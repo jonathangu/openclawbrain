@@ -1,11 +1,11 @@
 """
-🦀 CrabPath — Activation-driven memory graphs for AI agents.
+🦀 CrabPath — Neuron-inspired memory graphs for AI agents.
 Everything evolves into this.
 """
 
-__version__ = "0.0.1"
+__version__ = "0.1.0"
 
 from .graph import Graph, Node, Edge
-from .activation import activate, learn, Result
+from .activation import activate, learn, Firing
 
-__all__ = ["Graph", "Node", "Edge", "activate", "learn", "Result"]
+__all__ = ["Graph", "Node", "Edge", "activate", "learn", "Firing"]

@@ -1,109 +1,194 @@
-"""Tests for CrabPath activation."""
+"""Tests for CrabPath neuron-style activation."""
 
 from crabpath import Graph, Node, Edge, activate, learn
 
 
 def _simple_graph() -> Graph:
-    """A -> B -> C, with A -inhibits-> D"""
+    """A -> B -> C, with A -inhibits-> D.
+
+    Default thresholds (1.0), so a seed of 1.0 on A will fire A,
+    which sends energy to B (excitatory) and D (inhibitory).
+    """
     g = Graph()
-    g.add_node(Node(id="a", content="start node", tags=["start"]))
+    g.add_node(Node(id="a", content="start node"))
     g.add_node(Node(id="b", content="middle node"))
     g.add_node(Node(id="c", content="end node"))
     g.add_node(Node(id="d", content="bad node"))
-    
-    g.add_edge(Edge(source="a", target="b", weight=0.9))
-    g.add_edge(Edge(source="b", target="c", weight=0.8))
-    g.add_edge(Edge(source="a", target="d", weight=-1.0))  # inhibition
+
+    g.add_edge(Edge(source="a", target="b", weight=1.5))   # excitatory
+    g.add_edge(Edge(source="b", target="c", weight=1.2))   # excitatory
+    g.add_edge(Edge(source="a", target="d", weight=-1.0))  # inhibitory
     return g
 
 
-def test_basic_activation():
+def test_basic_firing():
     g = _simple_graph()
     result = activate(g, seeds={"a": 1.0})
-    
-    assert len(result.nodes) > 0
-    assert result.hops > 0
+
+    assert len(result.fired) > 0
+    assert result.steps > 0
 
 
-def test_activation_spreads():
+def test_activation_propagates():
+    """A fires → sends 1.5 energy to B → B fires (1.5 >= 1.0)."""
     g = _simple_graph()
     result = activate(g, seeds={"a": 1.0})
-    
-    ids = [n.id for n, _ in result.nodes]
-    assert "b" in ids  # should spread from a to b
+
+    fired_ids = [n.id for n, _ in result.fired]
+    assert "a" in fired_ids
+    assert "b" in fired_ids
+
+
+def test_chain_propagation():
+    """A → B → C. Energy should chain through all three."""
+    g = _simple_graph()
+    result = activate(g, seeds={"a": 1.0}, max_steps=5)
+
+    fired_ids = [n.id for n, _ in result.fired]
+    assert "a" in fired_ids
+    assert "b" in fired_ids
+    assert "c" in fired_ids
 
 
 def test_inhibition():
+    """A has negative edge to D. D should be inhibited."""
     g = _simple_graph()
     result = activate(g, seeds={"a": 1.0})
-    
+
     assert "d" in result.inhibited
-    ids = [n.id for n, _ in result.nodes]
-    assert "d" not in ids
+    fired_ids = [n.id for n, _ in result.fired]
+    assert "d" not in fired_ids
+
+
+def test_threshold_gating():
+    """Node with high threshold shouldn't fire on low energy."""
+    g = Graph()
+    g.add_node(Node(id="a", content="A"))
+    g.add_node(Node(id="b", content="B", threshold=10.0))  # high threshold
+    g.add_edge(Edge(source="a", target="b", weight=1.0))
+
+    result = activate(g, seeds={"a": 1.0})
+
+    fired_ids = [n.id for n, _ in result.fired]
+    assert "a" in fired_ids
+    assert "b" not in fired_ids  # 1.0 energy < 10.0 threshold
+
+
+def test_low_threshold_fires_easily():
+    """Node with low threshold fires on small energy."""
+    g = Graph()
+    g.add_node(Node(id="a", content="A"))
+    g.add_node(Node(id="b", content="B", threshold=0.1))
+    g.add_edge(Edge(source="a", target="b", weight=0.5))
+
+    result = activate(g, seeds={"a": 1.0})
+
+    fired_ids = [n.id for n, _ in result.fired]
+    assert "b" in fired_ids
 
 
 def test_empty_graph():
     g = Graph()
     result = activate(g, seeds={})
-    assert len(result.nodes) == 0
+    assert len(result.fired) == 0
 
 
-def test_damping():
-    g = _simple_graph()
-    
-    # High damping = more spread
-    r1 = activate(g, seeds={"a": 1.0}, damping=0.99)
-    # Low damping = less spread
-    r2 = activate(g, seeds={"a": 1.0}, damping=0.1)
-    
-    # With high damping, downstream nodes should have higher activation
-    scores_high = {n.id: s for n, s in r1.nodes}
-    scores_low = {n.id: s for n, s in r2.nodes}
-    
-    if "b" in scores_high and "b" in scores_low:
-        assert scores_high["b"] >= scores_low["b"]
+def test_decay():
+    """With high decay, subthreshold energy should vanish."""
+    g = Graph()
+    g.add_node(Node(id="a", content="A"))
+    g.add_node(Node(id="b", content="B", threshold=1.0))
+    g.add_edge(Edge(source="a", target="b", weight=0.8))  # 0.8 < 1.0 threshold
+
+    # With no decay, B won't fire (0.8 < 1.0)
+    # With decay, even less chance
+    result = activate(g, seeds={"a": 1.0}, decay=0.9)
+    fired_ids = [n.id for n, _ in result.fired]
+    assert "b" not in fired_ids
+
+
+def test_convergent_firing():
+    """Two nodes both connect to a target — their energy should sum."""
+    g = Graph()
+    g.add_node(Node(id="a", content="A"))
+    g.add_node(Node(id="b", content="B"))
+    g.add_node(Node(id="c", content="C", threshold=1.5))
+    g.add_edge(Edge(source="a", target="c", weight=0.9))
+    g.add_edge(Edge(source="b", target="c", weight=0.9))
+
+    # Each sends 0.9, total 1.8 >= 1.5
+    result = activate(g, seeds={"a": 1.0, "b": 1.0})
+    fired_ids = [n.id for n, _ in result.fired]
+    assert "c" in fired_ids
 
 
 def test_learning_strengthens():
     g = _simple_graph()
     result = activate(g, seeds={"a": 1.0})
-    
+
     old_weight = g.get_edge("a", "b").weight
     learn(g, result, outcome=1.0)
     new_weight = g.get_edge("a", "b").weight
-    
-    assert new_weight >= old_weight
+
+    assert new_weight > old_weight
 
 
 def test_learning_weakens():
     g = _simple_graph()
     result = activate(g, seeds={"a": 1.0})
-    
+
     old_weight = g.get_edge("a", "b").weight
     learn(g, result, outcome=-1.0)
     new_weight = g.get_edge("a", "b").weight
-    
-    assert new_weight <= old_weight
+
+    assert new_weight < old_weight
+
+
+def test_learning_only_affects_cofired_edges():
+    """Learning should only touch edges between nodes that both fired."""
+    g = _simple_graph()
+    result = activate(g, seeds={"a": 1.0}, max_steps=1)
+
+    # Only step 1: A fires. B may not have fired yet depending on propagation.
+    # The inhibitory edge a->d should not be affected by learning (d didn't fire).
+    old_inhibit_weight = g.get_edge("a", "d").weight
+    learn(g, result, outcome=1.0)
+    assert g.get_edge("a", "d").weight == old_inhibit_weight
 
 
 def test_top_k():
     g = Graph()
     for i in range(20):
-        g.add_node(Node(id=f"n{i}", content=f"node {i}"))
-    # Connect all to node 0
+        g.add_node(Node(id=f"n{i}", content=f"node {i}", threshold=0.1))
     for i in range(1, 20):
         g.add_edge(Edge(source="n0", target=f"n{i}", weight=0.5))
-    
+
     result = activate(g, seeds={"n0": 1.0}, top_k=5)
-    assert len(result.nodes) <= 5
+    assert len(result.fired) <= 5
 
 
-def test_custom_types():
-    """User-defined types work fine."""
+def test_refractory():
+    """A node that fired shouldn't fire again in the same activation pass."""
     g = Graph()
-    g.add_node(Node(id="a", content="a", type="my-custom-type"))
-    g.add_node(Node(id="b", content="b", type="another-type"))
-    g.add_edge(Edge(source="a", target="b", weight=1.0, type="my-edge-type"))
-    
-    result = activate(g, seeds={"a": 1.0})
-    assert len(result.nodes) > 0
+    g.add_node(Node(id="a", content="A"))
+    g.add_node(Node(id="b", content="B"))
+    g.add_edge(Edge(source="a", target="b", weight=2.0))
+    g.add_edge(Edge(source="b", target="a", weight=2.0))  # cycle
+
+    result = activate(g, seeds={"a": 1.0}, max_steps=5)
+
+    # A should fire exactly once even though there's a cycle back
+    a_count = sum(1 for n, _ in result.fired if n.id == "a")
+    assert a_count == 1
+
+
+def test_energy_at_firing():
+    """The score should be the node's potential at time of firing."""
+    g = Graph()
+    g.add_node(Node(id="a", content="A"))
+    result = activate(g, seeds={"a": 2.5})
+
+    assert len(result.fired) == 1
+    node, score = result.fired[0]
+    assert node.id == "a"
+    assert score == 2.5
