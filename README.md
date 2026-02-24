@@ -141,21 +141,58 @@ The paper covers:
 
 ## Quick Start
 
-> 🚧 Coming soon — the library is in active development.
+### Install
 
-```python
-# Eventually:
-from crabpath import MemoryGraph, ActivationEngine
+```bash
+pip install crabpath
+```
 
-graph = MemoryGraph.from_logs("./agent-sessions/")
-engine = ActivationEngine(graph, model="haiku")
+### Bootstrap from an OpenClaw workspace
+
+```bash
+# Import your workspace files + learning harness into a CrabPath graph
+crabpath import-openclaw ~/.openclaw/workspace/
+
+# Check what you got
+crabpath stats
 
 # Query the graph
-result = engine.activate("deployment failed after config change")
-# Returns: relevant facts + playbook + constraints + inhibitions
+crabpath activate "deployment failed after config change" --json
+```
 
-# After task completion, learn from outcome
-engine.learn(result, outcome="success", trace=tool_call_log)
+### Use as a library
+
+```python
+from crabpath.graph import MemoryGraph, MemoryNode, MemoryEdge, NodeType, EdgeType
+from crabpath.activation import ActivationEngine
+
+# Create a graph
+graph = MemoryGraph(db_path="my-agent.db")
+
+# Add nodes
+graph.add_node(MemoryNode(
+    id="rule-1",
+    node_type=NodeType.RULE,
+    content="Never claim fixed without testing on prod",
+    summary="test before claiming fixed",
+    tags=["deploy", "verification"],
+    prior=0.9,
+))
+
+# Bootstrap from OpenClaw
+from crabpath.openclaw import import_workspace
+from pathlib import Path
+stats = import_workspace(graph, Path("~/.openclaw/workspace/").expanduser())
+
+# Activate the graph for a query
+engine = ActivationEngine(graph)
+result = engine.activate("deployment failed after config change")
+
+for node, score in result.activated_nodes:
+    print(f"[{score:.3f}] {node.node_type.value}: {node.summary}")
+
+# Learn from outcome
+engine.learn(result, outcome="success")
 ```
 
 ## Why "CrabPath"?
