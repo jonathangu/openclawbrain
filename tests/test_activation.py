@@ -1,180 +1,109 @@
-"""Tests for the CrabPath activation engine."""
+"""Tests for CrabPath activation."""
 
-from crabpath.activation import ActivationConfig, ActivationEngine, ActivationResult
-from crabpath.graph import (
-    EdgeType,
-    MemoryEdge,
-    MemoryGraph,
-    MemoryNode,
-    NodeType,
-)
+from crabpath import Graph, Node, Edge, activate, learn
 
 
-def _build_test_graph() -> MemoryGraph:
-    """Build a small test graph for activation tests."""
-    g = MemoryGraph()
+def _simple_graph() -> Graph:
+    """A -> B -> C, with A -inhibits-> D"""
+    g = Graph()
+    g.add_node(Node(id="a", content="start node", tags=["start"]))
+    g.add_node(Node(id="b", content="middle node"))
+    g.add_node(Node(id="c", content="end node"))
+    g.add_node(Node(id="d", content="bad node"))
     
-    # Hub node
-    g.add_node(MemoryNode(
-        id="hub-deploy",
-        node_type=NodeType.HUB,
-        content="Deployment triage hub",
-        summary="deployment triage",
-        tags=["deploy", "triage"],
-        prior=0.8,
-    ))
-    
-    # Facts
-    g.add_node(MemoryNode(
-        id="fact-config",
-        node_type=NodeType.FACT,
-        content="Config changed on Feb 21, breaking staging",
-        summary="config change broke staging",
-        tags=["config", "staging"],
-        prior=0.5,
-    ))
-    
-    # Action
-    g.add_node(MemoryNode(
-        id="action-logs",
-        node_type=NodeType.ACTION,
-        content="tail -n 200 /var/log/service.log",
-        summary="check service logs",
-        tags=["logs", "debug"],
-        prior=0.6,
-    ))
-    
-    # Rule (inhibitory)
-    g.add_node(MemoryNode(
-        id="rule-no-untested",
-        node_type=NodeType.RULE,
-        content="Never claim fixed without testing on prod",
-        summary="test before claiming fixed",
-        tags=["deploy", "verification"],
-        prior=0.9,
-    ))
-    
-    # Bad action to inhibit
-    g.add_node(MemoryNode(
-        id="action-claim-fixed",
-        node_type=NodeType.ACTION,
-        content="Report fix to user without verification",
-        summary="claim fixed without testing",
-        tags=["report"],
-        prior=0.3,
-    ))
-    
-    # Edges
-    g.add_edge(MemoryEdge(
-        source="hub-deploy", target="fact-config",
-        edge_type=EdgeType.ASSOCIATION, weight=0.9,
-    ))
-    g.add_edge(MemoryEdge(
-        source="hub-deploy", target="action-logs",
-        edge_type=EdgeType.SEQUENCE, weight=0.8,
-    ))
-    g.add_edge(MemoryEdge(
-        source="rule-no-untested", target="action-claim-fixed",
-        edge_type=EdgeType.INHIBITION, weight=-1.0,
-    ))
-    g.add_edge(MemoryEdge(
-        source="fact-config", target="action-logs",
-        edge_type=EdgeType.SEQUENCE, weight=0.7,
-    ))
-    
+    g.add_edge(Edge(source="a", target="b", weight=0.9))
+    g.add_edge(Edge(source="b", target="c", weight=0.8))
+    g.add_edge(Edge(source="a", target="d", weight=-1.0))  # inhibition
     return g
 
 
 def test_basic_activation():
-    g = _build_test_graph()
-    engine = ActivationEngine(g)
+    g = _simple_graph()
+    result = activate(g, seeds={"a": 1.0})
     
-    result = engine.activate("deploy", seed_nodes=["hub-deploy"])
-    
-    assert len(result.activated_nodes) > 0
+    assert len(result.nodes) > 0
     assert result.hops > 0
-    # Hub should be in results
-    node_ids = [n.id for n, _ in result.activated_nodes]
-    assert "hub-deploy" in node_ids
 
 
 def test_activation_spreads():
-    g = _build_test_graph()
-    engine = ActivationEngine(g)
+    g = _simple_graph()
+    result = activate(g, seeds={"a": 1.0})
     
-    result = engine.activate("deploy", seed_nodes=["hub-deploy"])
-    
-    node_ids = [n.id for n, _ in result.activated_nodes]
-    # Activation should spread to connected nodes
-    assert "fact-config" in node_ids or "action-logs" in node_ids
+    ids = [n.id for n, _ in result.nodes]
+    assert "b" in ids  # should spread from a to b
 
 
-def test_inhibition_works():
-    g = _build_test_graph()
-    engine = ActivationEngine(g)
+def test_inhibition():
+    g = _simple_graph()
+    result = activate(g, seeds={"a": 1.0})
     
-    # Seed from rule node
-    result = engine.activate(
-        "deploy verification",
-        seed_nodes=["rule-no-untested"],
-    )
-    
-    # "action-claim-fixed" should be inhibited
-    assert "action-claim-fixed" in result.inhibited_nodes
+    assert "d" in result.inhibited
+    ids = [n.id for n, _ in result.nodes]
+    assert "d" not in ids
 
 
-def test_quarantined_nodes_excluded():
-    g = _build_test_graph()
-    node = g.get_node("action-logs")
-    node.quarantined = True
-    
-    engine = ActivationEngine(g)
-    result = engine.activate("deploy", seed_nodes=["hub-deploy"])
-    
-    node_ids = [n.id for n, _ in result.activated_nodes]
-    assert "action-logs" not in node_ids
+def test_empty_graph():
+    g = Graph()
+    result = activate(g, seeds={})
+    assert len(result.nodes) == 0
 
 
-def test_empty_activation():
-    g = MemoryGraph()
-    engine = ActivationEngine(g)
+def test_damping():
+    g = _simple_graph()
     
-    result = engine.activate("anything")
-    assert len(result.activated_nodes) == 0
-    assert result.tier == "deliberative"
+    # High damping = more spread
+    r1 = activate(g, seeds={"a": 1.0}, damping=0.99)
+    # Low damping = less spread
+    r2 = activate(g, seeds={"a": 1.0}, damping=0.1)
+    
+    # With high damping, downstream nodes should have higher activation
+    scores_high = {n.id: s for n, s in r1.nodes}
+    scores_low = {n.id: s for n, s in r2.nodes}
+    
+    if "b" in scores_high and "b" in scores_low:
+        assert scores_high["b"] >= scores_low["b"]
 
 
-def test_learning_updates_weights():
-    g = _build_test_graph()
-    engine = ActivationEngine(g)
+def test_learning_strengthens():
+    g = _simple_graph()
+    result = activate(g, seeds={"a": 1.0})
     
-    result = engine.activate("deploy", seed_nodes=["hub-deploy"])
+    old_weight = g.get_edge("a", "b").weight
+    learn(g, result, outcome=1.0)
+    new_weight = g.get_edge("a", "b").weight
     
-    # Get initial weight
-    edges = g.get_edges_from("hub-deploy")
-    initial_weights = {(e.source, e.target): e.weight for e in edges}
-    
-    # Learn from success
-    engine.learn(result, outcome="success", reward=1.0, learning_rate=0.1)
-    
-    # Weights along traversal path should increase
-    edges_after = g.get_edges_from("hub-deploy")
-    for e in edges_after:
-        key = (e.source, e.target)
-        if key in initial_weights and e.target in result.traversal_path:
-            assert e.weight >= initial_weights[key]
+    assert new_weight >= old_weight
 
 
-def test_config_custom():
-    config = ActivationConfig(
-        alpha=0.7,
-        max_hops=2,
-        top_k=5,
-        threshold=0.05,
-    )
-    g = _build_test_graph()
-    engine = ActivationEngine(g, config=config)
+def test_learning_weakens():
+    g = _simple_graph()
+    result = activate(g, seeds={"a": 1.0})
     
-    result = engine.activate("deploy", seed_nodes=["hub-deploy"])
-    assert result.hops <= 2
-    assert len(result.activated_nodes) <= 5
+    old_weight = g.get_edge("a", "b").weight
+    learn(g, result, outcome=-1.0)
+    new_weight = g.get_edge("a", "b").weight
+    
+    assert new_weight <= old_weight
+
+
+def test_top_k():
+    g = Graph()
+    for i in range(20):
+        g.add_node(Node(id=f"n{i}", content=f"node {i}"))
+    # Connect all to node 0
+    for i in range(1, 20):
+        g.add_edge(Edge(source="n0", target=f"n{i}", weight=0.5))
+    
+    result = activate(g, seeds={"n0": 1.0}, top_k=5)
+    assert len(result.nodes) <= 5
+
+
+def test_custom_types():
+    """User-defined types work fine."""
+    g = Graph()
+    g.add_node(Node(id="a", content="a", type="my-custom-type"))
+    g.add_node(Node(id="b", content="b", type="another-type"))
+    g.add_edge(Edge(source="a", target="b", weight=1.0, type="my-edge-type"))
+    
+    result = activate(g, seeds={"a": 1.0})
+    assert len(result.nodes) > 0

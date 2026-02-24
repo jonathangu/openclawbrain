@@ -4,231 +4,120 @@
 
 ---
 
-In biology, [carcinisation](https://en.wikipedia.org/wiki/Carcinisation) is the phenomenon where crustaceans independently evolve into crab-like forms — over and over again. Nature keeps reinventing the crab because the crab body plan *works*.
+In biology, [carcinisation](https://en.wikipedia.org/wiki/Carcinisation) is the phenomenon where crustaceans independently evolve into crab-like forms — over and over again. Nature keeps reinventing the crab because it *works*.
 
-CrabPath is a bet that agent memory systems will undergo the same convergence. Every serious agent memory system will eventually arrive at: **a weighted directed graph where activation spreads based on relevance, connections learn from outcomes, and frequently-used paths compile into cached reflexes.**
+CrabPath is a bet that agent memory will converge the same way. Instead of loading a pile of files every session or doing naive vector search, your agent should:
 
-This is that system.
+1. **Spread activation** through a learned memory graph
+2. **Load only what lights up** — the handful of things that matter for *this* task
+3. **Learn from outcomes** — successful paths strengthen, failed paths weaken
+4. **Inhibit bad patterns** — negative edges suppress known mistakes
 
-## What CrabPath Does
+## Install
 
-Instead of loading the same pile of files every session (or doing naive vector search), CrabPath:
-
-1. **Propagates activation** through a learned memory graph when a task arrives
-2. **Loads only what lights up** — the handful of facts, procedures, and constraints that matter for *this* task
-3. **Learns from outcomes** — successful paths strengthen, failed paths weaken, bad patterns get inhibited
-4. **Compiles hot paths** — frequently-successful routes become cached reflexes that cost nearly nothing to run
-
-The result: agent memory that gets faster, cheaper, and more accurate over time.
-
-## Key Concepts
-
-### The Graph
-
-Nodes aren't just text chunks. They're typed:
-
-| Type | What it represents | Example |
-|------|-------------------|---------|
-| **Fact** | Declarative knowledge | "prod uses env var X" |
-| **Rule** | Behavioral constraint | "never claim fixed without testing" |
-| **Tool** | Tool affordance + local best practice | "use pty:true for Codex" |
-| **Action** | Atomic executable step | `git diff HEAD~1 -- config/` |
-| **Sequence** | Multi-step playbook | "debug deploy: config → logs → rollback" |
-| **Episode** | Interaction trace with outcome | session log + success/failure label |
-| **Error Class** | Reusable failure pattern | "context bloat", "stale cache" |
-
-Edges are typed too: **Association**, **Sequence** (then), **Causation**, **Contingency** (if/else), **Inhibition** (blocks), **Preference**, **Abstraction**.
-
-### Three-Tier Compute
-
-Like biological nervous systems, CrabPath routes queries through three layers:
-
-| Layer | Mechanism | Cost | When |
-|-------|-----------|------|------|
-| **Reflex** | Cached compiled path | ~$0 | Routine tasks (target: 70%) |
-| **Habitual** | Cheap model activation | ~$0.001/query | Pattern matching |
-| **Deliberative** | Full model reasoning | ~$0.01-0.80/query | Novel tasks (target: 5%) |
-
-As the graph learns, more queries drop from deliberative → habitual → reflex.
-
-### Myelination (Compiled Reflexes)
-
-When a path fires often enough with consistent success, CrabPath compiles it into a deterministic macro — like how practiced skills become automatic in the brain. These are formalized as **options** (semi-MDP macro-actions) with:
-
-- Initiation conditions (when to trigger)
-- Internal policy (what to do)  
-- Termination conditions (when to stop)
-- Verification checks (did it work?)
-- Fallback (degrade gracefully if environment changed)
-
-### Learning Rules
-
-- **Hebbian strengthening**: co-activated nodes during success → strengthen edges
-- **Inhibition learning**: actions that caused failures → strengthen blocking edges
-- **Decay**: unused connections fade over time
-- **Pruning**: dead nodes/edges get archived
-- **Consolidation**: nightly replay merges duplicates, promotes patterns to sequences
-- **Immune system**: quarantine nodes correlated with repeated failures
-
-## Status
-
-🚧 **Early development** — we're building this in the open.
-
-CrabPath grew out of running three persistent LLM agents for 20+ days ($13K+ in API costs, 1,482 classified interactions, 252 corrections). The paper documents the architecture, the math, and the experimental plan.
-
-### What exists today
-- [Research paper](https://jonathangu.com/crabpath/) with full architecture spec
-- Core graph + activation engine (`pip install crabpath`)
-- CLI for bootstrapping, querying, and learning
-- 21 passing tests
-
-### What we're building
-- [ ] Persistence (save/load graphs to SQLite)
-- [ ] Warm-start pipeline (bootstrap from agent logs — any format)
-- [ ] Myelination compiler (option extraction)
-- [ ] Embedding-based seed node selection
-- [ ] Offline replay evaluation framework
-- [ ] Framework integrations (OpenClaw, LangChain, etc. — optional extras)
-
-## Architecture
-
+```bash
+pip install crabpath
 ```
-┌─────────────────────────────────────────────┐
-│                  CrabPath                    │
-│                                              │
-│  ┌──────────┐   ┌──────────┐   ┌─────────┐ │
-│  │  Reflex   │   │ Habitual │   │Delibera-│ │
-│  │  Cache    │──▶│  Router  │──▶│  tive    │ │
-│  │  (free)   │   │ (cheap)  │   │ (smart) │ │
-│  └──────────┘   └──────────┘   └─────────┘ │
-│       ▲              │              │        │
-│       │              ▼              ▼        │
-│  ┌──────────────────────────────────────┐   │
-│  │         Memory Graph (G)             │   │
-│  │  nodes: facts, rules, tools, actions │   │
-│  │  edges: sequence, inhibition, cause  │   │
-│  │  weights: learned from outcomes      │   │
-│  └──────────────────────────────────────┘   │
-│       ▲              │                       │
-│       │              ▼                       │
-│  ┌──────────┐   ┌──────────┐                │
-│  │ Learning │   │  Nightly │                │
-│  │   Loop   │   │ Cleanup  │                │
-│  │(Hebbian) │   │(consolid)│                │
-│  └──────────┘   └──────────┘                │
-└─────────────────────────────────────────────┘
-         ▲                    │
-         │    Agent Tasks     ▼
-    ┌─────────────────────────────┐
-    │   LLM Agent (OpenClaw etc)  │
-    └─────────────────────────────┘
+
+## Usage
+
+```python
+from crabpath import Graph, Node, Edge, activate, learn
+
+# Build a graph
+g = Graph()
+
+g.add_node(Node(id="check-logs", content="tail -n 200 /var/log/service.log",
+                type="action", tags=["deploy"]))
+g.add_node(Node(id="check-config", content="git diff HEAD~1 -- config/",
+                type="action", tags=["deploy"]))
+g.add_node(Node(id="no-untested-fix", content="Never claim fixed without testing",
+                type="rule", tags=["deploy"]))
+g.add_node(Node(id="claim-fixed", content="Tell user it's fixed",
+                type="action"))
+
+# Positive edges: these go together
+g.add_edge(Edge(source="check-config", target="check-logs", weight=0.9))
+
+# Negative edges: this blocks that
+g.add_edge(Edge(source="no-untested-fix", target="claim-fixed", weight=-1.0))
+
+# Activate
+result = activate(g, seeds={"check-config": 1.0, "no-untested-fix": 0.8})
+
+for node, score in result.nodes:
+    print(f"  [{score:.2f}] {node.type}: {node.content}")
+
+# "claim-fixed" is inhibited:
+print(f"  Inhibited: {result.inhibited}")
+
+# Learn from outcome
+learn(g, result, outcome=1.0)   # success → strengthen these paths
+learn(g, result, outcome=-1.0)  # failure → weaken them
+```
+
+## How It Works
+
+CrabPath is a directed graph where:
+
+- **Nodes** hold content (facts, rules, actions, whatever you want)
+- **Edges** have weights: positive = "these go together", negative = "this blocks that"
+- **Activation spreads** from seed nodes along edges, scaled by weight, with damping
+- **Inhibition** is first-class: negative edges suppress nodes (the missing primitive in most memory systems)
+- **Learning** adjusts weights based on outcomes: co-activated nodes during success get strengthened
+
+That's the whole thing. Four concepts: nodes, weighted edges, spreading activation, outcome learning.
+
+### What you build on top is up to you
+
+CrabPath doesn't dictate your node types, edge types, or learning strategy. Use `type="fact"` or `type="quantum_flux_capacitor"` — it's a string field. The library gives you the graph and the activation dynamics. You bring the domain knowledge.
+
+## API
+
+### Graph
+
+```python
+g = Graph()
+g.add_node(Node(id="...", content="...", type="...", tags=[...], prior=0.5))
+g.add_edge(Edge(source="a", target="b", weight=0.9, type="..."))
+g.get_node("a")              # Node or None
+g.get_edge("a", "b")         # Edge or None
+g.neighbors("a")             # [(Node, Edge), ...]
+g.nodes(type="rule")         # filtered list
+g.remove_node("a")           # removes node + connected edges
+```
+
+### Activation
+
+```python
+result = activate(
+    graph,
+    seeds={"node-a": 1.0, "node-b": 0.5},  # where to start
+    damping=0.85,    # activation decay per hop (0-1)
+    max_hops=3,      # propagation depth
+    top_k=10,        # nodes to return
+    threshold=0.01,  # minimum activation to propagate
+)
+
+result.nodes       # [(Node, score), ...] sorted by activation
+result.inhibited   # [node_id, ...] suppressed by negative edges
+result.hops        # number of propagation steps
+```
+
+### Learning
+
+```python
+learn(graph, result, outcome=1.0)    # +1 = success, -1 = failure
+learn(graph, result, outcome=-0.5, learning_rate=0.05)
 ```
 
 ## The Paper
 
-📄 **Read the full paper**: [jonathangu.com/crabpath](https://jonathangu.com/crabpath/)
-
-The paper covers:
-- Why static context loading fails and what to do about it
-- The full CrabPath architecture (typed graph, activation dynamics, learning rules)
-- Mathematical framework (spectral graph theory, PageRank connection, MDP formulation)
-- 10 biological mechanisms as testable engineering hypotheses
-- Cost analysis and myelination economics
-- Warm-start pipeline from existing agent data
-- Experimental plan with ablation matrix
-- Honest accounting of limitations and failure modes
-
-## Quick Start
-
-### Install
-
-```bash
-pip install crabpath
-```
-
-### Use as a library
-
-```python
-from crabpath.graph import MemoryGraph, MemoryNode, MemoryEdge, NodeType, EdgeType
-from crabpath.activation import ActivationEngine
-
-# Create a graph
-graph = MemoryGraph()
-
-# Add memories
-graph.add_node(MemoryNode(
-    id="rule-1",
-    node_type=NodeType.RULE,
-    content="Never claim fixed without testing on prod",
-    summary="test before claiming fixed",
-    tags=["deploy", "verification"],
-    prior=0.9,
-))
-
-graph.add_node(MemoryNode(
-    id="action-check-logs",
-    node_type=NodeType.ACTION,
-    content="tail -n 200 /var/log/service.log",
-    summary="check service logs",
-    tags=["deploy", "debug"],
-    prior=0.6,
-))
-
-# Connect them
-graph.add_edge(MemoryEdge(
-    source="rule-1",
-    target="action-check-logs",
-    edge_type=EdgeType.SEQUENCE,
-    weight=0.8,
-))
-
-# Activate the graph for a query
-engine = ActivationEngine(graph)
-result = engine.activate("deployment failed")
-
-for node, score in result.activated_nodes:
-    print(f"[{score:.3f}] {node.node_type.value}: {node.summary}")
-
-# Learn from outcome
-engine.learn(result, outcome="success")
-```
-
-### CLI
-
-```bash
-pip install crabpath
-
-crabpath init                                    # Create a new graph
-crabpath activate "deploy broken" --json         # Query the graph
-crabpath stats                                   # Show graph stats
-```
-
-### Optional: Bootstrap from OpenClaw
-
-```bash
-# If you use OpenClaw, import your workspace into CrabPath
-crabpath import-openclaw ~/.openclaw/workspace/
-```
+📄 **[jonathangu.com/crabpath](https://jonathangu.com/crabpath/)** — full architecture, math, experimental plan, and the biological inspiration behind the design.
 
 ## Why "CrabPath"?
 
-🦀 **Carcinisation** — nature's most repeated evolutionary experiment. Unrelated crustaceans keep independently evolving into crabs because the crab form is a local optimum that *works*.
-
-We believe activation-driven memory graphs are the "crab form" of AI agent memory. Every system that gets serious about persistent agents will converge here: weighted graphs, spreading activation, inhibition, compiled reflexes.
-
-CrabPath is the path everything walks. 🦀
-
-## Contributing
-
-We welcome contributions! This is early-stage research turning into a real system. If you're interested in:
-
-- Graph algorithms and activation dynamics
-- LLM agent memory systems
-- Reinforcement learning / online learning
-- Biological inspiration in AI systems
-- Building developer tools
-
-...come help us build the crab. 🦀
+🦀 Everything evolves into a crab. We think everything in agent memory evolves into this: weighted graphs, spreading activation, inhibition, compiled reflexes. CrabPath is the path everything walks.
 
 ## License
 
@@ -247,4 +136,4 @@ Apache 2.0 — see [LICENSE](LICENSE).
 
 ---
 
-*Built by [Jonathan Gu](https://jonathangu.com) • Powered by too many late nights and $13K in API costs* 🦀
+*Built by [Jonathan Gu](https://jonathangu.com)* 🦀
