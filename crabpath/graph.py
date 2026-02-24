@@ -109,5 +109,34 @@ class Graph:
     def edge_count(self) -> int:
         return len(self._edges)
 
+    def save(self, path: str) -> None:
+        """Save the graph to a JSON file."""
+        import json
+        data = {
+            "nodes": [
+                {k: v for k, v in n.__dict__.items()}
+                for n in self._nodes.values()
+            ],
+            "edges": [
+                {k: v for k, v in e.__dict__.items()}
+                for e in self._edges.values()
+            ],
+        }
+        with open(path, "w") as f:
+            json.dump(data, f, indent=2)
+
+    @classmethod
+    def load(cls, path: str) -> "Graph":
+        """Load a graph from a JSON file."""
+        import json
+        with open(path) as f:
+            data = json.load(f)
+        g = cls()
+        for nd in data["nodes"]:
+            g.add_node(Node(**nd))
+        for ed in data["edges"]:
+            g.add_edge(Edge(**ed))
+        return g
+
     def __repr__(self) -> str:
         return f"Graph(nodes={self.node_count}, edges={self.edge_count})"
