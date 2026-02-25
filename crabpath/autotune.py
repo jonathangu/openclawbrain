@@ -6,6 +6,9 @@ from dataclasses import dataclass
 from typing import Any
 
 from .graph import Graph
+from .decay import DecayConfig
+from .mitosis import MitosisConfig
+from .synaptogenesis import SynaptogenesisConfig
 from .mitosis import MitosisState
 from .synaptogenesis import edge_tier_stats
 
@@ -451,3 +454,94 @@ def autotune(graph: Graph, health: GraphHealth) -> list[Adjustment]:
         return []
 
     return adjustments
+
+
+def _record_change(
+    changes: dict[str, dict[str, float | int]],
+    key: str,
+    before: float | int,
+    after: float | int,
+) -> None:
+    if after == before:
+        return
+    changes[key] = {"before": before, "after": after, "delta": after - before}
+
+
+def apply_adjustments(
+    adjustments: list[Adjustment],
+    syn_config: SynaptogenesisConfig,
+    decay_config: DecayConfig,
+    mitosis_config: MitosisConfig,
+) -> dict[str, dict[str, float | int]]:
+    """Apply suggestions from autotune() directly to live config objects.
+
+    Returns:
+        Mapping of changed public keys to `{before, after, delta}`.
+    """
+    del mitosis_config
+    changes: dict[str, dict[str, float | int]] = {}
+
+    for adjustment in adjustments:
+        for key, direction in adjustment.suggested_change.items():
+            if key == "decay_half_life":
+                before = decay_config.half_life_turns
+                if direction == "decrease":
+                    after = before * 0.75
+                elif direction == "increase":
+                    after = before * 1.33
+                else:
+                    continue
+                after = int(round(max(20, min(300, after))))
+                decay_config.half_life_turns = after
+                _record_change(changes, "decay_half_life", before, after)
+
+            elif key == "promotion_threshold":
+                before = int(syn_config.promotion_threshold)
+                if direction == "decrease":
+                    after = before - 1
+                elif direction == "increase":
+                    after = before + 1
+                else:
+                    continue
+                after = max(1, min(10, after))
+                syn_config.promotion_threshold = after
+                _record_change(changes, "promotion_threshold", before, after)
+
+            elif key == "reflex_threshold":
+                before = float(syn_config.reflex_threshold)
+                if direction == "increase":
+                    after = before + 0.05
+                else:
+                    continue
+                after = min(0.95, after)
+                syn_config.reflex_threshold = after
+                _record_change(changes, "reflex_threshold", before, after)
+
+            elif key == "skip_factor":
+                before = float(syn_config.skip_factor)
+                if direction == "increase":
+                    after = before + 0.02
+                elif direction == "decrease":
+                    after = before - 0.02
+                else:
+                    continue
+                after = max(0.0, min(1.0, after))
+                syn_config.skip_factor = after
+                _record_change(changes, "skip_factor", before, after)
+
+    return changes
+
+
+def self_tune(
+    graph: Graph,
+    state: MitosisState,
+    query_stats: dict[str, Any],
+    syn_config: SynaptogenesisConfig,
+    decay_config: DecayConfig,
+    mitosis_config: MitosisConfig,
+) -> tuple[GraphHealth, list[Adjustment], dict[str, dict[str, float | int]]]:
+    """Run one full health-tuning cycle."""
+    health = measure_health(graph, state, query_stats)
+    adjustments = autotune(graph, health)
+    changes = apply_adjustments(adjustments, syn_config, decay_config, mitosis_config)
+    return health, adjustments, changes
