@@ -228,3 +228,112 @@ def test_learn_bad_args(tmp_path: Path) -> None:
     assert result.returncode == 1
     error = _load_json_output(result.stderr)
     assert "error" in error
+
+
+def test_migrate_cli_outputs_graph_and_info(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "AGENTS.md").write_text(
+        "## Rules\nUse concise, safe, and direct instructions.\n\n## Tools\nUse CLI and browser for debugging."
+    )
+    (workspace / "SOUL.md").write_text(
+        "## Identity\nI am a memory graph test harness."
+    )
+
+    graph_path = tmp_path / "migrated_graph.json"
+    embeddings_path = tmp_path / "migrated_embeddings.json"
+
+    result = _run_cli(
+        [
+            "migrate",
+            "--workspace",
+            str(workspace),
+            "--no-include-memory",
+            "--output-graph",
+            str(graph_path),
+            "--output-embeddings",
+            str(embeddings_path),
+            "--verbose",
+            "--include-docs",
+        ]
+    )
+    assert result.returncode == 0
+
+    payload = _load_json_output(result.stdout)
+    assert payload["ok"] is True
+    assert payload["graph_path"] == str(graph_path)
+    assert payload["embeddings_path"] == str(embeddings_path)
+    assert payload["info"]["bootstrap"]["nodes"] > 0
+
+    assert graph_path.exists()
+    assert embeddings_path.exists()
+    migrated = Graph.load(str(graph_path))
+    assert migrated.node_count >= 2
+
+
+def test_split_cli_saves_chunks(tmp_path: Path) -> None:
+    graph_path = tmp_path / "split_graph.json"
+    graph = Graph()
+    graph.add_node(
+        Node(
+            id="soul",
+            content=(
+                "## Identity\nI am the main identity file. This file captures the core persona and operating guidelines for this agent.\n\n"
+                "## Tools\nUse codex for coding and browser for web tasks.\n\n"
+                "## Safety\nNever expose credentials.\n\n"
+                "## Memory\nKeep daily notes and migration logs. This text should be sufficiently long and realistic "
+                "so that CLI split operations can test chunking behavior across markdown sections, "
+                "ensuring output contains multiple coherent chunks from the source content.\n\n"
+                "## Notes\nContinue extending these notes with project decisions and rationale so downstream systems "
+                "can find useful overlap signals and stable retrieval anchors."
+            ),
+        )
+    )
+    graph.save(str(graph_path))
+
+    result = _run_cli(
+        [
+            "split",
+            "--graph",
+            str(graph_path),
+            "--node-id",
+            "soul",
+            "--save",
+        ]
+    )
+    assert result.returncode == 0
+    payload = _load_json_output(result.stdout)
+
+    assert payload["ok"] is True
+    assert payload["action"] == "split"
+    assert payload["chunk_count"] >= 2
+    assert payload["node_id"] == "soul"
+
+    split_graph = Graph.load(str(graph_path))
+    assert split_graph.get_node("soul") is None
+    assert len(payload["chunk_ids"]) == payload["chunk_count"]
+
+
+def test_sim_cli_runs_and_outputs_snapshots(tmp_path: Path) -> None:
+    output = tmp_path / "sim.json"
+    result = _run_cli(
+        [
+            "sim",
+            "--queries",
+            "5",
+            "--decay-interval",
+            "2",
+            "--decay-half-life",
+            "40",
+            "--output",
+            str(output),
+        ]
+    )
+    assert result.returncode == 0
+
+    payload = _load_json_output(result.stdout)
+    assert payload["ok"] is True
+    assert payload["queries"] == 5
+    assert payload["result"]["final"]["nodes"] >= 1
+    assert len(payload["result"]["snapshots"]) == 5
+    assert output.exists()

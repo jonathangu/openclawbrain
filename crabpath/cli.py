@@ -20,6 +20,10 @@ from .activation import learn as _learn
 from .embeddings import EmbeddingIndex, openai_embed
 from .feedback import auto_outcome, map_correction_to_snapshot, snapshot_path
 from .graph import Graph
+from .lifecycle_sim import run_simulation, workspace_scenario, SimConfig
+from .migrate import MigrateConfig, migrate
+from .mitosis import MitosisConfig, MitosisState, split_node
+from .migrate import fallback_llm_split
 
 
 DEFAULT_GRAPH_PATH = "crabpath_graph.json"
@@ -241,6 +245,36 @@ def cmd_stats(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def cmd_migrate(args: argparse.Namespace) -> dict[str, Any]:
+    config = MigrateConfig(
+        include_memory=args.include_memory,
+        include_docs=args.include_docs,
+    )
+    graph, info = migrate(
+        workspace_dir=args.workspace,
+        session_logs=args.session_logs or None,
+        config=config,
+        verbose=False,
+    )
+    if "states" in info:
+        info = dict(info)
+        info.pop("states", None)
+
+    graph_path = args.output_graph
+    graph.save(graph_path)
+
+    embeddings_path = args.output_embeddings
+    if embeddings_path:
+        EmbeddingIndex().save(embeddings_path)
+
+    return {
+        "ok": True,
+        "graph_path": str(graph_path),
+        "embeddings_path": str(embeddings_path) if embeddings_path else None,
+        "info": info,
+    }
+
+
 def cmd_add(args: argparse.Namespace) -> dict[str, Any]:
     graph_path = Path(args.graph)
     if graph_path.exists():
@@ -294,6 +328,59 @@ def cmd_consolidate(args: argparse.Namespace) -> dict[str, Any]:
     return {"ok": True, **result}
 
 
+def cmd_split_node(args: argparse.Namespace) -> dict[str, Any]:
+    graph = _load_graph(args.graph)
+    state = MitosisState()
+    result = split_node(
+        graph,
+        node_id=args.node_id,
+        llm_call=fallback_llm_split,
+        state=state,
+        config=MitosisConfig(),
+    )
+
+    if result is None:
+        raise CLIError(f"could not split node: {args.node_id}")
+
+    if args.save:
+        graph.save(args.graph)
+
+    return {
+        "ok": True,
+        "action": "split",
+        "node_id": args.node_id,
+        "chunk_ids": result.chunk_ids,
+        "chunk_count": len(result.chunk_ids),
+        "edges_created": result.edges_created,
+    }
+
+
+def cmd_sim(args: argparse.Namespace) -> dict[str, Any]:
+    files, queries = workspace_scenario()
+    selected_queries = queries[: args.queries]
+
+    if not selected_queries:
+        raise CLIError("queries must be a positive integer")
+
+    config = SimConfig(
+        decay_interval=args.decay_interval,
+        decay_half_life=args.decay_half_life,
+    )
+    result = run_simulation(files, selected_queries, config=config)
+
+    if args.output:
+        Path(args.output).write_text(json.dumps(result, indent=2))
+
+    payload = {
+        "ok": True,
+        "queries": args.queries,
+        "result": result,
+    }
+    if args.output:
+        payload["output"] = args.output
+    return payload
+
+
 def _build_parser() -> JSONArgumentParser:
     parser = JSONArgumentParser(
         prog="crabpath",
@@ -329,6 +416,31 @@ def _build_parser() -> JSONArgumentParser:
     st = subparsers.add_parser("stats", help="Show simple graph stats")
     st.add_argument("--graph", default=DEFAULT_GRAPH_PATH)
     st.set_defaults(func=cmd_stats)
+
+    mig = subparsers.add_parser("migrate", help="Bootstrap CrabPath from workspace files")
+    mig.add_argument("--workspace", default="~/.openclaw/workspace")
+    mig.add_argument("--session-logs", action="append", default=[])
+    mig.add_argument("--include-memory", dest="include_memory", action="store_true")
+    mig.add_argument("--no-include-memory", dest="include_memory", action="store_false")
+    mig.set_defaults(include_memory=True)
+    mig.add_argument("--include-docs", action="store_true", default=False)
+    mig.add_argument("--output-graph", default=DEFAULT_GRAPH_PATH)
+    mig.add_argument("--output-embeddings", default=None)
+    mig.add_argument("--verbose", action="store_true", default=False)
+    mig.set_defaults(func=cmd_migrate)
+
+    split = subparsers.add_parser("split", help="Split a node into coherent chunks")
+    split.add_argument("--graph", default=DEFAULT_GRAPH_PATH)
+    split.add_argument("--node-id", required=True, dest="node_id")
+    split.add_argument("--save", action="store_true")
+    split.set_defaults(func=cmd_split_node)
+
+    sim = subparsers.add_parser("sim", help="Run the lifecycle simulation")
+    sim.add_argument("--queries", type=int, default=100)
+    sim.add_argument("--decay-interval", type=int, default=5)
+    sim.add_argument("--decay-half-life", type=int, default=80)
+    sim.add_argument("--output", default=None)
+    sim.set_defaults(func=cmd_sim)
 
     add = subparsers.add_parser("add", help="Add or update a node in the graph")
     add.add_argument("--id", required=True, help="Node ID")
