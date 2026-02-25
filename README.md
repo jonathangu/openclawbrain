@@ -367,6 +367,87 @@ for adjustment in autotune(graph, health):
     print(adjustment.metric, adjustment.current, adjustment.target_range, adjustment.suggested_change)
 ```
 
+## Emergent Properties
+
+The graph should converge to a healthy operating profile. Use this as the signal for whether self-tuning is working:
+
+| Metric | Target | Why this matters |
+| --- | --- | --- |
+| `avg_nodes_fired_per_query` | `3-8` | Sparse activation: load only what's needed per query. |
+| `cross_file_edge_pct` | `5-20%` | Cross-file discovery: graph finds useful connections humans never made. |
+| `dormant_pct` | `60-90%` | Tier differentiation: graph learns what matters and keeps most links dormant. |
+| `reflex_pct` | `1-5%` | Compiled paths: critical paths auto-follow as reflex edges. |
+| `context_compression` | `<20%` | Context compression: only fraction of graph actually loaded per query. |
+| `proto_promotion_rate` | `5-15%` | Promotion filtering: not everything sticks, not nothing sticks. |
+| `reconvergence_rate` | `<10%` | Split quality: low reconvergence means splits stay meaningful. |
+| `orphan_nodes` | `0` | Full connectivity: every node should stay reachable. |
+
+Defaults are grid-calibrated from `360` parameter combinations. Treat this as a strong prior, not a fixed truth.
+
+Self-tuning loop:
+
+`measure` → `diagnose` → `apply` → `evaluate` → `learn`
+
+```python
+from crabpath import measure_health
+from crabpath.autotune import self_tune, TuneMemory
+
+tune_memory = TuneMemory.load("crabpath_tune_memory.json")
+health, adjustments, changes = self_tune(
+    graph=graph,
+    state=state,
+    query_stats=query_stats,
+    syn_config=syn_config,
+    decay_config=decay_config,
+    mitosis_config=mitosis_config,
+    cycle_number=cycle,
+    tune_memory=tune_memory,
+)
+```
+
+`autotune` does more than suggest: `self_tune()` applies adjustments directly through `apply_adjustments()`.
+
+`TuneMemory` adds meta-learning:
+- It tracks metric/knob/direction triplets over time.
+- Successful triples are preferred.
+- Failing triples are blocked.
+- The graph gradually learns what knobs matter for your workload.
+
+`TuneMemory` output (from `TuneMemory.report()`):
+
+```text
+TuneMemory report
+Working triples:
+- avg_nodes_fired_per_query:decay_half_life:decrease => 3
+Preferred triples:
+- reflex_pct:hebbian_increment:increase => 5
+Blocked triples:
+- orphan_nodes:investigation:none => -3
+```
+
+Example `crabpath health` CLI output (JSON mode):
+
+```bash
+python -m crabpath.cli health \
+  --graph crabpath_graph.json \
+  --query-stats stats/last_200_queries.json \
+  --json
+```
+
+```json
+{
+  "ok": true,
+  "graph": "crabpath_graph.json",
+  "query_stats_provided": true,
+  "metrics": [
+    {"metric":"avg_nodes_fired_per_query","value":6.2,"target_range":[3.0,8.0],"status":"✅"},
+    {"metric":"cross_file_edge_pct","value":11.8,"target_range":[5.0,20.0],"status":"✅"},
+    {"metric":"reconvergence_rate","value":4.3,"target_range":[null,10.0],"status":"✅"},
+    {"metric":"orphan_nodes","value":0,"target_range":[0.0,0.0],"status":"✅"}
+  ]
+}
+```
+
 ## How Activation Works
 
 Each node has a **potential** (energy) and a **threshold**. When potential ≥ threshold, the node **fires**.
