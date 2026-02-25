@@ -6,13 +6,22 @@
 
 CrabPath is a memory architecture for AI agents where documents are nodes, weighted pointers are edges, and an LLM is the activation function. The graph learns which paths lead to good outcomes using trajectory-aware credit assignment (Gu, 2016), compiling expensive LLM reasoning into cheap reflexive routing over time.
 
+## Requirements
+
+- Python 3.10+
+- Zero dependencies (stdlib only)
+- Optional: `OPENAI_API_KEY` for semantic embeddings (`text-embedding-3-small` via OpenAI API)
+- Optional: any OpenAI-compatible embedding endpoint
+
 ## Install
 
 ```bash
 pip install crabpath   # or: pip install .
 ```
 
-Zero dependencies. Pure Python.
+`OPENAI_API_KEY` is optional but recommended. Without it, CrabPath falls back to
+keyword-based routing. With it, semantic embeddings use
+`text-embedding-3-small` for substantially better retrieval quality.
 
 ## The Loop
 
@@ -33,6 +42,8 @@ That's the whole integration. See [`examples/agent_memory.py`](examples/agent_me
 
 CrabPath ships with a JSON-only CLI for agent runtimes.
 All commands emit one-line JSON on `stdout` and JSON errors on `stderr`.
+Commands that use embeddings (`query`, `migrate`, `split`) use keyword fallback
+when `OPENAI_API_KEY` is not set.
 
 ```bash
 python -m crabpath.cli query "deploy broke after config change" --graph crabpath_graph.json --index crabpath_embeddings.json --top 12
@@ -213,6 +224,13 @@ print(f"nodes={graph.node_count}, edges={graph.edge_count}")
 
 ## Migration & Replay
 
+### Migration command example
+
+```bash
+export OPENAI_API_KEY=sk-...
+crabpath migrate --workspace ~/.openclaw/workspace --session-logs session.jsonl --output-graph graph.json --output-embeddings embed.json
+```
+
 Developer flow for pre-warming:
 
 1. Install `crabpath`.
@@ -233,6 +251,7 @@ print(info["nodes"], info["edges"])
 ```
 
 ```bash
+export OPENAI_API_KEY=sk-...
 crabpath migrate --workspace ~/.openclaw/workspace --session-logs session.jsonl --output-graph graph.json --output-embeddings embed.json
 ```
 
