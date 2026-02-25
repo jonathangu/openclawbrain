@@ -148,12 +148,20 @@ class Router:
 
         normalized = self._coerce_candidates(candidates)
 
-        header = f"System: {_SYSTEM_PROMPT}\nUser: Query: {query}\nCurrent: {node_summary}\nCandidates:\n"
+        header = (
+            "System: {_system}\\n"
+            "User: Query: {query}\\n"
+            "Current: {summary}\\n"
+            "These pointers have weights from your past routing decisions.\\n"
+            "Higher weight = you followed this more often and it worked.\\n"
+            "Candidates:\\n"
+        ).format(_system=_SYSTEM_PROMPT, query=query, summary=node_summary)
+
         candidate_lines: list[str] = []
         for candidate in normalized:
-            line = f"- {candidate.node_id}: {candidate.weight:.3f}"
+            line = f"→ {candidate.node_id} ({candidate.weight:.2f})"
             if candidate.summary:
-                line += f" | {candidate.summary}"
+                line += f": {candidate.summary}"
             candidate_lines.append(line)
 
         # Greedily include as many candidate lines as possible without

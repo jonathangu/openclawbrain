@@ -16,7 +16,7 @@ __version__ = "0.4.0"
 from .graph import Graph, Node, Edge
 from .activation import activate, learn, Firing
 from .embeddings import EmbeddingIndex, openai_embed
-from .adapter import OpenClawCrabPathAdapter
+from .adapter import CrabPathAgent, OpenClawCrabPathAdapter
 from .feedback import auto_outcome, map_correction_to_snapshot
 from .neurogenesis import (
     BLOCKED_QUERIES,
@@ -31,6 +31,7 @@ __all__ = [
     "Graph", "Node", "Edge",
     "activate", "learn", "Firing",
     "EmbeddingIndex", "openai_embed",
+    "CrabPathAgent",
     "OpenClawCrabPathAdapter",
     "BLOCKED_QUERIES", "NeurogenesisConfig", "NoveltyResult",
     "assess_novelty", "connect_new_node", "deterministic_auto_id",
