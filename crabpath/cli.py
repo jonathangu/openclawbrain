@@ -241,6 +241,52 @@ def cmd_stats(args: argparse.Namespace) -> dict[str, Any]:
     }
 
 
+def cmd_add(args: argparse.Namespace) -> dict[str, Any]:
+    graph_path = Path(args.graph)
+    if graph_path.exists():
+        graph = Graph.load(args.graph)
+    else:
+        graph = Graph()
+
+    from .graph import Node, Edge
+
+    node_id = args.id
+    if graph.get_node(node_id) is not None:
+        # Update existing node
+        node = graph.get_node(node_id)
+        node.content = args.content
+        if args.threshold is not None:
+            node.threshold = args.threshold
+        graph.save(args.graph)
+        return {"ok": True, "action": "updated", "id": node_id}
+
+    threshold = args.threshold if args.threshold is not None else 0.5
+    graph.add_node(Node(id=node_id, content=args.content, threshold=threshold))
+
+    # Connect to existing nodes if --connect provided
+    edges_added = 0
+    if args.connect:
+        connect_ids = [c.strip() for c in args.connect.split(",") if c.strip()]
+        for target_id in connect_ids:
+            if graph.get_node(target_id) is not None and target_id != node_id:
+                graph.add_edge(Edge(source=node_id, target=target_id, weight=0.5))
+                graph.add_edge(Edge(source=target_id, target=node_id, weight=0.5))
+                edges_added += 2
+
+    graph.save(args.graph)
+    return {"ok": True, "action": "created", "id": node_id, "edges_added": edges_added}
+
+
+def cmd_remove(args: argparse.Namespace) -> dict[str, Any]:
+    graph = _load_graph(args.graph)
+    node = graph.get_node(args.id)
+    if node is None:
+        raise CLIError(f"node not found: {args.id}")
+    graph.remove_node(args.id)
+    graph.save(args.graph)
+    return {"ok": True, "action": "removed", "id": args.id}
+
+
 def cmd_consolidate(args: argparse.Namespace) -> dict[str, Any]:
     graph = _load_graph(args.graph)
     result = graph.consolidate(min_weight=args.min_weight)
@@ -283,6 +329,19 @@ def _build_parser() -> JSONArgumentParser:
     st = subparsers.add_parser("stats", help="Show simple graph stats")
     st.add_argument("--graph", default=DEFAULT_GRAPH_PATH)
     st.set_defaults(func=cmd_stats)
+
+    add = subparsers.add_parser("add", help="Add or update a node in the graph")
+    add.add_argument("--id", required=True, help="Node ID")
+    add.add_argument("--content", required=True, help="Node content text")
+    add.add_argument("--threshold", type=float, default=None, help="Firing threshold (default: 0.5)")
+    add.add_argument("--connect", default=None, help="Comma-separated node IDs to connect to")
+    add.add_argument("--graph", default=DEFAULT_GRAPH_PATH)
+    add.set_defaults(func=cmd_add)
+
+    rm = subparsers.add_parser("remove", help="Remove a node and all its edges")
+    rm.add_argument("--id", required=True, help="Node ID to remove")
+    rm.add_argument("--graph", default=DEFAULT_GRAPH_PATH)
+    rm.set_defaults(func=cmd_remove)
 
     cons = subparsers.add_parser("consolidate", help="Consolidate and prune weak connections")
     cons.add_argument("--min-weight", type=float, default=0.05)
