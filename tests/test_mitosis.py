@@ -258,7 +258,7 @@ def test_split_node_basic():
             if i != j:
                 edge = g.get_edge(src, tgt)
                 assert edge is not None
-                assert edge.weight == 1.0
+                assert edge.weight == 0.65  # habitual, not reflex
 
 
 def test_split_node_too_small():
