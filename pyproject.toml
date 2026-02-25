@@ -26,9 +26,16 @@ classifiers = [
     "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
 
-# Zero dependencies. Pure Python.
+# Zero required dependencies. Pure Python stdlib.
+# Embeddings and scoring require optional extras.
 
 [project.optional-dependencies]
+openai = ["openai>=1.0"]
+google = ["google-generativeai>=0.3"]
+cohere = ["cohere>=4.0"]
+ollama = ["requests>=2.25"]
+embeddings = ["openai>=1.0"]  # most common provider
+all = ["openai>=1.0", "google-generativeai>=0.3", "cohere>=4.0", "requests>=2.25"]
 dev = [
     "pytest>=7.0",
     "pytest-cov",

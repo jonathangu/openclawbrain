@@ -1,16 +1,19 @@
 #!/bin/bash
 # CrabPath Quickstart — from zero to shadow mode
-# Usage: bash scripts/quickstart.sh ~/.openclaw/workspace
+# Usage: bash scripts/quickstart.sh [workspace_path]
 #
 # What it does:
-#   1. Bootstraps a graph from your workspace files
-#   2. Builds embeddings (requires OPENAI_API_KEY or GEMINI_API_KEY)
-#   3. Runs a health check
-#   4. Runs 5 test queries with scoring
-#   5. Shows you what the brain learned
+#   1. Installs CrabPath with embedding support (pip install -e .[embeddings])
+#   2. Bootstraps a graph from your workspace files
+#   3. Builds embeddings (requires OPENAI_API_KEY or GEMINI_API_KEY)
+#   4. Runs a health check
+#   5. Runs 5 test queries with scoring
+#   6. Shows you what the brain learned
 
 set -e
 
+SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
+REPO_DIR="$(dirname "$SCRIPT_DIR")"
 WORKSPACE="${1:-$HOME/.openclaw/workspace}"
 GRAPH="graph.json"
 EMBEDDINGS="embeddings.json"
@@ -27,6 +30,16 @@ if [ ! -d "$WORKSPACE" ]; then
     echo "Usage: bash scripts/quickstart.sh /path/to/workspace"
     exit 1
 fi
+
+# Step 0: Install CrabPath
+echo "Step 0: Installing CrabPath..."
+if ! python3 -c "import crabpath" 2>/dev/null; then
+    pip3 install -e "$REPO_DIR[embeddings]" --quiet 2>&1 | tail -2
+    echo "✅ CrabPath installed with embedding support"
+else
+    echo "✅ CrabPath already installed"
+fi
+echo ""
 
 # Check for API key
 if [ -z "$OPENAI_API_KEY" ] && [ -z "$GEMINI_API_KEY" ]; then
@@ -74,7 +87,7 @@ if [ "$HAS_KEY" = true ] && [ -f "$STATE_DIR/$EMBEDDINGS" ]; then
         "who am I helping" \
         "what happened recently"; do
         echo "  Query: $q"
-        python3 -m crabpath.cli query \
+        crabpath query \
             --graph "$STATE_DIR/$GRAPH" \
             --index "$STATE_DIR/$EMBEDDINGS" \
             --top 3 \
@@ -82,9 +95,10 @@ if [ "$HAS_KEY" = true ] && [ -f "$STATE_DIR/$EMBEDDINGS" ]; then
 import sys,json
 try:
     d=json.loads(sys.stdin.read())
-    for n in d.get('fired_nodes',[])[:3]:
-        print(f'    → {n[\"id\"][:40]}: {n[\"content\"][:60]}...')
-except: print('    (parse error)')
+    for n in d.get('fired',d.get('fired_nodes',[]))[:3]:
+        nid=n['id'][:45]; txt=n['content'][:60].replace(chr(10),' ')
+        print(f'    → {nid}: {txt}...')
+except Exception as e: print(f'    (parse error: {e})')
 "
         echo ""
     done
