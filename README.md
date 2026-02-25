@@ -124,6 +124,23 @@ if snapshot is not None:
     # feed inferred into adapter.learn(firing...) in your worker loop
 ```
 
+## Getting Started
+
+Quick start for existing AI agent workspaces with workspace files:
+
+```bash
+python3 scripts/bootstrap_from_workspace.py /path/to/workspace --output /path/to/crabpath_graph.json
+```
+
+After bootstrap, load and run the same graph workflow you already use:
+
+```python
+from crabpath import Graph, Node, Edge
+
+graph = Graph.load("/path/to/crabpath_graph.json")
+print(f"nodes={graph.node_count}, edges={graph.edge_count}")
+```
+
 ## Quick Start
 
 ```python
