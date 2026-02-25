@@ -40,16 +40,16 @@ from .graph import Graph, Edge
 class SynaptogenesisConfig:
     """All the knobs for edge formation."""
     # Proto-edge promotion
-    promotion_threshold: int = 3          # Co-fires needed to promote
-    proto_decay_rate: float = 0.8         # Proto-credit multiplier per maintenance cycle
-    proto_min_credit: float = 0.5         # Below this, proto-edge dies
+    promotion_threshold: int = 2          # Co-fires needed to promote (2 = responsive)
+    proto_decay_rate: float = 0.85        # Proto-credit multiplier per maintenance cycle
+    proto_min_credit: float = 0.4         # Below this, proto-edge dies
 
     # New edge weights
-    cofire_initial_weight: float = 0.15   # Symmetric co-fire edge
-    causal_initial_weight: float = 0.25   # Directed A→B (A fired before B)
+    cofire_initial_weight: float = 0.18   # Symmetric co-fire edge (just above dormant floor)
+    causal_initial_weight: float = 0.28   # Directed A→B (A fired before B)
 
     # Reinforcement
-    hebbian_increment: float = 0.05       # Per co-fire reinforcement
+    hebbian_increment: float = 0.06       # Per co-fire reinforcement
     skip_factor: float = 0.9             # Multiply weight when skipped as candidate
 
     # Limits

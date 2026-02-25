@@ -7,7 +7,7 @@ from .graph import Graph
 
 @dataclass
 class DecayConfig:
-    half_life_turns: int = 120
+    half_life_turns: int = 80    # 80 turns to halve (sim-validated baseline)
     min_weight: float = -5.0
     max_weight: float = 5.0
 
