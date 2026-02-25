@@ -1,0 +1,354 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from typing import Any, Mapping, Sequence
+import json
+
+
+_SYSTEM_PROMPT = (
+    "You are a memory router. Given a query and candidate document pointers, "
+    "choose which to follow. Output JSON: {\"target\": \"node_id\", \"confidence\": 0.0-1.0, \"rationale\": \"brief\"}"
+)
+
+
+class RouterError(RuntimeError):
+    """Raised when routing fails due to parsing issues or unavailable model output."""
+
+
+@dataclass
+class RouterConfig:
+    model: str = "gpt-5-mini"
+    temperature: float = 0.2
+    timeout_s: float = 8.0
+    max_retries: int = 2
+    fallback_behavior: str = "heuristic"
+
+
+@dataclass
+class RouterDecision:
+    chosen_target: str
+    rationale: str
+    confidence: float
+    tier: str
+    alternatives: list[tuple[str, float]]
+    raw: dict[str, Any]
+
+
+@dataclass
+class _NormalizedCandidate:
+    node_id: str
+    weight: float
+    summary: str | None = None
+
+
+def normalize_router_payload(payload: Mapping[str, Any]) -> RouterDecision:
+    """Validate and normalize a raw routing payload into a `RouterDecision`."""
+
+    if not isinstance(payload, Mapping):
+        raise RouterError("Router payload must be a mapping")
+
+    if "target" not in payload:
+        raise RouterError("Router payload missing required key: target")
+
+    target = payload["target"]
+    if not isinstance(target, str) or not target:
+        raise RouterError("Router payload target must be a non-empty string")
+
+    if "confidence" not in payload:
+        raise RouterError("Router payload missing required key: confidence")
+    try:
+        confidence = float(payload["confidence"])
+    except (TypeError, ValueError):
+        raise RouterError("Router payload confidence must be numeric")
+
+    if not (0.0 <= confidence <= 1.0):
+        raise RouterError("Router payload confidence must be between 0.0 and 1.0")
+
+    rationale = payload.get("rationale", "")
+    if not isinstance(rationale, str):
+        raise RouterError("Router payload rationale must be a string")
+
+    raw_alternatives = payload.get("alternatives", [])
+    alternatives: list[tuple[str, float]] = []
+    if raw_alternatives is None:
+        raw_alternatives = []
+    if not isinstance(raw_alternatives, list):
+        raise RouterError("Router payload alternatives must be a list")
+
+    for alt in raw_alternatives:
+        if not isinstance(alt, (tuple, list)) or len(alt) < 2:
+            raise RouterError("Each alternative must be a [node_id, score] pair")
+        node_id, score = alt[0], alt[1]
+        if not isinstance(node_id, str):
+            raise RouterError("Alternative node_id must be a string")
+        try:
+            score_f = float(score)
+        except (TypeError, ValueError):
+            raise RouterError("Alternative score must be numeric")
+        alternatives.append((node_id, score_f))
+
+    tier = str(payload.get("tier", "heuristic"))
+    raw = dict(payload)
+
+    return RouterDecision(
+        chosen_target=target,
+        rationale=rationale,
+        confidence=confidence,
+        tier=tier,
+        alternatives=alternatives,
+        raw=raw,
+    )
+
+
+class Router:
+    def __init__(self, config: RouterConfig | None = None, client: Any | None = None) -> None:
+        self.config = config or RouterConfig()
+        self.client = client
+
+    def _coerce_candidates(self, candidates: Sequence[tuple[str, float]]) -> list[_NormalizedCandidate]:
+        normalized: list[_NormalizedCandidate] = []
+        for item in candidates:
+            if not isinstance(item, (tuple, list)) or len(item) < 2:
+                raise RouterError("Candidates must be iterable of (node_id, weight) tuples")
+
+            node_id, score = item[0], item[1]
+            if not isinstance(node_id, str):
+                raise RouterError("Candidate node_id must be a string")
+
+            try:
+                weight = float(score)
+            except (TypeError, ValueError) as exc:
+                raise RouterError("Candidate weight must be numeric") from exc
+
+            summary = None
+            if len(item) >= 3:
+                maybe_summary = item[2]
+                if maybe_summary is not None:
+                    summary = str(maybe_summary)
+
+            normalized.append(_NormalizedCandidate(node_id=node_id, weight=weight, summary=summary))
+
+        return normalized
+
+    @staticmethod
+    def _token_count(text: str) -> int:
+        return len(text.split())
+
+    def build_prompt(self, query: str, candidates: list[tuple[str, float]], context: Mapping[str, Any], budget: int) -> str:
+        # Keep prompt under both the caller budget and the Router hard ceiling.
+        max_tokens = min(int(budget) if budget else 0, 199)
+        if max_tokens <= 0:
+            max_tokens = 199
+
+        node_summary = context.get("node_summary")
+        if node_summary is None:
+            node_summary = context.get("current_node_summary", "")
+        if node_summary is None:
+            node_summary = ""
+
+        normalized = self._coerce_candidates(candidates)
+
+        header = f"System: {_SYSTEM_PROMPT}\nUser: Query: {query}\nCurrent: {node_summary}\nCandidates:\n"
+        candidate_lines: list[str] = []
+        for candidate in normalized:
+            line = f"- {candidate.node_id}: {candidate.weight:.3f}"
+            if candidate.summary:
+                line += f" | {candidate.summary}"
+            candidate_lines.append(line)
+
+        # Greedily include as many candidate lines as possible without
+        # breaking the token cap.
+        included: list[str] = []
+        for line in candidate_lines:
+            if not included:
+                next_prompt = f"{header}{line}"
+            else:
+                next_prompt = f"{header}{'\n'.join(included)}\n{line}"
+            if self._token_count(next_prompt) < 200 and self._token_count(next_prompt) <= max_tokens:
+                included.append(line)
+            else:
+                break
+
+        body = "\n".join(included)
+        prompt = f"{header}{body}"
+
+        # In case context or system/user lines are already too long, trim
+        # with a very conservative fallback that keeps template validity.
+        if self._token_count(prompt) >= 200 or self._token_count(prompt) > max_tokens:
+            # leave room for a short suffix showing truncation and include only the top line.
+            fallback_query = query if len(query.split()) < max_tokens else " ".join(query.split()[: max_tokens // 3])
+            prompt = (
+                f"System: {_SYSTEM_PROMPT}\nUser: Query: {fallback_query}\nCurrent: {str(node_summary)[:40]}"
+                f"\nCandidates:\n(no candidates shown: token budget reached)"
+            )
+
+        return prompt
+
+    def parse_json(self, raw: str) -> dict[str, Any]:
+        if not isinstance(raw, str):
+            raise RouterError("Router parse input must be a string")
+
+        normalized_raw = raw.strip()
+        if not normalized_raw:
+            raise RouterError("Empty router output")
+
+        if normalized_raw.startswith("```"):
+            # Strip markdown JSON code-fence when LLM wraps output.
+            lines = normalized_raw.splitlines()
+            if len(lines) >= 2 and lines[0].startswith("```"):
+                if lines[-1].strip().endswith("```"):
+                    lines = lines[1:-1]
+                normalized_raw = "\n".join(lines).strip()
+
+        try:
+            payload = json.loads(normalized_raw)
+        except json.JSONDecodeError as exc:
+            raise RouterError("Router output is not valid JSON") from exc
+
+        if not isinstance(payload, dict):
+            raise RouterError("Router payload must be a JSON object")
+
+        for required_key in ("target", "confidence", "rationale"):
+            if required_key not in payload:
+                raise RouterError(f"Router payload missing required key: {required_key}")
+
+        if not isinstance(payload["target"], str):
+            raise RouterError("Router payload target must be a string")
+
+        if not isinstance(payload["rationale"], str):
+            raise RouterError("Router payload rationale must be a string")
+
+        try:
+            confidence = float(payload["confidence"])
+        except (TypeError, ValueError):
+            raise RouterError("Router payload confidence must be numeric")
+
+        if not (0.0 <= confidence <= 1.0):
+            raise RouterError("Router payload confidence must be between 0.0 and 1.0")
+
+        if "alternatives" in payload:
+            alternatives = payload["alternatives"]
+            if not isinstance(alternatives, list):
+                raise RouterError("Router payload alternatives must be a list")
+
+            for alt in alternatives:
+                if not isinstance(alt, (tuple, list)) or len(alt) < 2:
+                    raise RouterError("Alternative entries must be [node_id, score]")
+                if not isinstance(alt[0], str):
+                    raise RouterError("Alternative node_id must be a string")
+                try:
+                    float(alt[1])
+                except (TypeError, ValueError):
+                    raise RouterError("Alternative score must be numeric")
+
+        return payload
+
+    def _extract_model_output(self, messages: Sequence[dict[str, str]]) -> str:
+        if not self.client:
+            raise RouterError("No client configured")
+
+        # Primary path for OpenAI-style client.
+        if hasattr(self.client, "chat"):
+            response = self.client.chat.completions.create(
+                model=self.config.model,
+                messages=list(messages),
+                temperature=self.config.temperature,
+                timeout=self.config.timeout_s,
+            )
+
+            if not response.choices:
+                raise RouterError("LLM response missing choices")
+
+            choice = response.choices[0]
+            content = choice.message.content if hasattr(choice, "message") else None
+            if not content:
+                raise RouterError("LLM response content missing")
+            return str(content)
+
+        # Generic callable path for tests/mocks.
+        if callable(self.client):
+            return str(self.client(messages))
+
+        complete = getattr(self.client, "complete", None)
+        if callable(complete):
+            return str(complete(messages))
+
+        raise RouterError("Unknown client interface")
+
+    def decide_next(
+        self,
+        query: str,
+        current_node_id: str,
+        candidate_nodes: list[tuple[str, float]],
+        context: Mapping[str, Any],
+        tier: str,
+        previous_reasoning: str | None = None,
+    ) -> RouterDecision:
+        del previous_reasoning  # reserved for future reasoning carry-over
+
+        candidates = self._coerce_candidates(candidate_nodes)
+        if not candidates:
+            raise RouterError("No candidates provided")
+
+        if not self.client or self.config.fallback_behavior == "heuristic":
+            return self.fallback([(c.node_id, c.weight) for c in candidates], tier)
+
+        prompt = self.build_prompt(query, [(c.node_id, c.weight) for c in candidates], context, 199)
+        messages = [
+            {"role": "system", "content": _SYSTEM_PROMPT},
+            {"role": "user", "content": prompt},
+        ]
+
+        last_error: Exception | None = None
+        for _attempt in range(max(self.config.max_retries, 0) + 1):
+            try:
+                raw_output = self._extract_model_output(messages)
+                payload = self.parse_json(raw_output)
+                decision = normalize_router_payload(payload)
+                if "tier" not in payload:
+                    decision.tier = tier
+                decision.raw = payload
+                return decision
+            except (RouterError, json.JSONDecodeError, Exception) as exc:
+                last_error = exc
+
+        if self.config.fallback_behavior == "heuristic":
+            return self.fallback([(c.node_id, c.weight) for c in candidates], tier)
+
+        if last_error is None:
+            raise RouterError("Routing failed")
+        if isinstance(last_error, RouterError):
+            raise
+        raise RouterError("Routing failed") from last_error
+
+    def fallback(self, candidates: list[tuple[str, float]], tier: str) -> RouterDecision:
+        normalized = self._coerce_candidates(candidates)
+        if not normalized:
+            raise RouterError("Cannot fallback with empty candidate list")
+
+        ranked = sorted(normalized, key=lambda c: (c.weight, c.node_id), reverse=True)
+        chosen = ranked[0]
+
+        alternatives = [(candidate.node_id, candidate.weight) for candidate in ranked[1:]]
+
+        confidence = (chosen.weight + 1.0) / 2.0
+        if confidence < 0:
+            confidence = 0.0
+        elif confidence > 1:
+            confidence = 1.0
+
+        return RouterDecision(
+            chosen_target=chosen.node_id,
+            rationale=f"Fallback selected highest-weight candidate '{chosen.node_id}' in tier '{tier}'.",
+            confidence=confidence,
+            tier=tier,
+            alternatives=alternatives,
+            raw={
+                "method": "fallback",
+                "tier": tier,
+                "target": chosen.node_id,
+                "confidence": confidence,
+                "rationale": f"Fallback selected highest-weight candidate '{chosen.node_id}' in tier '{tier}'.",
+                "alternatives": alternatives,
+            },
+        )
