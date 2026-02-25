@@ -7,6 +7,7 @@ import sys
 from pathlib import Path
 
 from crabpath import Edge, EmbeddingIndex, Graph, Node
+from crabpath.mitosis import MitosisState
 
 
 def _run_cli(args: list[str], env: dict[str, str] | None = None) -> subprocess.CompletedProcess[str]:
@@ -162,6 +163,106 @@ def test_stats_outputs_graph_summary(tmp_path: Path) -> None:
     assert payload["top_hubs"] == ["a", "b", "c"]
 
 
+def test_health_cli_text_without_query_stats(tmp_path: Path) -> None:
+    graph_path = tmp_path / "graph.json"
+
+    graph = Graph()
+    graph.add_node(Node(id="file_a::a", content="alpha block"))
+    graph.add_node(Node(id="file_a::b", content="beta block"))
+    graph.add_node(Node(id="file_b::c", content="gamma block"))
+    graph.add_edge(Edge(source="file_a::a", target="file_a::b", weight=0.2))
+    graph.add_edge(Edge(source="file_a::b", target="file_b::c", weight=0.5))
+    graph.add_edge(Edge(source="file_b::c", target="file_a::a", weight=0.95))
+    graph.save(str(graph_path))
+
+    result = _run_cli(["health", "--graph", str(graph_path)])
+    assert result.returncode == 0
+    assert "Graph Health:" in result.stdout
+    assert "avg_nodes_fired_per_query" in result.stdout
+    assert "target" in result.stdout
+    assert "⚠️" in result.stdout
+    assert "n/a (collect query stats)" in result.stdout
+
+
+def test_health_cli_json_with_query_stats_and_state(tmp_path: Path) -> None:
+    graph_path = tmp_path / "graph.json"
+    query_stats_path = tmp_path / "query_stats.json"
+    state_path = tmp_path / "state.json"
+
+    graph = Graph()
+    graph.add_node(Node(id="file_a::a", content="alpha " * 20))
+    graph.add_node(Node(id="file_a::b", content="beta " * 20))
+    graph.add_node(Node(id="file_b::c", content="gamma " * 20))
+    graph.add_edge(Edge(source="file_a::a", target="file_a::b", weight=0.2))
+    graph.add_edge(Edge(source="file_a::b", target="file_b::c", weight=0.5))
+    graph.add_edge(Edge(source="file_b::c", target="file_a::a", weight=0.95))
+    graph.save(str(graph_path))
+
+    query_stats = {
+        "fired_counts": [1, 2, 3],
+        "chars": [20, 30],
+        "promotions": 1,
+        "proto_created": 10,
+        "reconverged_families": 1,
+    }
+    query_stats_path.write_text(json.dumps(query_stats), encoding="utf-8")
+    MitosisState(families={"x": ["file_a::a"], "y": ["file_a::b", "file_b::c"]}).save(str(state_path))
+
+    result = _run_cli(
+        [
+            "health",
+            "--graph",
+            str(graph_path),
+            "--query-stats",
+            str(query_stats_path),
+            "--mitosis-state",
+            str(state_path),
+            "--json",
+        ]
+    )
+    assert result.returncode == 0
+    payload = _load_json_output(result.stdout)
+
+    assert payload["query_stats_provided"] is True
+    assert payload["mitosis_state"] == str(state_path)
+    assert payload["metrics"]
+    metrics = {row["metric"]: row for row in payload["metrics"]}
+    assert metrics["avg_nodes_fired_per_query"]["value"] == 2.0
+    assert metrics["reconvergence_rate"]["value"] == 50.0
+    assert metrics["context_compression"]["target_range"] == [None, 20.0]
+
+
+def test_evolve_cli_appends_snapshot_and_report(tmp_path: Path) -> None:
+    graph_path = tmp_path / "graph.json"
+    snapshot_path = tmp_path / "evolve.jsonl"
+
+    graph = Graph()
+    graph.add_node(Node(id="file_a::a", content="alpha"))
+    graph.add_node(Node(id="file_b::b", content="bravo"))
+    graph.add_edge(Edge(source="file_a::a", target="file_b::b", weight=0.2))
+    graph.save(str(graph_path))
+
+    first = _run_cli(["evolve", "--graph", str(graph_path), "--snapshots", str(snapshot_path)])
+    assert first.returncode == 0
+    first_payload = _load_json_output(first.stdout)
+    assert first_payload["ok"] is True
+    assert first_payload["snapshot"]["nodes"] == 2
+    assert first_payload["snapshot"]["edges"] == 1
+    assert first_payload["snapshot"]["cross_file_edges"] == 1
+    assert snapshot_path.exists()
+    assert len(snapshot_path.read_text().splitlines()) == 1
+
+    graph.add_node(Node(id="file_c::c", content="charlie"))
+    graph.add_edge(Edge(source="file_b::b", target="file_c::c", weight=0.8))
+    graph.save(str(graph_path))
+
+    report = _run_cli(
+        ["evolve", "--graph", str(graph_path), "--snapshots", str(snapshot_path), "--report"]
+    )
+    assert report.returncode == 0
+    assert report.stdout.count("Evolution timeline") == 1
+    assert "nodes 3 (+1)" in report.stdout
+    assert "# 2" in report.stdout
 def test_consolidate_outputs_prune_counts(tmp_path: Path) -> None:
     graph_path = tmp_path / "graph.json"
 

@@ -341,6 +341,9 @@ def _format_timeline(snapshots: list[dict[str, Any]]) -> str:
             prev_dormant = int((prev_tiers or {}).get("dormant", 0))
             prev_habitual = int((prev_tiers or {}).get("habitual", 0))
             prev_reflex = int((prev_tiers or {}).get("reflex", 0))
+            delta_dormant = dormant - prev_dormant
+            delta_habitual = habitual - prev_habitual
+            delta_reflex = reflex - prev_reflex
 
             lines.append(
                 f"#{idx:>2} {label} | nodes {nodes} ({delta_nodes:+d}) | edges {edges} ({delta_edges:+d}) | cross-file {cross_file} ({delta_cross:+d}) | tiers d={dormant} ({delta_dormant:+d}) h={habitual} ({delta_habitual:+d}) r={reflex} ({delta_reflex:+d})"
