@@ -26,6 +26,7 @@ from .neurogenesis import (
     connect_new_node,
     deterministic_auto_id,
 )
+from .migrate import migrate, MigrateConfig, gather_files, parse_session_logs
 from .synaptogenesis import (
     SynaptogenesisConfig,
     SynaptogenesisState,
@@ -62,6 +63,7 @@ __all__ = [
     "BLOCKED_QUERIES", "NeurogenesisConfig", "NoveltyResult",
     "assess_novelty", "connect_new_node", "deterministic_auto_id",
     "auto_outcome", "map_correction_to_snapshot",
+    "migrate", "MigrateConfig", "gather_files", "parse_session_logs",
     "SynaptogenesisConfig", "SynaptogenesisState", "ProtoEdge",
     "record_cofiring", "record_skips", "decay_proto_edges",
     "classify_tier", "edge_tier_stats",
