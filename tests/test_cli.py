@@ -233,7 +233,7 @@ def test_health_cli_json_with_query_stats_and_state(tmp_path: Path) -> None:
     metrics = {row["metric"]: row for row in payload["metrics"]}
     assert metrics["avg_nodes_fired_per_query"]["value"] == 2.0
     assert metrics["reconvergence_rate"]["value"] == 50.0
-    assert metrics["context_compression"]["target_range"] == [None, 20.0]
+    assert metrics["context_compression"]["target_range"] == [None, 25.0]
 
 
 def test_evolve_cli_appends_snapshot_and_report(tmp_path: Path) -> None:

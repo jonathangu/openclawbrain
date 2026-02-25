@@ -100,7 +100,7 @@ def test_measure_health_uses_graph_state_and_query_stats():
 
 def test_autotune_for_avg_nodes_recommendations():
     health = GraphHealth(
-        avg_nodes_fired_per_query=10,
+        avg_nodes_fired_per_query=11,
         cross_file_edge_pct=10,
         dormant_pct=75,
         reflex_pct=2,
@@ -193,7 +193,7 @@ def test_autotune_orphan_nodes_flags_investigation():
 
 def test_autotune_targets_constant_shape():
     assert len(HEALTH_TARGETS) == 8
-    assert HEALTH_TARGETS["avg_nodes_fired_per_query"] == (3.0, 8.0)
+    assert HEALTH_TARGETS["avg_nodes_fired_per_query"] == (3.0, 10.0)
 
 
 def test_apply_adjustments_changes_expected_ranges_and_returns_deltas():
@@ -209,21 +209,21 @@ def test_apply_adjustments_changes_expected_ranges_and_returns_deltas():
         Adjustment(
             metric="avg_nodes_fired_per_query",
             current=10.0,
-            target_range=(3.0, 8.0),
+            target_range=(3.0, 10.0),
             suggested_change={"decay_half_life": "decrease", "promotion_threshold": "increase"},
             reason="spread too wide",
         ),
         Adjustment(
             metric="reflex_pct",
             current=8.0,
-            target_range=(1.0, 5.0),
+            target_range=(0.5, 5.0),
             suggested_change={"reflex_threshold": "increase"},
             reason="too many reflex edges",
         ),
         Adjustment(
             metric="cross_file_edge_pct",
             current=1.0,
-            target_range=(5.0, 20.0),
+            target_range=(3.0, 25.0),
             suggested_change={"skip_factor": "decrease"},
             reason="skip factor adjustment",
         ),
@@ -259,35 +259,35 @@ def test_apply_adjustments_enforces_bounds_and_limit():
         Adjustment(
             metric="avg_nodes_fired_per_query",
             current=10.0,
-            target_range=(3.0, 8.0),
+            target_range=(3.0, 10.0),
             suggested_change={"decay_half_life": "decrease"},
             reason="already at minimum",
         ),
         Adjustment(
             metric="cross_file_edge_pct",
             current=1.0,
-            target_range=(5.0, 20.0),
+            target_range=(3.0, 25.0),
             suggested_change={"promotion_threshold": "decrease"},
             reason="already at minimum",
         ),
         Adjustment(
             metric="reflex_pct",
             current=2.0,
-            target_range=(1.0, 5.0),
+            target_range=(0.5, 5.0),
             suggested_change={"hebbian_increment": "increase"},
             reason="already at maximum",
         ),
         Adjustment(
             metric="reflex_pct",
             current=2.0,
-            target_range=(1.0, 5.0),
+            target_range=(0.5, 5.0),
             suggested_change={"reflex_threshold": "increase"},
             reason="already at maximum",
         ),
         Adjustment(
             metric="context_compression",
             current=15.0,
-            target_range=(None, 20.0),
+            target_range=(None, 25.0),
             suggested_change={"skip_factor": "decrease"},
             reason="already at minimum",
         ),
@@ -350,21 +350,21 @@ def test_self_tune_runs_apply_adjustments_cycle(monkeypatch):
         )
 
     def fake_autotune(*_args, **_kwargs):
-        return [
-            Adjustment(
-                metric="avg_nodes_fired_per_query",
-                current=10.0,
-                target_range=(3.0, 8.0),
-                suggested_change={"decay_half_life": "decrease"},
-                reason="high spread",
-            ),
-            Adjustment(
-                metric="cross_file_edge_pct",
-                current=1.0,
-                target_range=(5.0, 20.0),
-                suggested_change={"promotion_threshold": "decrease"},
-                reason="cross-file too low",
-            ),
+            return [
+                Adjustment(
+                    metric="avg_nodes_fired_per_query",
+                    current=10.0,
+                    target_range=(3.0, 10.0),
+                    suggested_change={"decay_half_life": "decrease"},
+                    reason="high spread",
+                ),
+                Adjustment(
+                    metric="cross_file_edge_pct",
+                    current=1.0,
+                    target_range=(3.0, 25.0),
+                    suggested_change={"promotion_threshold": "decrease"},
+                    reason="cross-file too low",
+                ),
         ]
 
     import importlib
@@ -416,7 +416,7 @@ def test_self_tune_reverts_when_meta_learning_worsens(monkeypatch):
         orphan_nodes=0,
     )
     worse_health = GraphHealth(
-        avg_nodes_fired_per_query=10.0,
+        avg_nodes_fired_per_query=11.0,
         cross_file_edge_pct=10.0,
         dormant_pct=75.0,
         reflex_pct=2.0,
@@ -486,7 +486,7 @@ def test_self_tune_reverts_when_meta_learning_worsens(monkeypatch):
 
 def test_tune_history_records_and_scores_pending_adjustments():
     pre_health = GraphHealth(
-        avg_nodes_fired_per_query=10.0,
+        avg_nodes_fired_per_query=12.0,
         cross_file_edge_pct=10.0,
         dormant_pct=75.0,
         reflex_pct=2.0,

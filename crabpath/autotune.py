@@ -253,17 +253,17 @@ class TuneMemory(JSONStateMixin):
 
 
 HEALTH_TARGETS: dict[str, MetricRange] = {
-    "avg_nodes_fired_per_query": (3.0, 8.0),
-    "cross_file_edge_pct": (5.0, 20.0),
-    # Early-life graphs decay fast: sibling edges quickly drop below dormant threshold
-    # as signals are still sparse. For mature graphs, this should settle lower.
-    "dormant_pct": (60.0, 95.0),
-    "reflex_pct": (1.0, 5.0),
-    "context_compression": (None, 20.0),
-    # Proto promotion spikes are common early when exploratory traffic is still
-    # building structure; mature graphs usually converge to calmer rates.
+    # These targets are EMPIRICALLY CALIBRATED from 5 playback runs.
+    # They represent what a healthy ~300-node graph looks like after ~100 queries.
+    # They should be recalibrated for significantly different graph sizes.
+    # Wider targets keep the autotuner from generating false positives too often.
+    "avg_nodes_fired_per_query": (3.0, 10.0),
+    "cross_file_edge_pct": (3.0, 25.0),
+    "dormant_pct": (60.0, 97.0),
+    "reflex_pct": (0.5, 5.0),
+    "context_compression": (None, 25.0),
     "proto_promotion_rate": (5.0, 25.0),
-    "reconvergence_rate": (None, 10.0),
+    "reconvergence_rate": (None, 15.0),
     "orphan_nodes": (0.0, 0.0),
 }
 
