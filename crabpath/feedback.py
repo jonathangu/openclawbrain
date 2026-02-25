@@ -21,7 +21,7 @@ from .synaptogenesis import (
 DEFAULT_SNAPSHOT_PATH = "crabpath_events.db"
 
 
-RETRIEVAL_SCORING_MODEL = "gpt-4o-mini"
+RETRIEVAL_SCORING_MODEL = "gpt-5-mini"
 RETRIEVAL_HELPFULNESS_GATE = 0.3
 DEFAULT_OPENAI_TIMEOUT = 8.0
 
