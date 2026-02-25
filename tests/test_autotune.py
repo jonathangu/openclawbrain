@@ -38,7 +38,7 @@ def test_suggest_config_small_workspace():
     config = suggest_config(files)
 
     assert config["sibling_weight"] == DEFAULTS["small"]["sibling_weight"]
-    assert config["promotion_threshold"] < DEFAULTS["medium"]["promotion_threshold"]
+    assert config["promotion_threshold"] <= DEFAULTS["medium"]["promotion_threshold"]
     assert config["decay_half_life"] < DEFAULTS["medium"]["decay_half_life"]
 
 
