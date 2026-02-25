@@ -27,7 +27,13 @@ from .autotune import HEALTH_TARGETS, measure_health
 from .migrate import MigrateConfig, migrate
 from .mitosis import MitosisConfig, MitosisState, split_node
 from .migrate import fallback_llm_split
-from .synaptogenesis import edge_tier_stats
+from .synaptogenesis import (
+    SynaptogenesisConfig,
+    SynaptogenesisState,
+    edge_tier_stats,
+    record_correction,
+    record_cofiring,
+)
 
 
 DEFAULT_GRAPH_PATH = "crabpath_graph.json"
@@ -492,22 +498,64 @@ def cmd_snapshot(args: argparse.Namespace) -> dict[str, Any]:
 
 
 def cmd_feedback(args: argparse.Namespace) -> dict[str, Any]:
-    snapshot = map_correction_to_snapshot(
-        session_id=args.session,
-        turn_window=args.turn_window,
-    )
-    if snapshot is None:
-        raise CLIError(f"no attributable snapshot found for session: {args.session}")
+    if args.session is not None:
+        snapshot = map_correction_to_snapshot(
+            session_id=args.session,
+            turn_window=args.turn_window,
+        )
+        if snapshot is None:
+            raise CLIError(f"no attributable snapshot found for session: {args.session}")
 
-    turns_since_fire = snapshot.get("turns_since_fire", 0)
-    return {
-        "turn_id": snapshot.get("turn_id"),
-        "fired_ids": snapshot.get("fired_ids", []),
-        "turns_since_fire": turns_since_fire,
-        "suggested_outcome": auto_outcome(
-            corrections_count=1, turns_since_fire=int(turns_since_fire)
-        ),
-    }
+        turns_since_fire = snapshot.get("turns_since_fire", 0)
+        return {
+            "turn_id": snapshot.get("turn_id"),
+            "fired_ids": snapshot.get("fired_ids", []),
+            "turns_since_fire": turns_since_fire,
+            "suggested_outcome": auto_outcome(
+                corrections_count=1, turns_since_fire=int(turns_since_fire)
+            ),
+        }
+
+    if args.query is None:
+        raise CLIError("--query is required when not using --session")
+    if args.trajectory is None:
+        raise CLIError("--trajectory is required for manual feedback")
+    if args.reward is None:
+        raise CLIError("--reward is required for manual feedback")
+
+    trajectory = _split_csv(args.trajectory)
+    graph = _load_graph(args.graph)
+    syn_state = SynaptogenesisState()
+    config = SynaptogenesisConfig()
+
+    reward = float(args.reward)
+    if reward < 0.0:
+        results = record_correction(
+            graph=graph,
+            trajectory=trajectory,
+            reward=reward,
+            config=config,
+        )
+        payload = {
+            "action": "record_correction",
+            "reward": reward,
+            "results": results,
+        }
+    else:
+        results = record_cofiring(
+            graph=graph,
+            fired_nodes=trajectory,
+            state=syn_state,
+            config=config,
+        )
+        payload = {
+            "action": "record_cofiring",
+            "reward": 0.1,
+            "results": results,
+        }
+
+    graph.save(args.graph)
+    return {"ok": True, "query": args.query, "trajectory": trajectory, **payload}
 
 
 def cmd_stats(args: argparse.Namespace) -> dict[str, Any]:
@@ -721,8 +769,12 @@ def _build_parser() -> JSONArgumentParser:
     snap.set_defaults(func=cmd_snapshot)
 
     fb = subparsers.add_parser("feedback", help="Find most attributable snapshot")
-    fb.add_argument("--session", required=True)
+    fb.add_argument("--session", default=None)
     fb.add_argument("--turn-window", type=int, default=5)
+    fb.add_argument("--graph", default=DEFAULT_GRAPH_PATH)
+    fb.add_argument("--query", default=None)
+    fb.add_argument("--trajectory", default=None)
+    fb.add_argument("--reward", type=float, default=None)
     fb.set_defaults(func=cmd_feedback)
 
     st = subparsers.add_parser("stats", help="Show simple graph stats")

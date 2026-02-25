@@ -97,6 +97,7 @@ def test_snapshot_and_feedback_roundtrip(tmp_path: Path) -> None:
     graph_path = tmp_path / "graph.json"
     graph = Graph()
     graph.add_node(Node(id="a", content="seed"))
+    graph.add_edge(Edge(source="a", target="a", weight=1.0))
     graph.save(str(graph_path))
 
     snapshot_path = tmp_path / "session.events.db"
@@ -127,6 +128,8 @@ def test_snapshot_and_feedback_roundtrip(tmp_path: Path) -> None:
     feedback = _run_cli(
         [
             "feedback",
+            "--graph",
+            str(graph_path),
             "--session",
             "sess-123",
             "--turn-window",
@@ -141,6 +144,30 @@ def test_snapshot_and_feedback_roundtrip(tmp_path: Path) -> None:
     assert feedback_payload["fired_ids"] == ["a"]
     assert feedback_payload["turns_since_fire"] == 3
     assert feedback_payload["suggested_outcome"] == -1.0
+
+    manual_feedback = _run_cli(
+        [
+            "feedback",
+            "--graph",
+            str(graph_path),
+            "--query",
+            "no, that's wrong",
+            "--reward",
+            "-1.0",
+            "--trajectory",
+            "a,a",
+        ],
+        env={"OPENAI_API_KEY": ""},
+    )
+    assert manual_feedback.returncode == 0
+    manual_payload = _load_json_output(manual_feedback.stdout)
+    assert manual_payload["ok"] is True
+    assert manual_payload["query"] == "no, that's wrong"
+    assert manual_payload["trajectory"] == ["a", "a"]
+    assert manual_payload["action"] == "record_correction"
+
+    graph = Graph.load(str(graph_path))
+    assert graph.get_edge("a", "a").weight == 0.5
 
 
 def test_stats_outputs_graph_summary(tmp_path: Path) -> None:

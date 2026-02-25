@@ -24,7 +24,13 @@ from .embeddings import (
     openai_embed,
 )
 from .adapter import CrabPathAgent, OpenClawCrabPathAdapter
-from .feedback import auto_outcome, map_correction_to_snapshot
+from .feedback import (
+    auto_feedback,
+    auto_outcome,
+    detect_correction,
+    map_correction_to_snapshot,
+    score_retrieval,
+)
 from .neurogenesis import (
     BLOCKED_QUERIES,
     NeurogenesisConfig,
@@ -93,6 +99,9 @@ __all__ = [
     "connect_new_node",
     "deterministic_auto_id",
     "auto_outcome",
+    "auto_feedback",
+    "detect_correction",
+    "score_retrieval",
     "map_correction_to_snapshot",
     "migrate",
     "MigrateConfig",
