@@ -19,6 +19,7 @@ from typing import Any, Callable, Optional
 from .activation import Firing
 from .activation import learn as _learn
 from .embeddings import EmbeddingIndex, auto_embed
+from ._structural_utils import count_cross_file_edges
 from .feedback import auto_outcome, map_correction_to_snapshot, snapshot_path
 from .graph import Graph
 from .lifecycle_sim import run_simulation, workspace_scenario, SimConfig
@@ -123,21 +124,6 @@ def _load_mitosis_state(path: str | None) -> MitosisState:
         generations=state_data.get("generations", {}),
         chunk_to_parent=state_data.get("chunk_to_parent", {}),
     )
-
-
-def _node_file_id(node_id: str) -> str:
-    return str(node_id).split("::", 1)[0]
-
-
-def _cross_file_edges(graph: Graph) -> int:
-    if graph.node_count <= 1:
-        return 0
-
-    cross = 0
-    for edge in graph.edges():
-        if _node_file_id(edge.source) != _node_file_id(edge.target):
-            cross += 1
-    return cross
 
 
 def _format_health_target(target: tuple[float | None, float | None]) -> str:
@@ -306,7 +292,7 @@ def _build_snapshot(graph: Graph) -> dict[str, Any]:
         "nodes": graph.node_count,
         "edges": graph.edge_count,
         "tier_counts": edge_tier_stats(graph),
-        "cross_file_edges": _cross_file_edges(graph),
+        "cross_file_edges": count_cross_file_edges(graph),
     }
 
 

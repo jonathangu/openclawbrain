@@ -24,6 +24,7 @@ from dataclasses import dataclass, field
 from hashlib import sha256
 from typing import Any, Callable
 
+from ._structural_utils import ConfigBase, JSONStateMixin, parse_markdown_json, split_fallback_sections
 from .graph import Graph, Node, Edge
 
 
@@ -33,7 +34,7 @@ from .graph import Graph, Node, Edge
 
 
 @dataclass
-class MitosisConfig:
+class MitosisConfig(ConfigBase):
     """Configuration for graph self-organization."""
 
     sibling_weight: float = 0.65  # Initial sibling weight (habitual, not reflex)
@@ -92,7 +93,7 @@ class MaintenanceAction:
 
 
 @dataclass
-class MitosisState:
+class MitosisState(JSONStateMixin):
     """Tracks split history for the graph."""
 
     # parent_id -> list of chunk_ids
@@ -103,29 +104,25 @@ class MitosisState:
     chunk_to_parent: dict[str, str] = field(default_factory=dict)
 
     def save(self, path: str) -> None:
-        with open(path, "w") as f:
-            json.dump(
-                {
-                    "families": self.families,
-                    "generations": self.generations,
-                    "chunk_to_parent": self.chunk_to_parent,
-                },
-                f,
-                indent=2,
-            )
+        self._write_json_file(
+            path,
+            {
+                "families": self.families,
+                "generations": self.generations,
+                "chunk_to_parent": self.chunk_to_parent,
+            },
+        )
 
     @classmethod
     def load(cls, path: str) -> MitosisState:
-        try:
-            with open(path) as f:
-                data = json.load(f)
-            return cls(
-                families=data.get("families", {}),
-                generations=data.get("generations", {}),
-                chunk_to_parent=data.get("chunk_to_parent", {}),
-            )
-        except (FileNotFoundError, json.JSONDecodeError):
+        data = cls._load_json_file(path, default=None)
+        if not isinstance(data, dict):
             return cls()
+        return cls(
+            families=data.get("families", {}),
+            generations=data.get("generations", {}),
+            chunk_to_parent=data.get("chunk_to_parent", {}),
+        )
 
 
 # ---------------------------------------------------------------------------
@@ -197,50 +194,9 @@ def _make_chunk_id(parent_id: str, index: int, content: str) -> str:
     return f"{parent_id}::chunk-{index}-{h}"
 
 
-def _parse_json_response(raw: str) -> dict:
-    """Parse JSON from potentially markdown-wrapped LLM output."""
-    cleaned = raw.strip()
-    if cleaned.startswith("```"):
-        lines = cleaned.splitlines()
-        if len(lines) >= 2:
-            if lines[-1].strip().endswith("```"):
-                lines = lines[1:-1]
-            cleaned = "\n".join(lines).strip()
-    return json.loads(cleaned)
-
-
 def _fallback_split(content: str) -> list[str]:
     """Split by markdown headers. No target count — use natural structure."""
-    import re
-
-    # Split by ## headers
-    parts = re.split(r"\n(?=## )", content)
-    parts = [p.strip() for p in parts if p.strip()]
-
-    if len(parts) >= 2:
-        return parts
-
-    # Try # headers
-    parts = re.split(r"\n(?=# )", content)
-    parts = [p.strip() for p in parts if p.strip()]
-
-    if len(parts) >= 2:
-        return parts
-
-    # Last resort: split by double newlines, merge small ones
-    parts = [p.strip() for p in content.split("\n\n") if p.strip()]
-    if len(parts) >= 2:
-        # Merge very small adjacent parts (< 100 chars)
-        merged = [parts[0]]
-        for p in parts[1:]:
-            if len(merged[-1]) < 100:
-                merged[-1] = merged[-1] + "\n\n" + p
-            else:
-                merged.append(p)
-        if len(merged) >= 2:
-            return merged
-
-    return [content]
+    return split_fallback_sections(content, merge_short_paragraphs=100)
 
 
 # ---------------------------------------------------------------------------
@@ -259,7 +215,7 @@ def split_with_llm(
     """
     try:
         raw = llm_call(SPLIT_SYSTEM_PROMPT, SPLIT_USER_PROMPT.format(content=content))
-        parsed = _parse_json_response(raw)
+        parsed = parse_markdown_json(raw, require_object=True)
         sections = parsed.get("sections", [])
 
         if isinstance(sections, list) and len(sections) >= 2:
@@ -289,7 +245,7 @@ def should_merge(
 
     try:
         raw = llm_call(MERGE_SYSTEM_PROMPT, MERGE_USER_PROMPT.format(chunks=chunks_text))
-        parsed = _parse_json_response(raw)
+        parsed = parse_markdown_json(raw, require_object=True)
 
         do_merge = parsed.get("should_merge", False)
         reason = parsed.get("reason", "")
@@ -328,7 +284,7 @@ def should_create_node(
             NEUROGENESIS_SYSTEM_PROMPT,
             NEUROGENESIS_USER_PROMPT.format(query=query, existing=existing_text),
         )
-        parsed = _parse_json_response(raw)
+        parsed = parse_markdown_json(raw, require_object=True)
 
         do_create = parsed.get("should_create", False)
         reason = parsed.get("reason", "")

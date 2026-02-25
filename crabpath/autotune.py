@@ -2,11 +2,12 @@
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass, field
 from typing import Any
 
 from .graph import Graph
+from ._structural_utils import count_cross_file_edges
+from ._structural_utils import JSONStateMixin
 from .decay import DecayConfig
 from .mitosis import MitosisConfig
 from .synaptogenesis import SynaptogenesisConfig
@@ -159,7 +160,7 @@ class TuneHistory:
 
 
 @dataclass
-class TuneMemory:
+class TuneMemory(JSONStateMixin):
     scores: dict[tuple[str, str, str], int] = field(default_factory=dict)
 
     @staticmethod
@@ -231,15 +232,12 @@ class TuneMemory:
             self._triple_to_key(metric, knob, direction): score
             for (metric, knob, direction), score in self.scores.items()
         }
-        with open(path, "w", encoding="utf-8") as f:
-            json.dump(data, f, indent=2, sort_keys=True)
+        self._write_json_file(path, data, sort_keys=True)
 
     @classmethod
     def load(cls, path: str) -> "TuneMemory":
-        try:
-            with open(path, encoding="utf-8") as f:
-                data = json.load(f)
-        except (FileNotFoundError, json.JSONDecodeError):
+        data = cls._load_json_file(path, default=None)
+        if not isinstance(data, dict):
             return cls()
 
         scores: dict[tuple[str, str, str], int] = {}
@@ -429,21 +427,6 @@ def _extract_proto_edges(graph: Graph) -> int:
     return 0
 
 
-def _node_file_id(node_id: str) -> str:
-    return str(node_id).split("::", 1)[0]
-
-
-def _cross_file_edges(graph: Graph) -> int:
-    if graph.node_count <= 1:
-        return 0
-
-    cross = 0
-    for edge in graph.edges():
-        if _node_file_id(edge.source) != _node_file_id(edge.target):
-            cross += 1
-    return cross
-
-
 def _coerce_float(value: Any, default: float = 0.0) -> float:
     try:
         return float(value)
@@ -623,7 +606,7 @@ def measure_health(graph: Graph, state: MitosisState, query_stats: dict[str, Any
     tiers = edge_tier_stats(graph)
     total_edges = sum(tiers.values())
 
-    cross_file_edges = _cross_file_edges(graph)
+    cross_file_edges = count_cross_file_edges(graph)
     cross_file_edge_pct = (cross_file_edges / total_edges * 100.0) if total_edges else 0.0
 
     dormant = tiers.get("dormant", 0)

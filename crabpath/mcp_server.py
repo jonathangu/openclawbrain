@@ -11,6 +11,7 @@ from typing import Any, Callable
 
 from .activation import Firing, activate
 from .activation import learn as _learn
+from ._structural_utils import count_cross_file_edges
 from .embeddings import EmbeddingIndex, openai_embed
 from .graph import Edge, Graph
 from .lifecycle_sim import SimConfig, run_simulation, workspace_scenario
@@ -116,28 +117,13 @@ def _split_csv(value: str) -> list[str]:
     return ids
 
 
-def _node_file_id(node_id: str) -> str:
-    return str(node_id).split("::", 1)[0]
-
-
-def _cross_file_edges(graph: Graph) -> int:
-    if graph.node_count <= 1:
-        return 0
-
-    cross = 0
-    for edge in graph.edges():
-        if _node_file_id(edge.source) != _node_file_id(edge.target):
-            cross += 1
-    return cross
-
-
 def _build_snapshot(graph: Graph) -> dict[str, Any]:
     return {
         "timestamp": time.time(),
         "nodes": graph.node_count,
         "edges": graph.edge_count,
         "tier_counts": edge_tier_stats(graph),
-        "cross_file_edges": _cross_file_edges(graph),
+        "cross_file_edges": count_cross_file_edges(graph),
     }
 
 

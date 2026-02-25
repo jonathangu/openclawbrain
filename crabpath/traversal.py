@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
+from ._structural_utils import classify_edge_tier
 from .graph import Graph
 from .router import Router
 
@@ -73,14 +74,6 @@ def _seed_nodes_from_index(
             continue
         normalized.append((str(item[0]), float(item[1])))
     return normalized
-
-
-def _classify_tier(weight: float) -> str:
-    if weight > 0.8:
-        return "reflex"
-    if weight >= 0.3:
-        return "habitual"
-    return "dormant"
 
 
 def _build_router_context(
@@ -166,24 +159,24 @@ def traverse(
         tier = "dormant"
 
         if any(
-            _classify_tier(weight) == "reflex" and node_id not in visited
+            classify_edge_tier(weight) == "reflex" and node_id not in visited
             for node_id, weight in all_candidates
         ):
             reflex_candidates = [
                 c
                 for c in all_candidates
-                if _classify_tier(c[1]) == "reflex" and c[0] not in visited
+                if classify_edge_tier(c[1]) == "reflex" and c[0] not in visited
             ]
             tier = "reflex"
             chosen = sorted(reflex_candidates, key=lambda item: (item[1], item[0]), reverse=True)[0]
         elif any(
-            _classify_tier(weight) == "habitual" and node_id not in visited
+            classify_edge_tier(weight) == "habitual" and node_id not in visited
             for node_id, weight in all_candidates
         ):
             habitual_candidates = [
                 c
                 for c in all_candidates
-                if _classify_tier(c[1]) == "habitual" and c[0] not in visited
+                if classify_edge_tier(c[1]) == "habitual" and c[0] not in visited
             ]
             tier = "habitual"
             context = _build_router_context(

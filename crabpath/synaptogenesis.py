@@ -24,12 +24,12 @@ Edge changes:
 
 from __future__ import annotations
 
-import json
 import time
 from dataclasses import dataclass, field
 from typing import Any
 
 from .graph import Graph, Edge
+from ._structural_utils import ConfigBase, JSONStateMixin, classify_edge_tier
 
 
 # ---------------------------------------------------------------------------
@@ -38,7 +38,7 @@ from .graph import Graph, Edge
 
 
 @dataclass
-class SynaptogenesisConfig:
+class SynaptogenesisConfig(ConfigBase):
     """All the knobs for edge formation."""
 
     # Proto-edge promotion
@@ -82,14 +82,14 @@ class ProtoEdge:
 
 
 @dataclass
-class SynaptogenesisState:
+class SynaptogenesisState(JSONStateMixin):
     """Tracks proto-edges and co-firing history."""
 
     # (source, target) -> ProtoEdge
     proto_edges: dict[tuple[str, str], ProtoEdge] = field(default_factory=dict)
 
     def save(self, path: str) -> None:
-        data = {}
+        data: dict[str, Any] = {}
         for (s, t), pe in self.proto_edges.items():
             data[f"{s}|{t}"] = {
                 "source": pe.source,
@@ -100,29 +100,32 @@ class SynaptogenesisState:
                 "causal_count": pe.causal_count,
                 "reverse_count": pe.reverse_count,
             }
-        with open(path, "w") as f:
-            json.dump(data, f, indent=2)
+        self._write_json_file(path, data)
 
     @classmethod
     def load(cls, path: str) -> SynaptogenesisState:
-        try:
-            with open(path) as f:
-                data = json.load(f)
-            state = cls()
-            for key, val in data.items():
-                s, t = val["source"], val["target"]
-                state.proto_edges[(s, t)] = ProtoEdge(
-                    source=s,
-                    target=t,
-                    credit=val.get("credit", 1.0),
-                    first_seen=val.get("first_seen", 0.0),
-                    last_seen=val.get("last_seen", 0.0),
-                    causal_count=val.get("causal_count", 0),
-                    reverse_count=val.get("reverse_count", 0),
-                )
-            return state
-        except (FileNotFoundError, json.JSONDecodeError, KeyError):
+        data = cls._load_json_file(path, default=None)
+        if not isinstance(data, dict):
             return cls()
+
+        state = cls()
+        for val in data.values():
+            if not isinstance(val, dict):
+                continue
+            s = val.get("source")
+            t = val.get("target")
+            if not isinstance(s, str) or not isinstance(t, str):
+                continue
+            state.proto_edges[(s, t)] = ProtoEdge(
+                source=s,
+                target=t,
+                credit=val.get("credit", 1.0),
+                first_seen=val.get("first_seen", 0.0),
+                last_seen=val.get("last_seen", 0.0),
+                causal_count=val.get("causal_count", 0),
+                reverse_count=val.get("reverse_count", 0),
+            )
+        return state
 
 
 # ---------------------------------------------------------------------------
@@ -301,11 +304,11 @@ def _add_edge_with_competition(
 def classify_tier(weight: float, config: SynaptogenesisConfig | None = None) -> str:
     """Classify an edge weight into a tier."""
     config = config or SynaptogenesisConfig()
-    if weight >= config.reflex_threshold:
-        return "reflex"
-    if weight >= config.dormant_threshold:
-        return "habitual"
-    return "dormant"
+    return classify_edge_tier(
+        weight,
+        dormant_threshold=config.dormant_threshold,
+        reflex_threshold=config.reflex_threshold,
+    )
 
 
 # ---------------------------------------------------------------------------

@@ -19,6 +19,7 @@ from dataclasses import dataclass, asdict
 from typing import Any, Callable
 
 from .graph import Graph
+from ._structural_utils import ConfigBase
 from .mitosis import (
     MitosisConfig,
     MitosisState,
@@ -42,7 +43,7 @@ from .decay import DecayConfig, apply_decay
 
 
 @dataclass
-class SimConfig:
+class SimConfig(ConfigBase):
     decay_interval: int = 5  # Decay every N queries
     maintenance_interval: int = 25  # Merge/split check every N queries
     proto_decay_interval: int = 5  # Decay proto-edges every N queries

@@ -23,12 +23,12 @@ Usage:
 from __future__ import annotations
 
 import json
-import re
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
 from .graph import Graph
+from ._structural_utils import split_fallback_sections
 from .mitosis import MitosisConfig, MitosisState, bootstrap_workspace
 from .synaptogenesis import (
     SynaptogenesisConfig,
@@ -311,14 +311,13 @@ def keyword_router(
 def fallback_llm_split(system: str, user: str) -> str:
     """Split by markdown headers. No API call needed."""
     content = user.split("---\n", 1)[-1].rsplit("\n---", 1)[0] if "---" in user else user
-    parts = re.split(r"\n(?=## )", content)
-    parts = [p.strip() for p in parts if p.strip() and len(p.strip()) > 50]
-    if len(parts) >= 2:
-        return json.dumps({"sections": parts})
-    parts = [p.strip() for p in content.split("\n\n") if p.strip() and len(p.strip()) > 50]
-    if len(parts) >= 2:
-        return json.dumps({"sections": parts})
-    return json.dumps({"sections": [content]})
+    sections = split_fallback_sections(
+        content,
+        min_header_chars=50,
+        min_paragraph_chars=50,
+        merge_short_paragraphs=0,
+    )
+    return json.dumps({"sections": sections})
 
 
 # ---------------------------------------------------------------------------

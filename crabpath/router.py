@@ -2,7 +2,8 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
-import json
+
+from ._structural_utils import parse_markdown_json
 
 
 _SYSTEM_PROMPT = (
@@ -219,24 +220,9 @@ class Router:
         return prompt
 
     def parse_json(self, raw: str) -> dict[str, Any]:
-        if not isinstance(raw, str):
-            raise RouterError("Router parse input must be a string")
-
-        normalized_raw = raw.strip()
-        if not normalized_raw:
-            raise RouterError("Empty router output")
-
-        if normalized_raw.startswith("```"):
-            # Strip markdown JSON code-fence when LLM wraps output.
-            lines = normalized_raw.splitlines()
-            if len(lines) >= 2 and lines[0].startswith("```"):
-                if lines[-1].strip().endswith("```"):
-                    lines = lines[1:-1]
-                normalized_raw = "\n".join(lines).strip()
-
         try:
-            payload = json.loads(normalized_raw)
-        except json.JSONDecodeError as exc:
+            payload = parse_markdown_json(raw, require_object=True)
+        except (TypeError, ValueError) as exc:
             raise RouterError("Router output is not valid JSON") from exc
 
         if not isinstance(payload, dict):
@@ -343,7 +329,7 @@ class Router:
                     decision.tier = tier
                 decision.raw = payload
                 return decision
-            except (RouterError, json.JSONDecodeError, Exception) as exc:
+            except (RouterError, Exception) as exc:
                 last_error = exc
 
         if self.config.fallback_behavior == "heuristic":
@@ -427,20 +413,9 @@ class Router:
 
     def parse_select_json(self, raw: str) -> dict[str, Any]:
         """Parse the selection response JSON."""
-        if not isinstance(raw, str):
-            raise RouterError("Select parse input must be a string")
-
-        normalized = raw.strip()
-        if normalized.startswith("```"):
-            lines = normalized.splitlines()
-            if len(lines) >= 2 and lines[0].startswith("```"):
-                if lines[-1].strip().endswith("```"):
-                    lines = lines[1:-1]
-                normalized = "\n".join(lines).strip()
-
         try:
-            payload = json.loads(normalized)
-        except json.JSONDecodeError as exc:
+            payload = parse_markdown_json(raw, require_object=True)
+        except (TypeError, ValueError) as exc:
             raise RouterError("Select output is not valid JSON") from exc
 
         if not isinstance(payload, dict):
