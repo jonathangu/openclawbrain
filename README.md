@@ -683,7 +683,7 @@ from crabpath import Graph
 from crabpath.mitosis import bootstrap_workspace, MitosisState, MitosisConfig
 
 def llm_call(system_prompt: str, user_prompt: str) -> str:
-    # Your cheap LLM call (e.g., GPT-4o-mini, Claude Haiku)
+    # Your cheap LLM call (e.g., GPT-5-mini, Claude Haiku)
     return your_llm_client.call(system_prompt, user_prompt)
 
 graph = Graph()
