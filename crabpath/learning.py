@@ -20,7 +20,7 @@ class RewardSignal:
 @dataclass
 class LearningConfig:
     learning_rate: float = 0.05
-    discount: float = 0.99
+    discount: float = 1.0
     baseline_decay: float = 0.95
     clip_min: float = -5
     clip_max: float = 5
@@ -105,11 +105,18 @@ def gu_corrected_advantage(
     baseline: float,
     discount: float | int,
 ) -> list[float]:
-    """Compute undiscounted baseline-shifted advantages for one trajectory."""
+    """Compute baseline-shifted advantages for one trajectory.
+
+    Discounting, when used, is applied by remaining steps to terminal
+    (e.g. step at index 0 in a length-3 trajectory uses discount^2).
+    A discount of 1.0 means no discounting and is preferred for CrabPath's
+    short terminal-reward trajectories.
+    """
     reward_value = _extract_reward(reward)
     reward_baselined = reward_value - _as_float(baseline)
+    remaining_steps = len(trajectory_steps)
     return [
-        reward_baselined * (_as_float(discount) ** index)
+        reward_baselined * (_as_float(discount) ** (remaining_steps - index - 1))
         for index, _ in enumerate(trajectory_steps)
     ]
 
@@ -120,7 +127,11 @@ def policy_gradient_update(
     config: LearningConfig,
     baseline: float = 0.0,
 ) -> tuple[float, list[float]]:
-    """Compute REINFORCE-style policy-loss proxy and per-step advantages."""
+    """Compute REINFORCE-style policy-loss proxy and per-step advantages.
+
+    For short trajectories with terminal-only reward, this trajectory-summed
+    REINFORCE objective is equivalent to Gu's decomposition when discount=1.0.
+    """
     advantages = gu_corrected_advantage(
         trajectory_steps,
         reward,
@@ -139,9 +150,9 @@ def policy_gradient_update(
         candidate_targets = [target for target, _ in candidates]
         if chosen not in candidate_targets:
             continue
-            chosen_prob = probs[candidate_targets.index(chosen)]
-            if chosen_prob > 0.0:
-                total_loss -= advantages[index] * log(chosen_prob)
+        chosen_prob = probs[candidate_targets.index(chosen)]
+        if chosen_prob > 0.0:
+            total_loss -= advantages[index] * log(chosen_prob)
 
     return total_loss, advantages
 
@@ -169,6 +180,8 @@ def weight_delta(
             baseline_grad = 1.0 if target == chosen else 0.0
             grad = baseline_grad - probability
             delta = config.learning_rate * advantages[index] * grad
+            # Per-step clipping is kept for numerical safety, while deltas are still
+            # accumulated per-edge to preserve trajectory-summed signal.
             if delta > config.clip_max:
                 delta = config.clip_max
             if delta < config.clip_min:
@@ -184,7 +197,14 @@ def _set_count(edge: Edge, field: str, delta: int) -> None:
 
 
 def apply_weight_updates(graph: Graph, deltas: Sequence[tuple[object, object, object]], config: LearningConfig) -> list[EdgeUpdate]:
-    """Apply policy gradients to graph edges and score skipped candidates."""
+    """Apply policy gradients to graph edges and score skipped candidates.
+
+    The policy-gradient terms are reward-conditional (from REINFORCE) and update
+    action propensities based on outcomes.
+    Skip penalties are reward-independent structural updates that act as an
+    auxiliary signal: they encourage deterministic routing (entropy reduction) by
+    reinforcing co-occurrence patterns separately from reward-driven updates.
+    """
     updates: list[EdgeUpdate] = []
     deltas_by_source: dict[str, set[str]] = {}
     raw_by_source: dict[tuple[str, str], float] = {}
@@ -233,6 +253,9 @@ def make_learning_step(
     config: LearningConfig,
 ) -> LearningResult:
     """Run a learning step end-to-end and return all weight updates."""
+    # episode_id is intended to represent a recurring query family/group so that
+    # baselines are shared across similar trajectories; per-query unique IDs
+    # reduce baseline effectiveness.
     prev_baseline = _BASELINE_STATE.get(reward.episode_id, 0.0)
     loss, advantages = policy_gradient_update(
         trajectory_steps,
