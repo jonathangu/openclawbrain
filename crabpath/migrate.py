@@ -36,6 +36,7 @@ from .synaptogenesis import (
     edge_tier_stats,
 )
 from .decay import DecayConfig, apply_decay
+from .autotune import suggest_config
 
 
 # ---------------------------------------------------------------------------
@@ -335,6 +336,7 @@ def migrate(
     Returns:
         (graph, info_dict) — the bootstrapped graph and migration stats.
     """
+    explicit_config = config is not None
     config = config or MigrateConfig()
     llm = llm_call or fallback_llm_split
     router = router_fn or keyword_router
@@ -346,6 +348,21 @@ def migrate(
 
     if not files:
         raise ValueError(f"No workspace files found in {workspace_dir}")
+
+    if not explicit_config:
+        autotune_defaults = suggest_config(files)
+        config.mitosis_config = MitosisConfig(
+            sibling_weight=autotune_defaults["sibling_weight"],
+            min_content_chars=autotune_defaults["min_content_chars"],
+        )
+        config.synapse_config = SynaptogenesisConfig(
+            promotion_threshold=autotune_defaults["promotion_threshold"],
+            hebbian_increment=autotune_defaults["hebbian_increment"],
+            skip_factor=autotune_defaults["skip_factor"],
+            max_outgoing=autotune_defaults["max_outgoing"],
+        )
+        config.decay_config = DecayConfig(half_life_turns=autotune_defaults["decay_half_life"])
+        config.decay_interval = autotune_defaults["decay_interval"]
 
     # 2. Bootstrap
     graph = Graph()
