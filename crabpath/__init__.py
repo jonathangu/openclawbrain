@@ -3,9 +3,14 @@
 Everything evolves into this.
 """
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 from .graph import Graph, Node, Edge
 from .activation import activate, learn, Firing
+from .embeddings import EmbeddingIndex, openai_embed
 
-__all__ = ["Graph", "Node", "Edge", "activate", "learn", "Firing"]
+__all__ = [
+    "Graph", "Node", "Edge",
+    "activate", "learn", "Firing",
+    "EmbeddingIndex", "openai_embed",
+]
