@@ -51,7 +51,8 @@ class EmbeddingIndex:
         texts = []
         ids = []
         for node in nodes:
-            parts = [node.content]
+            node_text = node.summary if node.summary else node.content
+            parts = [node_text]
             ec = node.metadata.get("error_class", "")
             if ec:
                 parts.append(ec)
@@ -114,11 +115,20 @@ class EmbeddingIndex:
     def upsert(
         self,
         node_id: str,
-        content: str,
-        embed_fn: Callable[[list[str]], list[list[float]]],
+        content_or_vector: list[float] | str,
+        embed_fn: Optional[Callable[[list[str]], list[list[float]]]] = None,
+        metadata: Any | None = None,
     ) -> None:
         """Add or replace one vector in the index."""
-        vector = embed_fn([content])[0]
+        _ = metadata
+        if isinstance(content_or_vector, list):
+            vector = content_or_vector
+        elif isinstance(content_or_vector, tuple):
+            vector = list(content_or_vector)
+        else:
+            if embed_fn is None:
+                raise TypeError("embed_fn is required when upserting from content")
+            vector = embed_fn([str(content_or_vector)])[0]
         self.vectors[node_id] = vector
         if vector:
             self.dim = len(vector)

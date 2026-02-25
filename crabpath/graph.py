@@ -29,6 +29,8 @@ class Node:
 
     id: str
     content: str
+    summary: str = ""
+    type: str = "fact"
     threshold: float = 1.0
     potential: float = 0.0
     trace: float = 0.0
@@ -46,10 +48,19 @@ class Edge:
     source: str
     target: str
     weight: float = 1.0
+    decay_rate: float = 0.01
+    last_followed_ts: float | None = None
+    created_by: str = "manual"  # auto | manual | llm
+    follow_count: int = 0
+    skip_count: int = 0
 
 
 class Graph:
     """A weighted directed graph. Plain dicts. No dependencies."""
+
+    VALID_EDGE_CREATORS = {"auto", "manual", "llm"}
+    NODE_DEFAULT_TYPE = "fact"
+    EDGE_DEFAULT_CREATED_BY = "manual"
 
     def __init__(self) -> None:
         self._nodes: dict[str, Node] = {}
@@ -108,6 +119,82 @@ class Graph:
             self._outgoing[source].remove(target)
         return True
 
+    @staticmethod
+    def normalize_node(record: dict[str, Any]) -> dict[str, Any]:
+        if not isinstance(record, dict):
+            return {}
+
+        metadata = record.get("metadata", {})
+        if not isinstance(metadata, dict):
+            metadata = {}
+
+        node_type = record.get("type")
+        if not isinstance(node_type, str):
+            node_type = metadata.get("type")
+            if not isinstance(node_type, str):
+                node_type = Graph.NODE_DEFAULT_TYPE
+
+        summary = record.get("summary")
+        if not isinstance(summary, str):
+            summary_meta = metadata.get("summary")
+            summary = summary_meta if isinstance(summary_meta, str) else ""
+
+        def _coerce_float(value: Any, default: float) -> float:
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return default
+
+        return {
+            "id": str(record.get("id", "")),
+            "content": str(record.get("content", "")),
+            "summary": summary,
+            "type": node_type,
+            "threshold": _coerce_float(record.get("threshold"), 1.0),
+            "potential": _coerce_float(record.get("potential"), 0.0),
+            "trace": _coerce_float(record.get("trace"), 0.0),
+            "metadata": metadata,
+        }
+
+    @staticmethod
+    def normalize_edge(record: dict[str, Any]) -> dict[str, Any]:
+        if not isinstance(record, dict):
+            return {}
+
+        created_by = record.get("created_by", Graph.EDGE_DEFAULT_CREATED_BY)
+        if created_by not in Graph.VALID_EDGE_CREATORS:
+            created_by = Graph.EDGE_DEFAULT_CREATED_BY
+
+        last_followed_ts = record.get("last_followed_ts")
+        if last_followed_ts is not None:
+            try:
+                last_followed_ts = float(last_followed_ts)
+            except (TypeError, ValueError):
+                last_followed_ts = None
+
+        def _coerce_float(value: Any, default: float) -> float:
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return default
+
+        def _coerce_int(value: Any, default: int) -> int:
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                return default
+
+        return {
+            "source": str(record.get("source", "")),
+            "target": str(record.get("target", "")),
+            "weight": _coerce_float(record.get("weight"), 1.0),
+            "decay_rate": _coerce_float(record.get("decay_rate"), 0.01),
+            "last_followed_ts": last_followed_ts,
+            "created_by": created_by,
+            "follow_count": _coerce_int(record.get("follow_count"), 0),
+            "skip_count": _coerce_int(record.get("skip_count"), 0),
+        }
+
     def outgoing(self, node_id: str) -> list[tuple[Node, Edge]]:
         """All outgoing connections from a node: [(target_node, edge), ...]"""
         result = []
@@ -162,13 +249,13 @@ class Graph:
         for target in list(self._outgoing.get(remove_id, [])):
             edge = self.get_edge(remove_id, target)
             if edge is not None:
-                edges_to_move[(remove_id, target)] = edge.weight
+                edges_to_move[(remove_id, target)] = edge
         for source in list(self._incoming.get(remove_id, [])):
             edge = self.get_edge(source, remove_id)
             if edge is not None:
-                edges_to_move[(source, remove_id)] = edge.weight
+                edges_to_move[(source, remove_id)] = edge
 
-        for (source, target), weight in edges_to_move.items():
+        for (source, target), edge in edges_to_move.items():
             new_source = keep_id if source == remove_id else source
             new_target = keep_id if target == remove_id else target
             if new_source == source and new_target == target:
@@ -176,10 +263,26 @@ class Graph:
 
             existing = self.get_edge(new_source, new_target)
             if existing is not None:
-                if abs(weight) > abs(existing.weight):
-                    existing.weight = weight
+                if abs(edge.weight) > abs(existing.weight):
+                    existing.weight = edge.weight
+                    existing.decay_rate = edge.decay_rate
+                    existing.last_followed_ts = edge.last_followed_ts
+                    existing.created_by = edge.created_by
+                    existing.follow_count += edge.follow_count
+                    existing.skip_count += edge.skip_count
             else:
-                self.add_edge(Edge(source=new_source, target=new_target, weight=weight))
+                self.add_edge(
+                    Edge(
+                        source=new_source,
+                        target=new_target,
+                        weight=edge.weight,
+                        decay_rate=edge.decay_rate,
+                        last_followed_ts=edge.last_followed_ts,
+                        created_by=edge.created_by,
+                        follow_count=edge.follow_count,
+                        skip_count=edge.skip_count,
+                    )
+                )
 
             self._remove_edge(source, target)
 
@@ -193,6 +296,18 @@ class Graph:
     @property
     def edge_count(self) -> int:
         return len(self._edges)
+
+    def active_edge_count(self) -> int:
+        return len([edge for edge in self._edges.values() if edge.weight != 0.0])
+
+    def prune_zero_weight_edges(self) -> int:
+        removed = 0
+        for source, target in list(self._edges):
+            edge = self._edges.get((source, target))
+            if edge is not None and edge.weight == 0.0:
+                if self._remove_edge(source, target):
+                    removed += 1
+        return removed
 
     # -- State --
 
@@ -215,24 +330,30 @@ class Graph:
 
     def save(self, path: str) -> None:
         """Save graph to a JSON file."""
-        data = {
-            "nodes": [_node_to_dict(n) for n in self._nodes.values()],
-            "edges": [_edge_to_dict(e) for e in self._edges.values()],
-        }
         with open(path, "w") as f:
-            json.dump(data, f, indent=2)
+            json.dump(self.to_v2_dict(), f, indent=2)
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> Graph:
+        g = cls()
+        for nd in data.get("nodes", []):
+            g.add_node(Node(**cls.normalize_node(nd)))
+        for ed in data.get("edges", []):
+            g.add_edge(Edge(**cls.normalize_edge(ed)))
+        return g
 
     @classmethod
     def load(cls, path: str) -> Graph:
         """Load graph from a JSON file."""
         with open(path) as f:
             data = json.load(f)
-        g = cls()
-        for nd in data["nodes"]:
-            g.add_node(Node(**nd))
-        for ed in data["edges"]:
-            g.add_edge(Edge(**ed))
-        return g
+        return cls.from_dict(data)
+
+    def to_v2_dict(self) -> dict[str, Any]:
+        return {
+            "nodes": [_node_to_dict(n) for n in self._nodes.values()],
+            "edges": [_edge_to_dict(e) for e in self._edges.values()],
+        }
 
     def __repr__(self) -> str:
         return f"Graph(nodes={self.node_count}, edges={self.edge_count})"
@@ -240,6 +361,10 @@ class Graph:
 
 def _node_to_dict(n: Node) -> dict:
     d: dict[str, Any] = {"id": n.id, "content": n.content}
+    if n.summary != "":
+        d["summary"] = n.summary
+    if n.type != Graph.NODE_DEFAULT_TYPE:
+        d["type"] = n.type
     if n.threshold != 1.0:
         d["threshold"] = n.threshold
     if n.potential != 0.0:
@@ -255,4 +380,14 @@ def _edge_to_dict(e: Edge) -> dict:
     d: dict[str, Any] = {"source": e.source, "target": e.target}
     if e.weight != 1.0:
         d["weight"] = e.weight
+    if e.decay_rate != 0.01:
+        d["decay_rate"] = e.decay_rate
+    if e.last_followed_ts is not None:
+        d["last_followed_ts"] = e.last_followed_ts
+    if e.created_by != "manual":
+        d["created_by"] = e.created_by
+    if e.follow_count != 0:
+        d["follow_count"] = e.follow_count
+    if e.skip_count != 0:
+        d["skip_count"] = e.skip_count
     return d
