@@ -27,6 +27,59 @@ Every agent integration follows the same pattern:
 
 That's the whole integration. See [`examples/agent_memory.py`](examples/agent_memory.py) for a working version.
 
+## CLI
+
+CrabPath ships with a JSON-only CLI for agent runtimes.
+All commands emit one-line JSON on `stdout` and JSON errors on `stderr`.
+
+```bash
+python -m crabpath.cli query "deploy broke after config change" --graph crabpath_graph.json --index crabpath_embeddings.json --top 12
+```
+
+```json
+{"fired":[{"id":"...","content":"...","energy":0.85}], "inhibited":["..."], "guardrails":["..."]}
+```
+
+```bash
+python -m crabpath.cli learn --graph crabpath_graph.json --outcome 1.0 --fired-ids node1,node2,node3
+```
+
+```json
+{"ok":true,"edges_updated":5}
+```
+
+```bash
+python -m crabpath.cli snapshot --graph crabpath_graph.json --session sess-123 --turn 42 --fired-ids node1,node2
+```
+
+```json
+{"ok":true,"snapshot_path":"crabpath_graph.events.db"}
+```
+
+```bash
+python -m crabpath.cli feedback --session sess-123 --turn-window 5
+```
+
+```json
+{"turn_id":42,"fired_ids":["..."],"turns_since_fire":3,"suggested_outcome":-1.0}
+```
+
+```bash
+python -m crabpath.cli stats --graph crabpath_graph.json
+```
+
+```json
+{"nodes":153,"edges":143,"avg_weight":0.72,"top_hubs":["..."]}
+```
+
+```bash
+python -m crabpath.cli consolidate --graph crabpath_graph.json --min-weight 0.05
+```
+
+```json
+{"ok":true,"pruned_edges":12,"pruned_nodes":3}
+```
+
 ## OpenClaw Integration
 
 Phase 1 adds `OpenClawCrabPathAdapter`, a small wrapper for

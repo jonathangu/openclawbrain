@@ -1,6 +1,10 @@
 """
 🦀 CrabPath — Neuron-inspired memory graphs for AI agents.
 Everything evolves into this.
+
+CLI:
+  python -m crabpath.cli
+  crabpath  # via console_scripts entry point
 """
 
 __version__ = "0.4.0"
