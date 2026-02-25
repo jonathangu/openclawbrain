@@ -27,6 +27,48 @@ Every agent integration follows the same pattern:
 
 That's the whole integration. See [`examples/agent_memory.py`](examples/agent_memory.py) for a working version.
 
+## OpenClaw Integration
+
+Phase 1 adds `OpenClawCrabPathAdapter`, a small wrapper for
+OpenClaw sessions with delayed outcome attribution.
+
+```python
+from crabpath import (
+    Graph,
+    EmbeddingIndex,
+    OpenClawCrabPathAdapter,
+    map_correction_to_snapshot,
+    auto_outcome,
+)
+
+adapter = OpenClawCrabPathAdapter(
+    graph_path="crabpath_graph.json",
+    index_path="crabpath_embeddings.json",
+    embed_fn=lambda texts: [[0.1] for _ in texts],  # your embedding function
+)
+graph, index = adapter.load()
+
+seeds = adapter.seed(
+    query_text="deploy broke after config change",
+    memory_search_ids=["memory-hit-12", "memory-hit-19"],
+)
+firing = adapter.activate(seeds, max_steps=3, decay=0.1, top_k=12)
+ctx = adapter.context(firing)
+llm_context = ctx["contents"]
+guardrails = ctx["guardrails"]
+
+adapter.learn(firing, outcome=1.0)   # or outcome=-1.0
+adapter.snapshot(session_id="session-1", turn_id=42, firing_result=firing)
+
+adapter.save()
+
+snapshot = map_correction_to_snapshot(session_id="session-1", turn_window=5)
+if snapshot is not None:
+    turns_since_fire = snapshot["turns_since_fire"]
+    inferred = auto_outcome(corrections_count=0, turns_since_fire=turns_since_fire)
+    # feed inferred into adapter.learn(firing...) in your worker loop
+```
+
 ## Quick Start
 
 ```python
