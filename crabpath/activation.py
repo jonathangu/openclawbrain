@@ -20,6 +20,7 @@ Zero dependencies. Pure Python.
 
 from __future__ import annotations
 
+import time
 from dataclasses import dataclass, field
 
 from .graph import Edge, Graph, Node
@@ -97,6 +98,11 @@ def activate(
             signal = node.potential
             fired_record[node.id] = signal
             fired_at[node.id] = step
+
+            metadata = dict(node.metadata) if isinstance(node.metadata, dict) else {}
+            metadata["fired_count"] = int(metadata.get("fired_count", 0)) + 1
+            metadata["last_fired_ts"] = time.time()
+            node.metadata = metadata
 
             # Refresh trace on firing
             node.trace = signal

@@ -11,6 +11,7 @@ Nodes hold content. Edges are weighted pointers. That's it.
 from __future__ import annotations
 
 import json
+import time
 from dataclasses import dataclass, field
 from typing import Any, Optional
 
@@ -68,9 +69,54 @@ class Graph:
         self._outgoing: dict[str, list[str]] = {}
         self._incoming: dict[str, list[str]] = {}
 
+    @staticmethod
+    def _coerce_int(value: Any, default: int = 0) -> int:
+        try:
+            return int(value)
+        except (TypeError, ValueError):
+            return default
+
+    @staticmethod
+    def _coerce_float(value: Any, default: float = 0.0) -> float:
+        try:
+            return float(value)
+        except (TypeError, ValueError):
+            return default
+
+    @staticmethod
+    def _is_guardrail_guard(node: Node) -> bool:
+        if node.type != "guardrail":
+            return False
+        text = node.content.lower()
+        return "never" in text or "always" in text
+
+    def _is_node_protected(self, node: Node | None) -> bool:
+        if node is None:
+            return False
+        if node.metadata.get("protected") is True:
+            return True
+        if self._is_guardrail_guard(node):
+            node.metadata["protected"] = True
+            return True
+        return False
+
+    def is_node_protected(self, node_id: str) -> bool:
+        return self._is_node_protected(self.get_node(node_id))
+
     # -- Nodes --
 
     def add_node(self, node: Node) -> None:
+        if not isinstance(node.metadata, dict):
+            node.metadata = {}
+
+        node.metadata.setdefault("fired_count", self._coerce_int(node.metadata.get("fired_count"), 0))
+        node.metadata.setdefault("last_fired_ts", self._coerce_float(node.metadata.get("last_fired_ts"), 0.0))
+        if "created_ts" not in node.metadata:
+            node.metadata["created_ts"] = time.time()
+
+        if self._is_node_protected(node):
+            node.metadata["protected"] = True
+
         self._nodes[node.id] = node
         self._outgoing.setdefault(node.id, [])
         self._incoming.setdefault(node.id, [])
@@ -234,7 +280,7 @@ class Graph:
             if self._incoming.get(node_id) or self._outgoing.get(node_id):
                 continue
             node = self._nodes.get(node_id)
-            if node is not None and node.metadata.get("protected") is True:
+            if self._is_node_protected(node):
                 continue
             self.remove_node(node_id)
             pruned_nodes += 1
@@ -372,7 +418,10 @@ def _node_to_dict(n: Node) -> dict:
     if n.trace != 0.0:
         d["trace"] = n.trace
     if n.metadata:
-        d["metadata"] = n.metadata
+        metadata_fields = set(n.metadata.keys())
+        lifecycle_only = metadata_fields <= {"fired_count", "last_fired_ts", "created_ts"}
+        if not lifecycle_only:
+            d["metadata"] = n.metadata
     return d
 
 

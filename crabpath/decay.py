@@ -43,6 +43,9 @@ def apply_decay(graph: Graph, turns_elapsed, config: DecayConfig | None = None) 
 
     changed = {}
     for edge in graph.edges():
+        if graph.is_node_protected(edge.source) or graph.is_node_protected(edge.target):
+            continue
+
         decayed = decay_weight(edge.weight, turns_elapsed, config)
         if decayed != edge.weight:
             edge.weight = decayed
