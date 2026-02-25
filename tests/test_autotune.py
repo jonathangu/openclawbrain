@@ -12,6 +12,8 @@ from crabpath.autotune import (
     self_tune,
     TuneHistory,
     TuneMemory,
+    SafetyBounds,
+    validate_config,
 )
 from crabpath.graph import Edge, Graph, Node
 from crabpath.mitosis import MitosisState
@@ -230,8 +232,6 @@ def test_apply_adjustments_changes_expected_ranges_and_returns_deltas():
     assert decay_config.half_life_turns == 60
     assert syn_config.promotion_threshold == 5
     assert syn_config.reflex_threshold == 0.95
-    assert syn_config.skip_factor == 0.9
-
     assert changes["decay_half_life"]["before"] == 80
     assert changes["decay_half_life"]["after"] == 60
     assert changes["decay_half_life"]["delta"] == -20
@@ -239,9 +239,88 @@ def test_apply_adjustments_changes_expected_ranges_and_returns_deltas():
     assert changes["promotion_threshold"]["after"] == 5
     assert changes["reflex_threshold"]["before"] == 0.9
     assert changes["reflex_threshold"]["after"] == 0.95
-    assert changes["skip_factor"]["before"] == 0.92
-    assert changes["skip_factor"]["after"] == 0.9
+    assert "skip_factor" not in changes
     assert mitosis_config.sibling_weight == 0.65
+
+
+def test_apply_adjustments_enforces_bounds_and_limit():
+    syn_config = SynaptogenesisConfig(
+        promotion_threshold=2,
+        hebbian_increment=0.12,
+        reflex_threshold=0.95,
+        skip_factor=0.80,
+    )
+    decay_config = DecayConfig(half_life_turns=30)
+    mitosis_config = MitosisConfig(sibling_weight=0.65)
+
+    adjustments = [
+        Adjustment(
+            metric="avg_nodes_fired_per_query",
+            current=10.0,
+            target_range=(3.0, 8.0),
+            suggested_change={"decay_half_life": "decrease"},
+            reason="already at minimum",
+        ),
+        Adjustment(
+            metric="cross_file_edge_pct",
+            current=1.0,
+            target_range=(5.0, 20.0),
+            suggested_change={"promotion_threshold": "decrease"},
+            reason="already at minimum",
+        ),
+        Adjustment(
+            metric="reflex_pct",
+            current=2.0,
+            target_range=(1.0, 5.0),
+            suggested_change={"hebbian_increment": "increase"},
+            reason="already at maximum",
+        ),
+        Adjustment(
+            metric="reflex_pct",
+            current=2.0,
+            target_range=(1.0, 5.0),
+            suggested_change={"reflex_threshold": "increase"},
+            reason="already at maximum",
+        ),
+        Adjustment(
+            metric="context_compression",
+            current=15.0,
+            target_range=(None, 20.0),
+            suggested_change={"skip_factor": "decrease"},
+            reason="already at minimum",
+        ),
+    ]
+
+    changes = apply_adjustments(
+        adjustments,
+        syn_config,
+        decay_config,
+        mitosis_config,
+    )
+
+    assert len(changes) == 3
+    assert decay_config.half_life_turns == 30
+    assert syn_config.promotion_threshold == 2
+    assert syn_config.hebbian_increment == 0.12
+    assert "reflex_threshold" not in changes
+    assert "skip_factor" not in changes
+    assert changes["decay_half_life"]["bounded"] is True
+    assert changes["promotion_threshold"]["bounded"] is True
+    assert changes["hebbian_increment"]["bounded"] is True
+
+
+def test_validate_config_bounds():
+    syn_config = SynaptogenesisConfig(
+        promotion_threshold=2,
+        hebbian_increment=0.02,
+        reflex_threshold=0.70,
+        skip_factor=0.80,
+    )
+    decay_config = DecayConfig(half_life_turns=30)
+
+    assert validate_config(syn_config, decay_config) is True
+    decay_config.half_life_turns = 20
+    assert validate_config(syn_config, decay_config) is False
 
 
 def test_self_tune_runs_apply_adjustments_cycle(monkeypatch):
@@ -308,6 +387,98 @@ def test_self_tune_runs_apply_adjustments_cycle(monkeypatch):
     assert syn_config.promotion_threshold == 3
     assert changes["decay_half_life"]["delta"] == -10
     assert changes["promotion_threshold"]["delta"] == -1
+
+
+def test_self_tune_reverts_when_meta_learning_worsens(monkeypatch):
+    graph = Graph()
+    graph.add_node(Node(id="file::a", content="alpha"))
+    graph.add_node(Node(id="file::b", content="beta"))
+    syn_config = SynaptogenesisConfig(
+        promotion_threshold=4,
+        reflex_threshold=0.9,
+        skip_factor=0.9,
+        hebbian_increment=0.06,
+    )
+    decay_config = DecayConfig(half_life_turns=80)
+    mitosis_config = MitosisConfig()
+    history = TuneHistory()
+
+    pre_health = GraphHealth(
+        avg_nodes_fired_per_query=6.0,
+        cross_file_edge_pct=10.0,
+        dormant_pct=75.0,
+        reflex_pct=2.0,
+        context_compression=12.0,
+        proto_promotion_rate=8.0,
+        reconvergence_rate=0.0,
+        orphan_nodes=0,
+    )
+    worse_health = GraphHealth(
+        avg_nodes_fired_per_query=10.0,
+        cross_file_edge_pct=10.0,
+        dormant_pct=75.0,
+        reflex_pct=2.0,
+        context_compression=12.0,
+        proto_promotion_rate=8.0,
+        reconvergence_rate=0.0,
+        orphan_nodes=0,
+    )
+
+    health_reads = iter([pre_health, worse_health])
+
+    def fake_autotune_cycle1(*_args, **_kwargs):
+        return [
+            Adjustment(
+                metric="avg_nodes_fired_per_query",
+                current=pre_health.avg_nodes_fired_per_query,
+                target_range=HEALTH_TARGETS["avg_nodes_fired_per_query"],
+                suggested_change={"decay_half_life": "decrease"},
+                reason="high spread",
+            ),
+        ]
+
+    autotune_calls = iter([fake_autotune_cycle1, lambda *_args, **_kwargs: []])
+
+    import importlib
+
+    autotune_module = importlib.import_module("crabpath.autotune")
+    monkeypatch.setattr(autotune_module, "measure_health", lambda *_, **__: next(health_reads))
+    def fake_autotune(*_args, **_kwargs):
+        return next(autotune_calls)(*_args, **_kwargs)
+
+    monkeypatch.setattr(autotune_module, "autotune", fake_autotune)
+
+    first_health, _, first_changes = self_tune(
+        graph,
+        MitosisState(),
+        {"fired_counts": [3, 4]},
+        syn_config,
+        decay_config,
+        mitosis_config,
+        cycle_number=1,
+        tune_history=history,
+        safety_bounds=SafetyBounds(max_adjustments_per_cycle=3),
+    )
+
+    assert first_health == pre_health
+    assert decay_config.half_life_turns == 60
+    assert first_changes
+
+    second_health, _, second_changes = self_tune(
+        graph,
+        MitosisState(),
+        {"fired_counts": [3, 4]},
+        syn_config,
+        decay_config,
+        mitosis_config,
+        cycle_number=2,
+        tune_history=history,
+        safety_bounds=SafetyBounds(max_adjustments_per_cycle=3),
+    )
+
+    assert second_health == worse_health
+    assert second_changes == {}
+    assert decay_config.half_life_turns == 80
 
 
 def test_tune_history_records_and_scores_pending_adjustments():

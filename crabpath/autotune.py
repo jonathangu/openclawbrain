@@ -98,6 +98,7 @@ class TuneHistoryRecord:
 class TuneHistory:
     records: list[TuneHistoryRecord] = field(default_factory=list)
     pending: list[TuneHistoryRecord] = field(default_factory=list)
+    previous_config: dict[str, float | int] | None = None
 
     def record_adjustments(
         self,
@@ -265,6 +266,106 @@ HEALTH_TARGETS: dict[str, MetricRange] = {
 }
 
 ADJUSTMENT_COOLDOWN_CYCLES = 2
+
+
+@dataclass
+class SafetyBounds:
+    # Decay: too fast = brain death, too slow = no differentiation
+    min_decay_half_life: int = 30
+    max_decay_half_life: int = 200
+
+    # Promotion: too low = noise, too high = no cross-file edges ever
+    min_promotion_threshold: int = 2
+    max_promotion_threshold: int = 6
+
+    # Hebbian: too high = reflex runaway, too low = no learning
+    min_hebbian_increment: float = 0.02
+    max_hebbian_increment: float = 0.12
+
+    # Skip: too aggressive = useful edges die, too weak = no differentiation
+    min_skip_factor: float = 0.80
+    max_skip_factor: float = 0.98
+
+    # Reflex threshold: too low = everything auto-follows, too high = never compiles
+    min_reflex_threshold: float = 0.70
+    max_reflex_threshold: float = 0.95
+
+    # Max adjustments per cycle: prevent thrashing
+    max_adjustments_per_cycle: int = 3
+
+    # Emergency brake: if >X% of metrics got WORSE after an adjustment, revert ALL
+    revert_threshold: float = 0.5
+
+
+ADJUSTMENT_PRIORITIES = {
+    "decay_half_life": 0,
+    "promotion_threshold": 1,
+    "hebbian_increment": 2,
+    "reflex_threshold": 3,
+    "skip_factor": 4,
+}
+
+
+def validate_config(
+    syn_config: SynaptogenesisConfig,
+    decay_config: DecayConfig,
+    safety_bounds: SafetyBounds | None = None,
+) -> bool:
+    """Return whether the current tunable config is within hard safety bounds."""
+    if safety_bounds is None:
+        safety_bounds = SafetyBounds()
+
+    checks: list[tuple[float | int, float | int, float | int]] = [
+        (decay_config.half_life_turns, safety_bounds.min_decay_half_life, safety_bounds.max_decay_half_life),
+        (syn_config.promotion_threshold, safety_bounds.min_promotion_threshold, safety_bounds.max_promotion_threshold),
+        (syn_config.hebbian_increment, safety_bounds.min_hebbian_increment, safety_bounds.max_hebbian_increment),
+        (syn_config.skip_factor, safety_bounds.min_skip_factor, safety_bounds.max_skip_factor),
+        (syn_config.reflex_threshold, safety_bounds.min_reflex_threshold, safety_bounds.max_reflex_threshold),
+    ]
+
+    for value, min_value, max_value in checks:
+        try:
+            if value < min_value or value > max_value:
+                return False
+        except TypeError:
+            return False
+
+    return True
+
+
+def _snapshot_tune_config(
+    syn_config: SynaptogenesisConfig,
+    decay_config: DecayConfig,
+) -> dict[str, float | int]:
+    return {
+        "decay_half_life": decay_config.half_life_turns,
+        "promotion_threshold": syn_config.promotion_threshold,
+        "hebbian_increment": syn_config.hebbian_increment,
+        "skip_factor": syn_config.skip_factor,
+        "reflex_threshold": syn_config.reflex_threshold,
+    }
+
+
+def _restore_tune_config(
+    snapshot: dict[str, float | int],
+    syn_config: SynaptogenesisConfig,
+    decay_config: DecayConfig,
+) -> None:
+    decay_config.half_life_turns = int(snapshot["decay_half_life"])
+    syn_config.promotion_threshold = int(snapshot["promotion_threshold"])
+    syn_config.hebbian_increment = float(snapshot["hebbian_increment"])
+    syn_config.skip_factor = float(snapshot["skip_factor"])
+    syn_config.reflex_threshold = float(snapshot["reflex_threshold"])
+
+
+def _should_revert(
+    records: list[TuneHistoryRecord],
+    safety_bounds: SafetyBounds,
+) -> bool:
+    if not records:
+        return False
+    worse_count = sum(1 for record in records if record.score < 0)
+    return (worse_count / len(records)) >= safety_bounds.revert_threshold
 
 
 # ---------------------------------------------------------------------------
@@ -719,10 +820,18 @@ def _record_change(
     key: str,
     before: float | int,
     after: float | int,
+    bounded: bool = False,
 ) -> None:
-    if after == before:
+    if after == before and not bounded:
         return
-    changes[key] = {"before": before, "after": after, "delta": after - before}
+    change: dict[str, float | int | bool] = {
+        "before": before,
+        "after": after,
+        "delta": after - before,
+    }
+    if bounded:
+        change["bounded"] = True
+    changes[key] = change
 
 
 def apply_adjustments(
@@ -732,84 +841,126 @@ def apply_adjustments(
     mitosis_config: MitosisConfig,
     last_adjusted: dict[str, int] | None = None,
     cycle_number: int = 0,
+    safety_bounds: SafetyBounds | None = None,
 ) -> dict[str, dict[str, float | int]]:
     """Apply suggestions from autotune() directly to live config objects.
 
     Returns:
         Mapping of changed public keys to `{before, after, delta}`.
     """
+    if safety_bounds is None:
+        safety_bounds = SafetyBounds()
+
     del mitosis_config
     if last_adjusted is None:
         last_adjusted = {}
     changes: dict[str, dict[str, float | int]] = {}
 
+    requested_adjustments: list[tuple[str, str]] = []
     for adjustment in adjustments:
         for key, direction in adjustment.suggested_change.items():
+            if key not in ADJUSTMENT_PRIORITIES:
+                continue
             last_seen = last_adjusted.get(key, -10**9)
             if cycle_number - last_seen <= ADJUSTMENT_COOLDOWN_CYCLES:
                 continue
-            if key == "decay_half_life":
-                before = decay_config.half_life_turns
-                if direction == "decrease":
-                    after = before * 0.75
-                elif direction == "increase":
-                    after = before * 1.33
-                else:
-                    continue
-                after = int(round(max(20, min(300, after))))
-                decay_config.half_life_turns = after
-                _record_change(changes, "decay_half_life", before, after)
-                last_adjusted[key] = cycle_number
+            requested_adjustments.append((key, direction))
 
-            elif key == "promotion_threshold":
-                before = int(syn_config.promotion_threshold)
-                if direction == "decrease":
-                    after = before - 1
-                elif direction == "increase":
-                    after = before + 1
-                else:
-                    continue
-                after = max(2, min(10, after))
-                syn_config.promotion_threshold = after
-                _record_change(changes, "promotion_threshold", before, after)
-                last_adjusted[key] = cycle_number
+    def _priority(item: tuple[str, str]) -> int:
+        return ADJUSTMENT_PRIORITIES.get(item[0], len(ADJUSTMENT_PRIORITIES))
 
-            elif key == "reflex_threshold":
-                before = float(syn_config.reflex_threshold)
-                if direction == "increase":
-                    after = before + 0.05
-                else:
-                    continue
-                after = min(0.95, after)
-                syn_config.reflex_threshold = after
-                _record_change(changes, "reflex_threshold", before, after)
-                last_adjusted[key] = cycle_number
+    requested_adjustments = list(dict.fromkeys(requested_adjustments))
+    requested_adjustments.sort(key=_priority)
+    requested_adjustments = requested_adjustments[: safety_bounds.max_adjustments_per_cycle]
 
-            elif key == "skip_factor":
-                before = float(syn_config.skip_factor)
-                if direction == "increase":
-                    after = before + 0.02
-                elif direction == "decrease":
-                    after = before - 0.02
-                else:
-                    continue
-                after = max(0.0, min(1.0, after))
-                syn_config.skip_factor = after
-                _record_change(changes, "skip_factor", before, after)
-                last_adjusted[key] = cycle_number
+    for key, direction in requested_adjustments:
+        if key == "decay_half_life":
+            before = decay_config.half_life_turns
+            if direction == "decrease":
+                candidate = before * 0.75
+            elif direction == "increase":
+                candidate = before * 1.33
+            else:
+                continue
+            clamped = int(round(max(safety_bounds.min_decay_half_life, min(safety_bounds.max_decay_half_life, candidate))))
+            bounded = int(round(candidate)) != clamped
+            decay_config.half_life_turns = clamped
+            _record_change(changes, "decay_half_life", before, clamped, bounded=bounded)
+            last_adjusted[key] = cycle_number
 
-            elif key == "hebbian_increment":
-                before = float(syn_config.hebbian_increment)
-                if direction == "increase":
-                    after = before + 0.01
-                elif direction == "decrease":
-                    after = before - 0.01
-                else:
-                    continue
-                after = max(0.02, min(0.15, after))
-                syn_config.hebbian_increment = after
-                _record_change(changes, "hebbian_increment", before, after)
-                last_adjusted[key] = cycle_number
+        elif key == "promotion_threshold":
+            before = int(syn_config.promotion_threshold)
+            if direction == "decrease":
+                candidate = before - 1
+            elif direction == "increase":
+                candidate = before + 1
+            else:
+                continue
+            clamped = int(
+                max(
+                    safety_bounds.min_promotion_threshold,
+                    min(safety_bounds.max_promotion_threshold, candidate),
+                )
+            )
+            bounded = candidate != clamped
+            syn_config.promotion_threshold = clamped
+            _record_change(changes, "promotion_threshold", before, clamped, bounded=bounded)
+            last_adjusted[key] = cycle_number
+
+        elif key == "reflex_threshold":
+            before = float(syn_config.reflex_threshold)
+            if direction == "increase":
+                candidate = before + 0.05
+            else:
+                continue
+            clamped = float(
+                max(
+                    safety_bounds.min_reflex_threshold,
+                    min(safety_bounds.max_reflex_threshold, candidate),
+                )
+            )
+            bounded = candidate != clamped
+            syn_config.reflex_threshold = clamped
+            _record_change(changes, "reflex_threshold", before, clamped, bounded=bounded)
+            last_adjusted[key] = cycle_number
+
+        elif key == "skip_factor":
+            before = float(syn_config.skip_factor)
+            if direction == "increase":
+                candidate = before + 0.02
+            elif direction == "decrease":
+                candidate = before - 0.02
+            else:
+                continue
+            clamped = float(
+                max(
+                    safety_bounds.min_skip_factor,
+                    min(safety_bounds.max_skip_factor, candidate),
+                )
+            )
+            bounded = candidate != clamped
+            syn_config.skip_factor = clamped
+            _record_change(changes, "skip_factor", before, clamped, bounded=bounded)
+            last_adjusted[key] = cycle_number
+
+        elif key == "hebbian_increment":
+            before = float(syn_config.hebbian_increment)
+            if direction == "increase":
+                candidate = before + 0.01
+            elif direction == "decrease":
+                candidate = before - 0.01
+            else:
+                continue
+            clamped = float(
+                max(
+                    safety_bounds.min_hebbian_increment,
+                    min(safety_bounds.max_hebbian_increment, candidate),
+                )
+            )
+            bounded = candidate != clamped
+            syn_config.hebbian_increment = clamped
+            _record_change(changes, "hebbian_increment", before, clamped, bounded=bounded)
+            last_adjusted[key] = cycle_number
 
     return changes
 
@@ -825,14 +976,22 @@ def self_tune(
     last_adjusted: dict[str, int] | None = None,
     tune_history: TuneHistory | None = None,
     tune_memory: TuneMemory | None = None,
+    safety_bounds: SafetyBounds | None = None,
 ) -> tuple[GraphHealth, list[Adjustment], dict[str, dict[str, float | int]]]:
     """Run one full health-tuning cycle."""
+    if safety_bounds is None:
+        safety_bounds = SafetyBounds()
+
     if tune_history is None:
         tune_history = TuneHistory()
 
     health = measure_health(graph, state, query_stats)
+
+    previous_config = _snapshot_tune_config(syn_config, decay_config)
     if tune_history.pending:
         completed_records = tune_history.evaluate_pending(health)
+        if _should_revert(completed_records, safety_bounds) and tune_history.previous_config is not None:
+            _restore_tune_config(tune_history.previous_config, syn_config, decay_config)
         if tune_memory is not None:
             tune_memory.update(TuneHistory(records=completed_records))
 
@@ -845,7 +1004,9 @@ def self_tune(
         mitosis_config,
         last_adjusted=last_adjusted,
         cycle_number=cycle_number,
+        safety_bounds=safety_bounds,
     )
+    tune_history.previous_config = previous_config
     tune_history.record_adjustments(cycle_number, health, adjustments, changes)
 
     return health, adjustments, changes
