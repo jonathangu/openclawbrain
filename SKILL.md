@@ -2,6 +2,88 @@
 
 CrabPath is a memory graph for AI agents with migration, query, and graph maintenance operations.
 
+## Safe Mode (ClawHub users)
+
+If you're using ClawHub and want to try CrabPath without risk:
+
+### Step 1: Install
+
+```bash
+pip install crabpath
+# or clone: git clone https://github.com/jonathangu/crabpath
+```
+
+### Step 2: Bootstrap (zero risk — read-only)
+
+```bash
+crabpath migrate --workspace ~/.openclaw/workspace --output-graph graph.json --output-embeddings embed.json
+```
+
+This reads your files and creates a graph. It does NOT modify your workspace.
+
+### Step 3: Check Health
+
+```bash
+crabpath health --graph graph.json
+```
+
+See what the graph looks like. All 8 metrics with ✅/❌.
+
+### Step 4: Shadow Mode (safe — runs alongside, never modifies responses)
+
+Add to your AGENTS.md:
+
+```text
+# After each user message, run:
+crabpath query --graph graph.json --embeddings embed.json --query 'summary of user message'
+```
+
+This logs what CrabPath would retrieve. Compare with what your agent actually loaded.
+
+CrabPath NEVER modifies your agent's responses in shadow mode.
+
+### Step 5: Replay History (optional, accelerates learning)
+
+```bash
+crabpath migrate --workspace ~/.openclaw/workspace --session-logs session.jsonl --output-graph graph.json
+```
+
+Feed historical queries to warm up the graph faster.
+
+### Step 6: Track Evolution
+
+```bash
+crabpath evolve --graph graph.json --snapshots evolution.jsonl --report
+```
+
+See how your graph changes over time. Make timelapses.
+
+### Step 7: Graduate to Active Mode (when ready)
+
+When you trust CrabPath's retrievals, start using its output as supplementary context.
+Still keep your static context loading as fallback.
+
+Monitor with:
+
+```bash
+crabpath health --graph graph.json
+```
+
+### Safety Guarantees
+
+- CrabPath NEVER modifies your workspace files.
+- CrabPath NEVER modifies your agent's responses (in shadow mode).
+- CrabPath NEVER sends data anywhere (all local, zero network calls except optional embeddings).
+- Kill switch: delete the graph.json file and you're back to normal.
+- All state is in graph.json — portable, inspectable, deletable.
+
+### What You Need
+
+- Python 3.10+
+- Zero pip dependencies
+- Optional: OPENAI_API_KEY or GEMINI_API_KEY for semantic embeddings (better retrieval)
+- Without API key: keyword-based routing still works (just less precise)
+
 ## Installation
 
 ```bash
