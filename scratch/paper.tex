@@ -397,6 +397,13 @@ Procedure & 548 & 467 & \textbf{205} & 63\% \\
 \label{tab:context}
 \end{table}
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/procedural_memory.png}
+\caption{Context tokens loaded per query across benchmark tasks.}
+\label{fig:context-efficiency}
+\end{figure}
+
 \subsection{Two-Tier Cost Model}
 
 Cost is split between a cheap router and a costly context reader.
@@ -471,6 +478,13 @@ Episode & Event & $w$(check\_tests) & $w$(skip\_tests) \\
 \label{tab:deploy}
 \end{table}
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/deploy_pipeline.png}
+\caption{Deploy pipeline weight trajectory. Safe path reaches reflex by episode 10; shortcut becomes dormant by episode 13.}
+\label{fig:deploy-pipeline}
+\end{figure}
+
 \subsection{Where RAG Fails}
 
 On the deploy pipeline, RAG loads 525 tokens per turn --- the same as static. All deployment nodes match ``deploy'' semantically, so top-k retrieval is indiscriminate. CrabPath loads 199 tokens, following only the learned path.
@@ -490,6 +504,13 @@ Negation & 546 & \textbf{546} & \textbf{87} & RAG = Static \\
 \caption{When documents are semantically similar, RAG degrades to static loading. CrabPath routes by learned outcomes, not similarity.}
 \label{tab:rag-fails}
 \end{table}
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/rag_collapse.png}
+\caption{Where RAG degrades to static loading. CrabPath routes by learned outcomes, not similarity.}
+\label{fig:rag-collapse}
+\end{figure}
+
 \subsection{Ablation Study}
 
 We isolate each mechanism by disabling it in turn and running 190 deterministic queries (80 procedural, 60 factual, 40 cross-file, 10 negation) against the same bootstrapped graph. Task accuracy measures the fraction of expected nodes present in the retrieval set.
@@ -513,6 +534,20 @@ Arm & Configuration & Accuracy & \multicolumn{2}{c}{95\% CI} & Reflex & Cross-Fi
 \caption{Ablation results with bootstrap 95\% confidence intervals (10,000 resamples, seed 2026). Accuracy is fraction of expected nodes retrieved. CIs for Arms~1 and~3 are non-overlapping, confirming the corrected policy gradient contributes beyond chance.}
 \label{tab:ablation}
 \end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/ablation_accuracy.png}
+\caption{Ablation accuracy with 95\% bootstrap confidence intervals.}
+\label{fig:ablation-accuracy}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/ablation_query_types.png}
+\caption{Per-query-type accuracy across ablation arms.}
+\label{fig:ablation-types}
+\end{figure}
 
 Five findings:
 
@@ -544,6 +579,13 @@ Reflex edges (cumul.) & 0--8 & 8--6 & 6--4 \\
 \caption{Phase transition diagnostics over 300 queries. Weight entropy decreases as Hebbian reinforcement differentiates edge weights (Phase~1). Around query 100, gradient magnitude spikes as the softmax distribution becomes sharp enough for policy-gradient updates to produce meaningful signal (Phase~2 onset). Accuracy climbs after the transition.}
 \label{tab:phase}
 \end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/phase_transition.png}
+\caption{Phase transition diagnostics over 300 queries. Weight entropy decreases during Hebbian phase; gradient magnitude spikes at RL onset.}
+\label{fig:phase-transition}
+\end{figure}
 
 We call this \emph{two-phase learning}:
 
@@ -587,6 +629,27 @@ BEIR-style frozen benchmark (50 queries, 3 domains) & BM25 & 0.220 \\
 \label{tab:external}
 \end{table}
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/hotpotqa_cold_start.png}
+\caption{HotpotQA cold-start retrieval: BM25 dominates when topics are diverse.}
+\label{fig:hotpotqa}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/learning_curve.png}
+\caption{Learning curve on persistent HotpotQA graph. CrabPath accumulates edge changes but topic diversity limits transfer.}
+\label{fig:learning-curve}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/recurring_topic.png}
+\caption{Recurring-topic benchmark (200 queries, 20 docs). Graph evolution statistics shown on secondary axis.}
+\label{fig:recurring-topic}
+\end{figure}
+
 CrabPath is much weaker than BM25 on hot/cold-start, diverse-topic retrieval. In the persistent HotpotQA run, the graph did learn (1,948 edge changes, average edge weight drifting from $0.50$ to $0.49$), but query-topic diversity limited transfer. This is consistent with a routing model whose gains come from recurring, structured query families rather than broad first-pass lexical matching.
 
 \subsection{Sparsity-Scale Crossover Analysis}
@@ -609,6 +672,13 @@ V. Sparse& -0.061 (BM25)     & +0.010 (CrabPath) & N/A \\
 \caption{Crossover matrix for phase-2 Recall@3 by sparsity and node count. Positive values indicate CrabPath advantage over BM25.}
 \label{tab:sparsity-crossover}
 \end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/sparsity_crossover.png}
+\caption{Phase2 Recall@3 crossover: green cells indicate CrabPath advantage.}
+\label{fig:sparsity-crossover}
+\end{figure}
 
 These results indicate clear crossover behavior. CrabPath is stronger at 20 nodes for dense and medium sparsity, while sparse and v.sparse regimes require more graph mass (about 50 nodes) before learned routing overtakes lexical search. In the noisiest sparse case, v.sparse graphs at only 20 nodes remain BM25-dominant, matching the expectation that structure-aware learning needs repeated evidence. 
 
@@ -635,6 +705,20 @@ Graph size & BM25 & CrabPath & CrabPath--BM25 \\
 \label{tab:scaling}
 \end{table}
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/scaling_curves.png}
+\caption{Recall@3 across graph sizes (sparse, edge ratio 0.1). CrabPath maintains advantage up to 1000 nodes.}
+\label{fig:scaling-curves}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/niah_multi_needle.png}
+\caption{Multi-needle retrieval at 1000 nodes. Partial recall by needle count K.}
+\label{fig:niah}
+\end{figure}
+
 CrabPath holds an advantage across all tested sizes up to 1,000 nodes, including low-resource regimes where lexical overlap is weak. The advantage collapses at 2,000 nodes in this setup, which we interpret as saturation in this metric family rather than regression of learning dynamics. The result still demonstrates strong small-to-mid-scale benefit for routing under the tested sparsity.
 
 \subsection{Context Utilization and Token Efficiency}
@@ -654,6 +738,13 @@ CrabPath & 549 & 0.725 & 0.275 \\
 \caption{Context efficiency on 100-node graph.}
 \label{tab:context}
 \end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/context_utilization.png}
+\caption{Context utilization: CrabPath loads 56\% fewer tokens with 43\% higher precision.}
+\label{fig:context-util}
+\end{figure}
 
 On average, CrabPath loads 56\% fewer tokens while increasing precision by 43\%. That is, the model routes to tighter context, not just more context with similar noise. The trade is lower recall in some broad-topic cases in favor of precision and budget efficiency.
 
@@ -677,6 +768,13 @@ Distractors & BM25 R@3 & BM25 FPR & CrabPath R@3 & CrabPath FPR \\
 \label{tab:distractors}
 \end{table}
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/noise_sensitivity.png}
+\caption{Noise sensitivity under distractor injection. CrabPath maintains low false-positive rate.}
+\label{fig:noise-sensitivity}
+\end{figure}
+
 BM25 keeps higher recall but shows consistently higher false positive rate (roughly 2--3$\times$ higher than CrabPath). CrabPath’s routing is more stable under keyword-overlap contamination because decisions are shaped by learned edge weights rather than raw term frequency. The weakness is clear: CrabPath may trade some recall for cleaner precision under adversarial noise.
 
 \subsection{Temporal Drift and Adaptation}
@@ -698,6 +796,13 @@ New queries on changed content & 0.39 & 0.00 \\
 \label{tab:temporal}
 \end{table}
 
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/temporal_drift.png}
+\caption{Temporal drift adaptation. BM25 adapts instantly; CrabPath requires re-learning.}
+\label{fig:temporal-drift}
+\end{figure}
+
 BM25 degrades but adapts quickly via direct term matching when content changes. CrabPath suffers in the final phase and drops substantially because previously learned routing remains stale without re-learning. This is a key limitation: temporal adaptation still requires targeted refresh or periodic retraining.
 
 \subsection{Downstream Task Quality}
@@ -717,6 +822,27 @@ CrabPath & 0.684 & 0.752 & 0.160 & 22.2 \\
 \caption{Downstream task quality.}
 \label{tab:downstream}
 \end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/downstream_accuracy.png}
+\caption{Downstream task quality: CrabPath achieves higher F1 with 6x less context.}
+\label{fig:downstream}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/ruler_multi_fact.png}
+\caption{RULER multi-fact retrieval. All-found rate and partial recall by needle count.}
+\label{fig:ruler}
+\end{figure}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/downstream_qa.png}
+\caption{Downstream QA benchmark: base comparison, distractor injection, and temporal drift.}
+\label{fig:downstream-qa}
+\end{figure}
 
 Despite lower coverage, CrabPath more than doubles F1 and reduces context length by about 6$\times$, while also lowering noise ratio. This indicates an architecture tuned for precise, targeted context slices rather than exhaustive retrieval. It also reinforces that metric choice should match workload: if throughput and precision under stable query families are primary, learned routing is a strong fit; if broad topical search is primary, BM25 remains competitive.
 
@@ -750,6 +876,13 @@ D (both) & 0.100 & 28.8 & 3 \\
 \caption{Traversal ablation on 50-node traversal behavior (R@3, average hops, inhibitory edges).}
 \label{tab:traversal-damping}
 \end{table}
+
+\begin{figure}[htbp]
+\centering
+\includegraphics[width=\textwidth]{figures/traversal_comparison.png}
+\caption{Traversal mechanism comparison. Edge damping (C) achieves highest recall and forms the most inhibitory edges.}
+\label{fig:traversal}
+\end{figure}
 
 Key insight: edge damping produces a self-regulating trajectory. As traversals repeat, effective edge strengths fall below threshold, naturally expanding the explored frontier and suppressing runaway loops without any additional global controls.
 
@@ -796,7 +929,6 @@ Code and design notes: \url{https://github.com/jonathangu/crabpath}.
 
 \begin{figure}[htbp]
 \centering
-%\includegraphics[width=\textwidth]{hero-v2.png}
 \caption{LLM-guided memory traversal over a weighted document graph.}
 \label{fig:hero}
 \end{figure}
