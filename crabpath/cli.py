@@ -57,6 +57,24 @@ DEFAULT_INIT_WORKSPACE_PATH = "."
 DEFAULT_DATA_DIR = "~/.crabpath"
 
 
+def _format_user_path(path_value: str | Path) -> str:
+    """Return a path string with user home rendered as ~ when possible."""
+    path = Path(path_value).expanduser()
+    try:
+        home = Path.home().resolve()
+        absolute = path.resolve()
+    except (OSError, RuntimeError):
+        return str(path)
+
+    if absolute == home:
+        return "~"
+
+    if absolute.is_absolute() and absolute.is_relative_to(home):
+        return f"~/{absolute.relative_to(home).as_posix()}"
+
+    return str(path)
+
+
 class CLIError(Exception):
     """Raised for user-facing CLI errors."""
 
@@ -79,6 +97,7 @@ def _emit_error(message: str) -> int:
 
 
 def _load_graph(path: str) -> Graph:
+    path = str(Path(path).expanduser())
     try:
         return load_graph(path)
     except (FileNotFoundError, ValueError) as exc:
@@ -86,6 +105,7 @@ def _load_graph(path: str) -> Graph:
 
 
 def _load_index(path: str) -> EmbeddingIndex:
+    path = str(Path(path).expanduser())
     try:
         return load_index(path)
     except ValueError as exc:
@@ -93,6 +113,8 @@ def _load_index(path: str) -> EmbeddingIndex:
 
 
 def _load_query_stats(path: str | None) -> dict[str, Any]:
+    if path is not None:
+        path = str(Path(path).expanduser())
     try:
         return load_query_stats(path)
     except (FileNotFoundError, ValueError) as exc:
@@ -100,6 +122,8 @@ def _load_query_stats(path: str | None) -> dict[str, Any]:
 
 
 def _load_mitosis_state(path: str | None) -> MitosisState:
+    if path is not None:
+        path = str(Path(path).expanduser())
     try:
         return load_mitosis_state(path)
     except (FileNotFoundError, ValueError) as exc:
@@ -298,7 +322,7 @@ def cmd_evolve(args: argparse.Namespace) -> dict[str, Any] | str:
         f.write(json.dumps(snapshot) + "\n")
 
     if not args.report:
-        return {"ok": True, "snapshot": snapshot, "snapshots": str(path)}
+        return {"ok": True, "snapshot": snapshot, "snapshots": _format_user_path(path)}
 
     snapshots = _load_snapshot_rows(path)
     return _format_timeline(snapshots)
@@ -758,7 +782,7 @@ def cmd_migrate(args: argparse.Namespace) -> dict[str, Any]:
         with open(stats_path, "w") as f:
             json.dump(info["query_stats"], f, indent=2)
         if verbose:
-            print(f"📊 Query stats saved to {stats_path}")
+            print(f"📊 Query stats saved to {_format_user_path(stats_path)}")
 
     embeddings_path = args.output_embeddings
     if embeddings_path:
@@ -769,8 +793,8 @@ def cmd_migrate(args: argparse.Namespace) -> dict[str, Any]:
 
     return {
         "ok": True,
-        "graph_path": str(graph_path),
-        "embeddings_path": str(embeddings_path) if embeddings_path else None,
+        "graph_path": _format_user_path(graph_path),
+        "embeddings_path": _format_user_path(embeddings_path) if embeddings_path else None,
         "info": info,
     }
 
@@ -806,8 +830,18 @@ def cmd_init(args: argparse.Namespace) -> dict[str, Any]:
 
     graph_path = data_dir / "graph.json"
     embed_path = data_dir / "embed.json"
+    session_warnings: list[str] = []
 
     session_logs = [args.sessions] if args.sessions else None
+    if args.sessions:
+        sessions_path = Path(args.sessions).expanduser()
+        if not sessions_path.exists():
+            raise CLIError(f"sessions path not found: {_format_user_path(sessions_path)}")
+        if sessions_path.is_dir() and not any(sessions_path.glob("*.jsonl")):
+            session_warnings.append(
+                f"No .jsonl files found in --sessions directory: {_format_user_path(sessions_path)}"
+            )
+
     stats_path = data_dir / "graph.stats.json"
 
     try:
@@ -862,22 +896,36 @@ def cmd_init(args: argparse.Namespace) -> dict[str, Any]:
             False,
         )
 
+        query_step = (
+            "crabpath query '<query>' "
+            f"--graph {_format_user_path(graph_path)} --top 8 --json"
+        )
+        if embeddings is not None:
+            query_step = (
+                "crabpath query '<query>' "
+                f"--graph {_format_user_path(graph_path)} --index {_format_user_path(embed_path)} --top 8 --json"
+            )
+
         next_steps = [
-            f"crabpath query '<query>' --graph {graph_path}",
-            f"crabpath health --graph {graph_path} --json",
+            query_step,
+            f"crabpath health --graph {_format_user_path(graph_path)} --json",
         ]
         if query_stats is not None:
             next_steps.append(
-                f"crabpath health --graph {graph_path} --query-stats {stats_path} --json"
+                f"crabpath health --graph {_format_user_path(graph_path)} --query-stats {_format_user_path(stats_path)} --json"
+            )
+        if args.sessions and query_stats is None and not session_warnings:
+            session_warnings.append(
+                f"No usable session log queries extracted from: {_format_user_path(args.sessions)}"
             )
 
-        return {
+        payload = {
             "ok": True,
-            "data_dir": str(data_dir),
-            "workspace": str(workspace_dir),
-            "graph_path": str(graph_path),
-            "embeddings_path": str(embed_path) if embeddings is not None else None,
-            "stats_path": str(stats_path) if query_stats is not None else None,
+            "data_dir": _format_user_path(data_dir),
+            "workspace": _format_user_path(workspace_dir),
+            "graph_path": _format_user_path(graph_path),
+            "embeddings_path": _format_user_path(embed_path) if embeddings is not None else None,
+            "stats_path": _format_user_path(stats_path) if query_stats is not None else None,
             "migration": info,
             "health": health_payload["metrics"],
             "summary": {
@@ -887,6 +935,9 @@ def cmd_init(args: argparse.Namespace) -> dict[str, Any]:
             },
             "next_steps": next_steps,
         }
+        if session_warnings:
+            payload["warnings"] = session_warnings
+        return payload
     finally:
         if temp_workspace is not None:
             shutil.rmtree(temp_workspace, ignore_errors=True)
@@ -902,26 +953,23 @@ def cmd_install_hook(args: argparse.Namespace) -> dict[str, Any]:
         Path(args.agent_workspace).expanduser().resolve() / "AGENTS.md"
     )
     if not agents_path.exists():
-        raise CLIError(f"AGENTS.md not found: {agents_path}")
+        raise CLIError(f"AGENTS.md not found: {_format_user_path(agents_path)}")
 
     existing = agents_path.read_text(encoding="utf-8")
-    if "CrabPath" in existing:
+    hook_marker = "## CrabPath Memory Graph (auto-installed)"
+    if hook_marker in existing:
         return {
             "ok": True,
-            "agents_md": str(agents_path),
+            "agents_md": _format_user_path(agents_path),
             "already_installed": True,
             "block_added": False,
-            "data_dir": str(data_dir),
+            "data_dir": _format_user_path(data_dir),
         }
 
     # Use ~ shorthand for portability
-    home = Path.home()
-    display_dir = str(data_dir)
-    if display_dir.startswith(str(home)):
-        display_dir = "~" + display_dir[len(str(home)):]
-    display_graph = f"{display_dir}/graph.json"
-    display_index = f"{display_dir}/embed.json"
     embed_path = data_dir / "embed.json"
+    display_graph = _format_user_path(graph_path)
+    display_index = _format_user_path(embed_path)
     has_embeddings = embed_path.exists()
 
     index_flag = f" --index {display_index}" if has_embeddings else ""
@@ -945,9 +993,9 @@ def cmd_install_hook(args: argparse.Namespace) -> dict[str, Any]:
 
     return {
         "ok": True,
-        "agents_md": str(agents_path),
+        "agents_md": _format_user_path(agents_path),
         "block_added": block_added,
-        "data_dir": str(data_dir),
+        "data_dir": _format_user_path(data_dir),
     }
 
 
@@ -965,13 +1013,17 @@ def cmd_extract_sessions(args: argparse.Namespace) -> dict[str, Any]:
             session_files.extend(sorted(sessions_dir.glob("*.jsonl")))
 
     if not session_files:
-        Path(args.output).parent.mkdir(parents=True, exist_ok=True)
-        Path(args.output).write_text("", encoding="utf-8")
+        output_path = Path(args.output).expanduser()
+        output_path.parent.mkdir(parents=True, exist_ok=True)
+        output_path.write_text("", encoding="utf-8")
         return {
             "ok": True,
-            "output": str(args.output),
+            "output": _format_user_path(output_path),
             "sessions_scanned": 0,
             "queries_extracted": 0,
+            "warnings": [
+                f"No agent session files found under: {_format_user_path(base)}",
+            ],
         }
 
     queries = parse_session_logs(session_files, max_queries=args.max_queries)
@@ -981,7 +1033,7 @@ def cmd_extract_sessions(args: argparse.Namespace) -> dict[str, Any]:
 
     return {
         "ok": True,
-        "output": str(output_path),
+        "output": _format_user_path(output_path),
         "sessions_scanned": len(session_files),
         "queries_extracted": len(queries),
     }

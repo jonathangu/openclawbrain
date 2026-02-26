@@ -18,44 +18,44 @@ from .synaptogenesis import edge_tier_stats
 
 def load_graph(path: str) -> Graph:
     """Load a graph with stable CLI/MCP error messages."""
-    file_path = Path(path)
+    file_path = Path(path).expanduser()
     if not file_path.exists():
-        raise FileNotFoundError(f"graph file not found: {path}")
+        raise FileNotFoundError(f"graph file not found: {file_path}")
 
     try:
-        return Graph.load(path)
+        return Graph.load(str(file_path))
     except (OSError, json.JSONDecodeError, KeyError, TypeError, ValueError) as exc:
-        raise ValueError(f"failed to load graph: {path}: {exc}") from exc
+        raise ValueError(f"failed to load graph: {file_path}: {exc}") from exc
 
 
 def load_index(path: str) -> EmbeddingIndex:
     """Load embedding index from disk, or return empty if missing."""
-    file_path = Path(path)
+    file_path = Path(path).expanduser()
     if not file_path.exists():
         return EmbeddingIndex()
 
     try:
-        return EmbeddingIndex.load(path)
+        return EmbeddingIndex.load(str(file_path))
     except (OSError, json.JSONDecodeError, KeyError, TypeError) as exc:
-        raise ValueError(f"failed to load index: {path}: {exc}") from exc
+        raise ValueError(f"failed to load index: {file_path}: {exc}") from exc
 
 
 def load_query_stats(path: str | None) -> dict[str, Any]:
     if path is None:
         return {}
 
-    file_path = Path(path)
+    file_path = Path(path).expanduser()
     if not file_path.exists():
-        raise FileNotFoundError(f"query-stats file not found: {path}")
+        raise FileNotFoundError(f"query-stats file not found: {file_path}")
 
     try:
         raw = file_path.read_text(encoding="utf-8")
         stats = json.loads(raw)
     except (OSError, json.JSONDecodeError) as exc:
-        raise ValueError(f"failed to load query-stats: {path}: {exc}") from exc
+        raise ValueError(f"failed to load query-stats: {file_path}: {exc}") from exc
 
     if not isinstance(stats, dict):
-        raise ValueError(f"query-stats must be a JSON object: {path}")
+        raise ValueError(f"query-stats must be a JSON object: {file_path}")
 
     return stats
 
@@ -64,18 +64,18 @@ def load_mitosis_state(path: str | None) -> MitosisState:
     if path is None:
         return MitosisState()
 
-    file_path = Path(path)
+    file_path = Path(path).expanduser()
     if not file_path.exists():
-        raise FileNotFoundError(f"mitosis-state file not found: {path}")
+        raise FileNotFoundError(f"mitosis-state file not found: {file_path}")
 
     try:
         raw = file_path.read_text(encoding="utf-8")
         state_data = json.loads(raw)
     except (OSError, json.JSONDecodeError) as exc:
-        raise ValueError(f"failed to load mitosis-state: {path}: {exc}") from exc
+        raise ValueError(f"failed to load mitosis-state: {file_path}: {exc}") from exc
 
     if not isinstance(state_data, dict):
-        raise ValueError(f"mitosis-state must be a JSON object: {path}")
+        raise ValueError(f"mitosis-state must be a JSON object: {file_path}")
 
     return MitosisState(
         families=state_data.get("families", {}),
