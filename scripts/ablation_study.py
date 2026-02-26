@@ -5,6 +5,7 @@ from __future__ import annotations
 
 import copy
 import json
+import random
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -175,6 +176,7 @@ class ArmResult:
     reflex_edges: int
     cross_file_edges: int
     correct_negation: float
+    per_query_scores: list[float]
     query_results: list[dict[str, object]]
     final_nodes: int
     final_edges: int
@@ -310,6 +312,65 @@ def _query_accuracy(selected_nodes: list[str], expected_nodes: list[str]) -> flo
     expected = set(expected_nodes)
     selected = set(selected_nodes)
     return len(expected & selected) / len(expected)
+
+
+def bootstrap_ci(
+    values: list[float],
+    n_boot: int = 10_000,
+    ci: float = 0.95,
+    seed: int = SEED,
+) -> tuple[float, float, float]:
+    """Compute mean and percentile bootstrap confidence interval."""
+    if not values:
+        return 0.0, 0.0, 0.0
+    rng = random.Random(seed)
+    n = len(values)
+
+    means: list[float] = []
+    for _ in range(n_boot):
+        sample = [values[rng.randrange(n)] for _ in range(n)]
+        means.append(sum(sample) / n)
+
+    means.sort()
+
+    alpha = (1.0 - ci) / 2.0
+    lower_i = int(alpha * n_boot)
+    upper_i = int((1.0 - alpha) * n_boot) - 1
+    return (sum(means) / n_boot, means[lower_i], means[upper_i])
+
+
+def paired_bootstrap_test(
+    a: list[float],
+    b: list[float],
+    n_boot: int = 10_000,
+    seed: int = SEED,
+) -> tuple[float, float]:
+    """Paired bootstrap hypothesis test for paired samples."""
+    if len(a) != len(b):
+        raise ValueError("Paired bootstrap requires equal-length inputs.")
+    if not a:
+        return 0.0, 0.0
+
+    rng = random.Random(seed)
+    n = len(a)
+
+    diffs = [a_i - b_i for a_i, b_i in zip(a, b)]
+    observed_mean_diff = sum(diffs) / n
+
+    boot_diffs: list[float] = []
+    for _ in range(n_boot):
+        boot_a_sum = 0.0
+        boot_b_sum = 0.0
+        for _ in range(n):
+            i = rng.randrange(n)
+            boot_a_sum += a[i]
+            boot_b_sum += b[i]
+        boot_diffs.append((boot_a_sum - boot_b_sum) / n)
+
+    abs_obs = abs(observed_mean_diff)
+    extreme = sum(1 for diff in boot_diffs if abs(diff) >= abs_obs)
+    p_value = extreme / n_boot
+    return observed_mean_diff, p_value
 
 
 def _build_trajectory(selected_nodes: list[str], graph: Graph) -> list[dict[str, object]]:
@@ -469,6 +530,7 @@ def run_arm(
     total_proto_created = 0
     negation_hits = 0
     negation_total = 0
+    per_query_scores: list[float] = []
 
     query_results: list[dict[str, object]] = []
 
@@ -490,6 +552,7 @@ def run_arm(
 
         score = _query_accuracy(selected_nodes, query.expected_nodes)
         total_accuracy += score
+        per_query_scores.append(score)
 
         selected_context = 0
         for node_id in selected_nodes:
@@ -616,21 +679,25 @@ def run_arm(
         reflex_edges=reflex_edges,
         cross_file_edges=count_cross_file_edges(graph),
         correct_negation=correct_negation,
+        per_query_scores=per_query_scores,
         query_results=query_results,
         final_nodes=graph.node_count,
         final_edges=graph.edge_count,
     )
 
 
-def _format_table(rows: list[ArmResult]) -> str:
+def _format_table(rows: list[ArmResult], ci_map: dict[str, tuple[float, float, float]]) -> str:
     lines = [
-        "| Arm | Accuracy | Avg Context Chars | Reflex Edges | "
-        "Cross-File Edges | Correct Negation |",
-        "| --- | --- | --- | --- | --- | --- |",
+        "| Arm | Accuracy | Accuracy CI Lower | Accuracy CI Upper | "
+        "Avg Context Chars | Reflex Edges | Cross-File Edges | "
+        "Correct Negation |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     for row in rows:
+        _, ci_lower, ci_upper = ci_map[row.name]
         lines.append(
-            f"| {row.name} | {row.accuracy:.3f} | {row.avg_context_chars:.1f} "
+            f"| {row.name} | {row.accuracy:.3f} | {ci_lower:.3f} | "
+            f"{ci_upper:.3f} | {row.avg_context_chars:.1f} "
             f"| {row.reflex_edges} | {row.cross_file_edges} | "
             f"{row.correct_negation:.3f} |"
         )
@@ -714,9 +781,42 @@ def main() -> None:
             )
         )
 
-    print(_format_table(results))
+    arm_cis: dict[str, tuple[float, float, float]] = {
+        result.name: bootstrap_ci(result.per_query_scores, seed=SEED) for result in results
+    }
+
+    print("Per-arm Accuracy (95% CI):")
+    for result in results:
+        mean, lower, upper = arm_cis[result.name]
+        print(f"{result.name}: {mean:.3f} [{lower:.3f}, {upper:.3f}]")
+
+    arm_1_vs_3 = paired_bootstrap_test(
+        results[0].per_query_scores,
+        results[2].per_query_scores,
+        seed=SEED,
+    )
+    arm_1_vs_2 = paired_bootstrap_test(
+        results[0].per_query_scores,
+        results[1].per_query_scores,
+        seed=SEED,
+    )
+
+    print(f"Paired test Arm 1 vs Arm 3: mean diff={arm_1_vs_3[0]:.6f}, p-value={arm_1_vs_3[1]:.6f}")
+    print(f"Paired test Arm 1 vs Arm 2: mean diff={arm_1_vs_2[0]:.6f}, p-value={arm_1_vs_2[1]:.6f}")
+    print()
+    print(_format_table(results, arm_cis))
 
     out_path = Path("scripts/ablation_results.json")
+    paired_tests = {
+        "arm_1_vs_3": {
+            "mean_diff": arm_1_vs_3[0],
+            "p_value": arm_1_vs_3[1],
+        },
+        "arm_1_vs_2": {
+            "mean_diff": arm_1_vs_2[0],
+            "p_value": arm_1_vs_2[1],
+        },
+    }
     out_path.write_text(
         json.dumps(
             {
@@ -733,6 +833,11 @@ def main() -> None:
                     {
                         "name": result.name,
                         "accuracy": result.accuracy,
+                        "accuracy_ci": {
+                            "mean": arm_cis[result.name][0],
+                            "lower": arm_cis[result.name][1],
+                            "upper": arm_cis[result.name][2],
+                        },
                         "avg_context_chars": result.avg_context_chars,
                         "reflex_edges": result.reflex_edges,
                         "cross_file_edges": result.cross_file_edges,
@@ -743,6 +848,7 @@ def main() -> None:
                     }
                     for result in results
                 ],
+                "paired_tests": paired_tests,
             },
             indent=2,
         ),
