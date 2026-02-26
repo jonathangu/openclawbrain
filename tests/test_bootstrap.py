@@ -12,7 +12,7 @@ def _write(file_path: Path, text: str) -> None:
 
 
 def _bootstrap_script() -> Path:
-    return Path(__file__).resolve().parents[1] / "scripts" / "bootstrap_from_workspace.py"
+    return Path(__file__).resolve().parents[1] / "docs" / "research" / "scripts" / "bootstrap_from_workspace.py"
 
 
 def test_bootstrap_from_workspace(tmp_path: Path) -> None:

@@ -73,7 +73,7 @@ def test_migration_script_backfills_fields(tmp_path: Path) -> None:
     input_path.write_text(json.dumps(legacy), encoding="utf-8")
 
     result = subprocess.run(
-        [sys.executable, "scripts/migrate_graph_v2.py", str(input_path), str(output_path)],
+        [sys.executable, "docs/research/scripts/migrate_graph_v2.py", str(input_path), str(output_path)],
         check=True,
         capture_output=True,
         text=True,

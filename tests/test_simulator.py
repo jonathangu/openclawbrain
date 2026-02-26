@@ -27,7 +27,7 @@ def _small_graph() -> Graph:
 
 
 def test_load_scenarios() -> None:
-    scenarios = load_scenarios(Path("scenarios/giraffe_test.jsonl"))
+    scenarios = load_scenarios(Path("docs/research/scenarios/giraffe_test.jsonl"))
     assert len(scenarios) == 10
     assert all(isinstance(step.query, str) for step in scenarios)
     assert all(isinstance(step.expected_answer_fragments, list) for step in scenarios)
