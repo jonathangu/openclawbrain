@@ -72,6 +72,20 @@ crabpath learn --graph graph.json --outcome 1.0 --fired-ids node1,node2,node3
 crabpath health --graph graph.json
 ```
 
+### Session Replay (warm up the graph)
+
+Replay historical session logs to bootstrap edge weights from real usage patterns:
+
+```bash
+crabpath replay --graph ~/.crabpath/graph.json --sessions ~/.openclaw/agents/main/sessions/
+```
+
+Or combine with init:
+
+```bash
+crabpath init --workspace ~/.openclaw/workspace --output ~/.crabpath --sessions ~/.openclaw/agents/main/sessions/
+```
+
 ### The key insight: CrabPath is a pure graph engine
 
 CrabPath NEVER makes network calls. It doesn't compute embeddings or call LLMs. You provide:

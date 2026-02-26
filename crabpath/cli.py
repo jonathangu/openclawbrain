@@ -10,6 +10,7 @@ from pathlib import Path
 
 from .graph import Edge, Graph, Node
 from .index import VectorIndex
+from .replay import extract_queries, extract_queries_from_dir, replay_queries
 from .split import split_workspace
 from .traverse import TraversalConfig, traverse
 from .learn import apply_outcome
@@ -23,6 +24,7 @@ def _build_parser() -> argparse.ArgumentParser:
     init = sub.add_parser("init", help="split workspace and output node text payload")
     init.add_argument("--workspace", required=True)
     init.add_argument("--output", required=True)
+    init.add_argument("--sessions", required=False)
     init.add_argument("--json", action="store_true")
 
     query = sub.add_parser("query", help="seed from index and traverse graph")
@@ -39,6 +41,12 @@ def _build_parser() -> argparse.ArgumentParser:
     learn.add_argument("--outcome", type=float, required=True)
     learn.add_argument("--fired-ids", required=True)
     learn.add_argument("--json", action="store_true")
+
+    replay = sub.add_parser("replay", help="warm up graph from historical sessions")
+    replay.add_argument("--graph", required=True)
+    replay.add_argument("--sessions", nargs="+", required=True)
+    replay.add_argument("--max-queries", type=int, default=None)
+    replay.add_argument("--json", action="store_true")
 
     health = sub.add_parser("health", help="compute graph health")
     health.add_argument("--graph", required=True)
@@ -93,6 +101,24 @@ def _parse_vector(values: list[str] | None) -> list[float] | None:
     return vector
 
 
+def _load_session_queries(session_paths: list[str] | str) -> list[str]:
+    if isinstance(session_paths, str):
+        session_paths = [session_paths]
+
+    queries: list[str] = []
+    for session_path in session_paths:
+        path = Path(session_path).expanduser()
+        if not path.exists():
+            raise SystemExit(f"missing sessions path: {path}")
+        if path.is_dir():
+            queries.extend(extract_queries_from_dir(path))
+        elif path.is_file():
+            queries.extend(extract_queries(path))
+        else:
+            raise SystemExit(f"invalid sessions path: {path}")
+    return queries
+
+
 _WORD_RE = re.compile(r"[A-Za-z0-9']+")
 
 
@@ -137,6 +163,10 @@ def cmd_init(args: argparse.Namespace) -> int:
     output_dir.mkdir(parents=True, exist_ok=True)
 
     graph, texts = split_workspace(args.workspace)
+    if args.sessions is not None:
+        queries = _load_session_queries(args.sessions)
+        replay_queries(graph=graph, queries=queries)
+
     graph_path = output_dir / "graph.json"
     texts_path = output_dir / "texts.json"
     payload = {
@@ -259,6 +289,54 @@ def cmd_learn(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_replay(args: argparse.Namespace) -> int:
+    graph = _load_graph(args.graph)
+    queries = _load_session_queries(args.sessions)
+    if args.max_queries is not None:
+        if args.max_queries <= 0:
+            queries = []
+        else:
+            queries = queries[: args.max_queries]
+
+    stats = replay_queries(graph=graph, queries=queries, verbose=not args.json)
+
+    graph_path = Path(args.graph).expanduser()
+    if graph_path.is_dir():
+        graph_path = graph_path / "graph.json"
+    payload = {
+        "nodes": [
+            {
+                "id": node.id,
+                "content": node.content,
+                "summary": node.summary,
+                "metadata": node.metadata,
+            }
+            for node in graph.nodes()
+        ],
+        "edges": [
+            {
+                "source": edge.source,
+                "target": edge.target,
+                "weight": edge.weight,
+                "kind": edge.kind,
+                "metadata": edge.metadata,
+            }
+            for source_edges in graph._edges.values()
+            for edge in source_edges.values()
+        ],
+    }
+    graph_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+
+    if args.json:
+        print(json.dumps(stats, indent=2))
+    else:
+        print(
+            f"Replayed {stats['queries_replayed']}/{len(queries)} queries, "
+            f"{stats['cross_file_edges_created']} cross-file edges created"
+        )
+    return 0
+
+
 def cmd_health(args: argparse.Namespace) -> int:
     graph = _load_graph(args.graph)
     health = measure_health(graph)
@@ -287,6 +365,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_query(args)
     if args.command == "learn":
         return cmd_learn(args)
+    if args.command == "replay":
+        return cmd_replay(args)
     if args.command == "health":
         return cmd_health(args)
     return 1
