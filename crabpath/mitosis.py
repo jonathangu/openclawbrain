@@ -37,7 +37,7 @@ from .graph import Graph, Node, Edge
 class MitosisConfig(ConfigBase):
     """Configuration for graph self-organization."""
 
-    sibling_weight: float = 0.65  # Initial sibling weight (habitual, not reflex)
+    sibling_weight: float = 0.25  # Start low — earn your edges through co-firing
     min_content_chars: int = 200  # Don't split nodes smaller than this
     chunk_type: str = "chunk"  # Node type for chunk nodes
     decay_rate: float = 0.01  # Edge decay rate for sibling edges

@@ -21,7 +21,7 @@ from .synaptogenesis import edge_tier_stats
 
 DEFAULTS = {
     "small": {
-        "sibling_weight": 0.45,
+        "sibling_weight": 0.20,
         "promotion_threshold": 2,
         "decay_half_life": 50,
         "decay_interval": 4,
@@ -31,7 +31,7 @@ DEFAULTS = {
         "max_outgoing": 14,
     },
     "medium": {
-        "sibling_weight": 0.5,
+        "sibling_weight": 0.25,
         "promotion_threshold": 2,
         "decay_half_life": 80,
         "decay_interval": 10,
@@ -41,7 +41,7 @@ DEFAULTS = {
         "max_outgoing": 20,
     },
     "large": {
-        "sibling_weight": 0.70,
+        "sibling_weight": 0.30,
         "promotion_threshold": 4,
         "decay_half_life": 120,
         "decay_interval": 12,
@@ -742,9 +742,13 @@ def measure_health(graph: Graph, state: MitosisState, query_stats: dict[str, Any
     )
 
 
-def autotune(graph: Graph, health: GraphHealth) -> list[Adjustment]:
+MIN_QUERIES_FOR_TIER_TARGETS = 100  # Don't flag dormant/reflex on young graphs
+
+
+def autotune(graph: Graph, health: GraphHealth, query_count: int = 0) -> list[Adjustment]:
     """Suggest configuration changes based on measured graph health."""
     del graph
+    young_graph = query_count < MIN_QUERIES_FOR_TIER_TARGETS
 
     adjustments: list[Adjustment] = []
 
@@ -810,9 +814,9 @@ def autotune(graph: Graph, health: GraphHealth) -> list[Adjustment]:
             )
         )
 
-    # dormant_pct
+    # dormant_pct — skip on young graphs (edges haven't had time to decay)
     min_dormant, max_dormant = HEALTH_TARGETS["dormant_pct"]
-    if (health.dormant_pct < (min_dormant or 0.0)) and not cross_file_low:
+    if (health.dormant_pct < (min_dormant or 0.0)) and not cross_file_low and not young_graph:
         adjustments.append(
             Adjustment(
                 metric="dormant_pct",
@@ -839,9 +843,9 @@ def autotune(graph: Graph, health: GraphHealth) -> list[Adjustment]:
             )
         )
 
-    # reflex_pct
+    # reflex_pct — skip on young graphs (edges haven't had time to compile)
     min_reflex, max_reflex = HEALTH_TARGETS["reflex_pct"]
-    if health.reflex_pct < (min_reflex or 0.0):
+    if health.reflex_pct < (min_reflex or 0.0) and not young_graph:
         adjustments.append(
             Adjustment(
                 metric="reflex_pct",
@@ -1150,7 +1154,9 @@ def self_tune(
         if tune_memory is not None:
             tune_memory.update(TuneHistory(records=completed_records))
 
-    adjustments = autotune(graph, health)
+    # Estimate total queries from cycle number (each cycle ≈ maintenance_interval queries)
+    estimated_total_queries = cycle_number * 10
+    adjustments = autotune(graph, health, query_count=estimated_total_queries)
     adjustments = _filter_adjustments(adjustments, tune_memory)
     effective_max = 1 if tune_memory is not None else safety_bounds.max_adjustments_per_cycle
     changes = apply_adjustments(

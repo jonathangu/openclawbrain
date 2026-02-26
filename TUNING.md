@@ -21,7 +21,7 @@ This file lists the knobs currently covered by runtime autotuning.
 | `skip_factor` (`SynaptogenesisConfig.skip_factor`) | `0.9` | Constant skip penalty multiplier for candidate routing. |
 | `dormant_threshold` (`SynaptogenesisConfig.dormant_threshold`) | `0.1` | Fixed tier boundary for dormant visibility. |
 | `reflex_threshold` (`SynaptogenesisConfig.reflex_threshold`) | `0.9` | Fixed tier boundary for reflex (auto-follow) edges. |
-| `sibling_weight` (`MitosisConfig.sibling_weight`) | Workspace-derived default | Warm-start behavior only; not autotuned. |
+| `sibling_weight` (`MitosisConfig.sibling_weight`) | `0.25` | Start low — edges earn weight through co-firing. |
 | `max_outgoing` (`SynaptogenesisConfig.max_outgoing`) | Workspace-derived default | Structural limit; not autotuned. |
 
 `self_tune()` flow: `measure_health()` → `autotune()` → `apply_adjustments()`.

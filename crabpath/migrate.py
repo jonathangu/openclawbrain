@@ -382,7 +382,7 @@ def migrate(
     # 2. Bootstrap
     graph = Graph()
     mit_state = MitosisState()
-    mit_config = config.mitosis_config or MitosisConfig(sibling_weight=0.65)
+    mit_config = config.mitosis_config or MitosisConfig(sibling_weight=0.25)
     syn_state = SynaptogenesisState()
 
     results = bootstrap_workspace(
