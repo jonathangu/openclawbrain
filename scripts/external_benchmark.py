@@ -6,6 +6,7 @@ from __future__ import annotations
 import json
 import math
 import random
+from itertools import combinations
 from dataclasses import dataclass
 from pathlib import Path
 from typing import Callable
@@ -23,6 +24,7 @@ from crabpath.legacy.activation import activate, learn as _learn  # noqa: E402
 SEED = 2026
 TOP_K = 5
 METRICS = ("recall@2", "recall@5", "precision@2", "precision@5", "ndcg@5", "mrr@5")
+LEARNING_CURVE_WINDOW = 10
 RESULTS_PATH = Path("scripts/external_benchmark_results.json")
 HOTPOT_DATASET = Path("scripts/hotpot_subset_100.json")
 
@@ -105,6 +107,54 @@ def _normalize_metrics(ranking: list[str], gold: list[str]) -> dict[str, float]:
         "precision@5": precision5,
         "ndcg@5": ndcg5,
         "mrr@5": mrr5,
+    }
+
+
+def _window_mean(values: list[float]) -> float:
+    return sum(values) / len(values) if values else 0.0
+
+
+def _build_learning_graph(questions: list[dict]) -> Graph:
+    graph = Graph()
+    seen_contexts: dict[str, str] = {}
+    question_contexts: list[list[str]] = []
+
+    for item in questions:
+        titles = []
+        seen = set()
+        for title, text in item.get("contexts", []):
+            if title in seen:
+                continue
+            seen.add(title)
+            titles.append(title)
+            seen_contexts.setdefault(title, text or "")
+        question_contexts.append(titles)
+
+    for title, text in seen_contexts.items():
+        graph.add_node(Node(id=title, content=text))
+
+    for titles in question_contexts:
+        for source, target in combinations(titles, 2):
+            graph.add_edge(Edge(source=source, target=target, weight=0.5))
+            graph.add_edge(Edge(source=target, target=source, weight=0.5))
+
+    return graph
+
+
+def _graph_window_stats(graph: Graph, initial_edge_weights: dict[tuple[str, str], float]) -> dict[str, int | float]:
+    edges = graph.edges()
+    edge_count = len(edges)
+    inhibitory = sum(1 for edge in edges if edge.weight < 0.0)
+    avg_weight = (sum(edge.weight for edge in edges) / edge_count) if edge_count else 0.0
+    changed = sum(
+        1
+        for edge in edges
+        if initial_edge_weights.get((edge.source, edge.target), 0.5) != edge.weight
+    )
+    return {
+        "inhibitory_edges": inhibitory,
+        "avg_weight": avg_weight,
+        "changed_edges": changed,
     }
 
 
@@ -340,6 +390,102 @@ def _run_retrieval_suite(
         method_metric_map[name] = stat.metrics
 
     return method_metric_map, method_query_results
+
+
+def _run_learning_curve(
+    questions: list[dict],
+) -> tuple[dict[str, object], list[dict[str, object]], dict[str, object]]:
+    graph = _build_learning_graph(questions)
+    initial_edge_weights = {
+        (edge.source, edge.target): edge.weight for edge in graph.edges()
+    }
+
+    warm_window = []
+    window_bm25_metrics: dict[str, list[float]] = {
+        metric: [] for metric in ("recall@2", "recall@5", "ndcg@5", "mrr@5")
+    }
+    window_crab_metrics: dict[str, list[float]] = {
+        metric: [] for metric in ("recall@2", "recall@5", "ndcg@5", "mrr@5")
+    }
+    query_results: list[dict[str, object]] = []
+    window_summaries: list[dict[str, object]] = []
+
+    for idx, query_item in enumerate(questions, 1):
+        question = str(query_item.get("question", ""))
+        query_id = str(query_item.get("id", ""))
+        gold = list(query_item.get("gold", []))
+
+        bm25_ranking = _bm25_ranking(graph, question)
+        bm25_metrics = _normalize_metrics(bm25_ranking, gold)
+        selected_bm25 = bm25_ranking[:TOP_K]
+
+        crab_ranking, activation_result = _activation_ranking(graph, question)
+        crab_metrics = _normalize_metrics(crab_ranking, gold)
+        selected_crab = crab_ranking[:TOP_K]
+
+        outcome = _learn_outcome(selected_crab, gold)
+        if outcome != 0.0:
+            _learn(graph=graph, result=activation_result, outcome=outcome, rate=0.1)
+
+        per_query = {
+            "query_num": idx,
+            "query_id": query_id,
+            "query": question,
+            "expected_nodes": gold,
+            "bm25": {
+                "selected_nodes": selected_bm25,
+                "all_nodes": bm25_ranking,
+                "metrics": bm25_metrics,
+            },
+            "crabpath": {
+                "selected_nodes": selected_crab,
+                "all_nodes": crab_ranking,
+                "metrics": crab_metrics,
+                "reward": outcome,
+            },
+        }
+        query_results.append(per_query)
+
+        for metric in window_bm25_metrics:
+            window_bm25_metrics[metric].append(float(bm25_metrics[metric]))
+        for metric in window_crab_metrics:
+            window_crab_metrics[metric].append(float(crab_metrics[metric]))
+
+        if idx % LEARNING_CURVE_WINDOW == 0:
+            start = idx - (LEARNING_CURVE_WINDOW - 1)
+            graph_stats = _graph_window_stats(graph, initial_edge_weights)
+            window = {
+                "window": f"{start}-{idx}",
+                "method_metrics": {
+                    "BM25": {
+                        metric: _window_mean(window_bm25_metrics[metric])
+                        for metric in window_bm25_metrics
+                    },
+                    "CrabPath": {
+                        metric: _window_mean(window_crab_metrics[metric])
+                        for metric in window_crab_metrics
+                    },
+                },
+                "graph": graph_stats,
+                "query_results": [
+                    q for q in query_results if start <= q["query_num"] <= idx
+                ],
+            }
+            window_summaries.append(window)
+            window_bm25_metrics = {metric: [] for metric in window_bm25_metrics}
+            window_crab_metrics = {metric: [] for metric in window_crab_metrics}
+
+    final_stats = _graph_window_stats(graph, initial_edge_weights)
+    final_summary = {
+        "window_count": len(window_summaries),
+        "window_size": LEARNING_CURVE_WINDOW,
+        "final_graph": final_stats,
+    }
+
+    return {
+        "windows": window_summaries,
+        "summary": final_summary,
+    }, query_results, final_summary
 
 
 def _build_beir_corpus() -> list[dict]:
@@ -702,11 +848,43 @@ def _format_output_section(
     return out
 
 
+def _print_learning_curve_table(learning_curve: dict[str, object]) -> None:
+    windows = learning_curve.get("windows", []) if isinstance(learning_curve, dict) else []
+    if not isinstance(windows, list):
+        return
+
+    print("")
+    print("Window | BM25 R@2 | CrabPath R@2 | BM25 R@5 | CrabPath R@5 | Inhibitory Edges | Avg Weight")
+    print("-" * 104)
+    for item in windows:
+        if not isinstance(item, dict):
+            continue
+        metrics = item.get("method_metrics", {})
+        if not isinstance(metrics, dict):
+            continue
+        bm25 = metrics.get("BM25", {})
+        crab = metrics.get("CrabPath", {})
+        graph = item.get("graph", {})
+        if not isinstance(bm25, dict) or not isinstance(crab, dict) or not isinstance(graph, dict):
+            continue
+
+        print(
+            f"{item.get('window', ''):6} | "
+            f"{float(bm25.get('recall@2', 0.0)):8.3f} | "
+            f"{float(crab.get('recall@2', 0.0)):11.3f} | "
+            f"{float(bm25.get('recall@5', 0.0)):8.3f} | "
+            f"{float(crab.get('recall@5', 0.0)):12.3f} | "
+            f"{int(graph.get('inhibitory_edges', 0)):15d} | "
+            f"{float(graph.get('avg_weight', 0.0)):10.4f}"
+        )
+
+
 def main() -> None:
     _seed_everything(SEED)
 
     hotpot_questions = _read_hotpot(HOTPOT_DATASET)
     hotpot_metrics, hotpot_query_results = _run_retrieval_suite(hotpot_questions)
+    learning_curve, learning_query_results, learning_summary = _run_learning_curve(hotpot_questions)
 
     beir_cases = _build_beir_corpus()
     beir_metrics, beir_query_results = _run_retrieval_suite_beir(beir_cases)
@@ -714,6 +892,7 @@ def main() -> None:
     print(_render_latex_table("HotpotQA Comparison", hotpot_metrics))
     print("")
     print(_render_latex_table("BEIR-style Frozen Benchmark", beir_metrics))
+    _print_learning_curve_table(learning_curve)
 
     payload = {
         "seed": SEED,
@@ -725,6 +904,13 @@ def main() -> None:
             "query_count": len(beir_cases),
             "domain_count": 3,
             "methods": _format_output_section(beir_metrics, beir_query_results),
+        },
+        "learning_curve": {
+            "query_count": len(hotpot_questions),
+            "window_size": LEARNING_CURVE_WINDOW,
+            "summary": learning_summary,
+            "windows": learning_curve.get("windows", []),
+            "per_query": learning_query_results,
         },
     }
     RESULTS_PATH.write_text(json.dumps(payload, indent=2), encoding="utf-8")
