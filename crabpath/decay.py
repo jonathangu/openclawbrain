@@ -9,14 +9,34 @@ from .graph import Graph
 @dataclass
 class DecayConfig(ConfigBase):
     half_life_turns: int = 80  # 80 turns to halve (sim-validated baseline)
+    # Backward-compatible decay-rate override:
+    #   0.0 => no decay, 1.0 => instant decay.
+    # When set, this overrides half_life_turns.
+    decay_rate: float | None = None
     min_weight: float = -5.0
     max_weight: float = 5.0
 
 
-def decay_factor(half_life_turns: int, elapsed_turns: int | float) -> float:
+def decay_factor(
+    half_life_turns: int,
+    elapsed_turns: int | float,
+    *,
+    decay_rate: float | None = None,
+) -> float:
     """Return decay multiplier for a given half-life and elapsed turns."""
+    if elapsed_turns <= 0:
+        return 1.0
+
+    if decay_rate is not None:
+        rate = _as_float(decay_rate)
+        if rate <= 0.0:
+            return 1.0
+        if rate >= 1.0:
+            return 0.0
+        return max(0.0, 1.0 - rate) ** _as_float(elapsed_turns)
+
     if half_life_turns <= 0:
-        return 0.0
+        return 1.0
     if elapsed_turns <= 0:
         return 1.0
     return 2 ** (-_as_float(elapsed_turns) / _as_float(half_life_turns))
@@ -24,7 +44,9 @@ def decay_factor(half_life_turns: int, elapsed_turns: int | float) -> float:
 
 def decay_weight(weight: float | int, elapsed_turns: int | float, config: DecayConfig) -> float:
     """Return a clamped decayed weight after the configured number of turns."""
-    decayed = _as_float(weight) * decay_factor(config.half_life_turns, elapsed_turns)
+    decayed = _as_float(weight) * decay_factor(
+        config.half_life_turns, elapsed_turns, decay_rate=config.decay_rate
+    )
     if decayed < config.min_weight:
         decayed = config.min_weight
     if decayed > config.max_weight:
@@ -55,7 +77,7 @@ def apply_decay(
     if config is None:
         config = DecayConfig()
 
-    factor = decay_factor(config.half_life_turns, turns_elapsed)
+    factor = decay_factor(config.half_life_turns, turns_elapsed, decay_rate=config.decay_rate)
     if factor == 1.0:
         return {}
 

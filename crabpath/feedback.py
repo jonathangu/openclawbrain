@@ -349,12 +349,7 @@ def snapshot_path(graph_path: str | None = None) -> Path:
             candidate = Path(env_path).expanduser()
             if ".." in candidate.parts:
                 raise ValueError("path traversal detected")
-            resolved = candidate.resolve()
-            if ".." in resolved.parts:
-                raise ValueError("path traversal detected")
-            if not resolved.parent.exists():
-                raise ValueError("snapshot directory does not exist")
-            return resolved
+            return candidate
         except (OSError, ValueError):
             return Path(DEFAULT_SNAPSHOT_PATH)
     if graph_path:
@@ -372,7 +367,11 @@ def _load_raw_snapshots(path: Path) -> list[dict[str, Any]]:
             line = line.strip()
             if not line:
                 continue
-            records.append(json.loads(line))
+            try:
+                record = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+            records.append(record)
     return records
 
 
@@ -401,7 +400,9 @@ def map_correction_to_snapshot(
     """
     path = snapshot_path()
     records = _load_raw_snapshots(path)
-    candidates = [r for r in records if r.get("session_id") == session_id]
+    candidates = [
+        r for r in records if str(r.get("session_id", "")) == session_id and not bool(r.get("attributed"))
+    ]
     if not candidates:
         return None
 
@@ -443,6 +444,8 @@ def auto_outcome(corrections_count: int, turns_since_fire: int) -> float:
     """
     if corrections_count > 0:
         return -1.0
+    if int(turns_since_fire) <= 0:
+        return 0.0
     if turns_since_fire >= 5:
         return 0.3
     return 0.0

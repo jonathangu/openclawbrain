@@ -320,10 +320,17 @@ class Router:
     ) -> RouterDecision:
         del previous_reasoning  # reserved for future reasoning carry-over
 
-        candidates = self._coerce_candidates(candidate_nodes)
-        if not candidates:
-            raise RouterError("No candidates provided")
+        if not candidate_nodes:
+            return RouterDecision(
+                chosen_target="",
+                rationale="No candidate nodes provided.",
+                confidence=0.0,
+                tier=tier,
+                alternatives=[],
+                raw={"method": "empty"},
+            )
 
+        candidates = self._coerce_candidates(candidate_nodes)
         if not self.client or self.config.fallback_behavior == "heuristic":
             return self.fallback([(c.node_id, c.weight) for c in candidates], tier)
 
@@ -505,10 +512,47 @@ class Router:
     def fallback(self, candidates: list[tuple[str, float]], tier: str) -> RouterDecision:
         normalized = self._coerce_candidates(candidates)
         if not normalized:
-            raise RouterError("Cannot fallback with empty candidate list")
+            return RouterDecision(
+                chosen_target="",
+                rationale="No candidates available.",
+                confidence=0.0,
+                tier=tier,
+                alternatives=[],
+                raw={
+                    "method": "fallback-empty",
+                    "tier": tier,
+                    "target": "",
+                    "confidence": 0.0,
+                    "rationale": "No candidates available.",
+                    "alternatives": [],
+                },
+            )
 
         ranked = sorted(normalized, key=lambda c: (c.weight, c.node_id), reverse=True)
         chosen = ranked[0]
+
+        if chosen.weight <= 0:
+            return RouterDecision(
+                chosen_target="",
+                rationale=(
+                    f"Fallback suppressed routing because all candidates are non-positive "
+                    f"in tier '{tier}'."
+                ),
+                confidence=0.0,
+                tier=tier,
+                alternatives=[(candidate.node_id, candidate.weight) for candidate in ranked],
+                raw={
+                    "method": "fallback-nonpositive",
+                    "tier": tier,
+                    "target": "",
+                    "confidence": 0.0,
+                    "rationale": (
+                        f"Fallback suppressed routing because all candidates are non-positive "
+                        f"in tier '{tier}'."
+                    ),
+                    "alternatives": [(candidate.node_id, candidate.weight) for candidate in ranked],
+                },
+            )
 
         alternatives = [(candidate.node_id, candidate.weight) for candidate in ranked[1:]]
 

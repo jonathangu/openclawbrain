@@ -56,6 +56,167 @@ def _is_system_noise(text: str) -> bool:
     noise_prefixes = ("system:", "[system", "assistant:", "[assistant", "tool:", "[tool")
     return lowered.startswith(noise_prefixes) or len(lowered) < 3
 
+
+def _read_workspace_text(path: Path) -> str | None:
+    """Read plain text files safely, skipping unsupported source files."""
+    if path.is_symlink() or not path.is_file():
+        return None
+    if path.name.startswith("."):
+        return None
+
+    try:
+        raw = path.read_bytes()
+    except OSError:
+        return None
+
+    if b"\x00" in raw:
+        return None
+
+    try:
+        return raw.decode("utf-8")
+    except UnicodeDecodeError:
+        return None
+
+
+def _extract_query_text(value: Any) -> str:
+    if isinstance(value, str):
+        return value.strip()
+    if not isinstance(value, (list, tuple)):
+        if not isinstance(value, dict):
+            return ""
+
+        text = value.get("text")
+        if isinstance(text, str):
+            return text.strip()
+
+        if "content" in value:
+            return _extract_query_text(value["content"])
+        if "query" in value:
+            return _extract_query_text(value["query"])
+
+        return ""
+
+    parts: list[str] = []
+    for item in value:
+        if isinstance(item, str):
+            if item:
+                parts.append(item.strip())
+            continue
+        if isinstance(item, dict):
+            if "text" in item:
+                text = item.get("text")
+                if isinstance(text, str) and text.strip():
+                    parts.append(text.strip())
+                    continue
+            if "content" in item:
+                text = _extract_query_text(item.get("content"))
+                if text:
+                    parts.append(text)
+            if "message" in item:
+                text = _extract_query_text(item.get("message"))
+                if text:
+                    parts.append(text)
+
+    return " ".join(part for part in parts if part)
+
+
+def _coerce_message_payload(message: Any) -> dict[str, Any] | None:
+    if isinstance(message, dict):
+        return message
+    if not isinstance(message, str):
+        return None
+
+    try:
+        parsed = json.loads(message)
+        if isinstance(parsed, dict):
+            return parsed
+    except json.JSONDecodeError:
+        pass
+
+    try:
+        parsed = ast.literal_eval(message)
+    except (ValueError, SyntaxError):
+        return None
+
+    return parsed if isinstance(parsed, dict) else None
+
+
+def _extract_query_from_record(record: dict[str, Any]) -> str:
+    if not isinstance(record, dict):
+        return ""
+
+    if record.get("type") == "message":
+        message = record.get("message")
+        if isinstance(message, dict):
+            query = _extract_query_from_record(message)
+            if query:
+                return query
+
+        if isinstance(message, list):
+            query = _extract_query_text(message)
+            if query:
+                return query
+
+        message_payload = _coerce_message_payload(message)
+        if message_payload is not None:
+            query = _extract_query_from_record(message_payload)
+            if query:
+                return query
+
+        if isinstance(message, str):
+            trimmed = message.strip()
+            if trimmed.startswith(("{", "[")) and trimmed.endswith(("}", "]")):
+                return ""
+
+            query = _extract_query_text(message)
+            if query:
+                return query
+
+    role = str(record.get("role", "")).lower()
+    if role and role != "user":
+        return ""
+
+    if isinstance(record.get("query"), str):
+        query = record["query"].strip()
+        if query:
+            return query
+
+    if "content" in record:
+        content = record.get("content")
+        query = _extract_query_text(content)
+        if query:
+            return query
+
+    message = record.get("message")
+    if message is not None:
+        message_payload = _coerce_message_payload(message)
+        if message_payload is not None:
+            query = _extract_query_from_record(message_payload)
+            if query:
+                return query
+
+    if isinstance(record.get("messages"), list):
+        for item in record["messages"]:
+            if not isinstance(item, dict):
+                continue
+            if str(item.get("role", "")).lower() != "user":
+                continue
+            query = _extract_query_text(item)
+            if query:
+                return query
+
+    if isinstance(record.get("text"), str):
+        query = record["text"].strip()
+        if query:
+            return query
+
+    if isinstance(record.get("body"), str):
+        query = record["body"].strip()
+        if query:
+            return query
+
+    return ""
+
 # ---------------------------------------------------------------------------
 # Configuration
 # ---------------------------------------------------------------------------
@@ -119,8 +280,8 @@ def gather_files(
         p = workspace / fname
         if p.exists():
             key = fname.replace(".md", "").lower().replace("/", "-")
-            content = p.read_text()
-            if content.strip():
+            content = _read_workspace_text(p)
+            if content and content.strip():
                 files[key] = content
 
     # Memory files
@@ -129,8 +290,8 @@ def gather_files(
         if memory_dir.exists():
             for p in sorted(memory_dir.glob("*.md")):
                 key = f"memory-{p.stem}"
-                content = p.read_text()
-                if content.strip() and len(content) > 100:
+                content = _read_workspace_text(p)
+                if content and content.strip() and len(content) > 100:
                     files[key] = content
 
     # Doc files
@@ -139,8 +300,8 @@ def gather_files(
         if docs_dir.exists():
             for p in sorted(docs_dir.glob("*.md")):
                 key = f"docs-{p.stem}"
-                content = p.read_text()
-                if content.strip() and len(content) > 100:
+                content = _read_workspace_text(p)
+                if content and content.strip() and len(content) > 100:
                     files[key] = content
 
     return files
@@ -163,35 +324,6 @@ def parse_session_logs(
     queries = []
     skipped_records = 0
 
-    def _extract_message_text(value: Any) -> str:
-        if isinstance(value, str):
-            return value.strip()
-        if not isinstance(value, list):
-            return ""
-
-        parts: list[str] = []
-        for block in value:
-            if not isinstance(block, dict):
-                continue
-            text = block.get("text")
-            if isinstance(text, str):
-                parts.append(text.strip())
-        return " ".join(part for part in parts if part)
-
-    def _extract_query_from_record(record: dict[str, Any]) -> str:
-        role = str(record.get("role", ""))
-        content = record.get("content", "")
-
-        if role == "user" and content:
-            text = _extract_message_text(content)
-            if text:
-                return text
-
-        query = record.get("query", "")
-        if isinstance(query, str):
-            return query.strip()
-        return ""
-
     for path in log_paths:
         p = Path(path).expanduser()
         if not p.exists():
@@ -204,72 +336,44 @@ def parse_session_logs(
                     if not line:
                         continue
 
-                    # Try JSONL
-                    extracted = False
-                    is_json = False
+                    # Try JSONL first.
                     try:
                         record = json.loads(line)
-                        is_json = True
-                        if not isinstance(record, dict):
-                            raise ValueError("Session log JSON records must be objects")
+                        if isinstance(record, dict):
+                            if str(record.get("type", "")).lower() in {
+                                "session",
+                                "model_change",
+                                "thinking_level_change",
+                                "custom",
+                            }:
+                                continue
 
-                        # OpenClaw transcript format: type='message'
-                        # with nested message dict.
-                        if record.get("type") == "message":
-                            message = record.get("message")
-                            if isinstance(message, dict):
-                                query = _extract_query_from_record(message)
-                            elif isinstance(message, str):
-                                try:
-                                    message_payload = json.loads(message)
-                                except json.JSONDecodeError:
-                                    try:
-                                        message_payload = ast.literal_eval(message)
-                                    except (ValueError, SyntaxError) as inner_exc:
-                                        raise ValueError(
-                                            "Unable to decode OpenClaw message payload"
-                                        ) from inner_exc
-                                if not isinstance(message_payload, dict):
-                                    raise ValueError("OpenClaw message payload must be a dict")
-                                query = _extract_query_from_record(message_payload)
-                            else:
-                                raise ValueError("OpenClaw message record missing message payload")
-
-                            if query and len(query) > 5 and not _is_system_noise(query):
+                            query = _extract_query_from_record(record)
+                            if (
+                                query
+                                and len(query) > 5
+                                and not _is_system_noise(query)
+                            ):
                                 queries.append(query[:500])
-                            extracted = True
                             continue
 
-                        # Skip other OpenClaw record types (session,
-                        # model_change, thinking_level_change, custom, etc.)
-                        if record.get("type") in (
-                            "session",
-                            "model_change",
-                            "thinking_level_change",
-                            "custom",
-                        ):
-                            continue
-
-                        query = _extract_query_from_record(record)
-                        if query and len(query) > 5:
-                            candidate = query
-                            if not _is_system_noise(candidate):
-                                queries.append(candidate[:500])
-                                extracted = True
+                        skipped_records += 1
+                        continue
                     except json.JSONDecodeError:
-                        is_json = False
-                    except (KeyError, ValueError):
+                        # Fall back to plain text when the line is clearly text.
+                        if line.startswith(("{", "[")):
+                            skipped_records += 1
+                            continue
+
+                        if len(line) > 5 and not line.startswith("#"):
+                            queries.append(line[:500])
+                        continue
+                    except (TypeError, ValueError):
                         skipped_records += 1
                         continue
 
-                    # Plain text fallback — only for non-JSON lines
-                    if (
-                        not extracted
-                        and not is_json
-                        and len(line) > 5
-                        and not line.startswith("#")
-                    ):
-                        queries.append(line[:500])
+                    if len(queries) >= max_queries:
+                        break
 
         except OSError:
             continue

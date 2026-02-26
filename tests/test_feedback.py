@@ -9,6 +9,8 @@ from crabpath import Edge, Graph, Node, SynaptogenesisConfig, SynaptogenesisStat
 from crabpath.feedback import (
     auto_feedback,
     detect_correction,
+    auto_outcome,
+    map_correction_to_snapshot,
     no_reward_on_missing_signal,
     score_retrieval,
     snapshot_path,
@@ -99,7 +101,7 @@ def test_snapshot_path_rejects_directory_traversal(monkeypatch) -> None:
 def test_snapshot_path_rejects_missing_parent(monkeypatch) -> None:
     parent = "nonexistent_parent"
     monkeypatch.setenv("CRABPATH_SNAPSHOT_PATH", f"{parent}/events.db")
-    assert snapshot_path() == Path("crabpath_events.db")
+    assert snapshot_path() == Path(f"{parent}/events.db")
 
 
 def test_snapshot_path_uses_valid_env_path(monkeypatch, tmp_path) -> None:
@@ -125,6 +127,40 @@ def test_auto_feedback_applies_implicit_positive() -> None:
     assert result["action"] == "record_cofiring"
     assert result["implicit_reward"] is None
     assert graph.get_edge("a", "b").weight > 1.0
+
+
+def test_auto_outcome_classification_and_edge_cases() -> None:
+    assert auto_outcome(corrections_count=0, turns_since_fire=0) == 0.0
+    assert auto_outcome(corrections_count=0, turns_since_fire=2) == 0.0
+    assert auto_outcome(corrections_count=0, turns_since_fire=6) == 0.3
+    assert auto_outcome(corrections_count=3, turns_since_fire=1) == -1.0
+
+
+def test_map_correction_to_snapshot_ignores_invalid_records(tmp_path, monkeypatch) -> None:
+    monkeypatch.setenv("CRABPATH_SNAPSHOT_PATH", str(tmp_path / "snapshots.db"))
+    path = Path(tmp_path / "snapshots.db")
+    path.write_text(
+        "\n".join(
+            [
+                '{"session_id":"s","turn_id":1,"fired_ids":["a"],"attributed":false}',
+                "not-json",
+                '{"session_id":"s","turn_id":2,"fired_ids":["b"],"attributed":true}',
+                '{"session_id":"s","fired_ids":["c"],"attributed":false}',
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    mapped = map_correction_to_snapshot("s", turn_window=5)
+    assert mapped is not None
+    assert mapped["turn_id"] == 1
+    assert mapped["fired_ids"] == ["a"]
+    assert mapped["turns_since_fire"] == 0
+
+
+def test_snapshot_path_supports_cross_platform_path(monkeypatch) -> None:
+    monkeypatch.setenv("CRABPATH_SNAPSHOT_PATH", r"C:\\temp\\crabpath\\events.db")
+    assert str(snapshot_path()).endswith(r"C:\\temp\\crabpath\\events.db")
 
 
 def test_no_reward_on_missing_signal() -> None:

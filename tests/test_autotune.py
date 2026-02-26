@@ -98,6 +98,60 @@ def test_measure_health_uses_graph_state_and_query_stats():
     assert health.orphan_nodes == 0
 
 
+def test_measure_health_empty_graph_returns_zeroed_metrics():
+    graph = Graph()
+    health = measure_health(graph, MitosisState(), {"fired_counts": []})
+
+    assert health.avg_nodes_fired_per_query == 0.0
+    assert health.cross_file_edge_pct == 0.0
+    assert health.dormant_pct == 0.0
+    assert health.reflex_pct == 0.0
+    assert health.context_compression == 0.0
+    assert health.proto_promotion_rate == 0.0
+    assert health.reconvergence_rate == 0.0
+    assert health.orphan_nodes == 0
+
+
+def test_measure_health_no_edges_returns_zero_percentages():
+    graph = Graph()
+    graph.add_node(Node(id="file_a::a", content="alpha"))
+    graph.add_node(Node(id="file_b::b", content="beta"))
+
+    health = measure_health(graph, MitosisState(), {"avg_nodes_fired_per_query": 3.2})
+
+    assert health.cross_file_edge_pct == 0.0
+    assert health.dormant_pct == 0.0
+    assert health.reflex_pct == 0.0
+    assert health.avg_nodes_fired_per_query == 3.2
+
+
+def test_measure_health_all_inhibitory_edges():
+    graph = Graph()
+    graph.add_node(Node(id="file_a::a", content="alpha"))
+    graph.add_node(Node(id="file_a::b", content="beta"))
+    graph.add_node(Node(id="file_b::c", content="gamma"))
+    graph.add_edge(Edge(source="file_a::a", target="file_a::b", weight=-0.4))
+    graph.add_edge(Edge(source="file_b::c", target="file_a::b", weight=-0.7))
+
+    health = measure_health(graph, MitosisState(families={"x": ["file_a::a"]}), {})
+
+    assert health.dormant_pct == 0.0
+    assert health.reflex_pct == 0.0
+    assert health.cross_file_edge_pct == 50.0
+
+
+def test_health_targets_have_typical_metric_ranges():
+    for key, target in HEALTH_TARGETS.items():
+        assert isinstance(target, tuple) and len(target) == 2
+        min_v, max_v = target
+        if key.endswith("_pct") or key in {"context_compression", "cross_file_edge_pct"}:
+            if min_v is not None:
+                assert 0.0 <= min_v <= 100.0
+            if max_v is not None:
+                assert 0.0 <= max_v <= 100.0
+        assert min_v is None or max_v is None or min_v <= max_v
+
+
 def test_compute_window_stats_tracks_last_fired_counts_and_delta_totals():
     current_stats = {
         "fired_counts": [1, 2, 3, 4],

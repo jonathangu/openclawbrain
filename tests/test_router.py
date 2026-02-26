@@ -91,6 +91,64 @@ def test_select_fallback_returns_top_candidates():
     assert "node-c" not in selected  # Below threshold
 
 
+def test_decide_next_uses_temperature_when_llm_client_configured():
+    captured = {}
+
+    class OpenAIClient:
+        def __init__(self) -> None:
+            self.chat = self
+            self.completions = self
+            self.create_called = False
+
+        def create(self, **kwargs):
+            captured.update(kwargs)
+            return type(
+                "Response",
+                (),
+                {"choices": [type("Choice", (), {"message": type("Msg", (), {"content": '{"target":"node-a","confidence":0.9,"rationale":"ok"}'})()})]},
+            )()
+
+    client = OpenAIClient()
+
+    router = Router(
+        config=RouterConfig(temperature=0.17, fallback_behavior="llm"),
+        client=client,
+    )
+
+    router.decide_next(
+        query="test",
+        current_node_id="node-a",
+        candidate_nodes=[("node-a", 0.8), ("node-b", 0.5)],
+        context={"node_summary": "summary"},
+        tier="habitual",
+    )
+
+    assert captured["model"] == "gpt-5-mini"
+    assert captured["temperature"] == 0.17
+
+
+def test_select_fallback_returns_empty_for_all_zero_weights():
+    router = Router()
+    candidates = [("node-a", 0.0, "one"), ("node-b", 0.0, "two")]
+    selected = router._select_fallback("query", candidates)
+    assert selected == []
+
+
+def test_decide_next_empty_candidates_returns_empty_decision():
+    router = Router()
+    decision = router.decide_next(
+        query="query",
+        current_node_id="node-a",
+        candidate_nodes=[],
+        context={"node_summary": "summary"},
+        tier="habitual",
+    )
+
+    assert decision.chosen_target == ""
+    assert decision.confidence == 0.0
+    assert decision.alternatives == []
+
+
 def test_select_fallback_uses_relative_threshold():
     router = Router()
     candidates = [

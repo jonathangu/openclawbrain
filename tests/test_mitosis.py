@@ -152,6 +152,14 @@ def test_split_with_llm_fallback_on_exception():
     assert len(sections) >= 2
 
 
+def test_split_with_llm_timeout_uses_fallback():
+    def timeout_llm(s, u):
+        raise TimeoutError("llm timeout")
+
+    sections = split_with_llm(SAMPLE_CONTENT, timeout_llm)
+    assert len(sections) >= 2
+
+
 # ---------------------------------------------------------------------------
 # Tests: fallback_split (structural, no count)
 # ---------------------------------------------------------------------------
@@ -455,6 +463,39 @@ def test_bootstrap_workspace():
     assert g.edge_count > 0
     assert "soul" in state.families
     assert "tools" in state.families
+
+
+def test_bootstrap_workspace_empty_dir(tmp_path):
+    g = Graph()
+    state = MitosisState()
+
+    results = bootstrap_workspace(g, {}, _mock_llm_split, state)
+
+    assert results == []
+    assert g.node_count == 0
+    assert g.edge_count == 0
+    assert len(state.families) == 0
+
+
+def test_bootstrap_tracks_split_history():
+    g = Graph()
+    state = MitosisState()
+
+    bootstrap_workspace(
+        g,
+        {"soul": SAMPLE_CONTENT},
+        _mock_llm_split,
+        state,
+    )
+
+    parent_id = "soul"
+    assert parent_id in state.families
+    assert state.generations[parent_id] == 1
+
+    chunks = state.families[parent_id]
+    assert chunks
+    for chunk_id in chunks:
+        assert state.chunk_to_parent[chunk_id] == parent_id
 
 
 # ---------------------------------------------------------------------------

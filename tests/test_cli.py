@@ -170,6 +170,139 @@ def test_snapshot_and_feedback_roundtrip(tmp_path: Path) -> None:
     assert graph.get_edge("a", "a").weight == 0.5
 
 
+def test_cli_query_learn_query_cycle(tmp_path: Path) -> None:
+    graph_path = tmp_path / "graph.json"
+    index_path = tmp_path / "index.json"
+
+    graph = Graph()
+    graph.add_node(Node(id="deploy", content="Deploy to production safely"))
+    graph.add_node(Node(id="rollback", content="Rollback procedure during deployment"))
+    graph.add_edge(Edge(source="deploy", target="rollback", weight=1.0))
+    graph.save(str(graph_path))
+    index = EmbeddingIndex()
+    index.vectors = {"deploy": [1.0], "rollback": [1.0]}
+    index.save(str(index_path))
+
+    first = _run_cli(
+        [
+            "query",
+            "deployment rollback",
+            "--graph",
+            str(graph_path),
+            "--index",
+            str(index_path),
+            "--explain",
+        ]
+    )
+    assert first.returncode == 0
+    first_payload = _load_json_output(first.stdout)
+    fired_ids = [item["id"] for item in first_payload["fired"]]
+    assert fired_ids
+
+    learn = _run_cli(
+        [
+            "learn",
+            "--graph",
+            str(graph_path),
+            "--outcome",
+            "1.0",
+            "--fired-ids",
+            ",".join(fired_ids),
+        ]
+    )
+    assert learn.returncode == 0
+
+    second = _run_cli(
+        [
+            "query",
+            "deployment rollback",
+            "--graph",
+            str(graph_path),
+            "--index",
+            str(index_path),
+        ]
+    )
+    assert second.returncode == 0
+    second_payload = _load_json_output(second.stdout)
+    assert len(second_payload["fired"]) >= 1
+
+    updated_graph = Graph.load(str(graph_path))
+    assert updated_graph.get_edge("deploy", "rollback").weight >= 1.0
+
+
+def test_init_query_explain_learn_health_cycle(tmp_path: Path) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "AGENTS.md").write_text("Use safe deployment patterns.", encoding="utf-8")
+    (workspace / "SOUL.md").write_text("I am Atlas Harbor operator.")
+    (workspace / "TOOLS.md").write_text("Use deploy tool for release.")
+    (workspace / "USER.md").write_text("operators ask about rollback and deployment.")
+    (workspace / "MEMORY.md").write_text("Past incidents involved rollback.")
+
+    data_dir = tmp_path / "data"
+    init = _run_cli(
+        [
+            "init",
+            "--workspace",
+            str(workspace),
+            "--data-dir",
+            str(data_dir),
+        ],
+        env={"OPENAI_API_KEY": ""},
+    )
+    assert init.returncode == 0
+    payload = _load_json_output(init.stdout)
+    graph_path = Path(payload["graph_path"])
+    index_path = Path(payload["embeddings_path"])
+    assert graph_path.exists()
+
+    query = _run_cli(
+        [
+            "query",
+            "How do we do rollback during deployment?",
+            "--graph",
+            str(graph_path),
+            "--index",
+            str(index_path),
+            "--explain",
+        ],
+        env={"OPENAI_API_KEY": ""},
+    )
+    assert query.returncode == 0
+    query_payload = _load_json_output(query.stdout)
+    fired_ids = [item["id"] for item in query_payload["fired"]]
+    assert fired_ids
+    assert "explain" in query_payload
+
+    learn = _run_cli(
+        [
+            "learn",
+            "--graph",
+            str(graph_path),
+            "--outcome",
+            "0.75",
+            "--fired-ids",
+            ",".join(fired_ids),
+        ],
+        env={"OPENAI_API_KEY": ""},
+    )
+    assert learn.returncode == 0
+
+    health = _run_cli(
+        [
+            "health",
+            "--graph",
+            str(graph_path),
+            "--json",
+        ],
+        env={"OPENAI_API_KEY": ""},
+    )
+    assert health.returncode == 0
+    health_payload = _load_json_output(health.stdout)
+    assert health_payload["query_stats_provided"] is False
+    assert health_payload["ok"] is True
+
+
 def test_stats_outputs_graph_summary(tmp_path: Path) -> None:
     graph_path = tmp_path / "graph.json"
 

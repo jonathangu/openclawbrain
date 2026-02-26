@@ -86,6 +86,27 @@ def test_gather_without_memory(tmp_path):
     assert not any(k.startswith("memory-2") for k in files)
 
 
+def test_gather_files_ignores_symlinks_hidden_and_binary(tmp_path):
+    ws = _make_workspace(tmp_path)
+    hidden = ws / ".secret.md"
+    hidden.write_text("should be ignored", encoding="utf-8")
+
+    binary = ws / "binary.md"
+    binary.write_bytes(b"\\x00\\x01binary")
+
+    memory_file = ws / "memory" / "secret.md"
+    memory_file.write_text("x" * 50, encoding="utf-8")
+
+    link_target = ws / "SOUL.md"
+    link = ws / "linked.md"
+    link.symlink_to(link_target)
+
+    files = gather_files(ws)
+    assert "secret" not in files
+    assert "binary" not in files
+    assert "linked" not in files
+
+
 # ---------------------------------------------------------------------------
 # Tests: parse_session_logs
 # ---------------------------------------------------------------------------
@@ -124,6 +145,30 @@ def test_parse_plain_text_logs(tmp_path):
     log.write_text("how do I use codex\nwhat are the safety rules\n")
     queries = parse_session_logs([log])
     assert len(queries) == 2
+
+
+def test_parse_session_logs_multiple_openclaw_formats(tmp_path):
+    log = tmp_path / "openclaw_formats.jsonl"
+    records = [
+        {"role": "user", "content": "role/content user query"},
+        {"type": "message", "message": "{'role': 'user', 'content': 'nested user query'}"},
+        {"type": "message", "message": {"role": "user", "content": "dict message user query"}},
+        {"type": "message", "message": {"role": "assistant", "content": "should ignore"}},
+    ]
+    log.write_text("\n".join(json.dumps(r) for r in records), encoding="utf-8")
+
+    queries = parse_session_logs([log])
+    assert queries == ["role/content user query", "nested user query", "dict message user query"]
+
+
+def test_parse_session_logs_empty_and_malformed(tmp_path):
+    empty = tmp_path / "empty.jsonl"
+    empty.write_text("", encoding="utf-8")
+    assert parse_session_logs([empty]) == []
+
+    malformed = tmp_path / "bad.jsonl"
+    malformed.write_text("{\"bad\": }\n{\"role\": \"user\", \"content\": \"good query\"}", encoding="utf-8")
+    assert parse_session_logs([malformed]) == ["good query"]
 
 
 def test_parse_max_queries(tmp_path):

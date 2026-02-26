@@ -50,3 +50,51 @@ def test_apply_decay_all_edges():
     assert expected_factor == 0.25
     assert abs(graph.get_edge("a", "b").weight - 0.25) < 1e-9
     assert abs(graph.get_edge("a", "c").weight + 0.5) < 1e-9
+
+
+def test_decay_respects_boundaries_and_sign():
+    graph = Graph()
+    graph.add_node(Node(id="a", content="A"))
+    graph.add_node(Node(id="b", content="B"))
+    graph.add_edge(Edge(source="a", target="b", weight=10.0))
+    graph.add_edge(Edge(source="b", target="a", weight=-10.0))
+
+    changed = apply_decay(
+        graph,
+        turns_elapsed=1,
+        config=DecayConfig(half_life_turns=1, min_weight=-0.5, max_weight=0.5),
+    )
+
+    assert changed["a->b"] == 0.5
+    assert changed["b->a"] == -0.5
+    assert graph.get_edge("a", "b").weight == 0.5
+    assert graph.get_edge("b", "a").weight == -0.5
+
+
+def test_decay_rate_zero_and_one():
+    graph = Graph()
+    graph.add_node(Node(id="a", content="A"))
+    graph.add_node(Node(id="b", content="B"))
+    graph.add_edge(Edge(source="a", target="b", weight=4.0))
+
+    no_decay = apply_decay(graph, turns_elapsed=10, config=DecayConfig(decay_rate=0.0))
+    assert no_decay == {}
+    assert graph.get_edge("a", "b").weight == 4.0
+
+    instant = apply_decay(
+        graph,
+        turns_elapsed=10,
+        config=DecayConfig(decay_rate=1.0),
+    )
+    assert instant["a->b"] == 0.0
+    assert graph.get_edge("a", "b").weight == 0.0
+
+
+def test_decay_large_time_gap():
+    graph = Graph()
+    graph.add_node(Node(id="a", content="A"))
+    graph.add_node(Node(id="b", content="B"))
+    graph.add_edge(Edge(source="a", target="b", weight=1.0))
+
+    apply_decay(graph, turns_elapsed=10000, config=DecayConfig(half_life_turns=1))
+    assert graph.get_edge("a", "b").weight < 1e-25

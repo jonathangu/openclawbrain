@@ -149,8 +149,8 @@ controller = MemoryController(
 
 # Query
 result = controller.query("deploy broke after config change")
-context = result.contents       # list of node contents
-guardrails = result.guardrails  # safety-relevant nodes
+context = result.context       # rendered context string
+context_chars = result.context_chars
 
 # Learn from outcome
 controller.learn(result, reward=1.0)  # or -1.0 for correction
@@ -182,12 +182,13 @@ The differentiator. When the user says "the codeword is elephant, NOT giraffe":
 
 ```python
 from crabpath.inhibition import apply_correction, is_inhibited
+from crabpath.inhibition import InhibitionConfig
 
 # After user correction
-apply_correction(graph, wrong_node_id="giraffe", correct_node_id="elephant")
+apply_correction(graph, trajectory=["giraffe", "elephant"], reward=-0.8, config=InhibitionConfig())
 
 # During routing
-if is_inhibited(graph, "giraffe", query_context):
+if is_inhibited(graph, "giraffe", "elephant"):
     # skip this node
 ```
 
