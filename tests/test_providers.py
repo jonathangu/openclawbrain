@@ -60,7 +60,8 @@ def test_auto_detect_respects_empty_api_keys(monkeypatch) -> None:
     )
 
     embedding_provider, router_provider = auto_detect_providers()
-    assert embedding_provider is None
+    assert embedding_provider is not None
+    assert embedding_provider.name == "tfidf-local"
     assert router_provider.name == "heuristic"
 
 

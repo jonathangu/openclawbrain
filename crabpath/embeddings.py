@@ -483,8 +483,8 @@ def auto_embed(
     provider = get_embedding_provider()
     if provider is None:
         raise RuntimeError(
-            "No embedding provider found. Tried: OPENAI, GEMINI, and Ollama. "
-            "Set OPENAI_API_KEY (pip install crabpath[openai]) or GEMINI/GOOGLE_API_KEY or run Ollama locally."
+            "Using local TF-IDF embeddings (no API key needed). "
+            "For better quality: pip install crabpath[openai]"
         )
 
     if provider.__class__.__name__ == "OpenAIEmbeddingProvider" and openai_model:

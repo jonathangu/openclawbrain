@@ -29,7 +29,7 @@ def auto_detect_providers() -> tuple[EmbeddingProvider | None, RouterProvider]:
     # 1) OpenAI
     # 2) Gemini
     # 3) Ollama
-    # 4) None / keyword-only
+    # 4) Local TF-IDF fallback
     if _env_has_value("OPENAI_API_KEY"):
         from .openai_provider import OpenAIEmbeddingProvider
 
@@ -54,6 +54,11 @@ def auto_detect_providers() -> tuple[EmbeddingProvider | None, RouterProvider]:
         candidate = _instantiate_router_provider(lambda: OllamaEmbeddingProvider())
         if isinstance(candidate, EmbeddingProvider):
             embedding_provider = candidate
+
+    if embedding_provider is None:
+        from .tfidf_provider import TfidfEmbeddingProvider
+
+        embedding_provider = TfidfEmbeddingProvider()
 
     # Routing priority:
     # 1) OpenAI

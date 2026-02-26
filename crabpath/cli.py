@@ -49,6 +49,7 @@ from .synaptogenesis import (
     record_correction,
 )
 from .providers import get_embedding_provider
+from .providers.tfidf_provider import TfidfEmbeddingProvider
 
 DEFAULT_GRAPH_PATH = "crabpath_graph.json"
 DEFAULT_INDEX_PATH = "crabpath_embeddings.json"
@@ -910,43 +911,46 @@ def cmd_init(args: argparse.Namespace) -> dict[str, Any]:
                 embed_callback = None
                 embeddings = None
             else:
+                embedding_provider = None
                 try:
-                    provider = get_embedding_provider(name=provider_name)
+                    embedding_provider = get_embedding_provider(name=provider_name)
                 except Exception as exc:
                     if provider_name == "auto":
                         warning = (
-                            "No embedding provider found. Using keyword-only mode. "
-                            "For better results: pip install crabpath[openai] and set OPENAI_API_KEY"
+                            "Using local TF-IDF embeddings (no API key needed). "
+                            "For better quality: pip install crabpath[openai]"
                         )
                         print(warning, file=sys.stderr)
                         if warning not in session_warnings:
                             session_warnings.append(warning)
-                        embed_fn = None
-                        embed_callback = None
-                        embeddings = None
+                        embedding_provider = TfidfEmbeddingProvider()
                     else:
                         raise CLIError(
                             f"No embedding provider found for --provider={provider_name}."
                         ) from exc
                 else:
-                    if provider is None:
+                    if embedding_provider is None and provider_name == "auto":
                         warning = (
-                            "No embedding provider found. Using keyword-only mode. "
-                            "For better results: pip install crabpath[openai] and set OPENAI_API_KEY"
+                            "Using local TF-IDF embeddings (no API key needed). "
+                            "For better quality: pip install crabpath[openai]"
                         )
                         print(warning, file=sys.stderr)
                         if warning not in session_warnings:
                             session_warnings.append(warning)
+                        embedding_provider = TfidfEmbeddingProvider()
+                    elif embedding_provider is None:
                         embed_fn = None
                         embed_callback = None
                         embeddings = None
                     else:
-                        embed_fn = provider.embed
+                        embed_fn = embedding_provider.embed
                         embeddings = EmbeddingIndex()
                         embed_callback = None
 
-                    if embed_fn is None:
-                        embeddings = None
+                if embed_fn is None:
+                    embed_fn = embedding_provider.embed if embedding_provider else None
+                    embeddings = EmbeddingIndex() if embed_fn is not None else None
+                    embed_callback = None
         graph, info = migrate(
             workspace_dir=workspace_dir,
             session_logs=session_logs,
@@ -967,6 +971,10 @@ def cmd_init(args: argparse.Namespace) -> dict[str, Any]:
 
         # Batch-embed all nodes at once (much faster than per-node upsert)
         if embeddings is not None and embed_fn is not None:
+            if isinstance(embedding_provider, TfidfEmbeddingProvider):
+                all_node_texts = [str(node.content) for node in graph.nodes()]
+                embedding_provider.fit(all_node_texts)
+
             embeddings.build(graph, embed_fn)
             embeddings.save(str(embed_path))
 
