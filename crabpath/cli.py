@@ -674,6 +674,10 @@ def cmd_query(args: argparse.Namespace) -> dict[str, Any]:
 
 def cmd_explain(args: argparse.Namespace) -> dict[str, Any] | str:
     graph = _load_graph(args.graph)
+    if getattr(args, "provider", "auto") in {"openai", "gemini", "ollama"}:
+        embed_fn = _safe_embed_fn(args.provider)
+        if embed_fn is None:
+            raise CLIError(f"No embedding provider found for --provider={args.provider}.")
     _load_index(args.index)
     trace = _explain_traversal(graph, args.query, DEFAULT_TOP_K)
     if args.json:
@@ -1364,6 +1368,15 @@ def _build_parser() -> JSONArgumentParser:
     explain.add_argument("query")
     explain.add_argument("--graph", default=DEFAULT_GRAPH_PATH)
     explain.add_argument("--index", default=DEFAULT_INDEX_PATH)
+    explain.add_argument(
+        "--provider",
+        default="auto",
+        choices=("openai", "gemini", "ollama", "heuristic", "auto"),
+        help=(
+            "Provider for embeddings. auto uses auto-detect. "
+            "heuristic uses keyword-only mode."
+        ),
+    )
     _add_json_flag(explain)
     explain.set_defaults(func=cmd_explain)
 

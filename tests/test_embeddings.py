@@ -217,3 +217,26 @@ def test_cosine_similarity():
     assert _cosine([1.0, 0.0], [0.0, 1.0]) == 0.0
     assert math.isclose(_cosine([1.0, 1.0], [1.0, 1.0]), 1.0)
     assert _cosine([0.0, 0.0], [1.0, 0.0]) == 0.0
+
+
+def test_seed_rejects_embedding_dimension_mismatch():
+    graph = Graph()
+    graph.add_node(Node(id="n1", content="alpha beta"))
+    graph.add_node(Node(id="n2", content="beta gamma"))
+
+    index = EmbeddingIndex()
+    index.build(graph, lambda batch: [[1.0, 0.0], [1.0, 0.0]])
+
+    with pytest.raises(ValueError, match="expected"):
+        index.seed("alpha", lambda batch: [[0.5]])
+
+
+def test_raw_scores_rejects_embedding_dimension_mismatch():
+    graph = Graph()
+    graph.add_node(Node(id="n1", content="alpha beta"))
+
+    index = EmbeddingIndex()
+    index.build(graph, lambda batch: [[1.0, 0.0]])
+
+    with pytest.raises(ValueError, match="expected"):
+        index.raw_scores("alpha", lambda batch: [[0.5]])

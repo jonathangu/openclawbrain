@@ -11,7 +11,8 @@ from .base import EmbeddingProvider, RouterProvider
 
 
 def _ensure_openai_key() -> None:
-    if not os.getenv("OPENAI_API_KEY"):
+    api_key = (os.getenv("OPENAI_API_KEY") or "").strip()
+    if not api_key:
         raise RuntimeError("OPENAI_API_KEY is required for OpenAI provider.")
 
 
@@ -45,6 +46,13 @@ def _candidate_pairs(
         candidate_pairs.append((candidate_id, candidate_weight))
 
     return candidate_pairs, current_node_id, str(context_summary or "")
+
+
+def _safe_branch_beam(value: Any) -> int:
+    try:
+        return max(1, int(value))
+    except (TypeError, ValueError):
+        return 5
 
 
 class OpenAIEmbeddingProvider(EmbeddingProvider):
@@ -119,10 +127,11 @@ class OpenAIRouterProvider(RouterProvider):
     ) -> dict[str, Any]:
         schema = schema or {}
         normalized, current_node_id, context_summary = _candidate_pairs(candidates)
+        branch_beam = _safe_branch_beam(schema.get("branch_beam", 5))
         decision = self.router.decide_next(
             query=query,
             current_node_id=str(schema.get("current_node_id", current_node_id)),
-            candidate_nodes=normalized[:max(1, int(schema.get("branch_beam", 5)))],
+            candidate_nodes=normalized[:branch_beam],
             context={
                 "node_summary": schema.get("node_summary", context_summary),
                 "current_node_summary": schema.get("current_node_summary", context_summary),

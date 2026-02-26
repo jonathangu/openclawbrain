@@ -91,7 +91,16 @@ class HeuristicRouter(RouterProvider):
                 "confidence": 0.0,
                 "rationale": "No candidates were available for heuristic routing.",
                 "tier": schema.get("tier", "heuristic"),
+                "provider": self.name,
                 "alternatives": [],
+                "raw": {
+                    "provider": self.name,
+                    "target": "",
+                    "confidence": 0.0,
+                    "rationale": "No candidates were available for heuristic routing.",
+                    "tier": schema.get("tier", "heuristic"),
+                    "alternatives": [],
+                },
             }
 
         ranked.sort(key=lambda item: item[1], reverse=True)
@@ -108,6 +117,15 @@ class HeuristicRouter(RouterProvider):
                 "Heuristic routing selected top weighted/token-overlap match."
             ),
             "tier": schema.get("tier", "heuristic"),
+            "provider": self.name,
             "alternatives": [[node_id, score] for node_id, score in top_candidates],
             "candidates": ranked,
+            "raw": {
+                "provider": self.name,
+                "target": str(target),
+                "confidence": confidence,
+                "rationale": "Heuristic routing selected top weighted/token-overlap match.",
+                "tier": schema.get("tier", "heuristic"),
+                "alternatives": [[node_id, score] for node_id, score in top_candidates],
+            },
         }

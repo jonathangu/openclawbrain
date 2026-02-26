@@ -301,6 +301,35 @@ def test_init_query_explain_learn_health_cycle(tmp_path: Path) -> None:
     assert health_payload["ok"] is True
 
 
+def test_explain_accepts_provider_flag(tmp_path: Path) -> None:
+    graph_path = tmp_path / "graph.json"
+    index_path = tmp_path / "index.json"
+
+    graph = Graph()
+    graph.add_node(Node(id="deploy", content="Deploy to production"))
+    graph.save(str(graph_path))
+    index = EmbeddingIndex()
+    index.vectors = {"deploy": [1.0, 0.0]}
+    index.save(str(index_path))
+
+    result = _run_cli(
+        [
+            "explain",
+            "How do we deploy?",
+            "--graph",
+            str(graph_path),
+            "--index",
+            str(index_path),
+            "--provider",
+            "heuristic",
+            "--json",
+        ],
+    )
+    assert result.returncode == 0
+    payload = _load_json_output(result.stdout)
+    assert payload["query"] == "How do we deploy?"
+
+
 def test_stats_outputs_graph_summary(tmp_path: Path) -> None:
     graph_path = tmp_path / "graph.json"
 

@@ -19,6 +19,8 @@ from typing import Any, Callable, Optional
 
 from .graph import Graph
 
+OPENAI_EMBEDDING_MAX_BATCH_SIZE = 2048
+
 
 @dataclass
 class EmbeddingIndex:
@@ -37,6 +39,7 @@ class EmbeddingIndex:
         expected_batch_size: int,
         *,
         context: str,
+        expected_dim: int | None = None,
     ) -> list[list[float]]:
         if not isinstance(vectors, list):
             raise TypeError(
@@ -47,11 +50,19 @@ class EmbeddingIndex:
                 f"embedding function returned {len(vectors)} vectors for {context}, "
                 f"expected {expected_batch_size}"
             )
+        observed_dim = expected_dim
         for idx, vector in enumerate(vectors):
             if not isinstance(vector, list):
                 raise TypeError(
                     f"embedding vector at position {idx} for {context} must be a list, "
                     f"got {type(vector).__name__}"
+                )
+            if observed_dim is None:
+                observed_dim = len(vector)
+            elif len(vector) != observed_dim:
+                raise ValueError(
+                    f"embedding vector at position {idx} for {context} has "
+                    f"dimension {len(vector)} but expected {observed_dim}"
                 )
             for value in vector:
                 if not isinstance(value, (int, float)):
@@ -62,10 +73,20 @@ class EmbeddingIndex:
         return vectors
 
     @staticmethod
-    def _single_vector(vectors: list[list[float]], *, context: str) -> list[float]:
+    def _single_vector(
+        vectors: list[list[float]],
+        *,
+        context: str,
+        expected_dim: int | None = None,
+    ) -> list[float]:
         if not vectors:
             raise ValueError(f"embedding function returned no vectors for {context}")
-        validated = EmbeddingIndex._validate_vector_batch(vectors, 1, context=context)
+        validated = EmbeddingIndex._validate_vector_batch(
+            vectors,
+            1,
+            context=context,
+            expected_dim=expected_dim,
+        )
         return validated[0]
 
     def build(
@@ -106,6 +127,7 @@ class EmbeddingIndex:
                 embed_fn(batch),
                 expected_batch_size=len(batch),
                 context=f"build batch {i}-{i + len(batch)}",
+                expected_dim=self.dim or None,
             )
             all_vectors.extend(vectors)
 
@@ -138,11 +160,20 @@ class EmbeddingIndex:
         if not self.vectors:
             return {}
 
-        q_vec = self._single_vector(embed_fn([query]), context=f"query seed: {query[:80]!r}")
+        q_vec = self._single_vector(
+            embed_fn([query]),
+            context=f"query seed: {query[:80]!r}",
+            expected_dim=self.dim or None,
+        )
 
         # Cosine similarity against all nodes
         scores = {}
         for node_id, node_vec in self.vectors.items():
+            if self.dim and len(node_vec) != self.dim:
+                raise ValueError(
+                    f"stored embedding dimension mismatch for node {node_id}: "
+                    f"expected {self.dim}, got {len(node_vec)}"
+                )
             sim = _cosine(q_vec, node_vec)
             if sim >= min_score:
                 scores[node_id] = sim
@@ -166,13 +197,17 @@ class EmbeddingIndex:
         _ = metadata
         if isinstance(content_or_vector, list):
             vector = self._validate_vector_batch(
-                [content_or_vector], expected_batch_size=1, context=f"upsert node_id={node_id}"
+                [content_or_vector],
+                expected_batch_size=1,
+                context=f"upsert node_id={node_id}",
+                expected_dim=self.dim or None,
             )[0]
         elif isinstance(content_or_vector, tuple):
             vector = self._validate_vector_batch(
                 [list(content_or_vector)],
                 expected_batch_size=1,
                 context=f"upsert node_id={node_id}",
+                expected_dim=self.dim or None,
             )[0]
         else:
             if embed_fn is None:
@@ -180,6 +215,7 @@ class EmbeddingIndex:
             vector = self._single_vector(
                 embed_fn([str(content_or_vector)]),
                 context=f"upsert node_id={node_id}",
+                expected_dim=self.dim or None,
             )
         self.vectors[node_id] = vector
         if vector:
@@ -199,9 +235,18 @@ class EmbeddingIndex:
         if not self.vectors:
             return []
 
-        q_vec = self._single_vector(embed_fn([query]), context=f"query raw_scores: {query[:80]!r}")
+        q_vec = self._single_vector(
+            embed_fn([query]),
+            context=f"query raw_scores: {query[:80]!r}",
+            expected_dim=self.dim or None,
+        )
         scores: list[tuple[str, float]] = []
         for node_id, node_vec in self.vectors.items():
+            if self.dim and len(node_vec) != self.dim:
+                raise ValueError(
+                    f"stored embedding dimension mismatch for node {node_id}: "
+                    f"expected {self.dim}, got {len(node_vec)}"
+                )
             scores.append((node_id, _cosine(q_vec, node_vec)))
 
         scores.sort(key=lambda item: item[1], reverse=True)
@@ -229,11 +274,19 @@ class EmbeddingIndex:
         idx = cls()
         idx.dim = data.get("dim", 0)
         idx.vectors = data.get("vectors", {})
+        if idx.dim <= 0 and isinstance(idx.vectors, dict):
+            inferred_dims = {
+                len(value) for value in idx.vectors.values() if isinstance(value, list)
+            }
+            if len(inferred_dims) == 1:
+                idx.dim = next(iter(inferred_dims))
         return idx
 
 
 def _cosine(a: list[float], b: list[float]) -> float:
     """Cosine similarity between two vectors."""
+    if len(a) != len(b):
+        raise ValueError("cosine vectors must have matching dimensions")
     dot = sum(x * y for x, y in zip(a, b))
     norm_a = math.sqrt(sum(x * x for x in a))
     norm_b = math.sqrt(sum(x * x for x in b))
@@ -259,9 +312,48 @@ def openai_embed(
 
     client = OpenAI()
 
+    def _status_code(exc: Exception) -> int | None:
+        status = getattr(exc, "status_code", None)
+        if isinstance(status, int):
+            return status
+        if isinstance(status, str) and status.isdigit():
+            return int(status)
+
+        response = getattr(exc, "response", None)
+        response_status = getattr(response, "status_code", None)
+        if isinstance(response_status, int):
+            return response_status
+        return None
+
+    def _embed_batch(batch: list[str]) -> list[list[float]]:
+        try:
+            response = client.embeddings.create(model=model, input=batch)
+        except Exception as exc:
+            status = _status_code(exc)
+            if status == 429:
+                raise ValueError(
+                    "OpenAI embeddings rate-limited (HTTP 429); retry to recover."
+                ) from exc
+            if status is not None and status >= 500:
+                raise ValueError(f"OpenAI embeddings HTTP {status}") from exc
+            raise ValueError(f"OpenAI embeddings request failed: {exc}") from exc
+
+        data = getattr(response, "data", None)
+        if not isinstance(data, list):
+            raise ValueError("OpenAI embeddings response missing data payload.")
+        return [list(map(float, item.embedding)) for item in data]
+
+
     def embed_fn(texts: list[str]) -> list[list[float]]:
-        resp = client.embeddings.create(model=model, input=texts)
-        return [d.embedding for d in resp.data]
+        vectors: list[list[float]] = []
+        if not isinstance(texts, list):
+            raise TypeError("texts must be a list of strings")
+
+        for i in range(0, len(texts), OPENAI_EMBEDDING_MAX_BATCH_SIZE):
+            batch = texts[i : i + OPENAI_EMBEDDING_MAX_BATCH_SIZE]
+            vectors.extend(_embed_batch(batch))
+
+        return vectors
 
     return embed_fn
 
@@ -272,7 +364,7 @@ def gemini_embed(
     """Returns an embed_fn that uses Google Gemini embeddings."""
     from google import generativeai as genai
 
-    api_key = os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")
+    api_key = (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY") or "").strip()
     if not api_key:
         raise RuntimeError("Gemini API key missing. Set GEMINI_API_KEY or GOOGLE_API_KEY.")
 
@@ -283,12 +375,27 @@ def gemini_embed(
     def embed_fn(texts: list[str]) -> list[list[float]]:
         vectors = []
         for text in texts:
-            result = genai.embed_content(
-                model=model_name,
-                content=text,
-                task_type="retrieval_document",
-            )
-            vectors.append([float(x) for x in result["embedding"]])
+            try:
+                result = genai.embed_content(
+                    model=model_name,
+                    content=text,
+                    task_type="retrieval_document",
+                )
+            except Exception as exc:
+                status = getattr(exc, "status", None)
+                if str(status) in {"500", "503"}:
+                    raise ValueError(
+                        f"Gemini embeddings service returned HTTP {status}"
+                    ) from exc
+                raise ValueError(f"Gemini embeddings request failed: {exc}") from exc
+
+            if not isinstance(result, dict):
+                raise ValueError(f"Gemini embed_content returned non-dict result: {result!r}")
+
+            embedding = result.get("embedding")
+            if not isinstance(embedding, (tuple, list)):
+                raise ValueError(f"Gemini response missing embedding: {result!r}")
+            vectors.append([float(x) for x in embedding])
         return vectors
 
     return embed_fn
@@ -323,13 +430,18 @@ def ollama_embed(
     endpoint = f"{base_url.rstrip('/')}/api/embeddings"
 
     # Verify service and model existence up front.
-    resp = requests.post(
-        endpoint,
-        json={"model": model, "prompt": "probe"},
-        timeout=1.5,
-    )
+    try:
+        resp = requests.post(
+            endpoint,
+            json={"model": model, "prompt": "probe"},
+            timeout=1.5,
+        )
+    except Exception as exc:
+        raise ValueError(
+            f"Ollama unavailable while verifying model '{model}' at {base_url}: {exc}"
+        ) from exc
     if resp.status_code != 200:
-        raise RuntimeError(
+        raise ValueError(
             f"Ollama returned HTTP {resp.status_code} for model '{model}' at {base_url}"
         )
 
@@ -337,12 +449,22 @@ def ollama_embed(
         vectors = []
         for text in texts:
             payload = {"model": model, "prompt": text}
-            response = requests.post(endpoint, json=payload, timeout=30)
-            response.raise_for_status()
-            result = response.json()
+            try:
+                response = requests.post(endpoint, json=payload, timeout=30)
+                response.raise_for_status()
+            except requests.RequestException as exc:
+                raise ValueError(f"Ollama request failed while embedding: {exc}") from exc
+            except Exception as exc:
+                raise ValueError(f"Ollama error while embedding: {exc}") from exc
+
+            try:
+                result = response.json()
+            except ValueError as exc:
+                raise ValueError(f"Ollama response was not valid JSON: {exc}") from exc
+
             embedding = result.get("embedding")
-            if embedding is None:
-                raise RuntimeError(f"Ollama response missing embedding: {result}")
+            if not isinstance(embedding, (tuple, list)):
+                raise ValueError(f"Ollama response missing embedding: {result}")
             vectors.append([float(x) for x in embedding])
         return vectors
 

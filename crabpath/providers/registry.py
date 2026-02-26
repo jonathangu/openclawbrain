@@ -15,6 +15,11 @@ def _instantiate_router_provider(factory: Any) -> RouterProvider | None:
         return None
 
 
+def _env_has_value(name: str) -> bool:
+    value = os.getenv(name)
+    return bool((value or "").strip())
+
+
 def auto_detect_providers() -> tuple[EmbeddingProvider | None, RouterProvider]:
     """Auto-detect best available providers."""
     embedding_provider: EmbeddingProvider | None = None
@@ -25,7 +30,7 @@ def auto_detect_providers() -> tuple[EmbeddingProvider | None, RouterProvider]:
     # 2) Gemini
     # 3) Ollama
     # 4) None / keyword-only
-    if os.getenv("OPENAI_API_KEY"):
+    if _env_has_value("OPENAI_API_KEY"):
         from .openai_provider import OpenAIEmbeddingProvider
 
         try:
@@ -33,7 +38,9 @@ def auto_detect_providers() -> tuple[EmbeddingProvider | None, RouterProvider]:
         except Exception:
             embedding_provider = None
 
-    if embedding_provider is None and (os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY")):
+    if embedding_provider is None and (
+        _env_has_value("GEMINI_API_KEY") or _env_has_value("GOOGLE_API_KEY")
+    ):
         from .gemini_provider import GeminiEmbeddingProvider
 
         try:

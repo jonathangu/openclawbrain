@@ -41,6 +41,13 @@ def _candidate_pairs(
     return candidate_pairs, current_node_id, str(context_summary or "")
 
 
+def _safe_branch_beam(value: Any) -> int:
+    try:
+        return max(1, int(value))
+    except (TypeError, ValueError):
+        return 5
+
+
 class OllamaEmbeddingProvider(EmbeddingProvider):
     name = "ollama"
 
@@ -101,18 +108,21 @@ class OllamaRouterProvider(RouterProvider):
         ).strip()
 
         endpoint = f"{self.base_url}/api/chat"
-        response = requests.post(
-            endpoint,
-            json={
-                "model": self.model,
-                "messages": [{"role": "user", "content": prompt}],
-                "stream": False,
-                "options": (
-                    {} if self.temperature is None else {"temperature": self.temperature}
-                ),
-            },
-            timeout=self.timeout_s,
-        )
+        try:
+            response = requests.post(
+                endpoint,
+                json={
+                    "model": self.model,
+                    "messages": [{"role": "user", "content": prompt}],
+                    "stream": False,
+                    "options": (
+                        {} if self.temperature is None else {"temperature": self.temperature}
+                    ),
+                },
+                timeout=self.timeout_s,
+            )
+        except requests.RequestException as exc:
+            raise RuntimeError(f"Ollama routing request failed: {exc}") from exc
         response.raise_for_status()
         result = response.json()
         message = result.get("message", {})
@@ -129,10 +139,11 @@ class OllamaRouterProvider(RouterProvider):
     ) -> dict[str, Any]:
         schema = schema or {}
         normalized, current_node_id, context_summary = _candidate_pairs(candidates)
+        branch_beam = _safe_branch_beam(schema.get("branch_beam", 5))
         decision = self.router.decide_next(
             query=query,
             current_node_id=str(schema.get("current_node_id", current_node_id)),
-            candidate_nodes=normalized[:max(1, int(schema.get("branch_beam", 5)))],
+            candidate_nodes=normalized[:branch_beam],
             context={
                 "node_summary": schema.get("node_summary", context_summary),
                 "current_node_summary": schema.get("current_node_summary", context_summary),
@@ -146,4 +157,5 @@ class OllamaRouterProvider(RouterProvider):
             "tier": decision.tier,
             "alternatives": decision.alternatives,
             "provider": self.name,
+            "raw": dict(decision.raw, provider=self.name),
         }
