@@ -9,6 +9,8 @@ import pytest
 from crabpath import Graph, Node
 from crabpath import embeddings as embeddings_lib
 from crabpath.providers.heuristic import HeuristicRouter
+from crabpath.providers.endpoint_provider import EndpointEmbeddingProvider, EndpointRouterProvider
+from crabpath.providers import registry
 from crabpath.providers.registry import auto_detect_providers
 
 
@@ -144,3 +146,25 @@ def test_ollama_embed_reports_disconnect(monkeypatch) -> None:
     monkeypatch.setattr(requests, "post", fail)
     with pytest.raises(ValueError, match="Ollama unavailable"):
         _ = embeddings_lib.ollama_embed()(["x"])
+
+
+def test_endpoint_providers_reject_non_http_urls() -> None:
+    with pytest.raises(ValueError, match="http or https"):
+        _ = EndpointEmbeddingProvider("file:///tmp/embeddings")
+
+    with pytest.raises(ValueError, match="http or https"):
+        _ = EndpointRouterProvider("ftp://localhost/v1/chat/completions")
+
+
+def test_auto_detect_ignores_invalid_embedding_endpoint_url(monkeypatch) -> None:
+    # Force discovery to avoid picking up ambient API keys or .env files.
+    monkeypatch.setenv("OPENAI_API_KEY", "   ")
+    monkeypatch.setenv("GEMINI_API_KEY", "   ")
+    monkeypatch.setenv("GOOGLE_API_KEY", "   ")
+    monkeypatch.setenv("CRABPATH_EMBEDDINGS_URL", "file:///tmp/embeddings")
+    monkeypatch.setattr(registry, "_try_find_key", lambda _: None)
+
+    provider, router = auto_detect_providers()
+    assert provider is not None
+    assert provider.name == "tfidf-local"
+    assert router.name == "heuristic"

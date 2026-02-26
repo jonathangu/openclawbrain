@@ -3,9 +3,24 @@
 from __future__ import annotations
 
 import json
+from urllib.parse import urlparse
 from typing import Any
 
 from .base import EmbeddingProvider, RouterProvider
+
+
+def _validate_endpoint_url(url: str, component: str) -> str:
+    """Validate user-supplied endpoint URLs.
+
+    We only allow HTTP(S) endpoints with explicit hosts. This prevents local and
+    file-path based injection through env vars.
+    """
+    parsed = urlparse(url)
+    if parsed.scheme.lower() not in {"http", "https"}:
+        raise ValueError(f"{component} URL must use http or https: {url!r}")
+    if not parsed.netloc:
+        raise ValueError(f"{component} URL must include a host: {url!r}")
+    return url
 
 
 class EndpointEmbeddingProvider(EmbeddingProvider):
@@ -14,7 +29,7 @@ class EndpointEmbeddingProvider(EmbeddingProvider):
     name = "endpoint"
 
     def __init__(self, url: str, token: str | None = None, model: str = "text-embedding-3-small") -> None:
-        self._url = url
+        self._url = _validate_endpoint_url(url, "Embedding endpoint")
         self._token = token
         self._model = model
         self._dim: int | None = None
@@ -53,7 +68,7 @@ class EndpointRouterProvider(RouterProvider):
     name = "endpoint"
 
     def __init__(self, url: str, token: str | None = None, model: str = "gpt-5-mini") -> None:
-        self._url = url
+        self._url = _validate_endpoint_url(url, "Router endpoint")
         self._token = token
         self._model = model
 
