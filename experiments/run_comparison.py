@@ -12,8 +12,8 @@ from typing import Any
 from crabpath.embeddings import EmbeddingIndex
 from crabpath.graph import Graph
 from crabpath.learning import LearningConfig, RewardSignal, make_learning_step
+from crabpath.lifecycle_sim import ScenarioStep, load_scenarios
 from crabpath.router import Router, RouterConfig
-from crabpath.simulator import ScenarioStep, load_scenarios
 from crabpath.traversal import TraversalConfig, traverse
 
 

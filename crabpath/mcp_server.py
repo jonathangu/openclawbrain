@@ -10,12 +10,12 @@ from pathlib import Path
 from typing import Any, Callable
 
 from ._structural_utils import count_cross_file_edges
-from .activation import Firing, activate
-from .activation import learn as _learn
 from .autotune import HEALTH_TARGETS, measure_health
 from .embeddings import EmbeddingIndex, openai_embed
 from .feedback import auto_outcome, map_correction_to_snapshot, snapshot_path
 from .graph import Edge, Graph
+from .legacy.activation import Firing, activate
+from .legacy.activation import learn as _learn
 from .lifecycle_sim import SimConfig, run_simulation, workspace_scenario
 from .migrate import MigrateConfig, fallback_llm_split
 from .migrate import migrate as run_migration

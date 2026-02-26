@@ -7,7 +7,7 @@ import importlib.util
 import json
 from pathlib import Path
 
-from crabpath.simulator import load_scenarios
+from crabpath.lifecycle_sim import load_scenarios
 
 
 def _discover_scenarios(scenarios_dir: Path) -> list[Path]:

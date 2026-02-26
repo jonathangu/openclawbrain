@@ -4,8 +4,7 @@ from pathlib import Path
 
 from crabpath.graph import Edge, Graph, Node
 from crabpath.learning import LearningConfig
-from crabpath.router import Router
-from crabpath.simulator import (
+from crabpath.lifecycle_sim import (
     EpisodeMetrics,
     ScenarioStep,
     load_scenarios,
@@ -13,6 +12,7 @@ from crabpath.simulator import (
     run_batch,
     run_episode,
 )
+from crabpath.router import Router
 from crabpath.traversal import TraversalConfig
 
 

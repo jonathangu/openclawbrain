@@ -15,15 +15,15 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
-from .activation import Firing
-from .activation import activate as _activate
-from .activation import learn as _learn
 from .decay import DecayConfig, apply_decay
 from .embeddings import EmbeddingIndex
 from .feedback import snapshot_path
 from .graph import Graph, Node
 from .learning import LearningConfig, LearningResult, RewardSignal, make_learning_step
-from .neurogenesis import (
+from .legacy.activation import Firing
+from .legacy.activation import activate as _activate
+from .legacy.activation import learn as _learn
+from .mitosis import (
     NeurogenesisConfig,
     assess_novelty,
     connect_new_node,

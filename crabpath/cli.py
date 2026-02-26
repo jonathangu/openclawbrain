@@ -17,12 +17,12 @@ from pathlib import Path
 from typing import Any, Callable, Optional
 
 from ._structural_utils import count_cross_file_edges
-from .activation import Firing
-from .activation import learn as _learn
 from .autotune import HEALTH_TARGETS, measure_health
 from .embeddings import EmbeddingIndex, auto_embed
 from .feedback import auto_outcome, map_correction_to_snapshot, snapshot_path
 from .graph import Graph
+from .legacy.activation import Firing
+from .legacy.activation import learn as _learn
 from .lifecycle_sim import SimConfig, run_simulation, workspace_scenario
 from .migrate import MigrateConfig, fallback_llm_split, migrate
 from .mitosis import MitosisConfig, MitosisState, split_node
@@ -412,7 +412,7 @@ def cmd_query(args: argparse.Namespace) -> dict[str, Any]:
     if not seeds:
         seeds = _keyword_seed(graph, args.query)
 
-    from .activation import activate
+    from .legacy.activation import activate
 
     firing = activate(
         graph,

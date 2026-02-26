@@ -424,13 +424,20 @@ class Router:
             return []
 
         if current_node_id and graph is not None:
-            filtered_candidates: list[tuple[str, float, str]] = []
-            for node_id, score, summary in candidates:
-                edge = graph.get_edge(current_node_id, node_id)
-                if edge is not None and edge.weight < 0:
-                    continue
-                filtered_candidates.append((node_id, score, summary))
-            candidates = filtered_candidates
+            from .inhibition import InhibitionConfig, is_inhibited, score_with_inhibition
+            summaries_by_id = {node_id: summary for node_id, _, summary in candidates}
+            scored_candidates = score_with_inhibition(
+                candidates=[(node_id, score) for node_id, score, _ in candidates],
+                graph=graph,
+                source_node=current_node_id,
+                config=InhibitionConfig(),
+            )
+            candidates = [
+                (node_id, score, summaries_by_id[node_id])
+                for node_id, score in scored_candidates
+                if node_id in summaries_by_id
+                and not is_inhibited(graph, current_node_id, node_id)
+            ]
 
         # Trivial query detection
         trivial = {"hello", "hi", "thanks", "yes", "no", "ok", "sure", "yeah", "bye"}

@@ -13,7 +13,7 @@ Paper: https://jonathangu.com/crabpath/
 
 __version__ = "1.0.0"
 
-from .activation import Firing, activate, learn
+from . import inhibition
 from .adapter import CrabPathAgent, OpenClawCrabPathAdapter
 from .autotune import (
     DEFAULTS,
@@ -40,15 +40,30 @@ from .feedback import (
     score_retrieval,
 )
 from .graph import Edge, Graph, Node
+from .inhibition import (
+    InhibitionConfig,
+    apply_correction,
+    get_inhibitory_edges,
+    inhibition_stats,
+    is_inhibited,
+    score_with_inhibition,
+)
+from .legacy.activation import Firing, activate, learn
 from .migrate import MigrateConfig, gather_files, migrate, parse_session_logs
 from .mitosis import (
+    BLOCKED_QUERIES,
     MergeResult,
     MitosisConfig,
     MitosisState,
+    NeurogenesisConfig,
     NeurogenesisResult,
+    NoveltyResult,
     SplitResult,
+    assess_novelty,
     bootstrap_workspace,
+    connect_new_node,
     create_node,
+    deterministic_auto_id,
     find_co_firing_families,
     merge_nodes,
     mitosis_maintenance,
@@ -56,14 +71,6 @@ from .mitosis import (
     should_merge,
     split_node,
     split_with_llm,
-)
-from .neurogenesis import (
-    BLOCKED_QUERIES,
-    NeurogenesisConfig,
-    NoveltyResult,
-    assess_novelty,
-    connect_new_node,
-    deterministic_auto_id,
 )
 from .shadow_logger import ShadowLog
 from .synaptogenesis import (
@@ -118,6 +125,13 @@ __all__ = [
     "decay_proto_edges",
     "classify_tier",
     "edge_tier_stats",
+    "InhibitionConfig",
+    "apply_correction",
+    "score_with_inhibition",
+    "is_inhibited",
+    "get_inhibitory_edges",
+    "inhibition_stats",
+    "inhibition",
     "MitosisConfig",
     "MitosisState",
     "SplitResult",

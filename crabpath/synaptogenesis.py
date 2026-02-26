@@ -30,6 +30,8 @@ from typing import Any
 
 from ._structural_utils import ConfigBase, JSONStateMixin, classify_edge_tier
 from .graph import Edge, Graph
+from .inhibition import InhibitionConfig
+from .inhibition import apply_correction as apply_inhibition_correction
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -264,61 +266,17 @@ def record_correction(
     reward: float = -1.0,
     config: SynaptogenesisConfig | None = None,
 ) -> list[dict[str, float | str | None]]:
-    """Apply inhibitory correction along a traversed trajectory.
-
-    Args:
-        graph: The graph to mutate.
-        trajectory: Ordered node IDs that were traversed.
-        reward: Only negative rewards apply correction.
-        config: Config.
-
-    Returns:
-        List of modified edges with before/after weights.
-    """
-    if reward >= 0.0:
-        return []
-
+    """Compatibility wrapper around inhibition.apply_correction."""
     config = config or SynaptogenesisConfig()
-    modified: list[dict[str, float | str | None]] = []
-
-    if len(trajectory) < 2:
-        return modified
-
-    for source, target in zip(trajectory, trajectory[1:]):
-        existing = graph.get_edge(source, target)
-        if existing is not None:
-            before = existing.weight
-            if existing.weight > 0:
-                existing.weight = existing.weight * config.correction_decay
-            else:
-                existing.weight = max(existing.weight - 0.1, config.negative_cap)
-            after = existing.weight
-            if after != before:
-                modified.append(
-                    {
-                        "source": source,
-                        "target": target,
-                        "before": before,
-                        "after": after,
-                    }
-                )
-            continue
-
-        before = None
-        new_edge = Edge(source=source, target=target, weight=-0.15, created_by="auto")
-        _add_edge_with_competition(graph, new_edge, config)
-        added = graph.get_edge(source, target)
-        if added is not None:
-            modified.append(
-                {
-                    "source": source,
-                    "target": target,
-                    "before": before,
-                    "after": added.weight,
-                }
-            )
-
-    return modified
+    return apply_inhibition_correction(
+        graph=graph,
+        trajectory=trajectory,
+        reward=reward,
+        config=InhibitionConfig(
+            correction_decay=config.correction_decay,
+            negative_cap=config.negative_cap,
+        ),
+    )
 
 
 def decay_proto_edges(
