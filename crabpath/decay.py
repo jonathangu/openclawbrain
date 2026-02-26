@@ -1,94 +1,41 @@
+"""Edge weight decay mechanics."""
+
 from __future__ import annotations
 
 from dataclasses import dataclass
 
-from ._structural_utils import ConfigBase
 from .graph import Graph
 
 
 @dataclass
-class DecayConfig(ConfigBase):
-    half_life_turns: int = 80  # 80 turns to halve (sim-validated baseline)
-    # Backward-compatible decay-rate override:
-    #   0.0 => no decay, 1.0 => instant decay.
-    # When set, this overrides half_life_turns.
-    decay_rate: float | None = None
-    min_weight: float = -5.0
-    max_weight: float = 5.0
+class DecayConfig:
+    """Decay control for weights in long-running graphs."""
+
+    half_life: int = 80
+    min_weight: float = 0.01
 
 
-def decay_factor(
-    half_life_turns: int,
-    elapsed_turns: int | float,
-    *,
-    decay_rate: float | None = None,
-) -> float:
-    """Return decay multiplier for a given half-life and elapsed turns."""
-    if elapsed_turns <= 0:
-        return 1.0
+def apply_decay(graph: Graph, config: DecayConfig | None = None) -> int:
+    """Apply exponential decay to all edges.
 
-    if decay_rate is not None:
-        rate = _as_float(decay_rate)
-        if rate <= 0.0:
-            return 1.0
-        if rate >= 1.0:
-            return 0.0
-        return max(0.0, 1.0 - rate) ** _as_float(elapsed_turns)
-
-    if half_life_turns <= 0:
-        return 1.0
-    if elapsed_turns <= 0:
-        return 1.0
-    return 2 ** (-_as_float(elapsed_turns) / _as_float(half_life_turns))
-
-
-def decay_weight(weight: float | int, elapsed_turns: int | float, config: DecayConfig) -> float:
-    """Return a clamped decayed weight after the configured number of turns."""
-    decayed = _as_float(weight) * decay_factor(
-        config.half_life_turns, elapsed_turns, decay_rate=config.decay_rate
-    )
-    if decayed < config.min_weight:
-        decayed = config.min_weight
-    if decayed > config.max_weight:
-        decayed = config.max_weight
-    return decayed
-
-
-def _as_float(value: object) -> float:
-    try:
-        return float(value)
-    except (TypeError, ValueError):
-        return 0.0
-
-
-def apply_decay(
-    graph: Graph, turns_elapsed: int | float, config: DecayConfig | None = None
-) -> dict[str, float]:
-    """Apply exponential decay to all non-protected edges.
-
-    Args:
-        graph: Graph to mutate in place.
-        turns_elapsed: Number of turns since last decay.
-        config: Optional override for decay config.
-
-    Returns:
-        Map of edge keys to new values for edges whose weight changed.
+    Each edge weight is multiplied by ``0.5 ** (1/half_life)``. Edges with absolute
+    weight below ``min_weight`` are set to ``0.0``.
     """
-    if config is None:
-        config = DecayConfig()
+    cfg = config or DecayConfig()
+    if cfg.half_life <= 0:
+        return 0
 
-    factor = decay_factor(config.half_life_turns, turns_elapsed, decay_rate=config.decay_rate)
-    if factor == 1.0:
-        return {}
+    factor = 0.5 ** (1.0 / cfg.half_life)
+    changed = 0
 
-    changed = {}
-    for edge in graph.edges():
-        if graph.is_node_protected(edge.source) or graph.is_node_protected(edge.target):
-            continue
-
-        decayed = decay_weight(edge.weight, turns_elapsed, config)
-        if decayed != edge.weight:
-            edge.weight = decayed
-            changed[f"{edge.source}->{edge.target}"] = decayed
+    for source_edges in graph._edges.values():
+        for edge in source_edges.values():
+            old = edge.weight
+            new = old * factor
+            if abs(new) < cfg.min_weight:
+                new = 0.0
+            if new != old:
+                edge.weight = new
+                changed += 1
 
     return changed

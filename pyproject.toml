@@ -1,63 +1,23 @@
-[build-system]
-requires = ["hatchling"]
-build-backend = "hatchling.build"
-
 [project]
 name = "crabpath"
-version = "2.4.0"
-description = "🦀 Memory store for AI agents that learns what to retrieve — and what to suppress — from experience."
-readme = "README.md"
-license = "Apache-2.0"
+version = "3.0.0"
+description = "Memory graph for AI agents that learns what to retrieve — and what to suppress."
 requires-python = ">=3.10"
-authors = [
-    { name = "Jonathan Gu", email = "jonathangu@gmail.com" },
-]
-keywords = ["ai", "agents", "memory", "graph", "neuron", "activation"]
+license = {text = "Apache-2.0"}
+authors = [{name = "Jonathan Gu", email = "jonathangu@gmail.com"}]
+readme = "README.md"
+keywords = ["ai", "agents", "memory", "graph", "retrieval"]
 classifiers = [
-    "Development Status :: 2 - Pre-Alpha",
+    "Development Status :: 4 - Beta",
     "Intended Audience :: Developers",
-    "Intended Audience :: Science/Research",
+    "Topic :: Scientific/Engineering :: Artificial Intelligence",
     "License :: OSI Approved :: Apache Software License",
     "Programming Language :: Python :: 3",
-    "Programming Language :: Python :: 3.10",
-    "Programming Language :: Python :: 3.11",
-    "Programming Language :: Python :: 3.12",
-    "Programming Language :: Python :: 3.13",
-    "Topic :: Scientific/Engineering :: Artificial Intelligence",
 ]
-
-# Zero required dependencies. Pure Python stdlib.
-# Embeddings and scoring require optional extras.
-
-[project.optional-dependencies]
-openai = ["openai>=1.0,<2.0"]
-google = ["google-generativeai>=0.3,<1.0"]
-cohere = ["cohere>=4.0,<5.0"]
-ollama = ["requests>=2.25,<3.0"]
-embeddings = ["openai>=1.0,<2.0"]  # most common provider
-all = ["openai>=1.0,<2.0", "google-generativeai>=0.3,<1.0", "cohere>=4.0,<5.0", "requests>=2.25,<3.0"]
-dev = [
-    "pytest>=7.0,<9.0",
-    "pytest-cov",
-    "ruff",
-    "mypy",
-]
-
-[project.urls]
-Homepage = "https://github.com/jonathangu/crabpath"
-Documentation = "https://jonathangu.com/crabpath/"
-Repository = "https://github.com/jonathangu/crabpath"
-Issues = "https://github.com/jonathangu/crabpath/issues"
 
 [project.scripts]
 crabpath = "crabpath.cli:main"
 
-[tool.ruff]
-line-length = 100
-target-version = "py310"
-
-[tool.ruff.lint]
-select = ["E", "F", "I", "N", "W"]
-
-[tool.pytest.ini_options]
-testpaths = ["tests"]
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
