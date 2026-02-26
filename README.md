@@ -70,7 +70,10 @@ crabpath embed --texts ./crabpath-data/texts.json --output ./crabpath-data/index
 # Option 2: Ollama (free, local)
 crabpath embed --texts ./crabpath-data/texts.json --output ./crabpath-data/index.json --provider ollama
 
-# Option 3: Custom embedding script
+# Option 3: Gemini (free tier, cloud)
+crabpath embed --texts ./crabpath-data/texts.json --output ./crabpath-data/index.json --provider gemini
+
+# Option 4: Custom embedding script
 crabpath embed --texts ./crabpath-data/texts.json --output ./crabpath-data/index.json --command 'python3 my_embed.py'
 
 # Or combine everything in one shot:
@@ -92,13 +95,13 @@ crabpath query 'how do I deploy' \
   --route-provider openai \
   --json
 
-# One command — auto-detects OpenAI/Ollama for embeddings + routing
+# One command — auto-detects OpenAI/Gemini/Ollama for embeddings + routing
 crabpath init --workspace ~/.openclaw/workspace \
   --output ~/.crabpath \
   --sessions ~/.openclaw/agents/main/sessions/
 ```
 
-No flags are needed when OPENAI_API_KEY is available via env var, `~/.env`, or the macOS keychain.
+No flags are needed when OPENAI_API_KEY or GEMINI_API_KEY is available via env var, `~/.env`, or the macOS keychain.
 
 # Learn from feedback
 crabpath learn --graph graph.json --outcome 1.0 --fired-ids node1,node2,node3

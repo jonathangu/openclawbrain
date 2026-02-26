@@ -6,11 +6,13 @@ import argparse
 import json
 import os
 import re
+from concurrent.futures import ThreadPoolExecutor, as_completed
 import shlex
 import subprocess
 import sys
 import tempfile
 import urllib.request
+import threading
 from pathlib import Path
 
 from .graph import Edge, Graph, Node
@@ -38,13 +40,14 @@ def _build_parser() -> argparse.ArgumentParser:
     init.add_argument("--sessions", required=False)
     embed_init_group = init.add_mutually_exclusive_group(required=False)
     embed_init_group.add_argument("--embed-command")
-    embed_init_group.add_argument("--embed-provider", choices=("openai", "ollama"))
-    init.add_argument("--route-provider", choices=("openai", "ollama"))
+    embed_init_group.add_argument("--embed-provider", choices=("openai", "ollama", "gemini"))
+    init.add_argument("--route-provider", choices=("openai", "ollama", "gemini"))
     init.add_argument("--llm-split", choices=("auto", "always", "never"), default="auto")
     init.add_argument("--llm-split-max-files", type=int, default=30)
     init.add_argument("--llm-split-min-chars", type=int, default=4000)
     init.add_argument("--llm-summary", choices=("auto", "always", "never"), default="auto")
     init.add_argument("--llm-summary-max-nodes", type=int, default=200)
+    init.add_argument("--parallel", type=int, default=None, help="max_workers for LLM calls (default: 8)")
     init.add_argument("--no-embed", action="store_true", help="skip embedding during init")
     init.add_argument("--no-route", action="store_true", help="skip route provider detection during init")
     init.add_argument("--json", action="store_true")
@@ -55,8 +58,9 @@ def _build_parser() -> argparse.ArgumentParser:
     embed.add_argument("--output", required=True)
     embed_provider_group = embed.add_mutually_exclusive_group(required=False)
     embed_provider_group.add_argument("--command", dest="embed_command")
-    embed_provider_group.add_argument("--provider", choices=("openai", "ollama"))
+    embed_provider_group.add_argument("--provider", choices=("openai", "ollama", "gemini"))
     embed.add_argument("--json", action="store_true")
+    embed.add_argument("--parallel", type=int, default=None, help="max_workers for embedding batches (default: 4)")
 
     query = sub.add_parser("query", help="seed from index and traverse graph")
     query.add_argument("text")
@@ -67,9 +71,10 @@ def _build_parser() -> argparse.ArgumentParser:
     query.add_argument("--json", action="store_true")
     query.add_argument("--query-vector", nargs="+", required=False)
     query.add_argument("--query-vector-stdin", action="store_true")
+    query.add_argument("--parallel", type=int, default=None, help="max_workers for LLM calls (default: 8)")
     query_route_group = query.add_mutually_exclusive_group(required=False)
     query_route_group.add_argument("--route-command")
-    query_route_group.add_argument("--route-provider", choices=("openai", "ollama"))
+    query_route_group.add_argument("--route-provider", choices=("openai", "ollama", "gemini"))
     query.add_argument("--no-route", action="store_true", help="skip LLM routing")
     query.add_argument("--auto-merge", action="store_true", help="auto-merge similar nodes after query")
     query.add_argument("--no-log", action="store_true", help="disable query/learn/replay/health logging")
@@ -85,13 +90,13 @@ def _build_parser() -> argparse.ArgumentParser:
 
     merge = sub.add_parser("merge", help="suggest and apply node merges")
     merge.add_argument("--graph", required=True)
-    merge.add_argument("--route-provider", choices=("openai", "ollama"))
+    merge.add_argument("--route-provider", choices=("openai", "ollama", "gemini"))
     merge.add_argument("--json", action="store_true")
     merge.add_argument("--no-log", action="store_true", help="disable query/learn/replay/health logging")
 
     connect = sub.add_parser("connect", help="suggest and apply cross-file edges")
     connect.add_argument("--graph", required=True)
-    connect.add_argument("--route-provider", choices=("openai", "ollama"))
+    connect.add_argument("--route-provider", choices=("openai", "ollama", "gemini"))
     connect.add_argument("--max-candidates", type=int, default=20)
     connect.add_argument("--json", action="store_true")
 
@@ -226,13 +231,17 @@ def _parse_score_payload(raw: str | None) -> dict[str, float] | None:
 
 def _auto_detect_provider(check_env_only: bool = False) -> str | None:
     """Auto-detect the best available provider.
-    Checks: OPENAI_API_KEY env, ~/.env, macOS keychain, then Ollama."""
+    Checks: OPENAI_API_KEY/GEMINI_API_KEY env, ~/.env/.zshrc/... keychain, then Ollama."""
     if os.getenv("CRABPATH_NO_AUTO_DETECT"):
         return None
 
     key = os.getenv("OPENAI_API_KEY", "").strip()
     if key:
         return "openai"
+
+    key = os.getenv("GEMINI_API_KEY", "").strip()
+    if key:
+        return "gemini"
 
     if check_env_only:
         return None
@@ -266,27 +275,39 @@ def _auto_detect_provider(check_env_only: bool = False) -> str | None:
         ".bashrc",
     ]
     home = Path.home()
-    for filename in env_candidates:
-        env_file = home / filename
-        if not env_file.exists():
-            continue
-        for line in env_file.read_text(encoding="utf-8").splitlines():
+    def _extract_key_from_file(path: Path, key_name: str) -> str | None:
+        if not path.exists():
+            return None
+        for line in path.read_text(encoding="utf-8").splitlines():
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-
             if line.startswith("export "):
                 line = line[len("export "):].strip()
-
-            if not line.startswith("OPENAI_API_KEY="):
+            if not line.startswith(f"{key_name}="):
                 continue
-
             raw_value = line.split("=", 1)[1].strip()
             raw_value = _strip_inline_comment(raw_value).strip()
-            value = raw_value.strip().strip('"').strip("'").strip()
+            value = raw_value.strip().strip('\"').strip("'").strip()
             if value:
-                os.environ["OPENAI_API_KEY"] = value
-                return "openai"
+                return value
+        return None
+
+    for filename in env_candidates:
+        env_file = home / filename
+        value = _extract_key_from_file(env_file, "OPENAI_API_KEY")
+        if value is None:
+            continue
+        os.environ["OPENAI_API_KEY"] = value
+        return "openai"
+
+    for filename in env_candidates:
+        env_file = home / filename
+        value = _extract_key_from_file(env_file, "GEMINI_API_KEY")
+        if value is None:
+            continue
+        os.environ["GEMINI_API_KEY"] = value
+        return "gemini"
 
     try:
         result = subprocess.run(
@@ -401,6 +422,22 @@ for line in sys.stdin:
     resp = requests.post('http://localhost:11434/api/embeddings', json={'model': 'nomic-embed-text', 'prompt': obj['text']})
     print(json.dumps({'id': obj['id'], 'embedding': resp.json()['embedding']}))
 """
+    if provider == "gemini":
+        return """import json
+import sys
+import google.generativeai as genai
+import os
+
+genai.configure(api_key=os.environ.get(\"GEMINI_API_KEY\", \"\"))
+
+for line in sys.stdin:
+    obj = json.loads(line)
+    result = genai.embed_content(
+        model=\"models/text-embedding-004\",
+        content=obj[\"text\"],
+    )
+    print(json.dumps({\"id\": obj[\"id\"], \"embedding\": result[\"embedding\"]}))
+"""
     raise SystemExit(f"unsupported provider: {provider}")
 
 
@@ -457,6 +494,29 @@ match = re.search(r'\\{[^}]+\\}', content)
 result = json.loads(match.group()) if match else {'selected': [c['id'] for c in req['candidates'][:3]]}
 print(json.dumps(result))
 """
+    if provider == "gemini":
+        return """import json
+import re
+import sys
+import google.generativeai as genai
+import os
+
+genai.configure(api_key=os.environ.get(\"GEMINI_API_KEY\", \"\"))
+model = genai.GenerativeModel(\"gemini-2.0-flash\")
+
+req = json.loads(sys.stdin.read())
+candidates = chr(10).join(f\"- {c['id']}: {c['content'][:100]}\" for c in req[\"candidates\"])
+prompt = f\"You are a memory router. Given a query and candidates, select which are most relevant. Return JSON: {{\\\"selected\\\": [\\\"id1\\\", \\\"id2\\\"]}}\\n\\nQuery: {req['query']}\\n\\nCandidates:\\n{candidates}\"
+
+response = model.generate_content(prompt)
+content = response.text
+try:
+    result = json.loads(content)
+except:
+    match = re.search(r\"\\\\{[^}]+\\\\}\", content)
+    result = json.loads(match.group()) if match else {\"selected\": [c[\"id\"] for c in req[\"candidates\"][:3]]}
+print(json.dumps(result))
+"""
     raise SystemExit(f"unsupported route provider: {provider}")
 
 
@@ -501,6 +561,19 @@ content = resp.json().get('response', '')
 match = re.search(r'\\{.*\\}', content, re.S)
 print(match.group(0) if match else content)
 """
+    if provider == "gemini":
+        return """import json
+import sys
+import google.generativeai as genai
+import os
+
+genai.configure(api_key=os.environ.get(\"GEMINI_API_KEY\", \"\"))
+model = genai.GenerativeModel(\"gemini-2.0-flash\")
+
+req = json.loads(sys.stdin.read())
+response = model.generate_content(f\"{req['system']}\\n\\n{req['user']}\")
+print(json.dumps({\"response\": response.text}))
+"""
     raise SystemExit(f"unsupported llm provider: {provider}")
 
 
@@ -521,6 +594,7 @@ def _run_llm_command(command: list[str], system_prompt: str, user_prompt: str) -
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        env=os.environ,
         text=True,
     )
     stdout_data, stderr_data = proc.communicate(json.dumps(payload))
@@ -556,6 +630,7 @@ def _run_route_command(
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        env=os.environ,
         text=True,
     )
     stdout_data, stderr_data = proc.communicate(json.dumps(payload))
@@ -611,6 +686,7 @@ def _run_embedding_batch(
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
         stderr=subprocess.PIPE,
+        env=os.environ,
         text=True,
     )
     stdout_data, stderr_data = proc.communicate(payload)
@@ -645,6 +721,7 @@ def _build_index_from_texts(
     texts: dict[str, str],
     embed_command: str | None,
     embed_provider: str | None,
+    parallel: int = 4,
 ) -> VectorIndex:
     text_items = list(texts.items())
     index = VectorIndex()
@@ -653,15 +730,38 @@ def _build_index_from_texts(
 
     command, temp_script = _build_embed_command(embed_command=embed_command, embed_provider=embed_provider)
     batches = _iter_text_batches(texts=text_items)
+    if parallel <= 0:
+        raise SystemExit("--parallel must be >= 1")
+    progress_lock = threading.Lock()
+    completed_batches = 0
+    total_batches = len(batches)
+    batch_results: list[dict[str, list[float]] | None] = [None] * total_batches
     try:
-        total_batches = len(batches)
-        for batch_index, batch in enumerate(batches, start=1):
-            print(
-                f"Embedding batch {batch_index}/{total_batches} ({min(batch_index * _EMBED_BATCH_SIZE, len(texts))}/{len(texts)})",
-                file=sys.stderr,
-            )
-            results = _run_embedding_batch(command=command, batch=batch)
-            for node_id, vector in results.items():
+        with ThreadPoolExecutor(max_workers=parallel) as executor:
+            futures = {}
+            for batch_index, batch in enumerate(batches, start=1):
+                futures[executor.submit(_run_embedding_batch, command=command, batch=batch)] = (batch_index, batch)
+
+            for future in as_completed(futures):
+                batch_index, _batch = futures[future]
+                try:
+                    batch_results[batch_index - 1] = future.result()
+                except (Exception, SystemExit) as exc:
+                    print(f"Warning: embedding batch {batch_index} failed: {exc}", file=sys.stderr)
+                    batch_results[batch_index - 1] = None
+                with progress_lock:
+                    completed_batches += 1
+                    completed = completed_batches
+                print(
+                    f"Embedding batch {completed}/{total_batches} "
+                    f"({min(completed * _EMBED_BATCH_SIZE, len(texts))}/{len(texts)})",
+                    file=sys.stderr,
+                )
+
+        for batch_result in batch_results:
+            if not batch_result:
+                continue
+            for node_id, vector in batch_result.items():
                 index.upsert(node_id, vector)
     finally:
         if temp_script is not None and Path(temp_script).exists():
@@ -734,6 +834,9 @@ def cmd_init(args: argparse.Namespace) -> int:
         raise SystemExit("--llm-split-min-chars must be >= 0")
     if args.llm_summary_max_nodes < 0:
         raise SystemExit("--llm-summary-max-nodes must be >= 0")
+    if args.parallel is not None and args.parallel <= 0:
+        raise SystemExit("--parallel must be >= 1")
+    llm_parallel = args.parallel if args.parallel is not None else 8
 
     llm_enabled = route_provider is not None
 
@@ -780,6 +883,7 @@ def cmd_init(args: argparse.Namespace) -> int:
             llm_fn=llm_fn if llm_enabled else None,
             should_use_llm_for_file=should_split_with_llm if llm_enabled else None,
             split_progress=split_progress_fn,
+            llm_parallelism=llm_parallel,
         )
 
         if args.sessions is not None:
@@ -804,9 +908,14 @@ def cmd_init(args: argparse.Namespace) -> int:
             else:
                 summary_targets = None
 
-            summaries = generate_summaries(graph, llm_fn=llm_fn, llm_node_ids=summary_targets)
-            for index, node in enumerate(graph.nodes(), start=1):
-                summary_progress_fn(index, len(graph.nodes()))
+            summaries = generate_summaries(
+                graph,
+                llm_fn=llm_fn,
+                llm_node_ids=summary_targets,
+                summary_progress=summary_progress_fn,
+                llm_parallelism=llm_parallel,
+            )
+            for node in graph.nodes():
                 node_summary = summaries.get(node.id)
                 if node_summary is not None:
                     node.summary = node_summary
@@ -832,6 +941,7 @@ def cmd_init(args: argparse.Namespace) -> int:
                 texts=texts,
                 embed_command=embed_command,
                 embed_provider=embed_provider,
+                parallel=4 if args.parallel is None else args.parallel,
             )
             index_path = output_dir / "index.json"
             index.save(str(index_path))
@@ -872,11 +982,15 @@ def cmd_embed(args: argparse.Namespace) -> int:
             raise SystemExit(
                 "provide either --command or --provider, or configure OPENAI_API_KEY / Ollama availability"
             )
+    if args.parallel is not None and args.parallel <= 0:
+        raise SystemExit("--parallel must be >= 1")
+    embed_parallel = args.parallel if args.parallel is not None else 4
 
     index = _build_index_from_texts(
         texts=texts,
         embed_command=args.embed_command,
         embed_provider=args.provider,
+        parallel=embed_parallel,
     )
     output_path = Path(args.output).expanduser()
     if output_path.suffix != ".json" and output_path.exists() is False:
@@ -896,6 +1010,8 @@ def cmd_query(args: argparse.Namespace) -> int:
     graph = _load_graph(args.graph)
     query_vec = _parse_vector(args.query_vector)
     using_stdin_vector = bool(args.query_vector_stdin)
+    if args.parallel is not None and args.parallel <= 0:
+        raise SystemExit("--parallel must be >= 1")
 
     if args.query_vector_stdin and args.query_vector:
         raise SystemExit("use only one of --query-vector or --query-vector-stdin")
