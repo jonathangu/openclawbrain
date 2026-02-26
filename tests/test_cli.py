@@ -31,27 +31,31 @@ def test_init_command_creates_workspace_graph(tmp_path, capsys) -> None:
     workspace = tmp_path / "ws"
     workspace.mkdir()
     (workspace / "a.md").write_text("## A\nHello", encoding="utf-8")
-    output = tmp_path / "graph.json"
+    output = tmp_path
 
     code = main(["init", "--workspace", str(workspace), "--output", str(output)])
     assert code == 0
-    data = json.loads(output.read_text(encoding="utf-8"))
-    assert "graph" in data
-    assert "node_texts" in data
-    assert len(data["graph"]["nodes"]) == 1
+    graph_path = output / "graph.json"
+    texts_path = output / "texts.json"
+    assert graph_path.exists()
+    assert texts_path.exists()
+    graph_data = json.loads(graph_path.read_text(encoding="utf-8"))
+    assert len(graph_data["nodes"]) == 1
+    texts_data = json.loads(texts_path.read_text(encoding="utf-8"))
+    assert len(texts_data) == 1
 
 
 def test_init_command_with_empty_workspace(tmp_path) -> None:
     workspace = tmp_path / "empty"
     workspace.mkdir()
-    output = tmp_path / "graph.json"
+    output = tmp_path / "out"
+    output.mkdir()
 
     code = main(["init", "--workspace", str(workspace), "--output", str(output)])
-    payload = json.loads(output.read_text(encoding="utf-8"))
-
     assert code == 0
-    assert payload["graph"]["nodes"] == []
-    assert payload["graph"]["edges"] == []
+    graph_data = json.loads((output / "graph.json").read_text(encoding="utf-8"))
+    assert graph_data["nodes"] == []
+    assert graph_data["edges"] == []
 
 
 def test_query_command_returns_json_with_fired_nodes(tmp_path, capsys) -> None:
@@ -88,9 +92,15 @@ def test_query_command_error_on_missing_graph(tmp_path) -> None:
         main(["query", "seed", "--graph", str(tmp_path / "missing.json"), "--index", str(index_path), "--query-vector", "1,0"])
 
 
-def test_query_command_non_vector_error() -> None:
-    with pytest.raises(SystemExit):
-        main(["query", "seed", "--graph", "dummy.json", "--index", "dummy_idx.json"])
+def test_query_command_keywords_without_index(tmp_path, capsys) -> None:
+    graph_path = tmp_path / "graph.json"
+    _write_graph_payload(graph_path)
+
+    code = main(["query", "alpha", "--graph", str(graph_path), "--top", "2", "--json"])
+    assert code == 0
+    out = json.loads(capsys.readouterr().out.strip())
+    assert out["fired"]
+    assert out["fired"][0] == "a"
 
 
 def test_learn_command_updates_graph_weights(tmp_path, capsys) -> None:
@@ -120,18 +130,28 @@ def test_health_command_outputs_all_metrics(tmp_path, capsys) -> None:
     code = main(["health", "--graph", str(graph_path), "--json"])
     assert code == 0
     payload = json.loads(capsys.readouterr().out.strip())
-    assert set(payload.keys()) == {"dormant_pct", "habitual_pct", "reflex_pct", "cross_file_edge_pct", "orphan_nodes"}
+    expected = {
+        "dormant_pct",
+        "habitual_pct",
+        "reflex_pct",
+        "cross_file_edge_pct",
+        "orphan_nodes",
+        "nodes",
+        "edges",
+    }
+    assert expected.issubset(set(payload.keys()))
 
 
 def test_init_output_flag_writes_path(tmp_path) -> None:
     workspace = tmp_path / "ws"
     workspace.mkdir()
     (workspace / "a.md").write_text("single paragraph", encoding="utf-8")
-    output = tmp_path / "custom.json"
+    output = tmp_path / "custom_out"
 
     code = main(["init", "--workspace", str(workspace), "--output", str(output), "--json"])
     assert code == 0
-    assert output.exists()
+    assert (output / "graph.json").exists()
+    assert (output / "texts.json").exists()
 
 
 def test_init_command_invalid_arguments(tmp_path) -> None:

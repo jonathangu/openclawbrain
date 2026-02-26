@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import argparse
 import json
+import re
 import sys
 from pathlib import Path
 
@@ -27,10 +28,11 @@ def _build_parser() -> argparse.ArgumentParser:
     query = sub.add_parser("query", help="seed from index and traverse graph")
     query.add_argument("text")
     query.add_argument("--graph", required=True)
-    query.add_argument("--index", required=True)
+    query.add_argument("--index", required=False)
     query.add_argument("--top", type=int, default=10)
     query.add_argument("--json", action="store_true")
     query.add_argument("--query-vector", nargs="+", required=False)
+    query.add_argument("--query-vector-stdin", action="store_true")
 
     learn = sub.add_parser("learn", help="apply outcome update")
     learn.add_argument("--graph", required=True)
@@ -46,9 +48,12 @@ def _build_parser() -> argparse.ArgumentParser:
 
 
 def _load_payload(path: str) -> dict:
-    if not Path(path).exists():
+    payload_path = Path(path)
+    if payload_path.is_dir():
+        payload_path = payload_path / "graph.json"
+    if not payload_path.exists():
         raise SystemExit(f"missing graph file: {path}")
-    return json.loads(Path(path).read_text(encoding="utf-8"))
+    return json.loads(payload_path.read_text(encoding="utf-8"))
 
 
 def _load_graph(path: str) -> Graph:
@@ -88,55 +93,117 @@ def _parse_vector(values: list[str] | None) -> list[float] | None:
     return vector
 
 
+_WORD_RE = re.compile(r"[A-Za-z0-9']+")
+
+
+def _tokenize_text(text: str) -> set[str]:
+    return {match.group(0).lower() for match in _WORD_RE.finditer(text)}
+
+
+def _load_query_vector_from_stdin() -> list[float]:
+    raw = sys.stdin.read().strip()
+    if not raw:
+        raise SystemExit("query vector JSON required on stdin")
+    data = json.loads(raw)
+    if not isinstance(data, list):
+        raise SystemExit("query vector stdin payload must be a JSON array")
+    vector: list[float] = []
+    for value in data:
+        vector.append(float(value))
+    return vector
+
+
+def _keyword_seeds(graph: Graph, text: str, top_k: int) -> list[tuple[str, float]]:
+    query_tokens = _tokenize_text(text)
+    if not query_tokens or top_k <= 0:
+        return []
+
+    scores: list[tuple[str, float]] = []
+    for node in graph.nodes():
+        node_tokens = _tokenize_text(node.content)
+        overlap = len(query_tokens & node_tokens)
+        scores.append((node.id, overlap / len(query_tokens)))
+
+    if not scores:
+        return []
+    scores.sort(key=lambda item: (item[1], item[0]), reverse=True)
+    return scores[:top_k]
+
+
 def cmd_init(args: argparse.Namespace) -> int:
+    output_dir = Path(args.output).expanduser()
+    if output_dir.suffix == ".json" and not output_dir.is_dir():
+        output_dir = output_dir.parent
+    output_dir.mkdir(parents=True, exist_ok=True)
+
     graph, texts = split_workspace(args.workspace)
+    graph_path = output_dir / "graph.json"
+    texts_path = output_dir / "texts.json"
     payload = {
-        "graph": {
-            "nodes": [
-                {
-                    "id": node.id,
-                    "content": node.content,
-                    "summary": node.summary,
-                    "metadata": node.metadata,
-                }
-                for node in graph.nodes()
-            ],
-            "edges": [
-                {
-                    "source": edge.source,
-                    "target": edge.target,
-                    "weight": edge.weight,
-                    "kind": edge.kind,
-                    "metadata": edge.metadata,
-                }
-                for source_edges in graph._edges.values()
-                for edge in source_edges.values()
-            ],
-        },
-        "node_texts": texts,
+        "nodes": [
+            {
+                "id": node.id,
+                "content": node.content,
+                "summary": node.summary,
+                "metadata": node.metadata,
+            }
+            for node in graph.nodes()
+        ],
+        "edges": [
+            {
+                "source": edge.source,
+                "target": edge.target,
+                "weight": edge.weight,
+                "kind": edge.kind,
+                "metadata": edge.metadata,
+            }
+            for source_edges in graph._edges.values()
+            for edge in source_edges.values()
+        ],
     }
-    Path(args.output).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    graph_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    texts_path.write_text(json.dumps(texts, indent=2), encoding="utf-8")
+
     if args.json:
-        print(json.dumps(payload))
+        print(json.dumps({"graph": str(graph_path), "texts": str(texts_path)}))
     else:
-        print(f"wrote {args.output}")
+        print(f"graph_path: {graph_path}")
+        print(f"texts_path: {texts_path}")
     return 0
 
 
 def cmd_query(args: argparse.Namespace) -> int:
     graph = _load_graph(args.graph)
     query_vec = _parse_vector(args.query_vector)
-    if query_vec is None:
-        raise SystemExit("query requires --query-vector in CLI mode")
+    using_stdin_vector = bool(args.query_vector_stdin)
 
-    if not Path(args.index).exists():
-        raise SystemExit(f"missing index file: {args.index}")
-    index_payload = json.loads(Path(args.index).read_text(encoding="utf-8"))
-    index = VectorIndex()
-    for node_id, vector in index_payload.items():
-        index.upsert(node_id, vector)
+    if args.query_vector_stdin and args.query_vector:
+        raise SystemExit("use only one of --query-vector or --query-vector-stdin")
 
-    seeds = index.search(query_vec, top_k=args.top)
+    if query_vec is not None:
+        index_path = args.index
+    elif using_stdin_vector:
+        if not args.index:
+            raise SystemExit("query-vector-stdin requires --index")
+        query_vec = _load_query_vector_from_stdin()
+        index_path = args.index
+    else:
+        query_vec = None
+        index_path = args.index
+
+    if query_vec is not None:
+        if not index_path:
+            raise SystemExit("query vector mode requires --index")
+        if not Path(index_path).exists():
+            raise SystemExit(f"missing index file: {index_path}")
+        index_payload = json.loads(Path(index_path).read_text(encoding="utf-8"))
+        index = VectorIndex()
+        for node_id, vector in index_payload.items():
+            index.upsert(node_id, vector)
+        seeds = index.search(query_vec, top_k=args.top)
+    else:
+        seeds = _keyword_seeds(graph=graph, text=args.text, top_k=args.top)
+
     result = traverse(graph=graph, seeds=seeds, config=TraversalConfig(max_hops=15), route_fn=None)
 
     if args.json:
@@ -196,10 +263,17 @@ def cmd_health(args: argparse.Namespace) -> int:
     graph = _load_graph(args.graph)
     health = measure_health(graph)
     payload = health.__dict__
+    payload["nodes"] = graph.node_count()
+    payload["edges"] = graph.edge_count()
     if args.json:
         print(json.dumps(payload, indent=2))
     else:
-        print(json.dumps(payload, indent=2))
+        print(
+            "nodes: {nodes}\nedges: {edges}\ndormant_pct: {dormant_pct:.2f}\nhabitual_pct: {habitual_pct:.2f}\n"
+            "reflex_pct: {reflex_pct:.2f}\ncross_file_edge_pct: {cross_file_edge_pct:.2f}\norphan_nodes: {orphan_nodes}".format(
+                **payload
+            )
+        )
     return 0
 
 

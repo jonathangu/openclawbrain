@@ -18,11 +18,12 @@ def test_full_cycle_init_query_learn_query(tmp_path, capsys) -> None:
         "## Alpha\nalpha content\n\n## Beta\nbeta content",
         encoding="utf-8",
     )
-    graph_path = tmp_path / "state.json"
+    output_dir = tmp_path / "graph_output"
+    graph_path = output_dir / "graph.json"
 
-    assert main(["init", "--workspace", str(workspace), "--output", str(graph_path)]) == 0
+    assert main(["init", "--workspace", str(workspace), "--output", str(output_dir)]) == 0
     payload = json.loads(graph_path.read_text(encoding="utf-8"))
-    assert len(payload["graph"]["nodes"]) == 2
+    assert len(payload["nodes"]) == 2
     capsys.readouterr()
 
     index_path = tmp_path / "index.json"
@@ -55,7 +56,7 @@ def test_full_cycle_init_query_learn_query(tmp_path, capsys) -> None:
     first = json.loads(capsys.readouterr().out.strip())
     first_fired = first["fired"]
 
-    before = payload["graph"]["edges"][0]["weight"]
+    before = payload["edges"][0]["weight"]
 
     code = main(["learn", "--graph", str(graph_path), "--outcome", "1.0", "--fired-ids", ",".join(first_fired[:2]), "--json"])
     assert code == 0
@@ -138,17 +139,18 @@ def test_large_workspace_pipeline_end_to_end(tmp_path, capsys) -> None:
             chunks.append(f"## Section {chunk_idx}\nFile {file_idx} chunk {chunk_idx}")
         (workspace / f"doc_{file_idx}.md").write_text("\n\n".join(chunks), encoding="utf-8")
 
-    payload_path = tmp_path / "state.json"
-    assert main(["init", "--workspace", str(workspace), "--output", str(payload_path)]) == 0
+    output_dir = tmp_path / "graph_output"
+    graph_path = output_dir / "graph.json"
+    assert main(["init", "--workspace", str(workspace), "--output", str(output_dir)]) == 0
 
-    payload = json.loads(payload_path.read_text(encoding="utf-8"))
-    assert len(payload["graph"]["nodes"]) >= 500
+    payload = json.loads(graph_path.read_text(encoding="utf-8"))
+    assert len(payload["nodes"]) >= 500
     capsys.readouterr()
 
     index_path = tmp_path / "index.json"
     index_payload = {
         node["id"]: [float(idx % 2), float((idx + 1) % 2)]
-        for idx, node in enumerate(payload["graph"]["nodes"])
+        for idx, node in enumerate(payload["nodes"])
     }
     index_path.write_text(json.dumps(index_payload), encoding="utf-8")
 
@@ -157,7 +159,7 @@ def test_large_workspace_pipeline_end_to_end(tmp_path, capsys) -> None:
             "query",
             "search",
             "--graph",
-            str(payload_path),
+            str(graph_path),
             "--index",
             str(index_path),
             "--top",
@@ -172,8 +174,8 @@ def test_large_workspace_pipeline_end_to_end(tmp_path, capsys) -> None:
     assert query_out["fired"]
 
     first_ids = ",".join(query_out["fired"][:2])
-    learn_code = main(["learn", "--graph", str(payload_path), "--outcome", "1.0", "--fired-ids", first_ids])
+    learn_code = main(["learn", "--graph", str(graph_path), "--outcome", "1.0", "--fired-ids", first_ids])
     assert learn_code == 0
 
-    health_code = main(["health", "--graph", str(payload_path), "--json"])
+    health_code = main(["health", "--graph", str(graph_path), "--json"])
     assert health_code == 0
