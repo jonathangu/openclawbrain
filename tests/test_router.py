@@ -65,7 +65,7 @@ def test_build_prompt_under_budget():
 def test_router_config_defaults():
     cfg = RouterConfig()
 
-    assert cfg.model == "gpt-5-mini"
+    assert cfg.model == "gpt-4o-mini"
     assert cfg.temperature is None  # Use model default
     assert cfg.timeout_s == 8.0
     assert cfg.max_retries == 2
