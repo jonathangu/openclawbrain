@@ -356,54 +356,38 @@ def auto_embed(
     ollama_base_url: str = "http://localhost:11434",
 ) -> Callable[[list[str]], list[list[float]]]:
     """Return the first available embedding provider adapter."""
-    errors: list[str] = []
+    from .providers import get_embedding_provider
 
-    if os.getenv("OPENAI_API_KEY"):
-        try:
-            return openai_embed(model=openai_model)
-        except Exception as exc:
-            import warnings
-
-            message = (
-                "OpenAI embedding failed: "
-                f"{exc}. Ensure OPENAI_API_KEY is set and the openai package is installed: "
-                "pip install openai"
-            )
-            warnings.warn(f"CrabPath: {message}", stacklevel=2)
-            errors.append(message)
-    else:
-        errors.append("OpenAI not attempted: OPENAI_API_KEY is not set.")
-
-    if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"):
-        try:
-            return gemini_embed(model=gemini_model)
-        except Exception as exc:
-            import warnings
-
-            message = (
-                "Gemini embedding failed: "
-                f"{exc}. Requires: pip install google-generativeai>=0.8 AND the Generative "
-                "Language API enabled on your GCP project "
-                "(https://console.developers.google.com/apis/api/generativelanguage.googleapis.com/"
-                "overview)"
-            )
-            warnings.warn(f"CrabPath: {message}", stacklevel=2)
-            errors.append(message)
-    else:
-        errors.append("Gemini not attempted: GEMINI_API_KEY/GOOGLE_API_KEY is not set.")
-
-    try:
-        return ollama_embed(model=ollama_model, base_url=ollama_base_url)
-    except Exception as exc:
-        import warnings
-
-        message = f"Ollama failed: {exc}"
-        warnings.warn(
-            f"CrabPath: Ollama embedding provider failed: {exc}. Falling back to runtime error.",
-            stacklevel=2,
+    provider = get_embedding_provider()
+    if provider is None:
+        raise RuntimeError(
+            "No embedding provider found. Tried: OPENAI, GEMINI, and Ollama. "
+            "Set OPENAI_API_KEY (pip install crabpath[openai]) or GEMINI/GOOGLE_API_KEY or run Ollama locally."
         )
-        errors.append(message)
 
-    raise RuntimeError(
-        "No embedding provider available. Tried: " + " | ".join(errors)
-    )
+    if provider.__class__.__name__ == "OpenAIEmbeddingProvider" and openai_model:
+        current_model = getattr(provider, "model", None)
+        if current_model != openai_model:
+            from .providers.openai_provider import OpenAIEmbeddingProvider
+
+            return OpenAIEmbeddingProvider(model=openai_model).embed
+
+    if provider.__class__.__name__ == "GeminiEmbeddingProvider" and gemini_model:
+        current_model = getattr(provider, "model", None)
+        if current_model != gemini_model:
+            from .providers.gemini_provider import GeminiEmbeddingProvider
+
+            return GeminiEmbeddingProvider(model=gemini_model).embed
+
+    if provider.__class__.__name__ == "OllamaEmbeddingProvider":
+        current_model = getattr(provider, "model", None)
+        current_base_url = getattr(provider, "base_url", None)
+        if current_model != ollama_model or current_base_url != ollama_base_url:
+            from .providers.ollama_provider import OllamaEmbeddingProvider
+
+            return OllamaEmbeddingProvider(
+                model=ollama_model,
+                base_url=ollama_base_url,
+            ).embed
+
+    return provider.embed

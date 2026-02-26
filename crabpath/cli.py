@@ -35,7 +35,7 @@ from ._io import (
 )
 from .autotune import HEALTH_TARGETS, measure_health
 from .controller import ControllerConfig, MemoryController
-from .embeddings import EmbeddingIndex, auto_embed
+from .embeddings import EmbeddingIndex
 from .feedback import auto_outcome, map_correction_to_snapshot, snapshot_path
 from .graph import Graph
 from .legacy.activation import learn as _learn
@@ -48,6 +48,7 @@ from .synaptogenesis import (
     record_cofiring,
     record_correction,
 )
+from .providers import get_embedding_provider
 
 DEFAULT_GRAPH_PATH = "crabpath_graph.json"
 DEFAULT_INDEX_PATH = "crabpath_embeddings.json"
@@ -341,11 +342,25 @@ def cmd_evolve(args: argparse.Namespace) -> dict[str, Any] | str:
     return _format_timeline(snapshots)
 
 
-def _safe_embed_fn() -> Optional[Callable[[list[str]], list[list[float]]]]:
+def _safe_embed_fn(
+    provider_name: str | None = None,
+) -> Optional[Callable[[list[str]], list[list[float]]]]:
+    provider_name = _router_provider_name(provider_name)
+    if provider_name == "heuristic":
+        return None
+
     try:
-        return auto_embed()
+        provider = get_embedding_provider(name=provider_name)
     except Exception:
         return None
+
+    if provider is None:
+        return None
+    return provider.embed
+
+
+def _router_provider_name(provider_name: str | None) -> str:
+    return str(provider_name).lower() if provider_name else "auto"
 
 
 def _tokenize_query(text: str) -> set[str]:
@@ -635,7 +650,9 @@ def _format_explain_trace(trace: dict[str, Any]) -> str:
 def cmd_query(args: argparse.Namespace) -> dict[str, Any]:
     graph = _load_graph(args.graph)
     index = _load_index(args.index)
-    embed_fn = _safe_embed_fn()
+    embed_fn = _safe_embed_fn(args.provider)
+    if embed_fn is None and args.provider in {"openai", "gemini", "ollama"}:
+        raise CLIError(f"No embedding provider found for --provider={args.provider}.")
     firing = run_query(graph, index, args.query, top_k=args.top, embed_fn=embed_fn)
     payload = {
         "fired": [
@@ -883,18 +900,49 @@ def cmd_init(args: argparse.Namespace) -> dict[str, Any]:
             embed_callback = None
             embeddings = None
         else:
-            try:
-                embed_fn = auto_embed()
-            except RuntimeError as exc:
-                raise CLIError(
-                    f"No embedding provider found. {exc}\n\n"
-                    "Embeddings are strongly recommended for accurate retrieval.\n"
-                    "Set one of: OPENAI_API_KEY, GEMINI_API_KEY, GOOGLE_API_KEY\n"
-                    "Or run Ollama locally: ollama pull nomic-embed-text\n\n"
-                    "To skip embeddings (keyword-only routing): crabpath init --no-embeddings"
-                ) from exc
-            embeddings = EmbeddingIndex()
+            provider_name = _router_provider_name(args.provider)
+            if provider_name == "heuristic":
+                embed_fn = None
+                embed_callback = None
+                embeddings = None
+            else:
+                try:
+                    provider = get_embedding_provider(name=provider_name)
+                except Exception as exc:
+                    if provider_name == "auto":
+                        warning = (
+                            "No embedding provider found. Using keyword-only mode. "
+                            "For better results: pip install crabpath[openai] and set OPENAI_API_KEY"
+                        )
+                        print(warning, file=sys.stderr)
+                        if warning not in session_warnings:
+                            session_warnings.append(warning)
+                        embed_fn = None
+                        embed_callback = None
+                        embeddings = None
+                    else:
+                        raise CLIError(
+                            f"No embedding provider found for --provider={provider_name}."
+                        ) from exc
+                else:
+                    if provider is None:
+                        warning = (
+                            "No embedding provider found. Using keyword-only mode. "
+                            "For better results: pip install crabpath[openai] and set OPENAI_API_KEY"
+                        )
+                        print(warning, file=sys.stderr)
+                        if warning not in session_warnings:
+                            session_warnings.append(warning)
+                        embed_fn = None
+                        embed_callback = None
+                        embeddings = None
+                    else:
+                        embed_fn = provider.embed
+                        embeddings = EmbeddingIndex()
+                        embed_callback = None
 
+                    if embed_fn is None:
+                        embeddings = None
         graph, info = migrate(
             workspace_dir=workspace_dir,
             session_logs=session_logs,
@@ -1217,6 +1265,15 @@ def _build_parser() -> JSONArgumentParser:
     q.add_argument("--graph", default=DEFAULT_GRAPH_PATH)
     q.add_argument("--index", default=DEFAULT_INDEX_PATH)
     q.add_argument("--explain", action="store_true", default=False)
+    q.add_argument(
+        "--provider",
+        default="auto",
+        choices=("openai", "gemini", "ollama", "heuristic", "auto"),
+        help=(
+            "Provider for embeddings. auto uses auto-detect. "
+            "heuristic uses keyword-only mode."
+        ),
+    )
     _add_json_flag(q)
     q.set_defaults(func=cmd_query)
 
@@ -1280,6 +1337,15 @@ def _build_parser() -> JSONArgumentParser:
         action="store_true",
         default=False,
         help="Skip embedding generation (use keyword-based routing instead)",
+    )
+    init.add_argument(
+        "--provider",
+        default="auto",
+        choices=("openai", "gemini", "ollama", "heuristic", "auto"),
+        help=(
+            "Provider for embeddings. auto uses auto-detect. heuristic uses keyword-only "
+            "routing/embeddings fallback."
+        ),
     )
     _add_json_flag(init)
     init.set_defaults(func=cmd_init)
