@@ -46,6 +46,18 @@ export CRABPATH_LLM_URL=http://localhost:18789/v1/chat/completions
 export CRABPATH_LLM_TOKEN=$OPENCLAW_GATEWAY_TOKEN
 ```
 
+## Modes
+
+CrabPath works in two modes:
+
+**Full mode** (LLM + embeddings): The graph learns from every query. Routing gets smarter. Bad paths get suppressed. This is the real product.
+- Requires: any OpenAI-compatible endpoint (set CRABPATH_LLM_URL or OPENAI_API_KEY)
+
+**Retrieval-only mode** (no LLM): Embedding-based search. Works out of the box, but the graph doesn't learn. Basically RAG.
+- Requires: nothing (local TF-IDF embeddings included)
+
+For the full CrabPath experience, provide LLM access. See the Install section.
+
 ### 2. Initialize graph + embeddings
 
 Requires one of: `OPENAI_API_KEY`, `GEMINI_API_KEY`, or local Ollama.

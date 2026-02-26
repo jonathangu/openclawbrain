@@ -8,6 +8,15 @@ CrabPath is a memory store for AI agents that learns what to retrieve — and wh
 - Classic RAG can’t learn from feedback, so retrieval stays similarity-only.
 - CrabPath tracks which retrieval paths worked, and builds a graph of learned routes.
 
+### Two Modes
+
+| Mode | What you get | What you need |
+|---|---|---|
+| **Full** | Learned routing + inhibition + decay. The graph gets smarter over time. | Any OpenAI-compatible LLM endpoint |
+| **Retrieval-only** | Semantic search over your workspace. Better than nothing, but just RAG with extra steps. | Nothing (works out of the box) |
+
+CrabPath always works. But the magic — learning what NOT to retrieve — requires a real LLM.
+
 ## Install
 
 ```bash
@@ -21,9 +30,9 @@ pip install crabpath[openai]     # or: pip install crabpath[google]
 
 Zero required dependencies. Python 3.10+. macOS Homebrew Python needs a venv (PEP 668).
 
-### LLM Access (recommended)
+### LLM Access (for full mode)
 
-CrabPath's smart routing needs a real LLM. Without one, it falls back to basic retrieval (like RAG). Provide access via any of:
+For the real experience, CrabPath's smart routing needs a real LLM. Without one, it falls back to retrieval-only (like RAG). Provide access via any of:
 
 ```bash
 # Option 1: Direct API key (easiest)
