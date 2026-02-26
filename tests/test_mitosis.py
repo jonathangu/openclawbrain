@@ -4,6 +4,7 @@ import json
 
 from crabpath.graph import Edge, Graph, Node
 from crabpath.mitosis import (
+    MitosisConfig,
     MitosisState,
     _fallback_split,
     _make_chunk_id,
@@ -281,7 +282,36 @@ def test_split_node_basic():
             if i != j:
                 edge = g.get_edge(src, tgt)
                 assert edge is not None
-                assert edge.weight == 0.25  # habitual, not reflex
+                assert 0.15 <= edge.weight <= 0.35
+
+
+def test_sibling_jitter_creates_spread():
+    g = Graph()
+    g.add_node(Node(id="soul", content="A. " * 120, type="workspace_file"))
+    state = MitosisState()
+    config = MitosisConfig(sibling_weight=0.25, sibling_jitter=0.1)
+
+    result = split_node(
+        g,
+        "soul",
+        _mock_llm_split_3way,
+        state,
+        config=config,
+    )
+    assert result is not None
+
+    sibling_weights = []
+    chunk_ids = result.chunk_ids
+    for src in chunk_ids:
+        for tgt in chunk_ids:
+            if src == tgt:
+                continue
+            edge = g.get_edge(src, tgt)
+            assert edge is not None
+            assert 0.15 <= edge.weight <= 0.35
+            sibling_weights.append(edge.weight)
+
+    assert len(set(round(weight, 12) for weight in sibling_weights)) > 1
 
 
 def test_split_node_too_small():

@@ -1,10 +1,61 @@
 from __future__ import annotations
 
+import re
 from dataclasses import dataclass
 from math import exp, log
-from typing import Any, Sequence
+from typing import Any, Callable, Sequence
 
 from .graph import Edge, Graph
+
+_STOPWORDS = {
+    "a",
+    "an",
+    "and",
+    "are",
+    "as",
+    "at",
+    "be",
+    "by",
+    "for",
+    "from",
+    "how",
+    "in",
+    "is",
+    "it",
+    "of",
+    "on",
+    "or",
+    "that",
+    "the",
+    "this",
+    "to",
+    "when",
+    "where",
+    "which",
+    "with",
+    "what",
+    "you",
+}
+
+
+def classify_query_family(query: str) -> str:
+    """Coarsely group query strings into stable family keys."""
+    tokens = [
+        token
+        for token in re.findall(r"[a-z0-9']+", query.lower())
+        if token not in _STOPWORDS
+    ]
+    if not tokens:
+        tokens = [token for token in re.findall(r"[a-z0-9']+", query.lower()) if token]
+        if not tokens:
+            return "query"
+    family = sorted(set(tokens))[:3]
+    return "_".join(family)
+
+
+def _looks_like_family_key(episode_id: str) -> bool:
+    candidate = episode_id.strip()
+    return "_" in candidate or len(candidate) <= 16
 
 
 @dataclass
@@ -21,7 +72,9 @@ class RewardSignal:
 class LearningConfig:
     learning_rate: float = 0.05
     discount: float = 1.0
+    temperature: float = 0.5
     baseline_decay: float = 0.95
+    query_family_fn: Callable[[str], str] | None = None
     clip_min: float = -5
     clip_max: float = 5
 
@@ -90,9 +143,13 @@ def _as_candidates(candidates: Any) -> list[tuple[str, float]]:
     return pairs
 
 
-def _softmax(values: list[float]) -> list[float]:
-    max_value = max(values) if values else 0.0
-    exps = [exp(v - max_value) for v in values]
+def _softmax(values: list[float], temperature: float = 1.0) -> list[float]:
+    if not values:
+        return []
+    safe_temperature = temperature if temperature > 0 else 1e-6
+    scaled = [v / safe_temperature for v in values]
+    max_value = max(scaled)
+    exps = [exp(v - max_value) for v in scaled]
     total = sum(exps)
     if total == 0.0:
         return [0.0 for _ in values]
@@ -146,7 +203,7 @@ def policy_gradient_update(
             continue
 
         chosen = str(_step_get(step, "to_node"))
-        probs = _softmax([weight for _, weight in candidates])
+        probs = _softmax([weight for _, weight in candidates], config.temperature)
         candidate_targets = [target for target, _ in candidates]
         if chosen not in candidate_targets:
             continue
@@ -172,7 +229,7 @@ def weight_delta(
         source = str(_step_get(step, "from_node"))
         chosen = str(_step_get(step, "to_node"))
         weights = [w for _, w in candidates]
-        probs = _softmax(weights)
+        probs = _softmax(weights, config.temperature)
 
         candidate_map = [
             (target, probs[target_index]) for target_index, (target, _) in enumerate(candidates)
@@ -257,10 +314,16 @@ def make_learning_step(
     config: LearningConfig,
 ) -> LearningResult:
     """Run a learning step end-to-end and return all weight updates."""
+    episode_id = reward.episode_id
+    if not _looks_like_family_key(episode_id):
+        if config.query_family_fn is not None:
+            episode_id = config.query_family_fn(episode_id)
+        else:
+            episode_id = classify_query_family(episode_id)
     # episode_id is intended to represent a recurring query family/group so that
     # baselines are shared across similar trajectories; per-query unique IDs
     # reduce baseline effectiveness.
-    prev_baseline = _BASELINE_STATE.get(reward.episode_id, 0.0)
+    prev_baseline = _BASELINE_STATE.get(episode_id, 0.0)
     loss, advantages = policy_gradient_update(
         trajectory_steps,
         reward,
@@ -273,6 +336,6 @@ def make_learning_step(
     updated_baseline = (
         config.baseline_decay * prev_baseline + (1.0 - config.baseline_decay) * final_reward
     )
-    _BASELINE_STATE[reward.episode_id] = updated_baseline
+    _BASELINE_STATE[episode_id] = updated_baseline
 
     return LearningResult(updates=updates, baseline=updated_baseline, avg_reward=final_reward)

@@ -19,6 +19,7 @@ Lifecycle:
 from __future__ import annotations
 
 import json
+import random
 import time
 from dataclasses import dataclass, field
 from hashlib import sha256
@@ -42,6 +43,7 @@ class MitosisConfig(ConfigBase):
     """Configuration for graph self-organization."""
 
     sibling_weight: float = 0.25  # Start low — earn your edges through co-firing
+    sibling_jitter: float = 0.1  # Add small deterministic jitter for sibling initialization
     min_content_chars: int = 200  # Don't split nodes smaller than this
     chunk_type: str = "chunk"  # Node type for chunk nodes
     decay_rate: float = 0.01  # Edge decay rate for sibling edges
@@ -379,16 +381,21 @@ def split_node(
             embed_callback(chunk_id, section_content)
         chunk_ids.append(chunk_id)
 
-    # Sibling edges (all-to-all at weight 1.0)
+    # Sibling edges (all-to-all at weight `sibling_weight` with deterministic jitter)
     edges_created = 0
+    rng = random.Random(int(sha256((node.content + node.id).encode("utf-8")).hexdigest()[:16], 16))
     for i, src_id in enumerate(chunk_ids):
         for j, tgt_id in enumerate(chunk_ids):
             if i != j:
+                weight = config.sibling_weight + rng.uniform(
+                    -config.sibling_jitter,
+                    config.sibling_jitter,
+                )
                 graph.add_edge(
                     Edge(
                         source=src_id,
                         target=tgt_id,
-                        weight=config.sibling_weight,
+                        weight=weight,
                         decay_rate=config.decay_rate,
                         created_by="auto",
                     )
