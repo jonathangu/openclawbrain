@@ -5,7 +5,6 @@ from __future__ import annotations
 import argparse
 import json
 import os
-import re
 import sys
 from collections.abc import Iterable
 from pathlib import Path
@@ -26,6 +25,7 @@ from .merge import apply_merge, suggest_merges
 from .replay import extract_queries, extract_queries_from_dir, replay_queries
 from .split import split_workspace
 from .traverse import TraversalConfig, TraversalResult, traverse
+from ._util import _tokenize
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -159,12 +159,13 @@ def _load_session_queries(session_paths: str | Iterable[str]) -> list[str]:
 
 
 def _keyword_seeds(graph: Graph, text: str, top_k: int) -> list[tuple[str, float]]:
-    query_tokens = {
-        token for token in re.split(r"\W+", text.lower()) if token
-    }
+    query_tokens = _tokenize(text)
     if not query_tokens:
         return []
-    scores = [(node.id, len(query_tokens & {token for token in re.split(r"\W+", node.content.lower()) if token}) / len(query_tokens)) for node in graph.nodes()]
+    scores = [
+        (node.id, len(query_tokens & _tokenize(node.content)) / len(query_tokens))
+        for node in graph.nodes()
+    ]
     scores.sort(key=lambda item: (item[1], item[0]), reverse=True)
     return scores[:top_k]
 

@@ -3,45 +3,12 @@
 from __future__ import annotations
 
 import hashlib
-import json
-import re
 from collections import defaultdict
 from dataclasses import dataclass
 from collections.abc import Callable
 
 from .graph import Edge, Graph, Node
-
-
-_JSON_OBJECT_RE = re.compile(r"\{.*\}", re.S)
-
-
-def _extract_json(raw: str) -> dict | None:
-    text = (raw or "").strip()
-    if not text:
-        return None
-    if text.startswith("```") and text.endswith("```"):
-        text = "\n".join(text.splitlines()[1:-1]).strip()
-    try:
-        payload = json.loads(text)
-        if isinstance(payload, dict):
-            return payload
-    except json.JSONDecodeError:
-        pass
-
-    match = _JSON_OBJECT_RE.search(text)
-    if not match:
-        return None
-    try:
-        payload = json.loads(match.group(0))
-        if isinstance(payload, dict):
-            return payload
-    except json.JSONDecodeError:
-        return None
-    return None
-
-
-def _first_line(text: str) -> str:
-    return (text.splitlines() or [""])[0]
+from ._util import _extract_json, _first_line
 
 
 def _unique_node_id(content: str, graph: Graph) -> str:

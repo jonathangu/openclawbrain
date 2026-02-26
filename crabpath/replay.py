@@ -1,20 +1,13 @@
 from __future__ import annotations
 
 import json
-import re
 from pathlib import Path
 from typing import Callable
 
 from .graph import Graph
 from .learn import LearningConfig, apply_outcome
 from .traverse import TraversalConfig, traverse
-
-
-_WORD_RE = re.compile(r"[A-Za-z0-9']+")
-
-
-def _tokenize_text(text: str) -> set[str]:
-    return {match.group(0).lower() for match in _WORD_RE.finditer(text)}
+from ._util import _tokenize
 
 
 def _extract_user_query_content(content: object) -> str | None:
@@ -117,13 +110,13 @@ def extract_queries_from_dir(sessions_dir: str | Path) -> list[str]:
 
 
 def default_keyword_seed_fn(graph: Graph, query_text: str) -> list[tuple[str, float]]:
-    query_tokens = _tokenize_text(query_text)
+    query_tokens = _tokenize(query_text)
     if not query_tokens:
         return []
 
     scores: list[tuple[str, float]] = []
     for node in graph.nodes():
-        node_tokens = _tokenize_text(node.content)
+        node_tokens = _tokenize(node.content)
         overlap = len(query_tokens & node_tokens)
         scores.append((node.id, overlap / len(query_tokens)))
 

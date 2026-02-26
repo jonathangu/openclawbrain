@@ -2,39 +2,10 @@
 
 from __future__ import annotations
 
-import json
-import re
 from collections.abc import Callable
 
 from ._batch import batch_or_single
-
-_JSON_OBJECT_RE = re.compile(r"\{.*\}", re.S)
-
-
-def _extract_json(raw: str) -> dict | None:
-    text = (raw or "").strip()
-    if not text:
-        return None
-    if text.startswith("```") and text.endswith("```"):
-        text = "\n".join(text.splitlines()[1:-1]).strip()
-    try:
-        payload = json.loads(text)
-        if isinstance(payload, dict):
-            return payload
-    except json.JSONDecodeError:
-        pass
-
-    match = _JSON_OBJECT_RE.search(text)
-    if not match:
-        return None
-    try:
-        payload = json.loads(match.group(0))
-        if isinstance(payload, dict):
-            return payload
-    except json.JSONDecodeError:
-        return None
-    return None
-
+from ._util import _extract_json
 
 def _coerce_score(value: object) -> float:
     try:

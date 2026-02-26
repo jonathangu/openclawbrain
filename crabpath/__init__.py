@@ -3,28 +3,44 @@
 from .graph import Edge, Graph, Node
 from .index import VectorIndex
 from ._batch import batch_or_single, batch_or_single_embed
-from .autotune import autotune, measure_health
+from .autotune import GraphHealth, autotune, measure_health
 from .decay import DecayConfig, apply_decay
 from .learn import LearningConfig, apply_outcome
-from .split import split_workspace
-from .traverse import traverse, TraversalConfig
+from .score import score_retrieval
+from .connect import apply_connections, suggest_connections
+from .merge import apply_merge, suggest_merges
+from .replay import replay_queries
+from .split import generate_summaries, split_workspace
+from .store import load_state, save_state
+from .traverse import TraversalResult, TraversalConfig, traverse
 
 __all__ = [
     "Node",
     "Edge",
     "Graph",
     "VectorIndex",
+    "GraphHealth",
     "TraversalConfig",
+    "TraversalResult",
     "DecayConfig",
     "LearningConfig",
     "measure_health",
     "autotune",
     "traverse",
     "split_workspace",
+    "generate_summaries",
     "apply_outcome",
     "apply_decay",
     "batch_or_single",
     "batch_or_single_embed",
+    "save_state",
+    "load_state",
+    "score_retrieval",
+    "suggest_merges",
+    "apply_merge",
+    "suggest_connections",
+    "apply_connections",
+    "replay_queries",
 ]
 
-__version__ = "6.0.1"
+__version__ = "6.1.0"

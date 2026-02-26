@@ -2,48 +2,11 @@
 
 from __future__ import annotations
 
-import json
-import re
 from collections.abc import Callable
 
 from .graph import Edge, Graph, Node
 from ._batch import batch_or_single
-
-
-_JSON_OBJECT_RE = re.compile(r"\{.*\}", re.S)
-_WORD_RE = re.compile(r"[A-Za-z0-9']+")
-
-
-def _extract_json(raw: str) -> dict | None:
-    text = (raw or "").strip()
-    if not text:
-        return None
-
-    if text.startswith("```") and text.endswith("```"):
-        text = "\n".join(text.splitlines()[1:-1]).strip()
-
-    try:
-        payload = json.loads(text)
-        if isinstance(payload, dict):
-            return payload
-    except json.JSONDecodeError:
-        pass
-
-    match = _JSON_OBJECT_RE.search(text)
-    if not match:
-        return None
-
-    try:
-        payload = json.loads(match.group(0))
-        if isinstance(payload, dict):
-            return payload
-    except json.JSONDecodeError:
-        return None
-    return None
-
-
-def _tokenize(text: str) -> set[str]:
-    return {match.group(0).lower() for match in _WORD_RE.finditer(text or "")}
+from ._util import _extract_json, _tokenize
 
 
 def _safe_float(value: object, default: float = 0.0) -> float:

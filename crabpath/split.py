@@ -4,9 +4,7 @@ from __future__ import annotations
 
 import hashlib
 import fnmatch
-import json
 import os
-import re
 from collections.abc import Callable
 from collections.abc import Iterable
 import threading
@@ -14,6 +12,7 @@ from pathlib import Path
 
 from ._batch import batch_or_single
 from .graph import Edge, Graph, Node
+from ._util import _extract_json, _first_line
 
 
 DEFAULT_EXCLUDES = {
@@ -34,8 +33,6 @@ DEFAULT_EXCLUDES = {
     "vendor",
     "target",
 }
-
-_JSON_OBJECT_RE = re.compile(r"\{.*\}", re.S)
 SPLIT_PROMPT = (
     "Split this document into coherent semantic sections. Each section should be a "
     "concept or topic. Return JSON: {\"sections\": [\"section1 text\", \"section2 text\"]}"
@@ -43,34 +40,9 @@ SPLIT_PROMPT = (
 SUMMARY_PROMPT = 'Write a one-line summary for this node. Return JSON: {"summary": "..."}'
 
 
-def _extract_json(raw: str) -> dict | list | str:
-    text = (raw or "").strip()
-    if not text:
-        return {}
-
-    if text.startswith("```") and text.endswith("```"):
-        text = "\n".join(text.splitlines()[1:-1]).strip()
-    try:
-        return json.loads(text)
-    except json.JSONDecodeError:
-        pass
-
-    match = _JSON_OBJECT_RE.search(text)
-    if not match:
-        return {}
-    try:
-        return json.loads(match.group(0))
-    except json.JSONDecodeError:
-        return {}
-
-
-def _first_line(text: str) -> str:
-    return (text.splitlines() or [""])[0]
-
-
 def _extract_sections(raw: str) -> list[str]:
     try:
-        payload = _extract_json(raw)
+        payload = _extract_json(raw) or {}
         sections = payload.get("sections") if isinstance(payload, dict) else None
         if isinstance(sections, list):
             parsed = [str(section).strip() for section in sections if str(section).strip()]
