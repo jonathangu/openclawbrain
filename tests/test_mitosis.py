@@ -1,22 +1,22 @@
 """Tests for CrabPath mitosis — LLM-driven graph self-organization."""
 
 import json
-from crabpath.graph import Graph, Node, Edge
+
+from crabpath.graph import Edge, Graph, Node
 from crabpath.mitosis import (
     MitosisState,
-    split_node,
-    split_with_llm,
-    should_merge,
-    should_create_node,
+    _fallback_split,
+    _make_chunk_id,
+    bootstrap_workspace,
     create_node,
     find_co_firing_families,
     merge_nodes,
-    bootstrap_workspace,
     mitosis_maintenance,
-    _fallback_split,
-    _make_chunk_id,
+    should_create_node,
+    should_merge,
+    split_node,
+    split_with_llm,
 )
-
 
 # ---------------------------------------------------------------------------
 # Mock LLMs

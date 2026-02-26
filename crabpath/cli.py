@@ -16,25 +16,23 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Callable, Optional
 
+from ._structural_utils import count_cross_file_edges
 from .activation import Firing
 from .activation import learn as _learn
+from .autotune import HEALTH_TARGETS, measure_health
 from .embeddings import EmbeddingIndex, auto_embed
-from ._structural_utils import count_cross_file_edges
 from .feedback import auto_outcome, map_correction_to_snapshot, snapshot_path
 from .graph import Graph
-from .lifecycle_sim import run_simulation, workspace_scenario, SimConfig
-from .autotune import HEALTH_TARGETS, measure_health
-from .migrate import MigrateConfig, migrate
+from .lifecycle_sim import SimConfig, run_simulation, workspace_scenario
+from .migrate import MigrateConfig, fallback_llm_split, migrate
 from .mitosis import MitosisConfig, MitosisState, split_node
-from .migrate import fallback_llm_split
 from .synaptogenesis import (
     SynaptogenesisConfig,
     SynaptogenesisState,
     edge_tier_stats,
-    record_correction,
     record_cofiring,
+    record_correction,
 )
-
 
 DEFAULT_GRAPH_PATH = "crabpath_graph.json"
 DEFAULT_INDEX_PATH = "crabpath_embeddings.json"
@@ -631,7 +629,7 @@ def cmd_add(args: argparse.Namespace) -> dict[str, Any]:
     else:
         graph = Graph()
 
-    from .graph import Node, Edge
+    from .graph import Edge, Node
 
     node_id = args.id
     if graph.get_node(node_id) is not None:

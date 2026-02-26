@@ -7,7 +7,6 @@ from pathlib import Path
 
 from crabpath.graph import Edge, Graph, Node
 
-
 PROCEDURE_NODES = [
     {
         "id": "pp_check_logs",
@@ -18,7 +17,10 @@ PROCEDURE_NODES = [
     {
         "id": "pp_read_config",
         "type": "procedure",
-        "content": "Procedure step 2: read relevant service config and verify environment overrides.",
+        "content": (
+            "Procedure step 2: read relevant service config and verify "
+            "environment overrides."
+        ),
         "summary": "Read config",
     },
     {
@@ -144,9 +146,19 @@ def write_outputs(graph_path: Path, scenario_path: Path) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Build procedure-learning experiment graph and scenarios")
-    parser.add_argument("--graph", default="experiments/procedure_graph.json", help="Path to write procedure graph JSON")
-    parser.add_argument("--scenario", default="scenarios/procedure.jsonl", help="Path to write procedure scenario JSONL")
+    parser = argparse.ArgumentParser(
+        description="Build procedure-learning experiment graph and scenarios"
+    )
+    parser.add_argument(
+        "--graph",
+        default="experiments/procedure_graph.json",
+        help="Path to write procedure graph JSON",
+    )
+    parser.add_argument(
+        "--scenario",
+        default="scenarios/procedure.jsonl",
+        help="Path to write procedure scenario JSONL",
+    )
     args = parser.parse_args()
 
     write_outputs(Path(args.graph), Path(args.scenario))

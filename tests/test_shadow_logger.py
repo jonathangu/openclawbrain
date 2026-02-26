@@ -7,13 +7,27 @@ from crabpath import Node, ShadowLog
 
 def test_shadow_log_query_and_tail(tmp_path: Path) -> None:
     log = ShadowLog(tmp_path / "shadow.jsonl")
+    query = (
+        "deploy broke after config change and service restarted multiple times "
+        "after a bad merge "
+    )
+    selected_nodes = [
+        Node(id="deploy_config", content="a" * 60),
+        "check_logs",
+    ]
     record = log.log_query(
-        query="deploy broke after config change and service restarted multiple times after a bad merge " * 2,
-        selected_nodes=[Node(id="deploy_config", content="a" * 60), "check_logs"],
+        query=(query * 2),
+        selected_nodes=selected_nodes,
         scores={"scores": {"deploy_config": 1.0}, "overall": 0.88},
         reward=0.88,
         trajectory=[("deploy_config", "check_logs"), ("check_logs", "restart_service")],
-        tiers={"reflex": 3, "habitual": 2, "dormant": 1, "inhibitory": 0, "proto_edge_count": 5},
+        tiers={
+            "reflex": 3,
+            "habitual": 2,
+            "dormant": 1,
+            "inhibitory": 0,
+            "proto_edge_count": 5,
+        },
     )
 
     assert record["event"] == "query"
@@ -21,7 +35,10 @@ def test_shadow_log_query_and_tail(tmp_path: Path) -> None:
     assert record["selected_node_ids"] == ["deploy_config", "check_logs"]
     assert record["selected_node_snippets"][0]["id"] == "deploy_config"
     assert len(record["selected_node_snippets"][0]["snippet"]) == 50
-    assert record["trajectory_edges"] == [["deploy_config", "check_logs"], ["check_logs", "restart_service"]]
+    assert record["trajectory_edges"] == [
+        ["deploy_config", "check_logs"],
+        ["check_logs", "restart_service"],
+    ]
     assert record["reward_source"] == "scoring"
     assert record["proto_edge_count"] == 5
 
@@ -44,7 +61,11 @@ def test_shadow_log_tune_and_summary(tmp_path: Path) -> None:
     )
     log.log_query(
         query="second query",
-        selected_nodes=[Node(id="x", content="x"), Node(id="y", content="y"), Node(id="z", content="z")],
+        selected_nodes=[
+            Node(id="x", content="x"),
+            Node(id="y", content="y"),
+            Node(id="z", content="z"),
+        ],
         scores=None,
         reward=None,
         trajectory=[],

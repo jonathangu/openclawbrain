@@ -4,20 +4,21 @@ from __future__ import annotations
 
 import json
 import os
-import time
 import sys
+import time
 from pathlib import Path
 from typing import Any, Callable
 
+from ._structural_utils import count_cross_file_edges
 from .activation import Firing, activate
 from .activation import learn as _learn
-from ._structural_utils import count_cross_file_edges
+from .autotune import HEALTH_TARGETS, measure_health
 from .embeddings import EmbeddingIndex, openai_embed
+from .feedback import auto_outcome, map_correction_to_snapshot, snapshot_path
 from .graph import Edge, Graph
 from .lifecycle_sim import SimConfig, run_simulation, workspace_scenario
-from .feedback import auto_outcome, map_correction_to_snapshot, snapshot_path
-from .migrate import MigrateConfig, fallback_llm_split, migrate as run_migration
-from .autotune import HEALTH_TARGETS, measure_health
+from .migrate import MigrateConfig, fallback_llm_split
+from .migrate import migrate as run_migration
 from .mitosis import MitosisConfig, MitosisState, split_node
 from .synaptogenesis import edge_tier_stats
 

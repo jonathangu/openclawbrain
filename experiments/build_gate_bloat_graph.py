@@ -114,26 +114,126 @@ def _gate_records() -> list[dict[str, str]]:
 
 
 QUERY_RECORDS: list[dict[str, Any]] = [
-    {"id": "gb_query_01", "query": "Preparing a hotfix for a critical API bug", "category": "coding", "expected": ["Regression tests", "idempotent", "Fail fast"]},
-    {"id": "gb_query_02", "query": "Deploying a database migration under production pressure", "category": "deployment", "expected": ["staged rollout", "schema", "snapshot"]},
-    {"id": "gb_query_03", "query": "Need to cleanly summarize context for the current incident task", "category": "memory", "expected": ["task intent", "context", "budget"]},
-    {"id": "gb_query_04", "query": "Running auth changes and preparing for production write", "category": "security", "expected": ["explicit approval", "prod write", "scopes"]},
-    {"id": "gb_query_05", "query": "Submitting PR for a risky infrastructure change", "category": "review", "expected": ["issue references", "risk", "review"]},
-    {"id": "gb_query_06", "query": "Rolling out canary traffic to a shared service", "category": "deployment", "expected": ["health checks", "expand", "blue-green"]},
-    {"id": "gb_query_07", "query": "Investigating a bug in user-facing serialization", "category": "coding", "expected": ["invalid input", "regression tests", "explicit types"]},
-    {"id": "gb_query_08", "query": "Building a concise memory plan for this coding task", "category": "memory", "expected": ["relevant", "summaries", "duplicate"]},
-    {"id": "gb_query_09", "query": "Responding to elevated token usage and possible abuse", "category": "security", "expected": ["rate limit", "credential leaks", "audit"]},
-    {"id": "gb_query_10", "query": "Preparing branch-level review for production impact", "category": "review", "expected": ["owner sign-off", "reviewer", "minimal diffs"]},
-    {"id": "gb_query_11", "query": "Scheduling maintenance and avoiding risky commands", "category": "deployment", "expected": ["off-hours", "safely", "rollout"]},
-    {"id": "gb_query_12", "query": "Fixing flaky behavior in a new feature", "category": "coding", "expected": ["regression tests", "focused", "small diffs"]},
-    {"id": "gb_query_13", "query": "Handling user request context and not overloading memory", "category": "memory", "expected": ["context", "budget", "relevant"]},
-    {"id": "gb_query_14", "query": "Preparing access to secret store for a script", "category": "security", "expected": ["plain text", "scopes", "approval"]},
-    {"id": "gb_query_15", "query": "Checking for stale instructions before final merge", "category": "review", "expected": ["stale", "close findings", "PR description"]},
-    {"id": "gb_query_16", "query": "Release window decision for a major service", "category": "deployment", "expected": ["deployment window", "health checks", "error budget"]},
-    {"id": "gb_query_17", "query": "Refactoring for maintainability while staying within policy", "category": "coding", "expected": ["feature flags", "explicit", "tests"]},
-    {"id": "gb_query_18", "query": "Summarizing session memory for handoff", "category": "memory", "expected": ["high-precision retrieval", "prune", "summaries"]},
-    {"id": "gb_query_19", "query": "Tool policy for external integrations and webhooks", "category": "security", "expected": ["webhook signatures", "validation", "audit"]},
-    {"id": "gb_query_20", "query": "Preparing PR docs and changelog before merge", "category": "review", "expected": ["issue references", "risk", "changelog"]},
+    {
+        "id": "gb_query_01",
+        "query": "Preparing a hotfix for a critical API bug",
+        "category": "coding",
+        "expected": ["Regression tests", "idempotent", "Fail fast"],
+    },
+    {
+        "id": "gb_query_02",
+        "query": "Deploying a database migration under production pressure",
+        "category": "deployment",
+        "expected": ["staged rollout", "schema", "snapshot"],
+    },
+    {
+        "id": "gb_query_03",
+        "query": "Need to cleanly summarize context for the current incident task",
+        "category": "memory",
+        "expected": ["task intent", "context", "budget"],
+    },
+    {
+        "id": "gb_query_04",
+        "query": "Running auth changes and preparing for production write",
+        "category": "security",
+        "expected": ["explicit approval", "prod write", "scopes"],
+    },
+    {
+        "id": "gb_query_05",
+        "query": "Submitting PR for a risky infrastructure change",
+        "category": "review",
+        "expected": ["issue references", "risk", "review"],
+    },
+    {
+        "id": "gb_query_06",
+        "query": "Rolling out canary traffic to a shared service",
+        "category": "deployment",
+        "expected": ["health checks", "expand", "blue-green"],
+    },
+    {
+        "id": "gb_query_07",
+        "query": "Investigating a bug in user-facing serialization",
+        "category": "coding",
+        "expected": ["invalid input", "regression tests", "explicit types"],
+    },
+    {
+        "id": "gb_query_08",
+        "query": "Building a concise memory plan for this coding task",
+        "category": "memory",
+        "expected": ["relevant", "summaries", "duplicate"],
+    },
+    {
+        "id": "gb_query_09",
+        "query": "Responding to elevated token usage and possible abuse",
+        "category": "security",
+        "expected": ["rate limit", "credential leaks", "audit"],
+    },
+    {
+        "id": "gb_query_10",
+        "query": "Preparing branch-level review for production impact",
+        "category": "review",
+        "expected": ["owner sign-off", "reviewer", "minimal diffs"],
+    },
+    {
+        "id": "gb_query_11",
+        "query": "Scheduling maintenance and avoiding risky commands",
+        "category": "deployment",
+        "expected": ["off-hours", "safely", "rollout"],
+    },
+    {
+        "id": "gb_query_12",
+        "query": "Fixing flaky behavior in a new feature",
+        "category": "coding",
+        "expected": ["regression tests", "focused", "small diffs"],
+    },
+    {
+        "id": "gb_query_13",
+        "query": "Handling user request context and not overloading memory",
+        "category": "memory",
+        "expected": ["context", "budget", "relevant"],
+    },
+    {
+        "id": "gb_query_14",
+        "query": "Preparing access to secret store for a script",
+        "category": "security",
+        "expected": ["plain text", "scopes", "approval"],
+    },
+    {
+        "id": "gb_query_15",
+        "query": "Checking for stale instructions before final merge",
+        "category": "review",
+        "expected": ["stale", "close findings", "PR description"],
+    },
+    {
+        "id": "gb_query_16",
+        "query": "Release window decision for a major service",
+        "category": "deployment",
+        "expected": ["deployment window", "health checks", "error budget"],
+    },
+    {
+        "id": "gb_query_17",
+        "query": "Refactoring for maintainability while staying within policy",
+        "category": "coding",
+        "expected": ["feature flags", "explicit", "tests"],
+    },
+    {
+        "id": "gb_query_18",
+        "query": "Summarizing session memory for handoff",
+        "category": "memory",
+        "expected": ["high-precision retrieval", "prune", "summaries"],
+    },
+    {
+        "id": "gb_query_19",
+        "query": "Tool policy for external integrations and webhooks",
+        "category": "security",
+        "expected": ["webhook signatures", "validation", "audit"],
+    },
+    {
+        "id": "gb_query_20",
+        "query": "Preparing PR docs and changelog before merge",
+        "category": "review",
+        "expected": ["issue references", "risk", "changelog"],
+    },
 ]
 
 
@@ -155,11 +255,23 @@ def build_graph() -> Graph:
 
         relevant = [gate for gate in gates if gate["category"] == category][:6]
         for index, gate in enumerate(relevant[:3], start=1):
-            graph.add_edge(Edge(source=query_node_id, target=gate["id"], weight=0.95 - 0.07 * (index - 1)))
+            graph.add_edge(
+                Edge(
+                    source=query_node_id,
+                    target=gate["id"],
+                    weight=0.95 - 0.07 * (index - 1),
+                )
+            )
 
         noisy_gates = [gate for gate in gates if gate["category"] != category][:2]
         for index, gate in enumerate(noisy_gates[:2], start=1):
-            graph.add_edge(Edge(source=query_node_id, target=gate["id"], weight=0.20 + 0.01 * index))
+            graph.add_edge(
+                Edge(
+                    source=query_node_id,
+                    target=gate["id"],
+                    weight=0.20 + 0.01 * index,
+                )
+            )
 
     return graph
 
@@ -186,9 +298,19 @@ def write_outputs(graph_path: Path, scenario_path: Path) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Build gate-bloat experiment graph and scenarios")
-    parser.add_argument("--graph", default="experiments/gate_bloat_graph.json", help="Path to write gate-bloat graph JSON")
-    parser.add_argument("--scenario", default="scenarios/gate_bloat.jsonl", help="Path to write gate-bloat scenario JSONL")
+    parser = argparse.ArgumentParser(
+        description="Build gate-bloat experiment graph and scenarios"
+    )
+    parser.add_argument(
+        "--graph",
+        default="experiments/gate_bloat_graph.json",
+        help="Path to write gate-bloat graph JSON",
+    )
+    parser.add_argument(
+        "--scenario",
+        default="scenarios/gate_bloat.jsonl",
+        help="Path to write gate-bloat scenario JSONL",
+    )
     args = parser.parse_args()
 
     graph_path = Path(args.graph)

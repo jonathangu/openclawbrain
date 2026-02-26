@@ -12,7 +12,6 @@ from __future__ import annotations
 
 import json
 import re
-from typing import Callable
 
 from crabpath import Edge, Graph, Node
 from crabpath.feedback import score_retrieval

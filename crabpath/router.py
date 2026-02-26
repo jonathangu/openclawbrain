@@ -3,9 +3,8 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any, Mapping, Sequence
 
-from .graph import Graph
 from ._structural_utils import parse_markdown_json
-
+from .graph import Graph
 
 _SYSTEM_PROMPT = (
     "You are a memory router. Given a query and candidate document pointers, "
@@ -338,7 +337,8 @@ class Router:
                 import warnings
 
                 warnings.warn(
-                    f"CrabPath: Router.decide_next failed: {exc}. Falling back to heuristic routing.",
+                    "CrabPath: Router.decide_next failed: "
+                    f"{exc}. Falling back to heuristic routing.",
                     stacklevel=2,
                 )
                 last_error = exc

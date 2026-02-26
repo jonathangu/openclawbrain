@@ -3,6 +3,7 @@ from __future__ import annotations
 import builtins
 
 import pytest
+
 from crabpath import Edge, Graph, Node, SynaptogenesisConfig, SynaptogenesisState
 from crabpath.feedback import (
     auto_feedback,

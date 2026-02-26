@@ -7,22 +7,21 @@ import random
 from dataclasses import dataclass
 from typing import Any
 
+from crabpath._structural_utils import count_cross_file_edges
 from crabpath.autotune import HEALTH_TARGETS, measure_health
 from crabpath.decay import DecayConfig, apply_decay
 from crabpath.graph import Edge, Graph, Node
-from crabpath.learning import LearningConfig, RewardSignal, _BASELINE_STATE, make_learning_step
+from crabpath.learning import _BASELINE_STATE, LearningConfig, RewardSignal, make_learning_step
 from crabpath.mitosis import MitosisConfig, MitosisState, bootstrap_workspace
 from crabpath.synaptogenesis import (
     SynaptogenesisConfig,
     SynaptogenesisState,
     decay_proto_edges,
     edge_tier_stats,
-    record_correction,
     record_cofiring,
+    record_correction,
     record_skips,
 )
-from crabpath._structural_utils import count_cross_file_edges
-
 
 CHECKPOINTS = (10, 20, 30, 40, 50)
 CORRECT_DEPLOY_IDS = [f"deploy_correct_{i}" for i in range(1, 6)]
@@ -51,12 +50,14 @@ def _build_workspace() -> dict[str, str]:
     return {
         "deploy_correct_1": (
             "Standard deploy procedure starts by checking CI status and commit tags, "
-            "then inspect the deployment manifest for service and cluster config changes."
+            "then inspect the deployment manifest for service and cluster config "
+            "changes."
         ),
-        "deploy_correct_2": (
-            "After approval, deploy through the normal pipeline only after manifest integrity check. "
-            "Keep config review mandatory, verify rollout plan, and do not skip checkpoints."
-        ),
+    "deploy_correct_2": (
+        "After approval, deploy through the normal pipeline only after "
+        "manifest integrity check. "
+        "Keep config review mandatory, verify rollout plan, and do not skip checkpoints."
+    ),
         "deploy_correct_3": (
             "If deploy validation fails, rollback immediately to the last good manifest, "
             "revert service config, and capture traceability for the cluster event."
@@ -74,8 +75,8 @@ def _build_workspace() -> dict[str, str]:
             "assuming the service config will reconcile by itself."
         ),
         "deploy_wrong_2": (
-            "Old rollout habit: deploy from local branch, ignore manifest details, and rely on hope that "
-            "deploy and config will pass in production."
+            "Old rollout habit: deploy from local branch, ignore manifest details, "
+            "and rely on hope that deploy and config will pass in production."
         ),
         "deploy_wrong_3": (
             "Outdated procedure says no rollback unless outage is severe; run deploy directly, "
@@ -90,16 +91,18 @@ def _build_workspace() -> dict[str, str]:
             "and hope the service rollout does not break the cluster."
         ),
         "hotfix_1": (
-            "Hotfix procedure starts with a minimal change package and an explicit emergency patch tag "
-            "for service config and deployment manifest."
+            "Hotfix procedure starts with a minimal change package and an explicit "
+            "emergency patch tag for service config and deployment manifest."
         ),
         "hotfix_2": (
-            "Run a narrow hotfix rollout only for the affected service and keep standard CI optional "
-            "when incident response requires speed with explicit operator notice."
+            "Run a narrow hotfix rollout only for the affected service and keep "
+            "standard CI optional when incident response requires speed with "
+            "explicit operator notice."
         ),
         "hotfix_3": (
-            "Hotfix validation is targeted: run the regression for the impacted flow, check monitor alerts, "
-            "and confirm no config drift across affected clusters."
+            "Hotfix validation is targeted: run the regression for the impacted flow, "
+            "check monitor alerts, and confirm no config drift across affected "
+            "clusters."
         ),
         "hotfix_4": (
             "After a hotfix, document root cause and temporary config changes, "
@@ -110,24 +113,25 @@ def _build_workspace() -> dict[str, str]:
             "while keeping monitoring strict on service behavior."
         ),
         "scaling_node": (
-            "Scaling guidance: update autoscaling policy, tune CPU and memory thresholds, "
-            "and test node drain strategies across cluster zones."
+            "Scaling guidance: update autoscaling policy, tune CPU and memory "
+            "thresholds, and test node drain strategies across cluster zones."
         ),
         "networking_node": (
-            "Networking playbook covers ingress routing, service mesh policy, DNS cache updates, "
-            "and port-level firewall rules for stable request paths."
+            "Networking playbook covers ingress routing, service mesh policy, "
+            "DNS cache updates, and port-level firewall rules for stable request "
+            "paths."
         ),
         "database_node": (
-            "Database recovery plan includes backup cadence, replica lag checks, index maintenance, "
-            "and connection pool cleanup after failover."
+            "Database recovery plan includes backup cadence, replica lag checks, "
+            "index maintenance, and connection pool cleanup after failover."
         ),
         "testing_node": (
             "Testing discipline covers unit and integration suites, flake triage, "
             "and release criteria before merging service changes."
         ),
         "monitoring_node": (
-            "Monitoring baseline defines alert thresholds, dashboards for request latency and errors, "
-            "and paging rules for cluster incidents."
+            "Monitoring baseline defines alert thresholds, dashboards for request "
+            "latency and errors, and paging rules for cluster incidents."
         ),
     }
 
@@ -144,9 +148,17 @@ def _build_queries() -> list[QuerySpec]:
         wrong=WRONG_DEPLOY_IDS,
     )
     for i in range(1, 10):
-        add(f"deployment failed while releasing service now {i}", CORRECT_DEPLOY_IDS, WRONG_DEPLOY_IDS)
+        add(
+            f"deployment failed while releasing service now {i}",
+            CORRECT_DEPLOY_IDS,
+            WRONG_DEPLOY_IDS,
+        )
     for i in range(1, 3):
-        add(f"what is the standard deploy path for the cluster update {i}", CORRECT_DEPLOY_IDS, WRONG_DEPLOY_IDS)
+        add(
+            f"what is the standard deploy path for the cluster update {i}",
+            CORRECT_DEPLOY_IDS,
+            WRONG_DEPLOY_IDS,
+        )
     add(
         "quick fix needed now",
         correct=HOTFIX_IDS,
@@ -330,7 +342,11 @@ def _topic_node(query: str) -> str:
     return TOPIC_NODES["default"]
 
 
-def _compute_health_summary(graph: Graph, mitosis_state: MitosisState, query_stats: dict[str, Any]) -> dict[str, Any]:
+def _compute_health_summary(
+    graph: Graph,
+    mitosis_state: MitosisState,
+    query_stats: dict[str, Any],
+) -> dict[str, Any]:
     health = measure_health(graph, mitosis_state, query_stats)
     metric_rows: dict[str, dict[str, Any]] = {}
     in_range_count = 0
@@ -355,7 +371,12 @@ def _compute_health_summary(graph: Graph, mitosis_state: MitosisState, query_sta
     }
 
 
-def run_arm(name: str, queries: list[QuerySpec], use_rl: bool = False, seed: int = 1337) -> dict[str, Any]:
+def run_arm(
+    name: str,
+    queries: list[QuerySpec],
+    use_rl: bool = False,
+    seed: int = 1337,
+) -> dict[str, Any]:
     workspace_files = _build_workspace()
     graph = Graph()
     mitosis_state = MitosisState()
@@ -432,7 +453,11 @@ def run_arm(name: str, queries: list[QuerySpec], use_rl: bool = False, seed: int
         ]
         selected_nodes = _route_nodes(qspec, ranked_candidates, rng)
 
-        reward, correct_hit = _score_retrieval(selected_nodes, qspec.correct_node_ids, qspec.wrong_node_ids)
+        reward, correct_hit = _score_retrieval(
+            selected_nodes,
+            qspec.correct_node_ids,
+            qspec.wrong_node_ids,
+        )
         if reward > 0.0:
             full_accuracy_count += 1
         if correct_hit:
@@ -479,7 +504,9 @@ def run_arm(name: str, queries: list[QuerySpec], use_rl: bool = False, seed: int
 
         total_nodes_fired += len(selected_nodes)
         selected_node_text_len = sum(
-            len(graph.get_node(node_id).content) for node_id in selected_nodes if graph.get_node(node_id)
+            len(graph.get_node(node_id).content)
+            for node_id in selected_nodes
+            if graph.get_node(node_id)
         )
         total_context_chars += selected_node_text_len
 
@@ -500,7 +527,10 @@ def run_arm(name: str, queries: list[QuerySpec], use_rl: bool = False, seed: int
                 "cross_file_edges": count_cross_file_edges(graph),
                 "tiers": tiers,
                 "health": {
-                    "in_range": f"{health_summary['in_range_count']}/{health_summary['in_range_total']}",
+                    "in_range": (
+                        f"{health_summary['in_range_count']}/"
+                        f"{health_summary['in_range_total']}"
+                    ),
                     "metrics": health_summary["metrics"],
                 },
                 "wrong_seen": wrong_seen,
@@ -563,13 +593,21 @@ def main() -> None:
         return f"{(b_num / b_den) - (a_num / a_den):.2f}"
 
     print("\nComparison table")
+    accuracy_delta = _delta(
+        a_final["accuracy_full_pct"],
+        b_final["accuracy_full_pct"],
+    )
+    wrong_path_delta = _delta(
+        a_final["wrong_path_hit_rate_pct"],
+        b_final["wrong_path_hit_rate_pct"],
+    )
     print(
         f"Retrieval accuracy | {a_final['accuracy_full_pct']:.2f}% | "
-        f"{b_final['accuracy_full_pct']:.2f}% | {_delta(a_final['accuracy_full_pct'], b_final['accuracy_full_pct'])}"
+        f"{b_final['accuracy_full_pct']:.2f}% | {accuracy_delta}"
     )
     print(
         f"Wrong-path hit rate | {a_final['wrong_path_hit_rate_pct']:.2f}% | "
-        f"{b_final['wrong_path_hit_rate_pct']:.2f}% | {_delta(a_final['wrong_path_hit_rate_pct'], b_final['wrong_path_hit_rate_pct'])}"
+        f"{b_final['wrong_path_hit_rate_pct']:.2f}% | {wrong_path_delta}"
     )
     print(
         f"Wrong nodes hit      | {a_final['wrong_hits']} of {a_final['wrong_seen']} | "
@@ -582,9 +620,13 @@ def main() -> None:
         f"Health score        | {a_final['health_in_range']} | {b_final['health_in_range']} | "
         f"{_delta_ratio(a_final['health_in_range'], b_final['health_in_range'])}"
     )
+    cross_file_delta = _delta(
+        a_final["cross_file_edges"],
+        b_final["cross_file_edges"],
+    )
     print(
         f"Cross-file edges    | {a_final['cross_file_edges']} | "
-        f"{b_final['cross_file_edges']} | {_delta(a_final['cross_file_edges'], b_final['cross_file_edges'])}"
+        f"{b_final['cross_file_edges']} | {cross_file_delta}"
     )
 
     result_path = "scripts/ab_scoring_results.json"

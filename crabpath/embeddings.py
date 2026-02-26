@@ -305,7 +305,8 @@ def auto_embed(
             import warnings
 
             warnings.warn(
-                f"CrabPath: OpenAI embedding provider failed: {exc}. Falling back to other providers.",
+                "CrabPath: OpenAI embedding provider failed: "
+                f"{exc}. Falling back to other providers.",
                 stacklevel=2,
             )
             errors.append(f"OpenAI failed: {exc}")
@@ -317,7 +318,8 @@ def auto_embed(
             import warnings
 
             warnings.warn(
-                f"CrabPath: Gemini embedding provider failed: {exc}. Falling back to other providers.",
+                "CrabPath: Gemini embedding provider failed: "
+                f"{exc}. Falling back to other providers.",
                 stacklevel=2,
             )
             errors.append(f"Gemini failed: {exc}")

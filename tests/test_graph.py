@@ -1,6 +1,6 @@
 """Tests for the CrabPath graph."""
 
-from crabpath import Graph, Node, Edge
+from crabpath import Edge, Graph, Node
 
 
 def test_create_graph():

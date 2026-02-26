@@ -8,7 +8,6 @@ from hashlib import sha1
 
 from .graph import Edge, Graph
 
-
 BLOCKED_QUERIES = {
     "hello",
     "thanks",

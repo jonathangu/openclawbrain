@@ -2,11 +2,9 @@
 from __future__ import annotations
 
 import argparse
-import json
 from pathlib import Path
 
 from crabpath.graph import Edge, Graph, Node
-
 
 DEPLOY_NODES = [
     {
@@ -37,7 +35,10 @@ DEPLOY_NODES = [
     {
         "id": "rollback",
         "type": "procedure",
-        "content": "If deploy fails: ssh prod git checkout HEAD~1 && pm2 restart. Rollback to previous version.",
+        "content": (
+            "If deploy fails: ssh prod git checkout HEAD~1 && pm2 restart. Rollback to "
+            "previous version."
+        ),
     },
     {
         "id": "skip_tests",

@@ -13,8 +13,17 @@ Paper: https://jonathangu.com/crabpath/
 
 __version__ = "1.0.0"
 
-from .graph import Graph, Node, Edge
-from .activation import activate, learn, Firing
+from .activation import Firing, activate, learn
+from .adapter import CrabPathAgent, OpenClawCrabPathAdapter
+from .autotune import (
+    DEFAULTS,
+    HEALTH_TARGETS,
+    Adjustment,
+    GraphHealth,
+    autotune,
+    measure_health,
+    suggest_config,
+)
 from .embeddings import (
     EmbeddingIndex,
     auto_embed,
@@ -23,7 +32,6 @@ from .embeddings import (
     ollama_embed,
     openai_embed,
 )
-from .adapter import CrabPathAgent, OpenClawCrabPathAdapter
 from .feedback import (
     auto_feedback,
     auto_outcome,
@@ -31,7 +39,24 @@ from .feedback import (
     map_correction_to_snapshot,
     score_retrieval,
 )
-from .shadow_logger import ShadowLog
+from .graph import Edge, Graph, Node
+from .migrate import MigrateConfig, gather_files, migrate, parse_session_logs
+from .mitosis import (
+    MergeResult,
+    MitosisConfig,
+    MitosisState,
+    NeurogenesisResult,
+    SplitResult,
+    bootstrap_workspace,
+    create_node,
+    find_co_firing_families,
+    merge_nodes,
+    mitosis_maintenance,
+    should_create_node,
+    should_merge,
+    split_node,
+    split_with_llm,
+)
 from .neurogenesis import (
     BLOCKED_QUERIES,
     NeurogenesisConfig,
@@ -40,42 +65,17 @@ from .neurogenesis import (
     connect_new_node,
     deterministic_auto_id,
 )
-from .migrate import migrate, MigrateConfig, gather_files, parse_session_logs
+from .shadow_logger import ShadowLog
 from .synaptogenesis import (
+    ProtoEdge,
     SynaptogenesisConfig,
     SynaptogenesisState,
-    ProtoEdge,
-    record_cofiring,
-    record_skips,
-    record_correction,
-    decay_proto_edges,
     classify_tier,
+    decay_proto_edges,
     edge_tier_stats,
-)
-from .autotune import (
-    DEFAULTS,
-    Adjustment,
-    GraphHealth,
-    HEALTH_TARGETS,
-    autotune,
-    measure_health,
-    suggest_config,
-)
-from .mitosis import (
-    MitosisConfig,
-    MitosisState,
-    SplitResult,
-    MergeResult,
-    NeurogenesisResult,
-    split_node,
-    split_with_llm,
-    should_merge,
-    should_create_node,
-    create_node,
-    find_co_firing_families,
-    merge_nodes,
-    bootstrap_workspace,
-    mitosis_maintenance,
+    record_cofiring,
+    record_correction,
+    record_skips,
 )
 
 __all__ = [

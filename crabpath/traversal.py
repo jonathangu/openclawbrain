@@ -69,7 +69,8 @@ def _seed_nodes_from_index(
         import warnings
 
         warnings.warn(
-            f"CrabPath: embedding index raw_scores failed: {exc}. Falling back to safe seed extraction.",
+            "CrabPath: embedding index raw_scores failed: "
+            f"{exc}. Falling back to safe seed extraction.",
             stacklevel=2,
         )
         return []

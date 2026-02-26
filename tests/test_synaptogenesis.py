@@ -1,20 +1,20 @@
 """Tests for CrabPath synaptogenesis — edge formation mechanics."""
 
 import pytest
-from crabpath.graph import Graph, Node, Edge
+
+from crabpath.decay import DecayConfig, apply_decay
+from crabpath.graph import Edge, Graph, Node
 from crabpath.synaptogenesis import (
+    ProtoEdge,
     SynaptogenesisConfig,
     SynaptogenesisState,
-    ProtoEdge,
-    record_cofiring,
-    record_skips,
-    decay_proto_edges,
-    record_correction,
     classify_tier,
+    decay_proto_edges,
     edge_tier_stats,
+    record_cofiring,
+    record_correction,
+    record_skips,
 )
-from crabpath.decay import apply_decay, DecayConfig
-
 
 # ---------------------------------------------------------------------------
 # Fixtures

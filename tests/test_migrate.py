@@ -1,16 +1,17 @@
 """Tests for CrabPath migration — bootstrap + playback."""
 
 import json
-import pytest
-from crabpath.migrate import (
-    migrate,
-    gather_files,
-    parse_session_logs,
-    keyword_router,
-    fallback_llm_split,
-    MigrateConfig,
-)
 
+import pytest
+
+from crabpath.migrate import (
+    MigrateConfig,
+    fallback_llm_split,
+    gather_files,
+    keyword_router,
+    migrate,
+    parse_session_logs,
+)
 
 # ---------------------------------------------------------------------------
 # Fixtures

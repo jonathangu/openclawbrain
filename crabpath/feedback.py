@@ -4,10 +4,9 @@ from __future__ import annotations
 
 import json
 import os
-from pathlib import Path
 import re
-from typing import Any, Optional
-from typing import Callable
+from pathlib import Path
+from typing import Any, Callable, Optional
 
 from .graph import Graph
 from .synaptogenesis import (

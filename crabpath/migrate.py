@@ -27,20 +27,19 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
-from .graph import Graph
 from ._structural_utils import split_fallback_sections
+from .autotune import suggest_config
+from .decay import DecayConfig, apply_decay
+from .graph import Graph
 from .mitosis import MitosisConfig, MitosisState, bootstrap_workspace
 from .synaptogenesis import (
     SynaptogenesisConfig,
     SynaptogenesisState,
-    record_cofiring,
-    record_skips,
     decay_proto_edges,
     edge_tier_stats,
+    record_cofiring,
+    record_skips,
 )
-from .decay import DecayConfig, apply_decay
-from .autotune import suggest_config
-
 
 # ---------------------------------------------------------------------------
 # Configuration

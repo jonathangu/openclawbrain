@@ -26,19 +26,18 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from crabpath._structural_utils import classify_edge_tier
-from crabpath.decay import DecayConfig, apply_decay
-from crabpath.graph import Graph
-from crabpath.lifecycle_sim import make_mock_llm_all
-from crabpath.mitosis import MitosisConfig, MitosisState, bootstrap_workspace
-from crabpath.synaptogenesis import (
+from crabpath._structural_utils import classify_edge_tier  # noqa: E402
+from crabpath.decay import DecayConfig, apply_decay  # noqa: E402
+from crabpath.graph import Graph  # noqa: E402
+from crabpath.lifecycle_sim import make_mock_llm_all  # noqa: E402
+from crabpath.mitosis import MitosisConfig, MitosisState, bootstrap_workspace  # noqa: E402
+from crabpath.synaptogenesis import (  # noqa: E402
     SynaptogenesisConfig,
     SynaptogenesisState,
     decay_proto_edges,
     record_cofiring,
     record_skips,
 )
-
 
 STOP_WORDS = {
     "a",
@@ -324,7 +323,8 @@ def _build_queries() -> list[QueryCase]:
             return QueryCase(
                 text=(
                     f"Post-deploy alerts show bad latency. Run monitoring alerts, then post-"
-                    f"deploy validation, then rollback-readiness metrics before rollback for run {i}."
+                    f"deploy validation, then rollback-readiness metrics before rollback "
+                    f"for run {i}."
                 ),
                 expected_procedure=[
                     "monitoring-alerts",
@@ -381,11 +381,36 @@ def _build_queries() -> list[QueryCase]:
         )
 
     for i in range(1, 11):
-        queries.append(clear_query(i, "post_deploy_failure") if i <= 8 else ambiguous_query(i, "post_deploy_failure"))
-        queries.append(clear_query(i, "feature_flag") if i <= 8 else ambiguous_query(i, "feature_flag"))
-        queries.append(clear_query(i, "config_drift") if i <= 8 else ambiguous_query(i, "config_drift"))
-        queries.append(clear_query(i, "rollout_alert") if i <= 8 else ambiguous_query(i, "rollout_alert"))
-        queries.append(clear_query(i, "incident_chaos") if i <= 8 else ambiguous_query(i, "incident_chaos"))
+        post_query = (
+            clear_query(i, "post_deploy_failure")
+            if i <= 8
+            else ambiguous_query(i, "post_deploy_failure")
+        )
+        feature_query = (
+            clear_query(i, "feature_flag")
+            if i <= 8
+            else ambiguous_query(i, "feature_flag")
+        )
+        drift_query = (
+            clear_query(i, "config_drift")
+            if i <= 8
+            else ambiguous_query(i, "config_drift")
+        )
+        rollout_query = (
+            clear_query(i, "rollout_alert")
+            if i <= 8
+            else ambiguous_query(i, "rollout_alert")
+        )
+        incident_query = (
+            clear_query(i, "incident_chaos")
+            if i <= 8
+            else ambiguous_query(i, "incident_chaos")
+        )
+        queries.append(post_query)
+        queries.append(feature_query)
+        queries.append(drift_query)
+        queries.append(rollout_query)
+        queries.append(incident_query)
 
     return queries
 
@@ -418,7 +443,10 @@ def _contains_all(required: list[str], retrieved: list[str]) -> bool:
     return required_set.issubset(set(retrieved))
 
 
-def _compute_learning_curve(query_results: list[dict[str, Any]], checkpoints: list[int]) -> dict[str, float]:
+def _compute_learning_curve(
+    query_results: list[dict[str, Any]],
+    checkpoints: list[int],
+) -> dict[str, float]:
     output: dict[str, float] = {}
     correct = 0
     total = len(query_results)
@@ -505,11 +533,20 @@ def simulate_rag(docs: dict[str, str], queries: list[QueryCase], top_k: int = 3)
     return {
         "system": "RAG",
         "query_results": query_results,
-        "summary": _summary(query_results, sum(len(content) for content in docs.values()), len(docs)),
+        "summary": _summary(
+            query_results,
+            sum(len(content) for content in docs.values()),
+            len(docs),
+        ),
     }
 
 
-def _expand_reflex(graph: Graph, seeds: list[str], config: SynaptogenesisConfig, max_hops: int = 2) -> list[str]:
+def _expand_reflex(
+    graph: Graph,
+    seeds: list[str],
+    config: SynaptogenesisConfig,
+    max_hops: int = 2,
+) -> list[str]:
     expanded = list(seeds)
     seen = set(expanded)
     frontier = list(seeds)
@@ -563,11 +600,16 @@ def simulate_crabpath(
     query_results: list[dict[str, Any]] = []
 
     for qi, query in enumerate(queries, 1):
-        ranked = _rank_documents(query.text, {n.id: (graph.get_node(n.id).content if graph.get_node(n.id) else "") for n in graph.nodes()}, retrieval_k)
+        doc_contents = {
+            n.id: (graph.get_node(n.id).content if graph.get_node(n.id) else "")
+            for n in graph.nodes()
+        }
+        ranked = _rank_documents(query.text, doc_contents, retrieval_k)
         retrieval = [doc_id for doc_id, _ in ranked]
         selected = retrieval[:keep_k]
 
-        # Memory-assisted priming with learned problem procedures (simulates CrabPath lifecycle memory).
+        # Memory-assisted priming with learned problem procedures.
+        # This simulates CrabPath lifecycle memory.
         if query.category in learned_paths:
             for doc_id in learned_paths[query.category]:
                 if doc_id not in selected:
@@ -588,7 +630,13 @@ def simulate_crabpath(
         )
         skips = 0
         if selected:
-            skips = record_skips(graph=graph, current_node=selected[0], candidates=retrieval, selected=selected, config=syn_config)
+            skips = record_skips(
+                graph=graph,
+                current_node=selected[0],
+                candidates=retrieval,
+                selected=selected,
+                config=syn_config,
+            )
 
         if qi % decay_interval == 0:
             apply_decay(graph, turns_elapsed=decay_interval, config=decay_cfg)
@@ -629,7 +677,11 @@ def simulate_crabpath(
     return {
         "system": "CrabPath",
         "query_results": query_results,
-        "summary": _summary(query_results, sum(len(content) for content in docs.values()), len(docs)),
+        "summary": _summary(
+            query_results,
+            sum(len(content) for content in docs.values()),
+            len(docs),
+        ),
         "learned_paths": learned_paths,
         "graph": {
             "nodes": graph.node_count,
@@ -700,10 +752,12 @@ def _print_table(sim_results: dict[str, Any], checkpoints=(1, 10, 25, 50)) -> No
     print("\nNOTES")
     print(f"- Ambiguous queries: {rag_amb['count']} total")
     print(
-        f"- RAG accuracy on ambiguous queries: {rag_amb['correct']}/{rag_amb['count']} ({rag_amb['percent']:.1f}%)"
+        f"- RAG accuracy on ambiguous queries: {rag_amb['correct']}/{rag_amb['count']} "
+        f"({rag_amb['percent']:.1f}%)"
     )
     print(
-        f"- CrabPath accuracy on ambiguous queries: {crab_amb['correct']}/{crab_amb['count']} ({crab_amb['percent']:.1f}%)"
+        f"- CrabPath accuracy on ambiguous queries: {crab_amb['correct']}/{crab_amb['count']} "
+        f"({crab_amb['percent']:.1f}%)"
     )
 
 
@@ -740,24 +794,36 @@ def _build_payload(
             for doc_id, content in docs.items()
         ],
         "queries": [
-            {"query_num": i + 1, "text": q.text, "category": q.category, "expected": q.expected_procedure, "ambiguous": q.ambiguous}
+            {
+                "query_num": i + 1,
+                "text": q.text,
+                "category": q.category,
+                "expected": q.expected_procedure,
+                "ambiguous": q.ambiguous,
+            }
             for i, q in enumerate(queries)
         ],
         "systems": {
             "static": {
                 "query_results": static_result["query_results"],
                 "summary": static_result["summary"],
-                "learning_curve": _compute_learning_curve(static_result["query_results"], checkpoints),
+                "learning_curve": _compute_learning_curve(
+                    static_result["query_results"], checkpoints
+                ),
             },
             "rag": {
                 "query_results": rag_result["query_results"],
                 "summary": rag_result["summary"],
-                "learning_curve": _compute_learning_curve(rag_result["query_results"], checkpoints),
+                "learning_curve": _compute_learning_curve(
+                    rag_result["query_results"], checkpoints
+                ),
             },
             "crab": {
                 "query_results": crab_result["query_results"],
                 "summary": crab_result["summary"],
-                "learning_curve": _compute_learning_curve(crab_result["query_results"], checkpoints),
+                "learning_curve": _compute_learning_curve(
+                    crab_result["query_results"], checkpoints
+                ),
                 "learned_paths": crab_result["learned_paths"],
                 "graph": crab_result["graph"],
             },
@@ -788,7 +854,10 @@ def main() -> None:
     output_path = ROOT / "scripts" / "rag_collapse_results.json"
     output_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
-    _print_table({"static": static_result, "rag": rag_result, "crab": crab_result}, checkpoints=checkpoints)
+    _print_table(
+        {"static": static_result, "rag": rag_result, "crab": crab_result},
+        checkpoints=checkpoints,
+    )
     _print_reflex_paths(crab_result)
 
     print(f"\nSaved full results to {output_path}")

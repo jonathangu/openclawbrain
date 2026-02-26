@@ -3,7 +3,7 @@
 import tempfile
 from pathlib import Path
 
-from crabpath import Graph, Node, Edge, activate, learn
+from crabpath import Edge, Graph, Node, activate, learn
 
 
 def test_save_load_roundtrip():

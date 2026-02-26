@@ -16,8 +16,7 @@ ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from crabpath.graph import Edge, Graph, Node
-
+from crabpath.graph import Edge, Graph, Node  # noqa: E402
 
 SECTION_RE = re.compile(r"^(#{2,3})\s+(.*)$")
 TOOL_PATTERNS = (

@@ -24,9 +24,13 @@ from dataclasses import dataclass, field
 from hashlib import sha256
 from typing import Any, Callable
 
-from ._structural_utils import ConfigBase, JSONStateMixin, parse_markdown_json, split_fallback_sections
-from .graph import Graph, Node, Edge
-
+from ._structural_utils import (
+    ConfigBase,
+    JSONStateMixin,
+    parse_markdown_json,
+    split_fallback_sections,
+)
+from .graph import Edge, Graph, Node
 
 # ---------------------------------------------------------------------------
 # Configuration
@@ -308,7 +312,8 @@ def should_create_node(
         import warnings
 
         warnings.warn(
-            f"CrabPath: should_create_node LLM call failed: {exc}. Falling back to not creating a new node.",
+            "CrabPath: should_create_node LLM call failed: "
+            f"{exc}. Falling back to not creating a new node.",
             stacklevel=2,
         )
         return False, "llm_error", "", ""

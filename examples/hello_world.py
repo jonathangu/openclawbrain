@@ -7,8 +7,8 @@ Run: python examples/hello_world.py
 from __future__ import annotations
 
 from pathlib import Path
-from crabpath import CrabPathAgent, Edge, Graph, Node
 
+from crabpath import CrabPathAgent, Edge, Graph, Node
 
 GRAPH_PATH = "hello_world_graph.json"
 INDEX_PATH = "hello_world_graph.index.json"

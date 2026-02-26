@@ -5,15 +5,11 @@ from __future__ import annotations
 from dataclasses import dataclass, field
 from typing import Any
 
-from .graph import Graph
-from ._structural_utils import count_cross_file_edges
-from ._structural_utils import JSONStateMixin
+from ._structural_utils import JSONStateMixin, count_cross_file_edges
 from .decay import DecayConfig
-from .mitosis import MitosisConfig
-from .synaptogenesis import SynaptogenesisConfig
-from .mitosis import MitosisState
-from .synaptogenesis import edge_tier_stats
-
+from .graph import Graph
+from .mitosis import MitosisConfig, MitosisState
+from .synaptogenesis import SynaptogenesisConfig, edge_tier_stats
 
 # ---------------------------------------------------------------------------
 # Tuned defaults by workspace regime.
@@ -538,7 +534,10 @@ def compute_window_stats(
         default=0,
     )
     total_promotions = current_promotions - snapshot_promotions
-    if any(key in current_stats or key in snapshot for key in ["promotions", "total_promotions", "promoted", "promoted_count"]):
+    if any(
+        key in current_stats or key in snapshot
+        for key in ["promotions", "total_promotions", "promoted", "promoted_count"]
+    ):
         windowed["promotions"] = max(0, total_promotions)
         windowed["total_promotions"] = max(0, total_promotions)
 

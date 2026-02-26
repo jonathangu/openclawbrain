@@ -8,12 +8,14 @@ from typing import Any
 
 from crabpath.graph import Edge, Graph, Node
 
-
 STABLE_NODES = [
     {
         "id": "sc_coordinator_old",
         "type": "fact",
-        "content": "Fact: The incident coordinator is Jordan and must receive all priority alerts.",
+        "content": (
+            "Fact: The incident coordinator is Jordan and must receive all priority "
+            "alerts."
+        ),
         "summary": "Old coordinator",
     },
     {
@@ -37,25 +39,37 @@ STABLE_NODES = [
     {
         "id": "sc_retry_old",
         "type": "fact",
-        "content": "Fact: Retry policy is 2 attempts with exponential backoff for transient errors.",
+        "content": (
+            "Fact: Retry policy is 2 attempts with exponential backoff for transient "
+            "errors."
+        ),
         "summary": "Old retry",
     },
     {
         "id": "sc_retry_new",
         "type": "fact",
-        "content": "Fact: Retry policy is 4 jittered attempts with exponential backoff for transient errors.",
+        "content": (
+            "Fact: Retry policy is 4 jittered attempts with exponential backoff for "
+            "transient errors."
+        ),
         "summary": "New retry",
     },
     {
         "id": "sc_coordinator_guard",
         "type": "guardrail",
-        "content": "Guardrail: do not keep using a coordinator field if policy has moved to a replacement name.",
+        "content": (
+            "Guardrail: do not keep using a coordinator field if policy has moved to a "
+            "replacement name."
+        ),
         "summary": "Coordinator guardrail",
     },
     {
         "id": "sc_region_guard",
         "type": "guardrail",
-        "content": "Guardrail: do not keep routing traffic to the old region once migration is active.",
+        "content": (
+            "Guardrail: do not keep routing traffic to the old region once migration is "
+            "active."
+        ),
         "summary": "Region guardrail",
     },
     {
@@ -67,7 +81,10 @@ STABLE_NODES = [
     {
         "id": "sc_tool_runbook",
         "type": "tool_call",
-        "content": "Tool call: open on-call runbook and on-call schedule before answering coordination or routing questions.",
+        "content": (
+            "Tool call: open on-call runbook and on-call schedule before answering "
+            "coordination or routing questions."
+        ),
         "summary": "Runbook lookup",
     },
 ]
@@ -78,34 +95,70 @@ TOPIC_ENTRIES = [
         "type": "fact",
         "content": "Coordinator policy retrieval node",
         "summary": "coordinator lookup",
-        "relevant": ["sc_coordinator_old", "sc_coordinator_new", "sc_coordinator_guard", "sc_tool_runbook"],
+        "relevant": [
+            "sc_coordinator_old",
+            "sc_coordinator_new",
+            "sc_coordinator_guard",
+            "sc_tool_runbook",
+        ],
     },
     {
         "id": "sc_entry_region",
         "type": "fact",
         "content": "Region policy retrieval node",
         "summary": "region lookup",
-        "relevant": ["sc_region_old", "sc_region_new", "sc_region_guard", "sc_tool_runbook"],
+        "relevant": [
+            "sc_region_old",
+            "sc_region_new",
+            "sc_region_guard",
+            "sc_tool_runbook",
+        ],
     },
     {
         "id": "sc_entry_retry",
         "type": "fact",
         "content": "Retry policy retrieval node",
         "summary": "retry lookup",
-        "relevant": ["sc_retry_old", "sc_retry_new", "sc_retry_guard", "sc_tool_runbook"],
+        "relevant": [
+            "sc_retry_old",
+            "sc_retry_new",
+            "sc_retry_guard",
+            "sc_tool_runbook",
+        ],
     },
 ]
 
 SCENARIO_TEMPLATE = [
-    {"topic": "coordinator", "query": "Who is the current incident coordinator?", "old": "Jordan", "new": "Morgan"},
-    {"topic": "region", "query": "Which primary region should traffic use?", "old": "us-east-1", "new": "eu-west-1"},
-    {"topic": "retry", "query": "What retry policy applies right now?", "old": "2 attempts", "new": "4 attempts"},
+    {
+        "topic": "coordinator",
+        "query": "Who is the current incident coordinator?",
+        "old": "Jordan",
+        "new": "Morgan",
+    },
+    {
+        "topic": "region",
+        "query": "Which primary region should traffic use?",
+        "old": "us-east-1",
+        "new": "eu-west-1",
+    },
+    {
+        "topic": "retry",
+        "query": "What retry policy applies right now?",
+        "old": "2 attempts",
+        "new": "4 attempts",
+    },
 ]
 
 
 CORRECTION_TURNS = [
-    {"topic": "coordinator", "query": "Correction: The incident coordinator is Morgan, not Jordan."},
-    {"topic": "region", "query": "Correction: Production traffic now uses eu-west-1, not us-east-1."},
+    {
+        "topic": "coordinator",
+        "query": "Correction: The incident coordinator is Morgan, not Jordan.",
+    },
+    {
+        "topic": "region",
+        "query": "Correction: Production traffic now uses eu-west-1, not us-east-1.",
+    },
     {"topic": "retry", "query": "Correction: Use 4 jittered retry attempts, not 2."},
     {"topic": "coordinator", "query": "The coordinator is now Morgan and not Jordan."},
     {"topic": "region", "query": "Remember, production routing is now eu-west-1."},
@@ -194,7 +247,7 @@ def _build_scenario_rows() -> list[dict[str, Any]]:
     for idx in range(15):
         topic_key = SCENARIO_TEMPLATE[idx % len(SCENARIO_TEMPLATE)]["topic"]
         template = RECALL_TEMPLATES[topic_key]
-        query = template["queries"][idx % len(template["queries"]) ]
+        query = template["queries"][idx % len(template["queries"])]
         expected = [template["new"]]
         reward = 1.0
         # Introduce one intentional stale slip at turn 20 to measure catch-up behavior.
@@ -234,9 +287,19 @@ def write_outputs(graph_path: Path, scenario_path: Path) -> None:
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(description="Build stale-context experiment graph and scenarios")
-    parser.add_argument("--graph", default="experiments/stale_context_graph.json", help="Path to write stale-context graph JSON")
-    parser.add_argument("--scenario", default="scenarios/stale_context.jsonl", help="Path to write stale-context scenario JSONL")
+    parser = argparse.ArgumentParser(
+        description="Build stale-context experiment graph and scenarios"
+    )
+    parser.add_argument(
+        "--graph",
+        default="experiments/stale_context_graph.json",
+        help="Path to write stale-context graph JSON",
+    )
+    parser.add_argument(
+        "--scenario",
+        default="scenarios/stale_context.jsonl",
+        help="Path to write stale-context scenario JSONL",
+    )
     args = parser.parse_args()
 
     write_outputs(Path(args.graph), Path(args.scenario))

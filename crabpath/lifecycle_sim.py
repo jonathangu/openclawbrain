@@ -15,11 +15,12 @@ All with mock LLM calls for reproducibility.
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass, asdict
+from dataclasses import asdict, dataclass
 from typing import Any, Callable
 
-from .graph import Graph
 from ._structural_utils import ConfigBase
+from .decay import DecayConfig, apply_decay
+from .graph import Graph
 from .mitosis import (
     MitosisConfig,
     MitosisState,
@@ -29,13 +30,11 @@ from .mitosis import (
 from .synaptogenesis import (
     SynaptogenesisConfig,
     SynaptogenesisState,
-    record_cofiring,
-    record_skips,
     decay_proto_edges,
     edge_tier_stats,
+    record_cofiring,
+    record_skips,
 )
-from .decay import DecayConfig, apply_decay
-
 
 # ---------------------------------------------------------------------------
 # Simulation config

@@ -16,13 +16,29 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from crabpath.autotune import HEALTH_TARGETS, GraphHealth, SafetyBounds, measure_health, self_tune
-from crabpath._structural_utils import count_cross_file_edges, node_file_id
-from crabpath.decay import DecayConfig, apply_decay
-from crabpath.graph import Graph
-from crabpath.lifecycle_sim import Query, make_mock_llm_all, make_mock_router, workspace_scenario
-from crabpath.mitosis import MitosisConfig, MitosisState, bootstrap_workspace, mitosis_maintenance
-from crabpath.synaptogenesis import (
+from crabpath._structural_utils import count_cross_file_edges, node_file_id  # noqa: E402
+from crabpath.autotune import (  # noqa: E402
+    HEALTH_TARGETS,
+    GraphHealth,
+    SafetyBounds,
+    measure_health,
+    self_tune,
+)
+from crabpath.decay import DecayConfig, apply_decay  # noqa: E402
+from crabpath.graph import Graph  # noqa: E402
+from crabpath.lifecycle_sim import (  # noqa: E402
+    Query,
+    make_mock_llm_all,
+    make_mock_router,
+    workspace_scenario,
+)
+from crabpath.mitosis import (  # noqa: E402
+    MitosisConfig,
+    MitosisState,
+    bootstrap_workspace,
+    mitosis_maintenance,
+)
+from crabpath.synaptogenesis import (  # noqa: E402
     SynaptogenesisConfig,
     SynaptogenesisState,
     classify_tier,
@@ -132,10 +148,9 @@ def _simulate_queries(
         promotions += cofire_result["promoted"]
         proto_created += cofire_result["proto_created"]
 
-        skips_penalized = 0
         if selected:
             candidate_ids = [c[0] for c in candidates]
-            skips_penalized = record_skips(graph, selected[0], candidate_ids, selected, synapse_config)
+            record_skips(graph, selected[0], candidate_ids, selected, synapse_config)
 
         fired_count = len(selected)
         fired_counts.append(fired_count)
@@ -213,21 +228,43 @@ def _simulate_queries(
                     "skip_factor": synapse_config.skip_factor,
                     "reflex_threshold": synapse_config.reflex_threshold,
                     "total_edges": graph.edge_count,
-                    "reflex_edges": len([e for e in graph.edges() if classify_tier(e.weight, synapse_config) == "reflex"]),
-                    "dormant_edges": len([e for e in graph.edges() if classify_tier(e.weight, synapse_config) == "dormant"]),
+                    "reflex_edges": len(
+                        [
+                            e
+                            for e in graph.edges()
+                            if classify_tier(e.weight, synapse_config) == "reflex"
+                        ]
+                    ),
+                    "dormant_edges": len(
+                        [
+                            e
+                            for e in graph.edges()
+                            if classify_tier(e.weight, synapse_config) == "dormant"
+                        ]
+                    ),
                 }
             )
 
         tune_history.append(health)
 
-    final_health = tune_history[-1] if tune_history else _health_to_dict(measure_health(graph, mitosis_state, _query_stats_from_run(
-        fired_counts=fired_counts,
-        context_chars=context_chars,
-        promotions=promotions,
-        proto_created=proto_created,
-        reconverged_families=0,
-        queries_seen=len(queries),
-    )))
+    final_health = (
+        tune_history[-1]
+        if tune_history
+        else _health_to_dict(
+            measure_health(
+                graph,
+                mitosis_state,
+                _query_stats_from_run(
+                    fired_counts=fired_counts,
+                    context_chars=context_chars,
+                    promotions=promotions,
+                    proto_created=proto_created,
+                    reconverged_families=0,
+                    queries_seen=len(queries),
+                ),
+            )
+        )
+    )
     if hasattr(final_health, "__dict__"):
         final_health_dict: dict[str, float | int] = _health_to_dict(final_health)
     else:
@@ -543,11 +580,17 @@ def _print_scenario2_report(
     b_cf_rows = _fmt_rows(b_cf, right_w)
 
     a_top = [
-        f"{edge['source_file']}->{edge['target_file']} {edge['source']}->{edge['target']} ({edge['weight']})"
+        (
+            f"{edge['source_file']}->{edge['target_file']} "
+            f"{edge['source']}->{edge['target']} ({edge['weight']})"
+        )
         for edge in brain_a["top_edges"]
     ]
     b_top = [
-        f"{edge['source_file']}->{edge['target_file']} {edge['source']}->{edge['target']} ({edge['weight']})"
+        (
+            f"{edge['source_file']}->{edge['target_file']} "
+            f"{edge['source']}->{edge['target']} ({edge['weight']})"
+        )
         for edge in brain_b["top_edges"]
     ]
     a_top_rows = _fmt_rows(a_top, left_w)

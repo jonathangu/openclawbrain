@@ -2,14 +2,12 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict
+import argparse
+import copy
+import json
+import re
 from pathlib import Path
 from typing import Any
-
-import argparse
-import json
-import copy
-import re
 
 from crabpath.embeddings import EmbeddingIndex
 from crabpath.graph import Graph
@@ -140,7 +138,12 @@ def _run_crabpath_arm(
         steps_to_apply = trajectory.steps[-1:]
 
     learning_cfg = LearningConfig()
-    make_learning_step(graph=graph, trajectory_steps=steps_to_apply, reward=reward, config=learning_cfg)
+    make_learning_step(
+        graph=graph,
+        trajectory_steps=steps_to_apply,
+        reward=reward,
+        config=learning_cfg,
+    )
 
     return {
         "query": scenario.query,
@@ -228,7 +231,9 @@ def run_comparison(
 
 
 def main(argv: list[str] | None = None) -> int:
-    parser = argparse.ArgumentParser(description="Run comparison experiment over a scenario JSONL file.")
+    parser = argparse.ArgumentParser(
+        description="Run comparison experiment over a scenario JSONL file."
+    )
     parser.add_argument("--graph", required=True, help="Path to graph JSON file.")
     parser.add_argument("--scenario", required=True, help="Path to scenario JSONL file.")
     parser.add_argument("--top-k", type=int, default=8)

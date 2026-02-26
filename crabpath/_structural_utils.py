@@ -2,9 +2,9 @@
 
 from __future__ import annotations
 
-from dataclasses import asdict, dataclass, replace
 import json
 import re
+from dataclasses import asdict, dataclass, replace
 from typing import Any, TypeVar
 
 

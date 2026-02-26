@@ -1,10 +1,10 @@
 """Tests for CrabPath lifecycle simulation."""
 
 from crabpath.lifecycle_sim import (
+    Query,
+    SimConfig,
     run_simulation,
     workspace_scenario,
-    SimConfig,
-    Query,
 )
 
 

@@ -1,8 +1,8 @@
 """Calibrate warm-start defaults for CrabPath via deterministic grid search."""
 
+# ruff: noqa: I001
 from __future__ import annotations
 
-import re
 import sys
 from itertools import product
 from pathlib import Path
@@ -11,13 +11,23 @@ ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from crabpath.autotune import HEALTH_TARGETS, GraphHealth, measure_health, self_tune
-from crabpath.decay import DecayConfig, apply_decay
-from crabpath.graph import Graph
-from crabpath.lifecycle_sim import SimConfig, make_mock_llm_all, make_mock_router, workspace_scenario
-from crabpath.mitosis import MitosisConfig, MitosisState, bootstrap_workspace, mitosis_maintenance
-from crabpath.synaptogenesis import SynaptogenesisConfig, SynaptogenesisState, decay_proto_edges, record_cofiring, record_skips
-
+from crabpath.autotune import HEALTH_TARGETS, GraphHealth, measure_health, self_tune  # noqa: E402
+from crabpath.decay import DecayConfig, apply_decay  # noqa: E402
+from crabpath.graph import Graph  # noqa: E402
+from crabpath.lifecycle_sim import (  # noqa: E402
+    SimConfig,
+    make_mock_llm_all,
+    make_mock_router,
+    workspace_scenario,
+)
+from crabpath.mitosis import MitosisConfig, MitosisState, bootstrap_workspace, mitosis_maintenance  # noqa: E402
+from crabpath.synaptogenesis import (  # noqa: E402
+    SynaptogenesisConfig,
+    SynaptogenesisState,
+    decay_proto_edges,
+    record_cofiring,
+    record_skips,
+)
 
 SIBLING_WEIGHTS: list[float] = [0.50, 0.55, 0.60, 0.65, 0.70, 0.75]
 PROMOTION_THRESHOLDS: list[int] = [2, 3, 4]
@@ -343,9 +353,17 @@ def main() -> None:
     with_tune_result = _score_health(with_tune)  # type: ignore[arg-type]
 
     print("\nSelf_tune@maintenance comparison:")
-    print(f"  without self_tune -> in_range={without_tune_result['in_range_count']}/8, distance={float(without_tune_result['distance']):.4f}")
-    print(f"  with self_tune    -> in_range={with_tune_result['in_range_count']}/8, distance={float(with_tune_result['distance']):.4f}")
-    delta_in_range = int(with_tune_result["in_range_count"]) - int(without_tune_result["in_range_count"])
+    print(
+        f"  without self_tune -> in_range={without_tune_result['in_range_count']}/8, "
+        f"distance={float(without_tune_result['distance']):.4f}"
+    )
+    print(
+        f"  with self_tune    -> in_range={with_tune_result['in_range_count']}/8, "
+        f"distance={float(with_tune_result['distance']):.4f}"
+    )
+    delta_in_range = int(with_tune_result["in_range_count"]) - int(
+        without_tune_result["in_range_count"]
+    )
     delta_distance = float(with_tune_result["distance"]) - float(without_tune_result["distance"])
     print(f"  delta -> in_range={delta_in_range:+d}, distance={delta_distance:+.4f}")
 

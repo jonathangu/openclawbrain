@@ -44,7 +44,9 @@ class DeployRouter(Router):
             chosen = sorted(normalized, key=lambda item: (item[1], item[0]), reverse=True)[0][0]
 
         alternatives = [(node_id, weight) for node_id, weight in normalized if node_id != chosen]
-        _, confidence_score = next((node_id, weight) for node_id, weight in normalized if node_id == chosen)
+        _, confidence_score = next(
+            (node_id, weight) for node_id, weight in normalized if node_id == chosen
+        )
         confidence = (confidence_score + 1.0) / 2.0
         if confidence < 0:
             confidence = 0.0
@@ -78,7 +80,9 @@ class DeployRouter(Router):
         candidates = self._coerce_for_decision(candidate_nodes)
 
         # Expedite queries are still allowed to pick the dangerous shortcut.
-        if ("out now" in text or "asap" in text) and any(node_id == "skip_tests" for node_id, _ in candidates):
+        if (
+            "out now" in text or "asap" in text
+        ) and any(node_id == "skip_tests" for node_id, _ in candidates):
             return self._build_decision(candidates, "skip_tests", tier)
 
         return self.fallback(candidates, tier)
@@ -139,7 +143,12 @@ def run_episode(
     )
     path = [step.to_node for step in trajectory.steps]
     reward_signal = RewardSignal(episode_id=query, final_reward=reward)
-    make_learning_step(graph=graph, trajectory_steps=trajectory.steps, reward=reward_signal, config=learning_cfg)
+    make_learning_step(
+        graph=graph,
+        trajectory_steps=trajectory.steps,
+        reward=reward_signal,
+        config=learning_cfg,
+    )
     return path, reward
 
 

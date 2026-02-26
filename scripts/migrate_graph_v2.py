@@ -5,20 +5,24 @@ from __future__ import annotations
 
 import argparse
 import json
-from pathlib import Path
 import sys
+from pathlib import Path
 from typing import Any
 
 ROOT = Path(__file__).resolve().parent.parent
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from crabpath.graph import Graph
+from crabpath.graph import Graph  # noqa: E402
 
 
 def migrate_graph_v2(input_path: str, output_path: str | None = None) -> dict[str, Any]:
     source = Path(input_path)
-    target = Path(output_path) if output_path else source.with_name(f"{source.stem}_v2{source.suffix}")
+    target = (
+        Path(output_path)
+        if output_path
+        else source.with_name(f"{source.stem}_v2{source.suffix}")
+    )
 
     with open(source) as f:
         data = json.load(f)

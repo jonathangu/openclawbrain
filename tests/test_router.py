@@ -2,8 +2,8 @@ from __future__ import annotations
 
 import pytest
 
+from crabpath.graph import Edge, Graph, Node
 from crabpath.router import Router, RouterConfig, RouterError
-from crabpath.graph import Graph, Node, Edge
 
 
 def test_fallback_picks_highest_weight():

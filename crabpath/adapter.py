@@ -15,7 +15,9 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable
 
-from .activation import Firing, activate as _activate, learn as _learn
+from .activation import Firing
+from .activation import activate as _activate
+from .activation import learn as _learn
 from .decay import DecayConfig, apply_decay
 from .embeddings import EmbeddingIndex
 from .feedback import snapshot_path
@@ -256,7 +258,8 @@ class CrabPathAgent:
                     import warnings
 
                     warnings.warn(
-                        f"CrabPath: embedding raw score retrieval failed: {exc}. Falling back to keyword scoring.",
+                        "CrabPath: embedding raw score retrieval failed: "
+                        f"{exc}. Falling back to keyword scoring.",
                         stacklevel=2,
                     )
                     return []

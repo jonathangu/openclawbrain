@@ -1,26 +1,25 @@
 """Tests for CrabPath autotuning and health measurement helpers."""
 
 from crabpath.autotune import (
-    suggest_config,
     DEFAULTS,
-    GraphHealth,
     HEALTH_TARGETS,
     Adjustment,
-    measure_health,
-    compute_window_stats,
-    autotune,
-    apply_adjustments,
-    self_tune,
+    GraphHealth,
+    SafetyBounds,
     TuneHistory,
     TuneMemory,
-    SafetyBounds,
+    apply_adjustments,
+    autotune,
+    compute_window_stats,
+    measure_health,
+    self_tune,
+    suggest_config,
     validate_config,
 )
-from crabpath.graph import Edge, Graph, Node
-from crabpath.mitosis import MitosisState
 from crabpath.decay import DecayConfig
+from crabpath.graph import Edge, Graph, Node
+from crabpath.mitosis import MitosisConfig, MitosisState
 from crabpath.synaptogenesis import SynaptogenesisConfig
-from crabpath.mitosis import MitosisConfig
 
 
 def _workspace_with_sizes(file_count: int, char_count: int) -> dict[str, str]:

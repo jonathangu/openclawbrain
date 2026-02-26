@@ -2,28 +2,27 @@ from __future__ import annotations
 
 import json
 import re
-from dataclasses import dataclass
-from typing import Any, Sequence
 import sys
+from dataclasses import dataclass
 from pathlib import Path
+from typing import Any, Sequence
 
 ROOT = Path(__file__).resolve().parents[1]
 if str(ROOT) not in sys.path:
     sys.path.insert(0, str(ROOT))
 
-from crabpath.graph import Graph
-from crabpath.mitosis import MitosisConfig, MitosisState, bootstrap_workspace
-from crabpath.lifecycle_sim import make_mock_llm_all
-from crabpath.router import Router
-from crabpath.synaptogenesis import (
+from crabpath.graph import Graph  # noqa: E402
+from crabpath.lifecycle_sim import make_mock_llm_all  # noqa: E402
+from crabpath.mitosis import MitosisConfig, MitosisState, bootstrap_workspace  # noqa: E402
+from crabpath.router import Router  # noqa: E402
+from crabpath.synaptogenesis import (  # noqa: E402
     SynaptogenesisConfig,
     SynaptogenesisState,
     classify_tier,
     decay_proto_edges,
     record_cofiring,
 )
-from crabpath.traversal import TraversalConfig, traverse
-
+from crabpath.traversal import TraversalConfig, traverse  # noqa: E402
 
 PROCEDURE = {
     "doc-check-ci": "First, check CI pipeline status and logs for the failed service",
@@ -274,7 +273,6 @@ def run_simulation() -> None:
 
     checkpoint_targets = {1, 25, 50}
 
-    total_recoils = 0
     for i, query_data in enumerate(queries, start=1):
         text = str(query_data["text"])
         expected_path = list(query_data["expected_path"])
@@ -368,9 +366,18 @@ def run_simulation() -> None:
     q25 = checkpoints[25]
     q50 = checkpoints[50]
     print("--- COMPARISON OVER TIME ---")
-    print(f"Q1 hops={q1.hops}, sequence_ok={q1.follows_expected}, reflex_chain={all(e['tier'] == 'reflex' for e in q1.chain_edges)}")
-    print(f"Q25 hops={q25.hops}, sequence_ok={q25.follows_expected}, reflex_chain={all(e['tier'] == 'reflex' for e in q25.chain_edges)}")
-    print(f"Q50 hops={q50.hops}, sequence_ok={q50.follows_expected}, reflex_chain={all(e['tier'] == 'reflex' for e in q50.chain_edges)}")
+    q1_reflex_chain = all(e["tier"] == "reflex" for e in q1.chain_edges)
+    q25_reflex_chain = all(e["tier"] == "reflex" for e in q25.chain_edges)
+    q50_reflex_chain = all(e["tier"] == "reflex" for e in q50.chain_edges)
+    print(
+        f"Q1 hops={q1.hops}, sequence_ok={q1.follows_expected}, reflex_chain={q1_reflex_chain}"
+    )
+    print(
+        f"Q25 hops={q25.hops}, sequence_ok={q25.follows_expected}, reflex_chain={q25_reflex_chain}"
+    )
+    print(
+        f"Q50 hops={q50.hops}, sequence_ok={q50.follows_expected}, reflex_chain={q50_reflex_chain}"
+    )
 
     print("\nQ1 vs Q25 vs Q50 chain tiers:")
     for label, cp in (("Q1", q1), ("Q25", q25), ("Q50", q50)):
