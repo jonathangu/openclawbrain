@@ -13,7 +13,7 @@ CLI:
 Paper: https://jonathangu.com/crabpath/
 """
 
-__version__ = "2.3.2"
+__version__ = "2.4.0"
 
 from .adapter import CrabPathAgent, OpenClawCrabPathAdapter
 from .autotune import (

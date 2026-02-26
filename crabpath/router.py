@@ -6,6 +6,7 @@ from typing import Any, Mapping, Sequence
 
 from ._structural_utils import parse_markdown_json
 from .graph import Graph
+from .providers.base import RouterProvider
 
 _SYSTEM_PROMPT = (
     "You are a memory router. Given a query and candidate document pointers, "
@@ -113,9 +114,15 @@ def normalize_router_payload(payload: Mapping[str, Any]) -> RouterDecision:
 
 
 class Router:
-    def __init__(self, config: RouterConfig | None = None, client: Any | None = None) -> None:
+    def __init__(
+        self,
+        config: RouterConfig | None = None,
+        client: Any | None = None,
+        provider: RouterProvider | None = None,
+    ) -> None:
         self.config = config or RouterConfig()
         self.client = client
+        self._provider = provider
 
     def _coerce_candidates(
         self, candidates: Sequence[tuple[str, float]]
@@ -266,6 +273,13 @@ class Router:
         return payload
 
     def _extract_model_output(self, messages: Sequence[dict[str, str]]) -> str:
+        if self._provider is not None and self.client is None:
+            last_message = messages[-1]["content"] if messages else ""
+            payload = self._provider.route(query=last_message, candidates=[], schema=None)
+            if isinstance(payload, dict):
+                return json.dumps(payload)
+            return str(payload)
+
         if not self.client:
             raise RouterError("No client configured")
 

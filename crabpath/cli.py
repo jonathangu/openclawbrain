@@ -48,7 +48,7 @@ from .synaptogenesis import (
     record_cofiring,
     record_correction,
 )
-from .providers import get_embedding_provider
+from .providers import get_embedding_provider, get_router_provider
 from .providers.tfidf_provider import TfidfEmbeddingProvider
 
 DEFAULT_GRAPH_PATH = "crabpath_graph.json"
@@ -360,6 +360,40 @@ def _safe_embed_fn(
     return provider.embed
 
 
+def _safe_router_provider(provider_name: str | None) -> Optional[Any]:
+    provider_name = _router_provider_name(provider_name)
+    try:
+        return get_router_provider(name=provider_name)
+    except Exception:
+        return None
+
+
+def _build_controller_router_call(
+    provider_name: str | None,
+) -> Callable[[str, str, list[tuple[str, float]]], str | None] | None:
+    provider = _safe_router_provider(provider_name)
+    if provider is None:
+        return None
+
+    def _call(
+        query_text: str, current_node_id: str, candidates: list[tuple[str, float]]
+    ) -> str | None:
+        try:
+            payload = provider.route(
+                query=query_text,
+                candidates=[{"node_id": node_id, "weight": weight} for node_id, weight in candidates],
+                schema={"current_node_id": current_node_id, "tier": "habitual"},
+            )
+            target = payload.get("target") if isinstance(payload, dict) else None
+            if target is None:
+                return None
+            return str(target)
+        except Exception:
+            return None
+
+    return _call
+
+
 def _router_provider_name(provider_name: str | None) -> str:
     return str(provider_name).lower() if provider_name else "auto"
 
@@ -390,6 +424,7 @@ def _explain_traversal(
     graph: Graph,
     query_text: str,
     top_k: int,
+    provider_name: str | None = None,
 ) -> dict[str, Any]:
     score_map = _seed_scores(graph, query_text, top_k)
     if not score_map:
@@ -406,7 +441,8 @@ def _explain_traversal(
         }
 
     controller = MemoryController(graph, config=ControllerConfig.default())
-    result = controller.query(query_text, llm_call=None)
+    route_call = _build_controller_router_call(provider_name)
+    result = controller.query(query_text, llm_call=route_call)
     if not result.selected_nodes:
         return {
             "query": query_text,
@@ -665,7 +701,7 @@ def cmd_query(args: argparse.Namespace) -> dict[str, Any]:
     }
 
     if args.explain:
-        explanation = _explain_traversal(graph, args.query, args.top)
+        explanation = _explain_traversal(graph, args.query, args.top, args.provider)
         payload["explain"] = explanation
         payload["seeds"] = explanation["seed_scores"]
         payload["candidates"] = explanation["candidate_rankings"]
@@ -680,7 +716,7 @@ def cmd_explain(args: argparse.Namespace) -> dict[str, Any] | str:
         if embed_fn is None:
             raise CLIError(f"No embedding provider found for --provider={args.provider}.")
     _load_index(args.index)
-    trace = _explain_traversal(graph, args.query, DEFAULT_TOP_K)
+    trace = _explain_traversal(graph, args.query, DEFAULT_TOP_K, args.provider)
     if args.json:
         return trace
     return _format_explain_trace(trace)
