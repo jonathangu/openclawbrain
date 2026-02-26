@@ -37,6 +37,15 @@ macOS Homebrew Python requires a virtual environment (PEP 668).
 pip install crabpath[openai]     # or: pip install crabpath[google]
 ```
 
+### Custom LLM Access (optional)
+
+If your agent host provides an OpenAI-compatible endpoint, point CrabPath at it:
+
+```bash
+export CRABPATH_LLM_URL=http://localhost:18789/v1/chat/completions
+export CRABPATH_LLM_TOKEN=$OPENCLAW_GATEWAY_TOKEN
+```
+
 ### 2. Initialize graph + embeddings
 
 Requires one of: `OPENAI_API_KEY`, `GEMINI_API_KEY`, or local Ollama.

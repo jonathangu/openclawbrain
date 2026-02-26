@@ -21,6 +21,24 @@ pip install crabpath[openai]     # or: pip install crabpath[google]
 
 Zero required dependencies. Python 3.10+. macOS Homebrew Python needs a venv (PEP 668).
 
+### Custom LLM Endpoint (optional)
+
+Point CrabPath at any OpenAI-compatible API:
+
+```bash
+# Routing LLM (for smart graph traversal)
+export CRABPATH_LLM_URL=http://localhost:8080/v1/chat/completions
+export CRABPATH_LLM_TOKEN=your-token  # optional
+export CRABPATH_LLM_MODEL=gpt-5-mini  # optional
+
+# Embeddings (for semantic retrieval) 
+export CRABPATH_EMBEDDINGS_URL=http://localhost:8080/v1/embeddings
+export CRABPATH_EMBEDDINGS_TOKEN=your-token  # optional
+export CRABPATH_EMBEDDINGS_MODEL=text-embedding-3-small  # optional
+```
+
+Works with: OpenAI, Ollama, LiteLLM, vLLM, OpenRouter, or any OpenAI-compatible proxy.
+
 ## Quick Start (60 seconds)
 
 ```python

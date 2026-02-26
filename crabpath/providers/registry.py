@@ -25,54 +25,93 @@ def auto_detect_providers() -> tuple[EmbeddingProvider | None, RouterProvider]:
     embedding_provider: EmbeddingProvider | None = None
     router_provider: RouterProvider
 
-    # Embeddings priority:
-    # 1) OpenAI
-    # 2) Gemini
-    # 3) Ollama
-    # 4) Local TF-IDF fallback
-    if _env_has_value("OPENAI_API_KEY"):
-        from .openai_provider import OpenAIEmbeddingProvider
+    # Custom endpoint providers:
+    llm_url = (os.getenv("CRABPATH_LLM_URL") or "").strip()
+    llm_token = (os.getenv("CRABPATH_LLM_TOKEN") or "").strip() or None
+    llm_model = (os.getenv("CRABPATH_LLM_MODEL") or "").strip() or "gpt-5-mini"
+
+    embed_url = (os.getenv("CRABPATH_EMBEDDINGS_URL") or "").strip()
+    embed_token = (os.getenv("CRABPATH_EMBEDDINGS_TOKEN") or "").strip() or None
+    embed_model = (
+        (os.getenv("CRABPATH_EMBEDDINGS_MODEL") or "").strip() or "text-embedding-3-small"
+    )
+
+    if embed_url:
+        from .endpoint_provider import EndpointEmbeddingProvider
 
         try:
-            embedding_provider = OpenAIEmbeddingProvider()
-        except Exception:
-            embedding_provider = None
-
-    if embedding_provider is None and (
-        _env_has_value("GEMINI_API_KEY") or _env_has_value("GOOGLE_API_KEY")
-    ):
-        from .gemini_provider import GeminiEmbeddingProvider
-
-        try:
-            embedding_provider = GeminiEmbeddingProvider()
+            embedding_provider = EndpointEmbeddingProvider(
+                embed_url,
+                embed_token,
+                embed_model,
+            )
         except Exception:
             embedding_provider = None
 
     if embedding_provider is None:
-        from .ollama_provider import OllamaEmbeddingProvider
+        # Embeddings priority:
+        # 1) OpenAI
+        # 2) Gemini
+        # 3) Ollama
+        # 4) Local TF-IDF fallback
+        if _env_has_value("OPENAI_API_KEY"):
+            from .openai_provider import OpenAIEmbeddingProvider
 
-        candidate = _instantiate_router_provider(lambda: OllamaEmbeddingProvider())
-        if isinstance(candidate, EmbeddingProvider):
-            embedding_provider = candidate
+            try:
+                embedding_provider = OpenAIEmbeddingProvider()
+            except Exception:
+                embedding_provider = None
 
-    if embedding_provider is None:
-        from .tfidf_provider import TfidfEmbeddingProvider
+        if embedding_provider is None and (
+            _env_has_value("GEMINI_API_KEY") or _env_has_value("GOOGLE_API_KEY")
+        ):
+            from .gemini_provider import GeminiEmbeddingProvider
 
-        embedding_provider = TfidfEmbeddingProvider()
+            try:
+                embedding_provider = GeminiEmbeddingProvider()
+            except Exception:
+                embedding_provider = None
 
-    # Routing priority:
-    # 1) OpenAI
-    # 2) Gemini
-    # 3) Heuristic (always available)
-    from .openai_provider import OpenAIRouterProvider
-    from .gemini_provider import GeminiRouterProvider
-    from .heuristic import HeuristicRouter
+        if embedding_provider is None:
+            from .ollama_provider import OllamaEmbeddingProvider
 
-    router_provider = _instantiate_router_provider(lambda: OpenAIRouterProvider())  # type: ignore[assignment]
+            candidate = _instantiate_router_provider(lambda: OllamaEmbeddingProvider())
+            if isinstance(candidate, EmbeddingProvider):
+                embedding_provider = candidate
+
+        if embedding_provider is None:
+            from .tfidf_provider import TfidfEmbeddingProvider
+
+            embedding_provider = TfidfEmbeddingProvider()
+
+    # Routing provider
+    if llm_url:
+        from .endpoint_provider import EndpointRouterProvider
+
+        router_provider = _instantiate_router_provider(
+            lambda: EndpointRouterProvider(llm_url, llm_token, llm_model)
+        )
+    else:
+        router_provider = None
+
     if router_provider is None:
-        router_provider = _instantiate_router_provider(lambda: GeminiRouterProvider())  # type: ignore[assignment]
-    if router_provider is None:
-        router_provider = HeuristicRouter()
+        # Routing priority:
+        # 1) OpenAI
+        # 2) Gemini
+        # 3) Heuristic (always available)
+        from .openai_provider import OpenAIRouterProvider
+        from .gemini_provider import GeminiRouterProvider
+        from .heuristic import HeuristicRouter
+
+        router_provider = _instantiate_router_provider(
+            lambda: OpenAIRouterProvider()
+        )  # type: ignore[assignment]
+        if router_provider is None:
+            router_provider = _instantiate_router_provider(
+                lambda: GeminiRouterProvider()
+            )  # type: ignore[assignment]
+        if router_provider is None:
+            router_provider = HeuristicRouter()
 
     return embedding_provider, router_provider
 
