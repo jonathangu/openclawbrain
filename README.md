@@ -25,7 +25,8 @@ CrabPath is a memory architecture for AI agents where documents are nodes, weigh
 ## Install
 
 ```bash
-pip install crabpath
+pip install crabpath            # PyPI
+clawhub install crabpath        # or ClawHub (OpenClaw agents)
 ```
 
 Requires Python 3.10+. Zero dependencies. Embeddings require one of:
@@ -331,7 +332,8 @@ Three commands, ~3 seconds total:
 
 ```bash
 # 1. Install
-pip install crabpath
+pip install crabpath            # PyPI
+clawhub install crabpath        # or ClawHub (OpenClaw agents)
 
 # 2. Bootstrap graph + embeddings + replay session history
 crabpath init --workspace ~/.openclaw/workspace \
