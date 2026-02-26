@@ -15,7 +15,7 @@ Pure graph engine for retrieval routing. Zero deps. Zero network calls. Caller p
 ## Install
 
 ```bash
-pip install crabpath
+pip install crabpath[embeddings]
 ```
 
 ## Quick Start
@@ -58,8 +58,8 @@ If batch fn not provided, CrabPath parallelizes single calls via ThreadPoolExecu
 ## CLI
 
 ```
-crabpath init --workspace W --output O [--embed-command CMD] [--embed-local]
-crabpath query TEXT --graph G [--index I] [--query-vector-stdin] [--route-command CMD] [--embed-command CMD] [--embed-local]
+crabpath init --workspace W --output O [--embed-command CMD]
+crabpath query TEXT --graph G [--index I] [--query-vector-stdin] [--route-command CMD] [--embed-command CMD]
 crabpath learn --graph G --outcome N --fired-ids a,b,c
 crabpath replay --graph G --sessions S
 crabpath health --graph G
@@ -70,13 +70,13 @@ crabpath journal [--stats]
 
 ## Local embeddings option
 
-Use `--embed-local` on `init` or `query` to embed with an in-repo wrapper around
-`sentence-transformers` (`all-MiniLM-L6-v2`) without running an external script.
+Install `crabpath[embeddings]` to enable local embeddings (`all-MiniLM-L6-v2`) by default.
+If installed, `init` and `query` automatically use local embeddings when `--embed-command` is not supplied.
 
 ```bash
 pip install crabpath[embeddings]
-crabpath init --workspace ./ws --output ./data --embed-local
-crabpath query "how do i deploy" --graph ./data/graph.json --index ./data/index.json --embed-local
+crabpath init --workspace ./ws --output ./data
+crabpath query "how do i deploy" --graph ./data/graph.json --index ./data/index.json
 ```
 
 ## Paper

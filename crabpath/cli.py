@@ -43,7 +43,6 @@ def _build_parser() -> argparse.ArgumentParser:
     i.add_argument("--output", required=True)
     i.add_argument("--sessions")
     i.add_argument("--embed-command")
-    i.add_argument("--embed-local", action="store_true")
     i.add_argument("--route-command")
     i.add_argument("--llm-split", choices=("auto", "always", "never"), default="auto")
     i.add_argument("--llm-split-max-files", type=int, default=30)
@@ -68,7 +67,6 @@ def _build_parser() -> argparse.ArgumentParser:
     q.add_argument("--parallel", type=int, default=8)
     q.add_argument("--route-command")
     q.add_argument("--embed-command")
-    q.add_argument("--embed-local", action="store_true")
     q.add_argument("--auto-merge", action="store_true")
     q.add_argument("--json", action="store_true")
     l = sub.add_parser("learn")
@@ -268,11 +266,29 @@ def _build_index_from_texts(
     return index
 
 
-def _embed_query_text(query_text: str, embed_command: str | None, embed_local: bool) -> list[float]:
-    if embed_local:
-        from .embeddings import local_embed_fn
+def _resolve_local_embed_batch_fn() -> Callable[[list[tuple[str, str]]], dict[str, list[float]]] | None:
+    try:
+        from .embeddings import local_embed_batch_fn
+    except ImportError:
+        return None
+    if "sentence_transformers" in sys.modules:
+        return local_embed_batch_fn
+    probe = subprocess.run([sys.executable, "-c", "import sentence_transformers"], capture_output=True, text=True)
+    if probe.returncode != 0:
+        return None
+    return local_embed_batch_fn
 
-        return local_embed_fn(query_text)
+
+def _embed_query_text(
+    query_text: str,
+    embed_command: str | None = None,
+    embed_batch_fn: Callable[[list[tuple[str, str]]], dict[str, list[float]]] | None = None,
+) -> list[float]:
+    if embed_batch_fn is not None:
+        result = embed_batch_fn([("query", query_text)])
+        if "query" not in result:
+            raise SystemExit("query embedding output missing query id")
+        return result["query"]
     if embed_command is None:
         raise SystemExit("query embedding requires --embed-command")
     result = _run_embedding_batch(embed_command, [("query", query_text)])
@@ -407,14 +423,19 @@ def cmd_init(args: argparse.Namespace) -> int:
             graph.get_node(node_id).summary = summary if graph.get_node(node_id) else summary
         _write_graph(graph_path, graph)
 
-    if args.embed_command and args.embed_local:
-        raise SystemExit("use either --embed-command or --embed-local")
+    local_embed_batch_fn = None
+    if args.embed_command is None:
+        local_embed_batch_fn = _resolve_local_embed_batch_fn()
+        if local_embed_batch_fn is not None:
+            print("Using local embeddings (all-MiniLM-L6-v2)", file=sys.stderr)
+
     if args.embed_command:
         _build_index_from_texts(texts, args.parallel, embed_command=args.embed_command).save(str(output_dir / "index.json"))
-    elif args.embed_local:
-        from .embeddings import local_embed_batch_fn
-
-        _build_index_from_texts(texts, args.parallel, embed_batch_fn=local_embed_batch_fn).save(str(output_dir / "index.json"))
+    elif local_embed_batch_fn is not None:
+        try:
+            _build_index_from_texts(texts, args.parallel, embed_batch_fn=local_embed_batch_fn).save(str(output_dir / "index.json"))
+        except ImportError:
+            print("Warning: local embeddings unavailable, continuing without index", file=sys.stderr)
 
     if args.json:
         print(json.dumps({"graph": str(graph_path), "texts": str(text_path), "index": str(output_dir / "index.json") if (output_dir / "index.json").exists() else None}))
@@ -441,18 +462,25 @@ def cmd_query(args: argparse.Namespace) -> int:
     if args.query_vector_stdin and args.query_vector:
         raise SystemExit("use only one of --query-vector or --query-vector-stdin")
 
+    local_embed_batch_fn = None
+    if args.embed_command is None and args.index is not None:
+        local_embed_batch_fn = _resolve_local_embed_batch_fn()
+        if local_embed_batch_fn is not None:
+            print("Using local embeddings (all-MiniLM-L6-v2)", file=sys.stderr)
+
     query_vec = _parse_vector(args.query_vector)
     if query_vec is None:
         if args.query_vector_stdin:
             if not args.index:
                 raise SystemExit("query-vector-stdin requires --index")
             query_vec = _load_query_vector_from_stdin()
-        elif args.embed_local:
-            if args.embed_command is not None:
-                raise SystemExit("use either --embed-command or --embed-local")
-            query_vec = _embed_query_text(args.text, None, embed_local=True)
         elif args.embed_command is not None and args.index is not None:
-            query_vec = _embed_query_text(args.text, args.embed_command, embed_local=False)
+            query_vec = _embed_query_text(query_text=args.text, embed_command=args.embed_command)
+        elif local_embed_batch_fn is not None and args.index is not None:
+            try:
+                query_vec = _embed_query_text(args.text, embed_batch_fn=local_embed_batch_fn)
+            except ImportError:
+                query_vec = None
 
     if query_vec is not None:
         if not args.index:

@@ -243,7 +243,7 @@ def test_init_graph_texts_written_when_embedding_fails(tmp_path) -> None:
     assert (output / "texts.json").exists()
 
 
-def test_init_command_with_local_embeddings(tmp_path, monkeypatch) -> None:
+def test_init_command_with_local_embeddings(tmp_path, monkeypatch, capsys) -> None:
     workspace = tmp_path / "ws"
     workspace.mkdir()
     (workspace / "a.md").write_text("local embedding test", encoding="utf-8")
@@ -271,8 +271,9 @@ def test_init_command_with_local_embeddings(tmp_path, monkeypatch) -> None:
     monkeypatch.setitem(sys.modules, "sentence_transformers", module)
     sys.modules.pop("crabpath.embeddings", None)
 
-    code = main(["init", "--workspace", str(workspace), "--output", str(output), "--embed-local"])
+    code = main(["init", "--workspace", str(workspace), "--output", str(output)])
     assert code == 0
+    assert "Using local embeddings (all-MiniLM-L6-v2)" in capsys.readouterr().err
     index_path = output / "index.json"
     assert index_path.exists()
 
