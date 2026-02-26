@@ -36,6 +36,10 @@ class Node:
     potential: float = 0.0
     trace: float = 0.0
     metadata: dict[str, Any] = field(default_factory=dict)
+    access_count: int = 0
+    failure_count: int = 0
+    cluster_id: str = ""
+    created_at: float | None = None
 
 
 @dataclass
@@ -54,6 +58,11 @@ class Edge:
     created_by: str = "manual"  # auto | manual | llm
     follow_count: int = 0
     skip_count: int = 0
+    kind: str = "excitatory"
+    evidence_count: int = 0
+    provenance: str = ""
+    last_modified_ts: float | None = None
+    decay_group: str = ""
 
 
 class Graph:
@@ -195,6 +204,24 @@ class Graph:
             except (TypeError, ValueError):
                 return default
 
+        def _coerce_int(value: Any, default: int) -> int:
+            try:
+                return int(value)
+            except (TypeError, ValueError):
+                return default
+
+        def _coerce_optional_float(value: Any) -> float | None:
+            if value is None:
+                return None
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return None
+
+        cluster_id = record.get("cluster_id", "")
+        if not isinstance(cluster_id, str):
+            cluster_id = ""
+
         return {
             "id": str(record.get("id", "")),
             "content": str(record.get("content", "")),
@@ -203,6 +230,10 @@ class Graph:
             "threshold": _coerce_float(record.get("threshold"), 1.0),
             "potential": _coerce_float(record.get("potential"), 0.0),
             "trace": _coerce_float(record.get("trace"), 0.0),
+            "access_count": _coerce_int(record.get("access_count"), 0),
+            "failure_count": _coerce_int(record.get("failure_count"), 0),
+            "cluster_id": cluster_id,
+            "created_at": _coerce_optional_float(record.get("created_at")),
             "metadata": metadata,
         }
 
@@ -234,6 +265,14 @@ class Graph:
             except (TypeError, ValueError):
                 return default
 
+        def _coerce_optional_float(value: Any) -> float | None:
+            if value is None:
+                return None
+            try:
+                return float(value)
+            except (TypeError, ValueError):
+                return None
+
         return {
             "source": str(record.get("source", "")),
             "target": str(record.get("target", "")),
@@ -243,6 +282,11 @@ class Graph:
             "created_by": created_by,
             "follow_count": _coerce_int(record.get("follow_count"), 0),
             "skip_count": _coerce_int(record.get("skip_count"), 0),
+            "kind": str(record.get("kind", "excitatory")),
+            "evidence_count": _coerce_int(record.get("evidence_count"), 0),
+            "provenance": str(record.get("provenance", "")),
+            "last_modified_ts": _coerce_optional_float(record.get("last_modified_ts")),
+            "decay_group": str(record.get("decay_group", "")),
         }
 
     def outgoing(self, node_id: str) -> list[tuple[Node, Edge]]:
@@ -318,8 +362,13 @@ class Graph:
                     existing.decay_rate = edge.decay_rate
                     existing.last_followed_ts = edge.last_followed_ts
                     existing.created_by = edge.created_by
-                    existing.follow_count += edge.follow_count
-                    existing.skip_count += edge.skip_count
+                existing.follow_count += edge.follow_count
+                existing.skip_count += edge.skip_count
+                existing.kind = edge.kind
+                existing.evidence_count += edge.evidence_count
+                existing.provenance = edge.provenance
+                existing.last_modified_ts = edge.last_modified_ts
+                existing.decay_group = edge.decay_group
             else:
                 self.add_edge(
                     Edge(
@@ -331,6 +380,11 @@ class Graph:
                         created_by=edge.created_by,
                         follow_count=edge.follow_count,
                         skip_count=edge.skip_count,
+                        kind=edge.kind,
+                        evidence_count=edge.evidence_count,
+                        provenance=edge.provenance,
+                        last_modified_ts=edge.last_modified_ts,
+                        decay_group=edge.decay_group,
                     )
                 )
 
@@ -421,6 +475,14 @@ def _node_to_dict(n: Node) -> dict:
         d["potential"] = n.potential
     if n.trace != 0.0:
         d["trace"] = n.trace
+    if n.access_count != 0:
+        d["access_count"] = n.access_count
+    if n.failure_count != 0:
+        d["failure_count"] = n.failure_count
+    if n.cluster_id != "":
+        d["cluster_id"] = n.cluster_id
+    if n.created_at is not None:
+        d["created_at"] = n.created_at
     if n.metadata:
         metadata_fields = set(n.metadata.keys())
         lifecycle_only = metadata_fields <= {"fired_count", "last_fired_ts", "created_ts"}
@@ -443,4 +505,14 @@ def _edge_to_dict(e: Edge) -> dict:
         d["follow_count"] = e.follow_count
     if e.skip_count != 0:
         d["skip_count"] = e.skip_count
+    if e.kind != "excitatory":
+        d["kind"] = e.kind
+    if e.evidence_count != 0:
+        d["evidence_count"] = e.evidence_count
+    if e.provenance != "":
+        d["provenance"] = e.provenance
+    if e.last_modified_ts is not None:
+        d["last_modified_ts"] = e.last_modified_ts
+    if e.decay_group != "":
+        d["decay_group"] = e.decay_group
     return d

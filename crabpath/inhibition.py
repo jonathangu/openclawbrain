@@ -60,6 +60,7 @@ def apply_correction(
             target=target,
             weight=-config.inhibition_strength,
             created_by="auto",
+            kind="inhibitory",
         )
         if not _add_edge_with_competition(graph, new_edge, config):
             continue

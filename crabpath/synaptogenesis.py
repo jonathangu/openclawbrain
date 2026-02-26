@@ -176,6 +176,7 @@ def record_cofiring(
             if edge is not None:
                 # Real edge exists — reinforce
                 edge.weight = min(edge.weight + config.hebbian_increment, 5.0)
+                edge.provenance = "hebbian"
                 edge.last_followed_ts = now
                 edge.follow_count = (edge.follow_count or 0) + 1
                 reinforced += 1

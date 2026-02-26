@@ -186,3 +186,66 @@ def test_merge_nodes_edge_conflict():
 
     assert g.merge_nodes("a", "b") is True
     assert g.get_edge("a", "c").weight == -0.7
+
+
+def test_edge_kind_serialization(tmp_path):
+    g = Graph()
+    g.add_node(Node(id="a", content="A"))
+    g.add_node(Node(id="b", content="B"))
+    g.add_node(Node(id="c", content="C"))
+
+    g.add_edge(
+        Edge(source="a", target="b", weight=0.6, kind="excitatory", provenance="unit-test")
+    )
+    g.add_edge(Edge(source="b", target="c", weight=-0.4, kind="inhibitory"))
+    g.add_edge(Edge(source="a", target="c", weight=0.1, kind="neutral"))
+
+    path = tmp_path / "edge_kind.json"
+    g.save(str(path))
+    restored = Graph.load(str(path))
+
+    assert restored.get_edge("a", "b").kind == "excitatory"
+    assert restored.get_edge("b", "c").kind == "inhibitory"
+    assert restored.get_edge("a", "c").kind == "neutral"
+
+
+def test_node_new_fields_serialization(tmp_path):
+    g = Graph()
+    g.add_node(
+        Node(
+            id="a",
+            content="A",
+            access_count=3,
+            cluster_id="family-1",
+            created_at=1_700_000_000.0,
+            failure_count=1,
+        )
+    )
+    g.add_node(Node(id="b", content="B", access_count=4, cluster_id="family-2"))
+
+    path = tmp_path / "node_fields.json"
+    g.save(str(path))
+    restored = Graph.load(str(path))
+
+    n_a = restored.get_node("a")
+    n_b = restored.get_node("b")
+
+    assert n_a.access_count == 3
+    assert n_a.cluster_id == "family-1"
+    assert n_a.failure_count == 1
+    assert n_a.created_at == 1_700_000_000.0
+    assert n_b.access_count == 4
+    assert n_b.cluster_id == "family-2"
+
+
+def test_edge_provenance_round_trip(tmp_path):
+    g = Graph()
+    g.add_node(Node(id="a", content="A"))
+    g.add_node(Node(id="b", content="B"))
+    g.add_edge(Edge(source="a", target="b", weight=0.8, provenance="correction"))
+
+    path = tmp_path / "edge_provenance.json"
+    g.save(str(path))
+    restored = Graph.load(str(path))
+
+    assert restored.get_edge("a", "b").provenance == "correction"

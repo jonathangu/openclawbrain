@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import re
+import time
 from dataclasses import dataclass
 from math import exp, log
 from typing import Any, Callable, Sequence
@@ -287,6 +288,9 @@ def apply_weight_updates(
             new_weight = config.clip_min
         edge.weight = new_weight
         _set_count(edge, "follow_count", 1)
+        _set_count(edge, "evidence_count", 1)
+        edge.provenance = "pg_update"
+        edge.last_modified_ts = time.time()
 
         updates.append(
             EdgeUpdate(
