@@ -951,6 +951,14 @@ def cmd_init(args: argparse.Namespace) -> dict[str, Any]:
             session_warnings.append(
                 f"No usable session log queries extracted from: {_format_user_path(args.sessions)}"
             )
+        suggestions: list[str] = []
+        if args.sessions is None:
+            agents_dir = Path.home() / ".openclaw" / "agents"
+            session_candidates = list(agents_dir.glob("*/sessions/*.jsonl"))
+            if agents_dir.exists() and session_candidates:
+                suggestion = "Tip: Found OpenClaw sessions at ~/.openclaw/agents/. Re-run with --sessions ~/.openclaw/agents/<name>/sessions/ to replay history and warm up the graph."
+                suggestions.append(suggestion)
+                next_steps.append(suggestion)
 
         payload = {
             "ok": True,
@@ -968,6 +976,8 @@ def cmd_init(args: argparse.Namespace) -> dict[str, Any]:
             },
             "next_steps": next_steps,
         }
+        if suggestions:
+            payload["suggestions"] = suggestions
         if session_warnings:
             payload["warnings"] = session_warnings
         return payload

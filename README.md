@@ -60,6 +60,14 @@ learn(g, result, outcome=1.0)  # STDP: causal edges strengthened
 g.save("memory.json")
 ```
 
+## Which Interface Should I Use?
+
+| Interface | Use When |
+|-----------|----------|
+| **CLI** (primary) | You're an AI agent or calling CrabPath from shell/exec. Stable, JSON-in/JSON-out. |
+| **MemoryController** | You're embedding CrabPath in a Python app. Wraps query + learning. |
+| **OpenClawCrabPathAdapter** | Legacy/internal. Prefer CLI or MemoryController for new work. |
+
 ## Recommended Import Path
 
 Use `MemoryController` as the primary API for new integrations; it wraps query and learn in one place.

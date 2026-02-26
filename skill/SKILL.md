@@ -3,23 +3,18 @@ name: crabpath
 description: "Memory graph for AI agents — learned document routing with semantic embeddings. Use when: agent needs better context retrieval, memory recall is missing relevant docs, or you want to reduce context bloat. Replaces static file loading with a learned graph that knows what to retrieve (and what NOT to)."
 homepage: https://github.com/jonathangu/crabpath
 metadata:
-  {
-    "openclaw":
-      {
-        "emoji": "🦀",
-        "requires": { "bins": ["crabpath"] },
-        "install":
-          [
-            {
-              "id": "uv",
-              "kind": "uv",
-              "package": "crabpath",
-              "bins": ["crabpath"],
-              "label": "Install CrabPath (uv)",
-            },
-          ],
-      },
-  }
+  openclaw:
+    emoji: "🦀"
+    requires:
+      bins:
+        - crabpath
+    install:
+      - id: uv
+        kind: uv
+        package: crabpath
+        bins:
+          - crabpath
+        label: "Install CrabPath (uv)"
 ---
 
 # CrabPath 🦀
@@ -81,15 +76,21 @@ Use the returned context to supplement memory files. CrabPath suggests context �
 
 ### Learn from outcomes
 
-After a successful response (no correction):
+After each response, tell CrabPath whether the retrieval helped:
+
+**When the user accepts your answer** (no correction, conversation moves on):
 ```bash
-crabpath learn --graph ~/.crabpath/graph.json --outcome 1.0 --fired-ids node1,node2
+crabpath learn --graph ~/.crabpath/graph.json --outcome 1.0 --fired-ids node1,node2,node3
 ```
 
-After a correction:
+**When the user corrects you** ('that's wrong', 'no, do X instead', 'you missed Y'):
 ```bash
-crabpath learn --graph ~/.crabpath/graph.json --outcome -1.0 --fired-ids node1,node2
+crabpath learn --graph ~/.crabpath/graph.json --outcome -1.0 --fired-ids node1,node2,node3
 ```
+
+The fired-ids come from the previous `crabpath query` JSON output (`fired[].id`).
+
+This is intentionally coarse. +1 strengthens retrieval paths that led to good answers. -1 suppresses paths that led to corrections. Over time, the graph learns which documents actually help for which queries.
 
 ### Health check
 
