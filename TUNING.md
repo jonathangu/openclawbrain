@@ -28,9 +28,9 @@ This file lists the knobs currently covered by runtime autotuning.
 
 ## LLM model rule
 
-**All CrabPath LLM calls must use a non-reasoning model (e.g. `gpt-4o-mini`).**
+**All CrabPath LLM calls use `gpt-5-mini` with `reasoning_effort="minimal"` (0 reasoning tokens).**
 
 Every internal LLM task is classification — routing, scoring, splitting, merging, neurogenesis.
-None require chain-of-thought. Reasoning models (gpt-5-mini, o-series) waste tokens on
-internal thinking that produces identical outputs 3× slower. The whole architecture assumes
-"one cheap, fast LLM." Don't upgrade the helper model — it makes things worse.
+None require chain-of-thought. With default reasoning, gpt-5-mini burns 256+ thinking tokens
+on trivial tasks (3× slower, identical output). `reasoning_effort="minimal"` disables this:
+1.2s per call, 0 reasoning tokens, same quality. Don't remove this parameter.
