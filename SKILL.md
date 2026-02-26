@@ -1,6 +1,6 @@
 ---
 name: crabpath
-description: Memory graph engine with learned routing. Caller provides embed/LLM callbacks.
+description: Memory graph engine with learned routing. Pure callbacks — caller provides embed/LLM functions.
 metadata:
   openclaw:
     emoji: "🦀"
@@ -8,9 +8,9 @@ metadata:
       python: ">=3.10"
 ---
 
-# CrabPath — Memory Graph Engine
+# CrabPath
 
-Pure graph engine. Zero deps. Zero network calls. Caller provides everything via callbacks.
+Memory graph engine. Zero deps. Zero network calls. Caller provides everything.
 
 ## Install
 
@@ -18,34 +18,46 @@ Pure graph engine. Zero deps. Zero network calls. Caller provides everything via
 pip install crabpath
 ```
 
-## Python API
+## Integration
 
 ```python
 from crabpath import split_workspace, traverse, apply_outcome, VectorIndex
+from crabpath._batch import batch_or_single_embed
+from crabpath.store import save_state, load_state
 
+# --- Build (once) ---
 graph, texts = split_workspace("~/.openclaw/workspace")
-
 index = VectorIndex()
-for nid, content in texts.items():
-    index.upsert(nid, your_embed_fn(content))
+vecs = batch_or_single_embed(list(texts.items()), embed_batch_fn=your_embed_batch)
+for nid, vec in vecs.items():
+    index.upsert(nid, vec)
+save_state(graph, index, "~/.crabpath/state.json")
 
-seeds = index.search(your_embed_fn("deploy"), top_k=8)
+# --- Query (every turn) ---
+graph, index = load_state("~/.crabpath/state.json")
+seeds = index.search(your_embed("user question"), top_k=8)
 result = traverse(graph, seeds)
-apply_outcome(graph, result.fired, outcome=1.0)
+context = result.context  # assembled text from fired nodes
+
+# --- Learn (after response) ---
+apply_outcome(graph, result.fired, outcome=1.0)  # +1 good, -1 bad
+save_state(graph, index, "~/.crabpath/state.json")
 ```
 
-## Batch Callbacks
+## Callbacks
+
+CrabPath never calls any API. The caller provides:
 
 ```python
-from crabpath._batch import batch_or_single_embed
-
-vecs = batch_or_single_embed(
-    list(texts.items()),
-    embed_batch_fn=lambda texts: {nid: your_embed(t) for nid, t in texts}
-)
+embed_fn(text: str) -> list[float]                              # single
+embed_batch_fn(texts: list[tuple[str, str]]) -> dict[str, list[float]]  # batch
+llm_fn(system: str, user: str) -> str                           # single
+llm_batch_fn(requests: list[dict]) -> list[dict]                # batch
 ```
 
-## CLI (pure graph ops)
+## CLI
+
+Pure graph operations only. No network calls.
 
 ```
 crabpath init --workspace W --output O [--sessions S]
@@ -56,6 +68,17 @@ crabpath health --graph G
 crabpath merge --graph G
 crabpath connect --graph G
 crabpath journal [--stats]
+```
+
+## Local Embeddings (optional)
+
+```bash
+pip install crabpath[embeddings]
+```
+
+```python
+from crabpath.embeddings import local_embed_fn, local_embed_batch_fn
+# all-MiniLM-L6-v2 — 80MB, CPU, no API key
 ```
 
 ## Paper

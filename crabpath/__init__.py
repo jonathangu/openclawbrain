@@ -27,4 +27,4 @@ __all__ = [
     "batch_or_single_embed",
 ]
 
-__version__ = "6.0.0"
+__version__ = "6.0.1"

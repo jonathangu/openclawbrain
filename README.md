@@ -72,6 +72,15 @@ crabpath connect --graph G
 crabpath journal [--stats]
 ```
 
+## Reproduce Results
+
+```bash
+git clone https://github.com/jonathangu/crabpath.git && cd crabpath
+pip install -e . && python sims/run_all.py
+```
+
+8 deterministic sims. No API keys. See [REPRODUCE.md](REPRODUCE.md).
+
 ## Paper
 
 https://jonathangu.com/crabpath/
