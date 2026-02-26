@@ -5,6 +5,7 @@ import os
 import sys
 from pathlib import Path
 
+import pytest
 from crabpath.cli import main
 
 
@@ -19,6 +20,11 @@ def _write_texts(path: Path) -> None:
         ),
         encoding="utf-8",
     )
+
+
+@pytest.fixture(autouse=True)
+def _disable_auto_detect(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("CRABPATH_NO_AUTO_DETECT", "1")
 
 
 def test_embed_command_creates_index(tmp_path) -> None:

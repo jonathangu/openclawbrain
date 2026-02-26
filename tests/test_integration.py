@@ -3,12 +3,18 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import pytest
 from crabpath.cli import main
 from crabpath.decay import DecayConfig, apply_decay
 from crabpath.graph import Edge, Graph, Node
 from crabpath.learn import apply_outcome
 from crabpath.split import split_workspace
 from crabpath.traverse import TraversalConfig, traverse
+
+
+@pytest.fixture(autouse=True)
+def _disable_auto_detect(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("CRABPATH_NO_AUTO_DETECT", "1")
 
 
 def test_full_cycle_init_query_learn_query(tmp_path, capsys) -> None:

@@ -2,12 +2,19 @@ from __future__ import annotations
 
 import json
 import os
+from types import SimpleNamespace
 import sys
 from pathlib import Path
 
 import pytest
 
+import crabpath.cli as cli
 from crabpath.cli import main
+
+
+@pytest.fixture(autouse=True)
+def _disable_auto_detect(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("CRABPATH_NO_AUTO_DETECT", "1")
 
 
 def _write_graph_payload(path: Path) -> None:
@@ -130,6 +137,45 @@ def test_init_command_with_empty_workspace(tmp_path) -> None:
     assert graph_data["edges"] == []
 
 
+def test_auto_detect_openai_from_env(monkeypatch) -> None:
+    monkeypatch.delenv("CRABPATH_NO_AUTO_DETECT", raising=False)
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+    assert cli._auto_detect_provider() == "openai"
+
+
+def test_auto_detect_none(monkeypatch, tmp_path) -> None:
+    monkeypatch.delenv("CRABPATH_NO_AUTO_DETECT", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.setattr(cli.subprocess, "run", lambda *_args, **_kwargs: SimpleNamespace(returncode=1, stdout=""))
+    monkeypatch.setattr(cli.urllib.request, "urlopen", lambda *_args, **_kwargs: (_ for _ in ()).throw(ConnectionError()))
+    assert cli._auto_detect_provider() is None
+
+
+def test_init_auto_embeds_when_key_available(tmp_path, monkeypatch) -> None:
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "note.md").write_text(
+        "## Alpha\nalpha content\n\n## Beta\nbeta content",
+        encoding="utf-8",
+    )
+
+    stub_dir = tmp_path / "stubs"
+    stub_dir.mkdir()
+    (stub_dir / "openai.py").write_text(
+        """class _Data:\n    def __init__(self, embedding):\n        self.embedding = embedding\n\n\nclass _Resp:\n    def __init__(self, embedding):\n        self.data = [_Data(embedding)]\n\n\nclass _Embeddings:\n    def create(self, model, input):\n        text = input[0]\n        return _Resp([float(len(text)), 1.0])\n\n\nclass OpenAI:\n    def __init__(self):\n        self.embeddings = _Embeddings()\n""",
+        encoding="utf-8",
+    )
+    env_path = os.environ.get("PYTHONPATH", "")
+    monkeypatch.setenv("PYTHONPATH", os.pathsep.join([str(stub_dir), env_path]) if env_path else str(stub_dir))
+    monkeypatch.setenv("OPENAI_API_KEY", "sk-test")
+
+    output_dir = tmp_path / "crabpath-data"
+    code = main(["init", "--workspace", str(workspace), "--output", str(output_dir), "--embed-provider", "openai"])
+    assert code == 0
+    assert (output_dir / "index.json").exists()
+
+
 def test_init_command_with_route_provider_no_embed(tmp_path) -> None:
     workspace = tmp_path / "ws"
     workspace.mkdir()
@@ -145,6 +191,7 @@ def test_init_command_with_route_provider_no_embed(tmp_path) -> None:
             str(output),
             "--route-provider",
             "openai",
+            "--no-embed",
         ]
     )
     assert code == 0

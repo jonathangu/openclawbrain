@@ -4,10 +4,16 @@ import json
 
 from pathlib import Path
 
+import pytest
 from crabpath.cli import main
 from crabpath.graph import Edge, Graph, Node
 from crabpath.replay import extract_queries, extract_queries_from_dir, replay_queries
 from crabpath.traverse import TraversalConfig
+
+
+@pytest.fixture(autouse=True)
+def _disable_auto_detect(monkeypatch: pytest.MonkeyPatch) -> None:
+    monkeypatch.setenv("CRABPATH_NO_AUTO_DETECT", "1")
 
 
 def _write_graph_payload(path: Path) -> None:

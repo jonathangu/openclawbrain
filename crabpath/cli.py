@@ -10,6 +10,7 @@ import shlex
 import subprocess
 import sys
 import tempfile
+import urllib.request
 from pathlib import Path
 
 from .graph import Edge, Graph, Node
@@ -36,13 +37,15 @@ def _build_parser() -> argparse.ArgumentParser:
     embed_init_group.add_argument("--embed-command")
     embed_init_group.add_argument("--embed-provider", choices=("openai", "ollama"))
     init.add_argument("--route-provider", choices=("openai", "ollama"))
+    init.add_argument("--no-embed", action="store_true", help="skip embedding during init")
+    init.add_argument("--no-route", action="store_true", help="skip route provider detection during init")
     init.add_argument("--json", action="store_true")
     init.add_argument("--no-log", action="store_true", help="disable query/learn/replay/health logging")
 
     embed = sub.add_parser("embed", help="build index.json from texts.json using an embedding command")
     embed.add_argument("--texts", required=True)
     embed.add_argument("--output", required=True)
-    embed_provider_group = embed.add_mutually_exclusive_group(required=True)
+    embed_provider_group = embed.add_mutually_exclusive_group(required=False)
     embed_provider_group.add_argument("--command", dest="embed_command")
     embed_provider_group.add_argument("--provider", choices=("openai", "ollama"))
     embed.add_argument("--json", action="store_true")
@@ -58,6 +61,7 @@ def _build_parser() -> argparse.ArgumentParser:
     query_route_group = query.add_mutually_exclusive_group(required=False)
     query_route_group.add_argument("--route-command")
     query_route_group.add_argument("--route-provider", choices=("openai", "ollama"))
+    query.add_argument("--no-route", action="store_true", help="skip LLM routing")
     query.add_argument("--no-log", action="store_true", help="disable query/learn/replay/health logging")
 
     learn = sub.add_parser("learn", help="apply outcome update")
@@ -132,6 +136,50 @@ def _parse_vector(values: list[str] | None) -> list[float] | None:
             if chunk:
                 vector.append(float(chunk))
     return vector
+
+
+def _auto_detect_provider(check_env_only: bool = False) -> str | None:
+    """Auto-detect the best available provider.
+    Checks: OPENAI_API_KEY env, ~/.env, macOS keychain, then Ollama."""
+    if os.getenv("CRABPATH_NO_AUTO_DETECT"):
+        return None
+
+    key = os.getenv("OPENAI_API_KEY", "").strip()
+    if key:
+        return "openai"
+
+    if check_env_only:
+        return None
+
+    env_file = Path.home() / ".env"
+    if env_file.exists():
+        for line in env_file.read_text(encoding="utf-8").splitlines():
+            if line.strip().startswith("OPENAI_API_KEY="):
+                value = line.split("=", 1)[1].strip().strip('"').strip("'")
+                if value:
+                    os.environ["OPENAI_API_KEY"] = value
+                    return "openai"
+
+    try:
+        result = subprocess.run(
+            ["security", "find-generic-password", "-s", "openai", "-w"],
+            capture_output=True,
+            text=True,
+            timeout=5,
+        )
+        if result.returncode == 0 and result.stdout.strip():
+            os.environ["OPENAI_API_KEY"] = result.stdout.strip()
+            return "openai"
+    except (FileNotFoundError, subprocess.TimeoutExpired):
+        pass
+
+    try:
+        with urllib.request.urlopen("http://localhost:11434/api/tags", timeout=2):
+            return "ollama"
+    except Exception:
+        pass
+
+    return None
 
 
 def _load_session_queries(session_paths: list[str] | str) -> list[str]:
@@ -247,7 +295,7 @@ resp = client.chat.completions.create(
         {'role': 'user', 'content': f'Query: {req[\"query\"]}\\n\\nCandidates:\\n{candidates}'},
     ],
     temperature=0.0,
-    max_tokens=200,
+    max_completion_tokens=200,
 )
 
 content = resp.choices[0].message.content
@@ -478,34 +526,70 @@ def cmd_init(args: argparse.Namespace) -> int:
     }
     graph_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     texts_path.write_text(json.dumps(texts, indent=2), encoding="utf-8")
-    if args.embed_command is not None or args.embed_provider is not None:
+    if args.no_embed:
+        if args.embed_command is not None or args.embed_provider is not None:
+            raise SystemExit("use --no-embed without --embed-command or --embed-provider")
+        embed_provider = None
+        embed_command = None
+    elif args.embed_command is not None or args.embed_provider is not None:
+        embed_command = args.embed_command
+        embed_provider = args.embed_provider
+    else:
+        embed_provider = _auto_detect_provider()
+        embed_command = None
+        if embed_provider:
+            print(f"Auto-detected embedding provider: {embed_provider}")
+        else:
+            print("Warning: no embedding provider detected, continuing without embeddings")
+
+    if args.no_route:
+        if args.route_provider is not None:
+            raise SystemExit("use --no-route without --route-provider")
+        route_provider = None
+    elif args.route_provider is not None:
+        route_provider = args.route_provider
+    else:
+        route_provider = _auto_detect_provider()
+        if route_provider:
+            print(f"Auto-detected routing provider: {route_provider}")
+
+    if args.embed_command is not None or embed_provider is not None:
         index = _build_index_from_texts(
             texts=texts,
-            embed_command=args.embed_command,
-            embed_provider=args.embed_provider,
+            embed_command=embed_command,
+            embed_provider=embed_provider,
         )
         index_path = output_dir / "index.json"
         index.save(str(index_path))
 
     if args.json:
         payload = {"graph": str(graph_path), "texts": str(texts_path)}
-        if args.embed_command is not None or args.embed_provider is not None:
+        if args.embed_command is not None or embed_provider is not None:
             payload["index"] = str(output_dir / "index.json")
-        if args.route_provider is not None:
-            payload["route_provider"] = args.route_provider
+        if route_provider is not None:
+            payload["route_provider"] = route_provider
         print(json.dumps(payload))
     else:
         print(f"graph_path: {graph_path}")
         print(f"texts_path: {texts_path}")
-        if args.route_provider is not None:
-            print(f"route_provider: {args.route_provider}")
-        if args.embed_command is not None or args.embed_provider is not None:
+        if route_provider is not None:
+            print(f"route_provider: {route_provider}")
+        if args.embed_command is not None or embed_provider is not None:
             print(f"index_path: {output_dir / 'index.json'}")
     return 0
 
 
 def cmd_embed(args: argparse.Namespace) -> int:
     texts = _load_texts_payload(args.texts)
+    if args.embed_command is None and args.provider is None:
+        args.provider = _auto_detect_provider()
+        if args.provider:
+            print(f"Auto-detected embedding provider: {args.provider}")
+        else:
+            raise SystemExit(
+                "provide either --command or --provider, or configure OPENAI_API_KEY / Ollama availability"
+            )
+
     index = _build_index_from_texts(
         texts=texts,
         embed_command=args.embed_command,
@@ -559,10 +643,21 @@ def cmd_query(args: argparse.Namespace) -> int:
 
     route_fn = None
     route_temp_script = None
-    if args.route_command is not None or args.route_provider is not None:
+    if args.no_route:
+        if args.route_command is not None or args.route_provider is not None:
+            raise SystemExit("use --no-route without --route-command or --route-provider")
+        route_provider = None
+    else:
+        route_provider = args.route_provider
+        if args.route_command is None and route_provider is None:
+            route_provider = _auto_detect_provider()
+            if route_provider:
+                print(f"Auto-detected routing provider: {route_provider}")
+
+    if args.route_command is not None or route_provider is not None:
         route_command, route_temp_script = _build_route_command(
             route_command=args.route_command,
-            route_provider=args.route_provider,
+            route_provider=route_provider,
         )
 
         def route_fn_impl(query_text: str | None, candidate_ids: list[str]) -> list[str]:

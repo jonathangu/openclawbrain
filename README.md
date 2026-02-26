@@ -92,13 +92,13 @@ crabpath query 'how do I deploy' \
   --route-provider openai \
   --json
 
-# Or one-shot with everything:
+# One command — auto-detects OpenAI/Ollama for embeddings + routing
 crabpath init --workspace ~/.openclaw/workspace \
   --output ~/.crabpath \
-  --sessions ~/.openclaw/agents/main/sessions/ \
-  --embed-provider openai \
-  --route-provider openai
+  --sessions ~/.openclaw/agents/main/sessions/
 ```
+
+No flags are needed when OPENAI_API_KEY is available via env var, `~/.env`, or the macOS keychain.
 
 # Learn from feedback
 crabpath learn --graph graph.json --outcome 1.0 --fired-ids node1,node2,node3
