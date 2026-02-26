@@ -42,6 +42,7 @@ python ../scripts/external_benchmark.py
 cd ../scripts
 python ablation_study.py
 python phase_transition_plot.py
+python sparsity_scale_experiment.py
 
 # Additional diagnostics
 python replay_shadow_queries.py
@@ -103,6 +104,9 @@ python scripts/ablation_study.py
 # Phase transition diagnostic
 python scripts/phase_transition_plot.py
 
+# Sparsity-scale crossover experiment
+python scripts/sparsity_scale_experiment.py
+
 # Deploy pipeline simulation
 python experiments/run_deploy_sim.py
 
@@ -128,7 +132,7 @@ All confidence intervals use 10,000 bootstrap resamples with `seed=2026`. The bo
 ## Test Suite
 
 ```bash
-# Run all 278 tests
+# Run all 305 tests
 python -m pytest tests/ -v
 
 # Run specific test module
