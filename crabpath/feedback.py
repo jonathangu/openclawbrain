@@ -20,7 +20,7 @@ from .synaptogenesis import (
 DEFAULT_SNAPSHOT_PATH = "crabpath_events.db"
 
 
-RETRIEVAL_SCORING_MODEL = "gpt-4o-mini"  # No reasoning overhead — 3x faster than gpt-5-mini for scoring
+RETRIEVAL_SCORING_MODEL = "gpt-5-mini"
 DEFAULT_OPENAI_TIMEOUT = 10.0  # gpt-4o-mini typically responds in 1-2s
 
 _CORRECTION_START_PATTERNS = (
@@ -121,7 +121,7 @@ def score_retrieval(
                 {"role": "system", "content": system},
                 {"role": "user", "content": prompt},
             ],
-
+            reasoning_effort="minimal",
             response_format={"type": "json_object"},
             timeout=DEFAULT_OPENAI_TIMEOUT,
         )
