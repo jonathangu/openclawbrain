@@ -15,6 +15,7 @@ from .split import split_workspace
 from .traverse import TraversalConfig, traverse
 from .learn import apply_outcome
 from .autotune import measure_health
+from .journal import log_health, log_learn, log_query, log_replay, read_journal, journal_stats
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -26,6 +27,7 @@ def _build_parser() -> argparse.ArgumentParser:
     init.add_argument("--output", required=True)
     init.add_argument("--sessions", required=False)
     init.add_argument("--json", action="store_true")
+    init.add_argument("--no-log", action="store_true", help="disable query/learn/replay/health logging")
 
     query = sub.add_parser("query", help="seed from index and traverse graph")
     query.add_argument("text")
@@ -35,22 +37,32 @@ def _build_parser() -> argparse.ArgumentParser:
     query.add_argument("--json", action="store_true")
     query.add_argument("--query-vector", nargs="+", required=False)
     query.add_argument("--query-vector-stdin", action="store_true")
+    query.add_argument("--no-log", action="store_true", help="disable query/learn/replay/health logging")
 
     learn = sub.add_parser("learn", help="apply outcome update")
     learn.add_argument("--graph", required=True)
     learn.add_argument("--outcome", type=float, required=True)
     learn.add_argument("--fired-ids", required=True)
     learn.add_argument("--json", action="store_true")
+    learn.add_argument("--no-log", action="store_true", help="disable query/learn/replay/health logging")
 
     replay = sub.add_parser("replay", help="warm up graph from historical sessions")
     replay.add_argument("--graph", required=True)
     replay.add_argument("--sessions", nargs="+", required=True)
     replay.add_argument("--max-queries", type=int, default=None)
     replay.add_argument("--json", action="store_true")
+    replay.add_argument("--no-log", action="store_true", help="disable query/learn/replay/health logging")
 
     health = sub.add_parser("health", help="compute graph health")
     health.add_argument("--graph", required=True)
     health.add_argument("--json", action="store_true")
+    health.add_argument("--no-log", action="store_true", help="disable query/learn/replay/health logging")
+
+    journal = sub.add_parser("journal", help="read recent journal entries or summary stats")
+    journal.add_argument("--last", type=int, default=10)
+    journal.add_argument("--stats", action="store_true")
+    journal.add_argument("--json", action="store_true")
+    journal.add_argument("--no-log", action="store_true", help="disable query/learn/replay/health logging")
 
     return parser
 
@@ -235,6 +247,8 @@ def cmd_query(args: argparse.Namespace) -> int:
         seeds = _keyword_seeds(graph=graph, text=args.text, top_k=args.top)
 
     result = traverse(graph=graph, seeds=seeds, config=TraversalConfig(max_hops=15), route_fn=None)
+    if not args.no_log:
+        log_query(query_text=args.text, fired_ids=result.fired, node_count=graph.node_count())
 
     if args.json:
         print(
@@ -257,6 +271,8 @@ def cmd_learn(args: argparse.Namespace) -> int:
     graph = _load_graph(args.graph)
     fired_ids = [value.strip() for value in args.fired_ids.split(",") if value.strip()]
     apply_outcome(graph, fired_nodes=fired_ids, outcome=args.outcome)
+    if not args.no_log:
+        log_learn(fired_ids=fired_ids, outcome=args.outcome)
     payload = {
         "graph": {
             "nodes": [
@@ -299,6 +315,12 @@ def cmd_replay(args: argparse.Namespace) -> int:
             queries = queries[: args.max_queries]
 
     stats = replay_queries(graph=graph, queries=queries, verbose=not args.json)
+    if not args.no_log:
+        log_replay(
+            queries_replayed=stats["queries_replayed"],
+            edges_reinforced=stats["edges_reinforced"],
+            cross_file_created=stats["cross_file_edges_created"],
+        )
 
     graph_path = Path(args.graph).expanduser()
     if graph_path.is_dir():
@@ -343,6 +365,8 @@ def cmd_health(args: argparse.Namespace) -> int:
     payload = health.__dict__
     payload["nodes"] = graph.node_count()
     payload["edges"] = graph.edge_count()
+    if not args.no_log:
+        log_health(payload)
     if args.json:
         print(json.dumps(payload, indent=2))
     else:
@@ -352,6 +376,57 @@ def cmd_health(args: argparse.Namespace) -> int:
                 **payload
             )
         )
+    return 0
+
+
+def cmd_journal(args: argparse.Namespace) -> int:
+    if args.last is not None and args.last <= 0:
+        raise SystemExit("last must be a positive integer")
+
+    if args.stats:
+        payload = journal_stats()
+        if args.json:
+            print(json.dumps(payload, indent=2))
+            return 0
+
+        print(f"total_entries: {payload['total_entries']}")
+        print(f"queries: {payload['queries']}")
+        print(f"learns: {payload['learns']}")
+        print(f"positive_outcomes: {payload['positive_outcomes']}")
+        print(f"negative_outcomes: {payload['negative_outcomes']}")
+        print(f"avg_fired_per_query: {payload['avg_fired_per_query']:.4f}")
+        return 0
+
+    entries = read_journal(last_n=args.last)
+    if args.json:
+        print(json.dumps(entries, indent=2))
+        return 0
+
+    if not entries:
+        print("No entries.")
+        return 0
+
+    for idx, entry in enumerate(entries, start=1):
+        kind = entry.get("type", "unknown")
+        timestamp = entry.get("iso", entry.get("ts", ""))
+        if kind == "query":
+            detail = f"query={entry.get('query')!r}"
+            detail += f", fired={entry.get('fired_count', 0)}"
+        elif kind == "learn":
+            detail = f"outcome={entry.get('outcome', 0)}"
+        elif kind == "replay":
+            detail = (
+                f"queries_replayed={entry.get('queries_replayed', 0)}, "
+                f"edges_reinforced={entry.get('edges_reinforced', 0)}, "
+                f"cross_file_created={entry.get('cross_file_created', 0)}"
+            )
+        else:
+            detail = ", ".join(
+                f"{key}={value}"
+                for key, value in entry.items()
+                if key not in {"type", "ts", "iso"}
+            )
+        print(f"{idx:>2}. {kind} @ {timestamp}: {detail}")
     return 0
 
 
@@ -369,6 +444,8 @@ def main(argv: list[str] | None = None) -> int:
         return cmd_replay(args)
     if args.command == "health":
         return cmd_health(args)
+    if args.command == "journal":
+        return cmd_journal(args)
     return 1
 
 

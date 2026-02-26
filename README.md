@@ -86,6 +86,18 @@ Or combine with init:
 crabpath init --workspace ~/.openclaw/workspace --output ~/.crabpath --sessions ~/.openclaw/agents/main/sessions/
 ```
 
+### Logging
+
+CrabPath logs every query, learn, and health check to `~/.crabpath/journal.jsonl`.
+
+```bash
+# View recent activity
+crabpath journal --last 5
+
+# Summary stats
+crabpath journal --stats
+```
+
 ### The key insight: CrabPath is a pure graph engine
 
 CrabPath NEVER makes network calls. It doesn't compute embeddings or call LLMs. You provide:
