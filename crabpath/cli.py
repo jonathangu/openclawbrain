@@ -172,10 +172,23 @@ def _build_health_report_lines(
     with_status: bool = False,
 ) -> list[str]:
     rows = build_health_rows(health, has_query_stats)
+    dormant_row = next((row for row in rows if row.get("metric") == "dormant_pct"), None)
+    reflex_row = next((row for row in rows if row.get("metric") == "reflex_pct"), None)
+    dormant_zero = float(dormant_row.get("value", -1.0) or 0.0) == 0.0 if dormant_row else False
+    reflex_zero = float(reflex_row.get("value", -1.0) or 0.0) == 0.0 if reflex_row else False
+    no_ok_metrics = not any(row.get("status") == "ok" for row in rows)
+
     lines: list[str] = [
         f"Graph Health: {graph.node_count} nodes, {graph.edge_count} edges",
         "-" * 46,
     ]
+
+    if dormant_zero and reflex_zero and no_ok_metrics:
+        lines.append(
+            "Note: Graph is freshly initialized — "
+            "metrics improve after 20-100 queries of real usage."
+        )
+
     for metric, target in HEALTH_TARGETS.items():
         row = next((item for item in rows if item["metric"] == metric), None)
         if row is None:
@@ -395,6 +408,7 @@ def _explain_traversal(
 
     candidate_rankings = []
     traversal_path = []
+    visit_order: list[str] = []
     inhibition_effects = []
     selected_node_reasons: list[dict[str, Any]] = [
         {
@@ -408,6 +422,8 @@ def _explain_traversal(
     for step_index, step in enumerate(result.trajectory):
         source = str(step.get("from_node", ""))
         target = str(step.get("to_node", ""))
+        if source:
+            visit_order.append(source)
         edge_weight = float(step.get("edge_weight", 0.0))
         outgoing = outgoing_cache.get(source)
         if outgoing is None:
@@ -487,6 +503,8 @@ def _explain_traversal(
                 "edge_weight": edge_weight,
             }
         )
+        if target:
+            visit_order.append(target)
         selected_node_reasons.append(
             {
                 "node_id": target,
@@ -513,6 +531,7 @@ def _explain_traversal(
         "traversal_path": traversal_path,
         "selected_node_reasons": selected_node_reasons,
         "selected_nodes": result.selected_nodes,
+        "visit_order": visit_order,
         "fired_with_reasoning": selected_node_reasons,
     }
 
@@ -533,6 +552,10 @@ def _format_explain_trace(trace: dict[str, Any]) -> str:
     inhibition_effects = trace.get("inhibition_effects")
     if not isinstance(inhibition_effects, list):
         inhibition_effects = []
+
+    visit_order = trace.get("visit_order")
+    if not isinstance(visit_order, list):
+        visit_order = []
 
     selected_node_reasons = trace.get("selected_node_reasons")
     if not isinstance(selected_node_reasons, list):
@@ -594,6 +617,16 @@ def _format_explain_trace(trace: dict[str, Any]) -> str:
             continue
         lines.append(
             f"- step {reason.get('step')}: {reason.get('node_id')}: {reason.get('reason')}"
+        )
+
+    if visit_order and len(set(visit_order)) < (len(visit_order) / 2):
+        lines.extend(
+            [
+                "",
+                "Note: Traversal is looping — this is normal for a fresh graph with no cross-file "
+                "edges. Run session replay (crabpath init --sessions ...) or use the graph for 20+ "
+                "queries to build cross-file structure.",
+            ]
         )
 
     return "\n".join(lines)
@@ -1230,7 +1263,7 @@ def _build_parser() -> JSONArgumentParser:
     init.add_argument(
         "--sessions",
         default=None,
-        help="Session logs directory or files for replay (auto-globs *.jsonl from directories)",
+        help="Replay historical queries to warm up the graph (strongly recommended). Pass a directory or individual .jsonl files. OpenClaw sessions: ~/.openclaw/agents/<name>/sessions/",
     )
     init.add_argument(
         "--no-embeddings",

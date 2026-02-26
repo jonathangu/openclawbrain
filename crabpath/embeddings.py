@@ -364,12 +364,15 @@ def auto_embed(
         except Exception as exc:
             import warnings
 
-            warnings.warn(
-                "CrabPath: OpenAI embedding provider failed: "
-                f"{exc}. Falling back to other providers.",
-                stacklevel=2,
+            message = (
+                "OpenAI embedding failed: "
+                f"{exc}. Ensure OPENAI_API_KEY is set and the openai package is installed: "
+                "pip install openai"
             )
-            errors.append(f"OpenAI failed: {exc}")
+            warnings.warn(f"CrabPath: {message}", stacklevel=2)
+            errors.append(message)
+    else:
+        errors.append("OpenAI not attempted: OPENAI_API_KEY is not set.")
 
     if os.getenv("GEMINI_API_KEY") or os.getenv("GOOGLE_API_KEY"):
         try:
@@ -377,26 +380,30 @@ def auto_embed(
         except Exception as exc:
             import warnings
 
-            warnings.warn(
-                "CrabPath: Gemini embedding provider failed: "
-                f"{exc}. Falling back to other providers.",
-                stacklevel=2,
+            message = (
+                "Gemini embedding failed: "
+                f"{exc}. Requires: pip install google-generativeai>=0.8 AND the Generative "
+                "Language API enabled on your GCP project "
+                "(https://console.developers.google.com/apis/api/generativelanguage.googleapis.com/"
+                "overview)"
             )
-            errors.append(f"Gemini failed: {exc}")
+            warnings.warn(f"CrabPath: {message}", stacklevel=2)
+            errors.append(message)
+    else:
+        errors.append("Gemini not attempted: GEMINI_API_KEY/GOOGLE_API_KEY is not set.")
 
     try:
         return ollama_embed(model=ollama_model, base_url=ollama_base_url)
     except Exception as exc:
         import warnings
 
+        message = f"Ollama failed: {exc}"
         warnings.warn(
             f"CrabPath: Ollama embedding provider failed: {exc}. Falling back to runtime error.",
             stacklevel=2,
         )
-        errors.append(f"Ollama failed: {exc}")
+        errors.append(message)
 
     raise RuntimeError(
-        "No embedding provider available. "
-        "Set OPENAI_API_KEY or GEMINI_API_KEY (or GOOGLE_API_KEY), "
-        "or run Ollama locally at http://localhost:11434 with an embed model. " + " | ".join(errors)
+        "No embedding provider available. Tried: " + " | ".join(errors)
     )

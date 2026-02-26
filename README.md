@@ -20,16 +20,23 @@ CrabPath is a memory architecture for AI agents where documents are nodes, weigh
 | Recurring-topic benchmark (200 queries) | CrabPath R@2: 0.02→0.07 vs BM25 flat 0.27 |
 | Sparsity crossover benchmark | Synthetic clusters: Phase2 Recall@3 crossover at ~50 nodes in sparse regimes (edge_ratio 0.1/0.05) |
 | Tests | 360, 0 lint errors |
-| Dependencies | Zero (stdlib only) |
+| Dependencies | Zero required dependencies (pure stdlib). Embedding providers are optional extras: pip install crabpath[openai] or pip install crabpath[google] |
 
 ## Install
 
 ```bash
+python3 -m venv ~/.crabpath-env && source ~/.crabpath-env/bin/activate
 pip install crabpath            # PyPI
 clawhub install crabpath        # or ClawHub (OpenClaw agents)
 ```
+macOS Homebrew Python requires a virtual environment (PEP 668).
 
-Requires Python 3.10+. Zero dependencies. Embeddings require one of:
+```bash
+# For embeddings (strongly recommended):
+pip install crabpath[openai]     # or: pip install crabpath[google]
+```
+
+Requires Python 3.10+. Zero required dependencies (pure stdlib). Embedding providers are optional extras: pip install crabpath[openai] or pip install crabpath[google]. Embeddings require one of:
 - `OPENAI_API_KEY` — OpenAI text-embedding-3-small (~$0.02 for 200 nodes)
 - `GEMINI_API_KEY` — Gemini text-embedding-004 (free tier)
 - Local [Ollama](https://ollama.com) — `ollama pull nomic-embed-text` (free, local)

@@ -31,7 +31,15 @@ Memory graph for AI agents. Learns which documents help and which to suppress.
 ### 1. Install
 
 ```bash
+python3 -m venv ~/.crabpath-env && source ~/.crabpath-env/bin/activate
 pip install crabpath
+```
+
+macOS Homebrew Python requires a virtual environment (PEP 668).
+
+```bash
+# For embeddings (strongly recommended):
+pip install crabpath[openai]     # or: pip install crabpath[google]
 ```
 
 ### 2. Initialize graph + embeddings
