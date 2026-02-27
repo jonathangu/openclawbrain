@@ -4,12 +4,13 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import sys
 import time
 from pathlib import Path
 from typing import Callable
 
-from openai import OpenAI
 from openclawbrain import HashEmbedder, TraversalConfig, load_state, traverse
+from openclawbrain.socket_client import OCBClient
 
 
 EMBED_MODEL = "text-embedding-3-small"
@@ -63,6 +64,22 @@ def _append_fired_log(log_path: Path, entry: dict[str, object], now: float | Non
     _write_fired_log(log_path, entries)
 
 
+def _load_query_via_socket(
+    socket_path: str | None,
+    query_text: str,
+    chat_id: str | None,
+    top: int,
+) -> dict[str, object] | None:
+    if socket_path is None:
+        return None
+
+    with OCBClient(socket_path) as client:
+        payload = client.query(query=query_text, chat_id=chat_id, top_k=top)
+        if not isinstance(payload, dict):
+            raise RuntimeError("invalid socket response payload")
+        return payload
+
+
 def require_api_key() -> str:
     api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
@@ -72,7 +89,7 @@ def require_api_key() -> str:
     return api_key
 
 
-def embed_query(client: OpenAI, query: str) -> list[float]:
+def embed_query(client, query: str) -> list[float]:
     response = client.embeddings.create(model=EMBED_MODEL, input=[query])
     return response.data[0].embedding
 
@@ -85,10 +102,13 @@ def _embed_fn_from_state(meta: dict[str, object]) -> tuple[Callable[[str], list[
         return HashEmbedder().embed, embedder_name
     if embedder_name == "hash-v1":
         # Legacy fallback: some historical states used hash-v1 with non-hash dims.
+        from openai import OpenAI
+
         api_key = require_api_key()
         client = OpenAI(api_key=api_key)
         return lambda text: embed_query(client, text), "text-embedding-3-small"
     if embedder_name in {"text-embedding-3-small", "openai-text-embedding-3-small"}:
+        from openai import OpenAI
         api_key = require_api_key()
         client = OpenAI(api_key=api_key)
         return lambda text: embed_query(client, text), embedder_name
@@ -102,16 +122,45 @@ def main(argv: list[str] | None = None) -> None:
     parser.add_argument("state_path", help="Path to state.json")
     parser.add_argument("query", nargs="+", help="Query text")
     parser.add_argument("--chat-id", help="Conversation id to persist fired nodes")
+    parser.add_argument("--socket", help="Unix socket path for daemon mode")
     parser.add_argument("--top", type=int, default=4, help="Top-k vector matches")
     parser.add_argument("--json", action="store_true", help="Emit JSON output")
     args = parser.parse_args(argv)
 
     query_text = " ".join(args.query).strip()
     state_path = Path(args.state_path)
-    if not state_path.exists():
-        raise SystemExit(f"state file not found: {state_path}")
     if args.top <= 0:
         raise SystemExit("--top must be >= 1")
+
+    resolved_socket = args.socket
+    if resolved_socket is None:
+        resolved_socket = OCBClient.default_socket_path(state_path.expanduser().parent.name)
+
+    if args.socket is not None or Path(resolved_socket).expanduser().exists():
+        try:
+            result = _load_query_via_socket(resolved_socket, query_text, args.chat_id, args.top)
+            if result is not None:
+                if args.json:
+                    output = {
+                        "state": str(state_path),
+                        "query": query_text,
+                        "seeds": result.get("seeds", []),
+                        "fired_nodes": result.get("fired_nodes", []),
+                        "context": result.get("context"),
+                    }
+                    print(json.dumps(output, indent=2))
+                    return
+                print("Fired nodes:")
+                for node_id in result.get("fired_nodes", []):
+                    print(f"- {node_id}")
+                print("Context:")
+                print(result.get("context") or "(no context)")
+                return
+        except Exception as exc:
+            print(f"socket unavailable, falling back to local state: {exc}", file=sys.stderr)
+
+    if not state_path.exists():
+        raise SystemExit(f"state file not found: {state_path}")
 
     graph, index, meta = load_state(str(state_path))
     query_embed_fn, embedder_name = _embed_fn_from_state(meta)

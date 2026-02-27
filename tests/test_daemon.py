@@ -311,7 +311,8 @@ def test_query_brain_uses_state_embedder_for_embeddings(monkeypatch) -> None:
             def create(model: str, input: list[str]) -> FakeOpenAIResponse:
                 return FakeOpenAIResponse()
 
-    monkeypatch.setattr(query_module, "OpenAI", FakeOpenAI)
+    import openai as openai_mod
+    monkeypatch.setattr(openai_mod, "OpenAI", FakeOpenAI)
     monkeypatch.setattr(query_module, "require_api_key", lambda: "test-key")
 
     openai_vector, embedder_name = query_module._embed_fn_from_state({"embedder_name": "text-embedding-3-small"})

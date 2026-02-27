@@ -5,12 +5,14 @@ import argparse
 import hashlib
 import json
 import os
+import sys
 from pathlib import Path
 from collections.abc import Callable
 from typing import Any
 import time
 
 from openclawbrain import HashEmbedder, apply_outcome, inject_correction, load_state, save_state
+from openclawbrain.socket_client import OCBClient
 
 
 FIRE_LOG = "fired_log.jsonl"
@@ -138,6 +140,7 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser = argparse.ArgumentParser(description="Learn from a correction linked to chat-id fired nodes")
     parser.add_argument("--state", required=True, help="Path to state.json")
     parser.add_argument("--chat-id", required=True, help="Conversation id used during query")
+    parser.add_argument("--socket", help="Unix socket path for daemon mode")
     parser.add_argument("--outcome", type=float, default=-1.0, help="Learn outcome value")
     parser.add_argument("--lookback", type=int, default=1, help="Number of recent queries to penalize")
     parser.add_argument("--content", help="Optional CORRECTION text to inject")
@@ -158,6 +161,26 @@ def main(argv: list[str] | None = None) -> None:
         raise SystemExit("--lookback must be >= 1")
 
     state_path = Path(args.state).expanduser()
+    socket_path = args.socket
+    if socket_path is None:
+        socket_path = OCBClient.default_socket_path(state_path.parent.name)
+
+    if args.socket is not None or socket_path is not None and Path(socket_path).exists():
+        try:
+            params = {
+                "chat_id": args.chat_id,
+                "outcome": args.outcome,
+                "lookback": args.lookback,
+            }
+            if args.content:
+                params["content"] = args.content
+            with OCBClient(socket_path) as client:
+                response = client.correction(**params)  # type: ignore[arg-type]
+            print(json.dumps(response, indent=2))
+            return
+        except Exception as exc:
+            print(f"socket unavailable, falling back to local state: {exc}", file=sys.stderr)
+
     if not state_path.exists():
         raise SystemExit(f"state file not found: {state_path}")
 
