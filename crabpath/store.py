@@ -52,7 +52,18 @@ def save_state(
     meta: dict[str, object] | None = None,
 ) -> None:
     """Save graph and index together to one JSON file."""
-    metadata = dict(meta or {})
+    state_path = Path(path)
+    existing_meta: dict[str, object] = {}
+    if state_path.exists():
+        payload = json.loads(state_path.read_text(encoding="utf-8"))
+        if isinstance(payload, dict):
+            raw_meta = payload.get("meta")
+            if isinstance(raw_meta, dict):
+                existing_meta = raw_meta
+
+    metadata = dict(existing_meta)
+    if meta is not None:
+        metadata.update(meta)
 
     # Resolve embedder: explicit args > meta dict > hash-v1 default
     if embedder_name is None:
@@ -63,6 +74,20 @@ def save_state(
     if embedder_dim is None:
         dim_from_meta = metadata.get("embedder_dim")
         embedder_dim = dim_from_meta if isinstance(dim_from_meta, int) else HashEmbedder().dim
+
+    existing_embedder = metadata.get("embedder_name")
+    if (
+        state_path.exists()
+        and embedder_dim is not None
+        and index._vectors
+        and existing_embedder != "hash-v1"
+    ):
+        for node_id, vector in index._vectors.items():
+            if len(vector) != embedder_dim:
+                raise ValueError(
+                    f"index vector dimension mismatch for node {node_id}: "
+                    f"expected={embedder_dim}, actual={len(vector)}"
+                )
 
     metadata.setdefault("schema_version", 1)
     metadata.setdefault("created_at", datetime.now(timezone.utc).isoformat())

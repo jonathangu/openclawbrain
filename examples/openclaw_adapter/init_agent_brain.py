@@ -10,7 +10,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 from openai import OpenAI
-from crabpath import Node, VectorIndex, save_state, split_workspace
+from crabpath import Node, VectorIndex, load_state, save_state, split_workspace
 from crabpath._batch import batch_or_single_embed
 from crabpath.autotune import measure_health
 from crabpath.replay import extract_queries, extract_queries_from_dir, replay_queries
@@ -62,12 +62,12 @@ def _correction_content_hash(content: str) -> str:
     return hashlib.sha256(content.encode("utf-8")).hexdigest()
 
 
-def _load_injected_correction_hashes(state_path: Path) -> set[str]:
+def _load_injected_correction_rows(state_path: Path) -> list[tuple[str, str]]:
     log_path = state_path.parent / "injected_corrections.jsonl"
     if not log_path.exists():
-        return set()
+        return []
 
-    hashes: set[str] = set()
+    rows: list[tuple[str, str]] = []
     for raw_line in log_path.read_text(encoding="utf-8").splitlines():
         try:
             payload = json.loads(raw_line)
@@ -76,13 +76,70 @@ def _load_injected_correction_hashes(state_path: Path) -> set[str]:
         if not isinstance(payload, dict):
             continue
         content_hash = payload.get("content_hash")
-        if isinstance(content_hash, str):
-            hashes.add(content_hash)
-    return hashes
+        node_id = payload.get("node_id")
+        if isinstance(content_hash, str) and isinstance(node_id, str):
+            rows.append((content_hash, node_id))
+    return rows
+
+
+def _load_injected_correction_hashes(state_path: Path) -> set[str]:
+    return {content_hash for content_hash, _ in _load_injected_correction_rows(state_path)}
+
+
+def _load_injected_node_ids(state_path: Path) -> set[str]:
+    return {node_id for _, node_id in _load_injected_correction_rows(state_path)}
+
+
+def _snapshot_injected_nodes(
+    state_path: Path, injected_node_ids: set[str]
+) -> tuple[dict[str, Node], dict[str, list[float]]]:
+    if not injected_node_ids:
+        return {}, {}
+
+    graph, index, _ = load_state(str(state_path))
+    nodes: dict[str, Node] = {}
+    vectors: dict[str, list[float]] = {}
+
+    for node_id in injected_node_ids:
+        node = graph.get_node(node_id)
+        vector = index._vectors.get(node_id)
+        if node is not None:
+            nodes[node_id] = Node(
+                id=node.id,
+                content=node.content,
+                summary=node.summary,
+                metadata=dict(node.metadata),
+            )
+        if isinstance(vector, list):
+            vectors[node_id] = list(vector)
+
+    return nodes, vectors
+
+
+def _restore_injected_nodes(
+    graph: Graph,
+    index: VectorIndex,
+    preserved_nodes: dict[str, Node],
+    preserved_vectors: dict[str, list[float]],
+) -> int:
+    restored = 0
+    for node_id, node in preserved_nodes.items():
+        if graph.get_node(node_id) is None:
+            graph.add_node(node)
+            restored += 1
+
+        vector = preserved_vectors.get(node_id)
+        if vector is not None:
+            index._vectors[node_id] = list(vector)
+
+    return restored
 
 
 def _load_active_learnings(
-    learning_db: Path, agent_id: str, injected_correction_hashes: set[str] | None = None
+    learning_db: Path,
+    agent_id: str,
+    injected_correction_hashes: set[str] | None = None,
+    skip_node_ids: set[str] | None = None,
 ) -> list[tuple[str, str]]:
     if not learning_db.exists():
         print(f"  [learnings] DB not found: {learning_db}")
@@ -104,7 +161,10 @@ def _load_active_learnings(
         if content.strip():
             if row["type"] == "CORRECTION" and _correction_content_hash(content) in skip_hashes:
                 continue
-            learnings.append((f"learning::{row['id']}", content))
+            node_id = f"learning::{row['id']}"
+            if skip_node_ids and node_id in skip_node_ids:
+                continue
+            learnings.append((node_id, content))
 
     return learnings
 
@@ -208,6 +268,7 @@ def run(
     learning_db: Path | None = None,
     do_connect_learnings: bool = True,
     batch_size: int = EMBED_BATCH_SIZE,
+    preserve_injected: bool = True,
 ) -> None:
     if not workspace.exists():
         raise SystemExit(f"workspace not found: {workspace}")
@@ -216,10 +277,19 @@ def run(
     client = OpenAI(api_key=api_key)
     embed_batch = build_embed_batch_fn(client, batch_size=batch_size)
 
+    output_dir, state_path, graph_path, index_path = resolve_output_paths(output)
+    preserved_nodes: dict[str, Node] = {}
+    preserved_vectors: dict[str, list[float]] = {}
+    injected_correction_node_ids: set[str] = set()
+
+    if preserve_injected and state_path.exists():
+        injected_correction_node_ids = _load_injected_node_ids(state_path)
+        if injected_correction_node_ids:
+            preserved_nodes, preserved_vectors = _snapshot_injected_nodes(state_path, injected_correction_node_ids)
+
     graph, texts = split_workspace(str(workspace), llm_fn=None, llm_batch_fn=None)
 
     agent_id = _infer_agent_id(output, sessions)
-    output_dir, state_path, graph_path, index_path = resolve_output_paths(output)
     injected_correction_hashes = set()
     if learning_db is not None:
         injected_correction_hashes = _load_injected_correction_hashes(state_path)
@@ -229,6 +299,7 @@ def run(
             learning_db=learning_db,
             agent_id=agent_id,
             injected_correction_hashes=injected_correction_hashes,
+            skip_node_ids=injected_correction_node_ids,
         )
         learning_count = len(learnings)
         print(f"  Learnings from DB ({agent_id}): {learning_count}")
@@ -250,6 +321,15 @@ def run(
     index = VectorIndex()
     for node_id, vector in embeddings.items():
         index.upsert(node_id, vector)
+
+    restored_nodes = _restore_injected_nodes(
+        graph=graph,
+        index=index,
+        preserved_nodes=preserved_nodes,
+        preserved_vectors=preserved_vectors,
+    )
+    if restored_nodes:
+        print(f"  Preserved injected nodes: {restored_nodes}")
 
     embedder_dim = EMBEDDING_DIM
     save_state(
@@ -346,6 +426,12 @@ def main() -> None:
         action="store_false",
         help="Skip learning node to workspace connection and correction inhibition steps",
     )
+    parser.add_argument(
+        "--preserve-injected",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Preserve injected CORRECTION nodes across rebuilds",
+    )
     parser.set_defaults(connect_learnings=None)
     args = parser.parse_args()
 
@@ -364,6 +450,7 @@ def main() -> None:
         learning_db=args.learning_db,
         do_connect_learnings=do_connect_learnings,
         batch_size=args.batch_size,
+        preserve_injected=args.preserve_injected,
     )
 
 

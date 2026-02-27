@@ -68,7 +68,78 @@ def _load_cache(cache_path: Path) -> dict[str, list[float]]:
     return {k: v for k, v in data.items() if isinstance(v, list) and len(v) == 1536}
 
 
-def _load_learnings(agent_id: str) -> list[tuple[str, str]]:
+def _load_injected_correction_rows(state_path: Path) -> list[tuple[str, str]]:
+    log_path = state_path.parent / "injected_corrections.jsonl"
+    if not log_path.exists():
+        return []
+
+    rows: list[tuple[str, str]] = []
+    for raw_line in log_path.read_text(encoding="utf-8").splitlines():
+        try:
+            payload = json.loads(raw_line)
+        except json.JSONDecodeError:
+            continue
+        if not isinstance(payload, dict):
+            continue
+        content_hash = payload.get("content_hash")
+        node_id = payload.get("node_id")
+        if isinstance(content_hash, str) and isinstance(node_id, str):
+            rows.append((content_hash, node_id))
+    return rows
+
+
+def _load_injected_node_ids(state_path: Path) -> set[str]:
+    return {node_id for _, node_id in _load_injected_correction_rows(state_path)}
+
+
+def _snapshot_injected_nodes(
+    state_path: Path, injected_node_ids: set[str]
+) -> tuple[dict[str, Node], dict[str, list[float]]]:
+    if not injected_node_ids:
+        return {}, {}
+
+    graph, index, _ = load_state(str(state_path))
+    nodes: dict[str, Node] = {}
+    vectors: dict[str, list[float]] = {}
+
+    for node_id in injected_node_ids:
+        node = graph.get_node(node_id)
+        vector = index._vectors.get(node_id)
+        if node is not None:
+            nodes[node_id] = Node(
+                id=node.id,
+                content=node.content,
+                summary=node.summary,
+                metadata=dict(node.metadata),
+            )
+        if isinstance(vector, list):
+            vectors[node_id] = list(vector)
+
+    return nodes, vectors
+
+
+def _restore_injected_nodes(
+    graph: Graph,
+    index: VectorIndex,
+    preserved_nodes: dict[str, Node],
+    preserved_vectors: dict[str, list[float]],
+) -> int:
+    restored = 0
+    for node_id, node in preserved_nodes.items():
+        if graph.get_node(node_id) is None:
+            graph.add_node(node)
+            restored += 1
+
+        vector = preserved_vectors.get(node_id)
+        if vector is not None:
+            index._vectors[node_id] = list(vector)
+
+    return restored
+
+
+def _load_learnings(
+    agent_id: str, skip_node_ids: set[str] | None = None
+) -> list[tuple[str, str]]:
     """Load learning nodes from SQLite for this agent. Returns (node_id, content) pairs."""
     if not LEARNING_DB.exists():
         print(f"  [learnings] DB not found: {LEARNING_DB}")
@@ -101,6 +172,8 @@ def _load_learnings(agent_id: str) -> list[tuple[str, str]]:
             parts.append(f"(occurred {row['recurrence_count']}x)")
         content = "\n".join(parts)
         if content.strip():
+            if skip_node_ids and node_id in skip_node_ids:
+                continue
             results.append((node_id, content))
     
     return results
@@ -131,11 +204,21 @@ def _embed_new_nodes(new_texts: dict[str, str], batch_size: int = 50) -> dict[st
     return results
 
 
-def rebuild_agent(agent_id: str, config: dict):
+def rebuild_agent(
+    agent_id: str, config: dict, preserve_injected: bool = True
+) -> dict[str, object]:
     workspace = config["workspace"]
     sessions = config["sessions"]
     output = config["output"]
     cache_path = config["cache"]
+    state_path = output / "state.json"
+    injected_node_ids: set[str] = set()
+    preserved_nodes: dict[str, Node] = {}
+    preserved_vectors: dict[str, list[float]] = {}
+    if preserve_injected and state_path.exists():
+        injected_node_ids = _load_injected_node_ids(state_path)
+        if injected_node_ids:
+            preserved_nodes, preserved_vectors = _snapshot_injected_nodes(state_path, injected_node_ids)
     
     print(f"\n{'='*60}")
     print(f"  {agent_id.upper()}")
@@ -154,7 +237,7 @@ def rebuild_agent(agent_id: str, config: dict):
     print(f"  Split: {graph.node_count()} nodes, {graph.edge_count()} edges, {len(texts)} texts")
     
     # 2. Add learning DB nodes
-    learnings = _load_learnings(agent_id)
+    learnings = _load_learnings(agent_id, skip_node_ids=injected_node_ids)
     print(f"  Learnings from DB: {len(learnings)} nodes")
     for node_id, content in learnings:
         node = Node(
@@ -193,12 +276,20 @@ def rebuild_agent(agent_id: str, config: dict):
     all_vecs = {**reused, **new_vecs}
     for nid, vec in all_vecs.items():
         index.upsert(nid, vec)
+
+    restored = _restore_injected_nodes(
+        graph=graph,
+        index=index,
+        preserved_nodes=preserved_nodes,
+        preserved_vectors=preserved_vectors,
+    )
+    if restored:
+        print(f"  Preserved injected nodes: {restored}")
     
     missing = len(texts) - len(all_vecs)
     print(f"  Index: {len(all_vecs)} vectors ({len(reused)} reused + {len(new_vecs)} new), {missing} missing")
     
     # 6. Save state
-    state_path = output / "state.json"
     meta = {
         "embedding_reused_count": len(reused),
         "embedding_new_count": len(new_vecs),
@@ -248,12 +339,22 @@ def main():
         choices=list(AGENTS.keys()),
         help="Rebuild only this agent (default: all)",
     )
+    parser.add_argument(
+        "--preserve-injected",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Preserve injected CORRECTION nodes across rebuilds",
+    )
     args = parser.parse_args()
 
     agent_ids = [args.agent] if args.agent else list(AGENTS.keys())
     results = {}
     for agent_id in agent_ids:
-        results[agent_id] = rebuild_agent(agent_id, AGENTS[agent_id])
+        results[agent_id] = rebuild_agent(
+            agent_id,
+            AGENTS[agent_id],
+            preserve_injected=args.preserve_injected,
+        )
     
     print(f"\n{'='*60}")
     print("  SUMMARY")
