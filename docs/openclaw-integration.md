@@ -34,7 +34,7 @@ OpenClawBrain stores everything in a single portable file:
 
 - Python **3.10+**
 - `pip install openclawbrain`
-- (Optional but common) OpenAI embeddings: `OPENAI_API_KEY` in the environment of whatever runs the daemon
+- OpenAI embeddings: `OPENAI_API_KEY` in the environment of whatever runs the daemon. Required for the recommended production setup; hash embeddings are the offline/testing fallback.
 
 Install:
 
@@ -123,7 +123,7 @@ BRAIN_DIR=~/.openclawbrain/main
 mkdir -p "$BRAIN_DIR"
 
 # Create/overwrite state.json inside the output directory
-openclawbrain init --workspace "$WORKSPACE" --output "$BRAIN_DIR"
+openclawbrain init --workspace "$WORKSPACE" --output "$BRAIN_DIR" --embedder openai --llm openai
 
 # Quick health signal
 openclawbrain doctor --state "$BRAIN_DIR/state.json"
@@ -409,12 +409,12 @@ openclawbrain init --workspace ~/.openclaw/workspace --output ~/.openclawbrain/m
 Common causes:
 
 - You aren’t using the daemon (so `state.json` reload happens every call).
-- You’re using real embeddings and the embed call dominates (`embed_query_ms`).
+- You’re using hash embeddings and still want production-grade retrieval (or `embed_query_ms` is high from OpenAI calls).
 
 Fixes:
 
 - Use the socket server command (`python3 -m openclawbrain.socket_server`) when available.
-- If you can tolerate it, start with hash embeddings for cheap iteration.
+- Use OpenAI embeddings for production routing/scoring behavior; only use hash embeddings for offline/testing fallback.
 
 ### “Daemon starts but OpenClaw can’t talk to it”
 

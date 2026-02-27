@@ -203,6 +203,11 @@ apply_outcome(...)
 
 ```
 
+#### Cost and defaults
+
+- Recommended: OpenAI `text-embedding-3-small` + `gpt-5-mini` for routing/scoring in production.
+- Hash embeddings are supported as a testing/offline fallback and should not be treated as the default production path.
+
 ### OpenClawBrain provides
 
 - `state.json` (graph + index + meta)

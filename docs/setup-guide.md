@@ -3,16 +3,18 @@
 ## Prerequisites
 - Python 3.10+
 - `pip install openclawbrain`
-- `OPENAI_API_KEY` in environment (for OpenAI embeddings; optional if using `hash`)
+- `OPENAI_API_KEY` in environment (required for the recommended OpenAI setup; optional only for hash offline/testing mode)
 - A workspace directory with markdown files (your agent's knowledge base)
 
 ## Step 1: Build your first brain
 
 ```bash
-openclawbrain init --workspace ./my-workspace --state ./brain/state.json --embedder openai
+openclawbrain init --workspace ./my-workspace --state ./brain/state.json --embedder openai --llm openai
 openclawbrain doctor --state ./brain/state.json
 openclawbrain info --state ./brain/state.json
 ```
+
+We recommend OpenAI embeddings with GPT-5-mini routing for production use. Hash embeddings work offline but produce lower-quality retrieval.
 
 ## Step 2: Wire up the fast loop (per-query)
 
@@ -22,7 +24,7 @@ Reference implementation: `examples/ops/query_and_learn.py`
 ```python
 from examples.ops.callbacks import make_embed_fn, make_llm_fn
 
-embed_fn = make_embed_fn("openai")  # or "hash" for zero-dep
+embed_fn = make_embed_fn("openai")  # or "hash" for offline/testing mode
 llm_fn = make_llm_fn("gpt-5-mini")  # optional, for LLM-assisted merge
 ```
 

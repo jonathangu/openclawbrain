@@ -18,7 +18,7 @@ Quickstart (OpenClaw users):
 
 ```bash
 pip install openclawbrain
-openclawbrain init --workspace ~/.openclaw/workspace --output ~/.openclawbrain/main
+openclawbrain init --workspace ~/.openclaw/workspace --output ~/.openclawbrain/main --embedder openai --llm openai
 python3 -m openclawbrain.socket_server --state ~/.openclawbrain/main/state.json
 ```
 
@@ -57,7 +57,7 @@ python3 -m openclawbrain.socket_client --socket ~/.openclawbrain/main/daemon.soc
 **OpenClawBrain learns from your agent feedback, so wrong answers get suppressed instead of resurfacing.** It builds a memory graph over your workspace, remembers what worked, and routes future answers through learned paths.
 
 - Zero dependencies. Pure Python 3.10+.
-- Works offline with built-in hash embeddings.
+- Built-in hash embeddings for offline/testing; OpenAI embeddings are recommended for production.
 - Builds a **`state.json`** brain from your workspace.
 - Queries follow learned routes instead of only similarity matches.
 - Positive feedback (`+1`) strengthens routes, negative (`-1`) creates inhibitory edges.
@@ -224,10 +224,11 @@ openclawbrain query "incident runbook for deploy failures" --state /tmp/brain/st
 
 ## Real embeddings + LLM routing (OpenAI)
 
-Offline hash embeddings work for trying the product, but real deployments generally use:
+Production deployments use:
 
 - **Embeddings:** `text-embedding-3-small` (1536-dim)
 - **LLM routing/scoring:** `gpt-5-mini`
+- **Offline/testing fallback:** `hash` embeddings (lower quality, no API key required).
 
 ```python
 from openai import OpenAI
@@ -455,11 +456,10 @@ from openclawbrain import (
 
 ## Cost control
 
-- **Free tier:** hash embeddings work offline with zero API calls. Good for trying OpenClawBrain and small workspaces.
-- **Budget tier:** use OpenAI `text-embedding-3-small` (~$0.02/1M tokens). Embed once at init, cache in state.json.
-- **LLM routing:** optional. `gpt-5-mini` for routing/scoring decisions. Only called during query, not at rest.
+- **Recommended:** OpenAI `text-embedding-3-small` (~$0.02/MB) + `gpt-5-mini` for routing/scoring. Embeddings are generated at init and cached in `state.json`; `gpt-5-mini` runs on query only.
+- **Offline/testing fallback:** hash embeddings with no API calls. Fast for local tryout, but lower retrieval quality than OpenAI.
 - **Batch init:** `openclawbrain init` embeds all workspace files in one batch call. Subsequent queries reuse cached vectors.
-- **Upgrade path:** start with hash, switch to real embeddings later by rebuilding state with `openclawbrain init`.
+- **Upgrade path:** when moving to production, rebuild with OpenAI embeddings via `openclawbrain init` and stop relying on the hash fallback.
 
 ## Optional: warm start from sessions
 
