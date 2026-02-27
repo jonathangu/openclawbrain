@@ -89,7 +89,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     x.add_argument("--summary")
     x.add_argument("--connect-top-k", type=int, default=3)
-    x.add_argument("--connect-min-sim", type=float, default=0.3)
+    x.add_argument("--connect-min-sim", type=float, default=None)
     x.add_argument("--vector-stdin", action="store_true")
     x.add_argument("--json", action="store_true")
 
@@ -620,6 +620,12 @@ def cmd_inject(args: argparse.Namespace) -> int:
     else:
         summary = args.summary
 
+    if args.connect_min_sim is not None:
+        connect_min_sim = args.connect_min_sim
+    else:
+        embedder_name, _ = _state_embedder_meta(meta)
+        connect_min_sim = 0.0 if embedder_name == "hash-v1" else 0.3
+
     node_type = args.type
     metadata = {"source": "cli_inject", "type": node_type}
     if node_type == "CORRECTION":
@@ -633,7 +639,7 @@ def cmd_inject(args: argparse.Namespace) -> int:
             vector=vector,
             embed_fn=None if args.vector_stdin else default_embed,
             connect_top_k=args.connect_top_k,
-            connect_min_sim=args.connect_min_sim,
+            connect_min_sim=connect_min_sim,
         )
     else:
         payload = inject_node(
@@ -646,7 +652,7 @@ def cmd_inject(args: argparse.Namespace) -> int:
             vector=vector,
             embed_fn=None if args.vector_stdin else default_embed,
             connect_top_k=args.connect_top_k,
-            connect_min_sim=args.connect_min_sim,
+            connect_min_sim=connect_min_sim,
         )
 
     state_meta = _state_meta(

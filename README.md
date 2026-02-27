@@ -1,4 +1,6 @@
-# CrabPath
+# CrabPath — learned retrieval routing for AI agents
+
+> Your retrieval routes become the prompt — assembled by learned routing, not top-k similarity.
 
 **CrabPath learns from your agent feedback, so wrong answers get suppressed instead of resurfacing.** It builds a memory graph over your workspace, remembers what worked, and routes future answers through learned paths.
 
@@ -55,6 +57,38 @@ crabpath query "can I skip CI" --state /tmp/brain/state.json --top 3
 crabpath health --state /tmp/brain/state.json
 ```
 
+## Correcting mistakes (the main workflow)
+
+When your agent retrieves wrong context, teach CrabPath in one command:
+
+```bash
+crabpath inject --state brain/state.json \
+  --id "correction::42" \
+  --content "Never show API keys in chat messages" \
+  --type CORRECTION
+```
+
+What happens:
+1. CrabPath creates a new node with your correction text
+2. It connects that node to the most related workspace chunks
+3. It adds **inhibitory edges** — negative-weight links that suppress those chunks
+4. Next query touching that topic: the correction appears, the bad route is dampened
+
+You can also reinforce good retrievals:
+
+```bash
+# After a query returns helpful context, strengthen those paths
+crabpath learn --state brain/state.json --outcome 1.0 \
+  --fired-ids "deploy.md::0,deploy.md::1"
+```
+
+Or weaken bad ones:
+
+```bash
+crabpath learn --state brain/state.json --outcome -1.0 \
+  --fired-ids "monitoring.md::2"
+```
+
 ## What it looks like in practice
 
 ```bash
@@ -80,6 +114,16 @@ crabpath query "incident runbook for deploy failures" --state /tmp/brain/state.j
 | Wrong answers | Can keep resurfacing | Inhibitory edges suppress them |
 | Over time | Same results for same query | Routes become habitual behavior |
 | Dependencies | Vector DB or service | Zero dependencies |
+
+## How CrabPath differs from related tools
+
+| | CrabPath | Plain RAG | Reflexion | MemGPT |
+|---|----------|-----------|-----------|--------|
+| What it learns | Retrieval routes | Nothing | Reasoning via self-reflection text | Memory read/write policies |
+| Negative feedback | Inhibitory edges suppress bad paths | None | None (additive only) | None |
+| Integration | Standalone library, any agent | Vector DB required | Tied to agent loop | Tied to agent architecture |
+| Cold start | Hash embeddings, no API key | Needs embedding service | Needs prior episodes | Needs configured tiers |
+| State | Single `state.json` file | External DB | Prompt history | Multi-tier storage |
 
 ## Real embeddings + LLM routing (OpenAI)
 
@@ -131,16 +175,6 @@ See `examples/openai_embedder/` for a complete example.
 | `connect` | Suggest/apply cross-file connections |
 | `journal` | Query event journal |
 
-## Teaching Your Graph
-
-Use feedback and injections together:
-
-- Positive learning: `learn --outcome 1.0 --fired-ids "A,B,C"` strengthens A→B and B→C.
-- Negative learning: `learn --outcome -1.0 --fired-ids "A,B"` weakens bad routes and can create inhibitory edges.
-- Inject correction: `inject --type CORRECTION` adds a correction node and connects it to related workspace nodes so it can actively suppress unsafe routes.
-- Inject teaching: `inject --type TEACHING` adds a node with the same normal reinforcement behavior for safe routing additions.
-- Inhibitory edges are simply negative-weight edges: they subtract activation from paths downstream, making them less likely to fire next time.
-
 ## Python API
 
 ```python
@@ -162,6 +196,22 @@ from crabpath import (
     score_retrieval,
 )
 ```
+
+## State lifecycle
+
+- **Where it lives:** a single `state.json` file (portable, version-controllable)
+- **How big:** ~180KB for 20 nodes (hash), ~60MB for 1,600 nodes (OpenAI embeddings)
+- **When to rebuild:** after major workspace restructuring or embedder changes
+- **Embedder changes:** CrabPath stores the embedder name + dimension in state metadata and hard-fails on mismatch — no silent corruption
+- **Merging:** use `crabpath merge` to consolidate similar nodes as the graph grows
+
+## Cost control
+
+- **Free tier:** hash embeddings work offline with zero API calls. Good for trying CrabPath and small workspaces.
+- **Budget tier:** use OpenAI `text-embedding-3-small` (~$0.02/1M tokens). Embed once at init, cache in state.json.
+- **LLM routing:** optional. `gpt-5-mini` for routing/scoring decisions. Only called during query, not at rest.
+- **Batch init:** `crabpath init` embeds all workspace files in one batch call. Subsequent queries reuse cached vectors.
+- **Upgrade path:** start with hash, switch to real embeddings later by rebuilding state with `crabpath init`.
 
 ## Optional: warm start from sessions
 

@@ -540,3 +540,29 @@ def test_cli_help_text_for_commands() -> None:
     for command in ["init", "query", "learn", "merge", "health", "connect", "replay", "journal"]:
         with pytest.raises(SystemExit):
             main([command, "--help"])
+
+
+def test_inject_command_defaults_connect_min_sim_for_hash_embedder(tmp_path, capsys) -> None:
+    """test inject uses a zero min similarity threshold by default for hash embeds."""
+    state_path = tmp_path / "state.json"
+    _write_state(state_path)
+
+    code = main(
+        [
+            "inject",
+            "--state",
+            str(state_path),
+            "--id",
+            "fix::ci",
+            "--content",
+            "alpha",
+            "--type",
+            "CORRECTION",
+            "--json",
+        ]
+    )
+    assert code == 0
+
+    out = json.loads(capsys.readouterr().out.strip())
+    assert out["connected_to"]
+    assert out["inhibitory_edges_created"] > 0
