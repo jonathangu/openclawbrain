@@ -14,12 +14,10 @@ EMBED_MODEL = "text-embedding-3-small"
 
 
 def require_api_key() -> str:
-    # The caller is responsible for injecting OPENAI_API_KEY into this process env.
-    api_key = os.getenv("OPENAI_API_KEY")
+    api_key = os.environ.get("OPENAI_API_KEY")
     if not api_key:
         raise SystemExit(
-            "OPENAI_API_KEY is required in process env. "
-            "Inject it in the agent process before running this script."
+            "This script must run inside the agent framework exec environment where OPENAI_API_KEY is injected."
         )
     return api_key
 
@@ -30,17 +28,21 @@ def embed_query(client: OpenAI, query: str) -> list[float]:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Query a CrabPath state.json with OpenAI embeddings")
-    parser.add_argument("state", help="Path to state.json")
+    parser = argparse.ArgumentParser(
+        description="Query a CrabPath state.json with OpenAI embeddings"
+    )
+    parser.add_argument("state_path", help="Path to state.json")
     parser.add_argument("query", nargs="+", help="Query text")
     parser.add_argument("--top", type=int, default=4, help="Top-k vector matches")
     parser.add_argument("--json", action="store_true", help="Emit JSON output")
     args = parser.parse_args()
 
     query_text = " ".join(args.query).strip()
-    state_path = Path(args.state)
+    state_path = Path(args.state_path)
     if not state_path.exists():
         raise SystemExit(f"state file not found: {state_path}")
+    if args.top <= 0:
+        raise SystemExit("--top must be >= 1")
 
     api_key = require_api_key()
     client = OpenAI(api_key=api_key)
@@ -51,8 +53,9 @@ def main() -> None:
     expected_dim = meta.get("embedder_dim")
     if isinstance(expected_dim, int) and len(query_vector) != expected_dim:
         raise SystemExit(
-            f"Embedding dimension mismatch: query={len(query_vector)} index={expected_dim}. "
-            "Rebuild state.json with the same embedder model."
+            "Embedding dimension mismatch: "
+            f"query={len(query_vector)} index={expected_dim}. "
+            "Rebuild state.json with text-embedding-3-small."
         )
 
     seeds = index.search(query_vector, top_k=args.top)
@@ -62,7 +65,7 @@ def main() -> None:
         "state": str(state_path),
         "query": query_text,
         "seeds": seeds,
-        "fired": result.fired,
+        "fired_nodes": result.fired,
         "context": result.context,
     }
 
@@ -70,12 +73,10 @@ def main() -> None:
         print(json.dumps(output, indent=2))
         return
 
-    print(f"state: {state_path}")
-    print(f"query: {query_text}")
-    print("fired:")
+    print("Fired nodes:")
     for node_id in result.fired:
-        print(f" - {node_id}")
-    print("context:")
+        print(f"- {node_id}")
+    print("Context:")
     print(result.context or "(no context)")
 
 

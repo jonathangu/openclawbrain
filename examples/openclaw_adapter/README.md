@@ -1,22 +1,19 @@
-# OpenClaw adapter example
+# OpenClaw adapter
 
-OpenClaw agents often inject API keys in-process (for example through their framework),
-while subprocesses may not inherit those keys reliably.
+This adapter is for agent frameworks that manage API keys internally.
 
-Use the Python API with callback-based callbacks for both embeddings and
-LLM-powered chunking/summarization. In this pattern, you do **not** shell out to
-`crabpath` CLI for embedding or LLM operations.
+The adapter scripts expect `OPENAI_API_KEY` to be present in `os.environ`.
+The agent framework injects this key into the process environment before invoking
+these scripts, so no key discovery, keychain lookup, or dotfile parsing is
+performed.
 
-Run:
+There is no manual key configuration for these scripts. Provide workspace,
+sessions, and output paths and the scripts run end-to-end.
 
-```bash
-OPENAI_API_KEY=... python3 examples/openclaw_adapter/init_agent_brain.py <workspace> <sessions> <output>
-python3 examples/openclaw_adapter/query_brain.py <state.json> "How does this work?"
-```
+The adapter is the integration layer between the pure CrabPath library and the
+framework. It handles:
 
-`init_agent_brain.py` replays historical sessions into the graph, embeds workspace
-chunks with OpenAI (`text-embedding-3-small`), stores `state.json` metadata
-(`embedder_name`, `embedder_dim`), and prints a health summary.
-
-`query_brain.py` loads `state.json`, embeds a live query with
-`text-embedding-3-small`, traverses the graph, and prints fired nodes/context.
+- Building a workspace graph with `openai-text-embedding-3-small` metadata.
+- Persisting `state.json`, `graph.json`, and `index.json`.
+- Querying the graph via `query_brain.py`.
+- Replaying history and printing health diagnostics in `init_agent_brain.py`.
