@@ -12,7 +12,7 @@ from .graph import Graph
 class DecayConfig:
     """Decay control for weights in long-running graphs."""
 
-    half_life: int = 80
+    half_life: int = 140
     min_weight: float = 0.01
 
 

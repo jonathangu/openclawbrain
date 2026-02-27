@@ -3,6 +3,9 @@
 ### Learning rule
 - Switched default learning rule from heuristic (apply_outcome) to policy-gradient (apply_outcome_pg). The PG update redistributes probability mass across all outgoing edges at each visited node (sum of updates ≈ 0), replacing the inflationary heuristic that only modified traversed edges. Simulation shows 10-15x better branch separation, 24x faster recovery after concept drift, and 30% less weight inflation.
 
+### Decay
+- Increased default decay half-life from 80 to 140 cycles. With PG's deflationary updates replacing the inflationary heuristic, edges need less aggressive decay. At half-life 140: edges queried 1x/day stabilize at 0.24 (habitual), abandoned edges still reach prune threshold by day 17.
+
 ### Maintenance
 - Added runtime node splitting (`split_node`, `suggest_splits`). The inverse of merge — splits bloated multi-topic nodes into focused children with automatic edge rewiring. Integrates into maintenance pipeline between decay and merge.
 
