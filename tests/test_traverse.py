@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from crabpath.graph import Edge, Graph, Node
-from crabpath.traverse import TraversalConfig, traverse
+from crabpath.traverse import TraversalConfig, traverse, _tier
 
 
 def test_traverse_prefers_highest_reflex_edge() -> None:
@@ -59,7 +59,7 @@ def test_dormant_tier_is_skipped() -> None:
     graph = Graph()
     graph.add_node(Node("a", "A"))
     graph.add_node(Node("b", "B"))
-    graph.add_edge(Edge("a", "b", 0.2))
+    graph.add_edge(Edge("a", "b", 0.19))
 
     result = traverse(graph, [("a", 1.0)], config=TraversalConfig(max_hops=2, beam_width=1))
     assert result.fired == ["a"]
@@ -435,8 +435,15 @@ def test_tier_summary_in_result() -> None:
 
     result = traverse(graph, [("a", 1.0)], config=TraversalConfig())
     assert result.tier_summary == {
-        "reflex": ">= 0.8",
-        "habitual": "0.3 - 0.8",
-        "dormant": "< 0.3",
-        "inhibitory": "< -0.3",
+        "reflex": ">= 0.6",
+        "habitual": "0.2 - 0.6",
+        "dormant": "< 0.2",
+        "inhibitory": "< -0.01",
     }
+
+
+def test_tier_thresholds_use_new_boundaries() -> None:
+    """test tier thresholds use new default boundaries."""
+    assert _tier(0.7, TraversalConfig()) == "reflex"
+    assert _tier(0.25, TraversalConfig()) == "habitual"
+    assert _tier(-0.02, TraversalConfig()) == "inhibitory"

@@ -2,7 +2,7 @@
 
 > Your retrieval routes become the prompt — assembled by learned routing, not top-k similarity.
 
-**Current release: v10.2.0**
+**Current release: v10.3.0**
 
 **CrabPath learns from your agent feedback, so wrong answers get suppressed instead of resurfacing.** It builds a memory graph over your workspace, remembers what worked, and routes future answers through learned paths.
 
@@ -216,6 +216,9 @@ See `examples/openai_embedder/` for a complete example.
 | `beam_width` | `8` | Frontier size per hop (wider = reaches farther routes) |
 | `max_hops` | `30` | Safety ceiling; damping controls convergence |
 | `fire_threshold` | `0.01` | Minimum score required to fire a candidate node |
+| `reflex_threshold` | `0.6` | Edges with weight `>= 0.6` auto-follow (no route function) |
+| `habitual_range` | `0.2 - 0.6` | Edges in this band run through route function |
+| `inhibitory_threshold` | `-0.01` | Edges at or below suppress targets |
 | `max_fired_nodes` | `None` | Hard stop on fired node count |
 | `max_context_chars` | `None` | Hard stop on rendered traversal context |
 | `edge_damping` | `0.3` | Per-reuse decay (`weight × 0.3^k`) |

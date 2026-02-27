@@ -1,5 +1,13 @@
 # CHANGELOG
 
+## v10.3.0 (2026-02-27)
+
+### Traversal tiers recalibrated from production data
+- **Defaults changed:** `reflex_threshold: 0.8 -> 0.6`, `habitual_range: 0.3-0.8 -> 0.2-0.6`, `inhibitory_threshold: -0.3 -> -0.01`.
+- **Production root-cause fix:** inhibitory edges were non-functional because the default threshold was `-0.3` while negatives were near `-0.035`.
+- **Tests and sims updated:** adjusted tier-classification expectations and added coverage for `-0.02` as inhibitory.
+- Test count increased to **204** in docs to match new coverage.
+
 ## v10.2.0 (2026-02-27)
 
 ### Traversal engine hardening

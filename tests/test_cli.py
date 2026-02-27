@@ -134,10 +134,10 @@ def test_query_command_returns_json_with_fired_nodes(tmp_path, capsys) -> None:
     assert out["fired"]
     assert "a" in out["fired"]
     assert out["tier_thresholds"] == {
-        "reflex": ">= 0.8",
-        "habitual": "0.3 - 0.8",
-        "dormant": "< 0.3",
-        "inhibitory": "< -0.3",
+        "reflex": ">= 0.6",
+        "habitual": "0.2 - 0.6",
+        "dormant": "< 0.2",
+        "inhibitory": "< -0.01",
     }
 
 

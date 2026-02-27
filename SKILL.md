@@ -77,7 +77,7 @@ Real-time correction flow:
 - Traversal and learning:
   - `traverse`
   - `TraversalConfig`
-  - `TraversalConfig.beam_width`, `.max_hops`, `.fire_threshold`, `.max_fired_nodes`, `.max_context_chars`
+  - `TraversalConfig.beam_width`, `.max_hops`, `.fire_threshold`, `.max_fired_nodes`, `.max_context_chars`, `.reflex_threshold`, `.habitual_range`, `.inhibitory_threshold`
   - `TraversalResult`
   - `apply_outcome`
 - Runtime injection APIs:
@@ -126,6 +126,9 @@ Real-time correction flow:
 - `beam_width=8`
 - `max_hops=30`
 - `fire_threshold=0.01`
+- `reflex_threshold=0.6`
+- `habitual_range=0.2-0.6`
+- `inhibitory_threshold=-0.01`
 - `max_fired_nodes` (hard node-count cap, default `None`)
 - `max_context_chars` (hard context cap, default `None`; `query_brain.py` default is `20000`)
 

@@ -37,9 +37,9 @@ def measure_health(graph: Graph) -> GraphHealth:
         source_node = graph.get_node(source_edges and next(iter(source_edges.values())).source)
         source_file = source_node.metadata.get("file") if source_node else None
         for edge in source_edges.values():
-            if edge.weight >= 0.8:
+            if edge.weight >= 0.6:
                 reflex += 1
-            elif 0.3 <= edge.weight < 0.8:
+            elif 0.2 <= edge.weight < 0.6:
                 habitual += 1
             else:
                 dormant += 1

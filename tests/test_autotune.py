@@ -35,9 +35,9 @@ def test_measure_health_matches_manual_counts() -> None:
     graph.add_edge(Edge("e", "a", 0.1))
 
     health = measure_health(graph)
-    assert health.reflex_pct == 2 / 5
+    assert health.reflex_pct == 3 / 5
     assert health.habitual_pct == 1 / 5
-    assert health.dormant_pct == 2 / 5
+    assert health.dormant_pct == 1 / 5
     assert health.cross_file_edge_pct == 2 / 5
     assert health.orphan_nodes == 0
 

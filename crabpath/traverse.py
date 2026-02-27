@@ -25,7 +25,7 @@ class TraversalConfig:
             Default ``0.0``.
         visit_penalty: penalty for revisiting a node in the same traversal.
         inhibitory_threshold: edges with weight <= this value actively suppress
-            target nodes. Default ``-0.3``.
+            target nodes. Default ``-0.01``.
         max_context_chars: maximum characters in assembled context; ``None``
             means unlimited.
         reflex_threshold: minimum edge weight for reflex-tier edges.
@@ -37,11 +37,11 @@ class TraversalConfig:
     edge_damping: float = 0.3
     fire_threshold: float = 0.01
     visit_penalty: float = 0.0
-    inhibitory_threshold: float = -0.3
+    inhibitory_threshold: float = -0.01
     max_fired_nodes: int | None = None
     max_context_chars: int | None = None
-    reflex_threshold: float = 0.8
-    habitual_range: tuple[float, float] = (0.3, 0.8)
+    reflex_threshold: float = 0.6
+    habitual_range: tuple[float, float] = (0.2, 0.6)
 
 
 @dataclass
