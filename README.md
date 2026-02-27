@@ -62,9 +62,12 @@ save_state(graph, index, "brain/state.json", meta=meta)
 
 Corrections create **inhibitory edges** — they actively suppress wrong routes during traversal.
 
-## Real Embeddings (OpenAI)
+## Real Embeddings + LLM Routing (OpenAI)
 
-The hash embedder works offline but semantic search needs real embeddings:
+The hash embedder works offline but semantic search needs real embeddings. In production we use:
+
+- **Embeddings:** `text-embedding-3-small` (1536-dim) — ~$0.02/1M tokens
+- **LLM routing/scoring:** `gpt-5-mini` — cheap, fast, good at tiny JSON decisions
 
 ```python
 from openai import OpenAI
@@ -72,18 +75,28 @@ from crabpath import split_workspace, VectorIndex
 
 client = OpenAI()
 
+# Embedding callback
 def embed(text):
     return client.embeddings.create(
         model="text-embedding-3-small", input=[text]
     ).data[0].embedding
 
-graph, texts = split_workspace("./workspace")
+# LLM callback (for split, route, score decisions)
+def llm(system, user):
+    return client.chat.completions.create(
+        model="gpt-5-mini",
+        messages=[{"role": "system", "content": system},
+                  {"role": "user", "content": user}]
+    ).choices[0].message.content
+
+# Build graph with real embeddings
+graph, texts = split_workspace("./workspace", llm_fn=llm)
 index = VectorIndex()
 for nid, content in texts.items():
     index.upsert(nid, embed(content))
 ```
 
-See `examples/openai_embedder/` for a complete example.
+See `examples/openai_embedder/` for a complete example with batching.
 
 ## Session Replay (optional — warm start from history)
 
