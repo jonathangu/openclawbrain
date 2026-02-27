@@ -48,7 +48,7 @@ pip install -e .
 python3 -m pytest tests/ -x -q
 ```
 
-Expected: 200 passed.
+Expected: 203 passed.
 
 ## Benchmarks
 

@@ -1,5 +1,15 @@
 # CHANGELOG
 
+## v10.2.0 (2026-02-27)
+
+### Traversal engine hardening
+- **Traversal termination updated:** stops on hop ceiling, fired-node budget, and context-character budget.
+- **Defaults changed:** `beam_width: 3 → 8`, `max_hops: 15 → 30`, `fire_threshold: 0.0 → 0.01`.
+- **New control:** `max_fired_nodes` hard-cap added for traversal loops.
+- **Context budget enforcement:** `max_context_chars` is enforced during traversal, not only at render time.
+- **Default CLI / script behavior:** `query_brain.py` now defaults to `max_context_chars=20000` for logged session flow.
+- Test count updated to **203** (from 200).
+
 ## v10.1.0 (2026-02-27)
 
 ### Real-time correction flow

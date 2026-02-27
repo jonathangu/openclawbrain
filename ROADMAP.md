@@ -10,6 +10,7 @@
 - [DONE] TEACHING/DIRECTIVE injection types documented and fully supported.
 - [DONE] Live injection primitives (`inject_node`, `inject_correction`, `inject_batch`) and `crabpath inject` CLI command.
 - [DONE] Correction propagation through inhibitory edges for teaching/correction workflows.
+- [DONE] Budget-based traversal termination (`max_fired_nodes` cap + `max_context_chars` enforced during traversal) with safer defaults (`beam_width=8`, `max_hops=30`, `fire_threshold=0.01`).
 
 ### Near-term
 - Review if the following are now complete:

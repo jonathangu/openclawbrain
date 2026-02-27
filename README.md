@@ -2,7 +2,7 @@
 
 > Your retrieval routes become the prompt — assembled by learned routing, not top-k similarity.
 
-**Current release: v10.1.0**
+**Current release: v10.2.0**
 
 **CrabPath learns from your agent feedback, so wrong answers get suppressed instead of resurfacing.** It builds a memory graph over your workspace, remembers what worked, and routes future answers through learned paths.
 
@@ -209,6 +209,29 @@ See `examples/openai_embedder/` for a complete example.
 | `connect` | Suggest/apply cross-file connections |
 | `journal` | Query event journal |
 
+## Traversal defaults
+
+| Setting | Default | Purpose |
+|---------|---------|---------|
+| `beam_width` | `8` | Frontier size per hop (wider = reaches farther routes) |
+| `max_hops` | `30` | Safety ceiling; damping controls convergence |
+| `fire_threshold` | `0.01` | Minimum score required to fire a candidate node |
+| `max_fired_nodes` | `None` | Hard stop on fired node count |
+| `max_context_chars` | `None` | Hard stop on rendered traversal context |
+| `edge_damping` | `0.3` | Per-reuse decay (`weight × 0.3^k`) |
+
+```python
+from crabpath import traverse, TraversalConfig
+
+result = traverse(
+    graph,
+    seeds,
+    config=TraversalConfig(max_context_chars=20000, max_fired_nodes=30),
+)
+```
+
+`query` and `query_brain.py` honor these budgets and stop as soon as any termination condition is met.
+
 ## Python API
 
 ```python
@@ -273,6 +296,7 @@ Three brains run in production on a Mac Mini M4 Pro:
 - No secret discovery (no dotfiles, no keychain lookup).
 - Embedder identity stored in state metadata; hard-fail on dimension mismatch.
 - One canonical state format (`state.json`).
+- Traversal defaults are budget-first for safety: `beam_width=8`, `max_hops=30`, `fire_threshold=0.01`.
 
 ## Paper + links
 
