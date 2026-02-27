@@ -1,3 +1,43 @@
+## v11.1.0 (2026-02-27)
+
+### New: Maintenance engine (`crabpath maintain`)
+- `crabpath/maintain.py`: `run_maintenance()`, `prune_edges()`, `prune_orphan_nodes()`
+- CLI: `crabpath maintain --state PATH --tasks health,decay,prune,merge [--dry-run]`
+- Scheduler-agnostic: call from cron, systemd, Airflow, or any batch runner
+
+### New: Two-timescale architecture docs
+- `docs/architecture.md`: online learning (fast loop) vs maintenance (slow loop)
+- Integration contract: what frameworks provide, what CrabPath produces
+- Brain directory layout specification
+
+### New: Framework-agnostic examples (`examples/ops/`)
+- `callbacks.py`: `make_embed_fn()` and `make_llm_fn()` factory functions
+  - Default: OpenAI text-embedding-3-small + gpt-5-mini
+  - Fallback: HashEmbedder (zero-dep, for testing)
+- `query_and_learn.py`: fast loop example with --embedder flag
+- `run_maintenance.py`: slow loop example with --embedder and --llm flags
+
+### New: True REINFORCE policy gradient (`apply_outcome_pg`)
+- Full derivation: softmax score function ∇log π = (1/τ)(eₐ - π)
+- Updates ALL outgoing edges at each visited node (not just traversed)
+- Conservation property: weight updates sum to zero per node
+- Temperature scaling, baseline support, discount along trajectory
+
+### New: 12 simulations + expanded benchmarks
+- PG vs heuristic ablation (weight conservation)
+- Noise robustness (graceful to 20%, degrades at 30%)
+- Static vs learning baseline
+- Scaling analysis (sub-linear: 50→2000 nodes)
+- Internal benchmark: 45 queries, 8 methods
+- External benchmarks: MultiHop-RAG (n=1000) + HotPotQA (n=500) with OpenAI embeddings
+
+### Paper updates
+- Title: "Learned Graph Traversal for Retrieval Routing"
+- Full PG derivation with numerical examples
+- External benchmark results (cold traverse +7.7% MultiHop, +33.6% HotPotQA)
+- De-marketing pass: removed metaphors, added crisp definitions
+- Honest finding: naive online learning degrades on non-repeating queries
+
 # CHANGELOG
 
 ## Unreleased
