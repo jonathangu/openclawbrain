@@ -73,6 +73,18 @@ Auto-save behavior:
 - On every `N` writes, where `N` is `--auto-save-interval`, the daemon saves state.
 - `shutdown` persists pending state before exit.
 
+Missing vs adapter scripts (current production reality):
+
+- `inject`: no daemon method yet; still performed via `openclawbrain inject` or adapter CLI paths.
+- fired log tracking: adapters can maintain `fired_log.jsonl` from `--chat-id`, while the daemon currently focuses on stateless request processing and does not update that log stream.
+- socket interface: no socket/TCP server today; daemon communication is intentionally stdio-only.
+
+Roadmap:
+
+- add daemon `inject` method for correction/teaching writes
+- add socket/TCP transport option (for long-running service topologies)
+- add safe concurrent access semantics for multi-client writes
+
 ### Vocabulary
 
 - **Brain**: persisted `state.json` plus associated artifacts.

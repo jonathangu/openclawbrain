@@ -154,3 +154,89 @@ OpenClawBrain never imports `openai` or any provider package directly. You const
 - `llm_fn`: `(system, user) -> str`
 
 Reference: `examples/ops/callbacks.py`
+
+## Daemon setup (production)
+
+Keep the process warm and reuse loaded state.
+
+Run the daemon directly for smoke tests:
+
+```bash
+openclawbrain daemon --state ~/.openclawbrain/main/state.json
+```
+
+### launchd (macOS)
+
+Create `~/Library/LaunchAgents/com.openclawbrain.daemon.plist`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.openclawbrain.daemon</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/env</string>
+    <string>openclawbrain</string>
+    <string>daemon</string>
+    <string>--state</string>
+    <string>/Users/YOU/.openclawbrain/main/state.json</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/Users/YOU/.openclawbrain/main/daemon.stdout.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/YOU/.openclawbrain/main/daemon.stderr.log</string>
+</dict>
+</plist>
+```
+
+Load it:
+
+```bash
+launchctl load -w ~/Library/LaunchAgents/com.openclawbrain.daemon.plist
+launchctl list | rg openclawbrain
+```
+
+### systemd (Linux)
+
+Create `/etc/systemd/system/openclawbrain-daemon.service`:
+
+```ini
+[Unit]
+Description=OpenClawBrain daemon worker
+After=network-online.target
+
+[Service]
+Type=simple
+User=YOUR_USER
+WorkingDirectory=/home/YOUR_USER
+ExecStart=/usr/bin/env openclawbrain daemon --state /home/YOUR_USER/.openclawbrain/main/state.json
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now openclawbrain-daemon.service
+```
+
+## Testing the daemon
+
+Use an `echo` pipe with NDJSON to validate request/response wiring:
+
+```bash
+echo '{"id":"health-1","method":"health","params":{}}' | openclawbrain daemon --state ~/.openclawbrain/main/state.json
+```
+
+You should receive a JSON reply on stdout with the same `id` and health fields.

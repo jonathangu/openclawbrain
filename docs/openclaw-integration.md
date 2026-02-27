@@ -1,6 +1,7 @@
 # OpenClaw Integration (OpenClawBrain)
 
 OpenClawBrain is built to be the long-term memory layer for **OpenClaw agents**.
+Canonical docs and examples: https://openclawbrain.ai
 
 If you’re already running OpenClaw, this guide shows the fastest path to:
 
@@ -199,7 +200,26 @@ That block is intentionally boring: it’s the contract OpenClaw already support
 openclawbrain daemon --state ~/.openclawbrain/main/state.json
 ```
 
-The daemon speaks NDJSON over stdin/stdout.
+The daemon speaks NDJSON over `stdin`/`stdout`.
+
+- Protocol: each line is one JSON request with `id`, `method`, and `params`.
+- Response: one JSON object with matching `id` and either `result` or `error`.
+- Start-up cost is paid once (state loaded at process start); expected savings are 100-800ms on hot-path calls, with production measurement at ~504ms on Mac Mini M4 Pro.
+
+Supported methods: `query`, `learn`, `maintain`, `health`, `info`, `save`, `reload`, `shutdown`.
+
+Example request and reply:
+
+```bash
+echo '{"id":"req-1","method":"query","params":{"query":"how to deploy","top_k":4}}' | openclawbrain daemon --state ~/.openclawbrain/main/state.json
+```
+
+```json
+{"id":"req-1","result":{"fired_nodes":["a"],"context":"...","embed_query_ms":1.1,"traverse_ms":2.4,"total_ms":3.5}}
+```
+
+- `inject` is still not available through the daemon endpoint; use `openclawbrain inject` for corrections or add new teaching content.
+- Daemon is intentionally stdio-only today (no socket/TCP server yet).
 
 ### Option B: launchd (macOS)
 

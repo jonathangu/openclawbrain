@@ -1,3 +1,9 @@
+## v12.0.1 (2026-02-27)
+
+### Documentation and operators
+- Documented `openclawbrain daemon` as the long-lived production path, including NDJSON protocol, startup command, timing expectations (including production 504ms on Mac Mini M4 Pro), methods, and limitations.
+- Clarified daemon capability gaps (`inject`, fired-log emission, socket interface) and added explicit roadmap items in `docs/architecture.md` and `docs/setup-guide.md`.
+
 ## v12.0.0 (2026-02-27)
 
 ### Rename and compatibility

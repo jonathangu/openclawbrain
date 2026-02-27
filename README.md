@@ -3,7 +3,8 @@
 
 > Your retrieval routes become the prompt — assembled by learned routing, not top-k similarity.
 
-**Current release: v12.0.0**
+**Current release: v12.0.1**
+**Website:** https://openclawbrain.ai
 
 **Setup:** [Setup Guide](docs/setup-guide.md)
 
@@ -246,17 +247,53 @@ See `examples/openai_embedder/` for a complete example.
 
 ## Persistent Worker (`openclawbrain daemon`)
 
-For production use, run OpenClawBrain as a long-lived daemon that keeps state hot in memory:
+For production use, run OpenClawBrain as a long-lived daemon so the graph stays hot in memory and query paths avoid repeated startup+reload overhead.
+
+Why this matters:
+
+- First load initializes `state.json` once, then keeps the process and index warm.
+- Saves about 100-800ms per call versus shelling out per query (production measure: ~504ms per warm query path on Mac Mini M4 Pro).
+- Reduces memory churn and tail latency under steady traffic.
+
+Start it with:
 
 ```bash
 openclawbrain daemon --state ~/.openclawbrain/main/state.json
 ```
 
-- Loads `state.json` once at startup (~100-800ms saved per call)
-- Accepts NDJSON requests over stdin, responds on stdout
-- Methods: `query`, `learn`, `maintain`, `health`, `info`, `save`, `reload`, `shutdown`
-- Query responses include timing: `embed_query_ms`, `traverse_ms`, `total_ms`
-- Auto-saves after N write operations; graceful SIGTERM/SIGINT shutdown
+Protocol:
+
+- Transport: `stdin`/`stdout` with newline-delimited JSON (NDJSON).
+- Each request is a single JSON object with `id`, `method`, and `params`.
+- Each response is a single JSON object with the same `id` and either `result` or `error`.
+
+Example request/response:
+
+```bash
+echo '{"id":"req-1","method":"query","params":{"query":"how to deploy","top_k":4,"chat_id":"telegram:123"}}' | openclawbrain daemon --state ~/.openclawbrain/main/state.json
+```
+
+```json
+{"id":"req-1","result":{"fired_nodes":["a"],"context":"...","seeds":[["a",0.96]],"embed_query_ms":1.1,"traverse_ms":2.4,"total_ms":3.5}}
+```
+
+Supported methods (all 8):
+
+- `query`: run route traversal and return `fired_nodes`, `context`, timing, and seeds.
+- `learn`: apply outcomes (`+1/-1`) to existing edges and return `edges_updated`.
+- `maintain`: run maintenance ops and return health/merge summary fields.
+- `health`: return current health metrics for the loaded graph.
+- `info`: return state metadata and object counts.
+- `save`: persist current in-memory state to disk immediately.
+- `reload`: reload `state.json` without restarting.
+- `shutdown`: persist pending writes and exit cleanly.
+- `query`/`learn`/`maintain`/`health`/`info` responses include `embed_query_ms`, `traverse_ms`, and `total_ms` timing fields where applicable.
+
+Current limitations:
+
+- `inject` method is not yet supported on daemon yet; use the CLI (`openclawbrain inject`) for corrections/additions.
+- Daemon is stdin/stdout only; there is no socket server (TCP/TLS/etc.) yet.
+- For concurrent writers, serialize access via a single process supervisor or use one dedicated per state file.
 
 Production timing (Mac Mini M4 Pro, OpenAI embeddings):
 - MAIN (1,158 nodes): 397ms embed + 107ms traverse = **504ms total**
