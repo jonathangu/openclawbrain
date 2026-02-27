@@ -52,12 +52,18 @@ def save_state(
     meta: dict[str, object] | None = None,
 ) -> None:
     """Save graph and index together to one JSON file."""
+    metadata = dict(meta or {})
+
+    # Resolve embedder: explicit args > meta dict > hash-v1 default
+    if embedder_name is None:
+        embedder_name = metadata.get("embedder_name")
     if embedder_name is None:
         embedder_name = "hash-v1"
-    if embedder_dim is None:
-        embedder_dim = HashEmbedder().dim
 
-    metadata = dict(meta or {})
+    if embedder_dim is None:
+        dim_from_meta = metadata.get("embedder_dim")
+        embedder_dim = dim_from_meta if isinstance(dim_from_meta, int) else HashEmbedder().dim
+
     metadata.setdefault("schema_version", 1)
     metadata.setdefault("created_at", datetime.now(timezone.utc).isoformat())
     metadata["node_count"] = graph.node_count()
