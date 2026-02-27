@@ -2,7 +2,9 @@
 
 > Your retrieval routes become the prompt — assembled by learned routing, not top-k similarity.
 
-**Current release: v10.3.0**
+**Current release: v11.2.0**
+
+**Setup:** [Setup Guide](docs/setup-guide.md)
 
 **CrabPath learns from your agent feedback, so wrong answers get suppressed instead of resurfacing.** It builds a memory graph over your workspace, remembers what worked, and routes future answers through learned paths.
 
@@ -22,7 +24,15 @@
 pip install crabpath
 ```
 
-See: [Setup Guide](docs/setup-guide.md)
+See also: [Setup Guide](docs/setup-guide.md) for a complete local configuration walkthrough.
+
+## Why CrabPath
+
+- Static retrieval vs learned routing: CrabPath continuously updates node-to-node edges so good routes strengthen and bad routes decay.
+- No correction propagation vs inhibitory edges: incorrect context can be actively suppressed and forgotten less often than in similarity-only systems.
+- Bulk context load vs targeted traversal: context windows stay focused (roughly 52KB → 3-13KB in typical sessions) by following likely retrieval routes.
+- No structural maintenance vs prune/merge/compact: CrabPath includes scheduled maintenance commands to keep the graph healthy and compact.
+- No protection vs constitutional anchors: anchor critical nodes with authority so operational instructions do not drift.
 
 ## 5-minute quickstart (A→B learning story)
 
@@ -200,19 +210,68 @@ See `examples/openai_embedder/` for a complete example.
 
 ## CLI Reference
 
-| Command | What it does |
+| Command | Description |
 |---------|-------------|
-| `init` | Build brain from workspace files |
-| `query` | Search the graph |
-| `learn` | Reinforce (+) or suppress (-) fired paths |
-| `inject` | Add a node: CORRECTION (inhibitory edges), TEACHING (positive connections), DIRECTIVE |
-| `replay` | Warm-start from session history |
-| `health` | Graph health metrics |
-| `doctor` | Validate state integrity |
-| `info` | Graph statistics |
-| `merge` | Suggest/apply node merges |
-| `connect` | Suggest/apply cross-file connections |
-| `journal` | Query event journal |
+| `init` | Build a brain from workspace files |
+| `query` | Traverse graph and return context |
+| `learn` | Apply outcome feedback to fired edges |
+| `merge` | Suggest and apply node merges |
+| `anchor` | Set/list/remove constitutional authority on nodes |
+| `connect` | Connect learning nodes to workspace neighborhoods |
+| `maintain` | Run structural maintenance (health, decay, prune, merge) |
+| `compact` | Compact old daily notes into graph nodes |
+| `sync` | Incremental re-embed after file changes |
+| `inject` | Add CORRECTION/TEACHING/DIRECTIVE nodes |
+| `replay` | Replay session queries into brain |
+| `health` | Show graph health metrics |
+| `journal` | Show event journal |
+| `doctor` | Run diagnostic checks |
+| `info` | Show brain info (nodes, edges, embedder) |
+
+## True Policy Gradient (apply_outcome_pg)
+
+`apply_outcome_pg` implements a full REINFORCE policy-gradient update.
+
+- It updates **all outgoing edges** for each visited node on the fired trajectory, not only traversed edges.
+- It uses the update:
+  `Δw = (η(z-b)γ^ℓ)/τ · (𝟙[j=a] - π(j|i))`
+  where:
+  - `η` = learning rate
+  - `z` = outcome reward
+  - `b` = baseline
+  - `γ` = discount
+  - `ℓ` = trajectory depth
+  - `τ` = temperature
+  - `π(j|i)` = action probability from softmax (including STOP)
+  - `𝟙[j=a]` = 1 for the taken action, else 0
+- Conservation property: for each source node `i`, outgoing updates sum to zero, so total outgoing mass is preserved.
+- Use `apply_outcome_pg` when you want smoother, probability-based updates across alternatives; use `apply_outcome` for a simpler sparse update that only touches traversed edges.
+
+```python
+from crabpath import apply_outcome_pg, LearningConfig
+
+config = LearningConfig(learning_rate=0.1, temperature=1.0, baseline=0.0)
+updates = apply_outcome_pg(graph, fired_nodes=["a", "b", "c"], outcome=1.0, config=config)
+```
+
+Full derivation: https://jonathangu.com/crabpath/gu2016/
+
+## Write policy summary
+
+| Situation | Action |
+|-----------|--------|
+| Durable fact | Edit file → sync re-embeds |
+| Correction | Edit file + learn_correction.py |
+| Soft teaching | crabpath inject --type TEACHING |
+| Wrong retrieval | learn_correction.py (graph-only) |
+| New rule | Edit AGENTS.md or SOUL.md |
+
+## Production stats (current)
+
+- MAIN: 1,160 nodes, 2,551 edges, 43 learnings
+- PELICAN: 555 nodes, 2,211 edges, 181 learnings
+- BOUNTIFUL: 289 nodes, 1,101 edges, 35 learnings
+- CORMORANT: 1,672 nodes, ~7,100 edges, 22 learnings (first external user!)
 
 ## Traversal defaults
 
