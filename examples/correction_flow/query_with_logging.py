@@ -54,7 +54,7 @@ def _append_fired_log(state_path: Path, entry: dict[str, object]) -> None:
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Query CrabPath state.json with hash embeddings and log fired nodes")
+    parser = argparse.ArgumentParser(description="Query OpenClawBrain state.json with hash embeddings and log fired nodes")
     parser.add_argument("state_path", help="Path to state.json")
     parser.add_argument("query", nargs="+", help="Query text")
     parser.add_argument("--chat-id", help="Conversation id to persist fired nodes")

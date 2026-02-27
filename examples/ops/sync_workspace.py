@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Sync an existing CrabPath state with workspace changes."""
+"""Sync an existing OpenClawBrain state with workspace changes."""
 
 from __future__ import annotations
 

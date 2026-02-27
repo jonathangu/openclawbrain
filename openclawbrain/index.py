@@ -1,4 +1,4 @@
-"""Pure vector index used by CrabPath."""
+"""Pure vector index used by OpenClawBrain."""
 
 from __future__ import annotations
 

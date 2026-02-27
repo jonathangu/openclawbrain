@@ -1,4 +1,4 @@
-"""OpenClawBrain public API (formerly CrabPath)."""
+"""OpenClawBrain public API."""
 
 from .graph import Edge, Graph, Node, remove_from_state
 from .index import VectorIndex

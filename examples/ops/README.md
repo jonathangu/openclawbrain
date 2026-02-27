@@ -16,7 +16,7 @@ By default, examples use OpenAI callbacks as the production path:
 
 ## Callback construction
 
-CrabPath core is callback-only and does not import `openai`:
+OpenClawBrain core is callback-only and does not import `openai`:
 
 ```python
 from examples.ops.callbacks import make_embed_fn, make_llm_fn

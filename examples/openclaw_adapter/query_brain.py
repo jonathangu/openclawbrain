@@ -78,7 +78,7 @@ def embed_query(client: OpenAI, query: str) -> list[float]:
 
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
-        description="Query a CrabPath state.json with OpenAI embeddings"
+        description="Query a OpenClawBrain state.json with OpenAI embeddings"
     )
     parser.add_argument("state_path", help="Path to state.json")
     parser.add_argument("query", nargs="+", help="Query text")

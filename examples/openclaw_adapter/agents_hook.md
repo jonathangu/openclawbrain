@@ -1,4 +1,4 @@
-# CrabPath Memory Graph (auto-installed)
+# OpenClawBrain Memory Graph (auto-installed)
 
 **Query** (before answering questions about prior work, context, decisions, corrections, lessons):
 ```bash

@@ -1,6 +1,5 @@
-# OpenClawBrain (formerly CrabPath)
+# OpenClawBrain
 
-> Migration note: this project was renamed from `crabpath` to `openclawbrain`. Legacy `crabpath` imports continue to work via a warning-only compatibility shim.
 
 > Your retrieval routes become the prompt — assembled by learned routing, not top-k similarity.
 
@@ -8,7 +7,7 @@
 
 **Setup:** [Setup Guide](docs/setup-guide.md)
 
-**CrabPath learns from your agent feedback, so wrong answers get suppressed instead of resurfacing.** It builds a memory graph over your workspace, remembers what worked, and routes future answers through learned paths.
+**OpenClawBrain learns from your agent feedback, so wrong answers get suppressed instead of resurfacing.** It builds a memory graph over your workspace, remembers what worked, and routes future answers through learned paths.
 
 - Zero dependencies. Pure Python 3.10+.
 - Works offline with built-in hash embeddings.
@@ -17,7 +16,7 @@
 - Positive feedback (`+1`) strengthens routes, negative (`-1`) creates inhibitory edges.
 - Over time, less noise appears and recurring mistakes are less likely.
 
-- CrabPath integrates with your agent's file-based workspace through incremental sync, constitutional anchors, and automatic compaction.
+- OpenClawBrain integrates with your agent's file-based workspace through incremental sync, constitutional anchors, and automatic compaction.
 - See the [context lifecycle](docs/architecture.md) for details.
 
 ## Install
@@ -28,12 +27,12 @@ pip install openclawbrain
 
 See also: [Setup Guide](docs/setup-guide.md) for a complete local configuration walkthrough.
 
-## Why CrabPath
+## Why OpenClawBrain
 
-- Static retrieval vs learned routing: CrabPath continuously updates node-to-node edges so good routes strengthen and bad routes decay.
+- Static retrieval vs learned routing: OpenClawBrain continuously updates node-to-node edges so good routes strengthen and bad routes decay.
 - No correction propagation vs inhibitory edges: incorrect context can be actively suppressed and forgotten less often than in similarity-only systems.
 - Bulk context load vs targeted traversal: context windows stay focused (roughly 52KB → 3-13KB in typical sessions) by following likely retrieval routes.
-- No structural maintenance vs prune/merge/compact: CrabPath includes scheduled maintenance commands to keep the graph healthy and compact.
+- No structural maintenance vs prune/merge/compact: OpenClawBrain includes scheduled maintenance commands to keep the graph healthy and compact.
 - No protection vs constitutional anchors: anchor critical nodes with authority so operational instructions do not drift.
 
 ## 5-minute quickstart (A→B learning story)
@@ -84,7 +83,7 @@ openclawbrain health --state /tmp/brain/state.json
 
 ## Correcting mistakes (the main workflow)
 
-When your agent retrieves wrong context, teach CrabPath in one command:
+When your agent retrieves wrong context, teach OpenClawBrain in one command:
 
 ```bash
 openclawbrain inject --state brain/state.json \
@@ -94,7 +93,7 @@ openclawbrain inject --state brain/state.json \
 ```
 
 What happens:
-1. CrabPath creates a new node with your correction text
+1. OpenClawBrain creates a new node with your correction text
 2. It connects that node to the most related workspace chunks
 3. It adds **inhibitory edges** — negative-weight links that suppress those chunks
 4. Next query touching that topic: the correction appears, the bad route is dampened
@@ -156,7 +155,7 @@ openclawbrain query "incident runbook for deploy failures" --state /tmp/brain/st
 
 ## How it compares
 
-| | Plain RAG | CrabPath |
+| | Plain RAG | OpenClawBrain |
 |---|-----------|----------|
 | Retrieval | Similarity search | Learned graph traversal |
 | Feedback | None | `learn +1/-1` updates edge weights |
@@ -165,9 +164,9 @@ openclawbrain query "incident runbook for deploy failures" --state /tmp/brain/st
 | Over time | Same results for same query | Routes become habitual behavior |
 | Dependencies | Vector DB or service | Zero dependencies |
 
-## How CrabPath differs from related tools
+## How OpenClawBrain differs from related tools
 
-| | CrabPath | Plain RAG | Reflexion | MemGPT |
+| | OpenClawBrain | Plain RAG | Reflexion | MemGPT |
 |---|----------|-----------|-----------|--------|
 | What it learns | Retrieval routes | Nothing | Reasoning via self-reflection text | Memory read/write policies |
 | Negative feedback | Inhibitory edges suppress bad paths | None | None (additive only) | None |
@@ -233,7 +232,7 @@ See `examples/openai_embedder/` for a complete example.
 
 ## Persistent Worker (`openclawbrain daemon`)
 
-For production use, run CrabPath as a long-lived daemon that keeps state hot in memory:
+For production use, run OpenClawBrain as a long-lived daemon that keeps state hot in memory:
 
 ```bash
 openclawbrain daemon --state ~/.openclawbrain/main/state.json
@@ -326,7 +325,7 @@ result = traverse(
 ## External benchmarks
 
 External retrieval benchmarks are optional and use separately downloaded datasets.
-CrabPath ships a quick-start workflow for MultiHop-RAG and HotPotQA in
+OpenClawBrain ships a quick-start workflow for MultiHop-RAG and HotPotQA in
 `benchmarks/external/README.md`, but the datasets are not in the repository.
 
 Quick run (from project root):
@@ -366,12 +365,12 @@ from openclawbrain import (
 - **Where it lives:** a single `state.json` file (portable, version-controllable)
 - **How big:** ~180KB for 20 nodes (hash), ~60MB for 1,600 nodes (OpenAI embeddings)
 - **When to rebuild:** after major workspace restructuring or embedder changes
-- **Embedder changes:** CrabPath stores the embedder name + dimension in state metadata and hard-fails on mismatch — no silent corruption
+- **Embedder changes:** OpenClawBrain stores the embedder name + dimension in state metadata and hard-fails on mismatch — no silent corruption
 - **Merging:** use `openclawbrain merge` to consolidate similar nodes as the graph grows
 
 ## Cost control
 
-- **Free tier:** hash embeddings work offline with zero API calls. Good for trying CrabPath and small workspaces.
+- **Free tier:** hash embeddings work offline with zero API calls. Good for trying OpenClawBrain and small workspaces.
 - **Budget tier:** use OpenAI `text-embedding-3-small` (~$0.02/1M tokens). Embed once at init, cache in state.json.
 - **LLM routing:** optional. `gpt-5-mini` for routing/scoring decisions. Only called during query, not at rest.
 - **Batch init:** `openclawbrain init` embeds all workspace files in one batch call. Subsequent queries reuse cached vectors.

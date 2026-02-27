@@ -302,7 +302,7 @@ def _print_table(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Run a reproducible CrabPath retrieval benchmark.")
+    parser = argparse.ArgumentParser(description="Run a reproducible OpenClawBrain retrieval benchmark.")
     parser.add_argument("--workspace", default=".", help="Workspace directory to split")
     parser.add_argument("--queries-path", default="benchmarks/queries.json", help="Path to query definitions")
     parser.add_argument("--seed-top-k", type=int, default=20, help="Top-k for keyword overlap")

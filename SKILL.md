@@ -8,7 +8,7 @@ metadata:
       python: ">=3.10"
 ---
 
-# OpenClawBrain (Formerly CrabPath)
+# OpenClawBrain
 
 Pure graph core: zero required deps and no network calls. Caller provides callbacks.
 

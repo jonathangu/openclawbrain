@@ -1,4 +1,4 @@
-"""Core in-memory graph primitives for CrabPath."""
+"""Core in-memory graph primitives for OpenClawBrain."""
 
 from __future__ import annotations
 
@@ -33,7 +33,7 @@ class Edge:
 
 
 class Graph:
-    """Directed weighted graph used by all CrabPath operations."""
+    """Directed weighted graph used by all OpenClawBrain operations."""
 
     def __init__(self) -> None:
         """  init  ."""

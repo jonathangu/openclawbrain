@@ -1,4 +1,4 @@
-# CrabPath Operator Setup Guide
+# OpenClawBrain Operator Setup Guide
 
 ## Prerequisites
 - Python 3.10+
@@ -148,7 +148,7 @@ openclawbrain compact --state ~/.openclawbrain/main/state.json --memory-dir ./me
 
 ## Callback pattern (the core principle)
 
-CrabPath never imports `openai` or any provider package directly. You construct callbacks and pass them in.
+OpenClawBrain never imports `openai` or any provider package directly. You construct callbacks and pass them in.
 
 - `embed_fn`: `(text) -> vector`
 - `llm_fn`: `(system, user) -> str`

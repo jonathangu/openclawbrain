@@ -1,12 +1,12 @@
-# CrabPath Architecture: two-timescale operation
+# OpenClawBrain Architecture: two-timescale operation
 
-CrabPath runs on two timescales.
+OpenClawBrain runs on two timescales.
 
-For production setup and runbooks, see [CrabPath Operator Setup Guide](setup-guide.md).
+For production setup and runbooks, see [OpenClawBrain Operator Setup Guide](setup-guide.md).
 
 ## 1) Overview
 
-CrabPath stores a learned retrieval policy as a graph of **nodes** and directed **edges** in `state.json`.
+OpenClawBrain stores a learned retrieval policy as a graph of **nodes** and directed **edges** in `state.json`.
 It separates:
 
 - **Online learning (fast loop)**: cheap updates while serving queries.
@@ -101,7 +101,7 @@ health -> decay -> merge -> prune -> connect
 
 ## 4) Constitutional Anchors
 
-CrabPath uses node metadata to mark maintenance authority:
+OpenClawBrain uses node metadata to mark maintenance authority:
 
 - `authority="constitutional"`: immutable anchors (`SOUL.md`, `AGENTS.md`, `USER.md`-style hard rules).
   - never decay
@@ -139,7 +139,7 @@ Run it periodically (cron, timer, CI job, custom workflow) or after meaningful e
 
 #### Callback Construction
 
-CrabPath requires callbacks only. Core code does not import provider SDKs.
+OpenClawBrain requires callbacks only. Core code does not import provider SDKs.
 
 ```python
 from examples.ops.callbacks import make_embed_fn, make_llm_fn
@@ -157,7 +157,7 @@ apply_outcome(...)
 
 ```
 
-### CrabPath provides
+### OpenClawBrain provides
 
 - `state.json` (graph + index + meta)
 - `journal.jsonl` (append-only telemetry)
@@ -166,7 +166,7 @@ apply_outcome(...)
 
 ### In one sentence
 
-CrabPath handles query-time scoring and maintenance operators;
+OpenClawBrain handles query-time scoring and maintenance operators;
 you own orchestration, retries, and scheduler.
 
 ## 6) Brain directory layout
@@ -195,7 +195,7 @@ A brain directory is the operational unit.
 
 ## 8) Scheduling
 
-Run maintenance with your scheduler of choice. CrabPath has no scheduler dependency.
+Run maintenance with your scheduler of choice. OpenClawBrain has no scheduler dependency.
 
 ### cron
 
@@ -263,15 +263,15 @@ jobs:
 
 ## 11) Context Lifecycle
 
-CrabPath is designed to work with both file-based canonical state and graph-based recall.
+OpenClawBrain is designed to work with both file-based canonical state and graph-based recall.
 
 The full cycle is:
 
 - Agent edits files (canonical state) → normal OpenClaw behavior
 - Harvester runs periodically → ingests file changes + session corrections
-- CrabPath sync → re-embeds changed chunks, sets authority levels
-- CrabPath learns → online edge updates from outcomes
-- CrabPath maintains → structural ops (decay/prune/merge)
+- OpenClawBrain sync → re-embeds changed chunks, sets authority levels
+- OpenClawBrain learns → online edge updates from outcomes
+- OpenClawBrain maintains → structural ops (decay/prune/merge)
 - Files get compacted → old daily notes shrink, content migrates to graph
 
 ```text
@@ -279,7 +279,7 @@ Files (small, current) ──edit──→ Files
   │                                │
   │ harvest + sync                 │ compact
   ▼                                ▼
-CrabPath Graph (learned) ◄─────── Harvester
+OpenClawBrain Graph (learned) ◄─────── Harvester
   │
   └── single retrieval engine
 ```
@@ -294,7 +294,7 @@ Authority is metadata used by maintenance policy:
 
 ## 13) Write Policy
 
-When should the agent edit a file vs inject into CrabPath?
+When should the agent edit a file vs inject into OpenClawBrain?
 
 | Situation | Action |
 |---|---|

@@ -1,6 +1,6 @@
 # OpenClaw adapter
 
-This README is OpenClaw-specific and assumes the surrounding OpenClaw framework handles key management, session ingestion, and production orchestration. For general CrabPath usage and core workflow, use the main project `README.md`.
+This README is OpenClaw-specific and assumes the surrounding OpenClaw framework handles key management, session ingestion, and production orchestration. For general OpenClawBrain usage and core workflow, use the main project `README.md`.
 
 This adapter is for frameworks that manage API keys internally.
 
@@ -8,7 +8,7 @@ This adapter is for frameworks that manage API keys internally.
 
 There is no manual key configuration for these scripts. Provide workspace, sessions, and output paths and the scripts run end-to-end.
 
-The adapter is the integration layer between the pure CrabPath library and the framework. It handles:
+The adapter is the integration layer between the pure OpenClawBrain library and the framework. It handles:
 
 - Building a workspace graph with `openai-text-embedding-3-small` metadata
 - Persisting `state.json` (and legacy `graph.json`/`index.json` for compatibility)

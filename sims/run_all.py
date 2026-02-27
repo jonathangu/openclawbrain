@@ -1,4 +1,4 @@
-"""Run all CrabPath simulations and print a compact summary."""
+"""Run all OpenClawBrain simulations and print a compact summary."""
 
 from __future__ import annotations
 

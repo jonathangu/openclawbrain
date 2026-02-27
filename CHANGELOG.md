@@ -1,7 +1,7 @@
 ## v12.0.0 (2026-02-27)
 
 ### Rename and compatibility
-- Rebranded package from `crabpath` to `openclawbrain` (formerly CrabPath).
+- Rebranded package from `crabpath` to `openclawbrain`.
 - `pyproject.toml` metadata updated: `name`, `version`, `description`, keywords, and scripts.
 - Added compatibility entry points in `pyproject.toml` for `openclawbrain`, `ocb`, and `crabpath`.
 - Added `crabpath` shim package that re-exports `openclawbrain` with deprecation warnings.
@@ -11,8 +11,8 @@
 
 ## v11.2.0 (2026-02-27)
 
-### New: Persistent worker daemon (`crabpath daemon`)
-- `crabpath/daemon.py`: loads state once, keeps graph+index hot in memory
+### New: Persistent worker daemon (`openclawbrain daemon`)
+- `openclawbrain/daemon.py`: loads state once, keeps graph+index hot in memory
 - JSON-RPC over stdin/stdout (NDJSON protocol)
 - Methods: query, learn, maintain, health, info, save, reload, shutdown
 - Query responses include timing: `embed_query_ms`, `traverse_ms`, `total_ms`
@@ -20,20 +20,20 @@
 - Eliminates per-call state reload (~100-800ms savings)
 - `examples/ops/client_example.py`: Python client demo
 
-### New: Constitutional anchors (`crabpath anchor`)
+### New: Constitutional anchors (`openclawbrain anchor`)
 - Authority levels: constitutional (never decay/prune/merge), canonical (slow decay), overlay (default)
-- `crabpath maintain` respects authority levels during all structural ops
-- CLI: `crabpath anchor --state PATH --node-id ID --authority constitutional|canonical`
+- `openclawbrain maintain` respects authority levels during all structural ops
+- CLI: `openclawbrain anchor --state PATH --node-id ID --authority constitutional|canonical`
 
-### New: Incremental file sync (`crabpath sync`)
-- `crabpath/sync.py`: detect file changes, re-embed only what changed
+### New: Incremental file sync (`openclawbrain sync`)
+- `openclawbrain/sync.py`: detect file changes, re-embed only what changed
 - Default authority map for common files (SOUL.md → constitutional, USER.md → canonical)
-- CLI: `crabpath sync --state PATH --workspace DIR`
+- CLI: `openclawbrain sync --state PATH --workspace DIR`
 
-### New: Daily note compaction (`crabpath compact`)
-- `crabpath/compact.py`: old notes → extract facts → inject into graph → shrink files
+### New: Daily note compaction (`openclawbrain compact`)
+- `openclawbrain/compact.py`: old notes → extract facts → inject into graph → shrink files
 - Optional LLM summarization, deterministic fallback
-- CLI: `crabpath compact --state PATH --memory-dir DIR`
+- CLI: `openclawbrain compact --state PATH --memory-dir DIR`
 
 ### Fix: save_state() embedder metadata preservation
 - Now reads existing meta before writing; no more silent hash-v1/1024 overwrite
@@ -46,7 +46,7 @@
 - Fixes GitHub Issue #1 item #5
 
 ### Docs
-- README overhaul: all 17 CLI commands, apply_outcome_pg section, "Why CrabPath", write policy
+- README overhaul: all 17 CLI commands, apply_outcome_pg section, "Why OpenClawBrain", write policy
 - `docs/architecture.md`: persistent worker, context lifecycle, constitutional anchors
 - `docs/setup-guide.md`: steps 7-9 (sync, anchors, compact)
 - Production stats: 4 brains (MAIN, PELICAN, BOUNTIFUL, CORMORANT)
@@ -57,14 +57,14 @@
 
 ## v11.1.0 (2026-02-27)
 
-### New: Maintenance engine (`crabpath maintain`)
-- `crabpath/maintain.py`: `run_maintenance()`, `prune_edges()`, `prune_orphan_nodes()`
-- CLI: `crabpath maintain --state PATH --tasks health,decay,prune,merge [--dry-run]`
+### New: Maintenance engine (`openclawbrain maintain`)
+- `openclawbrain/maintain.py`: `run_maintenance()`, `prune_edges()`, `prune_orphan_nodes()`
+- CLI: `openclawbrain maintain --state PATH --tasks health,decay,prune,merge [--dry-run]`
 - Scheduler-agnostic: call from cron, systemd, Airflow, or any batch runner
 
 ### New: Two-timescale architecture docs
 - `docs/architecture.md`: online learning (fast loop) vs maintenance (slow loop)
-- Integration contract: what frameworks provide, what CrabPath produces
+- Integration contract: what frameworks provide, what OpenClawBrain produces
 - Brain directory layout specification
 
 ### New: Framework-agnostic examples (`examples/ops/`)
@@ -100,8 +100,8 @@
 ## Unreleased
 
 ### Maintenance loop and ops docs
-- Added `crabpath.maintain` with `run_maintenance`, `prune_edges`, and `prune_orphan_nodes`.
-- Added `crabpath maintain` CLI command with `--state`, `--tasks`, `--dry-run`, `--max-merges`, and `--prune-below`.
+- Added `openclawbrain.maintain` with `run_maintenance`, `prune_edges`, and `prune_orphan_nodes`.
+- Added `openclawbrain maintain` CLI command with `--state`, `--tasks`, `--dry-run`, `--max-merges`, and `--prune-below`.
 - Added framework-agnostic examples in `examples/ops/` for fast loop and maintenance loop.
 - Added `docs/architecture.md` documenting fast/slow loops, integration contracts, and scheduler guidance.
 - Added `tests/test_maintain.py` covering maintenance execution, dry-run behavior, prune operations, merge effects, and report accounting.
@@ -109,7 +109,7 @@
 ## v10.4.0 (2026-02-27)
 
 ### True REINFORCE policy gradient
-- Added `apply_outcome_pg` in `crabpath.learn` for true policy-gradient updates:
+- Added `apply_outcome_pg` in `openclawbrain.learn` for true policy-gradient updates:
   - numerically stable softmax over outgoing edges plus synthetic STOP
   - updates for all outgoing edges at each step using `(1[chosen] - π)` score gradient
   - optional baseline and temperature support
@@ -161,8 +161,8 @@
 ### Documentation overhaul
 - **README rewritten:** value prop first, 5-minute quickstart with A→B learning story, "Correcting mistakes" and "Adding new knowledge" sections promoted to top.
 - **TEACHING documented:** all three injection types (CORRECTION, TEACHING, DIRECTIVE) explained with examples. Previously only CORRECTION was documented — three production agents independently thought rebuild was required to add new knowledge.
-- **Competition table:** CrabPath vs Plain RAG vs Reflexion vs MemGPT.
-- **New sections:** State lifecycle, Cost control, "How CrabPath differs from related tools".
+- **Competition table:** OpenClawBrain vs Plain RAG vs Reflexion vs MemGPT.
+- **New sections:** State lifecycle, Cost control, "How OpenClawBrain differs from related tools".
 - **Session replay demoted** to "Optional: warm start" with skip note for new users.
 
 ### New examples
@@ -177,7 +177,7 @@
 
 ## v10.0.0
 ### What Changed
-- Added CLI and API flows so CrabPath can inject and persist correction/teaching signals without rebuilding the entire state.
+- Added CLI and API flows so OpenClawBrain can inject and persist correction/teaching signals without rebuilding the entire state.
 - Expanded operational guidance and verification workflow so feedback and correction behavior can be validated deterministically.
 
 - Added live injection APIs (`inject_node`, `inject_correction`, `inject_batch`) with CLI support via `crabpath inject`, enabling runtime updates during operation.

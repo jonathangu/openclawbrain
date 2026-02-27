@@ -406,7 +406,7 @@ def run(
 
 
 def main() -> None:
-    parser = argparse.ArgumentParser(description="Initialize a CrabPath state.json for OpenClaw adapters")
+    parser = argparse.ArgumentParser(description="Initialize a OpenClawBrain state.json for OpenClaw adapters")
     parser.add_argument("workspace_path", help="Path to agent workspace markdown directory")
     parser.add_argument("sessions_path", help="Path to OpenClaw sessions file or directory")
     parser.add_argument("output_path", help="Output directory (or state.json path)")
