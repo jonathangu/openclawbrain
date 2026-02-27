@@ -7,6 +7,7 @@ from pathlib import Path
 import pytest
 
 from crabpath.cli import main
+from crabpath.hasher import default_embed
 
 
 def _write_graph_payload(path: Path) -> None:
@@ -24,8 +25,10 @@ def _write_graph_payload(path: Path) -> None:
     path.write_text(json.dumps(payload), encoding="utf-8")
 
 
-def _write_index(path: Path) -> None:
-    path.write_text(json.dumps({"a": [1, 0], "b": [0, 1]}), encoding="utf-8")
+def _write_index(path: Path, payload: dict[str, list[float]] | None = None) -> None:
+    if payload is None:
+        payload = {"a": [1.0, 0.0], "b": [0.0, 1.0]}
+    path.write_text(json.dumps(payload), encoding="utf-8")
 
 
 def test_init_command_creates_workspace_graph(tmp_path) -> None:
@@ -39,10 +42,14 @@ def test_init_command_creates_workspace_graph(tmp_path) -> None:
 
     graph_path = output / "graph.json"
     texts_path = output / "texts.json"
+    index_path = output / "index.json"
     assert graph_path.exists()
     assert texts_path.exists()
+    assert index_path.exists()
     graph_data = json.loads(graph_path.read_text(encoding="utf-8"))
-    assert len(graph_data["nodes"]) == 1
+    graph_payload = graph_data["graph"] if "graph" in graph_data else graph_data
+    assert len(graph_payload["nodes"]) == 1
+    assert graph_data.get("meta", {}).get("embedder") == "hash-v1"
     texts_data = json.loads(texts_path.read_text(encoding="utf-8"))
     assert len(texts_data) == 1
 
@@ -55,16 +62,24 @@ def test_init_command_with_empty_workspace(tmp_path) -> None:
 
     code = main(["init", "--workspace", str(workspace), "--output", str(output)])
     assert code == 0
-    graph_data = json.loads((output / "graph.json").read_text(encoding="utf-8"))
+    graph_file = json.loads((output / "graph.json").read_text(encoding="utf-8"))
+    graph_data = graph_file["graph"] if "graph" in graph_file else graph_file
     assert graph_data["nodes"] == []
     assert graph_data["edges"] == []
+    assert (output / "index.json").exists()
 
 
 def test_query_command_returns_json_with_fired_nodes(tmp_path, capsys) -> None:
     graph_path = tmp_path / "graph.json"
     index_path = tmp_path / "index.json"
     _write_graph_payload(graph_path)
-    _write_index(index_path)
+    _write_index(
+        index_path,
+        {
+            "a": default_embed("alpha"),
+            "b": default_embed("beta"),
+        },
+    )
 
     code = main(
         [
@@ -83,6 +98,37 @@ def test_query_command_returns_json_with_fired_nodes(tmp_path, capsys) -> None:
     out = json.loads(capsys.readouterr().out.strip())
     assert out["fired"]
     assert "a" in out["fired"]
+
+
+def test_query_auto_embeds(tmp_path, capsys) -> None:
+    graph_path = tmp_path / "graph.json"
+    index_path = tmp_path / "index.json"
+    _write_graph_payload(graph_path)
+    _write_index(
+        index_path,
+        {
+            "a": default_embed("alpha"),
+            "b": default_embed("completely different text"),
+        },
+    )
+
+    code = main(
+        [
+            "query",
+            "alpha",
+            "--graph",
+            str(graph_path),
+            "--index",
+            str(index_path),
+            "--top",
+            "2",
+            "--json",
+        ]
+    )
+    assert code == 0
+    out = json.loads(capsys.readouterr().out.strip())
+    assert out["fired"]
+    assert out["fired"][0] == "a"
 
 
 def test_query_uses_vector_from_stdin(tmp_path, capsys, monkeypatch) -> None:

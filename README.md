@@ -59,6 +59,24 @@ from crabpath.embeddings import local_embed_fn, local_embed_batch_fn
 # all-MiniLM-L6-v2, 80MB, CPU, no API key
 ```
 
+## Default Hash Embeddings
+
+If you don’t install `crabpath[embeddings]`, CrabPath uses a built-in zero-dependency
+`HashEmbedder` (`hash-v1`, 1024 dimensions) for indexing and query vectors.
+
+```python
+from crabpath import HashEmbedder
+
+embedder = HashEmbedder()  # default in CLI and default_embed
+vec = embedder.embed("deploy to production")
+vec2 = embedder.embed("deploy to production")
+assert vec == vec2  # deterministic
+```
+
+The `HashEmbedder` is deterministic and dependency-free: it tokenizes text into
+words and char n-grams, hashes features into a fixed vector size, and normalizes
+to unit length.
+
 ## Session Replay (warm start)
 
 A fresh graph is 100% habitual — every edge requires deliberation. Replay warms it up by feeding historical session logs through the graph:

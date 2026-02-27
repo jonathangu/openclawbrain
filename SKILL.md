@@ -91,6 +91,15 @@ from crabpath.embeddings import local_embed_fn, local_embed_batch_fn
 # all-MiniLM-L6-v2 — 80MB, CPU, no API key
 ```
 
+## Default Embeddings
+
+By default (including CLI `init`/`query`), CrabPath uses `HashEmbedder`:
+
+- class: `crabpath.HashEmbedder`
+- embedder name: `hash-v1`
+- deterministic, zero dependencies, no network calls
+- dimension: 1024
+
 ## Paper
 
 https://jonathangu.com/crabpath/

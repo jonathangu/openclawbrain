@@ -6,6 +6,7 @@ from ._batch import batch_or_single, batch_or_single_embed
 from .autotune import GraphHealth, autotune, measure_health
 from .decay import DecayConfig, apply_decay
 from .learn import LearningConfig, apply_outcome
+from .hasher import HashEmbedder, default_embed, default_embed_batch
 from .score import score_retrieval
 from .connect import apply_connections, suggest_connections
 from .merge import apply_merge, suggest_merges
@@ -22,6 +23,9 @@ __all__ = [
     "GraphHealth",
     "TraversalConfig",
     "TraversalResult",
+    "HashEmbedder",
+    "default_embed",
+    "default_embed_batch",
     "DecayConfig",
     "LearningConfig",
     "measure_health",
@@ -43,4 +47,4 @@ __all__ = [
     "replay_queries",
 ]
 
-__version__ = "6.1.0"
+__version__ = "7.0.0"

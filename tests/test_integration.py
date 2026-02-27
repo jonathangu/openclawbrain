@@ -28,7 +28,8 @@ def test_full_cycle_init_query_learn_query(tmp_path, capsys, monkeypatch) -> Non
 
     assert main(["init", "--workspace", str(workspace), "--output", str(output_dir)]) == 0
     payload = json.loads(graph_path.read_text(encoding="utf-8"))
-    assert len(payload["nodes"]) == 2
+    graph_payload = payload.get("graph", payload)
+    assert len(graph_payload["nodes"]) == 2
     capsys.readouterr()
 
     index_path = tmp_path / "index.json"
@@ -61,13 +62,14 @@ def test_full_cycle_init_query_learn_query(tmp_path, capsys, monkeypatch) -> Non
     assert code == 0
     first_fired = first["fired"]
 
-    before = payload["edges"][0]["weight"]
+    before = graph_payload["edges"][0]["weight"]
 
     code = main(["learn", "--graph", str(graph_path), "--outcome", "1.0", "--fired-ids", ",".join(first_fired[:2]), "--json"])
     assert code == 0
 
     updated = json.loads(graph_path.read_text(encoding="utf-8"))
-    after = updated["graph"]["edges"][0]["weight"]
+    updated_payload = updated.get("graph", updated)
+    after = updated_payload["edges"][0]["weight"]
     assert after > before
 
     capsys.readouterr()
@@ -149,13 +151,14 @@ def test_large_workspace_pipeline_end_to_end(tmp_path, capsys, monkeypatch) -> N
     assert main(["init", "--workspace", str(workspace), "--output", str(output_dir)]) == 0
 
     payload = json.loads(graph_path.read_text(encoding="utf-8"))
-    assert len(payload["nodes"]) >= 500
+    graph_payload = payload.get("graph", payload)
+    assert len(graph_payload["nodes"]) >= 500
     capsys.readouterr()
 
     index_path = tmp_path / "index.json"
     index_payload = {
         node["id"]: [float(idx % 2), float((idx + 1) % 2)]
-        for idx, node in enumerate(payload["nodes"])
+        for idx, node in enumerate(graph_payload["nodes"])
     }
     index_path.write_text(json.dumps(index_payload), encoding="utf-8")
 

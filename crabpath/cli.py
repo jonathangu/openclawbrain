@@ -7,6 +7,7 @@ import json
 import os
 import sys
 from collections.abc import Iterable
+from datetime import datetime, timezone
 from pathlib import Path
 
 from .connect import apply_connections, suggest_connections
@@ -24,6 +25,7 @@ from .learn import apply_outcome
 from .merge import apply_merge, suggest_merges
 from .replay import extract_queries, extract_queries_from_dir, replay_queries
 from .split import split_workspace
+from .hasher import HashEmbedder, default_embed
 from .traverse import TraversalConfig, TraversalResult, traverse
 from ._util import _tokenize
 
@@ -125,12 +127,21 @@ def _graph_payload(graph: Graph) -> dict:
     }
 
 
-def _write_graph(path: str | Path, graph: Graph) -> None:
+def _write_graph(
+    path: str | Path,
+    graph: Graph,
+    *,
+    include_meta: bool = False,
+    meta: dict[str, object] | None = None,
+) -> None:
     destination = Path(path).expanduser()
     if destination.is_dir():
         destination = destination / "graph.json"
     destination.parent.mkdir(parents=True, exist_ok=True)
-    destination.write_text(json.dumps(_graph_payload(graph), indent=2), encoding="utf-8")
+    payload: dict[str, object] = _graph_payload(graph)
+    if include_meta:
+        payload = {"graph": payload, "meta": meta or {}}
+    destination.write_text(json.dumps(payload, indent=2), encoding="utf-8")
 
 
 def _load_query_vector_from_stdin() -> list[float]:
@@ -200,9 +211,24 @@ def cmd_init(args: argparse.Namespace) -> int:
     if args.sessions is not None:
         replay_queries(graph=graph, queries=_load_session_queries(args.sessions))
 
+    embedder = HashEmbedder()
+    print(
+        f"Embedding {len(texts)} texts ({embedder.name}, dim={embedder.dim})",
+        file=sys.stderr,
+    )
+    index_vectors = embedder.embed_batch(list(texts.items()))
+
     graph_path = output_dir / "graph.json"
     text_path = output_dir / "texts.json"
-    _write_graph(graph_path, graph)
+    meta = {
+        "embedder": embedder.name,
+        "dim": embedder.dim,
+        "node_count": graph.node_count(),
+        "created_at": datetime.now(timezone.utc).isoformat(),
+    }
+    _write_graph(graph_path, graph, include_meta=True, meta=meta)
+    index_path = output_dir / "index.json"
+    index_path.write_text(json.dumps(index_vectors, indent=2), encoding="utf-8")
     text_path.write_text(json.dumps(texts, indent=2), encoding="utf-8")
 
     if args.json:
@@ -219,6 +245,10 @@ def cmd_query(args: argparse.Namespace) -> int:
         if args.index is None:
             raise SystemExit("query-vector-stdin requires --index")
         query_vec = _load_query_vector_from_stdin()
+        index = _load_index(args.index)
+        seeds = index.search(query_vec, top_k=args.top)
+    elif args.index is not None:
+        query_vec = default_embed(args.text)
         index = _load_index(args.index)
         seeds = index.search(query_vec, top_k=args.top)
     else:
