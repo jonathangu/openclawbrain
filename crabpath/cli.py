@@ -11,12 +11,14 @@ import shutil
 from collections.abc import Callable, Iterable
 from dataclasses import asdict
 from pathlib import Path
+from types import SimpleNamespace
 
 from .connect import apply_connections, suggest_connections
 from .autotune import measure_health
 from .graph import Edge, Graph, Node
 from .index import VectorIndex
 from .inject import inject_correction, inject_node
+from .compact import compact_daily_notes
 from .journal import (
     log_health,
     log_learn,
@@ -104,6 +106,15 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--prune-below", type=float, default=0.01)
     p.add_argument("--llm", choices=["none", "openai"], default="none")
     p.add_argument("--json", action="store_true")
+
+    z = sub.add_parser("compact")
+    z.add_argument("--state", required=True)
+    z.add_argument("--memory-dir", required=True)
+    z.add_argument("--max-age-days", type=int, default=7)
+    z.add_argument("--target-lines", type=int, default=15)
+    z.add_argument("--llm", choices=["none", "openai"], default="none")
+    z.add_argument("--dry-run", action="store_true")
+    z.add_argument("--json", action="store_true")
 
     x = sub.add_parser("inject")
     x.add_argument("--state", required=True)
@@ -693,6 +704,44 @@ def cmd_anchor(args: argparse.Namespace) -> int:
 
     payload = {"node_id": args.node_id, "authority": current_authority}
     print(json.dumps(payload) if args.json else f"{args.node_id} authority: {current_authority}")
+def cmd_compact(args: argparse.Namespace) -> int:
+    """cmd compact."""
+    if args.state is None:
+        raise SystemExit("--state is required for compact")
+
+    _, _, meta = _resolve_graph_index(args)
+
+    embed_args = SimpleNamespace(embedder=None)
+    embed_fn, _, _, _ = _resolve_embedder(embed_args, meta)
+    if args.llm == "openai":
+        from .openai_llm import openai_llm_fn
+
+        llm_fn = openai_llm_fn
+    else:
+        llm_fn = None
+
+    if embed_fn is None:
+        raise SystemExit("embedding callback missing")
+
+    report = compact_daily_notes(
+        state_path=args.state,
+        memory_dir=args.memory_dir,
+        max_age_days=args.max_age_days,
+        target_lines=args.target_lines,
+        embed_fn=embed_fn,
+        llm_fn=llm_fn,
+        journal_path=_resolve_journal_path(args),
+        dry_run=args.dry_run,
+    )
+    if args.json:
+        print(json.dumps(asdict(report), indent=2))
+    else:
+        print(f"Compaction report for {args.state}")
+        print(f"  scanned: {report.files_scanned}")
+        print(f"  compacted: {report.files_compacted}")
+        print(f"  skipped: {report.files_skipped}")
+        print(f"  nodes_injected: {report.nodes_injected}")
+        print(f"  lines: {report.lines_before} -> {report.lines_after}")
     return 0
 
 
@@ -1107,6 +1156,7 @@ def main(argv: list[str] | None = None) -> int:
         "maintain": cmd_maintain,
         "anchor": cmd_anchor,
         "connect": cmd_connect,
+        "compact": cmd_compact,
         "inject": cmd_inject,
         "replay": cmd_replay,
         "health": cmd_health,

@@ -4,6 +4,7 @@
 
 - `query_and_learn.py`: fast-loop interaction (`query -> traverse -> outcome`)
 - `run_maintenance.py`: slow-loop maintenance run (`health,decay,merge,prune`)
+- `compact_notes.py`: compact old daily notes into teaching summaries before graph updates
 
 By default, examples use OpenAI callbacks as the production path:
 
