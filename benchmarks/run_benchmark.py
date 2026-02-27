@@ -11,8 +11,16 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any
 
-from crabpath import HashEmbedder, TraversalConfig, VectorIndex, split_workspace, traverse
-from crabpath.replay import replay_queries
+from crabpath import (
+    HashEmbedder,
+    TraversalConfig,
+    VectorIndex,
+    apply_outcome,
+    apply_outcome_pg,
+    split_workspace,
+    traverse,
+)
+from crabpath.replay import default_keyword_seed_fn
 
 WORD_RE = re.compile(r"[A-Za-z0-9']+")
 
@@ -89,7 +97,7 @@ def _run_query_set(
     name: str,
     queries: list[dict[str, object]],
     graph: Any,
-    method: Callable[[str], list[str]],
+    method: Callable[[str, Any], list[str]],
 ) -> tuple[dict[str, float], list[dict[str, object]], dict[str, float]]:
     totals = {
         "Recall@3": 0.0,
@@ -106,7 +114,7 @@ def _run_query_set(
         relevant_files = list(relevant) if isinstance(relevant, list) else []
 
         start = time.perf_counter()
-        ranked_nodes = method(query)
+        ranked_nodes = method(query, graph)
         latency_ms = (time.perf_counter() - start) * 1000
         scores = _evaluate(ranked_nodes, graph, relevant_files)
         latencies_ms.append(latency_ms)
@@ -133,6 +141,95 @@ def _run_query_set(
     return averaged, details, latency_stats
 
 
+def _extract_fired_path(result: Any, graph: Any) -> list[str]:
+    if not result:
+        return []
+    if result.steps:
+        return [result.steps[0].from_node, *[step.to_node for step in result.steps]]
+
+    fired = list(result.fired or [])
+    if len(fired) <= 1:
+        return fired
+
+    valid: list[str] = []
+    for node_id in fired:
+        if graph.get_node(node_id) is not None:
+            valid.append(node_id)
+    return valid
+
+
+def _run_learning_query_set(
+    name: str,
+    queries: list[dict[str, object]],
+    graph: Any,
+    config: TraversalConfig,
+    seed_fn: Callable[[Any, str], list[tuple[str, float]]],
+    learn_fn: Callable[[Any, list[str]], dict],
+) -> tuple[dict[str, float], list[dict[str, object]], dict[str, float], dict[str, dict[str, float]]]:
+    totals = {
+        "Recall@3": 0.0,
+        "Recall@5": 0.0,
+        "Precision@3": 0.0,
+        "MRR": 0.0,
+    }
+    details: list[dict[str, object]] = []
+    latencies_ms: list[float] = []
+
+    query_count = len(queries)
+    checkpoints = [5, 10, 20, query_count] if query_count > 0 else []
+    seen: set[int] = set()
+    milestones: list[int] = []
+    for point in checkpoints:
+        if point <= 0:
+            continue
+        if point in seen:
+            continue
+        if point > query_count:
+            continue
+        seen.add(point)
+        milestones.append(point)
+    learning_curve: dict[str, dict[str, float]] = {}
+
+    for idx, row in enumerate(queries, start=1):
+        query = str(row.get("query", ""))
+        relevant = row.get("relevant")
+        relevant_files = list(relevant) if isinstance(relevant, list) else []
+        start = time.perf_counter()
+        seeded_nodes = seed_fn(graph, query)
+        result = traverse(graph=graph, seeds=seeded_nodes, config=config, query_text=query)
+        latency_ms = (time.perf_counter() - start) * 1000
+
+        scores = _evaluate(result.fired, graph, relevant_files)
+        latencies_ms.append(latency_ms)
+        for key in totals:
+            totals[key] += scores[key]
+        details.append(
+            {
+                "query": query,
+                "relevant": relevant_files,
+                "predicted_files": scores.pop("predicted_files"),
+                "scores": {k: scores[k] for k in totals},
+                "latency_ms": latency_ms,
+            }
+        )
+
+        fired_nodes = _extract_fired_path(result, graph)
+        learn_fn(graph, fired_nodes)
+
+        if idx in milestones:
+            learning_curve[str(idx) if idx != query_count else "N"] = {
+                key: value / idx for key, value in totals.items()
+            }
+
+    query_count = len(queries) if queries else 1
+    averaged = {key: value / query_count for key, value in totals.items()}
+    latency_stats = {
+        "p50_ms": _percentile(latencies_ms, 0.50),
+        "p95_ms": _percentile(latencies_ms, 0.95),
+    }
+    return averaged, details, latency_stats, learning_curve
+
+
 def _keyword_overlap(graph: Any, query: str, top_k: int) -> list[str]:
     query_tokens = _tokenize(query)
     if not query_tokens:
@@ -151,6 +248,13 @@ def _hash_overlap(index: VectorIndex, embedder: HashEmbedder, query: str, top_k:
     return [node_id for node_id, _ in index.search(query_vec, top_k=top_k)]
 
 
+def _weighted_hash_seeds(index: VectorIndex, embedder: HashEmbedder, query: str, top_k: int) -> list[tuple[str, float]]:
+    seeds = _hash_overlap(index=index, embedder=embedder, query=query, top_k=top_k)
+    if not seeds:
+        return []
+    return [(node_id, 1.0 - 0.05 * idx) for idx, node_id in enumerate(seeds)]
+
+
 def _keyword_seeds(query: str, graph: Any, top_k: int) -> list[tuple[str, float]]:
     query_tokens = _tokenize(query)
     if not query_tokens:
@@ -164,13 +268,9 @@ def _keyword_seeds(query: str, graph: Any, top_k: int) -> list[tuple[str, float]
 
 
 def _traverse(graph: Any, index: VectorIndex, embedder: HashEmbedder, query: str, seed_k: int, config: TraversalConfig) -> list[str]:
-    seeds = _hash_overlap(index=index, embedder=embedder, query=query, top_k=seed_k)
-    if not seeds:
+    seed_weights = _weighted_hash_seeds(index=index, embedder=embedder, query=query, top_k=seed_k)
+    if not seed_weights:
         return []
-    seed_weights = [
-        (node_id, 1.0 - 0.05 * idx)
-        for idx, node_id in enumerate(seeds)
-    ]
     result = traverse(graph=graph, seeds=seed_weights, config=config, query_text=query)
     return result.fired
 
@@ -237,57 +337,96 @@ def main() -> None:
 
     base_graph = graph
     traverse_config = TraversalConfig(max_hops=args.traverse_max_hops, beam_width=args.traverse_beam_width)
+    replay_config = TraversalConfig(max_hops=args.replay_max_hops, beam_width=args.traverse_beam_width)
     latency_ms: dict[str, dict[str, float]] = {}
+    learning_curves: dict[str, dict[str, dict[str, float]]] = {}
 
     scores: dict[str, dict[str, float]] = {}
     per_query: dict[str, list[dict[str, object]]] = {}
+    weighted_hash_seeds = lambda query_graph, query_text: _weighted_hash_seeds(
+        index=index,
+        embedder=embedder,
+        query=query_text,
+        top_k=args.traverse_seed_k,
+    )
+    keyword_seed = lambda query_graph, query_text: default_keyword_seed_fn(graph=query_graph, query_text=query_text)
 
     scores["keyword_overlap"], per_query["keyword_overlap"], latency_ms["keyword_overlap"] = _run_query_set(
         name="keyword_overlap",
         queries=queries,
         graph=deepcopy(base_graph),
-        method=lambda query: _keyword_overlap(graph=base_graph, query=query, top_k=args.seed_top_k),
+        method=lambda query, query_graph: _keyword_overlap(graph=query_graph, query=query, top_k=args.seed_top_k),
     )
 
     scores["hash_embed_similarity"], per_query["hash_embed_similarity"], latency_ms["hash_embed_similarity"] = _run_query_set(
         name="hash_embed_similarity",
         queries=queries,
         graph=deepcopy(base_graph),
-        method=lambda query: _hash_overlap(index=index, embedder=embedder, query=query, top_k=args.hash_top_k),
+        method=lambda query, query_graph: _hash_overlap(index=index, embedder=embedder, query=query, top_k=args.hash_top_k),
     )
 
-    scores["crabpath_traverse"], per_query["crabpath_traverse"], latency_ms["crabpath_traverse"] = _run_query_set(
+    scores["static_traverse"], per_query["static_traverse"], latency_ms["static_traverse"] = _run_query_set(
+        name="static_traverse",
+        queries=queries,
+        graph=deepcopy(base_graph),
+        method=lambda query, query_graph: _traverse(
+            graph=query_graph,
+            index=index,
+            embedder=embedder,
+            query=query,
+            seed_k=args.traverse_seed_k,
+            config=traverse_config,
+        ),
+    )
+
+    scores["crabpath_traverse"], per_query["crabpath_traverse"], latency_ms["crabpath_traverse"], learning_curves["crabpath_traverse"] = _run_learning_query_set(
         name="crabpath_traverse",
         queries=queries,
         graph=deepcopy(base_graph),
-        method=lambda query: _traverse(
-            graph=base_graph,
-            index=index,
-            embedder=embedder,
-            query=query,
-            seed_k=args.traverse_seed_k,
-            config=traverse_config,
-        ),
+        config=traverse_config,
+        seed_fn=weighted_hash_seeds,
+        learn_fn=lambda learning_graph, fired_nodes: apply_outcome(graph=learning_graph, fired_nodes=fired_nodes, outcome=1.0),
     )
 
-    replay_graph = deepcopy(base_graph)
-    replay_queries(
-        graph=replay_graph,
-        queries=[str(item.get("query")) for item in queries],
-        config=TraversalConfig(max_hops=args.replay_max_hops, beam_width=args.traverse_beam_width),
+    no_inhibition_config = TraversalConfig(
+        max_hops=args.traverse_max_hops,
+        beam_width=args.traverse_beam_width,
+        inhibitory_threshold=-999,
     )
-    scores["crabpath_with_replay"], per_query["crabpath_with_replay"], latency_ms["crabpath_with_replay"] = _run_query_set(
+    scores["crabpath_no_inhibition"], per_query["crabpath_no_inhibition"], latency_ms["crabpath_no_inhibition"], learning_curves["crabpath_no_inhibition"] = _run_learning_query_set(
+        name="crabpath_no_inhibition",
+        queries=queries,
+        graph=deepcopy(base_graph),
+        config=no_inhibition_config,
+        seed_fn=weighted_hash_seeds,
+        learn_fn=lambda learning_graph, fired_nodes: apply_outcome(graph=learning_graph, fired_nodes=fired_nodes, outcome=1.0),
+    )
+
+    scores["crabpath_pg"], per_query["crabpath_pg"], latency_ms["crabpath_pg"], learning_curves["crabpath_pg"] = _run_learning_query_set(
+        name="crabpath_pg",
+        queries=queries,
+        graph=deepcopy(base_graph),
+        config=traverse_config,
+        seed_fn=weighted_hash_seeds,
+        learn_fn=lambda learning_graph, fired_nodes: apply_outcome_pg(graph=learning_graph, fired_nodes=fired_nodes, outcome=1.0),
+    )
+
+    scores["crabpath_with_replay"], per_query["crabpath_with_replay"], latency_ms["crabpath_with_replay"], learning_curves["crabpath_with_replay"] = _run_learning_query_set(
         name="crabpath_with_replay",
         queries=queries,
-        graph=deepcopy(replay_graph),
-        method=lambda query: _traverse(
-            graph=replay_graph,
-            index=index,
-            embedder=embedder,
-            query=query,
-            seed_k=args.traverse_seed_k,
-            config=traverse_config,
-        ),
+        graph=deepcopy(base_graph),
+        config=replay_config,
+        seed_fn=keyword_seed,
+        learn_fn=lambda learning_graph, fired_nodes: apply_outcome(graph=learning_graph, fired_nodes=fired_nodes, outcome=1.0),
+    )
+
+    scores["crabpath_pg_with_replay"], per_query["crabpath_pg_with_replay"], latency_ms["crabpath_pg_with_replay"], learning_curves["crabpath_pg_with_replay"] = _run_learning_query_set(
+        name="crabpath_pg_with_replay",
+        queries=queries,
+        graph=deepcopy(base_graph),
+        config=replay_config,
+        seed_fn=keyword_seed,
+        learn_fn=lambda learning_graph, fired_nodes: apply_outcome_pg(graph=learning_graph, fired_nodes=fired_nodes, outcome=1.0),
     )
 
     _print_table(scores, latency_ms)
@@ -322,6 +461,7 @@ def main() -> None:
             "scores": method_scores,
             "latency_ms": method_latency,
             "per_query": per_query[method_name],
+            "learning_curve": learning_curves.get(method_name, {}),
         }
 
     results_path.write_text(json.dumps(output, indent=2), encoding="utf-8")
