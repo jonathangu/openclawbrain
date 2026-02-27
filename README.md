@@ -13,6 +13,9 @@
 - Positive feedback (`+1`) strengthens routes, negative (`-1`) creates inhibitory edges.
 - Over time, less noise appears and recurring mistakes are less likely.
 
+- CrabPath integrates with your agent's file-based workspace through incremental sync, constitutional anchors, and automatic compaction.
+- See the [context lifecycle](docs/architecture.md) for details.
+
 ## Install
 
 ```bash

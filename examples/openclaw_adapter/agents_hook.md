@@ -32,3 +32,13 @@ crabpath inject --state ~/.crabpath/AGENT/state.json \
 crabpath maintain --state ~/.crabpath/AGENT/state.json --tasks health,decay,prune,merge
 ```
 Dry-run first: add `--dry-run` to preview changes without applying.
+
+**Sync workspace** (after editing files):
+```
+crabpath sync --state ~/.crabpath/AGENT/state.json --workspace /path/to/workspace
+```
+
+**Compact old notes** (weekly or via cron):
+```
+crabpath compact --state ~/.crabpath/AGENT/state.json --memory-dir /path/to/memory
+```

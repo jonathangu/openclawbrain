@@ -217,3 +217,54 @@ jobs:
 - Use `run_maintenance()` for a complete slow-loop pass.
 - Keep `--tasks` tight when experimenting (`health,decay` first, then add `merge`/`prune`/`connect`).
 - Keep telemetry consistent so regressions are diagnosable.
+
+## 11) Context Lifecycle
+
+CrabPath is designed to work with both file-based canonical state and graph-based recall.
+
+The full cycle is:
+
+- Agent edits files (canonical state) → normal OpenClaw behavior
+- Harvester runs periodically → ingests file changes + session corrections
+- CrabPath sync → re-embeds changed chunks, sets authority levels
+- CrabPath learns → online edge updates from outcomes
+- CrabPath maintains → structural ops (decay/prune/merge)
+- Files get compacted → old daily notes shrink, content migrates to graph
+
+```text
+Files (small, current) ──edit──→ Files
+  │                                │
+  │ harvest + sync                 │ compact
+  ▼                                ▼
+CrabPath Graph (learned) ◄─────── Harvester
+  │
+  └── single retrieval engine
+```
+
+## 12) Authority Levels
+
+Authority is metadata used by maintenance policy:
+
+- `constitutional`: never decay/prune/merge (`SOUL.md`, `AGENTS.md`)
+- `canonical`: slow decay, protected prune (`USER.md`, `TOOLS.md`, `MEMORY.md`)
+- `overlay`: normal rules (e.g. `TEACHING`, `CORRECTION`, session-derived signals)
+
+## 13) Write Policy
+
+When should the agent edit a file vs inject into CrabPath?
+
+| Situation | Action |
+|---|---|
+| New durable fact | Edit file → sync re-embeds it |
+| Correction received | Edit file + learn_correction.py |
+| Soft teaching | `crabpath inject --type TEACHING` only |
+| Wrong retrieval | `learn_correction.py` (graph-only) |
+| New rule/contract | Edit `AGENTS.md` or `SOUL.md` |
+| Monitoring item | Edit `HEARTBEAT.md` |
+
+## 14) File Compaction
+
+- Daily notes older than 7 days get compacted.
+- Key facts are extracted and injected as `TEACHING` nodes.
+- Files shrink to ~15 lines (headers + key decisions).
+- Full historical content lives in the graph for retrieval and learning.

@@ -117,6 +117,25 @@ crabpath info --state ./brain/state.json
 - `reflex_pct`: target 0-10% (only proven routes)
 - `orphan_nodes`: should be 0
 
+## Step 7: Set up file sync (incremental re-embedding)
+
+```bash
+crabpath sync --state ~/.crabpath/main/state.json --workspace ./my-workspace --embedder openai
+```
+
+## Step 8: Set constitutional anchors
+
+```bash
+crabpath anchor --state ~/.crabpath/main/state.json --node-id "SOUL.md::0" --authority constitutional
+crabpath anchor --state ~/.crabpath/main/state.json --list
+```
+
+## Step 9: Compact old daily notes
+
+```bash
+crabpath compact --state ~/.crabpath/main/state.json --memory-dir ./memory --dry-run
+```
+
 ## Brain directory layout
 
 ```
