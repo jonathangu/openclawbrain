@@ -335,57 +335,65 @@ def _handle_inject(
     return {"injected": not existing, "node_id": result["node_id"]}, not existing
 
 
-def _handle_correction(
-    daemon_state: "_DaemonState",
+def _do_learn(
     graph: Graph,
     index: VectorIndex,
     embed_fn: Callable[[str], list[float]] | None,
     state_path: str,
-    params: dict[str, object],
+    *,
+    fired_ids: list[str],
+    outcome: float,
+    content: str = "",
+    node_type: str = "CORRECTION",
+    source: str = "daemon",
+    log_metadata: dict[str, object] | None = None,
 ) -> tuple[dict[str, object], bool]:
-    """Handle correction requests with optional correction node injection."""
-    chat_id = _parse_chat_id(params.get("chat_id"), "chat_id", required=True)
-    outcome = _parse_float(params.get("outcome"), "outcome", required=True)
-    lookback = _parse_int(params.get("lookback"), "lookback", default=1)
+    """Unified learning: penalize/reinforce fired path + optionally inject node.
 
-    raw_content = params.get("content")
-    content = raw_content.strip() if isinstance(raw_content, str) else ""
-
+    All three public handlers (learn, correction, self_learn) delegate here.
+    """
     should_write = False
-    fired_ids = _recent_fired_nodes(daemon_state, chat_id, lookback)
-
     edges_updated = 0
-    if fired_ids:
-        updates = apply_outcome_pg(graph=graph, fired_nodes=fired_ids, outcome=outcome, baseline=0.0, temperature=1.0)
+
+    # 1. Apply outcome to fired path
+    if fired_ids and outcome != 0:
+        updates = apply_outcome_pg(
+            graph=graph, fired_nodes=fired_ids, outcome=outcome,
+            baseline=0.0, temperature=1.0,
+        )
         edges_updated = len(updates)
+        if edges_updated:
+            should_write = True
         log_learn(
             fired_ids=fired_ids,
             outcome=outcome,
             journal_path=_journal_path(state_path),
-            metadata={"chat_id": chat_id},
+            metadata=log_metadata,
         )
-        should_write = True
 
-    correction_injected = False
-    correction_node_id = None
+    # 2. Inject node if content provided
+    node_id = None
+    node_injected = False
     if content:
         resolved_embed = embed_fn or HashEmbedder().embed
-        correction_node_id = _correction_node_id(content)
-        correction_injected = graph.get_node(correction_node_id) is None
-        if graph.get_node(correction_node_id) is None:
+        node_id = _correction_node_id(content)
+        if graph.get_node(node_id) is None:
             inject_node(
                 graph=graph,
                 index=index,
-                node_id=correction_node_id,
+                node_id=node_id,
                 content=content,
-                metadata={"type": "CORRECTION", "source": "daemon", "chat_id": chat_id},
+                metadata={"type": node_type, "source": source},
                 embed_fn=resolved_embed,
             )
+            node_injected = True
             should_write = True
-        if fired_ids:
+
+        # 3. Inhibitory edges for CORRECTION type
+        if node_type == "CORRECTION" and fired_ids:
             edges_added = _apply_inhibitory_edges(
                 graph=graph,
-                source_id=correction_node_id,
+                source_id=node_id,
                 targets=fired_ids,
                 inhibition_strength=-0.5,
                 inhibition_lr=0.08,
@@ -394,14 +402,47 @@ def _handle_correction(
             if edges_added:
                 should_write = True
 
-    payload = {
-        "fired_ids_penalized": fired_ids,
+    payload: dict[str, object] = {
         "edges_updated": edges_updated,
-        "correction_injected": correction_injected,
+        "fired_ids_penalized": fired_ids,
+        "node_injected": node_injected,
     }
-    if correction_node_id is not None:
-        payload["node_id"] = correction_node_id
+    if node_id is not None:
+        payload["node_id"] = node_id
 
+    return payload, should_write
+
+
+# ── Thin wrappers: resolve parameters, then delegate to _do_learn ──
+
+
+def _handle_correction(
+    daemon_state: "_DaemonState",
+    graph: Graph,
+    index: VectorIndex,
+    embed_fn: Callable[[str], list[float]] | None,
+    state_path: str,
+    params: dict[str, object],
+) -> tuple[dict[str, object], bool]:
+    """Human-initiated correction via chat_id lookback."""
+    chat_id = _parse_chat_id(params.get("chat_id"), "chat_id", required=True)
+    outcome = _parse_float(params.get("outcome"), "outcome", required=True)
+    lookback = _parse_int(params.get("lookback"), "lookback", default=1)
+    raw_content = params.get("content")
+    content = raw_content.strip() if isinstance(raw_content, str) else ""
+    fired_ids = _recent_fired_nodes(daemon_state, chat_id, lookback)
+
+    payload, should_write = _do_learn(
+        graph, index, embed_fn, state_path,
+        fired_ids=fired_ids,
+        outcome=outcome,
+        content=content,
+        node_type="CORRECTION",
+        source="daemon",
+        log_metadata={"chat_id": chat_id},
+    )
+    # Backward-compat key name
+    payload["correction_injected"] = payload.pop("node_injected")
     return payload, should_write
 
 
@@ -413,11 +454,10 @@ def _handle_self_learn(
     state_path: str,
     params: dict[str, object],
 ) -> tuple[dict[str, object], bool]:
-    """Handle autonomous agent learning — both corrections and positive reinforcement."""
+    """Agent-initiated learning — corrections and positive reinforcement."""
     raw_content = params.get("content")
     if not isinstance(raw_content, str) or not raw_content.strip():
         raise ValueError("content is required")
-    content = raw_content.strip()
 
     fired_ids = _parse_str_list(params.get("fired_ids"), "fired_ids", required=False)
     outcome = _parse_float(params.get("outcome"), "outcome", required=False, default=-1.0)
@@ -430,74 +470,28 @@ def _handle_self_learn(
     else:
         raise ValueError("node_type must be one of: CORRECTION, TEACHING")
 
-    should_write = False
-    edges_updated = 0
-    if fired_ids and outcome != 0:
-        updates = apply_outcome_pg(
-            graph=graph,
-            fired_nodes=fired_ids,
-            outcome=outcome,
-            baseline=0.0,
-            temperature=1.0,
-        )
-        edges_updated = len(updates)
-        if edges_updated:
-            should_write = True
-        log_learn(
-            fired_ids=fired_ids,
-            outcome=outcome,
-            journal_path=_journal_path(state_path),
-            metadata={"source": "self"},
-        )
-
-    node_id = _correction_node_id(content)
-    correction_injected = False
-    if graph.get_node(node_id) is None:
-        resolved_embed = embed_fn or HashEmbedder().embed
-        inject_node(
-            graph=graph,
-            index=index,
-            node_id=node_id,
-            content=content,
-            metadata={"type": node_type, "source": "self", "auto": True},
-            embed_fn=resolved_embed,
-        )
-        correction_injected = True
-        should_write = True
-
-    if node_type == "CORRECTION" and fired_ids:
-        edges_added = _apply_inhibitory_edges(
-            graph=graph,
-            source_id=node_id,
-            targets=fired_ids,
-            inhibition_strength=-0.5,
-            inhibition_lr=0.08,
-        )
-        edges_updated += edges_added
-        if edges_added:
-            should_write = True
-
-    return {
-        "edges_updated": edges_updated,
-        "node_injected": correction_injected,
-        "node_id": node_id,
-        "fired_ids_penalized": fired_ids,
-    }, should_write
+    return _do_learn(
+        graph, index, embed_fn, state_path,
+        fired_ids=fired_ids,
+        outcome=outcome,
+        content=raw_content.strip(),
+        node_type=node_type,
+        source="self",
+        log_metadata={"source": "self"},
+    )
 
 
-def _handle_learn(graph: Graph, params: dict[str, object], state_path: str) -> dict[str, int]:
-    """Handle learning updates."""
+def _handle_learn(graph: Graph, index: VectorIndex, embed_fn: Callable[[str], list[float]] | None,
+                   state_path: str, params: dict[str, object]) -> tuple[dict[str, object], bool]:
+    """Bare learning — just outcome on fired nodes, no injection."""
     fired_nodes = _parse_str_list(params.get("fired_nodes"), "fired_nodes")
     outcome = _parse_float(params.get("outcome"), "outcome", required=True)
 
-    updates = apply_outcome_pg(graph=graph, fired_nodes=fired_nodes, outcome=outcome, baseline=0.0, temperature=1.0)
-    log_learn(
+    return _do_learn(
+        graph, index, embed_fn, state_path,
         fired_ids=fired_nodes,
         outcome=outcome,
-        journal_path=_journal_path(state_path),
     )
-
-    return {"edges_updated": len(updates)}
 
 
 def _handle_maintain(
@@ -754,8 +748,10 @@ def main(argv: list[str] | None = None) -> int:
                             },
                         )
                 elif method == "learn":
-                    payload = _handle_learn(daemon_state.graph, params, state_path)
-                    should_write = True
+                    payload, should_write = _handle_learn(
+                        daemon_state.graph, daemon_state.index, embed_fn,
+                        state_path, params,
+                    )
                 elif method == "inject":
                     payload, should_write = _handle_inject(
                         graph=daemon_state.graph,
