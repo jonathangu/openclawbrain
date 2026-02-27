@@ -1,3 +1,49 @@
+## v11.2.0 (2026-02-27)
+
+### New: Persistent worker daemon (`crabpath daemon`)
+- `crabpath/daemon.py`: loads state once, keeps graph+index hot in memory
+- JSON-RPC over stdin/stdout (NDJSON protocol)
+- Methods: query, learn, maintain, health, info, save, reload, shutdown
+- Query responses include timing: `embed_query_ms`, `traverse_ms`, `total_ms`
+- Auto-save after N write ops, graceful SIGTERM/SIGINT handling
+- Eliminates per-call state reload (~100-800ms savings)
+- `examples/ops/client_example.py`: Python client demo
+
+### New: Constitutional anchors (`crabpath anchor`)
+- Authority levels: constitutional (never decay/prune/merge), canonical (slow decay), overlay (default)
+- `crabpath maintain` respects authority levels during all structural ops
+- CLI: `crabpath anchor --state PATH --node-id ID --authority constitutional|canonical`
+
+### New: Incremental file sync (`crabpath sync`)
+- `crabpath/sync.py`: detect file changes, re-embed only what changed
+- Default authority map for common files (SOUL.md → constitutional, USER.md → canonical)
+- CLI: `crabpath sync --state PATH --workspace DIR`
+
+### New: Daily note compaction (`crabpath compact`)
+- `crabpath/compact.py`: old notes → extract facts → inject into graph → shrink files
+- Optional LLM summarization, deterministic fallback
+- CLI: `crabpath compact --state PATH --memory-dir DIR`
+
+### Fix: save_state() embedder metadata preservation
+- Now reads existing meta before writing; no more silent hash-v1/1024 overwrite
+- Dimension mismatch raises ValueError (prevents corrupt state)
+- Fixes GitHub Issue #1 item #7 (CormorantAI production data corruption)
+
+### Fix: Rebuild preserves injected nodes
+- `--preserve-injected` flag (default True) in init_agent_brain.py and rebuild_all_brains.py
+- Snapshots + restores CORRECTION/TEACHING nodes across rebuilds
+- Fixes GitHub Issue #1 item #5
+
+### Docs
+- README overhaul: all 17 CLI commands, apply_outcome_pg section, "Why CrabPath", write policy
+- `docs/architecture.md`: persistent worker, context lifecycle, constitutional anchors
+- `docs/setup-guide.md`: steps 7-9 (sync, anchors, compact)
+- Production stats: 4 brains (MAIN, PELICAN, BOUNTIFUL, CORMORANT)
+- `jonathangu.com/crabpath/gu2016/`: accessible policy gradient derivation page
+
+### Tests
+- 246 tests (was 220), 15 simulations
+
 ## v11.1.0 (2026-02-27)
 
 ### New: Maintenance engine (`crabpath maintain`)

@@ -227,6 +227,28 @@ See `examples/openai_embedder/` for a complete example.
 | `journal` | Show event journal |
 | `doctor` | Run diagnostic checks |
 | `info` | Show brain info (nodes, edges, embedder) |
+| `daemon` | Start persistent worker (JSON-RPC over stdio, state loaded once) |
+
+## Persistent Worker (`crabpath daemon`)
+
+For production use, run CrabPath as a long-lived daemon that keeps state hot in memory:
+
+```bash
+crabpath daemon --state ~/.crabpath/main/state.json
+```
+
+- Loads `state.json` once at startup (~100-800ms saved per call)
+- Accepts NDJSON requests over stdin, responds on stdout
+- Methods: `query`, `learn`, `maintain`, `health`, `info`, `save`, `reload`, `shutdown`
+- Query responses include timing: `embed_query_ms`, `traverse_ms`, `total_ms`
+- Auto-saves after N write operations; graceful SIGTERM/SIGINT shutdown
+
+Production timing (Mac Mini M4 Pro, OpenAI embeddings):
+- MAIN (1,158 nodes): 397ms embed + 107ms traverse = **504ms total**
+- PELICAN (582 nodes): 634ms embed + 51ms traverse = **685ms total**
+- BOUNTIFUL (285 nodes): 404ms embed + 27ms traverse = **431ms total**
+
+See `examples/ops/client_example.py` for a Python client and `docs/architecture.md` for protocol details.
 
 ## True Policy Gradient (apply_outcome_pg)
 
