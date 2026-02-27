@@ -143,7 +143,28 @@ def save_state(
         "index": index._vectors,
         "meta": metadata,
     }
-    Path(path).write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    target = Path(path)
+    tmp = target.with_suffix(".tmp")
+    bak = target.with_suffix(".bak")
+    data = json.dumps(payload, indent=2).encode("utf-8")
+    # Atomic write: temp file → fsync → rename
+    tmp.write_bytes(data)
+    try:
+        import os
+        fd = os.open(str(tmp), os.O_RDONLY)
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+    except OSError:
+        pass
+    # Keep one backup of previous state
+    if target.exists():
+        try:
+            target.rename(bak)
+        except OSError:
+            pass
+    tmp.rename(target)
 
 
 def load_state(path: str) -> tuple[Graph, VectorIndex, dict[str, object]]:

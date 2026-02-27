@@ -408,7 +408,10 @@ def split_workspace(
 
     split_plan: list[tuple[int, str, str, bool]] = []
     for file_path, rel in candidates:
-        text = file_path.read_text(encoding="utf-8")
+        try:
+            text = file_path.read_text(encoding="utf-8")
+        except (UnicodeDecodeError, ValueError):
+            continue  # skip binary/non-UTF8 files
         use_llm = False
         if llm_fn is not None or llm_batch_fn is not None:
             if should_use_llm_for_file is None:

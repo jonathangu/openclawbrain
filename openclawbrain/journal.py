@@ -83,7 +83,14 @@ def read_journal(journal_path: str | None = None, last_n: int | None = None) -> 
     if not path.exists():
         return []
     lines = path.read_text(encoding="utf-8").strip().splitlines()
-    entries = [json.loads(line) for line in lines if line.strip()]
+    entries = []
+    for line in lines:
+        if not line.strip():
+            continue
+        try:
+            entries.append(json.loads(line))
+        except json.JSONDecodeError:
+            continue  # skip malformed records
     if last_n is not None:
         entries = entries[-last_n:]
     return entries
