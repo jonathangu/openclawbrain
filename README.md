@@ -2,6 +2,8 @@
 
 > Your retrieval routes become the prompt — assembled by learned routing, not top-k similarity.
 
+**Current release: v10.1.0**
+
 **CrabPath learns from your agent feedback, so wrong answers get suppressed instead of resurfacing.** It builds a memory graph over your workspace, remembers what worked, and routes future answers through learned paths.
 
 - Zero dependencies. Pure Python 3.10+.
@@ -29,9 +31,9 @@ crabpath doctor --state /tmp/brain/state.json
 # PASS: python_version
 # PASS: state_file_exists
 # PASS: state_json_valid
-# Summary: 7/7 checks passed
+# Summary: 8/9 checks passed
 
-# 3. Query (use --json once so you see node IDs)
+# 3. Query (text output includes node IDs)
 crabpath query "how do I deploy" --state /tmp/brain/state.json --top 3 --json
 # output (abbrev.)
 # {"fired": ["deploy.md::0", "deploy.md::1", "deploy.md::2"], ...}

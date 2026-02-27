@@ -19,6 +19,7 @@
 ## Test requirements
 
 - All tests must pass before opening a PR.
+- The test suite currently has 200 tests.
 - Run the full suite with:
   - `python3 -m pytest tests/ -x -q`
 - Add tests for new features and bug fixes when behavior changes or new API

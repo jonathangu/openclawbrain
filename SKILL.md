@@ -1,6 +1,6 @@
 ---
 name: crabpath
-description: Memory graph engine with caller-provided embed and LLM callbacks; core is pure.
+description: Memory graph engine with caller-provided embed and LLM callbacks; core is pure, with real-time correction flow and optional OpenAI integration.
 metadata:
   openclaw:
     emoji: "🦀"
@@ -10,7 +10,7 @@ metadata:
 
 # CrabPath
 
-Pure graph core: zero deps, zero network calls. Caller provides callbacks.
+Pure graph core: zero required deps and no network calls. Caller provides callbacks.
 
 ## Design Tenets
 
@@ -47,13 +47,22 @@ for nid, content in texts.items():
 `--state` is preferred:
 
 `crabpath query TEXT --state S [--top N] [--json]`
-
-`--graph`/`--index` flags still supported for backward compatibility.
+`crabpath query TEXT --state S --chat-id CID`
 
 `crabpath doctor --state S`
-`crabpath info --state S|--graph G`
+`crabpath info --state S`
+`crabpath init --workspace W --output O --embedder openai`
+`crabpath query TEXT --state S --llm openai`
+`crabpath inject --state S --type TEACHING [--type DIRECTIVE]`
+
+Real-time correction flow:
+`python3 query_brain.py --chat-id CHAT_ID`
+`python3 learn_correction.py --chat-id CHAT_ID`
 
 ## Quick Reference
+- `crabpath init/query/learn/inject/health/doctor/info`
+- `query_brain.py --chat-id` and `learn_correction.py` for real-time correction pipelines
+- `examples/correction_flow/`, `examples/cold_start/`, `examples/openai_embedder/`
 
 ## API Reference
 
@@ -78,8 +87,12 @@ for nid, content in texts.items():
   - `measure_health`, `autotune`, `replay_queries`
 - Embedding utilities:
   - `HashEmbedder`
+  - `OpenAIEmbedder`
   - `default_embed`
   - `default_embed_batch`
+  - `openai_llm_fn`
+- LLM routing callbacks:
+  - `chat_completion`
 - Graph primitives:
   - `Node`
   - `Edge`
@@ -89,17 +102,21 @@ for nid, content in texts.items():
 
 ## CLI Commands
 
-- `crabpath init --workspace W --output O [--sessions S]`
-- `crabpath query TEXT --state S [--top N] [--json]`
+- `crabpath init --workspace W --output O [--sessions S] [--embedder openai]`
+- `crabpath query TEXT --state S [--top N] [--json] [--chat-id CHAT_ID]`
 - `crabpath learn --state S --outcome N --fired-ids a,b,c [--json]`
-- `crabpath inject --state S --id NODE_ID --content TEXT [--type CORRECTION|TEACHING|DIRECTIVE] [--json]`
+- `crabpath inject --state S --id NODE_ID --content TEXT [--type CORRECTION|TEACHING|DIRECTIVE] [--json] [--connect-min-sim 0.0]`
+- `crabpath inject --state S --id NODE_ID --content TEXT --type TEACHING`
+- `crabpath inject --state S --id NODE_ID --content TEXT --type DIRECTIVE`
 - `crabpath health --state S`
 - `crabpath doctor --state S`
-- `crabpath info --state S|--graph G`
+- `crabpath info --state S`
 - `crabpath replay --state S --sessions S`
-- `crabpath merge --state S`
-- `crabpath connect --state S`
+- `crabpath merge --state S [--llm openai]`
+- `crabpath connect --state S [--llm openai]`
 - `crabpath journal [--stats]`
+- `query_brain.py --chat-id CHAT_ID`
+- `learn_correction.py --chat-id CHAT_ID`
 
 ## Paper
 

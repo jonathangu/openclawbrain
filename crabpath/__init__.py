@@ -54,4 +54,4 @@ __all__ = [
     "replay_queries",
 ]
 
-__version__ = "10.0.0"
+__version__ = "10.1.0"

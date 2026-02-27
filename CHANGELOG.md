@@ -1,5 +1,41 @@
 # CHANGELOG
 
+## v10.1.0 (2026-02-27)
+
+### Real-time correction flow
+- **Fired-node logging:** `query_brain.py --chat-id` persists fired nodes to `fired_log.jsonl` per conversation, with 7-day rolling prune. Corrections can now find what to penalize even hours after the original query.
+- **Same-turn corrections:** new `learn_correction.py` reads fired log by chat_id, penalizes via `apply_outcome`, and optionally injects a CORRECTION node — all in one command.
+- **Dedup with batch harvester:** `injected_corrections.jsonl` prevents double-injection when the 2-hour harvester later processes the same correction. `init_agent_brain.py` reads the dedup log on rebuild.
+
+### CLI DX improvements
+- **Query text output shows node IDs** — no more `--json` required for the learn workflow. Format: `node_id / ~~~ / content`.
+- **`learn --json` returns summary** (`{"edges_updated": N, "max_weight_delta": X}`) instead of dumping the entire graph.
+- **`health` text output is human-readable** — `Brain health: / Nodes / Edges / Reflex% Habitual% Dormant% / Orphans / Cross-file edges`.
+- **`inject` auto-detects hash-v1 embedder** and defaults `--connect-min-sim` to 0.0 (was 0.3, causing zero connections for users without OpenAI).
+
+### OpenAI integration
+- `crabpath/openai_embeddings.py` — `OpenAIEmbedder` class wrapping `text-embedding-3-small`.
+- `crabpath/openai_llm.py` — `openai_llm_fn` and `chat_completion` for GPT-5-mini routing/scoring.
+- CLI flags: `--embedder openai` for init/query/inject, `--llm openai` for init/merge/connect.
+- Zero new required dependencies — `openai` is an optional runtime import.
+
+### Documentation overhaul
+- **README rewritten:** value prop first, 5-minute quickstart with A→B learning story, "Correcting mistakes" and "Adding new knowledge" sections promoted to top.
+- **TEACHING documented:** all three injection types (CORRECTION, TEACHING, DIRECTIVE) explained with examples. Previously only CORRECTION was documented — three production agents independently thought rebuild was required to add new knowledge.
+- **Competition table:** CrabPath vs Plain RAG vs Reflexion vs MemGPT.
+- **New sections:** State lifecycle, Cost control, "How CrabPath differs from related tools".
+- **Session replay demoted** to "Optional: warm start" with skip note for new users.
+
+### New examples
+- `examples/cold_start/` — guided zero-session walkthrough with canned queries and expected output.
+- `examples/correction_flow/` — generic fired-node logging pattern for any agent framework (hash embedder, no API key).
+- `examples/sample_workspace/` expanded from 3 to 5 files (added `incidents.md`, `onboarding.md`) for cross-file routing demos.
+- `examples/openclaw_adapter/agents_hook.md` updated with full inject + correction + chat-id logging template.
+
+### Tests
+- 200 tests (was 188), 8 simulations all passing.
+- New tests: hash-embedder inject default, query text node IDs, health readable output, learn summary, correction flow integration (3 tests).
+
 ## v10.0.0
 ### What Changed
 - Added CLI and API flows so CrabPath can inject and persist correction/teaching signals without rebuilding the entire state.
