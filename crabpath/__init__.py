@@ -1,4 +1,4 @@
-"""CrabPath is now OpenClawBrain. This shim provides backward compatibility."""
+"""Backward compatibility shim for openclawbrain. This shim provides backward compatibility."""
 import warnings
 warnings.warn(
     "The 'crabpath' package has been renamed to 'openclawbrain'. "

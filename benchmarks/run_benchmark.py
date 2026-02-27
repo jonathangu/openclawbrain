@@ -379,8 +379,8 @@ def main() -> None:
         ),
     )
 
-    scores["crabpath_traverse"], per_query["crabpath_traverse"], latency_ms["crabpath_traverse"], learning_curves["crabpath_traverse"] = _run_learning_query_set(
-        name="crabpath_traverse",
+    scores["ocb_traverse"], per_query["ocb_traverse"], latency_ms["ocb_traverse"], learning_curves["ocb_traverse"] = _run_learning_query_set(
+        name="ocb_traverse",
         queries=queries,
         graph=deepcopy(base_graph),
         config=traverse_config,
@@ -393,8 +393,8 @@ def main() -> None:
         beam_width=args.traverse_beam_width,
         inhibitory_threshold=-999,
     )
-    scores["crabpath_no_inhibition"], per_query["crabpath_no_inhibition"], latency_ms["crabpath_no_inhibition"], learning_curves["crabpath_no_inhibition"] = _run_learning_query_set(
-        name="crabpath_no_inhibition",
+    scores["ocb_no_inhibition"], per_query["ocb_no_inhibition"], latency_ms["ocb_no_inhibition"], learning_curves["ocb_no_inhibition"] = _run_learning_query_set(
+        name="ocb_no_inhibition",
         queries=queries,
         graph=deepcopy(base_graph),
         config=no_inhibition_config,
@@ -402,8 +402,8 @@ def main() -> None:
         learn_fn=lambda learning_graph, fired_nodes: apply_outcome(graph=learning_graph, fired_nodes=fired_nodes, outcome=1.0),
     )
 
-    scores["crabpath_pg"], per_query["crabpath_pg"], latency_ms["crabpath_pg"], learning_curves["crabpath_pg"] = _run_learning_query_set(
-        name="crabpath_pg",
+    scores["ocb_pg"], per_query["ocb_pg"], latency_ms["ocb_pg"], learning_curves["ocb_pg"] = _run_learning_query_set(
+        name="ocb_pg",
         queries=queries,
         graph=deepcopy(base_graph),
         config=traverse_config,
@@ -411,8 +411,8 @@ def main() -> None:
         learn_fn=lambda learning_graph, fired_nodes: apply_outcome_pg(graph=learning_graph, fired_nodes=fired_nodes, outcome=1.0),
     )
 
-    scores["crabpath_with_replay"], per_query["crabpath_with_replay"], latency_ms["crabpath_with_replay"], learning_curves["crabpath_with_replay"] = _run_learning_query_set(
-        name="crabpath_with_replay",
+    scores["ocb_with_replay"], per_query["ocb_with_replay"], latency_ms["ocb_with_replay"], learning_curves["ocb_with_replay"] = _run_learning_query_set(
+        name="ocb_with_replay",
         queries=queries,
         graph=deepcopy(base_graph),
         config=replay_config,
@@ -420,8 +420,8 @@ def main() -> None:
         learn_fn=lambda learning_graph, fired_nodes: apply_outcome(graph=learning_graph, fired_nodes=fired_nodes, outcome=1.0),
     )
 
-    scores["crabpath_pg_with_replay"], per_query["crabpath_pg_with_replay"], latency_ms["crabpath_pg_with_replay"], learning_curves["crabpath_pg_with_replay"] = _run_learning_query_set(
-        name="crabpath_pg_with_replay",
+    scores["ocb_pg_with_replay"], per_query["ocb_pg_with_replay"], latency_ms["ocb_pg_with_replay"], learning_curves["ocb_pg_with_replay"] = _run_learning_query_set(
+        name="ocb_pg_with_replay",
         queries=queries,
         graph=deepcopy(base_graph),
         config=replay_config,

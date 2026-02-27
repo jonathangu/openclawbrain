@@ -355,7 +355,7 @@ def _run_learning(
 def _print_ascii(methods: dict[str, dict[str, float]], learning_curves: dict[str, dict[str, dict[str, float]]]) -> None:
     print("\nMethod                  FullHit  Partial  Recall@10  MRR    NodesFired")
     print("-----------------------------------------------------------------------")
-    for key in ["embedding_topk", "crabpath_cold", "crabpath_learning", "crabpath_pg_learning"]:
+    for key in ["embedding_topk", "ocb_cold", "ocb_learning", "ocb_pg_learning"]:
         values = methods[key]
         print(
             f"{key:<22}"
@@ -367,7 +367,7 @@ def _print_ascii(methods: dict[str, dict[str, float]], learning_curves: dict[str
         )
 
     print("\nLearning Curves")
-    for name in ["crabpath_learning", "crabpath_pg_learning"]:
+    for name in ["ocb_learning", "ocb_pg_learning"]:
         print(f"\n{name}")
         print("query  FullHit  Partial  Recall@10  MRR    NodesFired")
         for checkpoint in sorted(learning_curves.get(name, {}), key=lambda value: int(value)):
@@ -460,7 +460,7 @@ def main() -> None:
     )
 
     cold_graph = _clone_graph(graph)
-    methods["crabpath_cold"] = _run_static(
+    methods["ocb_cold"] = _run_static(
         rows=rows,
         graph=cold_graph,
         index=_build_index_from_nodes(cold_graph, cache),
@@ -468,14 +468,14 @@ def main() -> None:
         cache=cache,
         title_to_id=title_to_id,
         use_traversal=True,
-        method_name="crabpath_cold",
+        method_name="ocb_cold",
         embed_top_k=args.embed_top_k,
         seed_top_k=args.seed_top_k,
         traversal_config=traversal_config,
     )
 
     learning_graph = _clone_graph(graph)
-    methods["crabpath_learning"], learning_curves["crabpath_learning"] = _run_learning(
+    methods["ocb_learning"], learning_curves["ocb_learning"] = _run_learning(
         rows=rows,
         graph=learning_graph,
         index=_build_index_from_nodes(learning_graph, cache),
@@ -483,14 +483,14 @@ def main() -> None:
         cache=cache,
         title_to_id=title_to_id,
         use_pg=False,
-        method_name="crabpath_learning",
+        method_name="ocb_learning",
         seed_top_k=args.seed_top_k,
         traversal_config=traversal_config,
         embed_top_k=args.embed_top_k,
     )
 
     pg_graph = _clone_graph(graph)
-    methods["crabpath_pg_learning"], learning_curves["crabpath_pg_learning"] = _run_learning(
+    methods["ocb_pg_learning"], learning_curves["ocb_pg_learning"] = _run_learning(
         rows=rows,
         graph=pg_graph,
         index=_build_index_from_nodes(pg_graph, cache),
@@ -498,7 +498,7 @@ def main() -> None:
         cache=cache,
         title_to_id=title_to_id,
         use_pg=True,
-        method_name="crabpath_pg_learning",
+        method_name="ocb_pg_learning",
         seed_top_k=args.seed_top_k,
         traversal_config=traversal_config,
         embed_top_k=args.embed_top_k,
