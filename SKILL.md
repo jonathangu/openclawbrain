@@ -53,6 +53,12 @@ for nid, content in texts.items():
 `crabpath doctor --state S`
 `crabpath info --state S|--graph G`
 
+## Quick Reference
+
+## API
+
+- `graph.add_node(Node(...))` — inject external knowledge (corrections, directives) as graph nodes
+
 ## Paper
 
 https://jonathangu.com/crabpath/

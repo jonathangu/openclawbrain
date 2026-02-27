@@ -102,6 +102,29 @@ crabpath init --workspace ./ws --output ./data --sessions ./sessions/
 crabpath replay --state ./data/state.json --sessions ./sessions/
 ```
 
+## Injecting External Knowledge
+
+CrabPath nodes are not limited to file chunks. You can inject arbitrary knowledge as graph nodes:
+
+```python
+from crabpath.graph import Node
+from crabpath import Graph
+
+graph, texts = split_workspace("./workspace")
+
+# Inject a learning/correction
+node = Node(
+    id="learning::42",
+    content="Never show in-sample backtest results. Always use out-of-sample data.",
+    summary="Out-of-sample backtesting rule",
+    metadata={"source": "learning_db", "type": "CORRECTION"}
+)
+graph.add_node(node)
+texts["learning::42"] = node.content  # embed this too
+```
+
+The OpenClaw adapter (`examples/openclaw_adapter/`) demonstrates injecting corrections from a learning harness SQLite database as first-class retrievable nodes.
+
 ## 8. Three Embedding Tiers
 
 | Tier | Capability | Network | Notes |
