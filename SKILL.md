@@ -3,7 +3,7 @@ name: openclawbrain
 description: Memory graph engine with caller-provided embed and LLM callbacks; core is pure, with real-time correction flow and optional OpenAI integration.
 metadata:
   openclaw:
-    emoji: "🦀"
+    emoji: "🧠"
     requires:
       python: ">=3.10"
 ---
