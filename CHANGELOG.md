@@ -1,3 +1,10 @@
+## v12.1.1 (2026-02-27)
+
+### Bug fixes (from issue #3)
+- **embed_batch chunking**: `OpenAIEmbedder.embed_batch()` now chunks requests to stay within OpenAI's 300K token-per-request limit. Previously sent all texts in a single call, which failed on workspaces with >~750 nodes.
+- **openai optional dependency**: added `openai` to `[project.optional-dependencies]` so `pip install openclawbrain[openai]` pulls it in. Previously required manual `pip install openai`.
+- **--version flag**: `openclawbrain --version` now works. Previously errored out.
+
 ## v12.1.0 (2026-02-27)
 
 ### Socket transport and client tooling

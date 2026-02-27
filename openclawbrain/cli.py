@@ -66,6 +66,7 @@ def _resolve_state_path(
 def _build_parser() -> argparse.ArgumentParser:
     """ build parser."""
     parser = argparse.ArgumentParser(prog="openclawbrain")
+    parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
 
     i = sub.add_parser("init")
