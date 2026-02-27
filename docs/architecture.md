@@ -75,17 +75,20 @@ Auto-save behavior:
 - On every `N` writes, where `N` is `--auto-save-interval`, the daemon saves state.
 - `shutdown` persists pending state before exit.
 
+### Socket Transport
+
+`openclawbrain.socket_server` is an asyncio Unix socket bridge around the same NDJSON daemon worker.
+
+- The socket listener creates `daemon.sock` under the agent directory.
+- Each request is routed as NDJSON through the same request parser.
+- Each response preserves the same JSON-RPC `id`.
+- Concurrent clients are supported with a serialized lock to keep daemon execution single-threaded and deterministic.
+
 Missing vs adapter scripts (current production reality):
 
 - `inject`/`correction`: now supported by the daemon as NDJSON methods.
 - fired log tracking: adapters can still use `fired_log.jsonl`, while the daemon also writes append-only compatibility entries from query calls.
-- socket interface: no socket/TCP server today; daemon communication is intentionally stdio-only.
-
-Roadmap:
-
-- add daemon `inject` method for correction/teaching writes
-- add socket/TCP transport option (for long-running service topologies)
-- add safe concurrent access semantics for multi-client writes
+- socket interface: now provided by `openclawbrain.socket_server` with per-agent Unix socket.
 
 ### Vocabulary
 
@@ -156,7 +159,7 @@ User message → OpenClaw agent → reads AGENTS.md → queries OpenClawBrain da
 - The command calls the OpenClawBrain adapter scripts (Python) to query/learn.
 - Fired node IDs are logged per chat (`--chat-id`) so same-turn corrections can apply to the right retrieval.
 
-This is clunky but works.
+This is optimized for production through the socket transport wrapper.
 
 ### Practical shape (production)
 

@@ -155,14 +155,23 @@ OpenClawBrain never imports `openai` or any provider package directly. You const
 
 Reference: `examples/ops/callbacks.py`
 
-## Daemon setup (production)
+## Socket Server (recommended for production)
 
-Keep the process warm and reuse loaded state.
-
-Run the daemon directly for smoke tests:
+Run the production service as a Unix socket wrapper around the NDJSON daemon:
 
 ```bash
-openclawbrain daemon --state ~/.openclawbrain/main/state.json
+python3 -m openclawbrain.socket_server --state ~/.openclawbrain/main/state.json
+```
+
+The socket server creates and manages:
+
+- `~/.openclawbrain/<agent>/daemon.sock` (for example: `~/.openclawbrain/main/daemon.sock`)  
+  (created automatically by `socket_server`)
+
+Test it with:
+
+```bash
+python3 -m openclawbrain.socket_client --socket ~/.openclawbrain/main/daemon.sock --method health --params "{}"
 ```
 
 ### launchd (macOS)
@@ -179,8 +188,9 @@ Create `~/Library/LaunchAgents/com.openclawbrain.daemon.plist`:
   <key>ProgramArguments</key>
   <array>
     <string>/usr/bin/env</string>
-    <string>openclawbrain</string>
-    <string>daemon</string>
+    <string>python3</string>
+    <string>-m</string>
+    <string>openclawbrain.socket_server</string>
     <string>--state</string>
     <string>/Users/YOU/.openclawbrain/main/state.json</string>
   </array>
@@ -216,7 +226,96 @@ After=network-online.target
 Type=simple
 User=YOUR_USER
 WorkingDirectory=/home/YOUR_USER
-ExecStart=/usr/bin/env openclawbrain daemon --state /home/YOUR_USER/.openclawbrain/main/state.json
+ExecStart=/usr/bin/python3 -m openclawbrain.socket_server --state /home/YOUR_USER/.openclawbrain/main/state.json
+Restart=always
+RestartSec=1
+
+[Install]
+WantedBy=multi-user.target
+```
+
+Enable and start:
+
+```bash
+sudo systemctl daemon-reload
+sudo systemctl enable --now openclawbrain-daemon.service
+```
+
+### Client Library
+
+Use the stdlib-only socket client directly from Python:
+
+```python
+from openclawbrain.socket_client import OCBClient
+
+with OCBClient("~/.openclawbrain/main/daemon.sock") as client:
+    health = client.health()
+    result = client.query("how do we deploy", chat_id="telegram:123", top_k=4)
+```
+
+## Daemon setup (legacy / debug)
+
+Keep the process warm and reuse loaded state when testing transport internals directly:
+
+Run the daemon directly for smoke tests:
+
+```bash
+openclawbrain daemon --state ~/.openclawbrain/main/state.json
+```
+
+### launchd (macOS)
+
+Create `~/Library/LaunchAgents/com.openclawbrain.daemon.plist`:
+
+```xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>com.openclawbrain.daemon</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/usr/bin/env</string>
+    <string>python3</string>
+    <string>-m</string>
+    <string>openclawbrain.daemon</string>
+    <string>--state</string>
+    <string>/Users/YOU/.openclawbrain/main/state.json</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <true/>
+  <key>StandardOutPath</key>
+  <string>/Users/YOU/.openclawbrain/main/daemon.stdout.log</string>
+  <key>StandardErrorPath</key>
+  <string>/Users/YOU/.openclawbrain/main/daemon.stderr.log</string>
+</dict>
+</plist>
+```
+
+Load it:
+
+```bash
+launchctl load -w ~/Library/LaunchAgents/com.openclawbrain.daemon.plist
+launchctl list | rg openclawbrain
+```
+
+### systemd (Linux)
+
+Create `/etc/systemd/system/openclawbrain-daemon.service`:
+
+```ini
+[Unit]
+Description=OpenClawBrain daemon worker
+After=network-online.target
+
+[Service]
+Type=simple
+User=YOUR_USER
+WorkingDirectory=/home/YOUR_USER
+ExecStart=/usr/bin/env python3 -m openclawbrain.daemon --state /home/YOUR_USER/.openclawbrain/main/state.json
 Restart=always
 RestartSec=1
 
@@ -240,6 +339,12 @@ echo '{"id":"health-1","method":"health","params":{}}' | openclawbrain daemon --
 ```
 
 You should receive a JSON reply on stdout with the same `id` and health fields.
+
+Or use the socket client one-liner:
+
+```bash
+python3 -m openclawbrain.socket_client --socket ~/.openclawbrain/main/daemon.sock --method health --params "{}"
+```
 
 Daemon references (supported methods):
 

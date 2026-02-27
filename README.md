@@ -3,7 +3,7 @@
 
 > Your retrieval routes become the prompt — assembled by learned routing, not top-k similarity.
 
-**Current release: v12.0.1**
+**Current release: v12.1.0**
 **Website:** https://openclawbrain.ai
 
 **Setup:** [Setup Guide](docs/setup-guide.md)
@@ -19,7 +19,39 @@ Quickstart (OpenClaw users):
 ```bash
 pip install openclawbrain
 openclawbrain init --workspace ~/.openclaw/workspace --output ~/.openclawbrain/main
-openclawbrain daemon --state ~/.openclawbrain/main/state.json
+python3 -m openclawbrain.socket_server --state ~/.openclawbrain/main/state.json
+```
+
+Production Deployment (socket):
+
+Use LaunchAgent/systemd to keep the socket server running:
+
+```bash
+python3 -m openclawbrain.socket_server --state ~/.openclawbrain/main/state.json
+```
+
+macOS (`~/Library/LaunchAgents/com.openclawbrain.daemon.plist`):
+
+```xml
+<key>ProgramArguments</key>
+<array>
+  <string>/usr/bin/python3</string>
+  <string>-m</string>
+  <string>openclawbrain.socket_server</string>
+  <string>--state</string>
+  <string>/Users/YOU/.openclawbrain/main/state.json</string>
+</array>
+```
+
+Linux (`/etc/systemd/system/openclawbrain-daemon.service`):
+
+```ini
+[Service]
+ExecStart=/usr/bin/python3 -m openclawbrain.socket_server --state /home/YOUR_USER/.openclawbrain/main/state.json
+```
+
+```bash
+python3 -m openclawbrain.socket_client --socket ~/.openclawbrain/main/daemon.sock --method health --params "{}"
 ```
 
 **OpenClawBrain learns from your agent feedback, so wrong answers get suppressed instead of resurfacing.** It builds a memory graph over your workspace, remembers what worked, and routes future answers through learned paths.
@@ -294,9 +326,8 @@ Supported methods (all 10):
 
 Current limitations:
 
-- Socket transport and per-chat mutation APIs are not yet supported; use NDJSON over stdio and `chat_id`-scoped request payloads.
-- Daemon is stdin/stdout only; there is no socket server (TCP/TLS/etc.) yet.
-- For concurrent writers, serialize access via a single process supervisor or use one dedicated per state file.
+- Per-chat mutation APIs remain scoped through request payloads (`chat_id`) and adapter-layer bookkeeping.
+- Concurrent writers are serialized by the socket transport lock and one active request at a time.
 
 Production timing (Mac Mini M4 Pro, OpenAI embeddings):
 - MAIN (1,158 nodes): 397ms embed + 107ms traverse = **504ms total**

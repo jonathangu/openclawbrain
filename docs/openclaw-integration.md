@@ -6,7 +6,7 @@ Canonical docs and examples: https://openclawbrain.ai
 If you’re already running OpenClaw, this guide shows the fastest path to:
 
 - Build a brain (`state.json`) from your OpenClaw workspace
-- Run the **persistent daemon** (`openclawbrain daemon`) so queries are fast
+- Run the **persistent daemon service** (`openclawbrain.socket_server`) so queries are fast
 - Wire your OpenClaw agent’s **AGENTS.md** to query → respond → learn
 - Operate it like a runbook: launchd/systemd, maintenance cron, troubleshooting
 
@@ -22,7 +22,7 @@ Instead of “top-k similarity every time”, it learns which context routes act
 - Your agent stops resurfacing the same wrong chunks over and over.
 - Corrections create **inhibitory edges** that actively suppress bad retrieval routes.
 - You can add knowledge without rebuilding the whole index (`inject --type TEACHING`).
-- With the daemon, the brain stays **hot in memory**, avoiding per-call reload overhead.
+- With the socket server, the brain stays **hot in memory**, avoiding per-call reload overhead.
 
 OpenClawBrain stores everything in a single portable file:
 
@@ -76,7 +76,7 @@ OpenClawBrain learn / inject
 
 ### Why the daemon matters
 
-Without the daemon, every query path tends to do:
+Without the socket service, every query path tends to do:
 
 - start Python
 - load `state.json`
@@ -84,11 +84,17 @@ Without the daemon, every query path tends to do:
 - run query
 - exit
 
-With `openclawbrain daemon`, you pay the load cost once and queries become:
+With `openclawbrain.socket_server`, you pay the load cost once and queries become:
 
 - NDJSON request → response
 
 This is the “production shape” for OpenClaw integration.
+
+Adapter scripts (`query_brain.py` and `learn_correction.py`) now auto-detect the daemon socket:
+
+- If `~/.openclawbrain/<agent>/daemon.sock` exists, they use the in-memory socket transport (fast path).
+- If the socket is missing, they fall back to loading `state.json` from disk directly (slower but still works).
+- Both scripts also accept `--socket` when you want to force an explicit socket path.
 
 ---
 
@@ -195,7 +201,7 @@ That block is intentionally boring: it’s the contract OpenClaw already support
 ### Option A: run it manually (smoke test)
 
 ```bash
-openclawbrain daemon --state ~/.openclawbrain/main/state.json
+python3 -m openclawbrain.socket_server --state ~/.openclawbrain/main/state.json
 ```
 
 The daemon speaks NDJSON over `stdin`/`stdout`.
@@ -217,7 +223,7 @@ echo '{"id":"req-1","method":"query","params":{"query":"how to deploy","top_k":4
 ```
 
 - `inject` and `correction` are now available and are the preferred path for same-turn updates.
-- Daemon is intentionally stdio-only today (no socket/TCP server yet).
+- The daemon is still NDJSON over stdio internally, with production transport now provided by `openclawbrain.socket_server`.
 
 ### Option B: launchd (macOS)
 
@@ -234,8 +240,9 @@ Create `~/Library/LaunchAgents/com.openclawbrain.daemon.plist`:
   <key>ProgramArguments</key>
   <array>
     <string>/usr/bin/env</string>
-    <string>openclawbrain</string>
-    <string>daemon</string>
+    <string>python3</string>
+    <string>-m</string>
+    <string>openclawbrain.socket_server</string>
     <string>--state</string>
     <string>/Users/YOU/.openclawbrain/main/state.json</string>
     <string>--auto-save-interval</string>
@@ -290,7 +297,7 @@ Type=simple
 User=YOUR_USER
 WorkingDirectory=/home/YOUR_USER
 Environment=OPENAI_API_KEY=YOUR_KEY_HERE
-ExecStart=/usr/bin/env openclawbrain daemon --state /home/YOUR_USER/.openclawbrain/main/state.json --auto-save-interval 10
+ExecStart=/usr/bin/env python3 -m openclawbrain.socket_server --state /home/YOUR_USER/.openclawbrain/main/state.json --auto-save-interval 10
 Restart=always
 RestartSec=1
 
@@ -406,20 +413,18 @@ Common causes:
 
 Fixes:
 
-- Use `openclawbrain daemon`.
+- Use the socket server command (`python3 -m openclawbrain.socket_server`) when available.
 - If you can tolerate it, start with hash embeddings for cheap iteration.
 
 ### “Daemon starts but OpenClaw can’t talk to it”
 
-The daemon is a stdio protocol.
-If your integration layer doesn’t own the pipes, it can’t send NDJSON.
+The daemon worker is an NDJSON stdio process, wrapped for production by `socket_server`.
+If your integration layer cannot reach the socket, fall back to disk-path operation.
 
 Two practical options:
 
-1. Keep using the adapter scripts (shell-outs) but point them at a daemon later.
-2. Build a tiny Node wrapper that spawns the daemon once and multiplexes requests.
-
-(That Node wrapper is the right long-term shape for OpenClaw.)
+1. Keep using the adapter scripts; they will auto-detect and use the socket when available.
+2. For custom integrations, call `openclawbrain.socket_client` against `daemon.sock`.
 
 ### “Corrections aren’t sticking”
 
@@ -445,7 +450,7 @@ Two practical options:
                                          ▼
                          ┌──────────────────────────────────┐
                          │        OpenClawBrain daemon       │
-                         │   openclawbrain daemon --state    │
+                         │ openclawbrain.socket_server --state│
                          │  (NDJSON over stdin/stdout)       │
                          └───────────────┬───────────────────┘
                                          │

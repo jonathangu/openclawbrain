@@ -1,3 +1,12 @@
+## v12.1.0 (2026-02-27)
+
+### Socket transport and client tooling
+- `socket_server.py`: asyncio Unix socket server wrapping the NDJSON daemon worker.
+- `socket_client.py`: sync stdlib-only client with context-manager lifecycle and CLI entrypoint.
+- Adapter scripts (`query_brain.py`, `learn_correction.py`): added `--socket` flag and auto-detection of `daemon.sock`.
+- Added LaunchAgent plists and macOS install script integration for socket-server lifecycle.
+- Added integration test coverage for socket wrapper and client path.
+
 ## v12.0.1 (2026-02-27)
 
 ### Documentation and operators
