@@ -1,5 +1,16 @@
 # CHANGELOG
 
+## v10.4.0 (2026-02-27)
+
+### True REINFORCE policy gradient
+- Added `apply_outcome_pg` in `crabpath.learn` for true policy-gradient updates:
+  - numerically stable softmax over outgoing edges plus synthetic STOP
+  - updates for all outgoing edges at each step using `(1[chosen] - π)` score gradient
+  - optional baseline and temperature support
+  - weight clipping + Hebbian co-firing preserved
+- Exported `apply_outcome_pg` from `crabpath.__init__`.
+- Extended `LearningConfig` with `temperature` and `baseline`.
+
 ## v10.3.0 (2026-02-27)
 
 ### Traversal tiers recalibrated from production data

@@ -92,6 +92,8 @@ class LearningConfig:
     hebbian_increment: float = 0.06
     promotion_threshold: int = 2
     weight_bounds: tuple[float, float] = (-1.0, 1.0)
+    temperature: float = 1.0
+    baseline: float = 0.0
 
 
 _apply_outcome_call_count = 0
@@ -158,6 +160,103 @@ def hebbian_update(
                 cfg.weight_bounds,
             )
             graph._edges[source_id][target_id] = edge
+
+
+def _softmax_with_stop(graph: Graph, node_id: str, temperature: float) -> tuple[dict[str, float], float]:
+    """Compute numerically stable softmax over outgoing actions plus STOP."""
+    outgoing = graph.outgoing(node_id)
+    logits_by_target: dict[str, float] = {}
+    max_logit = 0.0
+    for _target_node, edge in outgoing:
+        relevance = float(edge.metadata.get("relevance", 0.0)) if isinstance(edge.metadata, dict) else 0.0
+        logit = (relevance + edge.weight) / temperature
+        logits_by_target[edge.target] = logit
+        if logit > max_logit:
+            max_logit = logit
+
+    exp_stop = math.exp(0.0 - max_logit)
+    exp_sum = exp_stop
+    probs_by_target: dict[str, float] = {"__STOP__": exp_stop}
+    for target_id, logit in logits_by_target.items():
+        exp_logit = math.exp(logit - max_logit)
+        probs_by_target[target_id] = exp_logit
+        exp_sum += exp_logit
+
+    return {action: prob / exp_sum for action, prob in probs_by_target.items()}, max_logit
+
+
+def apply_outcome_pg(
+    graph: Graph,
+    fired_nodes: list[str],
+    outcome: float,
+    config: LearningConfig | None = None,
+    auto_decay: bool = False,
+    decay_interval: int = 10,
+    per_node_outcomes: dict[str, float] | None = None,
+    baseline: float = 0.0,
+    temperature: float = 1.0,
+) -> dict:
+    """Apply REINFORCE policy-gradient updates over the full fired trajectory."""
+    global _apply_outcome_call_count
+    cfg = config or LearningConfig()
+    updates: dict[str, float] = defaultdict(float)
+
+    effective_temperature = temperature if temperature > 0 else cfg.temperature
+
+    if len(fired_nodes) < 2:
+        hebbian_update(graph, fired_nodes, cfg)
+        _apply_outcome_call_count += 1
+        if auto_decay:
+            if decay_interval <= 0:
+                decay_interval = 1
+            if _apply_outcome_call_count % decay_interval == 0:
+                apply_decay(graph)
+        return dict(updates)
+
+    for idx in range(len(fired_nodes) - 1):
+        source_id = fired_nodes[idx]
+        target_id = fired_nodes[idx + 1]
+
+        outgoing = graph.outgoing(source_id)
+        if not outgoing:
+            continue
+
+        node_outcome = outcome
+        if per_node_outcomes is not None and source_id in per_node_outcomes:
+            node_outcome = per_node_outcomes[source_id]
+
+        probs, _ = _softmax_with_stop(graph, source_id, effective_temperature)
+        scalar = cfg.learning_rate * (node_outcome - baseline) * (cfg.discount ** idx) / effective_temperature
+
+        for _target_node, edge in outgoing:
+            pi_j = probs.get(edge.target, 0.0)
+            if edge.target == target_id:
+                delta = scalar * (1.0 - pi_j)
+            else:
+                delta = -scalar * pi_j
+
+            new_weight = _clip_weight(edge.weight + delta, cfg.weight_bounds)
+            delta_actual = new_weight - edge.weight
+            edge.weight = new_weight
+            if edge.weight < -0.01:
+                edge.kind = "inhibitory"
+            else:
+                edge.kind = "sibling"
+            graph._edges[source_id][edge.target] = edge
+            updates[f"{source_id}->{edge.target}"] += delta_actual
+
+        if "__STOP__" in probs:
+            updates[f"{source_id}->__STOP__"] = -scalar * probs["__STOP__"]
+
+    hebbian_update(graph, fired_nodes, cfg)
+    _apply_outcome_call_count += 1
+    if auto_decay:
+        if decay_interval <= 0:
+            decay_interval = 1
+        if _apply_outcome_call_count % decay_interval == 0:
+            apply_decay(graph)
+
+    return dict(updates)
 
 
 def apply_outcome(

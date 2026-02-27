@@ -5,7 +5,7 @@ from .index import VectorIndex
 from ._batch import batch_or_single, batch_or_single_embed
 from .autotune import GraphHealth, autotune, measure_health
 from .decay import DecayConfig, apply_decay
-from .learn import LearningConfig, apply_outcome, maybe_create_node
+from .learn import LearningConfig, apply_outcome, apply_outcome_pg, maybe_create_node
 from .inject import inject_batch, inject_correction, inject_node
 from .hasher import HashEmbedder, default_embed, default_embed_batch
 from .score import score_retrieval
@@ -36,6 +36,7 @@ __all__ = [
     "split_workspace",
     "generate_summaries",
     "apply_outcome",
+    "apply_outcome_pg",
     "remove_from_state",
     "maybe_create_node",
     "apply_decay",
@@ -54,4 +55,4 @@ __all__ = [
     "replay_queries",
 ]
 
-__version__ = "10.3.0"
+__version__ = "10.4.0"
