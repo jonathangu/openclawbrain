@@ -50,6 +50,9 @@ for nid, content in texts.items():
 
 `--graph`/`--index` flags still supported for backward compatibility.
 
+`crabpath doctor --state S`
+`crabpath info --state S|--graph G`
+
 ## Paper
 
 https://jonathangu.com/crabpath/

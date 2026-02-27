@@ -2,7 +2,9 @@ from __future__ import annotations
 
 import argparse
 import json
+import platform
 import re
+import time
 from collections.abc import Callable
 from copy import deepcopy
 from datetime import datetime, timezone
@@ -58,6 +60,19 @@ def _mrr(predicted: list[str], relevant: set[str]) -> float:
     return 0.0
 
 
+def _percentile(values: list[float], q: float) -> float:
+    if not values:
+        return 0.0
+    if q <= 0.0:
+        return float(min(values))
+    if q >= 1.0:
+        return float(max(values))
+
+    ordered = sorted(values)
+    index = int((len(ordered) - 1) * q)
+    return float(ordered[index])
+
+
 def _evaluate(ranked_nodes: list[str], graph: Any, relevant: list[str]) -> dict[str, float]:
     relevant_set = set(relevant)
     ranked_files = _rank_to_files(graph, ranked_nodes)
@@ -75,7 +90,7 @@ def _run_query_set(
     queries: list[dict[str, object]],
     graph: Any,
     method: Callable[[str], list[str]],
-) -> tuple[dict[str, float], list[dict[str, object]]]:
+) -> tuple[dict[str, float], list[dict[str, object]], dict[str, float]]:
     totals = {
         "Recall@3": 0.0,
         "Recall@5": 0.0,
@@ -83,14 +98,18 @@ def _run_query_set(
         "MRR": 0.0,
     }
     details: list[dict[str, object]] = []
+    latencies_ms: list[float] = []
 
     for row in queries:
         query = str(row.get("query", ""))
         relevant = row.get("relevant")
         relevant_files = list(relevant) if isinstance(relevant, list) else []
 
+        start = time.perf_counter()
         ranked_nodes = method(query)
+        latency_ms = (time.perf_counter() - start) * 1000
         scores = _evaluate(ranked_nodes, graph, relevant_files)
+        latencies_ms.append(latency_ms)
 
         for key in totals:
             totals[key] += scores[key]
@@ -101,12 +120,17 @@ def _run_query_set(
                 "relevant": relevant_files,
                 "predicted_files": scores.pop("predicted_files"),
                 "scores": {k: scores[k] for k in totals},
+                "latency_ms": latency_ms,
             }
         )
 
     query_count = len(queries) if queries else 1
     averaged = {key: value / query_count for key, value in totals.items()}
-    return averaged, details
+    latency_stats = {
+        "p50_ms": _percentile(latencies_ms, 0.50),
+        "p95_ms": _percentile(latencies_ms, 0.95),
+    }
+    return averaged, details, latency_stats
 
 
 def _keyword_overlap(graph: Any, query: str, top_k: int) -> list[str]:
@@ -158,17 +182,23 @@ def _build_index(graph: Any, texts: dict[str, str], embedder: HashEmbedder) -> V
     return index
 
 
-def _print_table(scores_by_method: dict[str, dict[str, float]]) -> None:
-    print("\nMethod                  Recall@3 Recall@5 Precision@3 MRR")
-    print("-----------------------------------------------------")
+def _print_table(
+    scores_by_method: dict[str, dict[str, float]],
+    latency_by_method: dict[str, dict[str, float]],
+) -> None:
+    print("\nMethod                  Recall@3 Recall@5 Precision@3 MRR    p50_ms p95_ms")
+    print("--------------------------------------------------------------")
     for name, scores in scores_by_method.items():
+        latency = latency_by_method.get(name, {})
         print(
             f"{name:<22} "
             f"{scores['Recall@3']:.3f}    "
             f"{scores['Recall@5']:.3f}     "
             f"{scores['Precision@3']:.3f}       "
-            f"{scores['MRR']:.3f}"
-        )
+            f"{scores['MRR']:.3f}  "
+            f"{latency.get('p50_ms', 0.0):7.3f} "
+            f"{latency.get('p95_ms', 0.0):7.3f}"
+    )
 
 
 def main() -> None:
@@ -193,33 +223,40 @@ def main() -> None:
         raise SystemExit("queries.json must contain a list")
 
     print(f"Splitting workspace: {workspace_path}")
+    split_start = time.perf_counter()
     graph, texts = split_workspace(workspace_path)
-    print(f"Graph nodes: {graph.node_count()} | Chunks: {len(texts)}")
+    split_ms = (time.perf_counter() - split_start) * 1000
 
+    embed_start = time.perf_counter()
     embedder = HashEmbedder()
     index = _build_index(graph, texts, embedder)
+    embed_ms = (time.perf_counter() - embed_start) * 1000
+    print(f"Graph nodes: {graph.node_count()} | Chunks: {len(texts)}")
+    print(f"Init timings: split={split_ms:.3f}ms embed={embed_ms:.3f}ms")
+    print("Benchmark timings are machine-dependent and vary by hardware, OS, and runtime conditions.")
 
     base_graph = graph
     traverse_config = TraversalConfig(max_hops=args.traverse_max_hops, beam_width=args.traverse_beam_width)
+    latency_ms: dict[str, dict[str, float]] = {}
 
     scores: dict[str, dict[str, float]] = {}
     per_query: dict[str, list[dict[str, object]]] = {}
 
-    scores["keyword_overlap"], per_query["keyword_overlap"] = _run_query_set(
+    scores["keyword_overlap"], per_query["keyword_overlap"], latency_ms["keyword_overlap"] = _run_query_set(
         name="keyword_overlap",
         queries=queries,
         graph=deepcopy(base_graph),
         method=lambda query: _keyword_overlap(graph=base_graph, query=query, top_k=args.seed_top_k),
     )
 
-    scores["hash_embed_similarity"], per_query["hash_embed_similarity"] = _run_query_set(
+    scores["hash_embed_similarity"], per_query["hash_embed_similarity"], latency_ms["hash_embed_similarity"] = _run_query_set(
         name="hash_embed_similarity",
         queries=queries,
         graph=deepcopy(base_graph),
         method=lambda query: _hash_overlap(index=index, embedder=embedder, query=query, top_k=args.hash_top_k),
     )
 
-    scores["crabpath_traverse"], per_query["crabpath_traverse"] = _run_query_set(
+    scores["crabpath_traverse"], per_query["crabpath_traverse"], latency_ms["crabpath_traverse"] = _run_query_set(
         name="crabpath_traverse",
         queries=queries,
         graph=deepcopy(base_graph),
@@ -239,7 +276,7 @@ def main() -> None:
         queries=[str(item.get("query")) for item in queries],
         config=TraversalConfig(max_hops=args.replay_max_hops, beam_width=args.traverse_beam_width),
     )
-    scores["crabpath_with_replay"], per_query["crabpath_with_replay"] = _run_query_set(
+    scores["crabpath_with_replay"], per_query["crabpath_with_replay"], latency_ms["crabpath_with_replay"] = _run_query_set(
         name="crabpath_with_replay",
         queries=queries,
         graph=deepcopy(replay_graph),
@@ -253,7 +290,7 @@ def main() -> None:
         ),
     )
 
-    _print_table(scores)
+    _print_table(scores, latency_ms)
 
     results_path = Path("benchmarks/results.json")
     output = {
@@ -261,6 +298,7 @@ def main() -> None:
         "workspace": str(workspace_path),
         "query_source": str(queries_path),
         "query_count": len(queries),
+        "init_timing_ms": {"split": split_ms, "embed": embed_ms},
         "graph_nodes": graph.node_count(),
         "chunks": len(texts),
         "embedder": embedder.name,
@@ -270,12 +308,19 @@ def main() -> None:
             "beam_width": args.traverse_beam_width,
             "seed_k": args.traverse_seed_k,
         },
+        "environment": {
+            "python": platform.python_version(),
+            "platform": platform.platform(),
+            "machine_notes": "Benchmarks are timing-sensitive and may vary across machines.",
+        },
         "methods": {},
     }
 
     for method_name, method_scores in scores.items():
+        method_latency = latency_ms.get(method_name, {"p50_ms": 0.0, "p95_ms": 0.0})
         output["methods"][method_name] = {
             "scores": method_scores,
+            "latency_ms": method_latency,
             "per_query": per_query[method_name],
         }
 

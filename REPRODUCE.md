@@ -68,4 +68,4 @@ Benchmark output compares:
 3. CrabPath traversal
 4. CrabPath traversal + session replay
 
-Current reference results (CR@3): `0.942`, `0.933`, `0.892`, `0.908`.
+Run `python3 benchmarks/run_benchmark.py` to see current deterministic results for this commit.

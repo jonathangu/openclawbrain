@@ -7,7 +7,7 @@ from pathlib import Path
 import pytest
 from crabpath.cli import main
 from crabpath.graph import Edge, Graph, Node
-from crabpath.replay import extract_queries, extract_queries_from_dir, replay_queries
+from crabpath.replay import extract_interactions, extract_queries, extract_queries_from_dir, replay_queries
 from crabpath.traverse import TraversalConfig
 
 
@@ -94,6 +94,44 @@ def test_extract_queries_from_directory(tmp_path: Path) -> None:
     assert extract_queries_from_dir(sessions) == ["one", "two", "three"]
 
 
+def test_extract_interactions_parses_user_and_assistant_messages(tmp_path: Path) -> None:
+    path = tmp_path / "session.jsonl"
+    path.write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "type": "message",
+                        "message": {
+                            "role": "user",
+                            "content": [{"type": "text", "text": "How do I run?"}],
+                        },
+                    }
+                ),
+                json.dumps(
+                    {
+                        "type": "message",
+                        "message": {
+                            "role": "assistant",
+                            "content": [{"type": "text", "text": "Use the docs."}],
+                            "tool_calls": [
+                                {"id": "tool-1", "type": "tool_call", "function": {"name": "lookup", "arguments": "{}"}},
+                            ],
+                        },
+                    }
+                ),
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    interactions = extract_interactions(path)
+    assert len(interactions) == 1
+    assert interactions[0]["query"] == "How do I run?"
+    assert interactions[0]["response"] == "Use the docs."
+    assert interactions[0]["tool_calls"] == [{"id": "tool-1", "name": "lookup", "arguments": "{}"}]
+
+
 def test_extract_queries_filtering_since_timestamp(tmp_path: Path) -> None:
     path = tmp_path / "session.jsonl"
     path.write_text(
@@ -172,3 +210,29 @@ def test_replay_queries_supports_outcome_fn_negative_learning() -> None:
     assert stats["queries_replayed"] == 2
     assert graph._edges["a"]["bad"].kind == "inhibitory"
     assert graph._edges["a"]["bad"].weight < 0.8
+
+
+def test_replay_queries_auto_scores_if_assistant_response_matches() -> None:
+    base = Graph()
+    base.add_node(Node("a", "alpha content", metadata={"file": "a.md"}))
+    base.add_node(Node("b", "beta content", metadata={"file": "a.md"}))
+    base.add_edge(Edge("a", "b", 0.5))
+
+    boosted = Graph()
+    boosted.add_node(Node("a", "alpha content", metadata={"file": "a.md"}))
+    boosted.add_node(Node("b", "beta content", metadata={"file": "a.md"}))
+    boosted.add_edge(Edge("a", "b", 0.5))
+
+    replay_queries(
+        graph=base,
+        config=TraversalConfig(max_hops=1),
+        queries=["alpha"],
+    )
+    assert base._edges["a"]["b"].weight > 0.5
+
+    replay_queries(
+        graph=boosted,
+        config=TraversalConfig(max_hops=1),
+        queries=[{"query": "alpha", "response": "alpha content answered", "tool_calls": []}],
+    )
+    assert boosted._edges["a"]["b"].weight > base._edges["a"]["b"].weight

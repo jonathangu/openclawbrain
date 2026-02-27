@@ -93,6 +93,26 @@ def test_learning_rate_controls_magnitude_of_change() -> None:
     assert graph_fast._edges["a"]["b"].weight > graph_slow._edges["a"]["b"].weight
 
 
+def test_apply_outcome_uses_per_node_scores() -> None:
+    graph = Graph()
+    graph.add_node(Node("a", "A"))
+    graph.add_node(Node("b", "B"))
+    graph.add_node(Node("c", "C"))
+    graph.add_edge(Edge("a", "b", 0.2))
+    graph.add_edge(Edge("b", "c", 0.2))
+
+    apply_outcome(
+        graph=graph,
+        fired_nodes=["a", "b", "c"],
+        outcome=1.0,
+        config=LearningConfig(learning_rate=0.4, discount=1.0),
+        per_node_outcomes={"a": 1.0, "b": -0.5},
+    )
+
+    assert graph._edges["a"]["b"].weight > 0.2
+    assert graph._edges["b"]["c"].weight < 0.2
+
+
 def test_discount_factor_reduces_later_step_credit() -> None:
     graph = Graph()
     for node_id in ["a", "b", "c"]:

@@ -25,6 +25,7 @@ from .journal import (
 from .learn import apply_outcome
 from .merge import apply_merge, suggest_merges
 from .replay import (
+    extract_interactions,
     extract_query_records,
     extract_query_records_from_dir,
     extract_queries,
@@ -232,6 +233,22 @@ def _load_session_query_records(session_paths: str | Iterable[str], since_ts: fl
         else:
             raise SystemExit(f"invalid sessions path: {path}")
     return records
+
+
+def _load_session_interactions(session_paths: str | Iterable[str], since_ts: float | None = None) -> list[dict[str, object]]:
+    if isinstance(session_paths, str):
+        session_paths = [session_paths]
+    interactions: list[dict[str, object]] = []
+    for session_path in session_paths:
+        path = Path(session_path).expanduser()
+        if path.is_dir():
+            for session_file in sorted(path.glob("*.jsonl")):
+                interactions.extend(extract_interactions(session_file, since_ts=since_ts))
+        elif path.is_file():
+            interactions.extend(extract_interactions(path, since_ts=since_ts))
+        else:
+            raise SystemExit(f"invalid sessions path: {path}")
+    return interactions
 
 
 def _state_meta(meta: dict[str, object] | None, fallback_name: str | None = None, fallback_dim: int | None = None) -> dict[str, object]:
@@ -490,7 +507,7 @@ def cmd_replay(args: argparse.Namespace) -> int:
     if not isinstance(last_replayed_ts, (int, float)):
         last_replayed_ts = None
 
-    query_records = _load_session_query_records(args.sessions, since_ts=last_replayed_ts)
+    query_records = _load_session_interactions(args.sessions, since_ts=last_replayed_ts)
     stats = replay_queries(
         graph=graph,
         queries=query_records,

@@ -112,12 +112,9 @@ crabpath replay --state ./data/state.json --sessions ./sessions/
 
 ## 9. Benchmarks
 
-Reference benchmark (current repo) on CrabPath repo:
+Benchmark results are commit-specific and should be regenerated locally:
 
-- Keyword R@3: `0.942`
-- Hash R@3: `0.933`
-- CrabPath R@3: `0.892`
-- CrabPath + replay R@3: `0.908`
+Run `python3 benchmarks/run_benchmark.py` to see current deterministic results for this commit.
 
 ## 10. CLI
 
@@ -128,6 +125,8 @@ crabpath init --workspace W --output O [--sessions S]
 crabpath query TEXT --state S [--top N] [--json]
 crabpath learn --state S --outcome N --fired-ids a,b,c
 crabpath health --state S
+crabpath doctor --state S
+crabpath info --state S|--graph G
 crabpath replay --state S --sessions S
 crabpath merge --state S
 crabpath connect --state S

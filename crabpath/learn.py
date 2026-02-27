@@ -165,12 +165,15 @@ def apply_outcome(
     config: LearningConfig | None = None,
     auto_decay: bool = False,
     decay_interval: int = 10,
+    per_node_outcomes: dict[str, float] | None = None,
 ) -> dict:
     """Apply outcome-based policy updates over the full fired trajectory.
 
     Positive outcome strengthens traversed edges; negative outcome weakens them.
     Negative outcomes may create inhibitory edges when missing.
     Returns a mapping of ``"source->target"`` to weight delta.
+    ``per_node_outcomes`` can supply a different reward/penalty for each source
+    node in ``fired_nodes``; when omitted, ``outcome`` is used for all edges.
 
     When ``auto_decay`` is true, the graph is decayed after every
     ``decay_interval`` successful calls to this function.
@@ -189,13 +192,15 @@ def apply_outcome(
                 apply_decay(graph)
         return dict(updates)
 
-    sign = 1.0 if outcome >= 0 else -1.0
-
     for idx in range(len(fired_nodes) - 1):
         source_id = fired_nodes[idx]
         target_id = fired_nodes[idx + 1]
         edge = graph._edges.get(source_id, {}).get(target_id)
-        delta = cfg.learning_rate * (cfg.discount ** (idx + 1)) * sign
+        node_outcome = outcome
+        if per_node_outcomes is not None and source_id in per_node_outcomes:
+            node_outcome = per_node_outcomes[source_id]
+
+        delta = cfg.learning_rate * (cfg.discount ** (idx + 1)) * node_outcome
 
         if edge is None:
             graph.add_edge(
@@ -203,14 +208,14 @@ def apply_outcome(
                     source=source_id,
                     target=target_id,
                     weight=_clip_weight(delta, cfg.weight_bounds),
-                    kind="inhibitory" if sign < 0 else "sibling",
+                    kind="inhibitory" if node_outcome < 0 else "sibling",
                 )
             )
             updates[f"{source_id}->{target_id}"] = delta
             continue
 
         edge.weight = _clip_weight(edge.weight + delta, cfg.weight_bounds)
-        if sign < 0:
+        if node_outcome < 0:
             edge.kind = "inhibitory"
         graph._edges[source_id][target_id] = edge
         updates[f"{source_id}->{target_id}"] = delta

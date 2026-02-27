@@ -8,7 +8,12 @@ from pathlib import Path
 
 
 class VectorIndex:
-    """In-memory map of node IDs to caller-provided vectors."""
+    """In-memory map of node IDs to caller-provided vectors.
+
+    Brute-force cosine similarity. O(n) per query where n = number of vectors.
+    Practical limit: ~10,000 nodes for <10ms query latency.
+    For larger graphs, provide a custom index via callbacks.
+    """
 
     def __init__(self) -> None:
         """Create empty index."""
