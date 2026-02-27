@@ -5,8 +5,10 @@ import os
 import subprocess
 import sys
 from pathlib import Path
+import importlib.util
 
 from openclawbrain import Edge, Graph, HashEmbedder, Node, VectorIndex, save_state
+from openclawbrain import daemon as daemon_module
 from openclawbrain.store import load_state
 
 
@@ -72,6 +74,15 @@ def _shutdown_daemon(proc: subprocess.Popen) -> dict:
         proc.kill()
         proc.wait(timeout=2)
     return response
+
+
+def _load_query_brain_module():
+    spec = importlib.util.spec_from_file_location("oc_query_brain", Path("examples/openclaw_adapter/query_brain.py"))
+    if spec is None or spec.loader is None:
+        raise RuntimeError("failed to load query_brain module")
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
 
 
 def test_daemon_responds_to_health(tmp_path: Path) -> None:
@@ -161,3 +172,148 @@ def test_daemon_shutdown_saves_state(tmp_path: Path) -> None:
     graph_after, _, _ = load_state(str(state_path))
     after_weight = graph_after._edges["a"]["b"].weight
     assert after_weight > before_weight
+
+
+def test_daemon_inject_creates_node_and_persists(tmp_path: Path) -> None:
+    state_path = tmp_path / "state.json"
+    _write_state(state_path)
+
+    proc = _start_daemon(state_path)
+    try:
+        response = _call(
+            proc,
+            "inject",
+            {"id": "c", "type": "TEACHING", "content": "gamma", "metadata": {"source": "unit-test"}},
+            req_id="inject-1",
+        )
+        assert response["id"] == "inject-1"
+        assert response["result"]["injected"] is True
+        assert response["result"]["node_id"] == "c"
+    finally:
+        _shutdown_daemon(proc)
+
+    graph, _, _ = load_state(str(state_path))
+    node = graph.get_node("c")
+    assert node is not None
+    assert node.metadata["type"] == "TEACHING"
+
+
+def test_daemon_correction_penalizes_fired_nodes_and_injects(tmp_path: Path) -> None:
+    state_path = tmp_path / "state.json"
+    _write_state(state_path)
+
+    proc = _start_daemon(state_path)
+    try:
+        query_response = _call(
+            proc,
+            "query",
+            {"query": "alpha", "top_k": 2, "chat_id": "chat-1"},
+            req_id="query-corr",
+        )["result"]
+        assert query_response["fired_nodes"]
+
+        correction = _call(
+            proc,
+            "correction",
+            {
+                "chat_id": "chat-1",
+                "outcome": -1.0,
+                "content": "Avoid alpha in this context.",
+                "lookback": 1,
+            },
+            req_id="corr-1",
+        )["result"]
+        assert correction["correction_injected"] is True
+        assert correction["fired_ids_penalized"] == query_response["fired_nodes"]
+        assert correction["edges_updated"] >= 1
+    finally:
+        _shutdown_daemon(proc)
+
+    graph, _, _ = load_state(str(state_path))
+    correction_node_id = [node.id for node in graph.nodes() if node.id.startswith("correction::") and node.metadata.get("type") == "CORRECTION"]
+    assert len(correction_node_id) == 1
+    corr_node = graph.get_node(correction_node_id[0])
+    assert corr_node is not None
+    inhibitory_targets = {edge.target for _target, edge in graph.outgoing(corr_node.id) if edge.kind == "inhibitory"}
+    assert set(query_response["fired_nodes"]).intersection(inhibitory_targets)
+
+
+def test_daemon_query_populates_fired_history(tmp_path: Path) -> None:
+    state_path = tmp_path / "state.json"
+    _write_state(state_path)
+
+    proc = _start_daemon(state_path)
+    try:
+        query_response = _call(proc, "query", {"query": "alpha", "top_k": 2, "chat_id": "chat-history"}, req_id="query-1")["result"]
+        correction_response = _call(
+            proc,
+            "correction",
+            {"chat_id": "chat-history", "outcome": -1.0, "lookback": 3},
+            req_id="corr-1",
+        )["result"]
+        assert correction_response["fired_ids_penalized"] == query_response["fired_nodes"]
+    finally:
+        _shutdown_daemon(proc)
+
+
+def test_daemon_fired_log_ring_buffer_tracks_per_chat_id() -> None:
+    graph = Graph()
+    graph.add_node(Node("a", "alpha", metadata={"file": "a.md"}))
+    index = VectorIndex()
+    hash_embedder = HashEmbedder()
+    index.upsert("a", hash_embedder.embed("alpha"))
+    daemon_state = daemon_module._DaemonState(
+        graph=graph,
+        index=index,
+        meta={"embedder_name": "hash-v1", "embedder_dim": hash_embedder.dim},
+        fired_log={},
+    )
+
+    for count in range(105):
+        daemon_module._append_fired_history(
+            daemon_state=daemon_state,
+            chat_id="chat-1",
+            query=f"q-{count}",
+            fired_nodes=["a"],
+            timestamp=float(count),
+        )
+    assert len(daemon_state.fired_log["chat-1"]) == 100
+    assert daemon_state.fired_log["chat-1"][0]["query"] == "q-5"
+
+    for count in range(1205):
+        daemon_module._append_fired_history(
+            daemon_state=daemon_state,
+            chat_id=f"chat-{count % 20}",
+            query=f"q-global-{count}",
+            fired_nodes=["a"],
+            timestamp=float(count + 200),
+        )
+    assert daemon_module._fired_history_size(daemon_state) == 1000
+
+
+def test_query_brain_uses_state_embedder_for_embeddings(monkeypatch) -> None:
+    query_module = _load_query_brain_module()
+
+    hash_vector = query_module._embed_fn_from_state(
+        {"embedder_name": "hash-v1", "embedder_dim": HashEmbedder().dim}
+    )[0]("probe")
+    assert len(hash_vector) == HashEmbedder().dim
+
+    class FakeOpenAIResponse:
+        data = [type("item", (), {"embedding": [0.1, 0.2, 0.3]})()]
+
+    class FakeOpenAI:
+        def __init__(self, api_key: str) -> None:
+            assert api_key == "test-key"
+
+        class embeddings:  # type: ignore
+            @staticmethod
+            def create(model: str, input: list[str]) -> FakeOpenAIResponse:
+                return FakeOpenAIResponse()
+
+    monkeypatch.setattr(query_module, "OpenAI", FakeOpenAI)
+    monkeypatch.setattr(query_module, "require_api_key", lambda: "test-key")
+
+    openai_vector, embedder_name = query_module._embed_fn_from_state({"embedder_name": "text-embedding-3-small"})
+    assert openai_vector("probe") == [0.1, 0.2, 0.3]
+    assert embedder_name == "text-embedding-3-small"

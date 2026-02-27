@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import argparse
 import copy
+import hashlib
 import json
 import os
+from collections import deque
 import signal
 import sys
 import time
@@ -22,8 +24,15 @@ from .journal import log_health, log_learn, log_query
 from .learn import apply_outcome
 from .maintain import connect_learning_nodes, prune_edges, prune_orphan_nodes
 from .merge import apply_merge, suggest_merges
+from .inject import _apply_inhibitory_edges, inject_node
 from .store import load_state, save_state
 from .traverse import TraversalConfig, traverse
+
+
+FIRED_LOG_LIMIT_PER_CHAT = 100
+FIRED_LOG_LIMIT_TOTAL = 1000
+
+FIRED_LOG_FILE = "fired_log.jsonl"
 
 
 def _build_parser() -> argparse.ArgumentParser:
@@ -48,6 +57,11 @@ def _make_embed_fn(embed_model: str) -> Callable[[str], list[float]] | None:
 def _journal_path(state_path: str) -> str:
     """Resolve journal.jsonl path for the loaded state directory."""
     return str(Path(state_path).expanduser().parent / "journal.jsonl")
+
+
+def _fired_log_path(state_path: str) -> str:
+    """Resolve fired_log.jsonl path for the loaded state directory."""
+    return str(Path(state_path).expanduser().parent / FIRED_LOG_FILE)
 
 
 def _ms(start: float, end: float) -> float:
@@ -128,6 +142,97 @@ def _parse_str_list(value: object, label: str, required: bool = True) -> list[st
     return entries
 
 
+def _parse_chat_id(value: object, label: str, required: bool = True) -> str | None:
+    """Parse optional chat_id with non-empty normalization."""
+    if value is None:
+        if required:
+            raise ValueError(f"{label} is required")
+        return None
+    if not isinstance(value, str):
+        raise ValueError(f"{label} must be a string")
+    value = value.strip()
+    if required and not value:
+        raise ValueError(f"{label} is required")
+    return value if value else None
+
+
+def _append_fired_log(state_path: str, entry: dict[str, object]) -> None:
+    path = Path(_fired_log_path(state_path))
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(entry) + "\n")
+
+
+def _append_fired_history(
+    daemon_state: "_DaemonState",
+    chat_id: str,
+    query: str,
+    fired_nodes: list[str],
+    timestamp: float,
+) -> None:
+    entries = daemon_state.fired_log.setdefault(chat_id, deque(maxlen=FIRED_LOG_LIMIT_PER_CHAT))
+    entries.append(
+        {
+            "chat_id": chat_id,
+            "query": query,
+            "fired_nodes": list(fired_nodes),
+            "ts": timestamp,
+            "timestamp": timestamp,
+        }
+    )
+
+    while _fired_history_size(daemon_state) > FIRED_LOG_LIMIT_TOTAL:
+        _trim_oldest_fired_history_entry(daemon_state)
+
+
+def _trim_oldest_fired_history_entry(daemon_state: "_DaemonState") -> None:
+    oldest_chat = None
+    oldest_timestamp = float("inf")
+
+    for chat_id, entries in daemon_state.fired_log.items():
+        if not entries:
+            continue
+        candidate = entries[0].get("ts")
+        if isinstance(candidate, (int, float)) and candidate < oldest_timestamp:
+            oldest_timestamp = float(candidate)
+            oldest_chat = chat_id
+
+    if oldest_chat is None:
+        return
+    entries = daemon_state.fired_log[oldest_chat]
+    if entries:
+        entries.popleft()
+        if not entries:
+            daemon_state.fired_log.pop(oldest_chat, None)
+
+
+def _fired_history_size(daemon_state: "_DaemonState") -> int:
+    return sum(len(entries) for entries in daemon_state.fired_log.values())
+
+
+def _recent_fired_nodes(daemon_state: "_DaemonState", chat_id: str, lookback: int) -> list[str]:
+    history = daemon_state.fired_log.get(chat_id, deque())
+    if not history:
+        return []
+
+    seen: set[str] = set()
+    fired_nodes: list[str] = []
+    for entry in reversed(history):
+        for node_id in entry.get("fired_nodes", []):
+            if isinstance(node_id, str) and node_id and node_id not in seen:
+                seen.add(node_id)
+                fired_nodes.append(node_id)
+        lookback -= 1
+        if lookback <= 0:
+            break
+    return fired_nodes
+
+
+def _correction_node_id(content: str) -> str:
+    digest = hashlib.sha256(content.encode("utf-8")).hexdigest()
+    return f"correction::{digest[:12]}"
+
+
 def _handle_query(
     graph: Graph,
     index: VectorIndex,
@@ -183,6 +288,121 @@ def _handle_query(
         "traverse_ms": _ms(traverse_start, traverse_stop),
         "total_ms": _ms(total_start, total_stop),
     }
+
+
+def _handle_inject(
+    graph: Graph,
+    index: VectorIndex,
+    embed_fn: Callable[[str], list[float]] | None,
+    params: dict[str, object],
+    meta: dict[str, object],
+) -> tuple[dict[str, object], bool]:
+    """Handle injection requests from daemon clients."""
+    node_id = params.get("id")
+    if not isinstance(node_id, str) or not node_id.strip():
+        raise ValueError("id is required")
+
+    content = params.get("content")
+    if not isinstance(content, str) or not content.strip():
+        raise ValueError("content is required")
+
+    node_type = params.get("type")
+    if node_type not in {"TEACHING", "CORRECTION", "DIRECTIVE"}:
+        raise ValueError("type must be one of: TEACHING, CORRECTION, DIRECTIVE")
+
+    raw_metadata = params.get("metadata")
+    if raw_metadata is not None and not isinstance(raw_metadata, dict):
+        raise ValueError("metadata must be an object")
+
+    metadata = dict(raw_metadata or {})
+    metadata.setdefault("type", node_type)
+    metadata.setdefault("source", "daemon")
+    resolved_embed = embed_fn or HashEmbedder().embed
+    resolved_meta = str(meta.get("embedder_name", "hash-v1"))
+    connect_min_sim = 0.0 if resolved_meta == "hash-v1" else 0.3
+
+    existing = graph.get_node(node_id) is not None
+    result = inject_node(
+        graph=graph,
+        index=index,
+        node_id=node_id,
+        content=content,
+        metadata=metadata,
+        embed_fn=resolved_embed,
+        connect_min_sim=connect_min_sim,
+    )
+
+    return {"injected": not existing, "node_id": result["node_id"]}, not existing
+
+
+def _handle_correction(
+    daemon_state: "_DaemonState",
+    graph: Graph,
+    index: VectorIndex,
+    embed_fn: Callable[[str], list[float]] | None,
+    state_path: str,
+    params: dict[str, object],
+) -> tuple[dict[str, object], bool]:
+    """Handle correction requests with optional correction node injection."""
+    chat_id = _parse_chat_id(params.get("chat_id"), "chat_id", required=True)
+    outcome = _parse_float(params.get("outcome"), "outcome", required=True)
+    lookback = _parse_int(params.get("lookback"), "lookback", default=1)
+
+    raw_content = params.get("content")
+    content = raw_content.strip() if isinstance(raw_content, str) else ""
+
+    should_write = False
+    fired_ids = _recent_fired_nodes(daemon_state, chat_id, lookback)
+
+    edges_updated = 0
+    if fired_ids:
+        updates = apply_outcome(graph=graph, fired_nodes=fired_ids, outcome=outcome)
+        edges_updated = len(updates)
+        log_learn(
+            fired_ids=fired_ids,
+            outcome=outcome,
+            journal_path=_journal_path(state_path),
+            metadata={"chat_id": chat_id},
+        )
+        should_write = True
+
+    correction_injected = False
+    correction_node_id = None
+    if content:
+        resolved_embed = embed_fn or HashEmbedder().embed
+        correction_node_id = _correction_node_id(content)
+        correction_injected = graph.get_node(correction_node_id) is None
+        if graph.get_node(correction_node_id) is None:
+            inject_node(
+                graph=graph,
+                index=index,
+                node_id=correction_node_id,
+                content=content,
+                metadata={"type": "CORRECTION", "source": "daemon", "chat_id": chat_id},
+                embed_fn=resolved_embed,
+            )
+            should_write = True
+        if fired_ids:
+            edges_added = _apply_inhibitory_edges(
+                graph=graph,
+                source_id=correction_node_id,
+                targets=fired_ids,
+                inhibition_strength=-0.5,
+                inhibition_lr=0.08,
+            )
+            edges_updated += edges_added
+            if edges_added:
+                should_write = True
+
+    payload = {
+        "fired_ids_penalized": fired_ids,
+        "edges_updated": edges_updated,
+        "correction_injected": correction_injected,
+    }
+    if correction_node_id is not None:
+        payload["node_id"] = correction_node_id
+
+    return payload, should_write
 
 
 def _handle_learn(graph: Graph, params: dict[str, object], state_path: str) -> dict[str, int]:
@@ -366,6 +586,7 @@ class _DaemonState:
     graph: Graph
     index: VectorIndex
     meta: dict[str, object]
+    fired_log: dict[str, deque[dict[str, object]]]
     write_count: int = 0
 
 
@@ -375,7 +596,7 @@ def main(argv: list[str] | None = None) -> int:
     state_path = str(Path(args.state).expanduser())
 
     graph, index, meta = load_state(state_path)
-    daemon_state = _DaemonState(graph=graph, index=index, meta=meta)
+    daemon_state = _DaemonState(graph=graph, index=index, meta=meta, fired_log={})
     embed_fn = _make_embed_fn(args.embed_model)
     auto_save_interval = max(1, args.auto_save_interval) if args.auto_save_interval > 0 else 0
 
@@ -427,9 +648,42 @@ def main(argv: list[str] | None = None) -> int:
                         params=params,
                         state_path=state_path,
                     )
+                    query_chat_id = _parse_chat_id(params.get("chat_id"), "chat_id", required=False)
+                    if query_chat_id is not None:
+                        query_nodes = payload.get("fired_nodes", [])
+                        if not isinstance(query_nodes, list):
+                            query_nodes = []
+                        query_text = params.get("query")
+                        if not isinstance(query_text, str):
+                            query_text = ""
+
+                        _append_fired_history(
+                            daemon_state=daemon_state,
+                            chat_id=query_chat_id,
+                            query=query_text,
+                            fired_nodes=[node_id for node_id in query_nodes if isinstance(node_id, str)],
+                            timestamp=time.time(),
+                        )
+                        _append_fired_log(
+                            state_path=state_path,
+                            entry={
+                                "chat_id": query_chat_id,
+                                "query": query_text,
+                                "fired_nodes": [node_id for node_id in query_nodes if isinstance(node_id, str)],
+                                "ts": time.time(),
+                            },
+                        )
                 elif method == "learn":
                     payload = _handle_learn(daemon_state.graph, params, state_path)
                     should_write = True
+                elif method == "inject":
+                    payload, should_write = _handle_inject(
+                        graph=daemon_state.graph,
+                        index=daemon_state.index,
+                        embed_fn=embed_fn,
+                        params=params,
+                        meta=daemon_state.meta,
+                    )
                 elif method == "maintain":
                     payload, should_write = _handle_maintain(
                         daemon_state.graph,
@@ -455,6 +709,15 @@ def main(argv: list[str] | None = None) -> int:
                     daemon_state.graph, daemon_state.index, daemon_state.meta = _load_new_state(state_path)
                     daemon_state.write_count = 0
                     payload = {"reloaded": True}
+                elif method == "correction":
+                    payload, should_write = _handle_correction(
+                        daemon_state=daemon_state,
+                        graph=daemon_state.graph,
+                        index=daemon_state.index,
+                        embed_fn=embed_fn,
+                        state_path=state_path,
+                        params=params,
+                    )
                 elif method == "shutdown":
                     if daemon_state.write_count > 0:
                         save_state(

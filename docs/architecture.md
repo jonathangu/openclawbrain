@@ -60,6 +60,8 @@ Supported methods:
 
 - `query`: returns `fired_nodes`, `context`, `seeds`, timing (`embed_query_ms`, `traverse_ms`, `total_ms`)
 - `learn`: returns `edges_updated`
+- `inject`: writes a new node and returns `{injected, node_id}`
+- `correction`: penalizes recent query history for a chat and optionally injects a correction node
 - `maintain`: returns `health_before`, `health_after`, `merges_applied`
 - `health`: returns health metrics
 - `info`: returns node/edge counts and `embedder`
@@ -69,14 +71,14 @@ Supported methods:
 
 Auto-save behavior:
 
-- `write_count` increments after write operations (`learn`, `maintain`).
+- `write_count` increments after write operations (`learn`, `inject`, `correction`, `maintain`).
 - On every `N` writes, where `N` is `--auto-save-interval`, the daemon saves state.
 - `shutdown` persists pending state before exit.
 
 Missing vs adapter scripts (current production reality):
 
-- `inject`: no daemon method yet; still performed via `openclawbrain inject` or adapter CLI paths.
-- fired log tracking: adapters can maintain `fired_log.jsonl` from `--chat-id`, while the daemon currently focuses on stateless request processing and does not update that log stream.
+- `inject`/`correction`: now supported by the daemon as NDJSON methods.
+- fired log tracking: adapters can still use `fired_log.jsonl`, while the daemon also writes append-only compatibility entries from query calls.
 - socket interface: no socket/TCP server today; daemon communication is intentionally stdio-only.
 
 Roadmap:

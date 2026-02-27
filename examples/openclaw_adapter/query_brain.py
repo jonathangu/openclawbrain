@@ -6,9 +6,10 @@ import json
 import os
 import time
 from pathlib import Path
+from typing import Callable
 
 from openai import OpenAI
-from openclawbrain import TraversalConfig, load_state, traverse
+from openclawbrain import HashEmbedder, TraversalConfig, load_state, traverse
 
 
 EMBED_MODEL = "text-embedding-3-small"
@@ -76,6 +77,24 @@ def embed_query(client: OpenAI, query: str) -> list[float]:
     return response.data[0].embedding
 
 
+def _embed_fn_from_state(meta: dict[str, object]) -> tuple[Callable[[str], list[float]], str]:
+    embedder_name = str(meta.get("embedder_name", "hash-v1"))
+    hash_dim = meta.get("embedder_dim")
+
+    if embedder_name == "hash-v1" and hash_dim == HashEmbedder().dim:
+        return HashEmbedder().embed, embedder_name
+    if embedder_name == "hash-v1":
+        # Legacy fallback: some historical states used hash-v1 with non-hash dims.
+        api_key = require_api_key()
+        client = OpenAI(api_key=api_key)
+        return lambda text: embed_query(client, text), "text-embedding-3-small"
+    if embedder_name in {"text-embedding-3-small", "openai-text-embedding-3-small"}:
+        api_key = require_api_key()
+        client = OpenAI(api_key=api_key)
+        return lambda text: embed_query(client, text), embedder_name
+    return HashEmbedder().embed, "hash-v1"
+
+
 def main(argv: list[str] | None = None) -> None:
     parser = argparse.ArgumentParser(
         description="Query a OpenClawBrain state.json with OpenAI embeddings"
@@ -94,18 +113,16 @@ def main(argv: list[str] | None = None) -> None:
     if args.top <= 0:
         raise SystemExit("--top must be >= 1")
 
-    api_key = require_api_key()
-    client = OpenAI(api_key=api_key)
-
     graph, index, meta = load_state(str(state_path))
-    query_vector = embed_query(client, query_text)
+    query_embed_fn, embedder_name = _embed_fn_from_state(meta)
+    query_vector = query_embed_fn(query_text)
 
     expected_dim = meta.get("embedder_dim")
     if isinstance(expected_dim, int) and len(query_vector) != expected_dim:
         raise SystemExit(
             "Embedding dimension mismatch: "
             f"query={len(query_vector)} index={expected_dim}. "
-            "Rebuild state.json with text-embedding-3-small."
+            f"Rebuild state.json with {embedder_name}."
         )
 
     seeds = index.search(query_vector, top_k=args.top)
