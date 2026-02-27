@@ -102,6 +102,28 @@ crabpath init --workspace ./ws --output ./data --sessions ./sessions/
 crabpath replay --state ./data/state.json --sessions ./sessions/
 ```
 
+## Live Injection
+
+Use `inject_node`, `inject_correction`, and `inject_batch` to add nodes to an active graph without rebuilding state.
+
+```python
+from crabpath import inject_node, inject_correction, load_state, save_state
+
+graph, index, meta = load_state("state.json")
+
+# Inject a teaching
+inject_node(graph, index, "learning::42", 
+            "Always run tests before deploying",
+            embed_fn=my_embed_fn)
+
+# Inject a correction (creates inhibitory edges)
+inject_correction(graph, index, "learning::43",
+                  "Never skip CI for hotfixes",
+                  embed_fn=my_embed_fn)
+
+save_state(graph, index, "state.json", meta=meta)
+```
+
 ## Injecting External Knowledge
 
 CrabPath nodes are not limited to file chunks. You can inject arbitrary knowledge as graph nodes:
@@ -147,6 +169,7 @@ Run `python3 benchmarks/run_benchmark.py` to see current deterministic results f
 crabpath init --workspace W --output O [--sessions S]
 crabpath query TEXT --state S [--top N] [--json]
 crabpath learn --state S --outcome N --fired-ids a,b,c
+crabpath inject --state S --id NODE_ID --content "..." --type CORRECTION|TEACHING|DIRECTIVE [--json]
 crabpath health --state S
 crabpath doctor --state S
 crabpath info --state S|--graph G

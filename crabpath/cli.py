@@ -13,6 +13,7 @@ from .connect import apply_connections, suggest_connections
 from .autotune import measure_health
 from .graph import Edge, Graph, Node
 from .index import VectorIndex
+from .inject import inject_correction, inject_node
 from .journal import (
     log_health,
     log_learn,
@@ -76,6 +77,21 @@ def _build_parser() -> argparse.ArgumentParser:
     c.add_argument("--state")
     c.add_argument("--graph")
     c.add_argument("--json", action="store_true")
+
+    x = sub.add_parser("inject")
+    x.add_argument("--state", required=True)
+    x.add_argument("--id", required=True)
+    x.add_argument("--content", required=True)
+    x.add_argument(
+        "--type",
+        choices=["CORRECTION", "TEACHING", "DIRECTIVE"],
+        default="TEACHING",
+    )
+    x.add_argument("--summary")
+    x.add_argument("--connect-top-k", type=int, default=3)
+    x.add_argument("--connect-min-sim", type=float, default=0.3)
+    x.add_argument("--vector-stdin", action="store_true")
+    x.add_argument("--json", action="store_true")
 
     r = sub.add_parser("replay")
     r.add_argument("--state")
@@ -527,6 +543,67 @@ def cmd_connect(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_inject(args: argparse.Namespace) -> int:
+    """cmd inject."""
+    graph, index, meta = _resolve_graph_index(args)
+    if args.state is None:
+        raise SystemExit("--state is required for inject")
+    if index is None:
+        index = VectorIndex()
+
+    if args.vector_stdin:
+        vector = _load_query_vector_from_stdin()
+    else:
+        _ensure_hash_embedder_compat(meta)
+        vector = None
+
+    if args.summary is None:
+        from ._util import _first_line
+
+        summary = _first_line(args.content)
+    else:
+        summary = args.summary
+
+    node_type = args.type
+    metadata = {"source": "cli_inject", "type": node_type}
+    if node_type == "CORRECTION":
+        payload = inject_correction(
+            graph=graph,
+            index=index,
+            node_id=args.id,
+            content=args.content,
+            summary=summary,
+            metadata=metadata,
+            vector=vector,
+            embed_fn=None if args.vector_stdin else default_embed,
+            connect_top_k=args.connect_top_k,
+            connect_min_sim=args.connect_min_sim,
+        )
+    else:
+        payload = inject_node(
+            graph=graph,
+            index=index,
+            node_id=args.id,
+            content=args.content,
+            summary=summary,
+            metadata=metadata,
+            vector=vector,
+            embed_fn=None if args.vector_stdin else default_embed,
+            connect_top_k=args.connect_top_k,
+            connect_min_sim=args.connect_min_sim,
+        )
+
+    state_meta = _state_meta(
+        meta,
+        fallback_name=HashEmbedder().name,
+        fallback_dim=HashEmbedder().dim,
+    )
+    save_state(graph=graph, index=index, path=args.state, meta=state_meta)
+
+    print(json.dumps(payload, indent=2) if args.json else f"Injected {payload['node_id']}")
+    return 0
+
+
 def cmd_replay(args: argparse.Namespace) -> int:
     """cmd replay."""
     graph, index, meta = _resolve_graph_index(args)
@@ -778,6 +855,7 @@ def main(argv: list[str] | None = None) -> int:
         "learn": cmd_learn,
         "merge": cmd_merge,
         "connect": cmd_connect,
+        "inject": cmd_inject,
         "replay": cmd_replay,
         "health": cmd_health,
         "journal": cmd_journal,

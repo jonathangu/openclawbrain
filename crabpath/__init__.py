@@ -6,6 +6,7 @@ from ._batch import batch_or_single, batch_or_single_embed
 from .autotune import GraphHealth, autotune, measure_health
 from .decay import DecayConfig, apply_decay
 from .learn import LearningConfig, apply_outcome, maybe_create_node
+from .inject import inject_batch, inject_correction, inject_node
 from .hasher import HashEmbedder, default_embed, default_embed_batch
 from .score import score_retrieval
 from .connect import apply_connections, suggest_connections
@@ -47,7 +48,10 @@ __all__ = [
     "apply_merge",
     "suggest_connections",
     "apply_connections",
+    "inject_node",
+    "inject_correction",
+    "inject_batch",
     "replay_queries",
 ]
 
-__version__ = "9.3.1"
+__version__ = "10.0.0"
