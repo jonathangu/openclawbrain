@@ -59,6 +59,29 @@ from crabpath.embeddings import local_embed_fn, local_embed_batch_fn
 # all-MiniLM-L6-v2, 80MB, CPU, no API key
 ```
 
+## Session Replay (warm start)
+
+A fresh graph is 100% habitual — every edge requires deliberation. Replay warms it up by feeding historical session logs through the graph:
+
+```python
+from crabpath import replay_queries, split_workspace
+from crabpath.replay import extract_queries_from_dir
+
+graph, texts = split_workspace("./workspace")
+queries = extract_queries_from_dir("./sessions/")
+replay_queries(graph=graph, queries=queries)
+# Graph now has learned edges from real usage patterns
+```
+
+Or via CLI:
+```bash
+crabpath init --workspace ./ws --output ./data --sessions ./sessions/
+# or separately:
+crabpath replay --graph ./data/graph.json --sessions ./sessions/
+```
+
+On a 1,012-node graph, replaying 120 real queries created 39% cross-file edges and 5% reflex edges in seconds.
+
 ## CLI (pure graph ops)
 
 ```

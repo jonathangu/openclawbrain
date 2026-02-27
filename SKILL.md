@@ -55,6 +55,16 @@ llm_fn(system: str, user: str) -> str                           # single
 llm_batch_fn(requests: list[dict]) -> list[dict]                # batch
 ```
 
+## Session Replay (warm start)
+
+```python
+from crabpath.replay import extract_queries_from_dir, replay_queries
+queries = extract_queries_from_dir("~/.openclaw/agents/main/sessions/")
+replay_queries(graph=graph, queries=queries)
+```
+
+Or: `crabpath init --workspace W --output O --sessions ~/.openclaw/agents/main/sessions/`
+
 ## CLI
 
 Pure graph operations only. No network calls.
