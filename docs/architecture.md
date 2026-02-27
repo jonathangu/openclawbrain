@@ -2,6 +2,8 @@
 
 CrabPath runs on two timescales.
 
+For production setup and runbooks, see [CrabPath Operator Setup Guide](setup-guide.md).
+
 ## 1) Overview
 
 CrabPath stores a learned retrieval policy as a graph of **nodes** and directed **edges** in `state.json`.

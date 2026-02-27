@@ -19,6 +19,8 @@
 pip install crabpath
 ```
 
+See: [Setup Guide](docs/setup-guide.md)
+
 ## 5-minute quickstart (A→B learning story)
 
 ```bash
