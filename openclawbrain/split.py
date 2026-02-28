@@ -334,7 +334,8 @@ def _match_gitignore(path_posix: str, patterns: list[str]) -> bool:
         is_dir_pattern = normalized.endswith("/")
         if is_dir_pattern:
             normalized = normalized[:-1]
-            if path_posix == normalized or path_posix.startswith(normalized + "/"):
+            # Match at root or any subdirectory level
+            if path_posix == normalized or path_posix.startswith(normalized + "/") or ("/" + normalized + "/") in ("/" + path_posix + "/") or ("/" + normalized) in ("/" + path_posix):
                 return True
             continue
         if pattern.startswith("/"):
@@ -489,15 +490,16 @@ def split_workspace(
         if not use_llm:
             suffix = Path(rel).suffix.lower()
             if suffix == ".py":
-                text_chunks_by_index[idx] = _chunk_python(text)
+                chunks = _chunk_python(text)
             elif suffix in {".txt", ".rst", ".md", ".html"}:
-                text_chunks_by_index[idx] = _chunk_markdown(text)
+                chunks = _chunk_markdown(text)
             elif suffix == ".json":
-                text_chunks_by_index[idx] = _chunk_json(text)
+                chunks = _chunk_json(text)
             elif suffix in {".yaml", ".yml", ".toml", ".cfg", ".ini"}:
-                text_chunks_by_index[idx] = _chunk_config_like(text)
+                chunks = _chunk_config_like(text)
             else:
-                text_chunks_by_index[idx] = _chunk_markdown(text)
+                chunks = _chunk_markdown(text)
+            text_chunks_by_index[idx] = _rechunk_oversized(chunks)
             _report(rel, "heuristic")
             continue
         llm_requests.append({"id": rel, "system": SPLIT_PROMPT, "user": text})
