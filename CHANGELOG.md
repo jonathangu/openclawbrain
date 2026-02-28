@@ -1,5 +1,11 @@
 ## Unreleased
 
+### Best brain by default
+- `replay` now defaults to full-learning (fast-learning + harvest). Use `--edges-only` for cheap edge-only replay.
+- `init` now defaults to `--embedder auto --llm auto`, which tries OpenAI and falls back to hash/none gracefully.
+- Added `--edges-only` flag for replay to explicitly request old edge-only behavior.
+- Guarded `full_learning.py` OpenAI imports with try/except so the module loads without openai installed.
+
 ### Full-learning replay and harvest
 
 - Added `openclawbrain replay --fast-learning` for LLM transcript mining + injection from session logs.

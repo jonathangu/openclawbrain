@@ -123,7 +123,8 @@ BRAIN_DIR=~/.openclawbrain/main
 mkdir -p "$BRAIN_DIR"
 
 # Create/overwrite state.json inside the output directory
-openclawbrain init --workspace "$WORKSPACE" --output "$BRAIN_DIR" --embedder openai --llm openai
+# By default, init auto-detects OpenAI (uses it if OPENAI_API_KEY is set, falls back to hash otherwise)
+openclawbrain init --workspace "$WORKSPACE" --output "$BRAIN_DIR"
 
 # Quick health signal
 openclawbrain doctor --state "$BRAIN_DIR/state.json"
@@ -348,13 +349,12 @@ OpenClawBrain ships an OpenClaw adapter that logs fired IDs per chat.
 
 That’s the ergonomic way to do “same-turn correction” inside OpenClaw.
 
-For full-history rebuilds, use fast/full replay:
+For full-history rebuilds, replay your sessions (full-learning is the default):
 
 ```bash
 openclawbrain replay \
   --state ~/.openclawbrain/main/state.json \
-  --sessions /path/to/sessions \
-  --full-learning
+  --sessions /path/to/sessions
 ```
 
 This does:
@@ -363,12 +363,22 @@ This does:
 - LLM transcript mining into `learning::` nodes (`--fast-learning` behavior)
 - slow-learning maintenance pass (`harvest`) with decay/scale/split/merge/prune/connect
 
-To enable decay during a plain replay without full-learning, use `--decay-during-replay`:
+For cheap edge-only replay (no LLM, no harvest), use `--edges-only`:
 
 ```bash
 openclawbrain replay \
   --state ~/.openclawbrain/main/state.json \
   --sessions /path/to/sessions \
+  --edges-only
+```
+
+To enable decay during an edges-only replay, add `--decay-during-replay`:
+
+```bash
+openclawbrain replay \
+  --state ~/.openclawbrain/main/state.json \
+  --sessions /path/to/sessions \
+  --edges-only \
   --decay-during-replay \
   --decay-interval 10
 ```
