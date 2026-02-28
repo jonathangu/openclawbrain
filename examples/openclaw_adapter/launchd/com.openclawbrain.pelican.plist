@@ -3,14 +3,15 @@
 <plist version="1.0">
 <dict>
     <key>Label</key>
-    <string>com.openclawbrain.pelican</string>
+    <string>com.openclawbrain.__BRAIN_NAME__</string>
     <key>ProgramArguments</key>
     <array>
-        <string>/opt/homebrew/bin/python3</string>
+        <!-- Update this interpreter path only if a different Python path is required. -->
+        <string>__PYTHON_PATH__</string>
         <string>-m</string>
         <string>openclawbrain.socket_server</string>
         <string>--state</string>
-        <string>~/.openclawbrain/pelican/state.json</string>
+        <string>__STATE_PATH__</string>
     </array>
     <key>RunAtLoad</key>
     <true/>

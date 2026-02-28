@@ -313,7 +313,10 @@ def _load_query_vector_from_stdin() -> list[float]:
     return [float(v) for v in payload]
 
 
-def _load_session_queries(session_paths: str | Iterable[str]) -> list[str]:
+def _load_session_queries(
+    session_paths: str | Iterable[str],
+    since_ts: float | None = None,
+) -> list[str]:
     """ load session queries."""
     if isinstance(session_paths, str):
         session_paths = [session_paths]
@@ -321,9 +324,9 @@ def _load_session_queries(session_paths: str | Iterable[str]) -> list[str]:
     for session_path in session_paths:
         path = Path(session_path).expanduser()
         if path.is_dir():
-            queries.extend(extract_queries_from_dir(path))
+            queries.extend(extract_queries_from_dir(path, since_ts=since_ts))
         elif path.is_file():
-            queries.extend(extract_queries(path))
+            queries.extend(extract_queries(path, since_ts=since_ts))
         else:
             raise SystemExit(f"invalid sessions path: {path}")
     return queries
@@ -582,7 +585,12 @@ def cmd_init(args: argparse.Namespace) -> int:
     llm_fn, llm_batch_fn = _resolve_llm(args)
     graph, texts = split_workspace(args.workspace, llm_fn=llm_fn, llm_batch_fn=llm_batch_fn)
     if args.sessions is not None:
-        replay_queries(graph=graph, queries=_load_session_queries(args.sessions))
+        interactions = _load_session_interactions(args.sessions, since_ts=None)
+        print(
+            f"Loaded {len(interactions)} interactions from session files",
+            file=sys.stderr,
+        )
+        replay_queries(graph=graph, queries=interactions)
 
     embedder_fn, embed_batch_fn, embedder_name, embedder_dim = _resolve_embedder(args, {})
     print(
@@ -965,10 +973,14 @@ def cmd_replay(args: argparse.Namespace) -> int:
     if not isinstance(last_replayed_ts, (int, float)):
         last_replayed_ts = None
 
-    query_records = _load_session_interactions(args.sessions, since_ts=last_replayed_ts)
+    interactions = _load_session_interactions(args.sessions, since_ts=last_replayed_ts)
+    print(
+        f"Loaded {len(interactions)} interactions from session files",
+        file=sys.stderr,
+    )
     stats = replay_queries(
         graph=graph,
-        queries=query_records,
+        queries=interactions,
         verbose=not args.json,
         since_ts=last_replayed_ts,
     )
@@ -988,7 +1000,7 @@ def cmd_replay(args: argparse.Namespace) -> int:
     print(
         json.dumps(stats, indent=2)
         if args.json
-        else f"Replayed {stats['queries_replayed']}/{len(query_records)} queries, {stats['cross_file_edges_created']} cross-file edges created"
+        else f"Replayed {stats['queries_replayed']}/{len(interactions)} queries, {stats['cross_file_edges_created']} cross-file edges created"
     )
     return 0
 
