@@ -5,8 +5,11 @@ from __future__ import annotations
 import argparse
 import importlib
 import json
+import threading
 import sys
 import types
+
+import pytest
 
 from openclawbrain.cli import _resolve_embedder
 from openclawbrain.cli import _resolve_llm
@@ -47,9 +50,10 @@ def _install_fake_openai(monkeypatch, vector_fn):
     return calls, module
 
 
-def _install_fake_openai_llm(monkeypatch, responses):
+def _install_fake_openai_llm(monkeypatch, responses, *, create_supports_timeout: bool = True):
     """Install a fake openai module for LLM calls."""
     calls: list[tuple[str, list[dict[str, str]]]] = []
+    client_inits: list[dict[str, object]] = []
     response_items = responses.copy()
 
     class FakeMessage:
@@ -65,11 +69,20 @@ def _install_fake_openai_llm(monkeypatch, responses):
             self.choices = [FakeChoice(content)]
 
     class FakeChatCompletions:
-        def create(self, model: str, messages: list[dict[str, str]]) -> FakeResponse:
+        def create(
+            self,
+            model: str,
+            messages: list[dict[str, str]],
+            timeout: int | None = None,
+        ) -> FakeResponse:
+            if timeout is not None and not create_supports_timeout:
+                raise TypeError("create() got an unexpected keyword argument 'timeout'")
             calls.append((model, messages))
             system = messages[0]["content"] if len(messages) > 0 else ""
             user = messages[1]["content"] if len(messages) > 1 else ""
             content = response_items.pop(0)
+            if isinstance(content, Exception):
+                raise content
             return FakeResponse(content(system, user) if callable(content) else str(content))
 
     class FakeChat:
@@ -77,9 +90,20 @@ def _install_fake_openai_llm(monkeypatch, responses):
             self.completions = FakeChatCompletions()
 
     class FakeOpenAI:
-        def __init__(self, api_key: str | None = None) -> None:
+        def __init__(self, api_key: str | None = None, timeout: int | None = None, max_retries: int | None = None, **kwargs: object) -> None:
             self.chat = FakeChat()
             self.api_key = api_key
+            self.timeout = timeout
+            self.max_retries = max_retries
+            self.kwargs = kwargs
+            client_inits.append(
+                {
+                    "thread_id": threading.get_ident(),
+                    "api_key": api_key,
+                    "timeout": timeout,
+                    "max_retries": max_retries,
+                }
+            )
 
     fake_openai = types.ModuleType("openai")
     fake_openai.OpenAI = FakeOpenAI
@@ -88,7 +112,8 @@ def _install_fake_openai_llm(monkeypatch, responses):
     module_name = "openclawbrain.openai_llm"
     sys.modules.pop(module_name, None)
     module = importlib.import_module(module_name)
-    module._client = None
+    module._thread_local.__dict__.pop("client", None)
+    module._openai_client_init_calls = client_inits
     return calls, module
 
 
@@ -111,6 +136,57 @@ def test_openai_llm_fn_calls_chat_completion(monkeypatch) -> None:
             ],
         )
     ]
+    assert len(module._openai_client_init_calls) == 1
+    assert module._openai_client_init_calls[0]["api_key"] == "test-key"
+    assert module._openai_client_init_calls[0]["timeout"] == 60
+    assert module._openai_client_init_calls[0]["max_retries"] == 2
+
+
+def test_openai_llm_fn_falls_back_for_timeout_kwarg(monkeypatch) -> None:
+    """test openai llm fn timeout fallback."""
+    calls, module = _install_fake_openai_llm(
+        monkeypatch,
+        [lambda _, __: "reply one"],
+        create_supports_timeout=False,
+    )
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    response = module.openai_llm_fn("system prompt", "user prompt")
+
+    assert response == "reply one"
+    assert len(calls) == 1
+
+
+def test_openai_llm_batch_fn_uses_thread_local_clients(monkeypatch) -> None:
+    """test openai llm batch fn uses thread local clients."""
+    _, module = _install_fake_openai_llm(
+        monkeypatch,
+        [f"reply {idx}" for idx in range(6)],
+    )
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    module.openai_llm_batch_fn(
+        [
+            {"system": f"system {idx}", "user": f"user {idx}", "id": f"r{idx}"}
+            for idx in range(6)
+        ],
+        max_workers=3,
+    )
+
+    thread_ids = {entry["thread_id"] for entry in module._openai_client_init_calls}
+    assert len(thread_ids) >= 2
+
+
+def test_openai_llm_fn_reraises_non_timeout_typeerror(monkeypatch) -> None:
+    """test non-timeout TypeError is raised."""
+    calls, module = _install_fake_openai_llm(
+        monkeypatch,
+        [TypeError("bad payload")],
+    )
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+
+    with pytest.raises(TypeError, match="bad payload"):
+        module.openai_llm_fn("system prompt", "user prompt")
+
+    assert len(calls) == 1
 
 
 def test_openai_llm_batch_fn_runs_sequentially(monkeypatch) -> None:

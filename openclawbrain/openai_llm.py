@@ -4,23 +4,41 @@ from __future__ import annotations
 
 import os
 import sys
+import threading
 
 
 _OPENAI_TIMEOUT_SECONDS = 60
-
-_client = None
+_OPENAI_MAX_RETRIES = 2
+_thread_local = threading.local()
 
 
 def _get_client():
     """Create a lazy OpenAI client on first use."""
-    global _client
-    if _client is not None:
-        return _client
+    client = getattr(_thread_local, "client", None)
+    if client is not None:
+        return client
 
     import openai
 
-    _client = openai.OpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-    return _client
+    client = openai.OpenAI(
+        api_key=os.environ.get("OPENAI_API_KEY"),
+        timeout=_OPENAI_TIMEOUT_SECONDS,
+        max_retries=_OPENAI_MAX_RETRIES,
+    )
+    _thread_local.client = client
+    return client
+
+
+def _is_timeout_kwarg_typeerror(exc: TypeError) -> bool:
+    """Return True when TypeError indicates an unexpected timeout kwarg."""
+    message = str(exc)
+    lowered = message.lower()
+    return (
+        "unexpected" in lowered
+        and "keyword" in lowered
+        and "argument" in lowered
+        and "timeout" in lowered
+    )
 
 
 def openai_llm_fn(system: str, user: str) -> str:
@@ -35,7 +53,9 @@ def openai_llm_fn(system: str, user: str) -> str:
             ],
             timeout=_OPENAI_TIMEOUT_SECONDS,
         )
-    except TypeError:
+    except TypeError as exc:
+        if not _is_timeout_kwarg_typeerror(exc):
+            raise
         response = client.chat.completions.create(
             model="gpt-5-mini",
             messages=[
