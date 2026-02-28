@@ -18,7 +18,7 @@ Quickstart (OpenClaw users):
 
 ```bash
 pip install openclawbrain
-openclawbrain init --workspace ~/.openclaw/workspace --output ~/.openclawbrain/main --embedder openai --llm openai
+openclawbrain init --workspace ~/.openclaw/workspace --output ~/.openclawbrain/main
 python3 -m openclawbrain.socket_server --state ~/.openclawbrain/main/state.json
 ```
 
@@ -344,7 +344,7 @@ See `examples/openai_embedder/` for a complete example.
 | `compact` | Compact old daily notes into graph nodes |
 | `sync` | Incremental re-embed after file changes |
 | `inject` | Add CORRECTION/TEACHING/DIRECTIVE nodes |
-| `replay` | Replay session queries, optionally with `--fast-learning`, `--full-learning`, `--decay-during-replay` |
+| `replay` | Replay session queries (defaults to full-learning; use `--edges-only` for cheap replay, `--fast-learning` for LLM mining only) |
 | `harvest` | Apply slow-learning pass from `learning_events.jsonl` to current graph |
 | `health` | Show graph health metrics |
 | `status` | `openclawbrain status --state brain/state.json [--json]` returns a one-command health overview: version, nodes, edges, tier distribution, daemon status, embedder, decay half-life |
@@ -539,19 +539,34 @@ from openclawbrain import (
 ## Cost control
 
 - **Recommended:** OpenAI `text-embedding-3-small` (~$0.02/MB) + `gpt-5-mini` for routing/scoring. Embeddings are generated at init and cached in `state.json`; `gpt-5-mini` runs on query only.
-- **Offline/testing fallback:** hash embeddings with no API calls. Fast for local tryout, but lower retrieval quality than OpenAI.
+- **Auto-detection:** `openclawbrain init` tries OpenAI by default (`--embedder auto --llm auto`). If `OPENAI_API_KEY` is set, you get production-quality embeddings automatically. If not, it falls back to hash embeddings with no API calls.
 - **Batch init:** `openclawbrain init` embeds all workspace files in one batch call. Subsequent queries reuse cached vectors.
-- **Upgrade path:** when moving to production, rebuild with OpenAI embeddings via `openclawbrain init` and stop relying on the hash fallback.
+- **Explicit control:** use `--embedder openai` / `--embedder hash` to force a specific embedder. Use `--llm none` to skip LLM-assisted splitting.
 
-## Optional: warm start from sessions
+## Warm start from sessions
 
-If you have prior conversation logs, replay them:
+If you have prior conversation logs, replay them. By default, `replay` runs the
+full learning pipeline (LLM transcript mining + edge replay + harvest):
 
 ```bash
 openclawbrain replay --state /tmp/brain/state.json --sessions ./sessions/
 ```
 
-For transcript-backed fast-learning:
+This is equivalent to passing `--full-learning` explicitly. Decay is enabled
+during replay by default and the harvest pass runs
+(`decay,scale,split,merge,prune,connect`), so unrelated edges weaken while
+active paths are reinforced.
+
+For cheap edge-only replay (no LLM, no harvest):
+
+```bash
+openclawbrain replay \
+  --state /tmp/brain/state.json \
+  --sessions ./sessions/ \
+  --edges-only
+```
+
+For transcript-backed fast-learning only (no harvest):
 
 ```bash
 openclawbrain replay \
@@ -563,25 +578,13 @@ openclawbrain replay \
   --checkpoint /tmp/brain/replay_checkpoint.json
 ```
 
-For the full learning pipeline (replay + fast-learning + harvest):
+To enable decay during an edges-only replay:
 
 ```bash
 openclawbrain replay \
   --state /tmp/brain/state.json \
   --sessions ./sessions/ \
-  --full-learning
-```
-
-`--full-learning` enables decay during replay by default and runs the harvest
-pass with decay included (`decay,scale,split,merge,prune,connect`), so
-unrelated edges weaken while active paths are reinforced.
-
-To enable decay during a plain replay (without full-learning):
-
-```bash
-openclawbrain replay \
-  --state /tmp/brain/state.json \
-  --sessions ./sessions/ \
+  --edges-only \
   --decay-during-replay \
   --decay-interval 10
 ```
@@ -591,8 +594,6 @@ pass (default 10).
 
 The fast-learning and harvest pipeline is sidecar-only to the core files:
 `learning_events.jsonl` is append-only, and `replay` updates `state.json` via the same graph mutation model as existing injection commands.
-
-Skip this if you are just getting started.
 
 ## Production experience
 

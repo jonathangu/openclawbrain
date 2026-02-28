@@ -68,7 +68,7 @@ def test_init_command_creates_workspace_graph(tmp_path) -> None:
     (workspace / "a.md").write_text("## A\nHello", encoding="utf-8")
     output = tmp_path
 
-    code = main(["init", "--workspace", str(workspace), "--output", str(output)])
+    code = main(["init", "--workspace", str(workspace), "--output", str(output), "--embedder", "hash", "--llm", "none"])
     assert code == 0
 
     graph_path = output / "graph.json"
@@ -94,7 +94,7 @@ def test_init_command_with_empty_workspace(tmp_path) -> None:
     output = tmp_path / "out"
     output.mkdir()
 
-    code = main(["init", "--workspace", str(workspace), "--output", str(output)])
+    code = main(["init", "--workspace", str(workspace), "--output", str(output), "--embedder", "hash", "--llm", "none"])
     assert code == 0
     graph_file = json.loads((output / "graph.json").read_text(encoding="utf-8"))
     graph_data = graph_file["graph"] if "graph" in graph_file else graph_file
@@ -292,7 +292,7 @@ def test_cli_state_replay_uses_last_replayed_ts(tmp_path, capsys) -> None:
         encoding="utf-8",
     )
 
-    code = main(["replay", "--state", str(state_path), "--sessions", str(sessions), "--json"])
+    code = main(["replay", "--state", str(state_path), "--sessions", str(sessions), "--edges-only", "--json"])
     assert code == 0
     first = json.loads(capsys.readouterr().out.strip())
     assert first["queries_replayed"] == 3
@@ -307,7 +307,7 @@ def test_cli_state_replay_uses_last_replayed_ts(tmp_path, capsys) -> None:
         ),
         encoding="utf-8",
     )
-    code = main(["replay", "--state", str(state_path), "--sessions", str(sessions), "--json"])
+    code = main(["replay", "--state", str(state_path), "--sessions", str(sessions), "--edges-only", "--json"])
     assert code == 0
     second = json.loads(capsys.readouterr().out.strip())
     assert second["queries_replayed"] == 2
@@ -330,7 +330,7 @@ def test_cli_replay_discovers_reset_session_files(tmp_path, capsys) -> None:
         encoding="utf-8",
     )
 
-    code = main(["replay", "--state", str(state_path), "--sessions", str(sessions), "--json"])
+    code = main(["replay", "--state", str(state_path), "--sessions", str(sessions), "--edges-only", "--json"])
     assert code == 0
     payload = json.loads(capsys.readouterr().out.strip())
     assert payload["queries_replayed"] == 2
@@ -693,3 +693,105 @@ def test_inject_command_defaults_connect_min_sim_for_hash_embedder(tmp_path, cap
     out = json.loads(capsys.readouterr().out.strip())
     assert out["connected_to"]
     assert out["inhibitory_edges_created"] > 0
+
+
+def test_cli_replay_default_runs_full_learning(tmp_path, capsys, monkeypatch) -> None:
+    """replay without flags defaults to full-learning (fast-learning + harvest)."""
+    state_path = tmp_path / "state.json"
+    _write_state(state_path)
+
+    sessions = tmp_path / "sessions.jsonl"
+    sessions.write_text(
+        "\n".join(
+            [
+                json.dumps({"role": "user", "content": "do not do that", "ts": 1.0}),
+                json.dumps({"role": "user", "content": "how to deploy", "ts": 2.0}),
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    from openclawbrain import full_learning as learning_module
+
+    def fake_llm(_: str, __: str) -> str:
+        return json.dumps(
+            {
+                "corrections": [
+                    {
+                        "content": "Default full-learning correction.",
+                        "context": "test",
+                        "severity": "high",
+                    }
+                ],
+                "teachings": [],
+                "reinforcements": [],
+            }
+        )
+
+    monkeypatch.setattr(learning_module, "openai_llm_fn", fake_llm)
+
+    code = main(
+        [
+            "replay",
+            "--state",
+            str(state_path),
+            "--sessions",
+            str(sessions),
+            "--ignore-checkpoint",
+            "--json",
+        ]
+    )
+    assert code == 0
+    result = json.loads(capsys.readouterr().out.strip())
+
+    # Default should trigger fast_learning and harvest
+    assert "fast_learning" in result
+    assert result["fast_learning"]["events_appended"] >= 1
+    assert "harvest" in result
+
+
+def test_cli_replay_edges_only_skips_learning(tmp_path, capsys) -> None:
+    """replay --edges-only does not run fast_learning or harvest."""
+    state_path = tmp_path / "state.json"
+    _write_state(state_path)
+
+    sessions = tmp_path / "sessions.jsonl"
+    sessions.write_text(
+        json.dumps({"role": "user", "content": "alpha", "ts": 1.0}),
+        encoding="utf-8",
+    )
+
+    code = main(
+        [
+            "replay",
+            "--state",
+            str(state_path),
+            "--sessions",
+            str(sessions),
+            "--edges-only",
+            "--json",
+        ]
+    )
+    assert code == 0
+    result = json.loads(capsys.readouterr().out.strip())
+
+    assert "fast_learning" not in result
+    assert "harvest" not in result
+    assert result["queries_replayed"] == 1
+
+
+def test_cli_init_auto_embedder_falls_back_to_hash(tmp_path, monkeypatch) -> None:
+    """init with auto embedder and no OPENAI_API_KEY uses hash embedder."""
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+
+    workspace = tmp_path / "ws"
+    workspace.mkdir()
+    (workspace / "a.md").write_text("## A\nHello", encoding="utf-8")
+    output = tmp_path / "out"
+    output.mkdir()
+
+    code = main(["init", "--workspace", str(workspace), "--output", str(output)])
+    assert code == 0
+
+    state_data = json.loads((output / "state.json").read_text(encoding="utf-8"))
+    assert state_data["meta"]["embedder_name"] == "hash-v1"

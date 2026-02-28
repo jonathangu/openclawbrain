@@ -83,8 +83,8 @@ def _build_parser() -> argparse.ArgumentParser:
     i.add_argument("--workspace", required=True)
     i.add_argument("--output", required=True)
     i.add_argument("--sessions")
-    i.add_argument("--embedder", choices=["hash", "openai"], default=None)
-    i.add_argument("--llm", choices=["none", "openai"], default="none")
+    i.add_argument("--embedder", choices=["hash", "openai", "auto"], default="auto")
+    i.add_argument("--llm", choices=["none", "openai", "auto"], default="auto")
     i.add_argument("--json", action="store_true")
 
     q = sub.add_parser("query")
@@ -187,6 +187,7 @@ def _build_parser() -> argparse.ArgumentParser:
     r.add_argument("--sessions", nargs="+", required=True)
     r.add_argument("--fast-learning", action="store_true")
     r.add_argument("--full-learning", action="store_true")
+    r.add_argument("--edges-only", action="store_true")
     r.add_argument("--decay-during-replay", action="store_true")
     r.add_argument("--decay-interval", type=int, default=10)
     r.add_argument("--workers", type=int, default=4)
@@ -560,6 +561,19 @@ def _resolve_embedder(
     """ resolve embedder."""
     openai_name = "openai-text-embedding-3-small"
     embedder_name, _ = _state_embedder_meta(meta)
+
+    if args.embedder == "auto":
+        try:
+            from .openai_embeddings import OpenAIEmbedder
+
+            if not os.environ.get("OPENAI_API_KEY"):
+                raise RuntimeError("no key")
+            embedder = OpenAIEmbedder()
+        except Exception:
+            print("warning: OpenAI not available, falling back to hash embedder", file=sys.stderr)
+            embedder = HashEmbedder()
+        return embedder.embed, embedder.embed_batch, embedder.name, embedder.dim
+
     use_openai = args.embedder == "openai" or (args.embedder is None and embedder_name == openai_name)
     if use_openai:
         from .openai_embeddings import OpenAIEmbedder
@@ -573,6 +587,16 @@ def _resolve_embedder(
 
 def _resolve_llm(args: argparse.Namespace) -> tuple[Callable[[str, str], str] | None, Callable[[list[dict]], list[dict]] | None]:
     """Resolve optional LLM callbacks."""
+    if getattr(args, "llm", None) == "auto":
+        try:
+            from .openai_llm import openai_llm_batch_fn, openai_llm_fn
+
+            if not os.environ.get("OPENAI_API_KEY"):
+                raise RuntimeError("no key")
+            return openai_llm_fn, openai_llm_batch_fn
+        except Exception:
+            print("warning: OpenAI LLM not available, falling back to none", file=sys.stderr)
+            return None, None
     if getattr(args, "llm", None) == "openai":
         from .openai_llm import openai_llm_batch_fn, openai_llm_fn
 
@@ -1133,6 +1157,12 @@ def cmd_replay(args: argparse.Namespace) -> int:
     state_path = _resolve_state_path(args.state, allow_default=True)
     run_fast = bool(args.fast_learning)
     run_full = bool(args.full_learning)
+    edges_only = bool(args.edges_only)
+
+    # Default: full-learning unless --edges-only or --fast-learning explicitly set
+    if not run_fast and not run_full and not edges_only:
+        run_full = True
+
     if (run_fast or run_full) and state_path is None:
         raise SystemExit("--state is required for fast/full learning replay mode")
 

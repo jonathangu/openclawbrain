@@ -16,9 +16,17 @@ from typing import Any
 from ._util import _extract_json
 from .inject import inject_batch
 from .maintain import run_maintenance
-from .openai_embeddings import OpenAIEmbedder
+try:
+    from .openai_embeddings import OpenAIEmbedder
+except Exception:
+    OpenAIEmbedder = None
+
 from .hasher import HashEmbedder
-from .openai_llm import openai_llm_fn
+
+try:
+    from .openai_llm import openai_llm_fn
+except Exception:
+    openai_llm_fn = None
 from .replay import replay_queries
 from .store import load_state, save_state
 
@@ -488,7 +496,7 @@ def _state_embedder_info(
 ) -> tuple[Callable[[list[tuple[str, str]]], dict[str, list[float]]], float]:
     """Resolve embed batch fn and default connect similarity."""
     embedder_name = str(meta.get("embedder_name", ""))
-    if embedder_name == OpenAIEmbedder().name:
+    if OpenAIEmbedder is not None and embedder_name == OpenAIEmbedder().name:
         embedder = OpenAIEmbedder()
         return embedder.embed_batch, 0.30
     embedder = HashEmbedder()
@@ -515,6 +523,8 @@ def run_fast_learning(
     if workers < 1:
         workers = 1
     if llm_fn is None:
+        if openai_llm_fn is None:
+            raise SystemExit("LLM required for fast-learning; install openai and set OPENAI_API_KEY")
         llm_fn = openai_llm_fn
 
     checkpoint = _load_checkpoint(checkpoint_path) if (checkpoint_path and resume) else {"sessions": {}}
@@ -672,10 +682,8 @@ def run_harvest(
         _persist_state(graph=graph, index=index, meta=meta, state_path=state_path, backup=backup)
 
     embedder_name = meta.get("embedder_name")
-    if embedder_name == OpenAIEmbedder().name:
-        from .openai_embeddings import OpenAIEmbedder as _OAI
-
-        embed_fn = _OAI().embed
+    if OpenAIEmbedder is not None and embedder_name == OpenAIEmbedder().name:
+        embed_fn = OpenAIEmbedder().embed
     else:
         embed_fn = HashEmbedder().embed
 

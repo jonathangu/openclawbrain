@@ -9,22 +9,30 @@
 ## Step 1: Build your first brain
 
 ```bash
-openclawbrain init --workspace ./my-workspace --state ./brain/state.json --embedder openai --llm openai
+openclawbrain init --workspace ./my-workspace --state ./brain/state.json
 openclawbrain doctor --state ./brain/state.json
 openclawbrain info --state ./brain/state.json
 ```
 
-We recommend OpenAI embeddings with GPT-5-mini routing for production use. Hash embeddings work offline but produce lower-quality retrieval.
+By default, `init` tries OpenAI embeddings and LLM (`--embedder auto --llm auto`). If `OPENAI_API_KEY` is set, you get production-quality embeddings automatically. If not, it falls back to hash embeddings with no API calls. Use `--embedder hash --llm none` to force offline mode.
 
-## Initial learning: cold-start replay vs sidecar fast-learning
+## Initial learning: replay your sessions
 
-After init, replay your existing sessions once to seed graph edges from real usage:
+After init, replay your existing sessions to seed graph edges and extract learning signals. By default, `replay` runs the full learning pipeline (LLM mining + edge replay + harvest):
 
 ```bash
 openclawbrain replay --state ./brain/state.json --sessions ./sessions/
 ```
 
-Then run transcript-backed fast-learning to extract durable correction/teaching nodes into the same brain directory:
+This extracts durable correction/teaching nodes and runs maintenance in one command.
+
+For cheap edge-only replay (no LLM, no harvest):
+
+```bash
+openclawbrain replay --state ./brain/state.json --sessions ./sessions/ --edges-only
+```
+
+For fine-grained control over the LLM mining pass:
 
 ```bash
 openclawbrain replay \
@@ -93,12 +101,12 @@ For production automation, run `harvest` after `replay --fast-learning` with a b
 
 ## Decay during replay
 
-`--full-learning` automatically enables decay during the replay pass. Unrelated edges weaken while actively traversed paths are reinforced. The harvest step also includes the `decay` task (`decay,scale,split,merge,prune,connect`).
+The default full-learning mode automatically enables decay during the replay pass. Unrelated edges weaken while actively traversed paths are reinforced. The harvest step also includes the `decay` task (`decay,scale,split,merge,prune,connect`).
 
-To enable decay during a plain replay (without full-learning), pass `--decay-during-replay`:
+To enable decay during an edges-only replay, pass `--decay-during-replay`:
 
 ```bash
-openclawbrain replay --state ./brain/state.json --sessions ./sessions/ --decay-during-replay --decay-interval 10
+openclawbrain replay --state ./brain/state.json --sessions ./sessions/ --edges-only --decay-during-replay --decay-interval 10
 ```
 
 `--decay-interval N` (default 10) controls how many learning steps occur between each decay pass.
