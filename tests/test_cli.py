@@ -314,6 +314,29 @@ def test_cli_state_replay_uses_last_replayed_ts(tmp_path, capsys) -> None:
     assert json.loads(state_path.read_text(encoding="utf-8"))["meta"]["last_replayed_ts"] == 5.0
 
 
+def test_cli_replay_discovers_reset_session_files(tmp_path, capsys) -> None:
+    """test replay discovers and processes reset session files."""
+    state_path = tmp_path / "state.json"
+    _write_state(state_path)
+
+    sessions = tmp_path / "sessions"
+    sessions.mkdir()
+    (sessions / "current.jsonl").write_text(
+        json.dumps({"role": "user", "content": "alpha", "ts": 1.0}),
+        encoding="utf-8",
+    )
+    (sessions / "current.jsonl.reset.2026-02-27").write_text(
+        json.dumps({"role": "user", "content": "alpha", "ts": 2.0}),
+        encoding="utf-8",
+    )
+
+    code = main(["replay", "--state", str(state_path), "--sessions", str(sessions), "--json"])
+    assert code == 0
+    payload = json.loads(capsys.readouterr().out.strip())
+    assert payload["queries_replayed"] == 2
+    assert json.loads(state_path.read_text(encoding="utf-8"))["meta"]["last_replayed_ts"] == 2.0
+
+
 def test_cli_replay_with_fast_learning_writes_learning_events_and_injects_nodes(
     tmp_path,
     capsys,

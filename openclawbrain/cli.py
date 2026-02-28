@@ -6,6 +6,7 @@ import argparse
 import socket
 import json
 import os
+import warnings
 from datetime import datetime, timezone
 import sys
 import tempfile
@@ -43,7 +44,13 @@ from .split import split_workspace
 from .hasher import HashEmbedder
 from .traverse import TraversalConfig, TraversalResult, traverse
 from .sync import DEFAULT_AUTHORITY_MAP, sync_workspace
-from .full_learning import default_checkpoint_path, run_fast_learning, run_harvest, _persist_state
+from .full_learning import (
+    collect_session_files,
+    default_checkpoint_path,
+    run_fast_learning,
+    run_harvest,
+    _persist_state,
+)
 from ._util import _tokenize
 from .maintain import run_maintenance
 from .store import load_state, save_state, resolve_default_state_path
@@ -473,16 +480,23 @@ def _load_session_interactions(session_paths: str | Iterable[str], since_ts: flo
     """ load session interactions."""
     if isinstance(session_paths, str):
         session_paths = [session_paths]
-    interactions: list[dict[str, object]] = []
+
+    session_files: list[Path] = []
+    invalid_paths: list[str] = []
+
     for session_path in session_paths:
-        path = Path(session_path).expanduser()
-        if path.is_dir():
-            for session_file in sorted(path.glob("*.jsonl")):
-                interactions.extend(extract_interactions(session_file, since_ts=since_ts))
-        elif path.is_file():
-            interactions.extend(extract_interactions(path, since_ts=since_ts))
-        else:
-            raise SystemExit(f"invalid sessions path: {path}")
+        try:
+            session_files.extend(collect_session_files(session_path))
+        except SystemExit:
+            warnings.warn(f"invalid sessions path: {Path(session_path).expanduser()}")
+            invalid_paths.append(str(session_path))
+
+    if not session_files:
+        raise SystemExit(f"invalid sessions path: {invalid_paths[0]}")
+
+    interactions: list[dict[str, object]] = []
+    for session_file in session_files:
+        interactions.extend(extract_interactions(session_file, since_ts=since_ts))
     return interactions
 
 
