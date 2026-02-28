@@ -149,7 +149,9 @@ def collect_session_files(session_paths: str | Path | list[str] | list[Path]) ->
     for item in session_paths:
         src = Path(item).expanduser()
         if src.is_dir():
-            paths.extend(sorted(src.glob("*.jsonl")))
+            patterns = ("*.jsonl", "*.jsonl.reset.*", "*.jsonl.deleted.*")
+            collected = sorted((match for pattern in patterns for match in src.glob(pattern)))
+            paths.extend(collected)
             continue
         if src.is_file():
             paths.append(src)
