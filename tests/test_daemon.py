@@ -9,6 +9,7 @@ import importlib.util
 
 from openclawbrain import Edge, Graph, HashEmbedder, Node, VectorIndex, save_state
 from openclawbrain import daemon as daemon_module
+from openclawbrain.journal import read_journal
 from openclawbrain.store import load_state
 
 
@@ -136,12 +137,26 @@ def test_daemon_query_returns_fired_nodes(tmp_path: Path) -> None:
         assert result["prompt_context"].startswith("[BRAIN_CONTEXT v1]")
         assert "- node:" in result["prompt_context"]
         assert "alpha" in result["prompt_context"]
+        assert result["prompt_context_len"] == len(result["prompt_context"])
+        assert result["prompt_context_max_chars"] == 20000
+        assert isinstance(result["prompt_context_trimmed"], bool)
+        assert isinstance(result["prompt_context_included_node_ids"], list)
+        assert isinstance(result["prompt_context_dropped_node_ids"], list)
+        assert isinstance(result["prompt_context_dropped_count"], int)
 
         assert isinstance(result["embed_query_ms"], float)
         assert isinstance(result["traverse_ms"], float)
         assert isinstance(result["total_ms"], float)
     finally:
         _shutdown_daemon(proc)
+
+    journal_entries = read_journal(journal_path=str(tmp_path / "journal.jsonl"))
+    query_entries = [entry for entry in journal_entries if entry.get("type") == "query"]
+    assert query_entries
+    metadata = query_entries[-1]["metadata"]
+    assert metadata["prompt_context_len"] == len(result["prompt_context"])
+    assert metadata["prompt_context_max_chars"] == 20000
+    assert isinstance(metadata["prompt_context_trimmed"], bool)
 
 
 def test_daemon_unknown_method_returns_error(tmp_path: Path) -> None:
