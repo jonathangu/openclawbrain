@@ -249,7 +249,6 @@ def _handle_query(
 
     Includes a deterministic `prompt_context` block suitable for prompt caching.
     """
-    """Handle query requests with embed + traversal timings."""
     query_text = params.get("query")
     if not isinstance(query_text, str) or not query_text.strip():
         raise ValueError("query must be a non-empty string")

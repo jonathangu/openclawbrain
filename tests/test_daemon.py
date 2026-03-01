@@ -130,6 +130,13 @@ def test_daemon_query_returns_fired_nodes(tmp_path: Path) -> None:
         assert result["fired_nodes"]
         assert "a" in result["fired_nodes"]
         assert result["seeds"]
+
+        # Deterministic appendix block for prompt caching.
+        assert "prompt_context" in result
+        assert result["prompt_context"].startswith("[BRAIN_CONTEXT v1]")
+        assert "- node:" in result["prompt_context"]
+        assert "alpha" in result["prompt_context"]
+
         assert isinstance(result["embed_query_ms"], float)
         assert isinstance(result["traverse_ms"], float)
         assert isinstance(result["total_ms"], float)
