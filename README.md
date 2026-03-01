@@ -56,14 +56,14 @@ python3 -m openclawbrain.socket_client --socket ~/.openclawbrain/main/daemon.soc
 
 **OpenClawBrain learns from your agent feedback, so wrong answers get suppressed instead of resurfacing.** It builds a memory graph over your workspace, remembers what worked, and routes future answers through learned paths.
 
-- Zero dependencies. Pure Python 3.10+.
+- Pure Python 3.10+ core (no vector DB). The package currently installs the OpenAI SDK by default; hash-embedder mode runs offline.
 - Built-in hash embeddings for offline/testing; OpenAI embeddings are recommended for production.
 - Builds a **`state.json`** brain from your workspace.
 - Queries follow learned routes instead of only similarity matches.
 - Positive feedback (`+1`) uses the default policy-gradient learner `apply_outcome_pg()` (conserving probability mass across traversed nodes), while negative (`-1`) creates inhibitory edges.
 - Over time, less noise appears and recurring mistakes are less likely.
 
-- OpenClawBrain integrates with your agent's file-based workspace through incremental sync, constitutional anchors, and automatic compaction.
+- OpenClawBrain integrates with your agent's file-based workspace through incremental sync, constitutional anchors, and optional/scheduled compaction.
 - See the [context lifecycle](docs/architecture.md) for details.
 
 ## Install
