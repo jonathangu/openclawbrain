@@ -139,3 +139,32 @@ python examples/eval/prompt_context_eval.py \
 ```
 
 If no `--queries-file` is provided, a small built-in sample query set is used.
+
+## 10) Defaults that matter (v12.2.4+)
+- `max_prompt_context_chars` default: **30000** (daemon)
+- `max_fired_nodes` default: **30** (daemon)
+- prompt context is ordered deterministically but importance-first: **authority → score → stable source order**.
+
+Useful telemetry fields (daemon `query` response + journal metadata):
+- `prompt_context_len`, `prompt_context_max_chars`, `prompt_context_trimmed`
+- `prompt_context_included_node_ids`
+- `prompt_context_dropped_node_ids` (capped) + `prompt_context_dropped_count`
+- `prompt_context_dropped_authority_counts`
+
+## 11) OpenClaw media understanding (audio/image) → better memory
+OpenClaw has a built-in **media-understanding** pipeline that can:
+- transcribe audio/voice notes
+- describe images
+- extract text from files
+
+When enabled in OpenClaw config, it will set `ctx.Transcript` and/or append extracted blocks to `ctx.Body`, so the resulting session logs contain the actual text (not only `[media attached: ...]` stubs). OpenClawBrain replay/full-learning can then learn from that text.
+
+If you rely on toolResult-only transcripts/OCR, keep `openclawbrain replay --include-tool-results` enabled (default).
+
+## 12) Correction wiring: what exists vs what you still need
+OpenClawBrain supports `correction(chat_id, lookback=N)` (it remembers recent fired paths per `chat_id`). To get *automatic* corrections in live chat, OpenClaw must:
+1) pass a stable `chat_id` into each brain query
+2) detect correction messages
+3) call `correction(...)`
+
+If you don't have that OpenClaw integration yet, you can still apply corrections manually via `openclawbrain self-learn` (offline) or daemon `correction` calls.
