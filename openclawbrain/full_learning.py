@@ -8,6 +8,7 @@ import json
 import os
 import sys
 import time
+import warnings
 from collections import defaultdict
 from collections.abc import Callable
 from dataclasses import dataclass
@@ -507,6 +508,23 @@ def _load_checkpoint(path: Path | str) -> dict[str, Any]:
     return payload
 
 
+def _checkpoint_phase_offsets(
+    checkpoint: dict[str, Any],
+    *,
+    phase: str,
+) -> tuple[dict[str, int], bool]:
+    """Resolve phase session offsets, falling back to legacy top-level sessions."""
+    phase_payload = checkpoint.get(phase)
+    if isinstance(phase_payload, dict):
+        sessions = phase_payload.get("sessions")
+        if isinstance(sessions, dict):
+            return {k: int(v) for k, v in sessions.items() if isinstance(v, (int, float))}, False
+    legacy_sessions = checkpoint.get("sessions")
+    if isinstance(legacy_sessions, dict):
+        return {k: int(v) for k, v in legacy_sessions.items() if isinstance(v, (int, float))}, True
+    return {}, False
+
+
 def _save_checkpoint(
     path: Path | str,
     *,
@@ -702,13 +720,12 @@ def run_fast_learning(
     checkpoint = _load_checkpoint(checkpoint_path) if (checkpoint_path and resume) else {"version": 1, "sessions": {}}
     if ignore_checkpoint:
         checkpoint = {"version": 1, "sessions": {}}
-    fast_checkpoint = checkpoint.get("fast_learning")
-    if not isinstance(fast_checkpoint, dict):
-        fast_checkpoint = {}
-    start_lines_raw = fast_checkpoint.get("sessions")
-    if not isinstance(start_lines_raw, dict):
-        start_lines_raw = checkpoint.get("sessions", {})
-    start_lines = {k: int(v) for k, v in start_lines_raw.items() if isinstance(v, (int, float))}
+    start_lines, used_legacy_sessions = _checkpoint_phase_offsets(checkpoint, phase="fast_learning")
+    if used_legacy_sessions and start_lines:
+        warnings.warn(
+            "fast_learning checkpoint missing phase-scoped sessions; falling back to legacy top-level 'sessions' offsets",
+            stacklevel=2,
+        )
 
     grouped_turns, turn_offsets = _collect_turns(
         session_paths,

@@ -49,6 +49,7 @@ from .hasher import HashEmbedder
 from .traverse import TraversalConfig, TraversalResult, traverse
 from .sync import DEFAULT_AUTHORITY_MAP, sync_workspace
 from .full_learning import (
+    _checkpoint_phase_offsets,
     collect_session_files,
     default_checkpoint_path,
     load_interactions_for_replay,
@@ -204,10 +205,11 @@ def _build_parser() -> argparse.ArgumentParser:
     r = sub.add_parser("replay")
     r.add_argument("--state")
     r.add_argument("--graph")
-    r.add_argument("--sessions", nargs="+", required=True)
+    r.add_argument("--sessions", nargs="+")
     r.add_argument("--fast-learning", action="store_true")
     r.add_argument("--full-learning", action="store_true")
     r.add_argument("--edges-only", action="store_true")
+    r.add_argument("--show-checkpoint", action="store_true")
     r.add_argument("--decay-during-replay", action="store_true")
     r.add_argument("--decay-interval", type=int, default=10)
     r.add_argument("--workers", type=int, default=4)
@@ -1229,13 +1231,110 @@ def cmd_self_correct(args: argparse.Namespace) -> int:
     return 0
 
 
+def _checkpoint_time_display(value: object) -> str:
+    """Format checkpoint timestamps for human output."""
+    if isinstance(value, (int, float)):
+        try:
+            return datetime.fromtimestamp(float(value), tz=timezone.utc).isoformat()
+        except (OverflowError, OSError, ValueError):
+            return str(value)
+    if value is None:
+        return "n/a"
+    return str(value)
+
+
+def _replay_phase_plan(
+    *,
+    run_fast: bool,
+    run_full: bool,
+    stop_after_fast_learning: bool,
+) -> list[str]:
+    """Return replay phases that will run for the current arguments."""
+    phases: list[str] = []
+    if run_fast or run_full:
+        phases.append("fast_learning")
+    if not stop_after_fast_learning:
+        phases.append("replay")
+    if run_full and not stop_after_fast_learning:
+        phases.append("harvest")
+    return phases
+
+
+def _build_checkpoint_status_payload(
+    *,
+    checkpoint_path: str,
+    checkpoint_data: dict[str, object],
+    run_fast: bool,
+    run_full: bool,
+    stop_after_fast_learning: bool,
+    resume_requested: bool,
+    ignore_checkpoint: bool,
+) -> tuple[dict[str, object], bool, bool]:
+    """Build stable checkpoint status payload for replay CLI output."""
+    fast_offsets, fast_legacy = _checkpoint_phase_offsets(checkpoint_data, phase="fast_learning")
+    replay_offsets, replay_legacy = _checkpoint_phase_offsets(checkpoint_data, phase="replay")
+    if fast_legacy and fast_offsets:
+        warnings.warn(
+            "fast_learning checkpoint missing phase-scoped sessions; falling back to legacy top-level 'sessions' offsets",
+            stacklevel=2,
+        )
+    if replay_legacy and replay_offsets:
+        warnings.warn(
+            "replay checkpoint missing phase-scoped sessions; falling back to legacy top-level 'sessions' offsets",
+            stacklevel=2,
+        )
+
+    fast_raw = checkpoint_data.get("fast_learning")
+    if not isinstance(fast_raw, dict):
+        fast_raw = {}
+    replay_raw = checkpoint_data.get("replay")
+    if not isinstance(replay_raw, dict):
+        replay_raw = {}
+
+    phase_plan = _replay_phase_plan(
+        run_fast=run_fast,
+        run_full=run_full,
+        stop_after_fast_learning=stop_after_fast_learning,
+    )
+    resume_would_take_effect = (
+        resume_requested
+        and not ignore_checkpoint
+        and (bool(fast_offsets) or bool(replay_offsets))
+    )
+
+    payload: dict[str, object] = {
+        "type": "checkpoint_status",
+        "checkpoint_path": checkpoint_path,
+        "schema_version": int(checkpoint_data.get("version", 1)),
+        "resume": {
+            "requested": bool(resume_requested),
+            "ignore_checkpoint": bool(ignore_checkpoint),
+            "would_take_effect": bool(resume_would_take_effect),
+        },
+        "phases": phase_plan,
+        "fast_learning": {
+            "status": str(fast_raw.get("status", "unknown")),
+            "windows_processed": int(fast_raw.get("windows_processed", 0)) if isinstance(fast_raw.get("windows_processed"), (int, float)) else 0,
+            "windows_total": int(fast_raw.get("windows_total", 0)) if isinstance(fast_raw.get("windows_total"), (int, float)) else 0,
+            "updated_at": fast_raw.get("updated_at"),
+            "session_offsets_count": len(fast_offsets),
+            "legacy_offsets_fallback": bool(fast_legacy and fast_offsets),
+        },
+        "replay": {
+            "queries_processed": int(replay_raw.get("queries_processed", 0)) if isinstance(replay_raw.get("queries_processed"), (int, float)) else 0,
+            "queries_total": int(replay_raw.get("queries_total", 0)) if isinstance(replay_raw.get("queries_total"), (int, float)) else 0,
+            "merge_batches": int(replay_raw.get("merge_batches", 0)) if isinstance(replay_raw.get("merge_batches"), (int, float)) else 0,
+            "updated_at": replay_raw.get("updated_at"),
+            "session_offsets_count": len(replay_offsets),
+            "legacy_offsets_fallback": bool(replay_legacy and replay_offsets),
+        },
+    }
+    return payload, bool(fast_legacy and fast_offsets), bool(replay_legacy and replay_offsets)
+
+
 def cmd_replay(args: argparse.Namespace) -> int:
     """cmd replay."""
-    graph, index, meta = _resolve_graph_index(args, allow_default_state=True)
     state_path = _resolve_state_path(args.state, allow_default=True)
-    tool_result_allowlist = _parse_tool_result_allowlist(args.tool_result_allowlist)
-    tool_result_max_chars = max(0, int(args.tool_result_max_chars))
-    include_tool_results = bool(args.include_tool_results)
     run_fast = bool(args.fast_learning)
     run_full = bool(args.full_learning)
     edges_only = bool(args.edges_only)
@@ -1244,10 +1343,71 @@ def cmd_replay(args: argparse.Namespace) -> int:
     if not run_fast and not run_full and not edges_only:
         run_full = True
 
+    checkpoint_path = args.checkpoint or (str(default_checkpoint_path(str(state_path))) if state_path is not None else None)
+    phase_plan = _replay_phase_plan(
+        run_fast=run_fast,
+        run_full=run_full,
+        stop_after_fast_learning=bool(args.stop_after_fast_learning),
+    )
+
+    if args.show_checkpoint:
+        if checkpoint_path is None:
+            raise SystemExit("--checkpoint or --state is required for --show-checkpoint")
+        checkpoint_data = _load_checkpoint(checkpoint_path)
+        status_payload, _, _ = _build_checkpoint_status_payload(
+            checkpoint_path=checkpoint_path,
+            checkpoint_data=checkpoint_data,
+            run_fast=run_fast,
+            run_full=run_full,
+            stop_after_fast_learning=bool(args.stop_after_fast_learning),
+            resume_requested=bool(args.resume),
+            ignore_checkpoint=bool(args.ignore_checkpoint),
+        )
+        if args.json:
+            print(json.dumps(status_payload, indent=2))
+            return 0
+        fast_status = status_payload["fast_learning"] if isinstance(status_payload.get("fast_learning"), dict) else {}
+        replay_status = status_payload["replay"] if isinstance(status_payload.get("replay"), dict) else {}
+        resume_status = status_payload["resume"] if isinstance(status_payload.get("resume"), dict) else {}
+        print(f"Checkpoint: {status_payload['checkpoint_path']}")
+        print(f"Schema version: {status_payload.get('schema_version', 1)}")
+        print(
+            "Fast learning: "
+            f"{fast_status.get('windows_processed', 0)}/{fast_status.get('windows_total', 0)} windows, "
+            f"status={fast_status.get('status', 'unknown')}, "
+            f"updated_at={_checkpoint_time_display(fast_status.get('updated_at'))}"
+        )
+        print(
+            "Replay: "
+            f"{replay_status.get('queries_processed', 0)}/{replay_status.get('queries_total', 0)} queries, "
+            f"merge_batches={replay_status.get('merge_batches', 0)}, "
+            f"updated_at={_checkpoint_time_display(replay_status.get('updated_at'))}"
+        )
+        print(
+            "Resume would take effect: "
+            f"{bool(resume_status.get('would_take_effect', False))} "
+            f"(resume={bool(resume_status.get('requested', False))}, ignore_checkpoint={bool(resume_status.get('ignore_checkpoint', False))})"
+        )
+        print(f"Phases: {', '.join(phase_plan) if phase_plan else 'none'}")
+        return 0
+
+    if not args.sessions:
+        raise SystemExit("--sessions is required unless --show-checkpoint is set")
     if (run_fast or run_full) and state_path is None:
         raise SystemExit("--state is required for fast/full learning replay mode")
 
-    checkpoint_path = args.checkpoint or (str(default_checkpoint_path(str(state_path))) if state_path is not None else None)
+    graph, index, meta = _resolve_graph_index(args, allow_default_state=True)
+    tool_result_allowlist = _parse_tool_result_allowlist(args.tool_result_allowlist)
+    tool_result_max_chars = max(0, int(args.tool_result_max_chars))
+    include_tool_results = bool(args.include_tool_results)
+
+    if not args.json:
+        print("Replay startup:", file=sys.stderr)
+        print(f"  checkpoint: {checkpoint_path if checkpoint_path is not None else 'none'}", file=sys.stderr)
+        print(f"  resume: {bool(args.resume)}", file=sys.stderr)
+        print(f"  ignore_checkpoint: {bool(args.ignore_checkpoint)}", file=sys.stderr)
+        print(f"  phases: {', '.join(phase_plan) if phase_plan else 'none'}", file=sys.stderr)
+
     checkpoint_every_windows = max(0, int(args.checkpoint_every))
     checkpoint_every_seconds = max(0, int(args.checkpoint_every_seconds))
     persist_state_every_seconds = max(0, int(args.persist_state_every_seconds))
@@ -1296,16 +1456,13 @@ def cmd_replay(args: argparse.Namespace) -> int:
             return 0
 
     checkpoint_data = _load_checkpoint(checkpoint_path) if (checkpoint_path and args.resume and not args.ignore_checkpoint) else {"version": 1}
-    replay_checkpoint = checkpoint_data.get("replay")
-    if not isinstance(replay_checkpoint, dict):
-        replay_checkpoint = {}
-    replay_since_lines_raw = replay_checkpoint.get("sessions")
-    replay_since_lines = (
-        {k: int(v) for k, v in replay_since_lines_raw.items() if isinstance(v, (int, float))}
-        if isinstance(replay_since_lines_raw, dict)
-        else {}
-    )
-    if args.ignore_checkpoint:
+    replay_since_lines, replay_legacy_fallback = _checkpoint_phase_offsets(checkpoint_data, phase="replay")
+    if replay_legacy_fallback and replay_since_lines:
+        warnings.warn(
+            "replay checkpoint missing phase-scoped sessions; falling back to legacy top-level 'sessions' offsets",
+            stacklevel=2,
+        )
+    if args.ignore_checkpoint or not args.resume:
         replay_since_lines = {}
 
     interactions, replay_offsets = load_interactions_for_replay(

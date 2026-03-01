@@ -54,6 +54,18 @@ You can run this repeatedly; dedupe is by `(type, sha256(content), session_point
 
 For ongoing operation after startup, use `--ignore-checkpoint` only when you intentionally want to replay older chunks that were already ingested.
 
+Checkpoint visibility:
+
+```bash
+openclawbrain replay --state ./brain/state.json --show-checkpoint --resume
+openclawbrain replay --state ./brain/state.json --show-checkpoint --resume --json
+```
+
+Resume semantics:
+- `--resume` enables checkpoint offsets.
+- `--ignore-checkpoint` disables resume even when a checkpoint exists.
+- If a checkpoint only has legacy top-level `sessions` offsets, replay still resumes from them and prints a warning.
+
 ## Step 2: Wire up the fast loop (per-query)
 
 Minimum per-query pattern: **query → log → learn**.  
