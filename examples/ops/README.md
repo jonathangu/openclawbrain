@@ -5,6 +5,8 @@
 - `query_and_learn.py`: fast-loop interaction (`query -> traverse -> outcome`)
 - `run_maintenance.py`: slow-loop maintenance run (`health,decay,merge,prune`)
 - `compact_notes.py`: compact old daily notes into teaching summaries before graph updates
+- `replay_last_days.sh`: full-learning replay over session files modified in the last N days, with safe checkpoint defaults for long runs
+- `cutover_then_background_full_learning.sh`: fast-learning cutover first, then background full-learning replay via `nohup`
 
 By default, examples use OpenAI callbacks as the production path:
 
@@ -28,3 +30,36 @@ run_maintenance(..., embed_fn=embedder, llm_fn=llm)
 ```
 
 Use `--embedder hash` explicitly when you want deterministic, zero-API testing.
+
+## Shell helper usage
+
+Replay the last 14 days (defaults shown):
+
+```bash
+examples/ops/replay_last_days.sh \
+  --state ~/.openclawbrain/main/state.json \
+  --sessions-dir ~/.openclaw/sessions \
+  --days 14 \
+  --replay-workers 4 \
+  --workers 4 \
+  --progress-every 2000 \
+  --checkpoint-every-seconds 60 \
+  --checkpoint-every 50 \
+  --persist-state-every-seconds 300
+```
+
+Fast cutover, then background full-learning replay:
+
+```bash
+examples/ops/cutover_then_background_full_learning.sh \
+  --state ~/.openclawbrain/main/state.json \
+  --sessions-dir ~/.openclaw/sessions \
+  --replay-workers 4 \
+  --workers 4 \
+  --progress-every 2000 \
+  --checkpoint-every-seconds 60 \
+  --checkpoint-every 50 \
+  --persist-state-every-seconds 300
+```
+
+Both scripts run with `set -euo pipefail` and do not print secrets.
