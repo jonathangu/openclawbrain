@@ -481,8 +481,11 @@ def append_learning_events(path: Path | str, events: list[dict]) -> None:
 
 
 def _load_checkpoint(path: Path | str) -> dict[str, Any]:
-    """Load checkpoint JSON."""
-    payload: dict[str, Any] = {"version": 1, "sessions": {}}
+    """Load checkpoint JSON.
+
+    We treat checkpoints without an explicit version as legacy (version=0).
+    """
+    payload: dict[str, Any] = {"version": 0, "sessions": {}}
     p = Path(path)
     if not p.exists():
         return payload
@@ -492,6 +495,14 @@ def _load_checkpoint(path: Path | str) -> dict[str, Any]:
         return payload
     if not isinstance(raw, dict):
         return payload
+
+    raw_version = raw.get("version")
+    if isinstance(raw_version, int):
+        payload["version"] = raw_version
+    elif isinstance(raw.get("fast_learning"), dict) or isinstance(raw.get("replay"), dict):
+        # Phase-scoped payload implies modern schema even if version was omitted.
+        payload["version"] = 1
+
     raw_sessions = raw.get("sessions")
     if isinstance(raw_sessions, dict):
         payload["sessions"] = {k: int(v) for k, v in raw_sessions.items() if isinstance(v, (int, float))}
@@ -513,15 +524,14 @@ def _checkpoint_phase_offsets(
     *,
     phase: str,
 ) -> tuple[dict[str, int], bool]:
-    """Resolve phase session offsets, with safe legacy fallback.
+    """Resolve phase session offsets.
 
-    New checkpoints store offsets per phase (e.g. `fast_learning.sessions`, `replay.sessions`).
+    v1+ checkpoints store offsets per phase (e.g. `fast_learning.sessions`, `replay.sessions`).
 
     Legacy checkpoints stored a single top-level `sessions` map.
 
-    Safety rule:
-    - When running replay and `fast_learning` has already produced session offsets, we MUST NOT
-      fall back to the legacy map, otherwise replay can incorrectly skip all work.
+    IMPORTANT: For v1+ checkpoints, we must NEVER fall back to the legacy top-level map.
+    Otherwise, fast-learning can advance offsets and cause replay to incorrectly skip all work.
     """
     phase_payload = checkpoint.get(phase)
     if isinstance(phase_payload, dict):
@@ -529,10 +539,9 @@ def _checkpoint_phase_offsets(
         if isinstance(sessions, dict):
             return {k: int(v) for k, v in sessions.items() if isinstance(v, (int, float))}, False
 
-    if phase == "replay":
-        fast_payload = checkpoint.get("fast_learning")
-        if isinstance(fast_payload, dict) and isinstance(fast_payload.get("sessions"), dict):
-            return {}, False
+    version = checkpoint.get("version")
+    if isinstance(version, int) and version >= 1:
+        return {}, False
 
     legacy_sessions = checkpoint.get("sessions")
     if isinstance(legacy_sessions, dict):
@@ -561,8 +570,6 @@ def _save_checkpoint(
     if extra:
         phase_payload.update(extra)
     payload[phase] = phase_payload
-    if phase == "fast_learning" and session_offsets is not None:
-        payload["sessions"] = dict(phase_payload.get("sessions", {}))
     with path.open("w", encoding="utf-8") as handle:
         json.dump(payload, handle, indent=2)
 

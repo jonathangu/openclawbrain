@@ -1034,7 +1034,7 @@ def test_cli_replay_show_checkpoint_text_legacy_fixture_warns(tmp_path, capsys) 
     assert code == 0
     out = capsys.readouterr().out
     assert f"Checkpoint: {checkpoint_path}" in out
-    assert "Schema version: 1" in out
+    assert "Schema version: 0" in out
     assert "Resume would take effect: True (resume=True, ignore_checkpoint=False)" in out
 
 

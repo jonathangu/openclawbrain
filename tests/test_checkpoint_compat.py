@@ -47,12 +47,31 @@ def test_replay_resume_prefers_phase_scoped_sessions(tmp_path: Path, capsys) -> 
     assert "legacy checkpoint 'sessions'" not in capsys.readouterr().err
 
 
-def test_replay_resume_falls_back_to_legacy_sessions(tmp_path: Path, capsys) -> None:
-    """Replay resume falls back to top-level sessions when replay.sessions is missing."""
+def test_replay_resume_does_not_fall_back_for_v1_checkpoint(tmp_path: Path, capsys) -> None:
+    """For v1 checkpoints, replay must not fall back to top-level sessions offsets.
+
+    This prevents fast-learning offsets from causing replay to skip all work.
+    """
     session_path = tmp_path / "sessions.jsonl"
     checkpoint_path = _write_checkpoint_from_fixture(
         tmp_path,
         "mixed_partial_sessions.json",
+        session_path,
+    )
+    checkpoint = _load_checkpoint(checkpoint_path)
+
+    offsets, used_legacy = _checkpoint_phase_offsets(checkpoint, phase="replay")
+
+    assert offsets == {}
+    assert used_legacy is False
+
+
+def test_replay_resume_falls_back_to_legacy_sessions(tmp_path: Path, capsys) -> None:
+    """Replay resume falls back to top-level sessions only for legacy checkpoints."""
+    session_path = tmp_path / "sessions.jsonl"
+    checkpoint_path = _write_checkpoint_from_fixture(
+        tmp_path,
+        "legacy_schema.json",
         session_path,
     )
     checkpoint = _load_checkpoint(checkpoint_path)
