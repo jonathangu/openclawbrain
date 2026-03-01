@@ -5,6 +5,15 @@
 - Startup now prints an operator banner with socket path, state path, status-check command, and `Ctrl-C` shutdown guidance.
 - Updated operator docs to recommend `openclawbrain serve` as the canonical production startup path.
 
+### Replay checkpoint UX overhaul (issues #24, #25)
+- Added `openclawbrain replay --show-checkpoint` to print checkpoint status without opening JSON files.
+  - Human output includes checkpoint path, schema version, fast-learning progress/status, replay progress/merge batches, and whether resume would take effect.
+  - `--json` emits stable schema payloads with `type: checkpoint_status`.
+- `openclawbrain replay` now prints a startup banner in text mode with checkpoint path, `resume`, `ignore_checkpoint`, and planned phases.
+- Backward compatibility: if `fast_learning.sessions` or `replay.sessions` is missing, replay falls back to legacy top-level `sessions` offsets and emits warnings.
+- Added checkpoint fixture-based tests for legacy/new schemas, replay/fast-learning legacy fallback warnings, and startup/checkpoint status output.
+- Updated operator docs (`docs/ops-recipes.md`, `docs/setup-guide.md`) with `--show-checkpoint` and explicit resume semantics.
+
 ### Replay ops hardening + simple parallel replay v0 (issue #19)
 - `openclawbrain replay` adds:
   - `--progress-every N` (periodic progress, JSONL events when `--json` is enabled)

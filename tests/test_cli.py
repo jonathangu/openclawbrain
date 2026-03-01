@@ -930,6 +930,100 @@ def test_cli_replay_progress_events_jsonl(tmp_path, capsys) -> None:
     assert '{"type": "progress", "phase": "replay"' in out
 
 
+def test_cli_replay_show_checkpoint_json_uses_new_schema_fixture(tmp_path, capsys) -> None:
+    """replay --show-checkpoint emits stable JSON status for new schema checkpoints."""
+    state_path = tmp_path / "state.json"
+    _write_state(state_path)
+    fixture = Path(__file__).parent / "fixtures" / "checkpoints" / "new_schema.json"
+    checkpoint_path = tmp_path / "replay_checkpoint.json"
+    checkpoint_path.write_text(fixture.read_text(encoding="utf-8"), encoding="utf-8")
+
+    code = main(
+        [
+            "replay",
+            "--state",
+            str(state_path),
+            "--checkpoint",
+            str(checkpoint_path),
+            "--show-checkpoint",
+            "--resume",
+            "--json",
+        ]
+    )
+    assert code == 0
+    payload = json.loads(capsys.readouterr().out.strip())
+    assert payload["type"] == "checkpoint_status"
+    assert payload["checkpoint_path"] == str(checkpoint_path)
+    assert payload["schema_version"] == 1
+    assert payload["fast_learning"]["windows_processed"] == 4
+    assert payload["fast_learning"]["windows_total"] == 10
+    assert payload["fast_learning"]["status"] == "running"
+    assert payload["replay"]["queries_processed"] == 8
+    assert payload["replay"]["queries_total"] == 16
+    assert payload["replay"]["merge_batches"] == 2
+    assert payload["resume"]["would_take_effect"] is True
+
+
+def test_cli_replay_show_checkpoint_text_legacy_fixture_warns(tmp_path, capsys) -> None:
+    """replay --show-checkpoint warns when legacy top-level sessions are used."""
+    state_path = tmp_path / "state.json"
+    _write_state(state_path)
+    fixture = Path(__file__).parent / "fixtures" / "checkpoints" / "legacy_schema.json"
+    checkpoint_path = tmp_path / "replay_checkpoint.json"
+    checkpoint_path.write_text(fixture.read_text(encoding="utf-8"), encoding="utf-8")
+
+    with pytest.warns(UserWarning, match="legacy top-level 'sessions' offsets"):
+        code = main(
+            [
+                "replay",
+                "--state",
+                str(state_path),
+                "--checkpoint",
+                str(checkpoint_path),
+                "--show-checkpoint",
+                "--resume",
+            ]
+        )
+    assert code == 0
+    out = capsys.readouterr().out
+    assert f"Checkpoint: {checkpoint_path}" in out
+    assert "Schema version: 1" in out
+    assert "Resume would take effect: True (resume=True, ignore_checkpoint=False)" in out
+
+
+def test_cli_replay_startup_banner_printed_for_text_mode(tmp_path, capsys) -> None:
+    """replay prints startup banner in non-JSON mode."""
+    state_path = tmp_path / "state.json"
+    _write_state(state_path)
+    sessions = tmp_path / "sessions.jsonl"
+    sessions.write_text(
+        "\n".join(
+            [
+                json.dumps({"role": "user", "content": "alpha", "ts": 1.0}),
+                json.dumps({"role": "assistant", "content": "ok", "ts": 1.1}),
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    code = main(
+        [
+            "replay",
+            "--state",
+            str(state_path),
+            "--sessions",
+            str(sessions),
+            "--edges-only",
+        ]
+    )
+    assert code == 0
+    err = capsys.readouterr().err
+    assert "Replay startup:" in err
+    assert "resume: False" in err
+    assert "ignore_checkpoint: False" in err
+    assert "phases: replay" in err
+
+
 def test_cli_replay_writes_checkpoint_and_resume_uses_it(tmp_path, capsys) -> None:
     """replay writes checkpoint and resume only replays new lines."""
     state_path = tmp_path / "state.json"
@@ -994,6 +1088,49 @@ def test_cli_replay_writes_checkpoint_and_resume_uses_it(tmp_path, capsys) -> No
     assert second_payload["last_replayed_ts"] == 2.1
 
 
+def test_cli_replay_resume_legacy_checkpoint_warns_and_uses_offsets(tmp_path, capsys) -> None:
+    """replay resume falls back to legacy top-level sessions offsets."""
+    state_path = tmp_path / "state.json"
+    _write_state(state_path)
+    sessions = tmp_path / "sessions.jsonl"
+    sessions.write_text(
+        "\n".join(
+            [
+                json.dumps({"role": "user", "content": "alpha", "ts": 1.0}),
+                json.dumps({"role": "assistant", "content": "ok", "ts": 1.1}),
+                json.dumps({"role": "user", "content": "beta", "ts": 2.0}),
+                json.dumps({"role": "assistant", "content": "ok", "ts": 2.1}),
+            ]
+        ),
+        encoding="utf-8",
+    )
+    fixture = Path(__file__).parent / "fixtures" / "checkpoints" / "legacy_schema.json"
+    checkpoint_path = tmp_path / "replay_checkpoint.json"
+    checkpoint = json.loads(fixture.read_text(encoding="utf-8"))
+    checkpoint["sessions"] = {str(sessions): 2}
+    checkpoint_path.write_text(json.dumps(checkpoint), encoding="utf-8")
+
+    with pytest.warns(UserWarning, match="replay checkpoint missing phase-scoped sessions"):
+        code = main(
+            [
+                "replay",
+                "--state",
+                str(state_path),
+                "--sessions",
+                str(sessions),
+                "--edges-only",
+                "--checkpoint",
+                str(checkpoint_path),
+                "--resume",
+                "--json",
+            ]
+        )
+    assert code == 0
+    payload = json.loads(capsys.readouterr().out.strip())
+    assert payload["queries_replayed"] == 1
+    assert payload["last_replayed_ts"] == 2.1
+
+
 def test_cli_replay_stop_after_fast_learning(tmp_path, capsys, monkeypatch) -> None:
     """stop-after-fast-learning exits before replay and harvest."""
     state_path = tmp_path / "state.json"
@@ -1041,6 +1178,57 @@ def test_cli_replay_stop_after_fast_learning(tmp_path, capsys, monkeypatch) -> N
     assert "fast_learning" in payload
     assert "harvest" not in payload
     assert "queries_replayed" not in payload
+
+
+def test_cli_replay_fast_learning_resume_legacy_checkpoint_warns(tmp_path, capsys, monkeypatch) -> None:
+    """fast-learning resume falls back to legacy top-level sessions offsets."""
+    state_path = tmp_path / "state.json"
+    _write_state(state_path)
+    sessions = tmp_path / "sessions.jsonl"
+    sessions.write_text(
+        "\n".join(
+            [
+                json.dumps({"role": "user", "content": "first", "ts": 1.0}),
+                json.dumps({"role": "assistant", "content": "ok", "ts": 1.1}),
+                json.dumps({"role": "user", "content": "second", "ts": 2.0}),
+                json.dumps({"role": "assistant", "content": "ok", "ts": 2.1}),
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    from openclawbrain import full_learning as learning_module
+
+    def fake_llm(_: str, __: str) -> str:
+        return json.dumps({"corrections": [], "teachings": [], "reinforcements": []})
+
+    monkeypatch.setattr(learning_module, "openai_llm_fn", fake_llm)
+
+    fixture = Path(__file__).parent / "fixtures" / "checkpoints" / "legacy_schema.json"
+    checkpoint_path = tmp_path / "replay_checkpoint.json"
+    checkpoint = json.loads(fixture.read_text(encoding="utf-8"))
+    checkpoint["sessions"] = {str(sessions): 2}
+    checkpoint_path.write_text(json.dumps(checkpoint), encoding="utf-8")
+
+    with pytest.warns(UserWarning, match="fast_learning checkpoint missing phase-scoped sessions"):
+        code = main(
+            [
+                "replay",
+                "--state",
+                str(state_path),
+                "--sessions",
+                str(sessions),
+                "--fast-learning",
+                "--stop-after-fast-learning",
+                "--checkpoint",
+                str(checkpoint_path),
+                "--resume",
+                "--json",
+            ]
+        )
+    assert code == 0
+    payload = json.loads(capsys.readouterr().out.strip())
+    assert payload["stopped_after_fast_learning"] is True
 
 
 def test_cli_replay_parallel_mode_v0(tmp_path, capsys) -> None:

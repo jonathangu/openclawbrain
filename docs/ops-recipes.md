@@ -100,6 +100,30 @@ Notes:
 - `--replay-workers` controls edge-replay parallelism.
 - `merge_batches` in replay output indicates how many merge windows were applied.
 - Use both `--checkpoint-every-seconds` and `--checkpoint-every` for long runs so restarts resume from recent progress.
+- Replay startup now prints a banner (unless `--json`) with checkpoint path, `resume`, `ignore_checkpoint`, and planned phases.
+
+Inspect checkpoint progress without opening JSON:
+
+```bash
+openclawbrain replay \
+  --state ~/.openclawbrain/main/state.json \
+  --show-checkpoint \
+  --resume
+```
+
+Machine-readable checkpoint status:
+
+```bash
+openclawbrain replay \
+  --state ~/.openclawbrain/main/state.json \
+  --show-checkpoint \
+  --resume \
+  --json
+```
+
+Resume semantics:
+- Resume takes effect only when `--resume` is set and `--ignore-checkpoint` is not set.
+- If phase-scoped offsets are missing, replay falls back to legacy top-level `sessions` offsets and emits a warning.
 
 Use `examples/ops/replay_last_days.sh` when you want a bounded replay window.
 
