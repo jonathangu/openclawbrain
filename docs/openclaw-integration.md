@@ -2,6 +2,7 @@
 
 OpenClawBrain is built to be the long-term memory layer for **OpenClaw agents**.
 Canonical docs and examples: https://openclawbrain.ai
+Operator recipes (cutover, parallel replay, prompt caching, media memory): [docs/ops-recipes.md](ops-recipes.md)
 
 If you’re already running OpenClaw, this guide shows the fastest path to:
 
