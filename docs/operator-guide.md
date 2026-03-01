@@ -140,7 +140,7 @@ python examples/eval/prompt_context_eval.py \
 
 If no `--queries-file` is provided, a small built-in sample query set is used.
 
-## 10) Defaults that matter (v12.2.4+)
+## 10) Defaults that matter (v12.2.5+)
 - `max_prompt_context_chars` default: **30000** (daemon)
 - `max_fired_nodes` default: **30** (daemon)
 - prompt context is ordered deterministically but importance-first: **authority → score → stable source order**.
@@ -151,7 +151,15 @@ Useful telemetry fields (daemon `query` response + journal metadata):
 - `prompt_context_dropped_node_ids` (capped) + `prompt_context_dropped_count`
 - `prompt_context_dropped_authority_counts`
 
-## 11) OpenClaw media understanding (audio/image) → better memory
+## 11) Bootstrap files + memory notes are always indexed (v12.2.5+)
+Even if your OpenClaw workspace `.gitignore` excludes local operator files (common), OpenClawBrain will still index:
+- `SOUL.md`, `AGENTS.md`, `USER.md`, `TOOLS.md`, `MEMORY.md`, `IDENTITY.md`, `HEARTBEAT.md`
+- `active-tasks.md`, `WORKFLOW_AUTO.md`
+- everything under `memory/`
+
+This is intentional: these files are the “constitution + history” of your agent.
+
+## 12) OpenClaw media understanding (audio/image) → better memory
 OpenClaw has a built-in **media-understanding** pipeline that can:
 - transcribe audio/voice notes
 - describe images
@@ -161,7 +169,7 @@ When enabled in OpenClaw config, it will set `ctx.Transcript` and/or append extr
 
 If you rely on toolResult-only transcripts/OCR, keep `openclawbrain replay --include-tool-results` enabled (default).
 
-## 12) Correction wiring: what exists vs what you still need
+## 13) Correction wiring: what exists vs what you still need
 OpenClawBrain supports `correction(chat_id, lookback=N)` (it remembers recent fired paths per `chat_id`). To get *automatic* corrections in live chat, OpenClaw must:
 1) pass a stable `chat_id` into each brain query
 2) detect correction messages

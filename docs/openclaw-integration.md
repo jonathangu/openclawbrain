@@ -513,25 +513,46 @@ Two practical options:
 If you run the **opencormorant** fork of OpenClaw (`github.com/jonathangu/opencormorant`), there is a built-in `openclawbrain` tool that agents can call directly — no shell exec needed.
 
 ### What it provides
-The tool connects to the daemon Unix socket (`~/.openclawbrain/<agent>/daemon.sock`) and exposes four actions:
+The tool connects to the daemon Unix socket (`~/.openclawbrain/<agent>/daemon.sock`) and routes to the correct agent automatically (main/pelican/bountiful).
+
+It supports **all OpenClawBrain daemon methods** (plus a safe generic passthrough):
 
 | Action | Description |
 |---|---|
-| `query` | Retrieve context + fired node IDs for a user message |
-| `correction` | Apply negative reinforcement to the last query's fired path + inject correction node |
-| `self_learn` | Autonomous learning (corrections or reinforcement) |
-| `info` | Brain health/status |
+| `query` | Retrieve context + fired node IDs |
+| `learn` | Apply numeric outcome to fired IDs (weight updates) |
+| `inject` | Inject TEACHING/CORRECTION/DIRECTIVE nodes |
+| `maintain` | Run structural maintenance tasks |
+| `health` | Health summary |
+| `info` | Node/edge counts + embedder |
+| `save` | Persist state immediately |
+| `reload` | Reload state from disk |
+| `correction` | Penalize recent fired path for `chat_id` + inject correction node |
+| `self_learn` / `self_correct` | Autonomous learning/correction helpers |
+| `shutdown` | Stop the daemon (**requires** `confirm="shutdown"`) |
+| `call` | Generic validated passthrough: provide `method` + `params` |
 
 ### How to use it (agent perspective)
-The tool is registered automatically. Agents can call it like any other tool:
+The tool is registered automatically. Agents can call it like any other tool.
 
+Query:
 ```
-openclawbrain(action="query", query="how do we deploy", chat_id="telegram:123")
+openclawbrain(action="query", query="how do we deploy", chat_id="telegram:123", top_k=4)
 ```
 
-For corrections:
+Correction:
 ```
 openclawbrain(action="correction", chat_id="telegram:123", content="Actually we use blue-green deploys, not rolling")
+```
+
+Generic call (validated passthrough):
+```
+openclawbrain(action="call", method="maintain", params={"tasks":["health","decay"]})
+```
+
+Shutdown (explicit guard):
+```
+openclawbrain(action="shutdown", confirm="shutdown")
 ```
 
 ### Requirements
