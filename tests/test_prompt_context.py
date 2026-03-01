@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from openclawbrain.graph import Graph, Node
-from openclawbrain.prompt_context import build_prompt_context
+from openclawbrain.prompt_context import build_prompt_context, build_prompt_context_with_stats
 
 
 def test_build_prompt_context_is_deterministic_across_input_order() -> None:
@@ -52,3 +52,26 @@ def test_build_prompt_context_includes_citation_with_source_lines() -> None:
     assert "  source: workspace/deploy.md#L41-L63" in rendered
     assert "  Deploy with CI checks enabled." in rendered
     assert rendered.endswith("[/BRAIN_CONTEXT]")
+
+
+def test_build_prompt_context_with_stats_reports_trimmed_and_dropped_ids() -> None:
+    """Stats include deterministic included/dropped ids when budget trims context."""
+    graph = Graph()
+    graph.add_node(Node("a", "alpha", metadata={"file": "docs/a.md", "start_line": 1}))
+    graph.add_node(Node("b", "beta", metadata={"file": "docs/a.md", "start_line": 2}))
+    graph.add_node(Node("c", "gamma", metadata={"file": "docs/a.md", "start_line": 3}))
+
+    rendered, stats = build_prompt_context_with_stats(
+        graph=graph,
+        node_ids=["c", "a", "b"],
+        max_chars=110,
+    )
+
+    assert rendered.startswith("[BRAIN_CONTEXT v1]")
+    assert stats["prompt_context_trimmed"] is True
+    assert stats["prompt_context_max_chars"] == 110
+    assert stats["prompt_context_len"] == len(rendered)
+    assert stats["prompt_context_included_node_ids"] == ["a"]
+    assert stats["prompt_context_dropped_node_ids"] == ["b", "c"]
+    assert stats["prompt_context_dropped_count"] == 2
+    assert stats["prompt_context_dropped_node_ids_truncated"] is False

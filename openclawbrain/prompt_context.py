@@ -127,6 +127,90 @@ def _format_entry(
     return "\n".join(lines)
 
 
+def build_prompt_context_with_stats(
+    graph: Graph,
+    node_ids: list[str],
+    *,
+    max_chars: int | None = 20000,
+    include_node_ids: bool = True,
+    dropped_node_ids_limit: int = 50,
+) -> tuple[str, dict[str, Any]]:
+    """Build prompt context and structured telemetry about trimming behavior."""
+    header = "[BRAIN_CONTEXT v1]"
+    footer = "[/BRAIN_CONTEXT]"
+
+    unique_ids = sorted(set(node_ids), key=lambda item: _sort_key(graph, item))
+    formatted_entries: list[tuple[str, str]] = []
+    for node_id in unique_ids:
+        entry = _format_entry(graph, node_id, include_node_ids=include_node_ids)
+        if entry is not None:
+            formatted_entries.append((node_id, entry))
+
+    entries = [entry for _node_id, entry in formatted_entries]
+    ordered_node_ids = [node_id for node_id, _entry in formatted_entries]
+
+    if entries:
+        body = "\n\n".join(entries)
+        rendered = f"{header}\n{body}\n{footer}"
+    else:
+        rendered = f"{header}\n{footer}"
+
+    included_node_ids: list[str] = []
+    dropped_node_ids: list[str] = []
+    trimmed = False
+
+    if max_chars is None:
+        final_rendered = rendered
+        included_node_ids = ordered_node_ids
+    elif max_chars <= 0:
+        final_rendered = ""
+        trimmed = bool(rendered)
+        dropped_node_ids = ordered_node_ids
+    elif len(rendered) <= max_chars:
+        final_rendered = rendered
+        included_node_ids = ordered_node_ids
+    else:
+        trimmed = True
+        minimum = len(header) + 1 + len(footer)
+        if max_chars <= minimum:
+            final_rendered = rendered[:max_chars]
+            dropped_node_ids = ordered_node_ids
+        else:
+            body_budget = max_chars - minimum
+            trimmed_body = ""
+            for node_id, entry in formatted_entries:
+                candidate = entry if not trimmed_body else f"{trimmed_body}\n\n{entry}"
+                if len(candidate) <= body_budget:
+                    trimmed_body = candidate
+                    included_node_ids.append(node_id)
+                    continue
+                if not trimmed_body and body_budget > 0:
+                    # If the first entry is truncated, it still counts as included.
+                    trimmed_body = entry[:body_budget]
+                    included_node_ids.append(node_id)
+                break
+
+            if trimmed_body:
+                final_rendered = f"{header}\n{trimmed_body}\n{footer}"
+            else:
+                final_rendered = f"{header}\n{footer}"[:max_chars]
+
+            dropped_node_ids = ordered_node_ids[len(included_node_ids) :]
+
+    dropped_node_ids_cap = max(0, int(dropped_node_ids_limit))
+    dropped_node_ids_display = dropped_node_ids[:dropped_node_ids_cap]
+    stats = {
+        "prompt_context_len": len(final_rendered),
+        "prompt_context_max_chars": max_chars,
+        "prompt_context_trimmed": trimmed,
+        "prompt_context_included_node_ids": included_node_ids,
+        "prompt_context_dropped_node_ids": dropped_node_ids_display,
+        "prompt_context_dropped_node_ids_truncated": len(dropped_node_ids) > len(dropped_node_ids_display),
+        "prompt_context_dropped_count": len(dropped_node_ids),
+    }
+    return final_rendered, stats
+
+
 def build_prompt_context(
     graph: Graph,
     node_ids: list[str],
@@ -135,47 +219,10 @@ def build_prompt_context(
     include_node_ids: bool = True,
 ) -> str:
     """Build a deterministic, cache-friendly context appendix block."""
-    header = "[BRAIN_CONTEXT v1]"
-    footer = "[/BRAIN_CONTEXT]"
-
-    unique_ids = sorted(set(node_ids), key=lambda item: _sort_key(graph, item))
-    entries = [
-        entry
-        for entry in (
-            _format_entry(graph, node_id, include_node_ids=include_node_ids)
-            for node_id in unique_ids
-        )
-        if entry is not None
-    ]
-
-    if entries:
-        body = "\n\n".join(entries)
-        rendered = f"{header}\n{body}\n{footer}"
-    else:
-        rendered = f"{header}\n{footer}"
-
-    if max_chars is None:
-        return rendered
-    if max_chars <= 0:
-        return ""
-    if len(rendered) <= max_chars:
-        return rendered
-
-    minimum = len(header) + 1 + len(footer)
-    if max_chars <= minimum:
-        return rendered[:max_chars]
-
-    body_budget = max_chars - minimum
-    trimmed_body = ""
-    for entry in entries:
-        candidate = entry if not trimmed_body else f"{trimmed_body}\n\n{entry}"
-        if len(candidate) <= body_budget:
-            trimmed_body = candidate
-            continue
-        if not trimmed_body and body_budget > 0:
-            trimmed_body = entry[:body_budget]
-        break
-
-    if trimmed_body:
-        return f"{header}\n{trimmed_body}\n{footer}"
-    return f"{header}\n{footer}"[:max_chars]
+    rendered, _stats = build_prompt_context_with_stats(
+        graph=graph,
+        node_ids=node_ids,
+        max_chars=max_chars,
+        include_node_ids=include_node_ids,
+    )
+    return rendered

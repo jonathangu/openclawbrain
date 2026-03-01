@@ -27,7 +27,7 @@ from .inject import _apply_inhibitory_edges, inject_node
 from .state_lock import state_write_lock
 from .store import load_state, save_state
 from .traverse import TraversalConfig, traverse
-from .prompt_context import build_prompt_context
+from .prompt_context import build_prompt_context_with_stats
 
 
 FIRED_LOG_LIMIT_PER_CHAT = 100
@@ -293,25 +293,25 @@ def _handle_query(
     traverse_stop = time.perf_counter()
     total_stop = time.perf_counter()
 
+    prompt_context, prompt_context_stats = build_prompt_context_with_stats(
+        graph=graph,
+        node_ids=[str(node_id) for node_id in result.fired],
+        max_chars=max_prompt_chars,
+        include_node_ids=True,
+    )
     log_query(
         query_text=query_text,
         fired_ids=result.fired,
         node_count=graph.node_count(),
         journal_path=_journal_path(state_path),
-        metadata={"chat_id": params.get("chat_id")},
-    )
-
-    prompt_context = build_prompt_context(
-        graph=graph,
-        node_ids=[str(node_id) for node_id in result.fired],
-        max_chars=max_prompt_chars,
-        include_node_ids=True,
+        metadata={"chat_id": params.get("chat_id"), **prompt_context_stats},
     )
 
     return {
         "fired_nodes": result.fired,
         "context": result.context,
         "prompt_context": prompt_context,
+        **prompt_context_stats,
         "seeds": [[node_id, score] for node_id, score in seeds],
         "embed_query_ms": _ms(embed_start, embed_stop),
         "traverse_ms": _ms(traverse_start, traverse_stop),
