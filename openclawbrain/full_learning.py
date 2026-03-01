@@ -513,12 +513,27 @@ def _checkpoint_phase_offsets(
     *,
     phase: str,
 ) -> tuple[dict[str, int], bool]:
-    """Resolve phase session offsets, falling back to legacy top-level sessions."""
+    """Resolve phase session offsets, with safe legacy fallback.
+
+    New checkpoints store offsets per phase (e.g. `fast_learning.sessions`, `replay.sessions`).
+
+    Legacy checkpoints stored a single top-level `sessions` map.
+
+    Safety rule:
+    - When running replay and `fast_learning` has already produced session offsets, we MUST NOT
+      fall back to the legacy map, otherwise replay can incorrectly skip all work.
+    """
     phase_payload = checkpoint.get(phase)
     if isinstance(phase_payload, dict):
         sessions = phase_payload.get("sessions")
         if isinstance(sessions, dict):
             return {k: int(v) for k, v in sessions.items() if isinstance(v, (int, float))}, False
+
+    if phase == "replay":
+        fast_payload = checkpoint.get("fast_learning")
+        if isinstance(fast_payload, dict) and isinstance(fast_payload.get("sessions"), dict):
+            return {}, False
+
     legacy_sessions = checkpoint.get("sessions")
     if isinstance(legacy_sessions, dict):
         return {k: int(v) for k, v in legacy_sessions.items() if isinstance(v, (int, float))}, True
