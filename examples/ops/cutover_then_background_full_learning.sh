@@ -2,7 +2,8 @@
 set -euo pipefail
 
 STATE="${STATE:-$HOME/.openclawbrain/main/state.json}"
-SESSIONS_DIR="${SESSIONS_DIR:-$HOME/.openclaw/sessions}"
+# For OpenClaw, sessions live under: ~/.openclaw/agents/<agent>/sessions
+SESSIONS_DIR="${SESSIONS_DIR:-$HOME/.openclaw/agents/main/sessions}"
 REPLAY_WORKERS="${REPLAY_WORKERS:-4}"
 WORKERS="${WORKERS:-4}"
 PROGRESS_EVERY="${PROGRESS_EVERY:-2000}"

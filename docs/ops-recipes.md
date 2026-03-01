@@ -2,6 +2,8 @@
 
 Practical operator runbooks for cutovers and large replays.
 
+**OpenClaw path note:** OpenClaw agent session logs typically live at `~/.openclaw/agents/<agent>/sessions` (e.g., `~/.openclaw/agents/main/sessions`). You can pass that directory directly via `--sessions <dir>`.
+
 ## Cutover fast
 
 Use this when you need improved retrieval quickly and can defer full replay/harvest.

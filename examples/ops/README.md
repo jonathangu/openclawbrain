@@ -38,7 +38,7 @@ Replay the last 14 days (defaults shown):
 ```bash
 examples/ops/replay_last_days.sh \
   --state ~/.openclawbrain/main/state.json \
-  --sessions-dir ~/.openclaw/sessions \
+  --sessions-dir ~/.openclaw/agents/main/sessions \
   --days 14 \
   --replay-workers 4 \
   --workers 4 \
@@ -53,7 +53,7 @@ Fast cutover, then background full-learning replay:
 ```bash
 examples/ops/cutover_then_background_full_learning.sh \
   --state ~/.openclawbrain/main/state.json \
-  --sessions-dir ~/.openclaw/sessions \
+  --sessions-dir ~/.openclaw/agents/main/sessions \
   --replay-workers 4 \
   --workers 4 \
   --progress-every 2000 \
