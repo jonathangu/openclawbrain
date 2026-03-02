@@ -58,11 +58,16 @@ def test_two_cluster_simulation_is_deterministic(tmp_path: Path) -> None:
         seed=11,
     )
 
-    assert summary_a["initial_accuracy"] == summary_b["initial_accuracy"]
-    assert summary_a["final_accuracy"] == summary_b["final_accuracy"]
+    assert summary_a["initial_cluster_accuracy"] == summary_b["initial_cluster_accuracy"]
+    assert summary_a["final_cluster_accuracy"] == summary_b["final_cluster_accuracy"]
+    assert summary_a["initial_top1_accuracy"] == summary_b["initial_top1_accuracy"]
+    assert summary_a["final_top1_accuracy"] == summary_b["final_top1_accuracy"]
     assert summary_a["initial_ce_loss"] == summary_b["initial_ce_loss"]
     assert summary_a["final_ce_loss"] == summary_b["final_ce_loss"]
+    assert summary_a["ce_loss_overall_decrease"] == summary_b["ce_loss_overall_decrease"]
+    assert summary_a["ce_loss_monotonic_nonincreasing"] == summary_b["ce_loss_monotonic_nonincreasing"]
 
     curve_a = (out_a / "simulation_curve.csv").read_text(encoding="utf-8")
     curve_b = (out_b / "simulation_curve.csv").read_text(encoding="utf-8")
     assert curve_a == curve_b
+    assert curve_a.splitlines()[0] == "epoch,ce_loss,cluster_accuracy,top1_accuracy"

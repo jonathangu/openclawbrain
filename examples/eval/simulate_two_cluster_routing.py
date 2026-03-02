@@ -2,7 +2,7 @@
 """Synthetic two-cluster routing simulation for route model behavior.
 
 Produces:
-- simulation_curve.csv (epoch, ce_loss, accuracy)
+- simulation_curve.csv (epoch, ce_loss, cluster_accuracy, top1_accuracy)
 - report.md (short narrative summary)
 """
 
@@ -119,7 +119,7 @@ def _write_traces_and_labels(
                                 RouteCandidate(target_id="cluster_b_t0", edge_weight=0.35, edge_relevance=0.35),
                                 RouteCandidate(target_id="cluster_b_t1", edge_weight=0.35, edge_relevance=0.35),
                             ],
-                            teacher_choose=[chosen],
+                            teacher_choose=list(preferred_targets),
                             teacher_scores={},
                             ts=1000.0 + sample_idx,
                         )
@@ -156,7 +156,7 @@ def _evaluate_accuracy(
     state_path: Path,
     labels_path: Path,
     label_temp: float,
-) -> float:
+) -> dict[str, float]:
     traces = _read_traces(str(traces_path))
     labels: list[LabelRecord] = []
     for line in labels_path.read_text(encoding="utf-8").splitlines():
@@ -169,27 +169,37 @@ def _evaluate_accuracy(
     labels_by_key = _labels_index(labels)
     reward_weights = RewardWeights()
 
-    correct = 0
+    cluster_correct = 0
+    top1_correct = 0
     total = 0
     for trace, point_idx, point, query_vector, targets, candidate_ids in points:
         logits, _q_proj, _target_projs = _point_logits(model, query_vector, targets)
         pred_idx = int(np.argmax(logits))
         pred_target = candidate_ids[pred_idx]
-        teacher_dist = _teacher_distribution(
-            trace,
-            point_idx,
-            point,
-            candidate_ids,
-            labels_by_key,
-            label_temp=label_temp,
-            reward_weights=reward_weights,
-        )
-        teacher_idx = int(np.argmax(teacher_dist))
-        teacher_target = candidate_ids[teacher_idx]
-        if pred_target == teacher_target:
-            correct += 1
+        acceptable_targets = {target_id for target_id in point.teacher_choose if target_id in candidate_ids}
+        if not acceptable_targets:
+            teacher_dist = _teacher_distribution(
+                trace,
+                point_idx,
+                point,
+                candidate_ids,
+                labels_by_key,
+                label_temp=label_temp,
+                reward_weights=reward_weights,
+            )
+            acceptable_targets = {candidate_ids[int(np.argmax(teacher_dist))]}
+
+        if pred_target in acceptable_targets:
+            cluster_correct += 1
+        if pred_target == point.chosen_target_id:
+            top1_correct += 1
         total += 1
-    return float(correct / total) if total else 0.0
+    if total <= 0:
+        return {"cluster_accuracy": 0.0, "top1_accuracy": 0.0}
+    return {
+        "cluster_accuracy": float(cluster_correct / total),
+        "top1_accuracy": float(top1_correct / total),
+    }
 
 
 def run_two_cluster_simulation(
@@ -218,8 +228,16 @@ def run_two_cluster_simulation(
     )
 
     rows: list[dict[str, float]] = []
-    initial_model = RouteModel.init_random(dq=dim, dt=dim, df=1, rank=max(1, int(rank)))
-    initial_accuracy = _evaluate_accuracy(
+    model_rank = max(1, int(rank))
+    initial_model = RouteModel(
+        r=model_rank,
+        A=np.zeros((dim, model_rank), dtype=float),
+        B=np.zeros((dim, model_rank), dtype=float),
+        w_feat=np.zeros(1, dtype=float),
+        b=0.0,
+        T=1.0,
+    )
+    initial_metrics = _evaluate_accuracy(
         model=initial_model,
         traces_path=traces_path,
         state_path=state_path,
@@ -240,7 +258,7 @@ def run_two_cluster_simulation(
             label_temp=label_temp,
         )
         model = RouteModel.load_npz(model_path)
-        accuracy = _evaluate_accuracy(
+        metrics = _evaluate_accuracy(
             model=model,
             traces_path=traces_path,
             state_path=state_path,
@@ -251,24 +269,32 @@ def run_two_cluster_simulation(
             {
                 "epoch": float(epoch),
                 "ce_loss": float(summary.final_ce_loss),
-                "accuracy": float(accuracy),
+                "cluster_accuracy": float(metrics["cluster_accuracy"]),
+                "top1_accuracy": float(metrics["top1_accuracy"]),
             }
         )
 
     csv_path = output_dir / "simulation_curve.csv"
     with csv_path.open("w", encoding="utf-8", newline="") as handle:
-        writer = csv.DictWriter(handle, fieldnames=["epoch", "ce_loss", "accuracy"])
+        writer = csv.DictWriter(handle, fieldnames=["epoch", "ce_loss", "cluster_accuracy", "top1_accuracy"])
         writer.writeheader()
         for row in rows:
             writer.writerow(
                 {
                     "epoch": int(row["epoch"]),
                     "ce_loss": f"{row['ce_loss']:.8f}",
-                    "accuracy": f"{row['accuracy']:.8f}",
+                    "cluster_accuracy": f"{row['cluster_accuracy']:.8f}",
+                    "top1_accuracy": f"{row['top1_accuracy']:.8f}",
                 }
             )
 
     final_row = rows[-1]
+    initial_ce_loss = float(rows[0]["ce_loss"])
+    final_ce_loss = float(final_row["ce_loss"])
+    overall_loss_decrease = final_ce_loss < initial_ce_loss
+    monotonic_nonincreasing = all(
+        rows[idx]["ce_loss"] <= rows[idx - 1]["ce_loss"] + 1e-12 for idx in range(1, len(rows))
+    )
     report_path = output_dir / "report.md"
     report_path.write_text(
         "\n".join(
@@ -279,15 +305,23 @@ def run_two_cluster_simulation(
                 "- 1 ambiguous source node",
                 "- 4 targets split into two clusters (2 per cluster)",
                 "- query vectors sampled from two centroids with Gaussian noise",
-                "- dense teacher labels supervise the correct cluster",
+                "- cluster-level supervision marks both in-cluster targets as acceptable",
                 "",
                 "## Results",
-                f"- Initial random-model accuracy: {initial_accuracy:.4f}",
-                f"- Final accuracy (epoch {int(final_row['epoch'])}): {float(final_row['accuracy']):.4f}",
-                f"- Initial CE loss (epoch 1): {float(rows[0]['ce_loss']):.6f}",
-                f"- Final CE loss (epoch {int(final_row['epoch'])}): {float(final_row['ce_loss']):.6f}",
+                "- Chance-level cluster accuracy baseline: 0.5000 (2 of 4 targets belong to the right cluster)",
+                f"- Initial cluster accuracy: {float(initial_metrics['cluster_accuracy']):.4f}",
+                f"- Final cluster accuracy (epoch {int(final_row['epoch'])}): {float(final_row['cluster_accuracy']):.4f}",
+                f"- Initial top-1 exact-target accuracy: {float(initial_metrics['top1_accuracy']):.4f}",
+                f"- Final top-1 exact-target accuracy (epoch {int(final_row['epoch'])}): {float(final_row['top1_accuracy']):.4f}",
+                f"- Initial CE loss (epoch 1): {initial_ce_loss:.6f}",
+                f"- Final CE loss (epoch {int(final_row['epoch'])}): {final_ce_loss:.6f}",
+                f"- CE monotonic non-increasing across epochs: {'yes' if monotonic_nonincreasing else 'no'}",
                 "",
-                "Loss decreases while routing accuracy improves, consistent with the expected QTsim learning behavior on clustered routing targets.",
+                (
+                    "Overall CE loss decreased across training, consistent with learnable cluster routing."
+                    if overall_loss_decrease
+                    else "Overall CE loss did not decrease; inspect hyperparameters or sample noise."
+                ),
                 "",
                 f"CSV curve: `{csv_path.name}`",
             ]
@@ -303,10 +337,16 @@ def run_two_cluster_simulation(
         "labels_path": str(labels_path),
         "csv_path": str(csv_path),
         "report_path": str(report_path),
-        "initial_accuracy": initial_accuracy,
-        "final_accuracy": float(final_row["accuracy"]),
-        "initial_ce_loss": float(rows[0]["ce_loss"]),
-        "final_ce_loss": float(final_row["ce_loss"]),
+        "initial_cluster_accuracy": float(initial_metrics["cluster_accuracy"]),
+        "final_cluster_accuracy": float(final_row["cluster_accuracy"]),
+        "initial_top1_accuracy": float(initial_metrics["top1_accuracy"]),
+        "final_top1_accuracy": float(final_row["top1_accuracy"]),
+        "initial_accuracy": float(initial_metrics["cluster_accuracy"]),
+        "final_accuracy": float(final_row["cluster_accuracy"]),
+        "initial_ce_loss": initial_ce_loss,
+        "final_ce_loss": final_ce_loss,
+        "ce_loss_overall_decrease": bool(overall_loss_decrease),
+        "ce_loss_monotonic_nonincreasing": bool(monotonic_nonincreasing),
         "epochs": int(final_row["epoch"]),
     }
 
