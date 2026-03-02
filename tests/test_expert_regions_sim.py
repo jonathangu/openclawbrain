@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from pathlib import Path
+import csv
 
 from examples.eval.simulate_expert_regions import run_expert_regions_simulation
 
@@ -71,3 +72,19 @@ def test_expert_regions_simulation_is_deterministic(tmp_path: Path) -> None:
     report_a = (out_a / "report.md").read_text(encoding="utf-8")
     report_b = (out_b / "report.md").read_text(encoding="utf-8")
     assert report_a == report_b
+
+
+def test_curve_includes_industry_baselines(tmp_path: Path) -> None:
+    summary = _run_small(tmp_path / "curve_check", seed=31)
+    curve_path = Path(summary["curve_path"])
+    with curve_path.open("r", encoding="utf-8", newline="") as handle:
+        reader = csv.DictReader(handle)
+        policies = {row["policy"] for row in reader}
+    assert {"vector_topk", "vector_topk_rerank", "pointer_chase"}.issubset(policies)
+
+
+def test_report_includes_industry_baselines_section(tmp_path: Path) -> None:
+    summary = _run_small(tmp_path / "report_check", seed=32)
+    report_path = Path(summary["report_path"])
+    report = report_path.read_text(encoding="utf-8")
+    assert "## Industry baselines" in report
