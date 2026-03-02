@@ -21,6 +21,14 @@ Runs the complete default brain-building pipeline for every agent listed in
 USAGE
 }
 
+iso_now() {
+  python3 - <<'PY'
+from datetime import datetime, timezone
+
+print(datetime.now(timezone.utc).isoformat())
+PY
+}
+
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
   usage
   exit 0
@@ -131,7 +139,7 @@ while IFS=$'\t' read -r AGENT_ID WORKSPACE_DIR; do
     echo "workspace: $WORKSPACE_DIR"
     echo "state: $STATE"
     echo "sessions: $SESSIONS"
-    echo "timestamp: $(date -Is)"
+    echo "timestamp: $(iso_now)"
 
     if [[ ! -f "$STATE" ]]; then
       echo "error: missing state file: $STATE" >&2
