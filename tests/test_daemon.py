@@ -885,8 +885,22 @@ def test_query_brain_socket_node_id_default_follows_compact_mode(tmp_path: Path,
 
     captured: list[bool] = []
 
-    def _fake_socket(*args, **_kwargs):
-        captured.append(bool(args[-1]))
+    def _fake_socket(
+        socket_path: str | None,
+        query_text: str,
+        chat_id: str | None,
+        top: int,
+        route_mode: str,
+        route_top_k: int,
+        route_alpha_sim: float,
+        route_use_relevance: bool,
+        max_prompt_context_chars: int,
+        exclude_files: list[str],
+        exclude_file_prefixes: list[str],
+        prompt_context_include_node_ids: bool,
+        include_provenance: bool,
+    ):
+        captured.append(bool(prompt_context_include_node_ids))
         return {
             "fired_nodes": ["a"],
             "context": "ctx",
@@ -989,6 +1003,7 @@ def test_query_brain_socket_passes_route_params(tmp_path: Path, capsys, monkeypa
         exclude_files: list[str],
         exclude_file_prefixes: list[str],
         prompt_context_include_node_ids: bool,
+        include_provenance: bool,
     ) -> dict[str, object]:
         captured.update(
             {
@@ -1004,6 +1019,7 @@ def test_query_brain_socket_passes_route_params(tmp_path: Path, capsys, monkeypa
                 "exclude_files": exclude_files,
                 "exclude_file_prefixes": exclude_file_prefixes,
                 "prompt_context_include_node_ids": prompt_context_include_node_ids,
+                "include_provenance": include_provenance,
             }
         )
         return {

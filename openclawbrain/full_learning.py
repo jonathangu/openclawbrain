@@ -18,6 +18,7 @@ from typing import Any
 
 from ._util import _extract_json
 from .inject import inject_batch
+from .provenance import attach_tool_evidence_provenance
 from .maintain import run_maintenance
 try:
     from .openai_embeddings import OpenAIEmbedder
@@ -34,7 +35,9 @@ except Exception:
 from .replay import (
     DEFAULT_TOOL_RESULT_ALLOWLIST,
     DEFAULT_TOOL_RESULT_MAX_CHARS,
+    _extract_tool_calls,
     _extract_tool_result,
+    _extract_tool_result_record,
     _is_media_stub_query,
     _normalize_tool_result_allowlist,
     replay_queries,
@@ -648,6 +651,7 @@ def load_interactions_for_replay(
 
     for path in files:
         path_name = str(path)
+        session_name = path.name
         start_line = int((since_lines or {}).get(path_name, 0))
         last_line = start_line
         last_user_idx: int | None = None
@@ -671,9 +675,13 @@ def load_interactions_for_replay(
                         "query": query,
                         "response": None,
                         "tool_calls": [],
+                        "tool_results": [],
                         "ts": record_ts,
                         "source": path_name,
+                        "session": session_name,
                         "line_no": line_no,
+                        "line_no_start": line_no,
+                        "line_no_end": line_no,
                     }
                 )
                 last_user_idx = len(interactions) - 1
@@ -681,6 +689,16 @@ def load_interactions_for_replay(
                 continue
 
             if role in {"toolresult", "tool_result"}:
+                if last_user_idx is not None:
+                    record = _extract_tool_result_record(message)
+                    if record is not None:
+                        record["line_no"] = line_no
+                        record["session"] = session_name
+                        record["source"] = path_name
+                        interactions[last_user_idx].setdefault("tool_results", [])
+                        if isinstance(interactions[last_user_idx]["tool_results"], list):
+                            interactions[last_user_idx]["tool_results"].append(record)
+                    interactions[last_user_idx]["line_no_end"] = line_no
                 if (
                     include_tool_results
                     and last_user_idx is not None
@@ -714,12 +732,10 @@ def load_interactions_for_replay(
 
             response = _resolve_text(message.get("content"))
             interactions[last_user_idx]["response"] = response
-            tool_calls = []
-            raw_calls = message.get("tool_calls")
-            if isinstance(raw_calls, list):
-                tool_calls = [call for call in raw_calls if isinstance(call, dict)]
+            tool_calls = _extract_tool_calls(message, is_assistant=True)
             interactions[last_user_idx]["tool_calls"] = tool_calls
             interactions[last_user_idx]["ts"] = record_ts
+            interactions[last_user_idx]["line_no_end"] = line_no
             last_user_idx = None
 
         offsets[path_name] = last_line
@@ -950,6 +966,9 @@ def run_fast_learning(
             connect_top_k=3,
             connect_min_sim=connect_min_sim,
         )
+        provenance_edges = attach_tool_evidence_provenance(graph, deduped)
+        if provenance_edges.get("edges_added"):
+            injected["edges_added"] = int(injected.get("edges_added", 0)) + int(provenance_edges["edges_added"])
         _persist_state(graph=graph, index=index, meta=meta, state_path=state_path, backup=backup)
 
     if checkpoint_path:

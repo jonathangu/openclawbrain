@@ -81,9 +81,9 @@ DEFAULT_STATE_PROFILE = "main"
 REPLAY_MODES = ("edges-only", "fast-learning", "full")
 REPLAY_HELP_EPILOG = (
     "Replay modes and rough cost profile:\n"
-    "  edges-only    Fastest/cheapest. No LLM calls, no harvest. Good default for frequent warm-up.\n"
+    "  edges-only    Fastest/cheapest. No LLM calls, no harvest.\n"
     "  fast-learning LLM-bound transcript mining + injection only. Usually the slowest and highest-cost phase.\n"
-    "  full          Fast-learning + edge replay + harvest. Highest end-to-end time and API spend.\n\n"
+    "  full          Fast-learning + edge replay + harvest. Highest end-to-end time and API spend. Default.\n\n"
     "Checkpoint semantics:\n"
     "  --resume uses saved per-session offsets.\n"
     "  --fresh / --no-checkpoint starts from scratch even if a checkpoint exists.\n"
@@ -142,7 +142,7 @@ def _resolve_replay_mode(args: argparse.Namespace) -> tuple[str, bool]:
         return explicit_mode, False
     if legacy_mode is not None:
         return legacy_mode, False
-    return "edges-only", True
+    return "full", True
 
 
 def _load_profile(profile_path: str | None) -> BrainProfile | None:
@@ -288,6 +288,7 @@ def _build_parser() -> argparse.ArgumentParser:
     q.add_argument("--query-vector-stdin", action="store_true")
     q.add_argument("--embedder", choices=["local", "openai"], default=None)
     q.add_argument("--max-context-chars", type=int, default=None)
+    q.add_argument("--provenance", action=argparse.BooleanOptionalAction, default=False)
     q.add_argument("--json", action="store_true")
 
     l = sub.add_parser("learn")
@@ -442,8 +443,8 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=REPLAY_MODES,
         default=None,
         help=(
-            "Replay mode: edges-only (cheap/default), fast-learning (LLM mining only), "
-            "or full (fast-learning + replay + harvest)."
+            "Replay mode: edges-only (cheap), fast-learning (LLM mining only), "
+            "or full (fast-learning + replay + harvest; default)."
         ),
     )
     r.add_argument(
@@ -489,6 +490,12 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     r.add_argument("--ignore-checkpoint", action="store_true", help=argparse.SUPPRESS)
     r.add_argument("--include-tool-results", action=argparse.BooleanOptionalAction, default=True)
+    r.add_argument(
+        "--tool-edges",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Create tool action/evidence edges during replay (default: on).",
+    )
     r.add_argument(
         "--tool-result-allowlist",
         default=",".join(sorted(DEFAULT_TOOL_RESULT_ALLOWLIST)),
@@ -1411,7 +1418,11 @@ def cmd_query(args: argparse.Namespace) -> int:
     result = traverse(
         graph=graph,
         seeds=seeds,
-        config=TraversalConfig(max_hops=15, max_context_chars=args.max_context_chars),
+        config=TraversalConfig(
+            max_hops=15,
+            max_context_chars=args.max_context_chars,
+            include_provenance=bool(args.provenance),
+        ),
         query_text=args.text,
     )
     log_query(
@@ -1973,7 +1984,7 @@ def cmd_replay(args: argparse.Namespace) -> int:
     timed_progress_interval_seconds = 30
     if mode_defaulted and not quiet:
         print(
-            "Replay mode note: no mode specified; defaulting to --mode edges-only (never defaults to full).",
+            "Replay mode note: no mode specified; defaulting to --mode full.",
             file=sys.stderr,
         )
 
@@ -2196,6 +2207,7 @@ def cmd_replay(args: argparse.Namespace) -> int:
             auto_decay=auto_decay,
             decay_interval=decay_interval,
             on_merge=_on_merge,
+            tool_edges=bool(args.tool_edges),
         )
         stats["queries_replayed"] = int(parallel_stats.get("queries_replayed", 0))
         stats["edges_reinforced"] = int(parallel_stats.get("edges_reinforced", 0))
@@ -2222,6 +2234,7 @@ def cmd_replay(args: argparse.Namespace) -> int:
                 verbose=False,
                 auto_decay=auto_decay,
                 decay_interval=decay_interval,
+                tool_edges=bool(args.tool_edges),
             )
             merge_batches += 1
             processed_interactions += len(batch)

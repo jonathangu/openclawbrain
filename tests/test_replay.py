@@ -8,6 +8,7 @@ import pytest
 from openclawbrain.cli import main
 from openclawbrain.graph import Edge, Graph, Node
 from openclawbrain import learn as _learn_mod
+from openclawbrain.provenance import TOOL_EVIDENCE_PREFIX
 from openclawbrain.replay import extract_interactions, extract_queries, extract_queries_from_dir, replay_queries
 from openclawbrain.traverse import TraversalConfig
 
@@ -136,6 +137,63 @@ def test_extract_interactions_parses_user_and_assistant_messages(tmp_path: Path)
     assert interactions[0]["query"] == "How do I run?"
     assert interactions[0]["response"] == "Use the docs."
     assert interactions[0]["tool_calls"] == [{"id": "tool-1", "name": "lookup", "arguments": "{}"}]
+
+
+def test_extract_interactions_pairs_camelcase_toolcall_and_toolresult(tmp_path: Path) -> None:
+    """CamelCase toolCall items and toolResult records are paired in interactions."""
+    path = tmp_path / "session_toolcall.jsonl"
+    path.write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "type": "message",
+                        "message": {
+                            "role": "user",
+                            "content": [{"type": "text", "text": "Search the web"}],
+                        },
+                    }
+                ),
+                json.dumps(
+                    {
+                        "type": "message",
+                        "message": {
+                            "role": "assistant",
+                            "content": [
+                                {
+                                    "type": "toolCall",
+                                    "id": "tc-1",
+                                    "name": "web_search",
+                                    "arguments": "{\"q\": \"alpha\"}",
+                                }
+                            ],
+                        },
+                    }
+                ),
+                json.dumps(
+                    {
+                        "type": "message",
+                        "message": {
+                            "role": "toolResult",
+                            "toolName": "web_search",
+                            "toolCallId": "tc-1",
+                            "content": "result text",
+                        },
+                    }
+                ),
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    interactions = extract_interactions(path)
+    assert len(interactions) == 1
+    assert interactions[0]["tool_calls"] == [{"id": "tc-1", "name": "web_search", "arguments": "{\"q\": \"alpha\"}"}]
+    tool_results = interactions[0].get("tool_results")
+    assert isinstance(tool_results, list)
+    assert tool_results[0]["tool_call_id"] == "tc-1"
+    assert tool_results[0]["tool_name"] == "web_search"
+    assert tool_results[0]["content"] == "result text"
 
 
 def test_extract_interactions_attaches_allowlisted_tool_result_for_media_stub(tmp_path: Path) -> None:
@@ -315,6 +373,38 @@ def test_replay_queries_auto_scores_if_assistant_response_matches() -> None:
         queries=[{"query": "alpha", "response": "alpha content answered", "tool_calls": []}],
     )
     assert boosted._edges["a"]["b"].weight > base._edges["a"]["b"].weight
+
+
+def test_replay_creates_tool_action_edges_and_evidence_nodes() -> None:
+    """Replay creates tool action nodes/edges and evidence nodes for tier-1 tools."""
+    graph = Graph()
+    graph.add_node(Node("a", "alpha", metadata={"file": "a.md"}))
+    graph.add_node(Node("b", "beta", metadata={"file": "a.md"}))
+    graph.add_edge(Edge("a", "b", 0.5))
+
+    interactions = [
+        {
+            "query": "alpha",
+            "response": "done",
+            "tool_calls": [{"id": "tc-1", "name": "web_search", "arguments": "{\"q\": \"alpha\"}"}],
+            "tool_results": [{"tool_call_id": "tc-1", "tool_name": "web_search", "content": "result text"}],
+            "ts": 1.0,
+            "session": "session.jsonl",
+            "source": "session.jsonl",
+            "line_no_start": 1,
+            "line_no_end": 3,
+        }
+    ]
+
+    replay_queries(graph=graph, queries=interactions, config=TraversalConfig(max_hops=1))
+
+    tool_action_nodes = [node for node in graph.nodes() if node.id.startswith("tool_action::")]
+    assert tool_action_nodes
+    action_node_id = tool_action_nodes[0].id
+    assert graph._edges["a"][action_node_id].kind == "tool_action"
+
+    evidence_nodes = [node for node in graph.nodes() if node.id.startswith(TOOL_EVIDENCE_PREFIX)]
+    assert evidence_nodes
 
 
 def test_extract_queries_missing_file_returns_empty(tmp_path: Path) -> None:

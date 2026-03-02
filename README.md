@@ -346,7 +346,7 @@ See `examples/openai_embedder/` for a complete example.
 | `compact` | Compact old daily notes into graph nodes |
 | `sync` | Incremental re-embed after file changes |
 | `inject` | Add CORRECTION/TEACHING/DIRECTIVE nodes |
-| `replay` | Replay session queries (`--mode edges-only` default, plus `--mode fast-learning` or `--mode full`; use `--resume`/`--fresh`/`--checkpoint` to control checkpoint behavior) |
+| `replay` | Replay session queries (`--mode full` default, plus `--mode edges-only` or `--mode fast-learning`; use `--resume`/`--fresh`/`--checkpoint` to control checkpoint behavior) |
 | `harvest` | Apply slow-learning pass from `learning_events.jsonl` to current graph |
 | `async-route-pg` | Background teacher-shadow routing labels from recent query journal + PG edge updates |
 | `health` | Show graph health metrics |

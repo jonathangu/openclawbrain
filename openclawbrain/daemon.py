@@ -422,7 +422,12 @@ def _handle_query(
     result = traverse(
         graph=graph,
         seeds=seeds,
-        config=TraversalConfig(max_hops=15, max_context_chars=max_context_chars, max_fired_nodes=max_fired_nodes),
+        config=TraversalConfig(
+            max_hops=15,
+            max_context_chars=max_context_chars,
+            max_fired_nodes=max_fired_nodes,
+            include_provenance=query.include_provenance,
+        ),
         query_text=query_text,
         route_fn=route_fn,
     )

@@ -1098,8 +1098,8 @@ def test_inject_command_defaults_connect_min_sim_for_hash_embedder(tmp_path, cap
     assert out["inhibitory_edges_created"] > 0
 
 
-def test_cli_replay_default_mode_is_edges_only_and_not_full(tmp_path, capsys) -> None:
-    """replay without mode/legacy flags defaults to edges-only and prints a note."""
+def test_cli_replay_default_mode_is_full(tmp_path, capsys, monkeypatch) -> None:
+    """replay without mode/legacy flags defaults to full and prints a note."""
     state_path = tmp_path / "state.json"
     _write_state(state_path)
 
@@ -1113,6 +1113,11 @@ def test_cli_replay_default_mode_is_edges_only_and_not_full(tmp_path, capsys) ->
         ),
         encoding="utf-8",
     )
+
+    import openclawbrain.cli as cli_module
+
+    monkeypatch.setattr(cli_module, "run_fast_learning", lambda **_: {"events_injected": 0})
+    monkeypatch.setattr(cli_module, "run_harvest", lambda **_: {"harvested": 0})
 
     code = main(
         [
@@ -1128,9 +1133,9 @@ def test_cli_replay_default_mode_is_edges_only_and_not_full(tmp_path, capsys) ->
     captured = capsys.readouterr()
     result = json.loads(captured.out.strip())
     assert result["queries_replayed"] == 2
-    assert "fast_learning" not in result
-    assert "harvest" not in result
-    assert "defaulting to --mode edges-only" in captured.err
+    assert "fast_learning" in result
+    assert "harvest" in result
+    assert "defaulting to --mode full" in captured.err
 
 
 def test_cli_replay_edges_only_skips_learning(tmp_path, capsys) -> None:
@@ -1475,7 +1480,7 @@ def test_cli_replay_mode_resolution_maps_legacy_flags() -> None:
 
     parser = _build_parser()
     default_args = parser.parse_args(["replay", "--state", "/tmp/x.json", "--sessions", "/tmp/s"])
-    assert _resolve_replay_mode(default_args) == ("edges-only", True)
+    assert _resolve_replay_mode(default_args) == ("full", True)
 
     edges_args = parser.parse_args(["replay", "--state", "/tmp/x.json", "--sessions", "/tmp/s", "--edges-only"])
     assert _resolve_replay_mode(edges_args) == ("edges-only", False)

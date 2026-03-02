@@ -79,6 +79,67 @@ def test_inject_node_with_vector() -> None:
     assert index._vectors["learning::43"] == default_embed("Never forget to commit")
 
 
+def test_inject_node_attaches_tool_evidence_provenance() -> None:
+    """inject node attaches provenance edges when session_pointer is provided."""
+    graph = Graph()
+    index = VectorIndex()
+    graph.add_node(
+        Node(
+            "tool_evidence::web_search::abc",
+            "Evidence",
+            metadata={"session": "s", "line_no": 2},
+        )
+    )
+
+    result = inject_node(
+        graph,
+        index,
+        "learning::prov",
+        "Tie learning to evidence",
+        embed_fn=default_embed,
+        connect_top_k=0,
+        connect_min_sim=0.0,
+        metadata={"session_pointer": "s:1-3"},
+    )
+
+    assert result["edges_added"] == 1
+    edge = graph._edges["learning::prov"]["tool_evidence::web_search::abc"]
+    assert edge.kind == "provenance"
+
+
+def test_inject_batch_attaches_tool_evidence_provenance() -> None:
+    """inject batch attaches provenance edges when session + line range is provided."""
+    graph = Graph()
+    index = VectorIndex()
+    graph.add_node(
+        Node(
+            "tool_evidence::web_search::def",
+            "Evidence",
+            metadata={"session": "s", "line_no": 5},
+        )
+    )
+
+    result = inject_batch(
+        graph=graph,
+        index=index,
+        nodes=[
+            {
+                "id": "learning::prov-batch",
+                "content": "Tie batch learning to evidence",
+                "type": "TEACHING",
+                "metadata": {"session": "s", "line_no_start": 5, "line_no_end": 5},
+            }
+        ],
+        embed_fn=default_embed,
+        connect_top_k=0,
+        connect_min_sim=0.0,
+    )
+
+    assert result["injected"] == 1
+    edge = graph._edges["learning::prov-batch"]["tool_evidence::web_search::def"]
+    assert edge.kind == "provenance"
+
+
 def test_inject_correction_creates_inhibitory() -> None:
     """test inject correction creates inhibitory edges."""
     graph = Graph()

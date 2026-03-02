@@ -7,6 +7,7 @@ from collections.abc import Callable
 from ._util import _first_line
 from .graph import Edge, Graph, Node
 from .index import VectorIndex
+from .provenance import attach_tool_evidence_provenance
 
 
 def _resolve_vector(
@@ -192,9 +193,16 @@ def inject_node(
         connect_min_sim=connect_min_sim,
     )
 
+    provenance_edges = {"edges_added": 0}
+    if isinstance(metadata, dict):
+        provenance_edges = attach_tool_evidence_provenance(
+            graph,
+            [{"node_id": node_id, "metadata": metadata}],
+        )
+
     return {
         "node_id": node_id,
-        "edges_added": len(connected_to) * 2,
+        "edges_added": len(connected_to) * 2 + int(provenance_edges.get("edges_added", 0)),
         "connected_to": connected_to,
     }
 
@@ -313,6 +321,7 @@ def inject_batch(
     edges_added = 0
     inhibitory = 0
     skipped = 0
+    provenance_items: list[dict[str, object]] = []
 
     for item in nodes:
         if not isinstance(item, dict):
@@ -373,6 +382,12 @@ def inject_batch(
 
         injected += 1
         edges_added += int(result.get("edges_added", 0))
+        if isinstance(node_metadata, dict):
+            provenance_items.append({"node_id": node_id, "metadata": node_metadata})
+
+    if provenance_items:
+        provenance_edges = attach_tool_evidence_provenance(graph, provenance_items)
+        edges_added += int(provenance_edges.get("edges_added", 0))
 
     return {
         "injected": injected,
