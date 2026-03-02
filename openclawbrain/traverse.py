@@ -30,6 +30,8 @@ class TraversalConfig:
             means unlimited.
         reflex_threshold: minimum edge weight for reflex-tier edges.
         habitual_range: inclusive lower/upper bounds for habitual-tier edges.
+        include_provenance: when True, include tool evidence nodes in traversal.
+        exclude_node_prefixes: node id prefixes to exclude from traversal.
     """
 
     max_hops: int = 30
@@ -42,6 +44,8 @@ class TraversalConfig:
     max_context_chars: int | None = None
     reflex_threshold: float = 0.6
     habitual_range: tuple[float, float] = (0.15, 0.6)
+    include_provenance: bool = False
+    exclude_node_prefixes: tuple[str, ...] = ("tool_evidence::",)
 
 
 @dataclass
@@ -183,7 +187,16 @@ def traverse(
     if cfg.max_hops <= 0 or cfg.beam_width <= 0:
         return TraversalResult([], [], "")
 
-    valid_seeds = [(node_id, score) for node_id, score in seeds if graph.get_node(node_id)]
+    exclude_prefixes = () if cfg.include_provenance else cfg.exclude_node_prefixes
+
+    def _is_excluded(node_id: str) -> bool:
+        return any(node_id.startswith(prefix) for prefix in exclude_prefixes)
+
+    valid_seeds = [
+        (node_id, score)
+        for node_id, score in seeds
+        if graph.get_node(node_id) and not _is_excluded(node_id)
+    ]
     if not valid_seeds:
         return TraversalResult([], [], "")
 
@@ -232,6 +245,8 @@ def traverse(
         habitual_by_source: dict[str, list[tuple[str, str, float, float, str, Edge]]] = {}
         for source_id, source_score in frontier:
             for target_node, edge in graph.outgoing(source_id):
+                if _is_excluded(target_node.id):
+                    continue
                 use_count = used_edges.get((source_id, target_node.id), 0)
                 effective = edge.weight * (cfg.edge_damping**use_count)
                 if effective <= 0.0:

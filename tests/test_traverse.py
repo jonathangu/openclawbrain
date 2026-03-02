@@ -410,7 +410,24 @@ def test_traversal_with_all_edges_inhibitory_or_low_returns_seed_only() -> None:
 
     result = traverse(graph, [("a", 1.0)], config=TraversalConfig(max_hops=2, beam_width=1, reflex_threshold=0.0))
     assert result.steps == []
-    assert result.fired == ["a"]
+
+
+def test_traverse_excludes_tool_evidence_by_default() -> None:
+    """Tool evidence nodes are excluded unless include_provenance=True."""
+    graph = Graph()
+    graph.add_node(Node("seed", "Seed"))
+    graph.add_node(Node("tool_evidence::web_search::abc", "Evidence"))
+    graph.add_edge(Edge("seed", "tool_evidence::web_search::abc", 0.9))
+
+    result = traverse(graph, [("seed", 1.0)], config=TraversalConfig(max_hops=1, beam_width=2))
+    assert result.fired == ["seed"]
+
+    result_with_prov = traverse(
+        graph,
+        [("seed", 1.0)],
+        config=TraversalConfig(max_hops=1, beam_width=2, include_provenance=True),
+    )
+    assert "tool_evidence::web_search::abc" in result_with_prov.fired
 
 
 def test_traversal_tier_classification_is_stable() -> None:

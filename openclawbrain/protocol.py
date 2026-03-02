@@ -122,6 +122,7 @@ class QueryParams:
     prompt_context_include_node_ids: bool = True
     exclude_files: tuple[str, ...] = ()
     exclude_file_prefixes: tuple[str, ...] = ()
+    include_provenance: bool = False
     chat_id: str | None = None
 
     @classmethod
@@ -173,6 +174,7 @@ class QueryParams:
             exclude_file_prefixes=tuple(
                 parse_str_list(params.get("exclude_file_prefixes"), "exclude_file_prefixes", required=False)
             ),
+            include_provenance=parse_bool(params.get("include_provenance"), "include_provenance", default=False),
             chat_id=parse_chat_id(params.get("chat_id"), "chat_id", required=False),
         )
 
@@ -194,6 +196,7 @@ class QueryParams:
             "prompt_context_include_node_ids": self.prompt_context_include_node_ids,
             "exclude_files": list(self.exclude_files),
             "exclude_file_prefixes": list(self.exclude_file_prefixes),
+            "include_provenance": self.include_provenance,
             "chat_id": self.chat_id,
         }
 

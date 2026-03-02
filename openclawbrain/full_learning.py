@@ -17,6 +17,7 @@ from pathlib import Path
 from typing import Any
 
 from ._util import _extract_json
+from .graph import Edge
 from .inject import inject_batch
 from .maintain import run_maintenance
 try:
@@ -34,7 +35,9 @@ except Exception:
 from .replay import (
     DEFAULT_TOOL_RESULT_ALLOWLIST,
     DEFAULT_TOOL_RESULT_MAX_CHARS,
+    _extract_tool_calls,
     _extract_tool_result,
+    _extract_tool_result_record,
     _is_media_stub_query,
     _normalize_tool_result_allowlist,
     replay_queries,
@@ -648,6 +651,7 @@ def load_interactions_for_replay(
 
     for path in files:
         path_name = str(path)
+        session_name = path.name
         start_line = int((since_lines or {}).get(path_name, 0))
         last_line = start_line
         last_user_idx: int | None = None
@@ -671,9 +675,13 @@ def load_interactions_for_replay(
                         "query": query,
                         "response": None,
                         "tool_calls": [],
+                        "tool_results": [],
                         "ts": record_ts,
                         "source": path_name,
+                        "session": session_name,
                         "line_no": line_no,
+                        "line_no_start": line_no,
+                        "line_no_end": line_no,
                     }
                 )
                 last_user_idx = len(interactions) - 1
@@ -681,6 +689,16 @@ def load_interactions_for_replay(
                 continue
 
             if role in {"toolresult", "tool_result"}:
+                if last_user_idx is not None:
+                    record = _extract_tool_result_record(message)
+                    if record is not None:
+                        record["line_no"] = line_no
+                        record["session"] = session_name
+                        record["source"] = path_name
+                        interactions[last_user_idx].setdefault("tool_results", [])
+                        if isinstance(interactions[last_user_idx]["tool_results"], list):
+                            interactions[last_user_idx]["tool_results"].append(record)
+                    interactions[last_user_idx]["line_no_end"] = line_no
                 if (
                     include_tool_results
                     and last_user_idx is not None
@@ -714,12 +732,10 @@ def load_interactions_for_replay(
 
             response = _resolve_text(message.get("content"))
             interactions[last_user_idx]["response"] = response
-            tool_calls = []
-            raw_calls = message.get("tool_calls")
-            if isinstance(raw_calls, list):
-                tool_calls = [call for call in raw_calls if isinstance(call, dict)]
+            tool_calls = _extract_tool_calls(message, is_assistant=True)
             interactions[last_user_idx]["tool_calls"] = tool_calls
             interactions[last_user_idx]["ts"] = record_ts
+            interactions[last_user_idx]["line_no_end"] = line_no
             last_user_idx = None
 
         offsets[path_name] = last_line
@@ -740,6 +756,82 @@ def _state_embedder_info(
         return embedder.embed_batch, 0.30
     embedder = HashEmbedder()
     return embedder.embed_batch, 0.0
+
+
+def _parse_session_pointer(pointer: str) -> tuple[str, int, int] | None:
+    """Parse session_pointer into (session, start_line, end_line)."""
+    if not pointer or ":" not in pointer:
+        return None
+    session_part, range_part = pointer.rsplit(":", 1)
+    if "-" not in range_part:
+        return None
+    start_raw, end_raw = range_part.split("-", 1)
+    try:
+        start = int(start_raw)
+        end = int(end_raw)
+    except ValueError:
+        return None
+    if start > end:
+        start, end = end, start
+    return session_part, start, end
+
+
+def _connect_learning_to_tool_evidence(
+    graph: object,
+    events: list[dict],
+) -> dict[str, int]:
+    """Connect learning nodes to tool evidence nodes by session/line ranges."""
+    if not hasattr(graph, "nodes") or not hasattr(graph, "get_node"):
+        return {"edges_added": 0}
+
+    session_index: dict[str, list[tuple[int, str]]] = {}
+    for node in graph.nodes():  # type: ignore[union-attr]
+        if not node.id.startswith("tool_evidence::"):
+            continue
+        metadata = node.metadata if isinstance(node.metadata, dict) else {}
+        line_no = metadata.get("line_no")
+        if not isinstance(line_no, (int, float)):
+            continue
+        line_val = int(line_no)
+        for key in ("session", "session_path"):
+            session = metadata.get(key)
+            if isinstance(session, str) and session:
+                session_index.setdefault(session, []).append((line_val, node.id))
+
+    if not session_index:
+        return {"edges_added": 0}
+
+    edges_added = 0
+    for event in events:
+        node_id = event.get("node_id")
+        pointer = event.get("session_pointer")
+        if not isinstance(node_id, str) or not isinstance(pointer, str):
+            continue
+        parsed = _parse_session_pointer(pointer)
+        if parsed is None:
+            continue
+        session, start_line, end_line = parsed
+        evidence_nodes = session_index.get(session, [])
+        if not evidence_nodes:
+            continue
+        for line_no, evidence_id in evidence_nodes:
+            if line_no < start_line or line_no > end_line:
+                continue
+            existing = graph._edges.get(node_id, {}).get(evidence_id)  # type: ignore[attr-defined]
+            if existing is not None:
+                continue
+            graph.add_edge(  # type: ignore[attr-defined]
+                Edge(
+                    source=node_id,
+                    target=evidence_id,
+                    weight=0.20,
+                    kind="provenance",
+                    metadata={"source": "fast_learning"},
+                )
+            )
+            edges_added += 1
+
+    return {"edges_added": edges_added}
 
 
 def run_fast_learning(
@@ -950,6 +1042,9 @@ def run_fast_learning(
             connect_top_k=3,
             connect_min_sim=connect_min_sim,
         )
+        provenance_edges = _connect_learning_to_tool_evidence(graph, deduped)
+        if provenance_edges.get("edges_added"):
+            injected["edges_added"] = int(injected.get("edges_added", 0)) + int(provenance_edges["edges_added"])
         _persist_state(graph=graph, index=index, meta=meta, state_path=state_path, backup=backup)
 
     if checkpoint_path:

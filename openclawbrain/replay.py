@@ -12,6 +12,7 @@ from .decay import apply_decay
 from .graph import Graph
 from .learn import LearningConfig, apply_outcome
 from .traverse import TraversalConfig, traverse
+from .provenance import ToolProvenanceConfig, build_tool_provenance
 from ._util import _tokenize
 
 DEFAULT_TOOL_RESULT_ALLOWLIST = frozenset(
@@ -109,6 +110,24 @@ def _extract_tool_result(message: dict) -> tuple[str | None, str | None]:
     return normalized_name, text
 
 
+def _extract_tool_result_record(message: dict) -> dict[str, object] | None:
+    """Extract tool result record with call id + content when available."""
+    if not isinstance(message, dict):
+        return None
+    tool_call_id = message.get("toolCallId") or message.get("tool_call_id")
+    if not isinstance(tool_call_id, str) or not tool_call_id.strip():
+        tool_call_id = None
+    tool_name, text = _extract_tool_result(message)
+    record: dict[str, object] = {}
+    if tool_call_id is not None:
+        record["tool_call_id"] = tool_call_id
+    if tool_name is not None:
+        record["tool_name"] = tool_name
+    if text is not None:
+        record["content"] = text
+    return record or None
+
+
 def _extract_openclaw_query(payload: dict) -> str | None:
     """ extract openclaw query."""
     message = _extract_message_payload(payload)
@@ -156,6 +175,9 @@ def _extract_tool_call(payload: dict) -> dict[str, object] | None:
     call: dict[str, object] = {}
     if isinstance(payload.get("id"), str):
         call["id"] = payload["id"]
+    tool_call_id = payload.get("toolCallId") or payload.get("tool_call_id")
+    if isinstance(tool_call_id, str) and tool_call_id.strip():
+        call["id"] = tool_call_id
     if isinstance(name, str) and name.strip():
         call["name"] = name
     if arguments is not None:
@@ -182,7 +204,7 @@ def _extract_tool_calls(payload: dict, *, is_assistant: bool) -> list[dict[str, 
     content = payload.get("content")
     if isinstance(content, list):
         for item in content:
-            if not isinstance(item, dict) or item.get("type") != "tool_call":
+            if not isinstance(item, dict) or item.get("type") not in {"tool_call", "toolCall"}:
                 continue
             call = _extract_tool_call(item)
             if call is not None:
@@ -257,7 +279,7 @@ def extract_interactions(
     """Extract user/assistant interactions from a session log.
 
     Output entries use:
-    {"query": <user message>, "response": <assistant message>, "tool_calls": [...], "ts": <float|None>}
+    {"query": <user message>, "response": <assistant message>, "tool_calls": [...], "tool_results": [...], "ts": <float|None>}
     """
     path = Path(session_path).expanduser()
     if not path.exists():
@@ -276,7 +298,9 @@ def extract_interactions(
         print(f"warning: skipping unreadable session file: {path} ({exc})", file=sys.stderr)
         return []
 
-    for raw in fh:
+    session_name = path.name
+
+    for line_no, raw in enumerate(fh, start=1):
         raw = raw.strip()
         if not raw:
             continue
@@ -284,7 +308,20 @@ def extract_interactions(
         try:
             payload = json.loads(raw)
         except json.JSONDecodeError:
-            interactions.append({"query": raw, "response": None, "tool_calls": [], "ts": None})
+            interactions.append(
+                {
+                    "query": raw,
+                    "response": None,
+                    "tool_calls": [],
+                    "tool_results": [],
+                    "ts": None,
+                    "source": str(path),
+                    "session": session_name,
+                    "line_no": line_no,
+                    "line_no_start": line_no,
+                    "line_no_end": line_no,
+                }
+            )
             continue
 
         if not isinstance(payload, dict):
@@ -306,13 +343,36 @@ def extract_interactions(
             if since_ts is not None and record_ts is not None and record_ts <= since_ts:
                 last_user_index = None
                 continue
-            interactions.append({"query": query, "response": None, "tool_calls": [], "ts": record_ts})
+            interactions.append(
+                {
+                    "query": query,
+                    "response": None,
+                    "tool_calls": [],
+                    "tool_results": [],
+                    "ts": record_ts,
+                    "source": str(path),
+                    "session": session_name,
+                    "line_no": line_no,
+                    "line_no_start": line_no,
+                    "line_no_end": line_no,
+                }
+            )
             last_user_index = len(interactions) - 1
             appended_tool_chars[last_user_index] = 0
             continue
 
         normalized_role = role.strip().lower()
         if normalized_role in {"toolresult", "tool_result"}:
+            if last_user_index is not None:
+                record = _extract_tool_result_record(message)
+                if record is not None:
+                    record["line_no"] = line_no
+                    record["session"] = session_name
+                    record["source"] = str(path)
+                    interactions[last_user_index].setdefault("tool_results", [])
+                    if isinstance(interactions[last_user_index]["tool_results"], list):
+                        interactions[last_user_index]["tool_results"].append(record)
+                interactions[last_user_index]["line_no_end"] = line_no
             if (
                 include_tool_results
                 and last_user_index is not None
@@ -347,7 +407,13 @@ def extract_interactions(
             "query": None,
             "response": response,
             "tool_calls": tool_calls,
+            "tool_results": [],
             "ts": record_ts,
+            "source": str(path),
+            "session": session_name,
+            "line_no": line_no,
+            "line_no_start": line_no,
+            "line_no_end": line_no,
         }
 
         if last_user_index is not None:
@@ -356,11 +422,15 @@ def extract_interactions(
             ):
                 interactions[last_user_index]["response"] = response
                 interactions[last_user_index]["tool_calls"] = tool_calls
+                interactions[last_user_index]["line_no_end"] = line_no
+                if "tool_results" not in interactions[last_user_index]:
+                    interactions[last_user_index]["tool_results"] = []
                 if record_ts is not None:
                     interactions[last_user_index]["ts"] = record_ts
             else:
                 interactions[last_user_index]["response"] = None
                 interactions[last_user_index]["tool_calls"] = []
+                interactions[last_user_index]["tool_results"] = []
             continue
 
         if since_ts is not None and record_ts is not None and record_ts <= since_ts:
@@ -512,7 +582,9 @@ def _cross_file_edges(graph: Graph) -> set[tuple[str, str]]:
     return edges
 
 
-def _interaction_query_outcome(entry: dict[str, object]) -> tuple[str, float | None, str | None, list[dict[str, object]]]:
+def _interaction_query_outcome(
+    entry: dict[str, object],
+) -> tuple[str, float | None, str | None, list[dict[str, object]], list[dict[str, object]], dict[str, object]]:
     """ interaction query outcome."""
     raw_query = entry.get("query")
     query: str | None = None
@@ -531,38 +603,52 @@ def _interaction_query_outcome(entry: dict[str, object]) -> tuple[str, float | N
     raw_tool_calls = entry.get("tool_calls")
     tool_calls = [tool for tool in raw_tool_calls if isinstance(tool, dict)] if isinstance(raw_tool_calls, list) else []
 
-    return query, query_ts, response_text, tool_calls
+    raw_tool_results = entry.get("tool_results")
+    tool_results = (
+        [tool for tool in raw_tool_results if isinstance(tool, dict)] if isinstance(raw_tool_results, list) else []
+    )
+    meta = {
+        "source": entry.get("source"),
+        "session": entry.get("session"),
+        "line_no": entry.get("line_no"),
+        "line_no_start": entry.get("line_no_start"),
+        "line_no_end": entry.get("line_no_end"),
+    }
+
+    return query, query_ts, response_text, tool_calls, tool_results, meta
 
 
 def _normalize_replay_queries(
     queries: list[str | tuple[str, float | None] | dict[str, object]],
     *,
     since_ts: float | None = None,
-) -> list[tuple[str, float | None, str | None, list[dict[str, object]]]]:
+) -> list[tuple[str, float | None, str | None, list[dict[str, object]], list[dict[str, object]], dict[str, object]]]:
     """Normalize replay inputs into (query, ts, response, tool_calls)."""
-    normalized_queries: list[tuple[str, float | None, str | None, list[dict[str, object]]]] = []
+    normalized_queries: list[
+        tuple[str, float | None, str | None, list[dict[str, object]], list[dict[str, object]], dict[str, object]]
+    ] = []
     for entry in queries:
         if isinstance(entry, tuple) and len(entry) == 2 and isinstance(entry[0], str):
             query, query_ts = entry
             if not query.strip():
                 continue
-            normalized_queries.append((query, query_ts, None, []))
+            normalized_queries.append((query, query_ts, None, [], [], {}))
             continue
         if isinstance(entry, dict):
-            query, query_ts, response_text, tool_calls = _interaction_query_outcome(entry)
+            query, query_ts, response_text, tool_calls, tool_results, meta = _interaction_query_outcome(entry)
             if query is None or not query.strip():
                 continue
-            normalized_queries.append((query, query_ts, response_text, tool_calls))
+            normalized_queries.append((query, query_ts, response_text, tool_calls, tool_results, meta))
             continue
 
         query = str(entry)
         if query.strip():
-            normalized_queries.append((query, None, None, []))
+            normalized_queries.append((query, None, None, [], [], {}))
 
     if since_ts is not None:
         normalized_queries = [
-            (query, query_ts, response, tools)
-            for query, query_ts, response, tools in normalized_queries
+            (query, query_ts, response, tools, results, meta)
+            for query, query_ts, response, tools, results, meta in normalized_queries
             if query_ts is None or query_ts > since_ts
         ]
     return normalized_queries
@@ -579,6 +665,9 @@ def replay_queries(
     since_ts: float | None = None,
     auto_decay: bool = False,
     decay_interval: int = 10,
+    *,
+    tool_edges: bool = True,
+    tool_provenance_config: ToolProvenanceConfig | None = None,
 ) -> dict:
     """Replay historical queries to warm up graph edges.
 
@@ -615,7 +704,9 @@ def replay_queries(
     total_queries = len(normalized_queries)
     latest_ts = None
 
-    for idx, (query, query_ts, query_response, _) in enumerate(normalized_queries, start=1):
+    for idx, (query, query_ts, query_response, tool_calls, tool_results, meta) in enumerate(
+        normalized_queries, start=1
+    ):
         stats["queries_replayed"] += 1
 
         if idx > 0 and idx % 100 == 0:
@@ -624,6 +715,19 @@ def replay_queries(
         seeds = seed_fn(graph, query)
         result = traverse(graph=graph, seeds=seeds, config=cfg)
         if not result.fired:
+            if tool_edges and tool_calls:
+                fired_fallback = [str(seeds[0][0])] if seeds else []
+                build_tool_provenance(
+                    graph=graph,
+                    fired_nodes=fired_fallback,
+                    tool_calls=tool_calls,
+                    tool_results=tool_results,
+                    session=meta.get("session") if isinstance(meta, dict) else None,
+                    session_path=meta.get("source") if isinstance(meta, dict) else None,
+                    line_no_start=meta.get("line_no_start") if isinstance(meta, dict) else None,
+                    line_no_end=meta.get("line_no_end") if isinstance(meta, dict) else None,
+                    config=tool_provenance_config,
+                )
             if verbose:
                 print(
                     f"Replayed {stats['queries_replayed']}/{total_queries} queries, "
@@ -640,6 +744,19 @@ def replay_queries(
         query_outcome = _auto_score_query_outcome(query_outcome, query_response, result.fired, graph)
 
         fired_nodes = [result.steps[0].from_node, *[step.to_node for step in result.steps]] if result.steps else result.fired
+
+        if tool_edges and tool_calls:
+            build_tool_provenance(
+                graph=graph,
+                fired_nodes=fired_nodes,
+                tool_calls=tool_calls,
+                tool_results=tool_results,
+                session=meta.get("session") if isinstance(meta, dict) else None,
+                session_path=meta.get("source") if isinstance(meta, dict) else None,
+                line_no_start=meta.get("line_no_start") if isinstance(meta, dict) else None,
+                line_no_end=meta.get("line_no_end") if isinstance(meta, dict) else None,
+                config=tool_provenance_config,
+            )
         apply_outcome(
             graph=graph,
             fired_nodes=fired_nodes,
@@ -692,6 +809,8 @@ def replay_queries_parallel(
     auto_decay: bool = False,
     decay_interval: int = 10,
     on_merge: Callable[[dict[str, object]], None] | None = None,
+    tool_edges: bool = True,
+    tool_provenance_config: ToolProvenanceConfig | None = None,
 ) -> dict:
     """Approximate true-parallel replay with deterministic shard merges."""
     worker_count = max(1, workers)
@@ -708,6 +827,8 @@ def replay_queries_parallel(
             since_ts=since_ts,
             auto_decay=auto_decay,
             decay_interval=decay_interval,
+            tool_edges=tool_edges,
+            tool_provenance_config=tool_provenance_config,
         )
 
     cfg = config or TraversalConfig()
@@ -725,20 +846,24 @@ def replay_queries_parallel(
         }
 
     indexed = [
-        (idx, query, query_ts, query_response)
-        for idx, (query, query_ts, query_response, _tool_calls) in enumerate(normalized)
+        (idx, query, query_ts, query_response, tool_calls, tool_results, meta)
+        for idx, (query, query_ts, query_response, tool_calls, tool_results, meta) in enumerate(normalized)
     ]
-    shards: list[list[tuple[int, str, float | None, str | None]]] = [[] for _ in range(worker_count)]
+    shards: list[
+        list[tuple[int, str, float | None, str | None, list[dict[str, object]], list[dict[str, object]], dict[str, object]]]
+    ] = [[] for _ in range(worker_count)]
     for item in indexed:
         shards[item[0] % worker_count].append(item)
 
     def _worker_shard(
         shard_id: int,
-        shard_items: list[tuple[int, str, float | None, str | None]],
+        shard_items: list[
+            tuple[int, str, float | None, str | None, list[dict[str, object]], list[dict[str, object]], dict[str, object]]
+        ],
     ) -> tuple[int, list[list[dict[str, object]]]]:
         shard_batches: list[list[dict[str, object]]] = []
         pending: list[dict[str, object]] = []
-        for global_idx, query, query_ts, query_response in shard_items:
+        for global_idx, query, query_ts, query_response, tool_calls, tool_results, meta in shard_items:
             seeds = seed_fn(graph, query)
             result = traverse(graph=graph, seeds=seeds, config=cfg)
             event: dict[str, object] = {"idx": global_idx, "ts": query_ts}
@@ -752,6 +877,11 @@ def replay_queries_parallel(
                 )
                 event["fired_nodes"] = fired_nodes
                 event["outcome"] = query_outcome
+            if tool_edges and tool_calls:
+                event["tool_calls"] = tool_calls
+                event["tool_results"] = tool_results
+                event["meta"] = meta
+                event["seeds"] = seeds
             pending.append(event)
             if len(pending) >= batch_size:
                 shard_batches.append(pending)
@@ -818,6 +948,28 @@ def replay_queries_parallel(
                     stats["cross_file_edges_created"] += len(after_cross_edges - before_cross_edges)
                     if auto_decay and decay_interval > 0 and decay_counter % max(1, decay_interval) == 0:
                         apply_decay(graph)
+                if tool_edges and isinstance(event.get("tool_calls"), list):
+                    tool_calls = [call for call in event.get("tool_calls", []) if isinstance(call, dict)]
+                    tool_results = [res for res in event.get("tool_results", []) if isinstance(res, dict)]
+                    meta = event.get("meta")
+                    seeds = event.get("seeds") or []
+                    fired_fallback: list[str] = []
+                    if isinstance(fired_nodes, list) and fired_nodes:
+                        fired_fallback = [str(node_id) for node_id in fired_nodes]
+                    elif isinstance(seeds, list) and seeds:
+                        fired_fallback = [str(seeds[0][0])]
+                    if tool_calls:
+                        build_tool_provenance(
+                            graph=graph,
+                            fired_nodes=fired_fallback,
+                            tool_calls=tool_calls,
+                            tool_results=tool_results,
+                            session=meta.get("session") if isinstance(meta, dict) else None,
+                            session_path=meta.get("source") if isinstance(meta, dict) else None,
+                            line_no_start=meta.get("line_no_start") if isinstance(meta, dict) else None,
+                            line_no_end=meta.get("line_no_end") if isinstance(meta, dict) else None,
+                            config=tool_provenance_config,
+                        )
                 if query_ts_value is not None:
                     latest_ts = query_ts_value if latest_ts is None else max(latest_ts, query_ts_value)
                 processed += 1

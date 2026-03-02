@@ -40,6 +40,7 @@ def test_query_params_defaults_follow_daemon_behavior() -> None:
     assert params.prompt_context_include_node_ids is True
     assert params.exclude_files == ()
     assert params.exclude_file_prefixes == ()
+    assert params.include_provenance is False
     assert params.chat_id is None
 
 

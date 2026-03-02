@@ -66,3 +66,23 @@ Each agent run writes auditable artifacts under `~/.openclawbrain/<agent>/scratc
 - The script expects existing agent state files at `~/.openclawbrain/<agent>/state.json`.
 - The script does **not** start or stop `launchd` services; it only builds artifacts.
 - If you need a clean rebuild + cutover workflow, use `examples/ops/rebuild_then_cutover.sh` after this completes.
+
+## Tool provenance edges
+
+Replay now builds first-class tool action/evidence nodes by default. This helps the brain learn tool usage quickly while keeping evidence out of prompt context unless explicitly requested.
+
+- Tool actions are always connected to the fired nodes that caused them.
+- Tool evidence is stored only for allowlisted tools and is redacted/truncated to avoid secrets or graph bloat.
+- Tool evidence nodes (`tool_evidence::...`) are excluded from traversal context by default.
+
+To view tool evidence during query/traverse:
+
+```bash
+openclawbrain query --provenance "your query"
+```
+
+To disable tool edge creation during replay:
+
+```bash
+openclawbrain replay --no-tool-edges --mode edges-only --sessions <path>
+```

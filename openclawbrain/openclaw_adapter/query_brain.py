@@ -81,6 +81,7 @@ def _load_query_via_socket(
     exclude_files: list[str],
     exclude_file_prefixes: list[str],
     prompt_context_include_node_ids: bool,
+    include_provenance: bool,
 ) -> dict[str, object] | None:
     if socket_path is None:
         return None
@@ -94,6 +95,7 @@ def _load_query_via_socket(
             "route_alpha_sim": route_alpha_sim,
             "route_use_relevance": route_use_relevance,
             "max_prompt_context_chars": max_prompt_context_chars,
+            "include_provenance": include_provenance,
         }
         if chat_id is not None:
             params["chat_id"] = chat_id
@@ -329,6 +331,7 @@ def main(argv: list[str] | None = None) -> None:
         default=None,
         help="Include '- node: <id>' lines in prompt_context",
     )
+    parser.add_argument("--provenance", action=argparse.BooleanOptionalAction, default=False)
     parser.add_argument(
         "--no-include-node-ids",
         dest="include_node_ids",
@@ -388,6 +391,7 @@ def main(argv: list[str] | None = None) -> None:
                 exclude_files,
                 [],
                 include_node_ids,
+                bool(args.provenance),
             )
             if result is not None:
                 fired_nodes = [str(node_id) for node_id in result.get("fired_nodes", [])]
@@ -449,7 +453,12 @@ def main(argv: list[str] | None = None) -> None:
         )
 
     seeds = index.search(query_vector, top_k=args.top)
-    result = traverse(graph=graph, seeds=seeds, query_text=query_text, config=TraversalConfig(max_context_chars=20000))
+    result = traverse(
+        graph=graph,
+        seeds=seeds,
+        query_text=query_text,
+        config=TraversalConfig(max_context_chars=20000, include_provenance=bool(args.provenance)),
+    )
 
     excluded_node_ids: set[str] = set()
     excluded_files: set[str] = set()
