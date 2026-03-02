@@ -4,7 +4,7 @@
 - Python 3.10+
 - `pip install openclawbrain`
 - `OPENAI_API_KEY` only if you explicitly use OpenAI embeddings/teacher labeling
-- A workspace directory with markdown files (your agent's knowledge base)
+- A workspace directory with markdown files (your agent's working knowledge/docs)
 
 ## Step 1: Build your first brain
 
@@ -26,18 +26,18 @@ Runtime route-mode default is `learned`. `init` writes a default identity-like `
 
 ## Initial learning: replay your sessions
 
-After init, replay your existing sessions to seed graph edges and extract learning signals. By default, `replay` runs the full learning pipeline (LLM mining + edge replay + harvest):
+After init, replay your existing sessions to seed graph edges and extract learning signals. By default, `replay` runs `--mode edges-only` (cheap/fast, no LLM mining, no harvest):
 
 ```bash
 openclawbrain replay --state ./brain/state.json --sessions ./sessions/
 ```
 
-This extracts durable correction/teaching nodes and runs maintenance in one command (`--full-learning`, alias: `--full-pipeline`).
+Use `--mode full` when you explicitly want the full pipeline (LLM mining + edge replay + harvest).
 
 For cheap edge-only replay (no LLM, no harvest):
 
 ```bash
-openclawbrain replay --state ./brain/state.json --sessions ./sessions/ --edges-only
+openclawbrain replay --state ./brain/state.json --sessions ./sessions/ --mode edges-only
 ```
 
 For fine-grained control over the LLM mining pass:
@@ -46,7 +46,7 @@ For fine-grained control over the LLM mining pass:
 openclawbrain replay \
   --state ./brain/state.json \
   --sessions ./sessions/ \
-  --fast-learning \
+  --mode fast-learning \
   --workers 4 \
   --window-radius 8 \
   --max-windows 6 \
@@ -61,7 +61,7 @@ openclawbrain replay \
 
 You can run this repeatedly; dedupe is by `(type, sha256(content), session_pointer)`, so repeated runs are idempotent.
 
-For ongoing operation after startup, use `--ignore-checkpoint` only when you intentionally want to replay older chunks that were already ingested.
+For ongoing operation after startup, use `--fresh` (`--no-checkpoint`) only when you intentionally want to replay older chunks that were already ingested.
 
 Replay progress defaults:
 - Fast-learning prints progress as it processes extraction windows.
@@ -82,7 +82,7 @@ openclawbrain replay --state ./brain/state.json --show-checkpoint --resume --jso
 
 Resume semantics:
 - `--resume` enables checkpoint offsets.
-- `--ignore-checkpoint` disables resume even when a checkpoint exists.
+- `--fresh` / `--no-checkpoint` disables resume even when a checkpoint exists (`--ignore-checkpoint` remains a legacy alias).
 - If a checkpoint only has legacy top-level `sessions` offsets, replay still resumes from them and prints a warning.
 
 ## Step 2: Wire up the fast loop (per-query)
@@ -128,7 +128,7 @@ openclawbrain harvest \
 
 The harvest path is intentionally sidecar: it consumes OpenClaw replay artifacts and updates graph structure from them, without changing OpenClaw core memory files.
 
-For production automation, run `harvest` after `replay --fast-learning` with a bounded schedule (daily/hourly depending on session volume).
+For production automation, run `harvest` after `replay --mode fast-learning` with a bounded schedule (daily/hourly depending on session volume).
 
 ## Decay during replay
 
@@ -137,7 +137,7 @@ The default full-learning mode automatically enables decay during the replay pas
 To enable decay during an edges-only replay, pass `--decay-during-replay`:
 
 ```bash
-openclawbrain replay --state ./brain/state.json --sessions ./sessions/ --edges-only --decay-during-replay --decay-interval 10
+openclawbrain replay --state ./brain/state.json --sessions ./sessions/ --mode edges-only --decay-during-replay --decay-interval 10
 ```
 
 `--decay-interval N` (default 10) controls how many learning steps occur between each decay pass.
@@ -268,7 +268,7 @@ Reference: `examples/ops/callbacks.py`
 Run the production service as a Unix socket wrapper around the NDJSON daemon:
 
 ```bash
-openclawbrain serve --state ~/.openclawbrain/main/state.json
+openclawbrain serve start --state ~/.openclawbrain/main/state.json
 ```
 
 `serve` runs the daemon worker with `--embed-model auto` and `--route-mode learned` by default. Embedding mode follows state metadata (`local:*` => local, `hash-v1` => hash, OpenAI states require explicit `--embed-model openai:<model>`).
@@ -306,6 +306,7 @@ Create `~/Library/LaunchAgents/com.openclawbrain.daemon.plist`:
     <string>/usr/bin/env</string>
     <string>openclawbrain</string>
     <string>serve</string>
+    <string>start</string>
     <string>--state</string>
     <string>/Users/YOU/.openclawbrain/main/state.json</string>
   </array>
@@ -341,7 +342,7 @@ After=network-online.target
 Type=simple
 User=YOUR_USER
 WorkingDirectory=/home/YOUR_USER
-ExecStart=/usr/bin/env openclawbrain serve --state /home/YOUR_USER/.openclawbrain/main/state.json
+ExecStart=/usr/bin/env openclawbrain serve start --state /home/YOUR_USER/.openclawbrain/main/state.json
 Restart=always
 RestartSec=1
 

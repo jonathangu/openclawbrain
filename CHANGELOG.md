@@ -1,5 +1,12 @@
 ## Unreleased
 
+### Docs: operator OOTB audit
+- Updated README and operator-facing docs to standardize lifecycle commands on `openclawbrain serve start|status|stop`.
+- Clarified replay operator semantics around `--mode {edges-only,fast-learning,full}` and checkpoint controls (`--resume`, `--fresh`, `--checkpoint`).
+- Clarified OOTB defaults: `init` uses local embeddings first (`fastembed`) with hash fallback; OpenAI embeddings remain explicit/optional.
+- Clarified route-mode defaults/overrides: daemon defaults to `--route-mode learned`, with `edge+sim` fallback when `route_model.npz` is unavailable.
+- Removed hardcoded operator/prod size/performance snapshots from README that can become stale.
+
 ### Operator lifecycle UX (Issue #60 part 1)
 - `openclawbrain serve` now supports lifecycle subcommands: `start`, `status`, and `stop`.
 - `serve status` validates socket presence and performs a live `health` ping over the Unix socket.

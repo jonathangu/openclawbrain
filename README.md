@@ -10,11 +10,13 @@
 
 ## Docs
 
-- Operator guide: [docs/operator-guide.md](docs/operator-guide.md)
-- Operator quickstart: [docs/operator-quickstart.md](docs/operator-quickstart.md)
+- Operator quickstart (start here): [docs/operator-quickstart.md](docs/operator-quickstart.md)
+- Operator guide (deep dive): [docs/operator-guide.md](docs/operator-guide.md)
+- Shadow routing architecture: [docs/shadow-routing-upg-architecture.md](docs/shadow-routing-upg-architecture.md)
+- Evaluation plan: [docs/evaluation-plan.md](docs/evaluation-plan.md)
+- QTsim math appendix: [docs/ultimate-policy-gradient-routing-math.md](docs/ultimate-policy-gradient-routing-math.md)
 - OpenClaw integration: [docs/openclaw-integration.md](docs/openclaw-integration.md)
 - Setup guide: [docs/setup-guide.md](docs/setup-guide.md)
-- Evaluation plan: [docs/evaluation-plan.md](docs/evaluation-plan.md)
 - GitHub repo: https://github.com/jonathangu/openclawbrain
 - ClawHub skill: https://clawhub.ai/skills/openclawbrain
 
@@ -31,7 +33,7 @@ Quickstart (OpenClaw users):
 ```bash
 pip install openclawbrain
 openclawbrain init --workspace ~/.openclaw/workspace --output ~/.openclawbrain/main
-openclawbrain serve --state ~/.openclawbrain/main/state.json
+openclawbrain serve start --state ~/.openclawbrain/main/state.json
 ```
 
 Production Deployment (socket):
@@ -39,7 +41,7 @@ Production Deployment (socket):
 Use LaunchAgent/systemd to keep the socket server running:
 
 ```bash
-openclawbrain serve --state ~/.openclawbrain/main/state.json
+openclawbrain serve start --state ~/.openclawbrain/main/state.json
 ```
 
 macOS (`~/Library/LaunchAgents/com.openclawbrain.daemon.plist`):
@@ -50,6 +52,7 @@ macOS (`~/Library/LaunchAgents/com.openclawbrain.daemon.plist`):
   <string>/usr/bin/env</string>
   <string>openclawbrain</string>
   <string>serve</string>
+  <string>start</string>
   <string>--state</string>
   <string>/Users/YOU/.openclawbrain/main/state.json</string>
 </array>
@@ -59,7 +62,7 @@ Linux (`/etc/systemd/system/openclawbrain-daemon.service`):
 
 ```ini
 [Service]
-ExecStart=/usr/bin/env openclawbrain serve --state /home/YOUR_USER/.openclawbrain/main/state.json
+ExecStart=/usr/bin/env openclawbrain serve start --state /home/YOUR_USER/.openclawbrain/main/state.json
 ```
 
 ```bash
@@ -104,58 +107,30 @@ See also: [Setup Guide](docs/setup-guide.md) for a complete local configuration 
 
 - Static retrieval vs learned routing: OpenClawBrain continuously updates node-to-node edges so good routes strengthen and bad routes decay.
 - No correction propagation vs inhibitory edges: incorrect context can be actively suppressed and forgotten less often than in similarity-only systems.
-- Bulk context load vs targeted traversal: context windows stay focused (roughly 52KB → 3-13KB in typical sessions) by following likely retrieval routes.
+- Bulk context load vs targeted traversal: context windows stay focused by following likely retrieval routes.
 - No structural maintenance vs prune/merge/compact: OpenClawBrain includes scheduled maintenance commands to keep the graph healthy and compact.
 - No protection vs constitutional anchors: anchor critical nodes with authority so operational instructions do not drift.
 
-## 5-minute quickstart (A→B learning story)
+## 5-minute operator path (OOTB)
 
 ```bash
-# 1. Build a brain from the sample workspace
-openclawbrain init --workspace examples/sample_workspace --output /tmp/brain
-Large texts are automatically rechunked to stay under embedding model limits (12K chars). No content is skipped or truncated.
+# 1) init (default embedder auto -> local fastembed -> hash fallback)
+openclawbrain init --workspace ~/.openclaw/workspace --output ~/.openclawbrain/main
 
-# 2. Check state health
-openclawbrain doctor --state /tmp/brain/state.json
-# output
-# PASS: python_version
-# PASS: state_file_exists
-# PASS: state_json_valid
-# Summary: 8/9 checks passed
+# 2) start service
+openclawbrain serve start --state ~/.openclawbrain/main/state.json
 
-# 3. Query (text output includes node IDs)
-openclawbrain query "how do I deploy" --state /tmp/brain/state.json --top 3 --json
-# output (abbrev.)
-# {"fired": ["deploy.md::0", "deploy.md::1", "deploy.md::2"], ...}
+# 3) status check
+openclawbrain serve status --state ~/.openclawbrain/main/state.json
 
-# 4. Teach it (good path)
-openclawbrain learn --state /tmp/brain/state.json --outcome 1.0 --fired-ids "deploy.md::0,deploy.md::1"
-# output
-# {"edges_updated": 2, "max_weight_delta": 0.155}
-#
-# `learn` defaults to `apply_outcome_pg()` for full-policy updates.
-# `apply_outcome()` remains available for simpler sparse updates.
+# 4) query example (daemon socket)
+python3 -m openclawbrain.socket_client \
+  --socket ~/.openclawbrain/main/daemon.sock \
+  --method query \
+  --params '{"query":"summarize deploy rollback policy","top_k":4}'
 
-# 5. Inject a correction
-openclawbrain inject --state /tmp/brain/state.json \
-  --id "fix::1" --content "Never skip CI for hotfixes" --type CORRECTION
-
-# 5b. Add new knowledge (no correction needed, just a new fact)
-openclawbrain inject --state /tmp/brain/state.json \
-  --id "teaching::monitoring-tip" \
-  --content "Check Grafana dashboards before every deploy" \
-  --type TEACHING
-
-# 6. Query again and see the route change
-openclawbrain query "can I skip CI" --state /tmp/brain/state.json --top 3
-# output
-# fix::1
-# ~~~~~~
-# Never skip CI for hotfixes
-# ...
-
-# 7. Re-check health for a quick signal
-openclawbrain health --state /tmp/brain/state.json
+# 5) stop service
+openclawbrain serve stop --state ~/.openclawbrain/main/state.json
 ```
 
 ## Correcting mistakes (the main workflow)
@@ -319,9 +294,9 @@ openclawbrain query "incident runbook for deploy failures" --state /tmp/brain/st
 | Cold start | Hash embeddings, no API key | Needs embedding service | Needs prior episodes | Needs configured tiers |
 | State | Single `state.json` file | External DB | Prompt history | Multi-tier storage |
 
-## Real embeddings + LLM routing (OpenAI)
+## Optional OpenAI embeddings + LLM routing
 
-Production deployments use:
+If you want API-backed embeddings/teacher labeling, use:
 
 - **Embeddings:** `text-embedding-3-small` (1536-dim)
 - **LLM routing/scoring:** `gpt-5-mini`
@@ -370,7 +345,7 @@ See `examples/openai_embedder/` for a complete example.
 | `compact` | Compact old daily notes into graph nodes |
 | `sync` | Incremental re-embed after file changes |
 | `inject` | Add CORRECTION/TEACHING/DIRECTIVE nodes |
-| `replay` | Replay session queries (defaults to full-learning; use `--edges-only` for cheap replay, `--fast-learning`/`--extract-learning-events` for LLM mining only, or `--full-learning`/`--full-pipeline` for the full pass) |
+| `replay` | Replay session queries (`--mode edges-only` default, plus `--mode fast-learning` or `--mode full`; use `--resume`/`--fresh`/`--checkpoint` to control checkpoint behavior) |
 | `harvest` | Apply slow-learning pass from `learning_events.jsonl` to current graph |
 | `async-route-pg` | Background teacher-shadow routing labels from recent query journal + PG edge updates |
 | `health` | Show graph health metrics |
@@ -393,7 +368,7 @@ For production use, prefer `openclawbrain serve`, which manages the daemon worke
 Why this matters:
 
 - First load initializes `state.json` once, then keeps the process and index warm.
-- Saves about 100-800ms per call versus shelling out per query (production measure: ~504ms per warm query path on Mac Mini M4 Pro).
+- Saves process startup/reload overhead versus one-shot CLI calls.
 - Reduces memory churn and tail latency under steady traffic.
 
 Start it with:
@@ -452,11 +427,6 @@ Current limitations:
 - Per-chat mutation APIs remain scoped through request payloads (`chat_id`) and adapter-layer bookkeeping.
 - Concurrent writers are serialized by the socket transport lock and one active request at a time.
 
-Production timing (Mac Mini M4 Pro, OpenAI embeddings):
-- MAIN (1,158 nodes): 397ms embed + 107ms traverse = **504ms total**
-- PELICAN (582 nodes): 634ms embed + 51ms traverse = **685ms total**
-- BOUNTIFUL (285 nodes): 404ms embed + 27ms traverse = **431ms total**
-
 See `examples/ops/client_example.py` for a Python client and `docs/architecture.md` for protocol details.
 
 ## True Policy Gradient (apply_outcome_pg)
@@ -496,13 +466,6 @@ Full derivation: https://jonathangu.com/openclawbrain/gu2016/
 | Soft teaching | openclawbrain inject --type TEACHING |
 | Wrong retrieval | daemon `correction` (graph-only, no rebuild) |
 | New rule | Edit AGENTS.md or SOUL.md |
-
-## Production stats (current)
-
-- MAIN: 1,160 nodes, 2,551 edges, 43 learnings
-- PELICAN: 555 nodes, 2,211 edges, 181 learnings
-- BOUNTIFUL: 289 nodes, 1,101 edges, 35 learnings
-- CORMORANT: 1,672 nodes, ~7,100 edges, 22 learnings (first external user!)
 
 ## Traversal defaults
 
@@ -593,7 +556,7 @@ from openclawbrain import (
 ## State lifecycle
 
 - **Where it lives:** a single `state.json` file (portable, version-controllable)
-- **How big:** ~180KB for 20 nodes (hash), ~60MB for 1,600 nodes (OpenAI embeddings)
+- **How big:** depends on workspace size and embedder (`hash` smaller, dense embeddings larger)
 - **When to rebuild:** after major workspace restructuring or embedder changes
 - **Embedder changes:** OpenClawBrain stores the embedder name + dimension in state metadata and hard-fails on mismatch — no silent corruption
 - **Maintenance:** use `openclawbrain maintain` (`decay` + `scale` + `split` + `merge` + `prune` + `connect`) to rebalance structure as the graph evolves
@@ -612,8 +575,8 @@ from openclawbrain import (
 
 ## Warm start from sessions
 
-If you have prior conversation logs, replay them. By default, `replay` runs the
-full learning pipeline (LLM transcript mining + edge replay + harvest):
+If you have prior conversation logs, replay them. By default, `replay` runs
+`--mode edges-only` (cheap/fast, no LLM, no harvest):
 
 ```bash
 openclawbrain replay --state /tmp/brain/state.json --sessions ./sessions/
@@ -645,10 +608,8 @@ openclawbrain replay \
 - `--tool-result-allowlist` (comma-separated tool names)
 - `--tool-result-max-chars` (max allowlisted tool text appended per user query)
 
-This is equivalent to passing `--full-learning` (alias: `--full-pipeline`) explicitly. Decay is enabled
-during replay by default and the harvest pass runs
-(`decay,scale,split,merge,prune,connect`), so unrelated edges weaken while
-active paths are reinforced.
+To run the full pipeline explicitly, use `--mode full` (or legacy alias
+`--full-learning` / `--full-pipeline`).
 
 For cheap edge-only replay (no LLM, no harvest):
 
@@ -656,7 +617,7 @@ For cheap edge-only replay (no LLM, no harvest):
 openclawbrain replay \
   --state /tmp/brain/state.json \
   --sessions ./sessions/ \
-  --edges-only
+  --mode edges-only
 ```
 
 For transcript-backed fast-learning only (no harvest):
@@ -665,7 +626,7 @@ For transcript-backed fast-learning only (no harvest):
 openclawbrain replay \
   --state /tmp/brain/state.json \
   --sessions ./sessions/ \
-  --fast-learning \
+  --mode fast-learning \
   --resume \
   --workers 4 \
   --checkpoint /tmp/brain/replay_checkpoint.json
@@ -678,7 +639,7 @@ For cutover-friendly startup (inject quickly, then start daemon immediately):
 openclawbrain replay \
   --state /tmp/brain/state.json \
   --sessions ./sessions/ \
-  --fast-learning \
+  --mode fast-learning \
   --stop-after-fast-learning \
   --checkpoint /tmp/brain/replay_checkpoint.json
 ```
@@ -690,7 +651,7 @@ For durable long replays with periodic progress/checkpoint/state persistence:
 openclawbrain replay \
   --state /tmp/brain/state.json \
   --sessions ./sessions/ \
-  --edges-only \
+  --mode edges-only \
   --resume \
   --checkpoint /tmp/brain/replay_checkpoint.json \
   --checkpoint-every-seconds 60 \
@@ -709,7 +670,7 @@ For simple true-parallel replay v0:
 openclawbrain replay \
   --state /tmp/brain/state.json \
   --sessions ./sessions/ \
-  --edges-only \
+  --mode edges-only \
   --replay-workers 4 \
   --checkpoint-every 1
 ```
@@ -725,7 +686,7 @@ To enable decay during an edges-only replay:
 openclawbrain replay \
   --state /tmp/brain/state.json \
   --sessions ./sessions/ \
-  --edges-only \
+  --mode edges-only \
   --decay-during-replay \
   --decay-interval 10
 ```
@@ -823,16 +784,6 @@ openclawbrain daemon \
 Replay/harvest now optionally emit route traces + labels:
 - `openclawbrain replay --traces-out ... --labels-out ...`
 - `openclawbrain harvest --traces-out ... --labels-out ...`
-
-## Production experience
-
-Three brains run in production on a Mac Mini M4 Pro:
-
-| Brain | Nodes | Edges | Learning Corrections | Sessions Replayed |
-|-------|-------|-------|---------------------|-------------------|
-| MAIN | 1,142 | 2,814 | 43 | 215 |
-| PELICAN | 512 | 1,984 | 181 | 183 |
-| BOUNTIFUL | 273 | 1,073 | 35 | 300 |
 
 ## Design Tenets
 

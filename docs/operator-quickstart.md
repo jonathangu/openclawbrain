@@ -58,6 +58,16 @@ python3 -m openclawbrain.socket_client \
   --params '{"query":"summarize deploy risks","top_k":4}'
 ```
 
+## Defaults that matter
+
+- `serve start` defaults to `--route-mode learned`.
+- `init` writes `route_model.npz` beside `state.json`; if missing/unloadable, query routing falls back to `edge+sim`.
+- Override route mode at service start with `--route-mode off|edge|edge+sim|learned`.
+- Query embeddings default to `--embed-model auto`:
+  - `local:*` state metadata -> local embeddings (fastembed)
+  - `hash-v1` state metadata -> hash embeddings
+  - OpenAI state metadata -> use `--embed-model openai:<model>` explicitly if you want OpenAI query embeddings
+
 ## Stop
 
 ```bash
