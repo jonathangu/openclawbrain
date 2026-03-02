@@ -50,6 +50,17 @@ If present, the script sources:
 
 This is the place to set `OPENAI_API_KEY` (required for replay `--mode full` and async teacher labeling). The script does not print secrets.
 
+## Logging and audit artifacts
+
+Each agent run writes auditable artifacts under `~/.openclawbrain/<agent>/scratch/` with a shared timestamp prefix.
+
+- `default-experience.<ts>.log` captures the full run (stdout/stderr) with readable section headers.
+- `default-experience.<ts>.status_before.json` and `default-experience.<ts>.status_after.json` capture `openclawbrain status --json` snapshots.
+- `default-experience.<ts>.maintain.json`, `default-experience.<ts>.async-route-pg.json`, and `default-experience.<ts>.train-route-model.json` capture machine-readable step outputs.
+- `route_traces.jsonl` and `route_model.npz` hold the route teacher traces and trained model.
+- `state.pre-default-experience.<ts>.json` is the pre-run state backup.
+- `default-experience.<ts>.manifest.json` summarizes paths and embeds the before/after status objects.
+
 ## Notes
 
 - The script expects existing agent state files at `~/.openclawbrain/<agent>/state.json`.
