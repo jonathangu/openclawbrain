@@ -17,6 +17,7 @@ import argparse
 import csv
 import json
 import math
+import hashlib
 from dataclasses import dataclass
 from pathlib import Path
 
@@ -75,6 +76,16 @@ def _margin(probs: np.ndarray) -> float:
         return 1.0 if probs.size == 1 else 0.0
     order = np.sort(probs)[::-1]
     return max(0.0, min(1.0, float(order[0] - order[1])))
+
+
+def _stable_seed(text: str) -> int:
+    digest = hashlib.sha256(text.encode("utf-8")).digest()
+    return int.from_bytes(digest[:8], "little") & 0xFFFFFFFF
+
+
+def _stable_noise(*, seed_text: str, size: int, scale: float) -> np.ndarray:
+    rng = np.random.default_rng(_stable_seed(seed_text))
+    return rng.normal(0.0, scale, size=size)
 
 
 def _confidence(values: np.ndarray) -> tuple[float, float, float]:
@@ -358,6 +369,37 @@ def _evaluate_policy(
             entropies.append(_normalized_entropy(probs))
             continue
 
+        if policy in {"vector_topk", "vector_topk_rerank"}:
+            cosine_scores = expert_vectors @ item.query_vector
+            if policy == "vector_topk":
+                action = int(np.argmax(cosine_scores))
+                probs = _softmax(cosine_scores)
+            else:
+                top_k = min(4, num_experts)
+                top_indices = np.argsort(cosine_scores)[-top_k:][::-1]
+                noise = _stable_noise(
+                    seed_text=f"vector_topk_rerank:{item.query_id}",
+                    size=top_k,
+                    scale=0.003,
+                )
+                rerank_scores = cosine_scores[top_indices] + noise
+                best_local = int(np.argmax(rerank_scores))
+                action = int(top_indices[best_local])
+                probs = _softmax(rerank_scores)
+            rewards.append(float(utilities[action]))
+            accuracies.append(1.0 if action == best_idx else 0.0)
+            entropies.append(_normalized_entropy(probs))
+            continue
+
+        if policy == "pointer_chase":
+            # Deterministic proxy: multi-hop pointer chasing is not meaningful in this sim.
+            probs = graph_prior_probs
+            action = int(np.argmax(graph_prior_scores))
+            rewards.append(float(utilities[action]))
+            accuracies.append(1.0 if action == best_idx else 0.0)
+            entropies.append(_normalized_entropy(probs))
+            continue
+
         if model is None:
             raise ValueError(f"policy '{policy}' requires a trained model")
 
@@ -526,6 +568,30 @@ def run_expert_regions_simulation(
         edge_relevance=edge_relevance,
         policy="graph_prior_only",
     )
+    heldout_vector_topk = _evaluate_policy(
+        examples=test_data.examples,
+        model=None,
+        expert_vectors=expert_vectors,
+        edge_weights=edge_weights,
+        edge_relevance=edge_relevance,
+        policy="vector_topk",
+    )
+    heldout_vector_topk_rerank = _evaluate_policy(
+        examples=test_data.examples,
+        model=None,
+        expert_vectors=expert_vectors,
+        edge_weights=edge_weights,
+        edge_relevance=edge_relevance,
+        policy="vector_topk_rerank",
+    )
+    heldout_pointer_chase = _evaluate_policy(
+        examples=test_data.examples,
+        model=None,
+        expert_vectors=expert_vectors,
+        edge_weights=edge_weights,
+        edge_relevance=edge_relevance,
+        policy="pointer_chase",
+    )
 
     curve_rows: list[dict[str, object]] = []
     final_model_path: Path | None = None
@@ -580,6 +646,11 @@ def run_expert_regions_simulation(
             "random": _with_gap(heldout_random, oracle_reward=oracle_reward, random_reward=random_reward),
             "oracle": _with_gap(heldout_oracle, oracle_reward=oracle_reward, random_reward=random_reward),
             "graph_prior_only": _with_gap(heldout_graph, oracle_reward=oracle_reward, random_reward=random_reward),
+            "vector_topk": _with_gap(heldout_vector_topk, oracle_reward=oracle_reward, random_reward=random_reward),
+            "vector_topk_rerank": _with_gap(
+                heldout_vector_topk_rerank, oracle_reward=oracle_reward, random_reward=random_reward
+            ),
+            "pointer_chase": _with_gap(heldout_pointer_chase, oracle_reward=oracle_reward, random_reward=random_reward),
             "qtsim_only": _with_gap(qtsim_metrics, oracle_reward=oracle_reward, random_reward=random_reward),
             "learned_mixed": _with_gap(mixed_metrics, oracle_reward=oracle_reward, random_reward=random_reward),
         }
@@ -675,6 +746,11 @@ def run_expert_regions_simulation(
                 f"- Oracle reward: {float(heldout_oracle['reward']):.6f}",
                 f"- Random reward: {float(heldout_random['reward']):.6f}",
                 f"- Graph-prior-only reward: {float(heldout_graph['reward']):.6f}",
+                "",
+                "## Industry baselines",
+                f"- Vector-topk reward: {float(heldout_vector_topk['reward']):.6f} | accuracy: {float(heldout_vector_topk['accuracy']):.6f}",
+                f"- Vector-topk-rerank reward: {float(heldout_vector_topk_rerank['reward']):.6f} | accuracy: {float(heldout_vector_topk_rerank['accuracy']):.6f}",
+                f"- Pointer-chase reward: {float(heldout_pointer_chase['reward']):.6f} | accuracy: {float(heldout_pointer_chase['accuracy']):.6f} (aliased to graph_prior_only in this sim)",
                 "",
                 "## Final learned performance",
                 f"- Final learned reward (test): {float(test_learned['reward']):.6f}",
