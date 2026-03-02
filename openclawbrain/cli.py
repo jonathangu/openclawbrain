@@ -273,7 +273,7 @@ def _build_parser() -> argparse.ArgumentParser:
     i.add_argument("--sessions")
     i.add_argument("--embedder", choices=["local", "openai", "auto"], default="auto")
     i.add_argument("--embed-model", default=None)
-    i.add_argument("--llm", choices=["none", "openai", "auto"], default="auto")
+    i.add_argument("--llm", choices=["none", "openai", "ollama", "auto"], default="auto")
     # LLM-splitting controls (default: use LLM only for larger/complex files)
     i.add_argument("--llm-split-min-chars", type=int, default=20000)
     i.add_argument("--llm-split-mode", choices=["auto", "all", "off"], default="auto")
@@ -301,7 +301,7 @@ def _build_parser() -> argparse.ArgumentParser:
     m = sub.add_parser("merge")
     m.add_argument("--state")
     m.add_argument("--graph")
-    m.add_argument("--llm", choices=["none", "openai"], default="none")
+    m.add_argument("--llm", choices=["none", "openai", "ollama"], default="none")
     m.add_argument("--json", action="store_true")
 
     a = sub.add_parser("anchor")
@@ -315,7 +315,7 @@ def _build_parser() -> argparse.ArgumentParser:
     c = sub.add_parser("connect")
     c.add_argument("--state")
     c.add_argument("--graph")
-    c.add_argument("--llm", choices=["none", "openai"], default="none")
+    c.add_argument("--llm", choices=["none", "openai", "ollama"], default="none")
     c.add_argument("--json", action="store_true")
 
     p = sub.add_parser("maintain")
@@ -324,7 +324,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--dry-run", action="store_true")
     p.add_argument("--max-merges", type=int, default=5)
     p.add_argument("--prune-below", type=float, default=0.01)
-    p.add_argument("--llm", choices=["none", "openai"], default="none")
+    p.add_argument("--llm", choices=["none", "openai", "ollama"], default="none")
     p.add_argument("--embedder", choices=["local", "openai"], default=None)
     p.add_argument("--force", action="store_true", help="Bypass state lock (expert use)")
     p.add_argument("--json", action="store_true")
@@ -334,7 +334,7 @@ def _build_parser() -> argparse.ArgumentParser:
     z.add_argument("--memory-dir", required=True)
     z.add_argument("--max-age-days", type=int, default=7)
     z.add_argument("--target-lines", type=int, default=15)
-    z.add_argument("--llm", choices=["none", "openai"], default="none")
+    z.add_argument("--llm", choices=["none", "openai", "ollama"], default="none")
     z.add_argument("--dry-run", action="store_true")
     z.add_argument("--force", action="store_true", help="Bypass state lock (expert use)")
     z.add_argument("--json", action="store_true")
@@ -466,6 +466,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     r.add_argument("--edges-only", action="store_true")
+    r.add_argument("--llm", choices=["none", "openai", "ollama", "auto"], default=None)
     r.add_argument("--show-checkpoint", action="store_true")
     r.add_argument("--decay-during-replay", action="store_true")
     r.add_argument("--decay-interval", type=int, default=10)
@@ -553,7 +554,7 @@ def _build_parser() -> argparse.ArgumentParser:
     ar.add_argument("--max-queries", type=int, default=200)
     ar.add_argument("--sample-rate", type=float, default=0.1)
     ar.add_argument("--max-candidates-per-node", type=int, default=12)
-    ar.add_argument("--teacher", choices=["openai", "none"], default="openai")
+    ar.add_argument("--teacher", choices=["openai", "ollama", "none"], default="openai")
     ar.add_argument("--teacher-model", default="gpt-5-mini")
     ar.add_argument("--apply", action="store_true")
     ar.add_argument("--json", action="store_true")
@@ -1140,6 +1141,10 @@ def _resolve_llm(args: argparse.Namespace) -> tuple[Callable[[str, str], str] | 
         from .openai_llm import openai_llm_batch_fn, openai_llm_fn
 
         return openai_llm_fn, openai_llm_batch_fn
+    if getattr(args, "llm", None) == "ollama":
+        from .ollama_llm import ollama_llm_batch_fn, ollama_llm_fn
+
+        return ollama_llm_fn, ollama_llm_batch_fn
     return None, None
 
 
@@ -1567,12 +1572,7 @@ def cmd_compact(args: argparse.Namespace) -> int:
 
     embed_args = SimpleNamespace(embedder=None)
     embed_fn, _, _, _, _ = _resolve_embedder(embed_args, meta)
-    if args.llm == "openai":
-        from .openai_llm import openai_llm_fn
-
-        llm_fn = openai_llm_fn
-    else:
-        llm_fn = None
+    llm_fn, _ = _resolve_llm(args)
 
     if embed_fn is None:
         raise SystemExit("embedding callback missing")
@@ -2012,6 +2012,7 @@ def cmd_replay(args: argparse.Namespace) -> int:
         print(f"[{phase}] {completed}/{total} ({pct:.1f}%){extra_text}", file=sys.stderr)
 
     fast_stats: dict[str, object] | None = None
+    llm_fn, _ = _resolve_llm(args)
     if run_fast or run_full:
         fast_stats = run_fast_learning(
             state_path=str(state_path),
@@ -2032,6 +2033,7 @@ def cmd_replay(args: argparse.Namespace) -> int:
             on_progress=_emit_progress if progress_every > 0 else None,
             progress_every_windows=progress_every,
             progress_every_seconds=10 if progress_every > 0 else 0,
+            llm_fn=llm_fn,
         )
         graph, index, meta = load_state(str(state_path))
         if args.stop_after_fast_learning:

@@ -1506,6 +1506,15 @@ def test_cli_replay_fresh_aliases_parse() -> None:
     assert args_no_checkpoint.fresh is True
 
 
+def test_cli_async_route_pg_teacher_ollama_parses() -> None:
+    """--teacher ollama is accepted by async-route-pg."""
+    from openclawbrain.cli import _build_parser
+
+    parser = _build_parser()
+    args = parser.parse_args(["async-route-pg", "--state", "/tmp/x.json", "--teacher", "ollama"])
+    assert args.teacher == "ollama"
+
+
 
 def test_cli_replay_writes_checkpoint_and_resume_uses_it(tmp_path, capsys) -> None:
     """replay writes checkpoint and resume only replays new lines."""
