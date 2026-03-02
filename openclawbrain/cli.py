@@ -81,9 +81,9 @@ DEFAULT_STATE_PROFILE = "main"
 REPLAY_MODES = ("edges-only", "fast-learning", "full")
 REPLAY_HELP_EPILOG = (
     "Replay modes and rough cost profile:\n"
-    "  edges-only    Fastest/cheapest. No LLM calls, no harvest. Good default for frequent warm-up.\n"
+    "  edges-only    Fastest/cheapest. No LLM calls, no harvest.\n"
     "  fast-learning LLM-bound transcript mining + injection only. Usually the slowest and highest-cost phase.\n"
-    "  full          Fast-learning + edge replay + harvest. Highest end-to-end time and API spend.\n\n"
+    "  full          Fast-learning + edge replay + harvest. Highest end-to-end time and API spend. Default.\n\n"
     "Checkpoint semantics:\n"
     "  --resume uses saved per-session offsets.\n"
     "  --fresh / --no-checkpoint starts from scratch even if a checkpoint exists.\n"
@@ -142,7 +142,7 @@ def _resolve_replay_mode(args: argparse.Namespace) -> tuple[str, bool]:
         return explicit_mode, False
     if legacy_mode is not None:
         return legacy_mode, False
-    return "edges-only", True
+    return "full", True
 
 
 def _load_profile(profile_path: str | None) -> BrainProfile | None:
@@ -443,8 +443,8 @@ def _build_parser() -> argparse.ArgumentParser:
         choices=REPLAY_MODES,
         default=None,
         help=(
-            "Replay mode: edges-only (cheap/default), fast-learning (LLM mining only), "
-            "or full (fast-learning + replay + harvest)."
+            "Replay mode: edges-only (cheap), fast-learning (LLM mining only), "
+            "or full (fast-learning + replay + harvest; default)."
         ),
     )
     r.add_argument(
@@ -1984,7 +1984,7 @@ def cmd_replay(args: argparse.Namespace) -> int:
     timed_progress_interval_seconds = 30
     if mode_defaulted and not quiet:
         print(
-            "Replay mode note: no mode specified; defaulting to --mode edges-only (never defaults to full).",
+            "Replay mode note: no mode specified; defaulting to --mode full.",
             file=sys.stderr,
         )
 

@@ -72,7 +72,7 @@ openclawbrain replay \
 Then keep serving from the daemon state.
 
 Replay mode quick guidance:
-- `--mode edges-only` (default when omitted): cheapest/fastest, no LLM mining, no harvest.
+- `--mode full` (default when omitted): fast-learning + replay + harvest.
 - `--mode fast-learning`: LLM transcript mining + injection only; usually the slowest and most expensive stage.
 - `--mode full`: fast-learning + edge replay + harvest; highest end-to-end runtime/cost.
 - Legacy flags still work and map to mode: `--edges-only`, `--fast-learning` (`--extract-learning-events`), `--full-learning` (`--full-pipeline`).
@@ -120,7 +120,7 @@ jq . ~/.openclawbrain/main/replay_checkpoint.json
 ```
 
 Flag meanings:
-- `--mode {edges-only,fast-learning,full}`: explicit replay mode. If omitted, replay defaults to `edges-only` and prints a startup note.
+- `--mode {edges-only,fast-learning,full}`: explicit replay mode. If omitted, replay defaults to `full` and prints a startup note.
 - `--checkpoint <path>`: checkpoint file location.
 - `--resume`: continue from saved per-session line offsets.
 - `--fresh` / `--no-checkpoint`: start from scratch even if checkpoint exists.

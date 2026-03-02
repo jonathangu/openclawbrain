@@ -74,6 +74,7 @@ Replay now builds first-class tool action/evidence nodes by default. This helps 
 - Tool actions are always connected to the fired nodes that caused them.
 - Tool evidence is stored only for allowlisted tools and is redacted/truncated to avoid secrets or graph bloat.
 - Tool evidence nodes (`tool_evidence::...`) are excluded from traversal context by default.
+- Learning nodes with `session_pointer` (or session + line range metadata) automatically link to matching tool evidence nodes.
 
 To view tool evidence during query/traverse:
 

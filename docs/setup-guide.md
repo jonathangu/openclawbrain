@@ -26,7 +26,7 @@ Runtime route-mode default is `learned`. `init` writes a default identity-like `
 
 ## Initial learning: replay your sessions
 
-After init, replay your existing sessions to seed graph edges and extract learning signals. By default, `replay` runs `--mode edges-only` (cheap/fast, no LLM mining, no harvest):
+After init, replay your existing sessions to seed graph edges and extract learning signals. By default, `replay` runs `--mode full` (fast-learning + replay + harvest):
 
 ```bash
 openclawbrain replay --state ./brain/state.json --sessions ./sessions/
@@ -37,7 +37,7 @@ Use `--mode full` when you explicitly want the full pipeline (LLM mining + edge 
 For cheap edge-only replay (no LLM, no harvest):
 
 ```bash
-openclawbrain replay --state ./brain/state.json --sessions ./sessions/ --mode edges-only
+openclawbrain replay --state ./brain/state.json --sessions ./sessions/ --mode full
 ```
 
 For fine-grained control over the LLM mining pass:

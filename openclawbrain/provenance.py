@@ -197,6 +197,138 @@ def _ensure_edge(
     return True
 
 
+def _parse_session_pointer(pointer: str) -> tuple[str, int, int] | None:
+    """Parse session_pointer into (session, start_line, end_line)."""
+    if not pointer or ":" not in pointer:
+        return None
+    session_part, range_part = pointer.rsplit(":", 1)
+    if "-" not in range_part:
+        return None
+    start_raw, end_raw = range_part.split("-", 1)
+    try:
+        start = int(start_raw)
+        end = int(end_raw)
+    except ValueError:
+        return None
+    if start > end:
+        start, end = end, start
+    return session_part, start, end
+
+
+def _resolve_session_range(
+    metadata: dict[str, Any],
+    *,
+    pointer: str | None = None,
+) -> tuple[str, int, int] | None:
+    if pointer is None:
+        raw_pointer = metadata.get("session_pointer")
+        pointer = raw_pointer if isinstance(raw_pointer, str) else None
+    if pointer:
+        parsed = _parse_session_pointer(pointer)
+        if parsed is not None:
+            return parsed
+
+    session = metadata.get("session")
+    if not isinstance(session, str) or not session:
+        session = metadata.get("session_path")
+    if not isinstance(session, str) or not session:
+        return None
+
+    line_no_start = metadata.get("line_no_start")
+    line_no_end = metadata.get("line_no_end")
+    line_no = metadata.get("line_no")
+    if not isinstance(line_no_start, (int, float)):
+        line_no_start = line_no
+    if not isinstance(line_no_end, (int, float)):
+        line_no_end = line_no
+    if not isinstance(line_no_start, (int, float)) or not isinstance(line_no_end, (int, float)):
+        return None
+    start = int(line_no_start)
+    end = int(line_no_end)
+    if start > end:
+        start, end = end, start
+    return session, start, end
+
+
+def attach_tool_evidence_provenance(
+    graph: Graph,
+    node_ids_or_events: list[object],
+    *,
+    weight: float = 0.20,
+    kind: str = "provenance",
+) -> dict[str, int]:
+    """Attach tool evidence provenance edges for nodes with session pointers or line ranges."""
+    if not hasattr(graph, "nodes") or not hasattr(graph, "get_node"):
+        return {"edges_added": 0}
+
+    session_index: dict[str, list[tuple[int, str]]] = {}
+    for node in graph.nodes():
+        if not node.id.startswith(TOOL_EVIDENCE_PREFIX):
+            continue
+        metadata = node.metadata if isinstance(node.metadata, dict) else {}
+        line_no = metadata.get("line_no")
+        if not isinstance(line_no, (int, float)):
+            continue
+        line_val = int(line_no)
+        for key in ("session", "session_path"):
+            session = metadata.get(key)
+            if isinstance(session, str) and session:
+                session_index.setdefault(session, []).append((line_val, node.id))
+
+    if not session_index:
+        return {"edges_added": 0}
+
+    edges_added = 0
+    for item in node_ids_or_events:
+        node_id: str | None = None
+        metadata: dict[str, Any] = {}
+        pointer: str | None = None
+
+        if isinstance(item, str):
+            node_id = item
+            node = graph.get_node(node_id)
+            metadata = node.metadata if (node is not None and isinstance(node.metadata, dict)) else {}
+        elif isinstance(item, dict):
+            node_id = item.get("node_id") if isinstance(item.get("node_id"), str) else None
+            if node_id is None and isinstance(item.get("id"), str):
+                node_id = item.get("id")
+            raw_pointer = item.get("session_pointer")
+            pointer = raw_pointer if isinstance(raw_pointer, str) else None
+            raw_metadata = item.get("metadata")
+            metadata = raw_metadata if isinstance(raw_metadata, dict) else {}
+            if not metadata and node_id:
+                node = graph.get_node(node_id)
+                metadata = node.metadata if (node is not None and isinstance(node.metadata, dict)) else {}
+        else:
+            continue
+
+        if not node_id or graph.get_node(node_id) is None:
+            continue
+
+        parsed = _resolve_session_range(metadata, pointer=pointer)
+        if parsed is None:
+            continue
+        session, start_line, end_line = parsed
+
+        evidence_nodes = session_index.get(session, [])
+        if not evidence_nodes:
+            continue
+        for line_no, evidence_id in evidence_nodes:
+            if line_no < start_line or line_no > end_line:
+                continue
+            if _ensure_edge(
+                graph,
+                node_id,
+                evidence_id,
+                weight=weight,
+                kind=kind,
+                metadata={"source": "provenance"},
+            ):
+                edges_added += 1
+
+    return {"edges_added": edges_added}
+
+
 def build_tool_provenance(
     *,
     graph: Graph,
