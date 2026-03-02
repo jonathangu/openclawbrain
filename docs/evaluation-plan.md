@@ -76,13 +76,17 @@ Recommended process for paper-grade ground truth:
 
 - Eval and ablations:
   - `python examples/eval/run_eval.py --state /path/to/state.json --output /tmp/ocb_eval.json`
-- Synthetic simulation:
+- Primary synthetic proof-of-learning:
+  - `python examples/eval/simulate_expert_regions.py --output-dir /tmp/ocb_expert_regions`
+  - This is the paper-grade synthetic benchmark: K-expert Gaussian regions, soft teacher labels, heldout baselines (`random`, `oracle`, `graph_prior_only`, `qtsim_only`, `learned_mixed`), and oracle-gap closure curves.
+- Secondary synthetic sanity check:
   - `python examples/eval/simulate_two_cluster_routing.py --output-dir /tmp/ocb_two_cluster`
-  - This simulation is a cluster-routing sanity check: success is measured by selecting the correct target cluster, not exact target ID within a cluster.
+  - This remains a lightweight cluster-routing smoke test.
 
 ## Expected evidence package for paper
 
 - per-mode JSON summaries from `run_eval.py`
-- simulation CSV + report from `simulate_two_cluster_routing.py`
+- simulation CSV + report from `simulate_expert_regions.py` (primary synthetic evidence)
+- simulation CSV + report from `simulate_two_cluster_routing.py` (secondary sanity evidence)
 - qualitative failure analysis for low-confidence and high-disagreement queries
 - appendix with dataset construction protocol and annotation rubric
