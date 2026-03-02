@@ -11,6 +11,21 @@ pip install -e .
 python sims/run_all.py
 ```
 
+## Embedding Defaults
+
+OpenClawBrain defaults to local fastembed embeddings with `BAAI/bge-large-en-v1.5`.
+To switch to a smaller or bespoke fastembed model:
+
+```bash
+# Smaller local model
+openclawbrain reembed --state ~/.openclawbrain/main/state.json \
+  --embedder local --embed-model BAAI/bge-small-en-v1.5 --backup
+
+# Bespoke fastembed model
+openclawbrain reembed --state ~/.openclawbrain/main/state.json \
+  --embedder local --embed-model my-org/my-embedding-model --backup
+```
+
 ## Expected Output
 
 ```

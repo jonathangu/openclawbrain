@@ -10,6 +10,7 @@ from pathlib import Path
 from typing import Any, Callable
 
 from openclawbrain import HashEmbedder, TraversalConfig, load_state, traverse
+from openclawbrain.local_embedder import LocalEmbedder, resolve_local_model
 from openclawbrain.prompt_context import build_prompt_context_ranked_with_stats
 from openclawbrain.socket_client import OCBClient
 
@@ -215,6 +216,9 @@ def _embed_fn_from_state(meta: dict[str, object]) -> tuple[Callable[[str], list[
     embedder_name = str(meta.get("embedder_name", "hash-v1"))
     hash_dim = meta.get("embedder_dim")
 
+    if embedder_name.startswith("local:"):
+        embedder = LocalEmbedder(model_name=resolve_local_model(meta))
+        return embedder.embed, embedder.name
     if embedder_name == "hash-v1" and hash_dim == HashEmbedder().dim:
         return HashEmbedder().embed, embedder_name
     if embedder_name == "hash-v1":

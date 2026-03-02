@@ -19,6 +19,7 @@ def _write_workspace(path: Path) -> None:
 def _build_state(workspace: Path) -> Path:
     env = os.environ.copy()
     env.pop("OPENAI_API_KEY", None)
+    env["OPENCLAWBRAIN_FASTEMBED_STUB"] = "1"
     output = workspace.parent / "state"
     output.mkdir(parents=True, exist_ok=True)
 
@@ -39,6 +40,7 @@ def _build_state(workspace: Path) -> Path:
 def _start_server(state_path: Path, socket_path: Path) -> subprocess.Popen:
     env = os.environ.copy()
     env.pop("OPENAI_API_KEY", None)
+    env["OPENCLAWBRAIN_FASTEMBED_STUB"] = "1"
     return subprocess.Popen(
         [
             sys.executable,

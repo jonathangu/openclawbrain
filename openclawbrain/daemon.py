@@ -20,7 +20,7 @@ from .graph import Graph, Node
 from .hasher import HashEmbedder
 from .index import VectorIndex
 from .learn import apply_outcome, apply_outcome_pg
-from .local_embedder import DEFAULT_LOCAL_MODEL, LocalEmbedder
+from .local_embedder import DEFAULT_LOCAL_MODEL, LocalEmbedder, resolve_local_model
 from .maintain import run_maintenance
 from .inject import _apply_inhibitory_edges, inject_correction, inject_node
 from .policy import DecisionMetrics, RoutingPolicy, make_runtime_route_fn
@@ -86,14 +86,14 @@ def _resolve_embed_fn(embed_model: str, meta: dict[str, object]) -> Callable[[st
 
     if model_lower in {"auto", ""}:
         if embedder_name_str.startswith("local:"):
-            return _make_local_embed_fn(DEFAULT_LOCAL_MODEL)
+            return _make_local_embed_fn(resolve_local_model(meta))
         if embedder_name_str == "hash-v1":
             return None
         return None
     if model_lower == "hash":
         return None
     if model_lower == "local":
-        return _make_local_embed_fn(DEFAULT_LOCAL_MODEL)
+        return _make_local_embed_fn(resolve_local_model(meta))
     if model_lower.startswith("local:"):
         local_model = model.split(":", 1)[1].strip()
         return _make_local_embed_fn(local_model or DEFAULT_LOCAL_MODEL)

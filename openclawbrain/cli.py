@@ -50,7 +50,7 @@ from .split import split_workspace
 from .hasher import HashEmbedder
 from .traverse import TraversalConfig, TraversalResult, traverse
 from .sync import DEFAULT_AUTHORITY_MAP, sync_workspace
-from .local_embedder import DEFAULT_LOCAL_MODEL, DEFAULT_LOCAL_MODEL_TAG, LocalEmbedder
+from .local_embedder import LocalEmbedder, resolve_local_model
 from .route_model import RouteModel
 from .full_learning import (
     _checkpoint_phase_offsets,
@@ -71,6 +71,7 @@ from .labels import LabelRecord, from_self_learning_event, from_teacher_output, 
 from .trace import RouteTrace, route_trace_to_json
 from .state_lock import StateLockError, state_write_lock
 from .store import load_state, save_state, resolve_default_state_path
+from ._batch import batch_or_single_embed
 from .ops.async_route_pg import run_async_route_pg
 from .profile import BrainProfile, BrainProfileError
 from .train_route_model import train_route_model, write_summary_json
@@ -247,6 +248,7 @@ def _state_lock_context_for_command(args: argparse.Namespace):
         "self-correct": False,
         "replay": True,
         "harvest": False,
+        "reembed": True,
         "sync": True,
         "async-route-pg": False,
     }
@@ -270,6 +272,7 @@ def _build_parser() -> argparse.ArgumentParser:
     i.add_argument("--output", required=True)
     i.add_argument("--sessions")
     i.add_argument("--embedder", choices=["hash", "local", "openai", "auto"], default="auto")
+    i.add_argument("--embed-model", default=None)
     i.add_argument("--llm", choices=["none", "openai", "auto"], default="auto")
     # LLM-splitting controls (default: use LLM only for larger/complex files)
     i.add_argument("--llm-split-min-chars", type=int, default=20000)
@@ -334,6 +337,13 @@ def _build_parser() -> argparse.ArgumentParser:
     z.add_argument("--dry-run", action="store_true")
     z.add_argument("--force", action="store_true", help="Bypass state lock (expert use)")
     z.add_argument("--json", action="store_true")
+
+    reembed = sub.add_parser("reembed", help="Rebuild embeddings + index for an existing state.json")
+    reembed.add_argument("--state", required=True)
+    reembed.add_argument("--embedder", choices=["local"], default="local")
+    reembed.add_argument("--embed-model", default=None)
+    reembed.add_argument("--backup", action=argparse.BooleanOptionalAction, default=True)
+    reembed.add_argument("--json", action="store_true")
 
     d = sub.add_parser(
         "daemon",
@@ -991,7 +1001,12 @@ def _parse_tool_result_allowlist(raw: str | None) -> set[str]:
     return {name for name in names if name}
 
 
-def _state_meta(meta: dict[str, object] | None, fallback_name: str | None = None, fallback_dim: int | None = None) -> dict[str, object]:
+def _state_meta(
+    meta: dict[str, object] | None,
+    fallback_name: str | None = None,
+    fallback_dim: int | None = None,
+    fallback_model: str | None = None,
+) -> dict[str, object]:
     """ state meta."""
     base = dict(meta or {})
     embedder_name, embedder_dim = _state_embedder_meta(base)
@@ -999,6 +1014,10 @@ def _state_meta(meta: dict[str, object] | None, fallback_name: str | None = None
         base["embedder_name"] = embedder_name or fallback_name
     if fallback_dim is not None:
         base["embedder_dim"] = embedder_dim if embedder_dim is not None else fallback_dim
+    if fallback_model is not None:
+        embedder_model = _state_embedder_model(base)
+        if embedder_model is None:
+            base["embedder_model"] = fallback_model
     return base
 
 
@@ -1043,25 +1062,41 @@ def _state_embedder_meta(meta: dict[str, object]) -> tuple[str | None, int | Non
     return embedder_name, embedder_dim
 
 
+def _state_embedder_model(meta: dict[str, object]) -> str | None:
+    """Resolve stored embedder model name if present."""
+    embedder_model = meta.get("embedder_model")
+    if isinstance(embedder_model, str) and embedder_model.strip():
+        return embedder_model.strip()
+    return None
+
+
 def _resolve_embedder(
     args: argparse.Namespace, meta: dict[str, object]
-) -> tuple[callable[[str], list[float]], callable[[list[tuple[str, str]]], dict[str, list[float]]], str, int]:
+) -> tuple[
+    callable[[str], list[float]],
+    callable[[list[tuple[str, str]]], dict[str, list[float]]],
+    str,
+    int,
+    str | None,
+]:
     """ resolve embedder."""
     openai_name = "openai-text-embedding-3-small"
     embedder_name, _ = _state_embedder_meta(meta)
+    embed_model = getattr(args, "embed_model", None)
+
+    if args.embedder == "hash":
+        embedder = HashEmbedder()
+        return embedder.embed, embedder.embed_batch, embedder.name, embedder.dim, None
 
     if args.embedder == "auto":
-        try:
-            embedder = LocalEmbedder()
-            return embedder.embed, embedder.embed_batch, embedder.name, embedder.dim
-        except Exception:
-            print("warning: local embedder not available, falling back to hash embedder", file=sys.stderr)
-            embedder = HashEmbedder()
-            return embedder.embed, embedder.embed_batch, embedder.name, embedder.dim
+        local_model = resolve_local_model(meta, embed_model=embed_model)
+        embedder = LocalEmbedder(model_name=local_model)
+        return embedder.embed, embedder.embed_batch, embedder.name, embedder.dim, local_model
 
     if args.embedder == "local":
-        embedder = LocalEmbedder()
-        return embedder.embed, embedder.embed_batch, embedder.name, embedder.dim
+        local_model = resolve_local_model(meta, embed_model=embed_model)
+        embedder = LocalEmbedder(model_name=local_model)
+        return embedder.embed, embedder.embed_batch, embedder.name, embedder.dim, local_model
 
     use_openai = args.embedder == "openai" or (args.embedder is None and embedder_name == openai_name)
     use_local = args.embedder is None and isinstance(embedder_name, str) and embedder_name.startswith("local:")
@@ -1070,18 +1105,17 @@ def _resolve_embedder(
 
         embedder = OpenAIEmbedder()
     elif use_local:
-        local_model = DEFAULT_LOCAL_MODEL
-        if isinstance(embedder_name, str):
-            local_tag = embedder_name.split(":", 1)[1]
-            if "/" in local_tag:
-                local_model = local_tag
-            elif local_tag == DEFAULT_LOCAL_MODEL_TAG:
-                local_model = DEFAULT_LOCAL_MODEL
+        local_model = resolve_local_model(meta, embed_model=embed_model)
         embedder = LocalEmbedder(model_name=local_model)
     else:
-        embedder = HashEmbedder()
+        if embedder_name == HashEmbedder().name:
+            embedder = HashEmbedder()
+        else:
+            local_model = resolve_local_model(meta, embed_model=embed_model)
+            embedder = LocalEmbedder(model_name=local_model)
 
-    return embedder.embed, embedder.embed_batch, embedder.name, embedder.dim
+    resolved_model = local_model if isinstance(embedder, LocalEmbedder) else None
+    return embedder.embed, embedder.embed_batch, embedder.name, embedder.dim, resolved_model
 
 
 def _resolve_llm(args: argparse.Namespace) -> tuple[Callable[[str, str], str] | None, Callable[[list[dict]], list[dict]] | None]:
@@ -1273,7 +1307,7 @@ def cmd_init(args: argparse.Namespace) -> int:
             node.metadata["authority"] = authority
 
     print("Phase 2/4: Embedding texts...", file=sys.stderr)
-    embedder_fn, embed_batch_fn, embedder_name, embedder_dim = _resolve_embedder(args, prior_meta)
+    embedder_fn, embed_batch_fn, embedder_name, embedder_dim, embedder_model = _resolve_embedder(args, prior_meta)
     print(
         f"Embedding {len(texts)} texts ({embedder_name}, dim={embedder_dim})",
         file=sys.stderr,
@@ -1313,7 +1347,12 @@ def cmd_init(args: argparse.Namespace) -> int:
     print("Phase 4/5: Saving state...", file=sys.stderr)
     graph_path = output_dir / "graph.json"
     text_path = output_dir / "texts.json"
-    state_meta = _state_meta(prior_meta, fallback_name=embedder_name, fallback_dim=embedder_dim)
+    state_meta = _state_meta(
+        prior_meta,
+        fallback_name=embedder_name,
+        fallback_dim=embedder_dim,
+        fallback_model=embedder_model,
+    )
     if replay_stats.get("last_replayed_ts") is not None:
         state_meta["last_replayed_ts"] = replay_stats["last_replayed_ts"]
         source = replay_stats.get("last_replayed_ts_source")
@@ -1353,7 +1392,6 @@ def cmd_init(args: argparse.Namespace) -> int:
 def cmd_query(args: argparse.Namespace) -> int:
     """cmd query."""
     graph, index, meta = _resolve_graph_index(args, allow_default_state=True)
-    embed_fn, _, embedder_name, _ = _resolve_embedder(args, meta)
     if args.top <= 0:
         raise SystemExit("--top must be >= 1")
 
@@ -1363,6 +1401,7 @@ def cmd_query(args: argparse.Namespace) -> int:
         query_vec = _load_query_vector_from_stdin()
         seeds = index.search(query_vec, top_k=args.top)
     elif index is not None:
+        embed_fn, _, embedder_name, _, _ = _resolve_embedder(args, meta)
         if embedder_name == HashEmbedder().name:
             _ensure_hash_embedder_compat(meta)
         query_vec = embed_fn(args.text)
@@ -1517,7 +1556,7 @@ def cmd_compact(args: argparse.Namespace) -> int:
     _, _, meta = _resolve_graph_index(args, allow_default_state=True)
 
     embed_args = SimpleNamespace(embedder=None)
-    embed_fn, _, _, _ = _resolve_embedder(embed_args, meta)
+    embed_fn, _, _, _, _ = _resolve_embedder(embed_args, meta)
     if args.llm == "openai":
         from .openai_llm import openai_llm_fn
 
@@ -1550,6 +1589,62 @@ def cmd_compact(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_reembed(args: argparse.Namespace) -> int:
+    """Rebuild embeddings for every node and rewrite index + embedder metadata."""
+    state_path = _resolve_state_path(args.state, allow_default=False)
+    if state_path is None:
+        raise SystemExit("--state is required for reembed")
+
+    graph, _index, meta = load_state(state_path)
+    embed_fn, embed_batch_fn, embedder_name, embedder_dim, embedder_model = _resolve_embedder(args, meta)
+
+    if embedder_name == HashEmbedder().name:
+        raise SystemExit("hash embedder is not permitted for reembed; use --embedder local")
+
+    texts = [(node.id, node.content) for node in graph.nodes()]
+    vectors = batch_or_single_embed(texts, embed_fn=embed_fn, embed_batch_fn=embed_batch_fn)
+    if len(vectors) != graph.node_count():
+        raise SystemExit(
+            f"reembed failed: expected {graph.node_count()} embeddings, got {len(vectors)}"
+        )
+
+    index = VectorIndex()
+    for node_id, vector in vectors.items():
+        index.upsert(node_id, vector)
+
+    state_meta = dict(meta)
+    state_meta["embedder_name"] = embedder_name
+    state_meta["embedder_dim"] = embedder_dim
+    if embedder_model is not None:
+        state_meta["embedder_model"] = embedder_model
+    _persist_state(
+        graph=graph,
+        index=index,
+        meta=state_meta,
+        state_path=state_path,
+        backup=bool(args.backup),
+    )
+
+    payload = {
+        "state": state_path,
+        "nodes": graph.node_count(),
+        "embedder_name": state_meta.get("embedder_name"),
+        "embedder_dim": state_meta.get("embedder_dim"),
+        "embedder_model": state_meta.get("embedder_model"),
+        "backup": bool(args.backup),
+    }
+    if args.json:
+        print(json.dumps(payload, indent=2))
+    else:
+        print(
+            "reembed ok: "
+            f"nodes={payload['nodes']} "
+            f"embedder={payload['embedder_name']} "
+            f"dim={payload['embedder_dim']}"
+        )
+    return 0
+
+
 def cmd_inject(args: argparse.Namespace) -> int:
     """cmd inject."""
     graph, index, meta = _resolve_graph_index(args, allow_default_state=True)
@@ -1558,7 +1653,7 @@ def cmd_inject(args: argparse.Namespace) -> int:
         raise SystemExit("--state is required for inject")
     if index is None:
         index = VectorIndex()
-    embed_fn, _, embedder_name, _ = _resolve_embedder(args, meta)
+    embed_fn, _, embedder_name, _, _ = _resolve_embedder(args, meta)
 
     if args.vector_stdin:
         vector = _load_query_vector_from_stdin()
@@ -1625,7 +1720,7 @@ def cmd_self_correct(args: argparse.Namespace) -> int:
         raise SystemExit("--state is required for self-correct")
     if index is None:
         index = VectorIndex()
-    embed_fn, _, embedder_name, _ = _resolve_embedder(args, meta)
+    embed_fn, _, embedder_name, _, _ = _resolve_embedder(args, meta)
     if embedder_name == HashEmbedder().name:
         _ensure_hash_embedder_compat(meta)
 
@@ -2562,7 +2657,7 @@ def cmd_sync(args: argparse.Namespace) -> int:
     authority_map = _parse_authority_map(getattr(args, "authority_map", None))
     graph, index, meta = _resolve_graph_index(args, allow_default_state=True)
 
-    embed_fn, embed_batch_fn, _, _ = _resolve_embedder(args, meta)
+    embed_fn, embed_batch_fn, _, _, _ = _resolve_embedder(args, meta)
 
     if args.dry_run:
         with tempfile.TemporaryDirectory() as tmp_dir:
@@ -2638,7 +2733,7 @@ def cmd_maintain(args: argparse.Namespace) -> int:
         raise SystemExit("--state is required for maintain")
     requested_tasks = [task.strip() for task in args.tasks.split(",") if task.strip()]
     _, _, meta = _resolve_graph_index(args, allow_default_state=True)
-    embed_fn, _, _, _ = _resolve_embedder(args, meta)
+    embed_fn, _, _, _, _ = _resolve_embedder(args, meta)
     llm_fn, _ = _resolve_llm(args)
     report = run_maintenance(
         state_path=state_path,
@@ -2993,6 +3088,7 @@ def main(argv: list[str] | None = None) -> int:
         "anchor": cmd_anchor,
         "connect": cmd_connect,
         "compact": cmd_compact,
+        "reembed": cmd_reembed,
         "daemon": cmd_daemon,
         "serve": cmd_serve,
         "inject": cmd_inject,

@@ -12,6 +12,7 @@ from typing import Any
 import time
 
 from openclawbrain import HashEmbedder, apply_outcome, inject_correction, load_state, save_state
+from openclawbrain.local_embedder import LocalEmbedder, resolve_local_model
 from openclawbrain.socket_client import OCBClient
 
 
@@ -70,6 +71,10 @@ def _resolve_embed_fn(meta: dict[str, object]) -> Callable[[str], list[float]]:
     embedder_name = meta.get("embedder_name")
     if embedder_name == "hash-v1":
         return HashEmbedder().embed
+
+    if isinstance(embedder_name, str) and embedder_name.startswith("local:"):
+        embedder = LocalEmbedder(model_name=resolve_local_model(meta))
+        return embedder.embed
 
     if embedder_name in {"text-embedding-3-small", "openai-text-embedding-3-small"}:
         from openai import OpenAI

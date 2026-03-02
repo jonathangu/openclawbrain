@@ -261,25 +261,23 @@ def test_resolve_embedder_chooses_by_arg_and_meta(monkeypatch) -> None:
     """test resolve embedder."""
     _install_fake_openai(monkeypatch, lambda text: [1.0] * 1536)
 
-    hash_fn, hash_batch_fn, hash_name, hash_dim = _resolve_embedder(argparse.Namespace(embedder="hash"), {})
+    hash_fn, hash_batch_fn, hash_name, hash_dim, hash_model = _resolve_embedder(argparse.Namespace(embedder="hash"), {})
     assert hash_name == "hash-v1"
     assert hash_dim == 1024
+    assert hash_model is None
     assert isinstance(hash_fn("alpha"), list)
     assert isinstance(hash_batch_fn([("a", "alpha")]), dict)
 
-    default_fn, _, default_name, _ = _resolve_embedder(argparse.Namespace(embedder=None), {})
-    assert default_name == "hash-v1"
-    assert isinstance(default_fn("alpha"), list)
-
-    openai_fn, openai_batch_fn, openai_name, openai_dim = _resolve_embedder(
+    openai_fn, openai_batch_fn, openai_name, openai_dim, openai_model = _resolve_embedder(
         argparse.Namespace(embedder="openai"), {}
     )
     assert openai_name == "openai-text-embedding-3-small"
     assert openai_dim == 1536
+    assert openai_model is None
     assert openai_fn("query") == [1.0] * 1536
     assert openai_batch_fn([("a", "query")]) == {"a": [1.0] * 1536}
 
-    auto_fn, _, auto_name, _ = _resolve_embedder(
+    auto_fn, _, auto_name, _, _ = _resolve_embedder(
         argparse.Namespace(embedder=None),
         {"embedder_name": "openai-text-embedding-3-small", "embedder_dim": 1536},
     )
@@ -287,8 +285,11 @@ def test_resolve_embedder_chooses_by_arg_and_meta(monkeypatch) -> None:
     assert auto_fn("query") == [1.0] * 1536
 
     class FakeLocalEmbedder:
-        name = "local:bge-small-en-v1.5"
+        name = "local:bge-large-en-v1.5"
         dim = 3
+
+        def __init__(self, model_name: str | None = None) -> None:
+            self.model_name = model_name or "BAAI/bge-large-en-v1.5"
 
         def embed(self, _text: str) -> list[float]:
             return [0.1, 0.2, 0.3]
@@ -298,9 +299,15 @@ def test_resolve_embedder_chooses_by_arg_and_meta(monkeypatch) -> None:
 
     import openclawbrain.cli as cli_module
     monkeypatch.setattr(cli_module, "LocalEmbedder", FakeLocalEmbedder)
-    local_fn, local_batch_fn, local_name, local_dim = _resolve_embedder(argparse.Namespace(embedder="auto"), {})
-    assert local_name == "local:bge-small-en-v1.5"
+    default_fn, _, default_name, _, default_model = _resolve_embedder(argparse.Namespace(embedder=None), {})
+    assert default_name == "local:bge-large-en-v1.5"
+    assert default_model == "BAAI/bge-large-en-v1.5"
+    assert isinstance(default_fn("alpha"), list)
+
+    local_fn, local_batch_fn, local_name, local_dim, local_model = _resolve_embedder(argparse.Namespace(embedder="auto"), {})
+    assert local_name == "local:bge-large-en-v1.5"
     assert local_dim == 3
+    assert local_model == "BAAI/bge-large-en-v1.5"
     assert local_fn("query") == [0.1, 0.2, 0.3]
     assert local_batch_fn([("n1", "query")]) == {"n1": [0.1, 0.2, 0.3]}
 

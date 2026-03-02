@@ -8,9 +8,12 @@ from pathlib import Path
 import pytest
 
 from openclawbrain.cli import main
+from openclawbrain.graph import Graph, Node
 from openclawbrain.hasher import default_embed
 from openclawbrain.journal import read_journal
+from openclawbrain.index import VectorIndex
 from openclawbrain.state_lock import lock_path_for_state
+from openclawbrain.store import save_state
 
 
 def _write_graph_payload(path: Path) -> None:
@@ -34,6 +37,27 @@ def _write_index(path: Path, payload: dict[str, list[float]] | None = None) -> N
     if payload is None:
         payload = {"a": [1.0, 0.0], "b": [0.0, 1.0]}
     path.write_text(json.dumps(payload), encoding="utf-8")
+
+
+def _install_fake_local_embedder(monkeypatch):
+    class FakeLocalEmbedder:
+        def __init__(self, model_name: str | None = None) -> None:
+            self.model_name = model_name or "BAAI/bge-large-en-v1.5"
+            self.name = f"local:{self.model_name.rsplit('/', 1)[-1]}"
+            self.dim = 2
+
+        def embed(self, text: str) -> list[float]:
+            lowered = text.lower()
+            if "alpha" in lowered or "deploy" in lowered:
+                return [1.0, 0.0]
+            return [0.0, 1.0]
+
+        def embed_batch(self, texts: list[tuple[str, str]]) -> dict[str, list[float]]:
+            return {node_id: self.embed(content) for node_id, content in texts}
+
+    import openclawbrain.cli as cli_module
+    monkeypatch.setattr(cli_module, "LocalEmbedder", FakeLocalEmbedder)
+    return FakeLocalEmbedder
 
 
 def _write_state(
@@ -145,16 +169,17 @@ def test_init_sets_authority_metadata_for_mapped_files(tmp_path, monkeypatch) ->
     assert "canonical" in authorities_for("USER.md")
 
 
-def test_query_command_returns_json_with_fired_nodes(tmp_path, capsys) -> None:
+def test_query_command_returns_json_with_fired_nodes(tmp_path, capsys, monkeypatch) -> None:
     """test query command returns json with fired nodes."""
+    _install_fake_local_embedder(monkeypatch)
     graph_path = tmp_path / "graph.json"
     index_path = tmp_path / "index.json"
     _write_graph_payload(graph_path)
     _write_index(
         index_path,
         {
-            "a": default_embed("alpha"),
-            "b": default_embed("beta"),
+            "a": [1.0, 0.0],
+            "b": [0.0, 1.0],
         },
     )
 
@@ -168,6 +193,8 @@ def test_query_command_returns_json_with_fired_nodes(tmp_path, capsys) -> None:
             str(index_path),
             "--top",
             "2",
+            "--embedder",
+            "local",
             "--json",
         ]
     )
@@ -183,16 +210,17 @@ def test_query_command_returns_json_with_fired_nodes(tmp_path, capsys) -> None:
     }
 
 
-def test_query_auto_embeds(tmp_path, capsys) -> None:
+def test_query_auto_embeds(tmp_path, capsys, monkeypatch) -> None:
     """test query auto embeds."""
+    _install_fake_local_embedder(monkeypatch)
     graph_path = tmp_path / "graph.json"
     index_path = tmp_path / "index.json"
     _write_graph_payload(graph_path)
     _write_index(
         index_path,
         {
-            "a": default_embed("alpha"),
-            "b": default_embed("completely different text"),
+            "a": [1.0, 0.0],
+            "b": [0.0, 1.0],
         },
     )
 
@@ -206,6 +234,8 @@ def test_query_auto_embeds(tmp_path, capsys) -> None:
             str(index_path),
             "--top",
             "2",
+            "--embedder",
+            "local",
             "--json",
         ]
     )
@@ -525,8 +555,9 @@ def test_cli_replay_with_fast_learning_writes_learning_events_and_injects_nodes(
     assert len(second_learning_nodes) == len(learning_nodes)
 
 
-def test_query_command_text_output_includes_node_ids(tmp_path, capsys) -> None:
+def test_query_command_text_output_includes_node_ids(tmp_path, capsys, monkeypatch) -> None:
     """test query text output includes node ids."""
+    _install_fake_local_embedder(monkeypatch)
     graph_path = tmp_path / "graph.json"
     index_path = tmp_path / "index.json"
     graph_payload = {
@@ -557,7 +588,7 @@ def test_query_command_text_output_includes_node_ids(tmp_path, capsys) -> None:
         }
     }
     graph_path.write_text(json.dumps(graph_payload), encoding="utf-8")
-    _write_index(index_path, {"deploy.md::0": default_embed("deploy"), "deploy.md::1": default_embed("hotfix")})
+    _write_index(index_path, {"deploy.md::0": [1.0, 0.0], "deploy.md::1": [0.0, 1.0]})
 
     code = main(
         [
@@ -569,6 +600,8 @@ def test_query_command_text_output_includes_node_ids(tmp_path, capsys) -> None:
             str(index_path),
             "--top",
             "2",
+            "--embedder",
+            "local",
         ]
     )
     assert code == 0
@@ -1720,8 +1753,11 @@ def test_cli_init_auto_embedder_prefers_local(tmp_path, monkeypatch) -> None:
     """init with auto embedder uses local embedder metadata when available."""
 
     class FakeLocalEmbedder:
-        name = "local:bge-small-en-v1.5"
+        name = "local:bge-large-en-v1.5"
         dim = 3
+
+        def __init__(self, model_name: str | None = None) -> None:
+            self.model_name = model_name or "BAAI/bge-large-en-v1.5"
 
         def embed(self, _text: str) -> list[float]:
             return [1.0, 0.0, 0.0]
@@ -1742,6 +1778,61 @@ def test_cli_init_auto_embedder_prefers_local(tmp_path, monkeypatch) -> None:
     assert code == 0
 
     state_data = json.loads((output / "state.json").read_text(encoding="utf-8"))
-    assert state_data["meta"]["embedder_name"] == "local:bge-small-en-v1.5"
+    assert state_data["meta"]["embedder_name"] == "local:bge-large-en-v1.5"
     assert state_data["meta"]["embedder_dim"] == 3
+    assert state_data["meta"]["embedder_model"] == "BAAI/bge-large-en-v1.5"
     assert (output / "route_model.npz").exists()
+
+
+def test_reembed_rewrites_embedder_meta_and_index_dims(tmp_path, monkeypatch) -> None:
+    """reembed should recompute vectors and update embedder metadata."""
+    class FakeLocalEmbedder:
+        def __init__(self, model_name: str | None = None) -> None:
+            self.model_name = model_name or "BAAI/bge-large-en-v1.5"
+            self.name = f"local:{self.model_name.rsplit('/', 1)[-1]}"
+            self.dim = 3
+
+        def embed(self, text: str) -> list[float]:
+            return [1.0, 0.0, 0.0] if "alpha" in text.lower() else [0.0, 1.0, 0.0]
+
+        def embed_batch(self, texts: list[tuple[str, str]]) -> dict[str, list[float]]:
+            return {node_id: self.embed(content) for node_id, content in texts}
+
+    import openclawbrain.cli as cli_module
+    monkeypatch.setattr(cli_module, "LocalEmbedder", FakeLocalEmbedder)
+
+    graph = Graph()
+    graph.add_node(Node(id="a", content="alpha", summary="", metadata={}))
+    graph.add_node(Node(id="b", content="beta", summary="", metadata={}))
+    index = VectorIndex()
+    index.upsert("a", [0.0, 1.0])
+    index.upsert("b", [1.0, 0.0])
+    state_path = tmp_path / "state.json"
+    save_state(
+        graph=graph,
+        index=index,
+        path=str(state_path),
+        meta={"embedder_name": "openai-text-embedding-3-small", "embedder_dim": 2},
+    )
+
+    code = main(
+        [
+            "reembed",
+            "--state",
+            str(state_path),
+            "--embedder",
+            "local",
+            "--embed-model",
+            "BAAI/bge-large-en-v1.5",
+            "--json",
+        ]
+    )
+    assert code == 0
+
+    payload = json.loads(state_path.read_text(encoding="utf-8"))
+    assert payload["meta"]["embedder_name"] == "local:bge-large-en-v1.5"
+    assert payload["meta"]["embedder_dim"] == 3
+    assert payload["meta"]["embedder_model"] == "BAAI/bge-large-en-v1.5"
+    index_payload = payload["index"]
+    assert len(index_payload["a"]) == 3
+    assert len(index_payload["b"]) == 3
