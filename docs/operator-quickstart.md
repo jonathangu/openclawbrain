@@ -65,7 +65,7 @@ python3 -m openclawbrain.socket_client \
 - Override route mode at service start with `--route-mode off|edge|edge+sim|learned`.
 - Query embeddings default to `--embed-model auto`:
   - `local:*` state metadata -> local embeddings (fastembed)
-  - `hash-v1` state metadata -> hash embeddings
+  - `hash-v1` state metadata -> hash embeddings (legacy only)
   - OpenAI state metadata -> use `--embed-model openai:<model>` explicitly if you want OpenAI query embeddings
 
 ## Stop

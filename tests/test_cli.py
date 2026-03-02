@@ -87,14 +87,15 @@ def _write_state(
     path.write_text(json.dumps({"graph": graph_payload, "index": index_payload, "meta": meta}), encoding="utf-8")
 
 
-def test_init_command_creates_workspace_graph(tmp_path) -> None:
+def test_init_command_creates_workspace_graph(tmp_path, monkeypatch) -> None:
     """test init command creates workspace graph."""
     workspace = tmp_path / "ws"
     workspace.mkdir()
     (workspace / "a.md").write_text("## A\nHello", encoding="utf-8")
     output = tmp_path
 
-    code = main(["init", "--workspace", str(workspace), "--output", str(output), "--embedder", "hash", "--llm", "none"])
+    monkeypatch.setenv("OPENCLAWBRAIN_FASTEMBED_STUB", "1")
+    code = main(["init", "--workspace", str(workspace), "--output", str(output), "--embedder", "local", "--llm", "none"])
     assert code == 0
 
     graph_path = output / "graph.json"
@@ -106,21 +107,22 @@ def test_init_command_creates_workspace_graph(tmp_path) -> None:
     graph_data = json.loads(graph_path.read_text(encoding="utf-8"))
     graph_payload = graph_data["graph"] if "graph" in graph_data else graph_data
     assert len(graph_payload["nodes"]) == 1
-    assert graph_data.get("meta", {}).get("embedder_name") == "hash-v1"
+    assert graph_data.get("meta", {}).get("embedder_name") == "local:bge-large-en-v1.5"
     state_data = json.loads((tmp_path / "state.json").read_text(encoding="utf-8"))
-    assert state_data["meta"]["embedder_name"] == "hash-v1"
+    assert state_data["meta"]["embedder_name"] == "local:bge-large-en-v1.5"
     texts_data = json.loads(texts_path.read_text(encoding="utf-8"))
     assert len(texts_data) == 1
 
 
-def test_init_command_with_empty_workspace(tmp_path) -> None:
+def test_init_command_with_empty_workspace(tmp_path, monkeypatch) -> None:
     """test init command with empty workspace."""
     workspace = tmp_path / "empty"
     workspace.mkdir()
     output = tmp_path / "out"
     output.mkdir()
 
-    code = main(["init", "--workspace", str(workspace), "--output", str(output), "--embedder", "hash", "--llm", "none"])
+    monkeypatch.setenv("OPENCLAWBRAIN_FASTEMBED_STUB", "1")
+    code = main(["init", "--workspace", str(workspace), "--output", str(output), "--embedder", "local", "--llm", "none"])
     assert code == 0
     graph_file = json.loads((output / "graph.json").read_text(encoding="utf-8"))
     graph_data = graph_file["graph"] if "graph" in graph_file else graph_file
@@ -151,7 +153,8 @@ def test_init_sets_authority_metadata_for_mapped_files(tmp_path, monkeypatch) ->
     output = tmp_path / "out"
     output.mkdir()
 
-    code = main(["init", "--workspace", str(workspace), "--output", str(output), "--embedder", "hash", "--llm", "none"])
+    monkeypatch.setenv("OPENCLAWBRAIN_FASTEMBED_STUB", "1")
+    code = main(["init", "--workspace", str(workspace), "--output", str(output), "--embedder", "local", "--llm", "none"])
     assert code == 0
 
     state_data = json.loads((output / "state.json").read_text(encoding="utf-8"))
@@ -610,18 +613,16 @@ def test_query_command_text_output_includes_node_ids(tmp_path, capsys, monkeypat
     assert "deploy.md::1" in out
 
 
-def test_cli_dimension_mismatch_error(tmp_path) -> None:
-    """test cli dimension mismatch error."""
+def test_cli_rejects_hash_embedder_flag(tmp_path, capsys) -> None:
+    """CLI rejects hash embedder selection."""
     state_path = tmp_path / "state.json"
-    _write_state(
-        state_path,
-        index_payload={"a": [1.0, 0.0] * 768, "b": [0.0, 1.0] * 768},
-        meta={"embedder_name": "openai-text-embedding-3-small", "embedder_dim": 1536},
-    )
+    _write_state(state_path)
 
-    with pytest.raises(SystemExit, match=r"Index was built with openai-text-embedding-3-small \(dim=1536\). CLI hash embedder uses dim=1024. Dimension mismatch. Use --query-vector-stdin with matching embedder."):
+    with pytest.raises(SystemExit):
         main(["query", "alpha", "--state", str(state_path), "--embedder", "hash", "--top", "2", "--json"])
-        main(["query", "alpha", "--state", str(state_path), "--top", "2", "--json"])
+
+    err = capsys.readouterr().err
+    assert "invalid choice" in err
 
 
 def test_query_command_error_on_missing_graph(tmp_path) -> None:

@@ -271,7 +271,7 @@ def _build_parser() -> argparse.ArgumentParser:
     i.add_argument("--workspace", required=True)
     i.add_argument("--output", required=True)
     i.add_argument("--sessions")
-    i.add_argument("--embedder", choices=["hash", "local", "openai", "auto"], default="auto")
+    i.add_argument("--embedder", choices=["local", "openai", "auto"], default="auto")
     i.add_argument("--embed-model", default=None)
     i.add_argument("--llm", choices=["none", "openai", "auto"], default="auto")
     # LLM-splitting controls (default: use LLM only for larger/complex files)
@@ -286,7 +286,7 @@ def _build_parser() -> argparse.ArgumentParser:
     q.add_argument("--index")
     q.add_argument("--top", type=int, default=10)
     q.add_argument("--query-vector-stdin", action="store_true")
-    q.add_argument("--embedder", choices=["hash", "local", "openai"], default=None)
+    q.add_argument("--embedder", choices=["local", "openai"], default=None)
     q.add_argument("--max-context-chars", type=int, default=None)
     q.add_argument("--json", action="store_true")
 
@@ -324,7 +324,7 @@ def _build_parser() -> argparse.ArgumentParser:
     p.add_argument("--max-merges", type=int, default=5)
     p.add_argument("--prune-below", type=float, default=0.01)
     p.add_argument("--llm", choices=["none", "openai"], default="none")
-    p.add_argument("--embedder", choices=["hash", "local", "openai"], default=None)
+    p.add_argument("--embedder", choices=["local", "openai"], default=None)
     p.add_argument("--force", action="store_true", help="Bypass state lock (expert use)")
     p.add_argument("--json", action="store_true")
 
@@ -409,7 +409,7 @@ def _build_parser() -> argparse.ArgumentParser:
     x.add_argument("--summary")
     x.add_argument("--connect-top-k", type=int, default=3)
     x.add_argument("--connect-min-sim", type=float, default=None)
-    x.add_argument("--embedder", choices=["hash", "local", "openai"], default=None)
+    x.add_argument("--embedder", choices=["local", "openai"], default=None)
     x.add_argument("--vector-stdin", action="store_true")
     x.add_argument("--json", action="store_true")
 
@@ -602,7 +602,7 @@ def _build_parser() -> argparse.ArgumentParser:
     sync = sub.add_parser("sync")
     sync.add_argument("--state")
     sync.add_argument("--workspace", required=True)
-    sync.add_argument("--embedder", choices=["openai", "hash", "local"], default=None)
+    sync.add_argument("--embedder", choices=["openai", "local"], default=None)
     sync.add_argument(
         "--authority-map",
         help="JSON object mapping file name -> authority level",
@@ -1085,8 +1085,7 @@ def _resolve_embedder(
     embed_model = getattr(args, "embed_model", None)
 
     if args.embedder == "hash":
-        embedder = HashEmbedder()
-        return embedder.embed, embedder.embed_batch, embedder.name, embedder.dim, None
+        raise SystemExit("hash embedder is not selectable via CLI; use local/openai or migrate legacy state")
 
     if args.embedder == "auto":
         local_model = resolve_local_model(meta, embed_model=embed_model)

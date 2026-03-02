@@ -18,6 +18,7 @@ from openclawbrain.traverse import TraversalConfig, traverse
 
 def test_full_cycle_init_query_learn_query(tmp_path, capsys, monkeypatch) -> None:
     """test full cycle init query learn query."""
+    monkeypatch.setenv("OPENCLAWBRAIN_FASTEMBED_STUB", "1")
     workspace = tmp_path / "docs"
     workspace.mkdir()
     (workspace / "note.md").write_text(
@@ -34,8 +35,6 @@ def test_full_cycle_init_query_learn_query(tmp_path, capsys, monkeypatch) -> Non
             str(workspace),
             "--output",
             str(output_dir),
-            "--embedder",
-            "hash",
             "--llm",
             "none",
         ]
@@ -158,6 +157,7 @@ def test_decay_and_learning_interaction() -> None:
 
 def test_large_workspace_pipeline_end_to_end(tmp_path, capsys, monkeypatch) -> None:
     """test large workspace pipeline end to end."""
+    monkeypatch.setenv("OPENCLAWBRAIN_FASTEMBED_STUB", "1")
     workspace = tmp_path / "docs"
     workspace.mkdir()
 
@@ -176,8 +176,6 @@ def test_large_workspace_pipeline_end_to_end(tmp_path, capsys, monkeypatch) -> N
             str(workspace),
             "--output",
             str(output_dir),
-            "--embedder",
-            "hash",
             "--llm",
             "none",
         ]

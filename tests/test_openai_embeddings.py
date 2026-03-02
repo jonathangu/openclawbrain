@@ -261,7 +261,10 @@ def test_resolve_embedder_chooses_by_arg_and_meta(monkeypatch) -> None:
     """test resolve embedder."""
     _install_fake_openai(monkeypatch, lambda text: [1.0] * 1536)
 
-    hash_fn, hash_batch_fn, hash_name, hash_dim, hash_model = _resolve_embedder(argparse.Namespace(embedder="hash"), {})
+    hash_fn, hash_batch_fn, hash_name, hash_dim, hash_model = _resolve_embedder(
+        argparse.Namespace(embedder=None),
+        {"embedder_name": "hash-v1", "embedder_dim": 1024},
+    )
     assert hash_name == "hash-v1"
     assert hash_dim == 1024
     assert hash_model is None
