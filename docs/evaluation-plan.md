@@ -78,6 +78,7 @@ Recommended process for paper-grade ground truth:
   - `python examples/eval/run_eval.py --state /path/to/state.json --output /tmp/ocb_eval.json`
 - Synthetic simulation:
   - `python examples/eval/simulate_two_cluster_routing.py --output-dir /tmp/ocb_two_cluster`
+  - This simulation is a cluster-routing sanity check: success is measured by selecting the correct target cluster, not exact target ID within a cluster.
 
 ## Expected evidence package for paper
 
