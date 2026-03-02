@@ -34,6 +34,9 @@ def test_query_params_defaults_follow_daemon_behavior() -> None:
     assert params.route_top_k == 5
     assert params.route_alpha_sim == 0.5
     assert params.route_use_relevance is True
+    assert params.debug_allow_confidence_override is False
+    assert params.router_conf_override is None
+    assert params.relevance_conf_override is None
     assert params.prompt_context_include_node_ids is True
     assert params.exclude_files == ()
     assert params.exclude_file_prefixes == ()
@@ -63,6 +66,9 @@ def test_query_params_validation_errors() -> None:
 
     with pytest.raises(ValueError, match="route_use_relevance must be a boolean"):
         QueryParams.from_dict({"query": "x", "route_use_relevance": "yes"})
+
+    with pytest.raises(ValueError, match="router_conf_override must be between 0.0 and 1.0"):
+        QueryParams.from_dict({"query": "x", "router_conf_override": 1.1})
 
 
 def test_query_response_to_dict_result_and_error() -> None:

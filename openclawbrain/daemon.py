@@ -406,6 +406,9 @@ def _handle_query(
         top_k=query.route_top_k,
         alpha_sim=query.route_alpha_sim,
         use_relevance=query.route_use_relevance,
+        debug_allow_confidence_override=query.debug_allow_confidence_override,
+        router_conf_override=query.router_conf_override,
+        relevance_conf_override=query.relevance_conf_override,
     )
     decision_log: list[DecisionMetrics] = []
     route_fn = make_runtime_route_fn(

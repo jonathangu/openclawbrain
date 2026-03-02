@@ -19,6 +19,9 @@ class RoutingPolicy:
     top_k: int = 5
     alpha_sim: float = 0.5
     use_relevance: bool = True
+    debug_allow_confidence_override: bool = False
+    router_conf_override: float | None = None
+    relevance_conf_override: float | None = None
 
     @classmethod
     def from_values(
@@ -212,6 +215,11 @@ def make_learned_route_fn(
         router_scores = [router_score for _target_id, _weight, _relevance, router_score in scored]
         relevance_entropy, relevance_conf, _relevance_margin = _confidence(relevances)
         router_entropy, router_conf, router_margin = _confidence(router_scores)
+        if config.debug_allow_confidence_override:
+            if config.relevance_conf_override is not None:
+                relevance_conf = max(0.0, min(1.0, float(config.relevance_conf_override)))
+            if config.router_conf_override is not None:
+                router_conf = max(0.0, min(1.0, float(config.router_conf_override)))
 
         ranked: list[tuple[str, float, float, float]] = []
         for target_id, weight, relevance, router_score in scored:

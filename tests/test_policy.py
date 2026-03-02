@@ -133,3 +133,60 @@ def test_make_runtime_route_fn_learned_populates_decision_log() -> None:
     assert metrics.candidate_count == 2
     assert 0.0 <= metrics.router_conf <= 1.0
     assert 0.0 <= metrics.relevance_conf <= 1.0
+
+
+def test_learned_route_confidence_overrides_are_debug_gated() -> None:
+    index = VectorIndex()
+    index.upsert("a", [1.0, 0.0])
+    index.upsert("b", [0.0, 1.0])
+    model = RouteModel(
+        r=2,
+        A=np.asarray([[1.0, 0.0], [0.0, 1.0]], dtype=float),
+        B=np.asarray([[4.0, 0.0], [0.0, -4.0]], dtype=float),
+        w_feat=np.asarray([0.0], dtype=float),
+        b=0.0,
+        T=1.0,
+    )
+
+    candidates = [
+        Edge("src", "a", weight=0.1, metadata={"relevance": 0.1}),
+        Edge("src", "b", weight=0.9, metadata={"relevance": 0.9}),
+    ]
+
+    ungated_log = []
+    ungated_fn = make_runtime_route_fn(
+        policy=RoutingPolicy(
+            route_mode="learned",
+            top_k=1,
+            debug_allow_confidence_override=False,
+            router_conf_override=0.0,
+            relevance_conf_override=0.0,
+        ),
+        query_vector=[1.0, 0.0],
+        index=index,
+        learned_model=model,
+        target_projections=model.precompute_target_projections(index),
+        decision_log=ungated_log,
+    )
+    assert ungated_fn is not None
+    assert ungated_fn("src", candidates, "q") == ["a"]
+    assert ungated_log[0].router_conf > 0.0
+
+    gated_log = []
+    gated_fn = make_runtime_route_fn(
+        policy=RoutingPolicy(
+            route_mode="learned",
+            top_k=1,
+            debug_allow_confidence_override=True,
+            router_conf_override=0.0,
+            relevance_conf_override=0.0,
+        ),
+        query_vector=[1.0, 0.0],
+        index=index,
+        learned_model=model,
+        target_projections=model.precompute_target_projections(index),
+        decision_log=gated_log,
+    )
+    assert gated_fn is not None
+    assert gated_fn("src", candidates, "q") == ["b"]
+    assert gated_log[0].router_conf == 0.0

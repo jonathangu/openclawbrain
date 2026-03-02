@@ -14,6 +14,7 @@
 - Operator quickstart: [docs/operator-quickstart.md](docs/operator-quickstart.md)
 - OpenClaw integration: [docs/openclaw-integration.md](docs/openclaw-integration.md)
 - Setup guide: [docs/setup-guide.md](docs/setup-guide.md)
+- Evaluation plan: [docs/evaluation-plan.md](docs/evaluation-plan.md)
 - GitHub repo: https://github.com/jonathangu/openclawbrain
 - ClawHub skill: https://clawhub.ai/skills/openclawbrain
 
@@ -534,6 +535,25 @@ result = traverse(
 External retrieval benchmarks are optional and use separately downloaded datasets.
 OpenClawBrain ships a quick-start workflow for MultiHop-RAG and HotPotQA in
 `benchmarks/external/README.md`, but the datasets are not in the repository.
+
+## Evaluation suite (paper-focused)
+
+Use the built-in eval + ablation harness:
+
+```bash
+python examples/eval/run_eval.py \
+  --state /path/to/state.json \
+  --output /tmp/ocb_eval_summary.json
+```
+
+Run the synthetic two-cluster routing simulation:
+
+```bash
+python examples/eval/simulate_two_cluster_routing.py \
+  --output-dir /tmp/ocb_two_cluster
+```
+
+See [docs/evaluation-plan.md](docs/evaluation-plan.md) for baselines, metrics, ablation matrix, and dataset guidance.
 
 Quick run (from project root):
 

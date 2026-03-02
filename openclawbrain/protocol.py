@@ -36,6 +36,16 @@ def parse_float(value: object, label: str, required: bool = False, default: floa
     return float(value)
 
 
+def parse_optional_probability(value: object, label: str) -> float | None:
+    """Parse optional confidence override values in [0, 1]."""
+    if value is None:
+        return None
+    parsed = parse_float(value, label, required=False, default=0.0)
+    if parsed < 0.0 or parsed > 1.0:
+        raise ValueError(f"{label} must be between 0.0 and 1.0")
+    return parsed
+
+
 
 def parse_bool(value: object, label: str, *, default: bool) -> bool:
     """Validate boolean input with a default."""
@@ -106,6 +116,9 @@ class QueryParams:
     route_top_k: int = 5
     route_alpha_sim: float = 0.5
     route_use_relevance: bool = True
+    debug_allow_confidence_override: bool = False
+    router_conf_override: float | None = None
+    relevance_conf_override: float | None = None
     prompt_context_include_node_ids: bool = True
     exclude_files: tuple[str, ...] = ()
     exclude_file_prefixes: tuple[str, ...] = ()
@@ -138,6 +151,19 @@ class QueryParams:
             route_top_k=parse_int(params.get("route_top_k"), "route_top_k", default=5),
             route_alpha_sim=parse_float(params.get("route_alpha_sim"), "route_alpha_sim", default=0.5),
             route_use_relevance=parse_bool(params.get("route_use_relevance"), "route_use_relevance", default=True),
+            debug_allow_confidence_override=parse_bool(
+                params.get("debug_allow_confidence_override"),
+                "debug_allow_confidence_override",
+                default=False,
+            ),
+            router_conf_override=parse_optional_probability(
+                params.get("router_conf_override"),
+                "router_conf_override",
+            ),
+            relevance_conf_override=parse_optional_probability(
+                params.get("relevance_conf_override"),
+                "relevance_conf_override",
+            ),
             prompt_context_include_node_ids=parse_bool(
                 params.get("prompt_context_include_node_ids"),
                 "prompt_context_include_node_ids",
@@ -162,6 +188,9 @@ class QueryParams:
             "route_top_k": self.route_top_k,
             "route_alpha_sim": self.route_alpha_sim,
             "route_use_relevance": self.route_use_relevance,
+            "debug_allow_confidence_override": self.debug_allow_confidence_override,
+            "router_conf_override": self.router_conf_override,
+            "relevance_conf_override": self.relevance_conf_override,
             "prompt_context_include_node_ids": self.prompt_context_include_node_ids,
             "exclude_files": list(self.exclude_files),
             "exclude_file_prefixes": list(self.exclude_file_prefixes),
