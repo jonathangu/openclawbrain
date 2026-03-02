@@ -113,15 +113,15 @@ New modules and boundaries:
 
 Runtime learned mode:
 - `route_mode=learned` uses `policy.make_learned_route_fn`.
-- `QRsim` is the route-model term: projected query/target similarity plus bias only.
+- `QTsim` is the Query-Target Similarity term: route-model projected query/target similarity plus bias only.
 - Graph prior is explicit and separate: `graph_prior_i = rel_conf*r_i + (1-rel_conf)*w_i`.
   - `w_i = edge.weight`
   - `r_i = edge.metadata.relevance` (default `0`)
   - `rel_conf = 1 - H_norm(softmax(r))`, with margin fallback for very small candidate sets.
-- Router confidence is similarly computed from `QRsim` logits:
-  - `router_conf = 1 - H_norm(softmax(QRsim))`, with margin fallback for very small candidate sets.
+- Router confidence is similarly computed from `QTsim` logits:
+  - `router_conf = 1 - H_norm(softmax(QTsim))`, with margin fallback for very small candidate sets.
 - Final runtime score mixes both policies by confidence:
-  - `final_i = router_conf*QRsim_i + (1-router_conf)*graph_prior_i`
+  - `final_i = router_conf*QTsim_i + (1-router_conf)*graph_prior_i`
 - Runtime ranking remains deterministic top-k with target-id tie-breaks.
 
 Trace/schema updates:
@@ -131,4 +131,4 @@ Trace/schema updates:
 Training CLI:
 - `openclawbrain train-route-model --state ... --traces-in ... --out ...`
 - Numpy-only SGD over cross-entropy against teacher/human/self label distributions.
-- `train-route-model` trains the `QRsim` router from traces + labels (distillation and RL-derived labels), with constant edge features so weight/relevance are not direct router inputs.
+- `train-route-model` trains the `QTsim` router from traces + labels (distillation and RL-derived labels), with constant edge features so weight/relevance are not direct router inputs.

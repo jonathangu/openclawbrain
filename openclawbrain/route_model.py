@@ -135,7 +135,7 @@ class RouteModel:
 
     @classmethod
     def init_identity(cls, d: int, df: int = 1) -> "RouteModel":
-        """Initialize an identity-like QRsim-only model."""
+        """Initialize an identity-like QTsim-only model."""
         if d <= 0 or df <= 0:
             raise ValueError("d and df must be positive")
         A = np.eye(d, dtype=float)
