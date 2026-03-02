@@ -175,8 +175,6 @@ def test_sync_dry_run_doesnt_modify(tmp_path: Path) -> None:
             str(state_path),
             "--workspace",
             str(workspace),
-            "--embedder",
-            "hash",
             "--dry-run",
             "--json",
         ]

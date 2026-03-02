@@ -28,9 +28,9 @@ What `serve` does:
 
 Daemon embed-model auto behavior:
 - `local:*` states -> local query embeddings.
-- `hash-v1` states -> hash query embeddings.
+- `hash-v1` states -> hash query embeddings (legacy only).
 - OpenAI states -> no OpenAI call in `auto`; require explicit `--embed-model openai:<model>`.
-- Force offline mode: `--embed-model hash` or `--embed-model local`.
+- Force offline mode: `--embed-model local`. Legacy hash-v1 states can force hash query embeddings with `--embed-model hash`.
 - Force explicit OpenAI model: `--embed-model openai:text-embedding-3-small`.
 
 Route-mode behavior:
@@ -196,7 +196,7 @@ echo '{"id":"op-q1","method":"query","params":{"query":"incident deploy rollback
 Force query embed-model when needed:
 
 ```bash
-openclawbrain daemon --state ~/.openclawbrain/main/state.json --embed-model hash
+openclawbrain daemon --state ~/.openclawbrain/main/state.json --embed-model hash  # legacy hash-v1 only
 openclawbrain daemon --state ~/.openclawbrain/main/state.json --embed-model local
 openclawbrain daemon --state ~/.openclawbrain/main/state.json --embed-model openai:text-embedding-3-small
 ```
@@ -212,7 +212,7 @@ Operational notes:
 |---|---|---|
 | `status` says `Daemon: not running` | service not started, crashed, or wrong state path | `openclawbrain serve start --state ~/.openclawbrain/main/state.json` then `openclawbrain serve status --state ~/.openclawbrain/main/state.json` |
 | `daemon.sock` missing | service never started or wrong agent/state directory | `ls -la ~/.openclawbrain/main` and restart `openclawbrain serve` with the same `--state` |
-| embedder/dimension mismatch on daemon query | forced wrong `--embed-model` for this state | use `--embed-model auto` for local/hash states, or explicit OpenAI mode for OpenAI states: `--embed-model openai:text-embedding-3-small` |
+| embedder/dimension mismatch on daemon query | forced wrong `--embed-model` for this state | use `--embed-model auto` for local/legacy hash states, or explicit OpenAI mode for OpenAI states: `--embed-model openai:text-embedding-3-small` |
 | Replay fails with lock/single-writer message | another process holds `state.json.lock` | stop the other writer, use `examples/ops/rebuild_then_cutover.sh ...`, or expert override with `--force` / `OPENCLAWBRAIN_STATE_LOCK_FORCE=1` |
 | Replay restarts from old work | checkpoint not used, wrong path, or intentionally ignored | run with `--resume --checkpoint ~/.openclawbrain/main/replay_checkpoint.json`; inspect with `openclawbrain replay --state ~/.openclawbrain/main/state.json --show-checkpoint --resume` |
 | `LLM required for fast-learning` | no OpenAI client/key configured for fast-learning mining | set `OPENAI_API_KEY` or run `--mode edges-only` replay path |

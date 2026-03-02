@@ -25,6 +25,7 @@ except Exception:
     OpenAIEmbedder = None
 
 from .hasher import HashEmbedder
+from .local_embedder import LocalEmbedder, resolve_local_model
 
 try:
     from .openai_llm import openai_llm_fn
@@ -733,6 +734,10 @@ def _state_embedder_info(
     if OpenAIEmbedder is not None and embedder_name == OpenAIEmbedder.name:
         embedder = OpenAIEmbedder()
         return embedder.embed_batch, 0.30
+    if embedder_name.startswith("local:"):
+        local_model = resolve_local_model(meta)
+        embedder = LocalEmbedder(model_name=local_model)
+        return embedder.embed_batch, 0.30
     embedder = HashEmbedder()
     return embedder.embed_batch, 0.0
 
@@ -1020,6 +1025,8 @@ def run_harvest(
     embedder_name = meta.get("embedder_name")
     if OpenAIEmbedder is not None and embedder_name == OpenAIEmbedder.name:
         embed_fn = OpenAIEmbedder().embed
+    elif isinstance(embedder_name, str) and embedder_name.startswith("local:"):
+        embed_fn = LocalEmbedder(model_name=resolve_local_model(meta)).embed
     else:
         embed_fn = HashEmbedder().embed
 

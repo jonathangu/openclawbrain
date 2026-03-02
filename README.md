@@ -85,8 +85,8 @@ python3 -m openclawbrain.openclaw_adapter.query_brain \
 
 **OpenClawBrain learns from your agent feedback, so wrong answers get suppressed instead of resurfacing.** It builds a memory graph over your workspace, remembers what worked, and routes future answers through learned paths.
 
-- Pure Python 3.10+ core (no vector DB). OOTB embeddings are local (`fastembed`, BGE-small), so OpenAI is not required.
-- Built-in local + hash embeddings for offline/default operation; OpenAI embeddings are optional.
+- Pure Python 3.10+ core (no vector DB). OOTB embeddings are local (`fastembed`, BGE-large), so OpenAI is not required.
+- Built-in local embeddings for offline/default operation; OpenAI embeddings are optional.
 - Builds a **`state.json`** brain from your workspace.
 - Queries follow learned routes instead of only similarity matches.
 - Positive feedback (`+1`) uses the default policy-gradient learner `apply_outcome_pg()` (conserving probability mass across traversed nodes), while negative (`-1`) creates inhibitory edges.
@@ -114,7 +114,7 @@ See also: [Setup Guide](docs/setup-guide.md) for a complete local configuration 
 ## 5-minute operator path (OOTB)
 
 ```bash
-# 1) init (default embedder auto -> local fastembed -> hash fallback)
+# 1) init (default embedder auto -> local fastembed bge-large)
 openclawbrain init --workspace ~/.openclaw/workspace --output ~/.openclawbrain/main
 
 # 2) start service
@@ -291,7 +291,7 @@ openclawbrain query "incident runbook for deploy failures" --state /tmp/brain/st
 | Negative feedback | Inhibitory edges suppress bad paths | None | None (additive only) | None |
 | New knowledge | `inject` node (no rebuild) | Re-embed corpus | Add to reflection prompt | Update tier config |
 | Integration | Standalone library, any agent | Vector DB required | Tied to agent loop | Tied to agent architecture |
-| Cold start | Hash embeddings, no API key | Needs embedding service | Needs prior episodes | Needs configured tiers |
+| Cold start | Local fastembed embeddings, no API key | Needs embedding service | Needs prior episodes | Needs configured tiers |
 | State | Single `state.json` file | External DB | Prompt history | Multi-tier storage |
 
 ## Optional OpenAI embeddings + LLM routing
@@ -300,7 +300,7 @@ If you want API-backed embeddings/teacher labeling, use:
 
 - **Embeddings:** `text-embedding-3-small` (1536-dim)
 - **LLM routing/scoring:** `gpt-5-mini`
-- **Offline/testing fallback:** `hash` embeddings (lower quality, no API key required).
+- **Offline/testing default:** local fastembed embeddings (no API key required).
 
 ```python
 from openai import OpenAI
@@ -379,9 +379,9 @@ openclawbrain daemon --state ~/.openclawbrain/main/state.json
 
 Embedding mode defaults to `--embed-model auto`:
 - For `local:*` state metadata, daemon queries use local embeddings.
-- For `hash-v1` state metadata, daemon queries use hash embeddings.
+- For legacy `hash-v1` state metadata, daemon queries use hash embeddings (avoid for new states).
 - For OpenAI-based states, `auto` does not call OpenAI; use `--embed-model openai:<model>` explicitly.
-- Use `--embed-model hash` or `--embed-model local` to force offline query embeddings.
+- Use `--embed-model local` to force offline query embeddings.
 
 Routing mode defaults to `--route-mode learned`. `init` writes a default identity-like `route_model.npz` beside `state.json`; if that file is missing or unloadable, daemon query routing gracefully falls back to `edge+sim`.
 
@@ -574,7 +574,7 @@ from openclawbrain import (
 ## State lifecycle
 
 - **Where it lives:** a single `state.json` file (portable, version-controllable)
-- **How big:** depends on workspace size and embedder (`hash` smaller, dense embeddings larger)
+- **How big:** depends on workspace size and embedder (dense embeddings are larger)
 - **When to rebuild:** after major workspace restructuring or embedder changes
 - **Embedder changes:** OpenClawBrain stores the embedder name + dimension in state metadata and hard-fails on mismatch — no silent corruption
 - **Maintenance:** use `openclawbrain maintain` (`decay` + `scale` + `split` + `merge` + `prune` + `connect`) to rebalance structure as the graph evolves
@@ -586,10 +586,22 @@ from openclawbrain import (
 
 ## Cost control
 
-- **Default OOTB:** `openclawbrain init` uses local BGE-small embeddings (`--embedder auto` -> local -> hash fallback) and writes vectors to `state.json`.
+- **Default OOTB:** `openclawbrain init` uses local BGE-large embeddings (`--embedder auto` -> local fastembed) and writes vectors to `state.json`.
 - **Optional OpenAI:** install `openclawbrain[openai]` and use `--embedder openai` (or OpenAI teacher labeling via `async-route-pg`) when you want API-backed labels/embeddings.
 - **Batch init:** `openclawbrain init` embeds all workspace files in one batch call. Subsequent queries reuse cached vectors.
-- **Explicit control:** use `--embedder local` / `--embedder hash` / `--embedder openai` to force a specific embedder. Use `--llm none` to skip LLM-assisted splitting.
+- **Explicit control:** use `--embedder local` / `--embedder openai` to force a specific embedder. Use `--embed-model BAAI/bge-small-en-v1.5` to choose a smaller local model, or pass a bespoke fastembed model string. Use `--llm none` to skip LLM-assisted splitting.
+
+Example: switching an existing state to a different local model
+
+```bash
+# Smaller local model
+openclawbrain reembed --state ~/.openclawbrain/main/state.json \
+  --embedder local --embed-model BAAI/bge-small-en-v1.5 --backup
+
+# Bespoke fastembed model
+openclawbrain reembed --state ~/.openclawbrain/main/state.json \
+  --embedder local --embed-model my-org/my-embedding-model --backup
+```
 
 ## Warm start from sessions
 

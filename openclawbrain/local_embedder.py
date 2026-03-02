@@ -3,13 +3,40 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import os
 
 import numpy as np
 
-DEFAULT_LOCAL_MODEL = "BAAI/bge-small-en-v1.5"
-DEFAULT_LOCAL_MODEL_TAG = "bge-small-en-v1.5"
+DEFAULT_LOCAL_MODEL = "BAAI/bge-large-en-v1.5"
+DEFAULT_LOCAL_MODEL_TAG = "bge-large-en-v1.5"
+
+_LOCAL_MODEL_TAG_MAP = {
+    "bge-large-en-v1.5": "BAAI/bge-large-en-v1.5",
+    "bge-small-en-v1.5": "BAAI/bge-small-en-v1.5",
+}
 
 _MODEL_CACHE: dict[str, object] = {}
+
+
+def _stub_dim_for_model(model_name: str) -> int:
+    lower = model_name.lower()
+    if "small" in lower:
+        return 384
+    if "large" in lower:
+        return 1024
+    return 768
+
+
+class _StubTextEmbedding:
+    def __init__(self, model_name: str) -> None:
+        from .hasher import HashEmbedder
+
+        self.model_name = model_name
+        self._embedder = HashEmbedder(dim=_stub_dim_for_model(model_name))
+
+    def embed(self, texts: list[str]):
+        for text in texts:
+            yield self._embedder.embed(text)
 
 
 def _normalize(vec: object) -> list[float]:
@@ -22,6 +49,49 @@ def _normalize(vec: object) -> list[float]:
     return [float(v) for v in arr.tolist()]
 
 
+def local_tag_from_model(model_name: str | None) -> str:
+    """Derive the local tag name used in metadata from a model name."""
+    if not model_name:
+        return DEFAULT_LOCAL_MODEL_TAG
+    return model_name.rsplit("/", 1)[-1]
+
+
+def local_embedder_name(model_name: str | None) -> str:
+    """Create the stable embedder_name string for local embeddings."""
+    return f"local:{local_tag_from_model(model_name)}"
+
+
+def resolve_local_model(
+    meta: dict[str, object] | None = None,
+    *,
+    embed_model: str | None = None,
+    default_model: str = DEFAULT_LOCAL_MODEL,
+) -> str:
+    """Resolve the full local model name from metadata and overrides."""
+    if embed_model:
+        cleaned = str(embed_model).strip()
+        if cleaned:
+            return cleaned
+
+    if meta:
+        embedder_model = meta.get("embedder_model")
+        if isinstance(embedder_model, str) and embedder_model.strip():
+            return embedder_model.strip()
+        embedder_name = meta.get("embedder_name") or meta.get("embedder")
+        if isinstance(embedder_name, str) and embedder_name.startswith("local:"):
+            local_tag = embedder_name.split(":", 1)[1].strip()
+            if not local_tag:
+                return default_model
+            if "/" in local_tag:
+                return local_tag
+            mapped = _LOCAL_MODEL_TAG_MAP.get(local_tag)
+            if mapped:
+                return mapped
+            return local_tag
+
+    return default_model
+
+
 @dataclass
 class LocalEmbedder:
     """Fast local embedder powered by `fastembed`."""
@@ -31,8 +101,7 @@ class LocalEmbedder:
 
     @property
     def name(self) -> str:
-        model_tag = self.model_name.rsplit("/", 1)[-1]
-        return f"local:{model_tag}"
+        return local_embedder_name(self.model_name)
 
     @property
     def dim(self) -> int:
@@ -47,6 +116,10 @@ class LocalEmbedder:
         try:
             from fastembed import TextEmbedding
         except ImportError as exc:
+            if os.environ.get("OPENCLAWBRAIN_FASTEMBED_STUB"):
+                model = _StubTextEmbedding(self.model_name)
+                _MODEL_CACHE[self.model_name] = model
+                return model
             raise ImportError("fastembed is required for local embeddings") from exc
         model = TextEmbedding(model_name=self.model_name)
         _MODEL_CACHE[self.model_name] = model

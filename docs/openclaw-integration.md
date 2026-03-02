@@ -42,7 +42,7 @@ OpenClawBrain stores everything in a single portable file:
   - `local:*` states use local query embeddings (fastembed, offline by default).
   - `hash-v1` states use hash query embeddings (offline, no OpenAI call).
   - OpenAI states do not auto-call OpenAI; use `--embed-model openai:<model>` explicitly when needed.
-  - Force hash mode: `--embed-model hash`.
+  - Legacy hash-v1 states can force hash query embeddings with `--embed-model hash` (legacy only).
   - Force local mode: `--embed-model local`.
   - Force explicit OpenAI model: `--embed-model openai:text-embedding-3-small`.
 
@@ -143,7 +143,7 @@ BRAIN_DIR=~/.openclawbrain/main
 mkdir -p "$BRAIN_DIR"
 
 # Create/overwrite state.json inside the output directory
-# By default, init uses embedder auto -> local fastembed -> hash fallback.
+# By default, init uses embedder auto -> local fastembed.
 openclawbrain init --workspace "$WORKSPACE" --output "$BRAIN_DIR"
 
 # Quick health signal
@@ -279,7 +279,7 @@ Daemon embed-model default and overrides:
 - `local:*` state metadata => local query embeddings.
 - `hash-v1` state metadata => hash query embeddings (offline).
 - OpenAI state metadata => no OpenAI call in auto; use `--embed-model openai:<model>` explicitly.
-- Force modes with `--embed-model hash` or `--embed-model local`.
+- Force modes with `--embed-model local`. Legacy hash-v1 states can force hash query embeddings with `--embed-model hash` (legacy only).
 
 Example request and reply:
 
@@ -538,7 +538,7 @@ Dimension mismatch usually means query embedding dimensions do not match the vec
 Fixes:
 - Run daemon in default auto mode (`--embed-model auto`), which follows state metadata safely.
 - Rebuild state if needed with the embedder you intend to keep.
-- Only force `--embed-model hash`, `--embed-model local`, or `--embed-model openai:<model>` when you intentionally want that behavior and dimensions are known to match.
+- Only force `--embed-model local` or `--embed-model openai:<model>` when you intentionally want that behavior and dimensions are known to match. Legacy hash-v1 states can use `--embed-model hash` if required.
 
 ```bash
 openclawbrain init --workspace ~/.openclaw/workspace --output ~/.openclawbrain/main
@@ -549,12 +549,12 @@ openclawbrain init --workspace ~/.openclaw/workspace --output ~/.openclawbrain/m
 Common causes:
 
 - You aren’t using the daemon (so `state.json` reload happens every call).
-- You’re using hash embeddings and still want production-grade retrieval (or `embed_query_ms` is high from OpenAI calls).
+- You’re using legacy hash-v1 embeddings and still want production-grade retrieval (or `embed_query_ms` is high from OpenAI calls).
 
 Fixes:
 
 - Use the canonical brain-on command (`openclawbrain serve start --state ...`).
-- Use OpenAI embeddings for production routing/scoring behavior; only use hash embeddings for offline/testing fallback.
+- Use OpenAI or local embeddings for production routing/scoring behavior; hash embeddings are legacy-only for existing hash-v1 states.
 
 ### “Daemon starts but OpenClaw can’t talk to it”
 
