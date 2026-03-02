@@ -34,6 +34,13 @@ def test_learned_closes_at_least_40_percent_of_oracle_gap(tmp_path: Path) -> Non
     assert gap_closed >= 0.40
 
 
+def test_learned_reward_beats_random_by_margin(tmp_path: Path) -> None:
+    summary = _run_small(tmp_path / "reward_gap", seed=24)
+    learned_reward = float(summary["final_learned_reward"])
+    random_reward = float(summary["random_reward"])
+    assert learned_reward - random_reward > 0.10
+
+
 def test_expert_regions_simulation_is_deterministic(tmp_path: Path) -> None:
     out_a = tmp_path / "run_a"
     out_b = tmp_path / "run_b"

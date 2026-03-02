@@ -516,6 +516,24 @@ python examples/eval/simulate_two_cluster_routing.py \
   --output-dir /tmp/ocb_two_cluster
 ```
 
+Run the industry baseline suite (JSON + CSV + report in scratch):
+
+```bash
+python examples/eval/run_baselines.py \
+  --state /path/to/state.json \
+  --output-dir scratch/industry-baselines/latest
+```
+
+Baseline matrix (industry standard):
+
+| Mode | Description | Optional deps |
+| --- | --- | --- |
+| `vector_topk` | Vector similarity top-k only | none |
+| `vector_topk_rerank` | Vector top-k reranked by BM25 | `openclawbrain[reranker]` |
+| `pointer_chase` | Deterministic pointer-chasing simulator | none |
+| `learned` | OpenClawBrain learned routing | route model |
+| `edge_sim_legacy` | Legacy edge+sim routing | none |
+
 See [docs/evaluation-plan.md](docs/evaluation-plan.md) for baselines, metrics, ablation matrix, and dataset guidance.
 
 Quick run (from project root):

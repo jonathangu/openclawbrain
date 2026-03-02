@@ -10,7 +10,9 @@ OpenClawBrain reduces multi-hop pointer chasing, which should reduce turns, toke
 
 Evaluate the following retrieval modes with the same state and query set:
 
-- `vector_only`: top-k vector seeds only; no traversal.
+- `vector_topk` (`vector_only` in `run_eval.py`): top-k vector seeds only; no traversal.
+- `vector_topk_rerank`: vector top-k with BM25 reranking (optional `openclawbrain[reranker]`).
+- `pointer_chase`: deterministic pointer-chasing simulator (LLM/tool loop) for turn/token/latency/cost comparison.
 - `graph_prior_only`: learned router path with `router_conf=0.0` (forces graph-prior behavior from edge weight/relevance confidence mix).
 - `qtsim_only`: learned router path with `router_conf=1.0` and `relevance_conf=1.0` (forces QTsim score dominance).
 - `learned`: default confidence-mixed learned routing.
@@ -44,6 +46,16 @@ For each dataset split or benchmark shard, run all five modes:
 4. `qtsim_only`
 5. `learned`
 
+## Industry baseline matrix
+
+Report alongside the learned modes:
+
+1. `vector_topk`
+2. `vector_topk_rerank` (BM25; optional extra)
+3. `pointer_chase` (deterministic simulated LLM/tool loop)
+4. `learned`
+5. `edge_sim_legacy`
+
 Interpretation:
 
 - `learned` should outperform `vector_only` on multi-hop and history queries.
@@ -76,6 +88,8 @@ Recommended process for paper-grade ground truth:
 
 - Eval and ablations:
   - `python examples/eval/run_eval.py --state /path/to/state.json --output /tmp/ocb_eval.json`
+- Industry baseline suite (JSON + CSV + report in scratch):
+  - `python examples/eval/run_baselines.py --state /path/to/state.json --output-dir scratch/industry-baselines/latest`
 - Primary synthetic proof-of-learning:
   - `python examples/eval/simulate_expert_regions.py --output-dir /tmp/ocb_expert_regions`
   - This is the paper-grade synthetic benchmark: K-expert Gaussian regions, soft teacher labels, heldout baselines (`random`, `oracle`, `graph_prior_only`, `qtsim_only`, `learned_mixed`), and oracle-gap closure curves.
