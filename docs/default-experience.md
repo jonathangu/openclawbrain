@@ -50,6 +50,10 @@ If present, the script sources:
 
 This is the place to set `OPENAI_API_KEY` (required for replay `--mode full` and async teacher labeling). The script does not print secrets.
 
+You can also control parallelism with:
+
+- `PARALLEL_AGENTS` (default `2`): number of agent pipelines to run concurrently. Parallelism is across agents only; steps within a single agent remain sequential.
+
 ## Logging and audit artifacts
 
 Each agent run writes auditable artifacts under `~/.openclawbrain/<agent>/scratch/` with a shared timestamp prefix.

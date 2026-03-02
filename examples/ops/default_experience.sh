@@ -11,6 +11,7 @@ ROOT="$HOME/.openclawbrain"
 EMBED_MODEL="BAAI/bge-large-en-v1.5"
 TEACHER_MODEL="gpt-5-mini"
 SINCE_HOURS="168"
+PARALLEL_AGENTS="${PARALLEL_AGENTS:-2}"
 
 usage() {
   cat <<'USAGE'
@@ -48,6 +49,11 @@ fi
 
 if [[ ! -f "$CONFIG" ]]; then
   echo "error: missing config: $CONFIG" >&2
+  exit 1
+fi
+
+if [[ ! "$PARALLEL_AGENTS" =~ ^[0-9]+$ || "$PARALLEL_AGENTS" -lt 1 ]]; then
+  echo "error: PARALLEL_AGENTS must be a positive integer (got: $PARALLEL_AGENTS)" >&2
   exit 1
 fi
 
@@ -107,12 +113,85 @@ backup_if_exists() {
   fi
 }
 
+wait_for_state_unlock() {
+  local state="$1"
+  local lock="${state}.lock"
+  local timeout="${STATE_LOCK_TIMEOUT_SECONDS:-3600}"
+  local start_ts
+  local backoff=1
+
+  if [[ ! "$timeout" =~ ^[0-9]+$ || "$timeout" -lt 1 ]]; then
+    timeout=3600
+  fi
+
+  start_ts="$(date +%s)"
+  while [[ -e "$lock" ]]; do
+    local pid=""
+    if [[ -s "$lock" ]]; then
+      pid="$(awk 'NR==1{print $1}' "$lock")"
+    fi
+
+    if [[ -n "$pid" && "$pid" =~ ^[0-9]+$ ]]; then
+      if ! kill -0 "$pid" 2>/dev/null; then
+        echo "state lock stale (pid $pid), removing: $lock"
+        rm -f "$lock"
+        break
+      fi
+    fi
+
+    local now
+    local elapsed
+    now="$(date +%s)"
+    elapsed="$((now - start_ts))"
+    if (( elapsed >= timeout )); then
+      echo "error: state lock timeout after ${elapsed}s: $lock" >&2
+      return 1
+    fi
+
+    echo "state lock present (pid ${pid:-unknown}), waiting ${backoff}s..."
+    sleep "$backoff"
+    if (( backoff < 30 )); then
+      backoff="$((backoff * 2))"
+      if (( backoff > 30 )); then
+        backoff=30
+      fi
+    fi
+  done
+}
+
+PIDS=()
+AGENT_IDS=()
 FAILED=0
+
+wait_for_slot() {
+  while (( ${#PIDS[@]} >= PARALLEL_AGENTS )); do
+    local i=0
+    local waited=0
+    while (( i < ${#PIDS[@]} )); do
+      local pid="${PIDS[i]}"
+      if ! kill -0 "$pid" 2>/dev/null; then
+        if ! wait "$pid"; then
+          FAILED=1
+        fi
+        PIDS=( "${PIDS[@]:0:i}" "${PIDS[@]:i+1}" )
+        AGENT_IDS=( "${AGENT_IDS[@]:0:i}" "${AGENT_IDS[@]:i+1}" )
+        waited=1
+        break
+      fi
+      i=$((i + 1))
+    done
+    if [[ "$waited" -eq 0 ]]; then
+      sleep 1
+    fi
+  done
+}
 
 while IFS=$'\t' read -r AGENT_ID WORKSPACE_DIR; do
   if [[ -z "$AGENT_ID" || -z "$WORKSPACE_DIR" ]]; then
     continue
   fi
+
+  wait_for_slot
 
   TS="$(date '+%Y%m%d-%H%M%S')"
   AGENT_DIR="$ROOT/$AGENT_ID"
@@ -163,6 +242,7 @@ while IFS=$'\t' read -r AGENT_ID WORKSPACE_DIR; do
 
     echo
     echo "== 1) Re-embed (local BGE-large) =="
+    wait_for_state_unlock "$STATE"
     "$OCB_BIN" reembed \
       --state "$STATE" \
       --embedder local \
@@ -170,6 +250,7 @@ while IFS=$'\t' read -r AGENT_ID WORKSPACE_DIR; do
 
     echo
     echo "== 2) Replay (full, include tool results) =="
+    wait_for_state_unlock "$STATE"
     "$OCB_BIN" replay \
       --state "$STATE" \
       --sessions "$SESSIONS" \
@@ -182,6 +263,7 @@ while IFS=$'\t' read -r AGENT_ID WORKSPACE_DIR; do
 
     echo
     echo "== 3) Maintain (structural tasks) =="
+    wait_for_state_unlock "$STATE"
     "$OCB_BIN" maintain \
       --state "$STATE" \
       --tasks health,decay,scale,split,merge,prune,connect \
@@ -192,6 +274,7 @@ while IFS=$'\t' read -r AGENT_ID WORKSPACE_DIR; do
 
     echo
     echo "== 4) Async route teacher labeling =="
+    wait_for_state_unlock "$STATE"
     "$OCB_BIN" async-route-pg \
       --state "$STATE" \
       --teacher openai \
@@ -204,12 +287,17 @@ while IFS=$'\t' read -r AGENT_ID WORKSPACE_DIR; do
 
     echo
     echo "== 5) Train route model =="
-    "$OCB_BIN" train-route-model \
-      --state "$STATE" \
-      --traces-in "$TRACE_OUT" \
-      --out "$ROUTE_MODEL_OUT" \
-      --json > "$TRAIN_ROUTE_JSON"
-    echo "saved: $TRAIN_ROUTE_JSON"
+    if [[ ! -s "$TRACE_OUT" ]]; then
+      echo "trace output missing or empty; skipping train-route-model: $TRACE_OUT"
+    else
+      wait_for_state_unlock "$STATE"
+      "$OCB_BIN" train-route-model \
+        --state "$STATE" \
+        --traces-in "$TRACE_OUT" \
+        --out "$ROUTE_MODEL_OUT" \
+        --json > "$TRAIN_ROUTE_JSON"
+      echo "saved: $TRAIN_ROUTE_JSON"
+    fi
 
     echo
     echo "== Status (after) =="
@@ -254,8 +342,15 @@ PY
 
     echo
     echo "Done. Log: $LOG"
-  ) || FAILED=1
-
+  ) &
+  PIDS+=( "$!" )
+  AGENT_IDS+=( "$AGENT_ID" )
 done <<< "$AGENT_ROWS"
+
+for pid in "${PIDS[@]}"; do
+  if ! wait "$pid"; then
+    FAILED=1
+  fi
+done
 
 exit "$FAILED"
