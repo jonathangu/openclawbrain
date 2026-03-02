@@ -39,10 +39,12 @@ OpenClawBrain stores everything in a single portable file:
 - Python **3.10+**
 - `pip install openclawbrain`
 - Daemon query embedding mode defaults to `--embed-model auto`:
+  - `local:*` states use local query embeddings (fastembed, offline by default).
   - `hash-v1` states use hash query embeddings (offline, no OpenAI call).
-  - Non-hash states use OpenAI query embeddings with `text-embedding-3-small` (`OPENAI_API_KEY` required in daemon environment).
+  - OpenAI states do not auto-call OpenAI; use `--embed-model openai:<model>` explicitly when needed.
   - Force hash mode: `--embed-model hash`.
-  - Force explicit model: `--embed-model text-embedding-3-small` (or another compatible model).
+  - Force local mode: `--embed-model local`.
+  - Force explicit OpenAI model: `--embed-model openai:text-embedding-3-small`.
 
 Install:
 
@@ -141,7 +143,7 @@ BRAIN_DIR=~/.openclawbrain/main
 mkdir -p "$BRAIN_DIR"
 
 # Create/overwrite state.json inside the output directory
-# By default, init auto-detects OpenAI (uses it if OPENAI_API_KEY is set, falls back to hash otherwise)
+# By default, init uses embedder auto -> local fastembed -> hash fallback.
 openclawbrain init --workspace "$WORKSPACE" --output "$BRAIN_DIR"
 
 # Quick health signal
@@ -261,22 +263,23 @@ This aligns retrieval output with OpenClawBrain’s context-efficiency goal: pre
 ### Option A: run it manually (smoke test)
 
 ```bash
-openclawbrain serve --state ~/.openclawbrain/main/state.json
+openclawbrain serve start --state ~/.openclawbrain/main/state.json
 ```
 
 The daemon speaks NDJSON over `stdin`/`stdout`.
 
 - Protocol: each line is one JSON request with `id`, `method`, and `params`.
 - Response: one JSON object with matching `id` and either `result` or `error`.
-- Start-up cost is paid once (state loaded at process start); expected savings are 100-800ms on hot-path calls, with production measurement at ~504ms on Mac Mini M4 Pro.
+- Start-up cost is paid once (state loaded at process start), so steady-state query/learn calls avoid repeated reload overhead.
 
 Supported methods: `query`, `learn`, `last_fired`, `learn_by_chat_id`, `capture_feedback`, `maintain`, `health`, `info`, `save`, `reload`, `shutdown`, `inject`, `correction`.
 
 Daemon embed-model default and overrides:
 - Default is `--embed-model auto`.
+- `local:*` state metadata => local query embeddings.
 - `hash-v1` state metadata => hash query embeddings (offline).
-- Non-hash state metadata => OpenAI query embeddings with `text-embedding-3-small`.
-- Force modes with `--embed-model hash` or `--embed-model <model>`.
+- OpenAI state metadata => no OpenAI call in auto; use `--embed-model openai:<model>` explicitly.
+- Force modes with `--embed-model hash` or `--embed-model local`.
 
 Example request and reply:
 
@@ -308,6 +311,7 @@ Create `~/Library/LaunchAgents/com.openclawbrain.daemon.plist`:
     <string>/usr/bin/env</string>
     <string>openclawbrain</string>
     <string>serve</string>
+    <string>start</string>
     <string>--state</string>
     <string>/Users/YOU/.openclawbrain/main/state.json</string>
   </array>
@@ -360,7 +364,7 @@ Type=simple
 User=YOUR_USER
 WorkingDirectory=/home/YOUR_USER
 Environment=OPENAI_API_KEY=YOUR_KEY_HERE
-ExecStart=/usr/bin/env openclawbrain serve --state /home/YOUR_USER/.openclawbrain/main/state.json
+ExecStart=/usr/bin/env openclawbrain serve start --state /home/YOUR_USER/.openclawbrain/main/state.json
 Restart=always
 RestartSec=1
 
@@ -411,7 +415,7 @@ OpenClawBrain ships an OpenClaw adapter that logs fired IDs per chat.
 
 That’s the ergonomic way to do “same-turn correction” inside OpenClaw.
 
-For full-history rebuilds, replay your sessions (full-learning is the default; explicit alias pair: `--full-learning` / `--full-pipeline`):
+For full-history rebuilds, replay your sessions. Default mode is `edges-only`; use `--mode full` for full-learning + replay + harvest:
 
 ```bash
 openclawbrain replay \
@@ -442,17 +446,17 @@ openclawbrain replay \
 
 This does:
 
-- replay query edges from session history (with decay enabled by default)
-- LLM transcript mining into `learning::` nodes (`--fast-learning` / `--extract-learning-events` behavior)
-- slow-learning maintenance pass (`harvest`) with decay/scale/split/merge/prune/connect
+- replay query edges from session history (`--mode edges-only`)
+- optional LLM transcript mining into `learning::` nodes (`--mode fast-learning`)
+- optional full pass (`--mode full`) adding harvest tasks (`decay,scale,split,merge,prune,connect`)
 
-For cheap edge-only replay (no LLM, no harvest), use `--edges-only`:
+For cheap edge-only replay (no LLM, no harvest), use `--mode edges-only`:
 
 ```bash
 openclawbrain replay \
   --state ~/.openclawbrain/main/state.json \
   --sessions /path/to/sessions \
-  --edges-only
+  --mode edges-only
 ```
 
 To enable decay during an edges-only replay, add `--decay-during-replay`:
@@ -461,7 +465,7 @@ To enable decay during an edges-only replay, add `--decay-during-replay`:
 openclawbrain replay \
   --state ~/.openclawbrain/main/state.json \
   --sessions /path/to/sessions \
-  --edges-only \
+  --mode edges-only \
   --decay-during-replay \
   --decay-interval 10
 ```
@@ -534,7 +538,7 @@ Dimension mismatch usually means query embedding dimensions do not match the vec
 Fixes:
 - Run daemon in default auto mode (`--embed-model auto`), which follows state metadata safely.
 - Rebuild state if needed with the embedder you intend to keep.
-- Only force `--embed-model hash` or `--embed-model <model>` when you intentionally want that behavior and dimensions are known to match.
+- Only force `--embed-model hash`, `--embed-model local`, or `--embed-model openai:<model>` when you intentionally want that behavior and dimensions are known to match.
 
 ```bash
 openclawbrain init --workspace ~/.openclaw/workspace --output ~/.openclawbrain/main
@@ -549,7 +553,7 @@ Common causes:
 
 Fixes:
 
-- Use the canonical brain-on command (`openclawbrain serve --state ...`).
+- Use the canonical brain-on command (`openclawbrain serve start --state ...`).
 - Use OpenAI embeddings for production routing/scoring behavior; only use hash embeddings for offline/testing fallback.
 
 ### “Daemon starts but OpenClaw can’t talk to it”
@@ -630,7 +634,7 @@ openclawbrain(action="shutdown", confirm="shutdown")
 ```
 
 ### Requirements
-- OpenClawBrain daemon must be running (`openclawbrain serve --state ...`)
+- OpenClawBrain daemon must be running (`openclawbrain serve start --state ...`)
 - The `daemon.sock` file must be accessible from the OpenClaw process
 
 ### Media understanding synergy
@@ -662,7 +666,7 @@ To enable in your OpenClaw config:
                                          ▼
                          ┌──────────────────────────────────┐
                          │        OpenClawBrain daemon       │
-                         │ openclawbrain serve --state ...    │
+                         │ openclawbrain serve start --state ... │
                          │  (NDJSON over stdin/stdout)       │
                          └───────────────┬───────────────────┘
                                          │

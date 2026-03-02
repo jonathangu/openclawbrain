@@ -16,7 +16,7 @@ Use packaged adapter CLIs for agent hooks (no `~/openclawbrain` clone required):
 Canonical run command:
 
 ```bash
-openclawbrain serve --state ~/.openclawbrain/main/state.json
+openclawbrain serve start --state ~/.openclawbrain/main/state.json
 ```
 
 What `serve` does:
@@ -46,7 +46,7 @@ Route-mode behavior:
 ## 3) Confirm it's ON
 
 ```bash
-openclawbrain status --state ~/.openclawbrain/main/state.json
+openclawbrain serve status --state ~/.openclawbrain/main/state.json
 ls -l ~/.openclawbrain/main/daemon.sock
 ```
 
@@ -63,7 +63,7 @@ Use when you need improvements now and can defer full replay/harvest.
 openclawbrain replay \
   --state ~/.openclawbrain/main/state.json \
   --sessions ~/.openclaw/agents/main/sessions \
-  --fast-learning \
+  --mode fast-learning \
   --stop-after-fast-learning \
   --resume \
   --checkpoint ~/.openclawbrain/main/replay_checkpoint.json
@@ -88,8 +88,8 @@ examples/ops/rebuild_then_cutover.sh main ~/.openclaw/workspace \
 This rebuilds into a fresh directory, verifies it, stops daemon briefly at cutover, swaps dirs atomically, then restarts.
 
 ### full-learning guidance + when to schedule it
-Use full-learning (`--full-learning`) off-peak (nightly/low traffic, and after large session growth or major workspace changes).  
-Single-writer rule still applies: either run full-learning on a NEW state before cutover, or stop daemon writes before replaying LIVE.
+Use full replay (`--mode full`) off-peak (nightly/low traffic, and after large session growth or major workspace changes).  
+Single-writer rule still applies: either run full replay on a NEW state before cutover, or stop daemon writes before replaying LIVE.
 
 ## 5) Checkpoints & resume
 Default checkpoint path is next to state: `~/.openclawbrain/main/replay_checkpoint.json`.
@@ -136,7 +136,7 @@ Flag meanings:
 - Replay phase: stderr shows `Loaded <N> interactions from session files`; with `--progress-every`, shows `[replay] <done>/<total> (<pct>%)`.
 - Startup banner includes selected `mode` and `checkpoint` path.
 - Replay completion: `Replayed <n>/<total> queries, <m> cross-file edges created`
-- Full-learning completion (`--full-learning`): final line includes harvest summary, e.g. `harvest: tasks=<k>, damped_edges=<x>`.
+- Full replay completion (`--mode full`): final line includes harvest summary, e.g. `harvest: tasks=<k>, damped_edges=<x>`.
 
 ## 7) Concurrency rules (single writer)
 Only one process should write a given `state.json` at a time.
@@ -210,12 +210,12 @@ Operational notes:
 
 | Symptom | Likely cause | Commands |
 |---|---|---|
-| `status` says `Daemon: not running` | service not started, crashed, or wrong state path | `openclawbrain serve --state ~/.openclawbrain/main/state.json` then `openclawbrain status --state ~/.openclawbrain/main/state.json` |
+| `status` says `Daemon: not running` | service not started, crashed, or wrong state path | `openclawbrain serve start --state ~/.openclawbrain/main/state.json` then `openclawbrain serve status --state ~/.openclawbrain/main/state.json` |
 | `daemon.sock` missing | service never started or wrong agent/state directory | `ls -la ~/.openclawbrain/main` and restart `openclawbrain serve` with the same `--state` |
 | embedder/dimension mismatch on daemon query | forced wrong `--embed-model` for this state | use `--embed-model auto` for local/hash states, or explicit OpenAI mode for OpenAI states: `--embed-model openai:text-embedding-3-small` |
 | Replay fails with lock/single-writer message | another process holds `state.json.lock` | stop the other writer, use `examples/ops/rebuild_then_cutover.sh ...`, or expert override with `--force` / `OPENCLAWBRAIN_STATE_LOCK_FORCE=1` |
 | Replay restarts from old work | checkpoint not used, wrong path, or intentionally ignored | run with `--resume --checkpoint ~/.openclawbrain/main/replay_checkpoint.json`; inspect with `openclawbrain replay --state ~/.openclawbrain/main/state.json --show-checkpoint --resume` |
-| `LLM required for fast-learning` | no OpenAI client/key configured for fast-learning mining | set `OPENAI_API_KEY` or run `--edges-only` replay path |
+| `LLM required for fast-learning` | no OpenAI client/key configured for fast-learning mining | set `OPENAI_API_KEY` or run `--mode edges-only` replay path |
 | CLI says invalid sessions path | wrong sessions directory/file path | `ls -la ~/.openclaw/agents/main/sessions` and pass existing dir/files to `--sessions` |
 
 ## 10) Prompt-context and route-mode eval (offline)
