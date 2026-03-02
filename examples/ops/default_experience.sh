@@ -115,6 +115,12 @@ while IFS=$'\t' read -r AGENT_ID WORKSPACE_DIR; do
   ROUTE_MODEL_OUT="$AGENT_DIR/route_model.npz"
   STATE_BACKUP="$SCRATCH/state.pre-default-experience.${TS}.json"
   LOG="$SCRATCH/default-experience.${TS}.log"
+  STATUS_BEFORE="$SCRATCH/default-experience.${TS}.status_before.json"
+  STATUS_AFTER="$SCRATCH/default-experience.${TS}.status_after.json"
+  MAINTAIN_JSON="$SCRATCH/default-experience.${TS}.maintain.json"
+  ASYNC_ROUTE_JSON="$SCRATCH/default-experience.${TS}.async-route-pg.json"
+  TRAIN_ROUTE_JSON="$SCRATCH/default-experience.${TS}.train-route-model.json"
+  MANIFEST="$SCRATCH/default-experience.${TS}.manifest.json"
 
   mkdir -p "$SCRATCH"
 
@@ -136,6 +142,13 @@ while IFS=$'\t' read -r AGENT_ID WORKSPACE_DIR; do
       exit 2
     fi
 
+    echo
+    echo "== Status (before) =="
+    "$OCB_BIN" status \
+      --state "$STATE" \
+      --json > "$STATUS_BEFORE"
+    echo "saved: $STATUS_BEFORE"
+
     backup_if_exists "$TRACE_OUT" "$TS"
     backup_if_exists "$ROUTE_MODEL_OUT" "$TS"
     cp -p "$STATE" "$STATE_BACKUP"
@@ -153,7 +166,11 @@ while IFS=$'\t' read -r AGENT_ID WORKSPACE_DIR; do
       --state "$STATE" \
       --sessions "$SESSIONS" \
       --mode full \
-      --include-tool-results
+      --include-tool-results \
+      --progress-every 250 \
+      --checkpoint-every-seconds 60 \
+      --workers 4 \
+      --replay-workers 1
 
     echo
     echo "== 3) Maintain (structural tasks) =="
@@ -161,7 +178,9 @@ while IFS=$'\t' read -r AGENT_ID WORKSPACE_DIR; do
       --state "$STATE" \
       --tasks health,decay,scale,split,merge,prune,connect \
       --llm none \
-      --embedder local
+      --embedder local \
+      --json > "$MAINTAIN_JSON"
+    echo "saved: $MAINTAIN_JSON"
 
     echo
     echo "== 4) Async route teacher labeling =="
@@ -170,14 +189,60 @@ while IFS=$'\t' read -r AGENT_ID WORKSPACE_DIR; do
       --teacher openai \
       --teacher-model "$TEACHER_MODEL" \
       --since-hours "$SINCE_HOURS" \
-      --traces-out "$TRACE_OUT"
+      --traces-out "$TRACE_OUT" \
+      --apply \
+      --json > "$ASYNC_ROUTE_JSON"
+    echo "saved: $ASYNC_ROUTE_JSON"
 
     echo
     echo "== 5) Train route model =="
     "$OCB_BIN" train-route-model \
       --state "$STATE" \
       --traces-in "$TRACE_OUT" \
-      --out "$ROUTE_MODEL_OUT"
+      --out "$ROUTE_MODEL_OUT" \
+      --json > "$TRAIN_ROUTE_JSON"
+    echo "saved: $TRAIN_ROUTE_JSON"
+
+    echo
+    echo "== Status (after) =="
+    "$OCB_BIN" status \
+      --state "$STATE" \
+      --json > "$STATUS_AFTER"
+    echo "saved: $STATUS_AFTER"
+
+    "$PY_BIN" - <<PY
+import json
+
+manifest = {
+    "agent_id": "$AGENT_ID",
+    "state_path": "$STATE",
+    "sessions_path": "$SESSIONS",
+    "log_path": "$LOG",
+    "embed_model": "$EMBED_MODEL",
+    "teacher_model": "$TEACHER_MODEL",
+    "since_hours": "$SINCE_HOURS",
+    "artifacts": {
+        "state_backup": "$STATE_BACKUP",
+        "trace_out": "$TRACE_OUT",
+        "route_model_out": "$ROUTE_MODEL_OUT",
+        "maintain_json": "$MAINTAIN_JSON",
+        "async_route_pg_json": "$ASYNC_ROUTE_JSON",
+        "train_route_model_json": "$TRAIN_ROUTE_JSON",
+        "status_before_json": "$STATUS_BEFORE",
+        "status_after_json": "$STATUS_AFTER",
+        "manifest_path": "$MANIFEST",
+    },
+}
+
+with open("$STATUS_BEFORE", "r", encoding="utf-8") as f:
+    manifest["status_before"] = json.load(f)
+with open("$STATUS_AFTER", "r", encoding="utf-8") as f:
+    manifest["status_after"] = json.load(f)
+
+with open("$MANIFEST", "w", encoding="utf-8") as f:
+    json.dump(manifest, f, indent=2, sort_keys=True)
+PY
+    echo "saved: $MANIFEST"
 
     echo
     echo "Done. Log: $LOG"
