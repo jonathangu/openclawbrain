@@ -127,13 +127,44 @@ wait_for_state_unlock() {
   start_ts="$(date +%s)"
   while [[ -e "$lock" ]]; do
     local pid=""
+    local command=""
     if [[ -s "$lock" ]]; then
-      pid="$(awk 'NR==1{print $1}' "$lock")"
+      local lock_payload=""
+      lock_payload="$(python3 - "$lock" <<'PY'
+import json
+import sys
+
+path = sys.argv[1]
+try:
+    with open(path, "r", encoding="utf-8") as f:
+        data = json.load(f)
+except Exception:
+    sys.exit(0)
+
+if isinstance(data, dict):
+    pid = data.get("pid")
+    command = data.get("command")
+    if isinstance(pid, int):
+        print(f"pid={pid}")
+    if isinstance(command, str) and command:
+        print(f"command={command}")
+PY
+)"
+      while IFS= read -r line; do
+        case "$line" in
+          pid=*) pid="${line#pid=}" ;;
+          command=*) command="${line#command=}" ;;
+        esac
+      done <<< "$lock_payload"
     fi
 
     if [[ -n "$pid" && "$pid" =~ ^[0-9]+$ ]]; then
       if ! kill -0 "$pid" 2>/dev/null; then
-        echo "state lock stale (pid $pid), removing: $lock"
+        if [[ -n "$command" ]]; then
+          echo "state lock stale (pid $pid, command $command), removing: $lock"
+        else
+          echo "state lock stale (pid $pid), removing: $lock"
+        fi
         rm -f "$lock"
         break
       fi
@@ -148,7 +179,11 @@ wait_for_state_unlock() {
       return 1
     fi
 
-    echo "state lock present (pid ${pid:-unknown}), waiting ${backoff}s..."
+    local owner_text="pid ${pid:-unknown}"
+    if [[ -n "$command" ]]; then
+      owner_text="${owner_text}, command ${command}"
+    fi
+    echo "state lock present (${owner_text}), waiting ${backoff}s..."
     sleep "$backoff"
     if (( backoff < 30 )); then
       backoff="$((backoff * 2))"
