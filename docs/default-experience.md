@@ -8,20 +8,20 @@ This is the **default, complete brain-building pipeline** for OpenClawBrain. It 
 - Re-embed existing states before learning so all vectors are consistent.
 - Full replay pipeline (`--mode full`) with tool results included.
 - Structural maintenance tasks run every cycle.
-- Async route-teacher labeling + route model training.
+- Optional async route-teacher traces + route model training (off by default).
 
 ## Cost & spend notes
 
-This pipeline intentionally does **LLM work** in replay and labeling:
+This pipeline intentionally does **LLM work** in replay. Teacher labeling is optional.
 
 - **Replay `--mode full`** runs fast-learning transcript mining + edge replay + harvest. The fast-learning phase calls an LLM to extract learning events, so it will incur LLM usage.
-- **Async teacher labeling** (`async-route-pg --teacher ollama --teacher-model qwen2.5:32b-instruct`) uses a local Ollama model to label route decisions and generate training traces.
+- **Optional async teacher labeling** (`async-route-pg`) uses a teacher model to label route decisions and generate training traces when enabled.
 
 The script **never uses OpenAI embeddings**. All embedding work is forced to local BGE-large (`BAAI/bge-large-en-v1.5`). If you want to avoid OpenAI entirely, use Ollama for replay/teacher labeling or set `--teacher none` and use a non-LLM replay mode.
 
 ## Local LLM (Ollama)
 
-You can run the full pipeline without OpenAI by using Ollama for both replay fast-learning and async teacher labeling. This is a full opt-out of OpenAI usage (embeddings are already local).
+You can run the pipeline without OpenAI by using Ollama for replay fast-learning. Optional teacher labeling can also use Ollama. This is a full opt-out of OpenAI usage (embeddings are already local).
 
 Install and start Ollama:
 
@@ -42,7 +42,7 @@ Run replay with Ollama:
 openclawbrain replay --state ./brain/state.json --sessions ./sessions/ --mode full --llm ollama
 ```
 
-Run async-route-pg with Ollama:
+Optional: run async-route-pg with Ollama:
 
 ```bash
 openclawbrain async-route-pg --state ./brain/state.json --teacher ollama --teacher-model qwen2.5:32b-instruct
@@ -60,14 +60,38 @@ The operator script below is the default macOS path for a complete brain build a
 1. **Re-embed** the state with local BGE-large embeddings.
 2. **Replay** full pipeline with tool results included.
 3. **Maintain** structural tasks: `health,decay,scale,split,merge,prune,connect`.
-4. **Async route teacher labeling** (Ollama teacher, `qwen2.5:32b-instruct`) for the last 168 hours.
-5. **Train route model** from the generated traces.
+4. **Optional:** async route teacher labeling for recent queries (only when enabled).
+5. **Optional:** train a route model from generated traces.
 
 ### Run it
 
 ```bash
 examples/ops/default_experience.sh
 ```
+
+## Optional: Async teacher traces
+
+By default, the script runs only the core steps (re-embed → replay → maintain). To enable high-cadence teacher traces and route-model training, set env vars before running the script.
+
+Minimum enablement:
+
+```bash
+ENABLE_ASYNC_TEACHER=1 \
+TEACHER_PROVIDER=ollama \
+TEACHER_MODEL=qwen2.5:32b-instruct \
+examples/ops/default_experience.sh
+```
+
+Key env vars (all optional; defaults are shown in the script):
+- `ENABLE_ASYNC_TEACHER` (`0` by default)
+- `TEACHER_PROVIDER` (`none` by default; set to `ollama` or `openai`)
+- `TEACHER_MODEL`
+- `SINCE_HOURS`
+- `MAX_DECISION_POINTS`
+- `SAMPLE_RATE`
+- `MAX_QUERIES`
+
+For more detailed trace workflows (side traces, combining runs, training/apply), see `docs/teacher-traces.md`.
 
 ### Environment
 
@@ -96,8 +120,9 @@ Each agent run writes auditable artifacts under `~/.openclawbrain/<agent>/scratc
 
 - `default-experience.<ts>.log` captures the full run (stdout/stderr) with readable section headers.
 - `default-experience.<ts>.status_before.json` and `default-experience.<ts>.status_after.json` capture `openclawbrain status --json` snapshots.
-- `default-experience.<ts>.maintain.json`, `default-experience.<ts>.async-route-pg.json`, and `default-experience.<ts>.train-route-model.json` capture machine-readable step outputs.
-- `route_traces.jsonl` and `route_model.npz` hold the route teacher traces and trained model.
+- `default-experience.<ts>.maintain.json` captures maintain output.
+- If async teacher is enabled, `default-experience.<ts>.async-route-pg.json` and `default-experience.<ts>.train-route-model.json` capture machine-readable step outputs.
+- `route_traces.jsonl` and `route_model.npz` are only produced when async teacher is enabled.
 - `state.pre-default-experience.<ts>.json` is the pre-run state backup.
 - `default-experience.<ts>.manifest.json` summarizes paths and embeds the before/after status objects.
 

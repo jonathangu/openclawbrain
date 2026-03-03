@@ -9,8 +9,13 @@ CONFIG="$HOME/.openclaw/openclaw.json"
 ENV_FILE="$HOME/.openclaw/credentials/env/openclawbrain.env"
 ROOT="$HOME/.openclawbrain"
 EMBED_MODEL="BAAI/bge-large-en-v1.5"
-TEACHER_MODEL="qwen2.5:32b-instruct"
-SINCE_HOURS="168"
+ENABLE_ASYNC_TEACHER="${ENABLE_ASYNC_TEACHER:-0}"
+TEACHER_PROVIDER="${TEACHER_PROVIDER:-none}"
+TEACHER_MODEL="${TEACHER_MODEL:-qwen2.5:32b-instruct}"
+SINCE_HOURS="${SINCE_HOURS:-168}"
+MAX_DECISION_POINTS="${MAX_DECISION_POINTS:-500}"
+SAMPLE_RATE="${SAMPLE_RATE:-0.1}"
+MAX_QUERIES="${MAX_QUERIES:-200}"
 PARALLEL_AGENTS="${PARALLEL_AGENTS:-2}"
 
 usage() {
@@ -28,6 +33,15 @@ from datetime import datetime, timezone
 
 print(datetime.now(timezone.utc).isoformat())
 PY
+}
+
+is_truthy() {
+  local normalized
+  normalized="$(printf '%s' "$1" | tr '[:upper:]' '[:lower:]')"
+  case "$normalized" in
+    1|true|yes|y) return 0 ;;
+    *) return 1 ;;
+  esac
 }
 
 if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
@@ -308,31 +322,47 @@ while IFS=$'\t' read -r AGENT_ID WORKSPACE_DIR; do
       --json > "$MAINTAIN_JSON"
     echo "saved: $MAINTAIN_JSON"
 
-    echo
-    echo "== 4) Async route teacher labeling =="
-    wait_for_state_unlock "$STATE"
-    "$OCB_BIN" async-route-pg \
-      --state "$STATE" \
-      --teacher ollama \
-      --teacher-model "$TEACHER_MODEL" \
-      --since-hours "$SINCE_HOURS" \
-      --traces-out "$TRACE_OUT" \
-      --apply \
-      --json > "$ASYNC_ROUTE_JSON"
-    echo "saved: $ASYNC_ROUTE_JSON"
-
-    echo
-    echo "== 5) Train route model =="
-    if [[ ! -s "$TRACE_OUT" ]]; then
-      echo "trace output missing or empty; skipping train-route-model: $TRACE_OUT"
-    else
+    if is_truthy "$ENABLE_ASYNC_TEACHER"; then
+      echo
+      echo "== 4) Async route teacher labeling =="
+      if [[ "$TEACHER_PROVIDER" == "none" ]]; then
+        echo "warning: TEACHER_PROVIDER=none; async teacher will emit no labels"
+      fi
       wait_for_state_unlock "$STATE"
-      "$OCB_BIN" train-route-model \
+      "$OCB_BIN" async-route-pg \
         --state "$STATE" \
-        --traces-in "$TRACE_OUT" \
-        --out "$ROUTE_MODEL_OUT" \
-        --json > "$TRAIN_ROUTE_JSON"
-      echo "saved: $TRAIN_ROUTE_JSON"
+        --teacher "$TEACHER_PROVIDER" \
+        --teacher-model "$TEACHER_MODEL" \
+        --since-hours "$SINCE_HOURS" \
+        --max-decision-points "$MAX_DECISION_POINTS" \
+        --sample-rate "$SAMPLE_RATE" \
+        --max-queries "$MAX_QUERIES" \
+        --traces-out "$TRACE_OUT" \
+        --apply \
+        --json > "$ASYNC_ROUTE_JSON"
+      echo "saved: $ASYNC_ROUTE_JSON"
+
+      echo
+      echo "== 5) Train route model =="
+      if [[ ! -s "$TRACE_OUT" ]]; then
+        echo "trace output missing or empty; skipping train-route-model: $TRACE_OUT"
+      else
+        wait_for_state_unlock "$STATE"
+        "$OCB_BIN" train-route-model \
+          --state "$STATE" \
+          --traces-in "$TRACE_OUT" \
+          --out "$ROUTE_MODEL_OUT" \
+          --json > "$TRAIN_ROUTE_JSON"
+        echo "saved: $TRAIN_ROUTE_JSON"
+      fi
+    else
+      echo
+      echo "== 4) Async route teacher labeling (optional) =="
+      echo "skipped: ENABLE_ASYNC_TEACHER=$ENABLE_ASYNC_TEACHER (set to 1 to enable)"
+
+      echo
+      echo "== 5) Train route model (optional) =="
+      echo "skipped: no async teacher traces generated"
     fi
 
     echo
@@ -351,8 +381,13 @@ manifest = {
     "sessions_path": "$SESSIONS",
     "log_path": "$LOG",
     "embed_model": "$EMBED_MODEL",
+    "async_teacher_enabled": "$ENABLE_ASYNC_TEACHER",
+    "teacher_provider": "$TEACHER_PROVIDER",
     "teacher_model": "$TEACHER_MODEL",
     "since_hours": "$SINCE_HOURS",
+    "max_decision_points": "$MAX_DECISION_POINTS",
+    "sample_rate": "$SAMPLE_RATE",
+    "max_queries": "$MAX_QUERIES",
     "artifacts": {
         "state_backup": "$STATE_BACKUP",
         "trace_out": "$TRACE_OUT",
