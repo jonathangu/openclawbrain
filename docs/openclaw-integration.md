@@ -417,7 +417,7 @@ That’s the ergonomic way to do “same-turn correction” inside OpenClaw.
 
 For full-history rebuilds, replay your sessions. Default mode is `full` and the recommended operator experience (the "best brain") is the full, bells-and-whistles pipeline.
 
-See `examples/ops/default_experience.sh` for the recommended sequence: local BGE-large + `replay --mode full` + `maintain` + `harvest` + `async-route-pg` (teacher `gpt-5-mini`) + `train-route-model`.
+See `examples/ops/default_experience.sh` for the recommended sequence: local BGE-large reembed + `replay --mode full` (fast-learning + edge replay + harvest) + `maintain` + `async-route-pg` (teacher `gpt-5-mini`) + `train-route-model` (may be skipped if no traces were produced).
 
 Use `--mode edges-only` for cheap edge-only replay when you explicitly want a minimal, low-cost pass.
 
