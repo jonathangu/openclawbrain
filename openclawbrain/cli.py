@@ -576,6 +576,62 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     ar.add_argument("--reward-weights", default=None, help="Comma-separated weights: human=1.0,self=0.6,harvester=0.3,teacher=0.1")
 
+    dream = sub.add_parser("dream")
+    dream.add_argument("--state", required=True)
+    dream.add_argument("--interval-seconds", type=int, default=900)
+    dream.add_argument("--once", action="store_true", help="Run a single dreaming cycle and exit.")
+    dream.add_argument("--apply", action=argparse.BooleanOptionalAction, default=True)
+    dream.add_argument("--skip-if-locked", action=argparse.BooleanOptionalAction, default=True)
+    dream.add_argument("--since-hours", type=float, default=24.0)
+    dream.add_argument("--max-queries", type=int, default=200)
+    dream.add_argument("--sample-rate", type=float, default=0.1)
+    dream.add_argument("--max-candidates-per-node", type=int, default=12)
+    dream.add_argument("--max-decision-points", type=int, default=500)
+    dream.add_argument("--teacher", choices=["openai", "ollama", "none"], default="openai")
+    dream.add_argument("--teacher-model", default="gpt-5-mini")
+    dream.add_argument("--score-scale", type=float, default=0.3)
+    dream.add_argument(
+        "--reward-source",
+        choices=[
+            RewardSource.HUMAN.value,
+            RewardSource.SELF.value,
+            RewardSource.HARVESTER.value,
+            RewardSource.TEACHER.value,
+        ],
+        default=RewardSource.TEACHER.value,
+    )
+    dream.add_argument("--reward-weights", default=None, help="Comma-separated weights: human=1.0,self=0.6,harvester=0.3,teacher=0.1")
+    dream.add_argument("--traces-dir", default=None)
+    dream.add_argument("--json", action="store_true")
+
+    dreaming = sub.add_parser("dreaming")
+    dreaming.add_argument("--state", required=True)
+    dreaming.add_argument("--interval-seconds", type=int, default=900)
+    dreaming.add_argument("--once", action="store_true", help="Run a single dreaming cycle and exit.")
+    dreaming.add_argument("--apply", action=argparse.BooleanOptionalAction, default=True)
+    dreaming.add_argument("--skip-if-locked", action=argparse.BooleanOptionalAction, default=True)
+    dreaming.add_argument("--since-hours", type=float, default=24.0)
+    dreaming.add_argument("--max-queries", type=int, default=200)
+    dreaming.add_argument("--sample-rate", type=float, default=0.1)
+    dreaming.add_argument("--max-candidates-per-node", type=int, default=12)
+    dreaming.add_argument("--max-decision-points", type=int, default=500)
+    dreaming.add_argument("--teacher", choices=["openai", "ollama", "none"], default="openai")
+    dreaming.add_argument("--teacher-model", default="gpt-5-mini")
+    dreaming.add_argument("--score-scale", type=float, default=0.3)
+    dreaming.add_argument(
+        "--reward-source",
+        choices=[
+            RewardSource.HUMAN.value,
+            RewardSource.SELF.value,
+            RewardSource.HARVESTER.value,
+            RewardSource.TEACHER.value,
+        ],
+        default=RewardSource.TEACHER.value,
+    )
+    dreaming.add_argument("--reward-weights", default=None, help="Comma-separated weights: human=1.0,self=0.6,harvester=0.3,teacher=0.1")
+    dreaming.add_argument("--traces-dir", default=None)
+    dreaming.add_argument("--json", action="store_true")
+
     tr = sub.add_parser("train-route-model")
     tr.add_argument("--state", required=True)
     tr.add_argument("--traces-in", required=True)
@@ -936,6 +992,12 @@ def _resolve_journal_path(args: argparse.Namespace, *, allow_default_state: bool
             return str(graph_path / "journal.jsonl")
         return str(graph_path.parent / "journal.jsonl")
     return None
+
+
+def _default_dream_traces_dir(state_path: str) -> Path:
+    resolved_state = Path(state_path).expanduser()
+    agent = resolved_state.parent.name or "default"
+    return Path.home() / ".openclawbrain" / agent / "scratch"
 
 
 def _load_session_query_records(session_paths: str | Iterable[str], since_ts: float | None = None) -> list[tuple[str, float | None]]:
@@ -3095,6 +3157,124 @@ def cmd_async_route_pg(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_dream(args: argparse.Namespace) -> int:
+    """Run background dreaming loop (teacher-shadow async routing updates)."""
+    state_path = _resolve_state_path(args.state, allow_default=False)
+    if state_path is None:
+        raise SystemExit("--state is required")
+    journal_path = _resolve_journal_path(args, allow_default_state=False)
+    if journal_path is None:
+        raise SystemExit("unable to resolve journal path")
+
+    try:
+        parsed_weights = RewardWeights.from_string(args.reward_weights) if args.reward_weights else RewardWeights.from_env()
+    except ValueError as exc:
+        raise SystemExit(str(exc)) from exc
+
+    traces_dir = Path(args.traces_dir).expanduser() if args.traces_dir else _default_dream_traces_dir(state_path)
+    interval_seconds = max(1, int(args.interval_seconds))
+    cycle = 0
+
+    while True:
+        cycle += 1
+        cycle_start = datetime.now(timezone.utc)
+        traces_out = traces_dir / f"dream_traces_{cycle_start.strftime('%Y%m%dT%H%M%S')}{cycle_start.microsecond // 1000:03d}Z.jsonl"
+        payload: dict[str, object] = {
+            "cycle": cycle,
+            "ts": cycle_start.isoformat(),
+            "state_path": state_path,
+            "journal_path": journal_path,
+            "apply": bool(args.apply),
+            "traces_out": str(traces_out),
+        }
+
+        if args.apply:
+            try:
+                with state_write_lock(
+                    state_path,
+                    force=False,
+                    command_hint="openclawbrain dream",
+                ):
+                    summary = run_async_route_pg(
+                        state_path=state_path,
+                        journal_path=journal_path,
+                        since_hours=float(args.since_hours),
+                        max_queries=max(1, int(args.max_queries)),
+                        sample_rate=max(0.0, min(1.0, float(args.sample_rate))),
+                        max_candidates_per_node=max(1, int(args.max_candidates_per_node)),
+                        max_decision_points=max(1, int(args.max_decision_points)),
+                        teacher=str(args.teacher),
+                        teacher_model=str(args.teacher_model),
+                        apply=True,
+                        write_relevance_metadata=True,
+                        score_scale=float(args.score_scale),
+                        traces_out=str(traces_out),
+                        traces_in=None,
+                        include_query_vector=False,
+                        reward_source=RewardSource.parse(args.reward_source),
+                        reward_weights=parsed_weights,
+                    )
+                    payload["status"] = "ok"
+                    payload["summary"] = summary.to_dict()
+            except StateLockError as exc:
+                if args.skip_if_locked:
+                    payload["status"] = "skipped"
+                    payload["skip_reason"] = "state_lock_held"
+                    payload["message"] = str(exc)
+                else:
+                    raise SystemExit(str(exc)) from None
+        else:
+            summary = run_async_route_pg(
+                state_path=state_path,
+                journal_path=journal_path,
+                since_hours=float(args.since_hours),
+                max_queries=max(1, int(args.max_queries)),
+                sample_rate=max(0.0, min(1.0, float(args.sample_rate))),
+                max_candidates_per_node=max(1, int(args.max_candidates_per_node)),
+                max_decision_points=max(1, int(args.max_decision_points)),
+                teacher=str(args.teacher),
+                teacher_model=str(args.teacher_model),
+                apply=False,
+                write_relevance_metadata=True,
+                score_scale=float(args.score_scale),
+                traces_out=str(traces_out),
+                traces_in=None,
+                include_query_vector=False,
+                reward_source=RewardSource.parse(args.reward_source),
+                reward_weights=parsed_weights,
+            )
+            payload["status"] = "ok"
+            payload["summary"] = summary.to_dict()
+
+        if args.json:
+            print(json.dumps(payload, separators=(",", ":")))
+        else:
+            status = payload.get("status")
+            if status == "skipped":
+                print(f"dream: skipped (state lock held) traces_out={traces_out}")
+            else:
+                summary_payload = payload.get("summary", {})
+                if isinstance(summary_payload, dict):
+                    print(
+                        "dream: "
+                        f"sampled_queries={summary_payload.get('sampled_queries')} "
+                        f"decision_points={summary_payload.get('decision_points_total')} "
+                        f"labeled={summary_payload.get('decision_points_labeled')} "
+                        f"updates={summary_payload.get('updates_applied')} "
+                        f"total_abs_delta={summary_payload.get('total_abs_weight_delta')} "
+                        f"max_abs_delta={summary_payload.get('max_abs_weight_delta')} "
+                        f"dry_run={summary_payload.get('dry_run')} "
+                        f"traces_out={traces_out}"
+                    )
+                else:
+                    print(f"dream: completed traces_out={traces_out}")
+
+        if args.once:
+            break
+        time.sleep(interval_seconds)
+    return 0
+
+
 def cmd_train_route_model(args: argparse.Namespace) -> int:
     """Train learned route model from traces and optional labels."""
     try:
@@ -3150,6 +3330,8 @@ def main(argv: list[str] | None = None) -> int:
         "harvest": cmd_harvest,
         "health": cmd_health,
         "async-route-pg": cmd_async_route_pg,
+        "dream": cmd_dream,
+        "dreaming": cmd_dream,
         "train-route-model": cmd_train_route_model,
         "journal": cmd_journal,
         "doctor": cmd_doctor,

@@ -11,6 +11,60 @@ Key points:
 - **Single-writer rule:** only one writer may update a given `state.json` at a time. `async-route-pg` is a writer when `--apply` is used. Respect the state lock (`state.json.lock`).
 - Traces are append-friendly JSONL and can be combined across runs.
 
+## Dreaming (optional background loop)
+
+`openclawbrain dream` is an **optional** always-on loop that periodically runs `async-route-pg` logic with caps. Jon calls this **dreaming**. It is never enabled by default.
+
+What it does:
+- Every interval (default 900s), it attempts a dreaming cycle.
+- It writes **timestamped** traces files under `~/.openclawbrain/<agent>/scratch` by default (override with `--traces-dir`).
+- When `--apply` is on (default), it **tries** to acquire the state write lock **non-blocking**. If the lock is held, it **skips** the cycle and moves on (no blocking).
+- When `--no-apply` is set, it runs traces-only mode without acquiring the lock.
+
+Why it does not block:
+- The state lock is single-writer by design. Dreaming respects it by **skipping** when the lock is held, so your daemon or other write operations are never stalled.
+
+Recommended cadence and caps:
+- Use short intervals (10–30 minutes) with conservative caps.
+- Keep `--max-queries`, `--sample-rate`, and `--max-decision-points` low enough to stay within your cost budget.
+
+### Example: local Ollama teacher (apply updates)
+
+```bash
+openclawbrain dream \
+  --state ~/.openclawbrain/main/state.json \
+  --interval-seconds 900 \
+  --since-hours 24 \
+  --max-queries 200 \
+  --sample-rate 0.1 \
+  --max-decision-points 500 \
+  --teacher ollama \
+  --teacher-model qwen2.5:32b-instruct \
+  --apply
+```
+
+### Example: OpenRouter teacher (traces-only)
+
+```bash
+export OPENAI_API_KEY=...            # do not print keys in logs
+export OPENAI_BASE_URL=https://openrouter.ai/api/v1
+
+openclawbrain dream \
+  --state ~/.openclawbrain/main/state.json \
+  --interval-seconds 900 \
+  --since-hours 24 \
+  --max-queries 200 \
+  --sample-rate 0.1 \
+  --max-decision-points 500 \
+  --teacher openai \
+  --teacher-model openrouter/<provider>/<model> \
+  --no-apply
+```
+
+Notes:
+- Dreaming is **optional**. The brain runs fine without it.
+- Use `--once` to run a single cycle for manual checks or tests.
+
 ## Quick recipes
 
 ### Local Ollama teacher (apply updates)
