@@ -154,6 +154,8 @@ Each agent run writes auditable artifacts under `~/.openclawbrain/<agent>/scratc
 - `route_traces.jsonl` and `route_model.npz` are only produced when async teacher is enabled.
 - `state.pre-default-experience.<ts>.json` is the pre-run state backup.
 - `default-experience.<ts>.manifest.json` summarizes paths and embeds the before/after status objects.
+- `build-all.<ts>.events.jsonl` is the durable run-level stream for all `build-all` agents/steps. It is append-only and includes `run_start`, `agent_start`, `agent_end`, and step start/end records.
+- The root `~/.openclawbrain/scratch/build-all.<ts>.manifest.json` is written immediately at start with status `running`, then updated as each agent completes so partial progress is visible after crashes, and set to `complete` on completion with summary counts.
 
 ## Notes
 

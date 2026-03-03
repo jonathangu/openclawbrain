@@ -98,6 +98,83 @@ REPLAY_HELP_EPILOG = (
 )
 
 
+def _write_json_atomic(path: Path, payload: object) -> None:
+    """Write JSON payload via a temporary file and atomic rename."""
+    target = Path(path)
+    target.parent.mkdir(parents=True, exist_ok=True)
+    temp = target.with_suffix(target.suffix + ".tmp")
+    temp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
+    try:
+        fd = os.open(str(temp), os.O_RDONLY)
+        try:
+            os.fsync(fd)
+        finally:
+            os.close(fd)
+    except OSError:
+        pass
+    temp.replace(target)
+
+
+def _append_jsonl(path: Path, payload: dict[str, object]) -> None:
+    """Append one JSON object as one line."""
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        handle.write(json.dumps(payload, default=str) + "\n")
+
+
+def _build_all_root_manifest_payload(
+    *,
+    run_id: str,
+    run_ts: datetime,
+    args: argparse.Namespace,
+    ocb_bin: str,
+    agent_ids: list[str],
+    parallel_agents: int,
+    events_jsonl: Path,
+    status: str = "running",
+    agents: list[dict[str, object]] | None = None,
+) -> dict[str, object]:
+    """Build the build-all root manifest content."""
+    succeeded = len([item for item in (agents or []) if int(item.get("exit_code", 1)) == 0])
+    failed = len([item for item in (agents or []) if int(item.get("exit_code", 1)) != 0])
+    completed = len(agents or [])
+    return {
+        "run_id": run_id,
+        "status": status,
+        "timestamp": run_ts.isoformat(),
+        "openclawbrain_bin": ocb_bin,
+        "command": "build-all",
+        "args": {
+            "agents": getattr(args, "agents", None),
+            "parallel_agents": parallel_agents,
+            "reembed": bool(args.reembed),
+            "embed_model": str(args.embed_model),
+            "mode": str(args.mode),
+            "llm": str(args.llm),
+            "workers": int(args.workers) if args.workers is not None else None,
+            "llm_model": getattr(args, "llm_model", None),
+            "resume": bool(args.resume),
+            "include_tool_results": bool(args.include_tool_results),
+            "checkpoint_every_seconds": int(args.checkpoint_every_seconds),
+            "replay_progress_interval_seconds": int(args.replay_progress_interval_seconds),
+            "replay_since_hours": args.replay_since_hours,
+            "replay_max_interactions": args.replay_max_interactions,
+            "replay_sample_rate": float(args.replay_sample_rate),
+            "replay_priority": str(args.replay_priority),
+            "advance_offsets_on_skip": bool(args.advance_offsets_on_skip),
+            "enable_async_teacher": bool(args.enable_async_teacher),
+            "events_jsonl": str(events_jsonl),
+        },
+        "agents": agents or [],
+        "summary": {
+            "total_agents": len(agent_ids),
+            "completed": completed,
+            "succeeded": succeeded,
+            "failed": failed,
+        },
+    }
+
+
 def _parse_positive_float(value: str) -> float:
     """Parse a strictly positive float CLI argument."""
     parsed = float(value)
@@ -494,6 +571,7 @@ def _build_all_agent_pipeline(
     ocb_bin: str,
     ts_label: str,
     run_ts: datetime,
+    emit_event: Callable[[dict[str, object]], None],
 ) -> dict[str, object]:
     """Run build-all pipeline for a single agent."""
     root = Path.home() / ".openclawbrain"
@@ -518,10 +596,73 @@ def _build_all_agent_pipeline(
 
     steps: list[dict[str, object]] = []
     exit_code = 0
+    last_error: str | None = None
+    step_started: dict[str, float] = {}
+    agent_started_at = time.perf_counter()
 
-    def emit(step: str, status: str, extra: str | None = None) -> None:
+    artifact_paths = {
+        "log_path": str(log_path),
+        "manifest_path": str(agent_manifest_path),
+    }
+
+    def set_last_error(message: str | None) -> None:
+        nonlocal last_error
+        if message is not None and message:
+            last_error = message
+
+    def emit_event_payload(event: dict[str, object], *, with_artifact_paths: bool = True) -> None:
+        payload = {
+            "run_id": ts_label,
+            "agent_id": agent_id,
+            "ts": datetime.now(timezone.utc).isoformat(),
+            **event,
+        }
+        if with_artifact_paths:
+            payload["artifact_paths"] = dict(artifact_paths)
+        emit_event(payload)
+
+    def emit_step_start(step: str, *, stdout_path: Path | None = None) -> None:
+        step_started[step] = time.perf_counter()
+        event: dict[str, object] = {"type": "step_start", "step": step}
+        if stdout_path is not None:
+            event["artifact_paths"] = {**artifact_paths, "stdout_path": str(stdout_path)}
+        emit_event_payload(event, with_artifact_paths=stdout_path is None)
+
+    def emit_step_end(
+        step: str,
+        *,
+        status: str,
+        code: int | None = None,
+        error: str | None = None,
+        stdout_path: Path | None = None,
+    ) -> None:
+        started = step_started.get(step, time.perf_counter())
+        event: dict[str, object] = {
+            "type": "step_end",
+            "step": step,
+            "status": status,
+            "duration_seconds": max(0.0, time.perf_counter() - started),
+        }
+        if code is not None:
+            event["exit_code"] = int(code)
+        if error is not None:
+            event["error"] = error
+        if stdout_path is not None:
+            event["artifact_paths"] = {**artifact_paths, "stdout_path": str(stdout_path)}
+        emit_event_payload(event, with_artifact_paths=stdout_path is None)
+        if code is not None:
+            step_started.pop(step, None)
+
+    def emit_skipped(step: str, *, reason: str | None = None, code: int = 0, stdout_path: Path | None = None) -> None:
+        emit_step_start(step, stdout_path=stdout_path)
+        steps.append({"step": step, "status": "skipped"})
+        emit_step_end(step, status="skipped", code=code, error=reason, stdout_path=stdout_path)
+        if code != 0:
+            set_last_error(reason)
+
+    def emit_status(step: str, status: str, extra: str | None = None) -> None:
         base = f"[build-all] agent={agent_id} step={step} status={status}"
-        if extra:
+        if extra is not None:
             base = f"{base} {extra}"
         print(base)
 
@@ -532,15 +673,53 @@ def _build_all_agent_pipeline(
         steps.append(payload)
 
     def run_step(step: str, cmd: list[str], *, stdout_path: Path | None = None) -> int:
-        emit(step, "running")
+        emit_step_start(step, stdout_path=stdout_path)
+        emit_status(step, "running")
         code = _run_logged_command(cmd, log_path=log_path, step_name=step, stdout_path=stdout_path)
         if code == 0:
-            emit(step, "ok")
+            emit_status(step, "ok")
             record(step, "ok", code)
+            emit_step_end(step, status="ok", code=code, stdout_path=stdout_path)
         else:
-            emit(step, "failed", f"exit={code}")
+            emit_status(step, "failed", f"exit={code}")
             record(step, "failed", code)
-        return code
+            error = f"{step} failed with exit {code}"
+            set_last_error(error)
+            emit_step_end(step, status="failed", code=code, error=error, stdout_path=stdout_path)
+        return int(code)
+
+    def run_replay_step(replay_cmd: list[str]) -> int:
+        emit_step_start("replay")
+        emit_status("replay", "running")
+        code = _run_logged_replay_command(
+            replay_cmd,
+            log_path=log_path,
+            step_name="replay",
+            checkpoint_path=checkpoint_path,
+            agent_id=agent_id,
+            progress_interval_seconds=max(0, int(args.replay_progress_interval_seconds)),
+        )
+        if code == 0:
+            emit_status("replay", "ok")
+            record("replay", "ok", code)
+            emit_step_end("replay", status="ok", code=code)
+        else:
+            emit_status("replay", "failed", f"exit={code}")
+            record("replay", "failed", code)
+            set_last_error(f"replay failed with exit {code}")
+            emit_step_end("replay", status="failed", code=code, error=f"replay failed with exit {code}")
+        return int(code)
+
+    emit_event_payload(
+        {
+            "type": "agent_start",
+            "artifact_paths": {
+                "log_path": str(log_path),
+                "manifest_path": str(agent_manifest_path),
+            },
+        },
+        with_artifact_paths=True,
+    )
 
     log_path.parent.mkdir(parents=True, exist_ok=True)
     with log_path.open("a", encoding="utf-8") as log_handle:
@@ -551,23 +730,29 @@ def _build_all_agent_pipeline(
         log_handle.write(f"timestamp: {run_ts.isoformat()}\n")
 
     if not state_path.exists():
-        emit("preflight", "failed", f"missing_state={state_path}")
+        emit_status("preflight", "failed", f"missing_state={state_path}")
+        set_last_error("missing state")
         exit_code = 2
+        emit_skipped("status_before", reason="missing state", code=exit_code, stdout_path=status_before_path)
     elif not sessions_path.exists():
-        emit("preflight", "failed", f"missing_sessions={sessions_path}")
+        emit_status("preflight", "failed", f"missing_sessions={sessions_path}")
+        set_last_error("missing sessions")
         exit_code = 2
+        emit_skipped("status_before", reason="missing sessions", code=exit_code, stdout_path=status_before_path)
+    elif not _wait_for_state_unlock(state_path, int(args.state_lock_timeout_seconds)):
+        emit_status("preflight", "failed", "state_lock_timeout")
+        set_last_error("state lock timeout")
+        exit_code = 3
+        emit_skipped("status_before", reason="state lock timeout", code=exit_code, stdout_path=status_before_path)
     else:
-        if not _wait_for_state_unlock(state_path, int(args.state_lock_timeout_seconds)):
-            emit("preflight", "failed", "state_lock_timeout")
-            exit_code = 3
-        else:
-            preflight = {
+        steps.append(
+            {
                 "step": "preflight",
                 "status": "ok",
                 "state_path": str(state_path),
                 "sessions_path": str(sessions_path),
             }
-            steps.append(preflight)
+        )
 
     if exit_code == 0:
         exit_code = run_step(
@@ -591,8 +776,7 @@ def _build_all_agent_pipeline(
             ],
         )
     elif exit_code == 0:
-        emit("reembed", "skipped", "disabled")
-        record("reembed", "skipped")
+        emit_skipped("reembed", reason="disabled", code=0)
 
     if exit_code == 0:
         replay_cmd = [
@@ -631,22 +815,10 @@ def _build_all_agent_pipeline(
             replay_cmd.append("--no-include-tool-results")
         if args.resume:
             replay_cmd.append("--resume")
-        emit("replay", "running")
-        code = _run_logged_replay_command(
-            replay_cmd,
-            log_path=log_path,
-            step_name="replay",
-            checkpoint_path=checkpoint_path,
-            agent_id=agent_id,
-            progress_interval_seconds=max(0, int(args.replay_progress_interval_seconds)),
-        )
-        if code == 0:
-            emit("replay", "ok")
-            record("replay", "ok", code)
-        else:
-            emit("replay", "failed", f"exit={code}")
-            record("replay", "failed", code)
-        exit_code = code
+
+        exit_code = run_replay_step(replay_cmd)
+    else:
+        emit_skipped("replay", reason=last_error, code=exit_code)
 
     if exit_code == 0:
         exit_code = run_step(
@@ -666,6 +838,8 @@ def _build_all_agent_pipeline(
             ],
             stdout_path=maintain_path,
         )
+    else:
+        emit_skipped("maintain", reason=last_error, code=exit_code, stdout_path=maintain_path)
 
     if exit_code == 0 and args.enable_async_teacher:
         async_cmd = [
@@ -702,30 +876,30 @@ def _build_all_agent_pipeline(
             async_cmd.append("--write-relevance-metadata")
         else:
             async_cmd.append("--no-write-relevance-metadata")
-        exit_code = run_step("async_route_pg", async_cmd, stdout_path=async_route_path)
 
-        if exit_code == 0:
-            if traces_out_path.exists() and traces_out_path.stat().st_size > 0:
-                train_cmd = [
-                    ocb_bin,
-                    "train-route-model",
-                    "--state",
-                    str(state_path),
-                    "--traces-in",
-                    str(traces_out_path),
-                    "--out",
-                    str(route_model_out_path),
-                    "--json",
-                ]
-                exit_code = run_step("train_route_model", train_cmd, stdout_path=train_route_path)
-            else:
-                emit("train_route_model", "skipped", "missing_traces")
-                record("train_route_model", "skipped")
+        exit_code = run_step("async_route_pg", async_cmd, stdout_path=async_route_path)
+        if exit_code == 0 and traces_out_path.exists() and traces_out_path.stat().st_size > 0:
+            train_cmd = [
+                ocb_bin,
+                "train-route-model",
+                "--state",
+                str(state_path),
+                "--traces-in",
+                str(traces_out_path),
+                "--out",
+                str(route_model_out_path),
+                "--json",
+            ]
+            exit_code = run_step("train_route_model", train_cmd, stdout_path=train_route_path)
+        else:
+            skip_reason = "missing traces" if exit_code == 0 else "async route failed"
+            emit_skipped("train_route_model", reason=skip_reason, code=exit_code, stdout_path=train_route_path)
     elif exit_code == 0:
-        emit("async_route_pg", "skipped", "disabled")
-        record("async_route_pg", "skipped")
-        emit("train_route_model", "skipped", "no_async_teacher")
-        record("train_route_model", "skipped")
+        emit_skipped("async_route_pg", reason="disabled", code=0, stdout_path=async_route_path)
+        emit_skipped("train_route_model", reason="disabled", code=0, stdout_path=train_route_path)
+    else:
+        emit_skipped("async_route_pg", reason=last_error, code=exit_code, stdout_path=async_route_path)
+        emit_skipped("train_route_model", reason=last_error, code=exit_code, stdout_path=train_route_path)
 
     if exit_code == 0:
         exit_code = run_step(
@@ -733,6 +907,8 @@ def _build_all_agent_pipeline(
             [ocb_bin, "status", "--state", str(state_path), "--json"],
             stdout_path=status_after_path,
         )
+    else:
+        emit_skipped("status_after", reason=last_error, code=exit_code, stdout_path=status_after_path)
 
     manifest = {
         "agent_id": agent_id,
@@ -752,7 +928,24 @@ def _build_all_agent_pipeline(
         },
         "steps": steps,
     }
-    agent_manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    _write_json_atomic(agent_manifest_path, manifest)
+
+    emit_event_payload(
+        {
+            "type": "agent_end",
+            "status": "ok" if exit_code == 0 else "failed",
+            "exit_code": int(exit_code),
+            "duration_seconds": max(0.0, time.perf_counter() - agent_started_at),
+            "step": "agent_end",
+            **({"error": str(last_error)} if last_error else {}),
+            "artifact_paths": {
+                "log_path": str(log_path),
+                "manifest_path": str(agent_manifest_path),
+            },
+        },
+        with_artifact_paths=True,
+    )
+
     return {
         "agent_id": agent_id,
         "exit_code": int(exit_code),
@@ -760,8 +953,8 @@ def _build_all_agent_pipeline(
         "log_path": str(log_path),
         "artifacts": manifest["artifacts"],
         "steps": steps,
+        **({"error": str(last_error)} if last_error else {}),
     }
-
 
 def _coalesce_int(cli_value: int | None, profile_value: int | None, default: int) -> int:
     if cli_value is not None:
@@ -1361,6 +1554,11 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     build_all.add_argument("--reward-weights", default=None)
     build_all.add_argument("--write-relevance-metadata", action=argparse.BooleanOptionalAction, default=True)
+    build_all.add_argument(
+        "--events-jsonl",
+        default=None,
+        help="Optional path for build-all JSONL event stream. Defaults to ~/.openclawbrain/scratch/build-all.<ts>.events.jsonl",
+    )
     return parser
 
 
@@ -4038,10 +4236,54 @@ def cmd_build_all(args: argparse.Namespace) -> int:
     ocb_bin = _resolve_openclawbrain_bin()
     run_ts = datetime.now(timezone.utc)
     ts_label = run_ts.strftime("%Y%m%dT%H%M%S") + f"{run_ts.microsecond // 1000:03d}Z"
+    run_started_at = time.perf_counter()
 
     root = Path.home() / ".openclawbrain" / "scratch"
     root.mkdir(parents=True, exist_ok=True)
     root_manifest_path = root / f"build-all.{ts_label}.manifest.json"
+    events_jsonl_path = (
+        Path(args.events_jsonl)
+        if getattr(args, "events_jsonl", None) is not None
+        else root / f"build-all.{ts_label}.events.jsonl"
+    )
+    events_jsonl_path = events_jsonl_path.expanduser()
+
+    event_lock = threading.Lock()
+
+    def emit_event(event: dict[str, object]) -> None:
+        with event_lock:
+            payload = {
+                "run_id": ts_label,
+                **event,
+                "ts": datetime.now(timezone.utc).isoformat(),
+            }
+            _append_jsonl(events_jsonl_path, payload)
+
+    manifest: dict[str, object]
+    emit_event(
+        {
+            "type": "run_start",
+            "agent_id": None,
+            "status": "running",
+            "artifact_paths": {
+                "manifest_path": str(root_manifest_path),
+                "events_jsonl": str(events_jsonl_path),
+            },
+        }
+    )
+
+    manifest = _build_all_root_manifest_payload(
+        run_id=ts_label,
+        run_ts=run_ts,
+        args=args,
+        ocb_bin=ocb_bin,
+        agent_ids=agent_ids,
+        parallel_agents=parallel,
+        events_jsonl=events_jsonl_path,
+        status="running",
+        agents=[],
+    )
+    _write_json_atomic(root_manifest_path, manifest)
 
     results: list[dict[str, object]] = []
     with ThreadPoolExecutor(max_workers=parallel) as executor:
@@ -4053,6 +4295,7 @@ def cmd_build_all(args: argparse.Namespace) -> int:
                 ocb_bin=ocb_bin,
                 ts_label=ts_label,
                 run_ts=run_ts,
+                emit_event=emit_event,
             ): agent_id
             for agent_id in agent_ids
         }
@@ -4067,34 +4310,43 @@ def cmd_build_all(args: argparse.Namespace) -> int:
                     "error": str(exc),
                 }
             results.append(result)
+            manifest = _build_all_root_manifest_payload(
+                run_id=ts_label,
+                run_ts=run_ts,
+                args=args,
+                ocb_bin=ocb_bin,
+                agent_ids=agent_ids,
+                parallel_agents=parallel,
+                events_jsonl=events_jsonl_path,
+                status="running",
+                agents=results,
+            )
+            _write_json_atomic(root_manifest_path, manifest)
 
-    manifest = {
-        "timestamp": run_ts.isoformat(),
-        "agents": results,
-        "openclawbrain_bin": ocb_bin,
-        "command": "build-all",
-        "args": {
-            "agents": getattr(args, "agents", None),
-            "parallel_agents": parallel,
-            "reembed": bool(args.reembed),
-            "embed_model": str(args.embed_model),
-            "mode": str(args.mode),
-            "llm": str(args.llm),
-            "workers": int(args.workers) if args.workers is not None else None,
-            "llm_model": getattr(args, "llm_model", None),
-            "resume": bool(args.resume),
-            "include_tool_results": bool(args.include_tool_results),
-            "checkpoint_every_seconds": int(args.checkpoint_every_seconds),
-            "replay_progress_interval_seconds": int(args.replay_progress_interval_seconds),
-            "replay_since_hours": args.replay_since_hours,
-            "replay_max_interactions": args.replay_max_interactions,
-            "replay_sample_rate": float(args.replay_sample_rate),
-            "replay_priority": str(args.replay_priority),
-            "advance_offsets_on_skip": bool(args.advance_offsets_on_skip),
-            "enable_async_teacher": bool(args.enable_async_teacher),
-        },
-    }
-    root_manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    manifest = _build_all_root_manifest_payload(
+        run_id=ts_label,
+        run_ts=run_ts,
+        args=args,
+        ocb_bin=ocb_bin,
+        agent_ids=agent_ids,
+        parallel_agents=parallel,
+        events_jsonl=events_jsonl_path,
+        status="complete",
+        agents=results,
+    )
+    _write_json_atomic(root_manifest_path, manifest)
+    emit_event(
+        {
+            "type": "run_end",
+            "agent_id": None,
+            "status": "ok" if all(int(item.get("exit_code", 1)) == 0 for item in results) else "failed",
+            "duration_seconds": max(0.0, time.perf_counter() - run_started_at),
+            "artifact_paths": {
+                "manifest_path": str(root_manifest_path),
+                "events_jsonl": str(events_jsonl_path),
+            },
+        }
+    )
     print(f"[build-all] manifest={root_manifest_path}")
     return 0 if all(int(item.get("exit_code", 1)) == 0 for item in results) else 1
 

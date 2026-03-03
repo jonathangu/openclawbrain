@@ -9,6 +9,8 @@ from pathlib import Path
 
 import pytest
 
+from datetime import datetime, timezone
+
 from openclawbrain.cli import main, _read_replay_checkpoint_progress, _resolve_openclawbrain_bin, _filter_replay_interactions
 from openclawbrain.graph import Graph, Node
 from openclawbrain.hasher import default_embed
@@ -1609,6 +1611,73 @@ def test_cli_build_all_parser_accepts_subcommand() -> None:
     args = parser.parse_args(["build-all"])
     assert args.command == "build-all"
     assert args.parallel_agents == 1
+
+
+def test_build_all_root_manifest_written_before_agents_run(tmp_path, monkeypatch) -> None:
+    """Build-all root manifest can be written immediately via internal helpers."""
+    import openclawbrain.cli as cli_module
+
+    monkeypatch.setattr(cli_module.Path, "home", lambda: tmp_path)
+    run_ts = datetime(2026, 3, 3, 8, 9, 10, 12000, tzinfo=timezone.utc)
+    ts_label = run_ts.strftime("%Y%m%dT%H%M%S") + f"{run_ts.microsecond // 1000:03d}Z"
+    events_jsonl = tmp_path / ".openclawbrain" / "scratch" / f"build-all.{ts_label}.events.jsonl"
+    manifest_path = tmp_path / ".openclawbrain" / "scratch" / f"build-all.{ts_label}.manifest.json"
+
+    parser = cli_module._build_parser()
+    args = parser.parse_args(["build-all"])
+    ocb_bin = cli_module._resolve_openclawbrain_bin()
+
+    payload = cli_module._build_all_root_manifest_payload(
+        run_id=ts_label,
+        run_ts=run_ts,
+        args=args,
+        ocb_bin=ocb_bin,
+        agent_ids=[],
+        parallel_agents=1,
+        events_jsonl=events_jsonl,
+        status="running",
+        agents=[],
+    )
+    cli_module._write_json_atomic(manifest_path, payload)
+    assert manifest_path.exists()
+    data = json.loads(manifest_path.read_text(encoding="utf-8"))
+    assert data["run_id"] == ts_label
+    assert data["status"] == "running"
+    assert data["agents"] == []
+
+
+def test_cmd_build_all_events_jsonl_contains_run_and_agent_events(tmp_path, monkeypatch) -> None:
+    """build-all creates JSONL events with run/agent lifecycle records."""
+    import openclawbrain.cli as cli_module
+
+    monkeypatch.setattr(cli_module.Path, "home", lambda: tmp_path)
+    (tmp_path / ".openclawbrain" / "agent-1").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".openclaw" / "agents" / "agent-1").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".openclaw" / "agents" / "agent-1" / "sessions").write_text("", encoding="utf-8")
+    (tmp_path / ".openclaw" / "openclaw.json").write_text(
+        json.dumps({"agents": {"list": [{"id": "agent-1"}]}}),
+        encoding="utf-8",
+    )
+    _write_state(tmp_path / ".openclawbrain" / "agent-1" / "state.json")
+
+    monkeypatch.setattr(cli_module, "_run_logged_command", lambda *args, **kwargs: 0)
+    monkeypatch.setattr(cli_module, "_run_logged_replay_command", lambda *args, **kwargs: 0)
+
+    events_path = tmp_path / ".openclawbrain" / "scratch" / "events.jsonl"
+    code = cli_module.main(
+        [
+            "build-all",
+            "--agents",
+            "agent-1",
+            "--events-jsonl",
+            str(events_path),
+        ]
+    )
+    assert code == 0
+
+    lines = [json.loads(line) for line in events_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert any(item.get("type") == "run_start" for item in lines)
+    assert any(item.get("type") == "agent_start" for item in lines)
 
 
 def test_cli_build_all_forwards_workers_and_llm_model_to_replay_and_records_manifest(
