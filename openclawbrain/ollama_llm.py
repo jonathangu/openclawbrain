@@ -68,7 +68,7 @@ def _ollama_chat(system: str, user: str, *, model: str) -> str:
     return content
 
 
-def ollama_llm_fn(system: str, user: str, *, model: str = _DEFAULT_OLLAMA_MODEL) -> str:
+def ollama_llm_fn(system: str, user: str, *, model: str | None = None) -> str:
     """Run a single Ollama chat request."""
     resolved_model = _resolve_ollama_model(model)
     return _ollama_chat(system, user, model=resolved_model)
