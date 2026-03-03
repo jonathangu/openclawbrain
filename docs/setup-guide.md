@@ -73,6 +73,35 @@ Replay progress defaults:
 - Replay emits a heartbeat every 30 seconds by default.
 - Use `--quiet` to suppress banners/progress for automation.
 
+## Local LLM (Ollama)
+
+OpenClawBrain can run fast-learning + teacher labeling entirely on-device with Ollama. This is a full opt-out of OpenAI usage (embeddings are already local).
+
+Install and start Ollama:
+
+```bash
+brew install ollama
+ollama serve
+```
+
+Pull the default model:
+
+```bash
+ollama pull llama3.2:3b
+```
+
+Use Ollama for replay fast-learning:
+
+```bash
+openclawbrain replay --state ./brain/state.json --sessions ./sessions/ --mode full --llm ollama
+```
+
+Use Ollama for async teacher labeling:
+
+```bash
+openclawbrain async-route-pg --state ./brain/state.json --teacher ollama
+```
+
 Single-writer lock:
 - Writer commands lock `state.json` via `state.json.lock` to prevent clobbered writes.
 - If a lock is active, prefer rebuilding into a new state and cut over (`examples/ops/rebuild_then_cutover.sh`).

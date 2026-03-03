@@ -527,6 +527,53 @@ def _teacher_labels_openai(
     return labels_per_point, errors
 
 
+def _teacher_labels_ollama(
+    decision_points: list[DecisionPoint],
+    *,
+    teacher_model: str,
+) -> tuple[list[dict[str, float]], list[str]]:
+    errors: list[str] = []
+    if not decision_points:
+        return [], errors
+
+    from ..ollama_llm import ollama_llm_batch_fn
+
+    requests = [
+        {
+            "id": idx,
+            "model": teacher_model,
+            "system": TEACHER_SYSTEM_PROMPT,
+            "user": _teacher_user_prompt(point),
+        }
+        for idx, point in enumerate(decision_points)
+    ]
+    responses = ollama_llm_batch_fn(requests)
+    by_id: dict[int, dict] = {}
+    for row in responses:
+        if not isinstance(row, dict):
+            continue
+        request_id = row.get("id")
+        if isinstance(request_id, int):
+            by_id[request_id] = row
+
+    labels_per_point: list[dict[str, float]] = []
+    for idx, point in enumerate(decision_points):
+        response = by_id.get(idx, {})
+        raw = response.get("response")
+        if not isinstance(raw, str):
+            labels_per_point.append({})
+            err = response.get("error")
+            if isinstance(err, str) and err:
+                errors.append(err)
+            continue
+        valid_ids = {str(item["target_id"]) for item in point.candidates if "target_id" in item}
+        labels_per_point.append(parse_teacher_route_labels(raw, valid_ids))
+        err = response.get("error")
+        if isinstance(err, str) and err:
+            errors.append(err)
+    return labels_per_point, errors
+
+
 def run_async_route_pg(
     *,
     state_path: str,
@@ -593,6 +640,18 @@ def run_async_route_pg(
         teacher_available = True
         try:
             labels_by_point, model_errors = _teacher_labels_openai(
+                decision_points=decision_points,
+                teacher_model=teacher_model,
+            )
+            errors.extend(model_errors)
+        except Exception as exc:  # noqa: BLE001
+            errors.append(str(exc))
+            labels_by_point = [{} for _ in decision_points]
+            teacher_available = False
+    elif teacher == "ollama":
+        teacher_available = True
+        try:
+            labels_by_point, model_errors = _teacher_labels_ollama(
                 decision_points=decision_points,
                 teacher_model=teacher_model,
             )

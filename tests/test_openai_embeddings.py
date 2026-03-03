@@ -227,6 +227,16 @@ def test_resolve_llm_openai_returns_callbacks(monkeypatch) -> None:
     assert llm_batch_fn is not None
 
 
+def test_resolve_llm_ollama_returns_callbacks(monkeypatch) -> None:
+    """test resolve llm ollama."""
+    monkeypatch.setenv("OPENCLAWBRAIN_OLLAMA_HOST", "http://localhost:11434")
+    monkeypatch.setenv("OPENCLAWBRAIN_OLLAMA_MODEL", "llama3.2:3b")
+    llm_fn, llm_batch_fn = _resolve_llm(argparse.Namespace(llm="ollama"))
+
+    assert llm_fn is not None
+    assert llm_batch_fn is not None
+
+
 def test_openai_embedder_embed(monkeypatch) -> None:
     """test openai embedder embed."""
     embedding = [1.0] * 1536

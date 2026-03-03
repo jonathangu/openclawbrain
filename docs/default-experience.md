@@ -17,7 +17,36 @@ This pipeline intentionally does **LLM work** in replay and labeling:
 - **Replay `--mode full`** runs fast-learning transcript mining + edge replay + harvest. The fast-learning phase calls an LLM to extract learning events, so it will incur LLM usage.
 - **Async teacher labeling** (`async-route-pg --teacher openai --teacher-model gpt-5-mini`) uses the OpenAI API to label route decisions and generate training traces.
 
-The script **never uses OpenAI embeddings**. All embedding work is forced to local BGE-large (`BAAI/bge-large-en-v1.5`). If you do not want any OpenAI usage at all, set `--teacher none` and use a non-LLM replay mode; otherwise supply `OPENAI_API_KEY`.
+The script **never uses OpenAI embeddings**. All embedding work is forced to local BGE-large (`BAAI/bge-large-en-v1.5`). If you want to avoid OpenAI entirely, use Ollama for replay/teacher labeling or set `--teacher none` and use a non-LLM replay mode; otherwise supply `OPENAI_API_KEY`.
+
+## Local LLM (Ollama)
+
+You can run the full pipeline without OpenAI by using Ollama for both replay fast-learning and async teacher labeling. This is a full opt-out of OpenAI usage (embeddings are already local).
+
+Install and start Ollama:
+
+```bash
+brew install ollama
+ollama serve
+```
+
+Pull the default model:
+
+```bash
+ollama pull llama3.2:3b
+```
+
+Run replay with Ollama:
+
+```bash
+openclawbrain replay --state ./brain/state.json --sessions ./sessions/ --mode full --llm ollama
+```
+
+Run async-route-pg with Ollama:
+
+```bash
+openclawbrain async-route-pg --state ./brain/state.json --teacher ollama
+```
 
 ## One-command orchestration
 
