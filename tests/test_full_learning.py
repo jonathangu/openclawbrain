@@ -1,11 +1,14 @@
 from __future__ import annotations
 
+import json
 from pathlib import Path
 
 from openclawbrain.full_learning import (
     SessionTurn,
     collect_session_files,
     dedupe_learning_events,
+    _filter_learning_windows_for_llm,
+    _session_pointer_for_window,
     run_fast_learning,
     select_feedback_windows,
     _collect_turns,
@@ -52,6 +55,96 @@ def test_select_feedback_windows_merges_overlapping_regions() -> None:
         hard_max_turns=3,
     )
     assert windows == [(0, 6)]
+
+
+def test_filter_learning_windows_for_llm_skips_existing_session_pointers() -> None:
+    """Skip windows already represented by session_pointer in existing logs."""
+    source = "session.jsonl"
+    turn_a = SessionTurn(role="user", content="that is wrong", line_no=1, source=source)
+    turn_b = SessionTurn(role="assistant", content="ok", line_no=2, source=source)
+    turn_c = SessionTurn(role="user", content="thanks for help", line_no=3, source=source)
+    turn_d = SessionTurn(role="assistant", content="you're welcome", line_no=4, source=source)
+
+    existing_pointer = _session_pointer_for_window(source, [turn_a, turn_b])
+    candidate_windows = [
+        (source, [turn_a, turn_b], 1),
+        (source, [turn_c, turn_d], 2),
+    ]
+    filtered, skipped_low_signal, skipped_existing_pointer = _filter_learning_windows_for_llm(
+        candidate_windows,
+        existing_pointers={existing_pointer},
+    )
+
+    assert skipped_low_signal == 0
+    assert skipped_existing_pointer == 1
+    assert filtered == [(source, [turn_c, turn_d], 2)]
+
+
+def test_run_fast_learning_skips_windows_already_in_learning_log(
+    tmp_path: Path,
+) -> None:
+    """run_fast_learning should skip windows when session_pointer already exists."""
+    state_path = tmp_path / "state.json"
+    state_path.write_text(
+        '{"graph":{"nodes":[],"edges":[]},"index":{},"meta":{"embedder_name":"hash-v1","embedder_dim":1024}}',
+        encoding="utf-8",
+    )
+    session_path = tmp_path / "session.jsonl"
+    session_path.write_text(
+        "\n".join(
+            [
+                '{"role":"user","content":"that is wrong","ts":1.0}',
+                '{"role":"assistant","content":"acknowledged","ts":1.1}',
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    pointer = _session_pointer_for_window(str(session_path), [
+        SessionTurn(role="user", content="that is wrong", line_no=1, source=str(session_path)),
+        SessionTurn(role="assistant", content="acknowledged", line_no=2, source=str(session_path)),
+    ])
+    learning_events = tmp_path / "learning_events.jsonl"
+    learning_events.write_text(
+        json.dumps(
+            {
+                "type": "CORRECTION",
+                "content": "existing",
+                "content_hash": "abc",
+                "session_pointer": pointer,
+            }
+        )
+        + "\n",
+        encoding="utf-8",
+    )
+
+    llm_calls = 0
+
+    def fake_llm(_: str, __: str) -> str:
+        nonlocal llm_calls
+        llm_calls += 1
+        return (
+            '{"corrections":[{"content":"Do X instead.","context":"ctx","severity":"high"}],'
+            '"teachings":[],"reinforcements":[]}'
+        )
+
+    result = run_fast_learning(
+        state_path=str(state_path),
+        session_paths=[session_path],
+        workers=1,
+        max_windows=1,
+        llm_fn=fake_llm,
+        checkpoint_every=0,
+        checkpoint_every_seconds=0,
+        progress_every_windows=0,
+        progress_every_seconds=0,
+        backup=False,
+    )
+
+    assert llm_calls == 0
+    assert result["windows_total"] == 1
+    assert result["windows_skipped_existing_pointer"] == 1
+    assert result["windows_sent_to_llm"] == 0
 
 
 def test_dedupe_learning_events_is_idempotent() -> None:
