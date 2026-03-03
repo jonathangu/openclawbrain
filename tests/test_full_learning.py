@@ -3,11 +3,14 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
+import openclawbrain.full_learning as full_learning_module
+
 from openclawbrain.full_learning import (
     SessionTurn,
     collect_session_files,
     dedupe_learning_events,
     _filter_learning_windows_for_llm,
+    _window_to_payload,
     _session_pointer_for_window,
     run_fast_learning,
     select_feedback_windows,
@@ -55,6 +58,49 @@ def test_select_feedback_windows_merges_overlapping_regions() -> None:
         hard_max_turns=3,
     )
     assert windows == [(0, 6)]
+
+
+def test_session_pointer_normalization_reuses_resolved_path_for_filtering_and_payload(tmp_path: Path) -> None:
+    """Normalize symlinked sources to avoid duplicate fast-learning work."""
+    real_session = tmp_path / "real.jsonl"
+    linked_session = tmp_path / "linked.jsonl"
+    real_session.write_text(
+        "\n".join(
+            [
+                '{"role":"user","content":"that is wrong","ts":1.0}',
+                '{"role":"assistant","content":"acknowledged","ts":1.1}',
+            ]
+        ),
+        encoding="utf-8",
+    )
+    linked_session.symlink_to(real_session)
+
+    turn_a = SessionTurn(role="user", content="that is wrong", line_no=1, source=str(linked_session))
+    turn_b = SessionTurn(role="assistant", content="acknowledged", line_no=2, source=str(linked_session))
+    normalized_pointer = _session_pointer_for_window(str(real_session), [turn_a, turn_b])
+
+    filtered, skipped_low_signal, skipped_existing_pointer = _filter_learning_windows_for_llm(
+        candidate_windows=[(str(linked_session), [turn_a, turn_b], 1)],
+        existing_pointers={normalized_pointer},
+    )
+    assert skipped_existing_pointer == 1
+    assert skipped_low_signal == 0
+    assert filtered == []
+
+    def fake_llm(_: str, __: str) -> str:
+        return (
+            '{"corrections":[{"content":"Do X instead.","context":"ctx","severity":"high"}],'
+            '"teachings":[],"reinforcements":[]}'
+        )
+
+    events = _window_to_payload(
+        session=str(linked_session),
+        window=[turn_a, turn_b],
+        window_idx=1,
+        total_windows=1,
+        llm_fn=fake_llm,
+    )
+    assert events[0]["session_pointer"] == normalized_pointer
 
 
 def test_filter_learning_windows_for_llm_skips_existing_session_pointers() -> None:
@@ -142,9 +188,68 @@ def test_run_fast_learning_skips_windows_already_in_learning_log(
     )
 
     assert llm_calls == 0
-    assert result["windows_total"] == 1
+    assert result["windows_total"] == 0
+    assert result["windows_candidate"] == 1
     assert result["windows_skipped_existing_pointer"] == 1
     assert result["windows_sent_to_llm"] == 0
+
+
+def test_run_fast_learning_checkpoint_extras_include_counters(tmp_path: Path, monkeypatch) -> None:
+    """_save_checkpoint includes fast-learning counters during running and completion."""
+    state_path = tmp_path / "state.json"
+    state_path.write_text(
+        '{"graph":{"nodes":[],"edges":[]},"index":{},"meta":{"embedder_name":"hash-v1","embedder_dim":1024}}',
+        encoding="utf-8",
+    )
+    sessions = tmp_path / "sessions.jsonl"
+    sessions.write_text(
+        "\n".join(
+            [
+                '{"role":"user","content":"that guidance is wrong","ts":1.0}',
+                '{"role":"assistant","content":"acknowledged","ts":1.1}',
+            ]
+        ),
+        encoding="utf-8",
+    )
+    checkpoint_path = tmp_path / "replay_checkpoint.json"
+    recorded_extras: list[dict[str, object]] = []
+
+    def fake_save_checkpoint(
+        path: str,
+        *,
+        phase: str,
+        session_offsets: dict[str, int] | None = None,
+        extra: dict[str, object] | None = None,
+    ) -> None:
+        if phase == "fast_learning" and isinstance(extra, dict):
+            recorded_extras.append(extra)
+
+    monkeypatch.setattr(full_learning_module, "_save_checkpoint", fake_save_checkpoint)
+
+    def fake_llm(_: str, __: str) -> str:
+        return (
+            '{"corrections":[{"content":"Do X instead.","context":"ctx","severity":"high"}],'
+            '"teachings":[],"reinforcements":[]}'
+        )
+
+    run_fast_learning(
+        state_path=str(state_path),
+        session_paths=[sessions],
+        workers=1,
+        max_windows=1,
+        llm_fn=fake_llm,
+        checkpoint_path=str(checkpoint_path),
+        checkpoint_every=1,
+        checkpoint_every_seconds=0,
+        backup=False,
+    )
+
+    assert recorded_extras
+    for extra in recorded_extras:
+        assert extra["windows_candidate"] == 1
+        assert extra["windows_sent_to_llm"] == 1
+        assert extra["windows_skipped_low_signal"] == 0
+        assert extra["windows_skipped_existing_pointer"] == 0
 
 
 def test_dedupe_learning_events_is_idempotent() -> None:

@@ -2672,8 +2672,12 @@ def _build_checkpoint_status_payload(
         "phases": phase_plan,
         "fast_learning": {
             "status": str(fast_raw.get("status", "unknown")),
-            "windows_processed": int(fast_raw.get("windows_processed", 0)) if isinstance(fast_raw.get("windows_processed"), (int, float)) else 0,
-            "windows_total": int(fast_raw.get("windows_total", 0)) if isinstance(fast_raw.get("windows_total"), (int, float)) else 0,
+            "windows_processed": int(fast_raw.get("windows_processed", 0))
+            if isinstance(fast_raw.get("windows_processed"), (int, float))
+            else 0,
+            "windows_total": int(fast_raw.get("windows_total", 0))
+            if isinstance(fast_raw.get("windows_total"), (int, float))
+            else 0,
             "updated_at": fast_raw.get("updated_at"),
             "session_offsets_count": len(fast_offsets),
             "legacy_offsets_fallback": bool(fast_legacy and fast_offsets),
@@ -2687,6 +2691,15 @@ def _build_checkpoint_status_payload(
             "legacy_offsets_fallback": bool(replay_legacy and replay_offsets),
         },
     }
+    for counter_name in (
+        "windows_candidate",
+        "windows_sent_to_llm",
+        "windows_skipped_low_signal",
+        "windows_skipped_existing_pointer",
+    ):
+        value = fast_raw.get(counter_name)
+        if isinstance(value, (int, float)):
+            payload["fast_learning"][counter_name] = int(value)
     return payload, bool(fast_legacy and fast_offsets), bool(replay_legacy and replay_offsets)
 
 
@@ -2732,6 +2745,17 @@ def cmd_replay(args: argparse.Namespace) -> int:
             f"status={fast_status.get('status', 'unknown')}, "
             f"updated_at={_checkpoint_time_display(fast_status.get('updated_at'))}"
         )
+        fast_counter_bits = []
+        for counter_name in (
+            "windows_candidate",
+            "windows_sent_to_llm",
+            "windows_skipped_low_signal",
+            "windows_skipped_existing_pointer",
+        ):
+            if counter_name in fast_status:
+                fast_counter_bits.append(f"{counter_name}={fast_status[counter_name]}")
+        if fast_counter_bits:
+            print(f"  Fast learning counters: {', '.join(fast_counter_bits)}")
         print(
             "Replay: "
             f"{replay_status.get('queries_processed', 0)}/{replay_status.get('queries_total', 0)} queries, "
