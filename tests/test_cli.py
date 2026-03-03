@@ -1655,6 +1655,106 @@ def test_cli_build_all_parser_accepts_subcommand() -> None:
     args = parser.parse_args(["build-all"])
     assert args.command == "build-all"
     assert args.parallel_agents == 1
+    assert args.require_local_embedder is False
+
+
+def test_cmd_status_json_includes_embedder_dim_and_index_dim(tmp_path, capsys) -> None:
+    """status --json includes embedder and index dimensions."""
+    state_path = tmp_path / "state.json"
+    _write_state(
+        state_path,
+        index_payload={"a": [0.0, 1.0, 0.0], "b": [1.0, 0.0, 0.0]},
+        meta={"embedder_name": "local:bge-large-en-v1.5", "embedder_dim": 3},
+    )
+    code = main(["status", "--state", str(state_path), "--json"])
+    assert code == 0
+    payload = json.loads(capsys.readouterr().out.strip())
+    assert payload["embedder_dim"] == 3
+    assert payload["index_dim"] == 3
+
+
+def test_build_all_preflight_guard_blocks_dim_mismatch_without_reembed(tmp_path) -> None:
+    """build-all preflight fails when embedder_dim and index_dim mismatch and reembed is disabled."""
+    import openclawbrain.cli as cli_module
+
+    state_path = tmp_path / "state.json"
+    status_before = tmp_path / "status_before.json"
+    state_path.write_text(json.dumps({"nodes": []}), encoding="utf-8")
+    status_before.write_text(
+        json.dumps(
+            {
+                "embedder_name": "local:bge-large-en-v1.5",
+                "embedder_dim": 1536,
+                "index_dim": 1024,
+            }
+        ),
+        encoding="utf-8",
+    )
+    code, message = cli_module._evaluate_build_all_preflight(
+        state_path=str(state_path),
+        status_before_path=str(status_before),
+        reembed=False,
+        require_local_embedder=False,
+    )
+    assert code == 1
+    assert message is not None
+    assert "Re-run with --reembed" in message
+
+
+def test_build_all_preflight_guard_allows_dim_mismatch_with_reembed(tmp_path, capsys) -> None:
+    """build-all preflight continues on mismatch when reembed is enabled."""
+    import openclawbrain.cli as cli_module
+
+    state_path = tmp_path / "state.json"
+    status_before = tmp_path / "status_before.json"
+    state_path.write_text(json.dumps({"nodes": []}), encoding="utf-8")
+    status_before.write_text(
+        json.dumps(
+            {
+                "embedder_name": "local:bge-large-en-v1.5",
+                "embedder_dim": 1536,
+                "index_dim": 1024,
+            }
+        ),
+        encoding="utf-8",
+    )
+    code, message = cli_module._evaluate_build_all_preflight(
+        state_path=str(state_path),
+        status_before_path=str(status_before),
+        reembed=True,
+        require_local_embedder=False,
+    )
+    assert code == 0
+    assert message is None
+    assert "continuing because --reembed is enabled" in capsys.readouterr().out
+
+
+def test_build_all_preflight_guard_blocks_openai_without_reembed_when_local_required(tmp_path) -> None:
+    """build-all local-only preflight fails for openai states when --reembed is disabled."""
+    import openclawbrain.cli as cli_module
+
+    state_path = tmp_path / "state.json"
+    status_before = tmp_path / "status_before.json"
+    state_path.write_text(json.dumps({"nodes": []}), encoding="utf-8")
+    status_before.write_text(
+        json.dumps(
+            {
+                "embedder_name": "openai-text-embedding-3-small",
+                "embedder_dim": 3,
+                "index_dim": 3,
+            }
+        ),
+        encoding="utf-8",
+    )
+    code, message = cli_module._evaluate_build_all_preflight(
+        state_path=str(state_path),
+        status_before_path=str(status_before),
+        reembed=False,
+        require_local_embedder=True,
+    )
+    assert code == 1
+    assert message is not None
+    assert "OpenAI embedder" in message
 
 
 def test_build_all_root_manifest_written_before_agents_run(tmp_path, monkeypatch) -> None:
@@ -1704,7 +1804,22 @@ def test_cmd_build_all_events_jsonl_contains_run_and_agent_events(tmp_path, monk
     )
     _write_state(tmp_path / ".openclawbrain" / "agent-1" / "state.json")
 
-    monkeypatch.setattr(cli_module, "_run_logged_command", lambda *args, **kwargs: 0)
+    def fake_run_logged_command(cmd: list[str], **kwargs) -> int:
+        stdout_path = kwargs.get("stdout_path")
+        if isinstance(stdout_path, Path) and stdout_path.name.endswith("status_before.json"):
+            stdout_path.write_text(
+                json.dumps(
+                    {
+                        "embedder_name": "local:bge-large-en-v1.5",
+                        "embedder_dim": 3,
+                        "index_dim": 3,
+                    }
+                ),
+                encoding="utf-8",
+            )
+        return 0
+
+    monkeypatch.setattr(cli_module, "_run_logged_command", fake_run_logged_command)
     monkeypatch.setattr(cli_module, "_run_logged_replay_command", lambda *args, **kwargs: 0)
 
     events_path = tmp_path / ".openclawbrain" / "scratch" / "events.jsonl"
@@ -1743,11 +1858,26 @@ def test_cli_build_all_forwards_workers_and_llm_model_to_replay_and_records_mani
 
     captured_replay_cmd: list[list[str]] = []
 
+    def fake_run_logged_command(cmd: list[str], **kwargs) -> int:
+        stdout_path = kwargs.get("stdout_path")
+        if isinstance(stdout_path, Path) and stdout_path.name.endswith("status_before.json"):
+            stdout_path.write_text(
+                json.dumps(
+                    {
+                        "embedder_name": "local:bge-large-en-v1.5",
+                        "embedder_dim": 3,
+                        "index_dim": 3,
+                    }
+                ),
+                encoding="utf-8",
+            )
+        return 0
+
     def fake_run_logged_replay_command(cmd: list[str], **kwargs) -> int:
         captured_replay_cmd.append(cmd)
         return 0
 
-    monkeypatch.setattr(cli_module, "_run_logged_command", lambda *args, **kwargs: 0)
+    monkeypatch.setattr(cli_module, "_run_logged_command", fake_run_logged_command)
     monkeypatch.setattr(cli_module, "_run_logged_replay_command", fake_run_logged_replay_command)
 
     code = cli_module.main(
