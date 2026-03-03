@@ -156,6 +156,28 @@ def test_openai_llm_fn_falls_back_for_timeout_kwarg(monkeypatch) -> None:
     assert len(calls) == 1
 
 
+def test_openai_llm_fn_sanitizes_invalid_unicode(monkeypatch) -> None:
+    """test openai llm fn sanitizes invalid unicode."""
+    calls, module = _install_fake_openai_llm(
+        monkeypatch,
+        [lambda _, __: "ok"],
+    )
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    bad_text = "bad\ud83dtext"
+    module.openai_llm_fn(bad_text, bad_text)
+    sanitized = module.sanitize_text(bad_text)
+
+    assert calls == [
+        (
+            "gpt-5-mini",
+            [
+                {"role": "system", "content": sanitized},
+                {"role": "user", "content": sanitized},
+            ],
+        )
+    ]
+
+
 def test_openai_llm_batch_fn_uses_thread_local_clients(monkeypatch) -> None:
     """test openai llm batch fn uses thread local clients."""
     _, module = _install_fake_openai_llm(

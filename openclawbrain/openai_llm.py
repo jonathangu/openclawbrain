@@ -12,6 +12,11 @@ _OPENAI_MAX_RETRIES = 2
 _thread_local = threading.local()
 
 
+def sanitize_text(text: str) -> str:
+    """Return text that is safe to UTF-8 encode for JSON payloads."""
+    return text.encode("utf-8", "replace").decode("utf-8")
+
+
 def _extract_unsupported_kwarg(exc: TypeError) -> str | None:
     """Return a clearly unsupported keyword argument from an OpenAI TypeError."""
     message = str(exc).lower()
@@ -65,6 +70,8 @@ def _get_client():
 def openai_llm_fn(system: str, user: str, *, model: str = "gpt-5-mini") -> str:
     """Run a single OpenAI chat request."""
     client = _get_client()
+    system = sanitize_text(system)
+    user = sanitize_text(user)
     try:
         response = client.chat.completions.create(
             model=model,
@@ -120,8 +127,8 @@ def openai_llm_batch_fn(requests: list[dict], *, max_workers: int = 8) -> list[d
     results: list[dict] = []
 
     def _call(req: dict) -> dict:
-        system = str(req.get("system", ""))
-        user = str(req.get("user", ""))
+        system = sanitize_text(str(req.get("system", "")))
+        user = sanitize_text(str(req.get("user", "")))
         model = str(req.get("model", "gpt-5-mini"))
         request_id = req.get("id")
         try:
