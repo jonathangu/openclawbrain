@@ -51,7 +51,7 @@ def test_build_prompt_context_includes_citation_with_source_lines() -> None:
 
     rendered = build_prompt_context(graph=graph, node_ids=["deploy.md::0"])
 
-    assert "[BRAIN_CONTEXT v1]" in rendered
+    assert "[BRAIN_CONTEXT v1" in rendered
     assert "- node: deploy.md::0" in rendered
     assert "  source: workspace/deploy.md#L41-L63" in rendered
     assert "  Deploy with CI checks enabled." in rendered
@@ -71,7 +71,7 @@ def test_build_prompt_context_with_stats_reports_trimmed_and_dropped_ids() -> No
         max_chars=110,
     )
 
-    assert rendered.startswith("[BRAIN_CONTEXT v1]")
+    assert rendered.startswith("[BRAIN_CONTEXT v1")
     assert stats["prompt_context_trimmed"] is True
     assert stats["prompt_context_max_chars"] == 110
     assert stats["prompt_context_len"] == len(rendered)
@@ -122,7 +122,7 @@ def test_ranked_prompt_context_prefers_authority_then_score_then_source_order() 
             "canonical-high": 0.9,
             "constitutional": 0.1,
         },
-        max_chars=240,
+        max_chars=260,
     )
 
     # Authority outranks score and source ordering.

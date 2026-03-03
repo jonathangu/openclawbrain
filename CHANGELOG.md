@@ -16,6 +16,15 @@
 - Added one-page operator lifecycle guide: `docs/operator-quickstart.md` (linked from README).
 - Clarified docs/CLI wording that `serve` is the canonical operator entrypoint and `daemon` is low-level NDJSON worker plumbing.
 
+### OpenClaw-first integration hooks
+- Added `openclawbrain-context-injector` OpenClaw hook pack under `integrations/openclaw/hooks/openclawbrain-context-injector`.
+- Added docs for hook installation/enable/disable: `docs/openclawbrain-openclaw-hooks.md`.
+- Extended adapter query CLI with:
+  - `--exclude-paths` (repeatable source-path filter for prompt emission),
+  - `--redact` (default on for `--format prompt`) for conservative secret masking,
+  - explicit `[BRAIN_CONTEXT ...]` header labeling emitted block as data-only context.
+- Updated `docs/openclaw-integration.md` to recommend hook-based installation and keep legacy `AGENTS.md` flow as fallback.
+
 ### Replay mode UX + checkpoint semantics (Issue #60 part 2)
 - Added explicit replay mode selection: `openclawbrain replay --mode {edges-only,fast-learning,full}`.
 - Legacy replay flags remain supported and map to mode for backward compatibility:

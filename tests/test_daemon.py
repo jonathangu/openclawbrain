@@ -173,7 +173,7 @@ def test_daemon_query_returns_fired_nodes(tmp_path: Path) -> None:
 
         # Deterministic appendix block for prompt caching.
         assert "prompt_context" in result
-        assert result["prompt_context"].startswith("[BRAIN_CONTEXT v1]")
+        assert result["prompt_context"].startswith("[BRAIN_CONTEXT v1")
         assert "- node:" in result["prompt_context"]
         assert "alpha" in result["prompt_context"]
         assert result["prompt_context_len"] == len(result["prompt_context"])
@@ -385,7 +385,7 @@ def test_daemon_query_ranked_prompt_context_uses_authority_and_scores(monkeypatc
         params={
             "query": "anything",
             "top_k": 3,
-            "max_prompt_context_chars": 170,
+            "max_prompt_context_chars": 230,
             "max_fired_nodes": 7,
             "chat_id": "chat-ranked",
         },
@@ -897,6 +897,7 @@ def test_query_brain_socket_node_id_default_follows_compact_mode(tmp_path: Path,
         max_prompt_context_chars: int,
         exclude_files: list[str],
         exclude_file_prefixes: list[str],
+        exclude_paths: list[str],
         prompt_context_include_node_ids: bool,
         include_provenance: bool,
     ):
@@ -983,6 +984,95 @@ def test_query_brain_compact_include_stats_uses_slim_subset(tmp_path: Path, caps
     assert "seeds" not in output
 
 
+def test_query_brain_exclude_paths_filters_prompt_context(tmp_path: Path, capsys, monkeypatch) -> None:
+    query_module = _load_query_brain_module()
+    query_main = query_module.main
+
+    graph = Graph()
+    graph.add_node(Node("secret", "Secret bootstrap note", metadata={"source": "/workspace/notes/AGENT.md"}))
+    graph.add_node(Node("public", "Public design note", metadata={"source": "/workspace/docs/public.md"}))
+
+    index = VectorIndex()
+    embedder = HashEmbedder()
+    index.upsert("secret", embedder.embed("secret note"))
+    index.upsert("public", embedder.embed("public note"))
+    save_state(
+        graph=graph,
+        index=index,
+        path=tmp_path / "state.json",
+        meta={"embedder_name": "hash-v1", "embedder_dim": embedder.dim},
+    )
+
+    def _fake_traverse(*_args, **_kwargs):
+        return TraversalResult(
+            fired=["secret", "public"],
+            steps=[],
+            context="",
+            fired_scores={"secret": 0.8, "public": 0.7},
+        )
+
+    state_path = tmp_path / "state.json"
+    monkeypatch.setattr(query_module, "traverse", _fake_traverse)
+
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["query_brain.py", str(state_path), "query", "--format", "prompt", "--exclude-paths", "AGENT.md"],
+    )
+    query_main()
+    output = capsys.readouterr().out
+    assert "Secret bootstrap note" not in output
+    assert "Public design note" in output
+
+
+def test_query_brain_redacts_secret_patterns_in_prompt_context(tmp_path: Path, capsys, monkeypatch) -> None:
+    query_module = _load_query_brain_module()
+    query_main = query_module.main
+
+    graph = Graph()
+    graph.add_node(
+        Node(
+            "leak",
+            "OpenAI key sk-abcdefghijklmnopqrstuvwx and GitHub token ghp_abcdefghijklmnopqrstuvwxyz1234567890abc and Bearer abcdefghijklmnopqrstuvwxyz1234567",
+            metadata={"source": "/workspace/docs/security.md"},
+        )
+    )
+
+    index = VectorIndex()
+    embedder = HashEmbedder()
+    index.upsert("leak", embedder.embed("secret leak"))
+    save_state(
+        graph=graph,
+        index=index,
+        path=tmp_path / "state.json",
+        meta={"embedder_name": "hash-v1", "embedder_dim": embedder.dim},
+    )
+
+    def _fake_traverse(*_args, **_kwargs):
+        return TraversalResult(
+            fired=["leak"],
+            steps=[],
+            context="",
+            fired_scores={"leak": 0.9},
+        )
+
+    state_path = tmp_path / "state.json"
+    monkeypatch.setattr(query_module, "traverse", _fake_traverse)
+    monkeypatch.setattr(
+        sys,
+        "argv",
+        ["query_brain.py", str(state_path), "query", "--format", "prompt", "--no-include-node-ids"],
+    )
+    query_main()
+    output = capsys.readouterr().out
+    assert "sk-abcdefghijklmnopqrstuvwx" not in output
+    assert "ghp_abcdefghijklmnopqrstuvwxyz1234567890abc" not in output
+    assert "Bearer abcdefghijklmnopqrstuvwxyz1234567" not in output
+    assert "<REDACTED_OPENAI_API_KEY>" in output
+    assert "<REDACTED_GITHUB_TOKEN>" in output
+    assert "<REDACTED_BEARER_TOKEN>" in output
+
+
 def test_query_brain_socket_passes_route_params(tmp_path: Path, capsys, monkeypatch) -> None:
     state_path = tmp_path / "state.json"
     _write_state(state_path)
@@ -1002,6 +1092,7 @@ def test_query_brain_socket_passes_route_params(tmp_path: Path, capsys, monkeypa
         max_prompt_context_chars: int,
         exclude_files: list[str],
         exclude_file_prefixes: list[str],
+        exclude_paths: list[str],
         prompt_context_include_node_ids: bool,
         include_provenance: bool,
     ) -> dict[str, object]:
@@ -1018,6 +1109,7 @@ def test_query_brain_socket_passes_route_params(tmp_path: Path, capsys, monkeypa
                 "max_prompt_context_chars": max_prompt_context_chars,
                 "exclude_files": exclude_files,
                 "exclude_file_prefixes": exclude_file_prefixes,
+                "exclude_paths": exclude_paths,
                 "prompt_context_include_node_ids": prompt_context_include_node_ids,
                 "include_provenance": include_provenance,
             }

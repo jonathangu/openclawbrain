@@ -6,6 +6,7 @@ Primary operator runbook: [docs/operator-guide.md](operator-guide.md)
 Operator recipes (cutover, parallel replay, prompt caching, media memory): [docs/ops-recipes.md](ops-recipes.md)
 New-agent canonical SOP (workspace + dedicated brain + launchd + routing): [docs/new-agent-sop.md](new-agent-sop.md)
 Packaged adapter CLIs (no repo clone required): `python3 -m openclawbrain.openclaw_adapter.query_brain ...`, `python3 -m openclawbrain.openclaw_adapter.capture_feedback ...`, `python3 -m openclawbrain.openclaw_adapter.learn_by_chat_id ...`, and `python3 -m openclawbrain.openclaw_adapter.learn_correction ...`
+OpenClaw hook pack (recommended): [docs/openclawbrain-openclaw-hooks.md](openclawbrain-openclaw-hooks.md)
 
 If you’re already running OpenClaw, this guide shows the fastest path to:
 
@@ -158,32 +159,46 @@ Notes:
 
 ---
 
-## Step 2 — Wire it into your OpenClaw agent’s `AGENTS.md` (copy/paste)
+## Step 2 — Install the recommended OpenClaw hook (opt-in)
 
-OpenClaw agents do what `AGENTS.md` says. The simplest integration is:
+The recommended path is the OpenClaw hook pack:
 
-- **Before answering:** run a query and append prompt-only `[BRAIN_CONTEXT]`
-- **After answering:** learn by `chat_id` (no node IDs in prompt payload)
-- **When corrected or taught:** call `capture_feedback` in the same turn (canonical path)
+- `integrations/openclaw/hooks/openclawbrain-context-injector/`
+- [docs/openclawbrain-openclaw-hooks.md](openclawbrain-openclaw-hooks.md)
 
-Paste this block into your OpenClaw workspace `AGENTS.md` (edit `AGENT` and paths):
+Install and enable:
 
-```md
-## OpenClawBrain Memory Graph (auto-installed)
+```bash
+openclaw hooks install --link /path/to/openclawbrain/integrations/openclaw/hooks/openclawbrain-context-injector
+openclaw hooks enable openclawbrain-context-injector
+```
 
-**Query** (before answering questions about prior work, context, decisions, corrections, lessons):
+The hook behavior is:
+
+- Keep OpenClaw working as-is (fail-open).
+- Append a retrieved `[BRAIN_CONTEXT ...]` block to `bodyForAgent` for normal messages.
+- Use 12,000-char budget by default, 20,000-char budget for recall/correction language.
+- Keep `--exclude-bootstrap` and `--redact` enabled.
+- Skip slash commands.
+
+What changes when enabled:
+
+- OpenClaw still reads all its normal `AGENTS.md` files.
+- The hook adds only data context to prompts (it does not replace or reorder existing instructions).
+- Retrieval is automatic each qualifying message (no manual copy/paste per-agent edits required).
+- Failures are non-blocking: if query context cannot be loaded within 2s, OpenClaw proceeds with the original message.
+
+## Step 2 fallback — manual AGENTS.md integration
+
+If you do not want hook-based integration, keep the old manual path in `AGENTS.md`.
+This still works and remains fully supported:
+
 ```bash
 python3 -m openclawbrain.openclaw_adapter.query_brain ~/.openclawbrain/AGENT/state.json '<summary of user message>' --chat-id '<chat_id from inbound metadata>' --format prompt --exclude-bootstrap --max-prompt-context-chars 12000
 ```
-Always pass `--chat-id` so fired nodes are logged for later learning/corrections.
-Use `--exclude-recent-memory <today-note> <yesterday-note>` only when those files are already loaded by OpenClaw in the same prompt and you want to avoid duplication.
-To enable runtime route policy in daemon mode, use:
-```bash
-python3 -m openclawbrain.openclaw_adapter.query_brain ~/.openclawbrain/AGENT/state.json '<summary of user message>' --chat-id '<chat_id from inbound metadata>' --format prompt --route-mode edge+sim --route-top-k 5 --route-alpha-sim 0.5 --route-use-relevance
-```
-`--route-*` flags are daemon-query controls; local `state.json` fallback keeps existing traversal behavior.
 
-**Capture feedback** (canonical always-on path; same turn, no "log this" phrasing needed):
+For same-turn learning:
+
 ```bash
 python3 -m openclawbrain.openclaw_adapter.capture_feedback \
   --state ~/.openclawbrain/AGENT/state.json \
@@ -194,39 +209,6 @@ python3 -m openclawbrain.openclaw_adapter.capture_feedback \
   --message-id '<stable-message-id>' \
   --json
 ```
-Use `--dedup-key` (or `--message-id`) whenever possible so harvest/replay retries cannot double-inject. For positive reinforcement with a teaching:
-`--kind TEACHING --content "..." --outcome 1.0 --dedup-key '<stable-id>'`.
-
-Compatibility fallback:
-- `learn_by_chat_id` still works for outcome-only updates.
-- `learn_correction` still works for correction-specific flow.
-
-**Inject new knowledge** (when you learn something not in any workspace file):
-```bash
-echo '{"id":"inject-1","method":"inject","params":{"id":"teaching::<short-id>","content":"The new fact","type":"TEACHING"}}' \
-  | openclawbrain daemon --state ~/.openclawbrain/AGENT/state.json
-```
-
-**Health:** `openclawbrain health --state ~/.openclawbrain/AGENT/state.json`
-
-**Maintenance** (structural ops — runs automatically via harvester cron, but can also run manually):
-```bash
-openclawbrain maintain --state ~/.openclawbrain/AGENT/state.json --tasks health,decay,prune,merge
-```
-Dry-run first: add `--dry-run` to preview changes without applying.
-
-**Sync workspace** (after editing files):
-```
-openclawbrain sync --state ~/.openclawbrain/AGENT/state.json --workspace /path/to/workspace
-```
-
-**Compact old notes** (weekly or via cron):
-```
-openclawbrain compact --state ~/.openclawbrain/AGENT/state.json --memory-dir /path/to/memory
-```
-```
-
-That block is intentionally boring: it’s the contract OpenClaw already supports.
 
 ### Always-on self-learning (default)
 
