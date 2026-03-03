@@ -12,6 +12,9 @@ from datetime import datetime, timezone
 import sys
 import tempfile
 import shutil
+import subprocess
+import shlex
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from collections.abc import Callable, Iterable
 from contextlib import contextmanager, nullcontext
 from dataclasses import asdict
@@ -69,7 +72,7 @@ from .maintain import run_maintenance
 from .reward import RewardSource, RewardWeights
 from .labels import LabelRecord, from_self_learning_event, from_teacher_output, write_labels_jsonl
 from .trace import RouteTrace, route_trace_to_json
-from .state_lock import StateLockError, state_write_lock
+from .state_lock import StateLockError, lock_path_for_state, state_write_lock
 from .store import load_state, save_state, resolve_default_state_path
 from ._batch import batch_or_single_embed
 from .ops.async_route_pg import run_async_route_pg
@@ -160,6 +163,359 @@ def _coalesce(cli_value: str | None, profile_value: str | None, default: str) ->
     if profile_value is not None:
         return profile_value
     return default
+
+
+def _resolve_openclawbrain_bin() -> str:
+    """Resolve the installed openclawbrain CLI binary."""
+    candidate = shutil.which("openclawbrain")
+    if candidate:
+        return candidate
+    return str(Path(sys.argv[0]).expanduser())
+
+
+def _discover_agent_ids(config_path: Path | None = None) -> list[str]:
+    """Discover agent ids from ~/.openclaw/openclaw.json or fallback to main."""
+    cfg_path = config_path or (Path.home() / ".openclaw" / "openclaw.json")
+    if not cfg_path.exists():
+        return ["main"]
+    try:
+        payload = json.loads(cfg_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError) as exc:
+        raise SystemExit(f"invalid openclaw config: {cfg_path} ({exc})") from exc
+
+    agents = payload.get("agents", {})
+    if not isinstance(agents, dict):
+        raise SystemExit(f"invalid openclaw config: {cfg_path} (agents must be an object)")
+    agent_list = agents.get("list", [])
+    if not isinstance(agent_list, list):
+        raise SystemExit(f"invalid openclaw config: {cfg_path} (agents.list must be a list)")
+
+    resolved: list[str] = []
+    for entry in agent_list:
+        if not isinstance(entry, dict):
+            continue
+        agent_id = entry.get("id") or entry.get("name")
+        if isinstance(agent_id, str):
+            cleaned = agent_id.strip()
+            if cleaned and cleaned not in resolved:
+                resolved.append(cleaned)
+
+    if not resolved:
+        raise SystemExit(f"no agents found in {cfg_path}")
+    return resolved
+
+
+def _resolve_agent_ids(args: argparse.Namespace) -> list[str]:
+    """Resolve agent ids from CLI override or openclaw config."""
+    raw = getattr(args, "agents", None)
+    if raw:
+        resolved = [part.strip() for part in raw.split(",") if part.strip()]
+        if not resolved:
+            raise SystemExit("--agents specified but empty after parsing")
+        return resolved
+    return _discover_agent_ids()
+
+
+def _wait_for_state_unlock(state_path: Path, timeout_seconds: int) -> bool:
+    """Wait for the POSIX state lock to clear. Returns True if unlocked."""
+    try:
+        import fcntl  # type: ignore
+    except Exception:  # pragma: no cover - non-POSIX fallback
+        return True
+
+    lock_path = lock_path_for_state(state_path)
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    backoff = 1.0
+    start = time.time()
+    while True:
+        fd = os.open(str(lock_path), os.O_RDWR | os.O_CREAT, 0o644)
+        acquired = False
+        try:
+            try:
+                fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                acquired = True
+                return True
+            except BlockingIOError:
+                elapsed = time.time() - start
+                if elapsed >= timeout_seconds:
+                    return False
+        finally:
+            if acquired:
+                try:
+                    fcntl.flock(fd, fcntl.LOCK_UN)
+                except OSError:
+                    pass
+            os.close(fd)
+
+        time.sleep(backoff)
+        if backoff < 30.0:
+            backoff = min(30.0, backoff * 2)
+
+
+def _run_logged_command(
+    cmd: list[str],
+    *,
+    log_path: Path,
+    step_name: str,
+    stdout_path: Path | None = None,
+) -> int:
+    """Run a subprocess command and append stdout/stderr to the log."""
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("a", encoding="utf-8") as log_handle:
+        log_handle.write(f"\n== {step_name} ==\n")
+        log_handle.write(f"command: {' '.join(shlex.quote(part) for part in cmd)}\n")
+        log_handle.flush()
+        if stdout_path is not None:
+            stdout_path.parent.mkdir(parents=True, exist_ok=True)
+            with stdout_path.open("w", encoding="utf-8") as out_handle:
+                proc = subprocess.run(cmd, stdout=out_handle, stderr=log_handle, text=True, check=False)
+        else:
+            proc = subprocess.run(cmd, stdout=log_handle, stderr=log_handle, text=True, check=False)
+    return int(proc.returncode)
+
+
+def _build_all_agent_pipeline(
+    *,
+    agent_id: str,
+    args: argparse.Namespace,
+    ocb_bin: str,
+    ts_label: str,
+    run_ts: datetime,
+) -> dict[str, object]:
+    """Run build-all pipeline for a single agent."""
+    root = Path.home() / ".openclawbrain"
+    agent_root = root / agent_id
+    scratch = agent_root / "scratch"
+    scratch.mkdir(parents=True, exist_ok=True)
+
+    prefix = f"build-all.{ts_label}"
+    log_path = scratch / f"{prefix}.log"
+    status_before_path = scratch / f"{prefix}.status_before.json"
+    status_after_path = scratch / f"{prefix}.status_after.json"
+    maintain_path = scratch / f"{prefix}.maintain.json"
+    async_route_path = scratch / f"{prefix}.async-route-pg.json"
+    train_route_path = scratch / f"{prefix}.train-route-model.json"
+    traces_out_path = scratch / f"{prefix}.route_traces.jsonl"
+    route_model_out_path = scratch / f"{prefix}.route_model.npz"
+    agent_manifest_path = scratch / f"{prefix}.manifest.json"
+
+    state_path = agent_root / "state.json"
+    sessions_path = Path.home() / ".openclaw" / "agents" / agent_id / "sessions"
+
+    steps: list[dict[str, object]] = []
+    exit_code = 0
+
+    def emit(step: str, status: str, extra: str | None = None) -> None:
+        base = f"[build-all] agent={agent_id} step={step} status={status}"
+        if extra:
+            base = f"{base} {extra}"
+        print(base)
+
+    def record(step: str, status: str, code: int | None = None) -> None:
+        payload: dict[str, object] = {"step": step, "status": status}
+        if code is not None:
+            payload["exit_code"] = int(code)
+        steps.append(payload)
+
+    def run_step(step: str, cmd: list[str], *, stdout_path: Path | None = None) -> int:
+        emit(step, "running")
+        code = _run_logged_command(cmd, log_path=log_path, step_name=step, stdout_path=stdout_path)
+        if code == 0:
+            emit(step, "ok")
+            record(step, "ok", code)
+        else:
+            emit(step, "failed", f"exit={code}")
+            record(step, "failed", code)
+        return code
+
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    with log_path.open("a", encoding="utf-8") as log_handle:
+        log_handle.write("== OpenClawBrain build-all ==\n")
+        log_handle.write(f"agent: {agent_id}\n")
+        log_handle.write(f"state: {state_path}\n")
+        log_handle.write(f"sessions: {sessions_path}\n")
+        log_handle.write(f"timestamp: {run_ts.isoformat()}\n")
+
+    if not state_path.exists():
+        emit("preflight", "failed", f"missing_state={state_path}")
+        exit_code = 2
+    elif not sessions_path.exists():
+        emit("preflight", "failed", f"missing_sessions={sessions_path}")
+        exit_code = 2
+    else:
+        if not _wait_for_state_unlock(state_path, int(args.state_lock_timeout_seconds)):
+            emit("preflight", "failed", "state_lock_timeout")
+            exit_code = 3
+        else:
+            preflight = {
+                "step": "preflight",
+                "status": "ok",
+                "state_path": str(state_path),
+                "sessions_path": str(sessions_path),
+            }
+            steps.append(preflight)
+
+    if exit_code == 0:
+        exit_code = run_step(
+            "status_before",
+            [ocb_bin, "status", "--state", str(state_path), "--json"],
+            stdout_path=status_before_path,
+        )
+
+    if exit_code == 0 and args.reembed:
+        exit_code = run_step(
+            "reembed",
+            [
+                ocb_bin,
+                "reembed",
+                "--state",
+                str(state_path),
+                "--embedder",
+                "local",
+                "--embed-model",
+                str(args.embed_model),
+            ],
+        )
+    elif exit_code == 0:
+        emit("reembed", "skipped", "disabled")
+        record("reembed", "skipped")
+
+    if exit_code == 0:
+        replay_cmd = [
+            ocb_bin,
+            "replay",
+            "--state",
+            str(state_path),
+            "--sessions",
+            str(sessions_path),
+            "--mode",
+            str(args.mode),
+            "--llm",
+            str(args.llm),
+            "--checkpoint-every-seconds",
+            str(args.checkpoint_every_seconds),
+        ]
+        if args.include_tool_results:
+            replay_cmd.append("--include-tool-results")
+        else:
+            replay_cmd.append("--no-include-tool-results")
+        if args.resume:
+            replay_cmd.append("--resume")
+        exit_code = run_step("replay", replay_cmd)
+
+    if exit_code == 0:
+        exit_code = run_step(
+            "maintain",
+            [
+                ocb_bin,
+                "maintain",
+                "--state",
+                str(state_path),
+                "--tasks",
+                "health,decay,scale,split,merge,prune,connect",
+                "--llm",
+                "none",
+                "--embedder",
+                "local",
+                "--json",
+            ],
+            stdout_path=maintain_path,
+        )
+
+    if exit_code == 0 and args.enable_async_teacher:
+        async_cmd = [
+            ocb_bin,
+            "async-route-pg",
+            "--state",
+            str(state_path),
+            "--teacher",
+            str(args.teacher),
+            "--teacher-model",
+            str(args.teacher_model),
+            "--since-hours",
+            str(args.since_hours),
+            "--max-queries",
+            str(args.max_queries),
+            "--sample-rate",
+            str(args.sample_rate),
+            "--max-candidates-per-node",
+            str(args.max_candidates_per_node),
+            "--max-decision-points",
+            str(args.max_decision_points),
+            "--score-scale",
+            str(args.score_scale),
+            "--reward-source",
+            str(args.reward_source),
+            "--traces-out",
+            str(traces_out_path),
+            "--apply",
+            "--json",
+        ]
+        if args.reward_weights:
+            async_cmd.extend(["--reward-weights", str(args.reward_weights)])
+        if args.write_relevance_metadata:
+            async_cmd.append("--write-relevance-metadata")
+        else:
+            async_cmd.append("--no-write-relevance-metadata")
+        exit_code = run_step("async_route_pg", async_cmd, stdout_path=async_route_path)
+
+        if exit_code == 0:
+            if traces_out_path.exists() and traces_out_path.stat().st_size > 0:
+                train_cmd = [
+                    ocb_bin,
+                    "train-route-model",
+                    "--state",
+                    str(state_path),
+                    "--traces-in",
+                    str(traces_out_path),
+                    "--out",
+                    str(route_model_out_path),
+                    "--json",
+                ]
+                exit_code = run_step("train_route_model", train_cmd, stdout_path=train_route_path)
+            else:
+                emit("train_route_model", "skipped", "missing_traces")
+                record("train_route_model", "skipped")
+    elif exit_code == 0:
+        emit("async_route_pg", "skipped", "disabled")
+        record("async_route_pg", "skipped")
+        emit("train_route_model", "skipped", "no_async_teacher")
+        record("train_route_model", "skipped")
+
+    if exit_code == 0:
+        exit_code = run_step(
+            "status_after",
+            [ocb_bin, "status", "--state", str(state_path), "--json"],
+            stdout_path=status_after_path,
+        )
+
+    manifest = {
+        "agent_id": agent_id,
+        "state_path": str(state_path),
+        "sessions_path": str(sessions_path),
+        "timestamp": run_ts.isoformat(),
+        "exit_code": int(exit_code),
+        "log_path": str(log_path),
+        "artifacts": {
+            "status_before": str(status_before_path),
+            "status_after": str(status_after_path),
+            "maintain": str(maintain_path),
+            "async_route_pg": str(async_route_path),
+            "train_route_model": str(train_route_path),
+            "traces_out": str(traces_out_path),
+            "route_model_out": str(route_model_out_path),
+        },
+        "steps": steps,
+    }
+    agent_manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    return {
+        "agent_id": agent_id,
+        "exit_code": int(exit_code),
+        "manifest_path": str(agent_manifest_path),
+        "log_path": str(log_path),
+        "artifacts": manifest["artifacts"],
+        "steps": steps,
+    }
 
 
 def _coalesce_int(cli_value: int | None, profile_value: int | None, default: int) -> int:
@@ -674,6 +1030,42 @@ def _build_parser() -> argparse.ArgumentParser:
     sync.add_argument("--dry-run", action="store_true")
     sync.add_argument("--force", action="store_true", help="Bypass state lock (expert use)")
     sync.add_argument("--json", action="store_true")
+
+    build_all = sub.add_parser(
+        "build-all",
+        help="Run the default unattended brain-building pipeline for all agents.",
+    )
+    build_all.add_argument("--agents", help="Comma-separated agent ids to run (default: discover from openclaw.json)")
+    build_all.add_argument("--parallel-agents", type=int, default=1)
+    build_all.add_argument("--reembed", action=argparse.BooleanOptionalAction, default=True)
+    build_all.add_argument("--embed-model", default="BAAI/bge-large-en-v1.5")
+    build_all.add_argument("--mode", choices=REPLAY_MODES, default="full")
+    build_all.add_argument("--llm", choices=["none", "openai", "ollama", "auto"], default="auto")
+    build_all.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True)
+    build_all.add_argument("--include-tool-results", action=argparse.BooleanOptionalAction, default=True)
+    build_all.add_argument("--checkpoint-every-seconds", type=int, default=60)
+    build_all.add_argument("--state-lock-timeout-seconds", type=int, default=3600)
+    build_all.add_argument("--enable-async-teacher", action="store_true")
+    build_all.add_argument("--since-hours", type=float, default=24.0)
+    build_all.add_argument("--max-queries", type=int, default=200)
+    build_all.add_argument("--sample-rate", type=float, default=0.1)
+    build_all.add_argument("--max-candidates-per-node", type=int, default=12)
+    build_all.add_argument("--max-decision-points", type=int, default=500)
+    build_all.add_argument("--teacher", choices=["openai", "ollama", "none"], default="openai")
+    build_all.add_argument("--teacher-model", default="gpt-5-mini")
+    build_all.add_argument("--score-scale", type=float, default=0.3)
+    build_all.add_argument(
+        "--reward-source",
+        choices=[
+            RewardSource.HUMAN.value,
+            RewardSource.SELF.value,
+            RewardSource.HARVESTER.value,
+            RewardSource.TEACHER.value,
+        ],
+        default=RewardSource.TEACHER.value,
+    )
+    build_all.add_argument("--reward-weights", default=None)
+    build_all.add_argument("--write-relevance-metadata", action=argparse.BooleanOptionalAction, default=True)
     return parser
 
 
@@ -3307,6 +3699,66 @@ def cmd_train_route_model(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_build_all(args: argparse.Namespace) -> int:
+    """Run unattended brain-building pipeline for all configured agents."""
+    agent_ids = _resolve_agent_ids(args)
+    parallel = max(1, int(args.parallel_agents))
+    ocb_bin = _resolve_openclawbrain_bin()
+    run_ts = datetime.now(timezone.utc)
+    ts_label = run_ts.strftime("%Y%m%dT%H%M%S") + f"{run_ts.microsecond // 1000:03d}Z"
+
+    root = Path.home() / ".openclawbrain" / "scratch"
+    root.mkdir(parents=True, exist_ok=True)
+    root_manifest_path = root / f"build-all.{ts_label}.manifest.json"
+
+    results: list[dict[str, object]] = []
+    with ThreadPoolExecutor(max_workers=parallel) as executor:
+        future_map = {
+            executor.submit(
+                _build_all_agent_pipeline,
+                agent_id=agent_id,
+                args=args,
+                ocb_bin=ocb_bin,
+                ts_label=ts_label,
+                run_ts=run_ts,
+            ): agent_id
+            for agent_id in agent_ids
+        }
+        for future in as_completed(future_map):
+            agent_id = future_map[future]
+            try:
+                result = future.result()
+            except Exception as exc:  # noqa: BLE001
+                result = {
+                    "agent_id": agent_id,
+                    "exit_code": 1,
+                    "error": str(exc),
+                }
+            results.append(result)
+
+    manifest = {
+        "timestamp": run_ts.isoformat(),
+        "agents": results,
+        "openclawbrain_bin": ocb_bin,
+        "command": "build-all",
+        "args": {
+            "agents": getattr(args, "agents", None),
+            "parallel_agents": parallel,
+            "reembed": bool(args.reembed),
+            "embed_model": str(args.embed_model),
+            "mode": str(args.mode),
+            "llm": str(args.llm),
+            "resume": bool(args.resume),
+            "include_tool_results": bool(args.include_tool_results),
+            "checkpoint_every_seconds": int(args.checkpoint_every_seconds),
+            "enable_async_teacher": bool(args.enable_async_teacher),
+        },
+    }
+    root_manifest_path.write_text(json.dumps(manifest, indent=2), encoding="utf-8")
+    print(f"[build-all] manifest={root_manifest_path}")
+    return 0 if all(int(item.get("exit_code", 1)) == 0 for item in results) else 1
+
+
 def main(argv: list[str] | None = None) -> int:
     """main."""
     args = _build_parser().parse_args(argv)
@@ -3333,6 +3785,7 @@ def main(argv: list[str] | None = None) -> int:
         "dream": cmd_dream,
         "dreaming": cmd_dream,
         "train-route-model": cmd_train_route_model,
+        "build-all": cmd_build_all,
         "journal": cmd_journal,
         "doctor": cmd_doctor,
         "info": cmd_info,

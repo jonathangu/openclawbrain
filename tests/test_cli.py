@@ -1521,6 +1521,24 @@ def test_cli_async_route_pg_teacher_ollama_parses() -> None:
     assert args.teacher == "ollama"
 
 
+def test_cli_build_all_parser_accepts_subcommand() -> None:
+    """build-all subcommand parses with defaults."""
+    from openclawbrain.cli import _build_parser
+
+    parser = _build_parser()
+    args = parser.parse_args(["build-all"])
+    assert args.command == "build-all"
+    assert args.parallel_agents == 1
+
+
+def test_build_all_agent_discovery_falls_back_to_main(tmp_path, monkeypatch) -> None:
+    """Missing openclaw.json falls back to main agent id."""
+    import openclawbrain.cli as cli_module
+
+    monkeypatch.setattr(cli_module.Path, "home", lambda: tmp_path)
+    assert cli_module._discover_agent_ids() == ["main"]
+
+
 
 def test_cli_replay_writes_checkpoint_and_resume_uses_it(tmp_path, capsys) -> None:
     """replay writes checkpoint and resume only replays new lines."""

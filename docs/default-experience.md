@@ -50,10 +50,17 @@ openclawbrain async-route-pg --state ./brain/state.json --teacher ollama --teach
 
 ## One-command orchestration
 
-The operator script below is the default macOS path for a complete brain build across all agents in `~/.openclaw/openclaw.json`.
+The canonical unattended entrypoint is now the CLI subcommand:
 
-- Script: `examples/ops/default_experience.sh`
-- It is idempotent and logs per agent under `~/.openclawbrain/<agent>/scratch/`.
+```bash
+openclawbrain build-all
+```
+
+This runs the default brain-building pipeline across all agents listed in `~/.openclaw/openclaw.json` and logs per agent under `~/.openclawbrain/<agent>/scratch/`.
+
+The legacy script remains available for environments that prefer shell orchestration:
+
+- `examples/ops/default_experience.sh`
 
 ### What it does (per agent)
 
@@ -66,7 +73,7 @@ The operator script below is the default macOS path for a complete brain build a
 ### Run it
 
 ```bash
-examples/ops/default_experience.sh
+openclawbrain build-all
 ```
 
 ## Optional: Async teacher traces
