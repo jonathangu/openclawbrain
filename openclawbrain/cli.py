@@ -169,10 +169,13 @@ def _coalesce(cli_value: str | None, profile_value: str | None, default: str) ->
 
 def _resolve_openclawbrain_bin() -> str:
     """Resolve the installed openclawbrain CLI binary."""
+    argv0 = Path(sys.argv[0]).expanduser()
+    if argv0.is_file() and os.access(argv0, os.X_OK):
+        return str(argv0)
     candidate = shutil.which("openclawbrain")
     if candidate:
         return candidate
-    return str(Path(sys.argv[0]).expanduser())
+    return str(argv0)
 
 
 def _discover_agent_ids(config_path: Path | None = None) -> list[str]:

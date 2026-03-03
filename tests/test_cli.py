@@ -2,12 +2,13 @@ from __future__ import annotations
 
 import json
 import os
+import sys
 from io import StringIO
 from pathlib import Path
 
 import pytest
 
-from openclawbrain.cli import main, _read_replay_checkpoint_progress
+from openclawbrain.cli import main, _read_replay_checkpoint_progress, _resolve_openclawbrain_bin
 from openclawbrain.graph import Graph, Node
 from openclawbrain.hasher import default_embed
 from openclawbrain.journal import read_journal
@@ -170,6 +171,19 @@ def test_init_sets_authority_metadata_for_mapped_files(tmp_path, monkeypatch) ->
     assert "constitutional" in authorities_for("SOUL.md")
     assert "constitutional" in authorities_for("AGENTS.md")
     assert "canonical" in authorities_for("USER.md")
+
+
+def test_resolve_openclawbrain_bin_prefers_sys_argv(tmp_path, monkeypatch) -> None:
+    """resolve openclawbrain bin prefers sys.argv[0] when executable."""
+    monkeypatch.chdir(tmp_path)
+    bin_path = Path("openclawbrain")
+    bin_path.write_text("#!/bin/sh\n", encoding="utf-8")
+    os.chmod(bin_path, 0o755)
+
+    monkeypatch.setattr(sys, "argv", [str(bin_path)])
+    monkeypatch.setattr("openclawbrain.cli.shutil.which", lambda _: "/opt/homebrew/bin/openclawbrain")
+
+    assert _resolve_openclawbrain_bin() == str(bin_path)
 
 
 def test_query_command_returns_json_with_fired_nodes(tmp_path, capsys, monkeypatch) -> None:
