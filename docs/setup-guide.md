@@ -37,7 +37,7 @@ Use `--mode full` when you explicitly want the full pipeline (LLM mining + edge 
 For cheap edge-only replay (no LLM, no harvest):
 
 ```bash
-openclawbrain replay --state ./brain/state.json --sessions ./sessions/ --mode full
+openclawbrain replay --state ./brain/state.json --sessions ./sessions/ --mode edges-only
 ```
 
 For fine-grained control over the LLM mining pass:
