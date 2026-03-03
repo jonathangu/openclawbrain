@@ -269,7 +269,7 @@ def test_resolve_llm_auto_honors_default_env_ollama(monkeypatch) -> None:
 
 def test_resolve_llm_auto_prefers_ollama_model_env(monkeypatch) -> None:
     """auto prefers ollama when model env set."""
-    monkeypatch.setenv("OPENCLAWBRAIN_OLLAMA_MODEL", "qwen2.5:32b-instruct")
+    monkeypatch.setenv("OPENCLAWBRAIN_OLLAMA_MODEL", "qwen3.5:9b")
     llm_fn, llm_batch_fn = _resolve_llm(argparse.Namespace(llm="auto"))
     assert llm_fn is not None
     assert llm_batch_fn is not None
