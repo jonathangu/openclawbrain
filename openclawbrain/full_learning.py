@@ -72,6 +72,16 @@ FEEDBACK_REINFORCE = [
     "correct",
     "good",
 ]
+_LOW_SIGNAL_TOKENS = (
+    "correction",
+    "wrong",
+    "no",
+    "actually",
+    "do instead",
+    "next time",
+    "remember",
+    "note:",
+)
 
 LEARNING_EXTRACTOR_PROMPT = """Extract feedback signals from a compact conversation window.
 
@@ -351,6 +361,48 @@ def _turn_score(turn: SessionTurn) -> int:
             score += 1
             break
     return score
+
+
+def _window_has_feedback_signal(window: list[SessionTurn]) -> bool:
+    """Conservative filter for windows likely to contain feedback."""
+    for turn in window:
+        if turn.role != "user":
+            continue
+        if _turn_score(turn) > 0:
+            return True
+        text = turn.content.lower()
+        for token in _LOW_SIGNAL_TOKENS:
+            if token in text:
+                return True
+    return False
+
+
+def _session_pointer_for_window(session: str, window: list[SessionTurn]) -> str:
+    """Build deterministic pointer string for a window."""
+    return f"{session}:{window[0].line_no}-{window[-1].line_no}"
+
+
+def _filter_learning_windows_for_llm(
+    candidate_windows: list[tuple[str, list[SessionTurn], int]],
+    *,
+    existing_pointers: set[str],
+) -> tuple[list[tuple[str, list[SessionTurn], int]], int, int]:
+    """Filter windows before expensive LLM calls."""
+    filtered: list[tuple[str, list[SessionTurn], int]] = []
+    skipped_low_signal = 0
+    skipped_existing_pointer = 0
+
+    for source, segment, idx in candidate_windows:
+        if not _window_has_feedback_signal(segment):
+            skipped_low_signal += 1
+            continue
+        pointer = _session_pointer_for_window(source, segment)
+        if pointer in existing_pointers:
+            skipped_existing_pointer += 1
+            continue
+        filtered.append((source, segment, idx))
+
+    return filtered, skipped_low_signal, skipped_existing_pointer
 
 
 def select_feedback_windows(
@@ -807,7 +859,7 @@ def run_fast_learning(
         tool_result_allowlist=tool_result_allowlist,
         tool_result_max_chars=tool_result_max_chars,
     )
-    windows: list[tuple[str, list[SessionTurn], int]] = []
+    candidate_windows: list[tuple[str, list[SessionTurn], int]] = []
     for source, turns in grouped_turns:
         for idx, (start, end) in enumerate(
             select_feedback_windows(
@@ -819,11 +871,23 @@ def run_fast_learning(
             start=1,
         ):
             if start < end:
-                windows.append((source, turns[start:end], idx))
+                candidate_windows.append((source, turns[start:end], idx))
+
+    windows_total = len(candidate_windows)
+    existing_pointers = {
+        entry.get("session_pointer")
+        for entry in event_log_entries(learning_event_path(state_path))
+        if isinstance(entry.get("session_pointer"), str)
+    }
+    windows, windows_skipped_low_signal, windows_skipped_existing_pointer = _filter_learning_windows_for_llm(
+        candidate_windows,
+        existing_pointers=existing_pointers,
+    )
+    windows_sent_to_llm = len(windows)
 
     all_events: list[dict] = []
     completed_windows = 0
-    total_windows = len(windows)
+    total_windows = windows_sent_to_llm
     fast_started_at = time.monotonic()
     checkpoint_every_windows = max(0, checkpoint_every)
     checkpoint_interval_seconds = max(0, checkpoint_every_seconds)
@@ -889,7 +953,7 @@ def run_fast_learning(
         last_progress_completed = completed_windows
 
     if windows:
-        request_ctx = [(source, idx + 1, len(windows), segment) for idx, (source, segment, _) in enumerate(windows)]
+        request_ctx = [(source, idx + 1, total_windows, segment) for idx, (source, segment, _) in enumerate(windows)]
         if workers == 1:
             for source, idx, total, segment in request_ctx:
                 all_events.extend(_window_to_payload(session=source, window=segment, window_idx=idx, total_windows=total, llm_fn=llm_fn))
@@ -985,7 +1049,11 @@ def run_fast_learning(
         )
 
     return {
-        "windows": total_windows,
+        "windows": windows_sent_to_llm,
+        "windows_total": windows_total,
+        "windows_skipped_existing_pointer": windows_skipped_existing_pointer,
+        "windows_skipped_low_signal": windows_skipped_low_signal,
+        "windows_sent_to_llm": windows_sent_to_llm,
         "events_extracted": len(all_events),
         "events_appended": len(deduped),
         "events_skipped": skipped,
