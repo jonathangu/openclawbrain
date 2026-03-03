@@ -1389,6 +1389,50 @@ def test_cli_replay_show_checkpoint_json_uses_new_schema_fixture(tmp_path, capsy
     assert payload["resume"]["would_take_effect"] is True
 
 
+def test_cli_replay_show_checkpoint_text_includes_fast_learning_counters(tmp_path, capsys) -> None:
+    """replay --show-checkpoint prints fast-learning counter fields when present."""
+    state_path = tmp_path / "state.json"
+    _write_state(state_path)
+    checkpoint_path = tmp_path / "replay_checkpoint.json"
+    checkpoint_path.write_text(
+        json.dumps(
+            {
+                "version": 1,
+                "fast_learning": {
+                    "status": "running",
+                    "windows_processed": 4,
+                    "windows_total": 10,
+                    "windows_candidate": 12,
+                    "windows_sent_to_llm": 10,
+                    "windows_skipped_low_signal": 2,
+                    "windows_skipped_existing_pointer": 0,
+                    "updated_at": 1700000100.0,
+                },
+            },
+            indent=2,
+        ),
+        encoding="utf-8",
+    )
+
+    code = main(
+        [
+            "replay",
+            "--state",
+            str(state_path),
+            "--checkpoint",
+            str(checkpoint_path),
+            "--show-checkpoint",
+        ]
+    )
+    assert code == 0
+    out = capsys.readouterr().out
+    assert "Fast learning: 4/10 windows, status=running" in out
+    assert "windows_candidate=12" in out
+    assert "windows_sent_to_llm=10" in out
+    assert "windows_skipped_low_signal=2" in out
+    assert "windows_skipped_existing_pointer=0" in out
+
+
 def test_cli_replay_show_checkpoint_text_legacy_fixture_warns(tmp_path, capsys) -> None:
     """replay --show-checkpoint warns when legacy top-level sessions are used."""
     state_path = tmp_path / "state.json"

@@ -379,7 +379,16 @@ def _window_has_feedback_signal(window: list[SessionTurn]) -> bool:
 
 def _session_pointer_for_window(session: str, window: list[SessionTurn]) -> str:
     """Build deterministic pointer string for a window."""
-    return f"{session}:{window[0].line_no}-{window[-1].line_no}"
+    normalized_session = _normalize_session_source(session)
+    return f"{normalized_session}:{window[0].line_no}-{window[-1].line_no}"
+
+
+def _normalize_session_source(source: str) -> str:
+    """Normalize session path for stable dedupe identity."""
+    try:
+        return str(Path(source).expanduser().resolve())
+    except (OSError, RuntimeError):
+        return source
 
 
 def _filter_learning_windows_for_llm(
@@ -465,7 +474,7 @@ def _window_to_payload(
     if not isinstance(payload, dict):
         return []
 
-    pointer = f"{session}:{window[0].line_no}-{window[-1].line_no}"
+    pointer = _session_pointer_for_window(session, window)
     events: list[dict] = []
 
     for event_type, key in (("CORRECTION", "corrections"), ("TEACHING", "teachings"), ("REINFORCEMENT", "reinforcements")):
@@ -873,7 +882,7 @@ def run_fast_learning(
             if start < end:
                 candidate_windows.append((source, turns[start:end], idx))
 
-    windows_total = len(candidate_windows)
+    windows_candidate = len(candidate_windows)
     existing_pointers = {
         entry.get("session_pointer")
         for entry in event_log_entries(learning_event_path(state_path))
@@ -884,6 +893,14 @@ def run_fast_learning(
         existing_pointers=existing_pointers,
     )
     windows_sent_to_llm = len(windows)
+    windows_total = windows_sent_to_llm
+
+    print(
+        "[fast_learning] "
+        f"windows_candidate={windows_candidate} windows_sent_to_llm={windows_sent_to_llm} "
+        f"skipped_low_signal={windows_skipped_low_signal} skipped_existing_pointer={windows_skipped_existing_pointer}",
+        file=sys.stderr,
+    )
 
     all_events: list[dict] = []
     completed_windows = 0
@@ -917,6 +934,10 @@ def run_fast_learning(
                 "status": "running",
                 "windows_processed": completed_windows,
                 "windows_total": total_windows,
+                "windows_candidate": windows_candidate,
+                "windows_sent_to_llm": windows_sent_to_llm,
+                "windows_skipped_low_signal": windows_skipped_low_signal,
+                "windows_skipped_existing_pointer": windows_skipped_existing_pointer,
                 "updated_at": time.time(),
             },
         )
@@ -1044,6 +1065,10 @@ def run_fast_learning(
                 "status": "complete",
                 "windows_processed": completed_windows,
                 "windows_total": total_windows,
+                "windows_candidate": windows_candidate,
+                "windows_sent_to_llm": windows_sent_to_llm,
+                "windows_skipped_low_signal": windows_skipped_low_signal,
+                "windows_skipped_existing_pointer": windows_skipped_existing_pointer,
                 "updated_at": time.time(),
             },
         )
@@ -1051,6 +1076,7 @@ def run_fast_learning(
     return {
         "windows": windows_sent_to_llm,
         "windows_total": windows_total,
+        "windows_candidate": windows_candidate,
         "windows_skipped_existing_pointer": windows_skipped_existing_pointer,
         "windows_skipped_low_signal": windows_skipped_low_signal,
         "windows_sent_to_llm": windows_sent_to_llm,
