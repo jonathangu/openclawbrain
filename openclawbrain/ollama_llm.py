@@ -11,6 +11,7 @@ from urllib import request
 _DEFAULT_OLLAMA_TIMEOUT_SECONDS = 600
 _DEFAULT_OLLAMA_HOST = "http://127.0.0.1:11434"
 _DEFAULT_OLLAMA_MODEL = "llama3.2:3b"
+_DEFAULT_OLLAMA_THINK = False
 
 
 def _resolve_ollama_host() -> str:
@@ -55,12 +56,25 @@ def _resolve_ollama_timeout_seconds() -> int:
     return timeout
 
 
+def _resolve_ollama_think() -> bool:
+    v = os.environ.get("OPENCLAWBRAIN_OLLAMA_THINK")
+    if v is None or v == "":
+        return _DEFAULT_OLLAMA_THINK
+    v = str(v).strip().lower()
+    if v in {"0", "false", "no", "n", "off"}:
+        return False
+    if v in {"1", "true", "yes", "y", "on"}:
+        return True
+    return _DEFAULT_OLLAMA_THINK
+
+
 def _ollama_chat(system: str, user: str, *, model: str) -> str:
     host = _resolve_ollama_host()
     timeout_seconds = _resolve_ollama_timeout_seconds()
     payload = {
         "model": model,
         "stream": False,
+        "think": _resolve_ollama_think(),
         "messages": [
             {"role": "system", "content": system},
             {"role": "user", "content": user},
