@@ -259,6 +259,51 @@ def test_resolve_llm_ollama_returns_callbacks(monkeypatch) -> None:
     assert llm_batch_fn is not None
 
 
+def test_resolve_llm_auto_honors_default_env_ollama(monkeypatch) -> None:
+    """auto resolves to env default."""
+    monkeypatch.setenv("OPENCLAWBRAIN_DEFAULT_LLM", "ollama")
+    llm_fn, llm_batch_fn = _resolve_llm(argparse.Namespace(llm="auto"))
+    assert llm_fn is not None
+    assert llm_batch_fn is not None
+
+
+def test_resolve_llm_auto_prefers_ollama_model_env(monkeypatch) -> None:
+    """auto prefers ollama when model env set."""
+    monkeypatch.setenv("OPENCLAWBRAIN_OLLAMA_MODEL", "qwen2.5:32b-instruct")
+    llm_fn, llm_batch_fn = _resolve_llm(argparse.Namespace(llm="auto"))
+    assert llm_fn is not None
+    assert llm_batch_fn is not None
+
+
+def test_resolve_llm_auto_uses_openai_key(monkeypatch) -> None:
+    """auto prefers openai when key is set and no ollama model env."""
+    _install_fake_openai_llm(monkeypatch, [lambda _, __: "ok"])
+    monkeypatch.setenv("OPENAI_API_KEY", "test-key")
+    llm_fn, llm_batch_fn = _resolve_llm(argparse.Namespace(llm="auto"))
+    assert llm_fn is not None
+    assert llm_batch_fn is not None
+
+
+def test_resolve_llm_auto_none_when_no_env(monkeypatch) -> None:
+    """auto returns none when no env is set."""
+    monkeypatch.delenv("OPENCLAWBRAIN_DEFAULT_LLM", raising=False)
+    monkeypatch.delenv("OPENCLAWBRAIN_OLLAMA_MODEL", raising=False)
+    monkeypatch.delenv("OLLAMA_MODEL", raising=False)
+    monkeypatch.delenv("OPENAI_API_KEY", raising=False)
+    llm_fn, llm_batch_fn = _resolve_llm(argparse.Namespace(llm="auto"))
+    assert llm_fn is None
+    assert llm_batch_fn is None
+
+
+def test_resolve_llm_auto_honors_default_openrouter(monkeypatch) -> None:
+    """auto resolves openrouter via openai callbacks."""
+    _install_fake_openai_llm(monkeypatch, [lambda _, __: "ok"])
+    monkeypatch.setenv("OPENCLAWBRAIN_DEFAULT_LLM", "openrouter")
+    llm_fn, llm_batch_fn = _resolve_llm(argparse.Namespace(llm="auto"))
+    assert llm_fn is not None
+    assert llm_batch_fn is not None
+
+
 def test_openai_embedder_embed(monkeypatch) -> None:
     """test openai embedder embed."""
     embedding = [1.0] * 1536
