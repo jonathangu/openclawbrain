@@ -415,7 +415,9 @@ OpenClawBrain ships an OpenClaw adapter that logs fired IDs per chat.
 
 That’s the ergonomic way to do “same-turn correction” inside OpenClaw.
 
-For full-history rebuilds, replay your sessions. Default mode is `full`; use `--mode edges-only` for cheap edge-only replay:
+For full-history rebuilds, replay your sessions. Default mode is `full`; use `--mode edges-only` for cheap edge-only replay.
+
+Note: examples/ops/default_experience.sh demonstrates the recommended "all bells and whistles" path (local BGE-large + replay --mode full + maintain + async-route-pg teacher gpt-5-mini + train-route-model).
 
 ```bash
 openclawbrain replay \
