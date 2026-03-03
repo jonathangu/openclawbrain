@@ -39,7 +39,7 @@ openclawbrain dream \
   --sample-rate 0.1 \
   --max-decision-points 500 \
   --teacher ollama \
-  --teacher-model qwen2.5:32b-instruct \
+  --teacher-model qwen3.5:9b \
   --apply
 ```
 
@@ -76,7 +76,7 @@ openclawbrain async-route-pg \
   --max-queries 200 \
   --sample-rate 0.1 \
   --teacher ollama \
-  --teacher-model qwen2.5:32b-instruct \
+  --teacher-model qwen3.5:9b \
   --traces-out ~/.openclawbrain/main/route_traces.jsonl \
   --apply \
   --json
@@ -124,7 +124,7 @@ openclawbrain async-route-pg \
   --sample-rate 0.2 \
   --max-decision-points 1000 \
   --teacher ollama \
-  --teacher-model qwen2.5:32b-instruct \
+  --teacher-model qwen3.5:9b \
   --traces-out ~/.openclawbrain/main/route_traces.nightly.jsonl \
   --apply \
   --json

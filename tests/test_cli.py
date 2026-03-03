@@ -1554,11 +1554,11 @@ def test_cli_replay_llm_model_parse() -> None:
             "--llm",
             "ollama",
             "--llm-model",
-            "qwen2.5:7b-instruct",
+            "qwen3.5:9b",
         ]
     )
     assert args.llm == "ollama"
-    assert args.llm_model == "qwen2.5:7b-instruct"
+    assert args.llm_model == "qwen3.5:9b"
 
 
 def test_cli_async_route_pg_teacher_ollama_parses() -> None:
@@ -1614,7 +1614,7 @@ def test_cli_build_all_forwards_workers_and_llm_model_to_replay_and_records_mani
             "--llm",
             "ollama",
             "--llm-model",
-            "qwen2.5:7b-instruct",
+            "qwen3.5:9b",
             "--workers",
             "8",
         ]
@@ -1624,13 +1624,13 @@ def test_cli_build_all_forwards_workers_and_llm_model_to_replay_and_records_mani
     assert captured_replay_cmd, "replay command was not invoked"
     replay_cmd = captured_replay_cmd[0]
     assert "--workers" in replay_cmd and "8" in replay_cmd
-    assert "--llm-model" in replay_cmd and "qwen2.5:7b-instruct" in replay_cmd
+    assert "--llm-model" in replay_cmd and "qwen3.5:9b" in replay_cmd
 
     manifest_paths = sorted((tmp_path / ".openclawbrain" / "scratch").glob("build-all.*.manifest.json"))
     assert manifest_paths
     manifest = json.loads(manifest_paths[0].read_text(encoding="utf-8"))
     assert manifest["args"]["workers"] == 8
-    assert manifest["args"]["llm_model"] == "qwen2.5:7b-instruct"
+    assert manifest["args"]["llm_model"] == "qwen3.5:9b"
 
 
 def test_build_all_agent_discovery_falls_back_to_main(tmp_path, monkeypatch) -> None:
