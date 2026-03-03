@@ -9,7 +9,7 @@ CONFIG="$HOME/.openclaw/openclaw.json"
 ENV_FILE="$HOME/.openclaw/credentials/env/openclawbrain.env"
 ROOT="$HOME/.openclawbrain"
 EMBED_MODEL="BAAI/bge-large-en-v1.5"
-TEACHER_MODEL="gpt-5-mini"
+TEACHER_MODEL="qwen2.5:32b-instruct"
 SINCE_HOURS="168"
 PARALLEL_AGENTS="${PARALLEL_AGENTS:-2}"
 
@@ -290,6 +290,7 @@ while IFS=$'\t' read -r AGENT_ID WORKSPACE_DIR; do
       --state "$STATE" \
       --sessions "$SESSIONS" \
       --mode full \
+      --llm ollama \
       --include-tool-results \
       --progress-every 250 \
       --checkpoint-every-seconds 60 \
@@ -312,7 +313,7 @@ while IFS=$'\t' read -r AGENT_ID WORKSPACE_DIR; do
     wait_for_state_unlock "$STATE"
     "$OCB_BIN" async-route-pg \
       --state "$STATE" \
-      --teacher openai \
+      --teacher ollama \
       --teacher-model "$TEACHER_MODEL" \
       --since-hours "$SINCE_HOURS" \
       --traces-out "$TRACE_OUT" \

@@ -466,7 +466,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
 
     r.add_argument("--edges-only", action="store_true")
-    r.add_argument("--llm", choices=["none", "openai", "ollama", "auto"], default=None)
+    r.add_argument("--llm", choices=["none", "openai", "ollama", "auto"], default="auto")
     r.add_argument("--show-checkpoint", action="store_true")
     r.add_argument("--decay-during-replay", action="store_true")
     r.add_argument("--decay-interval", type=int, default=10)
@@ -1127,21 +1127,27 @@ def _resolve_embedder(
 
 def _resolve_llm(args: argparse.Namespace) -> tuple[Callable[[str, str], str] | None, Callable[[list[dict]], list[dict]] | None]:
     """Resolve optional LLM callbacks."""
-    if getattr(args, "llm", None) == "auto":
-        try:
-            from .openai_llm import openai_llm_batch_fn, openai_llm_fn
-
-            if not os.environ.get("OPENAI_API_KEY"):
-                raise RuntimeError("no key")
-            return openai_llm_fn, openai_llm_batch_fn
-        except Exception:
-            print("warning: OpenAI LLM not available, falling back to none", file=sys.stderr)
-            return None, None
-    if getattr(args, "llm", None) == "openai":
+    llm = getattr(args, "llm", None)
+    if llm == "auto":
+        default_llm = os.environ.get("OPENCLAWBRAIN_DEFAULT_LLM")
+        if isinstance(default_llm, str):
+            normalized = default_llm.strip().lower()
+            if normalized in {"none", "openai", "ollama", "openrouter"}:
+                llm = normalized
+        if llm == "auto":
+            if os.environ.get("OPENCLAWBRAIN_OLLAMA_MODEL") or os.environ.get("OLLAMA_MODEL"):
+                llm = "ollama"
+            elif os.environ.get("OPENAI_API_KEY"):
+                llm = "openai"
+            else:
+                return None, None
+    if llm in (None, "none"):
+        return None, None
+    if llm in {"openai", "openrouter"}:
         from .openai_llm import openai_llm_batch_fn, openai_llm_fn
 
         return openai_llm_fn, openai_llm_batch_fn
-    if getattr(args, "llm", None) == "ollama":
+    if llm == "ollama":
         from .ollama_llm import ollama_llm_batch_fn, ollama_llm_fn
 
         return ollama_llm_fn, ollama_llm_batch_fn

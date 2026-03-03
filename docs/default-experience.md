@@ -15,9 +15,9 @@ This is the **default, complete brain-building pipeline** for OpenClawBrain. It 
 This pipeline intentionally does **LLM work** in replay and labeling:
 
 - **Replay `--mode full`** runs fast-learning transcript mining + edge replay + harvest. The fast-learning phase calls an LLM to extract learning events, so it will incur LLM usage.
-- **Async teacher labeling** (`async-route-pg --teacher openai --teacher-model gpt-5-mini`) uses the OpenAI API to label route decisions and generate training traces.
+- **Async teacher labeling** (`async-route-pg --teacher ollama --teacher-model qwen2.5:32b-instruct`) uses a local Ollama model to label route decisions and generate training traces.
 
-The script **never uses OpenAI embeddings**. All embedding work is forced to local BGE-large (`BAAI/bge-large-en-v1.5`). If you want to avoid OpenAI entirely, use Ollama for replay/teacher labeling or set `--teacher none` and use a non-LLM replay mode; otherwise supply `OPENAI_API_KEY`.
+The script **never uses OpenAI embeddings**. All embedding work is forced to local BGE-large (`BAAI/bge-large-en-v1.5`). If you want to avoid OpenAI entirely, use Ollama for replay/teacher labeling or set `--teacher none` and use a non-LLM replay mode.
 
 ## Local LLM (Ollama)
 
@@ -30,10 +30,10 @@ brew install ollama
 ollama serve
 ```
 
-Pull the default model:
+Pull the recommended model:
 
 ```bash
-ollama pull llama3.2:3b
+ollama pull qwen2.5:32b-instruct
 ```
 
 Run replay with Ollama:
@@ -45,7 +45,7 @@ openclawbrain replay --state ./brain/state.json --sessions ./sessions/ --mode fu
 Run async-route-pg with Ollama:
 
 ```bash
-openclawbrain async-route-pg --state ./brain/state.json --teacher ollama
+openclawbrain async-route-pg --state ./brain/state.json --teacher ollama --teacher-model qwen2.5:32b-instruct
 ```
 
 ## One-command orchestration
@@ -60,7 +60,7 @@ The operator script below is the default macOS path for a complete brain build a
 1. **Re-embed** the state with local BGE-large embeddings.
 2. **Replay** full pipeline with tool results included.
 3. **Maintain** structural tasks: `health,decay,scale,split,merge,prune,connect`.
-4. **Async route teacher labeling** (OpenAI teacher, `gpt-5-mini`) for the last 168 hours.
+4. **Async route teacher labeling** (Ollama teacher, `qwen2.5:32b-instruct`) for the last 168 hours.
 5. **Train route model** from the generated traces.
 
 ### Run it
@@ -77,7 +77,14 @@ If present, the script sources:
 ~/.openclaw/credentials/env/openclawbrain.env
 ```
 
-This is the place to set `OPENAI_API_KEY` (required for replay `--mode full` and async teacher labeling). The script does not print secrets.
+This is the place to set `OPENCLAWBRAIN_DEFAULT_LLM=ollama` and `OPENCLAWBRAIN_OLLAMA_MODEL=qwen2.5:32b-instruct` so replay auto-selection stays local. The script does not print secrets.
+
+When `openclawbrain replay --llm auto` is used (the default), LLM selection is:
+
+- If `OPENCLAWBRAIN_DEFAULT_LLM` is set to `none`, `openai`, `ollama`, or `openrouter`, that choice is honored.
+- Otherwise, prefer Ollama when `OPENCLAWBRAIN_OLLAMA_MODEL` or `OLLAMA_MODEL` is set.
+- Else prefer OpenAI when `OPENAI_API_KEY` is set.
+- Else, no LLM is used.
 
 You can also control parallelism with:
 
