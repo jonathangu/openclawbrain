@@ -1539,6 +1539,28 @@ def test_cli_replay_fresh_aliases_parse() -> None:
     assert args_no_checkpoint.fresh is True
 
 
+def test_cli_replay_llm_model_parse() -> None:
+    """replay accepts --llm-model when --llm ollama."""
+    from openclawbrain.cli import _build_parser
+
+    parser = _build_parser()
+    args = parser.parse_args(
+        [
+            "replay",
+            "--state",
+            "/tmp/x.json",
+            "--sessions",
+            "/tmp/s",
+            "--llm",
+            "ollama",
+            "--llm-model",
+            "qwen2.5:7b-instruct",
+        ]
+    )
+    assert args.llm == "ollama"
+    assert args.llm_model == "qwen2.5:7b-instruct"
+
+
 def test_cli_async_route_pg_teacher_ollama_parses() -> None:
     """--teacher ollama is accepted by async-route-pg."""
     from openclawbrain.cli import _build_parser
@@ -1556,6 +1578,59 @@ def test_cli_build_all_parser_accepts_subcommand() -> None:
     args = parser.parse_args(["build-all"])
     assert args.command == "build-all"
     assert args.parallel_agents == 1
+
+
+def test_cli_build_all_forwards_workers_and_llm_model_to_replay_and_records_manifest(
+    tmp_path: Path,
+    monkeypatch,
+) -> None:
+    """build-all forwards --workers and --llm-model through the replay subprocess."""
+    import openclawbrain.cli as cli_module
+
+    monkeypatch.setattr(cli_module.Path, "home", lambda: tmp_path)
+    (tmp_path / ".openclawbrain" / "agent-1").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".openclaw" / "agents" / "agent-1").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".openclaw" / "agents" / "agent-1" / "sessions").write_text("", encoding="utf-8")
+    (tmp_path / ".openclaw" / "openclaw.json").write_text(
+        json.dumps({"agents": {"list": [{"id": "agent-1"}]}}),
+        encoding="utf-8",
+    )
+    _write_state(tmp_path / ".openclawbrain" / "agent-1" / "state.json")
+
+    captured_replay_cmd: list[list[str]] = []
+
+    def fake_run_logged_replay_command(cmd: list[str], **kwargs) -> int:
+        captured_replay_cmd.append(cmd)
+        return 0
+
+    monkeypatch.setattr(cli_module, "_run_logged_command", lambda *args, **kwargs: 0)
+    monkeypatch.setattr(cli_module, "_run_logged_replay_command", fake_run_logged_replay_command)
+
+    code = cli_module.main(
+        [
+            "build-all",
+            "--agents",
+            "agent-1",
+            "--llm",
+            "ollama",
+            "--llm-model",
+            "qwen2.5:7b-instruct",
+            "--workers",
+            "8",
+        ]
+    )
+    assert code == 0
+
+    assert captured_replay_cmd, "replay command was not invoked"
+    replay_cmd = captured_replay_cmd[0]
+    assert "--workers" in replay_cmd and "8" in replay_cmd
+    assert "--llm-model" in replay_cmd and "qwen2.5:7b-instruct" in replay_cmd
+
+    manifest_paths = sorted((tmp_path / ".openclawbrain" / "scratch").glob("build-all.*.manifest.json"))
+    assert manifest_paths
+    manifest = json.loads(manifest_paths[0].read_text(encoding="utf-8"))
+    assert manifest["args"]["workers"] == 8
+    assert manifest["args"]["llm_model"] == "qwen2.5:7b-instruct"
 
 
 def test_build_all_agent_discovery_falls_back_to_main(tmp_path, monkeypatch) -> None:

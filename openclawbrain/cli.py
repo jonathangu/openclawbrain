@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import argparse
+import functools
 import socket
 import json
 import os
@@ -508,6 +509,12 @@ def _build_all_agent_pipeline(
             str(args.mode),
             "--llm",
             str(args.llm),
+        ]
+        if args.workers is not None:
+            replay_cmd.extend(["--workers", str(int(args.workers))])
+        if getattr(args, "llm_model", None) is not None:
+            replay_cmd.extend(["--llm-model", str(args.llm_model)])
+        replay_cmd += [
             "--checkpoint-every-seconds",
             str(args.checkpoint_every_seconds),
         ]
@@ -954,6 +961,7 @@ def _build_parser() -> argparse.ArgumentParser:
 
     r.add_argument("--edges-only", action="store_true")
     r.add_argument("--llm", choices=["none", "openai", "ollama", "auto"], default="auto")
+    r.add_argument("--llm-model")
     r.add_argument("--show-checkpoint", action="store_true")
     r.add_argument("--decay-during-replay", action="store_true")
     r.add_argument("--decay-interval", type=int, default=10)
@@ -1172,6 +1180,8 @@ def _build_parser() -> argparse.ArgumentParser:
     build_all.add_argument("--embed-model", default="BAAI/bge-large-en-v1.5")
     build_all.add_argument("--mode", choices=REPLAY_MODES, default="full")
     build_all.add_argument("--llm", choices=["none", "openai", "ollama", "auto"], default="auto")
+    build_all.add_argument("--workers", type=int, default=None)
+    build_all.add_argument("--llm-model")
     build_all.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True)
     build_all.add_argument("--include-tool-results", action=argparse.BooleanOptionalAction, default=True)
     build_all.add_argument("--checkpoint-every-seconds", type=int, default=60)
@@ -1714,6 +1724,8 @@ def _resolve_embedder(
 def _resolve_llm(args: argparse.Namespace) -> tuple[Callable[[str, str], str] | None, Callable[[list[dict]], list[dict]] | None]:
     """Resolve optional LLM callbacks."""
     llm = getattr(args, "llm", None)
+    initial_llm = str(llm).strip().lower() if llm is not None else "auto"
+    llm_model = getattr(args, "llm_model", None)
     if llm == "auto":
         default_llm = os.environ.get("OPENCLAWBRAIN_DEFAULT_LLM")
         if isinstance(default_llm, str):
@@ -1736,6 +1748,8 @@ def _resolve_llm(args: argparse.Namespace) -> tuple[Callable[[str, str], str] | 
     if llm == "ollama":
         from .ollama_llm import ollama_llm_batch_fn, ollama_llm_fn
 
+        if initial_llm == "ollama" and isinstance(llm_model, str) and llm_model:
+            ollama_llm_fn = functools.partial(ollama_llm_fn, model=llm_model)
         return ollama_llm_fn, ollama_llm_batch_fn
     return None, None
 
@@ -3880,6 +3894,8 @@ def cmd_build_all(args: argparse.Namespace) -> int:
             "embed_model": str(args.embed_model),
             "mode": str(args.mode),
             "llm": str(args.llm),
+            "workers": int(args.workers) if args.workers is not None else None,
+            "llm_model": getattr(args, "llm_model", None),
             "resume": bool(args.resume),
             "include_tool_results": bool(args.include_tool_results),
             "checkpoint_every_seconds": int(args.checkpoint_every_seconds),

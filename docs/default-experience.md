@@ -76,6 +76,12 @@ The legacy script remains available for environments that prefer shell orchestra
 openclawbrain build-all
 ```
 
+Use a smaller fast-learning model with explicit worker parallelism:
+
+```bash
+openclawbrain build-all --llm ollama --llm-model qwen2.5:7b-instruct --workers 8 --embed-model BAAI/bge-large-en-v1.5
+```
+
 ## Optional: Async teacher traces
 
 By default, the script runs only the core steps (re-embed → replay → maintain). To enable high-cadence teacher traces and route-model training, set env vars before running the script.
