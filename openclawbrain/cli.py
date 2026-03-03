@@ -148,6 +148,7 @@ def _build_all_root_manifest_payload(
             "agents": getattr(args, "agents", None),
             "parallel_agents": parallel_agents,
             "reembed": bool(args.reembed),
+            "require_local_embedder": bool(args.require_local_embedder),
             "embed_model": str(args.embed_model),
             "mode": str(args.mode),
             "llm": str(args.llm),
@@ -173,6 +174,60 @@ def _build_all_root_manifest_payload(
             "failed": failed,
         },
     }
+
+
+def _evaluate_build_all_preflight(
+    *,
+    state_path: str,
+    status_before_path: str,
+    reembed: bool,
+    require_local_embedder: bool,
+) -> tuple[int, str | None]:
+    """Evaluate build-all preflight checks from a status snapshot.
+
+    Returns (exit_code, optional_error). exit_code 0 indicates continue.
+    """
+    try:
+        payload = _load_json(status_before_path)
+    except SystemExit as exc:
+        message = f"failed to read status_before snapshot: {exc}"
+        print(f"[build-all] preflight: {message}")
+        return 1, message
+
+    embedder_name = payload.get("embedder_name")
+    embedder_dim = payload.get("embedder_dim")
+    index_dim = payload.get("index_dim")
+
+    if (
+        require_local_embedder
+        and isinstance(embedder_name, str)
+        and embedder_name.startswith("openai")
+        and not reembed
+    ):
+        message = (
+            "state is using an OpenAI embedder. "
+            "Re-run with --reembed to switch to local embeddings, "
+            f"or run: openclawbrain reembed --state {state_path}"
+        )
+        print(f"[build-all] preflight: {message}")
+        return 1, message
+
+    if isinstance(embedder_dim, int) and isinstance(index_dim, int) and embedder_dim != index_dim:
+        if reembed:
+            print(
+                f"[build-all] preflight: embedder_dim mismatch "
+                f"(index={index_dim}, meta={embedder_dim}); continuing because --reembed is enabled."
+            )
+        else:
+            message = (
+                "embedder_dim differs from index_dim. "
+                "Re-run with --reembed or run: "
+                f"openclawbrain reembed --state {state_path}"
+            )
+            print(f"[build-all] preflight: {message}")
+            return 1, message
+
+    return 0, None
 
 
 def _parse_positive_float(value: str) -> float:
@@ -760,6 +815,17 @@ def _build_all_agent_pipeline(
             [ocb_bin, "status", "--state", str(state_path), "--json"],
             stdout_path=status_before_path,
         )
+
+    if exit_code == 0:
+        preflight_code, preflight_error = _evaluate_build_all_preflight(
+            state_path=str(state_path),
+            status_before_path=str(status_before_path),
+            reembed=bool(args.reembed),
+            require_local_embedder=bool(args.require_local_embedder),
+        )
+        if preflight_code != 0:
+            exit_code = preflight_code
+            set_last_error(preflight_error)
 
     if exit_code == 0 and args.reembed:
         exit_code = run_step(
@@ -1510,6 +1576,11 @@ def _build_parser() -> argparse.ArgumentParser:
     build_all.add_argument("--agents", help="Comma-separated agent ids to run (default: discover from openclaw.json)")
     build_all.add_argument("--parallel-agents", type=int, default=1)
     build_all.add_argument("--reembed", action=argparse.BooleanOptionalAction, default=True)
+    build_all.add_argument(
+        "--require-local-embedder",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+    )
     build_all.add_argument("--embed-model", default="BAAI/bge-large-en-v1.5")
     build_all.add_argument("--mode", choices=REPLAY_MODES, default="full")
     build_all.add_argument("--llm", choices=["none", "openai", "ollama", "auto"], default="auto")
@@ -1798,8 +1869,18 @@ def _last_replayed_display(value: object) -> str:
     return datetime.fromtimestamp(float(value), tz=timezone.utc).isoformat()
 
 
-def _status_payload(state_path: str, meta: dict[str, object], graph: Graph) -> dict[str, object]:
+def _infer_index_dim(index: VectorIndex) -> int | None:
+    """Infer vector dimension from any vector in the index."""
+    for vector in index._vectors.values():
+        return len(vector)
+    return None
+
+
+def _status_payload(state_path: str, meta: dict[str, object], graph: Graph, index: VectorIndex) -> dict[str, object]:
     """Build status payload details."""
+    embedder_dim = meta.get("embedder_dim")
+    index_dim = _infer_index_dim(index)
+
     health = measure_health(graph)
     inhibitory_edges = 0
     for source_edges in graph._edges.values():
@@ -1836,7 +1917,8 @@ def _status_payload(state_path: str, meta: dict[str, object], graph: Graph) -> d
         "decay_half_life": decay_value,
         "last_replayed": _last_replayed_display(meta.get("last_replayed_ts")),
         "embedder_name": meta.get("embedder_name", "unknown"),
-        "embedder_dim": meta.get("embedder_dim", "unknown"),
+        "embedder_dim": embedder_dim if isinstance(embedder_dim, int) else "unknown",
+        "index_dim": index_dim,
         "daemon_running": daemon_running,
         "daemon_socket_path": daemon_socket,
     }
@@ -3503,8 +3585,8 @@ def cmd_status(args: argparse.Namespace) -> int:
     if state_path is None:
         raise SystemExit("--state is required")
 
-    graph, _, meta = load_state(state_path)
-    payload = _status_payload(state_path, meta, graph)
+    graph, index, meta = load_state(state_path)
+    payload = _status_payload(state_path, meta, graph, index)
     if args.json:
         print(json.dumps(payload, indent=2))
         return 0

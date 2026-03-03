@@ -162,6 +162,10 @@ Each agent run writes auditable artifacts under `~/.openclawbrain/<agent>/scratc
 - The script expects existing agent state files at `~/.openclawbrain/<agent>/state.json`.
 - The script does **not** start or stop `launchd` services; it only builds artifacts.
 - If you need a clean rebuild + cutover workflow, use `examples/ops/rebuild_then_cutover.sh` after this completes.
+- `build-all` now snapshots `openclawbrain status --json` before replay and enforces embedding compatibility:
+  - it requires both `embedder_dim` and `index_dim` to match (if both are present),
+  - it prints a clear warning and continues when `--reembed` is enabled,
+  - otherwise it fails fast with a suggestion to rerun with `--reembed` or `openclawbrain reembed --state ...`.
 
 ## Tool provenance edges
 
