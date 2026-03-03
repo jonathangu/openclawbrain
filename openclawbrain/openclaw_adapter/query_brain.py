@@ -4,6 +4,7 @@ from __future__ import annotations
 import argparse
 import json
 import os
+import re
 import sys
 import time
 from pathlib import Path
@@ -19,6 +20,18 @@ EMBED_MODEL = "text-embedding-3-small"
 FIRED_LOG_TTL_SECONDS = 7 * 24 * 60 * 60
 DEFAULT_MAX_PROMPT_CONTEXT_CHARS = 12000
 BOOTSTRAP_EXCLUDE_FILES = ["AGENTS.md", "SOUL.md", "USER.md", "MEMORY.md", "active-tasks.md"]
+PATH_EXCLUDED_NODE_STAT = "prompt_context_excluded_paths_count"
+OPENAI_API_KEY_PATTERN = re.compile(r"\bsk-[A-Za-z0-9]{20,}\b")
+OPENAI_PROJECT_KEY_PATTERN = re.compile(r"\bsk-proj-[A-Za-z0-9_-]{20,}\b")
+GITHUB_PAT_PATTERNS = (
+    re.compile(r"\bghp_[A-Za-z0-9]{35,}\b"),
+    re.compile(r"\bgho_[A-Za-z0-9]{35,}\b"),
+    re.compile(r"\bghu_[A-Za-z0-9]{35,}\b"),
+    re.compile(r"\bghs_[A-Za-z0-9]{35,}\b"),
+    re.compile(r"\bghr_[A-Za-z0-9]{35,}\b"),
+    re.compile(r"\bghl_[A-Za-z0-9]{35,}\b"),
+)
+BEARER_TOKEN_PATTERN = re.compile(r"\bBearer\s+[A-Za-z0-9._~+/=-]{20,}\b", re.IGNORECASE)
 
 
 def _fired_log_path(state_path: Path) -> Path:
@@ -80,6 +93,7 @@ def _load_query_via_socket(
     max_prompt_context_chars: int,
     exclude_files: list[str],
     exclude_file_prefixes: list[str],
+    exclude_paths: list[str],
     prompt_context_include_node_ids: bool,
     include_provenance: bool,
 ) -> dict[str, object] | None:
@@ -103,6 +117,8 @@ def _load_query_via_socket(
             params["exclude_files"] = exclude_files
         if exclude_file_prefixes:
             params["exclude_file_prefixes"] = exclude_file_prefixes
+        if exclude_paths:
+            params["exclude_paths"] = exclude_paths
         params["prompt_context_include_node_ids"] = prompt_context_include_node_ids
         payload = client.request("query", params)
         if not isinstance(payload, dict):
@@ -147,6 +163,7 @@ def _compact_stats_subset(
         "prompt_context_dropped_authority_counts",
         "prompt_context_excluded_files_count",
         "prompt_context_excluded_node_ids_count",
+        PATH_EXCLUDED_NODE_STAT,
     )
     subset = {key: prompt_context_stats[key] for key in allowed_prompt_keys if key in prompt_context_stats}
     if timings:
@@ -154,6 +171,71 @@ def _compact_stats_subset(
             if key in timings:
                 subset[key] = timings[key]
     return subset
+
+
+def _normalize_exclude_values(values: list[str] | None) -> list[str]:
+    normalized: list[str] = []
+    seen: set[str] = set()
+    for value in values or []:
+        item = value.strip()
+        if not item:
+            continue
+        if item not in seen:
+            seen.add(item)
+            normalized.append(item)
+    return normalized
+
+
+def _node_source_path(node_metadata: object) -> str | None:
+    if not isinstance(node_metadata, dict):
+        return None
+    for key in ("source", "path", "file"):
+        raw_value = node_metadata.get(key)
+        if isinstance(raw_value, str):
+            value = raw_value.strip()
+            if value:
+                return value
+    return None
+
+
+def _node_matches_excluded_path(graph, node_id: str, exclude_paths: list[str]) -> bool:
+    if not exclude_paths:
+        return False
+    node = graph.get_node(node_id)
+    source = _node_source_path(node.metadata if node is not None else None)
+    if not source:
+        return False
+    lower_source = source.lower()
+    return any(exclude.lower() in lower_source for exclude in exclude_paths)
+
+
+def _apply_prompt_path_filters(
+    graph,
+    node_ids: list[str],
+    *,
+    exclude_paths: list[str],
+) -> tuple[list[str], int]:
+    if not exclude_paths:
+        return node_ids, 0
+
+    kept: list[str] = []
+    filtered_count = 0
+    for node_id in node_ids:
+        if _node_matches_excluded_path(graph, node_id, exclude_paths):
+            filtered_count += 1
+            continue
+        kept.append(node_id)
+
+    return kept, filtered_count
+
+
+def _redact_prompt_context_text(prompt_context: str) -> str:
+    redacted = OPENAI_API_KEY_PATTERN.sub("<REDACTED_OPENAI_API_KEY>", prompt_context)
+    redacted = OPENAI_PROJECT_KEY_PATTERN.sub("<REDACTED_OPENAI_PROJECT_KEY>", redacted)
+    for pattern in GITHUB_PAT_PATTERNS:
+        redacted = pattern.sub("<REDACTED_GITHUB_TOKEN>", redacted)
+    redacted = BEARER_TOKEN_PATTERN.sub("<REDACTED_BEARER_TOKEN>", redacted)
+    return redacted
 
 
 def _dump_json(payload: dict[str, object], *, pretty: bool) -> str:
@@ -305,12 +387,25 @@ def main(argv: list[str] | None = None) -> None:
         help="Exclude specific recent memory note files from prompt_context",
     )
     parser.add_argument(
+        "--exclude-paths",
+        action="append",
+        default=None,
+        metavar="SUBSTRING",
+        help="Drop fired nodes whose source path contains this substring (repeatable)",
+    )
+    parser.add_argument(
         "--format",
         choices=["text", "json", "prompt"],
         default="text",
         help="Output format (json includes both context and prompt_context)",
     )
     parser.add_argument("--json", action="store_true", help="Emit JSON output")
+    parser.add_argument(
+        "--redact",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Redact common secret patterns in emitted prompt_context",
+    )
     parser.add_argument(
         "--compact",
         dest="compact",
@@ -352,6 +447,8 @@ def main(argv: list[str] | None = None) -> None:
     output_format = "json" if args.json else args.format
     compact = args.compact if args.compact is not None else bool(args.json)
     include_node_ids = args.include_node_ids if args.include_node_ids is not None else (not compact)
+    redact = bool(args.redact) if args.redact is not None else output_format == "prompt"
+    exclude_paths = _normalize_exclude_values(args.exclude_paths)
 
     query_text = " ".join(args.query).strip()
     state_path = Path(args.state_path)
@@ -375,6 +472,8 @@ def main(argv: list[str] | None = None) -> None:
         exclude_files.extend(_expand_recent_memory_files(args.exclude_recent_memory))
     # Preserve insertion order and remove duplicates.
     exclude_files = list(dict.fromkeys(exclude_files))
+    # Normalize repeatable path filters.
+    exclude_paths = _normalize_exclude_values(exclude_paths)
 
     if args.socket is not None or Path(resolved_socket).expanduser().exists():
         try:
@@ -390,21 +489,46 @@ def main(argv: list[str] | None = None) -> None:
                 args.max_prompt_context_chars,
                 exclude_files,
                 [],
+                exclude_paths,
                 include_node_ids,
                 bool(args.provenance),
             )
             if result is not None:
                 fired_nodes = [str(node_id) for node_id in result.get("fired_nodes", [])]
+                raw_fired_scores = result.get("fired_scores")
+                fired_scores = (
+                    {str(node_id): float(score) for node_id, score in raw_fired_scores.items()}
+                    if isinstance(raw_fired_scores, dict)
+                    else None
+                )
                 prompt_context = str(result.get("prompt_context") or "")
                 prompt_context_stats = _collect_prompt_context_stats(result)
-                if not prompt_context and output_format in {"json", "prompt"} and state_path.exists():
+                if (not prompt_context or exclude_paths) and state_path.exists() and output_format in {"json", "prompt"}:
                     graph, _index, _meta = load_state(str(state_path))
-                    prompt_context, prompt_context_stats = build_prompt_context_ranked_with_stats(
-                        graph=graph,
-                        node_ids=fired_nodes,
-                        max_chars=args.max_prompt_context_chars,
-                        include_node_ids=include_node_ids,
-                    )
+                    prompt_node_ids = fired_nodes
+                    path_excluded_count = 0
+                    if exclude_paths:
+                        prompt_node_ids, path_excluded_count = _apply_prompt_path_filters(
+                            graph,
+                            fired_nodes,
+                            exclude_paths=exclude_paths,
+                        )
+                    if prompt_node_ids != fired_nodes or not prompt_context:
+                        prompt_context, prompt_context_stats = build_prompt_context_ranked_with_stats(
+                            graph=graph,
+                            node_ids=prompt_node_ids,
+                            node_scores=fired_scores,
+                            max_chars=args.max_prompt_context_chars,
+                            include_node_ids=include_node_ids,
+                        )
+                    if path_excluded_count:
+                        prompt_context_stats["prompt_context_excluded_node_ids_count"] = (
+                            int(prompt_context_stats.get("prompt_context_excluded_node_ids_count", 0))
+                            + path_excluded_count
+                        )
+                        prompt_context_stats[PATH_EXCLUDED_NODE_STAT] = path_excluded_count
+                if redact:
+                    prompt_context = _redact_prompt_context_text(prompt_context)
                 timings = {
                     key: result[key]
                     for key in ("embed_query_ms", "traverse_ms", "total_ms")
@@ -462,6 +586,7 @@ def main(argv: list[str] | None = None) -> None:
 
     excluded_node_ids: set[str] = set()
     excluded_files: set[str] = set()
+    path_excluded_count = 0
     if exclude_files:
         for node_id in result.fired:
             node = graph.get_node(node_id)
@@ -472,6 +597,13 @@ def main(argv: list[str] | None = None) -> None:
             if file_path in exclude_files:
                 excluded_node_ids.add(node_id)
                 excluded_files.add(file_path)
+    if exclude_paths:
+        for node_id in result.fired:
+            if node_id in excluded_node_ids:
+                continue
+            if _node_matches_excluded_path(graph, node_id, exclude_paths):
+                excluded_node_ids.add(node_id)
+                path_excluded_count += 1
 
     prompt_node_ids = [node_id for node_id in result.fired if node_id not in excluded_node_ids]
     prompt_context, prompt_context_stats = build_prompt_context_ranked_with_stats(
@@ -483,6 +615,10 @@ def main(argv: list[str] | None = None) -> None:
     )
     prompt_context_stats["prompt_context_excluded_files_count"] = len(excluded_files)
     prompt_context_stats["prompt_context_excluded_node_ids_count"] = len(excluded_node_ids)
+    if exclude_paths:
+        prompt_context_stats[PATH_EXCLUDED_NODE_STAT] = path_excluded_count
+    if redact:
+        prompt_context = _redact_prompt_context_text(prompt_context)
 
     if args.chat_id:
         log_entry = {
