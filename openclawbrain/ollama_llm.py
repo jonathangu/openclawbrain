@@ -8,7 +8,7 @@ import sys
 from urllib import request
 
 
-_OLLAMA_TIMEOUT_SECONDS = 60
+_DEFAULT_OLLAMA_TIMEOUT_SECONDS = 600
 _DEFAULT_OLLAMA_HOST = "http://127.0.0.1:11434"
 _DEFAULT_OLLAMA_MODEL = "llama3.2:3b"
 
@@ -36,8 +36,28 @@ def _resolve_ollama_model(model: str | None) -> str:
     return _DEFAULT_OLLAMA_MODEL
 
 
+def _resolve_ollama_timeout_seconds() -> int:
+    env_timeout = (
+        os.environ.get("OPENCLAWBRAIN_OLLAMA_TIMEOUT_SECONDS")
+        or os.environ.get("OLLAMA_TIMEOUT_SECONDS")
+    )
+    if not isinstance(env_timeout, str):
+        return _DEFAULT_OLLAMA_TIMEOUT_SECONDS
+    env_timeout = env_timeout.strip()
+    if not env_timeout:
+        return _DEFAULT_OLLAMA_TIMEOUT_SECONDS
+    try:
+        timeout = int(env_timeout)
+    except ValueError:
+        return _DEFAULT_OLLAMA_TIMEOUT_SECONDS
+    if timeout < 1:
+        return _DEFAULT_OLLAMA_TIMEOUT_SECONDS
+    return timeout
+
+
 def _ollama_chat(system: str, user: str, *, model: str) -> str:
     host = _resolve_ollama_host()
+    timeout_seconds = _resolve_ollama_timeout_seconds()
     payload = {
         "model": model,
         "stream": False,
@@ -53,7 +73,7 @@ def _ollama_chat(system: str, user: str, *, model: str) -> str:
         method="POST",
         headers={"Content-Type": "application/json"},
     )
-    with request.urlopen(req, timeout=_OLLAMA_TIMEOUT_SECONDS) as resp:
+    with request.urlopen(req, timeout=timeout_seconds) as resp:
         raw_bytes = resp.read()
     raw_text = raw_bytes.decode("utf-8") if raw_bytes else ""
     if not raw_text:
