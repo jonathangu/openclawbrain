@@ -82,6 +82,22 @@ Use a smaller fast-learning model with explicit worker parallelism:
 openclawbrain build-all --llm ollama --llm-model qwen3.5:9b --workers 8 --embed-model BAAI/bge-large-en-v1.5
 ```
 
+For faster iteration, use prioritized and bounded replay when rebuilding large histories:
+
+```bash
+openclawbrain build-all \\
+  --llm ollama \\
+  --llm-model qwen3.5:9b \\
+  --workers 8 \\
+  --replay-priority tool \\
+  --replay-sample-rate 0.25 \\
+  --replay-since-hours 24 \\
+  --replay-max-interactions 50000 \\
+  --advance-offsets-on-skip
+```
+
+This pattern only keeps recent tool-relevant interactions and can significantly cut replay runtime. Keep `--advance-offsets-on-skip` enabled for one-pass resumable runs; otherwise repeated passes may be required to eventually process skipped interactions.
+
 ## Optional: Async teacher traces
 
 By default, the script runs only the core steps (re-embed → replay → maintain). To enable high-cadence teacher traces and route-model training, set env vars before running the script.

@@ -3,12 +3,13 @@ from __future__ import annotations
 import json
 import os
 import sys
+import hashlib
 from io import StringIO
 from pathlib import Path
 
 import pytest
 
-from openclawbrain.cli import main, _read_replay_checkpoint_progress, _resolve_openclawbrain_bin
+from openclawbrain.cli import main, _read_replay_checkpoint_progress, _resolve_openclawbrain_bin, _filter_replay_interactions
 from openclawbrain.graph import Graph, Node
 from openclawbrain.hasher import default_embed
 from openclawbrain.journal import read_journal
@@ -1525,6 +1526,36 @@ def test_cli_replay_mode_resolution_maps_legacy_flags() -> None:
     assert _resolve_replay_mode(full_args) == ("full", False)
 
 
+def test_cli_replay_filters_parse() -> None:
+    """replay parser accepts budgeted/prioritized replay filtering flags."""
+    from openclawbrain.cli import _build_parser
+
+    parser = _build_parser()
+    args = parser.parse_args(
+        [
+            "replay",
+            "--state",
+            "/tmp/x.json",
+            "--sessions",
+            "/tmp/s",
+            "--replay-since-hours",
+            "1.5",
+            "--replay-max-interactions",
+            "42",
+            "--replay-sample-rate",
+            "0.25",
+            "--replay-priority",
+            "tool",
+            "--advance-offsets-on-skip",
+        ]
+    )
+    assert args.replay_since_hours == 1.5
+    assert args.replay_max_interactions == 42
+    assert args.replay_sample_rate == 0.25
+    assert args.replay_priority == "tool"
+    assert args.advance_offsets_on_skip is True
+
+
 def test_cli_replay_fresh_aliases_parse() -> None:
     """--fresh/--no-checkpoint set fresh-start semantics."""
     from openclawbrain.cli import _build_parser
@@ -1617,6 +1648,15 @@ def test_cli_build_all_forwards_workers_and_llm_model_to_replay_and_records_mani
             "qwen3.5:9b",
             "--workers",
             "8",
+            "--replay-since-hours",
+            "2.5",
+            "--replay-max-interactions",
+            "10",
+            "--replay-sample-rate",
+            "0.3",
+            "--replay-priority",
+            "tool",
+            "--advance-offsets-on-skip",
         ]
     )
     assert code == 0
@@ -1625,12 +1665,109 @@ def test_cli_build_all_forwards_workers_and_llm_model_to_replay_and_records_mani
     replay_cmd = captured_replay_cmd[0]
     assert "--workers" in replay_cmd and "8" in replay_cmd
     assert "--llm-model" in replay_cmd and "qwen3.5:9b" in replay_cmd
+    assert "--replay-since-hours" in replay_cmd and "2.5" in replay_cmd
+    assert "--replay-max-interactions" in replay_cmd and "10" in replay_cmd
+    assert "--replay-sample-rate" in replay_cmd and "0.3" in replay_cmd
+    assert "--replay-priority" in replay_cmd and "tool" in replay_cmd
+    assert "--advance-offsets-on-skip" in replay_cmd
 
     manifest_paths = sorted((tmp_path / ".openclawbrain" / "scratch").glob("build-all.*.manifest.json"))
     assert manifest_paths
     manifest = json.loads(manifest_paths[0].read_text(encoding="utf-8"))
     assert manifest["args"]["workers"] == 8
     assert manifest["args"]["llm_model"] == "qwen3.5:9b"
+    assert manifest["args"]["replay_since_hours"] == 2.5
+    assert manifest["args"]["replay_max_interactions"] == 10
+    assert manifest["args"]["replay_sample_rate"] == 0.3
+    assert manifest["args"]["replay_priority"] == "tool"
+    assert manifest["args"]["advance_offsets_on_skip"] is True
+
+
+def test_cli_build_all_replay_filters_parse() -> None:
+    """build-all parser accepts replay filter forwarding flags."""
+    from openclawbrain.cli import _build_parser
+
+    parser = _build_parser()
+    args = parser.parse_args(
+        [
+            "build-all",
+            "--replay-since-hours",
+            "4.2",
+            "--replay-max-interactions",
+            "55",
+            "--replay-sample-rate",
+            "0.8",
+            "--replay-priority",
+            "tool",
+            "--advance-offsets-on-skip",
+        ]
+    )
+    assert args.replay_since_hours == 4.2
+    assert args.replay_max_interactions == 55
+    assert args.replay_sample_rate == 0.8
+    assert args.replay_priority == "tool"
+    assert args.advance_offsets_on_skip is True
+
+
+def _expected_replay_sample_ratio(source: str, line_no: int) -> float:
+    """Compute expected deterministic replay sample ratio."""
+    key = f"{source}:{line_no}"
+    digest = hashlib.sha256(key.encode("utf-8")).hexdigest()
+    return (int(digest[:16], 16) % 1_000_000_007) / 1_000_000_007
+
+
+def test_filter_replay_interactions_applies_priority_then_since_then_sample_then_max() -> None:
+    """filtering helper preserves order and applies filters in priority since sample max."""
+    interactions: list[dict[str, object]] = [
+        {"source": "s1.jsonl", "line_no": 1, "ts": 1.0, "tool_calls": [], "tool_results": []},
+        {"source": "s1.jsonl", "line_no": 2, "ts": 1001.0, "tool_calls": [{"name": "x"}], "tool_results": []},
+        {"source": "s1.jsonl", "line_no": 3, "ts": None, "tool_calls": [], "tool_results": [{"name": "ocr"}]},
+        {"source": "s1.jsonl", "line_no": 4, "ts": 900.0, "tool_calls": [], "tool_results": []},
+    ]
+    _, summary = _filter_replay_interactions(
+        interactions,
+        now_ts=1000.0,
+        since_hours=0.001,
+        sample_rate=1.0,
+        max_interactions=2,
+        priority="tool",
+    )
+    assert summary["loaded_total"] == 4
+    assert summary["after_priority"] == 2
+    assert summary["after_since"] == 2
+    assert summary["after_sample"] == 2
+    assert summary["after_max"] == 2
+
+
+def test_filter_replay_interactions_with_sample_and_max_preserves_order() -> None:
+    """sample and max filters keep most recent filtered matches in original order."""
+    interactions: list[dict[str, object]] = [
+        {"source": "s1.jsonl", "line_no": 1, "ts": 1.0, "tool_calls": [{"name": "a"}], "tool_results": []},
+        {"source": "s2.jsonl", "line_no": 2, "ts": 2.0, "tool_calls": [{"name": "a"}], "tool_results": []},
+        {"source": "s3.jsonl", "line_no": 3, "ts": 3.0, "tool_calls": [{"name": "a"}], "tool_results": []},
+        {"source": "s4.jsonl", "line_no": 4, "ts": 4.0, "tool_calls": [{"name": "a"}], "tool_results": []},
+    ]
+    sample_rate = 0.5
+    expected_sampled = [
+        item
+        for item in interactions
+        if _expected_replay_sample_ratio(item["source"], item["line_no"]) < sample_rate  # type: ignore[index]
+    ]
+    expected_max = expected_sampled[-2:] if len(expected_sampled) > 2 else expected_sampled
+    filtered, summary = _filter_replay_interactions(
+        interactions,
+        now_ts=10.0,
+        since_hours=None,
+        sample_rate=sample_rate,
+        max_interactions=2,
+        priority="all",
+    )
+    assert filtered == expected_max
+    assert summary["loaded_total"] == 4
+    assert summary["after_priority"] == 4
+    assert summary["after_since"] == 4
+    assert summary["after_sample"] == len(expected_sampled)
+    assert summary["after_max"] == len(expected_max)
 
 
 def test_build_all_agent_discovery_falls_back_to_main(tmp_path, monkeypatch) -> None:

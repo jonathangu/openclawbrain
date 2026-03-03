@@ -7,6 +7,7 @@ import functools
 import socket
 import json
 import os
+import hashlib
 import time
 import warnings
 import threading
@@ -95,6 +96,102 @@ REPLAY_HELP_EPILOG = (
     "  --fresh / --no-checkpoint starts from scratch even if a checkpoint exists.\n"
     "  --checkpoint chooses the checkpoint file path."
 )
+
+
+def _parse_positive_float(value: str) -> float:
+    """Parse a strictly positive float CLI argument."""
+    parsed = float(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError(f"must be > 0, got {value}")
+    return parsed
+
+
+def _parse_replay_sample_rate(value: str) -> float:
+    """Parse replay sample-rate as (0, 1]."""
+    parsed = float(value)
+    if not (0 < parsed <= 1):
+        raise argparse.ArgumentTypeError(f"must be in (0, 1], got {value}")
+    return parsed
+
+
+def _parse_positive_int(value: str) -> int:
+    """Parse a strictly positive integer CLI argument."""
+    parsed = int(value)
+    if parsed <= 0:
+        raise argparse.ArgumentTypeError(f"must be > 0, got {value}")
+    return parsed
+
+
+def _filter_replay_interactions(
+    interactions: list[dict[str, object]],
+    *,
+    now_ts: float,
+    since_hours: float | None = None,
+    max_interactions: int | None = None,
+    sample_rate: float = 1.0,
+    priority: str = "all",
+) -> tuple[list[dict[str, object]], dict[str, int]]:
+    """Apply replay interaction filters and return summary counts.
+
+    Filters are applied in order: priority -> since -> sample -> max.
+    """
+
+    def _has_tool_data(item: dict[str, object]) -> bool:
+        tool_calls = item.get("tool_calls")
+        if isinstance(tool_calls, list) and tool_calls:
+            return True
+        tool_results = item.get("tool_results")
+        if isinstance(tool_results, list) and tool_results:
+            return True
+        return False
+
+    def _sample_keep(item: dict[str, object]) -> bool:
+        source = item.get("source")
+        line_no = item.get("line_no")
+        if sample_rate >= 1:
+            return True
+        if not isinstance(source, str) or not isinstance(line_no, (int, float)):
+            return True
+        key = f"{source}:{int(line_no)}"
+        digest = hashlib.sha256(key.encode("utf-8")).hexdigest()
+        ratio = (int(digest[:16], 16) % 1_000_000_007) / 1_000_000_007
+        return ratio < sample_rate
+
+    loaded_total = len(interactions)
+
+    filtered = list(interactions)
+    if priority == "tool":
+        filtered = [item for item in filtered if _has_tool_data(item)]
+    after_priority = len(filtered)
+
+    after_since = after_priority
+    if since_hours is not None:
+        cutoff = now_ts - (float(since_hours) * 3600)
+        filtered = [
+            item
+            for item in filtered
+            if (ts := item.get("ts")) is None
+            or not isinstance(ts, (int, float))
+            or float(ts) >= cutoff
+        ]
+        after_since = len(filtered)
+
+    if sample_rate < 1:
+        filtered = [item for item in filtered if _sample_keep(item)]
+    after_sample = len(filtered)
+
+    if max_interactions is not None:
+        filtered = filtered[-int(max_interactions) :] if max_interactions > 0 else []
+    after_max = len(filtered)
+
+    summary = {
+        "loaded_total": loaded_total,
+        "after_priority": after_priority,
+        "after_since": after_since,
+        "after_sample": after_sample,
+        "after_max": after_max,
+    }
+    return filtered, summary
 
 
 def _resolve_state_path(
@@ -518,6 +615,16 @@ def _build_all_agent_pipeline(
             "--checkpoint-every-seconds",
             str(args.checkpoint_every_seconds),
         ]
+        if args.replay_since_hours is not None:
+            replay_cmd.extend(["--replay-since-hours", str(args.replay_since_hours)])
+        if args.replay_max_interactions is not None:
+            replay_cmd.extend(["--replay-max-interactions", str(args.replay_max_interactions)])
+        if args.replay_sample_rate != 1.0:
+            replay_cmd.extend(["--replay-sample-rate", str(args.replay_sample_rate)])
+        if args.replay_priority != "all":
+            replay_cmd.extend(["--replay-priority", str(args.replay_priority)])
+        if args.advance_offsets_on_skip:
+            replay_cmd.append("--advance-offsets-on-skip")
         if args.include_tool_results:
             replay_cmd.append("--include-tool-results")
         else:
@@ -987,6 +1094,39 @@ def _build_parser() -> argparse.ArgumentParser:
     r.add_argument("--ignore-checkpoint", action="store_true", help=argparse.SUPPRESS)
     r.add_argument("--include-tool-results", action=argparse.BooleanOptionalAction, default=True)
     r.add_argument(
+        "--replay-since-hours",
+        type=_parse_positive_float,
+        default=None,
+        help="Keep only interactions with ts >= now - since_hours*3600.",
+    )
+    r.add_argument(
+        "--replay-max-interactions",
+        type=_parse_positive_int,
+        default=None,
+        help="Keep only the most recent N interactions after filtering.",
+    )
+    r.add_argument(
+        "--replay-sample-rate",
+        type=_parse_replay_sample_rate,
+        default=1.0,
+        help="Deterministic interaction sampling rate in (0, 1] (default 1).",
+    )
+    r.add_argument(
+        "--replay-priority",
+        choices=("all", "tool"),
+        default="all",
+        help="Filter interactions by tool content: all (default) or tool only.",
+    )
+    r.add_argument(
+        "--advance-offsets-on-skip",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "Advance replay offsets immediately when filtering skips interactions "
+            "instead of only updating offsets for processed interactions."
+        ),
+    )
+    r.add_argument(
         "--tool-edges",
         action=argparse.BooleanOptionalAction,
         default=True,
@@ -1184,6 +1324,19 @@ def _build_parser() -> argparse.ArgumentParser:
     build_all.add_argument("--llm-model")
     build_all.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True)
     build_all.add_argument("--include-tool-results", action=argparse.BooleanOptionalAction, default=True)
+    build_all.add_argument("--replay-since-hours", type=_parse_positive_float, default=None)
+    build_all.add_argument("--replay-max-interactions", type=_parse_positive_int, default=None)
+    build_all.add_argument(
+        "--replay-sample-rate",
+        type=_parse_replay_sample_rate,
+        default=1.0,
+    )
+    build_all.add_argument("--replay-priority", choices=("all", "tool"), default="all")
+    build_all.add_argument(
+        "--advance-offsets-on-skip",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+    )
     build_all.add_argument("--checkpoint-every-seconds", type=int, default=60)
     build_all.add_argument("--replay-progress-interval-seconds", type=int, default=15)
     build_all.add_argument("--state-lock-timeout-seconds", type=int, default=3600)
@@ -2701,10 +2854,39 @@ def cmd_replay(args: argparse.Namespace) -> int:
         tool_result_allowlist=tool_result_allowlist,
         tool_result_max_chars=tool_result_max_chars,
     )
+    interactions, filter_summary = _filter_replay_interactions(
+        interactions,
+        now_ts=time.time(),
+        since_hours=args.replay_since_hours,
+        max_interactions=args.replay_max_interactions,
+        sample_rate=float(args.replay_sample_rate),
+        priority=str(args.replay_priority),
+    )
     if not quiet:
         print(
-            f"Loaded {len(interactions)} interactions from session files",
+            f"Loaded {filter_summary['loaded_total']} interactions from session files",
             file=sys.stderr,
+        )
+        print(
+            "Replay filter summary: "
+            f"loaded_total={filter_summary['loaded_total']} "
+            f"after_priority={filter_summary['after_priority']} "
+            f"after_since={filter_summary['after_since']} "
+            f"after_sample={filter_summary['after_sample']} "
+            f"after_max={filter_summary['after_max']}",
+            file=sys.stderr,
+        )
+    filtering_active = (
+        args.replay_since_hours is not None
+        or args.replay_max_interactions is not None
+        or float(args.replay_sample_rate) < 1.0
+        or args.replay_priority == "tool"
+    )
+    if filtering_active and not bool(args.advance_offsets_on_skip):
+        warnings.warn(
+            "Replay filtering is active with --advance-offsets-on-skip disabled. "
+            "Subsequent --resume runs will require repeated runs to eventually cover all interactions.",
+            stacklevel=2,
         )
     auto_decay = bool(args.decay_during_replay) or run_full
     decay_interval = max(1, args.decay_interval)
@@ -2715,7 +2897,11 @@ def cmd_replay(args: argparse.Namespace) -> int:
     last_timed_progress_at = time.monotonic()
     merge_batches = 0
     state_dirty = False
-    replay_offsets_done = dict(replay_since_lines)
+    replay_offsets_done = dict(
+        replay_offsets
+        if (bool(args.advance_offsets_on_skip) and filtering_active)
+        else replay_since_lines
+    )
     last_checkpoint_at = time.monotonic()
     last_persist_at = time.monotonic()
     replay_latest_ts: float | None = None
@@ -3900,6 +4086,11 @@ def cmd_build_all(args: argparse.Namespace) -> int:
             "include_tool_results": bool(args.include_tool_results),
             "checkpoint_every_seconds": int(args.checkpoint_every_seconds),
             "replay_progress_interval_seconds": int(args.replay_progress_interval_seconds),
+            "replay_since_hours": args.replay_since_hours,
+            "replay_max_interactions": args.replay_max_interactions,
+            "replay_sample_rate": float(args.replay_sample_rate),
+            "replay_priority": str(args.replay_priority),
+            "advance_offsets_on_skip": bool(args.advance_offsets_on_skip),
             "enable_async_teacher": bool(args.enable_async_teacher),
         },
     }
