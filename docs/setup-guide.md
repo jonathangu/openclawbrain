@@ -29,7 +29,7 @@ Runtime route-mode default is `learned`. `init` writes a default identity-like `
 After init, replay your existing sessions to seed graph edges and extract learning signals.
 
 Recommended default ("best brain"): run the full, bells-and-whistles pipeline — this is the operator-recommended default experience.
-The example script `examples/ops/default_experience.sh` runs the recommended sequence: local BGE-large reembed, `replay --mode full` (fast-learning + edge replay + harvest), `maintain`, `async-route-pg` using `gpt-5-mini` as the teacher, and `train-route-model` (may be skipped if no traces were produced).
+The example script `examples/ops/default_experience.sh` runs the recommended core sequence by default: local BGE-large reembed, `replay --mode full` (fast-learning + edge replay + harvest), and `maintain`. Optional async teacher traces + route-model training are disabled by default and can be enabled after the brain is running.
 
 By default, `replay` runs `--mode full` (fast-learning + replay + harvest):
 
@@ -75,7 +75,7 @@ Replay progress defaults:
 
 ## Local LLM (Ollama)
 
-OpenClawBrain can run fast-learning + teacher labeling entirely on-device with Ollama. This is a full opt-out of OpenAI usage (embeddings are already local).
+OpenClawBrain can run fast-learning (and optional teacher labeling) entirely on-device with Ollama. This is a full opt-out of OpenAI usage (embeddings are already local).
 
 Install and start Ollama:
 
