@@ -4,6 +4,7 @@ import json
 import os
 import sys
 import hashlib
+import plistlib
 from io import StringIO
 from pathlib import Path
 
@@ -864,6 +865,110 @@ def test_serve_command_prints_banner_and_calls_socket_server(monkeypatch, capsys
     assert f"state path: {Path('~/agent/state.json').expanduser()}" in err
     assert "query status: openclawbrain serve status --state" in err
     assert "stop: Ctrl-C" in err
+
+
+def test_serve_install_dry_run_prints_launchd_plist(monkeypatch, tmp_path, capsys) -> None:
+    """serve install --dry-run should print a launchd plist with executable-based ProgramArguments."""
+    state_path = tmp_path / "main" / "state.json"
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(json.dumps({"nodes": []}), encoding="utf-8")
+
+    import openclawbrain.cli as cli_module
+
+    monkeypatch.setattr(cli_module.sys, "platform", "darwin")
+
+    code = main([
+        "serve",
+        "install",
+        "--state",
+        str(state_path),
+        "--socket-path",
+        str(tmp_path / "daemon.sock"),
+        "--dry-run",
+    ])
+    assert code == 0
+
+    payload_xml, _sep, _commands = capsys.readouterr().out.partition("Planned launchctl commands:")
+    payload = plistlib.loads(payload_xml.encode("utf-8"))
+    assert payload["Label"] == "com.openclawbrain.main"
+
+    program_arguments = payload["ProgramArguments"]
+    assert len(program_arguments) > 6
+    assert program_arguments[0] == sys.executable
+    assert program_arguments[1] == "-m"
+    assert program_arguments[2] == "openclawbrain.cli"
+    assert program_arguments[3] == "serve"
+    assert program_arguments[4] == "start"
+    assert "--state" in program_arguments
+    assert str(state_path) in program_arguments
+
+
+def test_serve_install_dry_run_includes_env_file(monkeypatch, tmp_path, capsys) -> None:
+    """serve install --dry-run should include EnvironmentVariables from --env-file."""
+    state_path = tmp_path / "main" / "state.json"
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(json.dumps({"nodes": []}), encoding="utf-8")
+
+    env_file = tmp_path / "service.env"
+    env_file.write_text("OPENAI_API_KEY=secret\nOPENCLAWBRAIN_DEFAULT_LLM=openai", encoding="utf-8")
+
+    import openclawbrain.cli as cli_module
+
+    monkeypatch.setattr(cli_module.sys, "platform", "darwin")
+
+    code = main([
+        "serve",
+        "install",
+        "--state",
+        str(state_path),
+        "--env-file",
+        str(env_file),
+        "--dry-run",
+    ])
+    assert code == 0
+
+    payload_xml, _sep, _commands = capsys.readouterr().out.partition("Planned launchctl commands:")
+    payload = plistlib.loads(payload_xml.encode("utf-8"))
+    environment = payload["EnvironmentVariables"]
+    assert environment["OPENAI_API_KEY"] == "secret"
+    assert environment["OPENCLAWBRAIN_DEFAULT_LLM"] == "openai"
+
+
+def test_serve_uninstall_dry_run_prints_bootout_command(monkeypatch, tmp_path, capsys) -> None:
+    state_path = tmp_path / "main" / "state.json"
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(json.dumps({"nodes": []}), encoding="utf-8")
+
+    import openclawbrain.cli as cli_module
+
+    monkeypatch.setattr(cli_module.sys, "platform", "darwin")
+
+    code = main([
+        "serve",
+        "uninstall",
+        "--state",
+        str(state_path),
+        "--dry-run",
+    ])
+    assert code == 0
+
+    output = capsys.readouterr().out
+    assert "Planned launchctl commands:" in output
+    assert f"launchctl bootout gui/{os.getuid()}" in output
+    assert f"{Path.home()}/Library/LaunchAgents/com.openclawbrain.main.plist" in output
+
+
+def test_serve_install_on_non_darwin_fails(monkeypatch, tmp_path, capsys) -> None:
+    state_path = tmp_path / "main" / "state.json"
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(json.dumps({"nodes": []}), encoding="utf-8")
+
+    import openclawbrain.cli as cli_module
+
+    monkeypatch.setattr(cli_module.sys, "platform", "linux")
+    code = main(["serve", "install", "--state", str(state_path)])
+    assert code == 1
+    assert "launchd lifecycle commands are supported on macOS only." in capsys.readouterr().err
 
 
 def test_serve_command_passes_explicit_socket_path(monkeypatch) -> None:

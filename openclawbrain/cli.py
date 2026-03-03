@@ -17,6 +17,7 @@ import tempfile
 import shutil
 import subprocess
 import shlex
+import plistlib
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from collections.abc import Callable, Iterable
 from contextlib import contextmanager, nullcontext
@@ -1222,11 +1223,11 @@ def _build_parser() -> argparse.ArgumentParser:
     d.add_argument("--route-model", default=None)
     d.add_argument("--auto-save-interval", type=int, default=10)
 
-    serve = sub.add_parser("serve", help="Canonical operator socket service lifecycle (`start|status|stop`)")
+    serve = sub.add_parser("serve", help="Canonical operator socket service lifecycle (`start|status|stop|install|uninstall`)")
     serve.add_argument(
         "serve_action",
         nargs="?",
-        choices=["start", "status", "stop"],
+        choices=["start", "status", "stop", "install", "uninstall"],
         default="start",
         help="Lifecycle action (default: start)",
     )
@@ -1247,6 +1248,10 @@ def _build_parser() -> argparse.ArgumentParser:
         default=True,
         help="Run in foreground mode (default: true)",
     )
+    serve.add_argument("--label", help="Override launchd label")
+    serve.add_argument("--plist-path", help="Override launchd plist path")
+    serve.add_argument("--env-file", help="Optional .env file for launchd EnvironmentVariables")
+    serve.add_argument("--dry-run", action="store_true", help="Render launchd configuration only")
     serve.add_argument(
         "--launchd",
         action="store_true",
@@ -1765,7 +1770,7 @@ def _daemon_socket_status(state_path: str) -> tuple[bool, str]:
 def _socket_health_status(
     socket_path: str,
     *,
-    timeout: float = 1.0,
+    timeout: float = 5.0,
 ) -> tuple[bool, dict[str, object] | None, str | None]:
     """Check socket existence + daemon health call via socket protocol."""
     resolved_socket = str(Path(socket_path).expanduser())
@@ -1798,43 +1803,108 @@ def _serve_status_payload(state_path: str, socket_path: str) -> dict[str, object
     }
 
 
-def _render_launchd_plist(*, state_path: str, socket_path: str) -> str:
+def _derive_serve_label(state_path: str) -> str:
+    state_parent = Path(state_path).expanduser().parent
+    return f"com.openclawbrain.{state_parent.name or 'main'}"
+
+
+def _derive_launchd_plist_path(label: str) -> Path:
+    return Path.home() / "Library" / "LaunchAgents" / f"{label}.plist"
+
+
+def _parse_env_file(env_path: str) -> dict[str, str]:
+    path = Path(env_path).expanduser()
+    if not path.exists():
+        raise SystemExit(f"env file not found: {path}")
+    env_vars: dict[str, str] = {}
+    for raw_line in path.read_text(encoding="utf-8").splitlines():
+        line = raw_line.strip()
+        if not line or line.startswith("#"):
+            continue
+        if line.lower().startswith("export "):
+            line = line[7:].strip()
+        if "=" not in line:
+            continue
+        key, value = line.split("=", 1)
+        key = key.strip()
+        if not key:
+            continue
+        value = value.strip()
+        if (
+            (len(value) >= 2)
+            and ((value.startswith('"') and value.endswith('"')) or (value.startswith("'") and value.endswith("'")))
+        ):
+            value = value[1:-1]
+        env_vars[key] = value
+    return env_vars
+
+
+def _run_launchctl(argv: list[str], *, ignore_errors: bool = False) -> None:
+    result = subprocess.run(argv, check=not ignore_errors)
+    if ignore_errors and result.returncode != 0:
+        return
+
+
+def _serve_start_arguments(
+    *,
+    state_path: str,
+    socket_path: str | None,
+    embed_model: str,
+    max_prompt_context_chars: int,
+    max_fired_nodes: int,
+    route_mode: str,
+    route_top_k: int,
+    route_alpha_sim: float,
+    route_use_relevance: bool,
+    route_model: str | None,
+) -> list[str]:
+    argv = ["--state", state_path]
+    if socket_path:
+        argv.extend(["--socket-path", socket_path])
+    argv.extend([
+        "--embed-model",
+        embed_model,
+        "--max-prompt-context-chars",
+        str(max_prompt_context_chars),
+        "--max-fired-nodes",
+        str(max_fired_nodes),
+        "--route-mode",
+        route_mode,
+        "--route-top-k",
+        str(route_top_k),
+        "--route-alpha-sim",
+        str(route_alpha_sim),
+        "--route-use-relevance",
+        "true" if route_use_relevance else "false",
+    ])
+    if route_model:
+        argv.extend(["--route-model", str(route_model)])
+    return argv
+
+
+def _render_launchd_plist(
+    *,
+    label: str,
+    state_path: str,
+    program_arguments: list[str],
+    env_vars: dict[str, str] | None = None,
+) -> str:
     """Render a minimal launchd plist for `openclawbrain serve start`."""
     state_parent = Path(state_path).expanduser().parent
-    label = f"com.openclawbrain.{state_parent.name or 'main'}"
     stdout_path = state_parent / "daemon.stdout.log"
     stderr_path = state_parent / "daemon.stderr.log"
-    return "\n".join(
-        [
-            "<?xml version=\"1.0\" encoding=\"UTF-8\"?>",
-            "<!DOCTYPE plist PUBLIC \"-//Apple//DTD PLIST 1.0//EN\" \"http://www.apple.com/DTDs/PropertyList-1.0.dtd\">",
-            "<plist version=\"1.0\">",
-            "<dict>",
-            "  <key>Label</key>",
-            f"  <string>{label}</string>",
-            "  <key>ProgramArguments</key>",
-            "  <array>",
-            "    <string>/usr/bin/env</string>",
-            "    <string>openclawbrain</string>",
-            "    <string>serve</string>",
-            "    <string>start</string>",
-            "    <string>--state</string>",
-            f"    <string>{Path(state_path).expanduser()}</string>",
-            "    <string>--socket-path</string>",
-            f"    <string>{Path(socket_path).expanduser()}</string>",
-            "  </array>",
-            "  <key>RunAtLoad</key>",
-            "  <true/>",
-            "  <key>KeepAlive</key>",
-            "  <true/>",
-            "  <key>StandardOutPath</key>",
-            f"  <string>{stdout_path}</string>",
-            "  <key>StandardErrorPath</key>",
-            f"  <string>{stderr_path}</string>",
-            "</dict>",
-            "</plist>",
-        ]
-    )
+    payload: dict[str, object] = {
+        "Label": label,
+        "ProgramArguments": program_arguments,
+        "RunAtLoad": True,
+        "KeepAlive": True,
+        "StandardOutPath": str(stdout_path),
+        "StandardErrorPath": str(stderr_path),
+    }
+    if env_vars:
+        payload["EnvironmentVariables"] = env_vars
+    payload_bytes = plistlib.dumps(payload, sort_keys=False)
+    return payload_bytes.decode("utf-8")
 
 
 def _render_systemd_unit(*, state_path: str, socket_path: str) -> str:
@@ -4007,11 +4077,97 @@ def cmd_serve(args: argparse.Namespace) -> int:
     from .socket_server import main as socket_server_main
 
     socket_path = (
-        str(Path(args.socket_path).expanduser())
-        if args.socket_path
-        else _default_daemon_socket_path(state_path)
+        str(Path(args.socket_path).expanduser()) if args.socket_path else _default_daemon_socket_path(state_path)
     )
+    explicit_socket_path = str(Path(args.socket_path).expanduser()) if args.socket_path else None
     action = getattr(args, "serve_action", "start")
+    start_argv = _serve_start_arguments(
+        state_path=state_path,
+        socket_path=explicit_socket_path,
+        embed_model=embed_model,
+        max_prompt_context_chars=max_prompt_context_chars,
+        max_fired_nodes=max_fired_nodes,
+        route_mode=route_mode,
+        route_top_k=route_top_k,
+        route_alpha_sim=route_alpha_sim,
+        route_use_relevance=route_use_relevance,
+        route_model=route_model,
+    )
+    launchd_program_arguments = [
+        sys.executable,
+        "-m",
+        "openclawbrain.cli",
+        "serve",
+        "start",
+    ] + start_argv
+
+    if action == "install":
+        if sys.platform != "darwin":
+            print(
+                "launchd lifecycle commands are supported on macOS only. "
+                "Use `openclawbrain serve --systemd` on Linux/systemd hosts.",
+                file=sys.stderr,
+            )
+            return 1
+
+        label = args.label or _derive_serve_label(state_path)
+        plist_path = Path(args.plist_path).expanduser() if args.plist_path else _derive_launchd_plist_path(label)
+        env_vars = _parse_env_file(args.env_file) if args.env_file else None
+        program = _render_launchd_plist(
+            label=label,
+            state_path=state_path,
+            program_arguments=launchd_program_arguments,
+            env_vars=env_vars,
+        )
+        uid = os.getuid()
+        bootout_cmd = ["launchctl", "bootout", f"gui/{uid}", str(plist_path)]
+        bootstrap_cmd = ["launchctl", "bootstrap", f"gui/{uid}", str(plist_path)]
+
+        print(program)
+        print("Planned launchctl commands:")
+        print(f"  {' '.join(bootout_cmd)}")
+        print(f"  {' '.join(bootstrap_cmd)}")
+
+        if args.dry_run:
+            return 0
+
+        _run_launchctl(bootout_cmd, ignore_errors=True)
+        plist_path.parent.mkdir(parents=True, exist_ok=True)
+        plist_path.write_text(program, encoding="utf-8")
+        if env_vars:
+            plist_path.chmod(0o600)
+        _run_launchctl(bootstrap_cmd)
+
+        print(f"wrote launchd plist: {plist_path}")
+        return 0
+
+    if action == "uninstall":
+        if sys.platform != "darwin":
+            print(
+                "launchd lifecycle commands are supported on macOS only. "
+                "Use `openclawbrain serve --systemd` on Linux/systemd hosts.",
+                file=sys.stderr,
+            )
+            return 1
+
+        label = args.label or _derive_serve_label(state_path)
+        plist_path = Path(args.plist_path).expanduser() if args.plist_path else _derive_launchd_plist_path(label)
+        uid = os.getuid()
+        bootout_cmd = ["launchctl", "bootout", f"gui/{uid}", str(plist_path)]
+        print("Planned launchctl commands:")
+        print(f"  {' '.join(bootout_cmd)}")
+
+        if args.dry_run:
+            return 0
+
+        _run_launchctl(bootout_cmd, ignore_errors=True)
+        try:
+            plist_path.unlink(missing_ok=True)
+            print(f"removed launchd plist: {plist_path}")
+        except OSError as exc:
+            print(f"could not remove plist {plist_path}: {exc}", file=sys.stderr)
+            return 1
+        return 0
 
     if action == "status":
         payload = _serve_status_payload(state_path, socket_path)
@@ -4073,7 +4229,14 @@ def cmd_serve(args: argparse.Namespace) -> int:
         return 1
 
     if args.launchd:
-        print(_render_launchd_plist(state_path=state_path, socket_path=socket_path))
+        label = args.label or _derive_serve_label(state_path)
+        print(
+            _render_launchd_plist(
+                label=label,
+                state_path=state_path,
+                program_arguments=launchd_program_arguments,
+            )
+        )
         return 0
     if args.systemd:
         print(_render_systemd_unit(state_path=state_path, socket_path=socket_path))
@@ -4085,28 +4248,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
     print(f"  query status: openclawbrain serve status --state {state_path}", file=sys.stderr)
     print("  stop: Ctrl-C", file=sys.stderr)
 
-    server_argv = ["--state", state_path]
-    if args.socket_path:
-        server_argv.extend(["--socket-path", socket_path])
-    server_argv.extend([
-        "--embed-model",
-        embed_model,
-        "--max-prompt-context-chars",
-        str(max_prompt_context_chars),
-        "--max-fired-nodes",
-        str(max_fired_nodes),
-        "--route-mode",
-        route_mode,
-        "--route-top-k",
-        str(route_top_k),
-        "--route-alpha-sim",
-        str(route_alpha_sim),
-        "--route-use-relevance",
-        "true" if route_use_relevance else "false",
-    ])
-    if route_model:
-        server_argv.extend(["--route-model", str(route_model)])
-    return socket_server_main(server_argv)
+    return socket_server_main(start_argv)
 
 
 def cmd_journal(args: argparse.Namespace) -> int:

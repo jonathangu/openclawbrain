@@ -296,6 +296,32 @@ echo '{"id":"req-1","method":"query","params":{"query":"how to deploy","top_k":4
 
 ### Option B: launchd (macOS)
 
+Use the first-class lifecycle helpers for most local installs:
+
+```bash
+openclawbrain serve install --state ~/.openclawbrain/main/state.json
+```
+
+To remove:
+
+```bash
+openclawbrain serve uninstall --state ~/.openclawbrain/main/state.json
+```
+
+You can inspect the generated plist in dry-run mode and apply custom options:
+
+```bash
+openclawbrain serve install --state ~/.openclawbrain/main/state.json --dry-run --label com.openclawbrain.main
+```
+
+The command writes `~/Library/LaunchAgents/com.openclawbrain.main.plist` by default and runs:
+
+- `openclawbrain serve start --state ... --socket-path ...` under the resolved Python executable path via `sys.executable`.
+
+If you need a manually customized template, see the legacy plist approach below.
+
+### Option C: legacy launchd plist template
+
 Create `~/Library/LaunchAgents/com.openclawbrain.daemon.plist`:
 
 ```xml
@@ -350,7 +376,7 @@ Notes:
 - Prefer injecting `OPENAI_API_KEY` via your own secure mechanism (1Password, Keychain, etc.).
 - The daemon is a stdio worker. You typically run it behind a small supervisor that manages pipes.
 
-### Option C: systemd (Linux)
+### Option D: systemd (Linux)
 
 Create `/etc/systemd/system/openclawbrain-daemon.service`:
 

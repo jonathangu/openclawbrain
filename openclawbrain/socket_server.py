@@ -263,10 +263,17 @@ class SocketDaemonServer:
                     self._logger.exception("unexpected request failure: %s", exc)
                     payload = self._format_response(request_id, error=f"unexpected error: {exc}")
                 writer.write((payload + "\n").encode("utf-8"))
-                await writer.drain()
+                try:
+                    await writer.drain()
+                except (BrokenPipeError, ConnectionResetError):
+                    self._logger.debug("client disconnected during write: %s", peer)
+                    break
         finally:
-            writer.close()
-            await writer.wait_closed()
+            try:
+                writer.close()
+                await writer.wait_closed()
+            except (BrokenPipeError, ConnectionResetError):
+                self._logger.debug("client already disconnected: %s", peer)
             self._logger.debug("client disconnected: %s", peer)
 
     async def _shutdown_server(self) -> None:
