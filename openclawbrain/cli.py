@@ -8,6 +8,7 @@ import json
 import os
 import time
 import warnings
+import threading
 from datetime import datetime, timezone
 import sys
 import tempfile
@@ -56,6 +57,7 @@ from .sync import DEFAULT_AUTHORITY_MAP, sync_workspace
 from .local_embedder import LocalEmbedder, resolve_local_model
 from .route_model import RouteModel
 from .full_learning import (
+    REPLAY_CHECKPOINT_FILENAME,
     _checkpoint_phase_offsets,
     collect_session_files,
     default_checkpoint_path,
@@ -274,6 +276,116 @@ def _run_logged_command(
     return int(proc.returncode)
 
 
+def _progress_int(value: object) -> int | None:
+    if isinstance(value, bool):
+        return None
+    if isinstance(value, (int, float)):
+        return int(value)
+    return None
+
+
+def _read_replay_checkpoint_progress(
+    checkpoint: dict[str, object],
+    *,
+    agent_id: str,
+) -> str | None:
+    parts: list[str] = []
+
+    fast_payload = checkpoint.get("fast_learning")
+    if isinstance(fast_payload, dict):
+        processed = _progress_int(fast_payload.get("windows_processed"))
+        total = _progress_int(fast_payload.get("windows_total"))
+        status = fast_payload.get("status")
+        status_text = str(status) if isinstance(status, str) else "unknown"
+        processed_text = str(processed) if processed is not None else "?"
+        total_text = str(total) if total is not None else "?"
+        parts.append(f"fast_learning={processed_text}/{total_text} status={status_text}")
+
+    replay_payload = checkpoint.get("replay")
+    if isinstance(replay_payload, dict):
+        processed = _progress_int(replay_payload.get("queries_processed"))
+        total = _progress_int(replay_payload.get("queries_total"))
+        merge_batches = _progress_int(replay_payload.get("merge_batches"))
+        status = replay_payload.get("status")
+        processed_text = str(processed) if processed is not None else "?"
+        total_text = str(total) if total is not None else "?"
+        part = f"replay={processed_text}/{total_text}"
+        if merge_batches is not None:
+            part = f"{part} merge_batches={merge_batches}"
+        if isinstance(status, str):
+            part = f"{part} status={status}"
+        parts.append(part)
+
+    if not parts:
+        return None
+    return f"[build-all] agent={agent_id} replay_progress " + " | ".join(parts)
+
+
+def _monitor_replay_checkpoint(
+    *,
+    checkpoint_path: Path,
+    agent_id: str,
+    interval_seconds: int,
+    stop_event: threading.Event,
+) -> None:
+    last_line: str | None = None
+    while True:
+        try:
+            if not checkpoint_path.exists():
+                checkpoint = None
+            else:
+                checkpoint = _load_checkpoint(checkpoint_path)
+        except Exception:  # noqa: BLE001
+            checkpoint = None
+        if isinstance(checkpoint, dict):
+            line = _read_replay_checkpoint_progress(checkpoint, agent_id=agent_id)
+        else:
+            line = None
+        if line and line != last_line:
+            print(line)
+            last_line = line
+        if stop_event.wait(interval_seconds):
+            return
+
+
+def _run_logged_replay_command(
+    cmd: list[str],
+    *,
+    log_path: Path,
+    step_name: str,
+    checkpoint_path: Path,
+    agent_id: str,
+    progress_interval_seconds: int,
+) -> int:
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    stop_event = threading.Event()
+    monitor: threading.Thread | None = None
+    with log_path.open("a", encoding="utf-8") as log_handle:
+        log_handle.write(f"\n== {step_name} ==\n")
+        log_handle.write(f"command: {' '.join(shlex.quote(part) for part in cmd)}\n")
+        log_handle.flush()
+        if progress_interval_seconds > 0:
+            monitor = threading.Thread(
+                target=_monitor_replay_checkpoint,
+                kwargs={
+                    "checkpoint_path": checkpoint_path,
+                    "agent_id": agent_id,
+                    "interval_seconds": progress_interval_seconds,
+                    "stop_event": stop_event,
+                },
+                daemon=True,
+            )
+            monitor.start()
+        proc = subprocess.Popen(cmd, stdout=log_handle, stderr=log_handle, text=True)
+        try:
+            returncode = proc.wait()
+        finally:
+            stop_event.set()
+            if monitor is not None:
+                monitor.join(timeout=max(1.0, float(progress_interval_seconds)))
+    return int(returncode)
+
+
 def _build_all_agent_pipeline(
     *,
     agent_id: str,
@@ -301,6 +413,7 @@ def _build_all_agent_pipeline(
 
     state_path = agent_root / "state.json"
     sessions_path = Path.home() / ".openclaw" / "agents" / agent_id / "sessions"
+    checkpoint_path = agent_root / REPLAY_CHECKPOINT_FILENAME
 
     steps: list[dict[str, object]] = []
     exit_code = 0
@@ -401,7 +514,22 @@ def _build_all_agent_pipeline(
             replay_cmd.append("--no-include-tool-results")
         if args.resume:
             replay_cmd.append("--resume")
-        exit_code = run_step("replay", replay_cmd)
+        emit("replay", "running")
+        code = _run_logged_replay_command(
+            replay_cmd,
+            log_path=log_path,
+            step_name="replay",
+            checkpoint_path=checkpoint_path,
+            agent_id=agent_id,
+            progress_interval_seconds=max(0, int(args.replay_progress_interval_seconds)),
+        )
+        if code == 0:
+            emit("replay", "ok")
+            record("replay", "ok", code)
+        else:
+            emit("replay", "failed", f"exit={code}")
+            record("replay", "failed", code)
+        exit_code = code
 
     if exit_code == 0:
         exit_code = run_step(
@@ -1044,6 +1172,7 @@ def _build_parser() -> argparse.ArgumentParser:
     build_all.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True)
     build_all.add_argument("--include-tool-results", action=argparse.BooleanOptionalAction, default=True)
     build_all.add_argument("--checkpoint-every-seconds", type=int, default=60)
+    build_all.add_argument("--replay-progress-interval-seconds", type=int, default=15)
     build_all.add_argument("--state-lock-timeout-seconds", type=int, default=3600)
     build_all.add_argument("--enable-async-teacher", action="store_true")
     build_all.add_argument("--since-hours", type=float, default=24.0)
@@ -3751,6 +3880,7 @@ def cmd_build_all(args: argparse.Namespace) -> int:
             "resume": bool(args.resume),
             "include_tool_results": bool(args.include_tool_results),
             "checkpoint_every_seconds": int(args.checkpoint_every_seconds),
+            "replay_progress_interval_seconds": int(args.replay_progress_interval_seconds),
             "enable_async_teacher": bool(args.enable_async_teacher),
         },
     }
