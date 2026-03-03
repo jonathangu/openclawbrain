@@ -26,7 +26,12 @@ Runtime route-mode default is `learned`. `init` writes a default identity-like `
 
 ## Initial learning: replay your sessions
 
-After init, replay your existing sessions to seed graph edges and extract learning signals. By default, `replay` runs `--mode full` (fast-learning + replay + harvest):
+After init, replay your existing sessions to seed graph edges and extract learning signals.
+
+Recommended default ("best brain"): run the full, bells-and-whistles pipeline — this is the operator-recommended default experience.
+The example script `examples/ops/default_experience.sh` runs the recommended sequence: local BGE-large embedder, `replay --mode full` (fast-learning + edge replay + harvest), `maintain`, `harvest`, `async-route-pg` using `gpt-5-mini` as the teacher, and `train-route-model`.
+
+By default, `replay` runs `--mode full` (fast-learning + replay + harvest):
 
 ```bash
 openclawbrain replay --state ./brain/state.json --sessions ./sessions/
