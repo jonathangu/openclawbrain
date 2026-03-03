@@ -1,3 +1,19 @@
+---
+name: openclawbrain-context-injector
+description: prepend OpenClawBrain context on message:preprocessed
+homepage: docs/openclawbrain-openclaw-hooks.md
+metadata:
+  openclaw:
+    emoji: 🧠
+    events:
+      - message:preprocessed
+    requires:
+      bins:
+        - python3
+      config:
+        - workspace.dir
+---
+
 # OpenClawBrain Context Injector Hook
 
 - **Event**: `message:preprocessed`
