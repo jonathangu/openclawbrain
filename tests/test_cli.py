@@ -7,7 +7,7 @@ from pathlib import Path
 
 import pytest
 
-from openclawbrain.cli import main
+from openclawbrain.cli import main, _read_replay_checkpoint_progress
 from openclawbrain.graph import Graph, Node
 from openclawbrain.hasher import default_embed
 from openclawbrain.journal import read_journal
@@ -1325,6 +1325,19 @@ def test_cli_replay_fast_learning_progress_events_jsonl(tmp_path, capsys, monkey
     assert code == 0
     out = capsys.readouterr().out
     assert '{"type": "progress", "phase": "fast_learning"' in out
+
+
+def test_read_replay_checkpoint_progress_minimal_fast_learning() -> None:
+    """Helper formats a minimal fast-learning checkpoint progress line."""
+    checkpoint = {
+        "fast_learning": {
+            "windows_processed": 2,
+            "windows_total": 10,
+            "status": "running",
+        }
+    }
+    line = _read_replay_checkpoint_progress(checkpoint, agent_id="agent-1")
+    assert line == "[build-all] agent=agent-1 replay_progress fast_learning=2/10 status=running"
 
 
 def test_cli_replay_show_checkpoint_json_uses_new_schema_fixture(tmp_path, capsys) -> None:
