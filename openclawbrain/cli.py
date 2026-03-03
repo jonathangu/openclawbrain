@@ -1612,7 +1612,38 @@ def cmd_reembed(args: argparse.Namespace) -> int:
         raise SystemExit("hash embedder is not permitted for reembed; use --embedder local")
 
     texts = [(node.id, node.content) for node in graph.nodes()]
-    vectors = batch_or_single_embed(texts, embed_fn=embed_fn, embed_batch_fn=embed_batch_fn)
+    vectors: dict[str, list[float]] = {}
+    total = len(texts)
+    batch_size = 128
+    start = time.perf_counter()
+    for offset in range(0, total, batch_size):
+        chunk = texts[offset : offset + batch_size]
+        if embed_batch_fn is not None:
+            batch_vectors = embed_batch_fn(chunk)
+        else:
+            batch_vectors = batch_or_single_embed(
+                chunk,
+                embed_fn=embed_fn,
+                embed_batch_fn=None,
+            )
+        vectors.update(batch_vectors)
+        if not args.json:
+            completed = min(offset + len(chunk), total)
+            pct = (100.0 * completed / total) if total > 0 else 100.0
+            elapsed_seconds = time.perf_counter() - start
+            rate = (completed / elapsed_seconds) if elapsed_seconds > 0 else 0.0
+            eta_seconds = ((total - completed) / rate) if rate > 0 else None
+            extras: list[str] = [
+                f"elapsed={float(elapsed_seconds):.1f}s",
+                f"rate={float(rate):.1f}/s",
+            ]
+            if isinstance(eta_seconds, (int, float)):
+                extras.append(f"eta={float(eta_seconds):.1f}s")
+            extra_text = f" {' '.join(extras)}" if extras else ""
+            print(
+                f"[reembed] {completed}/{total} ({pct:.1f}%)" + extra_text,
+                file=sys.stderr,
+            )
     if len(vectors) != graph.node_count():
         raise SystemExit(
             f"reembed failed: expected {graph.node_count()} embeddings, got {len(vectors)}"
