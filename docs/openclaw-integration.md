@@ -7,6 +7,10 @@ Operator recipes (cutover, parallel replay, prompt caching, media memory): [docs
 New-agent canonical SOP (workspace + dedicated brain + launchd + routing): [docs/new-agent-sop.md](new-agent-sop.md)
 Packaged adapter CLIs (no repo clone required): `python3 -m openclawbrain.openclaw_adapter.query_brain ...`, `python3 -m openclawbrain.openclaw_adapter.capture_feedback ...`, `python3 -m openclawbrain.openclaw_adapter.learn_by_chat_id ...`, and `python3 -m openclawbrain.openclaw_adapter.learn_correction ...`
 OpenClaw hook pack (recommended): [docs/openclawbrain-openclaw-hooks.md](openclawbrain-openclaw-hooks.md)
+Glossary: [docs/glossary.md](glossary.md)
+State directory lifecycle: [docs/state-directory.md](state-directory.md)
+Guardrails and rollback: [docs/guardrails-and-rollback.md](guardrails-and-rollback.md)
+End-to-end trace: [docs/end-to-end-trace.md](end-to-end-trace.md)
 
 If you’re already running OpenClaw, this guide shows the fastest path to:
 

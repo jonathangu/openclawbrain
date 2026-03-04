@@ -14,6 +14,7 @@ ROOT = Path(__file__).resolve().parent
 SIMS = [
     ("deploy_pipeline.py", "deploy_pipeline_results.json"),
     ("negation.py", "negation_results.json"),
+    ("mistake_recurrence.py", "mistake_recurrence_results.json"),
     ("context_reduction.py", "context_reduction_results.json"),
     ("pg_vs_heuristic.py", "pg_vs_heuristic_results.json"),
     ("merge_compression.py", "merge_compression_results.json"),
@@ -75,6 +76,10 @@ def _summary_value(payload: dict[str, Any]) -> str:
         return f"final={payload['claim']['edge_growth_to_reflex']['to_query_50']:.3f}"
     if payload.get("simulation") == "negation":
         return f"bad={payload['final_weights']['skip_tests_for_hotfix']:.3f}"
+    if payload.get("simulation") == "mistake_recurrence":
+        early = payload["wrong_fire_rate"]["early"]
+        late = payload["wrong_fire_rate"]["late"]
+        return f"{early:.2f}->{late:.2f}"
     if payload.get("simulation") == "context_reduction":
         first = payload["claim"]["reduction_to_few_nodes"]["from_query1"]
         last = payload["claim"]["reduction_to_few_nodes"]["to_last_10_avg"]

@@ -59,6 +59,41 @@ def _negation(result: dict[str, Any]) -> None:
     plt.close(fig)
 
 
+def _mistake_recurrence(result: dict[str, Any]) -> None:
+    fig, axes = plt.subplots(2, 1, figsize=(9, 6), sharex=True)
+    history = result["wrong_fire_history"]
+    queries = [item["query"] for item in history]
+    wrong = [item["wrong_weight"] for item in history]
+    correct = [item["correct_weight"] for item in history]
+    wrong_fired = [1.0 if item["wrong_fired"] else 0.0 for item in history]
+    window = max(1, int(result.get("window", 5)))
+
+    rolling: list[float] = []
+    for idx in range(len(wrong_fired)):
+        start = max(0, idx - window + 1)
+        window_values = wrong_fired[start : idx + 1]
+        rolling.append(sum(window_values) / len(window_values))
+
+    axes[0].plot(queries, correct, label="correct path weight", marker="o")
+    axes[0].plot(queries, wrong, label="wrong path weight", marker="o")
+    axes[0].axhline(0.0, linestyle="--", color="black", alpha=0.4)
+    axes[0].set_ylabel("edge weight")
+    axes[0].set_title("Mistake recurrence: inhibitory suppression over time")
+    axes[0].grid(alpha=0.3)
+    axes[0].legend()
+
+    axes[1].plot(queries, rolling, label=f"wrong path rate (window={window})", color="#d62728", marker="o")
+    axes[1].set_xlabel("query")
+    axes[1].set_ylabel("wrong-fire rate")
+    axes[1].set_ylim(0, 1.05)
+    axes[1].grid(alpha=0.3)
+    axes[1].legend()
+
+    fig.tight_layout()
+    fig.savefig(ROOT / "mistake_recurrence.png")
+    plt.close(fig)
+
+
 def _context_reduction(result: dict[str, Any]) -> None:
     fig, ax = plt.subplots(figsize=(10, 4))
     history = result["nodes_fired_series"]
@@ -222,6 +257,7 @@ def _individuation(result: dict[str, Any]) -> None:
 def main() -> None:
     deploy = _load("deploy_pipeline_results.json")
     negation = _load("negation_results.json")
+    mistake = _load("mistake_recurrence_results.json")
     context = _load("context_reduction_results.json")
     forgetting = _load("forgetting_results.json")
     damping = _load("edge_damping_results.json")
@@ -231,6 +267,7 @@ def main() -> None:
 
     _deploy_pipeline(deploy)
     _negation(negation)
+    _mistake_recurrence(mistake)
     _context_reduction(context)
     _forgetting(forgetting)
     _edge_damping(damping)
