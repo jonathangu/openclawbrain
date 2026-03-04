@@ -4,6 +4,7 @@ import { homedir } from "node:os";
 import * as path from "node:path";
 import { createHash } from "node:crypto";
 import { promisify } from "node:util";
+import { resolveStatePath } from "./state-path.js";
 
 const execFileAsync = promisify(execFile);
 const HOOK_VENV_PYTHON = path.join(
@@ -225,7 +226,7 @@ export default async function handler(event: any): Promise<any> {
   }
 
   const agentId = resolveAgentId(context);
-  const statePath = path.join(homedir(), ".openclawbrain", agentId, "state.json");
+  const statePath = resolveStatePath(agentId);
   const budget = keywordIncreasedBudget(message) ? 80000 : 20000;
   const chatId =
     normalizeText(context?.channelId) && normalizeText(context?.conversationId)
