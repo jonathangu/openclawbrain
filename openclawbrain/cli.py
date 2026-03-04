@@ -34,6 +34,7 @@ from .index import VectorIndex
 from .inject import inject_correction, inject_node
 from .compact import compact_daily_notes
 from .journal import (
+    log_event,
     log_health,
     log_learn,
     log_query,
@@ -122,6 +123,28 @@ def _write_json_atomic(path: Path, payload: object) -> None:
     except OSError:
         pass
     temp.replace(target)
+
+
+def _read_json_optional(path: Path) -> dict[str, object] | None:
+    """Read a JSON file if it exists, otherwise return None."""
+    target = Path(path)
+    if not target.exists():
+        return None
+    try:
+        payload = json.loads(target.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return None
+    return payload if isinstance(payload, dict) else None
+
+
+def _sync_report_path(state_path: str) -> Path:
+    """Resolve sync report path for a given state file."""
+    return Path(state_path).expanduser().parent / "sync.report.json"
+
+
+def _maintain_report_path(state_path: str) -> Path:
+    """Resolve maintenance report path for a given state file."""
+    return Path(state_path).expanduser().parent / "maintain.report.json"
 
 
 def _append_jsonl(path: Path, payload: dict[str, object]) -> None:
@@ -1500,6 +1523,9 @@ def _build_parser() -> argparse.ArgumentParser:
     h.add_argument("--state")
     h.add_argument("--graph")
     h.add_argument("--json", action="store_true")
+
+    rep = sub.add_parser("report", help="Daily brain update summary")
+    rep.add_argument("--state")
 
     ar = sub.add_parser("async-route-pg")
     ar.add_argument("--state", required=True)
@@ -4256,6 +4282,13 @@ def cmd_sync(args: argparse.Namespace) -> int:
                     f"-{report.nodes_removed} ={report.nodes_unchanged} unchanged | "
                     f"{report.embeddings_computed} embeddings"
                 )
+                graph, _, _ = load_state(str(tmp_state))
+                health = measure_health(graph)
+                print(
+                    "health: "
+                    f"nodes={graph.node_count()} edges={graph.edge_count()} orphans={health.orphan_nodes} "
+                    f"reflex={health.reflex_pct:.1%} habitual={health.habitual_pct:.1%} dormant={health.dormant_pct:.1%}"
+                )
             return 0
 
     report = sync_workspace(
@@ -4267,6 +4300,16 @@ def cmd_sync(args: argparse.Namespace) -> int:
         authority_map=authority_map,
     )
 
+    _write_json_atomic(
+        _sync_report_path(state_path),
+        {
+            **asdict(report),
+            "state_path": str(Path(state_path).expanduser()),
+            "ts": time.time(),
+            "iso": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+        },
+    )
+
     if args.json:
         print(json.dumps(asdict(report), indent=2))
     else:
@@ -4274,6 +4317,13 @@ def cmd_sync(args: argparse.Namespace) -> int:
             f"sync report: +{report.nodes_added}/~{report.nodes_updated} "
             f"-{report.nodes_removed} ={report.nodes_unchanged} unchanged | "
             f"{report.embeddings_computed} embeddings"
+        )
+        graph, _, _ = load_state(state_path)
+        health = measure_health(graph)
+        print(
+            "health: "
+            f"nodes={graph.node_count()} edges={graph.edge_count()} orphans={health.orphan_nodes} "
+            f"reflex={health.reflex_pct:.1%} habitual={health.habitual_pct:.1%} dormant={health.dormant_pct:.1%}"
         )
     return 0
 
@@ -4303,6 +4353,164 @@ def cmd_health(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_report(args: argparse.Namespace) -> int:
+    """Print consolidated daily summary report."""
+    state_path = _resolve_state_path(args.state, allow_default=True)
+    if state_path is None:
+        raise SystemExit("--state is required for report")
+    resolved_state = str(Path(state_path).expanduser())
+    graph, _, _ = load_state(resolved_state)
+    health = measure_health(graph)
+
+    socket_path = _default_daemon_socket_path(resolved_state)
+    socket_exists = Path(socket_path).exists()
+    pid_path = Path(socket_path).expanduser().parent / "daemon.pid"
+    pid = None
+    if pid_path.exists():
+        raw_pid = pid_path.read_text(encoding="utf-8").strip()
+        if raw_pid.isdigit():
+            pid = int(raw_pid)
+
+    sync_payload = _read_json_optional(_sync_report_path(resolved_state))
+    maintain_payload = _read_json_optional(_maintain_report_path(resolved_state))
+
+    journal_path = _resolve_journal_path(args, allow_default_state=True)
+    entries = read_journal(journal_path) if journal_path else []
+    last_report_ts = None
+    last_report_iso = None
+    for entry in reversed(entries):
+        if entry.get("type") == "report":
+            ts = entry.get("ts")
+            if isinstance(ts, (int, float)):
+                last_report_ts = float(ts)
+                last_report_iso = entry.get("iso") if isinstance(entry.get("iso"), str) else None
+                break
+
+    def _include_entry(entry: dict) -> bool:
+        ts = entry.get("ts")
+        if last_report_ts is None:
+            return True
+        if isinstance(ts, (int, float)):
+            return float(ts) > last_report_ts
+        return False
+
+    learn_positive = 0
+    learn_negative = 0
+    splits_suggested = 0
+    splits_applied = 0
+    merges_suggested = 0
+    merges_applied = 0
+    pruned_edges = 0
+    pruned_nodes = 0
+    replay_edges_reinforced = 0
+    replay_cross_file_created = 0
+
+    for entry in entries:
+        if not _include_entry(entry):
+            continue
+        if entry.get("type") == "learn":
+            outcome = entry.get("outcome", 0)
+            try:
+                outcome_val = float(outcome)
+            except (TypeError, ValueError):
+                outcome_val = 0.0
+            if outcome_val > 0:
+                learn_positive += 1
+            elif outcome_val < 0:
+                learn_negative += 1
+        elif entry.get("type") == "maintenance":
+            task = entry.get("task")
+            if task == "split":
+                splits_suggested += int(entry.get("suggested", 0) or 0)
+                splits_applied += int(entry.get("applied", 0) or 0)
+            elif task == "merge":
+                merges_suggested += int(entry.get("suggested", 0) or 0)
+                merges_applied += int(entry.get("applied", 0) or 0)
+            elif task == "prune":
+                pruned_edges += int(entry.get("edges_removed", 0) or 0)
+                pruned_nodes += int(entry.get("nodes_removed", 0) or 0)
+        elif entry.get("type") == "replay":
+            replay_edges_reinforced += int(entry.get("edges_reinforced", 0) or 0)
+            replay_cross_file_created += int(entry.get("cross_file_created", 0) or 0)
+
+    since_label = f"since {last_report_iso}" if last_report_iso else "all time"
+
+    def _get_int(payload: dict[str, object], key: str) -> int:
+        try:
+            return int(payload.get(key, 0) or 0)
+        except (TypeError, ValueError):
+            return 0
+
+    def _get_nested_int(payload: dict[str, object], key: str, subkey: str) -> int:
+        value = payload.get(key)
+        if isinstance(value, dict):
+            return _get_int(value, subkey)
+        return 0
+
+    lines = [
+        "Daily brain update summary",
+        f"  state: {resolved_state}",
+        f"  daemon.sock: {'present' if socket_exists else 'missing'}" + (f" (pid {pid})" if pid is not None else ""),
+        f"  nodes: {graph.node_count()}  edges: {graph.edge_count()}  orphans: {health.orphan_nodes}",
+        f"  reflex: {health.reflex_pct:.1%}  habitual: {health.habitual_pct:.1%}  dormant: {health.dormant_pct:.1%}",
+    ]
+
+    if sync_payload:
+        lines.append(
+            "  last sync: "
+            f"+{_get_int(sync_payload, 'nodes_added')}/~{_get_int(sync_payload, 'nodes_updated')} "
+            f"-{_get_int(sync_payload, 'nodes_removed')} ={_get_int(sync_payload, 'nodes_unchanged')} unchanged | "
+            f"{_get_int(sync_payload, 'embeddings_computed')} embeddings"
+        )
+    else:
+        lines.append("  last sync: (none)")
+
+    if maintain_payload:
+        lines.append(
+            "  last maintenance: "
+            f"nodes {_get_nested_int(maintain_payload, 'health_before', 'nodes')}"
+            f" -> {_get_nested_int(maintain_payload, 'health_after', 'nodes')} "
+            f"edges {_get_int(maintain_payload, 'edges_before')}"
+            f" -> {_get_int(maintain_payload, 'edges_after')}"
+        )
+        lines.append(
+            "  maintenance deltas: "
+            f"merges {_get_int(maintain_payload, 'merges_applied')}/{_get_int(maintain_payload, 'merges_proposed')} "
+            f"splits {_get_int(maintain_payload, 'splits_applied')}/{_get_int(maintain_payload, 'splits_proposed')} "
+            f"pruned edges={_get_int(maintain_payload, 'pruned_edges')} "
+            f"nodes={_get_int(maintain_payload, 'pruned_nodes')} "
+            f"decay_applied={bool(maintain_payload.get('decay_applied', False))}"
+        )
+    else:
+        lines.append("  last maintenance: (none)")
+
+    lines.extend(
+        [
+            f"  label usage ({since_label}):",
+            f"  learn outcomes: +{learn_positive} -{learn_negative}",
+            f"  maintenance: splits {splits_applied}/{splits_suggested} merges {merges_applied}/{merges_suggested} "
+            f"pruned edges={pruned_edges} nodes={pruned_nodes}",
+            f"  replay: edges_reinforced={replay_edges_reinforced} cross_file_created={replay_cross_file_created}",
+        ]
+    )
+
+    print("\n".join(lines))
+
+    if journal_path is not None:
+        log_event(
+            {
+                "type": "report",
+                "state_path": resolved_state,
+                "since_ts": last_report_ts,
+                "sync_report": bool(sync_payload),
+                "maintenance_report": bool(maintain_payload),
+            },
+            journal_path=journal_path,
+        )
+
+    return 0
+
+
 def cmd_maintain(args: argparse.Namespace) -> int:
     """cmd maintain."""
     state_path = _resolve_state_path(args.state, allow_default=True)
@@ -4322,6 +4530,17 @@ def cmd_maintain(args: argparse.Namespace) -> int:
         max_merges=args.max_merges,
         prune_below=args.prune_below,
     )
+    if not args.dry_run:
+        _write_json_atomic(
+            _maintain_report_path(state_path),
+            {
+                **asdict(report),
+                "state_path": str(Path(state_path).expanduser()),
+                "ts": time.time(),
+                "iso": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
+            },
+        )
+
     if args.json:
         print(json.dumps(asdict(report), indent=2))
         return 0
@@ -4332,7 +4551,10 @@ def cmd_maintain(args: argparse.Namespace) -> int:
         f"  nodes: {report.health_before['nodes']} -> {report.health_after['nodes']}",
         f"  edges: {report.edges_before} -> {report.edges_after}",
         f"  merges: {report.merges_applied}/{report.merges_proposed}",
+        f"  splits: {report.splits_applied}/{report.splits_proposed}",
         f"  pruned: edges={report.pruned_edges} nodes={report.pruned_nodes}",
+        f"  soft_pruned_edges: {report.soft_pruned_edges}",
+        f"  nodes_scaled: {report.nodes_scaled}",
         f"  decay_applied: {report.decay_applied}",
         f"  dry_run: {args.dry_run}",
     ]))
@@ -5853,6 +6075,7 @@ def main(argv: list[str] | None = None) -> int:
         "self-correct": cmd_self_correct,
         "harvest": cmd_harvest,
         "health": cmd_health,
+        "report": cmd_report,
         "async-route-pg": cmd_async_route_pg,
         "dream": cmd_dream,
         "dreaming": cmd_dream,

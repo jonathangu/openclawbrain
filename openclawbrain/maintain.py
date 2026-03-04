@@ -348,6 +348,9 @@ class MaintenanceReport:
     edges_after: int
     merges_proposed: int
     merges_applied: int
+    splits_proposed: int
+    splits_applied: int
+    nodes_scaled: int
     soft_pruned_edges: int
     pruned_edges: int
     pruned_nodes: int
@@ -393,6 +396,9 @@ def run_maintenance(
 
     merges_proposed = 0
     merges_applied = 0
+    splits_proposed = 0
+    splits_applied = 0
+    nodes_scaled = 0
     soft_pruned_edges = 0
     pruned_edges = 0
     pruned_nodes = 0
@@ -479,7 +485,7 @@ def run_maintenance(
     if "scale" in selected:
         tasks_run.append("scale")
         constitutional_nodes = _node_ids_with_authority(target_graph, "constitutional")
-        scaled_nodes = apply_synaptic_scaling(
+        nodes_scaled = apply_synaptic_scaling(
             target_graph,
             skip_node_ids=constitutional_nodes,
         )
@@ -487,7 +493,7 @@ def run_maintenance(
             {
                 "type": "maintenance",
                 "task": "scale",
-                "nodes_scaled": scaled_nodes,
+                "nodes_scaled": nodes_scaled,
                 "dry_run": dry_run,
             },
             journal_path=journal_path,
@@ -539,6 +545,9 @@ def run_maintenance(
                     embed_fn=embed_fn,
                 )
                 split_applied += 1
+
+        splits_proposed = split_proposed
+        splits_applied = split_applied
 
         log_event(
             {
@@ -648,6 +657,9 @@ def run_maintenance(
         edges_after=target_graph.edge_count(),
         merges_proposed=merges_proposed,
         merges_applied=merges_applied,
+        splits_proposed=splits_proposed,
+        splits_applied=splits_applied,
+        nodes_scaled=nodes_scaled,
         soft_pruned_edges=soft_pruned_edges,
         pruned_edges=pruned_edges,
         pruned_nodes=pruned_nodes,

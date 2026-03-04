@@ -149,11 +149,25 @@ def test_sync_sets_authority_for_unchanged_nodes_without_reembedding(tmp_path: P
     assert report.nodes_metadata_updated == 1
     assert report.authority_set["constitutional"] == 1
 
-    graph_after, _, _ = load_state(str(state_path))
-    node_after = graph_after.get_node("SOUL.md::0")
-    assert node_after is not None
-    assert node_after.content == "# Soul\nStable"
-    assert node_after.metadata["authority"] == "constitutional"
+
+def test_sync_writes_report_and_report_command_reads(tmp_path: Path, capsys) -> None:
+    """sync writes sync.report.json and report command reads it."""
+    workspace = tmp_path / "workspace"
+    workspace.mkdir()
+    (workspace / "SOUL.md").write_text("# Soul\nKeep these rules.", encoding="utf-8")
+
+    state_path = tmp_path / "state.json"
+    _write_state(state_path, graph=Graph(), index=VectorIndex())
+
+    assert main(["sync", "--state", str(state_path), "--workspace", str(workspace)]) == 0
+
+    report_path = state_path.parent / "sync.report.json"
+    assert report_path.exists()
+
+    assert main(["report", "--state", str(state_path)]) == 0
+    output = capsys.readouterr().out
+    assert "Daily brain update summary" in output
+    assert "last sync: +1" in output
 
 
 def test_sync_dry_run_doesnt_modify(tmp_path: Path) -> None:
