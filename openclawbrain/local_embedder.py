@@ -4,6 +4,7 @@ from __future__ import annotations
 
 from dataclasses import dataclass
 import os
+from pathlib import Path
 
 import numpy as np
 
@@ -15,7 +16,20 @@ _LOCAL_MODEL_TAG_MAP = {
     "bge-small-en-v1.5": "BAAI/bge-small-en-v1.5",
 }
 
-_MODEL_CACHE: dict[str, object] = {}
+FASTEMBED_CACHE_ENV = "FASTEMBED_CACHE_PATH"
+DEFAULT_FASTEMBED_CACHE_DIR = Path.home() / ".cache" / "fastembed"
+
+_MODEL_CACHE: dict[tuple[str, str | None], object] = {}
+
+
+def resolve_fastembed_cache_dir(cache_dir: str | None = None) -> str | None:
+    """Resolve fastembed cache dir with env override."""
+    if cache_dir and str(cache_dir).strip():
+        return str(Path(cache_dir).expanduser())
+    env_value = os.environ.get(FASTEMBED_CACHE_ENV)
+    if env_value and env_value.strip():
+        return str(Path(env_value).expanduser())
+    return str(DEFAULT_FASTEMBED_CACHE_DIR)
 
 
 def _stub_dim_for_model(model_name: str) -> int:
@@ -97,6 +111,7 @@ class LocalEmbedder:
     """Fast local embedder powered by `fastembed`."""
 
     model_name: str = DEFAULT_LOCAL_MODEL
+    cache_dir: str | None = None
     _dim: int | None = None
 
     @property
@@ -110,7 +125,9 @@ class LocalEmbedder:
         return self._dim
 
     def _model(self):
-        cached = _MODEL_CACHE.get(self.model_name)
+        cache_dir = resolve_fastembed_cache_dir(self.cache_dir)
+        cache_key = (self.model_name, cache_dir)
+        cached = _MODEL_CACHE.get(cache_key)
         if cached is not None:
             return cached
         try:
@@ -118,11 +135,11 @@ class LocalEmbedder:
         except ImportError as exc:
             if os.environ.get("OPENCLAWBRAIN_FASTEMBED_STUB"):
                 model = _StubTextEmbedding(self.model_name)
-                _MODEL_CACHE[self.model_name] = model
+                _MODEL_CACHE[cache_key] = model
                 return model
             raise ImportError("fastembed is required for local embeddings") from exc
-        model = TextEmbedding(model_name=self.model_name)
-        _MODEL_CACHE[self.model_name] = model
+        model = TextEmbedding(model_name=self.model_name, cache_dir=cache_dir)
+        _MODEL_CACHE[cache_key] = model
         return model
 
     def embed(self, text: str) -> list[float]:

@@ -15,6 +15,7 @@ openclawbrain info --state ./brain/state.json
 ```
 
 By default, `init` uses local embeddings (`--embedder auto` resolves to local) and does not require OpenAI. Use `--embedder openai` if you explicitly want OpenAI embeddings.
+fastembed cache lives at `~/.cache/fastembed` by default; override with `FASTEMBED_CACHE_PATH` if you want a different persistent location.
 
 Daemon query embedder default is `--embed-model auto`:
 - `local:*` states use local query embeddings.

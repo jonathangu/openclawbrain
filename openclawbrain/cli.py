@@ -77,7 +77,14 @@ from .full_learning import (
 from ._util import _tokenize
 from .maintain import run_maintenance
 from .reward import RewardSource, RewardWeights
-from .labels import LabelRecord, from_self_learning_event, from_teacher_output, write_labels_jsonl
+from .labels import (
+    LabelRecord,
+    append_labels_jsonl,
+    from_self_learning_event,
+    from_teacher_output,
+    read_labels_jsonl,
+    write_labels_jsonl,
+)
 from .trace import RouteTrace, route_trace_to_json
 from .state_lock import StateLockError, lock_path_for_state, state_write_lock
 from .store import load_state, save_state, resolve_default_state_path
@@ -96,6 +103,10 @@ LOOP_CHECKPOINT_FILENAME = "loop.checkpoint.json"
 LOOP_MANIFEST_FILENAME = "loop.manifest.json"
 LOOP_STDOUT_FILENAME = "loop.stdout.log"
 LOOP_STDERR_FILENAME = "loop.stderr.log"
+INIT_ROUTE_SINCE_HOURS = 100000
+INIT_ROUTE_MAX_QUERIES = 100000
+INIT_ROUTE_SAMPLE_RATE = 1.0
+INIT_ROUTE_TRACES_FILENAME = "init.route_traces.jsonl"
 REPLAY_HELP_EPILOG = (
     "Replay modes and rough cost profile:\n"
     "  edges-only    Fastest/cheapest. No LLM calls, no harvest.\n"
@@ -196,6 +207,7 @@ def _build_all_root_manifest_payload(
             "replay_priority": str(args.replay_priority),
             "advance_offsets_on_skip": bool(args.advance_offsets_on_skip),
             "enable_async_teacher": bool(args.enable_async_teacher),
+            "skip_init_route_model": bool(args.skip_init_route_model),
             "events_jsonl": str(events_jsonl),
         },
         "agents": agents or [],
@@ -719,13 +731,19 @@ def _build_all_agent_pipeline(
     maintain_path = scratch / f"{prefix}.maintain.json"
     async_route_path = scratch / f"{prefix}.async-route-pg.json"
     train_route_path = scratch / f"{prefix}.train-route-model.json"
+    init_harvest_path = scratch / f"{prefix}.init.harvest.json"
     traces_out_path = scratch / f"{prefix}.route_traces.jsonl"
     route_model_out_path = scratch / f"{prefix}.route_model.npz"
+    init_async_route_path = scratch / f"{prefix}.init.async-route-pg.json"
+    init_train_route_path = scratch / f"{prefix}.init.train-route-model.json"
+    init_traces_path = scratch / INIT_ROUTE_TRACES_FILENAME
+    init_route_model_out_path = agent_root / "route_model.npz"
     agent_manifest_path = scratch / f"{prefix}.manifest.json"
 
     state_path = agent_root / "state.json"
     sessions_path = Path.home() / ".openclaw" / "agents" / agent_id / "sessions"
     checkpoint_path = agent_root / REPLAY_CHECKPOINT_FILENAME
+    labels_path = _default_labels_path(str(state_path))
 
     steps: list[dict[str, object]] = []
     exit_code = 0
@@ -985,6 +1003,87 @@ def _build_all_agent_pipeline(
     else:
         emit_skipped("maintain", reason=last_error, code=exit_code, stdout_path=maintain_path)
 
+    if exit_code == 0 and not args.skip_init_route_model:
+        preserved = [record for record in read_labels_jsonl(labels_path) if record.reward_source != RewardSource.HARVESTER]
+        harvest_cmd = [
+            ocb_bin,
+            "harvest",
+            "--state",
+            str(state_path),
+            "--dry-run",
+            "--labels-out",
+            str(labels_path),
+            "--json",
+        ]
+        exit_code = run_step("init_harvest_labels", harvest_cmd, stdout_path=init_harvest_path)
+        if exit_code == 0 and preserved:
+            append_labels_jsonl(labels_path, preserved)
+        if exit_code == 0:
+            init_async_cmd = [
+                ocb_bin,
+                "async-route-pg",
+                "--state",
+                str(state_path),
+                "--teacher",
+                str(args.teacher),
+                "--teacher-model",
+                str(args.teacher_model),
+                "--since-hours",
+                str(INIT_ROUTE_SINCE_HOURS),
+                "--max-queries",
+                str(INIT_ROUTE_MAX_QUERIES),
+                "--sample-rate",
+                str(INIT_ROUTE_SAMPLE_RATE),
+                "--max-candidates-per-node",
+                str(args.max_candidates_per_node),
+                "--max-decision-points",
+                str(args.max_decision_points),
+                "--score-scale",
+                str(args.score_scale),
+                "--reward-source",
+                str(args.reward_source),
+                "--labels-out",
+                str(labels_path),
+                "--traces-out",
+                str(init_traces_path),
+                "--include-query-vector",
+                "--apply",
+                "--json",
+            ]
+            if args.reward_weights:
+                init_async_cmd.extend(["--reward-weights", str(args.reward_weights)])
+            if args.write_relevance_metadata:
+                init_async_cmd.append("--write-relevance-metadata")
+            else:
+                init_async_cmd.append("--no-write-relevance-metadata")
+
+            exit_code = run_step("init_async_route_pg", init_async_cmd, stdout_path=init_async_route_path)
+            if exit_code == 0 and init_traces_path.exists() and init_traces_path.stat().st_size > 0:
+                init_train_cmd = [
+                    ocb_bin,
+                    "train-route-model",
+                    "--state",
+                    str(state_path),
+                    "--traces-in",
+                    str(init_traces_path),
+                    "--labels-in",
+                    str(labels_path),
+                    "--out",
+                    str(init_route_model_out_path),
+                    "--json",
+                ]
+                exit_code = run_step("init_train_route_model", init_train_cmd, stdout_path=init_train_route_path)
+            else:
+                skip_reason = "missing traces" if exit_code == 0 else "init async route failed"
+                emit_skipped("init_train_route_model", reason=skip_reason, code=exit_code, stdout_path=init_train_route_path)
+        else:
+            emit_skipped("init_async_route_pg", reason="init harvest failed", code=exit_code, stdout_path=init_async_route_path)
+            emit_skipped("init_train_route_model", reason="init harvest failed", code=exit_code, stdout_path=init_train_route_path)
+    elif exit_code == 0:
+        emit_skipped("init_harvest_labels", reason="disabled", code=0, stdout_path=init_harvest_path)
+        emit_skipped("init_async_route_pg", reason="disabled", code=0, stdout_path=init_async_route_path)
+        emit_skipped("init_train_route_model", reason="disabled", code=0, stdout_path=init_train_route_path)
+
     if exit_code == 0 and args.enable_async_teacher:
         async_cmd = [
             ocb_bin,
@@ -1009,6 +1108,8 @@ def _build_all_agent_pipeline(
             str(args.score_scale),
             "--reward-source",
             str(args.reward_source),
+            "--labels-out",
+            str(labels_path),
             "--traces-out",
             str(traces_out_path),
             "--apply",
@@ -1030,6 +1131,8 @@ def _build_all_agent_pipeline(
                 str(state_path),
                 "--traces-in",
                 str(traces_out_path),
+                "--labels-in",
+                str(labels_path),
                 "--out",
                 str(route_model_out_path),
                 "--json",
@@ -1598,6 +1701,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     dream.add_argument("--reward-weights", default=None, help="Comma-separated weights: human=1.0,self=0.6,harvester=0.3,teacher=0.1")
     dream.add_argument("--traces-dir", default=None)
+    dream.add_argument("--labels-out", default=None)
     dream.add_argument("--json", action="store_true")
 
     loop = sub.add_parser(
@@ -1686,6 +1790,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     dreaming.add_argument("--reward-weights", default=None, help="Comma-separated weights: human=1.0,self=0.6,harvester=0.3,teacher=0.1")
     dreaming.add_argument("--traces-dir", default=None)
+    dreaming.add_argument("--labels-out", default=None)
     dreaming.add_argument("--json", action="store_true")
 
     tr = sub.add_parser("train-route-model")
@@ -1788,6 +1893,11 @@ def _build_parser() -> argparse.ArgumentParser:
     build_all.add_argument("--reward-weights", default=None)
     build_all.add_argument("--write-relevance-metadata", action=argparse.BooleanOptionalAction, default=True)
     build_all.add_argument(
+        "--skip-init-route-model",
+        action="store_true",
+        help="Skip one-shot route model init (harvest + async-route-pg + train-route-model).",
+    )
+    build_all.add_argument(
         "--events-jsonl",
         default=None,
         help="Optional path for build-all JSONL event stream. Defaults to ~/.openclawbrain/scratch/build-all.<ts>.events.jsonl",
@@ -1806,6 +1916,11 @@ def _build_parser() -> argparse.ArgumentParser:
     openclaw.add_argument("--state", help="Explicit state.json path (overrides --agent)")
     openclaw.add_argument("--hooks-path", help="Path to openclawbrain-context-injector hook directory")
     openclaw.add_argument("--env-file", help="Optional .env file to pass into launchd service plists")
+    openclaw.add_argument(
+        "--skip-init-route-model",
+        action="store_true",
+        help="Skip one-shot route model init (harvest + async-route-pg + train-route-model).",
+    )
     openclaw.add_argument("--yes", action="store_true", help="Skip confirmation prompts")
     return parser
 
@@ -2463,6 +2578,22 @@ def _default_dream_traces_dir(state_path: str) -> Path:
     resolved_state = Path(state_path).expanduser()
     agent = resolved_state.parent.name or "default"
     return Path.home() / ".openclawbrain" / agent / "scratch"
+
+
+def _default_labels_path(state_path: str) -> Path:
+    """Resolve default labels.jsonl path for a state file."""
+    return Path(state_path).expanduser().parent / "labels.jsonl"
+
+
+def _refresh_labels_from_harvest(labels_path: Path, harvest_output_path: Path) -> None:
+    """Replace labels file with harvest output, preserving non-harvester labels."""
+    preserved = [
+        record for record in read_labels_jsonl(labels_path)
+        if record.reward_source != RewardSource.HARVESTER
+    ]
+    if preserved:
+        append_labels_jsonl(harvest_output_path, preserved)
+    harvest_output_path.replace(labels_path)
 
 
 def _load_session_query_records(session_paths: str | Iterable[str], since_ts: float | None = None) -> list[tuple[str, float | None]]:
@@ -4958,6 +5089,7 @@ def cmd_async_route_pg(args: argparse.Namespace) -> int:
         parsed_weights = RewardWeights.from_string(args.reward_weights) if args.reward_weights else RewardWeights.from_env()
     except ValueError as exc:
         raise SystemExit(str(exc)) from exc
+    labels_out = str(Path(args.labels_out).expanduser()) if args.labels_out else str(_default_labels_path(state_path))
     summary = run_async_route_pg(
         state_path=state_path,
         journal_path=journal_path,
@@ -4973,7 +5105,7 @@ def cmd_async_route_pg(args: argparse.Namespace) -> int:
         score_scale=float(args.score_scale),
         traces_out=str(args.traces_out) if args.traces_out else None,
         traces_in=str(args.traces_in) if args.traces_in else None,
-        labels_out=str(args.labels_out) if args.labels_out else None,
+        labels_out=labels_out,
         include_query_vector=bool(args.include_query_vector),
         reward_source=RewardSource.parse(args.reward_source),
         reward_weights=parsed_weights,
@@ -5013,6 +5145,7 @@ def cmd_dream(args: argparse.Namespace) -> int:
         raise SystemExit(str(exc)) from exc
 
     traces_dir = Path(args.traces_dir).expanduser() if args.traces_dir else _default_dream_traces_dir(state_path)
+    labels_out = str(Path(args.labels_out).expanduser()) if args.labels_out else str(_default_labels_path(state_path))
     interval_seconds = max(1, int(args.interval_seconds))
     cycle = 0
 
@@ -5051,6 +5184,7 @@ def cmd_dream(args: argparse.Namespace) -> int:
                         score_scale=float(args.score_scale),
                         traces_out=str(traces_out),
                         traces_in=None,
+                        labels_out=labels_out,
                         include_query_vector=False,
                         reward_source=RewardSource.parse(args.reward_source),
                         reward_weights=parsed_weights,
@@ -5080,6 +5214,7 @@ def cmd_dream(args: argparse.Namespace) -> int:
                 score_scale=float(args.score_scale),
                 traces_out=str(traces_out),
                 traces_in=None,
+                labels_out=labels_out,
                 include_query_vector=False,
                 reward_source=RewardSource.parse(args.reward_source),
                 reward_weights=parsed_weights,
@@ -5127,6 +5262,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
     if state_path is None:
         raise SystemExit("--state or --agent is required for loop")
     state_path = str(Path(state_path).expanduser())
+    labels_path = _default_labels_path(state_path)
 
     agent_root = _loop_state_root(state_path)
     agent_id = agent_root.name or "main"
@@ -5533,6 +5669,31 @@ def cmd_loop(args: argparse.Namespace) -> int:
         emit_event({"type": "step_end", "job": job, "step": "harvest", "exit_code": code})
         return code
 
+    def run_harvest_labels(*, job: str) -> int:
+        temp_path = labels_path.with_suffix(".harvest.tmp")
+        harvest_cmd = [
+            *ocb_prefix,
+            "harvest",
+            "--state",
+            state_path,
+            "--dry-run",
+            "--labels-out",
+            str(temp_path),
+            "--json",
+        ]
+        write_checkpoint(status="running", job=job, step="harvest_labels")
+        emit_event({"type": "step_start", "job": job, "step": "harvest_labels"})
+        code = _run_logged_command(harvest_cmd, log_path=log_path, step_name=f"{job}.harvest_labels")
+        emit_event({"type": "step_end", "job": job, "step": "harvest_labels", "exit_code": code})
+        if code != 0:
+            return code
+        try:
+            _refresh_labels_from_harvest(labels_path, temp_path)
+        except OSError as exc:
+            log_line(f"{job}: harvest labels refresh failed to replace labels file: {exc}")
+            return 1
+        return 0
+
     def run_maintain(*, job: str) -> int:
         maintain_cmd = [
             *ocb_prefix,
@@ -5583,6 +5744,8 @@ def cmd_loop(args: argparse.Namespace) -> int:
             str(args.reward_source),
             "--apply",
             "--json",
+            "--labels-out",
+            str(labels_path),
         ]
         if args.reward_weights:
             async_cmd.extend(["--reward-weights", str(args.reward_weights)])
@@ -5612,6 +5775,8 @@ def cmd_loop(args: argparse.Namespace) -> int:
             state_path,
             "--traces-in",
             str(traces_in),
+            "--labels-in",
+            str(labels_path),
             "--out",
             str(out_path),
             "--json",
@@ -5745,6 +5910,9 @@ def cmd_loop(args: argparse.Namespace) -> int:
 
                 traces_out: Path | None = None
                 if include_teacher:
+                    labels_refresh_code = run_harvest_labels(job=job)
+                    if labels_refresh_code != 0:
+                        log_line(f"{job}: harvest labels refresh failed exit={labels_refresh_code}")
                     traces_root = _loop_state_root(state_path) / "scratch"
                     traces_root.mkdir(parents=True, exist_ok=True)
                     if args.enable_train_route_model:
@@ -6107,6 +6275,10 @@ def cmd_openclaw(args: argparse.Namespace) -> int:
             print("Aborted.")
             return 1
         hooks_path = _resolve_hooks_path(args.hooks_path)
+        labels_path = _default_labels_path(state_path)
+        scratch_dir = Path(state_path).expanduser().parent / "scratch"
+        scratch_dir.mkdir(parents=True, exist_ok=True)
+        traces_out = scratch_dir / INIT_ROUTE_TRACES_FILENAME
         codes = []
         serve_cmd = [*ocb_prefix, "serve", "install", "--state", state_path]
         if args.env_file:
@@ -6118,6 +6290,56 @@ def cmd_openclaw(args: argparse.Namespace) -> int:
         if args.env_file:
             loop_cmd.extend(["--env-file", str(Path(args.env_file).expanduser())])
         codes.append(run_step("loop install", loop_cmd))
+        if not args.skip_init_route_model:
+            preserved = [record for record in read_labels_jsonl(labels_path) if record.reward_source != RewardSource.HARVESTER]
+            harvest_cmd = [
+                *ocb_prefix,
+                "harvest",
+                "--state",
+                state_path,
+                "--dry-run",
+                "--labels-out",
+                str(labels_path),
+            ]
+            harvest_code = run_step("init harvest labels", harvest_cmd)
+            codes.append(harvest_code)
+            if harvest_code == 0 and preserved:
+                append_labels_jsonl(labels_path, preserved)
+            if harvest_code == 0:
+                async_cmd = [
+                    *ocb_prefix,
+                    "async-route-pg",
+                    "--state",
+                    state_path,
+                    "--since-hours",
+                    str(INIT_ROUTE_SINCE_HOURS),
+                    "--max-queries",
+                    str(INIT_ROUTE_MAX_QUERIES),
+                    "--sample-rate",
+                    str(INIT_ROUTE_SAMPLE_RATE),
+                    "--labels-out",
+                    str(labels_path),
+                    "--traces-out",
+                    str(traces_out),
+                    "--include-query-vector",
+                    "--apply",
+                ]
+                async_code = run_step("init async-route-pg", async_cmd)
+                codes.append(async_code)
+                if async_code == 0 and traces_out.exists() and traces_out.stat().st_size > 0:
+                    train_cmd = [
+                        *ocb_prefix,
+                        "train-route-model",
+                        "--state",
+                        state_path,
+                        "--traces-in",
+                        str(traces_out),
+                        "--labels-in",
+                        str(labels_path),
+                        "--out",
+                        str(Path(state_path).expanduser().parent / "route_model.npz"),
+                    ]
+                    codes.append(run_step("init train-route-model", train_cmd))
         codes.append(run_step("gateway restart", ["openclaw", "gateway", "restart"]))
         return 0 if all(code == 0 for code in codes) else 1
 
