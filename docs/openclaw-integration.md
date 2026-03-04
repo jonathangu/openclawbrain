@@ -10,6 +10,7 @@ OpenClaw hook pack (recommended): [docs/openclawbrain-openclaw-hooks.md](opencla
 Glossary: [docs/glossary.md](glossary.md)
 State directory lifecycle: [docs/state-directory.md](state-directory.md)
 Guardrails and rollback: [docs/guardrails-and-rollback.md](guardrails-and-rollback.md)
+Benchmarks: [docs/benchmarks.md](benchmarks.md)
 End-to-end trace: [docs/end-to-end-trace.md](end-to-end-trace.md)
 
 If you’re already running OpenClaw, this guide shows the fastest path to:
@@ -37,9 +38,10 @@ Brain-first mode injects OpenClawBrain context automatically at the hook layer. 
 ### 5-minute quickstart (copy/paste)
 
 ```bash
-openclawbrain serve --state ~/.openclawbrain/main/state.json
+openclawbrain serve install --state ~/.openclawbrain/main/state.json
 openclaw hooks install /path/to/openclawbrain/integrations/openclaw/hooks/openclawbrain-context-injector
 openclaw hooks enable openclawbrain-context-injector
+openclawbrain loop install --state ~/.openclawbrain/main/state.json
 openclaw gateway restart
 ```
 
@@ -56,8 +58,11 @@ openclawbrain init --workspace ~/.openclaw/workspace --output ~/.openclawbrain/m
 2. Start the daemon (hot socket):
 
 ```bash
-openclawbrain serve --state ~/.openclawbrain/main/state.json
+openclawbrain serve install --state ~/.openclawbrain/main/state.json
 ```
+
+macOS launchd is the default. For Linux, use `openclawbrain serve --systemd` to print a unit template.
+For a foreground daemon, run `openclawbrain serve start --state ~/.openclawbrain/main/state.json`.
 
 3. Install + enable the hook:
 
@@ -66,7 +71,19 @@ openclaw hooks install /path/to/openclawbrain/integrations/openclaw/hooks/opencl
 openclaw hooks enable openclawbrain-context-injector
 ```
 
-4. Restart the gateway so hooks load:
+4. Install the always-learning loop (recommended default):
+
+```bash
+openclawbrain loop install --state ~/.openclawbrain/main/state.json
+```
+
+On Linux/systemd hosts, run `openclawbrain loop --systemd` to print unit/timer templates.
+
+Default schedule:
+- Hourly cheap job: edges-only replay (LLM-free)
+- Nightly heavier job: full replay (fast-learning + harvest) + maintenance
+
+5. Restart the gateway so hooks load:
 
 ```bash
 openclaw gateway restart
@@ -95,14 +112,33 @@ If you want to stop the daemon too:
 openclawbrain serve stop --state ~/.openclawbrain/main/state.json
 ```
 
+If you want to stop the loop too:
+
+```bash
+openclawbrain loop uninstall --state ~/.openclawbrain/main/state.json
+```
+
 ### Why the gateway restart is required
 
 OpenClaw loads hook manifests on gateway start. Restarting ensures the new hook is discovered and activated. This is a normal, quick reload and does not change your agent data.
 
 ### Budgets and “remember” behavior
 
-- Default context budget: **12,000** chars.
-- Recall/correction language (for example: “remember”, “last time”, “earlier”, “correction”, “audit”) raises the budget to **20,000** chars.
+- Default context budget: **20,000** chars.
+- Recall/correction language (for example: “remember”, “last time”, “earlier”, “correction”, “audit”) raises the budget to **80,000** chars.
+
+### Context budget slices (why tool caps matter)
+
+Context budgets are shared across multiple prompt slices, so comparisons must cap tool outputs as well as brain context.
+
+| Slice | What it includes | Why it matters |
+| --- | --- | --- |
+| System/boot | AGENTS/SOUL/USER/TOOLS/bootstrap files loaded by OpenClaw | These are fixed and already present; avoid re-injecting them. |
+| Transcript | Recent user/assistant turns from OpenClaw | Grows quickly; can crowd out retrieval if left unchecked. |
+| Tool outputs | `tool_result` payloads, logs, JSON blobs | Large tool payloads can dwarf brain context if not capped. |
+| Brain context | `[BRAIN_CONTEXT ...]` from OpenClawBrain | This is the budget you tune for recall depth. |
+
+If you raise brain budgets without capping tool outputs, the prompt can still be dominated by tools. Always keep `--tool-result-max-chars` (or equivalent OpenClaw limits) aligned with your context target.
 
 ### Security defaults and guardrails
 
@@ -112,6 +148,8 @@ OpenClaw loads hook manifests on gateway start. Restarting ensures the new hook 
 - **Fail-open**: if the hook can’t run or times out, OpenClaw continues with the original prompt.
 
 Troubleshooting guide: [docs/openclaw-integration-troubleshooting.md](openclaw-integration-troubleshooting.md)
+Guardrails and rollback: [docs/guardrails-and-rollback.md](guardrails-and-rollback.md)
+Benchmarks: [docs/benchmarks.md](benchmarks.md)
 
 ---
 
@@ -282,7 +320,7 @@ The hook behavior is:
 
 - Keep OpenClaw working as-is (fail-open).
 - Append a retrieved `[BRAIN_CONTEXT ...]` block to `bodyForAgent` for normal messages.
-- Use 12,000-char budget by default, 20,000-char budget for recall/correction language (e.g., “remember”, “last time”, “correction”).
+- Use 20,000-char budget by default, 80,000-char budget for recall/correction language (e.g., “remember”, “last time”, “correction”).
 - Keep `--exclude-bootstrap` and `--redact` enabled.
 - Skip slash commands.
 
@@ -299,7 +337,7 @@ If you do not want hook-based integration, you can keep the legacy manual path i
 This still works and remains fully supported, but is not required for brain-first mode:
 
 ```bash
-python3 -m openclawbrain.openclaw_adapter.query_brain ~/.openclawbrain/AGENT/state.json '<summary of user message>' --chat-id '<chat_id from inbound metadata>' --format prompt --exclude-bootstrap --max-prompt-context-chars 12000
+python3 -m openclawbrain.openclaw_adapter.query_brain ~/.openclawbrain/AGENT/state.json '<summary of user message>' --chat-id '<chat_id from inbound metadata>' --format prompt --exclude-bootstrap --max-prompt-context-chars 20000
 ```
 
 For same-turn learning:
@@ -338,7 +376,7 @@ Use prompt format and exclusions to keep context “tight and right”:
 
 - Prefer `--format prompt` so only `[BRAIN_CONTEXT]` is appended to the model prompt.
 - Keep `--exclude-bootstrap` enabled (default in the adapter).
-- Start with `--max-prompt-context-chars 8000` to `12000`; only increase when needed.
+- Start with `--max-prompt-context-chars 20000` when matching hook defaults; allow up to `80000` for deep recall only when needed.
 - Use `--exclude-recent-memory ...` only for explicit daily notes already injected into the same OpenClaw turn.
 
 This aligns retrieval output with OpenClawBrain’s context-efficiency goal: preserve high-value retrieved nodes while minimizing repeated bootstrap content.
@@ -495,7 +533,7 @@ sudo systemctl status openclawbrain-daemon --no-pager
 
 ---
 
-## Step 4 — Wire up the learning loop (query → feedback → learn)
+## Step 6 — Wire up the learning loop (query → feedback → learn)
 
 In OpenClaw terms, you want a stable ritual:
 
@@ -527,6 +565,8 @@ OpenClawBrain ships an OpenClaw adapter that logs fired IDs per chat.
 - Correction: `correction` daemon method (`method:"correction"`) penalizes recent fired IDs *and* injects a correction node
 
 That’s the ergonomic way to do “same-turn correction” inside OpenClaw.
+
+If you use the hook pack, user messages starting with `Correction:`, `Fix:`, `Teaching:`, or `Note:` automatically call `capture_feedback` in a fail-open way (deduped by message-id when available).
 
 For full-history rebuilds, replay your sessions. Default mode is `full` and the recommended operator experience (the "best brain") is the full, bells-and-whistles pipeline.
 

@@ -206,7 +206,7 @@ If you are using the recommended OpenClaw hook integration, you can skip this se
 Use packaged CLI module invocation (no `~/openclawbrain` clone required):
 
 ```bash
-python3 -m openclawbrain.openclaw_adapter.query_brain ~/.openclawbrain/<agentId>/state.json '<summary>' --chat-id '<chat_id>' --format prompt --exclude-bootstrap --max-prompt-context-chars 12000
+python3 -m openclawbrain.openclaw_adapter.query_brain ~/.openclawbrain/<agentId>/state.json '<summary>' --chat-id '<chat_id>' --format prompt --exclude-bootstrap --max-prompt-context-chars 20000
 ```
 
 Learn command (no fired node IDs in prompt payload):

@@ -14,6 +14,7 @@ When `openclawbrain-context-injector` is enabled on `message:preprocessed`:
 - The returned prompt block is prepended to `event.context.bodyForAgent`.
 - The injected block is marked as prompt data (`[BRAIN_CONTEXT ...]`) and is intended to be used as context, not instruction text.
 - You keep normal OpenClaw flow and fall back to standard behavior if retrieval fails.
+- If a user message starts with `Correction:`, `Fix:`, `Teaching:`, or `Note:`, the hook best-effort calls `capture_feedback` (fail-open).
 
 ## Install and enable (recommended)
 
@@ -50,8 +51,9 @@ Troubleshooting:
 
 ## Runtime context budget
 
-- **Default budget**: 12,000 chars.
-- **Recall/correction messages** (for example: `remember`, `last time`, `earlier`, `we decided`, `correction`, `audit`) use **20,000** chars.
+- **Default budget**: 20,000 chars.
+- **Recall/correction messages** (for example: `remember`, `last time`, `earlier`, `we decided`, `correction`, `audit`) use **80,000** chars.
+- Budgets are tunable if you maintain a custom hook or wrapper.
 
 ## Security notes
 
