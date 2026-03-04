@@ -48,8 +48,8 @@ def test_full_cycle_init_query_learn_query(tmp_path, capsys, monkeypatch) -> Non
     index_path.write_text(
         json.dumps(
             {
-                "note.md::0": [1.0, 0.0],
-                "note.md::1": [0.0, 1.0],
+                "docs/note.md::0": [1.0, 0.0],
+                "docs/note.md::1": [0.0, 1.0],
             },
         )
     )
@@ -102,7 +102,7 @@ def test_full_cycle_init_query_learn_query(tmp_path, capsys, monkeypatch) -> Non
     )
     assert code == 0
     second = json.loads(capsys.readouterr().out.strip())
-    assert second["fired"][0] == "note.md::0"
+    assert second["fired"][0] == "docs/note.md::0"
 
 
 def test_edge_damping_simulation_converges() -> None:

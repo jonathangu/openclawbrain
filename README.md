@@ -348,6 +348,19 @@ See `examples/openai_embedder/` for a complete example.
 
 State writes are atomic (`temp` + `fsync` + `rename`) with `.bak` backup. Crash-safe.
 
+## Multi-workspace sync
+
+You can sync multiple workspaces into a single brain state without cross-deleting nodes:
+
+```bash
+openclawbrain sync --state ~/.openclawbrain/main/state.json \
+  --workspace ~/workspace-pelican \
+  --workspace ~/workspace-ops
+```
+
+`workspace_id` defaults to the workspace directory basename (with `workspace-` stripped). Use `--workspaces` for a comma-separated list if you prefer.
+Node ids are prefixed with `workspace_id` (for example: `pelican/docs/foo.md::0`).
+
 ## Low-Level Worker (`openclawbrain daemon`)
 
 For production use, prefer `openclawbrain serve`, which manages the daemon worker and socket lifecycle.

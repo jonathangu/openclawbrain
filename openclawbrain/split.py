@@ -339,6 +339,17 @@ def _load_gitignore_patterns(workspace: Path) -> list[str]:
     return [line.strip().replace("\\", "/") for line in raw_lines if line.strip() and not line.strip().startswith("#")]
 
 
+def _resolve_workspace_id(workspace_dir: str | Path, workspace_id: str | None = None) -> str:
+    """Resolve a stable workspace id (default: basename with workspace- stripped)."""
+    if workspace_id is not None and workspace_id.strip():
+        return workspace_id.strip()
+    base = Path(workspace_dir).expanduser().name
+    if base.startswith("workspace-"):
+        base = base[len("workspace-") :]
+    base = base.strip()
+    return base or "workspace"
+
+
 def _match_gitignore(path_posix: str, patterns: list[str]) -> bool:
     """ match gitignore."""
     for pattern in patterns:
@@ -420,6 +431,7 @@ def _should_skip_path(relative_path: str, excludes: set[str], gitignore_patterns
 def split_workspace(
     workspace_dir: str | Path,
     *,
+    workspace_id: str | None = None,
     max_depth: int = 3,
     exclude: Iterable[str] | None = None,
     llm_fn: Callable[[str, str], str] | None = None,
@@ -433,6 +445,7 @@ def split_workspace(
 
     Args:
         workspace_dir: Directory containing source files.
+        workspace_id: Optional stable workspace identifier (default: basename with ``workspace-`` stripped).
 
     Returns:
         ``(graph, texts)`` where each ``texts[node_id]`` is the chunk content for
@@ -450,6 +463,9 @@ def split_workspace(
 
     if llm_parallelism <= 0:
         raise ValueError("llm_parallelism must be >= 1")
+
+    resolved_workspace_id = _resolve_workspace_id(workspace_dir, workspace_id)
+    workspace_prefix = f"{resolved_workspace_id}/"
 
     graph = Graph()
     texts: dict[str, str] = {}
@@ -575,13 +591,19 @@ def split_workspace(
         for chunk_index, chunk in enumerate(chunks):
             if not chunk.strip():
                 continue
-            node_id = f"{rel}::{chunk_index}"
+            file_path = f"{workspace_prefix}{rel}"
+            node_id = f"{file_path}::{chunk_index}"
             summary = chunk.splitlines()[0] if chunk.splitlines() else ""
             node = Node(
                 id=node_id,
                 content=chunk,
                 summary=summary,
-                metadata={"file": rel, "chunk": chunk_index, "kind": "markdown"},
+                metadata={
+                    "file": file_path,
+                    "chunk": chunk_index,
+                    "kind": "markdown",
+                    "workspace_id": resolved_workspace_id,
+                },
             )
             graph.add_node(node)
             texts[node_id] = chunk

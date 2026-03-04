@@ -265,10 +265,12 @@ openclawbrain info --state ./brain/state.json
 openclawbrain sync --state ~/.openclawbrain/main/state.json --workspace ./my-workspace --embedder openai
 ```
 
+Multi-workspace sync is supported; repeat `--workspace` (or use `--workspaces` with a comma-separated list) to keep multiple workspaces in one brain state without cross-deletes.
+
 ## Step 8: Set constitutional anchors
 
 ```bash
-openclawbrain anchor --state ~/.openclawbrain/main/state.json --node-id "SOUL.md::0" --authority constitutional
+openclawbrain anchor --state ~/.openclawbrain/main/state.json --node-id "my-workspace/SOUL.md::0" --authority constitutional
 openclawbrain anchor --state ~/.openclawbrain/main/state.json --list
 ```
 

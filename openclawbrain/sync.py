@@ -14,7 +14,7 @@ from .graph import Edge, Graph, Node
 from .hasher import default_embed, default_embed_batch
 from .journal import log_event
 from ._util import _first_line
-from .split import split_workspace, _sibling_weight
+from .split import split_workspace, _sibling_weight, _resolve_workspace_id
 from .store import load_state, save_state
 
 
@@ -76,6 +76,16 @@ def _is_workspace_node(node: Node) -> bool:
     return isinstance(node.metadata, dict) and file_name == node.metadata.get("file")
 
 
+def _workspace_id_for_node(node: Node) -> str | None:
+    """Return workspace id from metadata if present."""
+    if not isinstance(node.metadata, dict):
+        return None
+    workspace_id = node.metadata.get("workspace_id")
+    if isinstance(workspace_id, str) and workspace_id.strip():
+        return workspace_id.strip()
+    return None
+
+
 def _is_protected(authority: str | None) -> bool:
     """Check if this node should be preserved even if removed from the workspace."""
     return isinstance(authority, str) and authority.lower() in PROTECTED_AUTHORITIES
@@ -128,6 +138,7 @@ def sync_workspace(
     state_path: str,
     workspace_dir: str,
     *,
+    workspace_id: str | None = None,
     embed_fn: Callable[[str], list[float]] | None = None,
     embed_batch_fn: Callable[[list[tuple[str, str]]], dict[str, list[float]]] | None = None,
     journal_path: str | None = None,
@@ -136,7 +147,8 @@ def sync_workspace(
     """Sync workspace chunks against persisted state and re-embed changed/new nodes."""
     state_path_obj = Path(state_path).expanduser()
     graph, index, meta = load_state(str(state_path_obj))
-    _, current_texts = split_workspace(workspace_dir)
+    resolved_workspace_id = _resolve_workspace_id(workspace_dir, workspace_id)
+    _, current_texts = split_workspace(workspace_dir, workspace_id=resolved_workspace_id)
 
     if embed_fn is None and embed_batch_fn is None:
         embed_fn = default_embed
@@ -146,6 +158,49 @@ def sync_workspace(
     existing_hashes: dict[str, str] = {node_id: _hash_content(node.content) for node_id, node in existing_nodes.items()}
     current_ids = set(current_texts.keys())
     existing_ids = set(existing_nodes.keys())
+
+    workspace_prefix = f"{resolved_workspace_id}/"
+    rel_files = set()
+    for node_id in current_ids:
+        file_name, _ = _split_node_id(node_id)
+        if file_name and file_name.startswith(workspace_prefix):
+            rel_files.add(file_name[len(workspace_prefix) :])
+
+    has_current_workspace_nodes = False
+    has_any_workspace_nodes = False
+    has_any_workspace_ids = False
+    legacy_workspace_match = False
+    for node in graph.nodes():
+        if not _is_workspace_node(node):
+            continue
+        has_any_workspace_nodes = True
+        node_workspace_id = _workspace_id_for_node(node)
+        if node_workspace_id is not None:
+            has_any_workspace_ids = True
+        if node_workspace_id == resolved_workspace_id:
+            has_current_workspace_nodes = True
+            break
+        if node_workspace_id is None:
+            file_name = _node_file(node)
+            if file_name in rel_files:
+                legacy_workspace_match = True
+
+    legacy_mode = (
+        (not has_current_workspace_nodes)
+        and has_any_workspace_nodes
+        and (legacy_workspace_match or not has_any_workspace_ids)
+    )
+    if legacy_mode:
+        legacy_texts: dict[str, str] = {}
+        for node_id, content in current_texts.items():
+            file_name, chunk_idx = _split_node_id(node_id)
+            if file_name is None or chunk_idx is None:
+                continue
+            if file_name.startswith(workspace_prefix):
+                file_name = file_name[len(workspace_prefix) :]
+            legacy_texts[f"{file_name}::{chunk_idx}"] = content
+        current_texts = legacy_texts
+        current_ids = set(current_texts.keys())
 
     added_ids = sorted(current_ids - existing_ids)
     unchanged_ids: list[str] = []
@@ -171,6 +226,10 @@ def sync_workspace(
     for node_id, node in workspace_nodes:
         if node_id in current_ids:
             continue
+        node_workspace_id = _workspace_id_for_node(node)
+        if node_workspace_id != resolved_workspace_id:
+            if not (legacy_mode and node_workspace_id is None):
+                continue
         authority = node.metadata.get("authority") if isinstance(node.metadata, dict) else None
         if _is_protected(authority):
             continue
@@ -210,6 +269,7 @@ def sync_workspace(
         metadata["file"] = file_name
         metadata["chunk"] = chunk_idx
         metadata["kind"] = metadata.get("kind", "markdown")
+        metadata["workspace_id"] = resolved_workspace_id
         authority = _resolve_authority(file_name, authority_map)
         previous_authority = metadata.get("authority")
         if authority is not None and previous_authority != authority:
@@ -236,6 +296,9 @@ def sync_workspace(
         node = graph.get_node(node_id)
         if node is None:
             continue
+        if node.metadata.get("workspace_id") != resolved_workspace_id:
+            node.metadata["workspace_id"] = resolved_workspace_id
+            nodes_metadata_updated += 1
         file_name = _node_file(node)
         if file_name is None:
             continue
@@ -273,6 +336,7 @@ def sync_workspace(
                 "type": "sync",
                 "state_path": str(state_path_obj),
                 "workspace_dir": str(Path(workspace_dir).expanduser()),
+                "workspace_id": resolved_workspace_id,
                 "nodes_added": report.nodes_added,
                 "nodes_updated": report.nodes_updated,
                 "nodes_removed": report.nodes_removed,

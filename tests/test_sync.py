@@ -52,8 +52,8 @@ def test_sync_detects_new_files(tmp_path: Path) -> None:
     assert report.embeddings_computed == 1
 
     graph, index, _ = load_state(str(state_path))
-    assert graph.get_node("SOUL.md::0") is not None
-    assert index._vectors["SOUL.md::0"] == default_embed("# Soul\nKeep these rules.")
+    assert graph.get_node("workspace/SOUL.md::0") is not None
+    assert index._vectors["workspace/SOUL.md::0"] == default_embed("# Soul\nKeep these rules.")
 
 
 def test_sync_detects_changed_content(tmp_path: Path) -> None:
@@ -74,7 +74,7 @@ def test_sync_detects_changed_content(tmp_path: Path) -> None:
     assert report.embeddings_computed == 1
 
     graph, _, _ = load_state(str(state_path))
-    assert graph.get_node("AGENTS.md::0").content == "# Agents\nRevised"
+    assert graph.get_node("workspace/AGENTS.md::0").content == "# Agents\nRevised"
 
 
 def test_sync_preserves_unchanged_nodes(tmp_path: Path) -> None:
@@ -115,7 +115,7 @@ def test_sync_sets_authority_from_map(tmp_path: Path) -> None:
     assert report.authority_set["canonical"] == 1
 
     graph, _, _ = load_state(str(state_path))
-    node = graph.get_node("USER.md::0")
+    node = graph.get_node("workspace/USER.md::0")
     assert node is not None
     assert node.metadata["authority"] == "canonical"
 
@@ -130,7 +130,7 @@ def test_sync_sets_authority_for_unchanged_nodes_without_reembedding(tmp_path: P
     _state_from_workspace(workspace, state_path)
 
     graph, index, _ = load_state(str(state_path))
-    node = graph.get_node("SOUL.md::0")
+    node = graph.get_node("workspace/SOUL.md::0")
     assert node is not None
     node.metadata.pop("authority", None)
     _write_state(state_path, graph=graph, index=index)
@@ -198,4 +198,51 @@ def test_sync_dry_run_doesnt_modify(tmp_path: Path) -> None:
     assert before == after
 
     graph, _, _ = load_state(str(state_path))
-    assert graph.get_node("IDENTITY.md::0").content == "# Identity\nA"
+    assert graph.get_node("workspace/IDENTITY.md::0").content == "# Identity\nA"
+
+
+def test_sync_multiple_workspaces_no_cross_delete(tmp_path: Path) -> None:
+    """syncing workspace A then B does not delete A nodes."""
+    workspace_a = tmp_path / "workspace-alpha"
+    workspace_b = tmp_path / "workspace-beta"
+    workspace_a.mkdir()
+    workspace_b.mkdir()
+    (workspace_a / "A.md").write_text("# A\nAlpha", encoding="utf-8")
+    (workspace_b / "B.md").write_text("# B\nBeta", encoding="utf-8")
+
+    state_path = tmp_path / "state.json"
+    _write_state(state_path, graph=Graph(), index=VectorIndex())
+
+    sync_workspace(state_path=str(state_path), workspace_dir=str(workspace_a), embed_fn=default_embed)
+    sync_workspace(state_path=str(state_path), workspace_dir=str(workspace_b), embed_fn=default_embed)
+
+    graph, _, _ = load_state(str(state_path))
+    assert graph.get_node("alpha/A.md::0") is not None
+    assert graph.get_node("beta/B.md::0") is not None
+
+
+def test_sync_scoped_deletion_within_workspace(tmp_path: Path) -> None:
+    """syncing workspace A twice deletes removed nodes only within A."""
+    workspace_a = tmp_path / "workspace-alpha"
+    workspace_b = tmp_path / "workspace-beta"
+    workspace_a.mkdir()
+    workspace_b.mkdir()
+    (workspace_a / "keep.md").write_text("# Keep\nAlpha", encoding="utf-8")
+    remove_path = workspace_a / "remove.md"
+    remove_path.write_text("# Remove\nAlpha", encoding="utf-8")
+    (workspace_b / "other.md").write_text("# Other\nBeta", encoding="utf-8")
+
+    state_path = tmp_path / "state.json"
+    _write_state(state_path, graph=Graph(), index=VectorIndex())
+
+    sync_workspace(state_path=str(state_path), workspace_dir=str(workspace_a), embed_fn=default_embed)
+    sync_workspace(state_path=str(state_path), workspace_dir=str(workspace_b), embed_fn=default_embed)
+
+    remove_path.unlink()
+    report = sync_workspace(state_path=str(state_path), workspace_dir=str(workspace_a), embed_fn=default_embed)
+    assert report.nodes_removed == 1
+
+    graph, _, _ = load_state(str(state_path))
+    assert graph.get_node("alpha/keep.md::0") is not None
+    assert graph.get_node("alpha/remove.md::0") is None
+    assert graph.get_node("beta/other.md::0") is not None
