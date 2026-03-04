@@ -972,6 +972,70 @@ def test_loop_install_dry_run_includes_env_file(monkeypatch, tmp_path, capsys) -
     assert environment["OPENCLAWBRAIN_DEFAULT_LLM"] == "openai"
 
 
+def test_loop_pause_serve_when_locked_uses_launchctl(monkeypatch, tmp_path) -> None:
+    """Loop pause-serve should bootout + bootstrap when the state lock is held."""
+    state_path = tmp_path / "main" / "state.json"
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(json.dumps({"nodes": []}), encoding="utf-8")
+
+    import openclawbrain.cli as cli_module
+
+    monkeypatch.setattr(cli_module.Path, "home", lambda: tmp_path)
+    plist_path = tmp_path / "Library" / "LaunchAgents" / "com.openclawbrain.main.plist"
+    plist_path.parent.mkdir(parents=True, exist_ok=True)
+    plist_path.write_text("plist", encoding="utf-8")
+
+    calls: list[list[str]] = []
+
+    def fake_launchctl(argv: list[str]) -> int:
+        calls.append(argv)
+        return 0
+
+    def fake_wait(_path: Path, timeout_seconds: int) -> bool:
+        return timeout_seconds > 0
+
+    ready, resume_cmd, reason = cli_module._maybe_pause_serve_for_state_lock(
+        state_path=str(state_path),
+        pause_when_locked=True,
+        timeout_seconds=30,
+        run_launchctl=fake_launchctl,
+        wait_for_unlock=fake_wait,
+        platform="darwin",
+    )
+
+    assert ready is True
+    assert reason is None
+    assert resume_cmd is not None
+    assert calls[0][:2] == ["launchctl", "bootout"]
+    fake_launchctl(resume_cmd)
+    assert calls[1][:2] == ["launchctl", "bootstrap"]
+
+
+def test_loop_pause_serve_disabled_skips(monkeypatch, tmp_path) -> None:
+    """Loop pause-serve disabled should skip when the state lock is held."""
+    state_path = tmp_path / "main" / "state.json"
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(json.dumps({"nodes": []}), encoding="utf-8")
+
+    import openclawbrain.cli as cli_module
+
+    def fake_wait(_path: Path, _timeout_seconds: int) -> bool:
+        return False
+
+    ready, resume_cmd, reason = cli_module._maybe_pause_serve_for_state_lock(
+        state_path=str(state_path),
+        pause_when_locked=False,
+        timeout_seconds=30,
+        run_launchctl=lambda _argv: 0,
+        wait_for_unlock=fake_wait,
+        platform="darwin",
+    )
+
+    assert ready is False
+    assert resume_cmd is None
+    assert reason == "state_lock_held"
+
+
 def test_serve_install_dry_run_includes_env_file(monkeypatch, tmp_path, capsys) -> None:
     """serve install --dry-run should include EnvironmentVariables from --env-file."""
     state_path = tmp_path / "main" / "state.json"

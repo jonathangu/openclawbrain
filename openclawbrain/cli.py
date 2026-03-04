@@ -500,6 +500,11 @@ def _wait_for_state_unlock(state_path: Path, timeout_seconds: int) -> bool:
             backoff = min(30.0, backoff * 2)
 
 
+def _state_lock_available(state_path: str | Path) -> bool:
+    """Return True if the state write lock is currently available."""
+    return _wait_for_state_unlock(Path(state_path).expanduser(), 0)
+
+
 def _run_logged_command(
     cmd: list[str],
     *,
@@ -1565,6 +1570,8 @@ def _build_parser() -> argparse.ArgumentParser:
     loop.add_argument("--reward-weights", default=None)
     loop.add_argument("--write-relevance-metadata", action=argparse.BooleanOptionalAction, default=True)
     loop.add_argument("--skip-if-locked", action=argparse.BooleanOptionalAction, default=True)
+    loop.add_argument("--pause-serve-when-locked", action=argparse.BooleanOptionalAction, default=True)
+    loop.add_argument("--pause-serve-timeout-seconds", type=int, default=30)
     loop.add_argument("--hourly-interval-seconds", type=int, default=3600)
     loop.add_argument("--nightly-hour", type=int, default=2)
     loop.add_argument("--nightly-minute", type=int, default=30)
@@ -1968,6 +1975,49 @@ def _loop_lock_held(lock_path: Path) -> bool:
     return True
 
 
+def _maybe_pause_serve_for_state_lock(
+    *,
+    state_path: str,
+    pause_when_locked: bool,
+    timeout_seconds: int,
+    run_launchctl: Callable[[list[str]], int] | None = None,
+    wait_for_unlock: Callable[[Path, int], bool] = _wait_for_state_unlock,
+    platform: str | None = None,
+) -> tuple[bool, list[str] | None, str | None]:
+    """Attempt to pause launchd-managed serve daemon if state lock is held."""
+    if run_launchctl is None:
+        run_launchctl = _run_launchctl_returncode
+    if wait_for_unlock(Path(state_path).expanduser(), 0):
+        return True, None, None
+
+    if not pause_when_locked:
+        return False, None, "state_lock_held"
+
+    effective_platform = platform or sys.platform
+    if effective_platform != "darwin":
+        return False, None, "state_lock_held"
+
+    label = _derive_serve_label(state_path)
+    plist_path = _derive_launchd_plist_path(label)
+    if not plist_path.exists():
+        return False, None, "state_lock_held"
+
+    uid = os.getuid()
+    bootout_cmd = ["launchctl", "bootout", f"gui/{uid}", str(plist_path)]
+    bootstrap_cmd = ["launchctl", "bootstrap", f"gui/{uid}", str(plist_path)]
+
+    bootout_rc = run_launchctl(bootout_cmd)
+    if bootout_rc != 0:
+        return False, None, "state_lock_held"
+
+    unlocked = wait_for_unlock(Path(state_path).expanduser(), max(0, int(timeout_seconds)))
+    if not unlocked:
+        run_launchctl(bootstrap_cmd)
+        return False, None, "state_lock_held"
+
+    return True, bootstrap_cmd, None
+
+
 def _parse_env_file(env_path: str) -> dict[str, str]:
     path = Path(env_path).expanduser()
     if not path.exists():
@@ -1999,6 +2049,13 @@ def _run_launchctl(argv: list[str], *, ignore_errors: bool = False) -> None:
     result = subprocess.run(argv, check=not ignore_errors)
     if ignore_errors and result.returncode != 0:
         return
+
+
+def _run_launchctl_returncode(argv: list[str]) -> int:
+    try:
+        return int(subprocess.run(argv, check=False).returncode)
+    except FileNotFoundError:
+        return 127
 
 
 def _serve_start_arguments(
@@ -4765,6 +4822,11 @@ def cmd_loop(args: argparse.Namespace) -> int:
             argv.append("--skip-if-locked")
         else:
             argv.append("--no-skip-if-locked")
+        if args.pause_serve_when_locked:
+            argv.append("--pause-serve-when-locked")
+        else:
+            argv.append("--no-pause-serve-when-locked")
+        argv.extend(["--pause-serve-timeout-seconds", str(int(args.pause_serve_timeout_seconds))])
         return argv
 
     if args.launchd:
@@ -4870,6 +4932,12 @@ def cmd_loop(args: argparse.Namespace) -> int:
                 checkpoint = json.loads(checkpoint_path.read_text(encoding="utf-8"))
             except json.JSONDecodeError:
                 checkpoint = None
+        manifest: dict[str, object] | None = None
+        if manifest_path.exists():
+            try:
+                manifest = json.loads(manifest_path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                manifest = None
         label = _derive_loop_label(state_path)
         plist_path = _derive_launchd_plist_path(label)
         print("OpenClawBrain loop status")
@@ -4895,6 +4963,23 @@ def cmd_loop(args: argparse.Namespace) -> int:
                 print(f"  started_at={started_at}")
             if completed_at:
                 print(f"  completed_at={completed_at}")
+            reason = checkpoint.get("reason")
+            if status in {"failed", "skipped"} and reason:
+                print(f"  reason={reason}")
+        if isinstance(manifest, dict):
+            for job_name in ("hourly", "nightly"):
+                payload = manifest.get(job_name)
+                if not isinstance(payload, dict):
+                    continue
+                last_status = payload.get("last_status")
+                if last_status is None:
+                    continue
+                last_reason = payload.get("last_reason")
+                last_exit = payload.get("last_exit_code")
+                last_completed = payload.get("last_completed_at") or payload.get("last_started_at")
+                print(
+                    f"{job_name.capitalize()}: status={last_status} exit={last_exit} reason={last_reason} completed_at={last_completed}"
+                )
         return 0
 
     if action != "run":
@@ -5156,6 +5241,20 @@ def cmd_loop(args: argparse.Namespace) -> int:
                 return 0
             raise SystemExit("loop lock held")
 
+        state_lock_ready, resume_cmd, state_lock_reason = _maybe_pause_serve_for_state_lock(
+            state_path=state_path,
+            pause_when_locked=bool(args.pause_serve_when_locked),
+            timeout_seconds=max(0, int(args.pause_serve_timeout_seconds)),
+        )
+        if not state_lock_ready:
+            reason = state_lock_reason or "state_lock_held"
+            msg = f"{job}: state lock held; skipping (reason={reason})"
+            log_line(msg)
+            write_checkpoint(status="skipped", job=job, step="lock", exit_code=0, reason=reason)
+            emit_event({"type": "job_skipped", "job": job, "reason": reason})
+            write_manifest(job, {"last_status": "skipped", "last_reason": reason})
+            return 0
+
         started_at = datetime.now(timezone.utc).isoformat()
         try:
             write_checkpoint(status="running", job=job, step="preflight", started_at=started_at)
@@ -5182,6 +5281,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
                         "last_status": "failed",
                         "last_step": "replay",
                         "last_exit_code": replay_code,
+                        "last_reason": "replay_failed",
                         "last_completed_at": completed_at,
                     },
                 )
@@ -5207,6 +5307,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
                             "last_status": "failed",
                             "last_step": "harvest",
                             "last_exit_code": harvest_code,
+                            "last_reason": "harvest_failed",
                             "last_completed_at": completed_at,
                         },
                     )
@@ -5232,6 +5333,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
                                 "last_status": "failed",
                                 "last_step": "maintain",
                                 "last_exit_code": maintain_code,
+                                "last_reason": "maintenance_failed",
                                 "last_completed_at": completed_at,
                             },
                         )
@@ -5270,6 +5372,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
                                 "last_status": "failed",
                                 "last_step": "async_route_pg",
                                 "last_exit_code": async_code,
+                                "last_reason": "async_route_pg_failed",
                                 "last_completed_at": completed_at,
                             },
                         )
@@ -5307,6 +5410,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
                                     "last_status": "failed",
                                     "last_step": "train_route_model",
                                     "last_exit_code": train_code,
+                                    "last_reason": "train_route_model_failed",
                                     "last_completed_at": completed_at,
                                 },
                             )
@@ -5327,6 +5431,8 @@ def cmd_loop(args: argparse.Namespace) -> int:
             log_line(f"{job}: run complete")
             return 0
         finally:
+            if resume_cmd is not None:
+                _run_launchctl_returncode(resume_cmd)
             if lock_fd is not None:
                 try:
                     import fcntl  # type: ignore

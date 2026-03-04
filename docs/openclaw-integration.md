@@ -85,6 +85,7 @@ openclawbrain loop install --state ~/.openclawbrain/main/state.json
 ```
 
 On Linux/systemd hosts, run `openclawbrain loop --systemd` to print a unit template.
+When the serve daemon is managed by launchd on macOS, the loop will briefly pause it to acquire the state lock while applying updates (short downtime). Disable with `--no-pause-serve-when-locked` if needed.
 
 Default schedule:
 - Hourly cheap job: edges-only replay + harvest (LLM-free)
