@@ -18,15 +18,22 @@ When `openclawbrain-context-injector` is enabled on `message:preprocessed`:
 ## Install and enable
 
 ```bash
-openclaw hooks install --link /path/to/openclawbrain/integrations/openclaw/hooks/openclawbrain-context-injector
+openclaw hooks install /path/to/openclawbrain/integrations/openclaw/hooks/openclawbrain-context-injector
 openclaw hooks enable openclawbrain-context-injector
+openclaw gateway restart
 ```
+
+Note: `--link` is dev-only. If you use it, set `hooks.internal.load.extraDirs` to the parent hooks directory (the directory that contains `openclawbrain-context-injector/`), then restart the gateway.
 
 To disable:
 
 ```bash
 openclaw hooks disable openclawbrain-context-injector
 ```
+
+Troubleshooting:
+
+- If `openclaw hooks info openclawbrain-context-injector` is not found, run `openclaw hooks list` and restart the gateway. Ensure the hook exists under `~/.openclaw/hooks/`.
 
 ## Runtime context budget
 
