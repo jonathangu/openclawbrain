@@ -34,6 +34,8 @@ def test_query_params_defaults_follow_daemon_behavior() -> None:
     assert params.route_top_k == 5
     assert params.route_alpha_sim == 0.5
     assert params.route_use_relevance is True
+    assert params.route_enable_stop is False
+    assert params.route_stop_margin == 0.1
     assert params.debug_allow_confidence_override is False
     assert params.router_conf_override is None
     assert params.relevance_conf_override is None
@@ -70,6 +72,9 @@ def test_query_params_validation_errors() -> None:
 
     with pytest.raises(ValueError, match="router_conf_override must be between 0.0 and 1.0"):
         QueryParams.from_dict({"query": "x", "router_conf_override": 1.1})
+
+    with pytest.raises(ValueError, match="route_stop_margin must be >= 0.0"):
+        QueryParams.from_dict({"query": "x", "route_stop_margin": -0.1})
 
 
 def test_query_response_to_dict_result_and_error() -> None:

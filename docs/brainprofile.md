@@ -22,6 +22,8 @@ CLI flags are overrides, not source of truth.
 - `OPENCLAWBRAIN_ROUTE_TOP_K`
 - `OPENCLAWBRAIN_ROUTE_ALPHA_SIM`
 - `OPENCLAWBRAIN_ROUTE_USE_RELEVANCE`
+- `OPENCLAWBRAIN_ROUTE_ENABLE_STOP`
+- `OPENCLAWBRAIN_ROUTE_STOP_MARGIN`
 - `OPENCLAWBRAIN_REWARD_SOURCE`
 - `OPENCLAWBRAIN_REWARD_WEIGHT_CORRECTION`
 - `OPENCLAWBRAIN_REWARD_WEIGHT_TEACHING`
@@ -42,7 +44,9 @@ CLI flags are overrides, not source of truth.
     "route_mode": "edge+sim",
     "route_top_k": 8,
     "route_alpha_sim": 0.65,
-    "route_use_relevance": true
+    "route_use_relevance": true,
+    "route_enable_stop": false,
+    "route_stop_margin": 0.1
   },
   "reward": {
     "source": "explicit",

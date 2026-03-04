@@ -58,6 +58,8 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--route-top-k", type=int, default=5)
     parser.add_argument("--route-alpha-sim", type=float, default=0.5)
     parser.add_argument("--route-use-relevance", choices=["true", "false"], default="true")
+    parser.add_argument("--route-enable-stop", choices=["true", "false"], default="false")
+    parser.add_argument("--route-stop-margin", type=float, default=0.1)
     parser.add_argument("--route-model", default=None)
     parser.add_argument("--auto-save-interval", type=int, default=10)
     parser.add_argument("--force", action="store_true", help="Bypass state lock (expert use)")
@@ -145,6 +147,21 @@ def _real_graph_updates(updates: dict[str, float]) -> int:
     return sum(1 for key in updates if not key.endswith("->__STOP__"))
 
 
+def _stop_weight_lookup(graph: Graph) -> Callable[[str], tuple[float, float]]:
+    """Return a lookup function for per-node stop relevance/weight."""
+    def _lookup(node_id: str) -> tuple[float, float]:
+        node = graph.get_node(node_id)
+        if node is None or not isinstance(node.metadata, dict):
+            return 0.0, 0.0
+        raw_weight = node.metadata.get("stop_weight", 0.0)
+        raw_relevance = node.metadata.get("stop_relevance", 0.0)
+        stop_weight = float(raw_weight) if isinstance(raw_weight, (int, float)) else 0.0
+        stop_relevance = float(raw_relevance) if isinstance(raw_relevance, (int, float)) else 0.0
+        return stop_weight, stop_relevance
+
+    return _lookup
+
+
 def _health_payload(graph: Graph) -> dict[str, object]:
     """Build health payload with node/edge counts included."""
     health = measure_health(graph)
@@ -220,6 +237,8 @@ def _build_query_route_fn(
     route_top_k: int,
     route_alpha_sim: float,
     route_use_relevance: bool,
+    route_enable_stop: bool = False,
+    route_stop_margin: float = 0.1,
     query_vector: list[float],
     index: VectorIndex,
 ) -> Callable[[str | None, list[object], str], list[str]] | None:
@@ -229,6 +248,8 @@ def _build_query_route_fn(
         top_k=parse_int(route_top_k, "route_top_k", default=5),
         alpha_sim=parse_float(route_alpha_sim, "route_alpha_sim", default=0.5),
         use_relevance=parse_bool(route_use_relevance, "route_use_relevance", default=True),
+        enable_stop=parse_bool(route_enable_stop, "route_enable_stop", default=False),
+        stop_margin=parse_float(route_stop_margin, "route_stop_margin", required=False, default=0.1),
     )
     return make_runtime_route_fn(policy=policy, query_vector=query_vector, index=index)
 
@@ -406,6 +427,8 @@ def _handle_query(
         top_k=query.route_top_k,
         alpha_sim=query.route_alpha_sim,
         use_relevance=query.route_use_relevance,
+        enable_stop=query.route_enable_stop,
+        stop_margin=query.route_stop_margin,
         debug_allow_confidence_override=query.debug_allow_confidence_override,
         router_conf_override=query.router_conf_override,
         relevance_conf_override=query.relevance_conf_override,
@@ -418,6 +441,7 @@ def _handle_query(
         learned_model=learned_model,
         target_projections=target_projections,
         decision_log=decision_log,
+        stop_weight_fn=_stop_weight_lookup(graph),
     )
     result = traverse(
         graph=graph,
@@ -944,9 +968,12 @@ def _handle_maintain(
     return asdict(report), should_write
 
 
-def _handle_health(graph: Graph) -> dict[str, object]:
+def _handle_health(graph: Graph, route_status: dict[str, object] | None = None) -> dict[str, object]:
     """Handle health request."""
-    return _health_payload(graph)
+    payload = _health_payload(graph)
+    if route_status:
+        payload.update(route_status)
+    return payload
 
 
 def _handle_info(graph: Graph, meta: dict[str, object]) -> dict[str, object]:
@@ -982,6 +1009,8 @@ class QueryDefaults:
     route_top_k: int = 5
     route_alpha_sim: float = 0.5
     route_use_relevance: bool = True
+    route_enable_stop: bool = False
+    route_stop_margin: float = 0.1
 
 
 def _with_query_defaults(params: dict[str, object], defaults: QueryDefaults) -> dict[str, object]:
@@ -993,6 +1022,8 @@ def _with_query_defaults(params: dict[str, object], defaults: QueryDefaults) -> 
     merged.setdefault("route_top_k", defaults.route_top_k)
     merged.setdefault("route_alpha_sim", defaults.route_alpha_sim)
     merged.setdefault("route_use_relevance", defaults.route_use_relevance)
+    merged.setdefault("route_enable_stop", defaults.route_enable_stop)
+    merged.setdefault("route_stop_margin", defaults.route_stop_margin)
     return merged
 
 
@@ -1011,6 +1042,7 @@ def main(argv: list[str] | None = None) -> int:
     lock_cm = state_write_lock(state_path, force=args.force, command_hint="openclawbrain daemon")
     with lock_cm if state_path else nullcontext():
         graph, index, meta = state_store.load(state_path)
+        route_mode_configured = parse_route_mode(args.route_mode)
         route_model: RouteModel | None = None
         target_projections: dict[str, object] = {}
         if route_model_path.exists():
@@ -1018,9 +1050,26 @@ def main(argv: list[str] | None = None) -> int:
                 route_model = RouteModel.load_npz(route_model_path)
                 target_projections = route_model.precompute_target_projections(index)
             except Exception as exc:  # noqa: BLE001
-                print(f"warning: failed to load route model at {route_model_path}: {exc}", file=sys.stderr)
+                print(
+                    f"warning: failed to load route model at {route_model_path}: {exc}; falling back to edge+sim",
+                    file=sys.stderr,
+                )
                 route_model = None
                 target_projections = {}
+        elif route_mode_configured == "learned":
+            print(
+                f"warning: route_model.npz missing at {route_model_path}; falling back to edge+sim",
+                file=sys.stderr,
+            )
+        route_model_present = route_model is not None
+        route_mode_effective = route_mode_configured
+        if route_mode_configured == "learned" and route_model is None:
+            route_mode_effective = "edge+sim"
+        route_status = {
+            "route_model_present": route_model_present,
+            "route_mode_configured": route_mode_configured,
+            "route_mode_effective": route_mode_effective,
+        }
         daemon_state = _DaemonState(
             graph=graph,
             index=index,
@@ -1032,6 +1081,9 @@ def main(argv: list[str] | None = None) -> int:
             ),
         )
         embed_fn = _resolve_embed_fn(args.embed_model, meta)
+        route_stop_margin = parse_float(args.route_stop_margin, "route_stop_margin", required=False, default=0.1)
+        if route_stop_margin < 0.0:
+            raise ValueError("route_stop_margin must be >= 0.0")
         query_defaults = QueryDefaults(
             max_prompt_context_chars=parse_int(
                 args.max_prompt_context_chars,
@@ -1043,7 +1095,7 @@ def main(argv: list[str] | None = None) -> int:
                 "max_fired_nodes",
                 default=30,
             ),
-            route_mode=parse_route_mode(args.route_mode),
+            route_mode=route_mode_effective,
             route_top_k=parse_int(
                 args.route_top_k,
                 "route_top_k",
@@ -1055,6 +1107,8 @@ def main(argv: list[str] | None = None) -> int:
                 default=0.5,
             ),
             route_use_relevance=str(args.route_use_relevance).strip().lower() == "true",
+            route_enable_stop=str(args.route_enable_stop).strip().lower() == "true",
+            route_stop_margin=route_stop_margin,
         )
         if query_defaults.route_mode == "learned" and route_model is None:
             query_defaults = QueryDefaults(
@@ -1064,6 +1118,8 @@ def main(argv: list[str] | None = None) -> int:
                 route_top_k=query_defaults.route_top_k,
                 route_alpha_sim=query_defaults.route_alpha_sim,
                 route_use_relevance=query_defaults.route_use_relevance,
+                route_enable_stop=query_defaults.route_enable_stop,
+                route_stop_margin=query_defaults.route_stop_margin,
             )
         auto_save_interval = max(1, args.auto_save_interval) if args.auto_save_interval > 0 else 0
 
@@ -1162,7 +1218,7 @@ def main(argv: list[str] | None = None) -> int:
                             state_store,
                         )
                     elif method == "health":
-                        payload = _handle_health(daemon_state.graph)
+                        payload = _handle_health(daemon_state.graph, route_status)
                     elif method == "info":
                         payload = _handle_info(daemon_state.graph, daemon_state.meta)
                     elif method == "save":

@@ -28,6 +28,8 @@ class ProfilePolicy:
     route_top_k: int = 5
     route_alpha_sim: float = 0.5
     route_use_relevance: bool = True
+    route_enable_stop: bool = False
+    route_stop_margin: float = 0.1
 
 
 @dataclass(frozen=True)
@@ -93,6 +95,8 @@ class BrainProfile:
                     "route_top_k",
                     "route_alpha_sim",
                     "route_use_relevance",
+                    "route_enable_stop",
+                    "route_stop_margin",
                 },
                 "policy",
             )
@@ -138,6 +142,18 @@ class BrainProfile:
                 "policy.route_use_relevance",
                 default=True,
             )
+            route_enable_stop = parse_bool(
+                raw_policy.get("route_enable_stop"),
+                "policy.route_enable_stop",
+                default=False,
+            )
+            route_stop_margin = parse_float(
+                raw_policy.get("route_stop_margin"),
+                "policy.route_stop_margin",
+                default=0.1,
+            )
+            if route_stop_margin < 0.0:
+                raise ValueError("policy.route_stop_margin must be >= 0.0")
 
             reward_source = _parse_non_empty_str(raw_reward.get("source"), "reward.source", default="explicit")
             reward_weight_correction = parse_float(
@@ -175,6 +191,8 @@ class BrainProfile:
                     route_top_k=route_top_k,
                     route_alpha_sim=route_alpha_sim,
                     route_use_relevance=route_use_relevance,
+                    route_enable_stop=route_enable_stop,
+                    route_stop_margin=route_stop_margin,
                 ),
                 reward=ProfileReward(
                     source=reward_source,
@@ -202,6 +220,8 @@ class BrainProfile:
                 "route_top_k": self.policy.route_top_k,
                 "route_alpha_sim": self.policy.route_alpha_sim,
                 "route_use_relevance": self.policy.route_use_relevance,
+                "route_enable_stop": self.policy.route_enable_stop,
+                "route_stop_margin": self.policy.route_stop_margin,
             },
             "reward": {
                 "source": self.reward.source,
@@ -230,6 +250,8 @@ def _env_overrides(*, env_prefix: str) -> dict[str, object]:
         "ROUTE_TOP_K": (("policy", "route_top_k"), int),
         "ROUTE_ALPHA_SIM": (("policy", "route_alpha_sim"), float),
         "ROUTE_USE_RELEVANCE": (("policy", "route_use_relevance"), _parse_env_bool),
+        "ROUTE_ENABLE_STOP": (("policy", "route_enable_stop"), _parse_env_bool),
+        "ROUTE_STOP_MARGIN": (("policy", "route_stop_margin"), float),
         "REWARD_SOURCE": (("reward", "source"), str),
         "REWARD_WEIGHT_CORRECTION": (("reward", "weight_correction"), float),
         "REWARD_WEIGHT_TEACHING": (("reward", "weight_teaching"), float),

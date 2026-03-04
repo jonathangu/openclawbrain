@@ -222,6 +222,60 @@ def test_apply_outcome_pg_updates_conserve_mass_including_stop() -> None:
     assert isclose(updates["a->b"] + updates["a->c"] + updates["a->__STOP__"], 0.0, rel_tol=1e-12, abs_tol=1e-12)
 
 
+def test_apply_outcome_pg_projects_updates_under_bounds() -> None:
+    """test apply outcome pg projects updates under bounds and conserves mass."""
+    graph = Graph()
+    graph.add_node(Node("a", "A", metadata={"stop_weight": 0.0}))
+    graph.add_node(Node("b", "B"))
+    graph.add_node(Node("c", "C"))
+    graph.add_edge(Edge("a", "b", 1.0))
+    graph.add_edge(Edge("a", "c", 0.0))
+
+    updates = apply_outcome_pg(
+        graph,
+        ["a", "b"],
+        outcome=1.0,
+        config=LearningConfig(learning_rate=2.0, discount=1.0),
+    )
+
+    assert isclose(updates["a->b"] + updates["a->c"] + updates["a->__STOP__"], 0.0, rel_tol=1e-12, abs_tol=1e-12)
+    assert -1.0 <= graph._edges["a"]["b"].weight <= 1.0
+    assert -1.0 <= graph._edges["a"]["c"].weight <= 1.0
+    assert -1.0 <= graph.get_node("a").metadata["stop_weight"] <= 1.0
+
+
+def test_apply_outcome_pg_updates_stop_weight_and_persists(tmp_path) -> None:
+    """test apply outcome pg updates stop weight and persists to disk."""
+    graph = Graph()
+    graph.add_node(Node("a", "A", metadata={"stop_weight": 0.2}))
+    graph.add_node(Node("b", "B"))
+    graph.add_edge(Edge("a", "b", 0.0))
+
+    updates = apply_outcome_pg(
+        graph,
+        ["a", "b"],
+        outcome=1.0,
+        config=LearningConfig(learning_rate=1.0, discount=1.0),
+    )
+
+    node = graph.get_node("a")
+    assert node is not None
+    assert "stop_weight" in node.metadata
+    assert isclose(node.metadata["stop_weight"], 0.2 + updates["a->__STOP__"], rel_tol=1e-12, abs_tol=1e-12)
+
+    path = tmp_path / "graph.json"
+    graph.save(str(path))
+    loaded = Graph.load(str(path))
+    loaded_node = loaded.get_node("a")
+    assert loaded_node is not None
+    assert isclose(
+        loaded_node.metadata["stop_weight"],
+        node.metadata["stop_weight"],
+        rel_tol=1e-12,
+        abs_tol=1e-12,
+    )
+
+
 def test_apply_outcome_pg_chosen_edge_positive_and_non_chosen_negative_on_positive_outcome() -> None:
     """test apply outcome pg chosen edge positive while non chosen negative on positive outcome."""
     graph = Graph()

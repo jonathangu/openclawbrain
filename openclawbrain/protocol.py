@@ -116,6 +116,8 @@ class QueryParams:
     route_top_k: int = 5
     route_alpha_sim: float = 0.5
     route_use_relevance: bool = True
+    route_enable_stop: bool = False
+    route_stop_margin: float = 0.1
     debug_allow_confidence_override: bool = False
     router_conf_override: float | None = None
     relevance_conf_override: float | None = None
@@ -152,6 +154,8 @@ class QueryParams:
             route_top_k=parse_int(params.get("route_top_k"), "route_top_k", default=5),
             route_alpha_sim=parse_float(params.get("route_alpha_sim"), "route_alpha_sim", default=0.5),
             route_use_relevance=parse_bool(params.get("route_use_relevance"), "route_use_relevance", default=True),
+            route_enable_stop=parse_bool(params.get("route_enable_stop"), "route_enable_stop", default=False),
+            route_stop_margin=_parse_stop_margin(params.get("route_stop_margin")),
             debug_allow_confidence_override=parse_bool(
                 params.get("debug_allow_confidence_override"),
                 "debug_allow_confidence_override",
@@ -190,6 +194,8 @@ class QueryParams:
             "route_top_k": self.route_top_k,
             "route_alpha_sim": self.route_alpha_sim,
             "route_use_relevance": self.route_use_relevance,
+            "route_enable_stop": self.route_enable_stop,
+            "route_stop_margin": self.route_stop_margin,
             "debug_allow_confidence_override": self.debug_allow_confidence_override,
             "router_conf_override": self.router_conf_override,
             "relevance_conf_override": self.relevance_conf_override,
@@ -199,6 +205,14 @@ class QueryParams:
             "include_provenance": self.include_provenance,
             "chat_id": self.chat_id,
         }
+
+
+def _parse_stop_margin(value: object) -> float:
+    """Parse non-negative stop margin with default."""
+    parsed = parse_float(value, "route_stop_margin", required=False, default=0.1)
+    if parsed < 0.0:
+        raise ValueError("route_stop_margin must be >= 0.0")
+    return parsed
 
 
 @dataclass(frozen=True)

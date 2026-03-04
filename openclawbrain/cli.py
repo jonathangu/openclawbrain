@@ -1128,6 +1128,18 @@ def _coalesce_route_use_relevance(
     return default
 
 
+def _coalesce_route_enable_stop(
+    cli_value: str | None,
+    profile_value: bool | None,
+    default: bool,
+) -> bool:
+    if cli_value is not None:
+        return cli_value.strip().lower() == "true"
+    if profile_value is not None:
+        return profile_value
+    return default
+
+
 @contextmanager
 def _command_state_write_lock(
     args: argparse.Namespace,
@@ -1297,6 +1309,8 @@ def _build_parser() -> argparse.ArgumentParser:
     d.add_argument("--route-top-k", type=int, default=None)
     d.add_argument("--route-alpha-sim", type=float, default=None)
     d.add_argument("--route-use-relevance", choices=["true", "false"], default=None)
+    d.add_argument("--route-enable-stop", choices=["true", "false"], default=None)
+    d.add_argument("--route-stop-margin", type=float, default=None)
     d.add_argument("--route-model", default=None)
     d.add_argument("--auto-save-interval", type=int, default=10)
 
@@ -1318,6 +1332,8 @@ def _build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--route-top-k", type=int, default=None)
     serve.add_argument("--route-alpha-sim", type=float, default=None)
     serve.add_argument("--route-use-relevance", choices=["true", "false"], default=None)
+    serve.add_argument("--route-enable-stop", choices=["true", "false"], default=None)
+    serve.add_argument("--route-stop-margin", type=float, default=None)
     serve.add_argument("--route-model", default=None)
     serve.add_argument(
         "--foreground",
@@ -1848,6 +1864,19 @@ def _resolve_graph_index(
     return graph, index, {}
 
 
+def _ensure_route_model_exists(state_path: str) -> None:
+    """Ensure route_model.npz exists beside state.json, creating identity model if missing."""
+    route_model_path = Path(state_path).expanduser().parent / "route_model.npz"
+    if route_model_path.exists():
+        return
+    _, _index, meta = load_state(str(Path(state_path).expanduser()))
+    embedder_dim = meta.get("embedder_dim")
+    if not isinstance(embedder_dim, int) or embedder_dim <= 0:
+        raise SystemExit("could not determine embedder dimension for route_model initialization")
+    RouteModel.init_identity(d=embedder_dim, df=1).save_npz(route_model_path)
+    print(f"wrote default route_model.npz: {route_model_path}", file=sys.stderr)
+
+
 def _graph_payload(graph: Graph) -> dict:
     """ graph payload."""
     return {
@@ -2160,6 +2189,8 @@ def _serve_start_arguments(
     route_top_k: int,
     route_alpha_sim: float,
     route_use_relevance: bool,
+    route_enable_stop: bool,
+    route_stop_margin: float,
     route_model: str | None,
 ) -> list[str]:
     argv = ["--state", state_path]
@@ -2180,6 +2211,10 @@ def _serve_start_arguments(
         str(route_alpha_sim),
         "--route-use-relevance",
         "true" if route_use_relevance else "false",
+        "--route-enable-stop",
+        "true" if route_enable_stop else "false",
+        "--route-stop-margin",
+        str(route_stop_margin),
     ])
     if route_model:
         argv.extend(["--route-model", str(route_model)])
@@ -4371,6 +4406,11 @@ def cmd_report(args: argparse.Namespace) -> int:
         raw_pid = pid_path.read_text(encoding="utf-8").strip()
         if raw_pid.isdigit():
             pid = int(raw_pid)
+    health_payload = None
+    if socket_exists:
+        ping_ok, health, _error = _socket_health_status(socket_path, timeout=2.0)
+        if ping_ok and isinstance(health, dict):
+            health_payload = health
 
     sync_payload = _read_json_optional(_sync_report_path(resolved_state))
     maintain_payload = _read_json_optional(_maintain_report_path(resolved_state))
@@ -4455,6 +4495,19 @@ def cmd_report(args: argparse.Namespace) -> int:
         f"  nodes: {graph.node_count()}  edges: {graph.edge_count()}  orphans: {health.orphan_nodes}",
         f"  reflex: {health.reflex_pct:.1%}  habitual: {health.habitual_pct:.1%}  dormant: {health.dormant_pct:.1%}",
     ]
+
+    route_model_present = None
+    route_mode_effective = None
+    if health_payload is not None:
+        route_model_present = health_payload.get("route_model_present")
+        route_mode_effective = health_payload.get("route_mode_effective")
+    if route_model_present is None:
+        route_model_present = (Path(resolved_state).expanduser().parent / "route_model.npz").exists()
+    if route_mode_effective is None:
+        route_mode_effective = "learned" if route_model_present else "edge+sim"
+
+    lines.append(f"  route_model: {'present' if route_model_present else 'missing'}")
+    lines.append(f"  route_mode_effective: {route_mode_effective}")
 
     if sync_payload:
         lines.append(
@@ -4599,6 +4652,18 @@ def cmd_daemon(args: argparse.Namespace) -> int:
         profile.policy.route_use_relevance if profile is not None else None,
         True,
     )
+    route_enable_stop = _coalesce_route_enable_stop(
+        args.route_enable_stop,
+        profile.policy.route_enable_stop if profile is not None else None,
+        False,
+    )
+    route_stop_margin = _coalesce_float(
+        args.route_stop_margin,
+        profile.policy.route_stop_margin if profile is not None else None,
+        0.1,
+    )
+    if route_stop_margin < 0.0:
+        raise SystemExit("--route-stop-margin must be >= 0.0")
     route_model = args.route_model
     from .daemon import main as daemon_main
 
@@ -4620,6 +4685,10 @@ def cmd_daemon(args: argparse.Namespace) -> int:
             str(route_alpha_sim),
             "--route-use-relevance",
             "true" if route_use_relevance else "false",
+            "--route-enable-stop",
+            "true" if route_enable_stop else "false",
+            "--route-stop-margin",
+            str(route_stop_margin),
             "--auto-save-interval",
             str(args.auto_save_interval),
         ] + (["--route-model", str(route_model)] if route_model else [])
@@ -4662,6 +4731,18 @@ def cmd_serve(args: argparse.Namespace) -> int:
         profile.policy.route_use_relevance if profile is not None else None,
         True,
     )
+    route_enable_stop = _coalesce_route_enable_stop(
+        args.route_enable_stop,
+        profile.policy.route_enable_stop if profile is not None else None,
+        False,
+    )
+    route_stop_margin = _coalesce_float(
+        args.route_stop_margin,
+        profile.policy.route_stop_margin if profile is not None else None,
+        0.1,
+    )
+    if route_stop_margin < 0.0:
+        raise SystemExit("--route-stop-margin must be >= 0.0")
     route_model = args.route_model
     from .socket_server import main as socket_server_main
 
@@ -4680,6 +4761,8 @@ def cmd_serve(args: argparse.Namespace) -> int:
         route_top_k=route_top_k,
         route_alpha_sim=route_alpha_sim,
         route_use_relevance=route_use_relevance,
+        route_enable_stop=route_enable_stop,
+        route_stop_margin=route_stop_margin,
         route_model=route_model,
     )
     launchd_program_arguments = _resolve_serve_launchd_program_arguments(start_argv)
@@ -4692,6 +4775,9 @@ def cmd_serve(args: argparse.Namespace) -> int:
                 file=sys.stderr,
             )
             return 1
+
+        if not args.dry_run:
+            _ensure_route_model_exists(state_path)
 
         label = args.label or _derive_serve_label(state_path)
         plist_path = Path(args.plist_path).expanduser() if args.plist_path else _derive_launchd_plist_path(label)

@@ -135,6 +135,29 @@ def test_make_runtime_route_fn_learned_populates_decision_log() -> None:
     assert 0.0 <= metrics.relevance_conf <= 1.0
 
 
+def test_make_runtime_route_fn_can_choose_stop() -> None:
+    index = VectorIndex()
+    index.upsert("a", [1.0, 0.0])
+    index.upsert("b", [0.0, 1.0])
+
+    route_fn = make_runtime_route_fn(
+        policy=RoutingPolicy(route_mode="edge", top_k=1, use_relevance=False, enable_stop=True, stop_margin=0.1),
+        query_vector=[1.0, 0.0],
+        index=index,
+        stop_weight_fn=lambda _node_id: (1.0, 0.0),
+    )
+    assert route_fn is not None
+    chosen = route_fn(
+        "src",
+        [
+            Edge("src", "a", weight=0.0),
+            Edge("src", "b", weight=0.0),
+        ],
+        "q",
+    )
+    assert chosen == []
+
+
 def test_learned_route_confidence_overrides_are_debug_gated() -> None:
     index = VectorIndex()
     index.upsert("a", [1.0, 0.0])
