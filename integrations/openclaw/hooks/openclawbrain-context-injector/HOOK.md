@@ -35,13 +35,16 @@ On each `message:preprocessed` event, the hook does:
 5. Compute `chatId`:
    - `${channelId}:${conversationId}` when both exist.
 6. Budget:
-   - default 12,000 chars.
-   - upgrade to 20,000 chars when message indicates recall/correction context.
+   - default 20,000 chars.
+   - upgrade to 80,000 chars when message indicates recall/correction context.
 7. Invoke:
    - `python3 -m openclawbrain.openclaw_adapter.query_brain <state-path> <message> --format prompt --exclude-bootstrap --redact --max-prompt-context-chars <budget>`
    - include `--chat-id` when available.
    - command timeout: 2s, fail-open.
 8. On success, prepend returned text to `event.context.bodyForAgent`.
+9. If the user message starts with `Correction:`, `Fix:`, `Teaching:`, or `Note:`, invoke `capture_feedback` (best-effort, fail-open).
+   - Use the OpenClaw message id when available.
+   - Otherwise compute a deterministic dedup key from `(chat_id, timestamp, text)`.
 
 ## Fail-open
 

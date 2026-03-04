@@ -38,6 +38,12 @@ Brain-first mode injects OpenClawBrain context automatically at the hook layer. 
 ### 5-minute quickstart (copy/paste)
 
 ```bash
+openclawbrain openclaw install --agent main --yes
+```
+
+Equivalent manual steps:
+
+```bash
 openclawbrain serve install --state ~/.openclawbrain/main/state.json
 openclaw hooks install /path/to/openclawbrain/integrations/openclaw/hooks/openclawbrain-context-injector
 openclaw hooks enable openclawbrain-context-injector
@@ -46,6 +52,7 @@ openclaw gateway restart
 ```
 
 Use `/path/to` as a placeholder for your local `openclawbrain` repo path.
+If the hook pack is not bundled with your install, pass `--hooks-path /path/to/openclawbrain/integrations/openclaw/hooks/openclawbrain-context-injector`.
 
 ### Step-by-step install (managed)
 
@@ -77,10 +84,10 @@ openclaw hooks enable openclawbrain-context-injector
 openclawbrain loop install --state ~/.openclawbrain/main/state.json
 ```
 
-On Linux/systemd hosts, run `openclawbrain loop --systemd` to print unit/timer templates.
+On Linux/systemd hosts, run `openclawbrain loop --systemd` to print a unit template.
 
 Default schedule:
-- Hourly cheap job: edges-only replay (LLM-free)
+- Hourly cheap job: edges-only replay + harvest (LLM-free)
 - Nightly heavier job: full replay (fast-learning + harvest) + maintenance
 
 5. Restart the gateway so hooks load:
@@ -97,9 +104,21 @@ openclaw hooks list
 openclaw hooks info openclawbrain-context-injector
 ```
 
+Convenience status check:
+
+```bash
+openclawbrain openclaw status --agent main
+```
+
 **“Ready”** means the hook is discovered, eligible, and enabled for the gateway (no missing requirements like `python3` or `workspace.dir`).
 
 ### Rollback (clean and fast)
+
+```bash
+openclawbrain openclaw uninstall --agent main --yes
+```
+
+Manual rollback steps:
 
 ```bash
 openclaw hooks disable openclawbrain-context-injector

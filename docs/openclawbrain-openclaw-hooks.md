@@ -15,6 +15,7 @@ When `openclawbrain-context-injector` is enabled on `message:preprocessed`:
 - The injected block is marked as prompt data (`[BRAIN_CONTEXT ...]`) and is intended to be used as context, not instruction text.
 - You keep normal OpenClaw flow and fall back to standard behavior if retrieval fails.
 - If a user message starts with `Correction:`, `Fix:`, `Teaching:`, or `Note:`, the hook best-effort calls `capture_feedback` (fail-open).
+- Retrieval adds **no completion-model calls**: it uses the local OpenClawBrain daemon plus embeddings only.
 
 ## Always-on learning (recommended default experience)
 
