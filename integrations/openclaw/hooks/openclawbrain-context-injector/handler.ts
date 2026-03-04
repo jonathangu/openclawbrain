@@ -86,14 +86,33 @@ function resolveMessageId(context: any, event: any): string {
   );
 }
 
-function deriveDedupKey(chatId: string, message: string, messageId: string): { dedupKey: string | null; messageId: string | null } {
+function resolveMessageTimestamp(context: any, event: any): string {
+  return (
+    normalizeText(context?.messageTimestamp) ||
+    normalizeText(context?.messageTs) ||
+    normalizeText(context?.message?.timestamp) ||
+    normalizeText(context?.message?.ts) ||
+    normalizeText(event?.timestamp) ||
+    normalizeText(event?.ts) ||
+    ""
+  );
+}
+
+function deriveDedupKey(
+  chatId: string,
+  message: string,
+  messageId: string,
+  timestamp: string,
+): { dedupKey: string | null; messageId: string | null } {
   if (messageId) {
     return { dedupKey: null, messageId };
   }
   if (!chatId) {
     return { dedupKey: null, messageId: null };
   }
-  const hash = createHash("sha256").update(message).digest("hex");
+  const hash = createHash("sha256")
+    .update(`${chatId}|${timestamp}|${message}`)
+    .digest("hex");
   return { dedupKey: `${chatId}:${hash}`, messageId: null };
 }
 
@@ -192,7 +211,8 @@ export default async function handler(event: any): Promise<any> {
   const directive = parseFeedbackDirective(message);
   if (directive) {
     const rawMessageId = resolveMessageId(context, event);
-    const dedup = deriveDedupKey(chatId, message, rawMessageId);
+    const timestamp = resolveMessageTimestamp(context, event);
+    const dedup = deriveDedupKey(chatId, message, rawMessageId, timestamp);
     runCaptureFeedback(statePath, chatId, directive, dedup.dedupKey, dedup.messageId);
   }
 

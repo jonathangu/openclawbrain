@@ -11,7 +11,7 @@ import hashlib
 import time
 import warnings
 import threading
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 import sys
 import tempfile
 import shutil
@@ -87,6 +87,13 @@ from . import __version__
 
 DEFAULT_STATE_PROFILE = "main"
 REPLAY_MODES = ("edges-only", "fast-learning", "full")
+LOOP_LOG_FILENAME = "loop.log"
+LOOP_EVENTS_FILENAME = "loop.events.jsonl"
+LOOP_LOCK_FILENAME = "loop.lock"
+LOOP_CHECKPOINT_FILENAME = "loop.checkpoint.json"
+LOOP_MANIFEST_FILENAME = "loop.manifest.json"
+LOOP_STDOUT_FILENAME = "loop.stdout.log"
+LOOP_STDERR_FILENAME = "loop.stderr.log"
 REPLAY_HELP_EPILOG = (
     "Replay modes and rough cost profile:\n"
     "  edges-only    Fastest/cheapest. No LLM calls, no harvest.\n"
@@ -339,6 +346,11 @@ def _resolve_state_path(
     if allow_default:
         return resolve_default_state_path(profile)
     return None
+
+
+def _state_path_for_agent(agent_id: str) -> str:
+    """Return the default state path for an agent id."""
+    return str((Path.home() / ".openclawbrain" / agent_id / "state.json").expanduser())
 
 
 def _resolve_effective_state_path(
@@ -1503,6 +1515,64 @@ def _build_parser() -> argparse.ArgumentParser:
     dream.add_argument("--traces-dir", default=None)
     dream.add_argument("--json", action="store_true")
 
+    loop = sub.add_parser(
+        "loop",
+        help="Always-learning loop runner + scheduler (`run|install|uninstall|status`)",
+    )
+    loop.add_argument(
+        "loop_action",
+        nargs="?",
+        choices=["run", "install", "uninstall", "status"],
+        default="run",
+        help="Loop action (default: run)",
+    )
+    loop.add_argument("--agent", help="Agent id (defaults to main; overrides --state)")
+    loop.add_argument("--state", help="Path to state.json (defaults to main profile)")
+    loop.add_argument("--sessions", help="Path to OpenClaw sessions directory")
+    loop.add_argument("--mode", choices=REPLAY_MODES, default="full")
+    loop.add_argument("--llm", choices=["none", "openai", "ollama", "auto"], default="auto")
+    loop.add_argument("--llm-model")
+    loop.add_argument("--workers", type=int, default=4)
+    loop.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True)
+    loop.add_argument("--include-tool-results", action=argparse.BooleanOptionalAction, default=True)
+    loop.add_argument("--checkpoint-every-seconds", type=int, default=60)
+    loop.add_argument("--replay-progress-interval-seconds", type=int, default=30)
+    loop.add_argument("--skip-maintain", action="store_true", help="Skip maintenance pass")
+    loop.add_argument("--maintain-tasks", default="health,decay,prune,merge")
+    loop.add_argument("--maintain-llm", choices=["none", "openai", "ollama"], default="none")
+    loop.add_argument("--maintain-embedder", choices=["local", "openai"], default="local")
+    loop.add_argument("--enable-teacher", action="store_true")
+    loop.add_argument("--since-hours", type=float, default=24.0)
+    loop.add_argument("--max-queries", type=int, default=200)
+    loop.add_argument("--sample-rate", type=float, default=0.1)
+    loop.add_argument("--max-candidates-per-node", type=int, default=12)
+    loop.add_argument("--max-decision-points", type=int, default=500)
+    loop.add_argument("--teacher", choices=["openai", "ollama", "none"], default="openai")
+    loop.add_argument("--teacher-model", default="gpt-5-mini")
+    loop.add_argument("--score-scale", type=float, default=0.3)
+    loop.add_argument("--enable-train-route-model", action="store_true")
+    loop.add_argument("--train-route-model-out", default=None)
+    loop.add_argument(
+        "--reward-source",
+        choices=[
+            RewardSource.HUMAN.value,
+            RewardSource.SELF.value,
+            RewardSource.HARVESTER.value,
+            RewardSource.TEACHER.value,
+        ],
+        default=RewardSource.TEACHER.value,
+    )
+    loop.add_argument("--reward-weights", default=None)
+    loop.add_argument("--write-relevance-metadata", action=argparse.BooleanOptionalAction, default=True)
+    loop.add_argument("--skip-if-locked", action=argparse.BooleanOptionalAction, default=True)
+    loop.add_argument("--hourly-interval-seconds", type=int, default=3600)
+    loop.add_argument("--nightly-hour", type=int, default=2)
+    loop.add_argument("--nightly-minute", type=int, default=30)
+    loop.add_argument("--dry-run", action="store_true")
+    loop.add_argument("--launchd", action="store_true", help="Print launchd plist for loop service")
+    loop.add_argument("--systemd", action="store_true", help="Print systemd unit template for loop service")
+    loop.add_argument("--env-file", help="Optional .env file for launchd EnvironmentVariables")
+
     dreaming = sub.add_parser("dreaming")
     dreaming.add_argument("--state", required=True)
     dreaming.add_argument("--interval-seconds", type=int, default=900)
@@ -1635,6 +1705,21 @@ def _build_parser() -> argparse.ArgumentParser:
         default=None,
         help="Optional path for build-all JSONL event stream. Defaults to ~/.openclawbrain/scratch/build-all.<ts>.events.jsonl",
     )
+
+    openclaw = sub.add_parser(
+        "openclaw",
+        help="OpenClaw integration helper (`install|uninstall|status`)",
+    )
+    openclaw.add_argument(
+        "action",
+        choices=["install", "uninstall", "status"],
+        help="OpenClaw integration action",
+    )
+    openclaw.add_argument("--agent", default="main", help="Agent id (default: main)")
+    openclaw.add_argument("--state", help="Explicit state.json path (overrides --agent)")
+    openclaw.add_argument("--hooks-path", help="Path to openclawbrain-context-injector hook directory")
+    openclaw.add_argument("--env-file", help="Optional .env file to pass into launchd service plists")
+    openclaw.add_argument("--yes", action="store_true", help="Skip confirmation prompts")
     return parser
 
 
@@ -1808,8 +1893,79 @@ def _derive_serve_label(state_path: str) -> str:
     return f"com.openclawbrain.{state_parent.name or 'main'}"
 
 
+def _derive_loop_label(state_path: str, flavor: str | None = None) -> str:
+    state_parent = Path(state_path).expanduser().parent
+    base = f"com.openclawbrain.loop.{state_parent.name or 'main'}"
+    return f"{base}.{flavor}" if flavor else base
+
+
 def _derive_launchd_plist_path(label: str) -> Path:
     return Path.home() / "Library" / "LaunchAgents" / f"{label}.plist"
+
+
+def _loop_state_root(state_path: str) -> Path:
+    return Path(state_path).expanduser().parent
+
+
+def _loop_log_path(state_path: str) -> Path:
+    return _loop_state_root(state_path) / LOOP_LOG_FILENAME
+
+
+def _loop_events_path(state_path: str) -> Path:
+    return _loop_state_root(state_path) / LOOP_EVENTS_FILENAME
+
+
+def _loop_lock_path(state_path: str) -> Path:
+    return _loop_state_root(state_path) / LOOP_LOCK_FILENAME
+
+
+def _loop_checkpoint_path(state_path: str) -> Path:
+    return _loop_state_root(state_path) / LOOP_CHECKPOINT_FILENAME
+
+
+def _loop_manifest_path(state_path: str) -> Path:
+    return _loop_state_root(state_path) / LOOP_MANIFEST_FILENAME
+
+
+def _loop_stdout_path(state_path: str) -> Path:
+    return _loop_state_root(state_path) / LOOP_STDOUT_FILENAME
+
+
+def _loop_stderr_path(state_path: str) -> Path:
+    return _loop_state_root(state_path) / LOOP_STDERR_FILENAME
+
+
+def _try_acquire_loop_lock(lock_path: Path) -> tuple[int | None, bool]:
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(str(lock_path), os.O_RDWR | os.O_CREAT, 0o644)
+    try:
+        import fcntl  # type: ignore
+
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return fd, True
+    except BlockingIOError:
+        os.close(fd)
+        return None, False
+    except Exception:  # noqa: BLE001
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+        return None, False
+
+
+def _loop_lock_held(lock_path: Path) -> bool:
+    fd, acquired = _try_acquire_loop_lock(lock_path)
+    if acquired and fd is not None:
+        try:
+            import fcntl  # type: ignore
+
+            fcntl.flock(fd, fcntl.LOCK_UN)
+        except OSError:
+            pass
+        os.close(fd)
+        return False
+    return True
 
 
 def _parse_env_file(env_path: str) -> dict[str, str]:
@@ -1907,6 +2063,30 @@ def _render_launchd_plist(
     return payload_bytes.decode("utf-8")
 
 
+def _render_loop_launchd_plist(
+    *,
+    label: str,
+    program_arguments: list[str],
+    stdout_path: Path,
+    stderr_path: Path,
+    schedule: dict[str, object],
+    env_vars: dict[str, str] | None = None,
+) -> str:
+    payload: dict[str, object] = {
+        "Label": label,
+        "ProgramArguments": program_arguments,
+        "RunAtLoad": True,
+        "KeepAlive": True,
+        "StandardOutPath": str(stdout_path),
+        "StandardErrorPath": str(stderr_path),
+        **schedule,
+    }
+    if env_vars:
+        payload["EnvironmentVariables"] = env_vars
+    payload_bytes = plistlib.dumps(payload, sort_keys=False)
+    return payload_bytes.decode("utf-8")
+
+
 def _render_systemd_unit(*, state_path: str, socket_path: str) -> str:
     """Render a minimal systemd unit for `openclawbrain serve start`."""
     state_parent = Path(state_path).expanduser().parent
@@ -1928,6 +2108,38 @@ def _render_systemd_unit(*, state_path: str, socket_path: str) -> str:
             "",
             "[Install]",
             "WantedBy=multi-user.target",
+        ]
+    )
+
+
+def _render_loop_systemd_templates(
+    *,
+    state_path: str,
+    sessions_path: str,
+    loop_cmd: str,
+) -> str:
+    return "\n".join(
+        [
+            "# /etc/systemd/system/openclawbrain-loop.service",
+            "[Unit]",
+            "Description=OpenClawBrain always-learning loop",
+            "After=network-online.target",
+            "",
+            "[Service]",
+            "Type=simple",
+            f"WorkingDirectory={Path(state_path).expanduser().parent}",
+            f"ExecStart={loop_cmd}",
+            "Restart=always",
+            "RestartSec=10",
+            "",
+            "[Install]",
+            "WantedBy=multi-user.target",
+            "# Enable:",
+            "#   sudo systemctl daemon-reload",
+            "#   sudo systemctl enable --now openclawbrain-loop.service",
+            "# Logs:",
+            "#   journalctl -u openclawbrain-loop.service -n 200 --no-pager",
+            f"# Sessions path assumed: {sessions_path}",
         ]
     )
 
@@ -4445,6 +4657,745 @@ def cmd_dream(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_loop(args: argparse.Namespace) -> int:
+    """Run/install always-learning loop (replay + maintenance + optional teacher)."""
+    if args.state:
+        state_path = _resolve_state_path(args.state, allow_default=False)
+    elif args.agent:
+        state_path = _state_path_for_agent(args.agent)
+    else:
+        state_path = _resolve_state_path(None, allow_default=True)
+    if state_path is None:
+        raise SystemExit("--state or --agent is required for loop")
+    state_path = str(Path(state_path).expanduser())
+
+    agent_root = _loop_state_root(state_path)
+    agent_id = agent_root.name or "main"
+    action = getattr(args, "loop_action", "run")
+    log_path = _loop_log_path(state_path)
+    events_path = _loop_events_path(state_path)
+    lock_path = _loop_lock_path(state_path)
+    checkpoint_path = _loop_checkpoint_path(state_path)
+    manifest_path = _loop_manifest_path(state_path)
+    stdout_path = _loop_stdout_path(state_path)
+    stderr_path = _loop_stderr_path(state_path)
+
+    sessions_path = (
+        Path(args.sessions).expanduser()
+        if args.sessions
+        else Path.home() / ".openclaw" / "agents" / agent_id / "sessions"
+    )
+
+    ocb_prefix = [sys.executable, "-m", "openclawbrain.cli"]
+
+    def _loop_run_program_arguments() -> list[str]:
+        argv = ocb_prefix + [
+            "loop",
+            "run",
+            "--state",
+            state_path,
+            "--sessions",
+            str(sessions_path),
+            "--mode",
+            str(args.mode),
+            "--llm",
+            str(args.llm),
+            "--checkpoint-every-seconds",
+            str(args.checkpoint_every_seconds),
+            "--replay-progress-interval-seconds",
+            str(args.replay_progress_interval_seconds),
+            "--maintain-tasks",
+            str(args.maintain_tasks),
+            "--maintain-llm",
+            str(args.maintain_llm),
+            "--maintain-embedder",
+            str(args.maintain_embedder),
+            "--since-hours",
+            str(args.since_hours),
+            "--max-queries",
+            str(args.max_queries),
+            "--sample-rate",
+            str(args.sample_rate),
+            "--max-candidates-per-node",
+            str(args.max_candidates_per_node),
+            "--max-decision-points",
+            str(args.max_decision_points),
+            "--teacher",
+            str(args.teacher),
+            "--teacher-model",
+            str(args.teacher_model),
+            "--score-scale",
+            str(args.score_scale),
+            "--reward-source",
+            str(args.reward_source),
+            "--hourly-interval-seconds",
+            str(args.hourly_interval_seconds),
+            "--nightly-hour",
+            str(args.nightly_hour),
+            "--nightly-minute",
+            str(args.nightly_minute),
+        ]
+        if args.llm_model:
+            argv.extend(["--llm-model", str(args.llm_model)])
+        if args.workers is not None:
+            argv.extend(["--workers", str(int(args.workers))])
+        if args.resume:
+            argv.append("--resume")
+        else:
+            argv.append("--no-resume")
+        if args.include_tool_results:
+            argv.append("--include-tool-results")
+        else:
+            argv.append("--no-include-tool-results")
+        if args.skip_maintain:
+            argv.append("--skip-maintain")
+        if args.enable_teacher:
+            argv.append("--enable-teacher")
+        if args.enable_train_route_model:
+            argv.append("--enable-train-route-model")
+        if args.train_route_model_out:
+            argv.extend(["--train-route-model-out", str(args.train_route_model_out)])
+        if args.reward_weights:
+            argv.extend(["--reward-weights", str(args.reward_weights)])
+        if args.write_relevance_metadata:
+            argv.append("--write-relevance-metadata")
+        else:
+            argv.append("--no-write-relevance-metadata")
+        if args.skip_if_locked:
+            argv.append("--skip-if-locked")
+        else:
+            argv.append("--no-skip-if-locked")
+        return argv
+
+    if args.launchd:
+        label = _derive_loop_label(state_path)
+        program = _render_loop_launchd_plist(
+            label=label,
+            program_arguments=_loop_run_program_arguments(),
+            stdout_path=stdout_path,
+            stderr_path=stderr_path,
+            schedule={},
+            env_vars=_parse_env_file(args.env_file) if args.env_file else None,
+        )
+        print(program)
+        return 0
+
+    if args.systemd:
+        print(
+            _render_loop_systemd_templates(
+                state_path=state_path,
+                sessions_path=str(sessions_path),
+                loop_cmd=" ".join(shlex.quote(part) for part in _loop_run_program_arguments()),
+            )
+        )
+        return 0
+
+    if action == "install":
+        if sys.platform != "darwin":
+            print(
+                "launchd lifecycle commands are supported on macOS only. "
+                "Use `openclawbrain loop --systemd` on Linux/systemd hosts.",
+                file=sys.stderr,
+            )
+            return 1
+        label = _derive_loop_label(state_path)
+        plist_path = _derive_launchd_plist_path(label)
+        env_vars = _parse_env_file(args.env_file) if args.env_file else None
+        program = _render_loop_launchd_plist(
+            label=label,
+            program_arguments=_loop_run_program_arguments(),
+            stdout_path=stdout_path,
+            stderr_path=stderr_path,
+            schedule={},
+            env_vars=env_vars,
+        )
+        uid = os.getuid()
+        bootout_cmd = ["launchctl", "bootout", f"gui/{uid}", str(plist_path)]
+        bootstrap_cmd = ["launchctl", "bootstrap", f"gui/{uid}", str(plist_path)]
+
+        print("Planned launchctl commands:")
+        print(f"  {' '.join(bootout_cmd)}")
+        print(f"  {' '.join(bootstrap_cmd)}")
+
+        if args.dry_run:
+            print(program)
+            return 0
+
+        _run_launchctl(bootout_cmd, ignore_errors=True)
+        plist_path.parent.mkdir(parents=True, exist_ok=True)
+        plist_path.write_text(program, encoding="utf-8")
+        if env_vars:
+            plist_path.chmod(0o600)
+        _run_launchctl(bootstrap_cmd)
+        print(f"wrote launchd plist: {plist_path}")
+        print(f"Loop log: {log_path}")
+        print(f"Loop events: {events_path}")
+        print(f"Loop manifest: {manifest_path}")
+        print(f"Loop stdout: {stdout_path}")
+        print(f"Loop stderr: {stderr_path}")
+        return 0
+
+    if action == "uninstall":
+        if sys.platform != "darwin":
+            print(
+                "launchd lifecycle commands are supported on macOS only. "
+                "Use `openclawbrain loop --systemd` on Linux/systemd hosts.",
+                file=sys.stderr,
+            )
+            return 1
+        label = _derive_loop_label(state_path)
+        plist_path = _derive_launchd_plist_path(label)
+        uid = os.getuid()
+        bootout_cmd = ["launchctl", "bootout", f"gui/{uid}", str(plist_path)]
+        print("Planned launchctl commands:")
+        print(f"  {' '.join(bootout_cmd)}")
+
+        if args.dry_run:
+            return 0
+
+        _run_launchctl(bootout_cmd, ignore_errors=True)
+        try:
+            plist_path.unlink(missing_ok=True)
+            print(f"removed launchd plist: {plist_path}")
+        except OSError as exc:
+            print(f"could not remove plist: {exc}", file=sys.stderr)
+            return 1
+        return 0
+
+    if action == "status":
+        lock_held = _loop_lock_held(lock_path)
+        checkpoint: dict[str, object] | None = None
+        if checkpoint_path.exists():
+            try:
+                checkpoint = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                checkpoint = None
+        label = _derive_loop_label(state_path)
+        plist_path = _derive_launchd_plist_path(label)
+        print("OpenClawBrain loop status")
+        print(f"State: {state_path}")
+        print(f"Sessions: {sessions_path}")
+        print(f"Log: {log_path}")
+        print(f"Stdout: {stdout_path}")
+        print(f"Stderr: {stderr_path}")
+        print(f"Events: {events_path}")
+        print(f"Manifest: {manifest_path}")
+        print(f"Lock: {lock_path} (held={lock_held})")
+        print(f"Checkpoint: {checkpoint_path}")
+        print(f"Launchd plist: {plist_path} (exists={plist_path.exists()})")
+        if isinstance(checkpoint, dict):
+            status = checkpoint.get("status", "unknown")
+            step = checkpoint.get("step", "unknown")
+            job = checkpoint.get("job", "unknown")
+            started_at = checkpoint.get("started_at")
+            completed_at = checkpoint.get("completed_at")
+            last_exit = checkpoint.get("exit_code")
+            print(f"Last run: job={job} status={status} step={step} exit={last_exit}")
+            if started_at:
+                print(f"  started_at={started_at}")
+            if completed_at:
+                print(f"  completed_at={completed_at}")
+        return 0
+
+    if action != "run":
+        raise SystemExit(f"Unknown loop action: {action}")
+
+    def log_line(message: str) -> None:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now(timezone.utc).isoformat()
+        with log_path.open("a", encoding="utf-8") as handle:
+            handle.write(f"[{ts}] {message}\n")
+
+    def emit_event(event: dict[str, object]) -> None:
+        payload = {
+            "ts": datetime.now(timezone.utc).isoformat(),
+            "agent_id": agent_id,
+            "state_path": state_path,
+            "sessions_path": str(sessions_path),
+            **event,
+        }
+        _append_jsonl(events_path, payload)
+
+    def load_manifest() -> dict[str, object]:
+        if not manifest_path.exists():
+            return {}
+        try:
+            return json.loads(manifest_path.read_text(encoding="utf-8"))
+        except json.JSONDecodeError:
+            return {}
+
+    def write_manifest(job: str, update: dict[str, object]) -> None:
+        manifest = load_manifest()
+        manifest.update(
+            {
+                "agent_id": agent_id,
+                "state_path": state_path,
+                "sessions_path": str(sessions_path),
+                "log_path": str(log_path),
+                "events_path": str(events_path),
+                "checkpoint_path": str(checkpoint_path),
+                "updated_at": datetime.now(timezone.utc).isoformat(),
+            }
+        )
+        job_payload = manifest.get(job)
+        if not isinstance(job_payload, dict):
+            job_payload = {}
+        job_payload.update(update)
+        manifest[job] = job_payload
+        _write_json_atomic(manifest_path, manifest)
+
+    def write_checkpoint(
+        *,
+        status: str,
+        job: str,
+        step: str,
+        exit_code: int | None = None,
+        reason: str | None = None,
+        started_at: str | None = None,
+        completed_at: str | None = None,
+    ) -> None:
+        payload: dict[str, object] = {
+            "status": status,
+            "job": job,
+            "step": step,
+            "state_path": state_path,
+            "sessions_path": str(sessions_path),
+            "mode": str(args.mode),
+            "maintain_tasks": str(args.maintain_tasks),
+            "teacher_enabled": bool(args.enable_teacher),
+            "train_route_model_enabled": bool(args.enable_train_route_model),
+        }
+        if started_at is not None:
+            payload["started_at"] = started_at
+        if completed_at is not None:
+            payload["completed_at"] = completed_at
+        if exit_code is not None:
+            payload["exit_code"] = int(exit_code)
+        if reason:
+            payload["reason"] = reason
+        _write_json_atomic(checkpoint_path, payload)
+
+    if not Path(state_path).exists():
+        log_line(f"missing state: {state_path}")
+        write_checkpoint(status="failed", job="preflight", step="preflight", exit_code=2, reason="missing_state")
+        return 2
+    if not sessions_path.exists():
+        log_line(f"missing sessions: {sessions_path}")
+        write_checkpoint(status="failed", job="preflight", step="preflight", exit_code=2, reason="missing_sessions")
+        return 2
+
+    if args.dry_run:
+        log_line("loop run dry-run: exiting without executing jobs")
+        return 0
+
+    def run_replay(
+        *,
+        job: str,
+        mode: str,
+        llm: str,
+    ) -> int:
+        replay_cmd = [
+            *ocb_prefix,
+            "replay",
+            "--state",
+            state_path,
+            "--sessions",
+            str(sessions_path),
+            "--mode",
+            str(mode),
+            "--llm",
+            str(llm),
+            "--checkpoint-every-seconds",
+            str(args.checkpoint_every_seconds),
+        ]
+        if args.llm_model:
+            replay_cmd.extend(["--llm-model", str(args.llm_model)])
+        if args.workers is not None:
+            replay_cmd.extend(["--workers", str(int(args.workers))])
+        if args.resume:
+            replay_cmd.append("--resume")
+        if args.include_tool_results:
+            replay_cmd.append("--include-tool-results")
+        else:
+            replay_cmd.append("--no-include-tool-results")
+
+        write_checkpoint(status="running", job=job, step="replay")
+        emit_event({"type": "step_start", "job": job, "step": "replay"})
+        code = _run_logged_replay_command(
+            replay_cmd,
+            log_path=log_path,
+            step_name=f"{job}.replay",
+            checkpoint_path=agent_root / REPLAY_CHECKPOINT_FILENAME,
+            agent_id=agent_id,
+            progress_interval_seconds=max(0, int(args.replay_progress_interval_seconds)),
+        )
+        emit_event({"type": "step_end", "job": job, "step": "replay", "exit_code": code})
+        return code
+
+    def run_harvest(*, job: str) -> int:
+        harvest_cmd = [
+            *ocb_prefix,
+            "harvest",
+            "--state",
+            state_path,
+            "--json",
+        ]
+        write_checkpoint(status="running", job=job, step="harvest")
+        emit_event({"type": "step_start", "job": job, "step": "harvest"})
+        code = _run_logged_command(harvest_cmd, log_path=log_path, step_name=f"{job}.harvest")
+        emit_event({"type": "step_end", "job": job, "step": "harvest", "exit_code": code})
+        return code
+
+    def run_maintain(*, job: str) -> int:
+        maintain_cmd = [
+            *ocb_prefix,
+            "maintain",
+            "--state",
+            state_path,
+            "--tasks",
+            str(args.maintain_tasks),
+            "--llm",
+            str(args.maintain_llm),
+            "--embedder",
+            str(args.maintain_embedder),
+            "--json",
+        ]
+        write_checkpoint(status="running", job=job, step="maintain")
+        emit_event({"type": "step_start", "job": job, "step": "maintain"})
+        code = _run_logged_command(maintain_cmd, log_path=log_path, step_name=f"{job}.maintain")
+        emit_event({"type": "step_end", "job": job, "step": "maintain", "exit_code": code})
+        return code
+
+    def run_async_route(
+        *,
+        job: str,
+        traces_out: Path | None,
+    ) -> int:
+        async_cmd = [
+            *ocb_prefix,
+            "async-route-pg",
+            "--state",
+            state_path,
+            "--teacher",
+            str(args.teacher),
+            "--teacher-model",
+            str(args.teacher_model),
+            "--since-hours",
+            str(args.since_hours),
+            "--max-queries",
+            str(args.max_queries),
+            "--sample-rate",
+            str(args.sample_rate),
+            "--max-candidates-per-node",
+            str(args.max_candidates_per_node),
+            "--max-decision-points",
+            str(args.max_decision_points),
+            "--score-scale",
+            str(args.score_scale),
+            "--reward-source",
+            str(args.reward_source),
+            "--apply",
+            "--json",
+        ]
+        if args.reward_weights:
+            async_cmd.extend(["--reward-weights", str(args.reward_weights)])
+        if args.write_relevance_metadata:
+            async_cmd.append("--write-relevance-metadata")
+        else:
+            async_cmd.append("--no-write-relevance-metadata")
+        if traces_out is not None:
+            async_cmd.extend(["--traces-out", str(traces_out)])
+
+        write_checkpoint(status="running", job=job, step="async_route_pg")
+        emit_event({"type": "step_start", "job": job, "step": "async_route_pg"})
+        code = _run_logged_command(async_cmd, log_path=log_path, step_name=f"{job}.async_route_pg")
+        emit_event({"type": "step_end", "job": job, "step": "async_route_pg", "exit_code": code})
+        return code
+
+    def run_train_route(
+        *,
+        job: str,
+        traces_in: Path,
+        out_path: Path,
+    ) -> int:
+        train_cmd = [
+            *ocb_prefix,
+            "train-route-model",
+            "--state",
+            state_path,
+            "--traces-in",
+            str(traces_in),
+            "--out",
+            str(out_path),
+            "--json",
+        ]
+        if args.reward_weights:
+            train_cmd.extend(["--reward-weights", str(args.reward_weights)])
+        write_checkpoint(status="running", job=job, step="train_route_model")
+        emit_event({"type": "step_start", "job": job, "step": "train_route_model"})
+        code = _run_logged_command(train_cmd, log_path=log_path, step_name=f"{job}.train_route_model")
+        emit_event({"type": "step_end", "job": job, "step": "train_route_model", "exit_code": code})
+        return code
+
+    def run_job(
+        *,
+        job: str,
+        mode: str,
+        llm: str,
+        include_maintain: bool,
+        include_teacher: bool,
+    ) -> int:
+        lock_fd, acquired = _try_acquire_loop_lock(lock_path)
+        if not acquired:
+            msg = f"{job}: loop lock held; skipping"
+            log_line(msg)
+            write_checkpoint(status="skipped", job=job, step="lock", exit_code=0, reason="loop_lock_held")
+            emit_event({"type": "job_skipped", "job": job, "reason": "loop_lock_held"})
+            write_manifest(job, {"last_status": "skipped", "last_reason": "loop_lock_held"})
+            if args.skip_if_locked:
+                return 0
+            raise SystemExit("loop lock held")
+
+        started_at = datetime.now(timezone.utc).isoformat()
+        try:
+            write_checkpoint(status="running", job=job, step="preflight", started_at=started_at)
+            write_manifest(job, {"last_status": "running", "last_started_at": started_at})
+            emit_event({"type": "job_start", "job": job, "started_at": started_at})
+            log_line(f"{job}: run start mode={mode} llm={llm} sessions={sessions_path}")
+
+            replay_code = run_replay(job=job, mode=mode, llm=llm)
+            if replay_code != 0:
+                log_line(f"{job}: replay failed exit={replay_code}")
+                completed_at = datetime.now(timezone.utc).isoformat()
+                write_checkpoint(
+                    status="failed",
+                    job=job,
+                    step="replay",
+                    exit_code=replay_code,
+                    reason="replay_failed",
+                    started_at=started_at,
+                    completed_at=completed_at,
+                )
+                write_manifest(
+                    job,
+                    {
+                        "last_status": "failed",
+                        "last_step": "replay",
+                        "last_exit_code": replay_code,
+                        "last_completed_at": completed_at,
+                    },
+                )
+                return replay_code
+
+            if job == "hourly":
+                harvest_code = run_harvest(job=job)
+                if harvest_code != 0:
+                    log_line(f"{job}: harvest failed exit={harvest_code}")
+                    completed_at = datetime.now(timezone.utc).isoformat()
+                    write_checkpoint(
+                        status="failed",
+                        job=job,
+                        step="harvest",
+                        exit_code=harvest_code,
+                        reason="harvest_failed",
+                        started_at=started_at,
+                        completed_at=completed_at,
+                    )
+                    write_manifest(
+                        job,
+                        {
+                            "last_status": "failed",
+                            "last_step": "harvest",
+                            "last_exit_code": harvest_code,
+                            "last_completed_at": completed_at,
+                        },
+                    )
+                    return harvest_code
+            else:
+                if include_maintain:
+                    maintain_code = run_maintain(job=job)
+                    if maintain_code != 0:
+                        log_line(f"{job}: maintenance failed exit={maintain_code}")
+                        completed_at = datetime.now(timezone.utc).isoformat()
+                        write_checkpoint(
+                            status="failed",
+                            job=job,
+                            step="maintain",
+                            exit_code=maintain_code,
+                            reason="maintenance_failed",
+                            started_at=started_at,
+                            completed_at=completed_at,
+                        )
+                        write_manifest(
+                            job,
+                            {
+                                "last_status": "failed",
+                                "last_step": "maintain",
+                                "last_exit_code": maintain_code,
+                                "last_completed_at": completed_at,
+                            },
+                        )
+                        return maintain_code
+                else:
+                    log_line(f"{job}: maintenance skipped")
+
+                traces_out: Path | None = None
+                if include_teacher:
+                    traces_root = _loop_state_root(state_path) / "scratch"
+                    traces_root.mkdir(parents=True, exist_ok=True)
+                    if args.enable_train_route_model:
+                        trace_ts = datetime.now(timezone.utc)
+                        traces_out = traces_root / (
+                            f"loop.{job}.{trace_ts.strftime('%Y%m%dT%H%M%S')}"
+                            f"{trace_ts.microsecond // 1000:03d}Z.route_traces.jsonl"
+                        )
+                    else:
+                        traces_out = None
+                    async_code = run_async_route(job=job, traces_out=traces_out)
+                    if async_code != 0:
+                        log_line(f"{job}: async-route-pg failed exit={async_code}")
+                        completed_at = datetime.now(timezone.utc).isoformat()
+                        write_checkpoint(
+                            status="failed",
+                            job=job,
+                            step="async_route_pg",
+                            exit_code=async_code,
+                            reason="async_route_pg_failed",
+                            started_at=started_at,
+                            completed_at=completed_at,
+                        )
+                        write_manifest(
+                            job,
+                            {
+                                "last_status": "failed",
+                                "last_step": "async_route_pg",
+                                "last_exit_code": async_code,
+                                "last_completed_at": completed_at,
+                            },
+                        )
+                        return async_code
+                else:
+                    log_line(f"{job}: async-route-pg skipped")
+
+                if args.enable_train_route_model:
+                    if not include_teacher:
+                        log_line(f"{job}: train-route-model skipped (teacher disabled)")
+                    elif traces_out is None:
+                        log_line(f"{job}: train-route-model skipped (no traces)")
+                    else:
+                        out_path = (
+                            Path(args.train_route_model_out).expanduser()
+                            if args.train_route_model_out
+                            else Path(state_path).expanduser().parent / "route_model.npz"
+                        )
+                        train_code = run_train_route(job=job, traces_in=traces_out, out_path=out_path)
+                        if train_code != 0:
+                            log_line(f"{job}: train-route-model failed exit={train_code}")
+                            completed_at = datetime.now(timezone.utc).isoformat()
+                            write_checkpoint(
+                                status="failed",
+                                job=job,
+                                step="train_route_model",
+                                exit_code=train_code,
+                                reason="train_route_model_failed",
+                                started_at=started_at,
+                                completed_at=completed_at,
+                            )
+                            write_manifest(
+                                job,
+                                {
+                                    "last_status": "failed",
+                                    "last_step": "train_route_model",
+                                    "last_exit_code": train_code,
+                                    "last_completed_at": completed_at,
+                                },
+                            )
+                            return train_code
+
+            completed_at = datetime.now(timezone.utc).isoformat()
+            write_checkpoint(status="ok", job=job, step="complete", exit_code=0, started_at=started_at, completed_at=completed_at)
+            write_manifest(
+                job,
+                {
+                    "last_status": "ok",
+                    "last_step": "complete",
+                    "last_exit_code": 0,
+                    "last_completed_at": completed_at,
+                },
+            )
+            emit_event({"type": "job_end", "job": job, "status": "ok", "completed_at": completed_at})
+            log_line(f"{job}: run complete")
+            return 0
+        finally:
+            if lock_fd is not None:
+                try:
+                    import fcntl  # type: ignore
+
+                    fcntl.flock(lock_fd, fcntl.LOCK_UN)
+                except OSError:
+                    pass
+                os.close(lock_fd)
+
+    def parse_manifest_time(value: object) -> datetime | None:
+        if not isinstance(value, str):
+            return None
+        try:
+            parsed = datetime.fromisoformat(value)
+        except ValueError:
+            return None
+        return parsed
+
+    def should_run_hourly(now_utc: datetime, manifest: dict[str, object]) -> bool:
+        hourly_payload = manifest.get("hourly") if isinstance(manifest.get("hourly"), dict) else {}
+        last_run = parse_manifest_time(hourly_payload.get("last_completed_at")) or parse_manifest_time(hourly_payload.get("last_started_at"))
+        if last_run is None:
+            return True
+        return (now_utc - last_run).total_seconds() >= max(60, int(args.hourly_interval_seconds))
+
+    def should_run_nightly(now_local: datetime, manifest: dict[str, object]) -> bool:
+        nightly_payload = manifest.get("nightly") if isinstance(manifest.get("nightly"), dict) else {}
+        last_run = parse_manifest_time(nightly_payload.get("last_completed_at")) or parse_manifest_time(nightly_payload.get("last_started_at"))
+        if last_run is not None:
+            last_local = last_run.astimezone(now_local.tzinfo)
+            if last_local.date() == now_local.date():
+                return False
+        scheduled = now_local.replace(hour=int(args.nightly_hour), minute=int(args.nightly_minute), second=0, microsecond=0)
+        return now_local >= scheduled
+
+    def next_sleep_seconds(now_local: datetime, now_utc: datetime, manifest: dict[str, object]) -> float:
+        hourly_payload = manifest.get("hourly") if isinstance(manifest.get("hourly"), dict) else {}
+        last_run = parse_manifest_time(hourly_payload.get("last_completed_at")) or parse_manifest_time(hourly_payload.get("last_started_at"))
+        interval = max(60, int(args.hourly_interval_seconds))
+        if last_run is None:
+            next_hourly = now_utc
+        else:
+            next_hourly = last_run + timedelta(seconds=interval)
+
+        scheduled_today = now_local.replace(hour=int(args.nightly_hour), minute=int(args.nightly_minute), second=0, microsecond=0)
+        if now_local >= scheduled_today:
+            scheduled_today = scheduled_today + timedelta(days=1)
+        next_nightly = scheduled_today.astimezone(now_utc.tzinfo)
+
+        next_due = min(next_hourly, next_nightly)
+        return max(5.0, (next_due - now_utc).total_seconds())
+
+    log_line("loop scheduler started")
+    emit_event({"type": "loop_start"})
+    while True:
+        now_utc = datetime.now(timezone.utc)
+        now_local = now_utc.astimezone()
+        manifest = load_manifest()
+
+        if should_run_hourly(now_utc, manifest):
+            run_job(job="hourly", mode="edges-only", llm="none", include_maintain=False, include_teacher=False)
+
+        if should_run_nightly(now_local, manifest):
+            run_job(job="nightly", mode=str(args.mode), llm=str(args.llm), include_maintain=not args.skip_maintain, include_teacher=args.enable_teacher)
+
+        sleep_seconds = next_sleep_seconds(now_local, now_utc, load_manifest())
+        time.sleep(sleep_seconds)
+
+
 def cmd_train_route_model(args: argparse.Namespace) -> int:
     """Train learned route model from traces and optional labels."""
     try:
@@ -4599,6 +5550,90 @@ def cmd_build_all(args: argparse.Namespace) -> int:
     return 0 if all(int(item.get("exit_code", 1)) == 0 for item in results) else 1
 
 
+def _resolve_hooks_path(hooks_path: str | None) -> Path:
+    if hooks_path:
+        path = Path(hooks_path).expanduser()
+    else:
+        path = Path(__file__).resolve().parents[1] / "integrations" / "openclaw" / "hooks" / "openclawbrain-context-injector"
+    if not path.exists():
+        raise SystemExit(
+            "openclaw hook path not found; pass --hooks-path pointing to integrations/openclaw/hooks/openclawbrain-context-injector"
+        )
+    return path
+
+
+def _run_subprocess_command(argv: list[str]) -> subprocess.CompletedProcess:
+    try:
+        return subprocess.run(argv, check=False)
+    except FileNotFoundError:
+        return subprocess.CompletedProcess(argv, 127)
+
+
+def cmd_openclaw(args: argparse.Namespace) -> int:
+    """Install/uninstall/status helper for OpenClaw integration."""
+    if args.state:
+        state_path = _resolve_state_path(args.state, allow_default=False)
+    else:
+        state_path = _state_path_for_agent(args.agent)
+    if state_path is None:
+        raise SystemExit("--state or --agent is required")
+    state_path = str(Path(state_path).expanduser())
+
+    def confirm(action: str) -> bool:
+        if args.yes:
+            return True
+        response = input(f"{action} OpenClaw integration for {state_path}? [y/N]: ").strip().lower()
+        return response in {"y", "yes"}
+
+    def run_step(label: str, argv: list[str]) -> int:
+        print(f"$ {' '.join(shlex.quote(part) for part in argv)}")
+        result = _run_subprocess_command(argv)
+        if result.returncode != 0:
+            print(f"{label} failed (exit={result.returncode})", file=sys.stderr)
+        return int(result.returncode)
+
+    ocb_prefix = [sys.executable, "-m", "openclawbrain.cli"]
+
+    if args.action == "install":
+        if not confirm("Install"):
+            print("Aborted.")
+            return 1
+        hooks_path = _resolve_hooks_path(args.hooks_path)
+        codes = []
+        serve_cmd = [*ocb_prefix, "serve", "install", "--state", state_path]
+        if args.env_file:
+            serve_cmd.extend(["--env-file", str(Path(args.env_file).expanduser())])
+        codes.append(run_step("serve install", serve_cmd))
+        codes.append(run_step("hooks install", ["openclaw", "hooks", "install", str(hooks_path)]))
+        codes.append(run_step("hooks enable", ["openclaw", "hooks", "enable", "openclawbrain-context-injector"]))
+        loop_cmd = [*ocb_prefix, "loop", "install", "--state", state_path]
+        if args.env_file:
+            loop_cmd.extend(["--env-file", str(Path(args.env_file).expanduser())])
+        codes.append(run_step("loop install", loop_cmd))
+        codes.append(run_step("gateway restart", ["openclaw", "gateway", "restart"]))
+        return 0 if all(code == 0 for code in codes) else 1
+
+    if args.action == "uninstall":
+        if not confirm("Uninstall"):
+            print("Aborted.")
+            return 1
+        codes = []
+        codes.append(run_step("hooks disable", ["openclaw", "hooks", "disable", "openclawbrain-context-injector"]))
+        codes.append(run_step("gateway restart", ["openclaw", "gateway", "restart"]))
+        codes.append(run_step("loop uninstall", [*ocb_prefix, "loop", "uninstall", "--state", state_path]))
+        codes.append(run_step("serve uninstall", [*ocb_prefix, "serve", "uninstall", "--state", state_path]))
+        return 0 if all(code == 0 for code in codes) else 1
+
+    if args.action == "status":
+        codes = []
+        codes.append(run_step("serve status", [*ocb_prefix, "serve", "status", "--state", state_path]))
+        codes.append(run_step("loop status", [*ocb_prefix, "loop", "status", "--state", state_path]))
+        codes.append(run_step("hooks info", ["openclaw", "hooks", "info", "openclawbrain-context-injector"]))
+        return 0 if all(code == 0 for code in codes) else 1
+
+    raise SystemExit(f"unknown action: {args.action}")
+
+
 def main(argv: list[str] | None = None) -> int:
     """main."""
     args = _build_parser().parse_args(argv)
@@ -4624,8 +5659,10 @@ def main(argv: list[str] | None = None) -> int:
         "async-route-pg": cmd_async_route_pg,
         "dream": cmd_dream,
         "dreaming": cmd_dream,
+        "loop": cmd_loop,
         "train-route-model": cmd_train_route_model,
         "build-all": cmd_build_all,
+        "openclaw": cmd_openclaw,
         "journal": cmd_journal,
         "doctor": cmd_doctor,
         "info": cmd_info,

@@ -903,6 +903,75 @@ def test_serve_install_dry_run_prints_launchd_plist(monkeypatch, tmp_path, capsy
     assert str(state_path) in program_arguments
 
 
+def _extract_plist_from_output(output: str) -> dict:
+    _, _, tail = output.partition("Planned launchctl commands:")
+    xml_start = tail.find("<?xml")
+    payload_xml = tail[xml_start:] if xml_start >= 0 else tail
+    return plistlib.loads(payload_xml.encode("utf-8"))
+
+
+def test_loop_install_dry_run_prints_launchd_plist(monkeypatch, tmp_path, capsys) -> None:
+    """loop install --dry-run should print a launchd plist with executable-based ProgramArguments."""
+    state_path = tmp_path / "main" / "state.json"
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(json.dumps({"nodes": []}), encoding="utf-8")
+
+    import openclawbrain.cli as cli_module
+
+    monkeypatch.setattr(cli_module.sys, "platform", "darwin")
+
+    code = main([
+        "loop",
+        "install",
+        "--state",
+        str(state_path),
+        "--dry-run",
+    ])
+    assert code == 0
+
+    payload = _extract_plist_from_output(capsys.readouterr().out)
+    assert payload["Label"] == "com.openclawbrain.loop.main"
+
+    program_arguments = payload["ProgramArguments"]
+    assert program_arguments[0] == sys.executable
+    assert program_arguments[1] == "-m"
+    assert program_arguments[2] == "openclawbrain.cli"
+    assert program_arguments[3] == "loop"
+    assert program_arguments[4] == "run"
+    assert "--state" in program_arguments
+    assert str(state_path) in program_arguments
+
+
+def test_loop_install_dry_run_includes_env_file(monkeypatch, tmp_path, capsys) -> None:
+    """loop install --dry-run should include EnvironmentVariables from --env-file."""
+    state_path = tmp_path / "main" / "state.json"
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(json.dumps({"nodes": []}), encoding="utf-8")
+
+    env_file = tmp_path / "service.env"
+    env_file.write_text("OPENAI_API_KEY=secret\nOPENCLAWBRAIN_DEFAULT_LLM=openai", encoding="utf-8")
+
+    import openclawbrain.cli as cli_module
+
+    monkeypatch.setattr(cli_module.sys, "platform", "darwin")
+
+    code = main([
+        "loop",
+        "install",
+        "--state",
+        str(state_path),
+        "--env-file",
+        str(env_file),
+        "--dry-run",
+    ])
+    assert code == 0
+
+    payload = _extract_plist_from_output(capsys.readouterr().out)
+    environment = payload["EnvironmentVariables"]
+    assert environment["OPENAI_API_KEY"] == "secret"
+    assert environment["OPENCLAWBRAIN_DEFAULT_LLM"] == "openai"
+
+
 def test_serve_install_dry_run_includes_env_file(monkeypatch, tmp_path, capsys) -> None:
     """serve install --dry-run should include EnvironmentVariables from --env-file."""
     state_path = tmp_path / "main" / "state.json"
@@ -1046,6 +1115,39 @@ def test_socket_health_status_uses_client_ping(monkeypatch, tmp_path) -> None:
     assert ok is True
     assert health == {"nodes": 2, "edges": 1}
     assert error is None
+
+
+def test_openclaw_install_runs_expected_commands(monkeypatch, tmp_path) -> None:
+    hooks_dir = tmp_path / "openclawbrain-context-injector"
+    hooks_dir.mkdir(parents=True, exist_ok=True)
+
+    import openclawbrain.cli as cli_module
+    from types import SimpleNamespace
+
+    calls: list[list[str]] = []
+
+    def fake_run(argv: list[str]) -> SimpleNamespace:
+        calls.append(argv)
+        return SimpleNamespace(returncode=0)
+
+    monkeypatch.setattr(cli_module, "_run_subprocess_command", fake_run)
+    monkeypatch.setattr(cli_module, "_resolve_hooks_path", lambda _: hooks_dir)
+
+    code = main([
+        "openclaw",
+        "install",
+        "--agent",
+        "main",
+        "--yes",
+        "--hooks-path",
+        str(hooks_dir),
+    ])
+    assert code == 0
+    assert calls[0][:4] == [sys.executable, "-m", "openclawbrain.cli", "serve"]
+    assert calls[1][:3] == ["openclaw", "hooks", "install"]
+    assert calls[2][:3] == ["openclaw", "hooks", "enable"]
+    assert calls[3][:4] == [sys.executable, "-m", "openclawbrain.cli", "loop"]
+    assert calls[4][:3] == ["openclaw", "gateway", "restart"]
 
 
 def test_serve_status_payload_reports_ping_failure(monkeypatch, tmp_path) -> None:
