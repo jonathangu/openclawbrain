@@ -2205,6 +2205,18 @@ def _resolve_serve_launchd_program_arguments(start_argv: list[str]) -> list[str]
     ] + start_argv
 
 
+def _resolve_loop_python() -> str:
+    override = os.environ.get("OPENCLAWBRAIN_LOOP_PYTHON") or os.environ.get("OPENCLAWBRAIN_PYTHON")
+    if isinstance(override, str) and override.strip():
+        return str(Path(override).expanduser())
+
+    venv_python = Path.home() / ".openclaw" / "venvs" / "openclawbrain" / "bin" / "python"
+    if venv_python.is_file():
+        return str(venv_python)
+
+    return sys.executable
+
+
 def _render_loop_launchd_plist(
     *,
     label: str,
@@ -4822,7 +4834,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
         else Path.home() / ".openclaw" / "agents" / agent_id / "sessions"
     )
 
-    ocb_prefix = [sys.executable, "-m", "openclawbrain.cli"]
+    ocb_prefix = [_resolve_loop_python(), "-m", "openclawbrain.cli"]
 
     def _loop_run_program_arguments() -> list[str]:
         argv = ocb_prefix + [

@@ -11,6 +11,7 @@ It keeps OpenClaw behavior **fail-open**:
 When `openclawbrain-context-injector` is enabled on `message:preprocessed`:
 
 - The hook runs `query_brain.py` for each non-slash user message.
+- The hook resolves Python in this order: `OPENCLAWBRAIN_HOOK_PYTHON`, `~/.openclaw/venvs/openclawbrain/bin/python`, then `python3`.
 - The returned prompt block is prepended to `event.context.bodyForAgent`.
 - The injected block is marked as prompt data (`[BRAIN_CONTEXT ...]`) and is intended to be used as context, not instruction text.
 - You keep normal OpenClaw flow and fall back to standard behavior if retrieval fails.
