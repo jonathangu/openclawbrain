@@ -28,6 +28,8 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--route-alpha-sim", type=float, default=0.5)
     parser.add_argument("--route-use-relevance", choices=["true", "false"], default="true")
     parser.add_argument("--route-model", default=None)
+    parser.add_argument("--route-enable-stop", choices=["true", "false"], default="false")
+    parser.add_argument("--route-stop-margin", type=float, default=0.1)
     parser.add_argument("--auto-save-interval", type=int, default=10)
     parser.add_argument("--force", action="store_true", help="Bypass state lock (expert use)")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
@@ -63,6 +65,8 @@ class SocketDaemonServer:
         route_alpha_sim: float,
         route_use_relevance: str,
         route_model: str | None,
+        route_enable_stop: str,
+        route_stop_margin: float,
         auto_save_interval: int,
         force: bool,
         verbose: bool,
@@ -81,6 +85,8 @@ class SocketDaemonServer:
         self.route_alpha_sim = route_alpha_sim
         self.route_use_relevance = route_use_relevance
         self.route_model = route_model
+        self.route_enable_stop = route_enable_stop
+        self.route_stop_margin = route_stop_margin
         self.auto_save_interval = auto_save_interval
         self.force = force
         self.pid_path = Path(_default_pid_path(str(self.socket_path)))
@@ -151,6 +157,10 @@ class SocketDaemonServer:
             str(self.route_alpha_sim),
             "--route-use-relevance",
             self.route_use_relevance,
+            "--route-enable-stop",
+            self.route_enable_stop,
+            "--route-stop-margin",
+            str(self.route_stop_margin),
             "--auto-save-interval",
             str(self.auto_save_interval),
         ]
@@ -382,6 +392,8 @@ def main(argv: list[str] | None = None) -> int:
         route_alpha_sim=args.route_alpha_sim,
         route_use_relevance=args.route_use_relevance,
         route_model=args.route_model,
+        route_enable_stop=args.route_enable_stop,
+        route_stop_margin=args.route_stop_margin,
         auto_save_interval=args.auto_save_interval,
         force=args.force,
         verbose=args.verbose,
