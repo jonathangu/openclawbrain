@@ -1,8 +1,8 @@
 # OpenClawBrain
 
-OpenClawBrain is a local-first routing memory layer for agents that learns which context should appear and when. It keeps retrieval off remote LLM critical paths by default, reduces LLM API turns per user-visible request, and suppresses repeated mistakes over time.
+OpenClawBrain is a local-first routing memory layer for agents that learns which context should appear and when. It keeps retrieval off remote LLM critical paths by default (routing does not require extra completion-model calls), reduces LLM API turns per user-visible request, and suppresses repeated mistakes over time.
 
-- **Hot-path guarantee:** routing stays local/bounded; no remote LLM on the critical path by default.
+- **Hot-path guarantee (routing):** memory routing is local + bounded; it requires no additional completion-model calls. (Your agent still uses an LLM to answer.)
 - **Turn reduction:** fewer LLM API calls per user-visible request, plus fewer retries/clarifications.
 - **Don’t repeat mistakes:** inhibitory suppression dampens bad routes and recurring errors.
 
