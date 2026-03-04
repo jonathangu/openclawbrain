@@ -8,16 +8,15 @@ import sys
 # Conservative limit: OpenAI allows 300K tokens per request.
 # ~4 chars per token, use 250K tokens (1M chars) as buffer.
 _MAX_CHARS_PER_CALL = 200_000  # ~50K tokens, well under OpenAI's 300K limit
-_MAX_CHARS_PER_TEXT = 15_000   # ~4000 tokens, safely under model's 8192 token limit
+_MAX_CHARS_PER_TEXT = 10_000   # ~3300 tokens at ~3 chars/tok; safely under model's 8192 token limit even for code
 
 
 class OpenAIEmbedder:
     """OpenAI text embedding wrapper."""
 
     name: str = "openai-text-embedding-3-small"
-    dim: int = 1536
 
-    def __init__(self) -> None:
+    def __init__(self, *, dimensions: int | None = None) -> None:
         """  init  ."""
         api_key = os.environ.get("OPENAI_API_KEY")
         try:
@@ -25,10 +24,25 @@ class OpenAIEmbedder:
         except ImportError as exc:
             raise ImportError("openai is not installed. Install with `pip install openclawbrain[openai]`.") from exc
         self.client = OpenAI(api_key=api_key)
+        self._dimensions = dimensions  # None = use API default (1536)
+
+    @property
+    def dim(self) -> int:
+        return self._dimensions if self._dimensions is not None else 1536
+
+    def _embed_kwargs(self) -> dict:
+        """Extra kwargs for embeddings.create (dimensions if set)."""
+        if self._dimensions is not None:
+            return {"dimensions": self._dimensions}
+        return {}
 
     def embed(self, text: str) -> list[float]:
         """embed."""
-        payload = self.client.embeddings.create(model="text-embedding-3-small", input=text[:_MAX_CHARS_PER_TEXT] if len(text) > _MAX_CHARS_PER_TEXT else text)
+        payload = self.client.embeddings.create(
+            model="text-embedding-3-small",
+            input=text[:_MAX_CHARS_PER_TEXT] if len(text) > _MAX_CHARS_PER_TEXT else text,
+            **self._embed_kwargs(),
+        )
         return [float(v) for v in payload.data[0].embedding]
 
     def embed_batch(self, texts: list[tuple[str, str]]) -> dict[str, list[float]]:
@@ -67,7 +81,8 @@ class OpenAIEmbedder:
         """Send one chunk to the OpenAI API and merge into result."""
         contents = [text[:_MAX_CHARS_PER_TEXT] for _, text in chunk]
         payload = self.client.embeddings.create(
-            model="text-embedding-3-small", input=contents
+            model="text-embedding-3-small", input=contents,
+            **self._embed_kwargs(),
         )
         vectors = [[float(v) for v in item.embedding] for item in payload.data]
         for idx, (node_id, _) in enumerate(chunk):

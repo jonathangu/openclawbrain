@@ -2575,7 +2575,8 @@ def _resolve_embedder(
     if use_openai:
         from .openai_embeddings import OpenAIEmbedder
 
-        embedder = OpenAIEmbedder()
+        _, prior_dim = _state_embedder_meta(meta)
+        embedder = OpenAIEmbedder(dimensions=prior_dim)
     elif use_local:
         local_model = resolve_local_model(meta, embed_model=embed_model)
         embedder = LocalEmbedder(model_name=local_model)
