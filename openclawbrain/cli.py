@@ -11,6 +11,7 @@ import hashlib
 import time
 import warnings
 import threading
+import signal
 from datetime import datetime, timezone, timedelta
 import sys
 import tempfile
@@ -503,6 +504,42 @@ def _wait_for_state_unlock(state_path: Path, timeout_seconds: int) -> bool:
 def _state_lock_available(state_path: str | Path) -> bool:
     """Return True if the state write lock is currently available."""
     return _wait_for_state_unlock(Path(state_path).expanduser(), 0)
+
+
+def _read_state_lock_owner(lock_path: Path) -> dict[str, object]:
+    try:
+        payload = json.loads(lock_path.read_text(encoding="utf-8"))
+    except (OSError, json.JSONDecodeError):
+        return {}
+    return payload if isinstance(payload, dict) else {}
+
+
+def _get_state_lock_owner_pid(lock_path: Path) -> int | None:
+    owner = _read_state_lock_owner(lock_path)
+    pid = owner.get("pid")
+    return pid if isinstance(pid, int) else None
+
+
+def _get_process_command(pid: int) -> str | None:
+    try:
+        result = subprocess.run(
+            ["ps", "-p", str(pid), "-o", "command="],
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+            check=False,
+        )
+    except FileNotFoundError:
+        return None
+    if result.returncode != 0:
+        return None
+    command = result.stdout.strip()
+    return command or None
+
+
+def _lock_owner_matches(command: str, state_path: str | Path) -> bool:
+    expected_state = f"--state {Path(state_path).expanduser()}"
+    return "openclawbrain daemon" in command and expected_state in command
 
 
 def _run_logged_command(
@@ -1982,12 +2019,19 @@ def _maybe_pause_serve_for_state_lock(
     timeout_seconds: int,
     run_launchctl: Callable[[list[str]], int] | None = None,
     wait_for_unlock: Callable[[Path, int], bool] = _wait_for_state_unlock,
+    get_lock_owner_pid: Callable[[Path], int | None] | None = None,
+    get_process_command: Callable[[int], str | None] | None = None,
     platform: str | None = None,
 ) -> tuple[bool, list[str] | None, str | None]:
     """Attempt to pause launchd-managed serve daemon if state lock is held."""
     if run_launchctl is None:
         run_launchctl = _run_launchctl_returncode
-    if wait_for_unlock(Path(state_path).expanduser(), 0):
+    if get_lock_owner_pid is None:
+        get_lock_owner_pid = _get_state_lock_owner_pid
+    if get_process_command is None:
+        get_process_command = _get_process_command
+    state_path_obj = Path(state_path).expanduser()
+    if wait_for_unlock(state_path_obj, 0):
         return True, None, None
 
     if not pause_when_locked:
@@ -2010,12 +2054,33 @@ def _maybe_pause_serve_for_state_lock(
     if bootout_rc != 0:
         return False, None, "state_lock_held"
 
-    unlocked = wait_for_unlock(Path(state_path).expanduser(), max(0, int(timeout_seconds)))
-    if not unlocked:
+    grace_seconds = min(3, max(0, int(timeout_seconds)))
+    if wait_for_unlock(state_path_obj, grace_seconds):
+        return True, bootstrap_cmd, None
+
+    try:
+        lock_path = lock_path_for_state(state_path_obj)
+        owner_pid = get_lock_owner_pid(lock_path)
+        if owner_pid is None:
+            raise ValueError("state lock owner pid missing")
+        command = get_process_command(owner_pid)
+        if command is None or not _lock_owner_matches(command, state_path_obj):
+            raise ValueError("state lock owner mismatch")
+
+        os.kill(owner_pid, signal.SIGTERM)
+        if wait_for_unlock(state_path_obj, max(0, int(timeout_seconds))):
+            return True, bootstrap_cmd, None
+
+        os.kill(owner_pid, signal.SIGKILL)
+        if wait_for_unlock(state_path_obj, max(0, int(timeout_seconds))):
+            return True, bootstrap_cmd, None
+    except Exception:
         run_launchctl(bootstrap_cmd)
         return False, None, "state_lock_held"
 
-    return True, bootstrap_cmd, None
+    run_launchctl(bootstrap_cmd)
+    return False, None, "state_lock_held"
+
 
 
 def _parse_env_file(env_path: str) -> dict[str, str]:

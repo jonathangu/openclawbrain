@@ -5,6 +5,7 @@ import os
 import sys
 import hashlib
 import plistlib
+import signal
 from io import StringIO
 from pathlib import Path
 
@@ -1009,6 +1010,66 @@ def test_loop_pause_serve_when_locked_uses_launchctl(monkeypatch, tmp_path) -> N
     assert calls[0][:2] == ["launchctl", "bootout"]
     fake_launchctl(resume_cmd)
     assert calls[1][:2] == ["launchctl", "bootstrap"]
+
+
+def test_loop_pause_serve_kills_orphan_daemon(monkeypatch, tmp_path) -> None:
+    """Loop pause-serve should terminate orphan daemon if lock persists after bootout."""
+    state_path = tmp_path / "main" / "state.json"
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(json.dumps({"nodes": []}), encoding="utf-8")
+
+    import openclawbrain.cli as cli_module
+
+    monkeypatch.setattr(cli_module.Path, "home", lambda: tmp_path)
+    plist_path = tmp_path / "Library" / "LaunchAgents" / "com.openclawbrain.main.plist"
+    plist_path.parent.mkdir(parents=True, exist_ok=True)
+    plist_path.write_text("plist", encoding="utf-8")
+
+    calls: list[list[str]] = []
+
+    def fake_launchctl(argv: list[str]) -> int:
+        calls.append(argv)
+        return 0
+
+    wait_results = [False, False, False, True]
+
+    def fake_wait(_path: Path, _timeout_seconds: int) -> bool:
+        return wait_results.pop(0)
+
+    owner_pid = 4242
+
+    def fake_get_pid(lock_path: Path) -> int | None:
+        assert lock_path == lock_path_for_state(state_path)
+        return owner_pid
+
+    def fake_ps(pid: int) -> str | None:
+        assert pid == owner_pid
+        return f"python -m openclawbrain daemon --state {state_path} --other"
+
+    kills: list[tuple[int, int]] = []
+
+    def fake_kill(pid: int, sig: int) -> None:
+        kills.append((pid, sig))
+
+    monkeypatch.setattr(cli_module.os, "kill", fake_kill)
+
+    ready, resume_cmd, reason = cli_module._maybe_pause_serve_for_state_lock(
+        state_path=str(state_path),
+        pause_when_locked=True,
+        timeout_seconds=30,
+        run_launchctl=fake_launchctl,
+        wait_for_unlock=fake_wait,
+        get_lock_owner_pid=fake_get_pid,
+        get_process_command=fake_ps,
+        platform="darwin",
+    )
+
+    assert ready is True
+    assert reason is None
+    assert resume_cmd is not None
+    assert calls[0][:2] == ["launchctl", "bootout"]
+    assert len(calls) == 1
+    assert kills == [(owner_pid, signal.SIGTERM), (owner_pid, signal.SIGKILL)]
 
 
 def test_loop_pause_serve_disabled_skips(monkeypatch, tmp_path) -> None:
