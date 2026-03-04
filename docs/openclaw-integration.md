@@ -12,8 +12,102 @@ If you’re already running OpenClaw, this guide shows the fastest path to:
 
 - Build a brain (`state.json`) from your OpenClaw workspace
 - Run the **persistent daemon service** (`openclawbrain serve`) so queries stay fast
-- Wire your OpenClaw agent’s **AGENTS.md** to query → respond → learn
-- Operate it like a runbook: launchd/systemd, maintenance cron, troubleshooting
+- Enable **brain-first** OpenClaw integration (no AGENTS wiring required)
+- Verify it’s working, and roll back cleanly
+
+---
+
+## Brain-first OpenClaw integration (recommended)
+
+Brain-first mode injects OpenClawBrain context automatically at the hook layer. This keeps your existing prompts intact and avoids manual AGENTS wiring.
+
+**BEFORE (no hook):**
+- OpenClaw uses only its base prompt (`AGENTS.md`, `SOUL.md`, etc.).
+- You must manually run `query_brain` or wire commands into AGENTS.
+
+**AFTER (hook enabled):**
+- Each non-slash user message gets a `[BRAIN_CONTEXT ...]` block prepended to `bodyForAgent`.
+- Retrieval is automatic and fail-open (if anything breaks, OpenClaw proceeds unchanged).
+- Corrections and recall language get a deeper context budget.
+
+### 5-minute quickstart (copy/paste)
+
+```bash
+openclawbrain serve --state ~/.openclawbrain/main/state.json
+openclaw hooks install /path/to/openclawbrain/integrations/openclaw/hooks/openclawbrain-context-injector
+openclaw hooks enable openclawbrain-context-injector
+openclaw gateway restart
+```
+
+Use `/path/to` as a placeholder for your local `openclawbrain` repo path.
+
+### Step-by-step install (managed)
+
+1. Build a brain if you do not already have one:
+
+```bash
+openclawbrain init --workspace ~/.openclaw/workspace --output ~/.openclawbrain/main
+```
+
+2. Start the daemon (hot socket):
+
+```bash
+openclawbrain serve --state ~/.openclawbrain/main/state.json
+```
+
+3. Install + enable the hook:
+
+```bash
+openclaw hooks install /path/to/openclawbrain/integrations/openclaw/hooks/openclawbrain-context-injector
+openclaw hooks enable openclawbrain-context-injector
+```
+
+4. Restart the gateway so hooks load:
+
+```bash
+openclaw gateway restart
+```
+
+### Verification (expect “Ready”)
+
+```bash
+openclaw hooks check
+openclaw hooks list
+openclaw hooks info openclawbrain-context-injector
+```
+
+**“Ready”** means the hook is discovered, eligible, and enabled for the gateway (no missing requirements like `python3` or `workspace.dir`).
+
+### Rollback (clean and fast)
+
+```bash
+openclaw hooks disable openclawbrain-context-injector
+openclaw gateway restart
+```
+
+If you want to stop the daemon too:
+
+```bash
+openclawbrain serve stop --state ~/.openclawbrain/main/state.json
+```
+
+### Why the gateway restart is required
+
+OpenClaw loads hook manifests on gateway start. Restarting ensures the new hook is discovered and activated. This is a normal, quick reload and does not change your agent data.
+
+### Budgets and “remember” behavior
+
+- Default context budget: **12,000** chars.
+- Recall/correction language (for example: “remember”, “last time”, “earlier”, “correction”, “audit”) raises the budget to **20,000** chars.
+
+### Security defaults and guardrails
+
+- **Exclude paths**: use `--exclude-paths` with manual wiring (or a custom hook) to drop sensitive directories from retrieval.
+- **Redaction**: prompt context is redacted for common secret patterns before injection.
+- **Data-only delimiter**: injected context is marked as `[BRAIN_CONTEXT ...]` (context, not instructions).
+- **Fail-open**: if the hook can’t run or times out, OpenClaw continues with the original prompt.
+
+Troubleshooting guide: [docs/openclaw-integration-troubleshooting.md](openclaw-integration-troubleshooting.md)
 
 ---
 
@@ -159,7 +253,7 @@ Notes:
 
 ---
 
-## Step 2 — Install the recommended OpenClaw hook (opt-in)
+## Step 2 — Install the recommended OpenClaw hook (if not already done)
 
 The recommended path is the OpenClaw hook pack:
 
@@ -184,7 +278,7 @@ The hook behavior is:
 
 - Keep OpenClaw working as-is (fail-open).
 - Append a retrieved `[BRAIN_CONTEXT ...]` block to `bodyForAgent` for normal messages.
-- Use 12,000-char budget by default, 20,000-char budget for recall/correction language.
+- Use 12,000-char budget by default, 20,000-char budget for recall/correction language (e.g., “remember”, “last time”, “correction”).
 - Keep `--exclude-bootstrap` and `--redact` enabled.
 - Skip slash commands.
 
@@ -195,10 +289,10 @@ What changes when enabled:
 - Retrieval is automatic each qualifying message (no manual copy/paste per-agent edits required).
 - Failures are non-blocking: if query context cannot be loaded within 2s, OpenClaw proceeds with the original message.
 
-## Step 2 fallback — manual AGENTS.md integration
+## Step 2 fallback — manual AGENTS.md integration (legacy/optional)
 
-If you do not want hook-based integration, keep the old manual path in `AGENTS.md`.
-This still works and remains fully supported:
+If you do not want hook-based integration, you can keep the legacy manual path in `AGENTS.md`.
+This still works and remains fully supported, but is not required for brain-first mode:
 
 ```bash
 python3 -m openclawbrain.openclaw_adapter.query_brain ~/.openclawbrain/AGENT/state.json '<summary of user message>' --chat-id '<chat_id from inbound metadata>' --format prompt --exclude-bootstrap --max-prompt-context-chars 12000

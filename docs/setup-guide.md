@@ -140,9 +140,8 @@ Use this when building your query handler:
   - `-1.0` for bad output
 - Persist feedback with `openclawbrain learn`
 
-For an AGENTS.md drop-in hook, use:
-
-`examples/openclaw_adapter/agents_hook.md`
+For a legacy AGENTS.md drop-in hook, use `examples/openclaw_adapter/agents_hook.md`.
+For the recommended hook-based integration, see `docs/openclaw-integration.md`.
 
 ## Step 3: Wire up the slow loop (maintenance)
 

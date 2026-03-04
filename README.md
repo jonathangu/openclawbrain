@@ -30,45 +30,17 @@ OpenClawBrain is designed to be the memory layer for **OpenClaw agents**.
 - Guide: **[docs/openclaw-integration.md](docs/openclaw-integration.md)**
 - Recommended OpenClaw hook install: **[docs/openclawbrain-openclaw-hooks.md](docs/openclawbrain-openclaw-hooks.md)**
 
-Quickstart (OpenClaw users):
+### Brain-first OpenClaw integration (recommended)
+
+Enable brain-backed context injection with zero AGENTS wiring. If you don’t have a brain yet, follow **[docs/openclaw-integration.md](docs/openclaw-integration.md)**.
+
+5-minute quickstart (daemon + hook install/enable + gateway restart):
 
 ```bash
-pip install openclawbrain
-openclawbrain init --workspace ~/.openclaw/workspace --output ~/.openclawbrain/main
-openclawbrain serve start --state ~/.openclawbrain/main/state.json
-```
-
-Production Deployment (socket):
-
-Use LaunchAgent/systemd to keep the socket server running:
-
-```bash
-openclawbrain serve start --state ~/.openclawbrain/main/state.json
-```
-
-macOS (`~/Library/LaunchAgents/com.openclawbrain.daemon.plist`):
-
-```xml
-<key>ProgramArguments</key>
-<array>
-  <string>/usr/bin/env</string>
-  <string>openclawbrain</string>
-  <string>serve</string>
-  <string>start</string>
-  <string>--state</string>
-  <string>/Users/YOU/.openclawbrain/main/state.json</string>
-</array>
-```
-
-Linux (`/etc/systemd/system/openclawbrain-daemon.service`):
-
-```ini
-[Service]
-ExecStart=/usr/bin/env openclawbrain serve start --state /home/YOUR_USER/.openclawbrain/main/state.json
-```
-
-```bash
-python3 -m openclawbrain.socket_client --socket ~/.openclawbrain/main/daemon.sock --method health --params "{}"
+openclawbrain serve --state ~/.openclawbrain/main/state.json
+openclaw hooks install /path/to/openclawbrain/integrations/openclaw/hooks/openclawbrain-context-injector
+openclaw hooks enable openclawbrain-context-injector
+openclaw gateway restart
 ```
 
 OpenClaw adapter query example with runtime routing (`route_mode=edge+sim`):
