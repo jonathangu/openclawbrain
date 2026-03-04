@@ -15,6 +15,16 @@ When `openclawbrain-context-injector` is enabled on `message:preprocessed`:
 - The injected block is marked as prompt data (`[BRAIN_CONTEXT ...]`) and is intended to be used as context, not instruction text.
 - You keep normal OpenClaw flow and fall back to standard behavior if retrieval fails.
 
+## Always-on learning (recommended default experience)
+
+Brain-first context injection is only half the loop. The other half is **same-turn learning**:
+
+- When a user clearly corrects the agent, call `capture_feedback --kind CORRECTION` in the same turn.
+- When a user teaches a durable rule/fact, call `capture_feedback --kind TEACHING`.
+- Use `--message-id` or `--dedup-key` so retries cannot double-inject.
+
+OpenClawBrain provides the adapter CLIs; your OpenClaw agent prompt/policy should make this automatic so operators do not need to say “inject teaching” or “log this.”
+
 ## Install and enable (recommended)
 
 ```bash
