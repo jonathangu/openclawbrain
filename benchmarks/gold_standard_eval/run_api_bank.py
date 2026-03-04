@@ -77,6 +77,17 @@ DRY_RUN_DATA = {
     ],
 }
 
+API_BANK_LEVEL_FILES: dict[int, dict[str, str]] = {
+    1: {
+        "train": "training-data/lv1-api-train.json",
+        "test": "test-data/level-1-api.json",
+    },
+    2: {
+        "train": "training-data/lv2-api-train.json",
+        "test": "test-data/level-2-api.json",
+    },
+}
+
 
 def _as_str(value: object) -> str:
     if value is None:
@@ -439,7 +450,38 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
             from datasets import load_dataset
         except ImportError as exc:
             raise SystemExit("datasets is required; install with: pip install -e .[eval]") from exc
-        dataset = load_dataset(args.dataset)
+        data_files = None
+        try:
+            from huggingface_hub import hf_hub_download
+        except ImportError:
+            hf_hub_download = None
+
+        if args.level == 3:
+            raise SystemExit("API-Bank level 3 is not wired yet; use --level 1 or 2.")
+
+        if hf_hub_download is None:
+            sys.stderr.write(
+                "hf_hub_download is unavailable; falling back to load_dataset(repo). "
+                "This may fail if API-Bank files have mismatched columns.\n"
+            )
+            dataset = load_dataset(args.dataset)
+        else:
+            level_files = API_BANK_LEVEL_FILES.get(args.level)
+            if level_files is None:
+                raise SystemExit(f"Unsupported API-Bank level: {args.level}")
+            data_files = {
+                "train": hf_hub_download(
+                    repo_id=args.dataset,
+                    repo_type="dataset",
+                    filename=level_files["train"],
+                ),
+                "test": hf_hub_download(
+                    repo_id=args.dataset,
+                    repo_type="dataset",
+                    filename=level_files["test"],
+                ),
+            }
+            dataset = load_dataset("json", data_files=data_files)
         if args.train_split not in dataset or args.split not in dataset:
             raise SystemExit(f"split '{args.split}' not in dataset; splits={list(dataset.keys())}")
         train_split = dataset[args.train_split]
@@ -514,6 +556,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
     summary: dict[str, Any] = {
         "dataset": args.dataset,
+        "level": args.level,
         "split": args.split,
         "train_split": args.train_split,
         "examples_evaluated": len(test_examples),
@@ -548,6 +591,7 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run API-Bank tool-use evaluation.")
     parser.add_argument("--dataset", default="liminghao1630/API-Bank", help="HuggingFace dataset name")
+    parser.add_argument("--level", type=int, choices=[1, 2, 3], default=1, help="API-Bank level subset")
     parser.add_argument("--split", default="test", help="Evaluation split")
     parser.add_argument("--train-split", default="train", help="Training split for brain context")
     parser.add_argument("--max-examples", type=int, default=None, help="Max examples to evaluate")
