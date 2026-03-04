@@ -45,6 +45,7 @@ OpenClawBrain is designed to be the memory layer for **OpenClaw agents**.
 - Canonical one-page quickstart: **[docs/operator-quickstart.md](docs/operator-quickstart.md)**
 - Guide: **[docs/openclaw-integration.md](docs/openclaw-integration.md)**
 - Recommended OpenClaw hook install: **[docs/openclawbrain-openclaw-hooks.md](docs/openclawbrain-openclaw-hooks.md)**
+- macOS launchd: `openclawbrain serve install` auto-detects the OpenClaw venv wrapper at `~/.openclaw/scripts/openclawbrain-serve` (or `OPENCLAWBRAIN_SERVE_WRAPPER`) so local deps like `fastembed` are available.
 
 ### Brain-first OpenClaw integration (recommended)
 
