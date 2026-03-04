@@ -118,6 +118,19 @@ REPLAY_HELP_EPILOG = (
     "  --checkpoint chooses the checkpoint file path."
 )
 
+_DEFAULT_DAEMON_HEALTH_TIMEOUT = 30.0
+
+
+def _daemon_health_timeout() -> float:
+    """Resolve daemon health timeout with env override."""
+    raw = os.getenv("OCB_DAEMON_HEALTH_TIMEOUT")
+    if raw is None:
+        return _DEFAULT_DAEMON_HEALTH_TIMEOUT
+    try:
+        return float(raw)
+    except (TypeError, ValueError):
+        return _DEFAULT_DAEMON_HEALTH_TIMEOUT
+
 
 def _write_json_atomic(path: Path, payload: object) -> None:
     """Write JSON payload via a temporary file and atomic rename."""
@@ -2070,7 +2083,7 @@ def _daemon_socket_status(state_path: str) -> tuple[bool, str]:
 def _socket_health_status(
     socket_path: str,
     *,
-    timeout: float = 5.0,
+    timeout: float | None = None,
 ) -> tuple[bool, dict[str, object] | None, str | None]:
     """Check socket existence + daemon health call via socket protocol."""
     resolved_socket = str(Path(socket_path).expanduser())
@@ -2079,6 +2092,8 @@ def _socket_health_status(
 
     from .socket_client import OCBClient
 
+    if timeout is None:
+        timeout = _daemon_health_timeout()
     try:
         with OCBClient(resolved_socket, timeout=timeout) as client:
             health = client.health()
@@ -4528,7 +4543,7 @@ def cmd_report(args: argparse.Namespace) -> int:
         raise SystemExit("--state is required for report")
     resolved_state = str(Path(state_path).expanduser())
     graph, _, _ = load_state(resolved_state)
-    health = measure_health(graph)
+    local_health = measure_health(graph)
 
     socket_path = _default_daemon_socket_path(resolved_state)
     socket_exists = Path(socket_path).exists()
@@ -4539,10 +4554,13 @@ def cmd_report(args: argparse.Namespace) -> int:
         if raw_pid.isdigit():
             pid = int(raw_pid)
     health_payload = None
+    health_warning = None
     if socket_exists:
-        ping_ok, health, _error = _socket_health_status(socket_path, timeout=2.0)
-        if ping_ok and isinstance(health, dict):
-            health_payload = health
+        ping_ok, daemon_health, _error = _socket_health_status(socket_path)
+        if ping_ok and isinstance(daemon_health, dict):
+            health_payload = daemon_health
+        else:
+            health_warning = "health unavailable (daemon timeout)"
 
     sync_payload = _read_json_optional(_sync_report_path(resolved_state))
     maintain_payload = _read_json_optional(_maintain_report_path(resolved_state))
@@ -4624,9 +4642,11 @@ def cmd_report(args: argparse.Namespace) -> int:
         "Daily brain update summary",
         f"  state: {resolved_state}",
         f"  daemon.sock: {'present' if socket_exists else 'missing'}" + (f" (pid {pid})" if pid is not None else ""),
-        f"  nodes: {graph.node_count()}  edges: {graph.edge_count()}  orphans: {health.orphan_nodes}",
-        f"  reflex: {health.reflex_pct:.1%}  habitual: {health.habitual_pct:.1%}  dormant: {health.dormant_pct:.1%}",
+        f"  nodes: {graph.node_count()}  edges: {graph.edge_count()}  orphans: {local_health.orphan_nodes}",
+        f"  reflex: {local_health.reflex_pct:.1%}  habitual: {local_health.habitual_pct:.1%}  dormant: {local_health.dormant_pct:.1%}",
     ]
+    if health_warning is not None:
+        lines.append(f"  warning: {health_warning}")
 
     route_model_present = None
     route_mode_effective = None

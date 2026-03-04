@@ -1407,6 +1407,32 @@ def test_serve_status_subcommand_uses_health_ping(monkeypatch, capsys) -> None:
     assert "edges=3" in out
 
 
+def test_report_handles_missing_daemon_health(monkeypatch, tmp_path, capsys) -> None:
+    """report should keep local stats and warn when daemon health is unavailable."""
+    from openclawbrain import cli as cli_module
+
+    home = tmp_path / "home"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+
+    state_dir = tmp_path / "main"
+    state_dir.mkdir()
+    state_path = state_dir / "state.json"
+    _write_state(state_path)
+
+    socket_path = Path(cli_module._default_daemon_socket_path(str(state_path)))
+    socket_path.parent.mkdir(parents=True, exist_ok=True)
+    socket_path.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr(cli_module, "_socket_health_status", lambda _path: (False, None, "timeout"))
+
+    code = main(["report", "--state", str(state_path)])
+    assert code == 0
+    out = capsys.readouterr().out
+    assert "warning: health unavailable (daemon timeout)" in out
+    assert "orphans:" in out
+
+
 def test_serve_stop_subcommand_sends_shutdown(monkeypatch, capsys) -> None:
     """`serve stop` should send daemon shutdown request over socket when reachable."""
     from openclawbrain import cli as cli_module
