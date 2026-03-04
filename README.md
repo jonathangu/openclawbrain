@@ -8,6 +8,12 @@ OpenClawBrain is a local-first routing memory layer for agents that learns which
 
 Turn = one LLM API call (including retries/clarifications).
 
+## Why this exists
+
+OpenClaw users consistently flag two pain points: token/API cost blowups during long or retry-heavy sessions, and memory/compaction amnesia where important context gets dropped or forgotten over time. See the OpenClaw discussion thread and a week-long cost writeup for concrete examples and user reports. [OpenClaw discussion](https://github.com/openclaw/openclaw/discussions/25633) and [cost writeup](https://medium.com/@likhitkumarvp/i-spent-47-testing-openclaw-for-a-week-heres-what-s-actually-happening-c274dc26a3fd).
+
+We aim to reduce LLM calls per user-visible exchange and bound context budgets; % savings depends on workload and will be reported via the benchmark harness. See the analyzer at [benchmarks/openclaw_llm_calls/analyze_session_jsonl.py](benchmarks/openclaw_llm_calls/analyze_session_jsonl.py).
+
 5-minute OpenClaw quickstart (daemon + hook-pack install/enable + gateway restart). Full guide: **[docs/openclaw-integration.md](docs/openclaw-integration.md)**.
 
 ```bash
