@@ -6,6 +6,14 @@ import { createHash } from "node:crypto";
 import { promisify } from "node:util";
 
 const execFileAsync = promisify(execFile);
+const HOOK_VENV_PYTHON = path.join(
+  homedir(),
+  ".openclaw",
+  "venvs",
+  "openclawbrain",
+  "bin",
+  "python",
+);
 
 const RECALL_OR_CORRECTION_KEYWORDS = [
   "remember",
@@ -116,7 +124,21 @@ function deriveDedupKey(
   return { dedupKey: `${chatId}:${hash}`, messageId: null };
 }
 
+async function resolveHookPython(): Promise<string> {
+  const override = normalizeText(process.env.OPENCLAWBRAIN_HOOK_PYTHON);
+  if (override) {
+    return override;
+  }
+  try {
+    await fs.access(HOOK_VENV_PYTHON);
+    return HOOK_VENV_PYTHON;
+  } catch (_error) {
+    return "python3";
+  }
+}
+
 async function runQueryBrain(
+  pythonPath: string,
   statePath: string,
   message: string,
   chatId: string,
@@ -140,7 +162,7 @@ async function runQueryBrain(
   }
 
   try {
-    const { stdout } = await execFileAsync("python3", args, {
+    const { stdout } = await execFileAsync(pythonPath, args, {
       timeout: 2000,
       maxBuffer: 1024 * 1024,
     });
@@ -156,6 +178,7 @@ async function runQueryBrain(
 }
 
 function runCaptureFeedback(
+  pythonPath: string,
   statePath: string,
   chatId: string,
   directive: { kind: "CORRECTION" | "TEACHING"; content: string; outcome: number | null },
@@ -188,7 +211,7 @@ function runCaptureFeedback(
     args.push("--dedup-key", dedupKey);
   }
 
-  void execFileAsync("python3", args, {
+  void execFileAsync(pythonPath, args, {
     timeout: 1000,
     maxBuffer: 128 * 1024,
   }).catch(() => undefined);
@@ -208,15 +231,16 @@ export default async function handler(event: any): Promise<any> {
     normalizeText(context?.channelId) && normalizeText(context?.conversationId)
       ? `${normalizeText(context.channelId)}:${normalizeText(context.conversationId)}`
       : normalizeText(context?.chatId) || normalizeText(context?.messageId);
+  const pythonPath = await resolveHookPython();
   const directive = parseFeedbackDirective(message);
   if (directive) {
     const rawMessageId = resolveMessageId(context, event);
     const timestamp = resolveMessageTimestamp(context, event);
     const dedup = deriveDedupKey(chatId, message, rawMessageId, timestamp);
-    runCaptureFeedback(statePath, chatId, directive, dedup.dedupKey, dedup.messageId);
+    runCaptureFeedback(pythonPath, statePath, chatId, directive, dedup.dedupKey, dedup.messageId);
   }
 
-  const promptContext = await runQueryBrain(statePath, message, chatId, budget);
+  const promptContext = await runQueryBrain(pythonPath, statePath, message, chatId, budget);
   if (!promptContext) {
     return event;
   }

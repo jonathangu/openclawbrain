@@ -958,6 +958,9 @@ def test_loop_install_dry_run_prints_launchd_plist(monkeypatch, tmp_path, capsys
     import openclawbrain.cli as cli_module
 
     monkeypatch.setattr(cli_module.sys, "platform", "darwin")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.delenv("OPENCLAWBRAIN_LOOP_PYTHON", raising=False)
+    monkeypatch.delenv("OPENCLAWBRAIN_PYTHON", raising=False)
 
     code = main([
         "loop",
@@ -981,6 +984,37 @@ def test_loop_install_dry_run_prints_launchd_plist(monkeypatch, tmp_path, capsys
     assert str(state_path) in program_arguments
 
 
+def test_loop_install_dry_run_prefers_openclaw_venv_python(monkeypatch, tmp_path, capsys) -> None:
+    """loop install --dry-run should prefer the OpenClaw venv python when present."""
+    state_path = tmp_path / "main" / "state.json"
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(json.dumps({"nodes": []}), encoding="utf-8")
+
+    venv_python = tmp_path / ".openclaw" / "venvs" / "openclawbrain" / "bin" / "python"
+    venv_python.parent.mkdir(parents=True, exist_ok=True)
+    venv_python.write_text("#!/bin/sh\n", encoding="utf-8")
+
+    import openclawbrain.cli as cli_module
+
+    monkeypatch.setattr(cli_module.sys, "platform", "darwin")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.delenv("OPENCLAWBRAIN_LOOP_PYTHON", raising=False)
+    monkeypatch.delenv("OPENCLAWBRAIN_PYTHON", raising=False)
+
+    code = main([
+        "loop",
+        "install",
+        "--state",
+        str(state_path),
+        "--dry-run",
+    ])
+    assert code == 0
+
+    payload = _extract_plist_from_output(capsys.readouterr().out)
+    program_arguments = payload["ProgramArguments"]
+    assert program_arguments[0] == str(venv_python)
+
+
 def test_loop_install_dry_run_includes_env_file(monkeypatch, tmp_path, capsys) -> None:
     """loop install --dry-run should include EnvironmentVariables from --env-file."""
     state_path = tmp_path / "main" / "state.json"
@@ -993,6 +1027,9 @@ def test_loop_install_dry_run_includes_env_file(monkeypatch, tmp_path, capsys) -
     import openclawbrain.cli as cli_module
 
     monkeypatch.setattr(cli_module.sys, "platform", "darwin")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.delenv("OPENCLAWBRAIN_LOOP_PYTHON", raising=False)
+    monkeypatch.delenv("OPENCLAWBRAIN_PYTHON", raising=False)
 
     code = main([
         "loop",

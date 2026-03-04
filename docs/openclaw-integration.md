@@ -78,11 +78,17 @@ openclaw hooks install /path/to/openclawbrain/integrations/openclaw/hooks/opencl
 openclaw hooks enable openclawbrain-context-injector
 ```
 
+Hook Python resolution:
+- `OPENCLAWBRAIN_HOOK_PYTHON`, then `~/.openclaw/venvs/openclawbrain/bin/python`, then `python3`.
+
 4. Install the always-learning loop (recommended default):
 
 ```bash
 openclawbrain loop install --state ~/.openclawbrain/main/state.json
 ```
+
+Loop Python resolution (launchd/systemd templates):
+- `OPENCLAWBRAIN_LOOP_PYTHON` or `OPENCLAWBRAIN_PYTHON`, then `~/.openclaw/venvs/openclawbrain/bin/python`, then the current `sys.executable`.
 
 On Linux/systemd hosts, run `openclawbrain loop --systemd` to print a unit template.
 When the serve daemon is managed by launchd on macOS, the loop will briefly pause it to acquire the state lock while applying updates (short downtime). Disable with `--no-pause-serve-when-locked` if needed.
