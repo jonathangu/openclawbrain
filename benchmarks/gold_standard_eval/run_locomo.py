@@ -154,7 +154,7 @@ def run(args: argparse.Namespace) -> dict[str, object]:
                 path=state_path,
                 embedder_name=embedder.name,
                 embedder_dim=embedder.dim,
-                meta={\"source\": \"locomo\"},
+                meta={"source": "locomo"},
             )
             prompt_context, stats = retrieve_prompt_context(
                 graph,
