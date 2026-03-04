@@ -97,6 +97,48 @@ def _as_str(value: object) -> str:
     return str(value).strip()
 
 
+def _load_json_rows(path: str) -> list[dict[str, Any]]:
+    with open(path, "r", encoding="utf-8") as handle:
+        payload = json.load(handle)
+    if isinstance(payload, dict) and isinstance(payload.get("data"), list):
+        payload = payload["data"]
+    if not isinstance(payload, list):
+        raise SystemExit(f"Expected list of rows in {path}")
+    rows: list[dict[str, Any]] = []
+    for item in payload:
+        if isinstance(item, dict):
+            rows.append(item)
+    return rows
+
+
+def _normalize_train_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    normalized: list[dict[str, Any]] = []
+    for row in rows:
+        normalized.append(
+            {
+                "id": row.get("id"),
+                "instruction": row.get("instruction"),
+                "input": row.get("input"),
+                "output": row.get("output"),
+            }
+        )
+    return normalized
+
+
+def _normalize_test_rows(rows: list[dict[str, Any]]) -> list[dict[str, Any]]:
+    normalized: list[dict[str, Any]] = []
+    for row in rows:
+        normalized.append(
+            {
+                "id": row.get("id"),
+                "instruction": row.get("instruction"),
+                "input": row.get("input"),
+                "output": row.get("expected_output") or row.get("output"),
+            }
+        )
+    return normalized
+
+
 def _extract_task_text(example: dict[str, Any]) -> str:
     instruction = _as_str(
         example.get("instruction")
@@ -447,45 +489,32 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
         test_split = DRY_RUN_DATA.get(args.split, [])
     else:
         try:
-            from datasets import load_dataset
-        except ImportError as exc:
-            raise SystemExit("datasets is required; install with: pip install -e .[eval]") from exc
-        data_files = None
-        try:
             from huggingface_hub import hf_hub_download
-        except ImportError:
-            hf_hub_download = None
+        except ImportError as exc:
+            raise SystemExit("huggingface_hub is required; install with: pip install -e .[eval]") from exc
 
         if args.level == 3:
             raise SystemExit("API-Bank level 3 is not wired yet; use --level 1 or 2.")
 
-        if hf_hub_download is None:
-            sys.stderr.write(
-                "hf_hub_download is unavailable; falling back to load_dataset(repo). "
-                "This may fail if API-Bank files have mismatched columns.\n"
-            )
-            dataset = load_dataset(args.dataset)
-        else:
-            level_files = API_BANK_LEVEL_FILES.get(args.level)
-            if level_files is None:
-                raise SystemExit(f"Unsupported API-Bank level: {args.level}")
-            data_files = {
-                "train": hf_hub_download(
-                    repo_id=args.dataset,
-                    repo_type="dataset",
-                    filename=level_files["train"],
-                ),
-                "test": hf_hub_download(
-                    repo_id=args.dataset,
-                    repo_type="dataset",
-                    filename=level_files["test"],
-                ),
-            }
-            dataset = load_dataset("json", data_files=data_files)
-        if args.train_split not in dataset or args.split not in dataset:
-            raise SystemExit(f"split '{args.split}' not in dataset; splits={list(dataset.keys())}")
-        train_split = dataset[args.train_split]
-        test_split = dataset[args.split]
+        level_files = API_BANK_LEVEL_FILES.get(args.level)
+        if level_files is None:
+            raise SystemExit(f"Unsupported API-Bank level: {args.level}")
+        data_files = {
+            "train": hf_hub_download(
+                repo_id=args.dataset,
+                repo_type="dataset",
+                filename=level_files["train"],
+            ),
+            "test": hf_hub_download(
+                repo_id=args.dataset,
+                repo_type="dataset",
+                filename=level_files["test"],
+            ),
+        }
+        train_rows = _load_json_rows(data_files["train"])
+        test_rows = _load_json_rows(data_files["test"])
+        train_split = _normalize_train_rows(train_rows)
+        test_split = _normalize_test_rows(test_rows)
 
     train_examples = _build_examples(train_split)
     test_examples = _build_examples(test_split)

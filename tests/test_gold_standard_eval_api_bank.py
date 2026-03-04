@@ -49,10 +49,12 @@ def test_api_bank_uses_hf_hub_download(monkeypatch, tmp_path):
             "id": "test-1",
             "instruction": "Add a medication.",
             "input": "Log aspirin 75mg for every morning.",
-            "output": (
+            "expected_output": (
                 "API-Request: [Add_Medication(medication_name='aspirin 75mg', "
                 "dosage='take one tablet every morning')]"
             ),
+            "file": "ignored.json",
+            "extra": "ignored",
         }
     ]
     train_path = tmp_path / "lv1-api-train.json"
@@ -68,19 +70,7 @@ def test_api_bank_uses_hf_hub_download(monkeypatch, tmp_path):
             return str(train_path)
         return str(test_path)
 
-    dataset_calls: dict[str, object] = {}
-
-    def fake_load_dataset(name: str, data_files=None):
-        dataset_calls["name"] = name
-        dataset_calls["data_files"] = data_files
-        with open(data_files["train"], "r", encoding="utf-8") as handle:
-            train_data = json.load(handle)
-        with open(data_files["test"], "r", encoding="utf-8") as handle:
-            test_data = json.load(handle)
-        return {"train": train_data, "test": test_data}
-
     monkeypatch.setitem(sys.modules, "huggingface_hub", types.SimpleNamespace(hf_hub_download=fake_hf_hub_download))
-    monkeypatch.setitem(sys.modules, "datasets", types.SimpleNamespace(load_dataset=fake_load_dataset))
 
     args = Namespace(
         dataset="liminghao1630/API-Bank",
@@ -101,8 +91,6 @@ def test_api_bank_uses_hf_hub_download(monkeypatch, tmp_path):
     )
     summary = run_api_bank.run(args)
     assert summary["examples_evaluated"] == 1
-    assert dataset_calls["name"] == "json"
-    assert set(dataset_calls["data_files"].keys()) == {"train", "test"}
     assert download_calls == [
         ("liminghao1630/API-Bank", "training-data/lv1-api-train.json"),
         ("liminghao1630/API-Bank", "test-data/level-1-api.json"),
