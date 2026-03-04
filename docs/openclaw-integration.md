@@ -169,9 +169,16 @@ The recommended path is the OpenClaw hook pack:
 Install and enable:
 
 ```bash
-openclaw hooks install --link /path/to/openclawbrain/integrations/openclaw/hooks/openclawbrain-context-injector
+openclaw hooks install /path/to/openclawbrain/integrations/openclaw/hooks/openclawbrain-context-injector
 openclaw hooks enable openclawbrain-context-injector
+openclaw gateway restart
 ```
+
+Note: `--link` is dev-only. If you use it, set `hooks.internal.load.extraDirs` to the parent hooks directory (the directory that contains `openclawbrain-context-injector/`), then restart the gateway.
+
+Troubleshooting:
+
+- If `openclaw hooks info openclawbrain-context-injector` is not found, run `openclaw hooks list` and restart the gateway. Ensure the hook exists under `~/.openclaw/hooks/`.
 
 The hook behavior is:
 
