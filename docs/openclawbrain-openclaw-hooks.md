@@ -15,7 +15,7 @@ When `openclawbrain-context-injector` is enabled on `message:preprocessed`:
 - The injected block is marked as prompt data (`[BRAIN_CONTEXT ...]`) and is intended to be used as context, not instruction text.
 - You keep normal OpenClaw flow and fall back to standard behavior if retrieval fails.
 
-## Install and enable
+## Install and enable (recommended)
 
 ```bash
 openclaw hooks install /path/to/openclawbrain/integrations/openclaw/hooks/openclawbrain-context-injector
@@ -25,10 +25,23 @@ openclaw gateway restart
 
 Note: `--link` is dev-only. If you use it, set `hooks.internal.load.extraDirs` to the parent hooks directory (the directory that contains `openclawbrain-context-injector/`), then restart the gateway.
 
+Why the gateway restart? OpenClaw loads hook manifests at gateway start, so a restart is required for discovery.
+
+## Verify
+
+```bash
+openclaw hooks check
+openclaw hooks list
+openclaw hooks info openclawbrain-context-injector
+```
+
+“Ready” means the hook is discovered, eligible, and enabled (no missing requirements such as `python3` or `workspace.dir`).
+
 To disable:
 
 ```bash
 openclaw hooks disable openclawbrain-context-injector
+openclaw gateway restart
 ```
 
 Troubleshooting:
@@ -44,6 +57,8 @@ Troubleshooting:
 
 - `--exclude-bootstrap` is enabled so AGENTS/USER/memory bootstrap files are not re-injected from the brain context.
 - `--redact` is enabled so common token-like patterns are masked before injection.
-- Prompt data is data-only context (not instruction text).
-- Keep secrets out of user-visible prompts and training data; redaction is conservative, not perfect.
+- Prompt data is marked as data-only context (`[BRAIN_CONTEXT ...]`), not instruction text.
+- Fail-open: if the hook errors or times out, OpenClaw continues unchanged.
 - Use OpenClaw `chat_id` consistently to preserve per-turn firing logs for later `capture_feedback`.
+
+Troubleshooting: [docs/openclaw-integration-troubleshooting.md](openclaw-integration-troubleshooting.md)

@@ -199,7 +199,9 @@ python3 -m openclawbrain.ops.audit_secret_leaks \
   --strict
 ```
 
-## F) Pin the query command in workspace `AGENTS.md`
+## F) Pin the query command in workspace `AGENTS.md` (legacy/optional)
+
+If you are using the recommended OpenClaw hook integration, you can skip this section.
 
 Use packaged CLI module invocation (no `~/openclawbrain` clone required):
 
