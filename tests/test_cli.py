@@ -877,6 +877,8 @@ def test_serve_install_dry_run_prints_launchd_plist(monkeypatch, tmp_path, capsy
     import openclawbrain.cli as cli_module
 
     monkeypatch.setattr(cli_module.sys, "platform", "darwin")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.delenv("OPENCLAWBRAIN_SERVE_WRAPPER", raising=False)
 
     code = main([
         "serve",
@@ -900,6 +902,42 @@ def test_serve_install_dry_run_prints_launchd_plist(monkeypatch, tmp_path, capsy
     assert program_arguments[2] == "openclawbrain.cli"
     assert program_arguments[3] == "serve"
     assert program_arguments[4] == "start"
+    assert "--state" in program_arguments
+    assert str(state_path) in program_arguments
+
+
+def test_serve_install_uses_openclaw_wrapper(monkeypatch, tmp_path, capsys) -> None:
+    """serve install --dry-run should prefer OpenClaw wrapper when available."""
+    state_path = tmp_path / "main" / "state.json"
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(json.dumps({"nodes": []}), encoding="utf-8")
+
+    wrapper_path = tmp_path / ".openclaw" / "scripts" / "openclawbrain-serve"
+    wrapper_path.parent.mkdir(parents=True, exist_ok=True)
+    wrapper_path.write_text("#!/bin/sh\n", encoding="utf-8")
+
+    import openclawbrain.cli as cli_module
+
+    monkeypatch.setattr(cli_module.sys, "platform", "darwin")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.delenv("OPENCLAWBRAIN_SERVE_WRAPPER", raising=False)
+
+    code = main([
+        "serve",
+        "install",
+        "--state",
+        str(state_path),
+        "--socket-path",
+        str(tmp_path / "daemon.sock"),
+        "--dry-run",
+    ])
+    assert code == 0
+
+    payload_xml, _sep, _commands = capsys.readouterr().out.partition("Planned launchctl commands:")
+    payload = plistlib.loads(payload_xml.encode("utf-8"))
+
+    program_arguments = payload["ProgramArguments"]
+    assert program_arguments[0] == str(wrapper_path)
     assert "--state" in program_arguments
     assert str(state_path) in program_arguments
 

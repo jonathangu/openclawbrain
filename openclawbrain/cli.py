@@ -2185,6 +2185,26 @@ def _render_launchd_plist(
     return payload_bytes.decode("utf-8")
 
 
+def _resolve_serve_launchd_program_arguments(start_argv: list[str]) -> list[str]:
+    wrapper_override = os.environ.get("OPENCLAWBRAIN_SERVE_WRAPPER")
+    if isinstance(wrapper_override, str) and wrapper_override.strip():
+        wrapper_path = Path(wrapper_override).expanduser()
+        if wrapper_path.is_file():
+            return [str(wrapper_path)] + start_argv
+
+    wrapper_path = Path.home() / ".openclaw" / "scripts" / "openclawbrain-serve"
+    if wrapper_path.is_file():
+        return [str(wrapper_path)] + start_argv
+
+    return [
+        sys.executable,
+        "-m",
+        "openclawbrain.cli",
+        "serve",
+        "start",
+    ] + start_argv
+
+
 def _render_loop_launchd_plist(
     *,
     label: str,
@@ -4427,13 +4447,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
         route_use_relevance=route_use_relevance,
         route_model=route_model,
     )
-    launchd_program_arguments = [
-        sys.executable,
-        "-m",
-        "openclawbrain.cli",
-        "serve",
-        "start",
-    ] + start_argv
+    launchd_program_arguments = _resolve_serve_launchd_program_arguments(start_argv)
 
     if action == "install":
         if sys.platform != "darwin":
