@@ -31,7 +31,8 @@ On each `message:preprocessed` event, the hook does:
    - match `event.context.workspaceDir` against `event.context.cfg.agents.list[].workspace`.
    - fallback: `main`.
 4. Compute state path:
-   - `~/.openclawbrain/<agentId>/state.json`.
+   - `OPENCLAWBRAIN_STATE_PATH` when set (non-empty).
+   - Otherwise `~/.openclawbrain/<agentId>/state.json` (agentId can be forced with `OPENCLAWBRAIN_AGENT_ID`).
 5. Compute `chatId`:
    - `${channelId}:${conversationId}` when both exist.
 6. Budget:
@@ -62,3 +63,11 @@ Keep bootstrap exclusions and redaction enabled:
 - `--redact`
 
 The emitted prompt block is a `[BRAIN_CONTEXT ...]` section and is marked as data-only context.
+
+## Single brain mode
+
+To share one brain state across all agents on a machine, set a fixed state path:
+
+```bash
+export OPENCLAWBRAIN_STATE_PATH=~/.openclawbrain/main/state.json
+```
