@@ -14,5 +14,7 @@ def test_toy_eval_runs_in_dry_mode():
     )
     summary = run_toy_calls.run(args)
     assert summary["tasks"] == 3
+    assert summary["baseline_avg_calls"] >= 1
+    assert summary["brain_avg_calls"] >= 1
     assert summary["baseline_avg_llm_calls"] >= 1
     assert summary["brain_avg_llm_calls"] >= 1

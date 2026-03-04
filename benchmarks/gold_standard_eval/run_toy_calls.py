@@ -143,15 +143,17 @@ def run(args: argparse.Namespace) -> dict[str, Any]:
 
     summary = {
         "tasks": len(tasks),
-        "baseline_avg_llm_calls": _avg([m.llm_calls for m in baseline_metrics]),
+        "baseline_avg_calls": _avg([m.llm_calls for m in baseline_metrics]),
         "baseline_avg_tool_calls": _avg([m.tool_calls for m in baseline_metrics]),
-        "brain_avg_llm_calls": _avg([m.llm_calls for m in brain_metrics]),
+        "brain_avg_calls": _avg([m.llm_calls for m in brain_metrics]),
         "brain_avg_tool_calls": _avg([m.tool_calls for m in brain_metrics]),
         "tool_result_max_chars": args.tool_result_max_chars,
         "brain_context_max_chars": args.max_prompt_context_chars,
         "embedder_mode": embedder.mode,
         "embedder_name": embedder.name,
     }
+    summary["baseline_avg_llm_calls"] = summary["baseline_avg_calls"]
+    summary["brain_avg_llm_calls"] = summary["brain_avg_calls"]
     return summary
 
 
