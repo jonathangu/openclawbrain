@@ -33,5 +33,6 @@ See `benchmarks/gold_standard_eval` for the dataset-based + simulation harness:
 - LoCoMo memory retrieval eval (dataset-based)
 - Minimal agent-loop simulator for tool-use efficiency and call counting
 - Toy call-counting tasks to validate LLM/tool step metrics
+- API-Bank tool-use eval for exact-match tool call accuracy
 
 Planned extensions include GAIA/WebArena task loaders and richer tool-use metrics under the same fairness caps.

@@ -4,6 +4,7 @@ This suite provides reproducible, dataset-based and simulation-based benchmarks 
 - LoCoMo memory retrieval eval (dataset-based)
 - A minimal agent-loop simulator for tool-use efficiency and call counting
 - A toy call-counting eval (simulation-based)
+- API-Bank tool-use eval (dataset-based)
 
 ## A/B Design
 
@@ -35,9 +36,9 @@ Toy call-counting (simulation-based):
 - Back-compat keys `baseline_avg_llm_calls` and `brain_avg_llm_calls` are still emitted
 
 API-Bank (tool-use, dataset-based):
-- `success_rate`: exact match on tool name + arguments
-- `avg_calls_to_first_correct`: average LLM calls until the first correct tool call (failures count as `max_steps + 1`)
-- `avg_redundant_calls`: average number of incorrect tool calls
+- `baseline_success_rate`, `brain_success_rate`: exact match on tool name + arguments
+- `baseline_avg_calls_to_first_correct`, `brain_avg_calls_to_first_correct`: average LLM calls until the first correct tool call (failures count as `max_steps + 1`)
+- `baseline_avg_redundant_calls`, `brain_avg_redundant_calls`: average number of incorrect tool calls
 
 ## Running
 

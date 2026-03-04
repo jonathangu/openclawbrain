@@ -142,12 +142,17 @@ def run_agent_loop(
     max_steps: int = 8,
     tool_result_max_chars: int = 2000,
     stub_policy: Callable[[list[dict[str, str]]], str] | None = None,
+    use_openai: bool | None = None,
+    execute_tools: bool = True,
+    stop_on_tool_call: bool = False,
+    tool_call_trace: list[dict[str, Any]] | None = None,
 ) -> tuple[str, LoopMetrics]:
     tools = tools or {}
     metrics = LoopMetrics()
-    use_openai = bool(os.environ.get("OPENAI_API_KEY"))
+    if use_openai is None:
+        use_openai = bool(os.environ.get("OPENAI_API_KEY"))
 
-    for _ in range(max_steps):
+    for step_idx in range(max_steps):
         metrics.llm_calls += 1
         if use_openai:
             try:
@@ -166,6 +171,17 @@ def run_agent_loop(
         metrics.add_usage(response.usage)
 
         if tool_calls:
+            if tool_call_trace is not None:
+                for call in tool_calls:
+                    tool_call_trace.append(
+                        {
+                            "step": step_idx + 1,
+                            "name": call.get("name"),
+                            "arguments": call.get("arguments"),
+                        }
+                    )
+            if not execute_tools:
+                return "", metrics
             for call in tool_calls:
                 name = call.get("name")
                 args = call.get("arguments") or {}
@@ -179,6 +195,8 @@ def run_agent_loop(
                 if tool_result_max_chars is not None and tool_result_max_chars > 0:
                     output = output[:tool_result_max_chars]
                 messages.append({"role": "tool", "name": name or "", "content": output})
+            if stop_on_tool_call:
+                return "", metrics
             continue
 
         if final_text:
