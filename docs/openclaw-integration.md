@@ -123,6 +123,12 @@ Instead of “top-k similarity every time”, it learns which context routes act
 - You can add knowledge without rebuilding the whole index (`inject --type TEACHING`).
 - With the socket server, the brain stays **hot in memory**, avoiding per-call reload overhead.
 
+**Always-on learning (recommended default experience):**
+
+- Clear user **corrections** and **teachings** should be captured automatically in the same turn via `capture_feedback`.
+- Operators should *not* need to say “inject teaching” / “log this” / special phrasing.
+- Use `--message-id` or `--dedup-key` so retries cannot double-inject.
+
 OpenClawBrain stores everything in a single portable file:
 
 - `state.json` — graph + embeddings + metadata
