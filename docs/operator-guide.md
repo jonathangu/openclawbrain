@@ -258,7 +258,7 @@ For OpenClaw integration, keep prompts token-tight and avoid re-sending files Op
 - Use `python3 -m openclawbrain.openclaw_adapter.query_brain ... --format prompt`.
 - Learn/inject in one canonical call with `python3 -m openclawbrain.openclaw_adapter.capture_feedback --state ... --chat-id ... --kind ... --content ... [--outcome ...] [--dedup-key ...]`.
 - Keep `--exclude-bootstrap` enabled (adapter default) so `AGENTS.md`, `SOUL.md`, `USER.md`, `MEMORY.md`, and `active-tasks.md` are not duplicated in `prompt_context`.
-- Start with `--max-prompt-context-chars 8000` to `12000`; increase only when retrieval quality requires it.
+- For hook-based brain-first, start with `--max-prompt-context-chars 20000`, and allow deep recall up to `80000` only when retrieval quality requires it (watch for attention dilution).
 - Use `--exclude-recent-memory <today> <yesterday>` only when those daily notes are already loaded elsewhere in the same turn.
 
 This preserves deterministic `prompt_context` while cutting duplicate tokens, matching the project’s “context efficiency/compression” operating model.
