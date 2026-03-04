@@ -17,7 +17,19 @@ class EmbedderConfig:
     mode: str
 
 
-def resolve_embedder() -> EmbedderConfig:
+def resolve_embedder(mode: str | None = None) -> EmbedderConfig:
+    if mode is not None and mode not in {"local", "hash"}:
+        raise ValueError(f"Unsupported embedder mode: {mode}")
+
+    if mode == "hash":
+        fallback = HashEmbedder()
+        return EmbedderConfig(
+            embed_fn=fallback.embed,
+            name=fallback.name,
+            dim=fallback.dim,
+            mode="hash",
+        )
+
     try:
         embedder = LocalEmbedder(model_name=resolve_local_model())
         # Force initialization to detect missing fastembed.

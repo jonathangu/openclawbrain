@@ -200,7 +200,7 @@ def run(args: argparse.Namespace) -> dict[str, object]:
                 examples.append(item)
 
     indices = _pick_indices(len(examples), args.max_examples, args.seed)
-    embedder = resolve_embedder()
+    embedder = resolve_embedder(args.embedder)
 
     hits = 0
     proxy_hits = 0
@@ -248,6 +248,8 @@ def run(args: argparse.Namespace) -> dict[str, object]:
         prompt_chars.append(stats.get("prompt_context_len", len(prompt_context)))
 
         total += 1
+        if total % 25 == 0:
+            print(f"Processed {total} examples...", file=sys.stderr)
         context_lower = prompt_context.lower()
         if answers:
             if any(answer.lower() in context_lower for answer in answers if answer):
@@ -310,6 +312,12 @@ def main() -> None:
         type=float,
         default=0.3,
         help="Overlap threshold for proxy metric when no gold answer spans",
+    )
+    parser.add_argument(
+        "--embedder",
+        default="local",
+        choices=("local", "hash"),
+        help="Embedder mode (default: local)",
     )
     parser.add_argument("--output", default=None, help="Optional output JSON path")
     args = parser.parse_args()
