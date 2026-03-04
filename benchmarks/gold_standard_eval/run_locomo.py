@@ -3,8 +3,10 @@ from __future__ import annotations
 import argparse
 import json
 import random
+import re
 import sys
 import tempfile
+from pathlib import Path
 from typing import Iterable
 
 from openclawbrain.store import save_state
@@ -84,6 +86,70 @@ def _extract_answers(example: dict) -> list[str]:
     return []
 
 
+def _flatten_locomo_sessions(conversation: dict) -> list[dict[str, str]]:
+    if not isinstance(conversation, dict):
+        return []
+    session_keys: list[tuple[int, str]] = []
+    for key, value in conversation.items():
+        match = re.match(r"^session_(\d+)$", str(key))
+        if match and isinstance(value, list):
+            session_keys.append((int(match.group(1)), str(key)))
+    messages: list[dict[str, str]] = []
+    for _idx, key in sorted(session_keys, key=lambda item: item[0]):
+        turns = conversation.get(key, [])
+        if not isinstance(turns, list):
+            continue
+        for turn in turns:
+            if not isinstance(turn, dict):
+                continue
+            speaker = str(turn.get("speaker") or turn.get("role") or turn.get("from") or "user")
+            content = (
+                turn.get("text")
+                or turn.get("utterance")
+                or turn.get("blip_caption")
+                or ""
+            )
+            content = str(content).strip()
+            if not content:
+                continue
+            messages.append({"speaker": speaker, "text": content})
+    return messages
+
+
+def _load_locomo10_json(path: str) -> list[dict[str, object]]:
+    with open(path, "r", encoding="utf-8") as handle:
+        data = json.load(handle)
+    if not isinstance(data, list):
+        raise SystemExit("locomo10.json must contain a top-level list of conversations")
+    examples: list[dict[str, object]] = []
+    for sample in data:
+        if not isinstance(sample, dict):
+            continue
+        conversation = sample.get("conversation", {})
+        messages = _flatten_locomo_sessions(conversation)
+        qas = sample.get("qa") or []
+        if not isinstance(qas, list):
+            continue
+        for qa in qas:
+            if not isinstance(qa, dict):
+                continue
+            question = str(qa.get("question") or "").strip()
+            if not question:
+                continue
+            answers = _as_str_list(
+                qa.get("answer") or qa.get("answers") or qa.get("adversarial_answer")
+            )
+            examples.append(
+                {
+                    "messages": messages,
+                    "question": question,
+                    "answers": answers,
+                    "sample_id": sample.get("sample_id"),
+                }
+            )
+    return examples
+
+
 def _proxy_overlap(question: str, context: str) -> float:
     if not question or not context:
         return 0.0
@@ -105,21 +171,35 @@ def _pick_indices(total: int, max_examples: int | None, seed: int) -> list[int]:
 
 
 def run(args: argparse.Namespace) -> dict[str, object]:
-    try:
-        from datasets import load_dataset
-    except ImportError as exc:
-        raise SystemExit("datasets is required; install with: pip install -e .[eval]") from exc
+    examples: list[dict[str, object]] = []
+    dataset_name = args.dataset if not args.path else None
+    if args.path:
+        if not Path(args.path).is_file():
+            raise SystemExit(f"--path does not exist: {args.path}")
+        examples = _load_locomo10_json(args.path)
+    else:
+        try:
+            from datasets import load_dataset
+        except ImportError as exc:
+            raise SystemExit("datasets is required; install with: pip install -e .[eval]") from exc
 
-    dataset_kwargs = {}
-    if args.config:
-        dataset_kwargs["name"] = args.config
+        dataset_kwargs = {}
+        if args.config:
+            dataset_kwargs["name"] = args.config
 
-    dataset = load_dataset(args.dataset, **dataset_kwargs)
-    if args.split not in dataset:
-        raise SystemExit(f"split '{args.split}' not in dataset; splits={list(dataset.keys())}")
+        if not args.dataset:
+            raise SystemExit("Provide --path or --dataset for HuggingFace loading.")
 
-    split = dataset[args.split]
-    indices = _pick_indices(len(split), args.max_examples, args.seed)
+        dataset = load_dataset(args.dataset, **dataset_kwargs)
+        if args.split not in dataset:
+            raise SystemExit(f"split '{args.split}' not in dataset; splits={list(dataset.keys())}")
+
+        split = dataset[args.split]
+        for item in split:
+            if isinstance(item, dict):
+                examples.append(item)
+
+    indices = _pick_indices(len(examples), args.max_examples, args.seed)
     embedder = resolve_embedder()
 
     hits = 0
@@ -131,7 +211,7 @@ def run(args: argparse.Namespace) -> dict[str, object]:
     sample_keys: list[str] = []
 
     for idx in indices:
-        example = split[int(idx)]
+        example = examples[int(idx)]
         if not sample_keys and isinstance(example, dict):
             sample_keys = sorted(example.keys())
 
@@ -182,12 +262,14 @@ def run(args: argparse.Namespace) -> dict[str, object]:
     proxy_recall = proxy_hits / proxy_examples if proxy_examples else 0.0
 
     summary = {
-        "dataset": args.dataset,
+        "dataset": dataset_name,
+        "path": args.path,
         "config": args.config,
         "split": args.split,
         "examples_evaluated": total,
         "hits": hits,
         "recall_at_k": recall,
+        "recall_at_k_proxy": recall,
         "avg_retrieved_chars": sum(retrieved_chars) / len(retrieved_chars) if retrieved_chars else 0.0,
         "avg_prompt_context_chars": sum(prompt_chars) / len(prompt_chars) if prompt_chars else 0.0,
         "proxy_examples": proxy_examples,
@@ -202,7 +284,16 @@ def run(args: argparse.Namespace) -> dict[str, object]:
 
 def main() -> None:
     parser = argparse.ArgumentParser(description="Run LoCoMo memory eval against OpenClawBrain retrieval.")
-    parser.add_argument("--dataset", default="locomo", help="HuggingFace dataset name (default: locomo)")
+    parser.add_argument(
+        "--path",
+        default="",
+        help="Path to locomo10.json (preferred; uses HuggingFace only when omitted)",
+    )
+    parser.add_argument(
+        "--dataset",
+        default="desire2020/locomo-serialized",
+        help="HuggingFace dataset name (fallback when --path is omitted)",
+    )
     parser.add_argument("--config", default=None, help="Optional dataset config name")
     parser.add_argument("--split", default="test", help="Dataset split (default: test)")
     parser.add_argument("--max-examples", type=int, default=None, help="Max examples to evaluate")
