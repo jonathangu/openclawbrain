@@ -49,6 +49,9 @@ def test_run_maintenance_default_tasks_on_small_graph(tmp_path) -> None:
     assert report.pruned_edges >= 1
     assert "nodes" in report.health_before
     assert "nodes" in report.health_after
+    assert report.splits_proposed == 0
+    assert report.splits_applied == 0
+    assert report.nodes_scaled == 0
 
 
 def test_dry_run_does_not_modify_state(tmp_path) -> None:
@@ -74,6 +77,29 @@ def test_dry_run_does_not_modify_state(tmp_path) -> None:
     assert report.tasks_run == ["decay", "prune", "merge"]
     assert before == after
     assert "dry_run=True; no state write performed" in report.notes
+    assert report.splits_proposed == 0
+    assert report.splits_applied == 0
+
+
+def test_maintenance_report_tracks_splits(tmp_path) -> None:
+    """test maintenance report tracks split counts."""
+    graph = Graph()
+    graph.add_node(Node("a", "Alpha\n\nBeta"))
+
+    state_path = tmp_path / "state.json"
+    _write_state(state_path, graph)
+
+    def dummy_embed(text: str) -> list[float]:
+        return [1.0, 0.0]
+
+    report = run_maintenance(
+        state_path=str(state_path),
+        tasks=["split"],
+        embed_fn=dummy_embed,
+    )
+
+    assert report.splits_proposed >= 1
+    assert report.splits_applied == 1
 
 
 def test_prune_edges_removes_low_weight_edges() -> None:
