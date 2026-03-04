@@ -1,5 +1,21 @@
 # OpenClawBrain
 
+OpenClawBrain is a local-first routing memory layer for agents that learns which context should appear and when. It keeps retrieval off remote LLM critical paths by default, reduces LLM API turns per user-visible request, and suppresses repeated mistakes over time.
+
+- **Hot-path guarantee:** routing stays local/bounded; no remote LLM on the critical path by default.
+- **Turn reduction:** fewer LLM API calls per user-visible request, plus fewer retries/clarifications.
+- **Don’t repeat mistakes:** inhibitory suppression dampens bad routes and recurring errors.
+
+Turn = one LLM API call (including retries/clarifications).
+
+5-minute OpenClaw quickstart (daemon + hook-pack install/enable + gateway restart). Full guide: **[docs/openclaw-integration.md](docs/openclaw-integration.md)**.
+
+```bash
+openclawbrain serve --state ~/.openclawbrain/main/state.json
+openclaw hooks install /path/to/openclawbrain/integrations/openclaw/hooks/openclawbrain-context-injector
+openclaw hooks enable openclawbrain-context-injector
+openclaw gateway restart
+```
 
 > Your retrieval routes become the prompt — assembled by learned routing, not top-k similarity.
 
@@ -33,15 +49,6 @@ OpenClawBrain is designed to be the memory layer for **OpenClaw agents**.
 ### Brain-first OpenClaw integration (recommended)
 
 Enable brain-backed context injection with zero AGENTS wiring. If you don’t have a brain yet, follow **[docs/openclaw-integration.md](docs/openclaw-integration.md)**.
-
-5-minute quickstart (daemon + hook install/enable + gateway restart):
-
-```bash
-openclawbrain serve --state ~/.openclawbrain/main/state.json
-openclaw hooks install /path/to/openclawbrain/integrations/openclaw/hooks/openclawbrain-context-injector
-openclaw hooks enable openclawbrain-context-injector
-openclaw gateway restart
-```
 
 OpenClaw adapter query example with runtime routing (`route_mode=edge+sim`):
 
