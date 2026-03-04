@@ -52,6 +52,7 @@ def test_socket_client_query_method_includes_route_params(monkeypatch) -> None:
         "route_top_k": 8,
         "route_alpha_sim": 0.2,
         "route_use_relevance": False,
+        "assert_learned": False,
     }
 
 

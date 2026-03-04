@@ -36,6 +36,7 @@ def test_query_params_defaults_follow_daemon_behavior() -> None:
     assert params.route_use_relevance is True
     assert params.route_enable_stop is False
     assert params.route_stop_margin == 0.1
+    assert params.assert_learned is False
     assert params.debug_allow_confidence_override is False
     assert params.router_conf_override is None
     assert params.relevance_conf_override is None

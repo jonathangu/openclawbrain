@@ -60,6 +60,12 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--route-use-relevance", choices=["true", "false"], default="true")
     parser.add_argument("--route-enable-stop", choices=["true", "false"], default="false")
     parser.add_argument("--route-stop-margin", type=float, default=0.1)
+    parser.add_argument(
+        "--assert-learned",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Error if effective routing mode is not learned.",
+    )
     parser.add_argument("--route-model", default=None)
     parser.add_argument("--auto-save-interval", type=int, default=10)
     parser.add_argument("--force", action="store_true", help="Bypass state lock (expert use)")
@@ -422,8 +428,18 @@ def _handle_query(
 
     traverse_start = time.perf_counter()
     seeds = index.search(query_vector, top_k=top_k)
+    route_mode_configured = query.route_mode
+    route_model_present = learned_model is not None
+    route_mode_effective = route_mode_configured
+    if route_mode_configured == "learned" and not route_model_present:
+        route_mode_effective = "edge+sim"
+    if query.assert_learned and route_mode_effective != "learned":
+        raise ValueError(
+            f"assert_learned requested but effective route_mode is {route_mode_effective} "
+            f"(configured={route_mode_configured}, model_present={route_model_present})"
+        )
     policy = RoutingPolicy(
-        route_mode="edge+sim" if query.route_mode == "learned" and learned_model is None else query.route_mode,
+        route_mode=route_mode_effective,
         top_k=query.route_top_k,
         alpha_sim=query.route_alpha_sim,
         use_relevance=query.route_use_relevance,
@@ -492,7 +508,15 @@ def _handle_query(
         query_text=query_text,
         fired_ids=result.fired,
         node_count=graph.node_count(),
-        metadata={"chat_id": query.chat_id, "max_fired_nodes": max_fired_nodes, **prompt_context_stats, **route_summary},
+        metadata={
+            "chat_id": query.chat_id,
+            "max_fired_nodes": max_fired_nodes,
+            "route_mode_configured": route_mode_configured,
+            "route_mode_effective": route_mode_effective,
+            "route_model_present": route_model_present,
+            **prompt_context_stats,
+            **route_summary,
+        },
     )
 
     return {
@@ -505,6 +529,9 @@ def _handle_query(
         "embed_query_ms": _ms(embed_start, embed_stop),
         "traverse_ms": _ms(traverse_start, traverse_stop),
         "total_ms": _ms(total_start, total_stop),
+        "route_mode_configured": route_mode_configured,
+        "route_mode_effective": route_mode_effective,
+        "route_model_present": route_model_present,
         **route_summary,
     }
 
@@ -1011,6 +1038,7 @@ class QueryDefaults:
     route_use_relevance: bool = True
     route_enable_stop: bool = False
     route_stop_margin: float = 0.1
+    assert_learned: bool = False
 
 
 def _with_query_defaults(params: dict[str, object], defaults: QueryDefaults) -> dict[str, object]:
@@ -1024,6 +1052,7 @@ def _with_query_defaults(params: dict[str, object], defaults: QueryDefaults) -> 
     merged.setdefault("route_use_relevance", defaults.route_use_relevance)
     merged.setdefault("route_enable_stop", defaults.route_enable_stop)
     merged.setdefault("route_stop_margin", defaults.route_stop_margin)
+    merged.setdefault("assert_learned", defaults.assert_learned)
     return merged
 
 
@@ -1045,11 +1074,13 @@ def main(argv: list[str] | None = None) -> int:
         route_mode_configured = parse_route_mode(args.route_mode)
         route_model: RouteModel | None = None
         target_projections: dict[str, object] = {}
+        route_model_error: str | None = None
         if route_model_path.exists():
             try:
                 route_model = RouteModel.load_npz(route_model_path)
                 target_projections = route_model.precompute_target_projections(index)
             except Exception as exc:  # noqa: BLE001
+                route_model_error = f"load_failed: {exc}"
                 print(
                     f"warning: failed to load route model at {route_model_path}: {exc}; falling back to edge+sim",
                     file=sys.stderr,
@@ -1057,6 +1088,7 @@ def main(argv: list[str] | None = None) -> int:
                 route_model = None
                 target_projections = {}
         elif route_mode_configured == "learned":
+            route_model_error = "missing"
             print(
                 f"warning: route_model.npz missing at {route_model_path}; falling back to edge+sim",
                 file=sys.stderr,
@@ -1065,10 +1097,23 @@ def main(argv: list[str] | None = None) -> int:
         route_mode_effective = route_mode_configured
         if route_mode_configured == "learned" and route_model is None:
             route_mode_effective = "edge+sim"
+        if args.assert_learned and route_mode_effective != "learned":
+            raise SystemExit(
+                "assert_learned enabled but effective route_mode is not learned "
+                f"(configured={route_mode_configured}, model_present={route_model_present})"
+            )
+        route_stop_margin = parse_float(args.route_stop_margin, "route_stop_margin", required=False, default=0.1)
+        if route_stop_margin < 0.0:
+            raise ValueError("route_stop_margin must be >= 0.0")
         route_status = {
             "route_model_present": route_model_present,
             "route_mode_configured": route_mode_configured,
             "route_mode_effective": route_mode_effective,
+            "route_model_path": str(route_model_path),
+            "route_model_error": route_model_error,
+            "route_enable_stop": str(args.route_enable_stop).strip().lower() == "true",
+            "route_stop_margin": route_stop_margin,
+            "route_assert_learned": bool(args.assert_learned),
         }
         daemon_state = _DaemonState(
             graph=graph,
@@ -1081,9 +1126,6 @@ def main(argv: list[str] | None = None) -> int:
             ),
         )
         embed_fn = _resolve_embed_fn(args.embed_model, meta)
-        route_stop_margin = parse_float(args.route_stop_margin, "route_stop_margin", required=False, default=0.1)
-        if route_stop_margin < 0.0:
-            raise ValueError("route_stop_margin must be >= 0.0")
         query_defaults = QueryDefaults(
             max_prompt_context_chars=parse_int(
                 args.max_prompt_context_chars,
@@ -1095,7 +1137,7 @@ def main(argv: list[str] | None = None) -> int:
                 "max_fired_nodes",
                 default=30,
             ),
-            route_mode=route_mode_effective,
+            route_mode=route_mode_configured,
             route_top_k=parse_int(
                 args.route_top_k,
                 "route_top_k",
@@ -1109,18 +1151,8 @@ def main(argv: list[str] | None = None) -> int:
             route_use_relevance=str(args.route_use_relevance).strip().lower() == "true",
             route_enable_stop=str(args.route_enable_stop).strip().lower() == "true",
             route_stop_margin=route_stop_margin,
+            assert_learned=bool(args.assert_learned),
         )
-        if query_defaults.route_mode == "learned" and route_model is None:
-            query_defaults = QueryDefaults(
-                max_prompt_context_chars=query_defaults.max_prompt_context_chars,
-                max_fired_nodes=query_defaults.max_fired_nodes,
-                route_mode="edge+sim",
-                route_top_k=query_defaults.route_top_k,
-                route_alpha_sim=query_defaults.route_alpha_sim,
-                route_use_relevance=query_defaults.route_use_relevance,
-                route_enable_stop=query_defaults.route_enable_stop,
-                route_stop_margin=query_defaults.route_stop_margin,
-            )
         auto_save_interval = max(1, args.auto_save_interval) if args.auto_save_interval > 0 else 0
 
         if hasattr(sys.stdout, "reconfigure"):

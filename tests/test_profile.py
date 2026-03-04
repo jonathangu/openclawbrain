@@ -24,6 +24,7 @@ def test_brain_profile_loads_from_json(tmp_path: Path) -> None:
                     "route_top_k": 9,
                     "route_alpha_sim": 0.7,
                     "route_use_relevance": False,
+                    "assert_learned": True,
                 },
                 "reward": {
                     "source": "explicit",
@@ -47,6 +48,7 @@ def test_brain_profile_loads_from_json(tmp_path: Path) -> None:
     assert profile.policy.route_top_k == 9
     assert profile.policy.route_alpha_sim == 0.7
     assert profile.policy.route_use_relevance is False
+    assert profile.policy.assert_learned is True
     assert profile.reward.source == "explicit"
     assert profile.reward.weight_correction == -0.9
     assert profile.reward.weight_teaching == 0.3
@@ -70,10 +72,12 @@ def test_brain_profile_env_overrides(monkeypatch, tmp_path: Path) -> None:
     monkeypatch.setenv("OPENCLAWBRAIN_ROUTE_MODE", "edge")
     monkeypatch.setenv("OPENCLAWBRAIN_MAX_FIRED_NODES", "88")
     monkeypatch.setenv("OPENCLAWBRAIN_EMBED_MODEL", "hash")
+    monkeypatch.setenv("OPENCLAWBRAIN_ROUTE_ASSERT_LEARNED", "true")
 
     profile = BrainProfile.load(str(profile_path))
     assert profile.policy.route_mode == "edge"
     assert profile.policy.max_fired_nodes == 88
+    assert profile.policy.assert_learned is True
     assert profile.embedder.embed_model == "hash"
 
 

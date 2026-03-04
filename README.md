@@ -34,6 +34,7 @@ openclaw gateway restart
 
 - Operator quickstart (start here): [docs/operator-quickstart.md](docs/operator-quickstart.md)
 - Operator guide (deep dive): [docs/operator-guide.md](docs/operator-guide.md)
+- Learned routing audit (invariants + checklist): [docs/learned-routing-audit.md](docs/learned-routing-audit.md)
 - Default brain-building experience (macOS): [docs/default-experience.md](docs/default-experience.md)
 - Shadow routing architecture: [docs/shadow-routing-upg-architecture.md](docs/shadow-routing-upg-architecture.md)
 - Evaluation plan: [docs/evaluation-plan.md](docs/evaluation-plan.md)

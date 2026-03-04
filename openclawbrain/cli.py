@@ -1256,6 +1256,18 @@ def _coalesce_route_enable_stop(
     return default
 
 
+def _coalesce_assert_learned(
+    cli_value: bool | None,
+    profile_value: bool | None,
+    default: bool,
+) -> bool:
+    if cli_value is not None:
+        return bool(cli_value)
+    if profile_value is not None:
+        return bool(profile_value)
+    return default
+
+
 @contextmanager
 def _command_state_write_lock(
     args: argparse.Namespace,
@@ -1427,6 +1439,12 @@ def _build_parser() -> argparse.ArgumentParser:
     d.add_argument("--route-use-relevance", choices=["true", "false"], default=None)
     d.add_argument("--route-enable-stop", choices=["true", "false"], default=None)
     d.add_argument("--route-stop-margin", type=float, default=None)
+    d.add_argument(
+        "--assert-learned",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Error if effective routing mode is not learned.",
+    )
     d.add_argument("--route-model", default=None)
     d.add_argument("--auto-save-interval", type=int, default=10)
 
@@ -1450,6 +1468,12 @@ def _build_parser() -> argparse.ArgumentParser:
     serve.add_argument("--route-use-relevance", choices=["true", "false"], default=None)
     serve.add_argument("--route-enable-stop", choices=["true", "false"], default=None)
     serve.add_argument("--route-stop-margin", type=float, default=None)
+    serve.add_argument(
+        "--assert-learned",
+        action=argparse.BooleanOptionalAction,
+        default=None,
+        help="Error if effective routing mode is not learned.",
+    )
     serve.add_argument("--route-model", default=None)
     serve.add_argument(
         "--foreground",
@@ -1658,6 +1682,10 @@ def _build_parser() -> argparse.ArgumentParser:
 
     rep = sub.add_parser("report", help="Daily brain update summary")
     rep.add_argument("--state")
+
+    ra = sub.add_parser("route-audit", help="Learned routing audit snapshot")
+    ra.add_argument("--state")
+    ra.add_argument("--json", action="store_true")
 
     ar = sub.add_parser("async-route-pg")
     ar.add_argument("--state", required=True)
@@ -2323,6 +2351,7 @@ def _serve_start_arguments(
     route_use_relevance: bool,
     route_enable_stop: bool,
     route_stop_margin: float,
+    assert_learned: bool,
     route_model: str | None,
 ) -> list[str]:
     argv = ["--state", state_path]
@@ -2348,6 +2377,8 @@ def _serve_start_arguments(
         "--route-stop-margin",
         str(route_stop_margin),
     ])
+    if assert_learned:
+        argv.append("--assert-learned")
     if route_model:
         argv.extend(["--route-model", str(route_model)])
     return argv
@@ -4729,17 +4760,34 @@ def cmd_report(args: argparse.Namespace) -> int:
         lines.append(f"  warning: {health_warning}")
 
     route_model_present = None
+    route_mode_configured = None
     route_mode_effective = None
+    route_model_error = None
+    route_model_path = None
     if health_payload is not None:
         route_model_present = health_payload.get("route_model_present")
+        route_mode_configured = health_payload.get("route_mode_configured")
         route_mode_effective = health_payload.get("route_mode_effective")
+        route_model_error = health_payload.get("route_model_error")
+        route_model_path = health_payload.get("route_model_path")
     if route_model_present is None:
         route_model_present = (Path(resolved_state).expanduser().parent / "route_model.npz").exists()
+    if route_mode_configured is None:
+        route_mode_configured = "unknown"
     if route_mode_effective is None:
         route_mode_effective = "learned" if route_model_present else "edge+sim"
 
     lines.append(f"  route_model: {'present' if route_model_present else 'missing'}")
+    lines.append(f"  route_mode_configured: {route_mode_configured}")
     lines.append(f"  route_mode_effective: {route_mode_effective}")
+    if route_model_path:
+        lines.append(f"  route_model_path: {route_model_path}")
+    if route_model_error:
+        lines.append(f"  route_model_error: {route_model_error}")
+    if route_mode_configured == "learned" and route_mode_effective != "learned":
+        lines.append("  warning: learned routing configured but effective mode is degraded")
+    elif not route_model_present and route_mode_effective != "learned":
+        lines.append("  warning: route_model missing; learned routing will fall back to edge+sim")
 
     sync_totals = None
     sync_workspace_count = 0
@@ -4818,6 +4866,107 @@ def cmd_report(args: argparse.Namespace) -> int:
             journal_path=journal_path,
         )
 
+    return 0
+
+
+def cmd_route_audit(args: argparse.Namespace) -> int:
+    """Print learned routing audit snapshot."""
+    state_path = _resolve_state_path(args.state, allow_default=True)
+    if state_path is None:
+        raise SystemExit("--state is required for route-audit")
+    resolved_state = str(Path(state_path).expanduser())
+    state_dir = Path(resolved_state).expanduser().parent
+    route_model_path = state_dir / "route_model.npz"
+    labels_path = _default_labels_path(resolved_state)
+
+    model_present = route_model_path.exists()
+    model_loaded = False
+    model_error = None
+    if model_present:
+        try:
+            RouteModel.load_npz(route_model_path)
+            model_loaded = True
+        except Exception as exc:  # noqa: BLE001
+            model_error = str(exc)
+
+    labels_count = 0
+    if labels_path.exists():
+        labels_count = sum(1 for line in labels_path.read_text(encoding="utf-8").splitlines() if line.strip())
+
+    last_train_ts = None
+    last_train_iso = None
+    if model_present:
+        last_train_ts = route_model_path.stat().st_mtime
+        last_train_iso = datetime.fromtimestamp(last_train_ts, tz=timezone.utc).isoformat()
+
+    socket_path = _default_daemon_socket_path(resolved_state)
+    ping_ok, health_payload, health_error = _socket_health_status(socket_path)
+    route_mode_configured = None
+    route_mode_effective = None
+    route_model_present = None
+    route_enable_stop = None
+    route_stop_margin = None
+    route_model_error = None
+    if isinstance(health_payload, dict):
+        route_mode_configured = health_payload.get("route_mode_configured")
+        route_mode_effective = health_payload.get("route_mode_effective")
+        route_model_present = health_payload.get("route_model_present")
+        route_enable_stop = health_payload.get("route_enable_stop")
+        route_stop_margin = health_payload.get("route_stop_margin")
+        route_model_error = health_payload.get("route_model_error")
+
+    if route_mode_effective is None:
+        route_mode_effective = "learned" if model_present else "edge+sim"
+    if route_mode_configured is None:
+        route_mode_configured = "unknown"
+    if route_model_present is None:
+        route_model_present = model_present
+
+    payload = {
+        "state_path": resolved_state,
+        "daemon_running": bool(ping_ok),
+        "daemon_socket": socket_path,
+        "daemon_health_error": health_error,
+        "route_mode_configured": route_mode_configured,
+        "route_mode_effective": route_mode_effective,
+        "route_model_present": route_model_present,
+        "route_model_loaded": model_loaded if model_present else False,
+        "route_model_path": str(route_model_path),
+        "route_model_error": route_model_error or model_error,
+        "last_train_ts": last_train_ts,
+        "last_train_iso": last_train_iso,
+        "labels_path": str(labels_path),
+        "labels_count": labels_count,
+        "route_enable_stop": route_enable_stop,
+        "route_stop_margin": route_stop_margin,
+    }
+
+    if args.json:
+        print(json.dumps(payload, indent=2))
+        return 0
+
+    lines = [
+        "Route audit",
+        f"  state: {resolved_state}",
+        f"  daemon_running: {bool(ping_ok)}",
+        f"  route_mode_configured: {route_mode_configured}",
+        f"  route_mode_effective: {route_mode_effective}",
+        f"  route_model_present: {route_model_present}",
+        f"  route_model_loaded: {model_loaded if model_present else False}",
+        f"  route_model_path: {route_model_path}",
+        f"  last_train_iso: {last_train_iso or 'n/a'}",
+        f"  labels_count: {labels_count}",
+        f"  labels_path: {labels_path}",
+        f"  stop_enabled: {route_enable_stop if route_enable_stop is not None else 'unknown'}",
+        f"  stop_margin: {route_stop_margin if route_stop_margin is not None else 'unknown'}",
+    ]
+    if payload.get("route_model_error"):
+        lines.append(f"  route_model_error: {payload['route_model_error']}")
+    if not ping_ok and health_error:
+        lines.append(f"  warning: daemon health unavailable ({health_error})")
+    if route_mode_configured == "learned" and route_mode_effective != "learned":
+        lines.append("  warning: learned routing configured but effective mode is degraded")
+    print("\n".join(lines))
     return 0
 
 
@@ -4918,6 +5067,11 @@ def cmd_daemon(args: argparse.Namespace) -> int:
         profile.policy.route_stop_margin if profile is not None else None,
         0.1,
     )
+    assert_learned = _coalesce_assert_learned(
+        args.assert_learned,
+        profile.policy.assert_learned if profile is not None else None,
+        False,
+    )
     if route_stop_margin < 0.0:
         raise SystemExit("--route-stop-margin must be >= 0.0")
     route_model = args.route_model
@@ -4947,7 +5101,9 @@ def cmd_daemon(args: argparse.Namespace) -> int:
             str(route_stop_margin),
             "--auto-save-interval",
             str(args.auto_save_interval),
-        ] + (["--route-model", str(route_model)] if route_model else [])
+        ]
+        + (["--assert-learned"] if assert_learned else [])
+        + (["--route-model", str(route_model)] if route_model else [])
     )
 
 
@@ -4997,6 +5153,11 @@ def cmd_serve(args: argparse.Namespace) -> int:
         profile.policy.route_stop_margin if profile is not None else None,
         0.1,
     )
+    assert_learned = _coalesce_assert_learned(
+        args.assert_learned,
+        profile.policy.assert_learned if profile is not None else None,
+        False,
+    )
     if route_stop_margin < 0.0:
         raise SystemExit("--route-stop-margin must be >= 0.0")
     route_model = args.route_model
@@ -5019,6 +5180,7 @@ def cmd_serve(args: argparse.Namespace) -> int:
         route_use_relevance=route_use_relevance,
         route_enable_stop=route_enable_stop,
         route_stop_margin=route_stop_margin,
+        assert_learned=assert_learned,
         route_model=route_model,
     )
     launchd_program_arguments = _resolve_serve_launchd_program_arguments(start_argv)
@@ -6511,6 +6673,7 @@ def main(argv: list[str] | None = None) -> int:
         "harvest": cmd_harvest,
         "health": cmd_health,
         "report": cmd_report,
+        "route-audit": cmd_route_audit,
         "async-route-pg": cmd_async_route_pg,
         "dream": cmd_dream,
         "dreaming": cmd_dream,
