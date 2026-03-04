@@ -29,7 +29,7 @@ def _install_fake_openai(monkeypatch, vector_fn):
             self.data = [FakeEmbedding(vector) for vector in vectors]
 
     class FakeEmbeddings:
-        def create(self, model: str, input: str | list[str]) -> FakeResponse:
+        def create(self, model: str, input: str | list[str], **_kwargs: object) -> FakeResponse:
             calls.append((model, input))
             values = [input] if isinstance(input, str) else input
             vectors = [vector_fn(value) for value in values]

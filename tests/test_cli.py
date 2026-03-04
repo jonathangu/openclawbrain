@@ -171,12 +171,14 @@ def test_init_sets_authority_metadata_for_mapped_files(tmp_path, monkeypatch) ->
 
     state_data = json.loads((output / "state.json").read_text(encoding="utf-8"))
     nodes = state_data["graph"]["nodes"]
+    workspace_prefix = f"{workspace.name}/"
 
     def authorities_for(file_name: str) -> set[str]:
+        expected_file = f"{workspace_prefix}{file_name}"
         return {
             str(node.get("metadata", {}).get("authority"))
             for node in nodes
-            if node.get("metadata", {}).get("file") == file_name
+            if node.get("metadata", {}).get("file") == expected_file
         }
 
     assert "constitutional" in authorities_for("SOUL.md")
@@ -870,6 +872,10 @@ def test_serve_command_prints_banner_and_calls_socket_server(monkeypatch, capsys
         "0.5",
         "--route-use-relevance",
         "true",
+        "--route-enable-stop",
+        "false",
+        "--route-stop-margin",
+        "0.1",
     ]]
 
     err = capsys.readouterr().err
@@ -1285,6 +1291,10 @@ def test_serve_command_passes_explicit_socket_path(monkeypatch) -> None:
         "0.5",
         "--route-use-relevance",
         "true",
+        "--route-enable-stop",
+        "false",
+        "--route-stop-margin",
+        "0.1",
     ]]
 
 
@@ -1359,7 +1369,9 @@ def test_openclaw_install_runs_expected_commands(monkeypatch, tmp_path) -> None:
     assert calls[1][:3] == ["openclaw", "hooks", "install"]
     assert calls[2][:3] == ["openclaw", "hooks", "enable"]
     assert calls[3][:4] == [sys.executable, "-m", "openclawbrain.cli", "loop"]
-    assert calls[4][:3] == ["openclaw", "gateway", "restart"]
+    assert calls[4][:4] == [sys.executable, "-m", "openclawbrain.cli", "harvest"]
+    assert calls[5][:4] == [sys.executable, "-m", "openclawbrain.cli", "async-route-pg"]
+    assert calls[6][:3] == ["openclaw", "gateway", "restart"]
 
 
 def test_serve_status_payload_reports_ping_failure(monkeypatch, tmp_path) -> None:

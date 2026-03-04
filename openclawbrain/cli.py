@@ -55,10 +55,10 @@ from .replay import (
     replay_queries,
     replay_queries_parallel,
 )
-from .split import split_workspace
+from .split import split_workspace, _resolve_workspace_id
 from .hasher import HashEmbedder
 from .traverse import TraversalConfig, TraversalResult, traverse
-from .sync import DEFAULT_AUTHORITY_MAP, sync_workspace
+from .sync import DEFAULT_AUTHORITY_MAP, SyncReport, sync_workspace
 from .local_embedder import LocalEmbedder, resolve_local_model
 from .route_model import RouteModel
 from .full_learning import (
@@ -1839,7 +1839,8 @@ def _build_parser() -> argparse.ArgumentParser:
 
     sync = sub.add_parser("sync")
     sync.add_argument("--state")
-    sync.add_argument("--workspace", required=True)
+    sync.add_argument("--workspace", action="append")
+    sync.add_argument("--workspaces", help="Comma-separated workspace roots")
     sync.add_argument("--embedder", choices=["openai", "local"], default=None)
     sync.add_argument(
         "--authority-map",
@@ -4435,11 +4436,51 @@ def _parse_authority_map(raw: str | None) -> dict[str, str]:
     return parsed
 
 
+def _sum_sync_reports(reports: dict[str, SyncReport]) -> SyncReport:
+    """Aggregate per-workspace sync reports."""
+    totals = SyncReport(
+        nodes_added=0,
+        nodes_updated=0,
+        nodes_removed=0,
+        nodes_unchanged=0,
+        nodes_metadata_updated=0,
+        embeddings_computed=0,
+        authority_set={},
+    )
+    for report in reports.values():
+        totals.nodes_added += report.nodes_added
+        totals.nodes_updated += report.nodes_updated
+        totals.nodes_removed += report.nodes_removed
+        totals.nodes_unchanged += report.nodes_unchanged
+        totals.nodes_metadata_updated += report.nodes_metadata_updated
+        totals.embeddings_computed += report.embeddings_computed
+        for key, value in report.authority_set.items():
+            totals.authority_set[key] = totals.authority_set.get(key, 0) + value
+    return totals
+
+
 def cmd_sync(args: argparse.Namespace) -> int:
     """cmd sync."""
     state_path = _resolve_state_path(args.state, allow_default=True)
     if state_path is None:
         raise SystemExit("--state is required for sync")
+    raw_workspaces: list[str] = []
+    if args.workspace:
+        raw_workspaces.extend(args.workspace)
+    if args.workspaces:
+        raw_workspaces.extend([item.strip() for item in args.workspaces.split(",") if item.strip()])
+    if not raw_workspaces:
+        raise SystemExit("--workspace or --workspaces is required for sync")
+
+    workspaces: list[str] = []
+    seen: set[str] = set()
+    for item in raw_workspaces:
+        resolved = str(Path(item).expanduser())
+        if resolved in seen:
+            continue
+        seen.add(resolved)
+        workspaces.append(resolved)
+
     authority_map = _parse_authority_map(getattr(args, "authority_map", None))
     graph, index, meta = _resolve_graph_index(args, allow_default_state=True)
 
@@ -4449,22 +4490,42 @@ def cmd_sync(args: argparse.Namespace) -> int:
         with tempfile.TemporaryDirectory() as tmp_dir:
             tmp_state = Path(tmp_dir) / "state.json"
             shutil.copy2(state_path, tmp_state)
-            report = sync_workspace(
-                state_path=str(tmp_state),
-                workspace_dir=args.workspace,
-                embed_fn=embed_fn,
-                embed_batch_fn=embed_batch_fn,
-                journal_path=None,
-                authority_map=authority_map,
-            )
-            if args.json:
-                print(json.dumps(asdict(report), indent=2))
-            else:
-                print(
-                    f"sync report: +{report.nodes_added}/~{report.nodes_updated} "
-                    f"-{report.nodes_removed} ={report.nodes_unchanged} unchanged | "
-                    f"{report.embeddings_computed} embeddings"
+            reports: dict[str, SyncReport] = {}
+            for workspace in workspaces:
+                workspace_id = _resolve_workspace_id(workspace)
+                reports[workspace_id] = sync_workspace(
+                    state_path=str(tmp_state),
+                    workspace_dir=workspace,
+                    workspace_id=workspace_id,
+                    embed_fn=embed_fn,
+                    embed_batch_fn=embed_batch_fn,
+                    journal_path=None,
+                    authority_map=authority_map,
                 )
+            if args.json:
+                payload = {"workspaces": {key: asdict(value) for key, value in reports.items()}}
+                print(json.dumps(payload, indent=2))
+            else:
+                if len(reports) == 1:
+                    report = next(iter(reports.values()))
+                    print(
+                        f"sync report: +{report.nodes_added}/~{report.nodes_updated} "
+                        f"-{report.nodes_removed} ={report.nodes_unchanged} unchanged | "
+                        f"{report.embeddings_computed} embeddings"
+                    )
+                else:
+                    for workspace_id, report in reports.items():
+                        print(
+                            f"sync[{workspace_id}]: +{report.nodes_added}/~{report.nodes_updated} "
+                            f"-{report.nodes_removed} ={report.nodes_unchanged} unchanged | "
+                            f"{report.embeddings_computed} embeddings"
+                        )
+                    totals = _sum_sync_reports(reports)
+                    print(
+                        f"sync total: +{totals.nodes_added}/~{totals.nodes_updated} "
+                        f"-{totals.nodes_removed} ={totals.nodes_unchanged} unchanged | "
+                        f"{totals.embeddings_computed} embeddings"
+                    )
                 graph, _, _ = load_state(str(tmp_state))
                 health = measure_health(graph)
                 print(
@@ -4474,19 +4535,23 @@ def cmd_sync(args: argparse.Namespace) -> int:
                 )
             return 0
 
-    report = sync_workspace(
-        state_path=state_path,
-        workspace_dir=args.workspace,
-        embed_fn=embed_fn,
-        embed_batch_fn=embed_batch_fn,
-        journal_path=_resolve_journal_path(args, allow_default_state=True),
-        authority_map=authority_map,
-    )
+    reports = {}
+    for workspace in workspaces:
+        workspace_id = _resolve_workspace_id(workspace)
+        reports[workspace_id] = sync_workspace(
+            state_path=state_path,
+            workspace_dir=workspace,
+            workspace_id=workspace_id,
+            embed_fn=embed_fn,
+            embed_batch_fn=embed_batch_fn,
+            journal_path=_resolve_journal_path(args, allow_default_state=True),
+            authority_map=authority_map,
+        )
 
     _write_json_atomic(
         _sync_report_path(state_path),
         {
-            **asdict(report),
+            "workspaces": {key: asdict(value) for key, value in reports.items()},
             "state_path": str(Path(state_path).expanduser()),
             "ts": time.time(),
             "iso": time.strftime("%Y-%m-%dT%H:%M:%S%z"),
@@ -4494,13 +4559,28 @@ def cmd_sync(args: argparse.Namespace) -> int:
     )
 
     if args.json:
-        print(json.dumps(asdict(report), indent=2))
+        print(json.dumps({"workspaces": {key: asdict(value) for key, value in reports.items()}}, indent=2))
     else:
-        print(
-            f"sync report: +{report.nodes_added}/~{report.nodes_updated} "
-            f"-{report.nodes_removed} ={report.nodes_unchanged} unchanged | "
-            f"{report.embeddings_computed} embeddings"
-        )
+        if len(reports) == 1:
+            report = next(iter(reports.values()))
+            print(
+                f"sync report: +{report.nodes_added}/~{report.nodes_updated} "
+                f"-{report.nodes_removed} ={report.nodes_unchanged} unchanged | "
+                f"{report.embeddings_computed} embeddings"
+            )
+        else:
+            for workspace_id, report in reports.items():
+                print(
+                    f"sync[{workspace_id}]: +{report.nodes_added}/~{report.nodes_updated} "
+                    f"-{report.nodes_removed} ={report.nodes_unchanged} unchanged | "
+                    f"{report.embeddings_computed} embeddings"
+                )
+            totals = _sum_sync_reports(reports)
+            print(
+                f"sync total: +{totals.nodes_added}/~{totals.nodes_updated} "
+                f"-{totals.nodes_removed} ={totals.nodes_unchanged} unchanged | "
+                f"{totals.embeddings_computed} embeddings"
+            )
         graph, _, _ = load_state(state_path)
         health = measure_health(graph)
         print(
@@ -4661,12 +4741,36 @@ def cmd_report(args: argparse.Namespace) -> int:
     lines.append(f"  route_model: {'present' if route_model_present else 'missing'}")
     lines.append(f"  route_mode_effective: {route_mode_effective}")
 
-    if sync_payload:
+    sync_totals = None
+    sync_workspace_count = 0
+    if isinstance(sync_payload, dict) and isinstance(sync_payload.get("workspaces"), dict):
+        workspaces_payload = sync_payload["workspaces"]
+        if workspaces_payload:
+            sync_workspace_count = len(workspaces_payload)
+            sync_totals = {
+                "nodes_added": 0,
+                "nodes_updated": 0,
+                "nodes_removed": 0,
+                "nodes_unchanged": 0,
+                "embeddings_computed": 0,
+            }
+            for report in workspaces_payload.values():
+                if not isinstance(report, dict):
+                    continue
+                for key in sync_totals:
+                    sync_totals[key] += _get_int(report, key)
+    elif sync_payload:
+        sync_totals = sync_payload
+
+    if sync_totals:
+        suffix = ""
+        if sync_workspace_count > 1:
+            suffix = f" ({sync_workspace_count} workspaces)"
         lines.append(
             "  last sync: "
-            f"+{_get_int(sync_payload, 'nodes_added')}/~{_get_int(sync_payload, 'nodes_updated')} "
-            f"-{_get_int(sync_payload, 'nodes_removed')} ={_get_int(sync_payload, 'nodes_unchanged')} unchanged | "
-            f"{_get_int(sync_payload, 'embeddings_computed')} embeddings"
+            f"+{_get_int(sync_totals, 'nodes_added')}/~{_get_int(sync_totals, 'nodes_updated')} "
+            f"-{_get_int(sync_totals, 'nodes_removed')} ={_get_int(sync_totals, 'nodes_unchanged')} unchanged | "
+            f"{_get_int(sync_totals, 'embeddings_computed')} embeddings{suffix}"
         )
     else:
         lines.append("  last sync: (none)")

@@ -125,6 +125,7 @@ def test_split_workspace_with_llm_fn_signature_matches_contract(tmp_path: Path) 
     """test split workspace with llm fn signature matches contract."""
     workspace = tmp_path / "split_workspace"
     workspace.mkdir()
+    workspace_id = workspace.name
     (workspace / "note.md").write_text("## One\nA\n\n## Two\nB")
 
     graph, texts = split_workspace(
@@ -134,5 +135,5 @@ def test_split_workspace_with_llm_fn_signature_matches_contract(tmp_path: Path) 
     )
 
     assert graph.node_count() == 2
-    assert texts["note.md::0"] == "One section"
-    assert texts["note.md::1"] == "Two section"
+    assert texts[f"{workspace_id}/note.md::0"] == "One section"
+    assert texts[f"{workspace_id}/note.md::1"] == "Two section"
