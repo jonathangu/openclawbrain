@@ -581,6 +581,7 @@ from openclawbrain import (
 - **Optional OpenAI:** install `openclawbrain[openai]` and use `--embedder openai` (or OpenAI teacher labeling via `async-route-pg`) when you want API-backed labels/embeddings.
 - **Batch init:** `openclawbrain init` embeds all workspace files in one batch call. Subsequent queries reuse cached vectors.
 - **Explicit control:** use `--embedder local` / `--embedder openai` to force a specific embedder. Use `--embed-model BAAI/bge-small-en-v1.5` to choose a smaller local model, or pass a bespoke fastembed model string. Use `--llm none` to skip LLM-assisted splitting.
+- **fastembed cache:** stored at `~/.cache/fastembed` by default. Override with `FASTEMBED_CACHE_PATH`.
 
 Example: switching an existing state to a different local model
 

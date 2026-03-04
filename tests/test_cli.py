@@ -13,7 +13,13 @@ import pytest
 
 from datetime import datetime, timezone
 
-from openclawbrain.cli import main, _read_replay_checkpoint_progress, _resolve_openclawbrain_bin, _filter_replay_interactions
+from openclawbrain.cli import (
+    main,
+    _read_replay_checkpoint_progress,
+    _resolve_openclawbrain_bin,
+    _filter_replay_interactions,
+    _default_labels_path,
+)
 from openclawbrain.graph import Graph, Node
 from openclawbrain.hasher import default_embed
 from openclawbrain.journal import read_journal
@@ -189,6 +195,12 @@ def test_resolve_openclawbrain_bin_prefers_sys_argv(tmp_path, monkeypatch) -> No
     monkeypatch.setattr("openclawbrain.cli.shutil.which", lambda _: "/opt/homebrew/bin/openclawbrain")
 
     assert _resolve_openclawbrain_bin() == str(bin_path)
+
+
+def test_default_labels_path_resolves_from_state_path(tmp_path) -> None:
+    state_path = tmp_path / "brain" / "state.json"
+    expected = state_path.parent / "labels.jsonl"
+    assert _default_labels_path(str(state_path)) == expected
 
 
 def test_query_command_returns_json_with_fired_nodes(tmp_path, capsys, monkeypatch) -> None:
