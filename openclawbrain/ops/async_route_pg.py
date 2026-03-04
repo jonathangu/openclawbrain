@@ -7,13 +7,14 @@ import json
 import os
 import random
 import time
-from dataclasses import asdict, dataclass
+from dataclasses import asdict, dataclass, replace
 from pathlib import Path
 from typing import Callable
 
 from ..graph import Edge, Graph
 from ..hasher import HashEmbedder
 from ..learn import apply_outcome_pg
+from ..labels import append_labels_jsonl, from_teacher_output
 from ..replay import default_keyword_seed_fn
 from ..reward import RewardSource, RewardWeights, scale_reward
 from ..storage import EventStore, JsonStateStore, JsonlEventStore, StateStore
@@ -419,9 +420,10 @@ def _flatten_traces(
     traces: list[RouteTrace],
     *,
     max_decision_points: int,
-) -> tuple[list[DecisionPoint], list[RouteDecisionPoint], bool]:
+) -> tuple[list[DecisionPoint], list[RouteDecisionPoint], list[tuple[str, int, float]], bool]:
     compat_points: list[DecisionPoint] = []
     route_points: list[RouteDecisionPoint] = []
+    point_refs: list[tuple[str, int, float]] = []
     cap_hit = False
 
     for trace in traces:
@@ -454,10 +456,11 @@ def _flatten_traces(
                 )
             )
             route_points.append(point)
+            point_refs.append((trace.query_id, idx, float(point.ts)))
         if cap_hit:
             break
 
-    return compat_points, route_points, cap_hit
+    return compat_points, route_points, point_refs, cap_hit
 
 
 def _normalize_labels(
@@ -470,6 +473,43 @@ def _normalize_labels(
     padded = list(labels_by_point)
     padded.extend({} for _ in range(expected_len - len(padded)))
     return padded
+
+
+def _apply_teacher_labels_to_traces(
+    traces: list[RouteTrace],
+    labels_by_point: list[dict[str, float]],
+    *,
+    max_decision_points: int,
+) -> list[RouteTrace]:
+    if not traces or not labels_by_point:
+        return traces
+    label_idx = 0
+    updated_traces: list[RouteTrace] = []
+    for trace in traces:
+        new_points: list[RouteDecisionPoint] = []
+        for point in trace.decision_points:
+            if label_idx >= max_decision_points or label_idx >= len(labels_by_point):
+                new_points.append(point)
+                continue
+            labels = labels_by_point[label_idx]
+            label_idx += 1
+            if not labels:
+                new_points.append(point)
+                continue
+            teacher_scores = {str(k): float(v) for k, v in labels.items()}
+            teacher_choose = list(point.teacher_choose)
+            if teacher_scores and not teacher_choose:
+                if all(float(value) >= 1.0 for value in teacher_scores.values()):
+                    teacher_choose = sorted(teacher_scores.keys())
+            new_points.append(
+                replace(
+                    point,
+                    teacher_scores=teacher_scores,
+                    teacher_choose=teacher_choose,
+                )
+            )
+        updated_traces.append(replace(trace, decision_points=new_points))
+    return updated_traces
 
 
 def _router_conf_multiplier(router_conf: float | None) -> float:
@@ -590,6 +630,7 @@ def run_async_route_pg(
     score_scale: float = 0.3,
     traces_out: str | None = None,
     traces_in: str | None = None,
+    labels_out: str | None = None,
     include_query_vector: bool = False,
     reward_source: RewardSource | str = RewardSource.TEACHER,
     reward_weights: RewardWeights | None = None,
@@ -623,10 +664,9 @@ def run_async_route_pg(
             event_store=resolved_event_store,
         )
 
-    if traces_out:
-        _write_traces_jsonl(traces_out, traces)
-
-    decision_points, route_points, flatten_cap_hit = _flatten_traces(traces, max_decision_points=max_decision_points)
+    decision_points, route_points, point_refs, flatten_cap_hit = _flatten_traces(
+        traces, max_decision_points=max_decision_points
+    )
     cap_hit = cap_hit or flatten_cap_hit
 
     teacher_available = False
@@ -666,6 +706,11 @@ def run_async_route_pg(
         errors.append("teacher disabled")
 
     labels_by_point = _normalize_labels(labels_by_point, expected_len=len(route_points))
+    traces_with_labels = _apply_teacher_labels_to_traces(
+        traces,
+        labels_by_point,
+        max_decision_points=max_decision_points,
+    )
 
     working_graph = graph if apply else copy.deepcopy(graph)
     decision_points_labeled = 0
@@ -728,6 +773,29 @@ def run_async_route_pg(
 
     if apply and teacher_available and updates_applied > 0:
         resolved_state_store.save(state_path, graph=working_graph, index=index, meta=meta)
+
+    if labels_out:
+        label_records = []
+        for (query_id, point_idx, ts), labels in zip(point_refs, labels_by_point):
+            if not labels:
+                continue
+            label_records.append(
+                from_teacher_output(
+                    query_id=query_id,
+                    decision_point_idx=point_idx,
+                    teacher_scores=labels,
+                    ts=ts,
+                    weight=1.0,
+                    metadata={
+                        "teacher_model": teacher_model,
+                        "teacher_requested": teacher,
+                    },
+                )
+            )
+        append_labels_jsonl(labels_out, label_records)
+
+    if traces_out:
+        _write_traces_jsonl(traces_out, traces_with_labels)
 
     return AsyncRoutePgSummary(
         teacher_requested=teacher,
