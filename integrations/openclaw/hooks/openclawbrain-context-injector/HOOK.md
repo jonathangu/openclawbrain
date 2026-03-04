@@ -42,6 +42,7 @@ On each `message:preprocessed` event, the hook does:
    - include `--chat-id` when available.
    - command timeout: 2s, fail-open.
 8. On success, prepend returned text to `event.context.bodyForAgent`.
+9. If the user message starts with `Correction:`, `Fix:`, `Teaching:`, or `Note:`, invoke `capture_feedback` (best-effort, fail-open).
 
 ## Fail-open
 

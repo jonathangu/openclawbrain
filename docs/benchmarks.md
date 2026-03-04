@@ -1,25 +1,37 @@
 # Benchmarks
 
-## LLM-call metrics (OpenClaw session JSONL)
+OpenClawBrain ships lightweight benchmarking tools in `benchmarks/` to help you compare:
+- retrieval quality before/after learning loops
+- replay and maintenance throughput
+- cost/latency tradeoffs for different embedder + LLM settings
 
-This harness estimates how many LLM API calls were made in a session log and how they map to user-visible exchanges.
-
-**Definition**: a **turn** equals one LLM API call (one assistant completion).
-
-### Run
+## Quickstart
 
 ```bash
-python3 benchmarks/openclaw_llm_calls/analyze_session_jsonl.py \
-  ~/.openclaw/agents/main/sessions/session-2026-03-01.jsonl \
-  --json-out /tmp/openclaw_llm_calls.json
+python3 benchmarks/run_benchmark.py --help
 ```
 
-### Output
+Common inputs:
+- `benchmarks/queries.json` for canned query prompts
+- `benchmarks/results.json` for baseline output comparisons
 
-- A human-readable table printed to stdout.
-- A JSON summary containing:
-  - total LLM call count (turns)
-  - prompt/completion/total tokens (when usage metadata exists)
-  - LLM calls per user-visible exchange
+## What to measure
 
-If your session log includes token usage metadata, the script aggregates it. Otherwise, token counts will be zero but turn counts still work.
+- **Cold start**: fresh `state.json` vs. warmed (after replay/maintain).
+- **Loop impact**: run `openclawbrain loop run --mode full` and compare before/after retrieval.
+- **Latency**: query time with/without `openclawbrain serve`.
+
+## Notes
+
+- For apples-to-apples results, keep embedder + LLM settings fixed.
+- LLM-backed fast-learning can be cost-heavy; edges-only replay is LLM-free.
+- Store benchmark artifacts under `~/.openclawbrain/<agent>/scratch` for easier diffing.
+
+## Gold-standard eval harness
+
+See `benchmarks/gold_standard_eval` for the dataset-based + simulation harness:
+- LoCoMo memory retrieval eval (dataset-based)
+- Minimal agent-loop simulator for tool-use efficiency and call counting
+- Toy call-counting tasks to validate LLM/tool step metrics
+
+Planned extensions include GAIA/WebArena task loaders and richer tool-use metrics under the same fairness caps.

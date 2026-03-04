@@ -1,5 +1,8 @@
 ## Unreleased
 
+### Benchmarks
+- Added gold-standard eval harness with LoCoMo memory retrieval, minimal agent-loop simulator, and toy call-counting eval under `benchmarks/gold_standard_eval`.
+
 ### Docs: operator OOTB audit
 - Updated README and operator-facing docs to standardize lifecycle commands on `openclawbrain serve start|status|stop`.
 - Clarified replay operator semantics around `--mode {edges-only,fast-learning,full}` and checkpoint controls (`--resume`, `--fresh`, `--checkpoint`).

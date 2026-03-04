@@ -87,6 +87,9 @@ from . import __version__
 
 DEFAULT_STATE_PROFILE = "main"
 REPLAY_MODES = ("edges-only", "fast-learning", "full")
+LOOP_LOG_FILENAME = "loop.log"
+LOOP_LOCK_FILENAME = "loop.lock"
+LOOP_CHECKPOINT_FILENAME = "loop.checkpoint.json"
 REPLAY_HELP_EPILOG = (
     "Replay modes and rough cost profile:\n"
     "  edges-only    Fastest/cheapest. No LLM calls, no harvest.\n"
@@ -1503,6 +1506,60 @@ def _build_parser() -> argparse.ArgumentParser:
     dream.add_argument("--traces-dir", default=None)
     dream.add_argument("--json", action="store_true")
 
+    loop = sub.add_parser(
+        "loop",
+        help="Always-learning loop runner + scheduler (`run|install|uninstall|status`)",
+    )
+    loop.add_argument(
+        "loop_action",
+        nargs="?",
+        choices=["run", "install", "uninstall", "status"],
+        default="run",
+        help="Loop action (default: run)",
+    )
+    loop.add_argument("--state", help="Path to state.json (defaults to main profile)")
+    loop.add_argument("--sessions", help="Path to OpenClaw sessions directory")
+    loop.add_argument("--mode", choices=REPLAY_MODES, default="full")
+    loop.add_argument("--llm", choices=["none", "openai", "ollama", "auto"], default="auto")
+    loop.add_argument("--llm-model")
+    loop.add_argument("--workers", type=int, default=4)
+    loop.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True)
+    loop.add_argument("--include-tool-results", action=argparse.BooleanOptionalAction, default=True)
+    loop.add_argument("--checkpoint-every-seconds", type=int, default=60)
+    loop.add_argument("--replay-progress-interval-seconds", type=int, default=30)
+    loop.add_argument("--skip-maintain", action="store_true", help="Skip maintenance pass")
+    loop.add_argument("--maintain-tasks", default="health,decay,prune,merge")
+    loop.add_argument("--maintain-llm", choices=["none", "openai", "ollama"], default="none")
+    loop.add_argument("--maintain-embedder", choices=["local", "openai"], default="local")
+    loop.add_argument("--enable-teacher", action="store_true")
+    loop.add_argument("--since-hours", type=float, default=24.0)
+    loop.add_argument("--max-queries", type=int, default=200)
+    loop.add_argument("--sample-rate", type=float, default=0.1)
+    loop.add_argument("--max-candidates-per-node", type=int, default=12)
+    loop.add_argument("--max-decision-points", type=int, default=500)
+    loop.add_argument("--teacher", choices=["openai", "ollama", "none"], default="openai")
+    loop.add_argument("--teacher-model", default="gpt-5-mini")
+    loop.add_argument("--score-scale", type=float, default=0.3)
+    loop.add_argument(
+        "--reward-source",
+        choices=[
+            RewardSource.HUMAN.value,
+            RewardSource.SELF.value,
+            RewardSource.HARVESTER.value,
+            RewardSource.TEACHER.value,
+        ],
+        default=RewardSource.TEACHER.value,
+    )
+    loop.add_argument("--reward-weights", default=None)
+    loop.add_argument("--write-relevance-metadata", action=argparse.BooleanOptionalAction, default=True)
+    loop.add_argument("--skip-if-locked", action=argparse.BooleanOptionalAction, default=True)
+    loop.add_argument("--hourly-interval-seconds", type=int, default=3600)
+    loop.add_argument("--nightly-hour", type=int, default=2)
+    loop.add_argument("--nightly-minute", type=int, default=30)
+    loop.add_argument("--dry-run", action="store_true")
+    loop.add_argument("--launchd", action="store_true", help="Print launchd plists for hourly/nightly loop")
+    loop.add_argument("--systemd", action="store_true", help="Print systemd unit+timer templates")
+
     dreaming = sub.add_parser("dreaming")
     dreaming.add_argument("--state", required=True)
     dreaming.add_argument("--interval-seconds", type=int, default=900)
@@ -1808,8 +1865,62 @@ def _derive_serve_label(state_path: str) -> str:
     return f"com.openclawbrain.{state_parent.name or 'main'}"
 
 
+def _derive_loop_label(state_path: str, flavor: str) -> str:
+    state_parent = Path(state_path).expanduser().parent
+    return f"com.openclawbrain.loop.{state_parent.name or 'main'}.{flavor}"
+
+
 def _derive_launchd_plist_path(label: str) -> Path:
     return Path.home() / "Library" / "LaunchAgents" / f"{label}.plist"
+
+
+def _loop_state_root(state_path: str) -> Path:
+    return Path(state_path).expanduser().parent
+
+
+def _loop_log_path(state_path: str) -> Path:
+    return _loop_state_root(state_path) / LOOP_LOG_FILENAME
+
+
+def _loop_lock_path(state_path: str) -> Path:
+    return _loop_state_root(state_path) / LOOP_LOCK_FILENAME
+
+
+def _loop_checkpoint_path(state_path: str) -> Path:
+    return _loop_state_root(state_path) / LOOP_CHECKPOINT_FILENAME
+
+
+def _try_acquire_loop_lock(lock_path: Path) -> tuple[int | None, bool]:
+    lock_path.parent.mkdir(parents=True, exist_ok=True)
+    fd = os.open(str(lock_path), os.O_RDWR | os.O_CREAT, 0o644)
+    try:
+        import fcntl  # type: ignore
+
+        fcntl.flock(fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+        return fd, True
+    except BlockingIOError:
+        os.close(fd)
+        return None, False
+    except Exception:  # noqa: BLE001
+        try:
+            os.close(fd)
+        except OSError:
+            pass
+        return None, False
+
+
+def _loop_lock_held(lock_path: Path) -> bool:
+    fd, acquired = _try_acquire_loop_lock(lock_path)
+    if acquired and fd is not None:
+        try:
+            import fcntl  # type: ignore
+
+            fcntl.flock(fd, fcntl.LOCK_UN)
+        except OSError:
+            pass
+        os.close(fd)
+        return False
+    return True
 
 
 def _parse_env_file(env_path: str) -> dict[str, str]:
@@ -1907,6 +2018,26 @@ def _render_launchd_plist(
     return payload_bytes.decode("utf-8")
 
 
+def _render_loop_launchd_plist(
+    *,
+    label: str,
+    program_arguments: list[str],
+    stdout_path: Path,
+    stderr_path: Path,
+    schedule: dict[str, object],
+) -> str:
+    payload: dict[str, object] = {
+        "Label": label,
+        "ProgramArguments": program_arguments,
+        "RunAtLoad": True,
+        "StandardOutPath": str(stdout_path),
+        "StandardErrorPath": str(stderr_path),
+        **schedule,
+    }
+    payload_bytes = plistlib.dumps(payload, sort_keys=False)
+    return payload_bytes.decode("utf-8")
+
+
 def _render_systemd_unit(*, state_path: str, socket_path: str) -> str:
     """Render a minimal systemd unit for `openclawbrain serve start`."""
     state_parent = Path(state_path).expanduser().parent
@@ -1928,6 +2059,77 @@ def _render_systemd_unit(*, state_path: str, socket_path: str) -> str:
             "",
             "[Install]",
             "WantedBy=multi-user.target",
+        ]
+    )
+
+
+def _render_loop_systemd_templates(
+    *,
+    state_path: str,
+    sessions_path: str,
+    hourly_cmd: str,
+    nightly_cmd: str,
+    nightly_hour: int,
+    nightly_minute: int,
+) -> str:
+    return "\n".join(
+        [
+            "# /etc/systemd/system/openclawbrain-loop-hourly.service",
+            "[Unit]",
+            "Description=OpenClawBrain always-learning loop (hourly edges-only)",
+            "After=network-online.target",
+            "",
+            "[Service]",
+            "Type=oneshot",
+            f"WorkingDirectory={Path(state_path).expanduser().parent}",
+            f"ExecStart={hourly_cmd}",
+            "",
+            "[Install]",
+            "WantedBy=multi-user.target",
+            "",
+            "# /etc/systemd/system/openclawbrain-loop-hourly.timer",
+            "[Unit]",
+            "Description=Run OpenClawBrain hourly loop",
+            "",
+            "[Timer]",
+            "OnCalendar=hourly",
+            "Persistent=true",
+            "",
+            "[Install]",
+            "WantedBy=timers.target",
+            "",
+            "# /etc/systemd/system/openclawbrain-loop-nightly.service",
+            "[Unit]",
+            "Description=OpenClawBrain always-learning loop (nightly full replay + maintenance)",
+            "After=network-online.target",
+            "",
+            "[Service]",
+            "Type=oneshot",
+            f"WorkingDirectory={Path(state_path).expanduser().parent}",
+            f"ExecStart={nightly_cmd}",
+            "",
+            "[Install]",
+            "WantedBy=multi-user.target",
+            "",
+            "# /etc/systemd/system/openclawbrain-loop-nightly.timer",
+            "[Unit]",
+            "Description=Run OpenClawBrain nightly loop",
+            "",
+            "[Timer]",
+            f"OnCalendar=*-*-* {int(nightly_hour):02d}:{int(nightly_minute):02d}:00",
+            "Persistent=true",
+            "",
+            "[Install]",
+            "WantedBy=timers.target",
+            "",
+            "# Enable:",
+            "#   sudo systemctl daemon-reload",
+            "#   sudo systemctl enable --now openclawbrain-loop-hourly.timer",
+            "#   sudo systemctl enable --now openclawbrain-loop-nightly.timer",
+            "# Logs:",
+            "#   journalctl -u openclawbrain-loop-hourly.service -n 200 --no-pager",
+            "#   journalctl -u openclawbrain-loop-nightly.service -n 200 --no-pager",
+            f"# Sessions path assumed: {sessions_path}",
         ]
     )
 
@@ -4445,6 +4647,407 @@ def cmd_dream(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_loop(args: argparse.Namespace) -> int:
+    """Run/install always-learning loop (replay + optional teacher + maintenance)."""
+    state_path = _resolve_state_path(args.state, allow_default=True)
+    if state_path is None:
+        raise SystemExit("--state is required for loop")
+    state_path = str(Path(state_path).expanduser())
+
+    agent_root = _loop_state_root(state_path)
+    agent_id = agent_root.name or "main"
+    action = getattr(args, "loop_action", "run")
+    log_path = _loop_log_path(state_path)
+    lock_path = _loop_lock_path(state_path)
+    checkpoint_path = _loop_checkpoint_path(state_path)
+
+    sessions_path = Path(args.sessions).expanduser() if args.sessions else Path.home() / ".openclaw" / "agents" / agent_id / "sessions"
+    ocb_bin = _resolve_openclawbrain_bin()
+
+    hourly_cmd = (
+        f"/usr/bin/env {shlex.quote(ocb_bin)} loop run --state {shlex.quote(state_path)} "
+        "--mode edges-only --llm none --skip-maintain --resume"
+    )
+    nightly_cmd = (
+        f"/usr/bin/env {shlex.quote(ocb_bin)} loop run --state {shlex.quote(state_path)} "
+        "--mode full --resume"
+    )
+
+    if args.launchd:
+        hourly_label = _derive_loop_label(state_path, "hourly")
+        nightly_label = _derive_loop_label(state_path, "nightly")
+        stdout_path = log_path
+        stderr_path = log_path
+        hourly_program = _render_loop_launchd_plist(
+            label=hourly_label,
+            program_arguments=shlex.split(hourly_cmd),
+            stdout_path=stdout_path,
+            stderr_path=stderr_path,
+            schedule={"StartInterval": int(args.hourly_interval_seconds)},
+        )
+        nightly_program = _render_loop_launchd_plist(
+            label=nightly_label,
+            program_arguments=shlex.split(nightly_cmd),
+            stdout_path=stdout_path,
+            stderr_path=stderr_path,
+            schedule={
+                "StartCalendarInterval": [
+                    {"Hour": int(args.nightly_hour), "Minute": int(args.nightly_minute)},
+                ]
+            },
+        )
+        print("# Hourly (edges-only)")
+        print(hourly_program)
+        print("# Nightly (full replay + maintenance)")
+        print(nightly_program)
+        return 0
+
+    if args.systemd:
+        print(
+            _render_loop_systemd_templates(
+                state_path=state_path,
+                sessions_path=str(sessions_path),
+                hourly_cmd=hourly_cmd,
+                nightly_cmd=nightly_cmd,
+            )
+        )
+        return 0
+
+    if action == "install":
+        if sys.platform != "darwin":
+            print(
+                "launchd lifecycle commands are supported on macOS only. "
+                "Use `openclawbrain loop --systemd` on Linux/systemd hosts.",
+                file=sys.stderr,
+            )
+            return 1
+        hourly_label = _derive_loop_label(state_path, "hourly")
+        nightly_label = _derive_loop_label(state_path, "nightly")
+        hourly_plist = _derive_launchd_plist_path(hourly_label)
+        nightly_plist = _derive_launchd_plist_path(nightly_label)
+        stdout_path = log_path
+        stderr_path = log_path
+        hourly_program = _render_loop_launchd_plist(
+            label=hourly_label,
+            program_arguments=shlex.split(hourly_cmd),
+            stdout_path=stdout_path,
+            stderr_path=stderr_path,
+            schedule={"StartInterval": int(args.hourly_interval_seconds)},
+        )
+        nightly_program = _render_loop_launchd_plist(
+            label=nightly_label,
+            program_arguments=shlex.split(nightly_cmd),
+            stdout_path=stdout_path,
+            stderr_path=stderr_path,
+            schedule={
+                "StartCalendarInterval": [
+                    {"Hour": int(args.nightly_hour), "Minute": int(args.nightly_minute)},
+                ]
+            },
+        )
+        uid = os.getuid()
+        hourly_bootout = ["launchctl", "bootout", f"gui/{uid}", str(hourly_plist)]
+        hourly_bootstrap = ["launchctl", "bootstrap", f"gui/{uid}", str(hourly_plist)]
+        nightly_bootout = ["launchctl", "bootout", f"gui/{uid}", str(nightly_plist)]
+        nightly_bootstrap = ["launchctl", "bootstrap", f"gui/{uid}", str(nightly_plist)]
+
+        print("Planned launchctl commands:")
+        print(f"  {' '.join(hourly_bootout)}")
+        print(f"  {' '.join(hourly_bootstrap)}")
+        print(f"  {' '.join(nightly_bootout)}")
+        print(f"  {' '.join(nightly_bootstrap)}")
+
+        if args.dry_run:
+            print("# Hourly plist")
+            print(hourly_program)
+            print("# Nightly plist")
+            print(nightly_program)
+            return 0
+
+        _run_launchctl(hourly_bootout, ignore_errors=True)
+        _run_launchctl(nightly_bootout, ignore_errors=True)
+        hourly_plist.parent.mkdir(parents=True, exist_ok=True)
+        nightly_plist.parent.mkdir(parents=True, exist_ok=True)
+        hourly_plist.write_text(hourly_program, encoding="utf-8")
+        nightly_plist.write_text(nightly_program, encoding="utf-8")
+        _run_launchctl(hourly_bootstrap)
+        _run_launchctl(nightly_bootstrap)
+        print(f"wrote launchd plist: {hourly_plist}")
+        print(f"wrote launchd plist: {nightly_plist}")
+        return 0
+
+    if action == "uninstall":
+        if sys.platform != "darwin":
+            print(
+                "launchd lifecycle commands are supported on macOS only. "
+                "Use `openclawbrain loop --systemd` on Linux/systemd hosts.",
+                file=sys.stderr,
+            )
+            return 1
+        hourly_label = _derive_loop_label(state_path, "hourly")
+        nightly_label = _derive_loop_label(state_path, "nightly")
+        hourly_plist = _derive_launchd_plist_path(hourly_label)
+        nightly_plist = _derive_launchd_plist_path(nightly_label)
+        uid = os.getuid()
+        hourly_bootout = ["launchctl", "bootout", f"gui/{uid}", str(hourly_plist)]
+        nightly_bootout = ["launchctl", "bootout", f"gui/{uid}", str(nightly_plist)]
+        print("Planned launchctl commands:")
+        print(f"  {' '.join(hourly_bootout)}")
+        print(f"  {' '.join(nightly_bootout)}")
+
+        if args.dry_run:
+            return 0
+
+        _run_launchctl(hourly_bootout, ignore_errors=True)
+        _run_launchctl(nightly_bootout, ignore_errors=True)
+        try:
+            hourly_plist.unlink(missing_ok=True)
+            nightly_plist.unlink(missing_ok=True)
+            print(f"removed launchd plist: {hourly_plist}")
+            print(f"removed launchd plist: {nightly_plist}")
+        except OSError as exc:
+            print(f"could not remove plist: {exc}", file=sys.stderr)
+            return 1
+        return 0
+
+    if action == "status":
+        lock_held = _loop_lock_held(lock_path)
+        checkpoint: dict[str, object] | None = None
+        if checkpoint_path.exists():
+            try:
+                checkpoint = json.loads(checkpoint_path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                checkpoint = None
+        hourly_label = _derive_loop_label(state_path, "hourly")
+        nightly_label = _derive_loop_label(state_path, "nightly")
+        hourly_plist = _derive_launchd_plist_path(hourly_label)
+        nightly_plist = _derive_launchd_plist_path(nightly_label)
+        print("OpenClawBrain loop status")
+        print(f"State: {state_path}")
+        print(f"Sessions: {sessions_path}")
+        print(f"Log: {log_path}")
+        print(f"Lock: {lock_path} (held={lock_held})")
+        print(f"Checkpoint: {checkpoint_path}")
+        print(f"Launchd hourly plist: {hourly_plist} (exists={hourly_plist.exists()})")
+        print(f"Launchd nightly plist: {nightly_plist} (exists={nightly_plist.exists()})")
+        if isinstance(checkpoint, dict):
+            status = checkpoint.get("status", "unknown")
+            step = checkpoint.get("step", "unknown")
+            started_at = checkpoint.get("started_at")
+            completed_at = checkpoint.get("completed_at")
+            last_exit = checkpoint.get("exit_code")
+            print(f"Last run: status={status} step={step} exit={last_exit}")
+            if started_at:
+                print(f"  started_at={started_at}")
+            if completed_at:
+                print(f"  completed_at={completed_at}")
+        return 0
+
+    if action != "run":
+        raise SystemExit(f"Unknown loop action: {action}")
+
+    def log_line(message: str) -> None:
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        ts = datetime.now(timezone.utc).isoformat()
+        with log_path.open("a", encoding="utf-8") as handle:
+            handle.write(f"[{ts}] {message}\n")
+
+    def write_checkpoint(
+        *,
+        status: str,
+        step: str,
+        exit_code: int | None = None,
+        reason: str | None = None,
+        started_at: str | None = None,
+        completed_at: str | None = None,
+    ) -> None:
+        payload: dict[str, object] = {
+            "status": status,
+            "step": step,
+            "state_path": state_path,
+            "sessions_path": str(sessions_path),
+            "mode": str(args.mode),
+            "maintain_tasks": str(args.maintain_tasks),
+            "teacher_enabled": bool(args.enable_teacher),
+        }
+        if started_at is not None:
+            payload["started_at"] = started_at
+        if completed_at is not None:
+            payload["completed_at"] = completed_at
+        if exit_code is not None:
+            payload["exit_code"] = int(exit_code)
+        if reason:
+            payload["reason"] = reason
+        _write_json_atomic(checkpoint_path, payload)
+
+    if not Path(state_path).exists():
+        log_line(f"missing state: {state_path}")
+        write_checkpoint(status="failed", step="preflight", exit_code=2, reason="missing_state")
+        return 2
+    if not sessions_path.exists():
+        log_line(f"missing sessions: {sessions_path}")
+        write_checkpoint(status="failed", step="preflight", exit_code=2, reason="missing_sessions")
+        return 2
+
+    lock_fd, acquired = _try_acquire_loop_lock(lock_path)
+    if not acquired:
+        msg = "loop lock held; skipping"
+        log_line(msg)
+        write_checkpoint(status="skipped", step="lock", exit_code=0, reason="loop_lock_held")
+        if args.skip_if_locked:
+            return 0
+        raise SystemExit("loop lock held")
+
+    started_at = datetime.now(timezone.utc).isoformat()
+    try:
+        write_checkpoint(status="running", step="preflight", started_at=started_at)
+        log_line(f"loop run start mode={args.mode} sessions={sessions_path}")
+
+        replay_cmd = [
+            ocb_bin,
+            "replay",
+            "--state",
+            state_path,
+            "--sessions",
+            str(sessions_path),
+            "--mode",
+            str(args.mode),
+            "--llm",
+            str(args.llm),
+            "--checkpoint-every-seconds",
+            str(args.checkpoint_every_seconds),
+        ]
+        if args.llm_model:
+            replay_cmd.extend(["--llm-model", str(args.llm_model)])
+        if args.workers is not None:
+            replay_cmd.extend(["--workers", str(int(args.workers))])
+        if args.resume:
+            replay_cmd.append("--resume")
+        if args.include_tool_results:
+            replay_cmd.append("--include-tool-results")
+        else:
+            replay_cmd.append("--no-include-tool-results")
+
+        write_checkpoint(status="running", step="replay", started_at=started_at)
+        replay_code = _run_logged_replay_command(
+            replay_cmd,
+            log_path=log_path,
+            step_name="replay",
+            checkpoint_path=agent_root / REPLAY_CHECKPOINT_FILENAME,
+            agent_id=agent_id,
+            progress_interval_seconds=max(0, int(args.replay_progress_interval_seconds)),
+        )
+        if replay_code != 0:
+            log_line(f"replay failed exit={replay_code}")
+            write_checkpoint(
+                status="failed",
+                step="replay",
+                exit_code=replay_code,
+                reason="replay_failed",
+                started_at=started_at,
+                completed_at=datetime.now(timezone.utc).isoformat(),
+            )
+            return replay_code
+
+        if args.skip_maintain:
+            log_line("maintenance skipped")
+        else:
+            write_checkpoint(status="running", step="maintain", started_at=started_at)
+            maintain_cmd = [
+                ocb_bin,
+                "maintain",
+                "--state",
+                state_path,
+                "--tasks",
+                str(args.maintain_tasks),
+                "--llm",
+                str(args.maintain_llm),
+                "--embedder",
+                str(args.maintain_embedder),
+                "--json",
+            ]
+            maintain_code = _run_logged_command(
+                maintain_cmd,
+                log_path=log_path,
+                step_name="maintain",
+            )
+            if maintain_code != 0:
+                log_line(f"maintenance failed exit={maintain_code}")
+                write_checkpoint(
+                    status="failed",
+                    step="maintain",
+                    exit_code=maintain_code,
+                    reason="maintenance_failed",
+                    started_at=started_at,
+                    completed_at=datetime.now(timezone.utc).isoformat(),
+                )
+                return maintain_code
+
+        if args.enable_teacher:
+            write_checkpoint(status="running", step="async_route_pg", started_at=started_at)
+            async_cmd = [
+                ocb_bin,
+                "async-route-pg",
+                "--state",
+                state_path,
+                "--teacher",
+                str(args.teacher),
+                "--teacher-model",
+                str(args.teacher_model),
+                "--since-hours",
+                str(args.since_hours),
+                "--max-queries",
+                str(args.max_queries),
+                "--sample-rate",
+                str(args.sample_rate),
+                "--max-candidates-per-node",
+                str(args.max_candidates_per_node),
+                "--max-decision-points",
+                str(args.max_decision_points),
+                "--score-scale",
+                str(args.score_scale),
+                "--reward-source",
+                str(args.reward_source),
+                "--apply",
+                "--json",
+            ]
+            if args.reward_weights:
+                async_cmd.extend(["--reward-weights", str(args.reward_weights)])
+            if args.write_relevance_metadata:
+                async_cmd.append("--write-relevance-metadata")
+            else:
+                async_cmd.append("--no-write-relevance-metadata")
+
+            async_code = _run_logged_command(async_cmd, log_path=log_path, step_name="async_route_pg")
+            if async_code != 0:
+                log_line(f"async-route-pg failed exit={async_code}")
+                write_checkpoint(
+                    status="failed",
+                    step="async_route_pg",
+                    exit_code=async_code,
+                    reason="async_route_pg_failed",
+                    started_at=started_at,
+                    completed_at=datetime.now(timezone.utc).isoformat(),
+                )
+                return async_code
+        else:
+            log_line("async-route-pg skipped")
+
+        completed_at = datetime.now(timezone.utc).isoformat()
+        write_checkpoint(status="ok", step="complete", exit_code=0, started_at=started_at, completed_at=completed_at)
+        log_line("loop run complete")
+        return 0
+    finally:
+        if lock_fd is not None:
+            try:
+                import fcntl  # type: ignore
+
+                fcntl.flock(lock_fd, fcntl.LOCK_UN)
+            except OSError:
+                pass
+            os.close(lock_fd)
+
+
 def cmd_train_route_model(args: argparse.Namespace) -> int:
     """Train learned route model from traces and optional labels."""
     try:
@@ -4624,6 +5227,7 @@ def main(argv: list[str] | None = None) -> int:
         "async-route-pg": cmd_async_route_pg,
         "dream": cmd_dream,
         "dreaming": cmd_dream,
+        "loop": cmd_loop,
         "train-route-model": cmd_train_route_model,
         "build-all": cmd_build_all,
         "journal": cmd_journal,
