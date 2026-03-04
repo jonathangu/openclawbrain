@@ -69,6 +69,7 @@ class OCBClient:
         route_use_relevance: bool = True,
         route_enable_stop: bool = False,
         route_stop_margin: float = 0.1,
+        assert_learned: bool = False,
     ) -> dict[str, Any]:
         params = {
             "query": query,
@@ -79,6 +80,7 @@ class OCBClient:
             "route_use_relevance": route_use_relevance,
             "route_enable_stop": route_enable_stop,
             "route_stop_margin": route_stop_margin,
+            "assert_learned": assert_learned,
         }
         if chat_id is not None:
             params["chat_id"] = chat_id
@@ -222,6 +224,12 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
         dest="route_use_relevance",
         action="store_false",
     )
+    parser.add_argument(
+        "--assert-learned",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Error if effective routing mode is not learned.",
+    )
     return parser.parse_args(argv)
 
 
@@ -238,6 +246,7 @@ def _main(argv: list[str] | None = None) -> int:
         params["route_top_k"] = args.route_top_k
         params["route_alpha_sim"] = args.route_alpha_sim
         params["route_use_relevance"] = args.route_use_relevance
+        params["assert_learned"] = bool(args.assert_learned)
 
     with OCBClient(socket_path=args.socket, timeout=args.timeout) as client:
         result = client.request(args.method, params)

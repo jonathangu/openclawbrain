@@ -118,6 +118,7 @@ class QueryParams:
     route_use_relevance: bool = True
     route_enable_stop: bool = False
     route_stop_margin: float = 0.1
+    assert_learned: bool = False
     debug_allow_confidence_override: bool = False
     router_conf_override: float | None = None
     relevance_conf_override: float | None = None
@@ -156,6 +157,7 @@ class QueryParams:
             route_use_relevance=parse_bool(params.get("route_use_relevance"), "route_use_relevance", default=True),
             route_enable_stop=parse_bool(params.get("route_enable_stop"), "route_enable_stop", default=False),
             route_stop_margin=_parse_stop_margin(params.get("route_stop_margin")),
+            assert_learned=parse_bool(params.get("assert_learned"), "assert_learned", default=False),
             debug_allow_confidence_override=parse_bool(
                 params.get("debug_allow_confidence_override"),
                 "debug_allow_confidence_override",
@@ -196,6 +198,7 @@ class QueryParams:
             "route_use_relevance": self.route_use_relevance,
             "route_enable_stop": self.route_enable_stop,
             "route_stop_margin": self.route_stop_margin,
+            "assert_learned": self.assert_learned,
             "debug_allow_confidence_override": self.debug_allow_confidence_override,
             "router_conf_override": self.router_conf_override,
             "relevance_conf_override": self.relevance_conf_override,

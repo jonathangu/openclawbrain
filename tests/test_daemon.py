@@ -9,6 +9,7 @@ from pathlib import Path
 import importlib
 
 import numpy as np
+import pytest
 from openclawbrain import Edge, Graph, HashEmbedder, Node, VectorIndex, save_state
 from openclawbrain.route_model import RouteModel
 from openclawbrain.traverse import TraversalResult
@@ -49,6 +50,27 @@ def _start_daemon(state_path: Path, auto_save_interval: int = 10) -> subprocess.
             str(state_path),
             "--auto-save-interval",
             str(auto_save_interval),
+        ],
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+        text=True,
+        bufsize=1,
+        env=env,
+    )
+
+
+def _start_daemon_with_args(state_path: Path, extra_args: list[str]) -> subprocess.Popen:
+    env = os.environ.copy()
+    env.pop("OPENAI_API_KEY", None)
+    return subprocess.Popen(
+        [
+            sys.executable,
+            "-m",
+            "openclawbrain",
+            "daemon",
+            "--state",
+            str(state_path),
+            *extra_args,
         ],
         stdin=subprocess.PIPE,
         stdout=subprocess.PIPE,
@@ -137,6 +159,9 @@ def test_daemon_responds_to_health(tmp_path: Path) -> None:
         assert "dormant_pct" in response["result"]
         assert "nodes" in response["result"]
         assert response["result"]["nodes"] == 2
+        assert response["result"]["route_mode_configured"] == "learned"
+        assert response["result"]["route_mode_effective"] in {"learned", "edge+sim"}
+        assert "route_model_present" in response["result"]
     finally:
         _shutdown_daemon(proc)
 
@@ -341,6 +366,51 @@ def test_daemon_query_route_mode_learned_falls_back_to_edge_sim_without_model(tm
     assert "seed" in response["fired_nodes"]
     assert "good" in response["fired_nodes"]
     assert "bad" not in response["fired_nodes"]
+
+
+def test_handle_query_assert_learned_errors_when_model_missing(tmp_path: Path) -> None:
+    graph = Graph()
+    graph.add_node(Node("seed", "seed content", metadata={"file": "seed.md"}))
+    graph.add_node(Node("good", "good answer", metadata={"file": "good.md"}))
+    graph.add_edge(Edge("seed", "good", weight=0.4, metadata={"relevance": 0.0}))
+
+    index = VectorIndex()
+    index.upsert("seed", [1.0, 0.0])
+    index.upsert("good", [1.0, 0.0])
+    meta = {"embedder_name": "hash-v1", "embedder_dim": 2}
+
+    with pytest.raises(ValueError, match="assert_learned"):
+        daemon_module._handle_query(
+            graph=graph,
+            index=index,
+            meta=meta,
+            embed_fn=lambda _q: [1.0, 0.0],
+            params={
+                "query": "assert learned",
+                "top_k": 1,
+                "route_mode": "learned",
+                "assert_learned": True,
+            },
+            state_path=str(tmp_path / "state.json"),
+            learned_model=None,
+        )
+
+
+def test_daemon_health_reports_route_model_load_error(tmp_path: Path) -> None:
+    state_path = tmp_path / "state.json"
+    _write_state(state_path)
+    bad_model = tmp_path / "route_model.npz"
+    bad_model.write_text("not a zip", encoding="utf-8")
+
+    proc = _start_daemon_with_args(state_path, ["--route-model", str(bad_model)])
+    try:
+        response = _call(proc, "health", req_id="health-bad-model")
+        result = response["result"]
+        assert result["route_model_present"] is False
+        assert result["route_model_error"].startswith("load_failed")
+        assert result["route_mode_effective"] in {"learned", "edge+sim"}
+    finally:
+        _shutdown_daemon(proc)
 
 
 def test_daemon_query_ranked_prompt_context_uses_authority_and_scores(monkeypatch, tmp_path: Path) -> None:

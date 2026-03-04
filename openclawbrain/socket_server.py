@@ -30,6 +30,12 @@ def _parse_args(argv: list[str] | None = None) -> argparse.Namespace:
     parser.add_argument("--route-model", default=None)
     parser.add_argument("--route-enable-stop", choices=["true", "false"], default="false")
     parser.add_argument("--route-stop-margin", type=float, default=0.1)
+    parser.add_argument(
+        "--assert-learned",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Error if effective routing mode is not learned.",
+    )
     parser.add_argument("--auto-save-interval", type=int, default=10)
     parser.add_argument("--force", action="store_true", help="Bypass state lock (expert use)")
     parser.add_argument("--verbose", action="store_true", help="Enable verbose logging")
@@ -67,6 +73,7 @@ class SocketDaemonServer:
         route_model: str | None,
         route_enable_stop: str,
         route_stop_margin: float,
+        assert_learned: bool,
         auto_save_interval: int,
         force: bool,
         verbose: bool,
@@ -87,6 +94,7 @@ class SocketDaemonServer:
         self.route_model = route_model
         self.route_enable_stop = route_enable_stop
         self.route_stop_margin = route_stop_margin
+        self.assert_learned = bool(assert_learned)
         self.auto_save_interval = auto_save_interval
         self.force = force
         self.pid_path = Path(_default_pid_path(str(self.socket_path)))
@@ -164,6 +172,8 @@ class SocketDaemonServer:
             "--auto-save-interval",
             str(self.auto_save_interval),
         ]
+        if self.assert_learned:
+            cmd.append("--assert-learned")
         if self.force:
             cmd.append("--force")
         if self.route_model:
@@ -394,6 +404,7 @@ def main(argv: list[str] | None = None) -> int:
         route_model=args.route_model,
         route_enable_stop=args.route_enable_stop,
         route_stop_margin=args.route_stop_margin,
+        assert_learned=args.assert_learned,
         auto_save_interval=args.auto_save_interval,
         force=args.force,
         verbose=args.verbose,

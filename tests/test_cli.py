@@ -1371,7 +1371,7 @@ def test_openclaw_install_runs_expected_commands(monkeypatch, tmp_path) -> None:
     assert calls[3][:4] == [sys.executable, "-m", "openclawbrain.cli", "loop"]
     assert calls[4][:4] == [sys.executable, "-m", "openclawbrain.cli", "harvest"]
     assert calls[5][:4] == [sys.executable, "-m", "openclawbrain.cli", "async-route-pg"]
-    assert calls[6][:3] == ["openclaw", "gateway", "restart"]
+    assert calls[-1][:3] == ["openclaw", "gateway", "restart"]
 
 
 def test_serve_status_payload_reports_ping_failure(monkeypatch, tmp_path) -> None:
@@ -1431,7 +1431,6 @@ def test_report_handles_missing_daemon_health(monkeypatch, tmp_path, capsys) -> 
     state_dir.mkdir()
     state_path = state_dir / "state.json"
     _write_state(state_path)
-
     socket_path = Path(cli_module._default_daemon_socket_path(str(state_path)))
     socket_path.parent.mkdir(parents=True, exist_ok=True)
     socket_path.write_text("", encoding="utf-8")
@@ -1443,6 +1442,44 @@ def test_report_handles_missing_daemon_health(monkeypatch, tmp_path, capsys) -> 
     out = capsys.readouterr().out
     assert "warning: health unavailable (daemon timeout)" in out
     assert "orphans:" in out
+
+
+def test_report_surfaces_route_model_health_fields(monkeypatch, tmp_path, capsys) -> None:
+    from openclawbrain import cli as cli_module
+
+    home = tmp_path / "home"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+
+    state_dir = tmp_path / "main"
+    state_dir.mkdir()
+    state_path = state_dir / "state.json"
+    _write_state(state_path)
+    socket_path = Path(cli_module._default_daemon_socket_path(str(state_path)))
+    socket_path.parent.mkdir(parents=True, exist_ok=True)
+    socket_path.write_text("", encoding="utf-8")
+
+    monkeypatch.setattr(
+        cli_module,
+        "_socket_health_status",
+        lambda _path: (
+            True,
+            {
+                "route_model_present": False,
+                "route_mode_configured": "learned",
+                "route_mode_effective": "edge+sim",
+                "route_model_error": "load_failed: bad zip",
+                "route_model_path": str(state_dir / "route_model.npz"),
+            },
+            None,
+        ),
+    )
+
+    code = main(["report", "--state", str(state_path)])
+    assert code == 0
+    out = capsys.readouterr().out
+    assert "route_model_error: load_failed: bad zip" in out
+    assert "warning: learned routing configured but effective mode is degraded" in out
 
 
 def test_serve_stop_subcommand_sends_shutdown(monkeypatch, capsys) -> None:

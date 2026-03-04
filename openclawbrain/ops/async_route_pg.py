@@ -14,7 +14,7 @@ from typing import Callable
 from ..graph import Edge, Graph
 from ..hasher import HashEmbedder
 from ..learn import apply_outcome_pg
-from ..labels import append_labels_jsonl, from_teacher_output
+from ..labels import append_labels_jsonl, from_teacher_output, write_labels_jsonl
 from ..replay import default_keyword_seed_fn
 from ..reward import RewardSource, RewardWeights, scale_reward
 from ..storage import EventStore, JsonStateStore, JsonlEventStore, StateStore
@@ -775,6 +775,9 @@ def run_async_route_pg(
         resolved_state_store.save(state_path, graph=working_graph, index=index, meta=meta)
 
     if labels_out:
+        labels_path = Path(labels_out).expanduser()
+        if not labels_path.exists():
+            write_labels_jsonl(labels_path, [])
         label_records = []
         for (query_id, point_idx, ts), labels in zip(point_refs, labels_by_point):
             if not labels:

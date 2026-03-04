@@ -30,6 +30,7 @@ class ProfilePolicy:
     route_use_relevance: bool = True
     route_enable_stop: bool = False
     route_stop_margin: float = 0.1
+    assert_learned: bool = False
 
 
 @dataclass(frozen=True)
@@ -97,6 +98,7 @@ class BrainProfile:
                     "route_use_relevance",
                     "route_enable_stop",
                     "route_stop_margin",
+                    "assert_learned",
                 },
                 "policy",
             )
@@ -154,6 +156,11 @@ class BrainProfile:
             )
             if route_stop_margin < 0.0:
                 raise ValueError("policy.route_stop_margin must be >= 0.0")
+            assert_learned = parse_bool(
+                raw_policy.get("assert_learned"),
+                "policy.assert_learned",
+                default=False,
+            )
 
             reward_source = _parse_non_empty_str(raw_reward.get("source"), "reward.source", default="explicit")
             reward_weight_correction = parse_float(
@@ -193,6 +200,7 @@ class BrainProfile:
                     route_use_relevance=route_use_relevance,
                     route_enable_stop=route_enable_stop,
                     route_stop_margin=route_stop_margin,
+                    assert_learned=assert_learned,
                 ),
                 reward=ProfileReward(
                     source=reward_source,
@@ -222,6 +230,7 @@ class BrainProfile:
                 "route_use_relevance": self.policy.route_use_relevance,
                 "route_enable_stop": self.policy.route_enable_stop,
                 "route_stop_margin": self.policy.route_stop_margin,
+                "assert_learned": self.policy.assert_learned,
             },
             "reward": {
                 "source": self.reward.source,
@@ -252,6 +261,7 @@ def _env_overrides(*, env_prefix: str) -> dict[str, object]:
         "ROUTE_USE_RELEVANCE": (("policy", "route_use_relevance"), _parse_env_bool),
         "ROUTE_ENABLE_STOP": (("policy", "route_enable_stop"), _parse_env_bool),
         "ROUTE_STOP_MARGIN": (("policy", "route_stop_margin"), float),
+        "ROUTE_ASSERT_LEARNED": (("policy", "assert_learned"), _parse_env_bool),
         "REWARD_SOURCE": (("reward", "source"), str),
         "REWARD_WEIGHT_CORRECTION": (("reward", "weight_correction"), float),
         "REWARD_WEIGHT_TEACHING": (("reward", "weight_teaching"), float),
