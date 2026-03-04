@@ -1558,6 +1558,7 @@ def _build_parser() -> argparse.ArgumentParser:
     ar.add_argument("--max-decision-points", type=int, default=500)
     ar.add_argument("--traces-out", default=None)
     ar.add_argument("--traces-in", default=None)
+    ar.add_argument("--labels-out", default=None)
     ar.add_argument("--include-query-vector", action="store_true")
     ar.add_argument(
         "--reward-source",
@@ -4972,6 +4973,7 @@ def cmd_async_route_pg(args: argparse.Namespace) -> int:
         score_scale=float(args.score_scale),
         traces_out=str(args.traces_out) if args.traces_out else None,
         traces_in=str(args.traces_in) if args.traces_in else None,
+        labels_out=str(args.labels_out) if args.labels_out else None,
         include_query_vector=bool(args.include_query_vector),
         reward_source=RewardSource.parse(args.reward_source),
         reward_weights=parsed_weights,

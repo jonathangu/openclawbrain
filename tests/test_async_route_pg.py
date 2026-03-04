@@ -5,6 +5,7 @@ from pathlib import Path
 
 from openclawbrain.graph import Edge, Graph, Node
 from openclawbrain.index import VectorIndex
+from openclawbrain.labels import LabelRecord, read_labels_jsonl, write_labels_jsonl
 from openclawbrain.ops.async_route_pg import parse_teacher_route_labels, run_async_route_pg
 from openclawbrain.reward import RewardSource
 from openclawbrain.store import load_state, save_state
@@ -198,3 +199,82 @@ def test_run_async_route_pg_modulates_updates_by_router_confidence(tmp_path: Pat
     weight_a = graph_after._edges["seed"]["target_a"].weight
     weight_b = graph_after._edges["seed"]["target_b"].weight
     assert (weight_a - 0.35) > (weight_b - 0.30)
+
+
+def test_async_route_pg_persists_teacher_labels_and_appends_labels_out(tmp_path: Path) -> None:
+    state_path = tmp_path / "state.json"
+    journal_path = tmp_path / "journal.jsonl"
+    traces_in = tmp_path / "route_traces_in.jsonl"
+    traces_out = tmp_path / "route_traces_out.jsonl"
+    labels_out = tmp_path / "labels.jsonl"
+    _write_state(state_path)
+    _write_journal(journal_path)
+
+    trace = RouteTrace(
+        query_id="trace-1",
+        ts=10.0,
+        query_text="alpha",
+        decision_points=[
+            RouteDecisionPoint(
+                query_text="alpha",
+                source_id="seed",
+                source_preview="seed",
+                chosen_target_id="target_a",
+                candidates=[RouteCandidate(target_id="target_a", edge_weight=0.35, edge_relevance=0.0)],
+                reward_source=RewardSource.TEACHER,
+                ts=10.0,
+            ),
+            RouteDecisionPoint(
+                query_text="alpha",
+                source_id="seed",
+                source_preview="seed",
+                chosen_target_id="target_b",
+                candidates=[RouteCandidate(target_id="target_b", edge_weight=0.30, edge_relevance=0.0)],
+                reward_source=RewardSource.TEACHER,
+                ts=11.0,
+            ),
+        ],
+    )
+    traces_in.write_text(route_trace_to_json(trace) + "\n", encoding="utf-8")
+
+    existing = LabelRecord(
+        query_id="existing",
+        decision_point_idx=0,
+        candidate_scores={"seed": 1.0},
+        reward_source=RewardSource.SELF,
+        weight=1.0,
+        ts=1.0,
+        metadata={"kind": "existing"},
+    )
+    write_labels_jsonl(labels_out, [existing])
+
+    def _teacher(points):
+        return [{"target_a": 1.0}, {"target_b": -0.5}], []
+
+    run_async_route_pg(
+        state_path=str(state_path),
+        journal_path=str(journal_path),
+        traces_in=str(traces_in),
+        traces_out=str(traces_out),
+        labels_out=str(labels_out),
+        teacher="none",
+        apply=False,
+        teacher_labeler=_teacher,
+    )
+
+    out_lines = [line for line in traces_out.read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert out_lines
+    trace_payload = json.loads(out_lines[0])
+    point_payloads = trace_payload.get("decision_points", [])
+    assert point_payloads[0]["teacher_scores"] == {"target_a": 1.0}
+    assert point_payloads[1]["teacher_scores"] == {"target_b": -0.5}
+
+    labels = read_labels_jsonl(labels_out)
+    assert len(labels) == 3
+    teacher_labels = [label for label in labels if label.reward_source == RewardSource.TEACHER]
+    assert len(teacher_labels) == 2
+    assert {label.decision_point_idx for label in teacher_labels} == {0, 1}
+    for label in teacher_labels:
+        assert label.query_id == "trace-1"
+        assert label.metadata.get("teacher_model") == "gpt-5-mini"
+        assert label.metadata.get("teacher_requested") == "none"

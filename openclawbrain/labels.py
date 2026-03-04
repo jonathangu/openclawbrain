@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import os
 import time
 from dataclasses import dataclass, field
 from pathlib import Path
@@ -119,6 +120,18 @@ def write_labels_jsonl(path: str | Path, records: list[LabelRecord]) -> None:
     with destination.open("w", encoding="utf-8") as handle:
         for record in records:
             handle.write(json.dumps(record.to_dict(), ensure_ascii=True, sort_keys=True) + "\n")
+
+
+def append_labels_jsonl(path: str | Path, records: list[LabelRecord]) -> None:
+    if not records:
+        return
+    destination = Path(path).expanduser()
+    destination.parent.mkdir(parents=True, exist_ok=True)
+    with destination.open("a", encoding="utf-8") as handle:
+        for record in records:
+            handle.write(json.dumps(record.to_dict(), ensure_ascii=True, sort_keys=True) + "\n")
+        handle.flush()
+        os.fsync(handle.fileno())
 
 
 def read_labels_jsonl(path: str | Path) -> list[LabelRecord]:

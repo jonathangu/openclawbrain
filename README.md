@@ -772,7 +772,9 @@ Storage boundary modules:
 
 Unified label schema:
 - `openclawbrain.labels.LabelRecord` with `reward_source` + `weight`
-- works across teacher labels, human corrections, and self-learning events
+- works across teacher labels, human corrections, self-learning events, and harvest outputs
+- **labels** = async teacher labels + human labels + self-learned labels + harvested labels
+- `--labels-out` appends JSONL records for long-lived label stores
 
 Training flow:
 
@@ -781,13 +783,20 @@ Training flow:
 openclawbrain async-route-pg \
   --state /tmp/brain/state.json \
   --traces-out /tmp/brain/route_traces.jsonl \
+  --labels-out /tmp/brain/labels.jsonl \
   --include-query-vector \
   --teacher none
 
-# 2) Train route model
+# 2) Collect harvest/self labels (optional; appends)
+openclawbrain harvest \
+  --state /tmp/brain/state.json \
+  --labels-out /tmp/brain/labels.jsonl
+
+# 3) Train route model
 openclawbrain train-route-model \
   --state /tmp/brain/state.json \
   --traces-in /tmp/brain/route_traces.jsonl \
+  --labels-in /tmp/brain/labels.jsonl \
   --out /tmp/brain/route_model.npz \
   --rank 16 \
   --epochs 3 \
@@ -795,7 +804,7 @@ openclawbrain train-route-model \
   --label-temp 0.5 \
   --json
 
-# 3) Run daemon with learned route mode
+# 4) Run daemon with learned route mode
 openclawbrain daemon \
   --state /tmp/brain/state.json \
   --route-mode learned \
