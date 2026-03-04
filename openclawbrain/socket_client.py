@@ -67,6 +67,8 @@ class OCBClient:
         route_top_k: int = 5,
         route_alpha_sim: float = 0.5,
         route_use_relevance: bool = True,
+        route_enable_stop: bool = False,
+        route_stop_margin: float = 0.1,
     ) -> dict[str, Any]:
         params = {
             "query": query,
@@ -75,6 +77,8 @@ class OCBClient:
             "route_top_k": route_top_k,
             "route_alpha_sim": route_alpha_sim,
             "route_use_relevance": route_use_relevance,
+            "route_enable_stop": route_enable_stop,
+            "route_stop_margin": route_stop_margin,
         }
         if chat_id is not None:
             params["chat_id"] = chat_id

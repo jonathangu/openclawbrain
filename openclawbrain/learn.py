@@ -104,6 +104,61 @@ def _clip_weight(weight: float, bounds: tuple[float, float]) -> float:
     return max(bounds[0], min(bounds[1], weight))
 
 
+def _node_stop_values(node: Node | None) -> tuple[float, float]:
+    """Extract stop relevance/weight from node metadata with safe fallbacks."""
+    if node is None or not isinstance(node.metadata, dict):
+        return 0.0, 0.0
+    raw_relevance = node.metadata.get("stop_relevance", 0.0)
+    raw_weight = node.metadata.get("stop_weight", 0.0)
+    stop_relevance = float(raw_relevance) if isinstance(raw_relevance, (int, float)) else 0.0
+    stop_weight = float(raw_weight) if isinstance(raw_weight, (int, float)) else 0.0
+    return stop_relevance, stop_weight
+
+
+def _project_conserving_updates(
+    weights: list[float],
+    deltas: list[float],
+    bounds: tuple[float, float],
+    *,
+    tol: float = 1e-12,
+) -> list[float]:
+    """Project proposed updates onto box constraints while conserving total weight."""
+    if len(weights) != len(deltas):
+        raise ValueError("weights and deltas must be the same length")
+    if not weights:
+        return []
+
+    lo, hi = bounds
+    target_sum = sum(weights)
+    proposed = [weight + delta for weight, delta in zip(weights, deltas)]
+    new_weights = [min(hi, max(lo, value)) for value in proposed]
+    diff = sum(new_weights) - target_sum
+    if abs(diff) <= tol:
+        return new_weights
+
+    max_iters = max(1, len(weights) * 5)
+    for _ in range(max_iters):
+        if abs(diff) <= tol:
+            break
+        if diff > 0:
+            free = [idx for idx, value in enumerate(new_weights) if value > lo + tol]
+            if not free:
+                break
+            share = diff / len(free)
+            for idx in free:
+                new_weights[idx] = max(lo, new_weights[idx] - share)
+        else:
+            free = [idx for idx, value in enumerate(new_weights) if value < hi - tol]
+            if not free:
+                break
+            share = (-diff) / len(free)
+            for idx in free:
+                new_weights[idx] = min(hi, new_weights[idx] + share)
+        diff = sum(new_weights) - target_sum
+
+    return new_weights
+
+
 def hebbian_update(
     graph: Graph,
     fired_nodes: list[str],
@@ -174,7 +229,9 @@ def _softmax_with_stop(graph: Graph, node_id: str, temperature: float) -> tuple[
         if logit > max_logit:
             max_logit = logit
 
-    exp_stop = math.exp(0.0 - max_logit)
+    stop_relevance, stop_weight = _node_stop_values(graph.get_node(node_id))
+    stop_logit = (stop_relevance + stop_weight) / temperature
+    exp_stop = math.exp(stop_logit - max_logit)
     exp_sum = exp_stop
     probs_by_target: dict[str, float] = {"__STOP__": exp_stop}
     for target_id, logit in logits_by_target.items():
@@ -228,14 +285,26 @@ def apply_outcome_pg(
         probs, _ = _softmax_with_stop(graph, source_id, effective_temperature)
         scalar = cfg.learning_rate * (node_outcome - baseline) * (cfg.discount ** idx) / effective_temperature
 
+        node = graph.get_node(source_id)
+        _stop_relevance, stop_weight = _node_stop_values(node)
+
+        weights = [edge.weight for _target_node, edge in outgoing]
+        deltas: list[float] = []
         for _target_node, edge in outgoing:
             pi_j = probs.get(edge.target, 0.0)
             if edge.target == target_id:
                 delta = scalar * (1.0 - pi_j)
             else:
                 delta = -scalar * pi_j
+            deltas.append(delta)
 
-            new_weight = _clip_weight(edge.weight + delta, cfg.weight_bounds)
+        stop_delta = -scalar * probs.get("__STOP__", 0.0)
+        weights.append(stop_weight)
+        deltas.append(stop_delta)
+
+        new_weights = _project_conserving_updates(weights, deltas, cfg.weight_bounds)
+
+        for (edge_target_node, edge), new_weight in zip(outgoing, new_weights[:-1]):
             delta_actual = new_weight - edge.weight
             edge.weight = new_weight
             if edge.weight < -0.01:
@@ -245,8 +314,13 @@ def apply_outcome_pg(
             graph._edges[source_id][edge.target] = edge
             updates[f"{source_id}->{edge.target}"] += delta_actual
 
-        if "__STOP__" in probs:
-            updates[f"{source_id}->__STOP__"] = -scalar * probs["__STOP__"]
+        if node is not None:
+            new_stop_weight = new_weights[-1]
+            delta_actual = new_stop_weight - stop_weight
+            if not isinstance(node.metadata, dict):
+                node.metadata = {}
+            node.metadata["stop_weight"] = new_stop_weight
+            updates[f"{source_id}->__STOP__"] += delta_actual
 
     hebbian_update(graph, fired_nodes, cfg)
     _apply_outcome_call_count += 1

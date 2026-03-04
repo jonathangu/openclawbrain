@@ -80,7 +80,7 @@ p_i = \pi_\theta(a=i\mid x,u,\{v_j\}) = \frac{\exp(z_i/T)}{\sum_{j=1}^{m}\exp(z_
 - lower \(T\): sharper policy
 - higher \(T\): smoother policy
 
-**STOP note:** training includes STOP in the softmax action set; the STOP logit is fixed today. Learning a STOP logit is future work.
+**STOP note:** training includes STOP in the softmax action set; the STOP logit is learnable per node via `metadata["stop_weight"]` (default `0.0`).
 
 ## 4) Teacher Labels to Target Distribution \(\mathbf{y}\)
 

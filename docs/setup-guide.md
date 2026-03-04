@@ -22,7 +22,7 @@ Daemon query embedder default is `--embed-model auto`:
 - OpenAI states do not auto-call OpenAI; set `--embed-model openai:<model>` to use OpenAI explicitly.
 - Force offline mode with `--embed-model local`. Legacy `hash-v1` states can force hash query embeddings with `--embed-model hash` (legacy only).
 
-Runtime route-mode default is `learned`. `init` writes a default identity-like `route_model.npz` beside `state.json`; if missing/unloadable, daemon falls back to `edge+sim`.
+Runtime route-mode default is `learned`. `init` writes a default identity-like `route_model.npz` beside `state.json`; if missing/unloadable, daemon falls back to `edge+sim`, logs a warning, and exposes the effective mode in `health`.
 
 ## Initial learning: replay your sessions
 

@@ -19,6 +19,8 @@ class RoutingPolicy:
     top_k: int = 5
     alpha_sim: float = 0.5
     use_relevance: bool = True
+    enable_stop: bool = False
+    stop_margin: float = 0.1
     debug_allow_confidence_override: bool = False
     router_conf_override: float | None = None
     relevance_conf_override: float | None = None
@@ -117,6 +119,7 @@ def make_runtime_route_fn(
     learned_model: RouteModel | None = None,
     target_projections: dict[str, object] | None = None,
     decision_log: list[DecisionMetrics] | None = None,
+    stop_weight_fn: Callable[[str], tuple[float, float]] | None = None,
 ) -> Callable[[str | None, list[object], str], list[str]] | None:
     """Build deterministic local route policy for habitual candidates."""
     if policy.route_mode == "off":
@@ -131,6 +134,7 @@ def make_runtime_route_fn(
             config=policy,
             query_vector=query_vector,
             decision_log=decision_log,
+            stop_weight_fn=stop_weight_fn,
         )
 
     use_similarity = policy.route_mode == "edge+sim"
@@ -156,10 +160,34 @@ def make_runtime_route_fn(
         return weight + relevance + (policy.alpha_sim * similarity)
 
     def _route_fn(_source_id: str | None, candidates: list[object], _query_text: str) -> list[str]:
+        scored = [
+            (str(getattr(edge, "target", "")), _score(edge), edge)
+            for edge in candidates
+            if str(getattr(edge, "target", ""))
+        ]
         ranked = sorted(
-            ((str(getattr(edge, "target", "")), _score(edge)) for edge in candidates),
+            ((target_id, score) for target_id, score, _edge in scored),
             key=lambda item: (-item[1], item[0]),
         )
+        if not ranked:
+            return []
+
+        if policy.enable_stop and stop_weight_fn is not None and _source_id:
+            if policy.use_relevance:
+                relevances = []
+                for _target_id, _score_value, edge in scored:
+                    metadata = getattr(edge, "metadata", None)
+                    raw_relevance = metadata.get("relevance", 0.0) if isinstance(metadata, dict) else 0.0
+                    relevances.append(float(raw_relevance) if isinstance(raw_relevance, (int, float)) else 0.0)
+                _entropy, relevance_conf, _margin = _confidence(relevances)
+            else:
+                relevance_conf = 0.0
+            stop_weight, stop_relevance = stop_weight_fn(_source_id)
+            stop_score = (relevance_conf * stop_relevance) + ((1.0 - relevance_conf) * stop_weight)
+            best_score = ranked[0][1]
+            if stop_score >= best_score + policy.stop_margin:
+                return []
+
         return [target_id for target_id, _score_value in ranked[: policy.top_k] if target_id]
 
     return _route_fn
@@ -172,6 +200,7 @@ def make_learned_route_fn(
     config: RoutingPolicy,
     query_vector: list[float],
     decision_log: list[DecisionMetrics] | None = None,
+    stop_weight_fn: Callable[[str], tuple[float, float]] | None = None,
 ) -> Callable[[str | None, list[object], str], list[str]]:
     """Build deterministic learned route function using low-rank scoring."""
     q_proj = model.project_query(query_vector)
@@ -228,6 +257,13 @@ def make_learned_route_fn(
             ranked.append((target_id, graph_prior, router_score, final_score))
 
         ranked.sort(key=lambda item: (-item[3], item[0]))
+
+        if config.enable_stop and stop_weight_fn is not None and source_id and ranked:
+            stop_weight, stop_relevance = stop_weight_fn(source_id)
+            stop_score = (relevance_conf * stop_relevance) + ((1.0 - relevance_conf) * stop_weight)
+            best_score = ranked[0][3]
+            if stop_score >= best_score + config.stop_margin:
+                return []
 
         if decision_log is not None and ranked:
             chosen_target, chosen_graph_prior, chosen_router, chosen_final = ranked[0]

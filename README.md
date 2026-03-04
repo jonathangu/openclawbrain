@@ -371,7 +371,7 @@ Embedding mode defaults to `--embed-model auto`:
 - For OpenAI-based states, `auto` does not call OpenAI; use `--embed-model openai:<model>` explicitly.
 - Use `--embed-model local` to force offline query embeddings.
 
-Routing mode defaults to `--route-mode learned`. `init` writes a default identity-like `route_model.npz` beside `state.json`; if that file is missing or unloadable, daemon query routing gracefully falls back to `edge+sim`.
+Routing mode defaults to `--route-mode learned`. `init` writes a default identity-like `route_model.npz` beside `state.json`; if that file is missing or unloadable, daemon query routing falls back to `edge+sim`, emits a warning on startup, and reports `route_model_present`, `route_mode_configured`, and `route_mode_effective` in `health`.
 
 Protocol:
 
@@ -390,6 +390,8 @@ Enable deterministic query-conditioned habitual routing (no LLM calls on query p
 ```bash
 echo '{"id":"req-2","method":"query","params":{"query":"how to deploy","top_k":4,"route_mode":"edge+sim","route_top_k":5,"route_alpha_sim":0.5,"route_use_relevance":true}}' | openclawbrain daemon --state ~/.openclawbrain/main/state.json
 ```
+
+Optional STOP routing: set `route_enable_stop=true` (default false) and tune `route_stop_margin` (default `0.1`) to allow the router to return `[]` when STOP beats the best candidate by the margin.
 
 ```json
 {"id":"req-1","result":{"fired_nodes":["a"],"context":"...","seeds":[["a",0.96]],"embed_query_ms":1.1,"traverse_ms":2.4,"total_ms":3.5}}
@@ -434,6 +436,7 @@ See `examples/ops/client_example.py` for a Python client and `docs/architecture.
   - `π(j|i)` = action probability from softmax (including STOP)
   - `𝟙[j=a]` = 1 for the taken action, else 0
 - Conservation property: for each source node `i`, outgoing updates sum to zero, so total outgoing mass is preserved.
+- STOP is a learnable per-node logit stored as `node.metadata["stop_weight"]` (default `0.0`) and participates in the softmax/projection updates alongside outgoing edges.
 - Use `apply_outcome_pg` when you want smoother, probability-based updates across alternatives; use `apply_outcome` for a simpler sparse update that only touches traversed edges.
 
 ```python
