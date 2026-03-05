@@ -2683,12 +2683,16 @@ def test_cli_build_all_defaults_enable_tool_results_max_chars_and_advance_offset
             )
         return 0
 
-    def fake_run_logged_replay_command(cmd: list[str], **kwargs) -> int:
+    def fake_run_logged_replay_command_with_watchdog(cmd: list[str], **kwargs) -> int:
         captured_replay_cmd.append(cmd)
         return 0
 
     monkeypatch.setattr(cli_module, "_run_logged_command", fake_run_logged_command)
-    monkeypatch.setattr(cli_module, "_run_logged_replay_command", fake_run_logged_replay_command)
+    monkeypatch.setattr(
+        cli_module,
+        "_run_logged_replay_command_with_watchdog",
+        fake_run_logged_replay_command_with_watchdog,
+    )
 
     code = cli_module.main(
         [
