@@ -1158,6 +1158,50 @@ def test_loop_install_dry_run_includes_env_file(monkeypatch, tmp_path, capsys) -
     assert environment["OPENCLAWBRAIN_DEFAULT_LLM"] == "openai"
 
 
+def test_loop_install_fast_flags_in_program_arguments(monkeypatch, tmp_path, capsys) -> None:
+    """loop install --fast should bake fast flags into ProgramArguments."""
+    state_path = tmp_path / "main" / "state.json"
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(json.dumps({"nodes": []}), encoding="utf-8")
+
+    import openclawbrain.cli as cli_module
+
+    monkeypatch.setattr(cli_module.sys, "platform", "darwin")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.delenv("OPENCLAWBRAIN_LOOP_PYTHON", raising=False)
+    monkeypatch.delenv("OPENCLAWBRAIN_PYTHON", raising=False)
+
+    code = main([
+        "loop",
+        "install",
+        "--state",
+        str(state_path),
+        "--fast",
+        "--dry-run",
+    ])
+    assert code == 0
+
+    payload = _extract_plist_from_output(capsys.readouterr().out)
+    program_arguments = payload["ProgramArguments"]
+
+    def _assert_flag_value(flag: str, value: str) -> None:
+        idx = program_arguments.index(flag)
+        assert program_arguments[idx + 1] == value
+
+    assert "--include-tool-results" in program_arguments
+    assert "--advance-offsets-on-skip" in program_arguments
+    assert "--enable-teacher" in program_arguments
+    assert "--enable-train-route-model" in program_arguments
+    _assert_flag_value("--replay-priority", "tool")
+    _assert_flag_value("--replay-max-interactions", "500")
+    _assert_flag_value("--tool-result-max-chars", "20000")
+    _assert_flag_value("--since-hours", "24.0")
+    _assert_flag_value("--max-queries", "60")
+    _assert_flag_value("--sample-rate", "0.1")
+    _assert_flag_value("--max-candidates-per-node", "8")
+    _assert_flag_value("--max-decision-points", "200")
+
+
 def test_loop_pause_serve_when_locked_uses_launchctl(monkeypatch, tmp_path) -> None:
     """Loop pause-serve should bootout + bootstrap when the state lock is held."""
     state_path = tmp_path / "main" / "state.json"
@@ -2242,6 +2286,17 @@ def test_cli_build_all_parser_accepts_subcommand() -> None:
     assert args.command == "build-all"
     assert args.parallel_agents == 1
     assert args.require_local_embedder is False
+
+
+def test_cli_bootstrap_parser_defaults() -> None:
+    """bootstrap subcommand parses with defaults."""
+    from openclawbrain.cli import _build_parser
+
+    parser = _build_parser()
+    args = parser.parse_args(["bootstrap", "--agent", "main"])
+    assert args.command == "bootstrap"
+    assert args.agent == "main"
+    assert args.fast is True
 
 
 def test_cmd_status_json_includes_embedder_dim_and_index_dim(tmp_path, capsys) -> None:
