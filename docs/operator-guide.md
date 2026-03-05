@@ -12,6 +12,8 @@ Use packaged adapter CLIs for agent hooks (no `~/openclawbrain` clone required):
 - `python3 -m openclawbrain.openclaw_adapter.query_brain ...`
 - `python3 -m openclawbrain.openclaw_adapter.capture_feedback ...`
 
+**Important (NO TIMEOUTS):** `init`, `build-all`, `async-route-pg`, and large local embedding runs can take 30-180+ minutes. If running under CI, cron, supervisor, or wrappers, do **not** use short timeouts; ensure the runner allows long execution. For unattended runs, prefer the `launchd` loop. For manual runs, use `nohup` or `tmux`.
+
 ## 2) Turn brain ON
 Canonical run command:
 

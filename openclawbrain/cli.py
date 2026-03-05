@@ -2898,6 +2898,16 @@ def _check_result(ok: bool, label: str, details: str = "") -> bool:
     return ok
 
 
+def _maybe_warn_long_running() -> None:
+    """warn about long-running commands when in an interactive session."""
+    if not sys.stderr.isatty():
+        return
+    print(
+        "Note: init/build-all may take a long time; do not run under a short timeout.",
+        file=sys.stderr,
+    )
+
+
 def _journal_entry_count(journal_path: str | None) -> int | None:
     """ journal entry count."""
     if journal_path is None:
@@ -2983,6 +2993,7 @@ def _query_text_output(result: TraversalResult, graph: Graph, max_context_chars:
 
 def cmd_init(args: argparse.Namespace) -> int:
     """cmd init."""
+    _maybe_warn_long_running()
     output_dir = Path(args.output).expanduser()
     if output_dir.suffix == ".json" and not output_dir.is_dir():
         output_dir = output_dir.parent
@@ -6392,6 +6403,7 @@ def cmd_train_route_model(args: argparse.Namespace) -> int:
 
 def cmd_build_all(args: argparse.Namespace) -> int:
     """Run unattended brain-building pipeline for all configured agents."""
+    _maybe_warn_long_running()
     agent_ids = _resolve_agent_ids(args)
     parallel = max(1, int(args.parallel_agents))
     ocb_bin = _resolve_openclawbrain_bin()

@@ -19,6 +19,7 @@ from openclawbrain.cli import (
     _resolve_openclawbrain_bin,
     _filter_replay_interactions,
     _default_labels_path,
+    _maybe_warn_long_running,
 )
 from openclawbrain.graph import Graph, Node
 from openclawbrain.hasher import default_embed
@@ -97,6 +98,22 @@ def _write_state(
     if meta is None:
         meta = {"embedder_name": "hash-v1", "embedder_dim": 1024}
     path.write_text(json.dumps({"graph": graph_payload, "index": index_payload, "meta": meta}), encoding="utf-8")
+
+
+def test_long_running_warning_prints_when_interactive(monkeypatch, capsys) -> None:
+    """interactive sessions print a long-running warning."""
+    monkeypatch.setattr(sys.stderr, "isatty", lambda: True)
+    _maybe_warn_long_running()
+    err = capsys.readouterr().err
+    assert "Note: init/build-all may take a long time; do not run under a short timeout." in err
+
+
+def test_long_running_warning_suppressed_when_not_tty(monkeypatch, capsys) -> None:
+    """non-interactive sessions suppress the long-running warning."""
+    monkeypatch.setattr(sys.stderr, "isatty", lambda: False)
+    _maybe_warn_long_running()
+    err = capsys.readouterr().err
+    assert err == ""
 
 
 def test_init_command_creates_workspace_graph(tmp_path, monkeypatch) -> None:

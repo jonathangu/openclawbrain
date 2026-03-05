@@ -8,6 +8,8 @@
 
 ## Step 1: Build your first brain
 
+**Important (NO TIMEOUTS):** `init`, `build-all`, `async-route-pg`, and large local embedding runs can take 30-180+ minutes. If running under CI, cron, supervisor, or wrappers, do **not** use short timeouts; ensure the runner allows long execution. For unattended runs, prefer the `launchd` loop. For manual runs, use `nohup` or `tmux`.
+
 ```bash
 openclawbrain init --workspace ./my-workspace --state ./brain/state.json
 openclawbrain doctor --state ./brain/state.json
