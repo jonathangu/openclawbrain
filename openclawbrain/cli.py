@@ -125,6 +125,14 @@ REPLAY_HELP_EPILOG = (
 )
 
 _DEFAULT_DAEMON_HEALTH_TIMEOUT = 30.0
+FAST_BOOT_REPLAY_MAX_INTERACTIONS = 500
+FAST_BOOT_REPLAY_PRIORITY = "tool"
+FAST_BOOT_TOOL_RESULT_MAX_CHARS = 20_000
+FAST_BOOT_ASYNC_SINCE_HOURS = 24.0
+FAST_BOOT_ASYNC_MAX_QUERIES = 60
+FAST_BOOT_ASYNC_SAMPLE_RATE = 0.1
+FAST_BOOT_ASYNC_MAX_CANDIDATES = 8
+FAST_BOOT_ASYNC_MAX_DECISION_POINTS = 200
 
 
 def _daemon_health_timeout() -> float:
@@ -618,6 +626,64 @@ def _discover_agent_ids(config_path: Path | None = None) -> list[str]:
     if not resolved:
         raise SystemExit(f"no agents found in {cfg_path}")
     return resolved
+
+
+def _resolve_agent_workspace(agent_id: str, config_path: Path | None = None) -> Path:
+    """Resolve workspace path for an OpenClaw agent id."""
+    cfg_path = config_path or (Path.home() / ".openclaw" / "openclaw.json")
+    workspace: Path | None = None
+    if cfg_path.exists():
+        try:
+            payload = json.loads(cfg_path.read_text(encoding="utf-8"))
+        except (OSError, json.JSONDecodeError) as exc:
+            raise SystemExit(f"invalid openclaw config: {cfg_path} ({exc})") from exc
+
+        agents = payload.get("agents", {})
+        agent_list = agents.get("list", []) if isinstance(agents, dict) else []
+        if not isinstance(agent_list, list):
+            raise SystemExit(f"invalid openclaw config: {cfg_path} (agents.list must be a list)")
+        for entry in agent_list:
+            if not isinstance(entry, dict):
+                continue
+            entry_id = entry.get("id") or entry.get("name")
+            if not isinstance(entry_id, str):
+                continue
+            if entry_id.strip() != agent_id:
+                continue
+            raw_workspace = entry.get("workspace")
+            if isinstance(raw_workspace, str) and raw_workspace.strip():
+                workspace = Path(raw_workspace).expanduser()
+                break
+
+    if workspace is None:
+        fallback = Path.home() / ".openclaw" / "workspace"
+        if fallback.exists():
+            return fallback
+        raise SystemExit(
+            f"workspace not found for agent '{agent_id}' in {cfg_path}; "
+            "add workspace in openclaw.json or pass --workspace"
+        )
+    return workspace
+
+
+def _apply_fast_loop_defaults(args: argparse.Namespace) -> None:
+    """Apply fast-boot defaults for the always-learning loop."""
+    args.replay_max_interactions = FAST_BOOT_REPLAY_MAX_INTERACTIONS
+    args.replay_priority = FAST_BOOT_REPLAY_PRIORITY
+    args.advance_offsets_on_skip = True
+    args.include_tool_results = True
+    args.tool_result_max_chars = FAST_BOOT_TOOL_RESULT_MAX_CHARS
+    args.skip_maintain = False
+    args.enable_teacher = True
+    args.enable_train_route_model = True
+    args.since_hours = FAST_BOOT_ASYNC_SINCE_HOURS
+    args.max_queries = FAST_BOOT_ASYNC_MAX_QUERIES
+    args.sample_rate = FAST_BOOT_ASYNC_SAMPLE_RATE
+    args.max_candidates_per_node = FAST_BOOT_ASYNC_MAX_CANDIDATES
+    args.max_decision_points = FAST_BOOT_ASYNC_MAX_DECISION_POINTS
+    args.mode = "full"
+    args.skip_if_locked = True
+    args.pause_serve_when_locked = True
 
 
 def _resolve_agent_ids(args: argparse.Namespace) -> list[str]:
@@ -1742,6 +1808,12 @@ def _build_parser() -> argparse.ArgumentParser:
     parser.add_argument("--version", action="version", version=f"%(prog)s {__version__}")
     sub = parser.add_subparsers(dest="command", required=True)
 
+    boot = sub.add_parser("bootstrap", help="Fast-boot a brain and install serve+loop services.")
+    boot.add_argument("--agent", required=True, help="Agent id (required)")
+    boot.add_argument("--workspace", help="Workspace root (overrides openclaw.json)")
+    boot.add_argument("--fast", action=argparse.BooleanOptionalAction, default=True)
+    boot.add_argument("--env-file", help="Optional .env file to pass into launchd service plists")
+
     i = sub.add_parser("init")
     i.add_argument("--workspace", required=True)
     i.add_argument("--output", required=True)
@@ -2164,8 +2236,12 @@ def _build_parser() -> argparse.ArgumentParser:
     loop.add_argument("--workers", type=int, default=4)
     loop.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True)
     loop.add_argument("--include-tool-results", action=argparse.BooleanOptionalAction, default=True)
+    loop.add_argument("--tool-result-max-chars", type=int, default=DEFAULT_TOOL_RESULT_MAX_CHARS)
     loop.add_argument("--checkpoint-every-seconds", type=int, default=60)
     loop.add_argument("--replay-progress-interval-seconds", type=int, default=30)
+    loop.add_argument("--replay-max-interactions", type=_parse_positive_int, default=None)
+    loop.add_argument("--replay-priority", choices=("all", "tool"), default="all")
+    loop.add_argument("--advance-offsets-on-skip", action=argparse.BooleanOptionalAction, default=False)
     loop.add_argument("--skip-maintain", action="store_true", help="Skip maintenance pass")
     loop.add_argument("--maintain-tasks", default="health,decay,prune,merge")
     loop.add_argument("--maintain-llm", choices=["none", "openai", "ollama"], default="none")
@@ -2199,6 +2275,7 @@ def _build_parser() -> argparse.ArgumentParser:
     loop.add_argument("--hourly-interval-seconds", type=int, default=3600)
     loop.add_argument("--nightly-hour", type=int, default=2)
     loop.add_argument("--nightly-minute", type=int, default=30)
+    loop.add_argument("--fast", action=argparse.BooleanOptionalAction, default=False)
     loop.add_argument("--dry-run", action="store_true")
     loop.add_argument("--launchd", action="store_true", help="Print launchd plist for loop service")
     loop.add_argument("--systemd", action="store_true", help="Print systemd unit template for loop service")
@@ -6135,6 +6212,9 @@ def cmd_loop(args: argparse.Namespace) -> int:
     state_path = str(Path(state_path).expanduser())
     labels_path = _default_labels_path(state_path)
 
+    if getattr(args, "fast", False):
+        _apply_fast_loop_defaults(args)
+
     agent_root = _loop_state_root(state_path)
     agent_id = agent_root.name or "main"
     action = getattr(args, "loop_action", "run")
@@ -6170,6 +6250,8 @@ def cmd_loop(args: argparse.Namespace) -> int:
             str(args.checkpoint_every_seconds),
             "--replay-progress-interval-seconds",
             str(args.replay_progress_interval_seconds),
+            "--tool-result-max-chars",
+            str(args.tool_result_max_chars),
             "--maintain-tasks",
             str(args.maintain_tasks),
             "--maintain-llm",
@@ -6205,6 +6287,12 @@ def cmd_loop(args: argparse.Namespace) -> int:
             argv.extend(["--llm-model", str(args.llm_model)])
         if args.workers is not None:
             argv.extend(["--workers", str(int(args.workers))])
+        if args.replay_max_interactions is not None:
+            argv.extend(["--replay-max-interactions", str(args.replay_max_interactions)])
+        if args.replay_priority != "all":
+            argv.extend(["--replay-priority", str(args.replay_priority)])
+        if args.advance_offsets_on_skip:
+            argv.append("--advance-offsets-on-skip")
         if args.resume:
             argv.append("--resume")
         else:
@@ -6510,10 +6598,19 @@ def cmd_loop(args: argparse.Namespace) -> int:
             replay_cmd.append("--resume")
         if args.include_tool_results:
             replay_cmd.append("--include-tool-results")
-            replay_cmd.extend(["--tool-result-max-chars", str(DEFAULT_TOOL_RESULT_MAX_CHARS)])
+            tool_max = (
+                args.tool_result_max_chars
+                if getattr(args, "tool_result_max_chars", None) is not None
+                else DEFAULT_TOOL_RESULT_MAX_CHARS
+            )
+            replay_cmd.extend(["--tool-result-max-chars", str(int(tool_max))])
         else:
             replay_cmd.append("--no-include-tool-results")
-        if str(mode) == "full":
+        if getattr(args, "replay_max_interactions", None) is not None:
+            replay_cmd.extend(["--replay-max-interactions", str(int(args.replay_max_interactions))])
+        if getattr(args, "replay_priority", "all") != "all":
+            replay_cmd.extend(["--replay-priority", str(args.replay_priority)])
+        if getattr(args, "advance_offsets_on_skip", False):
             replay_cmd.append("--advance-offsets-on-skip")
 
         write_checkpoint(status="running", job=job, step="replay")
@@ -7104,6 +7201,66 @@ def cmd_build_all(args: argparse.Namespace) -> int:
     return 0 if all(int(item.get("exit_code", 1)) == 0 for item in results) else 1
 
 
+def cmd_bootstrap(args: argparse.Namespace) -> int:
+    """Fast-boot a brain and install serve+loop services."""
+    agent_id = str(args.agent).strip()
+    if not agent_id:
+        raise SystemExit("--agent is required")
+
+    state_path = str(Path(_state_path_for_agent(agent_id)).expanduser())
+    workspace = Path(args.workspace).expanduser() if args.workspace else _resolve_agent_workspace(agent_id)
+    workspace = workspace.expanduser()
+    if not workspace.exists():
+        raise SystemExit(f"workspace not found: {workspace}")
+
+    ocb_bin = _resolve_openclawbrain_bin()
+
+    def run_step(label: str, argv: list[str]) -> int:
+        print(f"$ {' '.join(shlex.quote(part) for part in argv)}")
+        result = _run_subprocess_command(argv)
+        if result.returncode != 0:
+            print(f"{label} failed (exit={result.returncode})", file=sys.stderr)
+        return int(result.returncode)
+
+    codes: list[int] = []
+    state_file = Path(state_path)
+    if not state_file.exists():
+        output_dir = state_file.parent
+        init_cmd = [
+            ocb_bin,
+            "init",
+            "--workspace",
+            str(workspace),
+            "--output",
+            str(output_dir),
+        ]
+        if args.fast:
+            init_cmd.extend(["--embedder", "local", "--llm", "none", "--llm-split-mode", "off"])
+        codes.append(run_step("init", init_cmd))
+        if codes[-1] != 0:
+            return codes[-1]
+    else:
+        print(f"state exists: {state_path}")
+
+    serve_cmd = [ocb_bin, "serve", "install", "--state", state_path]
+    if args.env_file:
+        serve_cmd.extend(["--env-file", str(Path(args.env_file).expanduser())])
+    codes.append(run_step("serve install", serve_cmd))
+
+    loop_cmd = [ocb_bin, "loop", "install", "--state", state_path]
+    if args.fast:
+        loop_cmd.append("--fast")
+    if args.env_file:
+        loop_cmd.extend(["--env-file", str(Path(args.env_file).expanduser())])
+    codes.append(run_step("loop install", loop_cmd))
+
+    if all(code == 0 for code in codes):
+        print("Verify:")
+        print(f"  openclawbrain route-audit --state {state_path} && openclawbrain serve status --state {state_path}")
+        return 0
+    return 1
+
+
 def _resolve_hooks_path(hooks_path: str | None) -> Path:
     if hooks_path:
         path = Path(hooks_path).expanduser()
@@ -7246,6 +7403,7 @@ def main(argv: list[str] | None = None) -> int:
     """main."""
     args = _build_parser().parse_args(argv)
     handlers = {
+        "bootstrap": cmd_bootstrap,
         "init": cmd_init,
         "query": cmd_query,
         "learn": cmd_learn,

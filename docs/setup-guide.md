@@ -6,6 +6,29 @@
 - `OPENAI_API_KEY` only if you explicitly use OpenAI embeddings/teacher labeling
 - A workspace directory with markdown files (your agent's working knowledge/docs)
 
+## Fast boot (recommended)
+Bring the brain online in minutes, then let background learning run continuously.
+
+```bash
+openclawbrain bootstrap --agent <agent-id>
+```
+
+Notes:
+- Resolves workspace from `~/.openclaw/openclaw.json` for the agent; override with `--workspace /path/to/workspace`.
+- Creates `~/.openclawbrain/<agent-id>/state.json` with **local embeddings** if missing.
+- Installs + starts `serve` and `loop` launchd services immediately.
+- Default is fast mode; use `--no-fast` to opt out.
+
+Verify (single command):
+
+```bash
+openclawbrain route-audit --state ~/.openclawbrain/<agent-id>/state.json && openclawbrain serve status --state ~/.openclawbrain/<agent-id>/state.json
+```
+
+Background learning schedule (fast boot default):
+- Hourly: edges-only replay, tool-priority, max 500 interactions, include tool results (truncated to 20,000 chars), advance offsets on skips.
+- Nightly: async-route-pg teacher with low budgets + train-route-model.
+
 ## Step 1: Build your first brain
 
 **Important (NO TIMEOUTS):** `init`, `build-all`, `async-route-pg`, and large local embedding runs can take 30-180+ minutes. If running under CI, cron, supervisor, or wrappers, do **not** use short timeouts; ensure the runner allows long execution. For unattended runs, prefer the `launchd` loop. For manual runs, use `nohup` or `tmux`.

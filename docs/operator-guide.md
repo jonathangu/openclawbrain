@@ -14,6 +14,28 @@ Use packaged adapter CLIs for agent hooks (no `~/openclawbrain` clone required):
 
 **Important (NO TIMEOUTS):** `init`, `build-all`, `async-route-pg`, and large local embedding runs can take 30-180+ minutes. If running under CI, cron, supervisor, or wrappers, do **not** use short timeouts; ensure the runner allows long execution. For unattended runs, prefer the `launchd` loop. For manual runs, use `nohup` or `tmux`.
 
+## Fast boot (default)
+Bring a brain online quickly and push full learning into the background loop.
+
+```bash
+openclawbrain bootstrap --agent <agent-id>
+```
+
+This will:
+- Create `~/.openclawbrain/<agent-id>/state.json` with local embeddings if missing.
+- Install + start `serve` and `loop` services immediately.
+- Configure the loop for cheap hourly replay and bounded nightly learning.
+
+Verify (single command):
+
+```bash
+openclawbrain route-audit --state ~/.openclawbrain/<agent-id>/state.json && openclawbrain serve status --state ~/.openclawbrain/<agent-id>/state.json
+```
+
+Background learning schedule (fast boot default):
+- Hourly: edges-only replay, tool-priority, max 500 interactions, include tool results (truncated to 20,000 chars), advance offsets on skips.
+- Nightly: async-route-pg teacher with low budgets + train-route-model.
+
 ## 2) Turn brain ON
 Canonical run command:
 
