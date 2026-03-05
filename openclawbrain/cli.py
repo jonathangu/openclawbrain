@@ -161,16 +161,22 @@ def _write_json_atomic(path: Path, payload: object) -> None:
     target = Path(path)
     target.parent.mkdir(parents=True, exist_ok=True)
     temp = target.with_suffix(target.suffix + ".tmp")
-    temp.write_text(json.dumps(payload, indent=2), encoding="utf-8")
-    try:
-        fd = os.open(str(temp), os.O_RDONLY)
+    with temp.open("w", encoding="utf-8") as handle:
+        handle.write(json.dumps(payload, indent=2))
+        handle.flush()
         try:
-            os.fsync(fd)
-        finally:
-            os.close(fd)
-    except OSError:
-        pass
+            os.fsync(handle.fileno())
+        except OSError:
+            pass
     temp.replace(target)
+
+
+def _subprocess_env(extra: dict[str, str] | None = None) -> dict[str, str]:
+    env = dict(os.environ)
+    env.setdefault("PYTHONUNBUFFERED", "1")
+    if extra:
+        env.update(extra)
+    return env
 
 
 def _read_json_optional(path: Path) -> dict[str, object] | None:
@@ -319,10 +325,11 @@ def _build_all_root_manifest_payload(
     run_id: str,
     run_ts: datetime,
     args: argparse.Namespace,
-    ocb_bin: str,
+    ocb_prefix: list[str],
     agent_ids: list[str],
     parallel_agents: int,
     events_jsonl: Path,
+    stall_audit_jsonl: Path | None,
     status: str = "running",
     agents: list[dict[str, object]] | None = None,
 ) -> dict[str, object]:
@@ -334,7 +341,7 @@ def _build_all_root_manifest_payload(
         "run_id": run_id,
         "status": status,
         "timestamp": run_ts.isoformat(),
-        "openclawbrain_bin": ocb_bin,
+        "openclawbrain_bin": " ".join(shlex.quote(part) for part in ocb_prefix),
         "command": "build-all",
         "args": {
             "agents": getattr(args, "agents", None),
@@ -355,9 +362,12 @@ def _build_all_root_manifest_payload(
             "replay_sample_rate": float(args.replay_sample_rate),
             "replay_priority": str(args.replay_priority),
             "advance_offsets_on_skip": bool(args.advance_offsets_on_skip),
+            "tool_result_max_chars": getattr(args, "tool_result_max_chars", None),
+            "step_stall_timeout_seconds": int(getattr(args, "step_stall_timeout_seconds", 0)),
             "enable_async_teacher": bool(args.enable_async_teacher),
             "skip_init_route_model": bool(args.skip_init_route_model),
             "events_jsonl": str(events_jsonl),
+            "stall_audit_jsonl": str(stall_audit_jsonl) if stall_audit_jsonl else None,
         },
         "agents": agents or [],
         "summary": {
@@ -606,6 +616,17 @@ def _resolve_openclawbrain_bin() -> str:
     return str(argv0)
 
 
+def _resolve_subprocess_python() -> str:
+    override = os.environ.get("OPENCLAWBRAIN_SUBPROCESS_PYTHON") or os.environ.get("OPENCLAWBRAIN_PYTHON")
+    if isinstance(override, str) and override.strip():
+        return str(Path(override).expanduser())
+    return sys.executable
+
+
+def _resolve_subprocess_prefix() -> list[str]:
+    return [_resolve_subprocess_python(), "-m", "openclawbrain.cli"]
+
+
 def _discover_agent_ids(config_path: Path | None = None) -> list[str]:
     """Discover agent ids from ~/.openclaw/openclaw.json or fallback to main."""
     cfg_path = config_path or (Path.home() / ".openclaw" / "openclaw.json")
@@ -814,10 +835,104 @@ def _run_logged_command(
         if stdout_path is not None:
             stdout_path.parent.mkdir(parents=True, exist_ok=True)
             with stdout_path.open("w", encoding="utf-8") as out_handle:
-                proc = subprocess.run(cmd, stdout=out_handle, stderr=log_handle, text=True, check=False)
+                proc = subprocess.run(
+                    cmd,
+                    stdout=out_handle,
+                    stderr=log_handle,
+                    text=True,
+                    check=False,
+                    env=_subprocess_env(),
+                )
         else:
-            proc = subprocess.run(cmd, stdout=log_handle, stderr=log_handle, text=True, check=False)
+            proc = subprocess.run(
+                cmd,
+                stdout=log_handle,
+                stderr=log_handle,
+                text=True,
+                check=False,
+                env=_subprocess_env(),
+            )
     return int(proc.returncode)
+
+
+def _heartbeat_from_paths(paths: list[Path]) -> tuple[tuple[str, float, int], ...] | None:
+    entries: list[tuple[str, float, int]] = []
+    for path in paths:
+        try:
+            stat = path.stat()
+        except OSError:
+            continue
+        entries.append((path.name, float(stat.st_mtime), int(stat.st_size)))
+    return tuple(entries) if entries else None
+
+
+def _run_logged_command_with_watchdog(
+    cmd: list[str],
+    *,
+    log_path: Path,
+    step_name: str,
+    stdout_path: Path | None,
+    stall_timeout_seconds: int,
+    heartbeat_fn: Callable[[], object | None] | None,
+    kill_grace_seconds: int = 10,
+) -> tuple[int, bool]:
+    if stall_timeout_seconds <= 0:
+        return _run_logged_command(cmd, log_path=log_path, step_name=step_name, stdout_path=stdout_path), False
+
+    log_path.parent.mkdir(parents=True, exist_ok=True)
+    last_heartbeat_at = time.monotonic()
+    last_token: object | None = None
+    stalled = False
+
+    with log_path.open("a", encoding="utf-8") as log_handle:
+        log_handle.write(f"\n== {step_name} ==\n")
+        log_handle.write(f"command: {' '.join(shlex.quote(part) for part in cmd)}\n")
+        log_handle.flush()
+        out_handle = None
+        try:
+            if stdout_path is not None:
+                stdout_path.parent.mkdir(parents=True, exist_ok=True)
+                out_handle = stdout_path.open("w", encoding="utf-8")
+                proc = subprocess.Popen(
+                    cmd,
+                    stdout=out_handle,
+                    stderr=log_handle,
+                    text=True,
+                    env=_subprocess_env(),
+                )
+            else:
+                proc = subprocess.Popen(
+                    cmd,
+                    stdout=log_handle,
+                    stderr=log_handle,
+                    text=True,
+                    env=_subprocess_env(),
+                )
+            while True:
+                returncode = proc.poll()
+                if returncode is not None:
+                    return int(returncode), stalled
+                token = heartbeat_fn() if heartbeat_fn else None
+                if token is not None and token != last_token:
+                    last_token = token
+                    last_heartbeat_at = time.monotonic()
+                if (time.monotonic() - last_heartbeat_at) > stall_timeout_seconds:
+                    stalled = True
+                    log_handle.write(
+                        f"[stall] {step_name} heartbeat stalled for {stall_timeout_seconds}s; terminating\n"
+                    )
+                    log_handle.flush()
+                    proc.terminate()
+                    try:
+                        returncode = proc.wait(timeout=max(1, int(kill_grace_seconds)))
+                    except subprocess.TimeoutExpired:
+                        proc.kill()
+                        returncode = proc.wait()
+                    return int(returncode), stalled
+                time.sleep(1.0)
+        finally:
+            if out_handle is not None:
+                out_handle.close()
 
 
 def _progress_int(value: object) -> int | None:
@@ -863,6 +978,26 @@ def _read_replay_checkpoint_progress(
     if not parts:
         return None
     return f"[build-all] agent={agent_id} replay_progress " + " | ".join(parts)
+
+
+def _replay_checkpoint_heartbeat(checkpoint_path: Path, *, agent_id: str) -> object | None:
+    try:
+        if not checkpoint_path.exists():
+            return None
+        checkpoint = _load_checkpoint(checkpoint_path)
+    except Exception:  # noqa: BLE001
+        return None
+    if not isinstance(checkpoint, dict):
+        return None
+    try:
+        stat = checkpoint_path.stat()
+        mtime = float(stat.st_mtime)
+        size = int(stat.st_size)
+    except OSError:
+        mtime = 0.0
+        size = 0
+    progress = _read_replay_checkpoint_progress(checkpoint, agent_id=agent_id)
+    return (mtime, size, progress)
 
 
 def _monitor_replay_checkpoint(
@@ -1152,7 +1287,7 @@ def _run_logged_replay_command(
                 daemon=True,
             )
             monitor.start()
-        proc = subprocess.Popen(cmd, stdout=log_handle, stderr=log_handle, text=True, env=env)
+        proc = subprocess.Popen(cmd, stdout=log_handle, stderr=log_handle, text=True, env=_subprocess_env(env))
         try:
             returncode = proc.wait()
         finally:
@@ -1195,6 +1330,7 @@ def _run_logged_replay_command_with_watchdog(
     attempt = 0
     base_cmd = list(cmd)
     fallback_used = False
+    merged_env = _subprocess_env(env)
 
     while True:
         attempt += 1
@@ -1219,7 +1355,7 @@ def _run_logged_replay_command_with_watchdog(
                 )
                 monitor.start()
             try:
-                proc = spawn(base_cmd, stdout=log_handle, stderr=log_handle, text=True, env=env)
+                proc = spawn(base_cmd, stdout=log_handle, stderr=log_handle, text=True, env=merged_env)
             except FileNotFoundError:
                 stop_event.set()
                 if monitor is not None:
@@ -1334,9 +1470,10 @@ def _build_all_agent_pipeline(
     *,
     agent_id: str,
     args: argparse.Namespace,
-    ocb_bin: str,
+    ocb_prefix: list[str],
     ts_label: str,
     run_ts: datetime,
+    stall_audit_path: Path | None,
     emit_event: Callable[[dict[str, object]], None],
 ) -> dict[str, object]:
     """Run build-all pipeline for a single agent."""
@@ -1393,6 +1530,17 @@ def _build_all_agent_pipeline(
             payload["artifact_paths"] = dict(artifact_paths)
         emit_event(payload)
 
+    def emit_stall_audit(payload: dict[str, object]) -> None:
+        if stall_audit_path is None:
+            return
+        row = {
+            "run_id": ts_label,
+            "agent_id": agent_id,
+            "ts": datetime.now(timezone.utc).isoformat(),
+            **payload,
+        }
+        _append_jsonl(stall_audit_path, row)
+
     def emit_step_start(step: str, *, stdout_path: Path | None = None) -> None:
         step_started[step] = time.perf_counter()
         event: dict[str, object] = {"type": "step_start", "step": step}
@@ -1444,10 +1592,61 @@ def _build_all_agent_pipeline(
             payload["exit_code"] = int(code)
         steps.append(payload)
 
-    def run_step(step: str, cmd: list[str], *, stdout_path: Path | None = None) -> int:
+    def run_step(
+        step: str,
+        cmd: list[str],
+        *,
+        stdout_path: Path | None = None,
+        heartbeat_fn: Callable[[], object | None] | None = None,
+    ) -> int:
         emit_step_start(step, stdout_path=stdout_path)
         emit_status(step, "running")
-        code = _run_logged_command(cmd, log_path=log_path, step_name=step, stdout_path=stdout_path)
+        stall_timeout = max(0, int(getattr(args, "step_stall_timeout_seconds", 0)))
+        max_retries = 1
+        attempt = 0
+        stalled = False
+        while True:
+            if stall_timeout > 0:
+                code, stalled = _run_logged_command_with_watchdog(
+                    cmd,
+                    log_path=log_path,
+                    step_name=step,
+                    stdout_path=stdout_path,
+                    stall_timeout_seconds=stall_timeout,
+                    heartbeat_fn=heartbeat_fn,
+                )
+            else:
+                code = _run_logged_command(cmd, log_path=log_path, step_name=step, stdout_path=stdout_path)
+                stalled = False
+            if not stalled:
+                break
+            attempt += 1
+            emit_event_payload(
+                {
+                    "type": "step_stall",
+                    "step": step,
+                    "attempt": attempt,
+                    "timeout_seconds": stall_timeout,
+                }
+            )
+            emit_stall_audit(
+                {
+                    "type": "step_stall",
+                    "step": step,
+                    "attempt": attempt,
+                    "timeout_seconds": stall_timeout,
+                    "command": cmd,
+                }
+            )
+            if attempt > max_retries:
+                break
+            emit_status(step, "retrying", f"stall_timeout={stall_timeout}s attempt={attempt}/{max_retries}")
+        if stalled and attempt > max_retries:
+            reason = f"stall_timeout_{stall_timeout}s"
+            emit_status(step, "skipped", reason)
+            record(step, "skipped", 0)
+            emit_step_end(step, status="skipped", code=0, error=reason, stdout_path=stdout_path)
+            return 0
         if code == 0:
             emit_status(step, "ok")
             record(step, "ok", code)
@@ -1538,7 +1737,7 @@ def _build_all_agent_pipeline(
     if exit_code == 0:
         exit_code = run_step(
             "status_before",
-            [ocb_bin, "status", "--state", str(state_path), "--json"],
+            [*ocb_prefix, "status", "--state", str(state_path), "--json"],
             stdout_path=status_before_path,
         )
 
@@ -1557,7 +1756,7 @@ def _build_all_agent_pipeline(
         exit_code = run_step(
             "reembed",
             [
-                ocb_bin,
+                *ocb_prefix,
                 "reembed",
                 "--state",
                 str(state_path),
@@ -1566,13 +1765,14 @@ def _build_all_agent_pipeline(
                 "--embed-model",
                 str(args.embed_model),
             ],
+            heartbeat_fn=lambda: _heartbeat_from_paths([log_path]),
         )
     elif exit_code == 0:
         emit_skipped("reembed", reason="disabled", code=0)
 
     if exit_code == 0:
         replay_cmd = [
-            ocb_bin,
+            *ocb_prefix,
             "replay",
             "--state",
             str(state_path),
@@ -1606,7 +1806,12 @@ def _build_all_agent_pipeline(
             replay_cmd.append("--advance-offsets-on-skip")
         if args.include_tool_results:
             replay_cmd.append("--include-tool-results")
-            replay_cmd.extend(["--tool-result-max-chars", str(DEFAULT_TOOL_RESULT_MAX_CHARS)])
+            tool_max = (
+                args.tool_result_max_chars
+                if getattr(args, "tool_result_max_chars", None) is not None
+                else DEFAULT_TOOL_RESULT_MAX_CHARS
+            )
+            replay_cmd.extend(["--tool-result-max-chars", str(int(tool_max))])
         else:
             replay_cmd.append("--no-include-tool-results")
         if args.resume:
@@ -1620,7 +1825,7 @@ def _build_all_agent_pipeline(
         exit_code = run_step(
             "maintain",
             [
-                ocb_bin,
+                *ocb_prefix,
                 "maintain",
                 "--state",
                 str(state_path),
@@ -1640,7 +1845,7 @@ def _build_all_agent_pipeline(
     if exit_code == 0 and not args.skip_init_route_model:
         preserved = [record for record in read_labels_jsonl(labels_path) if record.reward_source != RewardSource.HARVESTER]
         harvest_cmd = [
-            ocb_bin,
+            *ocb_prefix,
             "harvest",
             "--state",
             str(state_path),
@@ -1654,7 +1859,7 @@ def _build_all_agent_pipeline(
             append_labels_jsonl(labels_path, preserved)
         if exit_code == 0:
             init_async_cmd = [
-                ocb_bin,
+                *ocb_prefix,
                 "async-route-pg",
                 "--state",
                 str(state_path),
@@ -1691,10 +1896,15 @@ def _build_all_agent_pipeline(
             else:
                 init_async_cmd.append("--no-write-relevance-metadata")
 
-            exit_code = run_step("init_async_route_pg", init_async_cmd, stdout_path=init_async_route_path)
+            exit_code = run_step(
+                "init_async_route_pg",
+                init_async_cmd,
+                stdout_path=init_async_route_path,
+                heartbeat_fn=lambda: _heartbeat_from_paths([init_async_route_path, log_path]),
+            )
             if exit_code == 0 and init_traces_path.exists() and init_traces_path.stat().st_size > 0:
                 init_train_cmd = [
-                    ocb_bin,
+                    *ocb_prefix,
                     "train-route-model",
                     "--state",
                     str(state_path),
@@ -1706,7 +1916,12 @@ def _build_all_agent_pipeline(
                     str(init_route_model_out_path),
                     "--json",
                 ]
-                exit_code = run_step("init_train_route_model", init_train_cmd, stdout_path=init_train_route_path)
+                exit_code = run_step(
+                    "init_train_route_model",
+                    init_train_cmd,
+                    stdout_path=init_train_route_path,
+                    heartbeat_fn=lambda: _heartbeat_from_paths([init_train_route_path, log_path]),
+                )
             else:
                 skip_reason = "missing traces" if exit_code == 0 else "init async route failed"
                 emit_skipped("init_train_route_model", reason=skip_reason, code=exit_code, stdout_path=init_train_route_path)
@@ -1720,7 +1935,7 @@ def _build_all_agent_pipeline(
 
     if exit_code == 0 and args.enable_async_teacher:
         async_cmd = [
-            ocb_bin,
+            *ocb_prefix,
             "async-route-pg",
             "--state",
             str(state_path),
@@ -1756,10 +1971,15 @@ def _build_all_agent_pipeline(
         else:
             async_cmd.append("--no-write-relevance-metadata")
 
-        exit_code = run_step("async_route_pg", async_cmd, stdout_path=async_route_path)
+        exit_code = run_step(
+            "async_route_pg",
+            async_cmd,
+            stdout_path=async_route_path,
+            heartbeat_fn=lambda: _heartbeat_from_paths([async_route_path, log_path]),
+        )
         if exit_code == 0 and traces_out_path.exists() and traces_out_path.stat().st_size > 0:
             train_cmd = [
-                ocb_bin,
+                *ocb_prefix,
                 "train-route-model",
                 "--state",
                 str(state_path),
@@ -1771,7 +1991,12 @@ def _build_all_agent_pipeline(
                 str(route_model_out_path),
                 "--json",
             ]
-            exit_code = run_step("train_route_model", train_cmd, stdout_path=train_route_path)
+            exit_code = run_step(
+                "train_route_model",
+                train_cmd,
+                stdout_path=train_route_path,
+                heartbeat_fn=lambda: _heartbeat_from_paths([train_route_path, log_path]),
+            )
         else:
             skip_reason = "missing traces" if exit_code == 0 else "async route failed"
             emit_skipped("train_route_model", reason=skip_reason, code=exit_code, stdout_path=train_route_path)
@@ -1785,7 +2010,7 @@ def _build_all_agent_pipeline(
     if exit_code == 0:
         exit_code = run_step(
             "status_after",
-            [ocb_bin, "status", "--state", str(state_path), "--json"],
+            [*ocb_prefix, "status", "--state", str(state_path), "--json"],
             stdout_path=status_after_path,
         )
     else:
@@ -2394,13 +2619,18 @@ def _build_parser() -> argparse.ArgumentParser:
     loop.add_argument("--workers", type=int, default=4)
     loop.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True)
     loop.add_argument("--include-tool-results", action=argparse.BooleanOptionalAction, default=True)
-    loop.add_argument("--tool-result-max-chars", type=int, default=DEFAULT_TOOL_RESULT_MAX_CHARS)
+    loop.add_argument("--tool-result-max-chars", type=int, default=None)
+    loop.add_argument("--advance-offsets-on-skip", action=argparse.BooleanOptionalAction, default=None)
     loop.add_argument("--checkpoint-every-seconds", type=int, default=60)
     loop.add_argument("--replay-progress-interval-seconds", type=int, default=30)
     loop.add_argument("--replay-max-interactions", type=_parse_positive_int, default=None)
     loop.add_argument("--replay-priority", choices=("all", "tool"), default="all")
-    loop.add_argument("--advance-offsets-on-skip", action=argparse.BooleanOptionalAction, default=False)
-    loop.add_argument("--maintain", action=argparse.BooleanOptionalAction, default=True, help="Run maintenance pass (default: on)")
+    loop.add_argument(
+        "--maintain",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Run maintenance pass (default: on)",
+    )
     loop.add_argument("--skip-maintain", action="store_true", help="Skip maintenance pass (legacy alias)")
     loop.add_argument("--maintain-tasks", default="health,decay,prune,merge")
     loop.add_argument("--maintain-llm", choices=["none", "openai", "ollama"], default="none")
@@ -2549,6 +2779,7 @@ def _build_parser() -> argparse.ArgumentParser:
     build_all.add_argument("--llm-model")
     build_all.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True)
     build_all.add_argument("--include-tool-results", action=argparse.BooleanOptionalAction, default=True)
+    build_all.add_argument("--tool-result-max-chars", type=int, default=None)
     build_all.add_argument("--replay-since-hours", type=_parse_positive_float, default=None)
     build_all.add_argument("--replay-max-interactions", type=_parse_positive_int, default=None)
     build_all.add_argument(
@@ -2572,6 +2803,7 @@ def _build_parser() -> argparse.ArgumentParser:
     build_all.add_argument("--checkpoint-every-seconds", type=int, default=60)
     build_all.add_argument("--replay-progress-interval-seconds", type=int, default=15)
     build_all.add_argument("--state-lock-timeout-seconds", type=int, default=3600)
+    build_all.add_argument("--step-stall-timeout-seconds", type=int, default=0)
     build_all.add_argument("--enable-async-teacher", action="store_true")
     build_all.add_argument("--since-hours", type=float, default=24.0)
     build_all.add_argument("--max-queries", type=int, default=200)
@@ -6387,6 +6619,10 @@ def cmd_loop(args: argparse.Namespace) -> int:
         raise SystemExit("--state or --agent is required for loop")
     state_path = str(Path(state_path).expanduser())
     labels_path = _default_labels_path(state_path)
+    if args.advance_offsets_on_skip is None:
+        args.advance_offsets_on_skip = bool(str(args.mode) != "edges-only")
+    if args.include_tool_results and getattr(args, "tool_result_max_chars", None) is None:
+        args.tool_result_max_chars = int(DEFAULT_TOOL_RESULT_MAX_CHARS)
 
     if getattr(args, "fast", False):
         _apply_fast_loop_defaults(args)
@@ -6413,6 +6649,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
     )
 
     ocb_prefix = [_resolve_loop_python(), "-m", "openclawbrain.cli"]
+    ocb_subprocess_prefix = _resolve_subprocess_prefix()
 
     def _loop_run_program_arguments() -> list[str]:
         argv = ocb_prefix + [
@@ -6502,11 +6739,16 @@ def cmd_loop(args: argparse.Namespace) -> int:
             argv.append("--no-resume")
         if args.include_tool_results:
             argv.append("--include-tool-results")
+            if args.tool_result_max_chars is not None:
+                argv.extend(["--tool-result-max-chars", str(int(args.tool_result_max_chars))])
         else:
             argv.append("--no-include-tool-results")
         argv.append("--maintain" if args.maintain else "--no-maintain")
+        argv.append("--harvest-labels" if args.harvest_labels else "--no-harvest-labels")
         argv.append("--enable-teacher" if args.enable_teacher else "--no-enable-teacher")
+        argv.append("--enable-async-route-pg" if args.enable_async_route_pg else "--no-enable-async-route-pg")
         argv.append("--enable-train-route-model" if args.enable_train_route_model else "--no-enable-train-route-model")
+        argv.append("--enable-dreaming" if args.enable_dreaming else "--no-enable-dreaming")
         if args.train_route_model_out:
             argv.extend(["--train-route-model-out", str(args.train_route_model_out)])
         if args.reward_weights:
@@ -6777,7 +7019,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
         llm: str,
     ) -> int:
         replay_cmd = [
-            *ocb_prefix,
+            *ocb_subprocess_prefix,
             "replay",
             "--state",
             state_path,
@@ -6838,7 +7080,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
 
     def run_harvest(*, job: str) -> int:
         harvest_cmd = [
-            *ocb_prefix,
+            *ocb_subprocess_prefix,
             "harvest",
             "--state",
             state_path,
@@ -6853,7 +7095,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
     def run_harvest_labels(*, job: str) -> int:
         temp_path = labels_path.with_suffix(".harvest.tmp")
         harvest_cmd = [
-            *ocb_prefix,
+            *ocb_subprocess_prefix,
             "harvest",
             "--state",
             state_path,
@@ -6877,7 +7119,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
 
     def run_maintain(*, job: str) -> int:
         maintain_cmd = [
-            *ocb_prefix,
+            *ocb_subprocess_prefix,
             "maintain",
             "--state",
             state_path,
@@ -6901,7 +7143,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
         traces_out: Path | None,
     ) -> int:
         async_cmd = [
-            *ocb_prefix,
+            *ocb_subprocess_prefix,
             "async-route-pg",
             "--state",
             state_path,
@@ -6950,7 +7192,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
         out_path: Path,
     ) -> int:
         train_cmd = [
-            *ocb_prefix,
+            *ocb_subprocess_prefix,
             "train-route-model",
             "--state",
             state_path,
@@ -7406,7 +7648,11 @@ def cmd_build_all(args: argparse.Namespace) -> int:
     _maybe_warn_long_running()
     agent_ids = _resolve_agent_ids(args)
     parallel = max(1, int(args.parallel_agents))
-    ocb_bin = _resolve_openclawbrain_bin()
+    if args.advance_offsets_on_skip is None:
+        args.advance_offsets_on_skip = bool(str(args.mode) != "edges-only")
+    if args.include_tool_results and getattr(args, "tool_result_max_chars", None) is None:
+        args.tool_result_max_chars = int(DEFAULT_TOOL_RESULT_MAX_CHARS)
+    ocb_prefix = _resolve_subprocess_prefix()
     run_ts = datetime.now(timezone.utc)
     ts_label = run_ts.strftime("%Y%m%dT%H%M%S") + f"{run_ts.microsecond // 1000:03d}Z"
     run_started_at = time.perf_counter()
@@ -7414,6 +7660,7 @@ def cmd_build_all(args: argparse.Namespace) -> int:
     root = Path.home() / ".openclawbrain" / "scratch"
     root.mkdir(parents=True, exist_ok=True)
     root_manifest_path = root / f"build-all.{ts_label}.manifest.json"
+    stall_audit_path = root / f"build-all.{ts_label}.stall_audit.jsonl"
     events_jsonl_path = (
         Path(args.events_jsonl)
         if getattr(args, "events_jsonl", None) is not None
@@ -7441,6 +7688,7 @@ def cmd_build_all(args: argparse.Namespace) -> int:
             "artifact_paths": {
                 "manifest_path": str(root_manifest_path),
                 "events_jsonl": str(events_jsonl_path),
+                "stall_audit_jsonl": str(stall_audit_path),
             },
         }
     )
@@ -7449,10 +7697,11 @@ def cmd_build_all(args: argparse.Namespace) -> int:
         run_id=ts_label,
         run_ts=run_ts,
         args=args,
-        ocb_bin=ocb_bin,
+        ocb_prefix=ocb_prefix,
         agent_ids=agent_ids,
         parallel_agents=parallel,
         events_jsonl=events_jsonl_path,
+        stall_audit_jsonl=stall_audit_path,
         status="running",
         agents=[],
     )
@@ -7465,9 +7714,10 @@ def cmd_build_all(args: argparse.Namespace) -> int:
                 _build_all_agent_pipeline,
                 agent_id=agent_id,
                 args=args,
-                ocb_bin=ocb_bin,
+                ocb_prefix=ocb_prefix,
                 ts_label=ts_label,
                 run_ts=run_ts,
+                stall_audit_path=stall_audit_path,
                 emit_event=emit_event,
             ): agent_id
             for agent_id in agent_ids
@@ -7487,10 +7737,11 @@ def cmd_build_all(args: argparse.Namespace) -> int:
                 run_id=ts_label,
                 run_ts=run_ts,
                 args=args,
-                ocb_bin=ocb_bin,
+                ocb_prefix=ocb_prefix,
                 agent_ids=agent_ids,
                 parallel_agents=parallel,
                 events_jsonl=events_jsonl_path,
+                stall_audit_jsonl=stall_audit_path,
                 status="running",
                 agents=results,
             )
@@ -7500,10 +7751,11 @@ def cmd_build_all(args: argparse.Namespace) -> int:
         run_id=ts_label,
         run_ts=run_ts,
         args=args,
-        ocb_bin=ocb_bin,
+        ocb_prefix=ocb_prefix,
         agent_ids=agent_ids,
         parallel_agents=parallel,
         events_jsonl=events_jsonl_path,
+        stall_audit_jsonl=stall_audit_path,
         status="complete",
         agents=results,
     )
@@ -7517,6 +7769,7 @@ def cmd_build_all(args: argparse.Namespace) -> int:
             "artifact_paths": {
                 "manifest_path": str(root_manifest_path),
                 "events_jsonl": str(events_jsonl_path),
+                "stall_audit_jsonl": str(stall_audit_path),
             },
         }
     )
@@ -7598,7 +7851,7 @@ def _resolve_hooks_path(hooks_path: str | None) -> Path:
 
 def _run_subprocess_command(argv: list[str]) -> subprocess.CompletedProcess:
     try:
-        return subprocess.run(argv, check=False)
+        return subprocess.run(argv, check=False, env=_subprocess_env())
     except FileNotFoundError:
         return subprocess.CompletedProcess(argv, 127)
 

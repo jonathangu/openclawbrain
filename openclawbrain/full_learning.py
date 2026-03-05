@@ -664,6 +664,11 @@ def _save_checkpoint(
     payload[phase] = phase_payload
     with path.open("w", encoding="utf-8") as handle:
         json.dump(payload, handle, indent=2)
+        handle.flush()
+        try:
+            os.fsync(handle.fileno())
+        except OSError:
+            pass
 
 
 def _persist_state(
