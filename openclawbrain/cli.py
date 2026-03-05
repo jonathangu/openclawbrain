@@ -55,7 +55,7 @@ from .replay import (
     replay_queries,
     replay_queries_parallel,
 )
-from .split import split_workspace, _resolve_workspace_id
+from .split import split_workspace, _resolve_workspace_id, _sibling_weight
 from .hasher import HashEmbedder
 from .traverse import TraversalConfig, TraversalResult, traverse
 from .sync import DEFAULT_AUTHORITY_MAP, SyncReport, sync_workspace
@@ -107,6 +107,12 @@ INIT_ROUTE_SINCE_HOURS = 100000
 INIT_ROUTE_MAX_QUERIES = 100000
 INIT_ROUTE_SAMPLE_RATE = 1.0
 INIT_ROUTE_TRACES_FILENAME = "init.route_traces.jsonl"
+INIT_CHECKPOINT_DIRNAME = "init_checkpoints"
+INIT_SPLIT_MANIFEST_FILENAME = "split.jsonl"
+INIT_MANIFEST_META_FILENAME = "manifest.json"
+INIT_VECTORS_FILENAME = "vectors.jsonl"
+INIT_PROGRESS_FILENAME = "progress.json"
+INIT_COMPLETE_FILENAME = "complete.json"
 REPLAY_HELP_EPILOG = (
     "Replay modes and rough cost profile:\n"
     "  edges-only    Fastest/cheapest. No LLM calls, no harvest.\n"
@@ -176,6 +182,118 @@ def _append_jsonl(path: Path, payload: dict[str, object]) -> None:
     path.parent.mkdir(parents=True, exist_ok=True)
     with path.open("a", encoding="utf-8") as handle:
         handle.write(json.dumps(payload, default=str) + "\n")
+
+
+def _append_jsonl_lines_fsync(path: Path, payloads: list[dict[str, object]]) -> None:
+    """Append multiple JSONL lines and fsync."""
+    if not payloads:
+        return
+    path.parent.mkdir(parents=True, exist_ok=True)
+    with path.open("a", encoding="utf-8") as handle:
+        for payload in payloads:
+            handle.write(json.dumps(payload, default=str) + "\n")
+        handle.flush()
+        try:
+            os.fsync(handle.fileno())
+        except OSError:
+            pass
+
+
+def _init_checkpoint_paths(output_dir: Path) -> dict[str, Path]:
+    """Resolve init checkpoint paths."""
+    root = output_dir / "scratch" / INIT_CHECKPOINT_DIRNAME
+    return {
+        "root": root,
+        "manifest": root / INIT_SPLIT_MANIFEST_FILENAME,
+        "manifest_meta": root / INIT_MANIFEST_META_FILENAME,
+        "vectors": root / INIT_VECTORS_FILENAME,
+        "progress": root / INIT_PROGRESS_FILENAME,
+        "complete": root / INIT_COMPLETE_FILENAME,
+    }
+
+
+def _read_jsonl(path: Path) -> list[dict[str, object]]:
+    """Read a JSONL file, skipping malformed lines."""
+    if not path.exists():
+        return []
+    records: list[dict[str, object]] = []
+    with path.open("r", encoding="utf-8") as handle:
+        for line in handle:
+            stripped = line.strip()
+            if not stripped:
+                continue
+            try:
+                payload = json.loads(stripped)
+            except json.JSONDecodeError:
+                continue
+            if isinstance(payload, dict):
+                records.append(payload)
+    return records
+
+
+def _write_init_manifest(
+    manifest_path: Path,
+    meta_path: Path,
+    entries: list[dict[str, object]],
+    meta: dict[str, object],
+) -> None:
+    """Write init split manifest and metadata."""
+    manifest_path.parent.mkdir(parents=True, exist_ok=True)
+    with manifest_path.open("w", encoding="utf-8") as handle:
+        for entry in entries:
+            handle.write(json.dumps(entry, default=str) + "\n")
+        handle.flush()
+        try:
+            os.fsync(handle.fileno())
+        except OSError:
+            pass
+    _write_json_atomic(meta_path, meta)
+
+
+def _build_graph_from_manifest(
+    entries: list[dict[str, object]],
+    workspace_id: str | None,
+) -> tuple[Graph, dict[str, str]]:
+    """Rebuild graph/texts from an init split manifest."""
+    graph = Graph()
+    texts: dict[str, str] = {}
+    file_chunks: dict[str, list[tuple[int, str]]] = {}
+    prefix = f"{workspace_id}/" if workspace_id else ""
+    for entry in entries:
+        node_id = entry.get("id")
+        text = entry.get("text")
+        metadata = entry.get("metadata")
+        summary = entry.get("summary")
+        if not isinstance(node_id, str) or not isinstance(text, str):
+            continue
+        if not isinstance(metadata, dict):
+            metadata = {}
+        if not isinstance(summary, str):
+            summary = text.splitlines()[0] if text.splitlines() else ""
+        node = Node(id=node_id, content=text, summary=summary, metadata=dict(metadata))
+        graph.add_node(node)
+        texts[node_id] = text
+        file_name = metadata.get("file")
+        chunk_idx = metadata.get("chunk")
+        if isinstance(file_name, str) and isinstance(chunk_idx, int):
+            file_chunks.setdefault(file_name, []).append((chunk_idx, node_id))
+
+    for file_name, chunks in file_chunks.items():
+        if not chunks:
+            continue
+        chunks.sort(key=lambda item: item[0])
+        rel = file_name[len(prefix) :] if prefix and file_name.startswith(prefix) else file_name
+        for source_offset, (_, source_id) in enumerate(chunks[:-1]):
+            target_id = chunks[source_offset + 1][1]
+            weight = _sibling_weight(rel, source_offset)
+            graph.add_edge(Edge(source=source_id, target=target_id, weight=weight, kind="sibling"))
+            graph.add_edge(Edge(source=target_id, target=source_id, weight=weight, kind="sibling"))
+    return graph, texts
+
+
+def _iso_now() -> str:
+    """UTC timestamp string."""
+    return datetime.now(timezone.utc).isoformat()
 
 
 def _build_all_root_manifest_payload(
@@ -1355,6 +1473,8 @@ def _build_parser() -> argparse.ArgumentParser:
     # LLM-splitting controls (default: use LLM only for larger/complex files)
     i.add_argument("--llm-split-min-chars", type=int, default=20000)
     i.add_argument("--llm-split-mode", choices=["auto", "all", "off"], default="auto")
+    i.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True)
+    i.add_argument("--checkpoint-every", type=int, default=200)
     i.add_argument("--json", action="store_true")
 
     q = sub.add_parser("query")
@@ -2998,6 +3118,14 @@ def cmd_init(args: argparse.Namespace) -> int:
     if output_dir.suffix == ".json" and not output_dir.is_dir():
         output_dir = output_dir.parent
     output_dir.mkdir(parents=True, exist_ok=True)
+    checkpoint_paths = _init_checkpoint_paths(output_dir)
+    checkpoint_root = checkpoint_paths["root"]
+    checkpoint_every = int(getattr(args, "checkpoint_every", 0) or 0)
+    if checkpoint_every <= 0:
+        raise SystemExit("--checkpoint-every must be >= 1")
+    if not getattr(args, "resume", True):
+        if checkpoint_root.exists():
+            shutil.rmtree(checkpoint_root)
 
     old_state_path = output_dir / "state.json"
     prior_meta: dict[str, object] = {}
@@ -3011,49 +3139,198 @@ def cmd_init(args: argparse.Namespace) -> int:
             if node.metadata.get("type") in {"CORRECTION", "TEACHING", "DIRECTIVE"}
         ]
 
-    print("Phase 1/4: Splitting workspace...", file=sys.stderr)
-    llm_fn, llm_batch_fn = _resolve_llm(args)
+    manifest_path = checkpoint_paths["manifest"]
+    manifest_meta_path = checkpoint_paths["manifest_meta"]
+    vectors_path = checkpoint_paths["vectors"]
+    progress_path = checkpoint_paths["progress"]
+    complete_path = checkpoint_paths["complete"]
+    resume_enabled = bool(getattr(args, "resume", True))
+    workspace_id = _resolve_workspace_id(args.workspace, None)
+    manifest_meta = _read_json_optional(manifest_meta_path) if resume_enabled else None
+    resume_manifest = False
+    if resume_enabled and manifest_path.exists():
+        meta_workspace_id = manifest_meta.get("workspace_id") if isinstance(manifest_meta, dict) else None
+        if isinstance(meta_workspace_id, str) and meta_workspace_id and meta_workspace_id != workspace_id:
+            print("Split checkpoint workspace mismatch; rebuilding.", file=sys.stderr)
+        else:
+            entries = _read_jsonl(manifest_path)
+            if entries:
+                print("Phase 1/4: Loading split checkpoint...", file=sys.stderr)
+                graph, texts = _build_graph_from_manifest(entries, workspace_id)
+                resume_manifest = True
 
-    def _should_use_llm(rel: str, text: str) -> bool:
-        mode = getattr(args, "llm_split_mode", "auto")
-        if mode == "off":
+    if not resume_manifest:
+        print("Phase 1/4: Splitting workspace...", file=sys.stderr)
+        llm_fn, llm_batch_fn = _resolve_llm(args)
+
+        def _should_use_llm(rel: str, text: str) -> bool:
+            mode = getattr(args, "llm_split_mode", "auto")
+            if mode == "off":
+                return False
+            if mode == "all":
+                return True
+            # auto: only use LLM for larger/complex files
+            min_chars = int(getattr(args, "llm_split_min_chars", 20000) or 20000)
+            if len(text) >= min_chars:
+                return True
+            # Also use LLM for markdown/docs that likely benefit even if smaller
+            lower = rel.lower()
+            if lower.endswith((".md", ".rst")) and (
+                "docs/" in lower or lower.endswith("agents.md") or lower.endswith("tools.md")
+            ):
+                return True
             return False
-        if mode == "all":
-            return True
-        # auto: only use LLM for larger/complex files
-        min_chars = int(getattr(args, "llm_split_min_chars", 20000) or 20000)
-        if len(text) >= min_chars:
-            return True
-        # Also use LLM for markdown/docs that likely benefit even if smaller
-        lower = rel.lower()
-        if lower.endswith(('.md', '.rst')) and ('docs/' in lower or lower.endswith('agents.md') or lower.endswith('tools.md')):
-            return True
-        return False
 
-    graph, texts = split_workspace(
-        args.workspace,
-        llm_fn=llm_fn,
-        llm_batch_fn=llm_batch_fn,
-        should_use_llm_for_file=_should_use_llm,
+        graph, texts = split_workspace(
+            args.workspace,
+            llm_fn=llm_fn,
+            llm_batch_fn=llm_batch_fn,
+            should_use_llm_for_file=_should_use_llm,
+        )
+        for node in graph.nodes():
+            file_name = node.metadata.get("file")
+            if not isinstance(file_name, str) or not file_name:
+                continue
+            authority = DEFAULT_AUTHORITY_MAP.get(Path(file_name).name)
+            if authority is not None:
+                node.metadata["authority"] = authority
+
+        manifest_entries: list[dict[str, object]] = []
+        for node_id, text in texts.items():
+            node = graph.get_node(node_id)
+            if node is None:
+                continue
+            manifest_entries.append(
+                {
+                    "id": node.id,
+                    "text": text,
+                    "summary": node.summary,
+                    "metadata": dict(node.metadata),
+                }
+            )
+        _write_init_manifest(
+            manifest_path,
+            manifest_meta_path,
+            manifest_entries,
+            {
+                "created_at": _iso_now(),
+                "workspace": str(Path(args.workspace).expanduser()),
+                "workspace_id": workspace_id,
+                "node_count": len(texts),
+            },
+        )
+
+    split_progress = _read_json_optional(progress_path) or {}
+    split_progress.update(
+        {
+            "phase": "split",
+            "split_completed_at": _iso_now(),
+            "node_count": len(texts),
+        }
     )
-    for node in graph.nodes():
-        file_name = node.metadata.get("file")
-        if not isinstance(file_name, str) or not file_name:
-            continue
-        authority = DEFAULT_AUTHORITY_MAP.get(Path(file_name).name)
-        if authority is not None:
-            node.metadata["authority"] = authority
+    _write_json_atomic(progress_path, split_progress)
 
     print("Phase 2/4: Embedding texts...", file=sys.stderr)
     embedder_fn, embed_batch_fn, embedder_name, embedder_dim, embedder_model = _resolve_embedder(args, prior_meta)
+    if resume_enabled:
+        existing_progress = _read_json_optional(progress_path) or {}
+        prior_name = existing_progress.get("embedder_name")
+        prior_dim = existing_progress.get("embedder_dim")
+        if isinstance(prior_name, str) and prior_name and prior_name != embedder_name:
+            raise SystemExit(
+                f"init checkpoint embedder mismatch: {prior_name} vs {embedder_name} (use --no-resume to rebuild)"
+            )
+        if isinstance(prior_dim, int) and prior_dim and prior_dim != embedder_dim:
+            raise SystemExit(
+                f"init checkpoint dimension mismatch: {prior_dim} vs {embedder_dim} (use --no-resume to rebuild)"
+            )
     print(
         f"Embedding {len(texts)} texts ({embedder_name}, dim={embedder_dim})",
         file=sys.stderr,
     )
-    index_vectors = embed_batch_fn(list(texts.items()))
+    index_vectors: dict[str, list[float]] = {}
     index = VectorIndex()
-    for node_id, vector in index_vectors.items():
-        index.upsert(node_id, vector)
+    done_ids: set[str] = set()
+    if resume_enabled and vectors_path.exists():
+        for record in _read_jsonl(vectors_path):
+            node_id = record.get("id")
+            vector = record.get("vector")
+            if not isinstance(node_id, str) or not isinstance(vector, list):
+                continue
+            try:
+                cast_vector = [float(v) for v in vector]
+            except (TypeError, ValueError):
+                continue
+            index_vectors[node_id] = cast_vector
+            done_ids.add(node_id)
+            index.upsert(node_id, cast_vector)
+
+    embedding_started_at = None
+    existing_progress = _read_json_optional(progress_path) or {}
+    if isinstance(existing_progress.get("embedding_started_at"), str):
+        embedding_started_at = str(existing_progress["embedding_started_at"])
+    if embedding_started_at is None:
+        embedding_started_at = _iso_now()
+    existing_progress.update(
+        {
+            "phase": "embedding",
+            "embedding_started_at": embedding_started_at,
+            "updated_at": _iso_now(),
+            "total": len(texts),
+            "done": len(done_ids),
+            "checkpoint_every": checkpoint_every,
+            "embedder_name": embedder_name,
+            "embedder_dim": embedder_dim,
+            "embedder_model": embedder_model,
+        }
+    )
+    _write_json_atomic(progress_path, existing_progress)
+
+    ordered_items = list(texts.items())
+    pending_items = [(node_id, text) for node_id, text in ordered_items if node_id not in done_ids]
+    for batch_start in range(0, len(pending_items), checkpoint_every):
+        batch = pending_items[batch_start : batch_start + checkpoint_every]
+        if not batch:
+            continue
+        batch_vectors = batch_or_single_embed(batch, embedder_fn, embed_batch_fn)
+        payloads: list[dict[str, object]] = []
+        for node_id, _text in batch:
+            vector = batch_vectors.get(node_id)
+            if vector is None:
+                continue
+            index_vectors[node_id] = vector
+            done_ids.add(node_id)
+            index.upsert(node_id, vector)
+            payloads.append({"id": node_id, "vector": vector})
+        _append_jsonl_lines_fsync(vectors_path, payloads)
+        next_index = len(texts)
+        for idx, (node_id, _text) in enumerate(ordered_items):
+            if node_id not in done_ids:
+                next_index = idx
+                break
+        progress_payload = _read_json_optional(progress_path) or {}
+        progress_payload.update(
+            {
+                "phase": "embedding",
+                "updated_at": _iso_now(),
+                "total": len(texts),
+                "done": len(done_ids),
+                "next_index": next_index,
+            }
+        )
+        _write_json_atomic(progress_path, progress_payload)
+
+    progress_payload = _read_json_optional(progress_path) or {}
+    progress_payload.update(
+        {
+            "phase": "embedding_complete",
+            "embedding_completed_at": _iso_now(),
+            "total": len(texts),
+            "done": len(done_ids),
+            "next_index": len(texts),
+        }
+    )
+    _write_json_atomic(progress_path, progress_payload)
 
     replay_stats: dict[str, object] = {}
     if args.sessions is not None:
@@ -3121,6 +3398,17 @@ def cmd_init(args: argparse.Namespace) -> int:
     index_path.write_text(json.dumps(index_vectors, indent=2), encoding="utf-8")
     text_path.write_text(json.dumps(texts, indent=2), encoding="utf-8")
     print("Phase 5/5: Wrote default route_model.npz", file=sys.stderr)
+
+    completion_payload = _read_json_optional(progress_path) or {}
+    completion_payload.update({"phase": "complete", "completed_at": _iso_now()})
+    _write_json_atomic(progress_path, completion_payload)
+    _write_json_atomic(
+        complete_path,
+        {
+            "completed_at": completion_payload["completed_at"],
+            "state_path": str(output_dir / "state.json"),
+        },
+    )
 
     if args.json:
         print(json.dumps({"graph": str(graph_path), "texts": str(text_path)}))
