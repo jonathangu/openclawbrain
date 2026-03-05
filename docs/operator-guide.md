@@ -33,8 +33,8 @@ openclawbrain route-audit --state ~/.openclawbrain/<agent-id>/state.json && open
 ```
 
 Background learning schedule (fast boot default):
-- Hourly: edges-only replay, tool-priority, max 500 interactions, include tool results (truncated to 20,000 chars), advance offsets on skips.
-- Nightly: async-route-pg teacher with low budgets + train-route-model.
+- Hourly: edges-only replay, tool-priority, max 500 interactions, include tool results (truncated to 20,000 chars), advance offsets on skips, harvest labels, maintain.
+- Nightly: async-route-pg teacher with low budgets + train-route-model + dreaming (with stall watchdogs).
 
 ## 2) Turn brain ON
 Canonical run command:

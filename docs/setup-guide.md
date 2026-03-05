@@ -26,8 +26,8 @@ openclawbrain route-audit --state ~/.openclawbrain/<agent-id>/state.json && open
 ```
 
 Background learning schedule (fast boot default):
-- Hourly: edges-only replay, tool-priority, max 500 interactions, include tool results (truncated to 20,000 chars), advance offsets on skips.
-- Nightly: async-route-pg teacher with low budgets + train-route-model.
+- Hourly: edges-only replay, tool-priority, max 500 interactions, include tool results (truncated to 20,000 chars), advance offsets on skips, harvest labels, maintain.
+- Nightly: async-route-pg teacher with low budgets + train-route-model + dreaming (with stall watchdogs).
 
 ## Step 1: Build your first brain
 
@@ -57,7 +57,7 @@ Runtime route-mode default is `learned`. `init` writes a default identity-like `
 After init, replay your existing sessions to seed graph edges and extract learning signals.
 
 Recommended default ("best brain"): run the full, bells-and-whistles pipeline — this is the operator-recommended default experience.
-The example script `examples/ops/default_experience.sh` runs the recommended core sequence by default: local BGE-large reembed, `replay --mode full` (fast-learning + edge replay + harvest), and `maintain`. Optional async teacher traces + route-model training are disabled by default and can be enabled after the brain is running.
+The example script `examples/ops/default_experience.sh` runs the recommended core sequence by default: local BGE-large reembed, `replay --mode full` (fast-learning + edge replay + harvest), and `maintain`. Fast boot now enables async teacher traces, route-model training, and dreaming by default; disable them with `loop --no-enable-async-route-pg`, `--no-enable-train-route-model`, or `--no-enable-dreaming` if needed.
 
 By default, `replay` runs `--mode full` (fast-learning + replay + harvest):
 
