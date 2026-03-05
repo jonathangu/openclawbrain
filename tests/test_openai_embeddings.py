@@ -8,6 +8,7 @@ import json
 import threading
 import sys
 import types
+import builtins
 
 import pytest
 
@@ -247,6 +248,27 @@ def test_resolve_llm_openai_returns_callbacks(monkeypatch) -> None:
 
     assert llm_fn is not None
     assert llm_batch_fn is not None
+
+
+def test_resolve_llm_openai_missing_dependency(monkeypatch) -> None:
+    """missing openai dependency yields actionable SystemExit."""
+    sys.modules.pop("openai", None)
+    real_import = builtins.__import__
+
+    def fake_import(name, *args, **kwargs):
+        if name == "openai":
+            raise ModuleNotFoundError("No module named 'openai'")
+        return real_import(name, *args, **kwargs)
+
+    monkeypatch.setattr(builtins, "__import__", fake_import)
+    with pytest.raises(SystemExit) as excinfo:
+        _resolve_llm(argparse.Namespace(llm="openai"))
+
+    message = str(excinfo.value)
+    assert "LLM provider=openai" in message
+    assert "openai is not installed" in message
+    assert "pip install \"openclawbrain[openai]\"" in message
+    assert f"sys.executable={sys.executable}" in message
 
 
 def test_resolve_llm_ollama_returns_callbacks(monkeypatch) -> None:
