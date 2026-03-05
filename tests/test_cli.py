@@ -203,6 +203,81 @@ def test_init_sets_authority_metadata_for_mapped_files(tmp_path, monkeypatch) ->
     assert "canonical" in authorities_for("USER.md")
 
 
+def test_init_resume_skips_completed_embeddings(tmp_path, monkeypatch) -> None:
+    """init resumes embeddings without re-embedding completed chunks."""
+    import openclawbrain.cli as cli_module
+
+    workspace = tmp_path / "ws"
+    workspace.mkdir()
+    for idx in range(4):
+        (workspace / f"file{idx}.md").write_text(f"## File {idx}\nHello {idx}", encoding="utf-8")
+    output = tmp_path / "out"
+    output.mkdir()
+
+    seen_ids: set[str] = set()
+    crash_after = 2
+    crash_state = {"crashed": False}
+
+    def embed_batch_fn(items: list[tuple[str, str]]) -> dict[str, list[float]]:
+        for node_id, _ in items:
+            if node_id in seen_ids:
+                raise AssertionError(f"re-embedded {node_id}")
+        if not crash_state["crashed"] and len(seen_ids) >= crash_after:
+            crash_state["crashed"] = True
+            raise RuntimeError("simulated crash")
+        vectors = {node_id: [0.1, 0.2, 0.3] for node_id, _ in items}
+        for node_id, _ in items:
+            seen_ids.add(node_id)
+        return vectors
+
+    def embed_fn(_text: str) -> list[float]:
+        return [0.1, 0.2, 0.3]
+
+    def resolve_embedder(_args: object, _meta: dict[str, object]):
+        return embed_fn, embed_batch_fn, "test-embedder", 3, None
+
+    monkeypatch.setattr(cli_module, "_resolve_embedder", resolve_embedder)
+
+    with pytest.raises(RuntimeError, match="simulated crash"):
+        cli_module.main(
+            [
+                "init",
+                "--workspace",
+                str(workspace),
+                "--output",
+                str(output),
+                "--embedder",
+                "local",
+                "--llm",
+                "none",
+                "--checkpoint-every",
+                "2",
+                "--resume",
+            ]
+        )
+
+    code = cli_module.main(
+        [
+            "init",
+            "--workspace",
+            str(workspace),
+            "--output",
+            str(output),
+            "--embedder",
+            "local",
+            "--llm",
+            "none",
+            "--checkpoint-every",
+            "2",
+            "--resume",
+        ]
+    )
+    assert code == 0
+    assert len(seen_ids) == 4
+    state_data = json.loads((output / "state.json").read_text(encoding="utf-8"))
+    assert len(state_data["graph"]["nodes"]) == 4
+
+
 def test_resolve_openclawbrain_bin_prefers_sys_argv(tmp_path, monkeypatch) -> None:
     """resolve openclawbrain bin prefers sys.argv[0] when executable."""
     monkeypatch.chdir(tmp_path)

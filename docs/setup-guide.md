@@ -19,6 +19,8 @@ openclawbrain info --state ./brain/state.json
 By default, `init` uses local embeddings (`--embedder auto` resolves to local) and does not require OpenAI. Use `--embedder openai` if you explicitly want OpenAI embeddings.
 fastembed cache lives at `~/.cache/fastembed` by default; override with `FASTEMBED_CACHE_PATH` if you want a different persistent location.
 
+`init` is resumable by default. If it is interrupted during embedding, rerun the same command and it will resume without re-embedding completed chunks. Checkpoints live under `<state_dir>/scratch/init_checkpoints/`. To force a clean rebuild, pass `--no-resume` or delete that directory.
+
 Daemon query embedder default is `--embed-model auto`:
 - `local:*` states use local query embeddings.
 - `hash-v1` states use hash query embeddings.
