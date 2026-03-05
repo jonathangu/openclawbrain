@@ -2,6 +2,8 @@
 
 A comprehensive brain rebuild that applies **all** learning mechanisms to historical conversation data.
 
+**Important (NO TIMEOUTS):** `init`, `build-all`, `async-route-pg`, and large local embedding runs can take 30-180+ minutes. If running under CI, cron, supervisor, or wrappers, do **not** use short timeouts; ensure the runner allows long execution. For unattended runs, prefer the `launchd` loop. For manual runs, use `nohup` or `tmux`.
+
 ## What This Does
 
 Most brain operations are incremental — they learn from new queries as they come in. A **full rebuild** replays your entire conversation history through the graph with every learning mechanism active:
