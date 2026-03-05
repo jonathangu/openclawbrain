@@ -2416,16 +2416,17 @@ def test_build_all_root_manifest_written_before_agents_run(tmp_path, monkeypatch
 
     parser = cli_module._build_parser()
     args = parser.parse_args(["build-all"])
-    ocb_bin = cli_module._resolve_openclawbrain_bin()
+    ocb_prefix = cli_module._resolve_subprocess_prefix()
 
     payload = cli_module._build_all_root_manifest_payload(
         run_id=ts_label,
         run_ts=run_ts,
         args=args,
-        ocb_bin=ocb_bin,
+        ocb_prefix=ocb_prefix,
         agent_ids=[],
         parallel_agents=1,
         events_jsonl=events_jsonl,
+        stall_audit_jsonl=None,
         status="running",
         agents=[],
     )
@@ -2649,6 +2650,64 @@ def test_replay_watchdog_restarts_and_fallback(tmp_path: Path) -> None:
     assert any(item.get("event") == "stall_detected" for item in events)
     assert any(item.get("event") == "restart" for item in events)
     assert any(item.get("event") == "fallback" for item in events)
+
+
+def test_cli_build_all_defaults_enable_tool_results_max_chars_and_advance_offsets(tmp_path: Path, monkeypatch) -> None:
+    """build-all defaults advance-offsets-on-skip and tool-result-max-chars for long rebuilds."""
+    import openclawbrain.cli as cli_module
+
+    monkeypatch.setattr(cli_module.Path, "home", lambda: tmp_path)
+    (tmp_path / ".openclawbrain" / "agent-1").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".openclaw" / "agents" / "agent-1").mkdir(parents=True, exist_ok=True)
+    (tmp_path / ".openclaw" / "agents" / "agent-1" / "sessions").write_text("", encoding="utf-8")
+    (tmp_path / ".openclaw" / "openclaw.json").write_text(
+        json.dumps({"agents": {"list": [{"id": "agent-1"}]}}),
+        encoding="utf-8",
+    )
+    _write_state(tmp_path / ".openclawbrain" / "agent-1" / "state.json")
+
+    captured_replay_cmd: list[list[str]] = []
+
+    def fake_run_logged_command(cmd: list[str], **kwargs) -> int:
+        stdout_path = kwargs.get("stdout_path")
+        if isinstance(stdout_path, Path) and stdout_path.name.endswith("status_before.json"):
+            stdout_path.write_text(
+                json.dumps(
+                    {
+                        "embedder_name": "local:bge-large-en-v1.5",
+                        "embedder_dim": 3,
+                        "index_dim": 3,
+                    }
+                ),
+                encoding="utf-8",
+            )
+        return 0
+
+    def fake_run_logged_replay_command_with_watchdog(cmd: list[str], **kwargs) -> int:
+        captured_replay_cmd.append(cmd)
+        return 0
+
+    monkeypatch.setattr(cli_module, "_run_logged_command", fake_run_logged_command)
+    monkeypatch.setattr(
+        cli_module,
+        "_run_logged_replay_command_with_watchdog",
+        fake_run_logged_replay_command_with_watchdog,
+    )
+
+    code = cli_module.main(
+        [
+            "build-all",
+            "--agents",
+            "agent-1",
+        ]
+    )
+    assert code == 0
+    assert captured_replay_cmd, "replay command was not invoked"
+    replay_cmd = captured_replay_cmd[0]
+    assert "--advance-offsets-on-skip" in replay_cmd
+    assert "--tool-result-max-chars" in replay_cmd
+    max_idx = replay_cmd.index("--tool-result-max-chars") + 1
+    assert replay_cmd[max_idx] == "20000"
 
 
 def test_cli_build_all_replay_filters_parse() -> None:
