@@ -1190,8 +1190,12 @@ def test_loop_install_fast_flags_in_program_arguments(monkeypatch, tmp_path, cap
 
     assert "--include-tool-results" in program_arguments
     assert "--advance-offsets-on-skip" in program_arguments
+    assert "--maintain" in program_arguments
+    assert "--harvest-labels" in program_arguments
     assert "--enable-teacher" in program_arguments
+    assert "--enable-async-route-pg" in program_arguments
     assert "--enable-train-route-model" in program_arguments
+    assert "--enable-dreaming" in program_arguments
     _assert_flag_value("--replay-priority", "tool")
     _assert_flag_value("--replay-max-interactions", "500")
     _assert_flag_value("--tool-result-max-chars", "20000")
@@ -1200,6 +1204,8 @@ def test_loop_install_fast_flags_in_program_arguments(monkeypatch, tmp_path, cap
     _assert_flag_value("--sample-rate", "0.1")
     _assert_flag_value("--max-candidates-per-node", "8")
     _assert_flag_value("--max-decision-points", "200")
+    _assert_flag_value("--dream-max-queries", "40")
+    _assert_flag_value("--dream-max-decision-points", "160")
 
 
 def test_loop_pause_serve_when_locked_uses_launchctl(monkeypatch, tmp_path) -> None:

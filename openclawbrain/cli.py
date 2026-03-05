@@ -133,6 +133,16 @@ FAST_BOOT_ASYNC_MAX_QUERIES = 60
 FAST_BOOT_ASYNC_SAMPLE_RATE = 0.1
 FAST_BOOT_ASYNC_MAX_CANDIDATES = 8
 FAST_BOOT_ASYNC_MAX_DECISION_POINTS = 200
+FAST_BOOT_DREAM_SINCE_HOURS = 24.0
+FAST_BOOT_DREAM_MAX_QUERIES = 40
+FAST_BOOT_DREAM_SAMPLE_RATE = 0.1
+FAST_BOOT_DREAM_MAX_CANDIDATES = 8
+FAST_BOOT_DREAM_MAX_DECISION_POINTS = 160
+FAST_BOOT_REPLAY_STALL_TIMEOUT_SECONDS = 900
+FAST_BOOT_REPLAY_STALL_MAX_RESTARTS = 1
+FAST_BOOT_REPLAY_STALL_FALLBACK_MODE = "edges-only"
+FAST_BOOT_DREAM_STALL_TIMEOUT_SECONDS = 900
+FAST_BOOT_DREAM_STALL_MAX_RESTARTS = 1
 
 
 def _daemon_health_timeout() -> float:
@@ -673,14 +683,28 @@ def _apply_fast_loop_defaults(args: argparse.Namespace) -> None:
     args.advance_offsets_on_skip = True
     args.include_tool_results = True
     args.tool_result_max_chars = FAST_BOOT_TOOL_RESULT_MAX_CHARS
+    args.maintain = True
     args.skip_maintain = False
+    args.harvest_labels = True
     args.enable_teacher = True
+    args.enable_async_route_pg = True
     args.enable_train_route_model = True
+    args.enable_dreaming = True
     args.since_hours = FAST_BOOT_ASYNC_SINCE_HOURS
     args.max_queries = FAST_BOOT_ASYNC_MAX_QUERIES
     args.sample_rate = FAST_BOOT_ASYNC_SAMPLE_RATE
     args.max_candidates_per_node = FAST_BOOT_ASYNC_MAX_CANDIDATES
     args.max_decision_points = FAST_BOOT_ASYNC_MAX_DECISION_POINTS
+    args.dream_since_hours = FAST_BOOT_DREAM_SINCE_HOURS
+    args.dream_max_queries = FAST_BOOT_DREAM_MAX_QUERIES
+    args.dream_sample_rate = FAST_BOOT_DREAM_SAMPLE_RATE
+    args.dream_max_candidates_per_node = FAST_BOOT_DREAM_MAX_CANDIDATES
+    args.dream_max_decision_points = FAST_BOOT_DREAM_MAX_DECISION_POINTS
+    args.replay_stall_timeout_seconds = FAST_BOOT_REPLAY_STALL_TIMEOUT_SECONDS
+    args.replay_stall_max_restarts = FAST_BOOT_REPLAY_STALL_MAX_RESTARTS
+    args.replay_stall_fallback_mode = FAST_BOOT_REPLAY_STALL_FALLBACK_MODE
+    args.dream_stall_timeout_seconds = FAST_BOOT_DREAM_STALL_TIMEOUT_SECONDS
+    args.dream_stall_max_restarts = FAST_BOOT_DREAM_STALL_MAX_RESTARTS
     args.mode = "full"
     args.skip_if_locked = True
     args.pause_serve_when_locked = True
@@ -955,6 +979,140 @@ def _append_replay_watchdog_event(
         payload.update(extra)
     _append_jsonl(watchdog_path, payload)
 
+
+def _append_watchdog_event(
+    *,
+    watchdog_path: Path,
+    payload: dict[str, object],
+) -> None:
+    payload = dict(payload)
+    payload["ts"] = datetime.now(timezone.utc).isoformat()
+    _append_jsonl(watchdog_path, payload)
+
+
+def _latest_mtime(path: Path) -> float | None:
+    if not path.exists():
+        return None
+    try:
+        if path.is_file():
+            return path.stat().st_mtime
+        if path.is_dir():
+            latest: float | None = None
+            for entry in path.iterdir():
+                try:
+                    mtime = entry.stat().st_mtime
+                except OSError:
+                    continue
+                if latest is None or mtime > latest:
+                    latest = mtime
+            return latest or path.stat().st_mtime
+    except OSError:
+        return None
+    return None
+
+
+def _progress_snapshot_for_paths(paths: list[Path]) -> dict[str, object]:
+    latest: float | None = None
+    for path in paths:
+        mtime = _latest_mtime(path)
+        if mtime is None:
+            continue
+        latest = mtime if latest is None or mtime > latest else latest
+    return {"mtime": latest}
+
+
+def _run_logged_command_with_watchdog(
+    cmd: list[str],
+    *,
+    log_path: Path,
+    step_name: str,
+    watchdog_path: Path,
+    run_id: str,
+    progress_paths: list[Path],
+    stall_timeout_seconds: int,
+    stall_max_restarts: int,
+    env: dict[str, str] | None = None,
+    spawn: Callable[..., subprocess.Popen] = subprocess.Popen,
+    sleep: Callable[[float], None] = time.sleep,
+    monotonic: Callable[[], float] = time.monotonic,
+) -> int:
+    if stall_timeout_seconds <= 0 or stall_max_restarts < 0:
+        return _run_logged_command(cmd, log_path=log_path, step_name=step_name)
+
+    restarts = 0
+    attempt = 0
+    base_cmd = list(cmd)
+
+    while True:
+        attempt += 1
+        attempt_label = f"{step_name} (attempt {attempt})" if attempt > 1 else step_name
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        with log_path.open("a", encoding="utf-8") as log_handle:
+            log_handle.write(f"\n== {attempt_label} ==\n")
+            log_handle.write(f"command: {' '.join(shlex.quote(part) for part in base_cmd)}\n")
+            log_handle.flush()
+            try:
+                proc = spawn(base_cmd, stdout=log_handle, stderr=log_handle, text=True, env=env)
+            except FileNotFoundError:
+                return 127
+
+            last_snapshot = _progress_snapshot_for_paths(progress_paths)
+            last_progress_at = monotonic()
+            stalled = False
+
+            while True:
+                returncode = proc.poll()
+                snapshot = _progress_snapshot_for_paths(progress_paths)
+                if _progress_snapshot_changed(last_snapshot, snapshot):
+                    last_progress_at = monotonic()
+                    last_snapshot = snapshot
+                if returncode is not None:
+                    returncode = int(returncode)
+                    break
+                if monotonic() - last_progress_at >= float(stall_timeout_seconds):
+                    stalled = True
+                    _append_watchdog_event(
+                        watchdog_path=watchdog_path,
+                        payload={
+                            "run_id": run_id,
+                            "event": "stall_detected",
+                            "step": step_name,
+                            "command": " ".join(shlex.quote(part) for part in base_cmd),
+                            "progress_paths": [str(path) for path in progress_paths],
+                            "last_mtime": last_snapshot.get("mtime"),
+                        },
+                    )
+                    returncode = _terminate_process(proc, timeout_seconds=10.0)
+                    break
+                sleep(max(1.0, min(5.0, stall_timeout_seconds / 6)))
+
+        if not stalled:
+            return int(returncode)
+
+        if restarts < stall_max_restarts:
+            restarts += 1
+            _append_watchdog_event(
+                watchdog_path=watchdog_path,
+                payload={
+                    "run_id": run_id,
+                    "event": "restart",
+                    "step": step_name,
+                    "restart_count": restarts,
+                    "command": " ".join(shlex.quote(part) for part in base_cmd),
+                },
+            )
+            continue
+
+        _append_watchdog_event(
+            watchdog_path=watchdog_path,
+            payload={
+                "run_id": run_id,
+                "event": "give_up",
+                "step": step_name,
+                "command": " ".join(shlex.quote(part) for part in base_cmd),
+            },
+        )
+        return 0
 
 def _terminate_process(proc: subprocess.Popen, timeout_seconds: float) -> int:
     proc.terminate()
@@ -2242,11 +2400,14 @@ def _build_parser() -> argparse.ArgumentParser:
     loop.add_argument("--replay-max-interactions", type=_parse_positive_int, default=None)
     loop.add_argument("--replay-priority", choices=("all", "tool"), default="all")
     loop.add_argument("--advance-offsets-on-skip", action=argparse.BooleanOptionalAction, default=False)
-    loop.add_argument("--skip-maintain", action="store_true", help="Skip maintenance pass")
+    loop.add_argument("--maintain", action=argparse.BooleanOptionalAction, default=True, help="Run maintenance pass (default: on)")
+    loop.add_argument("--skip-maintain", action="store_true", help="Skip maintenance pass (legacy alias)")
     loop.add_argument("--maintain-tasks", default="health,decay,prune,merge")
     loop.add_argument("--maintain-llm", choices=["none", "openai", "ollama"], default="none")
     loop.add_argument("--maintain-embedder", choices=["local", "openai"], default="local")
-    loop.add_argument("--enable-teacher", action="store_true")
+    loop.add_argument("--harvest-labels", action=argparse.BooleanOptionalAction, default=True, help="Refresh labels from harvest (default: on)")
+    loop.add_argument("--enable-teacher", action=argparse.BooleanOptionalAction, default=True)
+    loop.add_argument("--enable-async-route-pg", action=argparse.BooleanOptionalAction, default=True)
     loop.add_argument("--since-hours", type=float, default=24.0)
     loop.add_argument("--max-queries", type=int, default=200)
     loop.add_argument("--sample-rate", type=float, default=0.1)
@@ -2255,8 +2416,14 @@ def _build_parser() -> argparse.ArgumentParser:
     loop.add_argument("--teacher", choices=["openai", "ollama", "none"], default="openai")
     loop.add_argument("--teacher-model", default="gpt-5-mini")
     loop.add_argument("--score-scale", type=float, default=0.3)
-    loop.add_argument("--enable-train-route-model", action="store_true")
+    loop.add_argument("--enable-train-route-model", action=argparse.BooleanOptionalAction, default=True)
     loop.add_argument("--train-route-model-out", default=None)
+    loop.add_argument("--enable-dreaming", action=argparse.BooleanOptionalAction, default=True)
+    loop.add_argument("--dream-since-hours", type=float, default=24.0)
+    loop.add_argument("--dream-max-queries", type=int, default=200)
+    loop.add_argument("--dream-sample-rate", type=float, default=0.1)
+    loop.add_argument("--dream-max-candidates-per-node", type=int, default=12)
+    loop.add_argument("--dream-max-decision-points", type=int, default=500)
     loop.add_argument(
         "--reward-source",
         choices=[
@@ -2272,6 +2439,15 @@ def _build_parser() -> argparse.ArgumentParser:
     loop.add_argument("--skip-if-locked", action=argparse.BooleanOptionalAction, default=True)
     loop.add_argument("--pause-serve-when-locked", action=argparse.BooleanOptionalAction, default=True)
     loop.add_argument("--pause-serve-timeout-seconds", type=int, default=30)
+    loop.add_argument("--replay-stall-timeout-seconds", type=int, default=900)
+    loop.add_argument("--replay-stall-max-restarts", type=int, default=1)
+    loop.add_argument(
+        "--replay-stall-fallback-mode",
+        choices=["off", "edges-only"],
+        default="edges-only",
+    )
+    loop.add_argument("--dream-stall-timeout-seconds", type=int, default=900)
+    loop.add_argument("--dream-stall-max-restarts", type=int, default=1)
     loop.add_argument("--hourly-interval-seconds", type=int, default=3600)
     loop.add_argument("--nightly-hour", type=int, default=2)
     loop.add_argument("--nightly-minute", type=int, default=30)
@@ -6214,8 +6390,12 @@ def cmd_loop(args: argparse.Namespace) -> int:
 
     if getattr(args, "fast", False):
         _apply_fast_loop_defaults(args)
+    if getattr(args, "skip_maintain", False):
+        args.maintain = False
 
     agent_root = _loop_state_root(state_path)
+    scratch_root = agent_root / "scratch"
+    scratch_root.mkdir(parents=True, exist_ok=True)
     agent_id = agent_root.name or "main"
     action = getattr(args, "loop_action", "run")
     log_path = _loop_log_path(state_path)
@@ -6258,6 +6438,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
             str(args.maintain_llm),
             "--maintain-embedder",
             str(args.maintain_embedder),
+            "--harvest-labels" if args.harvest_labels else "--no-harvest-labels",
             "--since-hours",
             str(args.since_hours),
             "--max-queries",
@@ -6274,6 +6455,18 @@ def cmd_loop(args: argparse.Namespace) -> int:
             str(args.teacher_model),
             "--score-scale",
             str(args.score_scale),
+            "--enable-async-route-pg" if args.enable_async_route_pg else "--no-enable-async-route-pg",
+            "--enable-dreaming" if args.enable_dreaming else "--no-enable-dreaming",
+            "--dream-since-hours",
+            str(args.dream_since_hours),
+            "--dream-max-queries",
+            str(args.dream_max_queries),
+            "--dream-sample-rate",
+            str(args.dream_sample_rate),
+            "--dream-max-candidates-per-node",
+            str(args.dream_max_candidates_per_node),
+            "--dream-max-decision-points",
+            str(args.dream_max_decision_points),
             "--reward-source",
             str(args.reward_source),
             "--hourly-interval-seconds",
@@ -6282,6 +6475,16 @@ def cmd_loop(args: argparse.Namespace) -> int:
             str(args.nightly_hour),
             "--nightly-minute",
             str(args.nightly_minute),
+            "--replay-stall-timeout-seconds",
+            str(args.replay_stall_timeout_seconds),
+            "--replay-stall-max-restarts",
+            str(args.replay_stall_max_restarts),
+            "--replay-stall-fallback-mode",
+            str(args.replay_stall_fallback_mode),
+            "--dream-stall-timeout-seconds",
+            str(args.dream_stall_timeout_seconds),
+            "--dream-stall-max-restarts",
+            str(args.dream_stall_max_restarts),
         ]
         if args.llm_model:
             argv.extend(["--llm-model", str(args.llm_model)])
@@ -6301,12 +6504,9 @@ def cmd_loop(args: argparse.Namespace) -> int:
             argv.append("--include-tool-results")
         else:
             argv.append("--no-include-tool-results")
-        if args.skip_maintain:
-            argv.append("--skip-maintain")
-        if args.enable_teacher:
-            argv.append("--enable-teacher")
-        if args.enable_train_route_model:
-            argv.append("--enable-train-route-model")
+        argv.append("--maintain" if args.maintain else "--no-maintain")
+        argv.append("--enable-teacher" if args.enable_teacher else "--no-enable-teacher")
+        argv.append("--enable-train-route-model" if args.enable_train_route_model else "--no-enable-train-route-model")
         if args.train_route_model_out:
             argv.extend(["--train-route-model-out", str(args.train_route_model_out)])
         if args.reward_weights:
@@ -6617,13 +6817,20 @@ def cmd_loop(args: argparse.Namespace) -> int:
         emit_event({"type": "step_start", "job": job, "step": "replay"})
         replay_env = dict(os.environ)
         replay_env["PYTHONUNBUFFERED"] = "1"
-        code = _run_logged_replay_command(
+        run_id = f"loop.{job}.{datetime.now(timezone.utc).isoformat()}"
+        watchdog_path = scratch_root / "replay_watchdog.jsonl"
+        code = _run_logged_replay_command_with_watchdog(
             replay_cmd,
             log_path=log_path,
             step_name=f"{job}.replay",
             checkpoint_path=agent_root / REPLAY_CHECKPOINT_FILENAME,
             agent_id=agent_id,
+            run_id=run_id,
+            watchdog_path=watchdog_path,
             progress_interval_seconds=max(0, int(args.replay_progress_interval_seconds)),
+            stall_timeout_seconds=max(0, int(args.replay_stall_timeout_seconds)),
+            stall_max_restarts=max(0, int(args.replay_stall_max_restarts)),
+            stall_fallback_mode=str(args.replay_stall_fallback_mode),
             env=replay_env,
         )
         emit_event({"type": "step_end", "job": job, "step": "replay", "exit_code": code})
@@ -6763,6 +6970,58 @@ def cmd_loop(args: argparse.Namespace) -> int:
         emit_event({"type": "step_end", "job": job, "step": "train_route_model", "exit_code": code})
         return code
 
+    def run_dream(*, job: str, traces_dir: Path) -> int:
+        dream_cmd = [
+            *ocb_prefix,
+            "dream",
+            "--state",
+            state_path,
+            "--once",
+            "--teacher",
+            str(args.teacher),
+            "--teacher-model",
+            str(args.teacher_model),
+            "--since-hours",
+            str(args.dream_since_hours),
+            "--max-queries",
+            str(args.dream_max_queries),
+            "--sample-rate",
+            str(args.dream_sample_rate),
+            "--max-candidates-per-node",
+            str(args.dream_max_candidates_per_node),
+            "--max-decision-points",
+            str(args.dream_max_decision_points),
+            "--score-scale",
+            str(args.score_scale),
+            "--reward-source",
+            str(args.reward_source),
+            "--labels-out",
+            str(labels_path),
+            "--traces-dir",
+            str(traces_dir),
+            "--json",
+        ]
+        if args.reward_weights:
+            dream_cmd.extend(["--reward-weights", str(args.reward_weights)])
+
+        write_checkpoint(status="running", job=job, step="dream")
+        emit_event({"type": "step_start", "job": job, "step": "dream"})
+        run_id = f"loop.{job}.dream.{datetime.now(timezone.utc).isoformat()}"
+        watchdog_path = scratch_root / "dream_watchdog.jsonl"
+        progress_paths = [labels_path, traces_dir]
+        code = _run_logged_command_with_watchdog(
+            dream_cmd,
+            log_path=log_path,
+            step_name=f"{job}.dream",
+            watchdog_path=watchdog_path,
+            run_id=run_id,
+            progress_paths=progress_paths,
+            stall_timeout_seconds=max(0, int(args.dream_stall_timeout_seconds)),
+            stall_max_restarts=max(0, int(args.dream_stall_max_restarts)),
+        )
+        emit_event({"type": "step_end", "job": job, "step": "dream", "exit_code": code})
+        return code
+
     def run_job(
         *,
         job: str,
@@ -6853,6 +7112,37 @@ def cmd_loop(args: argparse.Namespace) -> int:
                         },
                     )
                     return harvest_code
+                if include_maintain:
+                    maintain_code = run_maintain(job=job)
+                    if maintain_code != 0:
+                        log_line(f"{job}: maintenance failed exit={maintain_code}")
+                        completed_at = datetime.now(timezone.utc).isoformat()
+                        write_checkpoint(
+                            status="failed",
+                            job=job,
+                            step="maintain",
+                            exit_code=maintain_code,
+                            reason="maintenance_failed",
+                            started_at=started_at,
+                            completed_at=completed_at,
+                        )
+                        write_manifest(
+                            job,
+                            {
+                                "last_status": "failed",
+                                "last_step": "maintain",
+                                "last_exit_code": maintain_code,
+                                "last_reason": "maintenance_failed",
+                                "last_completed_at": completed_at,
+                            },
+                        )
+                        return maintain_code
+                else:
+                    log_line(f"{job}: maintenance skipped")
+                if args.harvest_labels:
+                    labels_refresh_code = run_harvest_labels(job=job)
+                    if labels_refresh_code != 0:
+                        log_line(f"{job}: harvest labels refresh failed exit={labels_refresh_code}")
             else:
                 if include_maintain:
                     maintain_code = run_maintain(job=job)
@@ -6881,22 +7171,19 @@ def cmd_loop(args: argparse.Namespace) -> int:
                         return maintain_code
                 else:
                     log_line(f"{job}: maintenance skipped")
-
-                traces_out: Path | None = None
-                if include_teacher:
+                if args.harvest_labels:
                     labels_refresh_code = run_harvest_labels(job=job)
                     if labels_refresh_code != 0:
                         log_line(f"{job}: harvest labels refresh failed exit={labels_refresh_code}")
-                    traces_root = _loop_state_root(state_path) / "scratch"
-                    traces_root.mkdir(parents=True, exist_ok=True)
+
+                traces_out: Path | None = None
+                if include_teacher and args.enable_async_route_pg:
                     if args.enable_train_route_model:
                         trace_ts = datetime.now(timezone.utc)
-                        traces_out = traces_root / (
+                        traces_out = scratch_root / (
                             f"loop.{job}.{trace_ts.strftime('%Y%m%dT%H%M%S')}"
                             f"{trace_ts.microsecond // 1000:03d}Z.route_traces.jsonl"
                         )
-                    else:
-                        traces_out = None
                     async_code = run_async_route(job=job, traces_out=traces_out)
                     if async_code != 0:
                         log_line(f"{job}: async-route-pg failed exit={async_code}")
@@ -6922,7 +7209,10 @@ def cmd_loop(args: argparse.Namespace) -> int:
                         )
                         return async_code
                 else:
-                    log_line(f"{job}: async-route-pg skipped")
+                    if not include_teacher:
+                        log_line(f"{job}: async-route-pg skipped (teacher disabled)")
+                    else:
+                        log_line(f"{job}: async-route-pg skipped (disabled)")
 
                 if args.enable_train_route_model:
                     if not include_teacher:
@@ -6959,6 +7249,39 @@ def cmd_loop(args: argparse.Namespace) -> int:
                                 },
                             )
                             return train_code
+
+                if include_teacher and args.enable_dreaming:
+                    dream_dir = scratch_root / "dream"
+                    dream_dir.mkdir(parents=True, exist_ok=True)
+                    dream_code = run_dream(job=job, traces_dir=dream_dir)
+                    if dream_code != 0:
+                        log_line(f"{job}: dream failed exit={dream_code}")
+                        completed_at = datetime.now(timezone.utc).isoformat()
+                        write_checkpoint(
+                            status="failed",
+                            job=job,
+                            step="dream",
+                            exit_code=dream_code,
+                            reason="dream_failed",
+                            started_at=started_at,
+                            completed_at=completed_at,
+                        )
+                        write_manifest(
+                            job,
+                            {
+                                "last_status": "failed",
+                                "last_step": "dream",
+                                "last_exit_code": dream_code,
+                                "last_reason": "dream_failed",
+                                "last_completed_at": completed_at,
+                            },
+                        )
+                        return dream_code
+                else:
+                    if not include_teacher:
+                        log_line(f"{job}: dream skipped (teacher disabled)")
+                    else:
+                        log_line(f"{job}: dream skipped (disabled)")
 
             completed_at = datetime.now(timezone.utc).isoformat()
             write_checkpoint(status="ok", job=job, step="complete", exit_code=0, started_at=started_at, completed_at=completed_at)
@@ -7037,10 +7360,10 @@ def cmd_loop(args: argparse.Namespace) -> int:
         manifest = load_manifest()
 
         if should_run_hourly(now_utc, manifest):
-            run_job(job="hourly", mode="edges-only", llm="none", include_maintain=False, include_teacher=False)
+            run_job(job="hourly", mode="edges-only", llm="none", include_maintain=bool(args.maintain), include_teacher=False)
 
         if should_run_nightly(now_local, manifest):
-            run_job(job="nightly", mode=str(args.mode), llm=str(args.llm), include_maintain=not args.skip_maintain, include_teacher=args.enable_teacher)
+            run_job(job="nightly", mode=str(args.mode), llm=str(args.llm), include_maintain=bool(args.maintain), include_teacher=bool(args.enable_teacher))
 
         sleep_seconds = next_sleep_seconds(now_local, now_utc, load_manifest())
         time.sleep(sleep_seconds)
