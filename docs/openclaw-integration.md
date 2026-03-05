@@ -87,6 +87,8 @@ Hook Python resolution:
 openclawbrain loop install --state ~/.openclawbrain/main/state.json
 ```
 
+Loop now supports multiple sessions; pass `--sessions /path/to/sessions1 /path/to/sessions2` to aggregate multiple agents.
+
 Loop Python resolution (launchd/systemd templates):
 - `OPENCLAWBRAIN_LOOP_PYTHON` or `OPENCLAWBRAIN_PYTHON`, then `~/.openclaw/venvs/openclawbrain/bin/python`, then the current `sys.executable`.
 

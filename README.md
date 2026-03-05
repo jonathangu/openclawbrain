@@ -287,6 +287,7 @@ openclawbrain query "incident runbook for deploy failures" --state /tmp/brain/st
 
 If you want API-backed embeddings/teacher labeling, use:
 
+- OpenAI is an optional dependency. It is required for `--llm openai` / `--llm openrouter` and `--teacher openai`.
 - **Embeddings:** `text-embedding-3-small` (1536-dim)
 - **LLM routing/scoring:** `gpt-5-mini`
 - **Offline/testing default:** local fastembed embeddings (no API key required).

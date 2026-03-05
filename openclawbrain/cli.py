@@ -3217,9 +3217,14 @@ def _parse_env_file(env_path: str) -> dict[str, str]:
 
 
 def _run_launchctl(argv: list[str], *, ignore_errors: bool = False) -> None:
-    result = subprocess.run(argv, check=not ignore_errors)
-    if ignore_errors and result.returncode != 0:
+    if ignore_errors:
+        result = subprocess.run(argv, check=False, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        if result.returncode != 0:
+            if len(argv) > 1 and argv[1] == "bootout":
+                print("bootout: ignored (service not loaded)")
+            return
         return
+    subprocess.run(argv, check=True)
 
 
 def _run_launchctl_returncode(argv: list[str]) -> int:
@@ -3744,6 +3749,15 @@ def _resolve_llm(args: argparse.Namespace) -> tuple[Callable[[str, str], str] | 
     if llm in (None, "none"):
         return None, None
     if llm in {"openai", "openrouter"}:
+        try:
+            import openai  # noqa: F401
+        except ModuleNotFoundError as exc:
+            raise SystemExit(
+                "LLM provider="
+                f"{llm} but Python package openai is not installed in this environment "
+                f"(sys.executable={sys.executable}). Install: pip install \"openclawbrain[openai]\" "
+                "(or pip install openai), or set OPENCLAWBRAIN_DEFAULT_LLM=ollama / pass --llm ollama."
+            ) from exc
         from .openai_llm import openai_llm_batch_fn, openai_llm_fn
 
         return openai_llm_fn, openai_llm_batch_fn
@@ -5950,6 +5964,7 @@ def cmd_route_audit(args: argparse.Namespace) -> int:
     route_model_path = state_dir / "route_model.npz"
     labels_path = _default_labels_path(resolved_state)
 
+    labels_present = labels_path.exists()
     model_present = route_model_path.exists()
     model_loaded = False
     model_error = None
@@ -5961,7 +5976,7 @@ def cmd_route_audit(args: argparse.Namespace) -> int:
             model_error = str(exc)
 
     labels_count = 0
-    if labels_path.exists():
+    if labels_present:
         labels_count = sum(1 for line in labels_path.read_text(encoding="utf-8").splitlines() if line.strip())
 
     last_train_ts = None
@@ -6007,6 +6022,7 @@ def cmd_route_audit(args: argparse.Namespace) -> int:
         "last_train_ts": last_train_ts,
         "last_train_iso": last_train_iso,
         "labels_path": str(labels_path),
+        "labels_present": labels_present,
         "labels_count": labels_count,
         "route_enable_stop": route_enable_stop,
         "route_stop_margin": route_stop_margin,
@@ -6026,11 +6042,14 @@ def cmd_route_audit(args: argparse.Namespace) -> int:
         f"  route_model_loaded: {model_loaded if model_present else False}",
         f"  route_model_path: {route_model_path}",
         f"  last_train_iso: {last_train_iso or 'n/a'}",
+        f"  labels_present: {labels_present}",
         f"  labels_count: {labels_count}",
         f"  labels_path: {labels_path}",
         f"  stop_enabled: {route_enable_stop if route_enable_stop is not None else 'unknown'}",
         f"  stop_margin: {route_stop_margin if route_stop_margin is not None else 'unknown'}",
     ]
+    if not labels_present:
+        lines.append("  labels_note: labels file not created yet (will appear after first harvest/teacher run)")
     if payload.get("route_model_error"):
         lines.append(f"  route_model_error: {payload['route_model_error']}")
     if not ping_ok and health_error:
