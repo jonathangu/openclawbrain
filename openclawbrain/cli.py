@@ -2612,7 +2612,7 @@ def _build_parser() -> argparse.ArgumentParser:
     )
     loop.add_argument("--agent", help="Agent id (defaults to main; overrides --state)")
     loop.add_argument("--state", help="Path to state.json (defaults to main profile)")
-    loop.add_argument("--sessions", help="Path to OpenClaw sessions directory")
+    loop.add_argument("--sessions", nargs="+", help="Path(s) to OpenClaw sessions directory")
     loop.add_argument("--mode", choices=REPLAY_MODES, default="full")
     loop.add_argument("--llm", choices=["none", "openai", "ollama", "auto"], default="auto")
     loop.add_argument("--llm-model")
@@ -3384,9 +3384,10 @@ def _render_systemd_unit(*, state_path: str, socket_path: str) -> str:
 def _render_loop_systemd_templates(
     *,
     state_path: str,
-    sessions_path: str,
+    sessions_paths: list[str],
     loop_cmd: str,
 ) -> str:
+    sessions_display = ", ".join(sessions_paths)
     return "\n".join(
         [
             "# /etc/systemd/system/openclawbrain-loop.service",
@@ -3408,7 +3409,7 @@ def _render_loop_systemd_templates(
             "#   sudo systemctl enable --now openclawbrain-loop.service",
             "# Logs:",
             "#   journalctl -u openclawbrain-loop.service -n 200 --no-pager",
-            f"# Sessions path assumed: {sessions_path}",
+            f"# Sessions paths assumed: {sessions_display}",
         ]
     )
 
@@ -6642,14 +6643,18 @@ def cmd_loop(args: argparse.Namespace) -> int:
     stdout_path = _loop_stdout_path(state_path)
     stderr_path = _loop_stderr_path(state_path)
 
-    sessions_path = (
-        Path(args.sessions).expanduser()
-        if args.sessions
-        else Path.home() / ".openclaw" / "agents" / agent_id / "sessions"
-    )
+    if args.sessions:
+        sessions_paths = [Path(path).expanduser() for path in args.sessions]
+    else:
+        sessions_paths = [Path.home() / ".openclaw" / "agents" / agent_id / "sessions"]
 
     ocb_prefix = [_resolve_loop_python(), "-m", "openclawbrain.cli"]
     ocb_subprocess_prefix = _resolve_subprocess_prefix()
+
+    sessions_paths_serialized = [str(path) for path in sessions_paths]
+
+    def _format_sessions_paths(paths: list[Path]) -> str:
+        return ", ".join(str(path) for path in paths)
 
     def _loop_run_program_arguments() -> list[str]:
         argv = ocb_prefix + [
@@ -6658,7 +6663,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
             "--state",
             state_path,
             "--sessions",
-            str(sessions_path),
+            *[str(path) for path in sessions_paths],
             "--mode",
             str(args.mode),
             "--llm",
@@ -6785,7 +6790,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
         print(
             _render_loop_systemd_templates(
                 state_path=state_path,
-                sessions_path=str(sessions_path),
+                sessions_paths=sessions_paths_serialized,
                 loop_cmd=" ".join(shlex.quote(part) for part in _loop_run_program_arguments()),
             )
         )
@@ -6881,7 +6886,12 @@ def cmd_loop(args: argparse.Namespace) -> int:
         plist_path = _derive_launchd_plist_path(label)
         print("OpenClawBrain loop status")
         print(f"State: {state_path}")
-        print(f"Sessions: {sessions_path}")
+        if len(sessions_paths) == 1:
+            print(f"Sessions: {sessions_paths[0]}")
+        else:
+            print("Sessions:")
+            for path in sessions_paths:
+                print(f"  {path}")
         print(f"Log: {log_path}")
         print(f"Stdout: {stdout_path}")
         print(f"Stderr: {stderr_path}")
@@ -6935,7 +6945,8 @@ def cmd_loop(args: argparse.Namespace) -> int:
             "ts": datetime.now(timezone.utc).isoformat(),
             "agent_id": agent_id,
             "state_path": state_path,
-            "sessions_path": str(sessions_path),
+            "sessions_path": _format_sessions_paths(sessions_paths),
+            "sessions_paths": sessions_paths_serialized,
             **event,
         }
         _append_jsonl(events_path, payload)
@@ -6954,7 +6965,8 @@ def cmd_loop(args: argparse.Namespace) -> int:
             {
                 "agent_id": agent_id,
                 "state_path": state_path,
-                "sessions_path": str(sessions_path),
+                "sessions_path": _format_sessions_paths(sessions_paths),
+                "sessions_paths": sessions_paths_serialized,
                 "log_path": str(log_path),
                 "events_path": str(events_path),
                 "checkpoint_path": str(checkpoint_path),
@@ -6983,7 +6995,8 @@ def cmd_loop(args: argparse.Namespace) -> int:
             "job": job,
             "step": step,
             "state_path": state_path,
-            "sessions_path": str(sessions_path),
+            "sessions_path": _format_sessions_paths(sessions_paths),
+            "sessions_paths": sessions_paths_serialized,
             "mode": str(args.mode),
             "maintain_tasks": str(args.maintain_tasks),
             "teacher_enabled": bool(args.enable_teacher),
@@ -7003,8 +7016,10 @@ def cmd_loop(args: argparse.Namespace) -> int:
         log_line(f"missing state: {state_path}")
         write_checkpoint(status="failed", job="preflight", step="preflight", exit_code=2, reason="missing_state")
         return 2
-    if not sessions_path.exists():
-        log_line(f"missing sessions: {sessions_path}")
+    missing_sessions = [path for path in sessions_paths if not path.exists()]
+    if missing_sessions:
+        missing_display = _format_sessions_paths(missing_sessions)
+        log_line(f"missing sessions: {missing_display}")
         write_checkpoint(status="failed", job="preflight", step="preflight", exit_code=2, reason="missing_sessions")
         return 2
 
@@ -7024,7 +7039,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
             "--state",
             state_path,
             "--sessions",
-            str(sessions_path),
+            *sessions_paths_serialized,
             "--mode",
             str(mode),
             "--llm",
@@ -7302,7 +7317,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
             write_checkpoint(status="running", job=job, step="preflight", started_at=started_at)
             write_manifest(job, {"last_status": "running", "last_started_at": started_at})
             emit_event({"type": "job_start", "job": job, "started_at": started_at})
-            log_line(f"{job}: run start mode={mode} llm={llm} sessions={sessions_path}")
+            log_line(f"{job}: run start mode={mode} llm={llm} sessions={_format_sessions_paths(sessions_paths)}")
 
             replay_code = run_replay(job=job, mode=mode, llm=llm)
             if replay_code != 0:

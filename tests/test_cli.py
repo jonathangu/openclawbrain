@@ -1094,6 +1094,41 @@ def test_loop_install_dry_run_prints_launchd_plist(monkeypatch, tmp_path, capsys
     assert str(state_path) in program_arguments
 
 
+def test_loop_install_dry_run_supports_multiple_sessions(monkeypatch, tmp_path, capsys) -> None:
+    """loop install --dry-run should emit multiple --sessions args including relative paths."""
+    state_path = tmp_path / "main" / "state.json"
+    state_path.parent.mkdir(parents=True, exist_ok=True)
+    state_path.write_text(json.dumps({"nodes": []}), encoding="utf-8")
+
+    extra_sessions = tmp_path / "extra_sessions"
+    extra_sessions.mkdir(parents=True, exist_ok=True)
+
+    import openclawbrain.cli as cli_module
+
+    monkeypatch.setattr(cli_module.sys, "platform", "darwin")
+    monkeypatch.setenv("HOME", str(tmp_path))
+    monkeypatch.delenv("OPENCLAWBRAIN_LOOP_PYTHON", raising=False)
+    monkeypatch.delenv("OPENCLAWBRAIN_PYTHON", raising=False)
+
+    code = main([
+        "loop",
+        "install",
+        "--state",
+        str(state_path),
+        "--sessions",
+        ".",
+        str(extra_sessions),
+        "--dry-run",
+    ])
+    assert code == 0
+
+    payload = _extract_plist_from_output(capsys.readouterr().out)
+    program_arguments = payload["ProgramArguments"]
+    sessions_index = program_arguments.index("--sessions")
+    assert program_arguments[sessions_index + 1] == "."
+    assert program_arguments[sessions_index + 2] == str(extra_sessions)
+
+
 def test_loop_install_dry_run_prefers_openclaw_venv_python(monkeypatch, tmp_path, capsys) -> None:
     """loop install --dry-run should prefer the OpenClaw venv python when present."""
     state_path = tmp_path / "main" / "state.json"
