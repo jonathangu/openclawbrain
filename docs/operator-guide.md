@@ -131,6 +131,10 @@ Flag meanings:
 - `--checkpoint-every N`: checkpoint every N replay windows/merge batches.
 - `--stop-after-fast-learning`: end after fast-learning phase (for quick cutover).
 
+Build-all/loop replay safeguards:
+- Build-all full replay automatically enables `--advance-offsets-on-skip`, caps tool results (`--tool-result-max-chars 20000` when tool results are included), and runs with unbuffered output so checkpoints/progress flush promptly.
+- Build-all monitors replay checkpoints for stalls; if no progress for 15 minutes it terminates and restarts the replay, and after repeated stalls falls back to `edges-only` (or marks the replay as degraded and continues). See `replay_watchdog.jsonl` under the agent scratch directory for the audit trail.
+
 ## 6) Progress: expected output by phase
 - Fast-learning prints progress and completes with `Completed fast-learning; stopped before replay/harvest.` when `--stop-after-fast-learning` is set.
 - Replay emits a progress heartbeat every 30 seconds by default; add `--progress-every N` for per-item cadence.

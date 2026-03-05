@@ -802,6 +802,103 @@ def _monitor_replay_checkpoint(
             return
 
 
+def _checkpoint_progress_snapshot(checkpoint_path: Path) -> dict[str, object]:
+    mtime: float | None = None
+    if checkpoint_path.exists():
+        try:
+            mtime = checkpoint_path.stat().st_mtime
+        except OSError:
+            mtime = None
+    try:
+        checkpoint = _load_checkpoint(checkpoint_path)
+    except Exception:  # noqa: BLE001
+        checkpoint = None
+
+    updated_at: float | None = None
+    processed: int | None = None
+    total: int | None = None
+
+    if isinstance(checkpoint, dict):
+        fast_payload = checkpoint.get("fast_learning")
+        if isinstance(fast_payload, dict):
+            fast_updated = fast_payload.get("updated_at")
+            if isinstance(fast_updated, (int, float)):
+                updated_at = float(fast_updated)
+            fast_processed = _progress_int(fast_payload.get("windows_processed"))
+            fast_total = _progress_int(fast_payload.get("windows_total"))
+            if fast_processed is not None:
+                processed = fast_processed
+            if fast_total is not None:
+                total = fast_total
+
+        replay_payload = checkpoint.get("replay")
+        if isinstance(replay_payload, dict):
+            replay_updated = replay_payload.get("updated_at")
+            if isinstance(replay_updated, (int, float)):
+                updated_at = max(updated_at or 0.0, float(replay_updated))
+            replay_processed = _progress_int(replay_payload.get("queries_processed"))
+            replay_total = _progress_int(replay_payload.get("queries_total"))
+            if replay_processed is not None:
+                processed = replay_processed
+            if replay_total is not None:
+                total = replay_total
+
+    return {
+        "mtime": mtime,
+        "updated_at": updated_at,
+        "processed": processed,
+        "total": total,
+    }
+
+
+def _progress_snapshot_changed(
+    previous: dict[str, object] | None,
+    current: dict[str, object] | None,
+) -> bool:
+    if previous is None:
+        return current is not None
+    if current is None:
+        return False
+    for key in ("mtime", "updated_at", "processed", "total"):
+        if previous.get(key) != current.get(key):
+            return True
+    return False
+
+
+def _append_replay_watchdog_event(
+    *,
+    watchdog_path: Path,
+    run_id: str,
+    agent_id: str,
+    event: str,
+    checkpoint_path: Path,
+    snapshot: dict[str, object] | None,
+    extra: dict[str, object] | None = None,
+) -> None:
+    payload: dict[str, object] = {
+        "run_id": run_id,
+        "agent_id": agent_id,
+        "event": event,
+        "checkpoint_path": str(checkpoint_path),
+        "ts": datetime.now(timezone.utc).isoformat(),
+    }
+    if snapshot is not None:
+        payload["processed"] = snapshot.get("processed")
+        payload["total"] = snapshot.get("total")
+    if extra:
+        payload.update(extra)
+    _append_jsonl(watchdog_path, payload)
+
+
+def _terminate_process(proc: subprocess.Popen, timeout_seconds: float) -> int:
+    proc.terminate()
+    try:
+        return int(proc.wait(timeout=timeout_seconds))
+    except subprocess.TimeoutExpired:
+        proc.kill()
+        return int(proc.wait())
+
+
 def _run_logged_replay_command(
     cmd: list[str],
     *,
@@ -810,6 +907,7 @@ def _run_logged_replay_command(
     checkpoint_path: Path,
     agent_id: str,
     progress_interval_seconds: int,
+    env: dict[str, str] | None = None,
 ) -> int:
     log_path.parent.mkdir(parents=True, exist_ok=True)
     stop_event = threading.Event()
@@ -830,7 +928,7 @@ def _run_logged_replay_command(
                 daemon=True,
             )
             monitor.start()
-        proc = subprocess.Popen(cmd, stdout=log_handle, stderr=log_handle, text=True)
+        proc = subprocess.Popen(cmd, stdout=log_handle, stderr=log_handle, text=True, env=env)
         try:
             returncode = proc.wait()
         finally:
@@ -838,6 +936,174 @@ def _run_logged_replay_command(
             if monitor is not None:
                 monitor.join(timeout=max(1.0, float(progress_interval_seconds)))
     return int(returncode)
+
+
+def _run_logged_replay_command_with_watchdog(
+    cmd: list[str],
+    *,
+    log_path: Path,
+    step_name: str,
+    checkpoint_path: Path,
+    agent_id: str,
+    run_id: str,
+    watchdog_path: Path,
+    progress_interval_seconds: int,
+    stall_timeout_seconds: int,
+    stall_max_restarts: int,
+    stall_fallback_mode: str,
+    env: dict[str, str] | None = None,
+    spawn: Callable[..., subprocess.Popen] = subprocess.Popen,
+    sleep: Callable[[float], None] = time.sleep,
+    monotonic: Callable[[], float] = time.monotonic,
+) -> int:
+    if stall_timeout_seconds <= 0 or stall_max_restarts < 0:
+        return _run_logged_replay_command(
+            cmd,
+            log_path=log_path,
+            step_name=step_name,
+            checkpoint_path=checkpoint_path,
+            agent_id=agent_id,
+            progress_interval_seconds=progress_interval_seconds,
+            env=env,
+        )
+
+    restarts = 0
+    attempt = 0
+    base_cmd = list(cmd)
+    fallback_used = False
+
+    while True:
+        attempt += 1
+        log_path.parent.mkdir(parents=True, exist_ok=True)
+        stop_event = threading.Event()
+        monitor: threading.Thread | None = None
+        attempt_label = f"{step_name} (attempt {attempt})" if attempt > 1 else step_name
+        with log_path.open("a", encoding="utf-8") as log_handle:
+            log_handle.write(f"\n== {attempt_label} ==\n")
+            log_handle.write(f"command: {' '.join(shlex.quote(part) for part in base_cmd)}\n")
+            log_handle.flush()
+            if progress_interval_seconds > 0:
+                monitor = threading.Thread(
+                    target=_monitor_replay_checkpoint,
+                    kwargs={
+                        "checkpoint_path": checkpoint_path,
+                        "agent_id": agent_id,
+                        "interval_seconds": progress_interval_seconds,
+                        "stop_event": stop_event,
+                    },
+                    daemon=True,
+                )
+                monitor.start()
+            try:
+                proc = spawn(base_cmd, stdout=log_handle, stderr=log_handle, text=True, env=env)
+            except FileNotFoundError:
+                stop_event.set()
+                if monitor is not None:
+                    monitor.join(timeout=max(1.0, float(progress_interval_seconds)))
+                return 127
+
+            last_snapshot = _checkpoint_progress_snapshot(checkpoint_path)
+            last_progress_at = monotonic()
+            stalled = False
+
+            try:
+                while True:
+                    returncode = proc.poll()
+                    snapshot = _checkpoint_progress_snapshot(checkpoint_path)
+                    if _progress_snapshot_changed(last_snapshot, snapshot):
+                        last_progress_at = monotonic()
+                        last_snapshot = snapshot
+                    if returncode is not None:
+                        returncode = int(returncode)
+                        break
+                    if monotonic() - last_progress_at >= float(stall_timeout_seconds):
+                        stalled = True
+                        _append_replay_watchdog_event(
+                            watchdog_path=watchdog_path,
+                            run_id=run_id,
+                            agent_id=agent_id,
+                            event="stall_detected",
+                            checkpoint_path=checkpoint_path,
+                            snapshot=last_snapshot,
+                        )
+                        returncode = _terminate_process(proc, timeout_seconds=10.0)
+                        break
+                    sleep(max(1.0, min(5.0, stall_timeout_seconds / 6)))
+            finally:
+                stop_event.set()
+                if monitor is not None:
+                    monitor.join(timeout=max(1.0, float(progress_interval_seconds)))
+
+        if not stalled:
+            return int(returncode)
+
+        if restarts < stall_max_restarts:
+            restarts += 1
+            _append_replay_watchdog_event(
+                watchdog_path=watchdog_path,
+                run_id=run_id,
+                agent_id=agent_id,
+                event="restart",
+                checkpoint_path=checkpoint_path,
+                snapshot=last_snapshot,
+                extra={"restart_count": restarts},
+            )
+            continue
+
+        if not fallback_used and stall_fallback_mode == "edges-only":
+            fallback_used = True
+            fallback_cmd = []
+            skip_next = False
+            replaced_mode = False
+            for part in base_cmd:
+                if skip_next:
+                    skip_next = False
+                    continue
+                if part == "--mode":
+                    fallback_cmd.append(part)
+                    fallback_cmd.append("edges-only")
+                    skip_next = True
+                    replaced_mode = True
+                    continue
+                if part in {"--edges-only", "--fast-learning", "--full-learning"}:
+                    continue
+                fallback_cmd.append(part)
+            if not replaced_mode:
+                fallback_cmd.extend(["--mode", "edges-only"])
+            base_cmd = fallback_cmd
+            _append_replay_watchdog_event(
+                watchdog_path=watchdog_path,
+                run_id=run_id,
+                agent_id=agent_id,
+                event="fallback",
+                checkpoint_path=checkpoint_path,
+                snapshot=last_snapshot,
+                extra={"fallback_mode": "edges-only"},
+            )
+            stall_timeout_seconds = max(0, int(stall_timeout_seconds))
+            restarts = 0
+            if stall_timeout_seconds <= 0:
+                return _run_logged_replay_command(
+                    base_cmd,
+                    log_path=log_path,
+                    step_name=f"{step_name} (fallback)",
+                    checkpoint_path=checkpoint_path,
+                    agent_id=agent_id,
+                    progress_interval_seconds=progress_interval_seconds,
+                    env=env,
+                )
+            continue
+
+        _append_replay_watchdog_event(
+            watchdog_path=watchdog_path,
+            run_id=run_id,
+            agent_id=agent_id,
+            event="give_up",
+            checkpoint_path=checkpoint_path,
+            snapshot=last_snapshot,
+            extra={"fallback_mode": stall_fallback_mode},
+        )
+        return 0
 
 
 def _build_all_agent_pipeline(
@@ -973,13 +1239,22 @@ def _build_all_agent_pipeline(
     def run_replay_step(replay_cmd: list[str]) -> int:
         emit_step_start("replay")
         emit_status("replay", "running")
-        code = _run_logged_replay_command(
+        replay_env = dict(os.environ)
+        replay_env["PYTHONUNBUFFERED"] = "1"
+        watchdog_path = scratch / "replay_watchdog.jsonl"
+        code = _run_logged_replay_command_with_watchdog(
             replay_cmd,
             log_path=log_path,
             step_name="replay",
             checkpoint_path=checkpoint_path,
             agent_id=agent_id,
+            run_id=ts_label,
+            watchdog_path=watchdog_path,
             progress_interval_seconds=max(0, int(args.replay_progress_interval_seconds)),
+            stall_timeout_seconds=max(0, int(args.replay_stall_timeout_seconds)),
+            stall_max_restarts=max(0, int(args.replay_stall_max_restarts)),
+            stall_fallback_mode=str(args.replay_stall_fallback_mode),
+            env=replay_env,
         )
         if code == 0:
             emit_status("replay", "ok")
@@ -1100,10 +1375,14 @@ def _build_all_agent_pipeline(
             replay_cmd.extend(["--replay-sample-rate", str(args.replay_sample_rate)])
         if args.replay_priority != "all":
             replay_cmd.extend(["--replay-priority", str(args.replay_priority)])
-        if args.advance_offsets_on_skip:
+        advance_offsets_on_skip = args.advance_offsets_on_skip
+        if advance_offsets_on_skip is None:
+            advance_offsets_on_skip = str(args.mode) == "full"
+        if advance_offsets_on_skip:
             replay_cmd.append("--advance-offsets-on-skip")
         if args.include_tool_results:
             replay_cmd.append("--include-tool-results")
+            replay_cmd.extend(["--tool-result-max-chars", str(DEFAULT_TOOL_RESULT_MAX_CHARS)])
         else:
             replay_cmd.append("--no-include-tool-results")
         if args.resume:
@@ -2028,7 +2307,14 @@ def _build_parser() -> argparse.ArgumentParser:
     build_all.add_argument(
         "--advance-offsets-on-skip",
         action=argparse.BooleanOptionalAction,
-        default=False,
+        default=None,
+    )
+    build_all.add_argument("--replay-stall-timeout-seconds", type=int, default=900)
+    build_all.add_argument("--replay-stall-max-restarts", type=int, default=2)
+    build_all.add_argument(
+        "--replay-stall-fallback-mode",
+        choices=("full", "edges-only"),
+        default="edges-only",
     )
     build_all.add_argument("--checkpoint-every-seconds", type=int, default=60)
     build_all.add_argument("--replay-progress-interval-seconds", type=int, default=15)
@@ -6224,11 +6510,16 @@ def cmd_loop(args: argparse.Namespace) -> int:
             replay_cmd.append("--resume")
         if args.include_tool_results:
             replay_cmd.append("--include-tool-results")
+            replay_cmd.extend(["--tool-result-max-chars", str(DEFAULT_TOOL_RESULT_MAX_CHARS)])
         else:
             replay_cmd.append("--no-include-tool-results")
+        if str(mode) == "full":
+            replay_cmd.append("--advance-offsets-on-skip")
 
         write_checkpoint(status="running", job=job, step="replay")
         emit_event({"type": "step_start", "job": job, "step": "replay"})
+        replay_env = dict(os.environ)
+        replay_env["PYTHONUNBUFFERED"] = "1"
         code = _run_logged_replay_command(
             replay_cmd,
             log_path=log_path,
@@ -6236,6 +6527,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
             checkpoint_path=agent_root / REPLAY_CHECKPOINT_FILENAME,
             agent_id=agent_id,
             progress_interval_seconds=max(0, int(args.replay_progress_interval_seconds)),
+            env=replay_env,
         )
         emit_event({"type": "step_end", "job": job, "step": "replay", "exit_code": code})
         return code

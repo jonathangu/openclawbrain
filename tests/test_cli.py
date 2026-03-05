@@ -2406,7 +2406,7 @@ def test_cmd_build_all_events_jsonl_contains_run_and_agent_events(tmp_path, monk
         return 0
 
     monkeypatch.setattr(cli_module, "_run_logged_command", fake_run_logged_command)
-    monkeypatch.setattr(cli_module, "_run_logged_replay_command", lambda *args, **kwargs: 0)
+    monkeypatch.setattr(cli_module, "_run_logged_replay_command_with_watchdog", lambda *args, **kwargs: 0)
 
     events_path = tmp_path / ".openclawbrain" / "scratch" / "events.jsonl"
     code = cli_module.main(
@@ -2464,7 +2464,7 @@ def test_cli_build_all_forwards_workers_and_llm_model_to_replay_and_records_mani
         return 0
 
     monkeypatch.setattr(cli_module, "_run_logged_command", fake_run_logged_command)
-    monkeypatch.setattr(cli_module, "_run_logged_replay_command", fake_run_logged_replay_command)
+    monkeypatch.setattr(cli_module, "_run_logged_replay_command_with_watchdog", fake_run_logged_replay_command)
 
     code = cli_module.main(
         [
@@ -2509,7 +2509,85 @@ def test_cli_build_all_forwards_workers_and_llm_model_to_replay_and_records_mani
     assert manifest["args"]["replay_max_interactions"] == 10
     assert manifest["args"]["replay_sample_rate"] == 0.3
     assert manifest["args"]["replay_priority"] == "tool"
-    assert manifest["args"]["advance_offsets_on_skip"] is True
+
+
+def test_replay_watchdog_restarts_and_fallback(tmp_path: Path) -> None:
+    """watchdog restarts wedged replay and falls back to edges-only."""
+    import openclawbrain.cli as cli_module
+
+    checkpoint_path = tmp_path / "replay_checkpoint.json"
+    checkpoint_path.write_text(
+        json.dumps({"replay": {"queries_processed": 0, "queries_total": 10, "updated_at": 1.0}}),
+        encoding="utf-8",
+    )
+    log_path = tmp_path / "replay.log"
+    watchdog_path = tmp_path / "replay_watchdog.jsonl"
+
+    spawned_cmds: list[list[str]] = []
+
+    class FakeProc:
+        def __init__(self, returncode: int | None = None) -> None:
+            self.returncode = returncode
+
+        def poll(self):
+            return self.returncode
+
+        def wait(self, timeout: float | None = None):
+            if self.returncode is None:
+                self.returncode = 143
+            return self.returncode
+
+        def terminate(self):
+            self.returncode = 143
+
+        def kill(self):
+            self.returncode = 137
+
+    def fake_spawn(cmd: list[str], **_kwargs):
+        spawned_cmds.append(cmd)
+        if "--mode" in cmd and cmd[cmd.index("--mode") + 1] == "edges-only":
+            return FakeProc(returncode=0)
+        return FakeProc()
+
+    class FakeClock:
+        def __init__(self) -> None:
+            self.value = 0.0
+
+        def monotonic(self) -> float:
+            return self.value
+
+        def sleep(self, seconds: float) -> None:
+            self.value += seconds
+
+    clock = FakeClock()
+
+    code = cli_module._run_logged_replay_command_with_watchdog(
+        ["openclawbrain", "replay", "--mode", "full"],
+        log_path=log_path,
+        step_name="replay",
+        checkpoint_path=checkpoint_path,
+        agent_id="agent-1",
+        run_id="run-1",
+        watchdog_path=watchdog_path,
+        progress_interval_seconds=0,
+        stall_timeout_seconds=3,
+        stall_max_restarts=1,
+        stall_fallback_mode="edges-only",
+        env=None,
+        spawn=fake_spawn,
+        sleep=clock.sleep,
+        monotonic=clock.monotonic,
+    )
+
+    assert code == 0
+    assert len(spawned_cmds) == 3
+    assert "--mode" in spawned_cmds[-1]
+    assert spawned_cmds[-1][spawned_cmds[-1].index("--mode") + 1] == "edges-only"
+
+    events = [json.loads(line) for line in watchdog_path.read_text(encoding="utf-8").splitlines() if line.strip()]
+    assert any(item.get("event") == "stall_detected" for item in events)
+    assert any(item.get("event") == "restart" for item in events)
+    assert any(item.get("event") == "fallback" for item in events)
 
 
 def test_cli_build_all_replay_filters_parse() -> None:
