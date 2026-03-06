@@ -619,6 +619,12 @@ If you have prior conversation logs, replay them. By default, `replay` runs
 openclawbrain replay --state /tmp/brain/state.json --sessions ./sessions/
 ```
 
+`--sessions` now accepts more than plain OpenClaw JSONL files:
+- OpenClaw session directories with rotated `*.jsonl*` files
+- `sessions.json` session indices
+- nested Codex rollout trees such as `~/.codex/sessions`
+- direct Codex state sqlite files such as `~/.codex/state_5.sqlite`
+
 OpenClaw media uploads are usually logged as user text stubs like
 `[media attached: ...]`. Those stubs alone have little semantic value, so they
 often do not improve memory quality by themselves. The useful text typically
@@ -827,9 +833,11 @@ openclawbrain daemon \
   --route-model /tmp/brain/route_model.npz
 ```
 
-Replay/harvest now optionally emit route traces + labels:
-- `openclawbrain replay --traces-out ... --labels-out ...`
-- `openclawbrain harvest --traces-out ... --labels-out ...`
+Important training guardrails:
+- trainable route traces come from `async-route-pg --traces-out`, not `replay` or `harvest`
+- `harvest --labels-out` remains valid for harvested feedback labels
+- `replay --traces-out`, `replay --labels-out`, and `harvest --traces-out` are rejected because they previously produced placeholder/non-trainable exports
+- `train-route-model` now fails fast with a detailed readiness summary when traces are missing required fields such as `query_vector` or indexed candidate targets
 
 ## Design Tenets
 

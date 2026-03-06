@@ -105,3 +105,47 @@ def test_evaluate_ce_loss_supports_legacy_df3_features(tmp_path: Path) -> None:
     assert loss >= 0.0
     assert points_total > 0
     assert points_used > 0
+
+
+def test_train_route_model_errors_with_missing_required_trace_fields(tmp_path: Path) -> None:
+    state_path = tmp_path / "state.json"
+    traces_path = tmp_path / "traces.jsonl"
+    out_path = tmp_path / "route_model.npz"
+
+    _write_state(state_path)
+    trace = RouteTrace(
+        query_id="q-missing",
+        ts=1.0,
+        query_text="choose a",
+        seeds=[["seed", 1.0]],
+        fired_nodes=["seed", "target_a"],
+        traversal_config={"max_hops": 15},
+        route_policy={"route_mode": "off"},
+        query_vector=None,
+        decision_points=[
+            RouteDecisionPoint(
+                query_text="choose a",
+                source_id="seed",
+                source_preview="seed",
+                chosen_target_id="target_a",
+                candidates=[RouteCandidate(target_id="target_a", edge_weight=0.4, edge_relevance=0.0)],
+            )
+        ],
+    )
+    traces_path.write_text(route_trace_to_json(trace) + "\n", encoding="utf-8")
+
+    try:
+        train_route_model(
+            state_path=str(state_path),
+            traces_in=str(traces_path),
+            labels_in=None,
+            out_path=str(out_path),
+        )
+    except ValueError as exc:
+        message = str(exc)
+    else:
+        raise AssertionError("expected ValueError for missing training fields")
+
+    assert "required fields" in message
+    assert "missing_query_vector=1" in message
+    assert "points_with_lt2_indexed_candidates=1" in message
