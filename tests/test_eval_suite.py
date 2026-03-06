@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import csv
 from pathlib import Path
 
 import pytest
@@ -102,4 +103,40 @@ def test_openclaw_workflow_simulation_improves_over_graph_prior(tmp_path: Path) 
     assert float(summary["learned_minus_graph_prior_target_success"]) >= 0.49
     assert int(summary["first_full_success_epoch"]) <= 16
     assert Path(summary["report_path"]).exists()
+    assert Path(summary["per_query_matrix_csv_path"]).exists()
+    assert Path(summary["per_query_matrix_md_path"]).exists()
     assert Path(summary["worked_example_path"]).exists()
+
+    with Path(summary["per_query_matrix_csv_path"]).open(encoding="utf-8", newline="") as handle:
+        rows = list(csv.DictReader(handle))
+
+    assert len(rows) == 16
+    payments_learned = next(
+        row
+        for row in rows
+        if row["query_id"] == "payments_recovery_eval" and row["mode"] == "learned"
+    )
+    assert payments_learned["scenario"] == "payments_recovery"
+    assert payments_learned["category"] == "decision-history"
+    assert (
+        payments_learned["prompt_context_included_node_ids"]
+        == "doc::payments_incident_2026_02_14|doc::rollback_gate|hub::incident"
+    )
+    assert payments_learned["target_success"] == "1.0"
+    assert payments_learned["required_node_coverage"] == "1.0"
+    assert payments_learned["pointer_turns"] == ""
+
+    report_text = Path(summary["report_path"]).read_text(encoding="utf-8")
+    assert "| vector_topk | 0/4 (0.00) | 0.00 | - |" in report_text
+    assert "| pointer_chase | 1/4 (0.25) | 0.38 | 1.25 |" in report_text
+    assert "| graph_prior_only | 2/4 (0.50) | 0.50 | - |" in report_text
+    assert "| learned | 4/4 (1.00) | 1.00 | - |" in report_text
+    assert "## Scenario by mode" in report_text
+
+    matrix_md = Path(summary["per_query_matrix_md_path"]).read_text(encoding="utf-8")
+    assert "| payments_recovery_eval | payments_recovery | decision-history | learned |" in matrix_md
+    assert (
+        "| oncall_dashboard_recall_eval | oncall_dashboard_recall | ops | pointer_chase | "
+        "doc::oncall_schedule|doc::monitoring_dashboards | doc::monitoring_dashboards|hub::incident | 0.00 | 0.50 | 1 |"
+        in matrix_md
+    )

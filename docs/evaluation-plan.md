@@ -100,7 +100,7 @@ Recommended process for paper-grade ground truth:
   - This is the paper-grade synthetic benchmark: K-expert Gaussian regions, soft teacher labels, heldout baselines (`random`, `oracle`, `graph_prior_only`, `qtsim_only`, `learned_mixed`), and oracle-gap closure curves.
 - Workflow-shaped proof:
   - `python3 -m examples.eval.simulate_openclaw_workflows --output-dir scratch/workflow-proof/latest`
-  - This is the concrete OpenClaw-style benchmark: incident history, deploy-after-incident, customer update, and on-call/dashboard recall with exact-node success metrics plus a worked example.
+  - This is the concrete OpenClaw-style benchmark: incident history, deploy-after-incident, customer update, and on-call/dashboard recall with exact-node success counts, a compact scenario-by-mode report, a per-query matrix artifact, and a worked example.
 - Secondary synthetic sanity check:
   - `python examples/eval/simulate_two_cluster_routing.py --output-dir /tmp/ocb_two_cluster`
   - This remains a lightweight cluster-routing smoke test.
@@ -109,7 +109,7 @@ Recommended process for paper-grade ground truth:
 
 - per-mode JSON summaries from `run_eval.py`
 - simulation CSV + report from `simulate_expert_regions.py` (primary synthetic evidence)
-- workflow proof summary/report/worked example from `simulate_openclaw_workflows.py`
+- workflow proof summary/report/per_query_matrix/worked example from `simulate_openclaw_workflows.py`
 - simulation CSV + report from `simulate_two_cluster_routing.py` (secondary sanity evidence)
 - qualitative failure analysis for low-confidence and high-disagreement queries
 - appendix with dataset construction protocol and annotation rubric

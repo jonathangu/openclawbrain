@@ -33,6 +33,8 @@ Key generated files:
 - `scratch/workflow-proof/latest/eval_queries.jsonl`
 - `scratch/workflow-proof/latest/learning_curve.csv`
 - `scratch/workflow-proof/latest/baseline_eval/summary.json`
+- `scratch/workflow-proof/latest/per_query_matrix.csv`
+- `scratch/workflow-proof/latest/per_query_matrix.md`
 - `scratch/workflow-proof/latest/report.md`
 - `scratch/workflow-proof/latest/worked_example.md`
 
@@ -40,16 +42,25 @@ Key generated files:
 
 | mode | exact target success | required-node coverage | interpretation |
 | --- | --- | --- | --- |
-| `vector_topk` | `0.00` | `0.00` | one seed hub is found, but no route learning happens |
-| `pointer_chase` | `0.25` | `0.38` | sometimes reaches the right chain, but needs extra turns and still misses often |
-| `graph_prior_only` | `0.50` | `0.50` | cold-start graph priors are already useful on half the held-out workflow queries |
-| `learned` | `1.00` | `1.00` | learned routing recovers the exact required nodes on all held-out queries |
+| `vector_topk` | `0/4 (0.00)` | `0.00` | one seed hub is found, but no route learning happens |
+| `pointer_chase` | `1/4 (0.25)` | `0.38` | sometimes reaches the right chain, but needs extra turns and still misses often |
+| `graph_prior_only` | `2/4 (0.50)` | `0.50` | cold-start graph priors are already useful on half the held-out workflow queries |
+| `learned` | `4/4 (1.00)` | `1.00` | learned routing recovers the exact required nodes on all held-out queries |
 
 Learning-curve detail:
 
 - graph-prior target success stays flat at `0.50`
 - learned routing reaches `1.00` target success by epoch `14`
 - the final learned model at epoch `16` keeps `1.00` exact target success
+
+## Scenario-level evidence slice
+
+The proof bundle now includes `scratch/workflow-proof/latest/per_query_matrix.csv` and `scratch/workflow-proof/latest/per_query_matrix.md`.
+
+- They flatten the nested baseline JSON into 16 deterministic rows: 4 held-out workflow queries x 4 retrieval modes.
+- Each row records `query_id`, `scenario`, `category`, `required_node_ids`, `prompt_context_included_node_ids`, `target_success`, `required_node_coverage`, and `pointer_turns` when relevant.
+- `report.md` gives the compact count table and scenario-by-mode summary; `per_query_matrix.*` is the citeable prompt-context evidence behind those totals.
+- This does not widen the claim boundary: the artifact shows which memory nodes reached prompt context inside the sim, not downstream production answer quality.
 
 ## Worked example
 
@@ -71,14 +82,14 @@ What each mode actually returns:
 - `graph_prior_only` prefers `oncall_schedule` and `monitoring_dashboards`
 - `learned` returns `payments_incident_2026_02_14 -> rollback_gate`
 
-The candidate table in `scratch/workflow-proof/latest/worked_example.md` shows why: graph priors still favor the globally common incident tools, while the learned router assigns the highest score to the incident-history note for this query.
+The candidate table in `scratch/workflow-proof/latest/worked_example.md` shows why: graph priors still favor the globally common incident tools, while the learned router assigns the highest score to the incident-history note for this query. The corresponding row in `scratch/workflow-proof/latest/per_query_matrix.md` makes the exact prompt-context node IDs easy to cite alongside the worked example.
 
 ## What is actually proven now
 
 - OpenClawBrain can start with partially useful graph priors instead of requiring a fully trained router.
 - Async route supervision can improve runtime retrieval on workflow-shaped held-out examples, not just abstract synthetic clusters.
 - The learned runtime policy can outperform both vector-only retrieval and a pointer-chasing baseline on exact-node retrieval.
-- The evidence is reproducible from committed code and written artifacts, not a one-off screenshot or manual story.
+- The evidence is reproducible from committed code and written artifacts (`report.md`, `per_query_matrix.*`, `worked_example.md`), not a one-off screenshot or manual story.
 
 ## What is not proven yet
 

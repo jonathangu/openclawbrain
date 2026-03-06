@@ -103,12 +103,12 @@ python3 -m examples.eval.simulate_openclaw_workflows \
 
 Expected top-line metrics on this repo state:
 
-| mode | target success | required-node coverage |
+| mode | exact target success | required-node coverage |
 | --- | --- | --- |
-| `vector_topk` | `0.00` | `0.00` |
-| `pointer_chase` | `0.25` | `0.38` |
-| `graph_prior_only` | `0.50` | `0.50` |
-| `learned` | `1.00` | `1.00` |
+| `vector_topk` | `0/4 (0.00)` | `0.00` |
+| `pointer_chase` | `1/4 (0.25)` | `0.38` |
+| `graph_prior_only` | `2/4 (0.50)` | `0.50` |
+| `learned` | `4/4 (1.00)` | `1.00` |
 
 Expected learning-curve summary:
 
@@ -119,12 +119,16 @@ Artifacts:
 
 - `scratch/workflow-proof/latest/baseline_eval/summary.json`
 - `scratch/workflow-proof/latest/learning_curve.csv`
+- `scratch/workflow-proof/latest/per_query_matrix.csv`
+- `scratch/workflow-proof/latest/per_query_matrix.md`
+- `scratch/workflow-proof/latest/report.md`
 - `scratch/workflow-proof/latest/worked_example.md`
 - `docs/openclaw-workflow-proof.md`
 
 Notes:
 
 - This harness is deterministic and CI-friendly; it uses a small hash embedder instead of live model calls.
+- `per_query_matrix.*` is the reviewable scenario-level evidence slice: it records which node IDs reached prompt context for each held-out query and mode.
 - The production default stack remains local BGE-large embeddings and a local async teacher such as Ollama `qwen3.5:35b`.
 
 ## External benchmarks (optional, dataset downloads required)

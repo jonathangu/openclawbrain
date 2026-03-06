@@ -17,6 +17,7 @@ Outputs:
 - eval_queries.jsonl
 - route_model_epoch_*.npz
 - learning_curve.csv
+- per_query_matrix.csv / per_query_matrix.md
 - summary.json
 - report.md
 - worked_example.md
@@ -77,6 +78,8 @@ class _NullEventStore:
     def append(self, event: dict[str, object]) -> None:
         _ = event
 
+
+MODE_ORDER = ("vector_topk", "pointer_chase", "graph_prior_only", "learned")
 
 NOISE_TEXT = (
     "finance budget hiring vacation policy compliance legal invoice recruiting travel roadmap"
@@ -854,27 +857,186 @@ def _fmt_metric(value: object) -> str:
     return f"{float(value):.2f}" if isinstance(value, (int, float)) else "-"
 
 
+def _fmt_count(successes: int, total: int) -> str:
+    return f"{successes}/{total}" if total > 0 else "-"
+
+
+def _fmt_pointer_turns(value: object) -> str:
+    if not isinstance(value, (int, float)):
+        return "-"
+    turns = float(value)
+    return str(int(turns)) if turns.is_integer() else f"{turns:.2f}"
+
+
+def _row_metric(row: dict[str, object], field: str) -> float | None:
+    value = row.get(field)
+    return float(value) if isinstance(value, (int, float)) else None
+
+
+def _mode_query_rows(final_summary: dict[str, object]) -> dict[str, dict[str, dict[str, object]]]:
+    per_query = final_summary.get("per_query")
+    if not isinstance(per_query, dict):
+        return {}
+
+    rows_by_mode: dict[str, dict[str, dict[str, object]]] = {}
+    for mode, rows in per_query.items():
+        if not isinstance(mode, str) or not isinstance(rows, list):
+            continue
+        rows_by_mode[mode] = {
+            str(row.get("query_id")): row
+            for row in rows
+            if isinstance(row, dict) and isinstance(row.get("query_id"), str)
+        }
+    return rows_by_mode
+
+
+def _build_per_query_matrix_rows(final_summary: dict[str, object]) -> list[dict[str, object]]:
+    rows_by_mode = _mode_query_rows(final_summary)
+    matrix_rows: list[dict[str, object]] = []
+
+    for scenario in SCENARIOS:
+        for mode in MODE_ORDER:
+            mode_rows = rows_by_mode.get(mode)
+            if mode_rows is None:
+                raise KeyError(f"missing per-query rows for mode {mode}")
+            row = mode_rows.get(scenario.eval_query_id)
+            if row is None:
+                raise KeyError(f"missing per-query row for {scenario.eval_query_id} in mode {mode}")
+
+            matrix_rows.append(
+                {
+                    "query_id": scenario.eval_query_id,
+                    "scenario": scenario.key,
+                    "category": scenario.category,
+                    "mode": mode,
+                    "required_node_ids": "|".join(scenario.required_node_ids),
+                    "prompt_context_included_node_ids": str(
+                        row.get("prompt_context_included_node_ids", "")
+                    ),
+                    "target_success": _row_metric(row, "target_success"),
+                    "required_node_coverage": _row_metric(row, "required_node_coverage"),
+                    "pointer_turns": _row_metric(row, "pointer_turns"),
+                }
+            )
+
+    return matrix_rows
+
+
+def _write_per_query_matrix_csv(path: Path, rows: list[dict[str, object]]) -> Path:
+    fieldnames = [
+        "query_id",
+        "scenario",
+        "category",
+        "mode",
+        "required_node_ids",
+        "prompt_context_included_node_ids",
+        "target_success",
+        "required_node_coverage",
+        "pointer_turns",
+    ]
+    with path.open("w", encoding="utf-8", newline="") as handle:
+        writer = csv.DictWriter(handle, fieldnames=fieldnames)
+        writer.writeheader()
+        for row in rows:
+            writer.writerow({name: row.get(name) for name in fieldnames})
+    return path
+
+
+def _write_per_query_matrix_md(path: Path, rows: list[dict[str, object]]) -> Path:
+    lines = [
+        "# Per-Query Workflow Matrix",
+        "",
+        "Each row is one held-out workflow query under one retrieval mode. This is a deterministic evidence slice for the routing mechanism proof: it records which node IDs reached prompt context, not downstream production answer quality.",
+        "",
+        "Pointer turns are populated only for `pointer_chase`.",
+        "",
+        "| query_id | scenario | category | mode | required_node_ids | prompt_context_included_node_ids | target_success | required_node_coverage | pointer_turns |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
+    ]
+    for row in rows:
+        lines.append(
+            "| "
+            + " | ".join(
+                [
+                    str(row["query_id"]),
+                    str(row["scenario"]),
+                    str(row["category"]),
+                    str(row["mode"]),
+                    str(row["required_node_ids"]),
+                    str(row["prompt_context_included_node_ids"]),
+                    _fmt_metric(row.get("target_success")),
+                    _fmt_metric(row.get("required_node_coverage")),
+                    _fmt_pointer_turns(row.get("pointer_turns")),
+                ]
+            )
+            + " |"
+        )
+    path.write_text("\n".join(lines) + "\n", encoding="utf-8")
+    return path
+
+
 def _render_report(
     *,
     final_summary: dict[str, object],
     curve_rows: list[dict[str, float]],
     curve_meta: dict[str, object],
+    per_query_matrix_rows: list[dict[str, object]],
 ) -> str:
+    rows_by_mode: dict[str, list[dict[str, object]]] = {mode: [] for mode in MODE_ORDER}
+    row_lookup: dict[tuple[str, str], dict[str, object]] = {}
+    for row in per_query_matrix_rows:
+        mode = row.get("mode")
+        scenario = row.get("scenario")
+        if isinstance(mode, str) and mode in rows_by_mode:
+            rows_by_mode[mode].append(row)
+        if isinstance(mode, str) and isinstance(scenario, str):
+            row_lookup[(scenario, mode)] = row
+
     lines = [
         "# OpenClaw Workflow Proof",
         "",
-        "This harness models a realistic OpenClaw pattern: the brain starts with useful graph priors, then async teacher labels train a runtime route_fn that pulls the right historical note or runbook immediately.",
+        "This harness models a realistic OpenClaw pattern: OpenClawBrain starts from local graph priors, then async teacher labels train a runtime route_fn that pulls the right historical note or runbook immediately. The sims are evidence for the routing mechanism, not a claim of production superiority.",
         "",
         "## Final metrics",
         "",
-        "| mode | target success | required coverage | pointer turns mean |",
+        "| mode | exact target success | required coverage mean | pointer turns mean |",
         "| --- | --- | --- | --- |",
     ]
-    for mode in ("vector_topk", "pointer_chase", "graph_prior_only", "learned"):
+    for mode in MODE_ORDER:
         ground_truth = _ground_truth(final_summary, mode)
         pointer = _pointer_summary(final_summary, mode)
+        mode_rows = rows_by_mode.get(mode, [])
+        success_count = sum(
+            1 for row in mode_rows if (_row_metric(row, "target_success") or 0.0) >= 0.999999
+        )
+        total = len(mode_rows)
         lines.append(
-            f"| {mode} | {_fmt_metric(ground_truth.get('target_success_rate'))} | {_fmt_metric(ground_truth.get('required_node_coverage_mean'))} | {_fmt_metric(pointer.get('turns_mean'))} |"
+            f"| {mode} | {_fmt_count(success_count, total)} ({_fmt_metric(ground_truth.get('target_success_rate'))}) | {_fmt_metric(ground_truth.get('required_node_coverage_mean'))} | {_fmt_metric(pointer.get('turns_mean'))} |"
+        )
+
+    lines.extend(
+        [
+            "",
+            "See `per_query_matrix.csv` or `per_query_matrix.md` for the per-scenario node IDs behind these totals.",
+            "",
+            "## Scenario by mode",
+            "",
+            "Cells show `target_success / required_coverage`; `pointer_chase` also includes turns.",
+            "",
+            "| scenario | vector_topk | pointer_chase | graph_prior_only | learned |",
+            "| --- | --- | --- | --- | --- |",
+        ]
+    )
+    for scenario in SCENARIOS:
+        cell_text: list[str] = []
+        for mode in MODE_ORDER:
+            row = row_lookup[(scenario.key, mode)]
+            cell = f"{int(_row_metric(row, 'target_success') or 0.0)} / {_fmt_metric(row.get('required_node_coverage'))}"
+            if mode == "pointer_chase" and row.get("pointer_turns") is not None:
+                cell = f"{cell}; t={_fmt_pointer_turns(row.get('pointer_turns'))}"
+            cell_text.append(f"`{cell}`")
+        lines.append(
+            f"| {scenario.key} ({scenario.category}) | {cell_text[0]} | {cell_text[1]} | {cell_text[2]} | {cell_text[3]} |"
         )
 
     lines.extend(
@@ -1021,7 +1183,7 @@ def run_openclaw_workflow_simulation(
     final_summary = run_baseline_suite(
         state_path=state_path,
         queries_path=eval_queries_path,
-        modes=["vector_topk", "pointer_chase", "graph_prior_only", "learned"],
+        modes=list(MODE_ORDER),
         embed_model="auto",
         route_model_path=final_model_path,
         top_k=1,
@@ -1031,12 +1193,22 @@ def run_openclaw_workflow_simulation(
         output_dir=output_dir / "baseline_eval",
         include_per_query=True,
     )
+    per_query_matrix_rows = _build_per_query_matrix_rows(final_summary)
+    per_query_matrix_csv_path = _write_per_query_matrix_csv(
+        output_dir / "per_query_matrix.csv",
+        per_query_matrix_rows,
+    )
+    per_query_matrix_md_path = _write_per_query_matrix_md(
+        output_dir / "per_query_matrix.md",
+        per_query_matrix_rows,
+    )
     report_path = output_dir / "report.md"
     report_path.write_text(
         _render_report(
             final_summary=final_summary,
             curve_rows=curve_rows,
             curve_meta=curve_meta,
+            per_query_matrix_rows=per_query_matrix_rows,
         )
         + "\n",
         encoding="utf-8",
@@ -1062,6 +1234,8 @@ def run_openclaw_workflow_simulation(
         "labels_path": str(labels_path),
         "eval_queries_path": str(eval_queries_path),
         "curve_path": str(curve_path),
+        "per_query_matrix_csv_path": str(per_query_matrix_csv_path),
+        "per_query_matrix_md_path": str(per_query_matrix_md_path),
         "report_path": str(report_path),
         "worked_example_path": str(worked_example_path),
         "baseline_summary_path": str(Path(final_summary["output"]["summary_json"])),
