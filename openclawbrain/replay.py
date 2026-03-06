@@ -13,6 +13,7 @@ from .graph import Graph
 from .learn import LearningConfig, apply_outcome
 from .traverse import TraversalConfig, traverse
 from .provenance import ToolProvenanceConfig, build_tool_provenance
+from .session_sources import collect_session_files
 from ._util import _tokenize
 
 DEFAULT_TOOL_RESULT_ALLOWLIST = frozenset(
@@ -64,6 +65,11 @@ def _extract_message_payload(payload: dict) -> dict | None:
         message = payload.get("message")
         return message if isinstance(message, dict) else None
 
+    if payload.get("type") == "response_item":
+        response_item = payload.get("payload")
+        if isinstance(response_item, dict) and response_item.get("type") == "message":
+            return response_item
+
     role = payload.get("role")
     if isinstance(role, str) and role.strip().lower() in {"user", "assistant", "toolresult", "tool_result"}:
         return payload
@@ -114,10 +120,16 @@ def _extract_tool_result_record(message: dict) -> dict[str, object] | None:
     """Extract tool result record with call id + content when available."""
     if not isinstance(message, dict):
         return None
-    tool_call_id = message.get("toolCallId") or message.get("tool_call_id")
+    tool_call_id = message.get("toolCallId") or message.get("tool_call_id") or message.get("call_id")
     if not isinstance(tool_call_id, str) or not tool_call_id.strip():
         tool_call_id = None
     tool_name, text = _extract_tool_result(message)
+    if text is None and isinstance(message.get("output"), str):
+        output = str(message.get("output")).strip()
+        text = output or None
+    if tool_name is None and isinstance(message.get("name"), str):
+        normalized_name = str(message.get("name")).strip().lower()
+        tool_name = normalized_name or None
     record: dict[str, object] = {}
     if tool_call_id is not None:
         record["tool_call_id"] = tool_call_id
@@ -175,7 +187,7 @@ def _extract_tool_call(payload: dict) -> dict[str, object] | None:
     call: dict[str, object] = {}
     if isinstance(payload.get("id"), str):
         call["id"] = payload["id"]
-    tool_call_id = payload.get("toolCallId") or payload.get("tool_call_id")
+    tool_call_id = payload.get("toolCallId") or payload.get("tool_call_id") or payload.get("call_id")
     if isinstance(tool_call_id, str) and tool_call_id.strip():
         call["id"] = tool_call_id
     if isinstance(name, str) and name.strip():
@@ -327,6 +339,34 @@ def extract_interactions(
         if not isinstance(payload, dict):
             continue
 
+        if payload.get("type") == "response_item" and isinstance(payload.get("payload"), dict):
+            response_item = payload["payload"]
+            response_type = str(response_item.get("type", "")).strip().lower()
+            record_ts = _extract_query_timestamp(payload)
+            if response_type in {"function_call", "custom_tool_call"}:
+                if last_user_index is not None:
+                    tool_call = _extract_tool_call(response_item)
+                    if tool_call is not None:
+                        interactions[last_user_index].setdefault("tool_calls", [])
+                        if isinstance(interactions[last_user_index]["tool_calls"], list):
+                            interactions[last_user_index]["tool_calls"].append(tool_call)
+                        interactions[last_user_index]["line_no_end"] = line_no
+                continue
+            if response_type in {"function_call_output", "custom_tool_call_output"}:
+                if last_user_index is not None:
+                    record = _extract_tool_result_record(response_item)
+                    if record is not None:
+                        record["line_no"] = line_no
+                        record["session"] = session_name
+                        record["source"] = str(path)
+                        interactions[last_user_index].setdefault("tool_results", [])
+                        if isinstance(interactions[last_user_index]["tool_results"], list):
+                            interactions[last_user_index]["tool_results"].append(record)
+                        interactions[last_user_index]["line_no_end"] = line_no
+                        if record_ts is not None:
+                            interactions[last_user_index]["ts"] = record_ts
+                continue
+
         message = _extract_message_payload(payload)
         if message is None:
             continue
@@ -420,11 +460,16 @@ def extract_interactions(
             if interactions[last_user_index]["query"] is not None and (
                 since_ts is None or record_ts is None or record_ts > since_ts
             ):
+                existing_tool_calls = interactions[last_user_index].get("tool_calls")
+                existing_tool_results = interactions[last_user_index].get("tool_results")
                 interactions[last_user_index]["response"] = response
-                interactions[last_user_index]["tool_calls"] = tool_calls
+                interactions[last_user_index]["tool_calls"] = (
+                    tool_calls if tool_calls else existing_tool_calls if isinstance(existing_tool_calls, list) else []
+                )
                 interactions[last_user_index]["line_no_end"] = line_no
-                if "tool_results" not in interactions[last_user_index]:
-                    interactions[last_user_index]["tool_results"] = []
+                interactions[last_user_index]["tool_results"] = (
+                    existing_tool_results if isinstance(existing_tool_results, list) else []
+                )
                 if record_ts is not None:
                     interactions[last_user_index]["ts"] = record_ts
             else:
@@ -513,7 +558,7 @@ def extract_queries_from_dir(sessions_dir: str | Path, since_ts: float | None = 
         raise SystemExit(f"not a directory: {path}")
 
     queries: list[str] = []
-    for session_file in sorted(path.glob("*.jsonl")):
+    for session_file in collect_session_files([path]):
         queries.extend(extract_queries(session_file, since_ts=since_ts))
     return queries
 
@@ -530,7 +575,7 @@ def extract_query_records_from_dir(
         raise SystemExit(f"not a directory: {path}")
 
     records: list[tuple[str, float | None]] = []
-    for session_file in sorted(path.glob("*.jsonl")):
+    for session_file in collect_session_files([path]):
         records.extend(extract_query_records(session_file, since_ts=since_ts))
     return records
 

@@ -58,6 +58,48 @@ def _read_traces(path: str) -> list[RouteTrace]:
     return traces
 
 
+def _describe_trace_readiness(
+    traces: list[RouteTrace],
+    index_vectors: dict[str, list[float]],
+) -> str:
+    missing_query_vector = 0
+    traces_without_points = 0
+    points_total = 0
+    points_without_candidates = 0
+    points_without_supervision = 0
+    points_with_lt2_indexed_candidates = 0
+
+    for trace in traces:
+        if trace.query_vector is None:
+            missing_query_vector += 1
+        if not trace.decision_points:
+            traces_without_points += 1
+        for point in trace.decision_points:
+            points_total += 1
+            indexed_candidates = 0
+            if not point.candidates:
+                points_without_candidates += 1
+            for candidate in point.sorted_candidates():
+                target_vector = index_vectors.get(candidate.target_id)
+                if target_vector is None:
+                    continue
+                target_arr = np.asarray(target_vector, dtype=float)
+                if target_arr.ndim == 1:
+                    indexed_candidates += 1
+            if indexed_candidates < 2:
+                points_with_lt2_indexed_candidates += 1
+            if not point.teacher_scores and not point.teacher_choose and not point.chosen_target_id:
+                points_without_supervision += 1
+
+    return (
+        f"traces={len(traces)} missing_query_vector={missing_query_vector} "
+        f"traces_without_decision_points={traces_without_points} decision_points={points_total} "
+        f"points_without_candidates={points_without_candidates} "
+        f"points_with_lt2_indexed_candidates={points_with_lt2_indexed_candidates} "
+        f"points_without_supervision={points_without_supervision}"
+    )
+
+
 def _softmax(logits: np.ndarray) -> np.ndarray:
     stable = logits - np.max(logits)
     exp = np.exp(stable)
@@ -210,7 +252,12 @@ def train_route_model(
     parsed_weights = reward_weights or RewardWeights.from_env()
     points_total, points = _collect_points(traces, index._vectors)
     if not points:
-        raise ValueError("no trainable decision points found (need query_vector + >=2 candidates with target vectors)")
+        detail = _describe_trace_readiness(traces, index._vectors)
+        raise ValueError(
+            "no trainable decision points found; required fields are "
+            "trace.query_vector plus decision points with >=2 candidate target_ids that exist in the state index. "
+            f"observed: {detail}"
+        )
 
     dq = int(points[0][3].shape[0])
     dt = int(points[0][4][0].shape[0])

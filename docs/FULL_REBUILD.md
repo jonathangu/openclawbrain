@@ -47,15 +47,13 @@ openclawbrain init \
 Collect all session files:
 
 ```bash
-# For main agent
-SESSIONS=$(find ~/.openclaw/agents/main/sessions \
-  -maxdepth 1 \( -name "*.jsonl" -o -name "*.jsonl.reset.*" -o -name "*.jsonl.deleted.*" \) \
-  | grep -v ".lock$" | grep -v "sessions.json" | sort)
-
-# For cross-agent context (e.g., bountiful in main sessions)
-BOUNTIFUL_MAIN=$(grep -rl "5151316478" ~/.openclaw/agents/main/sessions/ | grep -v ".lock$")
-BOUNTIFUL_OWN=$(find ~/.openclaw/agents/bountiful/sessions -maxdepth 1 -name "*.jsonl*" | grep -v ".lock$")
-SESSIONS="$BOUNTIFUL_MAIN $BOUNTIFUL_OWN"
+# These can now be plain session dirs, sessions.json indices, Codex rollout dirs,
+# or Codex sqlite state files. Replay resolves them to the underlying logs.
+SESSIONS=(
+  ~/.openclaw/agents/main/sessions
+  ~/.openclaw/agents/codex/sessions/sessions.json
+  ~/.codex/sessions
+)
 ```
 
 Clear the replay checkpoint:
@@ -74,7 +72,7 @@ Replay:
 ```bash
 openclawbrain replay \
   --state ~/.openclawbrain/main/state.json \
-  --sessions $SESSIONS \
+  --sessions "${SESSIONS[@]}" \
   --json
 ```
 

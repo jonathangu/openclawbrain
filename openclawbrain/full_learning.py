@@ -20,6 +20,7 @@ from ._util import _extract_json
 from .inject import inject_batch
 from .provenance import attach_tool_evidence_provenance
 from .maintain import run_maintenance
+from .session_sources import collect_session_files as _collect_session_source_files
 try:
     from .openai_embeddings import OpenAIEmbedder
 except Exception:
@@ -218,28 +219,7 @@ def collect_session_files(session_paths: str | Path | list[str] | list[Path]) ->
     files remain after filtering, the function exits with a helpful
     message.
     """
-    paths: list[Path] = []
-    skipped: list[Path] = []
-    if isinstance(session_paths, (str, Path)):
-        session_paths = [session_paths]
-    for item in session_paths:
-        src = Path(item).expanduser()
-        if src.is_dir():
-            patterns = ("*.jsonl", "*.jsonl.reset.*", "*.jsonl.deleted.*")
-            collected = sorted((match for pattern in patterns for match in src.glob(pattern)))
-            paths.extend(collected)
-            continue
-        if src.is_file():
-            paths.append(src)
-            continue
-        # Missing or broken symlink — warn and skip.
-        print(f"warning: skipping missing session path: {src}", file=sys.stderr)
-        skipped.append(src)
-    if not paths and skipped:
-        raise SystemExit(
-            f"no valid session files found ({len(skipped)} missing/broken path(s) skipped)"
-        )
-    return paths
+    return _collect_session_source_files(session_paths)
 
 
 def _collect_turns(
