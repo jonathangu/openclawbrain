@@ -210,11 +210,13 @@ openclawbrain replay --state ./brain/state.json --sessions ./sessions/ --mode ed
 - `--max-windows`: max feedback windows sampled per file/session
 - `--hard-max-turns`: hard cap total turns considered to keep extraction bounded
 
-Recommended defaults:
+Recommended defaults for direct `feedback-scan` runs:
 - `--workers 4`
 - `--window-radius 8`
 - `--max-windows 1000`
 - `--hard-max-turns 120`
+
+Operational note: on local Ollama `qwen3.5:35b-a3b`, broad feedback scanning can take tens of minutes on real session archives. Treat `feedback-scan` as a first-class manual/background batch tool first; keep loop integration (`--enable-feedback-scan`) opt-in until you choose a narrower runtime budget/profile.
 ```
 
 Schedule maintenance:

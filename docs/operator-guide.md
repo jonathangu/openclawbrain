@@ -214,6 +214,8 @@ openclawbrain async-route-pg \
   --json
 ```
 
+`feedback-scan` is now a first-class command for natural-language correction/teaching detection, but loop integration remains intentionally opt-in via `--enable-feedback-scan`. On local Qwen 35B, validated real-archive scans are correct but can be slow enough that broad default enablement is not yet the right operational default.
+
 Daemon query with runtime route mode `edge+sim`:
 
 ```bash
