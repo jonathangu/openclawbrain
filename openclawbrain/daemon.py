@@ -20,6 +20,7 @@ from .graph import Graph, Node
 from .hasher import HashEmbedder
 from .index import VectorIndex
 from .learn import apply_outcome, apply_outcome_pg
+from .feedback_events import FeedbackEvent
 from .local_embedder import DEFAULT_LOCAL_MODEL, LocalEmbedder, resolve_local_model
 from .maintain import run_maintenance
 from .inject import _apply_inhibitory_edges, inject_correction, inject_node
@@ -897,6 +898,19 @@ def _handle_capture_feedback(
         edges_updated = _real_graph_updates(updates)
         if edges_updated:
             should_write = True
+        canonical_feedback_event = FeedbackEvent(
+            source_kind="human",
+            feedback_kind=kind,
+            content=content,
+            chat_id=chat_id,
+            message_id=str(message_id).strip() if isinstance(message_id, str) and message_id.strip() else None,
+            dedup_key=dedup_key_used,
+            fired_ids=fired_ids,
+            outcome=outcome_used,
+            confidence=1.0,
+            metadata={"source": "capture_feedback"},
+        ).to_dict()
+        _append_jsonl_event(resolved_event_store, canonical_feedback_event)
         _append_learn_event(
             resolved_event_store,
             fired_ids=fired_ids,

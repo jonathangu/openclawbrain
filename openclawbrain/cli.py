@@ -75,6 +75,7 @@ from .full_learning import (
 from ._util import _tokenize
 from .maintain import run_maintenance
 from .reward import RewardSource, RewardWeights
+from .feedback_events import from_dict as feedback_event_from_dict
 from .labels import (
     LabelRecord,
     append_labels_jsonl,
@@ -5354,9 +5355,10 @@ def cmd_harvest(args: argparse.Namespace) -> int:
         for idx, event in enumerate(events):
             if not isinstance(event, dict):
                 continue
-            event_type = str(event.get("type", "")).upper()
-            query_id = str(event.get("session_pointer", event.get("session", f"harvest:{idx}")))
-            node_id = event.get("node_id")
+            feedback_event = feedback_event_from_dict(event)
+            event_type = feedback_event.feedback_kind
+            query_id = str(feedback_event.session_pointer or feedback_event.session or f"harvest:{idx}")
+            node_id = feedback_event.node_id
             if isinstance(node_id, str) and node_id:
                 base_score = -1.0 if event_type == "CORRECTION" else 1.0
                 labels.append(
@@ -5365,9 +5367,14 @@ def cmd_harvest(args: argparse.Namespace) -> int:
                         decision_point_idx=0,
                         candidate_scores={node_id: base_score},
                         reward_source=RewardSource.HARVESTER,
-                        weight=1.0,
-                        ts=float(event.get("ts", 0.0) or 0.0),
-                        metadata={"event_type": event_type},
+                        weight=max(0.1, float(feedback_event.confidence)),
+                        ts=float(feedback_event.ts),
+                        metadata={
+                            "event_type": event_type,
+                            "source_kind": feedback_event.source_kind,
+                            "feedback_kind": feedback_event.feedback_kind,
+                            "session_pointer": feedback_event.session_pointer,
+                        },
                     )
                 )
                 continue
@@ -5375,23 +5382,34 @@ def cmd_harvest(args: argparse.Namespace) -> int:
                 {
                     "query_id": query_id,
                     "decision_point_idx": 0,
-                    "fired_ids": event.get("fired_ids"),
-                    "outcome": event.get("outcome", -1.0 if event_type == "CORRECTION" else 1.0),
-                    "ts": float(event.get("ts", 0.0) or 0.0),
-                    "metadata": {"event_type": event_type},
+                    "fired_ids": feedback_event.fired_ids,
+                    "outcome": feedback_event.outcome if feedback_event.outcome is not None else (-1.0 if event_type == "CORRECTION" else 1.0),
+                    "ts": float(feedback_event.ts),
+                    "metadata": {
+                        "event_type": event_type,
+                        "source_kind": feedback_event.source_kind,
+                        "feedback_kind": feedback_event.feedback_kind,
+                        "session_pointer": feedback_event.session_pointer,
+                    },
                 }
             )
             if fallback is not None:
                 labels.append(fallback)
                 continue
-            if event_type in {"TEACHING", "REINFORCEMENT"}:
+            if event_type in {"TEACHING", "REINFORCEMENT", "DIRECTIVE"}:
                 labels.append(
                     from_teacher_output(
                         query_id=query_id,
                         decision_point_idx=0,
                         teacher_scores={},
-                        ts=float(event.get("ts", 0.0) or 0.0),
-                        metadata={"event_type": event_type},
+                        ts=float(feedback_event.ts),
+                        weight=max(0.1, float(feedback_event.confidence)),
+                        metadata={
+                            "event_type": event_type,
+                            "source_kind": feedback_event.source_kind,
+                            "feedback_kind": feedback_event.feedback_kind,
+                            "session_pointer": feedback_event.session_pointer,
+                        },
                     )
                 )
         write_labels_jsonl(str(args.labels_out), labels)

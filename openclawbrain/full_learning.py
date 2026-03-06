@@ -18,6 +18,7 @@ from typing import Any
 
 from ._util import _extract_json
 from .inject import inject_batch
+from .feedback_events import FeedbackEvent, confidence_from_severity, event_hash
 from .provenance import attach_tool_evidence_provenance
 from .maintain import run_maintenance
 from .session_sources import collect_session_files as _collect_session_source_files
@@ -476,30 +477,24 @@ def _window_to_payload(
             context = item.get("context")
             if not isinstance(context, str):
                 context = ""
-            digest = hashlib.sha256(normalized.encode("utf-8")).hexdigest()
-            events.append(
-                {
-                    "type": event_type,
-                    "content": normalized,
-                    "content_hash": digest,
-                    "severity": severity,
-                    "context": context[:600],
-                    "session": session,
-                    "session_pointer": pointer,
-                }
+            event = FeedbackEvent(
+                source_kind="scanner",
+                feedback_kind=event_type,
+                content=normalized,
+                confidence=confidence_from_severity(severity),
+                session=session,
+                session_pointer=pointer,
+                context=context[:600],
+                severity=severity,
+                metadata={"source": "full_learning"},
             )
+            events.append(event.to_dict())
     return events
 
 
 def _event_key(event: dict) -> str:
-    """Stable dedup key: (type, sha256(content), session pointer)."""
-    return "|".join(
-        (
-            str(event.get("type")),
-            str(event.get("content_hash")),
-            str(event.get("session_pointer")),
-        )
-    )
+    """Stable dedup key for canonical feedback events."""
+    return event_hash(event)
 
 
 def event_log_entries(path: Path | str) -> list[dict]:
