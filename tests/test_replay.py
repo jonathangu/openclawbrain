@@ -100,6 +100,43 @@ def test_extract_queries_from_directory(tmp_path: Path) -> None:
     assert extract_queries_from_dir(sessions) == ["one", "two", "three"]
 
 
+def test_extract_queries_from_directory_supports_nested_codex_rollouts(tmp_path: Path) -> None:
+    sessions = tmp_path / "sessions"
+    rollout_dir = sessions / "2026" / "03" / "05"
+    rollout_dir.mkdir(parents=True)
+    (rollout_dir / "rollout-2026-03-05T14-31-25-thread.jsonl").write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "timestamp": "2026-03-05T22:31:25.111Z",
+                        "type": "response_item",
+                        "payload": {
+                            "type": "message",
+                            "role": "user",
+                            "content": [{"type": "input_text", "text": "fix the router"}],
+                        },
+                    }
+                ),
+                json.dumps(
+                    {
+                        "timestamp": "2026-03-05T22:31:26.111Z",
+                        "type": "response_item",
+                        "payload": {
+                            "type": "message",
+                            "role": "assistant",
+                            "content": [{"type": "output_text", "text": "working on it"}],
+                        },
+                    }
+                ),
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    assert extract_queries_from_dir(sessions) == ["fix the router"]
+
+
 def test_extract_interactions_parses_user_and_assistant_messages(tmp_path: Path) -> None:
     """test extract interactions parses user and assistant messages."""
     path = tmp_path / "session.jsonl"
@@ -194,6 +231,77 @@ def test_extract_interactions_pairs_camelcase_toolcall_and_toolresult(tmp_path: 
     assert tool_results[0]["tool_call_id"] == "tc-1"
     assert tool_results[0]["tool_name"] == "web_search"
     assert tool_results[0]["content"] == "result text"
+
+
+def test_extract_interactions_parses_codex_rollout_messages_and_tools(tmp_path: Path) -> None:
+    path = tmp_path / "rollout.jsonl"
+    path.write_text(
+        "\n".join(
+            [
+                json.dumps(
+                    {
+                        "timestamp": "2026-03-05T22:31:25.111Z",
+                        "type": "response_item",
+                        "payload": {
+                            "type": "message",
+                            "role": "user",
+                            "content": [{"type": "input_text", "text": "inspect current diffs"}],
+                        },
+                    }
+                ),
+                json.dumps(
+                    {
+                        "timestamp": "2026-03-05T22:31:25.511Z",
+                        "type": "response_item",
+                        "payload": {
+                            "type": "function_call",
+                            "name": "exec_command",
+                            "arguments": '{"cmd":"git diff --stat"}',
+                            "call_id": "call-1",
+                        },
+                    }
+                ),
+                json.dumps(
+                    {
+                        "timestamp": "2026-03-05T22:31:25.911Z",
+                        "type": "response_item",
+                        "payload": {
+                            "type": "function_call_output",
+                            "call_id": "call-1",
+                            "output": "openclawbrain/cli.py | 10 +++++-----",
+                        },
+                    }
+                ),
+                json.dumps(
+                    {
+                        "timestamp": "2026-03-05T22:31:26.111Z",
+                        "type": "response_item",
+                        "payload": {
+                            "type": "message",
+                            "role": "assistant",
+                            "content": [{"type": "output_text", "text": "I found the existing diff."}],
+                        },
+                    }
+                ),
+            ]
+        ),
+        encoding="utf-8",
+    )
+
+    interactions = extract_interactions(path)
+    assert len(interactions) == 1
+    assert interactions[0]["query"] == "inspect current diffs"
+    assert interactions[0]["response"] == "I found the existing diff."
+    assert interactions[0]["tool_calls"] == [{"id": "call-1", "name": "exec_command", "arguments": '{"cmd":"git diff --stat"}'}]
+    assert interactions[0]["tool_results"] == [
+        {
+            "tool_call_id": "call-1",
+            "content": "openclawbrain/cli.py | 10 +++++-----",
+            "line_no": 3,
+            "session": "rollout.jsonl",
+            "source": str(path),
+        }
+    ]
 
 
 def test_extract_interactions_attaches_allowlisted_tool_result_for_media_stub(tmp_path: Path) -> None:

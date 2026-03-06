@@ -318,6 +318,8 @@ When enabled in OpenClaw config, it will set `ctx.Transcript` and/or append extr
 
 If you rely on toolResult-only transcripts/OCR, keep `openclawbrain replay --include-tool-results` enabled (default).
 
+Replay session sources can also be `sessions.json` indices, nested Codex rollout directories like `~/.codex/sessions`, or direct Codex sqlite state files such as `~/.codex/state_5.sqlite`.
+
 ## 15) Correction wiring: what exists vs what you still need
 OpenClawBrain supports `correction(chat_id, lookback=N)` (it remembers recent fired paths per `chat_id`). To get *automatic* corrections in live chat, OpenClaw must:
 1) pass a stable `chat_id` into each brain query
@@ -499,6 +501,7 @@ openclawbrain daemon \
   --route-model ~/.openclawbrain/main/route_model.npz
 ```
 
-Optional exports during replay/harvest:
-- `openclawbrain replay --traces-out ... --labels-out ...`
-- `openclawbrain harvest --traces-out ... --labels-out ...`
+Training/export notes:
+- `async-route-pg --traces-out` is the supported source of trainable route traces.
+- `harvest --labels-out` remains supported for harvested feedback labels.
+- `replay --traces-out`, `replay --labels-out`, and `harvest --traces-out` are intentionally rejected because they were placeholder exports and not suitable for runtime-policy training.

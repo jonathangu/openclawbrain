@@ -2273,6 +2273,54 @@ def test_cli_replay_filters_parse() -> None:
     assert args.advance_offsets_on_skip is True
 
 
+def test_cli_replay_rejects_placeholder_route_exports(tmp_path: Path) -> None:
+    session = tmp_path / "session.jsonl"
+    session.write_text('{"role":"user","content":"hi"}\n', encoding="utf-8")
+
+    with pytest.raises(SystemExit, match="replay --traces-out was removed"):
+        main(
+            [
+                "replay",
+                "--state",
+                str(tmp_path / "state.json"),
+                "--sessions",
+                str(session),
+                "--traces-out",
+                str(tmp_path / "route_traces.jsonl"),
+            ]
+        )
+
+    with pytest.raises(SystemExit, match="replay --labels-out was removed"):
+        main(
+            [
+                "replay",
+                "--state",
+                str(tmp_path / "state.json"),
+                "--sessions",
+                str(session),
+                "--labels-out",
+                str(tmp_path / "labels.jsonl"),
+            ]
+        )
+
+
+def test_cli_harvest_rejects_placeholder_trace_exports(tmp_path: Path) -> None:
+    graph = Graph()
+    graph.add_node(Node("seed", "seed"))
+    save_state(graph=graph, index=VectorIndex(), path=str(tmp_path / "state.json"), meta={"embedder_name": "hash-v1", "embedder_dim": 1})
+
+    with pytest.raises(SystemExit, match="harvest --traces-out was removed"):
+        main(
+            [
+                "harvest",
+                "--state",
+                str(tmp_path / "state.json"),
+                "--traces-out",
+                str(tmp_path / "route_traces.jsonl"),
+            ]
+        )
+
+
 def test_cli_replay_fresh_aliases_parse() -> None:
     """--fresh/--no-checkpoint set fresh-start semantics."""
     from openclawbrain.cli import _build_parser

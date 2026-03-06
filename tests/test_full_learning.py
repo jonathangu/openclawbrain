@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import sqlite3
 from pathlib import Path
 
 import openclawbrain.full_learning as full_learning_module
@@ -314,6 +315,73 @@ def test_collect_session_files_broken_symlink_skipped(tmp_path: Path) -> None:
     link.symlink_to(target)
     result = collect_session_files([str(valid), str(link)])
     assert result == [valid]
+
+
+def test_collect_session_files_resolves_sessions_json_with_direct_session_file(tmp_path: Path) -> None:
+    sessions_dir = tmp_path / "agent" / "main" / "sessions"
+    sessions_dir.mkdir(parents=True)
+    session_file = sessions_dir / "abc.jsonl"
+    session_file.write_text('{"role":"user","content":"hi"}\n', encoding="utf-8")
+    (sessions_dir / "sessions.json").write_text(
+        json.dumps({"agent:main:main": {"sessionFile": str(session_file)}}),
+        encoding="utf-8",
+    )
+
+    assert collect_session_files([sessions_dir / "sessions.json"]) == [session_file]
+
+
+def test_collect_session_files_resolves_codex_rollouts_from_sessions_index(tmp_path: Path, monkeypatch) -> None:
+    codex_home = tmp_path / ".codex"
+    monkeypatch.setenv("CODEX_HOME", str(codex_home))
+    rollout_dir = codex_home / "sessions" / "2026" / "03" / "05"
+    rollout_dir.mkdir(parents=True)
+    rollout_path = rollout_dir / "rollout-2026-03-05T14-31-25-thread.jsonl"
+    rollout_path.write_text('{"role":"user","content":"codex query"}\n', encoding="utf-8")
+
+    db_path = codex_home / "state_5.sqlite"
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            "CREATE TABLE threads (id TEXT PRIMARY KEY, rollout_path TEXT NOT NULL, updated_at INTEGER NOT NULL)"
+        )
+        conn.execute(
+            "INSERT INTO threads (id, rollout_path, updated_at) VALUES (?, ?, ?)",
+            ("thread-1", str(rollout_path), 1772750548),
+        )
+        conn.commit()
+
+    sessions_dir = tmp_path / "agent" / "codex" / "sessions"
+    sessions_dir.mkdir(parents=True)
+    (sessions_dir / "sessions.json").write_text(
+        json.dumps(
+            {
+                "agent:codex:acp:1": {
+                    "sessionId": "session-1",
+                    "updatedAt": 1772750548000,
+                    "acp": {"backend": "acpx", "agent": "codex"},
+                }
+            }
+        ),
+        encoding="utf-8",
+    )
+
+    assert collect_session_files([sessions_dir / "sessions.json"]) == [rollout_path]
+
+
+def test_collect_session_files_resolves_direct_codex_sqlite(tmp_path: Path) -> None:
+    rollout_path = tmp_path / "rollout.jsonl"
+    rollout_path.write_text('{"role":"user","content":"codex query"}\n', encoding="utf-8")
+    db_path = tmp_path / "state_5.sqlite"
+    with sqlite3.connect(db_path) as conn:
+        conn.execute(
+            "CREATE TABLE threads (id TEXT PRIMARY KEY, rollout_path TEXT NOT NULL, updated_at INTEGER NOT NULL)"
+        )
+        conn.execute(
+            "INSERT INTO threads (id, rollout_path, updated_at) VALUES (?, ?, ?)",
+            ("thread-1", str(rollout_path), 1772750548),
+        )
+        conn.commit()
+
+    assert collect_session_files([db_path]) == [rollout_path]
 
 
 def test_collect_turns_includes_allowlisted_tool_result_for_media_stub(tmp_path: Path) -> None:

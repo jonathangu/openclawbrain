@@ -49,9 +49,7 @@ from .replay import (
     DEFAULT_TOOL_RESULT_MAX_CHARS,
     extract_interactions,
     extract_query_records,
-    extract_query_records_from_dir,
     extract_queries,
-    extract_queries_from_dir,
     replay_queries,
     replay_queries_parallel,
 )
@@ -3493,13 +3491,8 @@ def _load_session_queries(
         session_paths = [session_paths]
     queries: list[str] = []
     for session_path in session_paths:
-        path = Path(session_path).expanduser()
-        if path.is_dir():
-            queries.extend(extract_queries_from_dir(path, since_ts=since_ts))
-        elif path.is_file():
-            queries.extend(extract_queries(path, since_ts=since_ts))
-        else:
-            raise SystemExit(f"invalid sessions path: {path}")
+        for session_file in collect_session_files(session_path):
+            queries.extend(extract_queries(session_file, since_ts=since_ts))
     return queries
 
 
@@ -3546,13 +3539,8 @@ def _load_session_query_records(session_paths: str | Iterable[str], since_ts: fl
         session_paths = [session_paths]
     records: list[tuple[str, float | None]] = []
     for session_path in session_paths:
-        path = Path(session_path).expanduser()
-        if path.is_dir():
-            records.extend(extract_query_records_from_dir(path, since_ts=since_ts))
-        elif path.is_file():
-            records.extend(extract_query_records(path, since_ts=since_ts))
-        else:
-            raise SystemExit(f"invalid sessions path: {path}")
+        for session_file in collect_session_files(session_path):
+            records.extend(extract_query_records(session_file, since_ts=since_ts))
     return records
 
 
@@ -3562,6 +3550,19 @@ def _write_route_traces_jsonl(path: str, traces: list[RouteTrace]) -> None:
     with destination.open("w", encoding="utf-8") as handle:
         for trace in traces:
             handle.write(route_trace_to_json(trace) + "\n")
+
+
+def _reject_placeholder_route_exports(command_name: str, *, traces_out: object = None, labels_out: object = None) -> None:
+    if traces_out:
+        raise SystemExit(
+            f"{command_name} --traces-out was removed because it only produced placeholder, non-trainable route traces. "
+            "Use async-route-pg --traces-out [--include-query-vector] for trainable route traces."
+        )
+    if command_name == "replay" and labels_out:
+        raise SystemExit(
+            "replay --labels-out was removed because replay does not generate route-training labels. "
+            "Use harvest --labels-out for harvested feedback labels or async-route-pg --labels-out for teacher labels."
+        )
 
 
 def _load_session_interactions(
@@ -4747,6 +4748,8 @@ def _build_checkpoint_status_payload(
 
 def cmd_replay(args: argparse.Namespace) -> int:
     """cmd replay."""
+    _reject_placeholder_route_exports("replay", traces_out=args.traces_out, labels_out=args.labels_out)
+
     state_path = _resolve_state_path(args.state, allow_default=True)
     mode, mode_defaulted = _resolve_replay_mode(args)
     run_fast = mode in {"fast-learning", "full"}
@@ -5186,28 +5189,6 @@ def cmd_replay(args: argparse.Namespace) -> int:
         journal_path=_resolve_journal_path(args, allow_default_state=True),
     )
 
-    if args.traces_out:
-        replay_traces = [
-            RouteTrace(
-                query_id=f"replay:{idx}",
-                ts=float(item.get("ts", 0.0) or 0.0),
-                query_text=str(item.get("query", "") or ""),
-                chat_id=str(item["chat_id"]) if isinstance(item.get("chat_id"), str) else None,
-                seeds=[],
-                fired_nodes=[],
-                traversal_config={},
-                route_policy={"route_mode": "off"},
-                query_vector=None,
-                decision_points=[],
-            )
-            for idx, item in enumerate(interactions)
-            if isinstance(item, dict)
-        ]
-        _write_route_traces_jsonl(str(args.traces_out), replay_traces)
-
-    if args.labels_out:
-        write_labels_jsonl(str(args.labels_out), [])
-
     output: dict[str, object] = dict(stats)
     if fast_stats is not None:
         output["fast_learning"] = fast_stats
@@ -5243,6 +5224,8 @@ def cmd_harvest(args: argparse.Namespace) -> int:
     if state_path is None:
         raise SystemExit("--state is required for harvest")
 
+    _reject_placeholder_route_exports("harvest", traces_out=args.traces_out)
+
     requested_tasks = [task.strip() for task in args.tasks.split(",") if task.strip()]
     report = run_harvest(
         state_path=state_path,
@@ -5255,24 +5238,6 @@ def cmd_harvest(args: argparse.Namespace) -> int:
     )
 
     events = event_log_entries(Path(report["learning_events_path"]))
-    if args.traces_out:
-        harvest_traces = [
-            RouteTrace(
-                query_id=f"harvest:{idx}",
-                ts=float(event.get("ts", 0.0) or 0.0),
-                query_text=str(event.get("content", "") or ""),
-                chat_id=None,
-                seeds=[],
-                fired_nodes=[],
-                traversal_config={},
-                route_policy={"route_mode": "off"},
-                query_vector=None,
-                decision_points=[],
-            )
-            for idx, event in enumerate(events)
-            if isinstance(event, dict)
-        ]
-        _write_route_traces_jsonl(str(args.traces_out), harvest_traces)
 
     if args.labels_out:
         labels: list[LabelRecord] = []
