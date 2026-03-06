@@ -25,6 +25,7 @@ from openclawbrain.graph import Graph, Node
 from openclawbrain.hasher import default_embed
 from openclawbrain.journal import read_journal
 from openclawbrain.index import VectorIndex
+from openclawbrain.route_model import RouteModel
 from openclawbrain.state_lock import lock_path_for_state
 from openclawbrain.store import save_state
 
@@ -1657,6 +1658,91 @@ def test_report_surfaces_route_model_health_fields(monkeypatch, tmp_path, capsys
     out = capsys.readouterr().out
     assert "route_model_error: load_failed: bad zip" in out
     assert "warning: learned routing configured but effective mode is degraded" in out
+
+
+def test_report_surfaces_feedback_event_counts_and_route_freshness(monkeypatch, tmp_path, capsys) -> None:
+    home = tmp_path / "home"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+
+    state_dir = tmp_path / "main"
+    state_dir.mkdir()
+    state_path = state_dir / "state.json"
+    _write_state(state_path)
+
+    route_model_path = state_dir / "route_model.npz"
+    route_model_path.write_bytes(b"route-model")
+    labels_path = _default_labels_path(str(state_path))
+    labels_path.write_text('{"query_id":"q1"}\n{"query_id":"q2"}\n', encoding="utf-8")
+    os.utime(route_model_path, (100, 100))
+    os.utime(labels_path, (200, 200))
+
+    journal_path = state_dir / "journal.jsonl"
+    journal_rows = [
+        {"type": "report", "ts": 100.0, "iso": "2026-03-06T08:00:00+00:00"},
+        {
+            "type": "CORRECTION",
+            "feedback_kind": "CORRECTION",
+            "source_kind": "human",
+            "content": "Rollback first.",
+            "ts": 200.0,
+            "iso": "2026-03-06T09:00:00+00:00",
+        },
+        {
+            "type": "REINFORCEMENT",
+            "feedback_kind": "REINFORCEMENT",
+            "source_kind": "self",
+            "content": "That fix worked.",
+            "ts": 210.0,
+            "iso": "2026-03-06T09:10:00+00:00",
+        },
+        {
+            "type": "TEACHING",
+            "feedback_kind": "TEACHING",
+            "source_kind": "scanner",
+            "content": "Prefer narrow diffs.",
+            "ts": 220.0,
+            "iso": "2026-03-06T09:20:00+00:00",
+        },
+    ]
+    journal_path.write_text("".join(json.dumps(row) + "\n" for row in journal_rows), encoding="utf-8")
+
+    code = main(["report", "--state", str(state_path)])
+    assert code == 0
+    out = capsys.readouterr().out
+    assert "feedback events: total=3 human=1 self=1 scanner=1 teacher=0 harvester=0" in out
+    assert "feedback kinds: correction=1 teaching=1 directive=0 reinforcement=1 last_feedback=2026-03-06T09:20:00+00:00" in out
+    assert "route_training: freshness=stale labels=2" in out
+    assert "warning: route_model older than labels; run train-route-model" in out
+
+
+def test_route_audit_reports_route_training_freshness(monkeypatch, tmp_path, capsys) -> None:
+    from openclawbrain import cli as cli_module
+
+    home = tmp_path / "home"
+    home.mkdir()
+    monkeypatch.setenv("HOME", str(home))
+    monkeypatch.setattr(cli_module, "_socket_health_status", lambda _path: (False, None, "missing socket"))
+
+    state_dir = tmp_path / "main"
+    state_dir.mkdir()
+    state_path = state_dir / "state.json"
+    _write_state(state_path)
+
+    route_model_path = state_dir / "route_model.npz"
+    RouteModel.init_identity(d=1024, df=1).save_npz(route_model_path)
+    labels_path = _default_labels_path(str(state_path))
+    labels_path.write_text('{"query_id":"q1"}\n', encoding="utf-8")
+    os.utime(route_model_path, (100, 100))
+    os.utime(labels_path, (200, 200))
+
+    code = main(["route-audit", "--state", str(state_path), "--json"])
+    assert code == 0
+    payload = json.loads(capsys.readouterr().out)
+    assert payload["route_training_freshness"] == "stale"
+    assert payload["labels_count"] == 1
+    assert payload["labels_updated_iso"] is not None
+    assert payload["last_train_iso"] is not None
 
 
 def test_serve_stop_subcommand_sends_shutdown(monkeypatch, capsys) -> None:
