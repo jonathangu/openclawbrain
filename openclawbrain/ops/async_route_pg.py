@@ -199,6 +199,16 @@ def _select_query_entries(
             break
         if rng.random() <= clamped:
             sampled.append((idx, entry))
+
+    if sampled:
+        return sampled
+
+    # Fallback: if recent query volume is very low, do not silently produce zero supervision
+    # just because Bernoulli sampling missed all candidates. Deterministically take the most
+    # recent eligible queries up to max_queries.
+    if filtered and clamped > 0.0 and max_queries > 0:
+        return filtered[-max_queries:]
+
     return sampled
 
 
