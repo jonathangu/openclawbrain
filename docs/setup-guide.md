@@ -82,14 +82,14 @@ openclawbrain replay \
   --mode fast-learning \
   --workers 4 \
   --window-radius 8 \
-  --max-windows 6 \
+  --max-windows 1000 \
   --hard-max-turns 120 \
   --checkpoint ./brain/replay_checkpoint.json \
   --json
 ```
 `--extract-learning-events` is an alias for `--fast-learning`.
 
-`fast-learning` stores extracted events in an append-only log:
+`fast-learning` and `feedback-scan` store extracted events in append-only logs:
 - `./brain/learning_events.jsonl`
 
 You can run this repeatedly; dedupe is by `(type, sha256(content), session_pointer)`, so repeated runs are idempotent.
@@ -112,10 +112,10 @@ brew install ollama
 ollama serve
 ```
 
-Pull the default model:
+Pull the default local vNext model:
 
 ```bash
-ollama pull llama3.2:3b
+ollama pull qwen3.5:35b-a3b
 ```
 
 Use Ollama for replay fast-learning:
@@ -156,7 +156,7 @@ Reference implementation: `examples/ops/query_and_learn.py`
 from examples.ops.callbacks import make_embed_fn, make_llm_fn
 
 embed_fn = make_embed_fn("openai")  # or "local" for offline mode
-llm_fn = make_llm_fn("gpt-5-mini")  # optional, for LLM-assisted merge
+llm_fn = make_llm_fn("qwen3.5:35b-a3b")  # optional, for local Ollama-assisted merge
 ```
 
 Use this when building your query handler:
@@ -210,11 +210,13 @@ openclawbrain replay --state ./brain/state.json --sessions ./sessions/ --mode ed
 - `--max-windows`: max feedback windows sampled per file/session
 - `--hard-max-turns`: hard cap total turns considered to keep extraction bounded
 
-Recommended defaults:
+Recommended defaults for direct `feedback-scan` runs:
 - `--workers 4`
 - `--window-radius 8`
-- `--max-windows 6`
+- `--max-windows 1000`
 - `--hard-max-turns 120`
+
+Operational note: on local Ollama `qwen3.5:35b-a3b`, broad feedback scanning can take tens of minutes on real session archives. Treat `feedback-scan` as a first-class manual/background batch tool first; keep loop integration (`--enable-feedback-scan`) opt-in until you choose a narrower runtime budget/profile.
 ```
 
 Schedule maintenance:

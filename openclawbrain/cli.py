@@ -2169,6 +2169,7 @@ def _state_lock_context_for_command(args: argparse.Namespace):
         "self-learn": False,
         "self-correct": False,
         "replay": True,
+        "feedback-scan": True,
         "harvest": False,
         "reembed": True,
         "sync": True,
@@ -2515,6 +2516,43 @@ def _build_parser() -> argparse.ArgumentParser:
     r.add_argument("--force", action="store_true", help="Bypass state lock (expert use)")
     r.add_argument("--json", action="store_true")
 
+    fs = sub.add_parser("feedback-scan", help="Scan sessions for feedback windows + inject learning nodes.")
+    fs.add_argument("--state")
+    fs.add_argument("--sessions", nargs="+", required=True)
+    fs.add_argument("--llm", choices=["none", "openai", "ollama", "auto"], default="auto")
+    fs.add_argument("--llm-model")
+    fs.add_argument("--workers", type=int, default=4, help="LLM workers for feedback window extraction.")
+    fs.add_argument("--window-radius", type=int, default=8)
+    fs.add_argument("--max-windows", type=int, default=1000)
+    fs.add_argument("--hard-max-turns", type=int, default=120)
+    fs.add_argument("--backup", action=argparse.BooleanOptionalAction, default=True)
+    fs.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True)
+    fs.add_argument("--checkpoint", default=None)
+    fs.add_argument(
+        "--fresh",
+        "--no-checkpoint",
+        dest="fresh",
+        action="store_true",
+        help="Ignore saved checkpoint offsets and start scan from the beginning.",
+    )
+    fs.add_argument("--ignore-checkpoint", action="store_true", help=argparse.SUPPRESS)
+    fs.add_argument("--include-tool-results", action=argparse.BooleanOptionalAction, default=True)
+    fs.add_argument(
+        "--tool-result-allowlist",
+        default=",".join(sorted(DEFAULT_TOOL_RESULT_ALLOWLIST)),
+        help="Comma-separated tool names whose toolResult text may be attached for media stubs.",
+    )
+    fs.add_argument("--tool-result-max-chars", type=int, default=DEFAULT_TOOL_RESULT_MAX_CHARS)
+    fs.add_argument("--checkpoint-every-seconds", type=int, default=60)
+    fs.add_argument("--checkpoint-every", type=int, default=0, help="Checkpoint every K feedback windows")
+    fs.add_argument(
+        "--progress-every",
+        type=int,
+        default=0,
+        help="Emit progress every N feedback windows (JSON only).",
+    )
+    fs.add_argument("--json", action="store_true")
+
     hcmd = sub.add_parser("harvest")
     hcmd.add_argument("--state", required=True)
     hcmd.add_argument("--events")
@@ -2545,8 +2583,8 @@ def _build_parser() -> argparse.ArgumentParser:
     ar.add_argument("--max-queries", type=int, default=200)
     ar.add_argument("--sample-rate", type=float, default=0.1)
     ar.add_argument("--max-candidates-per-node", type=int, default=12)
-    ar.add_argument("--teacher", choices=["openai", "ollama", "none"], default="openai")
-    ar.add_argument("--teacher-model", default="gpt-5-mini")
+    ar.add_argument("--teacher", choices=["openai", "ollama", "none"], default="ollama")
+    ar.add_argument("--teacher-model", default="qwen3.5:35b-a3b")
     ar.add_argument("--apply", action="store_true")
     ar.add_argument("--json", action="store_true")
     ar.add_argument("--write-relevance-metadata", action=argparse.BooleanOptionalAction, default=True)
@@ -2579,8 +2617,8 @@ def _build_parser() -> argparse.ArgumentParser:
     dream.add_argument("--sample-rate", type=float, default=0.1)
     dream.add_argument("--max-candidates-per-node", type=int, default=12)
     dream.add_argument("--max-decision-points", type=int, default=500)
-    dream.add_argument("--teacher", choices=["openai", "ollama", "none"], default="openai")
-    dream.add_argument("--teacher-model", default="gpt-5-mini")
+    dream.add_argument("--teacher", choices=["openai", "ollama", "none"], default="ollama")
+    dream.add_argument("--teacher-model", default="qwen3.5:35b-a3b")
     dream.add_argument("--score-scale", type=float, default=0.3)
     dream.add_argument(
         "--reward-source",
@@ -2614,6 +2652,12 @@ def _build_parser() -> argparse.ArgumentParser:
     loop.add_argument("--mode", choices=REPLAY_MODES, default="full")
     loop.add_argument("--llm", choices=["none", "openai", "ollama", "auto"], default="auto")
     loop.add_argument("--llm-model")
+    loop.add_argument(
+        "--enable-feedback-scan",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help="Run feedback-scan before replay when mode is edges-only (default: off).",
+    )
     loop.add_argument("--workers", type=int, default=4)
     loop.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True)
     loop.add_argument("--include-tool-results", action=argparse.BooleanOptionalAction, default=True)
@@ -2641,8 +2685,8 @@ def _build_parser() -> argparse.ArgumentParser:
     loop.add_argument("--sample-rate", type=float, default=0.1)
     loop.add_argument("--max-candidates-per-node", type=int, default=12)
     loop.add_argument("--max-decision-points", type=int, default=500)
-    loop.add_argument("--teacher", choices=["openai", "ollama", "none"], default="openai")
-    loop.add_argument("--teacher-model", default="gpt-5-mini")
+    loop.add_argument("--teacher", choices=["openai", "ollama", "none"], default="ollama")
+    loop.add_argument("--teacher-model", default="qwen3.5:35b-a3b")
     loop.add_argument("--score-scale", type=float, default=0.3)
     loop.add_argument("--enable-train-route-model", action=argparse.BooleanOptionalAction, default=True)
     loop.add_argument("--train-route-model-out", default=None)
@@ -2696,8 +2740,8 @@ def _build_parser() -> argparse.ArgumentParser:
     dreaming.add_argument("--sample-rate", type=float, default=0.1)
     dreaming.add_argument("--max-candidates-per-node", type=int, default=12)
     dreaming.add_argument("--max-decision-points", type=int, default=500)
-    dreaming.add_argument("--teacher", choices=["openai", "ollama", "none"], default="openai")
-    dreaming.add_argument("--teacher-model", default="gpt-5-mini")
+    dreaming.add_argument("--teacher", choices=["openai", "ollama", "none"], default="ollama")
+    dreaming.add_argument("--teacher-model", default="qwen3.5:35b-a3b")
     dreaming.add_argument("--score-scale", type=float, default=0.3)
     dreaming.add_argument(
         "--reward-source",
@@ -2808,8 +2852,8 @@ def _build_parser() -> argparse.ArgumentParser:
     build_all.add_argument("--sample-rate", type=float, default=0.1)
     build_all.add_argument("--max-candidates-per-node", type=int, default=12)
     build_all.add_argument("--max-decision-points", type=int, default=500)
-    build_all.add_argument("--teacher", choices=["openai", "ollama", "none"], default="openai")
-    build_all.add_argument("--teacher-model", default="gpt-5-mini")
+    build_all.add_argument("--teacher", choices=["openai", "ollama", "none"], default="ollama")
+    build_all.add_argument("--teacher-model", default="qwen3.5:35b-a3b")
     build_all.add_argument("--score-scale", type=float, default=0.3)
     build_all.add_argument(
         "--reward-source",
@@ -5218,6 +5262,72 @@ def cmd_replay(args: argparse.Namespace) -> int:
     return 0
 
 
+def cmd_feedback_scan(args: argparse.Namespace) -> int:
+    """cmd feedback-scan."""
+    state_path = _resolve_state_path(args.state, allow_default=True)
+    if state_path is None:
+        raise SystemExit("--state is required for feedback-scan")
+    if not args.sessions:
+        raise SystemExit("--sessions is required for feedback-scan")
+
+    llm_fn, _ = _resolve_llm(args)
+    if llm_fn is None:
+        raise SystemExit("LLM required for feedback-scan; set --llm openai/ollama or OPENCLAWBRAIN_DEFAULT_LLM")
+
+    tool_result_allowlist = _parse_tool_result_allowlist(args.tool_result_allowlist)
+    tool_result_max_chars = max(0, int(args.tool_result_max_chars))
+    include_tool_results = bool(args.include_tool_results)
+    checkpoint_path = args.checkpoint or str(default_checkpoint_path(str(state_path)))
+    ignore_checkpoint = bool(args.fresh or args.ignore_checkpoint)
+
+    def _emit_progress(payload: dict[str, object]) -> None:
+        if args.json:
+            print(json.dumps(payload))
+
+    progress_every = max(0, int(args.progress_every))
+    stats = run_fast_learning(
+        state_path=str(state_path),
+        session_paths=args.sessions,
+        workers=max(1, int(args.workers)),
+        window_radius=max(1, int(args.window_radius)),
+        max_windows=max(1, int(args.max_windows)),
+        hard_max_turns=max(1, int(args.hard_max_turns)),
+        checkpoint_path=str(checkpoint_path) if checkpoint_path else None,
+        resume=bool(args.resume),
+        ignore_checkpoint=ignore_checkpoint,
+        backup=bool(args.backup),
+        include_tool_results=include_tool_results,
+        tool_result_allowlist=tool_result_allowlist,
+        tool_result_max_chars=tool_result_max_chars,
+        checkpoint_every=max(0, int(args.checkpoint_every)),
+        checkpoint_every_seconds=max(0, int(args.checkpoint_every_seconds)),
+        on_progress=_emit_progress if progress_every > 0 else None,
+        progress_every_windows=progress_every,
+        progress_every_seconds=10 if progress_every > 0 else 0,
+        llm_fn=llm_fn,
+    )
+
+    output = {
+        "status": "ok",
+        "state_path": str(state_path),
+        "checkpoint_path": str(checkpoint_path) if checkpoint_path else None,
+        "feedback_scan": stats,
+    }
+    if args.json:
+        print(json.dumps(output, indent=2))
+        return 0
+
+    print(
+        "feedback-scan: "
+        f"windows={stats.get('windows_sent_to_llm', stats.get('windows', 0))} "
+        f"events_appended={stats.get('events_appended', 0)} "
+        f"events_injected={stats.get('events_injected', 0)} "
+        f"edges_added={stats.get('edges_added', 0)} "
+        f"checkpoint={checkpoint_path}"
+    )
+    return 0
+
+
 def cmd_harvest(args: argparse.Namespace) -> int:
     """cmd harvest."""
     state_path = _resolve_state_path(args.state, allow_default=False)
@@ -6681,6 +6791,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
             str(args.teacher_model),
             "--score-scale",
             str(args.score_scale),
+            "--enable-feedback-scan" if args.enable_feedback_scan else "--no-enable-feedback-scan",
             "--enable-async-route-pg" if args.enable_async_route_pg else "--no-enable-async-route-pg",
             "--enable-dreaming" if args.enable_dreaming else "--no-enable-dreaming",
             "--dream-since-hours",
@@ -6735,6 +6846,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
         argv.append("--maintain" if args.maintain else "--no-maintain")
         argv.append("--harvest-labels" if args.harvest_labels else "--no-harvest-labels")
         argv.append("--enable-teacher" if args.enable_teacher else "--no-enable-teacher")
+        argv.append("--enable-feedback-scan" if args.enable_feedback_scan else "--no-enable-feedback-scan")
         argv.append("--enable-async-route-pg" if args.enable_async_route_pg else "--no-enable-async-route-pg")
         argv.append("--enable-train-route-model" if args.enable_train_route_model else "--no-enable-train-route-model")
         argv.append("--enable-dreaming" if args.enable_dreaming else "--no-enable-dreaming")
@@ -7010,6 +7122,44 @@ def cmd_loop(args: argparse.Namespace) -> int:
     if args.dry_run:
         log_line("loop run dry-run: exiting without executing jobs")
         return 0
+
+    def run_feedback_scan(*, job: str) -> int:
+        scan_cmd = [
+            *ocb_subprocess_prefix,
+            "feedback-scan",
+            "--state",
+            state_path,
+            "--sessions",
+            *sessions_paths_serialized,
+            "--llm",
+            str(args.llm),
+            "--checkpoint-every-seconds",
+            str(args.checkpoint_every_seconds),
+        ]
+        if args.llm_model:
+            scan_cmd.extend(["--llm-model", str(args.llm_model)])
+        if args.workers is not None:
+            scan_cmd.extend(["--workers", str(int(args.workers))])
+        if args.resume:
+            scan_cmd.append("--resume")
+        else:
+            scan_cmd.append("--no-resume")
+        if args.include_tool_results:
+            scan_cmd.append("--include-tool-results")
+            tool_max = (
+                args.tool_result_max_chars
+                if getattr(args, "tool_result_max_chars", None) is not None
+                else DEFAULT_TOOL_RESULT_MAX_CHARS
+            )
+            scan_cmd.extend(["--tool-result-max-chars", str(int(tool_max))])
+        else:
+            scan_cmd.append("--no-include-tool-results")
+
+        write_checkpoint(status="running", job=job, step="feedback_scan")
+        emit_event({"type": "step_start", "job": job, "step": "feedback_scan"})
+        code = _run_logged_command(scan_cmd, log_path=log_path, step_name=f"{job}.feedback_scan")
+        emit_event({"type": "step_end", "job": job, "step": "feedback_scan", "exit_code": code})
+        return code
 
     def run_replay(
         *,
@@ -7302,6 +7452,37 @@ def cmd_loop(args: argparse.Namespace) -> int:
             write_manifest(job, {"last_status": "running", "last_started_at": started_at})
             emit_event({"type": "job_start", "job": job, "started_at": started_at})
             log_line(f"{job}: run start mode={mode} llm={llm} sessions={_format_sessions_paths(sessions_paths)}")
+
+            if args.enable_feedback_scan:
+                if mode in {"fast-learning", "full"}:
+                    log_line(f"{job}: feedback-scan skipped (replay already includes fast-learning)")
+                elif llm == "none":
+                    log_line(f"{job}: feedback-scan skipped (llm disabled)")
+                else:
+                    scan_code = run_feedback_scan(job=job)
+                    if scan_code != 0:
+                        log_line(f"{job}: feedback-scan failed exit={scan_code}")
+                        completed_at = datetime.now(timezone.utc).isoformat()
+                        write_checkpoint(
+                            status="failed",
+                            job=job,
+                            step="feedback_scan",
+                            exit_code=scan_code,
+                            reason="feedback_scan_failed",
+                            started_at=started_at,
+                            completed_at=completed_at,
+                        )
+                        write_manifest(
+                            job,
+                            {
+                                "last_status": "failed",
+                                "last_step": "feedback_scan",
+                                "last_exit_code": scan_code,
+                                "last_reason": "feedback_scan_failed",
+                                "last_completed_at": completed_at,
+                            },
+                        )
+                        return scan_code
 
             replay_code = run_replay(job=job, mode=mode, llm=llm)
             if replay_code != 0:
@@ -7992,6 +8173,7 @@ def main(argv: list[str] | None = None) -> int:
         "serve": cmd_serve,
         "inject": cmd_inject,
         "replay": cmd_replay,
+        "feedback-scan": cmd_feedback_scan,
         "status": cmd_status,
         "self-learn": cmd_self_correct,
         "self-correct": cmd_self_correct,

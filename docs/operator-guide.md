@@ -195,8 +195,8 @@ openclawbrain async-route-pg \
   --since-hours 24 \
   --max-queries 200 \
   --sample-rate 0.1 \
-  --teacher openai \
-  --teacher-model gpt-5-mini \
+  --teacher ollama \
+  --teacher-model qwen3.5:35b-a3b \
   --json
 ```
 
@@ -208,11 +208,13 @@ openclawbrain async-route-pg \
   --since-hours 24 \
   --max-queries 200 \
   --sample-rate 0.1 \
-  --teacher openai \
-  --teacher-model gpt-5-mini \
+  --teacher ollama \
+  --teacher-model qwen3.5:35b-a3b \
   --apply \
   --json
 ```
+
+`feedback-scan` is now a first-class command for natural-language correction/teaching detection, but loop integration remains intentionally opt-in via `--enable-feedback-scan`. On local Qwen 35B, validated real-archive scans are correct but can be slow enough that broad default enablement is not yet the right operational default.
 
 Daemon query with runtime route mode `edge+sim`:
 
