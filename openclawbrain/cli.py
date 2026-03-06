@@ -2523,7 +2523,7 @@ def _build_parser() -> argparse.ArgumentParser:
     fs.add_argument("--llm-model")
     fs.add_argument("--workers", type=int, default=4, help="LLM workers for feedback window extraction.")
     fs.add_argument("--window-radius", type=int, default=8)
-    fs.add_argument("--max-windows", type=int, default=6)
+    fs.add_argument("--max-windows", type=int, default=1000)
     fs.add_argument("--hard-max-turns", type=int, default=120)
     fs.add_argument("--backup", action=argparse.BooleanOptionalAction, default=True)
     fs.add_argument("--resume", action=argparse.BooleanOptionalAction, default=True)
