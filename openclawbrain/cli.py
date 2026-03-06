@@ -7176,7 +7176,7 @@ def cmd_loop(args: argparse.Namespace) -> int:
         else:
             async_cmd.append("--no-write-relevance-metadata")
         if traces_out is not None:
-            async_cmd.extend(["--traces-out", str(traces_out)])
+            async_cmd.extend(["--traces-out", str(traces_out), "--include-query-vector"])
 
         write_checkpoint(status="running", job=job, step="async_route_pg")
         emit_event({"type": "step_start", "job": job, "step": "async_route_pg"})
