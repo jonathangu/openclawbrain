@@ -38,6 +38,7 @@ openclaw gateway restart
 - Default brain-building experience (macOS): [docs/default-experience.md](docs/default-experience.md)
 - Shadow routing architecture: [docs/shadow-routing-upg-architecture.md](docs/shadow-routing-upg-architecture.md)
 - Evaluation plan: [docs/evaluation-plan.md](docs/evaluation-plan.md)
+- Workflow proof (incident/deploy/customer/on-call benchmark): [docs/openclaw-workflow-proof.md](docs/openclaw-workflow-proof.md)
 - QTsim math appendix: [docs/ultimate-policy-gradient-routing-math.md](docs/ultimate-policy-gradient-routing-math.md)
 - OpenClaw integration: [docs/openclaw-integration.md](docs/openclaw-integration.md)
 - Setup guide: [docs/setup-guide.md](docs/setup-guide.md)

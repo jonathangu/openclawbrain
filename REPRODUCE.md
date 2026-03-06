@@ -85,6 +85,48 @@ Benchmark output compares:
 
 Run `python3 benchmarks/run_benchmark.py` to see current deterministic results for this commit.
 
+## Workflow Proof Harness
+
+This repo now includes a workflow-shaped proof harness that resembles recurring OpenClaw use:
+
+- incident history lookup
+- deploy-after-incident routing
+- customer update retrieval
+- on-call/dashboard recall
+
+Run it with:
+
+```bash
+python3 -m examples.eval.simulate_openclaw_workflows \
+  --output-dir scratch/workflow-proof/latest
+```
+
+Expected top-line metrics on this repo state:
+
+| mode | target success | required-node coverage |
+| --- | --- | --- |
+| `vector_topk` | `0.00` | `0.00` |
+| `pointer_chase` | `0.25` | `0.38` |
+| `graph_prior_only` | `0.50` | `0.50` |
+| `learned` | `1.00` | `1.00` |
+
+Expected learning-curve summary:
+
+- graph-prior target success stays at `0.50`
+- learned routing reaches `1.00` target success by epoch `14`
+
+Artifacts:
+
+- `scratch/workflow-proof/latest/baseline_eval/summary.json`
+- `scratch/workflow-proof/latest/learning_curve.csv`
+- `scratch/workflow-proof/latest/worked_example.md`
+- `docs/openclaw-workflow-proof.md`
+
+Notes:
+
+- This harness is deterministic and CI-friendly; it uses a small hash embedder instead of live model calls.
+- The production default stack remains local BGE-large embeddings and a local async teacher such as Ollama `qwen3.5:35b`.
+
 ## External benchmarks (optional, dataset downloads required)
 
 Benchmarks for external corpora are documented in `benchmarks/external/README.md`.

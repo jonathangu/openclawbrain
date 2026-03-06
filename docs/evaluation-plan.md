@@ -26,6 +26,10 @@ Primary metrics reported per mode:
 
 - Latency: p50 and p95 end-to-end query time.
 - Context efficiency: mean/median `prompt_context_len`, mean/median `fired_count`.
+- Exact-target grounding:
+  - mean `required_node_coverage`
+  - mean `target_success_rate`
+  - optional `acceptable_node_hit_rate`
 - Routing diagnostics: mean `route_router_conf_mean`, `route_relevance_conf_mean`, `route_policy_disagreement_mean`.
 - QTsim usage proxies:
   - distribution of `route_router_conf_mean`
@@ -79,6 +83,7 @@ Recommended process for paper-grade ground truth:
 1. Collect real queries from replay logs, route traces, and operator workflows.
 2. Stratify into categories (`decision-history`, `project-boundary`, `pointer`, `ops`).
 3. For each query, annotate one or more acceptable target nodes/chunks and required facts.
+   - In the repo eval JSONL, use `acceptable_node_ids` for any-of targets and `required_node_ids` for must-appear nodes.
 4. Record ambiguity flags (single-answer vs multi-answer) and confidence in labels.
 5. Keep train/dev/test splits by time or project slice to avoid leakage.
 6. Add adversarial near-miss queries to test pointer-chasing reduction.
@@ -93,6 +98,9 @@ Recommended process for paper-grade ground truth:
 - Primary synthetic proof-of-learning:
   - `python examples/eval/simulate_expert_regions.py --output-dir /tmp/ocb_expert_regions`
   - This is the paper-grade synthetic benchmark: K-expert Gaussian regions, soft teacher labels, heldout baselines (`random`, `oracle`, `graph_prior_only`, `qtsim_only`, `learned_mixed`), and oracle-gap closure curves.
+- Workflow-shaped proof:
+  - `python3 -m examples.eval.simulate_openclaw_workflows --output-dir scratch/workflow-proof/latest`
+  - This is the concrete OpenClaw-style benchmark: incident history, deploy-after-incident, customer update, and on-call/dashboard recall with exact-node success metrics plus a worked example.
 - Secondary synthetic sanity check:
   - `python examples/eval/simulate_two_cluster_routing.py --output-dir /tmp/ocb_two_cluster`
   - This remains a lightweight cluster-routing smoke test.
@@ -101,6 +109,7 @@ Recommended process for paper-grade ground truth:
 
 - per-mode JSON summaries from `run_eval.py`
 - simulation CSV + report from `simulate_expert_regions.py` (primary synthetic evidence)
+- workflow proof summary/report/worked example from `simulate_openclaw_workflows.py`
 - simulation CSV + report from `simulate_two_cluster_routing.py` (secondary sanity evidence)
 - qualitative failure analysis for low-confidence and high-disagreement queries
 - appendix with dataset construction protocol and annotation rubric
