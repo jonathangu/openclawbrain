@@ -213,6 +213,10 @@ def _route_decision_summary(decisions: list[DecisionMetrics]) -> dict[str, objec
     }
 
 
+def _append_jsonl_event(event_store: EventStore, payload: dict[str, object]) -> None:
+    event_store.append(dict(payload))
+
+
 def _append_learn_event(
     event_store: EventStore,
     *,
@@ -594,6 +598,7 @@ def _do_learn(
     node_type: str = "CORRECTION",
     source: str = "daemon",
     log_metadata: dict[str, object] | None = None,
+    canonical_feedback_event: dict[str, object] | None = None,
 ) -> tuple[dict[str, object], bool]:
     """Unified learning: penalize/reinforce fired path + optionally inject node.
 
@@ -601,6 +606,9 @@ def _do_learn(
     """
     should_write = False
     edges_updated = 0
+
+    if canonical_feedback_event is not None:
+        _append_jsonl_event(event_store, canonical_feedback_event)
 
     # 1. Apply outcome to fired path
     if fired_ids and outcome != 0:
@@ -656,6 +664,9 @@ def _do_learn(
     }
     if node_id is not None:
         payload["node_id"] = node_id
+    if canonical_feedback_event is not None:
+        payload["feedback_event_logged"] = True
+        payload["feedback_event_hash"] = canonical_feedback_event.get("event_hash")
 
     return payload, should_write
 
@@ -778,6 +789,17 @@ def _handle_self_learn(
             raise ValueError("state_path is required when event_store is not provided")
         resolved_event_store = JsonlEventStore(_journal_path(state_path))
 
+    feedback_kind = "REINFORCEMENT" if outcome > 0 else node_type
+    canonical_feedback_event = FeedbackEvent(
+        source_kind="self",
+        feedback_kind=feedback_kind,
+        content=raw_content.strip(),
+        fired_ids=fired_ids,
+        outcome=outcome,
+        confidence=1.0,
+        metadata={"source": "self_learn", "node_type": node_type},
+    ).to_dict()
+
     return _do_learn(
         graph, index, embed_fn, resolved_event_store,
         fired_ids=fired_ids,
@@ -786,6 +808,7 @@ def _handle_self_learn(
         node_type=node_type,
         source="self",
         log_metadata={"source": "self"},
+        canonical_feedback_event=canonical_feedback_event,
     )
 
 
