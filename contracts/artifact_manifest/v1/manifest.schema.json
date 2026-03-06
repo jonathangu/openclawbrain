@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openclawbrain.dev/contracts/artifact_manifest/v1/manifest.schema.json",
+  "title": "artifact_manifest.v1 manifest",
+  "type": "object",
+  "required": [
+    "contract_version",
+    "pack_id",
+    "agent_id",
+    "build_id",
+    "contract_versions",
+    "pack_checksum",
+    "compiler_fingerprint",
+    "model_fingerprint",
+    "runtime_compat",
+    "route_policy",
+    "serve_requirements",
+    "workspace_snapshot_id",
+    "event_range",
+    "checksums",
+    "eval_summary",
+    "created_at"
+  ],
+  "properties": {
+    "contract_version": {
+      "const": "artifact_manifest.v1"
+    },
+    "pack_id": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string"
+    },
+    "build_id": {
+      "type": "string"
+    },
+    "parent_pack_id": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "contract_versions": {
+      "type": "object"
+    },
+    "pack_checksum": {
+      "type": "string"
+    },
+    "compiler_fingerprint": {
+      "type": "object"
+    },
+    "model_fingerprint": {
+      "type": "object"
+    },
+    "runtime_compat": {
+      "type": "object"
+    },
+    "route_policy": {
+      "type": "object"
+    },
+    "serve_requirements": {
+      "type": "object"
+    },
+    "workspace_snapshot_id": {
+      "type": "string"
+    },
+    "event_range": {
+      "type": "object"
+    },
+    "checksums": {
+      "type": "object"
+    },
+    "eval_summary": {
+      "type": "object"
+    },
+    "created_at": {
+      "type": "string"
+    }
+  },
+  "additionalProperties": true
+}

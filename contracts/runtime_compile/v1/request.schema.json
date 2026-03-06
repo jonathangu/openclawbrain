@@ -1,0 +1,59 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openclawbrain.dev/contracts/runtime_compile/v1/request.schema.json",
+  "title": "runtime_compile.v1 request",
+  "type": "object",
+  "required": [
+    "contract_version",
+    "request_id",
+    "agent_id",
+    "session_id",
+    "turn_id",
+    "pack_id",
+    "user_message",
+    "recent_turns",
+    "tool_context",
+    "budget",
+    "hints",
+    "routing"
+  ],
+  "properties": {
+    "contract_version": {
+      "const": "runtime_compile.v1"
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "turn_id": {
+      "type": "string"
+    },
+    "pack_id": {
+      "type": "string"
+    },
+    "user_message": {
+      "type": "string"
+    },
+    "recent_turns": {
+      "type": "array"
+    },
+    "tool_context": {
+      "type": "array"
+    },
+    "budget": {
+      "type": "object"
+    },
+    "hints": {
+      "type": "object"
+    },
+    "routing": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}

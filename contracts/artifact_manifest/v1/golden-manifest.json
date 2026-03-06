@@ -1,0 +1,61 @@
+{
+  "contract_version": "artifact_manifest.v1",
+  "pack_id": "brainpack_2026_03_06_001",
+  "agent_id": "main",
+  "build_id": "build_2026_03_06_001",
+  "parent_pack_id": "brainpack_2026_03_05_004",
+  "contract_versions": {
+    "runtime_compile": "runtime_compile.v1",
+    "interaction_events": "interaction_events.v1",
+    "feedback_events": "feedback_events.v1",
+    "artifact_manifest": "artifact_manifest.v1"
+  },
+  "pack_checksum": "sha256:pack123",
+  "compiler_fingerprint": {
+    "compiler": "openclawbrain-ts",
+    "version": "0.1.0",
+    "build_hash": "abc123def456"
+  },
+  "model_fingerprint": {
+    "embedding_model": "BAAI/bge-large-en-v1.5",
+    "embedding_dimension": 1024,
+    "route_model_id": "route_model_2026_03_06"
+  },
+  "runtime_compat": {
+    "openclaw_min": "0.10.0",
+    "openclawbrain_min": "0.1.0"
+  },
+  "route_policy": {
+    "mode_requested": "learned",
+    "route_model_id": "route_model_2026_03_06",
+    "decision_trace_refs_emitted": true
+  },
+  "serve_requirements": {
+    "requires_learned_routing": true,
+    "required_route_assets": [
+      "route-model.onnx",
+      "route-metadata.json"
+    ],
+    "embedding_model": "BAAI/bge-large-en-v1.5",
+    "embedding_dimension": 1024
+  },
+  "workspace_snapshot_id": "workspace_2026_03_06_001",
+  "event_range": {
+    "interaction_event_start_id": "evt_1",
+    "interaction_event_end_id": "evt_7",
+    "feedback_event_start_id": "feedback_evt_1",
+    "feedback_event_end_id": "feedback_evt_3"
+  },
+  "checksums": {
+    "graph.bin": "sha256:graph123",
+    "vectors.bin": "sha256:vectors123",
+    "route-model.onnx": "sha256:route123"
+  },
+  "eval_summary": {
+    "baseline_pack_id": "brainpack_2026_03_05_004",
+    "score_delta": 0.12,
+    "regressions": 0,
+    "status": "promotable"
+  },
+  "created_at": "2026-03-06T11:00:00Z"
+}
