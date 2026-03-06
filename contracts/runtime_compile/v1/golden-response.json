@@ -1,0 +1,36 @@
+{
+  "contract_version": "runtime_compile.v1",
+  "request_id": "req_123",
+  "pack_id": "brainpack_2026_03_06_001",
+  "context_blocks": [
+    {
+      "id": "ctx_1",
+      "kind": "memory",
+      "title": "Deploy failure summary",
+      "content": "The last deploy failed because the dist build was stale and missing plugin SDK files.",
+      "score": 0.93,
+      "sources": [
+        {
+          "kind": "memory",
+          "ref": "memory/2026-03-06#deploy-stale-dist"
+        }
+      ]
+    }
+  ],
+  "suppressed_sources": [
+    "memory:duplicate:ctx_legacy"
+  ],
+  "routing": {
+    "mode_requested": "learned",
+    "mode_effective": "learned",
+    "used_learned_route_fn": true,
+    "route_model_id": "route_model_2026_03_06",
+    "decision_trace_ref": "route_decision_req_123"
+  },
+  "diagnostics": {
+    "candidate_count": 24,
+    "selected_count": 1,
+    "compile_ms": 18.7,
+    "router": "learned_route_fn"
+  }
+}

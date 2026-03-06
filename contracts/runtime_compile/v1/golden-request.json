@@ -1,0 +1,39 @@
+{
+  "contract_version": "runtime_compile.v1",
+  "request_id": "req_123",
+  "agent_id": "main",
+  "session_id": "sess_456",
+  "turn_id": "turn_789",
+  "pack_id": "brainpack_2026_03_06_001",
+  "user_message": "what failed last deploy?",
+  "recent_turns": [
+    {
+      "role": "user",
+      "content": "show me the last deploy note",
+      "turn_id": "turn_788"
+    },
+    {
+      "role": "assistant",
+      "content": "Deploy note loaded.",
+      "turn_id": "turn_788a"
+    }
+  ],
+  "tool_context": [
+    {
+      "tool_name": "web_search",
+      "summary": "No deploy ticket found in the tracker.",
+      "output_ref": "tool:web_search:req_122"
+    }
+  ],
+  "budget": {
+    "max_chars": 16000,
+    "max_blocks": 8
+  },
+  "hints": {
+    "recall": true,
+    "correction_sensitive": true
+  },
+  "routing": {
+    "mode_requested": "learned"
+  }
+}

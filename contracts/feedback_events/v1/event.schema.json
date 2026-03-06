@@ -1,0 +1,76 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://openclawbrain.dev/contracts/feedback_events/v1/event.schema.json",
+  "title": "feedback_events.v1 event",
+  "type": "object",
+  "required": [
+    "contract_version",
+    "event_id",
+    "event_ts",
+    "agent_id",
+    "session_id",
+    "turn_id",
+    "request_id",
+    "pack_id",
+    "feedback_kind",
+    "source_kind",
+    "message_ref",
+    "affected_turn_id",
+    "affected_context_ids",
+    "dedup_key"
+  ],
+  "properties": {
+    "contract_version": {
+      "const": "feedback_events.v1"
+    },
+    "event_id": {
+      "type": "string"
+    },
+    "event_ts": {
+      "type": "string"
+    },
+    "agent_id": {
+      "type": "string"
+    },
+    "session_id": {
+      "type": "string"
+    },
+    "turn_id": {
+      "type": "string"
+    },
+    "request_id": {
+      "type": "string"
+    },
+    "pack_id": {
+      "type": "string"
+    },
+    "feedback_kind": {
+      "type": "string"
+    },
+    "source_kind": {
+      "type": "string"
+    },
+    "message_ref": {
+      "type": "string"
+    },
+    "affected_turn_id": {
+      "type": "string"
+    },
+    "affected_context_ids": {
+      "type": "array"
+    },
+    "dedup_key": {
+      "type": "string"
+    },
+    "content": {
+      "type": [
+        "string",
+        "null"
+      ]
+    },
+    "metadata": {
+      "type": "object"
+    }
+  },
+  "additionalProperties": true
+}
