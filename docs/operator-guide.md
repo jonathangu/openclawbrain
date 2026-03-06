@@ -195,8 +195,8 @@ openclawbrain async-route-pg \
   --since-hours 24 \
   --max-queries 200 \
   --sample-rate 0.1 \
-  --teacher openai \
-  --teacher-model gpt-5-mini \
+  --teacher ollama \
+  --teacher-model qwen3.5:35b-a3b \
   --json
 ```
 
@@ -208,8 +208,8 @@ openclawbrain async-route-pg \
   --since-hours 24 \
   --max-queries 200 \
   --sample-rate 0.1 \
-  --teacher openai \
-  --teacher-model gpt-5-mini \
+  --teacher ollama \
+  --teacher-model qwen3.5:35b-a3b \
   --apply \
   --json
 ```

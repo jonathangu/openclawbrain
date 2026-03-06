@@ -156,7 +156,7 @@ Reference implementation: `examples/ops/query_and_learn.py`
 from examples.ops.callbacks import make_embed_fn, make_llm_fn
 
 embed_fn = make_embed_fn("openai")  # or "local" for offline mode
-llm_fn = make_llm_fn("gpt-5-mini")  # optional, for LLM-assisted merge
+llm_fn = make_llm_fn("qwen3.5:35b-a3b")  # optional, for local Ollama-assisted merge
 ```
 
 Use this when building your query handler:
