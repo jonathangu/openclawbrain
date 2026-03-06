@@ -61,6 +61,7 @@ def test_baseline_suite_runs_offline(tmp_path: Path, monkeypatch) -> None:
         embed_model="hash",
         route_model_path=None,
         top_k=2,
+        route_top_k=2,
         max_fired_nodes=5,
         max_prompt_context_chars=2000,
         output_dir=output_dir,

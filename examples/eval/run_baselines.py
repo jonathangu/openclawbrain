@@ -14,6 +14,8 @@ VALID_MODES = {
     "vector_only",
     "vector_topk_rerank",
     "pointer_chase",
+    "graph_prior_only",
+    "qtsim_only",
     "learned",
     "edge_sim_legacy",
 }
@@ -36,6 +38,7 @@ def main() -> None:
     parser.add_argument("--route-model", help="Optional path to route_model.npz")
     parser.add_argument("--embed-model", default="auto", help="auto|hash|local|local:<model>")
     parser.add_argument("--top-k", type=int, default=4)
+    parser.add_argument("--route-top-k", type=int, default=5)
     parser.add_argument("--max-fired-nodes", type=int, default=30)
     parser.add_argument("--max-prompt-context-chars", type=int, default=30000)
     parser.add_argument(
@@ -48,6 +51,8 @@ def main() -> None:
 
     if args.top_k <= 0:
         raise SystemExit("--top-k must be > 0")
+    if args.route_top_k <= 0:
+        raise SystemExit("--route-top-k must be > 0")
     if args.max_fired_nodes <= 0:
         raise SystemExit("--max-fired-nodes must be > 0")
     if args.max_prompt_context_chars <= 0:
@@ -73,6 +78,7 @@ def main() -> None:
         embed_model=args.embed_model,
         route_model_path=Path(args.route_model).expanduser() if args.route_model else None,
         top_k=args.top_k,
+        route_top_k=args.route_top_k,
         max_fired_nodes=args.max_fired_nodes,
         max_prompt_context_chars=args.max_prompt_context_chars,
         output_dir=Path(args.output_dir).expanduser(),

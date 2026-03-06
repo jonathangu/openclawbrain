@@ -38,6 +38,18 @@ class EvalQuery:
     query: str
     category: str
     expected_keywords: tuple[str, ...] = ()
+    acceptable_node_ids: tuple[str, ...] = ()
+    required_node_ids: tuple[str, ...] = ()
+
+
+def _parse_string_list(payload: object, *, line_no: int, field_name: str) -> tuple[str, ...]:
+    if payload is None:
+        return ()
+    if not isinstance(payload, list) or any(
+        not isinstance(item, str) or not item.strip() for item in payload
+    ):
+        raise SystemExit(f"line {line_no}: {field_name} must be a list of non-empty strings")
+    return tuple(item.strip() for item in payload)
 
 
 def _percentile(values: list[float], pct: float) -> float:
@@ -81,18 +93,28 @@ def _load_queries(path: Path) -> list[EvalQuery]:
                 f"line {line_no}: category must be one of {sorted(VALID_CATEGORIES)}"
             )
         expected_keywords = payload.get("expected_keywords", [])
-        if expected_keywords is None:
-            expected_keywords = []
-        if not isinstance(expected_keywords, list) or any(
-            not isinstance(item, str) or not item.strip() for item in expected_keywords
-        ):
-            raise SystemExit(f"line {line_no}: expected_keywords must be a list of non-empty strings")
+        acceptable_node_ids = payload.get("acceptable_node_ids", [])
+        required_node_ids = payload.get("required_node_ids", [])
         loaded.append(
             EvalQuery(
                 id=query_id.strip(),
                 query=query_text.strip(),
                 category=category,
-                expected_keywords=tuple(item.strip() for item in expected_keywords),
+                expected_keywords=_parse_string_list(
+                    expected_keywords,
+                    line_no=line_no,
+                    field_name="expected_keywords",
+                ),
+                acceptable_node_ids=_parse_string_list(
+                    acceptable_node_ids,
+                    line_no=line_no,
+                    field_name="acceptable_node_ids",
+                ),
+                required_node_ids=_parse_string_list(
+                    required_node_ids,
+                    line_no=line_no,
+                    field_name="required_node_ids",
+                ),
             )
         )
     if not loaded:
@@ -107,8 +129,18 @@ def _load_queries(path: Path) -> list[EvalQuery]:
 
 def _resolve_embed(meta: dict[str, object], embed_model: str) -> Any:
     model = embed_model.strip().lower()
+    configured_dim = meta.get("embedder_dim")
+    hash_dim = configured_dim if isinstance(configured_dim, int) and configured_dim > 0 else 1024
     if model == "hash":
-        return HashEmbedder().embed
+        return HashEmbedder(dim=hash_dim).embed
+    if model.startswith("hash:"):
+        try:
+            requested_dim = int(model.split(":", 1)[1].strip())
+        except ValueError as exc:
+            raise SystemExit("hash embed-model must be hash or hash:<positive-dim>") from exc
+        if requested_dim <= 0:
+            raise SystemExit("hash embed-model dimension must be > 0")
+        return HashEmbedder(dim=requested_dim).embed
     if model == "local":
         return LocalEmbedder(DEFAULT_LOCAL_MODEL).embed
     if model.startswith("local:"):
@@ -117,7 +149,7 @@ def _resolve_embed(meta: dict[str, object], embed_model: str) -> Any:
     embedder_name = str(meta.get("embedder_name", "hash-v1")).strip().lower()
     if embedder_name.startswith("local:"):
         return LocalEmbedder(DEFAULT_LOCAL_MODEL).embed
-    return HashEmbedder().embed
+    return HashEmbedder(dim=hash_dim).embed
 
 
 def _keyword_hit_ratio(prompt_context: str, expected_keywords: tuple[str, ...]) -> float | None:
@@ -126,6 +158,47 @@ def _keyword_hit_ratio(prompt_context: str, expected_keywords: tuple[str, ...]) 
     text = prompt_context.lower()
     hits = sum(1 for key in expected_keywords if key.lower() in text)
     return hits / max(1, len(expected_keywords))
+
+
+def _prompt_node_ids(payload: dict[str, object]) -> list[str]:
+    raw_ids = payload.get("prompt_context_included_node_ids")
+    if isinstance(raw_ids, list):
+        return [str(node_id) for node_id in raw_ids if isinstance(node_id, str) and node_id]
+    fired_nodes = payload.get("fired_nodes")
+    if isinstance(fired_nodes, list):
+        return [str(node_id) for node_id in fired_nodes if isinstance(node_id, str) and node_id]
+    return []
+
+
+def _required_node_coverage(
+    prompt_node_ids: list[str],
+    required_node_ids: tuple[str, ...],
+) -> float | None:
+    if not required_node_ids:
+        return None
+    present = sum(1 for node_id in required_node_ids if node_id in prompt_node_ids)
+    return present / max(1, len(required_node_ids))
+
+
+def _acceptable_node_hit(
+    prompt_node_ids: list[str],
+    acceptable_node_ids: tuple[str, ...],
+) -> float | None:
+    if not acceptable_node_ids:
+        return None
+    return 1.0 if any(node_id in prompt_node_ids for node_id in acceptable_node_ids) else 0.0
+
+
+def _target_success(
+    *,
+    required_node_coverage: float | None,
+    acceptable_node_hit: float | None,
+) -> float | None:
+    if required_node_coverage is None and acceptable_node_hit is None:
+        return None
+    required_ok = required_node_coverage is None or required_node_coverage >= 0.999999
+    acceptable_ok = acceptable_node_hit is None or acceptable_node_hit >= 0.999999
+    return 1.0 if required_ok and acceptable_ok else 0.0
 
 
 def _mean(values: list[float]) -> float:
@@ -164,6 +237,21 @@ def _summarize_mode(rows: list[dict[str, object]]) -> dict[str, object]:
     pointer_tokens = [float(row["pointer_total_tokens"]) for row in rows if row.get("pointer_total_tokens") is not None]
     pointer_cost = [float(row["pointer_cost"]) for row in rows if row.get("pointer_cost") is not None]
     pointer_latency = [float(row["pointer_latency_ms"]) for row in rows if row.get("pointer_latency_ms") is not None]
+    required_coverage = [
+        float(row["required_node_coverage"])
+        for row in rows
+        if row.get("required_node_coverage") is not None
+    ]
+    acceptable_hits = [
+        float(row["acceptable_node_hit"])
+        for row in rows
+        if row.get("acceptable_node_hit") is not None
+    ]
+    target_success = [
+        float(row["target_success"])
+        for row in rows
+        if row.get("target_success") is not None
+    ]
 
     summary = {
         "query_count": len(rows),
@@ -192,6 +280,16 @@ def _summarize_mode(rows: list[dict[str, object]]) -> dict[str, object]:
         "keyword_hit_ratio_mean": _mean(keyword_scores) if keyword_scores else None,
     }
 
+    if required_coverage or acceptable_hits or target_success:
+        summary["ground_truth"] = {
+            "queries_with_required_node_ids": len(required_coverage),
+            "queries_with_acceptable_node_ids": len(acceptable_hits),
+            "queries_with_targets": len(target_success),
+            "required_node_coverage_mean": _mean(required_coverage) if required_coverage else None,
+            "acceptable_node_hit_rate": _mean(acceptable_hits) if acceptable_hits else None,
+            "target_success_rate": _mean(target_success) if target_success else None,
+        }
+
     if pointer_turns:
         summary["pointer_chase"] = {
             "turns_mean": _mean(pointer_turns),
@@ -209,8 +307,8 @@ def _render_report(summary: dict[str, object], modes: list[str]) -> str:
         "",
         "## Summary",
         "",
-        "| mode | status | queries | p50 latency (ms) | p95 latency (ms) | ctx mean | fired mean |",
-        "| --- | --- | --- | --- | --- | --- | --- |",
+        "| mode | status | queries | target success | required coverage | p50 latency (ms) | p95 latency (ms) | ctx mean | fired mean |",
+        "| --- | --- | --- | --- | --- | --- | --- | --- | --- |",
     ]
     mode_status = summary.get("mode_status", {}) if isinstance(summary.get("mode_status"), dict) else {}
     mode_summaries = summary.get("mode_summaries", {}) if isinstance(summary.get("mode_summaries"), dict) else {}
@@ -219,8 +317,13 @@ def _render_report(summary: dict[str, object], modes: list[str]) -> str:
         mode_summary = mode_summaries.get(mode, {}) if isinstance(mode_summaries.get(mode), dict) else {}
         latency = mode_summary.get("latency", {}) if isinstance(mode_summary.get("latency"), dict) else {}
         context = mode_summary.get("context", {}) if isinstance(mode_summary.get("context"), dict) else {}
+        ground_truth = mode_summary.get("ground_truth", {}) if isinstance(mode_summary.get("ground_truth"), dict) else {}
+        target_success = ground_truth.get("target_success_rate")
+        required_coverage = ground_truth.get("required_node_coverage_mean")
+        target_success_text = f"{float(target_success):.2f}" if isinstance(target_success, (int, float)) else "-"
+        required_coverage_text = f"{float(required_coverage):.2f}" if isinstance(required_coverage, (int, float)) else "-"
         lines.append(
-            f"| {mode} | {status} | {mode_summary.get('query_count', 0)} | {latency.get('p50_ms', 0):.2f} | {latency.get('p95_ms', 0):.2f} | {context.get('prompt_context_len_mean', 0):.2f} | {context.get('fired_count_mean', 0):.2f} |"
+            f"| {mode} | {status} | {mode_summary.get('query_count', 0)} | {target_success_text} | {required_coverage_text} | {latency.get('p50_ms', 0):.2f} | {latency.get('p95_ms', 0):.2f} | {context.get('prompt_context_len_mean', 0):.2f} | {context.get('fired_count_mean', 0):.2f} |"
         )
 
     lines.append("")
@@ -249,6 +352,7 @@ def run_baseline_suite(
     embed_model: str,
     route_model_path: Path | None,
     top_k: int,
+    route_top_k: int,
     max_fired_nodes: int,
     max_prompt_context_chars: int,
     output_dir: Path,
@@ -259,7 +363,7 @@ def run_baseline_suite(
     queries = _load_queries(queries_path)
 
     route_model = None
-    if any(mode == "learned" for mode in modes):
+    if any(mode in {"learned", "graph_prior_only", "qtsim_only"} for mode in modes):
         model_path = route_model_path or (state_path.parent / "route_model.npz")
         if model_path.exists():
             route_model = RouteModel.load_npz(model_path)
@@ -315,10 +419,11 @@ def run_baseline_suite(
                     query_text=item.query,
                     config=cfg,
                 )
-            elif mode in {"learned", "edge_sim_legacy"}:
+            elif mode in {"learned", "edge_sim_legacy", "graph_prior_only", "qtsim_only"}:
                 params = {
                     "query": item.query,
                     "top_k": top_k,
+                    "route_top_k": route_top_k,
                     "max_prompt_context_chars": max_prompt_context_chars,
                     "max_context_chars": max_prompt_context_chars,
                     "max_fired_nodes": max_fired_nodes,
@@ -328,6 +433,13 @@ def run_baseline_suite(
                     params["route_mode"] = "edge+sim"
                 else:
                     params["route_mode"] = "learned"
+                    if mode == "graph_prior_only":
+                        params["debug_allow_confidence_override"] = True
+                        params["router_conf_override"] = 0.0
+                    elif mode == "qtsim_only":
+                        params["debug_allow_confidence_override"] = True
+                        params["router_conf_override"] = 1.0
+                        params["relevance_conf_override"] = 1.0
                 payload = _handle_query(
                     graph=graph,
                     index=index,
@@ -344,6 +456,9 @@ def run_baseline_suite(
             elapsed_ms = (time.perf_counter() - start) * 1000.0
             fired_nodes = payload.get("fired_nodes", [])
             prompt_context = str(payload.get("prompt_context", ""))
+            prompt_node_ids = _prompt_node_ids(payload)
+            acceptable_node_hit = _acceptable_node_hit(prompt_node_ids, item.acceptable_node_ids)
+            required_node_coverage = _required_node_coverage(prompt_node_ids, item.required_node_ids)
             row = {
                 "query_id": item.id,
                 "category": item.category,
@@ -351,10 +466,19 @@ def run_baseline_suite(
                 "latency_ms": round(elapsed_ms, 6),
                 "prompt_context_len": int(payload.get("prompt_context_len", len(prompt_context))),
                 "fired_count": len(fired_nodes) if isinstance(fired_nodes, list) else 0,
+                "prompt_context_included_node_ids": "|".join(prompt_node_ids),
+                "acceptable_node_ids": "|".join(item.acceptable_node_ids),
+                "required_node_ids": "|".join(item.required_node_ids),
                 "route_router_conf_mean": float(payload.get("route_router_conf_mean", 0.0)),
                 "route_relevance_conf_mean": float(payload.get("route_relevance_conf_mean", 0.0)),
                 "route_policy_disagreement_mean": float(payload.get("route_policy_disagreement_mean", 0.0)),
                 "keyword_hit_ratio": _keyword_hit_ratio(prompt_context, item.expected_keywords),
+                "acceptable_node_hit": acceptable_node_hit,
+                "required_node_coverage": required_node_coverage,
+                "target_success": _target_success(
+                    required_node_coverage=required_node_coverage,
+                    acceptable_node_hit=acceptable_node_hit,
+                ),
                 "pointer_turns": payload.get("pointer_turns"),
                 "pointer_tool_calls": payload.get("pointer_tool_calls"),
                 "pointer_total_tokens": payload.get("pointer_total_tokens"),
@@ -403,7 +527,13 @@ def _write_csv(path: Path, modes: list[str], rows: dict[str, list[dict[str, obje
         "latency_ms",
         "prompt_context_len",
         "fired_count",
+        "prompt_context_included_node_ids",
+        "acceptable_node_ids",
+        "required_node_ids",
         "keyword_hit_ratio",
+        "acceptable_node_hit",
+        "required_node_coverage",
+        "target_success",
         "route_router_conf_mean",
         "route_relevance_conf_mean",
         "route_policy_disagreement_mean",

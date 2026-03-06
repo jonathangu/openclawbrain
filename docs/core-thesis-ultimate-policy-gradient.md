@@ -61,7 +61,8 @@ An **offline** labeling function that answers:
 
 > Given the query + the current node + candidate edges, what should we expand next?
 
-It can be an LLM (default: `gpt-5-mini`) and is allowed to be slow — because it runs in the background and is heavily parallelized.
+It can be an LLM and is allowed to be slow, because it runs in the background and is heavily parallelized.
+For the current proof/operator-default stack, hold it to a local Ollama teacher such as `qwen3.5:35b` unless you explicitly switch providers.
 
 **Output (robust JSON):**
 - `choose`: a short list of target IDs, and/or
