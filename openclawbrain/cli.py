@@ -3870,6 +3870,99 @@ def _journal_entry_count(journal_path: str | None) -> int | None:
     return len(read_journal(journal_path=str(path)))
 
 
+def _feedback_event_summary(entries: Iterable[dict[str, object]], *, include_entry: Callable[[dict[str, object]], bool] | None = None) -> dict[str, object]:
+    """Summarize canonical feedback events already present in the journal."""
+    source_keys = ("human", "self", "scanner", "teacher", "harvester")
+    kind_keys = ("CORRECTION", "TEACHING", "DIRECTIVE", "REINFORCEMENT")
+    sources = {key: 0 for key in source_keys}
+    kinds = {key: 0 for key in kind_keys}
+    total = 0
+    last_ts = None
+    last_iso = None
+
+    for entry in entries:
+        if include_entry is not None and not include_entry(entry):
+            continue
+        raw_source = entry.get("source_kind")
+        raw_feedback_kind = entry.get("feedback_kind")
+        raw_type = entry.get("type")
+        if not isinstance(raw_source, str) or not raw_source.strip():
+            continue
+        if not (
+            (isinstance(raw_feedback_kind, str) and raw_feedback_kind.strip())
+            or raw_type in kind_keys
+        ):
+            continue
+        feedback = feedback_event_from_dict(entry)
+        if feedback.source_kind not in sources or feedback.feedback_kind not in kinds:
+            continue
+        total += 1
+        sources[feedback.source_kind] += 1
+        kinds[feedback.feedback_kind] += 1
+        ts = entry.get("ts")
+        if isinstance(ts, (int, float)):
+            ts_value = float(ts)
+            if last_ts is None or ts_value > last_ts:
+                last_ts = ts_value
+                last_iso = entry.get("iso") if isinstance(entry.get("iso"), str) else datetime.fromtimestamp(ts_value, tz=timezone.utc).isoformat()
+
+    return {
+        "total": total,
+        "sources": sources,
+        "kinds": kinds,
+        "last_ts": last_ts,
+        "last_iso": last_iso,
+    }
+
+
+def _route_training_freshness(state_path: str) -> dict[str, object]:
+    """Summarize route-training freshness from labels and route-model artifacts."""
+    state_dir = Path(state_path).expanduser().parent
+    labels_path = _default_labels_path(state_path)
+    route_model_path = state_dir / "route_model.npz"
+
+    labels_present = labels_path.exists()
+    route_model_present = route_model_path.exists()
+    labels_count = 0
+    if labels_present:
+        labels_count = sum(1 for line in labels_path.read_text(encoding="utf-8").splitlines() if line.strip())
+
+    labels_updated_ts = labels_path.stat().st_mtime if labels_present else None
+    route_model_updated_ts = route_model_path.stat().st_mtime if route_model_present else None
+    labels_updated_iso = (
+        datetime.fromtimestamp(labels_updated_ts, tz=timezone.utc).isoformat()
+        if labels_updated_ts is not None
+        else None
+    )
+    route_model_updated_iso = (
+        datetime.fromtimestamp(route_model_updated_ts, tz=timezone.utc).isoformat()
+        if route_model_updated_ts is not None
+        else None
+    )
+
+    if labels_present and route_model_present:
+        freshness = "stale" if labels_updated_ts is not None and route_model_updated_ts is not None and labels_updated_ts > route_model_updated_ts else "current"
+    elif labels_present:
+        freshness = "model_missing"
+    elif route_model_present:
+        freshness = "no_labels"
+    else:
+        freshness = "uninitialized"
+
+    return {
+        "labels_path": str(labels_path),
+        "labels_present": labels_present,
+        "labels_count": labels_count,
+        "labels_updated_ts": labels_updated_ts,
+        "labels_updated_iso": labels_updated_iso,
+        "route_model_path": str(route_model_path),
+        "route_model_present": route_model_present,
+        "route_model_updated_ts": route_model_updated_ts,
+        "route_model_updated_iso": route_model_updated_iso,
+        "freshness": freshness,
+    }
+
+
 def _ensure_hash_embedder_compat(meta: dict[str, object]) -> None:
     """ ensure hash embedder compat."""
     embedder_name, embedder_dim = _state_embedder_meta(meta)
@@ -5937,6 +6030,7 @@ def cmd_report(args: argparse.Namespace) -> int:
     if health_warning is not None:
         lines.append(f"  warning: {health_warning}")
 
+    route_freshness = _route_training_freshness(resolved_state)
     route_model_present = None
     route_mode_configured = None
     route_mode_effective = None
@@ -5949,15 +6043,24 @@ def cmd_report(args: argparse.Namespace) -> int:
         route_model_error = health_payload.get("route_model_error")
         route_model_path = health_payload.get("route_model_path")
     if route_model_present is None:
-        route_model_present = (Path(resolved_state).expanduser().parent / "route_model.npz").exists()
+        route_model_present = bool(route_freshness.get("route_model_present"))
     if route_mode_configured is None:
         route_mode_configured = "unknown"
     if route_mode_effective is None:
         route_mode_effective = "learned" if route_model_present else "edge+sim"
+    if route_model_path is None:
+        route_model_path = route_freshness.get("route_model_path")
 
     lines.append(f"  route_model: {'present' if route_model_present else 'missing'}")
     lines.append(f"  route_mode_configured: {route_mode_configured}")
     lines.append(f"  route_mode_effective: {route_mode_effective}")
+    lines.append(
+        "  route_training: "
+        f"freshness={route_freshness['freshness']} "
+        f"labels={route_freshness['labels_count']} "
+        f"labels_updated={route_freshness['labels_updated_iso'] or 'n/a'} "
+        f"route_model_updated={route_freshness['route_model_updated_iso'] or 'n/a'}"
+    )
     if route_model_path:
         lines.append(f"  route_model_path: {route_model_path}")
     if route_model_error:
@@ -5966,6 +6069,10 @@ def cmd_report(args: argparse.Namespace) -> int:
         lines.append("  warning: learned routing configured but effective mode is degraded")
     elif not route_model_present and route_mode_effective != "learned":
         lines.append("  warning: route_model missing; learned routing will fall back to edge+sim")
+    if route_freshness["freshness"] == "stale":
+        lines.append("  warning: route_model older than labels; run train-route-model")
+    elif route_freshness["freshness"] == "model_missing" and route_freshness["labels_count"] > 0:
+        lines.append("  warning: labels exist but route_model is missing; run train-route-model")
 
     sync_totals = None
     sync_workspace_count = 0
@@ -6020,9 +6127,31 @@ def cmd_report(args: argparse.Namespace) -> int:
     else:
         lines.append("  last maintenance: (none)")
 
+    feedback_summary = _feedback_event_summary(entries, include_entry=_include_entry)
     lines.extend(
         [
             f"  label usage ({since_label}):",
+            (
+                "  feedback events: "
+                f"total={feedback_summary['total']} "
+                f"human={feedback_summary['sources']['human']} "
+                f"self={feedback_summary['sources']['self']} "
+                f"scanner={feedback_summary['sources']['scanner']} "
+                f"teacher={feedback_summary['sources']['teacher']} "
+                f"harvester={feedback_summary['sources']['harvester']}"
+            ),
+            (
+                "  feedback kinds: "
+                f"correction={feedback_summary['kinds']['CORRECTION']} "
+                f"teaching={feedback_summary['kinds']['TEACHING']} "
+                f"directive={feedback_summary['kinds']['DIRECTIVE']} "
+                f"reinforcement={feedback_summary['kinds']['REINFORCEMENT']}"
+                + (
+                    f" last_feedback={feedback_summary['last_iso']}"
+                    if feedback_summary['last_iso']
+                    else ""
+                )
+            ),
             f"  learn outcomes: +{learn_positive} -{learn_negative}",
             f"  maintenance: splits {splits_applied}/{splits_suggested} merges {merges_applied}/{merges_suggested} "
             f"pruned edges={pruned_edges} nodes={pruned_nodes}",
@@ -6053,12 +6182,12 @@ def cmd_route_audit(args: argparse.Namespace) -> int:
     if state_path is None:
         raise SystemExit("--state is required for route-audit")
     resolved_state = str(Path(state_path).expanduser())
-    state_dir = Path(resolved_state).expanduser().parent
-    route_model_path = state_dir / "route_model.npz"
-    labels_path = _default_labels_path(resolved_state)
+    route_freshness = _route_training_freshness(resolved_state)
+    route_model_path = Path(str(route_freshness["route_model_path"]))
+    labels_path = Path(str(route_freshness["labels_path"]))
 
-    labels_present = labels_path.exists()
-    model_present = route_model_path.exists()
+    labels_present = bool(route_freshness["labels_present"])
+    model_present = bool(route_freshness["route_model_present"])
     model_loaded = False
     model_error = None
     if model_present:
@@ -6068,15 +6197,9 @@ def cmd_route_audit(args: argparse.Namespace) -> int:
         except Exception as exc:  # noqa: BLE001
             model_error = str(exc)
 
-    labels_count = 0
-    if labels_present:
-        labels_count = sum(1 for line in labels_path.read_text(encoding="utf-8").splitlines() if line.strip())
-
-    last_train_ts = None
-    last_train_iso = None
-    if model_present:
-        last_train_ts = route_model_path.stat().st_mtime
-        last_train_iso = datetime.fromtimestamp(last_train_ts, tz=timezone.utc).isoformat()
+    labels_count = int(route_freshness["labels_count"])
+    last_train_ts = route_freshness["route_model_updated_ts"]
+    last_train_iso = route_freshness["route_model_updated_iso"]
 
     socket_path = _default_daemon_socket_path(resolved_state)
     ping_ok, health_payload, health_error = _socket_health_status(socket_path)
@@ -6117,6 +6240,9 @@ def cmd_route_audit(args: argparse.Namespace) -> int:
         "labels_path": str(labels_path),
         "labels_present": labels_present,
         "labels_count": labels_count,
+        "labels_updated_ts": route_freshness["labels_updated_ts"],
+        "labels_updated_iso": route_freshness["labels_updated_iso"],
+        "route_training_freshness": route_freshness["freshness"],
         "route_enable_stop": route_enable_stop,
         "route_stop_margin": route_stop_margin,
     }
@@ -6135,8 +6261,10 @@ def cmd_route_audit(args: argparse.Namespace) -> int:
         f"  route_model_loaded: {model_loaded if model_present else False}",
         f"  route_model_path: {route_model_path}",
         f"  last_train_iso: {last_train_iso or 'n/a'}",
+        f"  route_training_freshness: {route_freshness['freshness']}",
         f"  labels_present: {labels_present}",
         f"  labels_count: {labels_count}",
+        f"  labels_updated_iso: {route_freshness['labels_updated_iso'] or 'n/a'}",
         f"  labels_path: {labels_path}",
         f"  stop_enabled: {route_enable_stop if route_enable_stop is not None else 'unknown'}",
         f"  stop_margin: {route_stop_margin if route_stop_margin is not None else 'unknown'}",
@@ -6149,6 +6277,10 @@ def cmd_route_audit(args: argparse.Namespace) -> int:
         lines.append(f"  warning: daemon health unavailable ({health_error})")
     if route_mode_configured == "learned" and route_mode_effective != "learned":
         lines.append("  warning: learned routing configured but effective mode is degraded")
+    if route_freshness["freshness"] == "stale":
+        lines.append("  warning: route_model older than labels; run train-route-model")
+    elif route_freshness["freshness"] == "model_missing" and labels_count > 0:
+        lines.append("  warning: labels exist but route_model is missing; run train-route-model")
     print("\n".join(lines))
     return 0
 
