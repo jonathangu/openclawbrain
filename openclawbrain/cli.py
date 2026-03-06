@@ -2583,8 +2583,8 @@ def _build_parser() -> argparse.ArgumentParser:
     ar.add_argument("--max-queries", type=int, default=200)
     ar.add_argument("--sample-rate", type=float, default=0.1)
     ar.add_argument("--max-candidates-per-node", type=int, default=12)
-    ar.add_argument("--teacher", choices=["openai", "ollama", "none"], default="openai")
-    ar.add_argument("--teacher-model", default="gpt-5-mini")
+    ar.add_argument("--teacher", choices=["openai", "ollama", "none"], default="ollama")
+    ar.add_argument("--teacher-model", default="qwen3.5:35b-a3b")
     ar.add_argument("--apply", action="store_true")
     ar.add_argument("--json", action="store_true")
     ar.add_argument("--write-relevance-metadata", action=argparse.BooleanOptionalAction, default=True)
@@ -2617,8 +2617,8 @@ def _build_parser() -> argparse.ArgumentParser:
     dream.add_argument("--sample-rate", type=float, default=0.1)
     dream.add_argument("--max-candidates-per-node", type=int, default=12)
     dream.add_argument("--max-decision-points", type=int, default=500)
-    dream.add_argument("--teacher", choices=["openai", "ollama", "none"], default="openai")
-    dream.add_argument("--teacher-model", default="gpt-5-mini")
+    dream.add_argument("--teacher", choices=["openai", "ollama", "none"], default="ollama")
+    dream.add_argument("--teacher-model", default="qwen3.5:35b-a3b")
     dream.add_argument("--score-scale", type=float, default=0.3)
     dream.add_argument(
         "--reward-source",
@@ -2685,8 +2685,8 @@ def _build_parser() -> argparse.ArgumentParser:
     loop.add_argument("--sample-rate", type=float, default=0.1)
     loop.add_argument("--max-candidates-per-node", type=int, default=12)
     loop.add_argument("--max-decision-points", type=int, default=500)
-    loop.add_argument("--teacher", choices=["openai", "ollama", "none"], default="openai")
-    loop.add_argument("--teacher-model", default="gpt-5-mini")
+    loop.add_argument("--teacher", choices=["openai", "ollama", "none"], default="ollama")
+    loop.add_argument("--teacher-model", default="qwen3.5:35b-a3b")
     loop.add_argument("--score-scale", type=float, default=0.3)
     loop.add_argument("--enable-train-route-model", action=argparse.BooleanOptionalAction, default=True)
     loop.add_argument("--train-route-model-out", default=None)
@@ -2740,8 +2740,8 @@ def _build_parser() -> argparse.ArgumentParser:
     dreaming.add_argument("--sample-rate", type=float, default=0.1)
     dreaming.add_argument("--max-candidates-per-node", type=int, default=12)
     dreaming.add_argument("--max-decision-points", type=int, default=500)
-    dreaming.add_argument("--teacher", choices=["openai", "ollama", "none"], default="openai")
-    dreaming.add_argument("--teacher-model", default="gpt-5-mini")
+    dreaming.add_argument("--teacher", choices=["openai", "ollama", "none"], default="ollama")
+    dreaming.add_argument("--teacher-model", default="qwen3.5:35b-a3b")
     dreaming.add_argument("--score-scale", type=float, default=0.3)
     dreaming.add_argument(
         "--reward-source",
@@ -2852,8 +2852,8 @@ def _build_parser() -> argparse.ArgumentParser:
     build_all.add_argument("--sample-rate", type=float, default=0.1)
     build_all.add_argument("--max-candidates-per-node", type=int, default=12)
     build_all.add_argument("--max-decision-points", type=int, default=500)
-    build_all.add_argument("--teacher", choices=["openai", "ollama", "none"], default="openai")
-    build_all.add_argument("--teacher-model", default="gpt-5-mini")
+    build_all.add_argument("--teacher", choices=["openai", "ollama", "none"], default="ollama")
+    build_all.add_argument("--teacher-model", default="qwen3.5:35b-a3b")
     build_all.add_argument("--score-scale", type=float, default=0.3)
     build_all.add_argument(
         "--reward-source",
