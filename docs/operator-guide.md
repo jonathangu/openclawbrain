@@ -7,3 +7,4 @@ Primary operator routes:
 - [reproduce-eval.md](reproduce-eval.md)
 
 Use `pnpm observability:smoke` as the baseline operator proof lane in this repo.
+Use `pnpm observability:report` when you want the concrete JSON proof for freshness checks, active/candidate/previous inspection, async no-op detection, and rollback confidence.

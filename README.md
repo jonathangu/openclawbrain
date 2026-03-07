@@ -51,8 +51,8 @@ Add `@openclawbrain/openclaw` when you want the typed OpenClaw bridge for promot
 The workspace root carries two deterministic proof lanes:
 
 - `pnpm lifecycle:smoke` proves the learning lifecycle from normalized events to promoted-pack compilation
-- `pnpm observability:smoke` proves activation health, promotion freshness, learned `route_fn` evidence, graph-dynamics freshness, supervision freshness, teacher freshness, and explicit fallback usage
-- `pnpm observability:report` prints the repo-local JSON proof surface for those observability claims
+- `pnpm observability:smoke` proves activation health, promotion freshness, rollback readiness, learned `route_fn` evidence, graph-dynamics freshness, supervision freshness, teacher freshness, async no-op detection, and explicit fallback usage
+- `pnpm observability:report` prints the repo-local JSON proof surface for those observability claims, including staged/promoted/rolled-back active-candidate-previous inspection
 - `pnpm continuous-product-loop:smoke` proves the post-attach loop from live-style event export to canonical supervision, learner refresh, promotion, and later compile freshness
 
 - OpenClaw owns runtime orchestration, prompt assembly, diagnostics, sessions, and guarded fail-open behavior.

@@ -77,7 +77,7 @@ That command rebuilds the workspace and then runs the same end-to-end learning p
 pnpm observability:smoke
 ```
 
-That command rebuilds the workspace and proves the operator-facing diagnostics surface on a temp directory: it inspects activation health, verifies promotion and rollback readiness, reads the active freshness target, and compiles a request that must surface learned-route evidence and deterministic fallback notes.
+That command rebuilds the workspace and proves the operator-facing diagnostics surface on a temp directory: it inspects active/candidate/previous state, verifies promotion and rollback readiness, reads the staged/promoted/rolled-back freshness targets, detects an explicit async-teacher duplicate/no-op, and compiles a request that must surface learned-route evidence and deterministic fallback notes.
 
 ## What `pnpm release:pack` covers
 

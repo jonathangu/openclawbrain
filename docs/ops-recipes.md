@@ -29,6 +29,19 @@ pnpm lifecycle:smoke
 pnpm observability:smoke
 ```
 
+## Rollback operator confidence
+
+```bash
+pnpm observability:report
+```
+
+Use that JSON proof when you need one quick local check for:
+
+- active/candidate/previous inspection across staged, promoted, and rolled-back states
+- active vs candidate freshness targets before promotion and after rollback
+- explicit async-teacher no-op detection via `noOpDetection.duplicateExport`
+- rollback readiness before the pointer move and the restored lineage after it
+
 ## Publish dry run
 
 ```bash

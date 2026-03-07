@@ -4,12 +4,14 @@ This is the operator-facing diagnostics contract for attached OpenClawBrain inst
 
 ## What operators must be able to prove
 
-The public observability surface should answer six questions clearly and continuously:
+The public observability surface should answer eight questions clearly and continuously:
 
 - **health**: are the active and candidate slots activation-ready?
 - **promotion safety**: can a pointer move happen safely right now?
 - **freshness**: what exact snapshot/export/build is active right now, and is a staged candidate fresher?
+- **rollback confidence**: can we inspect active/candidate/previous, verify rollback safety, and prove the prior active pack is still restorable?
 - **supervision freshness**: what local source streams and teacher signals most recently shaped the learned pack?
+- **no-op detection**: if the async teacher loop ignored a duplicate or empty refresh, can the operator see the explicit no-op reason instead of guessing?
 - **route evidence**: did the served compile actually use the promoted pack's learned `route_fn` when required?
 - **fallback**: if selection fell back, is that fact explicit?
 
@@ -30,9 +32,18 @@ Those repo-local lanes exercise the public package surface only on temporary act
 - `describeActivationObservability()` surfaces promotion freshness, learned `route_fn` freshness/version, and graph-dynamics freshness
 - `describeNormalizedEventExportObservability()` surfaces supervision freshness by source plus the freshest local teacher signal
 - `describeActivationTarget()` surfaces the promoted pack id, workspace snapshot, workspace revision, event range, export digest, route policy, and build time
+- `rollbackActivePack()` restores the previous active pack back into `active` while moving the just-promoted pack into `candidate`
+- `createAsyncTeacherLiveLoop()` surfaces explicit duplicate/no-op notes instead of silently swallowing the refresh
 - `compileRuntimeFromActivation()` plus `describeCompileFallbackUsage()` emit stable route evidence and explicit fallback usage
 
 `pnpm observability:report` is intentionally local-only: it proves temporary export, pack, activation, and compile state created inside the repo lane. It does not claim live production telemetry coverage or remote supervision recency outside those local artifacts.
+
+The JSON report now includes a concrete rollback/operator-confidence slice:
+
+- `activationSlots.staged`, `activationSlots.promoted`, and `activationSlots.rolledBack` show the exact active/candidate/previous lineage at each pointer move
+- `freshnessTargets.*` shows the active/candidate compile targets before promotion, after promotion, and after rollback
+- `rollback.before` and `rollback.after` show whether rollback was allowed, which pack ids moved, and which blocker remains once rollback has already happened
+- `noOpDetection.duplicateExport` surfaces the explicit duplicate/no-op reason from the async teacher loop path
 
 ## Health and promotion checks
 
@@ -74,10 +85,27 @@ What this proves:
 
 - `activationReady` and `findings` show basic health or the exact blocker
 - `promotion.allowed` and `rollback.allowed` show whether pointer movement is currently safe
+- `active`, `candidate`, and `previous` inspections let operators compare lineage before promotion and after rollback without opening manifests by hand
 - `freshness.workspaceSnapshot`, `freshness.eventRange`, `freshness.eventExportDigest`, `freshness.routePolicy`, `freshness.routerIdentity`, and `freshness.builtAt` show exactly what promoted state is being served
 - `promotionFreshness` makes it explicit whether the active pack is behind a promotion-ready candidate and which freshness dimensions advanced
 - `learnedRouteFnFreshness` exposes the local `route_fn` identity, version, checksum, and training/build timestamps
 - `graphDynamicsFreshness` exposes the local graph checksum, build freshness, and structural/hebbian/decay settings being served
+
+## Rollback recipe
+
+Use the repo-local proof lane when you want one short executable confidence check for freshness, slot inspection, no-op handling, and rollback:
+
+```bash
+pnpm observability:report
+```
+
+Read the JSON in this order:
+
+- `activationSlots.staged` to compare `active` vs `candidate` before promotion
+- `freshnessTargets.promotedActive` to see the fresher pack that became active
+- `noOpDetection.duplicateExport.reason` and `noOpDetection.duplicateExport.notes` to prove duplicate refreshes are surfaced as an explicit no-op
+- `rollback.before` to verify rollback was allowed
+- `activationSlots.rolledBack` plus `freshnessTargets.rolledBackActive` / `freshnessTargets.rolledBackCandidate` to prove the prior active pack was restored and the just-promoted pack moved back to candidate
 
 ## Supervision freshness checks
 
