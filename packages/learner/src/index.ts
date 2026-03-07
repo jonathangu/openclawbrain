@@ -846,7 +846,7 @@ function staticLifecycleBlocks(
     },
     {
       id: `${packId}:structural-ops`,
-      source: "docs/typescript-first-convergence.md",
+      source: "docs/learning-first-convergence.md",
       text: `Structural graph learning stays first-class with Hebbian reinforcement, decay half-life 30 days, and ops split=${structuralOps.split}, merge=${structuralOps.merge}, prune=${structuralOps.prune}, connect=${structuralOps.connect}.`,
       keywords: ["structural", "hebbian", "decay", "split", "merge", "prune", "connect", "graph", "memory"],
       priority: 4,
@@ -966,7 +966,7 @@ function createVectorsPayload(graph: PackGraphPayloadV1): PackVectorsPayloadV1 {
 function createRouterArtifact(packId: string, builtAt: string): RouterArtifactV1 {
   return {
     routerIdentity: `${packId}:route_fn`,
-    strategy: "keyword_overlap_v1",
+    strategy: "learned_route_fn_v1",
     trainedAt: builtAt,
     requiresLearnedRouting: true
   };

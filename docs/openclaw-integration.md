@@ -1,24 +1,24 @@
 # OpenClaw Integration
 
-OpenClawBrain integrates behind an OpenClaw-owned runtime boundary.
+OpenClawBrain integrates with OpenClaw through a narrow promoted-pack boundary.
 
-This document defines that boundary and the current public proof surface. It does not mean this repo ships a live OpenClaw runtime, a production rollout lane, or the full comparative benchmark harness.
+## Integration contract
 
-## Boundary
+OpenClaw keeps the hot path: session flow, prompt assembly, response delivery, and fail-open serving.
 
-### OpenClaw owns
-- session and channel orchestration
-- fail-open behavior
-- prompt assembly and hot-path serving
-- deployment, routing, and rollback controls
+OpenClawBrain supplies the learning side of the boundary:
 
-### OpenClawBrain owns
-- contracts and typed event schemas
-- event normalization and export boundaries
-- workspace metadata and provenance
-- immutable pack format and activation helpers
-- deterministic compilation and learner behavior
-- optional OpenClaw-facing runtime bridge helpers via `@openclawbrain/openclaw`
+- normalized event contracts
+- deterministic event export and provenance
+- immutable pack materialization
+- activation staging/promotion
+- promoted-pack compilation with learned-route diagnostics
+
+## Top invariant
+
+The promoted pack is the only supported artifact OpenClaw should compile from.
+
+If that pack's manifest says learned routing is required, compilation must use the pack's learned `route_fn`, expose `routerIdentity`, and report `usedLearnedRouteFn=true`.
 
 ## Minimal package surface
 
@@ -29,12 +29,13 @@ pnpm add @openclawbrain/contracts @openclawbrain/events @openclawbrain/event-exp
 ```
 
 Add these when needed:
+
 - `@openclawbrain/pack-format`
 - `@openclawbrain/workspace-metadata`
 - `@openclawbrain/provenance`
-- `@openclawbrain/openclaw` for the runtime-owned bridge layer itself
+- `@openclawbrain/openclaw` for the typed OpenClaw bridge package itself
 
-This GitHub repo is public. The supported integration boundary is the published `@openclawbrain/*` packages plus versioned fixtures under `contracts/`; workspace scripts, smoke lanes, and repo layout are proof/release machinery, not a separate runtime API.
+The supported public integration boundary is the published `@openclawbrain/*` packages plus versioned fixtures under `contracts/`.
 
 ## Bring-up sequence
 
@@ -49,7 +50,6 @@ pnpm release:pack
 
 ## Proofs available in this repo today
 
-### Mechanism proof
 Use the built-in smoke lanes:
 
 ```bash
@@ -58,28 +58,28 @@ pnpm observability:smoke
 ```
 
 These prove:
-- pack materialization
-- activation staging/promotion
-- runtime compilation against promoted packs
-- operator-facing observability and freshness diagnostics
 
-They run against the public package surface in this repo and temporary activation state. They do not stand up a deployed OpenClaw service.
+- pack materialization from normalized inputs
+- activation staging and promotion
+- compilation against promoted packs
+- learned `route_fn` evidence and explicit fallback notes
+- operator-facing health and freshness diagnostics
 
-### Comparative benchmark proof
-The larger comparative benchmark/proof harness currently lives in the sibling public repo:
-- `https://github.com/jonathangu/brain-ground-zero`
+They run against the public package surface in this repo and temporary activation state.
 
-Use that repo for the published recorded-session and sparse-feedback benchmark families. It is separate from the supported package surface in this repo, and this repo does not currently ship those proof families directly.
+Broader comparative benchmark families live in the sibling public repo `brain-ground-zero`.
 
 ## Failure semantics
 
 Integration stays fail-open:
+
 - OpenClaw continues serving if learning or artifact refresh is delayed
-- OpenClaw can fall back to core runtime behavior if brain artifacts are stale or unavailable
-- learning, harvesting, and graph updates stay off the hot path
+- compile can fall back deterministically when token selection misses
+- learning, harvesting, and pack refresh stay off the hot path
 
 ## Related docs
+
 - [openclaw-attach-quickstart.md](openclaw-attach-quickstart.md)
 - [operator-observability.md](operator-observability.md)
 - [reproduce-eval.md](reproduce-eval.md)
-- [typescript-first-convergence.md](typescript-first-convergence.md)
+- [learning-first-convergence.md](learning-first-convergence.md)

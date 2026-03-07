@@ -1,8 +1,8 @@
 # `@openclawbrain/compiler`
 
-Deterministic pack-backed context selection and native structural compaction for OpenClaw.
+Deterministic promoted-pack compilation with learned `route_fn` enforcement and native structural compaction.
 
-Install this after `@openclawbrain/pack-format` when OpenClaw needs a narrow compile boundary that stays separate from runtime ownership.
+Install this after `@openclawbrain/pack-format` when you need the narrow compile boundary over promoted packs.
 
 ## Install
 
@@ -13,13 +13,13 @@ pnpm add @openclawbrain/compiler
 ## Includes
 
 - pack loading for compile-time use
-- activation-aware compilation from active or promoted runtime slots
-- compile-target expectation checks over pack id, workspace snapshot, event range, and event-export digest via `expectedTarget`
+- activation-aware compilation from active or promoted pack slots
+- compile-target expectation checks over pack id, workspace snapshot, event range, event-export digest, route policy, and router identity via `expectedTarget`
 - deterministic context ranking over graph blocks and vector keywords
-- larger-context budget enforcement via max-block and max-character limits
-- native structural compaction when selection pressure exceeds the runtime budget
 - learned-routing enforcement when a pack manifest requires it
-- operator-facing compile notes for activation slot, served target provenance, and priority fallback
+- larger-context budget enforcement via max-block and max-character limits
+- native structural compaction when selection pressure exceeds the compile budget
+- operator-facing compile notes for activation slot, served target provenance, learned-route evidence, and explicit fallback
 
 ## Example
 
@@ -35,20 +35,23 @@ const { target, response } = compileRuntimeFromActivation(
     userMessage: "compile manifest routing",
     maxContextBlocks: 3,
     maxContextChars: 1800,
-    modeRequested: "heuristic",
+    modeRequested: "learned",
     compactionMode: "native"
   },
   {
     expectedTarget: {
       workspaceSnapshot: "workspace-1@snapshot-42",
-      eventExportDigest: "sha256-abc123"
+      eventExportDigest: "sha256-abc123",
+      routePolicy: "requires_learned_routing",
+      routerIdentity: "pack-1:route_fn"
     }
   }
 );
 
 console.log(target.packId, response.packId);
-console.log(response.diagnostics.selectionDigest);
+console.log(response.diagnostics.usedLearnedRouteFn);
+console.log(response.diagnostics.routerIdentity);
 console.log(response.diagnostics.notes);
 ```
 
-`response.diagnostics.notes` explicitly tells operators which activation slot and target provenance were served, and whether selection used token matching or deterministic priority fallback.
+`response.diagnostics` explicitly tells operators which target was served, whether learned routing actually ran, and whether compilation had to fall back.

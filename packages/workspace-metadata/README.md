@@ -1,6 +1,6 @@
 # `@openclawbrain/workspace-metadata`
 
-Workspace snapshot metadata normalization for TypeScript-first OpenClawBrain packs.
+Workspace snapshot metadata normalization for promoted OpenClawBrain packs.
 
 ## Install
 

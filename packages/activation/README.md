@@ -1,6 +1,6 @@
 # `@openclawbrain/activation`
 
-Activation inspection, staging, promotion, and rollback helpers for TypeScript-first OpenClawBrain packs.
+Activation inspection, staging, promotion, rollback, and freshness helpers for promoted OpenClawBrain packs.
 
 ## Install
 
@@ -13,6 +13,7 @@ pnpm add @openclawbrain/activation
 - activation pointer loading and inspection
 - compile-target inspection over active, candidate, and previous slots
 - candidate staging, promotion, and rollback helpers with manifest-pinned safety checks
+- freshness inspection over pack id, snapshot, event range, route policy, and router identity
 - activation-readiness checks surfaced as a package-first API
 
 ## Example

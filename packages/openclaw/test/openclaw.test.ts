@@ -93,6 +93,7 @@ test("compileRuntimeContext consumes the active pack through activation pointers
   assert.match(result.compileResponse.diagnostics.notes.join("; "), new RegExp(`target_pack_id=${packId}`));
   assert.match(result.compileResponse.diagnostics.notes.join("; "), /target_route_policy=requires_learned_routing/);
   assert.match(result.compileResponse.diagnostics.notes.join("; "), new RegExp(`target_router_identity=${packId}:route_fn`));
+  assert.match(result.compileResponse.diagnostics.notes.join("; "), /brain_boundary=promoted_pack_compile_only/);
   assert.match(result.compileResponse.diagnostics.notes.join("; "), /OpenClaw remains the runtime owner/);
   assert.match(result.brainContext, /^\[BRAIN_CONTEXT v1\]/);
   assert.match(result.brainContext, /PACK_ID:/);

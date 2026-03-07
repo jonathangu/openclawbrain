@@ -2,22 +2,15 @@
 
 This is the operator-facing diagnostics contract for attached OpenClawBrain installs.
 
-In this public repo, the proof surface for that contract is `pnpm observability:smoke` plus the package APIs below. This document does not imply that a browser dashboard ships in this repo.
+## What operators must be able to prove
 
-The attach path must prove four things clearly and continuously:
+The public observability surface should answer five questions clearly and continuously:
 
-- **health**: the active and candidate slots are activation-ready or they explain exactly why not
-- **promotion safety**: promotion and rollback readiness are explicit before any pointer move happens
-- **freshness**: the pack currently being served is pinned to a concrete workspace snapshot, event range, export digest, and build timestamp
-- **fallback**: runtime compilation tells you when it matched request tokens and when it had to fall back deterministically
-
-The install posture behind these checks does not change:
-
-- do **not** wait for a full history replay before first value
-- materialize a fast-boot pack from current workspace state and recent normalized events
-- learn fresh live events first while older history catches up passively in the background
-- keep passive background learning on continuously after attach
-- fail open in OpenClaw when brain artifacts are unavailable or mid-refresh
+- **health**: are the active and candidate slots activation-ready?
+- **promotion safety**: can a pointer move happen safely right now?
+- **freshness**: what exact snapshot/export/build is active right now?
+- **route evidence**: did the served compile actually use the promoted pack's learned `route_fn` when required?
+- **fallback**: if selection fell back, is that fact explicit?
 
 ## Repo proof
 
@@ -33,10 +26,8 @@ That smoke exercises the public package surface only on temporary activation sta
 
 - `inspectActivationState()` reports healthy active and candidate slots
 - `promotion.allowed` becomes `true` before promotion and `rollback.allowed` becomes `true` after promotion
-- `describeActivationTarget()` surfaces the promoted pack id, workspace snapshot, workspace revision, event range, export digest, and build time
-- `compileRuntimeFromActivation()` emits compile diagnostics with a stable `selectionDigest`, explicit served-target notes, and an explicit `selection_mode=priority_fallback` note when token matching does not hit
-
-It does not stand up a live OpenClaw service or render a dashboard UI.
+- `describeActivationTarget()` surfaces the promoted pack id, workspace snapshot, workspace revision, event range, export digest, route policy, and build time
+- `compileRuntimeFromActivation()` emits stable compile diagnostics including route evidence and fallback notes
 
 ## Health and promotion checks
 
@@ -72,9 +63,9 @@ What this proves:
 
 - `activationReady` and `findings` show basic health or the exact blocker
 - `promotion.allowed` and `rollback.allowed` show whether pointer movement is currently safe
-- `freshness.workspaceSnapshot`, `freshness.eventRange`, `freshness.eventExportDigest`, and `freshness.builtAt` show exactly what runtime state is being served
+- `freshness.workspaceSnapshot`, `freshness.eventRange`, `freshness.eventExportDigest`, `freshness.routePolicy`, `freshness.routerIdentity`, and `freshness.builtAt` show exactly what promoted state is being served
 
-## Runtime fallback checks
+## Learned-route checks
 
 Use `@openclawbrain/compiler` to prove what happened at compile time:
 
@@ -87,16 +78,18 @@ const compile = compileRuntimeFromActivation(
   {
     contract: CONTRACT_IDS.runtimeCompile,
     agentId: "agent-1",
-    userMessage: "zebra nebula quartz",
+    userMessage: "route feedback through the learned pack path",
     maxContextBlocks: 2,
     maxContextChars: 320,
-    modeRequested: "heuristic",
+    modeRequested: "learned",
     compactionMode: "native"
   },
   {
     expectedTarget: {
       workspaceSnapshot: "workspace-1@snapshot-42",
-      eventExportDigest: "sha256-abc123"
+      eventExportDigest: "sha256-abc123",
+      routePolicy: "requires_learned_routing",
+      routerIdentity: "pack-1:route_fn"
     }
   }
 );
@@ -105,6 +98,8 @@ console.log({
   slot: compile.slot,
   packId: compile.target.packId,
   workspaceSnapshot: compile.target.workspaceSnapshot,
+  usedLearnedRouteFn: compile.response.diagnostics.usedLearnedRouteFn,
+  routerIdentity: compile.response.diagnostics.routerIdentity,
   selectionDigest: compile.response.diagnostics.selectionDigest,
   notes: compile.response.diagnostics.notes
 });
@@ -112,31 +107,32 @@ console.log({
 
 What this proves:
 
-- `expectedTarget` rejects stale pack/view mismatches before serving runtime context
+- `expectedTarget` rejects stale pack/view mismatches before serving context
+- `modeRequested`, `modeEffective`, `usedLearnedRouteFn`, and `routerIdentity` prove whether learned routing was actually in effect
 - `selectionDigest` gives a stable fingerprint for the selected context set
 - `notes` tells you both which activation target was served and whether compilation used token matching or deterministic priority fallback
-- `modeRequested`, `modeEffective`, and `usedLearnedRouteFn` tell you whether learned routing was actually in effect
 
 The most important notes to look for are:
 
 - `activation_slot=...`
 - `target_pack_id=...`
 - `target_route_policy=...`
+- `target_router_identity=...` when learned routing is active
 - `target_workspace_snapshot=...`
 - `target_workspace_revision=...` when the pack is pinned to a revision
 - `target_event_range=START-END#COUNT`
 - `target_event_export_digest=...`
 - `target_built_at=...`
-- `target_router_identity=...` when learned routing is active
-- `selection_mode=priority_fallback` when no keyword hit occurs
+- `selection_mode=priority_fallback` when no token hit occurs
 
-## What operators should expect
+## What healthy steady state looks like
 
 In an attached deployment, healthy steady state looks like this:
 
-- first value appears from the fast-boot pack before any full history replay finishes
+- first value appears from the fast-boot pack before any full replay finishes
 - live events keep landing while passive replay keeps improving candidate packs in the background
 - freshness fields move forward with newer snapshots and export digests as promotions happen
-- fallback diagnostics stay explicit instead of silently hiding that runtime served a priority-ranked context set
+- learned-route evidence stays explicit whenever the active pack requires learned routing
+- fallback diagnostics stay explicit instead of silently hiding that compile served a priority-ranked context set
 
-If any of those conditions are not true, the activation inspection and compile diagnostics above are the first place to look.
+If any of those conditions are not true, activation inspection and compile diagnostics are the first place to look.

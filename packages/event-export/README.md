@@ -1,6 +1,6 @@
 # `@openclawbrain/event-export`
 
-Deterministic normalized event-export builders for the always-on OpenClawBrain learning lane.
+Deterministic normalized event-export builders for live-first OpenClawBrain learning.
 
 ## Install
 

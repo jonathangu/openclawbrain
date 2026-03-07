@@ -223,7 +223,7 @@ function main() {
     assert.equal(compile.response.diagnostics.modeRequested, "heuristic");
     assert.equal(compile.response.diagnostics.modeEffective, "learned");
     assert.equal(compile.response.diagnostics.usedLearnedRouteFn, true);
-    assert.equal(compile.response.diagnostics.selectionStrategy, "pack_keyword_overlap_v1");
+    assert.equal(compile.response.diagnostics.selectionStrategy, "pack_route_fn_selection_v1");
     assert.equal(typeof compile.response.diagnostics.selectionDigest, "string");
     assert.equal(compile.response.diagnostics.selectionDigest.length > 0, true);
     assert.match(compile.response.diagnostics.notes.join(";"), /activation_slot=active/);

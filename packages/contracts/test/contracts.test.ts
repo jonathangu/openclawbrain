@@ -54,11 +54,11 @@ test("canonical fixture sources point at current repo docs", () => {
   const sources = FIXTURE_PACK_GRAPH.blocks.map((block) => block.source);
   const attachQuickstartDoc = fileURLToPath(new URL("../../../../docs/openclaw-attach-quickstart.md", import.meta.url));
   const contractsDoc = fileURLToPath(new URL("../../../../docs/contracts-v1.md", import.meta.url));
-  const convergenceDoc = fileURLToPath(new URL("../../../../docs/typescript-first-convergence.md", import.meta.url));
+  const convergenceDoc = fileURLToPath(new URL("../../../../docs/learning-first-convergence.md", import.meta.url));
 
   assert.match(sources.join("\n"), /docs\/openclaw-attach-quickstart\.md/);
   assert.match(sources.join("\n"), /docs\/contracts-v1\.md/);
-  assert.match(sources.join("\n"), /docs\/typescript-first-convergence\.md/);
+  assert.match(sources.join("\n"), /docs\/learning-first-convergence\.md/);
   assert.equal(existsSync(attachQuickstartDoc), true);
   assert.equal(existsSync(contractsDoc), true);
   assert.equal(existsSync(convergenceDoc), true);
@@ -108,7 +108,7 @@ test("learned routing responses must explicitly mark route_fn usage", () => {
       selectedCount: 0,
       selectedCharCount: 0,
       selectedTokenCount: 0,
-      selectionStrategy: "pack_keyword_overlap_v1",
+      selectionStrategy: "pack_route_fn_selection_v1",
       selectionDigest: "sha256-empty",
       compactionMode: "native",
       compactionApplied: false,

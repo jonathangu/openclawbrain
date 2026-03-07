@@ -104,7 +104,7 @@ test("learner emits deterministic immutable pack manifests for always-on learnin
   assert.match(descriptor.graph.blocks.map((block) => block.text).join("\n"), /Fast boot defaults stay live at startup/);
   assert.match(descriptor.graph.blocks.map((block) => block.text).join("\n"), /Human label harvest is first-class/);
   assert.equal(descriptor.graph.blocks.some((block) => block.source === "docs/openclaw-attach-quickstart.md"), true);
-  assert.equal(descriptor.graph.blocks.some((block) => block.source === "docs/typescript-first-convergence.md"), true);
+  assert.equal(descriptor.graph.blocks.some((block) => block.source === "docs/learning-first-convergence.md"), true);
   assert.equal(
     descriptor.graph.blocks.some((block) => block.source.includes("openclawbrain-openclaw-rearchitecture")),
     false

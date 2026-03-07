@@ -23,7 +23,7 @@
     "selectedCount": 1,
     "selectedCharCount": 140,
     "selectedTokenCount": 16,
-    "selectionStrategy": "pack_keyword_overlap_v1",
+    "selectionStrategy": "pack_route_fn_selection_v1",
     "selectionDigest": "sha256-4b5959eb5be8499ac8d108bada06539a3aa79728ddb77761ac8b93a69b62211b",
     "compactionMode": "native",
     "compactionApplied": false,
@@ -31,9 +31,9 @@
       "selected_context_ids=ctx-context-compact",
       "selection_mode=token_match(feedback,scanner,manifest,structural,compaction)",
       "selection_tiers=token_match_only",
-      "selection_strategy=pack_keyword_overlap_v1",
-      "selection_overlap_pruned=3",
-      "router_strategy=keyword_overlap_v1"
+      "selection_strategy=pack_route_fn_selection_v1",
+      "selection_compaction_deduped=3",
+      "router_strategy=learned_route_fn_v1"
     ]
   }
 }

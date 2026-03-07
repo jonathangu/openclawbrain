@@ -1,6 +1,6 @@
 # `@openclawbrain/events`
 
-Normalized interaction and feedback event helpers for the TypeScript-first OpenClawBrain workspace.
+Normalized interaction and feedback event helpers for live-first OpenClawBrain learning.
 
 ## Install
 

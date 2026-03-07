@@ -2,51 +2,28 @@
 
 This is the operator-facing setup contract for attaching OpenClawBrain to OpenClaw.
 
-In this public repo, that contract is expressed as TypeScript packages plus smoke-proofed mechanics. This repo does not itself ship the full OpenClaw host/runtime or an online rollout lane.
+## Attach posture
 
-The goal is not “perfect historical completeness before first use.”
-The goal is **fast time-to-first-value**:
+The goal is fast time-to-first-value:
 
-- attach the brain quickly
-- turn it on quickly
-- make deterministic pack-backed context available immediately
-- let deeper learning continue in the background without blocking runtime
+- attach quickly
+- materialize a fast-boot pack quickly
+- promote quickly
+- learn fresh live events immediately
+- replay older history passively in the background
+- keep candidate-pack refresh always on
 
-The first attach must follow six rules:
+Do not block initial value on a full historical replay.
 
-- **no full history replay gate before first value**
-- **live events are learned first once attach is on**
-- **passive background learning stays on continuously**
-- **diagnostics prove health, promotions, freshness, and fallback**
+## Top invariant
 
-## What the attach path must guarantee
+The attach path should serve only from the promoted pack.
 
-1. **Fast startup wins over full replay**
-   - A new operator should not need to wait for a full history scan before the brain becomes useful.
-   - Initial activation should be able to start from current workspace state, recent normalized events, and whatever prior artifacts already exist.
-
-2. **Background history learning is non-blocking**
-   - Historical replay/backfill should start after attach and continue passively.
-   - Old history should improve the brain over time, but it must not delay initial activation.
-
-3. **Ongoing event harvesting is always on**
-   - New runtime interactions, human feedback, self-feedback, and harvested/derived supervision should keep flowing into normalized event exports continuously.
-   - The brain should prioritize fresh live events while historical backfill catches up behind the scenes.
-
-4. **OpenClaw remains the runtime owner**
-   - OpenClaw owns sessions, channels, diagnostics, fail-open behavior, and prompt assembly.
-   - OpenClawBrain stays on the memory/compiler/learning side of the boundary.
-
-5. **Fail open, never block messaging**
-   - If the brain is cold, missing, or mid-refresh, OpenClaw must still answer with its standard runtime path.
-
-6. **Diagnostics are part of the product contract**
-   - Operators must be able to prove activation health, promotion safety, freshness, and fallback from public APIs.
-   - The repo-level proof lane for that contract is `pnpm observability:smoke`.
+If the promoted manifest requires learned routing, the served compile must prove that the learned `route_fn` ran by exposing `usedLearnedRouteFn=true` plus the active `routerIdentity`.
 
 ## Install and prove
 
-This public repo is the current TypeScript package surface and proof harness for the attach/install boundary that an OpenClaw-owned integration layer consumes.
+This public repo is the package surface and proof harness for that attach boundary.
 
 ```bash
 corepack enable
@@ -62,68 +39,49 @@ For a package-first attach path inside OpenClaw, the narrow install lane is:
 pnpm add @openclawbrain/contracts @openclawbrain/events @openclawbrain/event-export @openclawbrain/learner @openclawbrain/activation @openclawbrain/compiler
 ```
 
-Add `@openclawbrain/openclaw` when you are wiring the OpenClaw-owned runtime integration layer itself; the narrow attach lane above remains the minimal install surface.
-
-That package lane is the supported public attach surface. The workspace root, smoke lanes, and docs in this repo exist to build, prove, and release that lane; they are not a separate runtime product.
+Add `@openclawbrain/openclaw` when you want the typed bridge for promoted-pack compile consumption and normalized event emission.
 
 That install set maps to the attach flow like this:
 
-- `@openclawbrain/events` and `@openclawbrain/event-export` normalize and bridge the live/backfill learning surface
-- `@openclawbrain/learner` materializes fast-boot and fresher candidate packs
-- `@openclawbrain/activation` stages, promotes, and inspects runtime slots
-- `@openclawbrain/compiler` compiles from the promoted pack and emits operator-visible diagnostics
+- `@openclawbrain/events` and `@openclawbrain/event-export` normalize live and backfill learning inputs
+- `@openclawbrain/learner` materializes fast-boot and fresher candidate packs, including learned `route_fn` artifacts when needed
+- `@openclawbrain/activation` stages, promotes, and inspects pack slots
+- `@openclawbrain/compiler` compiles from the promoted pack and emits route/fallback diagnostics
 
-`pnpm lifecycle:smoke` proves that the attach path can materialize, stage, promote, and compile from a promoted pack immediately.
+## Operator flow
 
-`pnpm observability:smoke` proves that the operator diagnostics surface can answer four questions without private runtime plumbing:
+For an attached deployment, the intended flow is:
 
-- is the active slot healthy now?
-- can the candidate be promoted safely now?
-- what exact snapshot/export/build is runtime serving now?
-- did runtime serve token-matched context or deterministic fallback now?
+1. Install the OpenClawBrain packages or the OpenClaw bridge.
+2. Point the learner/event-export surface at current workspace state plus recent events.
+3. Materialize a fast-boot pack immediately.
+4. Promote that pack so compile can start right away.
+5. Keep live event ingestion running continuously.
+6. Keep passive backfill and candidate-pack refresh running continuously.
+7. Promote fresher activation-ready packs as they become available.
 
-## Operator expectation
+## Healthy steady state
 
-For an attached deployment, the intended operator flow is:
+Once attached, healthy steady state looks like this:
 
-1. Install the OpenClawBrain packages or attach the OpenClaw integration.
-2. Point OpenClawBrain at the existing OpenClaw event/workspace surface.
-3. Materialize a fast-boot pack immediately from current state.
-4. Promote that pack so runtime compilation can start right away.
-5. Keep passive background learning running on:
-   - historical replay/backfill
-   - ongoing runtime events
-   - human corrections/teachings
-   - self-detected failures/successes
-   - harvested/derived supervision
-
-## Intended behavior after attach
-
-Once attached, the default lifecycle should be:
-
-1. **Attach** OpenClawBrain to OpenClaw.
-2. **Bootstrap fast** from current state and recent events.
-3. **Serve immediately** with deterministic pack-backed compilation.
-4. **Replay older history in the background** without blocking runtime.
-5. **Continuously harvest ongoing events** from the live OpenClaw stream.
-6. **Continuously materialize better candidate packs** from the growing event/export surface.
-7. **Promote safely** when activation-ready artifacts are available.
-8. **Inspect continuously** so health, freshness, and fallback stay visible to operators.
+1. First value appears from the fast-boot pack before a full replay finishes.
+2. Fresh live events are learned first while older history catches up in the background.
+3. Promotions move freshness forward through newer snapshots and export digests.
+4. Learned-route diagnostics stay visible whenever the promoted pack requires learned routing.
+5. Fallback stays explicit instead of silently hiding selection behavior.
 
 ## Non-goals for first setup
 
-The first setup should **not** require:
+The first setup should not require:
 
 - a full archive replay before first use
-- a multi-hour history import as a hard gate
-- separate competing runtime services on the production host
-- manual operator babysitting just to keep passive learning alive
+- a multi-hour import as a hard gate
+- separate competing brain services on the production host
+- manual babysitting just to keep passive learning alive
 
-## Current repo stance
+## Proof boundary
 
-Today this repository exposes the documented package-first attach surface used here: contracts, normalized events, event export, learner, activation, compiler, and the optional `@openclawbrain/openclaw` bridge package.
-
-The concrete proof path in the repo today is the lifecycle plus observability smoke:
+The concrete proof path in this repo is:
 
 ```bash
 pnpm check
@@ -131,31 +89,7 @@ pnpm lifecycle:smoke
 pnpm observability:smoke
 ```
 
-Those proofs cover:
-
-- normalized events
-- deterministic event export
-- learner pack materialization
-- activation staging/promotion
-- runtime compilation from the promoted pack
-- activation health and promotion readiness inspection
-- freshness inspection over workspace snapshot, event range, export digest, and build time
-- deterministic fallback diagnostics when token matching does not hit
-
-They do not by themselves prove a live OpenClaw rollout, a browser dashboard, or the larger comparative benchmark families.
-
-Any future tighter single-path OpenClaw attach/install UX should preserve the same invariants while keeping the supported package surface narrow.
+Those proofs cover normalized events, deterministic export, learner pack materialization, activation promotion, promoted-pack compilation, and operator diagnostics over health, freshness, learned-route evidence, and fallback.
 
 The detailed diagnostics contract lives in [`docs/operator-observability.md`](docs/operator-observability.md).
-The repo-wide convergence statement lives in [`docs/typescript-first-convergence.md`](docs/typescript-first-convergence.md).
-
-## Required doc promise
-
-Public docs and install guidance should keep repeating these points clearly:
-
-- **do not wait for a full history scan to get started**
-- **turn the brain on quickly and let it learn in the background**
-- **passive history learning should stay on continuously**
-- **real-time event scanning and harvesting should stay on continuously**
-- **fresh live events should be learned first while old history catches up**
-- **diagnostics should prove health, promotions, freshness, and fallback**
+The repo-wide convergence statement lives in [`docs/learning-first-convergence.md`](docs/learning-first-convergence.md).

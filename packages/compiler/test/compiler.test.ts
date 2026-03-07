@@ -389,7 +389,7 @@ test("learned-required packs force learned mode and select scanner context", (t:
   assert.equal(response.diagnostics.modeEffective, "learned");
   assert.equal(response.diagnostics.usedLearnedRouteFn, true);
   assert.equal(response.diagnostics.routerIdentity, FIXTURE_ROUTER_ARTIFACT.routerIdentity);
-  assert.equal(response.diagnostics.selectionStrategy, "pack_keyword_overlap_v1");
+  assert.equal(response.diagnostics.selectionStrategy, "pack_route_fn_selection_v1");
   assert.match(response.diagnostics.notes.join(";"), /learned_required_enforced=requested_heuristic->learned/);
 });
 
@@ -492,7 +492,7 @@ test("compileRuntime prunes overlapping compacted and raw context blocks", (t: T
   });
 
   assert.deepEqual(response.selectedContext.map((block) => block.id), ["ctx-context-compact"]);
-  assert.match(response.diagnostics.notes.join(";"), /selection_overlap_pruned=3/);
+  assert.match(response.diagnostics.notes.join(";"), /selection_compaction_deduped=3/);
 });
 
 test("compileRuntime rejects stale activePackId expectations", (t: TestContext) => {

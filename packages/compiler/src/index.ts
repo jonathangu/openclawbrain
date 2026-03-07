@@ -538,12 +538,12 @@ export function compileRuntime(packOrRoot: LoadedPack | string, request: Runtime
         ? "selection_tiers=token_match_only"
         : "selection_tiers=priority_fallback_only"
   );
-  notes.push("selection_strategy=pack_keyword_overlap_v1");
+  notes.push("selection_strategy=pack_route_fn_selection_v1");
   if (modeEffective !== request.modeRequested) {
     notes.push(`learned_required_enforced=requested_${request.modeRequested}->${modeEffective}`);
   }
   if (selection.overlapPrunedCount > 0) {
-    notes.push(`selection_overlap_pruned=${selection.overlapPrunedCount}`);
+    notes.push(`selection_compaction_deduped=${selection.overlapPrunedCount}`);
   }
   notes.push(`pack_graph_blocks=${pack.graph.blocks.length}`);
   if (request.maxContextChars !== undefined) {
@@ -555,7 +555,7 @@ export function compileRuntime(packOrRoot: LoadedPack | string, request: Runtime
   if (usedLearnedRouteFn && pack.router !== null) {
     notes.push(`router_strategy=${pack.router.strategy}`);
   }
-  notes.push("OpenClaw remains the runtime owner.");
+  notes.push("brain_boundary=promoted_pack_compile_only");
 
   const response: RuntimeCompileResponseV1 = {
     contract: CONTRACT_IDS.runtimeCompile,
@@ -570,7 +570,7 @@ export function compileRuntime(packOrRoot: LoadedPack | string, request: Runtime
       selectedCount: selectedContext.length,
       selectedCharCount: totalCharCount(selectedContext),
       selectedTokenCount: totalTokenCount(selectedContext),
-      selectionStrategy: "pack_keyword_overlap_v1",
+      selectionStrategy: "pack_route_fn_selection_v1",
       selectionDigest: checksumJsonPayload({
         packId: pack.manifest.packId,
         selectedContext: selectedContext.map((block) => ({

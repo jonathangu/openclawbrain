@@ -2,9 +2,7 @@
 
 This document is the reproducibility entrypoint for the current public OpenClawBrain surface.
 
-It splits the proof story on purpose: this repo reproduces the TypeScript package and mechanism proofs implemented here, while the larger comparative benchmark harness lives in a separate public repo.
-
-## 1) Bootstrap the TypeScript workspace
+## 1) Bootstrap the workspace
 
 ```bash
 cd /path/to/openclawbrain
@@ -16,7 +14,7 @@ pnpm release:pack
 
 ## 2) Reproduce the mechanism proofs in this repo
 
-These are the proofs that are implemented directly in the TypeScript workspace today.
+These are the proofs implemented directly in the public package workspace today.
 
 ### Lifecycle proof
 
@@ -24,12 +22,13 @@ These are the proofs that are implemented directly in the TypeScript workspace t
 pnpm lifecycle:smoke
 ```
 
-This proves the package-first lifecycle across:
+This proves the learning lifecycle across:
+
 - normalized events
 - event export
 - learner pack materialization
-- activation staging/promotion
-- compiler runtime compilation
+- activation staging and promotion
+- promoted-pack compilation
 
 ### Observability proof
 
@@ -38,62 +37,49 @@ pnpm observability:smoke
 ```
 
 This proves the operator-facing diagnostics surface for:
+
 - activation health
 - promotion readiness
 - freshness inspection
-- deterministic priority fallback
+- learned `route_fn` evidence
+- deterministic fallback diagnostics
 
-## 3) Reproduce comparative benchmark proof families in the separate proof repo
+## 3) Reproduce consumer proof from the published packages
 
-The larger benchmark harness currently lives in the sibling public proof repo:
-- `https://github.com/jonathangu/brain-ground-zero`
-
-That repo is the source of truth for the currently published benchmark families such as recorded-session head-to-head and sparse-feedback proof bundles. It is separate from this repo's supported TypeScript package surface, and this repo does not currently vendor or mirror that harness.
-
-### Quickstart for the proof harness repo
+Use the checked-in outside-consumer smoke:
 
 ```bash
-git clone https://github.com/jonathangu/brain-ground-zero.git
-cd brain-ground-zero
-python -m venv .venv
-source .venv/bin/activate
-pip install -e .
-python -m brain_ground_zero.cli smoke
-python scripts/validate_configs.py
-```
-
-### Example benchmark runs in the proof harness repo
-
-```bash
-python -m brain_ground_zero.cli run \
-  --family configs/families/relational_drift.yaml \
-  --baselines configs/baselines/all.yaml
-
-python -m brain_ground_zero.cli multiseed \
-  --family configs/families/relational_drift.yaml \
-  --baselines configs/baselines/all.yaml \
-  --seeds 10,20,30,40,50,60,70,80,90,100
+tmpdir="$(mktemp -d)"
+cp examples/npm-consumer/package.json "$tmpdir/package.json"
+cp examples/npm-consumer/smoke.mjs "$tmpdir/smoke.mjs"
+cd "$tmpdir"
+npm install
+npm run smoke
 ```
 
 ## Claim boundary
 
 ### Proven directly in this repo today
-- package build/typecheck
+
+- package build and typecheck
 - mechanism proof via lifecycle smoke
 - operator observability proof via observability smoke
 - publishable package surface and registry install path
 
-### Proven in the separate public proof repo today
-- comparative benchmark bundles
-- recorded-session head-to-head proof family
-- sparse-feedback proof family
+### Maintained separately
+
+Broader comparative benchmark families live in the separate public proof repo `brain-ground-zero`.
+
+Use that repo's own instructions for benchmark reproduction.
 
 ### Not claimed here
+
 - full comparative benchmark coverage inside this repo
 - live production answer-quality proof on served OpenClaw traffic
 - shadow-mode or online rollout proof
 
 ## Related docs
+
 - [openclaw-integration.md](openclaw-integration.md)
 - [openclaw-attach-quickstart.md](openclaw-attach-quickstart.md)
 - [operator-observability.md](operator-observability.md)

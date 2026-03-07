@@ -97,7 +97,7 @@ export interface RuntimeCompileDiagnosticsV1 {
   selectedCount: number;
   selectedCharCount: number;
   selectedTokenCount: number;
-  selectionStrategy: "pack_keyword_overlap_v1";
+  selectionStrategy: "pack_route_fn_selection_v1";
   selectionDigest: string;
   compactionMode: ContextCompactionMode;
   compactionApplied: boolean;
@@ -306,7 +306,7 @@ export interface PackGraphPayloadV1 {
 
 export interface RouterArtifactV1 {
   routerIdentity: string;
-  strategy: "keyword_overlap_v1";
+  strategy: "learned_route_fn_v1";
   trainedAt: string;
   requiresLearnedRouting: boolean;
 }
@@ -728,7 +728,7 @@ export function validateRuntimeCompileResponse(value: RuntimeCompileResponseV1):
   pushWhenMissing(errors, value.diagnostics.candidateCount >= value.diagnostics.selectedCount, "candidateCount must be >= selectedCount");
   pushWhenMissing(errors, value.diagnostics.selectedCharCount >= 0, "selectedCharCount must be non-negative");
   pushWhenMissing(errors, value.diagnostics.selectedTokenCount >= 0, "selectedTokenCount must be non-negative");
-  pushWhenMissing(errors, value.diagnostics.selectionStrategy === "pack_keyword_overlap_v1", "selectionStrategy must be pack_keyword_overlap_v1");
+  pushWhenMissing(errors, value.diagnostics.selectionStrategy === "pack_route_fn_selection_v1", "selectionStrategy must be pack_route_fn_selection_v1");
   pushWhenMissing(errors, value.diagnostics.selectionDigest.length > 0, "selectionDigest is required");
   pushWhenMissing(
     errors,
@@ -1177,7 +1177,7 @@ export function validatePackVectorsPayload(value: PackVectorsPayloadV1, graph?: 
 export function validateRouterArtifact(value: RouterArtifactV1, manifest?: ArtifactManifestV1): string[] {
   const errors: string[] = [];
   pushWhenMissing(errors, value.routerIdentity.length > 0, "routerIdentity is required");
-  pushWhenMissing(errors, value.strategy === "keyword_overlap_v1", "router strategy must be keyword_overlap_v1");
+  pushWhenMissing(errors, value.strategy === "learned_route_fn_v1", "router strategy must be learned_route_fn_v1");
   pushWhenMissing(errors, isIsoDate(value.trainedAt), "router trainedAt must be an ISO timestamp");
 
   if (manifest !== undefined) {
@@ -1227,7 +1227,7 @@ export const FIXTURE_PACK_GRAPH: PackGraphPayloadV1 = {
     },
     {
       id: "ctx-structural-ops",
-      source: "docs/typescript-first-convergence.md",
+      source: "docs/learning-first-convergence.md",
       text: "Structural graph operations like split, merge, prune, and connect stay first-class beside Hebbian reinforcement and decay.",
       keywords: ["structural", "split", "merge", "prune", "connect", "graph", "memory", "hebbian", "decay"],
       priority: 3,
@@ -1326,7 +1326,7 @@ export const FIXTURE_PACK_VECTORS: PackVectorsPayloadV1 = {
 
 export const FIXTURE_ROUTER_ARTIFACT: RouterArtifactV1 = {
   routerIdentity: "pack-fixture:route_fn",
-  strategy: "keyword_overlap_v1",
+  strategy: "learned_route_fn_v1",
   trainedAt: "2026-03-06T00:00:00.000Z",
   requiresLearnedRouting: true
 };
@@ -1411,7 +1411,7 @@ export const FIXTURE_WORKSPACE_METADATA: WorkspaceMetadataV1 = {
   revision: "fixture-rev-20260306",
   dirty: false,
   manifestDigest: "sha256-workspace-fixture",
-  labels: ["typescript-first", "public-surface"],
+  labels: ["learning-first", "public-surface"],
   files: ["README.md", "packages/contracts/src/index.ts", "packages/learner/src/index.ts"]
 };
 
@@ -1561,7 +1561,7 @@ export const FIXTURE_RUNTIME_COMPILE_RESPONSE: RuntimeCompileResponseV1 = {
     selectedCount: FIXTURE_RUNTIME_COMPILE_SELECTED_CONTEXT.length,
     selectedCharCount: FIXTURE_RUNTIME_COMPILE_SELECTED_CONTEXT.reduce((sum, block) => sum + block.text.length, 0),
     selectedTokenCount: FIXTURE_RUNTIME_COMPILE_SELECTED_CONTEXT.reduce((sum, block) => sum + (block.tokenCount ?? 0), 0),
-    selectionStrategy: "pack_keyword_overlap_v1",
+    selectionStrategy: "pack_route_fn_selection_v1",
     selectionDigest: checksumJsonPayload({
       packId: FIXTURE_ARTIFACT_MANIFEST.packId,
       selectedContext: FIXTURE_RUNTIME_COMPILE_SELECTED_CONTEXT
@@ -1572,9 +1572,9 @@ export const FIXTURE_RUNTIME_COMPILE_RESPONSE: RuntimeCompileResponseV1 = {
       "selected_context_ids=ctx-context-compact",
       "selection_mode=token_match(feedback,scanner,manifest,structural,compaction)",
       "selection_tiers=token_match_only",
-      "selection_strategy=pack_keyword_overlap_v1",
-      "selection_overlap_pruned=3",
-      "router_strategy=keyword_overlap_v1"
+      "selection_strategy=pack_route_fn_selection_v1",
+      "selection_compaction_deduped=3",
+      "router_strategy=learned_route_fn_v1"
     ]
   }
 };

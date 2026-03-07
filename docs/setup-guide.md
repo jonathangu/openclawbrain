@@ -1,11 +1,12 @@
 # Setup Guide
 
-For the current public OpenClawBrain package surface, start here:
+For the current public OpenClawBrain surface, start here:
 
 1. [openclaw-attach-quickstart.md](openclaw-attach-quickstart.md)
-2. [openclaw-integration.md](openclaw-integration.md)
-3. [operator-observability.md](operator-observability.md)
+2. [operator-observability.md](operator-observability.md)
+3. [openclaw-integration.md](openclaw-integration.md)
 4. [reproduce-eval.md](reproduce-eval.md)
+5. [contracts-v1.md](contracts-v1.md)
 
 Minimal bootstrap:
 

@@ -1,11 +1,12 @@
 # @openclawbrain/openclaw
 
-OpenClaw-facing runtime integration helpers for the TypeScript-first OpenClawBrain stack.
+OpenClaw integration helpers for promoted-pack compile consumption and normalized event emission.
 
-Use this package when OpenClaw needs a narrow, typed bridge over promoted packs without giving up runtime ownership:
+Use this package when OpenClaw needs a narrow, typed bridge over promoted packs:
 
 - resolve the active promoted pack from activation pointers
 - consume `runtime_compile.v1` through an activation-aware serve-path helper
+- surface learned-route diagnostics alongside compiled context
 - emit normalized interaction and feedback events for learner handoff
 - optionally write learner-facing event-export bundles on disk
 
@@ -17,6 +18,11 @@ const compileResult = compileRuntimeContext({
   message: "feedback scanner route gating",
   runtimeHints: ["feedback scanner"]
 });
+
+if (compileResult.ok) {
+  console.log(compileResult.compileResponse.diagnostics.usedLearnedRouteFn);
+  console.log(compileResult.compileResponse.diagnostics.routerIdentity);
+}
 
 const turnResult = runRuntimeTurn(
   {
