@@ -1,5 +1,14 @@
 # Ops Recipes
 
+## Check shipping surface truth
+
+```bash
+pnpm release:status
+```
+
+Use this first.
+If it reports `shipSurface: "repo-tip"`, treat the repo commit plus optional `.release/` tarballs as the only truthful distribution surface for the wave.
+
 ## Rebuild and verify
 
 ```bash
@@ -25,6 +34,8 @@ pnpm observability:smoke
 ```bash
 pnpm release:publish:dry-run
 ```
+
+Run this only after `pnpm release:status` shows a tagged release candidate and you are intentionally preparing package publication.
 
 ## Related docs
 - [openclaw-integration.md](openclaw-integration.md)

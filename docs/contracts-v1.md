@@ -13,9 +13,11 @@ Primary contract roots:
 
 For the current public landing:
 
-- the published packages plus the JSON schemas and golden fixtures under `contracts/` are the supported public contract surface
+- the versioned package set plus the JSON schemas and golden fixtures under `contracts/` are the supported public contract surface
 - the rest of the workspace is public documentation and proof machinery, not a second contract API
 - compiler, pack-format, activation, learner, and OpenClaw bridge helpers consume these shapes directly
+
+For the current wave, local truth comes from the repo tip and `.release/` tarballs until a matching release tag is cut and the publish lane is verified.
 
 ## Runtime compile v1
 
