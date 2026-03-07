@@ -8,6 +8,7 @@ import {
   buildNormalizedEventExport,
   canonicalJson,
   CONTRACT_IDS,
+  computeRouterFreshnessChecksum,
   createFeedbackEvent,
   createInteractionEvent,
   FIXTURE_ARTIFACT_MANIFEST,
@@ -57,12 +58,6 @@ function materializeTestPack(
       blockId: graph.blocks[index]?.id ?? entry.blockId
     }))
   };
-  const router = options.learnedRouting
-    ? {
-        ...FIXTURE_ROUTER_ARTIFACT,
-        routerIdentity: `${options.packId}:route_fn`
-      }
-    : null;
   const eventExport = buildNormalizedEventExport({
     interactionEvents: [
       createInteractionEvent({
@@ -98,6 +93,25 @@ function materializeTestPack(
       })
     ]
   });
+  const router = options.learnedRouting
+    ? {
+        ...FIXTURE_ROUTER_ARTIFACT,
+        routerIdentity: `${options.packId}:route_fn`,
+        trainedAt: options.builtAt ?? `2026-03-06T00:${String(options.eventStart).padStart(2, "0")}:30.000Z`,
+        training: {
+          ...FIXTURE_ROUTER_ARTIFACT.training,
+          eventExportDigest: eventExport.provenance.exportDigest,
+          freshnessChecksum: computeRouterFreshnessChecksum({
+            trainedAt: options.builtAt ?? `2026-03-06T00:${String(options.eventStart).padStart(2, "0")}:30.000Z`,
+            status: FIXTURE_ROUTER_ARTIFACT.training.status,
+            eventExportDigest: eventExport.provenance.exportDigest,
+            routeTraceCount: FIXTURE_ROUTER_ARTIFACT.training.routeTraceCount,
+            supervisionCount: FIXTURE_ROUTER_ARTIFACT.training.supervisionCount,
+            updateCount: FIXTURE_ROUTER_ARTIFACT.training.updateCount
+          })
+        }
+      }
+    : null;
 
   const manifest = {
     ...FIXTURE_ARTIFACT_MANIFEST,
@@ -204,6 +218,35 @@ test("pack load rejects manifest asset paths that escape the pack root", (t) => 
   });
 
   assert.throws(() => loadPack(rootDir), /graphPath must not escape the pack root/);
+});
+
+test("pack load rejects stale learned router freshness metadata", (t) => {
+  const rootDir = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-pack-router-freshness-"));
+  t.after(() => rmSync(rootDir, { recursive: true, force: true }));
+
+  const descriptor = materializeTestPack(rootDir, {
+    packId: "pack-router-freshness",
+    learnedRouting: true,
+    eventStart: 46
+  });
+
+  writePackFile(rootDir, PACK_LAYOUT.router, {
+    ...descriptor.router,
+    training: {
+      ...descriptor.router?.training,
+      eventExportDigest: "sha256-stale-router-refresh",
+      freshnessChecksum: computeRouterFreshnessChecksum({
+        trainedAt: descriptor.router?.trainedAt ?? "2026-03-06T01:00:30.000Z",
+        status: descriptor.router?.training.status ?? "updated",
+        eventExportDigest: "sha256-stale-router-refresh",
+        routeTraceCount: descriptor.router?.training.routeTraceCount ?? 0,
+        supervisionCount: descriptor.router?.training.supervisionCount ?? 0,
+        updateCount: descriptor.router?.training.updateCount ?? 0
+      })
+    }
+  });
+
+  assert.throws(() => loadPack(rootDir), /router eventExportDigest .* does not match manifest event export digest/);
 });
 
 test("promotion flips active and previous pointers while rollback restores the prior active pack", (t) => {

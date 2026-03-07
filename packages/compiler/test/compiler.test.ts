@@ -12,6 +12,9 @@ import {
   FIXTURE_ROUTER_ARTIFACT,
   buildNormalizedEventExport,
   canonicalJson,
+  computeRouterFreshnessChecksum,
+  computeRouterQueryChecksum,
+  computeRouterWeightsChecksum,
   createFeedbackEvent,
   createInteractionEvent,
   type ArtifactManifestV1,
@@ -290,7 +293,19 @@ function materializeActivationPack(rootDir: string, options: MaterializeActivati
           ...FIXTURE_ROUTER_ARTIFACT,
           routerIdentity: `${options.packId}:route_fn`,
           trainedAt: options.builtAt,
-          requiresLearnedRouting: true
+          requiresLearnedRouting: true,
+          training: {
+            ...FIXTURE_ROUTER_ARTIFACT.training,
+            eventExportDigest: options.normalizedEventExport.provenance.exportDigest,
+            freshnessChecksum: computeRouterFreshnessChecksum({
+              trainedAt: options.builtAt,
+              status: FIXTURE_ROUTER_ARTIFACT.training.status,
+              eventExportDigest: options.normalizedEventExport.provenance.exportDigest,
+              routeTraceCount: FIXTURE_ROUTER_ARTIFACT.training.routeTraceCount,
+              supervisionCount: FIXTURE_ROUTER_ARTIFACT.training.supervisionCount,
+              updateCount: FIXTURE_ROUTER_ARTIFACT.training.updateCount
+            })
+          }
         }
       : null;
 
@@ -446,6 +461,114 @@ test("learned-required packs force learned mode and select scanner context", (t:
   assert.equal(response.diagnostics.routerIdentity, FIXTURE_ROUTER_ARTIFACT.routerIdentity);
   assert.equal(response.diagnostics.selectionStrategy, "pack_route_fn_selection_v1");
   assert.match(response.diagnostics.notes.join(";"), /learned_required_enforced=requested_heuristic->learned/);
+});
+
+test("compileRuntime uses learned router policy updates and emits refresh diagnostics", (t: TestContext) => {
+  const rootDir = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-compile-router-delta-"));
+  t.after(() => rmSync(rootDir, { recursive: true, force: true }));
+
+  const router: RouterArtifactV1 = {
+    routerIdentity: FIXTURE_ROUTER_ARTIFACT.routerIdentity,
+    strategy: "learned_route_fn_v1",
+    trainedAt: "2026-03-07T12:00:00.000Z",
+    requiresLearnedRouting: true,
+    traces: [
+      {
+        traceId: "trace-compile-router-delta",
+        sourceEventId: "evt-compile-router-delta",
+        sourceContract: CONTRACT_IDS.feedbackEvents,
+        sourceKind: "teaching",
+        supervisionKind: "human_feedback",
+        targetBlockIds: ["ctx-structural-ops"],
+        reward: 4,
+        queryTokens: ["ambiguous"],
+        queryVector: {
+          ambiguous: 2
+        }
+      }
+    ],
+    policyUpdates: [
+      {
+        blockId: "ctx-structural-ops",
+        delta: 9,
+        evidenceCount: 1,
+        rewardSum: 4,
+        tokenWeights: {
+          ambiguous: 7
+        },
+        traceIds: ["trace-compile-router-delta"]
+      }
+    ],
+    training: {
+      status: "updated",
+      eventExportDigest: FIXTURE_ARTIFACT_MANIFEST.provenance.eventExports?.exportDigest ?? null,
+      routeTraceCount: 1,
+      supervisionCount: 1,
+      updateCount: 1,
+      queryChecksum: computeRouterQueryChecksum([
+        {
+          traceId: "trace-compile-router-delta",
+          sourceEventId: "evt-compile-router-delta",
+          sourceContract: CONTRACT_IDS.feedbackEvents,
+          sourceKind: "teaching",
+          supervisionKind: "human_feedback",
+          targetBlockIds: ["ctx-structural-ops"],
+          reward: 4,
+          queryTokens: ["ambiguous"],
+          queryVector: {
+            ambiguous: 2
+          }
+        }
+      ]),
+      weightsChecksum: computeRouterWeightsChecksum([
+        {
+          blockId: "ctx-structural-ops",
+          delta: 9,
+          evidenceCount: 1,
+          rewardSum: 4,
+          tokenWeights: {
+            ambiguous: 7
+          },
+          traceIds: ["trace-compile-router-delta"]
+        }
+      ]),
+      freshnessChecksum: computeRouterFreshnessChecksum({
+        trainedAt: "2026-03-07T12:00:00.000Z",
+        status: "updated",
+        eventExportDigest: FIXTURE_ARTIFACT_MANIFEST.provenance.eventExports?.exportDigest ?? null,
+        routeTraceCount: 1,
+        supervisionCount: 1,
+        updateCount: 1
+      }),
+      noOpReason: null
+    }
+  };
+  const manifest: ArtifactManifestV1 = {
+    ...FIXTURE_ARTIFACT_MANIFEST,
+    payloadChecksums: {
+      ...FIXTURE_ARTIFACT_MANIFEST.payloadChecksums,
+      router: computePayloadChecksum(router)
+    }
+  };
+
+  writePackFile(rootDir, PACK_LAYOUT.graph, FIXTURE_PACK_GRAPH);
+  writePackFile(rootDir, PACK_LAYOUT.vectors, FIXTURE_PACK_VECTORS);
+  writePackFile(rootDir, PACK_LAYOUT.router, router);
+  writePackFile(rootDir, PACK_LAYOUT.manifest, manifest);
+
+  const response = compileRuntime(rootDir, {
+    contract: CONTRACT_IDS.runtimeCompile,
+    agentId: "agent-router-delta",
+    userMessage: "ambiguous",
+    maxContextBlocks: 1,
+    modeRequested: "learned",
+    runtimeHints: []
+  });
+
+  assert.equal(response.selectedContext[0]?.id, "ctx-structural-ops");
+  assert.match(response.diagnostics.notes.join(";"), /router_refresh_status=updated/);
+  assert.match(response.diagnostics.notes.join(";"), /router_update_count=1/);
+  assert.match(response.diagnostics.notes.join(";"), /router_top_deltas=ctx-structural-ops:9/);
 });
 
 test("rankContextBlocks normalizes underscored keyword weights for runtime hints", (t: TestContext) => {
