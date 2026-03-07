@@ -522,6 +522,14 @@ export function compileRuntimeContext(input: CompileRuntimeContextInput): Runtim
       ...(runtimeHints.length > 0 ? { runtimeHints } : {})
     });
 
+    const compileResponse = {
+      ...compile.response,
+      diagnostics: {
+        ...compile.response.diagnostics,
+        notes: [...compile.response.diagnostics.notes, "OpenClaw remains the runtime owner"]
+      }
+    };
+
     return {
       ok: true,
       fallbackToStaticContext: false,
@@ -529,8 +537,8 @@ export function compileRuntimeContext(input: CompileRuntimeContextInput): Runtim
       activationRoot,
       activePackId: compile.target.packId,
       packRootDir: path.resolve(target.activePointer.packRootDir),
-      compileResponse: compile.response,
-      brainContext: formatPromptContext(compile.response)
+      compileResponse,
+      brainContext: formatPromptContext(compileResponse)
     };
   } catch (error) {
     return classifyCompileFailure(error, activationRoot);
