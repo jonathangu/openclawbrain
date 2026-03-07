@@ -180,7 +180,7 @@ function main() {
 
     promoteCandidatePack(activationRoot, "2026-03-06T05:10:00.000Z");
 
-    logStep("Compiling runtime context from the promoted active activation slot.");
+    logStep("Compiling runtime context from the promoted active pack.");
 
     const { target: activeTarget, response: compileResponse } = compileRuntimeFromActivation(
       activationRoot,
@@ -199,14 +199,14 @@ function main() {
           packId: candidatePack.manifest.packId,
           routePolicy: candidatePack.manifest.routePolicy,
           routerIdentity: candidatePack.router?.routerIdentity ?? null,
-          workspaceSnapshot: candidatePack.manifest.provenance.workspaceSnapshot,
-          workspaceRevision: candidatePack.manifest.provenance.workspace.revision,
+          workspaceSnapshot: "workspace-phase-2@snapshot-candidate",
+          workspaceRevision: "phase-2-candidate-rev",
           eventRange: {
-            start: candidatePack.manifest.provenance.eventRange.start,
-            end: candidatePack.manifest.provenance.eventRange.end,
-            count: candidatePack.manifest.provenance.eventRange.count
+            start: candidateExport.range.start,
+            end: candidateExport.range.end,
+            count: candidateExport.range.count
           },
-          eventExportDigest: candidatePack.manifest.provenance.eventExports?.exportDigest ?? null,
+          eventExportDigest: candidateExport.provenance.exportDigest,
           builtAt: candidatePack.manifest.provenance.builtAt
         }
       }

@@ -45,10 +45,11 @@ export interface ActivationCompileResolution {
   target: RuntimeCompileTargetV1;
 }
 
-export type ActivationCompileResult = RuntimeCompileResponseV1 & {
+export interface ActivationCompileResult extends RuntimeCompileResponseV1 {
+  slot: ActivationPointerSlot;
   target: RuntimeCompileTargetV1;
   response: RuntimeCompileResponseV1;
-};
+}
 
 function normalizeTokens(value: string): string[] {
   return [...new Set(value.toLowerCase().split(/[^a-z0-9]+/u).filter((token) => token.length >= 2))];
@@ -240,9 +241,7 @@ export function determineRouteMode(pack: LoadedPack, requested: RouteMode): Rout
 
 function assertRequestPackExpectation(pack: LoadedPack, request: RuntimeCompileRequestV1): void {
   if (request.activePackId !== undefined && request.activePackId !== pack.manifest.packId) {
-    throw new Error(
-      `Compile request activePackId ${request.activePackId} does not match loaded pack ${pack.manifest.packId}`
-    );
+    throw new Error(`Compile request activePackId ${request.activePackId} does not match loaded pack ${pack.manifest.packId}`);
   }
 }
 
@@ -250,21 +249,57 @@ export function loadPackForCompile(rootDir: string): LoadedPack {
   return loadPack(rootDir);
 }
 
-function resolveCompileExpectation(options: ActivationCompileOptions): RuntimeCompileExpectationV1 | undefined {
-  if (options.expectation !== undefined && options.expectedTarget !== undefined) {
-    const keys = [...new Set([...Object.keys(options.expectation), ...Object.keys(options.expectedTarget)])] as (keyof RuntimeCompileExpectationV1)[];
-    const conflicts = keys.filter(
-      (key) => JSON.stringify(options.expectation?.[key] ?? null) !== JSON.stringify(options.expectedTarget?.[key] ?? null)
-    );
+function resolveActivationCompileExpectation(options: ActivationCompileOptions): RuntimeCompileExpectationV1 | undefined {
+  const legacyExpectation = options.expectation;
+  const expectedTarget = options.expectedTarget;
 
-    if (conflicts.length > 0) {
-      throw new Error(
-        `Conflicting compile expectations: ${conflicts.join(', ')} differ between expectation and expectedTarget`
-      );
-    }
+  if (legacyExpectation === undefined) {
+    return expectedTarget;
+  }
+  if (expectedTarget === undefined) {
+    return legacyExpectation;
   }
 
-  return options.expectedTarget ?? options.expectation;
+  const conflicts: string[] = [];
+
+  if ((legacyExpectation.packId ?? null) !== (expectedTarget.packId ?? null)) {
+    conflicts.push("packId");
+  }
+  if ((legacyExpectation.routePolicy ?? null) !== (expectedTarget.routePolicy ?? null)) {
+    conflicts.push("routePolicy");
+  }
+  if ((legacyExpectation.routerIdentity ?? null) !== (expectedTarget.routerIdentity ?? null)) {
+    conflicts.push("routerIdentity");
+  }
+  if ((legacyExpectation.workspaceSnapshot ?? null) !== (expectedTarget.workspaceSnapshot ?? null)) {
+    conflicts.push("workspaceSnapshot");
+  }
+  if ((legacyExpectation.workspaceRevision ?? null) !== (expectedTarget.workspaceRevision ?? null)) {
+    conflicts.push("workspaceRevision");
+  }
+
+  const legacyRange = legacyExpectation.eventRange;
+  const expectedRange = expectedTarget.eventRange;
+  if (
+    (legacyRange?.start ?? null) !== (expectedRange?.start ?? null) ||
+    (legacyRange?.end ?? null) !== (expectedRange?.end ?? null) ||
+    (legacyRange?.count ?? null) !== (expectedRange?.count ?? null)
+  ) {
+    conflicts.push("eventRange");
+  }
+
+  if ((legacyExpectation.eventExportDigest ?? null) !== (expectedTarget.eventExportDigest ?? null)) {
+    conflicts.push("eventExportDigest");
+  }
+  if ((legacyExpectation.builtAt ?? null) !== (expectedTarget.builtAt ?? null)) {
+    conflicts.push("builtAt");
+  }
+
+  if (conflicts.length > 0) {
+    throw new Error(`Activation compile options expectation and expectedTarget differ for: ${conflicts.join(", ")}`);
+  }
+
+  return expectedTarget;
 }
 
 export function resolveActivationCompileTarget(rootDir: string, options: ActivationCompileOptions = {}): ActivationCompileResolution {
@@ -278,7 +313,7 @@ export function resolveActivationCompileTarget(rootDir: string, options: Activat
   }
 
   const target = describePackCompileTarget(pack);
-  const expectation = resolveCompileExpectation(options);
+  const expectation = resolveActivationCompileExpectation(options);
 
   if (expectation !== undefined) {
     const expectationErrors = validateRuntimeCompileExpectation(expectation);
@@ -377,15 +412,18 @@ export function compileRuntime(packOrRoot: LoadedPack | string, request: Runtime
   const maxBlocks = Math.max(0, request.maxContextBlocks);
   const matched = ranked.filter((entry) => entry.matchedTokens.length > 0);
   const candidatePool = matched.length > 0 ? matched : ranked;
-  const selected = maxBlocks === 0 ? [] : candidatePool.slice(0, maxBlocks).map((entry) =>
-    buildContextBlock({
-      id: entry.blockId,
-      source: entry.source,
-      text: entry.text,
-      tokenCount: entry.tokenCount,
-      ...(entry.compactedFrom !== undefined ? { compactedFrom: entry.compactedFrom } : {})
-    })
-  );
+  const selected =
+    maxBlocks === 0
+      ? []
+      : candidatePool.slice(0, maxBlocks).map((entry) =>
+          buildContextBlock({
+            id: entry.blockId,
+            source: entry.source,
+            text: entry.text,
+            tokenCount: entry.tokenCount,
+            ...(entry.compactedFrom !== undefined ? { compactedFrom: entry.compactedFrom } : {})
+          })
+        );
   const compactionMode = request.compactionMode ?? "native";
   const fitted = fitContextToCharBudget(selected, request.maxContextChars, compactionMode);
   const selectedContext = fitted.blocks;
@@ -457,11 +495,11 @@ export function compileRuntimeFromActivation(
           activePackId: resolved.target.packId
         }
       : request;
-
   const response = compileRuntime(resolved.pack, compiledRequest);
 
   return {
     ...response,
+    slot: resolved.slot,
     target: resolved.target,
     response
   };

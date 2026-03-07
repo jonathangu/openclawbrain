@@ -2,7 +2,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import test from "node:test";
+import test, { type TestContext } from "node:test";
 
 import {
   CONTRACT_IDS,
@@ -10,11 +10,17 @@ import {
   FIXTURE_PACK_GRAPH,
   FIXTURE_PACK_VECTORS,
   FIXTURE_ROUTER_ARTIFACT,
+  buildNormalizedEventExport,
+  canonicalJson,
+  createFeedbackEvent,
+  createInteractionEvent,
   type ArtifactManifestV1,
+  type FeedbackEventKind,
+  type InteractionEventKind,
+  type NormalizedEventExportV1,
   type PackGraphPayloadV1,
   type PackVectorsPayloadV1,
-  type RouterArtifactV1,
-  canonicalJson
+  type RouterArtifactV1
 } from "@openclawbrain/contracts";
 import {
   compileRuntime,
@@ -48,12 +54,14 @@ function materializeNamedPack(rootDir: string, options: { packId: string; learne
     ...FIXTURE_PACK_VECTORS,
     packId: options.packId
   };
-  const router: RouterArtifactV1 | null = options.learnedRouting
-    ? {
-        ...FIXTURE_ROUTER_ARTIFACT,
-        routerIdentity: `${options.packId}:route_fn`
-      }
-    : null;
+  const router: RouterArtifactV1 | null =
+    options.learnedRouting
+      ? {
+          ...FIXTURE_ROUTER_ARTIFACT,
+          routerIdentity: `${options.packId}:route_fn`
+        }
+      : null;
+
   const manifest: ArtifactManifestV1 = {
     ...FIXTURE_ARTIFACT_MANIFEST,
     packId: options.packId,
@@ -77,6 +85,207 @@ function materializeNamedPack(rootDir: string, options: { packId: string; learne
       graph: computePayloadChecksum(graph),
       vector: computePayloadChecksum(vectors),
       router: router === null ? null : computePayloadChecksum(router)
+    },
+    modelFingerprints: options.learnedRouting
+      ? ["BAAI/bge-large-en-v1.5", "ollama:qwen3.5:9b-q4_K_M", router?.routerIdentity ?? "router:missing"]
+      : ["BAAI/bge-large-en-v1.5"]
+  };
+
+  writePackFile(rootDir, PACK_LAYOUT.graph, graph);
+  writePackFile(rootDir, PACK_LAYOUT.vectors, vectors);
+  if (router !== null) {
+    writePackFile(rootDir, PACK_LAYOUT.router, router);
+  }
+  writePackFile(rootDir, PACK_LAYOUT.manifest, manifest);
+}
+
+interface BuildFixtureExportOptions {
+  sessionId: string;
+  sequenceStart: number;
+  createdAt: string;
+  streamSuffix: string;
+  interactionKind: InteractionEventKind;
+  feedbackKind: FeedbackEventKind;
+  feedbackContent: string;
+}
+
+interface MaterializeActivationPackOptions {
+  packId: string;
+  learnedRouting: boolean;
+  normalizedEventExport: NormalizedEventExportV1;
+  snapshotId: string;
+  revision: string | null;
+  builtAt: string;
+}
+
+function buildFixtureNormalizedEventExport(options: BuildFixtureExportOptions): NormalizedEventExportV1 {
+  const interaction = createInteractionEvent({
+    eventId: `${options.sessionId}:interaction:${options.sequenceStart}`,
+    agentId: "agent-compile-activation",
+    sessionId: options.sessionId,
+    channel: "cli",
+    sequence: options.sequenceStart,
+    kind: options.interactionKind,
+    createdAt: options.createdAt,
+    source: {
+      runtimeOwner: "openclaw",
+      stream: `openclaw/runtime/${options.streamSuffix}`
+    },
+    messageId: `msg-${options.sessionId}`
+  });
+
+  const feedback = createFeedbackEvent({
+    eventId: `${options.sessionId}:feedback:${options.sequenceStart + 1}`,
+    agentId: interaction.agentId,
+    sessionId: interaction.sessionId,
+    channel: interaction.channel,
+    sequence: options.sequenceStart + 1,
+    kind: options.feedbackKind,
+    createdAt: new Date(Date.parse(options.createdAt) + 60_000).toISOString(),
+    source: interaction.source,
+    content: options.feedbackContent,
+    relatedInteractionId: interaction.eventId
+  });
+
+  return buildNormalizedEventExport({
+    interactionEvents: [interaction],
+    feedbackEvents: [feedback]
+  });
+}
+
+function materializeActivationPack(rootDir: string, options: MaterializeActivationPackOptions): void {
+  const feedbackEvent = options.normalizedEventExport.feedbackEvents[0];
+  if (feedbackEvent === undefined) {
+    throw new Error("activation fixture requires a feedback event");
+  }
+
+  const graph: PackGraphPayloadV1 = {
+    packId: options.packId,
+    blocks: [
+      {
+        id: `${options.packId}:ctx:promotion-evidence`,
+        source: `${feedbackEvent.source.stream}:${feedbackEvent.kind}`,
+        text: feedbackEvent.content,
+        keywords: ["activation", "promotion", "evidence", "candidate", "runtime"],
+        priority: 5,
+        tokenCount: 14,
+        learning: {
+          role: "feedback",
+          humanLabels: 1,
+          selfLabels: 0,
+          decayHalfLifeDays: 30,
+          hebbianPulse: 5
+        }
+      },
+      {
+        id: `${options.packId}:ctx:workspace-summary`,
+        source: `workspace:${options.snapshotId}`,
+        text: `Workspace ${options.snapshotId} is pinned to event export ${options.normalizedEventExport.provenance.exportDigest}.`,
+        keywords: ["workspace", "snapshot", "event", "export", "digest"],
+        priority: 3,
+        tokenCount: 12,
+        learning: {
+          role: "workspace",
+          humanLabels: 0,
+          selfLabels: 0,
+          decayHalfLifeDays: null,
+          hebbianPulse: 1
+        }
+      }
+    ]
+  };
+
+  const promotionBlock = graph.blocks[0];
+  const workspaceBlock = graph.blocks[1];
+  if (promotionBlock === undefined || workspaceBlock === undefined) {
+    throw new Error("activation fixture requires both promotion and workspace blocks");
+  }
+
+  const vectors: PackVectorsPayloadV1 = {
+    packId: options.packId,
+    entries: [
+      {
+        blockId: promotionBlock.id,
+        keywords: ["activation", "promotion", "evidence"],
+        boost: 3,
+        weights: {
+          activation: 6,
+          promotion: 6,
+          evidence: 5,
+          candidate: 4
+        }
+      },
+      {
+        blockId: workspaceBlock.id,
+        keywords: ["workspace", "snapshot", "digest"],
+        boost: 1,
+        weights: {
+          workspace: 4,
+          snapshot: 4,
+          digest: 4
+        }
+      }
+    ]
+  };
+
+  const router: RouterArtifactV1 | null =
+    options.learnedRouting
+      ? {
+          ...FIXTURE_ROUTER_ARTIFACT,
+          routerIdentity: `${options.packId}:route_fn`,
+          trainedAt: options.builtAt,
+          requiresLearnedRouting: true
+        }
+      : null;
+
+  const manifest: ArtifactManifestV1 = {
+    ...FIXTURE_ARTIFACT_MANIFEST,
+    packId: options.packId,
+    routePolicy: options.learnedRouting ? "requires_learned_routing" : "heuristic_allowed",
+    runtimeAssets: {
+      graphPath: PACK_LAYOUT.graph,
+      vectorPath: PACK_LAYOUT.vectors,
+      router: options.learnedRouting
+        ? {
+            kind: "artifact",
+            identity: router?.routerIdentity ?? null,
+            artifactPath: PACK_LAYOUT.router
+          }
+        : {
+            kind: "none",
+            identity: null,
+            artifactPath: null
+          }
+    },
+    payloadChecksums: {
+      graph: computePayloadChecksum(graph),
+      vector: computePayloadChecksum(vectors),
+      router: router === null ? null : computePayloadChecksum(router)
+    },
+    modelFingerprints: options.learnedRouting
+      ? ["BAAI/bge-large-en-v1.5", "ollama:qwen3.5:9b-q4_K_M", router?.routerIdentity ?? "router:missing"]
+      : ["BAAI/bge-large-en-v1.5"],
+    provenance: {
+      ...FIXTURE_ARTIFACT_MANIFEST.provenance,
+      workspace: {
+        ...FIXTURE_ARTIFACT_MANIFEST.provenance.workspace,
+        workspaceId: "workspace-compile",
+        snapshotId: options.snapshotId,
+        capturedAt: options.builtAt,
+        rootDir: "/workspace/compile",
+        branch: "main",
+        revision: options.revision,
+        dirty: false,
+        manifestDigest: null,
+        labels: ["compile", options.learnedRouting ? "candidate" : "active"],
+        files: ["graph.json", "vectors.json", "manifest.json"]
+      },
+      workspaceSnapshot: options.snapshotId,
+      eventRange: options.normalizedEventExport.range,
+      eventExports: options.normalizedEventExport.provenance,
+      learningSurface: options.normalizedEventExport.provenance.learningSurface,
+      builtAt: options.builtAt,
+      offlineArtifacts: ["compiler-smoke", "activation-bridge"]
     }
   };
 
@@ -88,7 +297,76 @@ function materializeNamedPack(rootDir: string, options: { packId: string; learne
   writePackFile(rootDir, PACK_LAYOUT.manifest, manifest);
 }
 
-test("learned-required packs force learned mode and select scanner context", (t) => {
+function setupActivatedCandidateFixture(t: TestContext): {
+  activationRoot: string;
+  candidateExport: NormalizedEventExportV1;
+  candidatePackId: string;
+  candidateRouterIdentity: string;
+  candidateBuiltAt: string;
+  candidateWorkspaceSnapshot: string;
+  candidateWorkspaceRevision: string;
+} {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-compile-activation-"));
+  const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-compile-active-"));
+  const candidateRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-compile-candidate-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(activeRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(candidateRoot, { recursive: true, force: true }));
+
+  const activeExport = buildFixtureNormalizedEventExport({
+    sessionId: "session-compile-active",
+    sequenceStart: 31,
+    createdAt: "2026-03-06T05:31:00.000Z",
+    streamSuffix: "compile-active",
+    interactionKind: "memory_compiled",
+    feedbackKind: "approval",
+    feedbackContent: "Keep the baseline active pack stable while a promoted candidate is prepared."
+  });
+  const candidateExport = buildFixtureNormalizedEventExport({
+    sessionId: "session-compile-candidate",
+    sequenceStart: 41,
+    createdAt: "2026-03-06T05:41:00.000Z",
+    streamSuffix: "compile-candidate",
+    interactionKind: "operator_override",
+    feedbackKind: "teaching",
+    feedbackContent: "Activation promotion evidence should reach runtime compile after the candidate is promoted."
+  });
+
+  materializeActivationPack(activeRoot, {
+    packId: "pack-compile-active",
+    learnedRouting: false,
+    normalizedEventExport: activeExport,
+    snapshotId: "workspace-compile@snapshot-active",
+    revision: "compile-active-rev",
+    builtAt: "2026-03-06T05:36:00.000Z"
+  });
+
+  materializeActivationPack(candidateRoot, {
+    packId: "pack-compile-candidate",
+    learnedRouting: true,
+    normalizedEventExport: candidateExport,
+    snapshotId: "workspace-compile@snapshot-candidate",
+    revision: "compile-candidate-rev",
+    builtAt: "2026-03-06T05:46:00.000Z"
+  });
+
+  activatePack(activationRoot, activeRoot, "2026-03-06T05:50:00.000Z");
+  stageCandidatePack(activationRoot, candidateRoot, "2026-03-06T05:55:00.000Z");
+  promoteCandidatePack(activationRoot, "2026-03-06T06:00:00.000Z");
+
+  return {
+    activationRoot,
+    candidateExport,
+    candidatePackId: "pack-compile-candidate",
+    candidateRouterIdentity: "pack-compile-candidate:route_fn",
+    candidateBuiltAt: "2026-03-06T05:46:00.000Z",
+    candidateWorkspaceSnapshot: "workspace-compile@snapshot-candidate",
+    candidateWorkspaceRevision: "compile-candidate-rev"
+  };
+}
+
+test("learned-required packs force learned mode and select scanner context", (t: TestContext) => {
   const rootDir = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-compile-"));
   t.after(() => rmSync(rootDir, { recursive: true, force: true }));
   materializeFixturePack(rootDir);
@@ -113,7 +391,7 @@ test("learned-required packs force learned mode and select scanner context", (t)
   assert.equal(response.diagnostics.selectionStrategy, "pack_keyword_overlap_v1");
 });
 
-test("compileRuntime falls back to priority order when nothing matches", (t) => {
+test("compileRuntime falls back to priority order when nothing matches", (t: TestContext) => {
   const rootDir = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-compile-"));
   t.after(() => rmSync(rootDir, { recursive: true, force: true }));
   materializeFixturePack(rootDir);
@@ -134,7 +412,7 @@ test("compileRuntime falls back to priority order when nothing matches", (t) => 
   assert.equal(response.diagnostics.candidateCount, FIXTURE_PACK_GRAPH.blocks.length);
 });
 
-test("compileRuntime applies native structural compaction under a character budget", (t) => {
+test("compileRuntime applies native structural compaction under a character budget", (t: TestContext) => {
   const rootDir = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-compile-"));
   t.after(() => rmSync(rootDir, { recursive: true, force: true }));
   materializeFixturePack(rootDir);
@@ -157,7 +435,7 @@ test("compileRuntime applies native structural compaction under a character budg
   assert.match(response.diagnostics.notes.join(";"), /native_structural_compaction=applied/);
 });
 
-test("compileRuntime rejects stale activePackId expectations", (t) => {
+test("compileRuntime rejects stale activePackId expectations", (t: TestContext) => {
   const rootDir = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-compile-"));
   t.after(() => rmSync(rootDir, { recursive: true, force: true }));
   materializeFixturePack(rootDir);
@@ -177,7 +455,7 @@ test("compileRuntime rejects stale activePackId expectations", (t) => {
   );
 });
 
-test("compileRuntimeFromActivation serves the active pack and respects promotion", (t) => {
+test("compileRuntimeFromActivation serves the active pack and respects promotion", (t: TestContext) => {
   const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-compile-"));
   const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-pack-"));
   const candidateRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-candidate-pack-"));
@@ -198,7 +476,7 @@ test("compileRuntimeFromActivation serves the active pack and respects promotion
   activatePack(activationRoot, activeRoot, "2026-03-06T06:00:00.000Z");
   stageCandidatePack(activationRoot, candidateRoot, "2026-03-06T06:05:00.000Z");
 
-  const activeResponse = compileRuntimeFromActivation(activationRoot, {
+  const activeCompile = compileRuntimeFromActivation(activationRoot, {
     contract: CONTRACT_IDS.runtimeCompile,
     agentId: "agent-active-serving",
     userMessage: "feedback scanner manifest structural compaction context",
@@ -210,16 +488,16 @@ test("compileRuntimeFromActivation serves the active pack and respects promotion
     runtimeHints: ["pack-backed selection"]
   });
 
-  assert.equal(activeResponse.packId, "pack-active-serving");
-  assert.equal(activeResponse.target.packId, "pack-active-serving");
-  assert.equal(activeResponse.response.packId, "pack-active-serving");
-  assert.equal(activeResponse.diagnostics.modeEffective, "heuristic");
-  assert.equal(activeResponse.diagnostics.compactionApplied, true);
-  assert.equal(activeResponse.diagnostics.selectedCharCount <= 180, true);
+  assert.equal(activeCompile.slot, "active");
+  assert.equal(activeCompile.response.packId, "pack-active-serving");
+  assert.equal(activeCompile.target.packId, "pack-active-serving");
+  assert.equal(activeCompile.response.diagnostics.modeEffective, "heuristic");
+  assert.equal(activeCompile.response.diagnostics.compactionApplied, true);
+  assert.equal(activeCompile.response.diagnostics.selectedCharCount <= 180, true);
 
   promoteCandidatePack(activationRoot, "2026-03-06T06:10:00.000Z");
 
-  const promotedResponse = compileRuntimeFromActivation(activationRoot, {
+  const promotedCompile = compileRuntimeFromActivation(activationRoot, {
     contract: CONTRACT_IDS.runtimeCompile,
     agentId: "agent-promoted-serving",
     userMessage: "feedback scanner manifest structural compaction context",
@@ -231,102 +509,12 @@ test("compileRuntimeFromActivation serves the active pack and respects promotion
     runtimeHints: ["pack-backed selection"]
   });
 
-  assert.equal(promotedResponse.packId, "pack-candidate-serving");
-  assert.equal(promotedResponse.target.packId, "pack-candidate-serving");
-  assert.equal(promotedResponse.response.packId, "pack-candidate-serving");
-  assert.equal(promotedResponse.diagnostics.modeEffective, "learned");
-  assert.equal(promotedResponse.diagnostics.usedLearnedRouteFn, true);
-  assert.equal(promotedResponse.diagnostics.compactionApplied, true);
-});
-
-test("compileRuntimeFromActivation returns target metadata and accepts expectedTarget", (t) => {
-  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-bridge-activation-"));
-  const packRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-bridge-pack-"));
-
-  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
-  t.after(() => rmSync(packRoot, { recursive: true, force: true }));
-
-  materializeFixturePack(packRoot);
-  activatePack(activationRoot, packRoot, "2026-03-06T06:20:00.000Z");
-
-  const result = compileRuntimeFromActivation(
-    activationRoot,
-    {
-      contract: CONTRACT_IDS.runtimeCompile,
-      agentId: "agent-bridge-result",
-      userMessage: "Compile scanner context.",
-      maxContextBlocks: 1,
-      modeRequested: "heuristic",
-      runtimeHints: ["feedback scanner"]
-    },
-    {
-      expectedTarget: {
-        packId: FIXTURE_ARTIFACT_MANIFEST.packId,
-        workspaceSnapshot: FIXTURE_ARTIFACT_MANIFEST.provenance.workspaceSnapshot,
-        eventExportDigest: FIXTURE_ARTIFACT_MANIFEST.provenance.eventExports?.exportDigest ?? null
-      }
-    }
-  );
-
-  assert.equal(result.packId, FIXTURE_ARTIFACT_MANIFEST.packId);
-  assert.equal(result.response.packId, FIXTURE_ARTIFACT_MANIFEST.packId);
-  assert.equal(result.target.packId, FIXTURE_ARTIFACT_MANIFEST.packId);
-  assert.equal(result.target.workspaceSnapshot, FIXTURE_ARTIFACT_MANIFEST.provenance.workspaceSnapshot);
-  assert.equal(result.target.eventExportDigest, FIXTURE_ARTIFACT_MANIFEST.provenance.eventExports?.exportDigest ?? null);
-
-  assert.throws(
-    () =>
-      compileRuntimeFromActivation(
-        activationRoot,
-        {
-          contract: CONTRACT_IDS.runtimeCompile,
-          agentId: "agent-bridge-stale",
-          userMessage: "Compile scanner context.",
-          maxContextBlocks: 1,
-          modeRequested: "heuristic"
-        },
-        {
-          expectedTarget: {
-            workspaceSnapshot: "workspace-stale@snapshot"
-          }
-        }
-      ),
-    /Activation compile target mismatch: runtime compile target workspaceSnapshot/
-  );
-});
-
-test("compileRuntimeFromActivation rejects conflicting expectation aliases", (t) => {
-  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-conflict-activation-"));
-  const packRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-conflict-pack-"));
-
-  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
-  t.after(() => rmSync(packRoot, { recursive: true, force: true }));
-
-  materializeFixturePack(packRoot);
-  activatePack(activationRoot, packRoot, "2026-03-06T06:21:00.000Z");
-
-  assert.throws(
-    () =>
-      compileRuntimeFromActivation(
-        activationRoot,
-        {
-          contract: CONTRACT_IDS.runtimeCompile,
-          agentId: "agent-bridge-conflict",
-          userMessage: "Compile scanner context.",
-          maxContextBlocks: 1,
-          modeRequested: "heuristic"
-        },
-        {
-          expectation: {
-            packId: FIXTURE_ARTIFACT_MANIFEST.packId
-          },
-          expectedTarget: {
-            packId: "pack-stale"
-          }
-        }
-      ),
-    /Conflicting compile expectations: packId differ between expectation and expectedTarget/
-  );
+  assert.equal(promotedCompile.slot, "active");
+  assert.equal(promotedCompile.response.packId, "pack-candidate-serving");
+  assert.equal(promotedCompile.target.packId, "pack-candidate-serving");
+  assert.equal(promotedCompile.response.diagnostics.modeEffective, "learned");
+  assert.equal(promotedCompile.response.diagnostics.usedLearnedRouteFn, true);
+  assert.equal(promotedCompile.response.diagnostics.compactionApplied, true);
 });
 
 test("compileRuntimeFromActivation fails fast when no active pack is present", () => {
@@ -349,7 +537,7 @@ test("compileRuntimeFromActivation fails fast when no active pack is present", (
   }
 });
 
-test("resolveActivationCompileTarget validates manifest expectations before compile", (t) => {
+test("resolveActivationCompileTarget validates manifest expectations before compile", (t: TestContext) => {
   const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-expect-activation-"));
   const packRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-expect-pack-"));
 
@@ -390,7 +578,115 @@ test("resolveActivationCompileTarget validates manifest expectations before comp
   );
 });
 
-test("pack load rejects tampered graph payloads", (t) => {
+test("resolveActivationCompileTarget accepts equivalent expectation aliases with different key order", (t: TestContext) => {
+  const fixture = setupActivatedCandidateFixture(t);
+
+  const resolved = resolveActivationCompileTarget(fixture.activationRoot, {
+    expectation: {
+      packId: fixture.candidatePackId,
+      routePolicy: "requires_learned_routing",
+      routerIdentity: fixture.candidateRouterIdentity,
+      workspaceSnapshot: fixture.candidateWorkspaceSnapshot,
+      workspaceRevision: fixture.candidateWorkspaceRevision,
+      eventRange: {
+        start: fixture.candidateExport.range.start,
+        end: fixture.candidateExport.range.end,
+        count: fixture.candidateExport.range.count
+      },
+      eventExportDigest: fixture.candidateExport.provenance.exportDigest,
+      builtAt: fixture.candidateBuiltAt
+    },
+    expectedTarget: {
+      builtAt: fixture.candidateBuiltAt,
+      eventExportDigest: fixture.candidateExport.provenance.exportDigest,
+      eventRange: {
+        count: fixture.candidateExport.range.count,
+        end: fixture.candidateExport.range.end,
+        start: fixture.candidateExport.range.start
+      },
+      workspaceRevision: fixture.candidateWorkspaceRevision,
+      workspaceSnapshot: fixture.candidateWorkspaceSnapshot,
+      routerIdentity: fixture.candidateRouterIdentity,
+      routePolicy: "requires_learned_routing",
+      packId: fixture.candidatePackId
+    }
+  });
+
+  assert.equal(resolved.slot, "active");
+  assert.equal(resolved.target.packId, fixture.candidatePackId);
+  assert.equal(resolved.target.eventExportDigest, fixture.candidateExport.provenance.exportDigest);
+});
+
+test("compileRuntimeFromActivation compiles the promoted pack when expected provenance matches", (t: TestContext) => {
+  const fixture = setupActivatedCandidateFixture(t);
+
+  const result = compileRuntimeFromActivation(
+    fixture.activationRoot,
+    {
+      contract: CONTRACT_IDS.runtimeCompile,
+      agentId: "agent-activation-bridge",
+      userMessage: "Compile activation promotion evidence from the promoted candidate pack.",
+      maxContextBlocks: 2,
+      maxContextChars: 360,
+      modeRequested: "heuristic",
+      runtimeHints: ["activation", "promotion", "evidence"],
+      compactionMode: "native"
+    },
+    {
+      expectedTarget: {
+        packId: fixture.candidatePackId,
+        routePolicy: "requires_learned_routing",
+        routerIdentity: fixture.candidateRouterIdentity,
+        workspaceSnapshot: fixture.candidateWorkspaceSnapshot,
+        workspaceRevision: fixture.candidateWorkspaceRevision,
+        eventRange: {
+          start: fixture.candidateExport.range.start,
+          end: fixture.candidateExport.range.end,
+          count: fixture.candidateExport.range.count
+        },
+        eventExportDigest: fixture.candidateExport.provenance.exportDigest,
+        builtAt: fixture.candidateBuiltAt
+      }
+    }
+  );
+
+  assert.equal(result.target.packId, fixture.candidatePackId);
+  assert.equal(result.target.eventExportDigest, fixture.candidateExport.provenance.exportDigest);
+  assert.equal(result.target.workspaceSnapshot, fixture.candidateWorkspaceSnapshot);
+  assert.equal(result.response.packId, fixture.candidatePackId);
+  assert.equal(result.response.diagnostics.modeEffective, "learned");
+  assert.equal(result.response.diagnostics.usedLearnedRouteFn, true);
+  assert.equal(result.response.selectedContext.length > 0, true);
+  assert.equal(result.response.selectedContext.some((block) => /activation promotion evidence/i.test(block.text)), true);
+});
+
+test("compileRuntimeFromActivation rejects stale provenance expectations before compiling", (t: TestContext) => {
+  const fixture = setupActivatedCandidateFixture(t);
+
+  assert.throws(
+    () =>
+      compileRuntimeFromActivation(
+        fixture.activationRoot,
+        {
+          contract: CONTRACT_IDS.runtimeCompile,
+          agentId: "agent-activation-stale",
+          userMessage: "Compile the promoted candidate.",
+          maxContextBlocks: 1,
+          modeRequested: "heuristic",
+          runtimeHints: ["activation"]
+        },
+        {
+          expectedTarget: {
+            workspaceSnapshot: "workspace-compile@snapshot-stale",
+            eventExportDigest: "sha256-stale"
+          }
+        }
+      ),
+    /Activation compile target mismatch: runtime compile target workspaceSnapshot .* does not match expected workspace-compile@snapshot-stale; runtime compile target eventExportDigest .* does not match expected sha256-stale/
+  );
+});
+
+test("pack load rejects tampered graph payloads", (t: TestContext) => {
   const rootDir = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-pack-"));
   t.after(() => rmSync(rootDir, { recursive: true, force: true }));
 
@@ -403,9 +699,7 @@ test("pack load rejects tampered graph payloads", (t) => {
     path.join(rootDir, PACK_LAYOUT.graph),
     canonicalJson({
       ...FIXTURE_PACK_GRAPH,
-      blocks: FIXTURE_PACK_GRAPH.blocks.map((block, index) =>
-        index === 0 ? { ...block, text: `${block.text} tampered` } : block
-      )
+      blocks: FIXTURE_PACK_GRAPH.blocks.map((block, index) => (index === 0 ? { ...block, text: `${block.text} tampered` } : block))
     }),
     "utf8"
   );

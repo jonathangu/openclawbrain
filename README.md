@@ -11,6 +11,21 @@ The repo’s public story is now centered on four guarantees:
 
 Phase 2 is now explicit at the workspace root: the repo carries a deterministic lifecycle smoke that proves one true lifecycle across normalized events, event export, learner pack materialization, activation staging/promotion, and compiler runtime compilation against the promoted pack.
 
+## OpenClaw attach quickstart
+
+The attach/install story must optimize for **time-to-first-value**, not for full historical completeness before first use.
+
+That means:
+
+- do not block initial activation on a full history scan
+- bootstrap from current workspace state and recent normalized events
+- let OpenClaw compile useful context immediately after attach
+- keep passive historical replay/backfill running in the background
+- keep real-time event scanning and supervision harvest running continuously
+- keep OpenClaw as the sole runtime owner and fail open when brain artifacts are unavailable
+
+The operator-facing setup contract lives in [`docs/openclaw-attach-quickstart.md`](docs/openclaw-attach-quickstart.md).
+
 ## Boundary
 
 The product boundary is intentionally narrow:
@@ -85,6 +100,7 @@ That command cleans the workspace, rebuilds it, reruns tests, and produces publi
 
 ## Docs
 
+- `docs/openclaw-attach-quickstart.md`
 - `docs/typescript-first-convergence.md`
 - `docs/contracts-v1.md`
 - `scripts/lifecycle-smoke.mjs`
