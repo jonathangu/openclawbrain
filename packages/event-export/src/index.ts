@@ -9,6 +9,7 @@ export {
   validateLearningSurface,
   validateNormalizedEventExport,
   validateNormalizedEventRange,
+  type EventContractId,
   type EventExportProvenanceV1,
   type LearningBootProfile,
   type LearningCadence,
@@ -19,3 +20,23 @@ export {
   type NormalizedEventExportV1,
   type NormalizedEventRangeV1
 } from "@openclawbrain/contracts";
+
+export {
+  DEFAULT_EVENT_EXPORT_BACKFILL_SLICE_SIZE,
+  DEFAULT_EVENT_EXPORT_LIVE_SLICE_SIZE,
+  buildEventExportWatermark,
+  buildNormalizedEventDedupId,
+  buildNormalizedEventExportBridge,
+  createEventExportCursor,
+  validateEventExportCursor,
+  validateEventExportWatermark,
+  validateNormalizedEventExportBridge,
+  validateNormalizedEventExportSlice,
+  type BuildNormalizedEventExportBridgeInput,
+  type EventExportCursorV1,
+  type EventExportLaneV1,
+  type EventExportSliceProvenanceV1,
+  type EventExportWatermarkV1,
+  type NormalizedEventExportBridgeV1,
+  type NormalizedEventExportSliceV1
+} from "./bridge.js";

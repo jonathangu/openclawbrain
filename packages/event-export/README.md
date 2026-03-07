@@ -13,3 +13,4 @@ pnpm add @openclawbrain/event-export
 - explicit and derived normalized event ranges
 - learning-surface derivation for fast-boot defaults, passive background scans, and human/self label harvest
 - normalized event-export provenance helpers, validation, and fixtures
+- live-first event-export bridge slices with dedup-safe identities and backfill cursors/watermarks
