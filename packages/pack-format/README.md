@@ -17,7 +17,7 @@ pnpm add @openclawbrain/pack-format
 - canonical pack file layout constants
 - checksum-validated pack loading and JSON payload writing
 - deterministic graph/vector/router reads for pack-backed compilation
-- activation-pointer helpers for active, candidate, and previous slots
+- activation-pointer helpers for active, candidate, and previous slots pinned to manifest digests
 - manifest-gated promotion, rollback, and activation inspection helpers
 
 ## Example

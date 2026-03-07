@@ -12,5 +12,5 @@ pnpm add @openclawbrain/activation
 
 - activation pointer loading and inspection
 - compile-target inspection over active, candidate, and previous slots
-- candidate staging, promotion, and rollback helpers
+- candidate staging, promotion, and rollback helpers with manifest-pinned safety checks
 - activation-readiness checks surfaced as a package-first API
