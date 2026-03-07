@@ -269,6 +269,7 @@ export interface ActivationPointerRecordV1 {
   packId: string;
   packRootDir: string;
   manifestPath: string;
+  manifestDigest: string;
   routePolicy: RoutePolicy;
   routerIdentity: string | null;
   workspaceSnapshot: string;
@@ -596,12 +597,115 @@ export function validateRuntimeCompileRequest(value: RuntimeCompileRequestV1): s
   pushWhenMissing(errors, value.maxContextBlocks >= 0, "maxContextBlocks must be non-negative");
   pushWhenMissing(errors, value.modeRequested === "heuristic" || value.modeRequested === "learned", "modeRequested must be heuristic or learned");
 
+  if (value.activePackId !== undefined) {
+    pushWhenMissing(errors, value.activePackId.length > 0, "activePackId must be non-empty when set");
+  }
+
   if (value.maxContextChars !== undefined) {
     pushWhenMissing(errors, value.maxContextChars >= 0, "maxContextChars must be non-negative");
   }
 
   if (value.compactionMode !== undefined) {
     pushWhenMissing(errors, value.compactionMode === "none" || value.compactionMode === "native", "compactionMode must be none or native");
+  }
+
+  return errors;
+}
+
+export function validateRuntimeCompileExpectation(value: RuntimeCompileExpectationV1): string[] {
+  const errors: string[] = [];
+
+  if (value.packId !== undefined) {
+    pushWhenMissing(errors, value.packId.length > 0, "runtime compile expectation packId must be non-empty when set");
+  }
+  if (value.routePolicy !== undefined) {
+    pushWhenMissing(
+      errors,
+      value.routePolicy === "heuristic_allowed" || value.routePolicy === "requires_learned_routing",
+      "runtime compile expectation routePolicy must be explicit when set"
+    );
+  }
+  if (value.routerIdentity !== undefined && value.routerIdentity !== null) {
+    pushWhenMissing(errors, value.routerIdentity.length > 0, "runtime compile expectation routerIdentity must be non-empty when set");
+  }
+  if (value.workspaceSnapshot !== undefined) {
+    pushWhenMissing(errors, value.workspaceSnapshot.length > 0, "runtime compile expectation workspaceSnapshot must be non-empty when set");
+  }
+  if (value.workspaceRevision !== undefined && value.workspaceRevision !== null) {
+    pushWhenMissing(errors, value.workspaceRevision.length > 0, "runtime compile expectation workspaceRevision must be non-empty when set");
+  }
+  if (value.eventRange !== undefined) {
+    pushWhenMissing(errors, value.eventRange.count >= 0, "runtime compile expectation eventRange.count must be non-negative");
+    pushWhenMissing(errors, value.eventRange.start >= 0, "runtime compile expectation eventRange.start must be non-negative");
+    pushWhenMissing(
+      errors,
+      value.eventRange.end >= value.eventRange.start,
+      "runtime compile expectation eventRange.end must be >= start"
+    );
+  }
+  if (value.eventExportDigest !== undefined && value.eventExportDigest !== null) {
+    pushWhenMissing(
+      errors,
+      value.eventExportDigest.length > 0,
+      "runtime compile expectation eventExportDigest must be non-empty when set"
+    );
+  }
+  if (value.builtAt !== undefined) {
+    pushWhenMissing(errors, isIsoDate(value.builtAt), "runtime compile expectation builtAt must be an ISO timestamp when set");
+  }
+
+  return errors;
+}
+
+export function validateRuntimeCompileTargetExpectation(
+  target: RuntimeCompileTargetV1,
+  expectation: RuntimeCompileExpectationV1
+): string[] {
+  const errors = validateRuntimeCompileExpectation(expectation);
+
+  if (expectation.packId !== undefined && target.packId !== expectation.packId) {
+    errors.push(`runtime compile target packId ${target.packId} does not match expected ${expectation.packId}`);
+  }
+  if (expectation.routePolicy !== undefined && target.routePolicy !== expectation.routePolicy) {
+    errors.push(`runtime compile target routePolicy ${target.routePolicy} does not match expected ${expectation.routePolicy}`);
+  }
+  if (expectation.routerIdentity !== undefined && target.routerIdentity !== expectation.routerIdentity) {
+    errors.push(
+      `runtime compile target routerIdentity ${target.routerIdentity ?? "null"} does not match expected ${expectation.routerIdentity ?? "null"}`
+    );
+  }
+  if (expectation.workspaceSnapshot !== undefined && target.workspaceSnapshot !== expectation.workspaceSnapshot) {
+    errors.push(
+      `runtime compile target workspaceSnapshot ${target.workspaceSnapshot} does not match expected ${expectation.workspaceSnapshot}`
+    );
+  }
+  if (expectation.workspaceRevision !== undefined && target.workspaceRevision !== expectation.workspaceRevision) {
+    errors.push(
+      `runtime compile target workspaceRevision ${target.workspaceRevision ?? "null"} does not match expected ${expectation.workspaceRevision ?? "null"}`
+    );
+  }
+  if (expectation.eventRange !== undefined) {
+    if (target.eventRange.start !== expectation.eventRange.start) {
+      errors.push(
+        `runtime compile target eventRange.start ${target.eventRange.start} does not match expected ${expectation.eventRange.start}`
+      );
+    }
+    if (target.eventRange.end !== expectation.eventRange.end) {
+      errors.push(`runtime compile target eventRange.end ${target.eventRange.end} does not match expected ${expectation.eventRange.end}`);
+    }
+    if (target.eventRange.count !== expectation.eventRange.count) {
+      errors.push(
+        `runtime compile target eventRange.count ${target.eventRange.count} does not match expected ${expectation.eventRange.count}`
+      );
+    }
+  }
+  if (expectation.eventExportDigest !== undefined && target.eventExportDigest !== expectation.eventExportDigest) {
+    errors.push(
+      `runtime compile target eventExportDigest ${target.eventExportDigest ?? "null"} does not match expected ${expectation.eventExportDigest ?? "null"}`
+    );
+  }
+  if (expectation.builtAt !== undefined && target.builtAt !== expectation.builtAt) {
+    errors.push(`runtime compile target builtAt ${target.builtAt} does not match expected ${expectation.builtAt}`);
   }
 
   return errors;
@@ -950,6 +1054,7 @@ export function validateActivationPointerRecord(
   pushWhenMissing(errors, value.packRootDir.length > 0, "activation pointer packRootDir is required");
   pushWhenMissing(errors, value.manifestPath.length > 0, "activation pointer manifestPath is required");
   pushWhenMissing(errors, value.manifestPath.endsWith(".json"), "activation pointer manifestPath must target json");
+  pushWhenMissing(errors, value.manifestDigest.startsWith("sha256-"), "activation pointer manifestDigest must be a sha256 digest");
   pushWhenMissing(
     errors,
     value.routePolicy === "heuristic_allowed" || value.routePolicy === "requires_learned_routing",
@@ -1354,6 +1459,7 @@ export const FIXTURE_ACTIVATION_POINTERS: ActivationPointersV1 = {
     packId: "pack-active",
     packRootDir: "/packs/pack-active",
     manifestPath: "/packs/pack-active/manifest.json",
+    manifestDigest: "sha256-pack-active-manifest",
     routePolicy: "heuristic_allowed",
     routerIdentity: null,
     workspaceSnapshot: "workspace-active@snapshot-2026-03-06",
@@ -1372,6 +1478,7 @@ export const FIXTURE_ACTIVATION_POINTERS: ActivationPointersV1 = {
     packId: "pack-candidate",
     packRootDir: "/packs/pack-candidate",
     manifestPath: "/packs/pack-candidate/manifest.json",
+    manifestDigest: "sha256-pack-candidate-manifest",
     routePolicy: "requires_learned_routing",
     routerIdentity: "pack-candidate:route_fn",
     workspaceSnapshot: FIXTURE_WORKSPACE_METADATA.snapshotId,
@@ -1390,6 +1497,7 @@ export const FIXTURE_ACTIVATION_POINTERS: ActivationPointersV1 = {
     packId: "pack-previous",
     packRootDir: "/packs/pack-previous",
     manifestPath: "/packs/pack-previous/manifest.json",
+    manifestDigest: "sha256-pack-previous-manifest",
     routePolicy: "heuristic_allowed",
     routerIdentity: null,
     workspaceSnapshot: "workspace-previous@snapshot-2026-03-05",

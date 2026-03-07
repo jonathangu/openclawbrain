@@ -20,7 +20,8 @@ import {
   compileRuntime,
   compileRuntimeFromActivation,
   determineRouteMode,
-  loadPackForCompile
+  loadPackForCompile,
+  resolveActivationCompileTarget
 } from "@openclawbrain/compiler";
 import {
   PACK_LAYOUT,
@@ -252,6 +253,47 @@ test("compileRuntimeFromActivation fails fast when no active pack is present", (
   } finally {
     rmSync(activationRoot, { recursive: true, force: true });
   }
+});
+
+test("resolveActivationCompileTarget validates manifest expectations before compile", (t) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-expect-activation-"));
+  const packRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-expect-pack-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(packRoot, { recursive: true, force: true }));
+
+  materializeFixturePack(packRoot);
+  activatePack(activationRoot, packRoot, "2026-03-06T06:20:00.000Z");
+
+  const resolved = resolveActivationCompileTarget(activationRoot, {
+    expectation: {
+      packId: FIXTURE_ARTIFACT_MANIFEST.packId,
+      routePolicy: FIXTURE_ARTIFACT_MANIFEST.routePolicy,
+      routerIdentity: FIXTURE_ROUTER_ARTIFACT.routerIdentity,
+      workspaceSnapshot: FIXTURE_ARTIFACT_MANIFEST.provenance.workspaceSnapshot,
+      workspaceRevision: FIXTURE_ARTIFACT_MANIFEST.provenance.workspace.revision,
+      eventRange: {
+        start: FIXTURE_ARTIFACT_MANIFEST.provenance.eventRange.start,
+        end: FIXTURE_ARTIFACT_MANIFEST.provenance.eventRange.end,
+        count: FIXTURE_ARTIFACT_MANIFEST.provenance.eventRange.count
+      },
+      eventExportDigest: FIXTURE_ARTIFACT_MANIFEST.provenance.eventExports?.exportDigest ?? null,
+      builtAt: FIXTURE_ARTIFACT_MANIFEST.provenance.builtAt
+    }
+  });
+
+  assert.equal(resolved.slot, "active");
+  assert.equal(resolved.target.packId, FIXTURE_ARTIFACT_MANIFEST.packId);
+
+  assert.throws(
+    () =>
+      resolveActivationCompileTarget(activationRoot, {
+        expectation: {
+          workspaceSnapshot: "workspace-stale@snapshot"
+        }
+      }),
+    /Activation compile target mismatch: runtime compile target workspaceSnapshot/
+  );
 });
 
 test("pack load rejects tampered graph payloads", (t) => {

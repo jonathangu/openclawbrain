@@ -6,13 +6,17 @@ import {
   type PackContextBlockRecordV1,
   type PackVectorEntryV1,
   type RouteMode,
+  type RuntimeCompileExpectationV1,
   type RuntimeCompileRequestV1,
   type RuntimeCompileResponseV1,
+  type RuntimeCompileTargetV1,
   type RuntimeContextBlockV1,
+  validateRuntimeCompileExpectation,
   validateRuntimeCompileRequest,
-  validateRuntimeCompileResponse
+  validateRuntimeCompileResponse,
+  validateRuntimeCompileTargetExpectation
 } from "@openclawbrain/contracts";
-import { loadPack, loadPackFromActivation, type PackDescriptor } from "@openclawbrain/pack-format";
+import { describePackCompileTarget, loadPack, loadPackFromActivation, type PackDescriptor } from "@openclawbrain/pack-format";
 
 export type LoadedPack = PackDescriptor;
 
@@ -31,6 +35,13 @@ export interface RankedContextBlock {
 export interface ActivationCompileOptions {
   slot?: ActivationPointerSlot;
   requireActivationReady?: boolean;
+  expectation?: RuntimeCompileExpectationV1;
+}
+
+export interface ActivationCompileResolution {
+  slot: ActivationPointerSlot;
+  pack: LoadedPack;
+  target: RuntimeCompileTargetV1;
 }
 
 function normalizeTokens(value: string): string[] {
@@ -233,7 +244,7 @@ export function loadPackForCompile(rootDir: string): LoadedPack {
   return loadPack(rootDir);
 }
 
-export function loadPackForActivationCompile(rootDir: string, options: ActivationCompileOptions = {}): LoadedPack {
+export function resolveActivationCompileTarget(rootDir: string, options: ActivationCompileOptions = {}): ActivationCompileResolution {
   const slot = options.slot ?? "active";
   const pack = loadPackFromActivation(rootDir, slot, {
     requireActivationReady: options.requireActivationReady !== false
@@ -243,7 +254,30 @@ export function loadPackForActivationCompile(rootDir: string, options: Activatio
     throw new Error(`Activation slot ${slot} is empty`);
   }
 
-  return pack;
+  const target = describePackCompileTarget(pack);
+  const expectation = options.expectation;
+
+  if (expectation !== undefined) {
+    const expectationErrors = validateRuntimeCompileExpectation(expectation);
+    if (expectationErrors.length > 0) {
+      throw new Error(`Invalid compile expectation: ${expectationErrors.join("; ")}`);
+    }
+
+    const compatibilityErrors = validateRuntimeCompileTargetExpectation(target, expectation);
+    if (compatibilityErrors.length > 0) {
+      throw new Error(`Activation compile target mismatch: ${compatibilityErrors.join("; ")}`);
+    }
+  }
+
+  return {
+    slot,
+    pack,
+    target
+  };
+}
+
+export function loadPackForActivationCompile(rootDir: string, options: ActivationCompileOptions = {}): LoadedPack {
+  return resolveActivationCompileTarget(rootDir, options).pack;
 }
 
 export function rankContextBlocks(pack: LoadedPack, request: RuntimeCompileRequestV1): RankedContextBlock[] {
@@ -392,5 +426,14 @@ export function compileRuntimeFromActivation(
   request: RuntimeCompileRequestV1,
   options: ActivationCompileOptions = {}
 ): RuntimeCompileResponseV1 {
-  return compileRuntime(loadPackForActivationCompile(rootDir, options), request);
+  const resolved = resolveActivationCompileTarget(rootDir, options);
+  const compiledRequest =
+    request.activePackId === undefined && resolved.slot === "active"
+      ? {
+          ...request,
+          activePackId: resolved.target.packId
+        }
+      : request;
+
+  return compileRuntime(resolved.pack, compiledRequest);
 }
