@@ -9,6 +9,7 @@ Use this package when OpenClaw needs a narrow, typed bridge over promoted packs:
 - surface learned-route diagnostics alongside compiled context
 - emit normalized interaction and feedback events for learner handoff
 - optionally write learner-facing event-export bundles on disk
+- run a bounded async teacher loop that converts normalized exports into canonical supervision artifacts and future learner inputs
 
 ```ts
 import { compileRuntimeContext, runRuntimeTurn } from "@openclawbrain/openclaw";

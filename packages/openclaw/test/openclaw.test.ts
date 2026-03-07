@@ -10,12 +10,13 @@ import {
   FIXTURE_INTERACTION_EVENTS,
   type NormalizedEventExportV1
 } from "@openclawbrain/contracts";
-import { materializeCandidatePack } from "@openclawbrain/learner";
+import { materializeAlwaysOnLearningCandidatePack, materializeCandidatePack } from "@openclawbrain/learner";
 import { activatePack } from "@openclawbrain/pack-format";
 import {
   buildNormalizedRuntimeEventExport,
   classifyFeedbackKind,
   compileRuntimeContext,
+  createAsyncTeacherLiveLoop,
   loadRuntimeEventExportBundle,
   resolveActivePackForCompile,
   runRuntimeTurn
@@ -312,4 +313,134 @@ test("classifyFeedbackKind normalizes common operator cues", () => {
   assert.equal(classifyFeedbackKind("No — do this instead."), "correction");
   assert.equal(classifyFeedbackKind("ship it, looks good"), "approval");
   assert.equal(classifyFeedbackKind("do not send this message"), "suppression");
+});
+
+test("async teacher live loop surfaces duplicate/no-op and freshness diagnostics", async () => {
+  const loop = createAsyncTeacherLiveLoop({
+    packLabel: "teacher-loop-runtime",
+    workspace: {
+      workspaceId: "workspace-teacher-loop",
+      snapshotId: "workspace-teacher-loop@snapshot-1",
+      capturedAt: "2026-03-07T18:00:00.000Z",
+      rootDir: "/workspace/teacher-loop",
+      revision: "teacher-loop-rev"
+    },
+    learnedRouting: false,
+    maxQueuedExports: 1,
+    staleAfterMs: 120_000,
+    liveSliceSize: 2,
+    backfillSliceSize: 2
+  });
+  const exportOne = buildNormalizedRuntimeEventExport(
+    {
+      agentId: "runtime-teacher",
+      sessionId: "session-teacher-1",
+      channel: "whatsapp",
+      userMessage: "teacher queue fresh diagnostics",
+      sequenceStart: 801,
+      compile: {
+        createdAt: "2026-03-07T18:00:00.000Z"
+      },
+      feedback: [
+        {
+          createdAt: "2026-03-07T18:00:30.000Z",
+          content: "Use the freshest correction before falling back to older teacher state."
+        }
+      ]
+    },
+    {
+      ok: false,
+      fallbackToStaticContext: true,
+      hardRequirementViolated: false,
+      activationRoot: "/missing",
+      error: "No active pack pointer found",
+      brainContext: ""
+    }
+  );
+
+  const accepted = loop.enqueueNormalizedEventExport(exportOne, {
+    observedAt: "2026-03-07T18:01:00.000Z"
+  });
+  const duplicate = loop.enqueueNormalizedEventExport(exportOne, {
+    observedAt: "2026-03-07T18:01:15.000Z"
+  });
+  const snapshot = await loop.flush();
+
+  assert.equal(accepted.accepted, true);
+  assert.equal(duplicate.accepted, false);
+  assert.equal(duplicate.reason, "duplicate_export");
+  assert.equal(snapshot.queue.depth, 0);
+  assert.equal(snapshot.teacher.artifactCount, 1);
+  assert.equal(snapshot.teacher.latestFreshness, "fresh");
+  assert.equal(snapshot.diagnostics.latestFreshness, "fresh");
+  assert.match(snapshot.diagnostics.notes.join(";"), /teacher_freshness=fresh/);
+  assert.match(snapshot.diagnostics.notes.join(";"), /teacher_noop=duplicate_export/);
+  assert.match(duplicate.notes.join(";"), /teacher_noop=duplicate_export/);
+});
+
+test("async teacher live loop smoke proves teacher output reaches the learner candidate-pack path", async (t) => {
+  const rootDir = mkdtemp("openclawbrain-openclaw-teacher-smoke-");
+  t.after(() => rmSync(rootDir, { recursive: true, force: true }));
+
+  const loop = createAsyncTeacherLiveLoop({
+    packLabel: "teacher-smoke",
+    workspace: {
+      workspaceId: "workspace-teacher-smoke",
+      snapshotId: "workspace-teacher-smoke@snapshot-1",
+      capturedAt: "2026-03-07T19:00:00.000Z",
+      rootDir: "/workspace/teacher-smoke",
+      revision: "teacher-smoke-rev"
+    },
+    learnedRouting: true,
+    staleAfterMs: 300_000,
+    liveSliceSize: 2,
+    backfillSliceSize: 2
+  });
+  const exportOne = buildNormalizedRuntimeEventExport(
+    {
+      agentId: "runtime-teacher",
+      sessionId: "session-teacher-2",
+      channel: "whatsapp",
+      userMessage: "teacher output must reach the learner path",
+      sequenceStart: 901,
+      compile: {
+        createdAt: "2026-03-07T19:00:00.000Z"
+      },
+      delivery: {
+        createdAt: "2026-03-07T19:00:45.000Z",
+        messageId: "msg-teacher-2"
+      },
+      feedback: [
+        {
+          createdAt: "2026-03-07T19:00:30.000Z",
+          content: "Prioritize this fresh supervision when building the next candidate pack."
+        }
+      ]
+    },
+    {
+      ok: false,
+      fallbackToStaticContext: true,
+      hardRequirementViolated: false,
+      activationRoot: "/missing",
+      error: "No active pack pointer found",
+      brainContext: ""
+    }
+  );
+
+  loop.enqueueNormalizedEventExport(exportOne, {
+    observedAt: "2026-03-07T19:01:00.000Z"
+  });
+  const snapshot = await loop.flush();
+
+  assert.notEqual(snapshot.learner.lastMaterialization, null);
+  const descriptor = materializeAlwaysOnLearningCandidatePack(rootDir, snapshot.learner.lastMaterialization!);
+
+  assert.equal(snapshot.teacher.artifactCount, 1);
+  assert.equal(snapshot.learner.lastMaterialization?.candidate.summary.routePolicy, "requires_learned_routing");
+  assert.match(descriptor.graph.blocks.map((block) => block.text).join("\n"), /Teacher teaching/);
+  assert.match(
+    descriptor.graph.blocks.map((block) => block.text).join("\n"),
+    /Prioritize this fresh supervision when building the next candidate pack/
+  );
+  assert.equal(descriptor.graph.blocks.some((block) => block.learning.role === "teacher_supervision"), true);
 });

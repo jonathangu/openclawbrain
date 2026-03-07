@@ -13,6 +13,7 @@ import {
   FIXTURE_INTERACTION_EVENT,
   FIXTURE_INTERACTION_EVENTS,
   FIXTURE_NORMALIZED_EVENT_EXPORT,
+  FIXTURE_TEACHER_SUPERVISION_ARTIFACT,
   FIXTURE_WORKSPACE_METADATA,
   FIXTURE_PACK_GRAPH,
   FIXTURE_PACK_VECTORS,
@@ -28,6 +29,7 @@ import {
   validatePackGraphPayload,
   validatePackVectorsPayload,
   validateRouterArtifact,
+  validateTeacherSupervisionArtifact,
   validateRuntimeCompileExpectation,
   validateRuntimeCompileRequest,
   validateRuntimeCompileResponse,
@@ -43,11 +45,28 @@ test("canonical fixtures validate end-to-end", () => {
   assert.deepEqual(validateFeedbackEvent(FIXTURE_FEEDBACK_EVENT), []);
   assert.deepEqual(validateLearningSurface(FIXTURE_NORMALIZED_EVENT_EXPORT.provenance.learningSurface), []);
   assert.deepEqual(validateNormalizedEventExport(FIXTURE_NORMALIZED_EVENT_EXPORT), []);
+  assert.deepEqual(validateTeacherSupervisionArtifact(FIXTURE_TEACHER_SUPERVISION_ARTIFACT), []);
   assert.deepEqual(validateWorkspaceMetadata(FIXTURE_WORKSPACE_METADATA), []);
   assert.deepEqual(validateArtifactManifest(FIXTURE_ARTIFACT_MANIFEST), []);
   assert.deepEqual(validatePackGraphPayload(FIXTURE_PACK_GRAPH, FIXTURE_ARTIFACT_MANIFEST.packId), []);
   assert.deepEqual(validatePackVectorsPayload(FIXTURE_PACK_VECTORS, FIXTURE_PACK_GRAPH), []);
   assert.deepEqual(validateRouterArtifact(FIXTURE_ROUTER_ARTIFACT, FIXTURE_ARTIFACT_MANIFEST), []);
+});
+
+test("teacher supervision artifacts validate freshness and dedup metadata", () => {
+  assert.deepEqual(validateTeacherSupervisionArtifact(FIXTURE_TEACHER_SUPERVISION_ARTIFACT), []);
+
+  assert.deepEqual(
+    validateTeacherSupervisionArtifact({
+      ...FIXTURE_TEACHER_SUPERVISION_ARTIFACT,
+      artifactId: "",
+      freshness: {
+        ...FIXTURE_TEACHER_SUPERVISION_ARTIFACT.freshness,
+        ageMs: -1
+      }
+    }),
+    ["teacher supervision artifactId is required", "teacher supervision freshness.ageMs must be non-negative"]
+  );
 });
 
 test("canonical fixture sources point at current repo docs", () => {

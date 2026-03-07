@@ -18,12 +18,23 @@ import {
   type NormalizedEventExportV1,
   type RouteMode,
   type RuntimeCompileResponseV1,
+  type TeacherSupervisionArtifactV1,
   validateNormalizedEventExport
 } from "@openclawbrain/contracts";
+import {
+  DEFAULT_TEACHER_SUPERVISION_STALE_AFTER_MS,
+  advanceAlwaysOnLearningRuntime,
+  buildTeacherSupervisionArtifactsFromNormalizedEventExport,
+  createAlwaysOnLearningRuntimeState,
+  type AdvanceAlwaysOnLearningRuntimeInput,
+  type AlwaysOnLearningMaterializationJobV1,
+  type AlwaysOnLearningRuntimeStateV1
+} from "@openclawbrain/learner";
 import { inspectActivationState, type ActivationSlotInspection } from "@openclawbrain/pack-format";
 
 const DEFAULT_AGENT_ID = "openclaw-runtime";
 const FEEDBACK_KINDS = new Set<FeedbackEventKind>(["correction", "teaching", "approval", "suppression"]);
+export const DEFAULT_ASYNC_TEACHER_QUEUE_CAPACITY = 8;
 
 
 const RUNTIME_EVENT_EXPORT_BUNDLE_CONTRACT = "normalized_event_export_bundle.v1" as const;
@@ -193,8 +204,384 @@ export type RuntimeTurnResult = RuntimeCompileResult & {
   warnings: string[];
 };
 
+export type TeacherLoopNoOpReason = "none" | "duplicate_export" | "queue_full" | "no_teacher_artifacts";
+
+export interface AsyncTeacherLiveLoopInput
+  extends Pick<
+    AdvanceAlwaysOnLearningRuntimeInput,
+    | "packLabel"
+    | "workspace"
+    | "learnedRouting"
+    | "builtAt"
+    | "offlineArtifacts"
+    | "structuralOps"
+    | "liveSliceSize"
+    | "backfillSliceSize"
+    | "cadence"
+  > {
+  maxQueuedExports?: number;
+  staleAfterMs?: number;
+}
+
+export interface AsyncTeacherQueuedExportJobV1 {
+  jobId: string;
+  exportDigest: string;
+  observedAt: string;
+  normalizedEventExport: NormalizedEventExportV1;
+}
+
+export interface AsyncTeacherLiveLoopDiagnosticsV1 {
+  acceptedExportCount: number;
+  processedExportCount: number;
+  duplicateExportCount: number;
+  droppedExportCount: number;
+  emittedArtifactCount: number;
+  dedupedArtifactCount: number;
+  lastProcessedAt: string | null;
+  latestFreshness: TeacherSupervisionArtifactV1["freshness"]["status"] | "none";
+  lastNoOpReason: TeacherLoopNoOpReason;
+  notes: string[];
+}
+
+export interface AsyncTeacherLiveLoopSnapshotV1 {
+  runtimeOwner: "openclaw";
+  queue: {
+    capacity: number;
+    depth: number;
+    running: boolean;
+  };
+  teacher: {
+    artifactCount: number;
+    artifacts: TeacherSupervisionArtifactV1[];
+    latestFreshness: TeacherSupervisionArtifactV1["freshness"]["status"] | "none";
+  };
+  learner: {
+    state: AlwaysOnLearningRuntimeStateV1;
+    lastMaterialization: AlwaysOnLearningMaterializationJobV1 | null;
+  };
+  diagnostics: AsyncTeacherLiveLoopDiagnosticsV1;
+}
+
+export interface AsyncTeacherEnqueueResultV1 {
+  accepted: boolean;
+  exportDigest: string;
+  queueDepth: number;
+  notes: string[];
+  reason: Exclude<TeacherLoopNoOpReason, "none"> | null;
+}
+
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
+}
+
+function buildAsyncTeacherLoopNotes(input: {
+  queueDepth: number;
+  latestFreshness: TeacherSupervisionArtifactV1["freshness"]["status"] | "none";
+  artifactCount: number;
+  emittedArtifactCount: number;
+  dedupedArtifactCount: number;
+  noOpReason: TeacherLoopNoOpReason;
+  materialization: AlwaysOnLearningMaterializationJobV1 | null;
+}): string[] {
+  return [
+    `teacher_queue_depth=${input.queueDepth}`,
+    `teacher_freshness=${input.latestFreshness}`,
+    `teacher_artifacts_total=${input.artifactCount}`,
+    `teacher_artifacts_emitted=${input.emittedArtifactCount}`,
+    `teacher_artifacts_deduped=${input.dedupedArtifactCount}`,
+    `teacher_noop=${input.noOpReason}`,
+    input.materialization === null ? "teacher_materialization=noop" : `teacher_materialized_pack=${input.materialization.candidate.summary.packId}`
+  ];
+}
+
+function cloneAlwaysOnLearningMaterializationJobOrNull(
+  value: AlwaysOnLearningMaterializationJobV1 | null
+): AlwaysOnLearningMaterializationJobV1 | null {
+  return value === null ? null : structuredClone(value);
+}
+
+function cloneTeacherSupervisionArtifacts(value: readonly TeacherSupervisionArtifactV1[]): TeacherSupervisionArtifactV1[] {
+  return [...structuredClone(value)];
+}
+
+function buildNormalizedEventDedupId(event: InteractionEventV1 | FeedbackEventV1): string {
+  return checksumJsonPayload({
+    contract: event.contract,
+    eventId: event.eventId,
+    agentId: event.agentId,
+    sessionId: event.sessionId,
+    channel: event.channel,
+    sequence: event.sequence,
+    kind: event.kind,
+    createdAt: event.createdAt,
+    source: event.source,
+    packId: "packId" in event ? event.packId ?? null : null,
+    content: "content" in event ? event.content : null,
+    messageId: event.messageId ?? null,
+    relatedInteractionId: "relatedInteractionId" in event ? event.relatedInteractionId ?? null : null
+  });
+}
+
+function mergeUniqueEvents<T extends InteractionEventV1 | FeedbackEventV1>(
+  current: readonly T[],
+  additions: readonly T[]
+): T[] {
+  const merged = new Map<string, T>();
+
+  for (const event of [...current, ...additions]) {
+    merged.set(buildNormalizedEventDedupId(event), structuredClone(event));
+  }
+
+  return [...merged.values()].sort((left, right) => left.sequence - right.sequence || left.createdAt.localeCompare(right.createdAt));
+}
+
+function mergeTeacherArtifacts(
+  current: readonly TeacherSupervisionArtifactV1[],
+  additions: readonly TeacherSupervisionArtifactV1[]
+): TeacherSupervisionArtifactV1[] {
+  const merged = new Map<string, TeacherSupervisionArtifactV1>();
+
+  for (const artifact of [...current, ...additions]) {
+    const existing = merged.get(artifact.dedupId);
+    if (
+      existing === undefined ||
+      Date.parse(artifact.freshness.observedAt) > Date.parse(existing.freshness.observedAt) ||
+      (artifact.freshness.observedAt === existing.freshness.observedAt && artifact.artifactId.localeCompare(existing.artifactId) < 0)
+    ) {
+      merged.set(artifact.dedupId, structuredClone(artifact));
+    }
+  }
+
+  return [...merged.values()].sort((left, right) => {
+    if (left.freshness.status !== right.freshness.status) {
+      return left.freshness.status === "fresh" ? -1 : 1;
+    }
+    if (left.createdAt !== right.createdAt) {
+      return Date.parse(right.createdAt) - Date.parse(left.createdAt);
+    }
+
+    return left.artifactId.localeCompare(right.artifactId);
+  });
+}
+
+function latestTeacherFreshness(
+  artifacts: readonly TeacherSupervisionArtifactV1[]
+): TeacherSupervisionArtifactV1["freshness"]["status"] | "none" {
+  return artifacts[0]?.freshness.status ?? "none";
+}
+
+export class AsyncTeacherLiveLoop {
+  private readonly input: AsyncTeacherLiveLoopInput;
+  private readonly queueCapacity: number;
+  private readonly staleAfterMs: number;
+  private readonly queuedExportDigests = new Set<string>();
+  private readonly seenExportDigests = new Set<string>();
+  private queue: AsyncTeacherQueuedExportJobV1[] = [];
+  private drainPromise: Promise<void> | null = null;
+  private interactionEvents: InteractionEventV1[] = [];
+  private feedbackEvents: FeedbackEventV1[] = [];
+  private teacherArtifacts: TeacherSupervisionArtifactV1[] = [];
+  private learnerState: AlwaysOnLearningRuntimeStateV1 = createAlwaysOnLearningRuntimeState();
+  private lastMaterialization: AlwaysOnLearningMaterializationJobV1 | null = null;
+  private diagnostics: AsyncTeacherLiveLoopDiagnosticsV1 = {
+    acceptedExportCount: 0,
+    processedExportCount: 0,
+    duplicateExportCount: 0,
+    droppedExportCount: 0,
+    emittedArtifactCount: 0,
+    dedupedArtifactCount: 0,
+    lastProcessedAt: null,
+    latestFreshness: "none",
+    lastNoOpReason: "none",
+    notes: buildAsyncTeacherLoopNotes({
+      queueDepth: 0,
+      latestFreshness: "none",
+      artifactCount: 0,
+      emittedArtifactCount: 0,
+      dedupedArtifactCount: 0,
+      noOpReason: "none",
+      materialization: null
+    })
+  };
+
+  constructor(input: AsyncTeacherLiveLoopInput) {
+    this.input = input;
+    this.queueCapacity = input.maxQueuedExports ?? DEFAULT_ASYNC_TEACHER_QUEUE_CAPACITY;
+    this.staleAfterMs = input.staleAfterMs ?? DEFAULT_TEACHER_SUPERVISION_STALE_AFTER_MS;
+
+    if (!Number.isInteger(this.queueCapacity) || this.queueCapacity <= 0) {
+      throw new Error("maxQueuedExports must be a positive integer");
+    }
+    if (!Number.isInteger(this.staleAfterMs) || this.staleAfterMs <= 0) {
+      throw new Error("staleAfterMs must be a positive integer");
+    }
+  }
+
+  enqueueNormalizedEventExport(
+    normalizedEventExport: NormalizedEventExportV1,
+    options: { observedAt?: string } = {}
+  ): AsyncTeacherEnqueueResultV1 {
+    const validationErrors = validateNormalizedEventExport(normalizedEventExport);
+    if (validationErrors.length > 0) {
+      throw new Error(`normalized event export is invalid: ${validationErrors.join("; ")}`);
+    }
+
+    const exportDigest = normalizedEventExport.provenance.exportDigest;
+    if (this.seenExportDigests.has(exportDigest) || this.queuedExportDigests.has(exportDigest)) {
+      this.diagnostics.duplicateExportCount += 1;
+      this.diagnostics.lastNoOpReason = "duplicate_export";
+      this.refreshNotes();
+      return {
+        accepted: false,
+        exportDigest,
+        queueDepth: this.queue.length,
+        notes: [...this.diagnostics.notes],
+        reason: "duplicate_export"
+      };
+    }
+
+    if (this.queue.length >= this.queueCapacity) {
+      this.diagnostics.droppedExportCount += 1;
+      this.diagnostics.lastNoOpReason = "queue_full";
+      this.refreshNotes();
+      return {
+        accepted: false,
+        exportDigest,
+        queueDepth: this.queue.length,
+        notes: [...this.diagnostics.notes],
+        reason: "queue_full"
+      };
+    }
+
+    const observedAt =
+      options.observedAt ?? normalizedEventExport.range.lastCreatedAt ?? normalizedEventExport.range.firstCreatedAt ?? new Date().toISOString();
+
+    this.queue.push({
+      jobId: `teacher-loop-${createHash("sha256").update(`${exportDigest}:${observedAt}`).digest("hex")}`,
+      exportDigest,
+      observedAt,
+      normalizedEventExport: structuredClone(normalizedEventExport)
+    });
+    this.queuedExportDigests.add(exportDigest);
+    this.diagnostics.acceptedExportCount += 1;
+    this.refreshNotes();
+    void this.ensureDrain();
+
+    return {
+      accepted: true,
+      exportDigest,
+      queueDepth: this.queue.length,
+      notes: [...this.diagnostics.notes],
+      reason: null
+    };
+  }
+
+  async flush(): Promise<AsyncTeacherLiveLoopSnapshotV1> {
+    await this.ensureDrain();
+    return this.snapshot();
+  }
+
+  snapshot(): AsyncTeacherLiveLoopSnapshotV1 {
+    return {
+      runtimeOwner: "openclaw",
+      queue: {
+        capacity: this.queueCapacity,
+        depth: this.queue.length,
+        running: this.drainPromise !== null
+      },
+      teacher: {
+        artifactCount: this.teacherArtifacts.length,
+        artifacts: cloneTeacherSupervisionArtifacts(this.teacherArtifacts),
+        latestFreshness: this.diagnostics.latestFreshness
+      },
+      learner: {
+        state: structuredClone(this.learnerState),
+        lastMaterialization: cloneAlwaysOnLearningMaterializationJobOrNull(this.lastMaterialization)
+      },
+      diagnostics: {
+        ...this.diagnostics,
+        notes: [...this.diagnostics.notes]
+      }
+    };
+  }
+
+  private async ensureDrain(): Promise<void> {
+    if (this.drainPromise === null) {
+      this.drainPromise = this.drain().finally(() => {
+        this.drainPromise = null;
+      });
+    }
+
+    await this.drainPromise;
+
+    if (this.queue.length > 0) {
+      await this.ensureDrain();
+    }
+  }
+
+  private async drain(): Promise<void> {
+    while (this.queue.length > 0) {
+      const job = this.queue.shift() as AsyncTeacherQueuedExportJobV1;
+      this.queuedExportDigests.delete(job.exportDigest);
+      this.seenExportDigests.add(job.exportDigest);
+
+      this.interactionEvents = mergeUniqueEvents(this.interactionEvents, job.normalizedEventExport.interactionEvents);
+      this.feedbackEvents = mergeUniqueEvents(this.feedbackEvents, job.normalizedEventExport.feedbackEvents);
+
+      const builtArtifacts = buildTeacherSupervisionArtifactsFromNormalizedEventExport({
+        normalizedEventExport: job.normalizedEventExport,
+        observedAt: job.observedAt,
+        staleAfterMs: this.staleAfterMs
+      });
+      const nextTeacherArtifacts = mergeTeacherArtifacts(this.teacherArtifacts, builtArtifacts);
+      const emittedArtifactCount = builtArtifacts.length;
+      const dedupedArtifactCount = Math.max(0, this.teacherArtifacts.length + builtArtifacts.length - nextTeacherArtifacts.length);
+
+      this.teacherArtifacts = nextTeacherArtifacts;
+
+      const learnerResult = advanceAlwaysOnLearningRuntime({
+        packLabel: this.input.packLabel,
+        workspace: this.input.workspace,
+        interactionEvents: this.interactionEvents,
+        feedbackEvents: this.feedbackEvents,
+        teacherSupervisionArtifacts: this.teacherArtifacts,
+        learnedRouting: this.input.learnedRouting,
+        state: this.learnerState,
+        builtAt: this.input.builtAt ?? job.observedAt,
+        ...(this.input.offlineArtifacts !== undefined ? { offlineArtifacts: this.input.offlineArtifacts } : {}),
+        ...(this.input.structuralOps !== undefined ? { structuralOps: this.input.structuralOps } : {}),
+        ...(this.input.liveSliceSize !== undefined ? { liveSliceSize: this.input.liveSliceSize } : {}),
+        ...(this.input.backfillSliceSize !== undefined ? { backfillSliceSize: this.input.backfillSliceSize } : {}),
+        ...(this.input.cadence !== undefined ? { cadence: this.input.cadence } : {})
+      });
+
+      this.learnerState = structuredClone(learnerResult.state);
+      this.lastMaterialization = cloneAlwaysOnLearningMaterializationJobOrNull(learnerResult.materialization);
+      this.diagnostics.processedExportCount += 1;
+      this.diagnostics.emittedArtifactCount += emittedArtifactCount;
+      this.diagnostics.dedupedArtifactCount += dedupedArtifactCount;
+      this.diagnostics.lastProcessedAt = job.observedAt;
+      this.diagnostics.latestFreshness = latestTeacherFreshness(this.teacherArtifacts);
+      this.diagnostics.lastNoOpReason = emittedArtifactCount === 0 ? "no_teacher_artifacts" : "none";
+      this.refreshNotes();
+    }
+  }
+
+  private refreshNotes(): void {
+    this.diagnostics.notes = buildAsyncTeacherLoopNotes({
+      queueDepth: this.queue.length,
+      latestFreshness: this.diagnostics.latestFreshness,
+      artifactCount: this.teacherArtifacts.length,
+      emittedArtifactCount: this.diagnostics.emittedArtifactCount,
+      dedupedArtifactCount: this.diagnostics.dedupedArtifactCount,
+      noOpReason: this.diagnostics.lastNoOpReason,
+      materialization: this.lastMaterialization
+    });
+  }
+}
+
+export function createAsyncTeacherLiveLoop(input: AsyncTeacherLiveLoopInput): AsyncTeacherLiveLoop {
+  return new AsyncTeacherLiveLoop(input);
 }
 
 
