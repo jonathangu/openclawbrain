@@ -54,6 +54,19 @@ pnpm lifecycle:smoke
 pnpm observability:smoke
 ```
 
+For a package-first attach path inside OpenClaw, the narrow install lane is:
+
+```bash
+pnpm add @openclawbrain/contracts @openclawbrain/events @openclawbrain/event-export @openclawbrain/learner @openclawbrain/activation @openclawbrain/compiler
+```
+
+That install set maps to the attach flow like this:
+
+- `@openclawbrain/events` and `@openclawbrain/event-export` normalize and bridge the live/backfill learning surface
+- `@openclawbrain/learner` materializes fast-boot and fresher candidate packs
+- `@openclawbrain/activation` stages, promotes, and inspects runtime slots
+- `@openclawbrain/compiler` compiles from the promoted pack and emits operator-visible diagnostics
+
 `pnpm lifecycle:smoke` proves that the attach path can materialize, stage, promote, and compile from a useful pack immediately.
 
 `pnpm observability:smoke` proves that the operator diagnostics surface can answer four questions without private runtime plumbing:
@@ -126,6 +139,7 @@ Those proofs cover:
 The eventual single-path OpenClaw attach/install flow should preserve the same invariants while optimizing for immediate usefulness and always-on passive learning.
 
 The detailed diagnostics contract lives in [`docs/operator-observability.md`](docs/operator-observability.md).
+The repo-wide convergence statement lives in [`docs/typescript-first-convergence.md`](docs/typescript-first-convergence.md).
 
 ## Required doc promise
 

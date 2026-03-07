@@ -642,6 +642,161 @@ test("compileRuntimeFromActivation surfaces stale-route warnings when a fresher 
   );
 });
 
+test("compileRuntimeFromActivation treats snapshot and export drift as freshness even when event ranges tie", (t: TestContext) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-freshness-tie-"));
+  const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-freshness-tie-"));
+  const candidateRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-candidate-freshness-tie-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(activeRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(candidateRoot, { recursive: true, force: true }));
+
+  const activeExport = buildFixtureNormalizedEventExport({
+    sessionId: "session-freshness-tie-active",
+    sequenceStart: 91,
+    createdAt: "2026-03-06T08:01:00.000Z",
+    streamSuffix: "freshness-tie-active",
+    interactionKind: "memory_compiled",
+    feedbackKind: "approval",
+    feedbackContent: "Serve the current active pack until an equivalent-range candidate proves fresher provenance."
+  });
+  const candidateExport = buildFixtureNormalizedEventExport({
+    sessionId: "session-freshness-tie-candidate",
+    sequenceStart: 91,
+    createdAt: "2026-03-06T08:01:00.000Z",
+    streamSuffix: "freshness-tie-candidate",
+    interactionKind: "operator_override",
+    feedbackKind: "teaching",
+    feedbackContent: "The candidate keeps the same event range but advances workspace and export freshness."
+  });
+
+  materializeActivationPack(activeRoot, {
+    packId: "pack-freshness-tie-active",
+    learnedRouting: false,
+    normalizedEventExport: activeExport,
+    snapshotId: "workspace-freshness-tie@snapshot-active",
+    revision: "freshness-tie-active-rev",
+    builtAt: "2026-03-06T08:06:00.000Z"
+  });
+  materializeActivationPack(candidateRoot, {
+    packId: "pack-freshness-tie-candidate",
+    learnedRouting: true,
+    normalizedEventExport: candidateExport,
+    snapshotId: "workspace-freshness-tie@snapshot-candidate",
+    revision: "freshness-tie-candidate-rev",
+    builtAt: "2026-03-06T08:06:00.000Z"
+  });
+
+  activatePack(activationRoot, activeRoot, "2026-03-06T08:10:00.000Z");
+  stageCandidatePack(activationRoot, candidateRoot, "2026-03-06T08:15:00.000Z");
+
+  const result = compileRuntimeFromActivation(activationRoot, {
+    contract: CONTRACT_IDS.runtimeCompile,
+    agentId: "agent-freshness-tie-warning",
+    userMessage: "Keep serving the active route while the candidate proves fresher provenance.",
+    maxContextBlocks: 2,
+    maxContextChars: 320,
+    modeRequested: "heuristic",
+    runtimeHints: ["active", "candidate", "freshness", "snapshot", "export"],
+    compactionMode: "native"
+  });
+
+  assert.equal(result.slot, "active");
+  assert.equal(result.target.packId, "pack-freshness-tie-active");
+  assert.match(
+    result.response.diagnostics.notes.join(";"),
+    /stale_route_warning=active pack pack-freshness-tie-active is behind promotion-ready candidate pack-freshness-tie-candidate/
+  );
+});
+
+test("compileRuntimeFromActivation evaluates the staged candidate only when promotion safety holds", (t: TestContext) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-candidate-eval-"));
+  const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-candidate-eval-"));
+  const candidateRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-candidate-candidate-eval-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(activeRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(candidateRoot, { recursive: true, force: true }));
+
+  const activeExport = buildFixtureNormalizedEventExport({
+    sessionId: "session-candidate-eval-active",
+    sequenceStart: 101,
+    createdAt: "2026-03-06T09:01:00.000Z",
+    streamSuffix: "candidate-eval-active",
+    interactionKind: "memory_compiled",
+    feedbackKind: "approval",
+    feedbackContent: "Keep the active pack stable until the staged candidate passes evaluation."
+  });
+  const candidateExport = buildFixtureNormalizedEventExport({
+    sessionId: "session-candidate-eval-candidate",
+    sequenceStart: 111,
+    createdAt: "2026-03-06T09:11:00.000Z",
+    streamSuffix: "candidate-eval-candidate",
+    interactionKind: "operator_override",
+    feedbackKind: "teaching",
+    feedbackContent: "Evaluate the staged candidate only after promotion safety is satisfied."
+  });
+
+  materializeActivationPack(activeRoot, {
+    packId: "pack-candidate-eval-active",
+    learnedRouting: false,
+    normalizedEventExport: activeExport,
+    snapshotId: "workspace-candidate-eval@snapshot-active",
+    revision: "candidate-eval-active-rev",
+    builtAt: "2026-03-06T09:06:00.000Z"
+  });
+  materializeActivationPack(candidateRoot, {
+    packId: "pack-candidate-eval-candidate",
+    learnedRouting: true,
+    normalizedEventExport: candidateExport,
+    snapshotId: "workspace-candidate-eval@snapshot-candidate",
+    revision: "candidate-eval-candidate-rev",
+    builtAt: "2026-03-06T09:16:00.000Z"
+  });
+
+  activatePack(activationRoot, activeRoot, "2026-03-06T09:20:00.000Z");
+  stageCandidatePack(activationRoot, candidateRoot, "2026-03-06T09:25:00.000Z");
+
+  const result = compileRuntimeFromActivation(
+    activationRoot,
+    {
+      contract: CONTRACT_IDS.runtimeCompile,
+      agentId: "agent-candidate-eval",
+      userMessage: "Evaluate the staged candidate pack before promotion.",
+      maxContextBlocks: 2,
+      maxContextChars: 360,
+      modeRequested: "heuristic",
+      runtimeHints: ["candidate", "evaluation", "promotion", "safety"],
+      compactionMode: "native"
+    },
+    {
+      slot: "candidate",
+      expectedTarget: {
+        packId: "pack-candidate-eval-candidate",
+        routePolicy: "requires_learned_routing",
+        routerIdentity: "pack-candidate-eval-candidate:route_fn",
+        workspaceSnapshot: "workspace-candidate-eval@snapshot-candidate",
+        workspaceRevision: "candidate-eval-candidate-rev",
+        eventRange: {
+          start: candidateExport.range.start,
+          end: candidateExport.range.end,
+          count: candidateExport.range.count
+        },
+        eventExportDigest: candidateExport.provenance.exportDigest,
+        builtAt: "2026-03-06T09:16:00.000Z"
+      }
+    }
+  );
+
+  assert.equal(result.slot, "candidate");
+  assert.equal(result.target.packId, "pack-candidate-eval-candidate");
+  assert.equal(result.response.packId, "pack-candidate-eval-candidate");
+  assert.equal(result.response.diagnostics.modeEffective, "learned");
+  assert.equal(result.response.diagnostics.usedLearnedRouteFn, true);
+  assert.match(result.response.diagnostics.notes.join(";"), /activation_slot=candidate/);
+  assert.match(result.response.diagnostics.notes.join(";"), /target_pack_id=pack-candidate-eval-candidate/);
+});
+
 test("resolveActivationCompileTarget blocks candidate evaluation when promotion safety fails", (t: TestContext) => {
   const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-candidate-gate-"));
   const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-candidate-gate-"));
@@ -898,6 +1053,13 @@ test("compileRuntimeFromActivation compiles the promoted pack when expected prov
   assert.equal(result.response.selectedContext.some((block) => /activation promotion evidence/i.test(block.text)), true);
   assert.match(result.response.diagnostics.notes.join(";"), /activation_slot=active/);
   assert.match(result.response.diagnostics.notes.join(";"), new RegExp(`target_pack_id=${fixture.candidatePackId}`));
+  assert.match(result.response.diagnostics.notes.join(";"), /target_route_policy=requires_learned_routing/);
+  assert.match(
+    result.response.diagnostics.notes.join(";"),
+    new RegExp(
+      `target_event_range=${fixture.candidateExport.range.start}-${fixture.candidateExport.range.end}#${fixture.candidateExport.range.count}`
+    )
+  );
   assert.match(
     result.response.diagnostics.notes.join(";"),
     new RegExp(`target_event_export_digest=${fixture.candidateExport.provenance.exportDigest}`)
@@ -905,6 +1067,15 @@ test("compileRuntimeFromActivation compiles the promoted pack when expected prov
   assert.match(
     result.response.diagnostics.notes.join(";"),
     new RegExp(`target_workspace_snapshot=${fixture.candidateWorkspaceSnapshot}`)
+  );
+  assert.match(
+    result.response.diagnostics.notes.join(";"),
+    new RegExp(`target_workspace_revision=${fixture.candidateWorkspaceRevision}`)
+  );
+  assert.match(result.response.diagnostics.notes.join(";"), new RegExp(`target_built_at=${fixture.candidateBuiltAt}`));
+  assert.match(
+    result.response.diagnostics.notes.join(";"),
+    new RegExp(`target_router_identity=${fixture.candidateRouterIdentity}`)
   );
 });
 

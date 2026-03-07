@@ -29,7 +29,15 @@ That means:
 - keep real-time event scanning and supervision harvest running continuously
 - keep OpenClaw as the sole runtime owner and fail open when brain artifacts are unavailable
 
-The operator-facing setup contract lives in [`docs/openclaw-attach-quickstart.md`](docs/openclaw-attach-quickstart.md), and the diagnostics contract lives in [`docs/operator-observability.md`](docs/operator-observability.md).
+The operator-facing setup contract lives in [`docs/openclaw-attach-quickstart.md`](docs/openclaw-attach-quickstart.md), the diagnostics contract lives in [`docs/operator-observability.md`](docs/operator-observability.md), and the repo-wide convergence statement lives in [`docs/typescript-first-convergence.md`](docs/typescript-first-convergence.md).
+
+For a package-first attach lane, start with:
+
+```bash
+pnpm add @openclawbrain/contracts @openclawbrain/events @openclawbrain/event-export @openclawbrain/learner @openclawbrain/activation @openclawbrain/compiler
+```
+
+Add `@openclawbrain/pack-format`, `@openclawbrain/workspace-metadata`, and `@openclawbrain/provenance` only when you need to inspect or materialize the immutable artifact boundary directly.
 
 ## Boundary
 
@@ -114,6 +122,7 @@ That command cleans the workspace, rebuilds it, reruns tests, and produces publi
 
 - `docs/openclaw-attach-quickstart.md`
 - `docs/operator-observability.md`
+- `docs/typescript-first-convergence.md`
 - `docs/contracts-v1.md`
 - `scripts/lifecycle-smoke.mjs`
 - `scripts/observability-smoke.mjs`

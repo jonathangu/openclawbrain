@@ -204,6 +204,23 @@ export interface AdvanceAlwaysOnLearningRuntimeResultV1 {
   state: AlwaysOnLearningRuntimeStateV1;
 }
 
+export interface DrainAlwaysOnLearningRuntimeInput extends AdvanceAlwaysOnLearningRuntimeInput {
+  maxCycles?: number;
+}
+
+export interface AlwaysOnLearningRuntimeCycleV1 extends AdvanceAlwaysOnLearningRuntimeResultV1 {
+  cycle: number;
+}
+
+export interface DrainAlwaysOnLearningRuntimeResultV1 {
+  runtimeOwner: "openclaw";
+  drained: boolean;
+  stopReason: "idle" | "max_cycles" | "no_progress";
+  cycles: AlwaysOnLearningRuntimeCycleV1[];
+  materializations: AlwaysOnLearningMaterializationJobV1[];
+  state: AlwaysOnLearningRuntimeStateV1;
+}
+
 function stableHash(value: string): string {
   let hash = 0;
   for (const char of value) {
@@ -231,6 +248,35 @@ function cloneSliceWatermark(value: NormalizedEventExportSliceV1["watermark"]): 
     first: value.first === null ? null : { ...value.first },
     last: value.last === null ? null : { ...value.last }
   };
+}
+
+function cloneNormalizedEventExportSlice(value: NormalizedEventExportSliceV1): NormalizedEventExportSliceV1 {
+  return structuredClone(value);
+}
+
+function cloneAlwaysOnLearningRuntimeState(value: AlwaysOnLearningRuntimeStateV1): AlwaysOnLearningRuntimeStateV1 {
+  return structuredClone(value);
+}
+
+function cloneAlwaysOnLearningMaterializationJob(
+  value: AlwaysOnLearningMaterializationJobV1
+): AlwaysOnLearningMaterializationJobV1 {
+  return structuredClone(value);
+}
+
+function compareSliceRecency(left: NormalizedEventExportSliceV1, right: NormalizedEventExportSliceV1): number {
+  if (left.export.range.end !== right.export.range.end) {
+    return right.export.range.end - left.export.range.end;
+  }
+  if (left.export.range.start !== right.export.range.start) {
+    return right.export.range.start - left.export.range.start;
+  }
+
+  return left.sliceId.localeCompare(right.sliceId);
+}
+
+function sortPendingSlicesByRecency(slices: readonly NormalizedEventExportSliceV1[]): NormalizedEventExportSliceV1[] {
+  return [...slices].sort(compareSliceRecency);
 }
 
 function materializeCandidatePackResult(rootDir: string, result: CandidatePackBuildResult): PackDescriptor {
@@ -290,8 +336,8 @@ function mergePendingSlices(
   pending: AlwaysOnLearningPendingSlicesV1,
   discovered: readonly NormalizedEventExportSliceV1[]
 ): AlwaysOnLearningPendingSlicesV1 {
-  const live = [...pending.live];
-  const backfill = [...pending.backfill];
+  const live = pending.live.map(cloneNormalizedEventExportSlice);
+  const backfill = pending.backfill.map(cloneNormalizedEventExportSlice);
   const seenSliceIds = new Set([...live, ...backfill].map((slice) => slice.sliceId));
 
   for (const slice of discovered) {
@@ -300,16 +346,16 @@ function mergePendingSlices(
     }
 
     if (slice.lane === "live") {
-      live.push(slice);
+      live.push(cloneNormalizedEventExportSlice(slice));
     } else {
-      backfill.push(slice);
+      backfill.push(cloneNormalizedEventExportSlice(slice));
     }
     seenSliceIds.add(slice.sliceId);
   }
 
   return {
-    live,
-    backfill
+    live: sortPendingSlicesByRecency(live),
+    backfill: sortPendingSlicesByRecency(backfill)
   };
 }
 
@@ -365,6 +411,10 @@ export function createAlwaysOnLearningRuntimeState(): AlwaysOnLearningRuntimeSta
   };
 }
 
+function hasPendingSlices(pending: AlwaysOnLearningPendingSlicesV1): boolean {
+  return pending.live.length > 0 || pending.backfill.length > 0;
+}
+
 function buildAlwaysOnLearningMaterializationJob(
   input: AdvanceAlwaysOnLearningRuntimeInput,
   current: AlwaysOnLearningRuntimeStateV1,
@@ -407,7 +457,7 @@ export function advanceAlwaysOnLearningRuntime(
   input: AdvanceAlwaysOnLearningRuntimeInput
 ): AdvanceAlwaysOnLearningRuntimeResultV1 {
   const cadence = normalizeAlwaysOnLearningCadence(input.cadence);
-  const current = input.state ?? createAlwaysOnLearningRuntimeState();
+  const current = cloneAlwaysOnLearningRuntimeState(input.state ?? createAlwaysOnLearningRuntimeState());
   const bridge = buildNormalizedEventExportBridge({
     interactionEvents: [...input.interactionEvents],
     feedbackEvents: [...input.feedbackEvents],
@@ -416,9 +466,11 @@ export function advanceAlwaysOnLearningRuntime(
     ...(input.backfillSliceSize !== undefined ? { backfillSliceSize: input.backfillSliceSize } : {})
   });
   const pending = mergePendingSlices(current.pending, bridge.slices);
-  const selectedLive = pending.live.slice(0, cadence.liveSlicesPerCycle);
+  const selectedLive = pending.live.slice(0, cadence.liveSlicesPerCycle).map(cloneNormalizedEventExportSlice);
   const bootstrapLiveFirst = current.learnedEventExport === null && selectedLive.length > 0;
-  const selectedBackfill = bootstrapLiveFirst ? [] : pending.backfill.slice(0, cadence.backfillSlicesPerCycle);
+  const selectedBackfill = bootstrapLiveFirst
+    ? []
+    : pending.backfill.slice(0, cadence.backfillSlicesPerCycle).map(cloneNormalizedEventExportSlice);
   const selectedSlices = [...selectedLive, ...selectedBackfill];
   const learnedEventExport = mergeNormalizedEventExports(current.learnedEventExport, selectedSlices);
   const materialization =
@@ -431,8 +483,8 @@ export function advanceAlwaysOnLearningRuntime(
     attachBlocksOnFullReplay: false,
     cursor: bridge.cursor,
     pending: {
-      live: pending.live.slice(selectedLive.length),
-      backfill: pending.backfill.slice(selectedBackfill.length)
+      live: pending.live.slice(selectedLive.length).map(cloneNormalizedEventExportSlice),
+      backfill: pending.backfill.slice(selectedBackfill.length).map(cloneNormalizedEventExportSlice)
     },
     learnedEventExport,
     lastMaterializedAt: materialization?.candidate.manifest.provenance.builtAt ?? current.lastMaterializedAt,
@@ -443,14 +495,65 @@ export function advanceAlwaysOnLearningRuntime(
     runtimeOwner: "openclaw",
     hotPathLearning: false,
     attachBlocksOnFullReplay: false,
-    bridge,
-    selectedSlices,
+    bridge: structuredClone(bridge),
+    selectedSlices: selectedSlices.map(cloneNormalizedEventExportSlice),
     deferred: {
       live: nextState.pending.live.length,
       backfill: nextState.pending.backfill.length
     },
-    materialization,
-    state: nextState
+    materialization: materialization === null ? null : cloneAlwaysOnLearningMaterializationJob(materialization),
+    state: cloneAlwaysOnLearningRuntimeState(nextState)
+  };
+}
+
+export function drainAlwaysOnLearningRuntime(
+  input: DrainAlwaysOnLearningRuntimeInput
+): DrainAlwaysOnLearningRuntimeResultV1 {
+  const maxCycles = input.maxCycles ?? 64;
+
+  assertPositiveInteger("maxCycles", maxCycles);
+
+  const cycles: AlwaysOnLearningRuntimeCycleV1[] = [];
+  const materializations: AlwaysOnLearningMaterializationJobV1[] = [];
+  let state = cloneAlwaysOnLearningRuntimeState(input.state ?? createAlwaysOnLearningRuntimeState());
+  let stopReason: DrainAlwaysOnLearningRuntimeResultV1["stopReason"] = "max_cycles";
+
+  for (let cycle = 1; cycle <= maxCycles; cycle += 1) {
+    const result = advanceAlwaysOnLearningRuntime({
+      ...input,
+      state
+    });
+
+    cycles.push({
+      cycle,
+      ...structuredClone(result)
+    });
+
+    if (result.materialization !== null) {
+      materializations.push(cloneAlwaysOnLearningMaterializationJob(result.materialization));
+    }
+
+    state = cloneAlwaysOnLearningRuntimeState(result.state);
+
+    const idle = result.selectedSlices.length === 0 && result.bridge.slices.length === 0 && !hasPendingSlices(state.pending);
+    if (idle) {
+      stopReason = "idle";
+      break;
+    }
+
+    if (result.selectedSlices.length === 0) {
+      stopReason = "no_progress";
+      break;
+    }
+  }
+
+  return {
+    runtimeOwner: "openclaw",
+    drained: stopReason === "idle",
+    stopReason,
+    cycles,
+    materializations,
+    state
   };
 }
 
@@ -743,7 +846,7 @@ function staticLifecycleBlocks(
     },
     {
       id: `${packId}:structural-ops`,
-      source: "docs/typescript-first-convergence.md",
+      source: "docs/glossary.md",
       text: `Structural graph learning stays first-class with Hebbian reinforcement, decay half-life 30 days, and ops split=${structuralOps.split}, merge=${structuralOps.merge}, prune=${structuralOps.prune}, connect=${structuralOps.connect}.`,
       keywords: ["structural", "hebbian", "decay", "split", "merge", "prune", "connect", "graph", "memory"],
       priority: 4,

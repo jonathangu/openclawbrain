@@ -465,6 +465,12 @@ export function buildNormalizedEventExportBridge(input: BuildNormalizedEventExpo
   return bridge;
 }
 
+export function buildNormalizedEventExportBundleFromEvents(
+  input: BuildNormalizedEventExportBridgeInput
+): NormalizedEventExportBundleV1 {
+  return buildNormalizedEventExportBundle(buildNormalizedEventExportBridge(input));
+}
+
 export function buildNormalizedEventExportBundle(bridge: NormalizedEventExportBridgeV1): NormalizedEventExportBundleV1 {
   const errors = validateNormalizedEventExportBridge(bridge);
   if (errors.length > 0) {

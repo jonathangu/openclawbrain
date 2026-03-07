@@ -1227,7 +1227,7 @@ export const FIXTURE_PACK_GRAPH: PackGraphPayloadV1 = {
     },
     {
       id: "ctx-structural-ops",
-      source: "docs/typescript-first-convergence.md",
+      source: "docs/glossary.md",
       text: "Structural graph operations like split, merge, prune, and connect stay first-class beside Hebbian reinforcement and decay.",
       keywords: ["structural", "split", "merge", "prune", "connect", "graph", "memory", "hebbian", "decay"],
       priority: 3,

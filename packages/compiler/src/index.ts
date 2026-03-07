@@ -37,6 +37,7 @@ export interface ActivationCompileOptions {
   requireActivationReady?: boolean;
   requirePromotionSafe?: boolean;
   expectedTarget?: RuntimeCompileExpectationV1;
+  expectation?: never;
 }
 
 export interface ActivationCompileResolution {
@@ -50,10 +51,6 @@ export interface ActivationCompileResult extends RuntimeCompileResponseV1 {
   target: RuntimeCompileTargetV1;
   response: RuntimeCompileResponseV1;
 }
-
-type LegacyActivationCompileOptions = ActivationCompileOptions & {
-  expectation?: RuntimeCompileExpectationV1;
-};
 
 function normalizeTokens(value: string): string[] {
   return [...new Set(value.toLowerCase().split(/[^a-z0-9]+/u).filter((token) => token.length >= 2))];
@@ -359,8 +356,7 @@ export function loadPackForCompile(rootDir: string): LoadedPack {
 }
 
 function resolveActivationCompileExpectation(options: ActivationCompileOptions): RuntimeCompileExpectationV1 | undefined {
-  const legacyOptions = options as LegacyActivationCompileOptions;
-  if (Object.prototype.hasOwnProperty.call(legacyOptions, "expectation")) {
+  if (Object.prototype.hasOwnProperty.call(options, "expectation")) {
     throw new Error("Activation compile options expectation has been removed; use expectedTarget");
   }
 

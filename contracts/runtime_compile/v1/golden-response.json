@@ -12,12 +12,6 @@
         "ctx-runtime-compile",
         "ctx-structural-ops"
       ]
-    },
-    {
-      "id": "ctx-feedback-scanner",
-      "source": "docs/openclaw-attach-quickstart.md",
-      "text": "Unified feedback scanner runs against local session logs with Ollama qwen3.5:9b-q4_K_M and checkpointed replay.",
-      "tokenCount": 14
     }
   ],
   "diagnostics": {
@@ -26,17 +20,20 @@
     "usedLearnedRouteFn": true,
     "routerIdentity": "pack-fixture:route_fn",
     "candidateCount": 4,
-    "selectedCount": 2,
-    "selectedCharCount": 244,
-    "selectedTokenCount": 30,
+    "selectedCount": 1,
+    "selectedCharCount": 140,
+    "selectedTokenCount": 16,
     "selectionStrategy": "pack_keyword_overlap_v1",
-    "selectionDigest": "sha256-runtime-compile-fixture",
+    "selectionDigest": "sha256-4b5959eb5be8499ac8d108bada06539a3aa79728ddb77761ac8b93a69b62211b",
     "compactionMode": "native",
-    "compactionApplied": true,
+    "compactionApplied": false,
     "notes": [
-      "selected_context_ids=ctx-context-compact,ctx-feedback-scanner",
+      "selected_context_ids=ctx-context-compact",
       "selection_mode=token_match(feedback,scanner,manifest,structural,compaction)",
-      "selection_strategy=pack_keyword_overlap_v1"
+      "selection_tiers=token_match_only",
+      "selection_strategy=pack_keyword_overlap_v1",
+      "selection_overlap_pruned=3",
+      "router_strategy=keyword_overlap_v1"
     ]
   }
 }

@@ -9,6 +9,7 @@ import {
 } from "@openclawbrain/contracts";
 import {
   FIXTURE_NORMALIZED_EVENT_EXPORT,
+  buildNormalizedEventExportBundleFromEvents,
   buildNormalizedEventExportBundle,
   buildNormalizedEventExport,
   buildNormalizedEventExportBridge,
@@ -339,4 +340,27 @@ test("event-export bridge rejects inverted cursors and projects deterministic ex
     bridge.slices.map((slice) => slice.export.provenance.exportDigest)
   );
   assert.deepEqual(buildNormalizedEventExportBundle(bridge), bundle);
+});
+
+test("event-export package can project a live-first bundle directly from raw events", () => {
+  const input = buildBridgeFixtureEvents();
+  const direct = buildNormalizedEventExportBundleFromEvents({
+    ...input,
+    liveSliceSize: 2,
+    backfillSliceSize: 2
+  });
+  const bridged = buildNormalizedEventExportBridge({
+    ...input,
+    liveSliceSize: 2,
+    backfillSliceSize: 2
+  });
+
+  assert.deepEqual(direct, buildNormalizedEventExportBundle(bridged));
+  assert.deepEqual(
+    direct.entries.map((entry) => entry.lane),
+    ["live", "backfill"]
+  );
+  assert.equal(direct.bridgeDigest, bridged.bridgeDigest);
+  assert.equal(direct.entries[0]?.export.range.start, 104);
+  assert.equal(direct.entries[1]?.export.range.end, 103);
 });

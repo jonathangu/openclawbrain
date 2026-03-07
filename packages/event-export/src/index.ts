@@ -24,6 +24,7 @@ export {
 export {
   DEFAULT_EVENT_EXPORT_BACKFILL_SLICE_SIZE,
   DEFAULT_EVENT_EXPORT_LIVE_SLICE_SIZE,
+  buildNormalizedEventExportBundleFromEvents,
   buildEventExportWatermark,
   buildNormalizedEventExportBundle,
   buildNormalizedEventDedupId,

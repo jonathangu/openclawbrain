@@ -225,6 +225,33 @@ function main() {
     assert.equal(compile.response.diagnostics.selectionStrategy, "pack_keyword_overlap_v1");
     assert.equal(typeof compile.response.diagnostics.selectionDigest, "string");
     assert.equal(compile.response.diagnostics.selectionDigest.length > 0, true);
+    assert.match(compile.response.diagnostics.notes.join(";"), /activation_slot=active/);
+    assert.match(compile.response.diagnostics.notes.join(";"), new RegExp(`target_pack_id=${candidatePack.manifest.packId}`));
+    assert.match(compile.response.diagnostics.notes.join(";"), /target_route_policy=requires_learned_routing/);
+    assert.match(
+      compile.response.diagnostics.notes.join(";"),
+      /target_workspace_snapshot=workspace-observability@snapshot-candidate/
+    );
+    assert.match(
+      compile.response.diagnostics.notes.join(";"),
+      /target_workspace_revision=observability-candidate-rev/
+    );
+    assert.match(
+      compile.response.diagnostics.notes.join(";"),
+      new RegExp(`target_event_range=${candidateExport.range.start}-${candidateExport.range.end}#${candidateExport.range.count}`)
+    );
+    assert.match(
+      compile.response.diagnostics.notes.join(";"),
+      new RegExp(`target_event_export_digest=${candidateExport.provenance.exportDigest}`)
+    );
+    assert.match(
+      compile.response.diagnostics.notes.join(";"),
+      new RegExp(`target_built_at=${candidatePack.manifest.provenance.builtAt}`)
+    );
+    assert.match(
+      compile.response.diagnostics.notes.join(";"),
+      new RegExp(`target_router_identity=${candidatePack.router?.routerIdentity}`)
+    );
     assert.match(compile.response.diagnostics.notes.join(";"), /selection_mode=priority_fallback/);
 
     logStep("Observability smoke passed.");
@@ -243,6 +270,9 @@ function main() {
           },
           freshness: activeTarget,
           fallback: {
+            slot: compile.slot,
+            packId: compile.target.packId,
+            workspaceSnapshot: compile.target.workspaceSnapshot,
             modeRequested: compile.response.diagnostics.modeRequested,
             modeEffective: compile.response.diagnostics.modeEffective,
             selectionDigest: compile.response.diagnostics.selectionDigest,

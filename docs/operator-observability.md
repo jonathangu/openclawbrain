@@ -32,7 +32,7 @@ That smoke exercises the public package surface only and asserts:
 - `inspectActivationState()` reports healthy active and candidate slots
 - `promotion.allowed` becomes `true` before promotion and `rollback.allowed` becomes `true` after promotion
 - `describeActivationTarget()` surfaces the promoted pack id, workspace snapshot, workspace revision, event range, export digest, and build time
-- `compileRuntimeFromActivation()` emits compile diagnostics with a stable `selectionDigest` and an explicit `selection_mode=priority_fallback` note when token matching does not hit
+- `compileRuntimeFromActivation()` emits compile diagnostics with a stable `selectionDigest`, explicit served-target notes, and an explicit `selection_mode=priority_fallback` note when token matching does not hit
 
 ## Health and promotion checks
 
@@ -98,6 +98,7 @@ const compile = compileRuntimeFromActivation(
 );
 
 console.log({
+  slot: compile.slot,
   packId: compile.target.packId,
   workspaceSnapshot: compile.target.workspaceSnapshot,
   selectionDigest: compile.response.diagnostics.selectionDigest,
@@ -109,8 +110,21 @@ What this proves:
 
 - `expectedTarget` rejects stale pack/view mismatches before serving runtime context
 - `selectionDigest` gives a stable fingerprint for the selected context set
-- `notes` tells you whether compilation used token matching or deterministic priority fallback
+- `notes` tells you both which activation target was served and whether compilation used token matching or deterministic priority fallback
 - `modeRequested`, `modeEffective`, and `usedLearnedRouteFn` tell you whether learned routing was actually in effect
+
+The most important notes to look for are:
+
+- `activation_slot=...`
+- `target_pack_id=...`
+- `target_route_policy=...`
+- `target_workspace_snapshot=...`
+- `target_workspace_revision=...` when the pack is pinned to a revision
+- `target_event_range=START-END#COUNT`
+- `target_event_export_digest=...`
+- `target_built_at=...`
+- `target_router_identity=...` when learned routing is active
+- `selection_mode=priority_fallback` when no keyword hit occurs
 
 ## What operators should expect
 

@@ -14,11 +14,12 @@ pnpm add @openclawbrain/compiler
 
 - pack loading for compile-time use
 - activation-aware compilation from active or promoted runtime slots
-- compile-target expectation checks over pack id, workspace snapshot, event range, and event-export digest
+- compile-target expectation checks over pack id, workspace snapshot, event range, and event-export digest via `expectedTarget`
 - deterministic context ranking over graph blocks and vector keywords
 - larger-context budget enforcement via max-block and max-character limits
 - native structural compaction when selection pressure exceeds the runtime budget
 - learned-routing enforcement when a pack manifest requires it
+- operator-facing compile notes for activation slot, served target provenance, and priority fallback
 
 ## Example
 
@@ -50,4 +51,4 @@ console.log(response.diagnostics.selectionDigest);
 console.log(response.diagnostics.notes);
 ```
 
-`response.diagnostics.notes` explicitly tells operators whether selection used token matching or deterministic priority fallback.
+`response.diagnostics.notes` explicitly tells operators which activation slot and target provenance were served, and whether selection used token matching or deterministic priority fallback.

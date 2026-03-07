@@ -1,5 +1,5 @@
 import assert from "node:assert/strict";
-import { rmSync } from "node:fs";
+import { existsSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
@@ -18,6 +18,7 @@ import {
   buildCandidatePackFromNormalizedEventExport,
   buildCandidatePackFromNormalizedEventExportSlice,
   createAlwaysOnLearningRuntimeState,
+  drainAlwaysOnLearningRuntime,
   materializeAlwaysOnLearningCandidatePack,
   materializeCandidatePack,
   materializeCandidatePackBundleFromNormalizedEventExportBridge,
@@ -25,6 +26,28 @@ import {
   materializeCandidatePackFromNormalizedEventExport
 } from "@openclawbrain/learner";
 import { buildNormalizedEventExportBridge } from "@openclawbrain/event-export";
+
+function buildRuntimeInteractionEvents(start: number, end: number) {
+  return Array.from({ length: end - start + 1 }, (_, offset) => {
+    const sequence = start + offset;
+    const createdAt = new Date(Date.parse("2026-03-07T09:00:00.000Z") + offset * 60_000).toISOString();
+
+    return createInteractionEvent({
+      eventId: `evt-runtime-int-${sequence}`,
+      agentId: "agent-runtime-batch",
+      sessionId: "session-runtime-batch",
+      channel: "whatsapp",
+      sequence,
+      kind: "message_delivered",
+      createdAt,
+      source: {
+        runtimeOwner: "openclaw",
+        stream: "openclaw/runtime/whatsapp"
+      },
+      messageId: `msg-runtime-${sequence}`
+    });
+  });
+}
 
 test("learner emits deterministic immutable pack manifests for always-on learning", (t) => {
   const input = {
@@ -81,7 +104,7 @@ test("learner emits deterministic immutable pack manifests for always-on learnin
   assert.match(descriptor.graph.blocks.map((block) => block.text).join("\n"), /Fast boot defaults stay live at startup/);
   assert.match(descriptor.graph.blocks.map((block) => block.text).join("\n"), /Human label harvest is first-class/);
   assert.equal(descriptor.graph.blocks.some((block) => block.source === "docs/openclaw-attach-quickstart.md"), true);
-  assert.equal(descriptor.graph.blocks.some((block) => block.source === "docs/typescript-first-convergence.md"), true);
+  assert.equal(descriptor.graph.blocks.some((block) => block.source === "docs/glossary.md"), true);
   assert.equal(
     descriptor.graph.blocks.some((block) => block.source.includes("openclawbrain-openclaw-rearchitecture")),
     false
@@ -90,6 +113,10 @@ test("learner emits deterministic immutable pack manifests for always-on learnin
     descriptor.graph.blocks.some((block) => block.source === "memory/2026-03-05-openclawbrain-vnext-roadmap.md"),
     false
   );
+  assert.equal(descriptor.graph.blocks.some((block) => block.source === "docs/typescript-first-convergence.md"), false);
+  for (const source of descriptor.graph.blocks.map((block) => block.source).filter((value) => value.startsWith("docs/"))) {
+    assert.equal(existsSync(path.resolve(process.cwd(), "../..", source)), true, `${source} should exist in the repo docs`);
+  }
   assert.equal(descriptor.graph.blocks.some((block) => block.learning.role === "boot_default"), true);
   assert.equal(descriptor.graph.blocks.some((block) => block.learning.humanLabels > 0), true);
   assert.equal(descriptor.vectors.entries.some((entry) => entry.keywords.includes("fast_boot")), true);
@@ -279,6 +306,122 @@ test("always-on learner prioritizes fresh live events while passive history catc
   assert.equal(next.state.learnedEventExport?.range.end, 106);
   assert.equal(next.state.learnedEventExport?.range.count, 6);
   assert.equal(next.deferred.backfill, 0);
+});
+
+test("always-on learner picks the freshest pending live slice before older live backlog", () => {
+  const attach = advanceAlwaysOnLearningRuntime({
+    packLabel: "runtime-live-queue",
+    workspace: {
+      workspaceId: "workspace-runtime-live-queue",
+      snapshotId: "workspace-runtime-live-queue@snapshot-attach",
+      capturedAt: "2026-03-07T09:00:00.000Z",
+      rootDir: "/workspace/runtime-live-queue",
+      revision: "runtime-live-queue-attach"
+    },
+    interactionEvents: buildRuntimeInteractionEvents(100, 104),
+    feedbackEvents: [],
+    learnedRouting: false,
+    builtAt: "2026-03-07T09:00:30.000Z",
+    liveSliceSize: 1,
+    backfillSliceSize: 1,
+    state: createAlwaysOnLearningRuntimeState()
+  });
+  const next = advanceAlwaysOnLearningRuntime({
+    packLabel: "runtime-live-queue",
+    workspace: {
+      workspaceId: "workspace-runtime-live-queue",
+      snapshotId: "workspace-runtime-live-queue@snapshot-live",
+      capturedAt: "2026-03-07T09:01:00.000Z",
+      rootDir: "/workspace/runtime-live-queue",
+      revision: "runtime-live-queue-live"
+    },
+    interactionEvents: buildRuntimeInteractionEvents(100, 108),
+    feedbackEvents: [],
+    learnedRouting: false,
+    builtAt: "2026-03-07T09:01:30.000Z",
+    liveSliceSize: 1,
+    backfillSliceSize: 1,
+    cadence: {
+      liveSlicesPerCycle: 1,
+      backfillSlicesPerCycle: 1
+    },
+    state: attach.state
+  });
+
+  assert.equal(next.selectedSlices[0]?.lane, "live");
+  assert.equal(next.selectedSlices[0]?.export.range.start, 108);
+  assert.equal(next.selectedSlices[0]?.export.range.end, 108);
+  assert.deepEqual(
+    next.selectedSlices.map((slice) => `${slice.lane}:${slice.export.range.end}`),
+    ["live:108", "backfill:103"]
+  );
+  assert.equal(next.materialization?.reason, "fresh_live_events");
+  assert.deepEqual(
+    next.state.pending.live.map((slice) => slice.export.range.end),
+    [107, 106, 105]
+  );
+  assert.equal(next.state.pending.backfill[0]?.export.range.end, 102);
+});
+
+test("always-on learner drain helper runs live-first then background backfill to idle", () => {
+  const attach = advanceAlwaysOnLearningRuntime({
+    packLabel: "runtime-drain",
+    workspace: {
+      workspaceId: "workspace-runtime-drain",
+      snapshotId: "workspace-runtime-drain@snapshot-attach",
+      capturedAt: "2026-03-07T09:10:00.000Z",
+      rootDir: "/workspace/runtime-drain",
+      revision: "runtime-drain-attach"
+    },
+    interactionEvents: buildRuntimeInteractionEvents(100, 106),
+    feedbackEvents: [],
+    learnedRouting: true,
+    builtAt: "2026-03-07T09:10:30.000Z",
+    liveSliceSize: 2,
+    backfillSliceSize: 2,
+    state: createAlwaysOnLearningRuntimeState()
+  });
+  const drained = drainAlwaysOnLearningRuntime({
+    packLabel: "runtime-drain",
+    workspace: {
+      workspaceId: "workspace-runtime-drain",
+      snapshotId: "workspace-runtime-drain@snapshot-drain",
+      capturedAt: "2026-03-07T09:11:00.000Z",
+      rootDir: "/workspace/runtime-drain",
+      revision: "runtime-drain-run"
+    },
+    interactionEvents: buildRuntimeInteractionEvents(100, 108),
+    feedbackEvents: [],
+    learnedRouting: true,
+    builtAt: "2026-03-07T09:11:30.000Z",
+    liveSliceSize: 2,
+    backfillSliceSize: 2,
+    cadence: {
+      liveSlicesPerCycle: 1,
+      backfillSlicesPerCycle: 1
+    },
+    state: attach.state,
+    maxCycles: 8
+  });
+
+  assert.equal(drained.drained, true);
+  assert.equal(drained.stopReason, "idle");
+  assert.deepEqual(
+    drained.materializations.map((job) => job.reason),
+    ["fresh_live_events", "passive_history_catchup", "passive_history_catchup"]
+  );
+  assert.deepEqual(
+    drained.materializations.map((job) => job.lane),
+    ["live", "backfill", "backfill"]
+  );
+  assert.equal(drained.materializations[0]?.selectedEventRange.start, 103);
+  assert.equal(drained.materializations[0]?.selectedEventRange.end, 108);
+  assert.equal(drained.materializations[1]?.selectedEventRange.start, 101);
+  assert.equal(drained.materializations[2]?.selectedEventRange.start, 100);
+  assert.equal(drained.cycles.length, 4);
+  assert.equal(drained.state.pending.live.length, 0);
+  assert.equal(drained.state.pending.backfill.length, 0);
+  assert.equal(drained.state.materializationCount, 4);
 });
 
 test("always-on learner materialization hook emits a real candidate pack from the background job", (t) => {
