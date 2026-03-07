@@ -924,6 +924,33 @@ test("compileRuntimeFromActivation surfaces candidate rejection findings on the 
   assert.match(result.response.diagnostics.notes.join(";"), /candidate_rejected=pack-candidate-rejection-candidate:.*manifestDigest/);
 });
 
+test("compileRuntimeFromActivation fails clearly when an active learned route artifact goes missing", (t: TestContext) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-missing-route-activation-"));
+  const packRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-missing-route-pack-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(packRoot, { recursive: true, force: true }));
+
+  materializeNamedPack(packRoot, {
+    packId: "pack-missing-route-artifact",
+    learnedRouting: true
+  });
+  activatePack(activationRoot, packRoot, "2026-03-06T07:40:00.000Z");
+  rmSync(path.join(packRoot, "router", "model.json"), { force: true });
+
+  assert.throws(
+    () =>
+      compileRuntimeFromActivation(activationRoot, {
+        contract: CONTRACT_IDS.runtimeCompile,
+        agentId: "agent-missing-route-artifact",
+        userMessage: "Compile scanner context.",
+        maxContextBlocks: 1,
+        modeRequested: "heuristic"
+      }),
+    /router payload not found/
+  );
+});
+
 test("compileRuntimeFromActivation fails fast when no active pack is present", () => {
   const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-empty-activation-"));
 

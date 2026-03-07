@@ -37,7 +37,7 @@ That means:
 - let OpenClaw compile useful context immediately after attach
 - keep passive historical replay/backfill running in the background at all times
 - keep real-time event scanning and supervision harvest running continuously
-- keep OpenClaw as the sole runtime owner and fail open when brain artifacts are unavailable
+- keep OpenClaw as the sole runtime owner and fail open only for non-learned-required serve-path gaps
 
 The operator-facing setup contract lives in [`docs/openclaw-attach-quickstart.md`](docs/openclaw-attach-quickstart.md), the diagnostics contract lives in [`docs/operator-observability.md`](docs/operator-observability.md), and the repo-wide convergence statement lives in [`docs/typescript-first-convergence.md`](docs/typescript-first-convergence.md).
 
@@ -57,7 +57,7 @@ Add `@openclawbrain/openclaw` when you are wiring the OpenClaw-owned runtime int
 
 The product boundary is intentionally narrow:
 
-- OpenClaw owns runtime orchestration, prompt assembly, diagnostics, sessions, and fail-open behavior.
+- OpenClaw owns runtime orchestration, prompt assembly, diagnostics, sessions, and guarded fail-open behavior.
 - OpenClawBrain owns contracts, normalized event flows, workspace and provenance metadata, immutable pack artifacts, activation helpers, native structural compaction, deterministic compilation, and learner-side candidate-pack assembly.
 
 This GitHub repo is public. The supported public integration surface is narrower: the published `@openclawbrain/*` packages plus the versioned fixtures under `contracts/`. Workspace layout, root scripts, smoke lanes, and release plumbing are public proof-and-build machinery, not a second semver-stable API.
@@ -103,7 +103,7 @@ The root workspace package remains `private` in `package.json` so the monorepo i
 - `@openclawbrain/learner` assembles candidate packs with structural summaries and deterministic ids.
 - `@openclawbrain/activation` stages, promotes, inspects, and rolls back activation state.
 - `@openclawbrain/compiler` consumes coherent pack artifacts for runtime-side context selection.
-- `@openclawbrain/openclaw` wraps the OpenClaw-owned runtime boundary: fail-open compile consumption, prompt-context formatting, and normalized runtime event export handoff.
+- `@openclawbrain/openclaw` wraps the OpenClaw-owned runtime boundary: activation-aware compile diagnostics, learned-route hard-fail enforcement, prompt-context formatting, and normalized runtime event export handoff.
 
 ## Workspace
 

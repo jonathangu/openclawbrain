@@ -220,6 +220,9 @@ function main() {
     assert.equal(compileResponse.diagnostics.usedLearnedRouteFn, true);
     assert.equal(compileResponse.diagnostics.routerIdentity, candidatePack.router?.routerIdentity ?? null);
     assert.equal(compileResponse.selectedContext.length > 0, true);
+    assert.match(compileResponse.diagnostics.notes.join(";"), /activation_slot=active/);
+    assert.match(compileResponse.diagnostics.notes.join(";"), new RegExp(`target_pack_id=${candidatePack.manifest.packId}`));
+    assert.match(compileResponse.diagnostics.notes.join(";"), /target_route_policy=requires_learned_routing/);
     assert.equal(
       compileResponse.selectedContext.some((block) => /activation promotion evidence/i.test(block.text)),
       true,
@@ -234,7 +237,8 @@ function main() {
           candidatePackId: candidatePack.manifest.packId,
           promotedPackId: activeTarget.packId,
           selectedContextIds: compileResponse.selectedContext.map((block) => block.id),
-          selectionDigest: compileResponse.diagnostics.selectionDigest
+          selectionDigest: compileResponse.diagnostics.selectionDigest,
+          notes: compileResponse.diagnostics.notes
         },
         null,
         2

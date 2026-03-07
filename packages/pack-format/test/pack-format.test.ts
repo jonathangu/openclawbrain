@@ -337,6 +337,31 @@ test("learned-routing packs with stub router metadata can be staged but not acti
   assert.throws(() => activatePack(activationRoot, candidateRoot, "2026-03-06T02:15:00.000Z"), /Pack is not activation-ready/);
 });
 
+test("activation inspection surfaces missing learned route artifacts on the active slot", (t) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-"));
+  const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(activeRoot, { recursive: true, force: true }));
+
+  materializeTestPack(activeRoot, {
+    packId: "pack-active-missing-route",
+    learnedRouting: true,
+    eventStart: 50
+  });
+
+  activatePack(activationRoot, activeRoot, "2026-03-06T02:20:00.000Z");
+  rmSync(path.join(activeRoot, "router", "model.json"), { force: true });
+
+  const inspection = inspectActivationState(activationRoot, "2026-03-06T02:21:00.000Z");
+  assert.equal(inspection.active?.activationReady, false);
+  assert.match(inspection.active?.findings.join("; ") ?? "", /router payload not found/);
+  assert.throws(
+    () => loadPackFromActivation(activationRoot, "active", { requireActivationReady: true }),
+    /router payload not found/
+  );
+});
+
 test("promotion blocks stale candidate provenance from displacing a newer active pack", (t) => {
   const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-"));
   const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-"));

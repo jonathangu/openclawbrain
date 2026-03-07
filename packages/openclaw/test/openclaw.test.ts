@@ -89,6 +89,10 @@ test("compileRuntimeContext consumes the active pack through activation pointers
   assert.equal(result.activePackId, packId);
   assert.equal(result.compileResponse.contract, CONTRACT_IDS.runtimeCompile);
   assert.equal(result.compileResponse.selectedContext.length > 0, true);
+  assert.match(result.compileResponse.diagnostics.notes.join("; "), /activation_slot=active/);
+  assert.match(result.compileResponse.diagnostics.notes.join("; "), new RegExp(`target_pack_id=${packId}`));
+  assert.match(result.compileResponse.diagnostics.notes.join("; "), /target_route_policy=requires_learned_routing/);
+  assert.match(result.compileResponse.diagnostics.notes.join("; "), new RegExp(`target_router_identity=${packId}:route_fn`));
   assert.match(result.compileResponse.diagnostics.notes.join("; "), /OpenClaw remains the runtime owner/);
   assert.match(result.brainContext, /^\[BRAIN_CONTEXT v1\]/);
   assert.match(result.brainContext, /PACK_ID:/);
@@ -104,8 +108,31 @@ test("compileRuntimeContext fails open when no active pack is available", () => 
 
   assert.equal(result.ok, false);
   assert.equal(result.fallbackToStaticContext, true);
+  assert.equal(result.hardRequirementViolated, false);
   assert.equal(result.brainContext, "");
   assert.match(result.error, /No active pack pointer found/);
+});
+
+test("compileRuntimeContext hard-fails learned-required packs when the active route artifact disappears", (t) => {
+  const rootDir = mkdtemp("openclawbrain-openclaw-hard-fail-");
+  const activePackRoot = path.join(rootDir, "active-pack");
+  const activationRoot = path.join(rootDir, "activation");
+  t.after(() => rmSync(rootDir, { recursive: true, force: true }));
+
+  const { packId } = materializeActivePack(activePackRoot, activationRoot);
+  rmSync(path.join(activePackRoot, "router", "model.json"), { force: true });
+
+  const result = compileRuntimeContext({
+    activationRoot,
+    agentId: "runtime-hard-fail",
+    message: "feedback scanner route gating"
+  });
+
+  assert.equal(result.ok, false);
+  assert.equal(result.fallbackToStaticContext, false);
+  assert.equal(result.hardRequirementViolated, true);
+  assert.match(result.error, new RegExp(`Learned-routing hotpath hard requirement violated for active pack ${packId}`));
+  assert.match(result.error, /router payload not found/);
 });
 
 test("buildNormalizedRuntimeEventExport emits compile, delivery, and feedback events", (t) => {
@@ -196,6 +223,7 @@ test("runRuntimeTurn fails open on compile while still exporting delivery and fe
 
   assert.equal(result.ok, false);
   assert.equal(result.fallbackToStaticContext, true);
+  assert.equal(result.hardRequirementViolated, false);
   const normalizedEventExport = expectNormalizedEventExport(result.eventExport);
   assert.equal(normalizedEventExport.interactionEvents.length, 1);
   assert.equal(normalizedEventExport.feedbackEvents.length, 1);
@@ -251,6 +279,32 @@ test("runRuntimeTurn keeps compile output when event-export bundle writing fails
   assert.equal(result.warnings.length, 1);
   assert.match(result.eventExport.error, /EEXIST|not a directory/i);
   assert.match(result.brainContext, /^\[BRAIN_CONTEXT v1\]/);
+});
+
+test("runRuntimeTurn throws when a learned-required active route artifact is missing", (t) => {
+  const rootDir = mkdtemp("openclawbrain-openclaw-turn-hard-fail-");
+  const activePackRoot = path.join(rootDir, "active-pack");
+  const activationRoot = path.join(rootDir, "activation");
+  t.after(() => rmSync(rootDir, { recursive: true, force: true }));
+
+  const { packId } = materializeActivePack(activePackRoot, activationRoot);
+  rmSync(path.join(activePackRoot, "router", "model.json"), { force: true });
+
+  assert.throws(
+    () =>
+      runRuntimeTurn(
+        {
+          agentId: "runtime-test",
+          sessionId: "session-hard-fail",
+          channel: "whatsapp",
+          userMessage: "feedback scanner route gating"
+        },
+        {
+          activationRoot
+        }
+      ),
+    new RegExp(`Learned-routing hotpath hard requirement violated for active pack ${packId}`)
+  );
 });
 
 test("classifyFeedbackKind normalizes common operator cues", () => {

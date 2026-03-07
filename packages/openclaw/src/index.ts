@@ -3,7 +3,7 @@ import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import process from "node:process";
 
-import { compileRuntime } from "@openclawbrain/compiler";
+import { compileRuntimeFromActivation } from "@openclawbrain/compiler";
 import {
   CONTRACT_IDS,
   buildNormalizedEventExport,
@@ -79,6 +79,7 @@ export interface ActiveCompileTarget {
 export interface RuntimeCompileSuccess {
   ok: true;
   fallbackToStaticContext: false;
+  hardRequirementViolated: false;
   activationRoot: string;
   activePackId: string;
   packRootDir: string;
@@ -86,13 +87,25 @@ export interface RuntimeCompileSuccess {
   brainContext: string;
 }
 
-export interface RuntimeCompileFailure {
+export interface RuntimeCompileFailOpenFailure {
   ok: false;
   fallbackToStaticContext: true;
+  hardRequirementViolated: false;
   activationRoot: string;
   error: string;
   brainContext: string;
 }
+
+export interface RuntimeCompileHardFailure {
+  ok: false;
+  fallbackToStaticContext: false;
+  hardRequirementViolated: true;
+  activationRoot: string;
+  error: string;
+  brainContext: string;
+}
+
+export type RuntimeCompileFailure = RuntimeCompileFailOpenFailure | RuntimeCompileHardFailure;
 
 export type RuntimeCompileResult = RuntimeCompileSuccess | RuntimeCompileFailure;
 
@@ -437,14 +450,39 @@ export function formatPromptContext(compileResponse: RuntimeCompileResponseV1): 
   return `${lines.join("\n")}\n`;
 }
 
-function fallbackCompileResult(error: unknown, activationRoot: string): RuntimeCompileFailure {
+function failOpenCompileResult(error: unknown, activationRoot: string): RuntimeCompileFailOpenFailure {
   return {
     ok: false,
     fallbackToStaticContext: true,
+    hardRequirementViolated: false,
     activationRoot: path.resolve(activationRoot),
     error: toErrorMessage(error),
     brainContext: ""
   };
+}
+
+function classifyCompileFailure(error: unknown, activationRoot: string): RuntimeCompileFailure {
+  const resolvedActivationRoot = path.resolve(activationRoot);
+
+  try {
+    const inspection = inspectActivationState(resolvedActivationRoot);
+    const active = inspection.active;
+    if (active !== null && active.routePolicy === "requires_learned_routing") {
+      const failureReason = active.findings.length > 0 ? active.findings.join("; ") : toErrorMessage(error);
+      return {
+        ok: false,
+        fallbackToStaticContext: false,
+        hardRequirementViolated: true,
+        activationRoot: resolvedActivationRoot,
+        error: `Learned-routing hotpath hard requirement violated for active pack ${active.packId} (routerIdentity=${active.routerIdentity ?? "null"}): ${failureReason}`,
+        brainContext: ""
+      };
+    }
+  } catch {
+    return failOpenCompileResult(error, resolvedActivationRoot);
+  }
+
+  return failOpenCompileResult(error, resolvedActivationRoot);
 }
 
 export function resolveActivePackForCompile(activationRoot: string): ActiveCompileTarget {
@@ -474,7 +512,7 @@ export function compileRuntimeContext(input: CompileRuntimeContextInput): Runtim
 
   try {
     const target = resolveActivePackForCompile(activationRoot);
-    const compileResponse = compileRuntime(target.activePointer.packRootDir, {
+    const compile = compileRuntimeFromActivation(activationRoot, {
       contract: CONTRACT_IDS.runtimeCompile,
       agentId,
       userMessage: normalizeNonEmptyString(input.message, "message"),
@@ -487,14 +525,15 @@ export function compileRuntimeContext(input: CompileRuntimeContextInput): Runtim
     return {
       ok: true,
       fallbackToStaticContext: false,
+      hardRequirementViolated: false,
       activationRoot,
-      activePackId: target.activePointer.packId,
+      activePackId: compile.target.packId,
       packRootDir: path.resolve(target.activePointer.packRootDir),
-      compileResponse,
-      brainContext: formatPromptContext(compileResponse)
+      compileResponse: compile.response,
+      brainContext: formatPromptContext(compile.response)
     };
   } catch (error) {
-    return fallbackCompileResult(error, activationRoot);
+    return classifyCompileFailure(error, activationRoot);
   }
 }
 
@@ -755,6 +794,9 @@ export function runRuntimeTurn(turn: OpenClawRuntimeTurnInput, options: RunRunti
     ...(turn.runtimeHints !== undefined ? { runtimeHints: turn.runtimeHints } : {})
   };
   const compileResult = compileRuntimeContext(compileInput);
+  if (!compileResult.ok && compileResult.hardRequirementViolated) {
+    throw new Error(compileResult.error);
+  }
   const warnings: string[] = [];
 
   try {

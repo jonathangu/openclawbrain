@@ -17,6 +17,7 @@ import { CONTRACT_IDS } from "../packages/contracts/dist/src/index.js";
 import { buildNormalizedEventExport } from "../packages/event-export/dist/src/index.js";
 import { createFeedbackEvent, createInteractionEvent, sortNormalizedEvents } from "../packages/events/dist/src/index.js";
 import { materializeCandidatePackFromNormalizedEventExport } from "../packages/learner/dist/src/index.js";
+import { compileRuntimeContext } from "../packages/openclaw/dist/src/index.js";
 
 function logStep(message) {
   console.log(`[observability:smoke] ${message}`);
@@ -254,6 +255,42 @@ function main() {
     );
     assert.match(compile.response.diagnostics.notes.join(";"), /selection_mode=priority_fallback/);
 
+    logStep("Proving the same diagnostics and hard failure through the OpenClaw serve path.");
+
+    const served = compileRuntimeContext({
+      activationRoot,
+      agentId: "agent-observability-smoke",
+      message: "zebra nebula quartz",
+      maxContextBlocks: 2,
+      mode: "heuristic"
+    });
+
+    assert.equal(served.ok, true);
+    assert.equal(served.compileResponse.diagnostics.selectionDigest, compile.response.diagnostics.selectionDigest);
+    assert.match(served.compileResponse.diagnostics.notes.join(";"), /activation_slot=active/);
+    assert.match(served.compileResponse.diagnostics.notes.join(";"), new RegExp(`target_pack_id=${candidatePack.manifest.packId}`));
+    assert.match(served.compileResponse.diagnostics.notes.join(";"), /target_route_policy=requires_learned_routing/);
+    assert.match(
+      served.compileResponse.diagnostics.notes.join(";"),
+      new RegExp(`target_router_identity=${candidatePack.router?.routerIdentity}`)
+    );
+
+    rmSync(path.join(candidatePackRoot, "router", "model.json"), { force: true });
+
+    const hardFailure = compileRuntimeContext({
+      activationRoot,
+      agentId: "agent-observability-smoke",
+      message: "zebra nebula quartz",
+      maxContextBlocks: 2,
+      mode: "heuristic"
+    });
+
+    assert.equal(hardFailure.ok, false);
+    assert.equal(hardFailure.fallbackToStaticContext, false);
+    assert.equal(hardFailure.hardRequirementViolated, true);
+    assert.match(hardFailure.error, /Learned-routing hotpath hard requirement violated/);
+    assert.match(hardFailure.error, /router payload not found/);
+
     logStep("Observability smoke passed.");
     console.log(
       JSON.stringify(
@@ -277,6 +314,15 @@ function main() {
             modeEffective: compile.response.diagnostics.modeEffective,
             selectionDigest: compile.response.diagnostics.selectionDigest,
             notes: compile.response.diagnostics.notes
+          },
+          servePath: {
+            selectionDigest: served.compileResponse.diagnostics.selectionDigest,
+            notes: served.compileResponse.diagnostics.notes,
+            hardFailure: {
+              fallbackToStaticContext: hardFailure.fallbackToStaticContext,
+              hardRequirementViolated: hardFailure.hardRequirementViolated,
+              error: hardFailure.error
+            }
           }
         },
         null,
