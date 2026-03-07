@@ -3,6 +3,8 @@ import path from "node:path";
 
 import {
   CONTRACT_IDS,
+  checksumJsonPayload,
+  sortNormalizedEvents,
   type ArtifactManifestV1,
   type FeedbackEventV1,
   type InteractionEventV1,
@@ -17,10 +19,17 @@ import {
   type RouterArtifactV1
 } from "@openclawbrain/contracts";
 import {
+  buildNormalizedEventDedupId,
   buildNormalizedEventExport,
+  buildNormalizedEventExportBridge,
   createDefaultLearningSurface,
+  createEventExportCursor,
   createExplicitEventRange,
-  validateNormalizedEventExport
+  validateNormalizedEventExport,
+  type EventExportCursorV1,
+  type EventExportLaneV1,
+  type NormalizedEventExportBridgeV1,
+  type NormalizedEventExportSliceV1
 } from "@openclawbrain/event-export";
 import { computePayloadChecksum, loadPack, PACK_LAYOUT, type PackDescriptor, writePackFile } from "@openclawbrain/pack-format";
 import { buildArtifactProvenance } from "@openclawbrain/provenance";
@@ -76,12 +85,278 @@ export interface CandidatePackBuildResult {
   };
 }
 
+export const DEFAULT_ALWAYS_ON_LEARNING_LIVE_SLICES_PER_CYCLE = 1;
+export const DEFAULT_ALWAYS_ON_LEARNING_BACKFILL_SLICES_PER_CYCLE = 1;
+
+export interface AlwaysOnLearningCadenceV1 {
+  liveSlicesPerCycle: number;
+  backfillSlicesPerCycle: number;
+}
+
+export interface AlwaysOnLearningPendingSlicesV1 {
+  live: NormalizedEventExportSliceV1[];
+  backfill: NormalizedEventExportSliceV1[];
+}
+
+export interface AlwaysOnLearningRuntimeStateV1 {
+  runtimeOwner: "openclaw";
+  hotPathLearning: false;
+  attachBlocksOnFullReplay: false;
+  cursor: EventExportCursorV1;
+  pending: AlwaysOnLearningPendingSlicesV1;
+  learnedEventExport: NormalizedEventExportV1 | null;
+  lastMaterializedAt: string | null;
+  materializationCount: number;
+}
+
+export interface AdvanceAlwaysOnLearningRuntimeInput {
+  packLabel: string;
+  workspace: WorkspaceMetadataInput;
+  interactionEvents: readonly InteractionEventV1[];
+  feedbackEvents: readonly FeedbackEventV1[];
+  learnedRouting: boolean;
+  state?: AlwaysOnLearningRuntimeStateV1;
+  builtAt?: string;
+  offlineArtifacts?: string[];
+  structuralOps?: Partial<ArtifactManifestV1["graphDynamics"]["structuralOps"]>;
+  liveSliceSize?: number;
+  backfillSliceSize?: number;
+  cadence?: Partial<AlwaysOnLearningCadenceV1>;
+}
+
+export interface AlwaysOnLearningMaterializationJobV1 {
+  jobId: string;
+  lane: EventExportLaneV1;
+  priority: "immediate" | "background";
+  reason: "attach_bootstrap" | "fresh_live_events" | "passive_history_catchup";
+  selectedSliceIds: string[];
+  selectedEventRange: NormalizedEventExportV1["range"];
+  normalizedEventExport: NormalizedEventExportV1;
+  candidateInput: CandidatePackFromNormalizedEventExportInput;
+  candidate: CandidatePackBuildResult;
+}
+
+export interface AdvanceAlwaysOnLearningRuntimeResultV1 {
+  runtimeOwner: "openclaw";
+  hotPathLearning: false;
+  attachBlocksOnFullReplay: false;
+  bridge: NormalizedEventExportBridgeV1;
+  selectedSlices: NormalizedEventExportSliceV1[];
+  deferred: {
+    live: number;
+    backfill: number;
+  };
+  materialization: AlwaysOnLearningMaterializationJobV1 | null;
+  state: AlwaysOnLearningRuntimeStateV1;
+}
+
 function stableHash(value: string): string {
   let hash = 0;
   for (const char of value) {
     hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
   }
   return hash.toString(16).padStart(8, "0");
+}
+
+function assertPositiveInteger(label: string, value: number): void {
+  if (!Number.isInteger(value) || value <= 0) {
+    throw new Error(`${label} must be a positive integer`);
+  }
+}
+
+function assertNonNegativeInteger(label: string, value: number): void {
+  if (!Number.isInteger(value) || value < 0) {
+    throw new Error(`${label} must be a non-negative integer`);
+  }
+}
+
+function normalizeAlwaysOnLearningCadence(
+  input: Partial<AlwaysOnLearningCadenceV1> | undefined
+): AlwaysOnLearningCadenceV1 {
+  const cadence: AlwaysOnLearningCadenceV1 = {
+    liveSlicesPerCycle: input?.liveSlicesPerCycle ?? DEFAULT_ALWAYS_ON_LEARNING_LIVE_SLICES_PER_CYCLE,
+    backfillSlicesPerCycle: input?.backfillSlicesPerCycle ?? DEFAULT_ALWAYS_ON_LEARNING_BACKFILL_SLICES_PER_CYCLE
+  };
+
+  assertPositiveInteger("cadence.liveSlicesPerCycle", cadence.liveSlicesPerCycle);
+  assertNonNegativeInteger("cadence.backfillSlicesPerCycle", cadence.backfillSlicesPerCycle);
+
+  return cadence;
+}
+
+function mergePendingSlices(
+  pending: AlwaysOnLearningPendingSlicesV1,
+  discovered: readonly NormalizedEventExportSliceV1[]
+): AlwaysOnLearningPendingSlicesV1 {
+  const live = [...pending.live];
+  const backfill = [...pending.backfill];
+  const seenSliceIds = new Set([...live, ...backfill].map((slice) => slice.sliceId));
+
+  for (const slice of discovered) {
+    if (seenSliceIds.has(slice.sliceId)) {
+      continue;
+    }
+
+    if (slice.lane === "live") {
+      live.push(slice);
+    } else {
+      backfill.push(slice);
+    }
+    seenSliceIds.add(slice.sliceId);
+  }
+
+  return {
+    live,
+    backfill
+  };
+}
+
+function mergeNormalizedEventExports(
+  current: NormalizedEventExportV1 | null,
+  additions: readonly NormalizedEventExportSliceV1[]
+): NormalizedEventExportV1 | null {
+  if (current === null && additions.length === 0) {
+    return null;
+  }
+
+  const mergedEvents = sortNormalizedEvents([
+    ...(current?.interactionEvents ?? []),
+    ...(current?.feedbackEvents ?? []),
+    ...additions.flatMap((slice) => [...slice.export.interactionEvents, ...slice.export.feedbackEvents])
+  ]);
+  const deduped: NormalizedEventV1[] = [];
+  const seenDedupIds = new Set<string>();
+
+  for (const event of mergedEvents) {
+    const dedupId = buildNormalizedEventDedupId(event);
+    if (seenDedupIds.has(dedupId)) {
+      continue;
+    }
+
+    seenDedupIds.add(dedupId);
+    deduped.push(event);
+  }
+
+  return buildNormalizedEventExport({
+    interactionEvents: deduped.filter((event): event is InteractionEventV1 => event.contract === CONTRACT_IDS.interactionEvents),
+    feedbackEvents: deduped.filter((event): event is FeedbackEventV1 => event.contract === CONTRACT_IDS.feedbackEvents)
+  });
+}
+
+function createAlwaysOnLearningPendingSlices(): AlwaysOnLearningPendingSlicesV1 {
+  return {
+    live: [],
+    backfill: []
+  };
+}
+
+export function createAlwaysOnLearningRuntimeState(): AlwaysOnLearningRuntimeStateV1 {
+  return {
+    runtimeOwner: "openclaw",
+    hotPathLearning: false,
+    attachBlocksOnFullReplay: false,
+    cursor: createEventExportCursor(),
+    pending: createAlwaysOnLearningPendingSlices(),
+    learnedEventExport: null,
+    lastMaterializedAt: null,
+    materializationCount: 0
+  };
+}
+
+function buildAlwaysOnLearningMaterializationJob(
+  input: AdvanceAlwaysOnLearningRuntimeInput,
+  current: AlwaysOnLearningRuntimeStateV1,
+  selectedSlices: readonly NormalizedEventExportSliceV1[],
+  normalizedEventExport: NormalizedEventExportV1
+): AlwaysOnLearningMaterializationJobV1 {
+  const lane: EventExportLaneV1 = selectedSlices.some((slice) => slice.lane === "live") ? "live" : "backfill";
+  const reason: AlwaysOnLearningMaterializationJobV1["reason"] =
+    lane === "live"
+      ? current.learnedEventExport === null
+        ? "attach_bootstrap"
+        : "fresh_live_events"
+      : "passive_history_catchup";
+  const candidateInput: CandidatePackFromNormalizedEventExportInput = {
+    packLabel: input.packLabel,
+    workspace: input.workspace,
+    normalizedEventExport,
+    learnedRouting: input.learnedRouting,
+    ...(input.builtAt !== undefined ? { builtAt: input.builtAt } : {}),
+    ...(input.offlineArtifacts !== undefined ? { offlineArtifacts: input.offlineArtifacts } : {}),
+    ...(input.structuralOps !== undefined ? { structuralOps: input.structuralOps } : {})
+  };
+  const candidate = buildCandidatePackFromNormalizedEventExport(candidateInput);
+  const selectedSliceIds = selectedSlices.map((slice) => slice.sliceId);
+
+  return {
+    jobId: `learning-${stableHash(checksumJsonPayload({ lane, reason, exportDigest: normalizedEventExport.provenance.exportDigest, selectedSliceIds }))}`,
+    lane,
+    priority: lane === "live" ? "immediate" : "background",
+    reason,
+    selectedSliceIds,
+    selectedEventRange: normalizedEventExport.range,
+    normalizedEventExport,
+    candidateInput,
+    candidate
+  };
+}
+
+export function advanceAlwaysOnLearningRuntime(
+  input: AdvanceAlwaysOnLearningRuntimeInput
+): AdvanceAlwaysOnLearningRuntimeResultV1 {
+  const cadence = normalizeAlwaysOnLearningCadence(input.cadence);
+  const current = input.state ?? createAlwaysOnLearningRuntimeState();
+  const bridge = buildNormalizedEventExportBridge({
+    interactionEvents: [...input.interactionEvents],
+    feedbackEvents: [...input.feedbackEvents],
+    cursor: current.cursor,
+    ...(input.liveSliceSize !== undefined ? { liveSliceSize: input.liveSliceSize } : {}),
+    ...(input.backfillSliceSize !== undefined ? { backfillSliceSize: input.backfillSliceSize } : {})
+  });
+  const pending = mergePendingSlices(current.pending, bridge.slices);
+  const selectedLive = pending.live.slice(0, cadence.liveSlicesPerCycle);
+  const bootstrapLiveFirst = current.learnedEventExport === null && selectedLive.length > 0;
+  const selectedBackfill = bootstrapLiveFirst ? [] : pending.backfill.slice(0, cadence.backfillSlicesPerCycle);
+  const selectedSlices = [...selectedLive, ...selectedBackfill];
+  const learnedEventExport = mergeNormalizedEventExports(current.learnedEventExport, selectedSlices);
+  const materialization =
+    learnedEventExport === null || selectedSlices.length === 0
+      ? null
+      : buildAlwaysOnLearningMaterializationJob(input, current, selectedSlices, learnedEventExport);
+  const nextState: AlwaysOnLearningRuntimeStateV1 = {
+    runtimeOwner: "openclaw",
+    hotPathLearning: false,
+    attachBlocksOnFullReplay: false,
+    cursor: bridge.cursor,
+    pending: {
+      live: pending.live.slice(selectedLive.length),
+      backfill: pending.backfill.slice(selectedBackfill.length)
+    },
+    learnedEventExport,
+    lastMaterializedAt: materialization?.candidate.manifest.provenance.builtAt ?? current.lastMaterializedAt,
+    materializationCount: current.materializationCount + (materialization === null ? 0 : 1)
+  };
+
+  return {
+    runtimeOwner: "openclaw",
+    hotPathLearning: false,
+    attachBlocksOnFullReplay: false,
+    bridge,
+    selectedSlices,
+    deferred: {
+      live: nextState.pending.live.length,
+      backfill: nextState.pending.backfill.length
+    },
+    materialization,
+    state: nextState
+  };
+}
+
+export function materializeAlwaysOnLearningCandidatePack(
+  rootDir: string,
+  job: AlwaysOnLearningMaterializationJobV1
+): PackDescriptor {
+  return materializeCandidatePackFromNormalizedEventExport(rootDir, job.candidateInput);
 }
 
 function structuralOpsSummary(input: CandidatePackBuildInput): Required<ArtifactManifestV1["graphDynamics"]["structuralOps"]> {
