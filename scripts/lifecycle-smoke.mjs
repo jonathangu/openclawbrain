@@ -5,8 +5,8 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { activatePack, describeActivationTarget, inspectActivationState, loadPackFromActivation, promoteCandidatePack, stageCandidatePack } from "../packages/activation/dist/src/index.js";
-import { compileRuntime } from "../packages/compiler/dist/src/index.js";
+import { activatePack, inspectActivationState, promoteCandidatePack, stageCandidatePack } from "../packages/activation/dist/src/index.js";
+import { compileRuntimeFromActivation } from "../packages/compiler/dist/src/index.js";
 import { CONTRACT_IDS } from "../packages/contracts/dist/src/index.js";
 import { buildNormalizedEventExport } from "../packages/event-export/dist/src/index.js";
 import { createFeedbackEvent, createInteractionEvent, sortNormalizedEvents } from "../packages/events/dist/src/index.js";
@@ -180,33 +180,39 @@ function main() {
 
     promoteCandidatePack(activationRoot, "2026-03-06T05:10:00.000Z");
 
-    const activeTarget = describeActivationTarget(activationRoot, "active", {
-      requireActivationReady: true
-    });
-
-    assert.equal(activeTarget?.packId, candidatePack.manifest.packId);
-    assert.equal(activeTarget?.workspaceSnapshot, "workspace-phase-2@snapshot-candidate");
-    assert.equal(activeTarget?.eventExportDigest, candidateExport.provenance.exportDigest);
-
     logStep("Compiling runtime context from the promoted active pack.");
 
-    const activatedPack = loadPackFromActivation(activationRoot, "active", {
-      requireActivationReady: true
-    });
+    const { target: activeTarget, response: compileResponse } = compileRuntimeFromActivation(
+      activationRoot,
+      {
+        contract: CONTRACT_IDS.runtimeCompile,
+        agentId: "agent-lifecycle-smoke",
+        userMessage: "Compile the activation promotion evidence for the Phase-2 lifecycle smoke lane.",
+        maxContextBlocks: 2,
+        maxContextChars: 480,
+        modeRequested: "heuristic",
+        runtimeHints: ["activation", "promotion", "compiler", "evidence"],
+        compactionMode: "native"
+      },
+      {
+        expectedTarget: {
+          packId: candidatePack.manifest.packId,
+          workspaceSnapshot: "workspace-phase-2@snapshot-candidate",
+          workspaceRevision: "phase-2-candidate-rev",
+          eventRange: {
+            start: candidateExport.range.start,
+            end: candidateExport.range.end,
+            count: candidateExport.range.count
+          },
+          eventExportDigest: candidateExport.provenance.exportDigest,
+          builtAt: candidatePack.manifest.provenance.builtAt
+        }
+      }
+    );
 
-    assert.equal(activatedPack?.manifest.packId, candidatePack.manifest.packId);
-
-    const compileResponse = compileRuntime(activatedPack, {
-      contract: CONTRACT_IDS.runtimeCompile,
-      agentId: "agent-lifecycle-smoke",
-      userMessage: "Compile the activation promotion evidence for the Phase-2 lifecycle smoke lane.",
-      maxContextBlocks: 2,
-      maxContextChars: 480,
-      modeRequested: "heuristic",
-      runtimeHints: ["activation", "promotion", "compiler", "evidence"],
-      compactionMode: "native"
-    });
-
+    assert.equal(activeTarget.packId, candidatePack.manifest.packId);
+    assert.equal(activeTarget.workspaceSnapshot, "workspace-phase-2@snapshot-candidate");
+    assert.equal(activeTarget.eventExportDigest, candidateExport.provenance.exportDigest);
     assert.equal(compileResponse.packId, candidatePack.manifest.packId);
     assert.equal(compileResponse.diagnostics.modeEffective, "learned");
     assert.equal(compileResponse.diagnostics.usedLearnedRouteFn, true);
@@ -224,7 +230,7 @@ function main() {
         {
           activePackId: activePack.manifest.packId,
           candidatePackId: candidatePack.manifest.packId,
-          promotedPackId: activeTarget?.packId ?? null,
+          promotedPackId: activeTarget.packId,
           selectedContextIds: compileResponse.selectedContext.map((block) => block.id),
           selectionDigest: compileResponse.diagnostics.selectionDigest
         },
