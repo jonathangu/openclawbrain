@@ -1,859 +1,96 @@
 # OpenClawBrain
 
-OpenClawBrain is a local-first routing memory layer for agents that learns which context should appear and when. It keeps retrieval off remote LLM critical paths by default (routing does not require extra completion-model calls), reduces LLM API turns per user-visible request, and suppresses repeated mistakes over time.
+OpenClawBrain is the TypeScript-first workspace for deterministic, pack-backed context products.
 
-- **Hot-path guarantee (routing):** memory routing is local + bounded; it requires no additional completion-model calls. (Your agent still uses an LLM to answer.)
-- **Turn reduction:** fewer LLM API calls per user-visible request, plus fewer retries/clarifications.
-- **Don’t repeat mistakes:** inhibitory suppression dampens bad routes and recurring errors.
+The repo’s public story is now centered on four guarantees:
 
-Turn = one LLM API call (including retries/clarifications).
+- larger-context tolerance through explicit compile budgets and token-aware pack blocks
+- native structural compaction over pack-backed context instead of ad hoc prompt-side truncation
+- deterministic context selection from immutable packs, vectors, and manifest-gated routing artifacts
+- a clean repo/package boundary where the monorepo is private and the scoped TypeScript packages are the supported public surface
 
-## Why this exists
+Phase 2 is now explicit at the workspace root: the repo carries a deterministic lifecycle smoke that proves one true lifecycle across normalized events, event export, learner pack materialization, activation staging/promotion, and compiler runtime compilation against the promoted pack.
 
-OpenClaw users consistently flag two pain points: token/API cost blowups during long or retry-heavy sessions, and memory/compaction amnesia where important context gets dropped or forgotten over time. See the OpenClaw discussion thread and a week-long cost writeup for concrete examples and user reports. [OpenClaw discussion](https://github.com/openclaw/openclaw/discussions/25633) and [cost writeup](https://medium.com/@likhitkumarvp/i-spent-47-testing-openclaw-for-a-week-heres-what-s-actually-happening-c274dc26a3fd).
+## Boundary
 
-We aim to reduce LLM calls per user-visible exchange and bound context budgets; % savings depends on workload and will be reported via the benchmark harness. See the analyzer at [benchmarks/openclaw_llm_calls/analyze_session_jsonl.py](benchmarks/openclaw_llm_calls/analyze_session_jsonl.py).
+The product boundary is intentionally narrow:
 
-5-minute OpenClaw quickstart (daemon + hook-pack install/enable + gateway restart). Full guide: **[docs/openclaw-integration.md](docs/openclaw-integration.md)**.
+- OpenClaw owns runtime orchestration, prompt assembly, diagnostics, sessions, and fail-open behavior.
+- OpenClawBrain owns contracts, normalized event flows, workspace and provenance metadata, immutable pack artifacts, activation helpers, native structural compaction, deterministic compilation, and learner-side candidate-pack assembly.
+
+There is no Python daemon, socket, hook, or wheel-release lane in the supported surface of this repo.
+
+## Public packages
+
+The supported packages live under `packages/`:
+
+- `@openclawbrain/contracts`
+- `@openclawbrain/events`
+- `@openclawbrain/event-export`
+- `@openclawbrain/workspace-metadata`
+- `@openclawbrain/provenance`
+- `@openclawbrain/pack-format`
+- `@openclawbrain/activation`
+- `@openclawbrain/compiler`
+- `@openclawbrain/learner`
+
+## Context story
+
+- `@openclawbrain/contracts` defines `runtime_compile.v1`, immutable pack payloads, token-aware block metadata, and native compaction semantics.
+- `@openclawbrain/learner` emits deterministic candidate packs with structural-summary blocks that make large event exports serveable.
+- `@openclawbrain/pack-format` preserves the immutable graph/vector/router boundary that compilation reads from disk.
+- `@openclawbrain/compiler` performs deterministic pack-backed ranking, enforces learned-routing policy, and applies native structural compaction under character budgets.
+- `@openclawbrain/activation` promotes only activation-ready packs into active runtime slots.
+
+## Package flow
+
+- `@openclawbrain/events` builds normalized interaction and feedback events.
+- `@openclawbrain/event-export` turns those events into deterministic export ranges and provenance.
+- `@openclawbrain/workspace-metadata` and `@openclawbrain/provenance` stamp workspace and build provenance into immutable artifacts.
+- `@openclawbrain/learner` assembles candidate packs with structural summaries and deterministic ids.
+- `@openclawbrain/activation` stages, promotes, inspects, and rolls back activation state.
+- `@openclawbrain/compiler` consumes coherent pack artifacts for runtime-side context selection.
+
+## Workspace
+
+Requires Node 20+ and `pnpm` 10+.
 
 ```bash
-openclawbrain serve --state ~/.openclawbrain/main/state.json
-openclaw hooks install /path/to/openclawbrain/integrations/openclaw/hooks/openclawbrain-context-injector
-openclaw hooks enable openclawbrain-context-injector
-openclaw gateway restart
+corepack enable
+pnpm install --frozen-lockfile
+pnpm check
+pnpm lifecycle:smoke
+pnpm release:pack
 ```
 
-> Your retrieval routes become the prompt — assembled by learned routing, not top-k similarity.
+`pnpm check` builds the workspace, runs the package tests, and executes the root lifecycle smoke lane.
 
-**Repo version:** `v12.2.6` (see `pyproject.toml`; PyPI may lag)
-**Website:** https://openclawbrain.ai
+`pnpm lifecycle:smoke` rebuilds the workspace and runs the Phase-2 lifecycle proof on a temp directory using the existing public package APIs on disk:
 
-**Setup:** [Setup Guide](docs/setup-guide.md)
+- `@openclawbrain/events` creates normalized interaction and feedback events
+- `@openclawbrain/event-export` derives deterministic event export range and provenance
+- `@openclawbrain/learner` materializes active and candidate packs from those exports
+- `@openclawbrain/activation` stages and promotes the candidate pack into the active slot
+- `@openclawbrain/compiler` compiles runtime context from the promoted pack
+
+`pnpm release:pack` creates package tarballs in `.release/` for the full public package surface.
+
+For a release-candidate pass, run:
+
+```bash
+pnpm release:check
+```
+
+That command cleans the workspace, rebuilds it, reruns tests, and produces publishable tarballs for all public `@openclawbrain/*` packages.
 
 ## Docs
 
-- Operator quickstart (start here): [docs/operator-quickstart.md](docs/operator-quickstart.md)
-- Operator guide (deep dive): [docs/operator-guide.md](docs/operator-guide.md)
-- Learned routing audit (invariants + checklist): [docs/learned-routing-audit.md](docs/learned-routing-audit.md)
-- Default brain-building experience (macOS): [docs/default-experience.md](docs/default-experience.md)
-- Shadow routing architecture: [docs/shadow-routing-upg-architecture.md](docs/shadow-routing-upg-architecture.md)
-- Evaluation plan: [docs/evaluation-plan.md](docs/evaluation-plan.md)
-- Workflow proof (routing mechanism report + per-scenario matrix): [docs/openclaw-workflow-proof.md](docs/openclaw-workflow-proof.md)
-- QTsim math appendix: [docs/ultimate-policy-gradient-routing-math.md](docs/ultimate-policy-gradient-routing-math.md)
-- OpenClaw integration: [docs/openclaw-integration.md](docs/openclaw-integration.md)
-- Setup guide: [docs/setup-guide.md](docs/setup-guide.md)
-- GitHub repo: https://github.com/jonathangu/openclawbrain
-- ClawHub skill: https://clawhub.ai/skills/openclawbrain
-
-## OpenClaw Integration (start here if you run OpenClaw)
-
-OpenClawBrain is designed to be the memory layer for **OpenClaw agents**.
-
-- Canonical operator runbook: **[docs/operator-guide.md](docs/operator-guide.md)**
-- Canonical one-page quickstart: **[docs/operator-quickstart.md](docs/operator-quickstart.md)**
-- Guide: **[docs/openclaw-integration.md](docs/openclaw-integration.md)**
-- Recommended OpenClaw hook install: **[docs/openclawbrain-openclaw-hooks.md](docs/openclawbrain-openclaw-hooks.md)**
-- macOS launchd: `openclawbrain serve install` auto-detects the OpenClaw venv wrapper at `~/.openclaw/scripts/openclawbrain-serve` (or `OPENCLAWBRAIN_SERVE_WRAPPER`) so local deps like `fastembed` are available.
-
-### Brain-first OpenClaw integration (recommended)
-
-Enable brain-backed context injection with zero AGENTS wiring. If you don’t have a brain yet, follow **[docs/openclaw-integration.md](docs/openclaw-integration.md)**.
-
-OpenClaw adapter query example with runtime routing (`route_mode=edge+sim`):
-
-```bash
-python3 -m openclawbrain.openclaw_adapter.query_brain \
-  ~/.openclawbrain/main/state.json \
-  "summarize prior deploy failures" \
-  --chat-id "chat-123" \
-  --format prompt \
-  --route-mode edge+sim \
-  --route-top-k 5 \
-  --route-alpha-sim 0.5 \
-  --route-use-relevance
-```
-
-**OpenClawBrain learns from your agent feedback, so wrong answers get suppressed instead of resurfacing.** It builds a memory graph over your workspace, remembers what worked, and routes future answers through learned paths.
-
-- Pure Python 3.10+ core (no vector DB). OOTB embeddings are local (`fastembed`, BGE-large), so OpenAI is not required.
-- Built-in local embeddings for offline/default operation; OpenAI embeddings are optional.
-- Builds a **`state.json`** brain from your workspace.
-- Queries follow learned routes instead of only similarity matches.
-- Positive feedback (`+1`) uses the default policy-gradient learner `apply_outcome_pg()` (conserving probability mass across traversed nodes), while negative (`-1`) creates inhibitory edges.
-- Over time, less noise appears and recurring mistakes are less likely.
-
-- OpenClawBrain integrates with your agent's file-based workspace through incremental sync, constitutional anchors, and optional/scheduled compaction.
-- See the [context lifecycle](docs/architecture.md) for details.
-
-## Install
-
-```bash
-pip install openclawbrain
-```
-
-See also: [Setup Guide](docs/setup-guide.md) for a complete local configuration walkthrough.
-
-## Why OpenClawBrain
-
-- Static retrieval vs learned routing: OpenClawBrain continuously updates node-to-node edges so good routes strengthen and bad routes decay.
-- No correction propagation vs inhibitory edges: incorrect context can be actively suppressed and forgotten less often than in similarity-only systems.
-- Bulk context load vs targeted traversal: context windows stay focused by following likely retrieval routes.
-- No structural maintenance vs prune/merge/compact: OpenClawBrain includes scheduled maintenance commands to keep the graph healthy and compact.
-- No protection vs constitutional anchors: anchor critical nodes with authority so operational instructions do not drift.
-
-## 5-minute operator path (OOTB)
-
-```bash
-# 1) init (default embedder auto -> local fastembed bge-large)
-openclawbrain init --workspace ~/.openclaw/workspace --output ~/.openclawbrain/main
-
-# 2) start service
-openclawbrain serve start --state ~/.openclawbrain/main/state.json
-
-# 3) status check
-openclawbrain serve status --state ~/.openclawbrain/main/state.json
-
-# 4) query example (daemon socket)
-python3 -m openclawbrain.socket_client \
-  --socket ~/.openclawbrain/main/daemon.sock \
-  --method query \
-  --params '{"query":"summarize deploy rollback policy","top_k":4}'
-
-# 5) stop service
-openclawbrain serve stop --state ~/.openclawbrain/main/state.json
-```
-
-## Correcting mistakes (the main workflow)
-
-When your agent retrieves wrong context, teach OpenClawBrain in one command:
-
-```bash
-openclawbrain inject --state brain/state.json \
-  --id "correction::42" \
-  --content "Never show API keys in chat messages" \
-  --type CORRECTION
-```
-
-What happens:
-1. OpenClawBrain creates a new node with your correction text
-2. It connects that node to the most related workspace chunks
-3. It adds **inhibitory edges** — negative-weight links that suppress those chunks
-4. Next query touching that topic: the correction appears, the bad route is dampened
-
-To add knowledge without suppressing anything, use `--type TEACHING` instead.
-
-### Structural corrections with split
-
-Alongside inhibitory edges and periodic merge, maintenance now supports runtime splitting:
-
-- `openclawbrain maintain` runs `scale` after `decay`, then `split` before `merge`.
-- `suggest_splits()` finds bloated multi-topic nodes (including merged-byline nodes).
-- `split_node()` rewires outgoing and incoming edges into focused child nodes, then removes the parent.
-- Inhibitory edges are always copied to every child, so suppressions are not lost.
-- `openclawbrain maintain` now also includes optional homeostatic controls: decay half-life auto-adjusts to keep reflex-edge ratio in range, and synaptic scaling uses a soft per-node weight budget (5.0) with fourth-root scaling.
-- `Tier hysteresis: habitual band 0.15-0.6` prevents threshold thrashing.
-
-## Self-learning (autonomous agent learning)
-
-Agents can learn from their own observations — both mistakes and successes — without human feedback (self-correct available as CLI/API alias).
-
-```bash
-# Agent detected a failure — penalize the bad path and inject a correction
-openclawbrain self-learn --state brain/state.json \
-  --content 'Always download model artifacts before terminating training instances' \
-  --fired-ids 'infra.md::3,cleanup.md::1' \
-  --outcome -1.0 --type CORRECTION
-
-# Agent succeeded — reinforce the good path and record what worked
-openclawbrain self-learn --state brain/state.json \
-  --content 'Download-then-terminate sequence works reliably for model training' \
-  --fired-ids 'infra.md::3,download.md::1' \
-  --outcome 1.0 --type TEACHING
-
-# Agent learned something new (neutral — just adding knowledge)
-openclawbrain self-learn --state brain/state.json \
-  --content 'GBM training takes ~40 min on g5.xlarge' \
-  --outcome 0 --type TEACHING
-```
-
-The full spectrum:
-
-| Situation | outcome | type | Effect |
-|-----------|---------|------|--------|
-| Agent made a mistake | -1.0 | CORRECTION | Penalize fired path + inject with inhibitory edges |
-| Agent learned a fact | 0.0 | TEACHING | Inject knowledge only, no weight changes |
-| Agent succeeded | +1.0 | TEACHING | Reinforce fired path + inject positive knowledge |
-
-Via socket (Python):
-
-```python
-from openclawbrain.socket_client import OCBClient
-
-with OCBClient('~/.openclawbrain/main/daemon.sock') as client:
-    # Agent detected its own mistake
-    client.self_learn(
-        content='Always download artifacts before terminating instances',
-        fired_ids=['infra.md::3', 'cleanup.md::1'],
-        outcome=-1.0,
-        node_type='CORRECTION',
-    )
-
-    # Agent observed a success — reinforce
-    client.self_learn(
-        content='Chunked download with checksum verification works reliably',
-        fired_ids=['download.md::0', 'validate.md::1'],
-        outcome=1.0,
-        node_type='TEACHING',
-    )
-```
-
-This enables autonomous learning loops: agents observe outcomes, detect failures and successes, and teach themselves — no human in the loop. `self-correct` is available as CLI/API alias.
-
-## Adding new knowledge (no rebuild needed)
-
-When you learn something that isn't in any workspace file, inject it directly:
-
-```bash
-openclawbrain inject --state brain/state.json \
-  --id "teaching::codex-spark" \
-  --content "Use Codex CLI with gpt-5.3-codex-spark for coding tasks — free on Pro plan" \
-  --type TEACHING
-```
-
-TEACHING nodes connect to related workspace chunks just like CORRECTION nodes,
-but without inhibitory edges — they add knowledge instead of suppressing it.
-
-Three injection types:
-- **CORRECTION** — creates inhibitory edges that suppress related wrong paths
-- **TEACHING** — adds knowledge with normal positive connections
-- **DIRECTIVE** — same as TEACHING (use for standing instructions)
-
-For agent frameworks that need to correlate corrections with earlier queries,
-see `examples/correction_flow/` for the fired-node logging pattern.
-
-You can also reinforce good retrievals:
-
-```bash
-# After a query returns helpful context, strengthen those paths
-openclawbrain learn --state brain/state.json --outcome 1.0 \
-  --fired-ids "deploy.md::0,deploy.md::1"
-```
-
-Or weaken bad ones:
-
-```bash
-openclawbrain learn --state brain/state.json --outcome -1.0 \
-  --fired-ids "monitoring.md::2"
-```
-
-## What it looks like in practice
-
-```bash
-# Before learning
-openclawbrain query "how do we handle incidents" --state /tmp/brain/state.json --top 3
-
-# After one good learn on the best route
-openclawbrain learn --state /tmp/brain/state.json --outcome 1.0 --fired-ids "incidents.md::0,deploy.md::1"
-
-# After one negative learn on a bad route
-openclawbrain learn --state /tmp/brain/state.json --outcome -1.0 --fired-ids "monitoring.md::2,incidents.md::0"
-
-# Query again to observe new routing
-openclawbrain query "incident runbook for deploy failures" --state /tmp/brain/state.json --top 4
-```
-
-## How it compares
-
-| | Plain RAG | OpenClawBrain |
-|---|-----------|----------|
-| Retrieval | Similarity search | Learned graph traversal |
-| Feedback | None | `learn +1/-1` updates edge weights |
-| Wrong answers | Can keep resurfacing | Inhibitory edges suppress them |
-| Adding knowledge | Re-index/re-embed | `inject --type TEACHING` (no rebuild) |
-| Over time | Same results for same query | Routes become habitual behavior |
-| Dependencies | Vector DB or service | Zero dependencies |
-
-## How OpenClawBrain differs from related tools
-
-| | OpenClawBrain | Plain RAG | Reflexion | MemGPT |
-|---|----------|-----------|-----------|--------|
-| What it learns | Retrieval routes | Nothing | Reasoning via self-reflection text | Memory read/write policies |
-| Negative feedback | Inhibitory edges suppress bad paths | None | None (additive only) | None |
-| New knowledge | `inject` node (no rebuild) | Re-embed corpus | Add to reflection prompt | Update tier config |
-| Integration | Standalone library, any agent | Vector DB required | Tied to agent loop | Tied to agent architecture |
-| Cold start | Local fastembed embeddings, no API key | Needs embedding service | Needs prior episodes | Needs configured tiers |
-| State | Single `state.json` file | External DB | Prompt history | Multi-tier storage |
-
-## Optional OpenAI embeddings + LLM routing
-
-If you want API-backed embeddings/teacher labeling, use:
-
-- OpenAI is an optional dependency. It is required for `--llm openai` / `--llm openrouter` and `--teacher openai`.
-- **Embeddings:** `text-embedding-3-small` (1536-dim)
-- **LLM routing/scoring:** `gpt-5-mini`
-- **Offline/testing default:** local fastembed embeddings (no API key required).
-
-```python
-from openai import OpenAI
-from openclawbrain import split_workspace, VectorIndex
-
-client = OpenAI()
-
-
-def embed(text):
-    return client.embeddings.create(
-        model="text-embedding-3-small", input=[text]
-    ).data[0].embedding
-
-
-def llm(system, user):
-    return client.chat.completions.create(
-        model="gpt-5-mini",
-        messages=[{"role": "system", "content": system}, {"role": "user", "content": user}],
-    ).choices[0].message.content
-
-graph, texts = split_workspace("./workspace", llm_fn=llm)
-index = VectorIndex()
-for nid, content in texts.items():
-    index.upsert(nid, embed(content))
-```
-
-See `examples/openai_embedder/` for a complete example.
-
-## CLI Reference
-
-| Command | Description |
-|---------|-------------|
-| `init` | Build a brain from workspace files |
-| `query` | Traverse graph and return context |
-| `learn` | Apply outcome feedback to fired edges |
-| `self-learn` | Add outcome-aware lesson entries from agent observations |
-| `self-correct` | Alias for `self-learn` |
-| `merge` | Suggest and apply node merges |
-| `anchor` | Set/list/remove constitutional authority on nodes |
-| `connect` | Connect learning nodes to workspace neighborhoods |
-| `maintain` | Run structural maintenance (health, decay, scale, split, merge, prune, connect) |
-| `compact` | Compact old daily notes into graph nodes |
-| `sync` | Incremental re-embed after file changes |
-| `inject` | Add CORRECTION/TEACHING/DIRECTIVE nodes |
-| `replay` | Replay session queries (`--mode full` default, plus `--mode edges-only` or `--mode fast-learning`; use `--resume`/`--fresh`/`--checkpoint` to control checkpoint behavior) |
-| `harvest` | Apply slow-learning pass from `learning_events.jsonl` to current graph |
-| `async-route-pg` | Background teacher-shadow routing labels from recent query journal + PG edge updates |
-| `health` | Show graph health metrics |
-| `status` | `openclawbrain status --state brain/state.json [--json]` returns a one-command health overview: version, nodes, edges, tier distribution, daemon status, embedder, decay half-life |
-| `serve` | `openclawbrain serve start|status|stop --state brain/state.json [--socket-path path]` canonical socket-service lifecycle |
-| `journal` | Show event journal |
-| `doctor` | Run diagnostic checks |
-| `info` | Show brain info (nodes, edges, embedder) |
-| `daemon` | Low-level NDJSON worker (stdio), typically run behind `serve` |
-
-## State persistence
-
-State writes are atomic (`temp` + `fsync` + `rename`) with `.bak` backup. Crash-safe.
-
-## Multi-workspace sync
-
-You can sync multiple workspaces into a single brain state without cross-deleting nodes:
-
-```bash
-openclawbrain sync --state ~/.openclawbrain/main/state.json \
-  --workspace ~/workspace-pelican \
-  --workspace ~/workspace-ops
-```
-
-`workspace_id` defaults to the workspace directory basename (with `workspace-` stripped). Use `--workspaces` for a comma-separated list if you prefer.
-Node ids are prefixed with `workspace_id` (for example: `pelican/docs/foo.md::0`).
-
-## Low-Level Worker (`openclawbrain daemon`)
-
-For production use, prefer `openclawbrain serve`, which manages the daemon worker and socket lifecycle.
-`openclawbrain daemon` is the low-level NDJSON stdio worker.
-
-Why this matters:
-
-- First load initializes `state.json` once, then keeps the process and index warm.
-- Saves process startup/reload overhead versus one-shot CLI calls.
-- Reduces memory churn and tail latency under steady traffic.
-
-Start it with:
-
-```bash
-openclawbrain daemon --state ~/.openclawbrain/main/state.json
-```
-
-Embedding mode defaults to `--embed-model auto`:
-- For `local:*` state metadata, daemon queries use local embeddings.
-- For legacy `hash-v1` state metadata, daemon queries use hash embeddings (avoid for new states).
-- For OpenAI-based states, `auto` does not call OpenAI; use `--embed-model openai:<model>` explicitly.
-- Use `--embed-model local` to force offline query embeddings.
-
-Routing mode defaults to `--route-mode learned`. `init` writes a default identity-like `route_model.npz` beside `state.json`; if that file is missing or unloadable, daemon query routing falls back to `edge+sim`, emits a warning on startup, and reports `route_model_present`, `route_mode_configured`, and `route_mode_effective` in `health`.
-
-Protocol:
-
-- Transport: `stdin`/`stdout` with newline-delimited JSON (NDJSON).
-- Each request is a single JSON object with `id`, `method`, and `params`.
-- Each response is a single JSON object with the same `id` and either `result` or `error`.
-
-Example request/response:
-
-```bash
-echo '{"id":"req-1","method":"query","params":{"query":"how to deploy","top_k":4,"chat_id":"telegram:123"}}' | openclawbrain daemon --state ~/.openclawbrain/main/state.json
-```
-
-Enable deterministic query-conditioned habitual routing (no LLM calls on query path):
-
-```bash
-echo '{"id":"req-2","method":"query","params":{"query":"how to deploy","top_k":4,"route_mode":"edge+sim","route_top_k":5,"route_alpha_sim":0.5,"route_use_relevance":true}}' | openclawbrain daemon --state ~/.openclawbrain/main/state.json
-```
-
-Optional STOP routing: set `route_enable_stop=true` (default false) and tune `route_stop_margin` (default `0.1`) to allow the router to return `[]` when STOP beats the best candidate by the margin.
-
-```json
-{"id":"req-1","result":{"fired_nodes":["a"],"context":"...","seeds":[["a",0.96]],"embed_query_ms":1.1,"traverse_ms":2.4,"total_ms":3.5}}
-```
-
-Supported methods (all 10):
-
-- `query`: run route traversal and return `fired_nodes`, `context`, timing, and seeds.
-- `learn`: apply outcomes (`+1/-1`) with default `apply_outcome_pg()` updates and return `edges_updated`.
-- `inject`: add TEACHING/CORRECTION/DIRECTIVE nodes and connect them to related workspace chunks.
-- `correction`: atomically apply negative feedback to last-fired nodes and inject a CORRECTION node.
-- `maintain`: run maintenance ops and return health/merge summary fields.
-- `health`: return current health metrics for the loaded graph.
-- `info`: return state metadata and object counts.
-- `save`: persist current in-memory state to disk immediately.
-- `reload`: reload `state.json` without restarting.
-- `shutdown`: persist pending writes and exit cleanly.
-- `query`/`learn`/`maintain`/`health`/`info` responses include `embed_query_ms`, `traverse_ms`, and `total_ms` timing fields where applicable.
-- `query`/`learn`/`inject`/`correction` are the only mutation-capable methods; the daemon is the single source of truth for those changes while state is hot in memory.
-
-Current limitations:
-
-- Per-chat mutation APIs remain scoped through request payloads (`chat_id`) and adapter-layer bookkeeping.
-- Concurrent writers are serialized by the socket transport lock and one active request at a time.
-
-See `examples/ops/client_example.py` for a Python client and `docs/architecture.md` for protocol details.
-
-## True Policy Gradient (apply_outcome_pg)
-
-`apply_outcome_pg` implements a full REINFORCE policy-gradient update and is now the default learning rule used by daemon/CLI correction and learn paths.
-
-- It updates **all outgoing edges** for each visited node on the fired trajectory, not only traversed edges.
-- It uses the update:
-  `Δw = (η(z-b)γ^ℓ)/τ · (𝟙[j=a] - π(j|i))`
-  where:
-  - `η` = learning rate
-  - `z` = outcome reward
-  - `b` = baseline
-  - `γ` = discount
-  - `ℓ` = trajectory depth
-  - `τ` = temperature
-  - `π(j|i)` = action probability from softmax (including STOP)
-  - `𝟙[j=a]` = 1 for the taken action, else 0
-- Conservation property: for each source node `i`, outgoing updates sum to zero, so total outgoing mass is preserved.
-- STOP is a learnable per-node logit stored as `node.metadata["stop_weight"]` (default `0.0`) and participates in the softmax/projection updates alongside outgoing edges.
-- Use `apply_outcome_pg` when you want smoother, probability-based updates across alternatives; use `apply_outcome` for a simpler sparse update that only touches traversed edges.
-
-```python
-from openclawbrain import apply_outcome_pg, LearningConfig
-
-config = LearningConfig(learning_rate=0.1, temperature=1.0, baseline=0.0)
-updates = apply_outcome_pg(graph, fired_nodes=["a", "b", "c"], outcome=1.0, config=config)
-```
-
-Full derivation: https://jonathangu.com/openclawbrain/gu2016/
-
-## Write policy summary
-
-| Situation | Action |
-|-----------|--------|
-| Durable fact | Edit file → sync re-embeds |
-| Correction | Edit file + daemon `correction` method |
-| Soft teaching | openclawbrain inject --type TEACHING |
-| Wrong retrieval | daemon `correction` (graph-only, no rebuild) |
-| New rule | Edit AGENTS.md or SOUL.md |
-
-## Traversal defaults
-
-| Setting | Default | Purpose |
-|---------|---------|---------|
-| `beam_width` | `8` | Frontier size per hop (wider = reaches farther routes) |
-| `max_hops` | `30` | Safety ceiling; damping controls convergence |
-| `fire_threshold` | `0.01` | Minimum score required to fire a candidate node |
-| `reflex_threshold` | `0.6` | Edges with weight `>= 0.6` auto-follow (no route function) |
-| `habitual_range` | `0.15 - 0.6` | Edges in this band run through route function |
-| `inhibitory_threshold` | `-0.01` | Edges at or below suppress targets |
-| `max_fired_nodes` | `None` | Hard stop on fired node count |
-| `max_context_chars` | `None` | Hard stop on rendered traversal context |
-| `edge_damping` | `0.3` | Per-reuse decay (`weight × 0.3^k`) |
-
-```python
-from openclawbrain import traverse, TraversalConfig
-
-result = traverse(
-    graph,
-    seeds,
-    config=TraversalConfig(max_context_chars=20000, max_fired_nodes=30),
-)
-```
-
-`query` and `query_brain.py` honor these budgets and stop as soon as any termination condition is met.
-
-## External benchmarks
-
-External retrieval benchmarks are optional and use separately downloaded datasets.
-OpenClawBrain ships a quick-start workflow for MultiHop-RAG and HotPotQA in
-`benchmarks/external/README.md`, but the datasets are not in the repository.
-
-## Evaluation suite (paper-focused)
-
-Use the built-in eval + ablation harness:
-
-```bash
-python examples/eval/run_eval.py \
-  --state /path/to/state.json \
-  --output /tmp/ocb_eval_summary.json
-```
-
-Run the synthetic two-cluster routing simulation:
-
-```bash
-python examples/eval/simulate_two_cluster_routing.py \
-  --output-dir /tmp/ocb_two_cluster
-```
-
-Run the industry baseline suite (JSON + CSV + report in scratch):
-
-```bash
-python examples/eval/run_baselines.py \
-  --state /path/to/state.json \
-  --output-dir scratch/industry-baselines/latest
-```
-
-Baseline matrix (industry standard):
-
-| Mode | Description | Optional deps |
-| --- | --- | --- |
-| `vector_topk` | Vector similarity top-k only | none |
-| `vector_topk_rerank` | Vector top-k reranked by BM25 | `openclawbrain[reranker]` |
-| `pointer_chase` | Deterministic pointer-chasing simulator | none |
-| `learned` | OpenClawBrain learned routing | route model |
-| `edge_sim_legacy` | Legacy edge+sim routing | none |
-
-See [docs/evaluation-plan.md](docs/evaluation-plan.md) for baselines, metrics, ablation matrix, and dataset guidance.
-
-Quick run (from project root):
-
-```bash
-mkdir -p benchmarks/external
-curl -L https://huggingface.co/datasets/yixuantt/MultiHopRAG/raw/main/MultiHopRAG.json -o benchmarks/external/multihop_rag.json
-curl -L https://curtis.ml.cmu.edu/datasets/hotpot/hotpot_dev_distractor_v1.json -o benchmarks/external/hotpotqa_dev_distractor.json
-python3 benchmarks/external/run_multihop_rag.py --limit 50
-python3 benchmarks/external/run_hotpotqa.py --limit 50
-```
-
-## Python API
-
-```python
-from openclawbrain import (
-    split_workspace,
-    traverse,
-    apply_outcome_pg,
-    apply_outcome,
-    inject_node,
-    inject_correction,
-    inject_batch,
-    VectorIndex,
-    HashEmbedder,
-    TraversalConfig,
-    save_state,
-    load_state,
-    ManagedState,
-    measure_health,
-    suggest_splits,
-    split_node,
-    replay_queries,
-    score_retrieval,
-)
-```
-
-## State lifecycle
-
-- **Where it lives:** a single `state.json` file (portable, version-controllable)
-- **How big:** depends on workspace size and embedder (dense embeddings are larger)
-- **When to rebuild:** after major workspace restructuring or embedder changes
-- **Embedder changes:** OpenClawBrain stores the embedder name + dimension in state metadata and hard-fails on mismatch — no silent corruption
-- **Maintenance:** use `openclawbrain maintain` (`decay` + `scale` + `split` + `merge` + `prune` + `connect`) to rebalance structure as the graph evolves
-
-## Core thesis (recommended reading)
-
-- **Shadow routing + Ultimate Policy Gradient:** `docs/core-thesis-ultimate-policy-gradient.md`
-- **UPG routing math appendix:** `docs/ultimate-policy-gradient-routing-math.md`
-
-## Cost control
-
-- **Default OOTB:** `openclawbrain init` uses local BGE-large embeddings (`--embedder auto` -> local fastembed) and writes vectors to `state.json`.
-- **Optional OpenAI:** install `openclawbrain[openai]` and use `--embedder openai` (or OpenAI teacher labeling via `async-route-pg`) when you want API-backed labels/embeddings.
-- **Batch init:** `openclawbrain init` embeds all workspace files in one batch call. Subsequent queries reuse cached vectors.
-- **Explicit control:** use `--embedder local` / `--embedder openai` to force a specific embedder. Use `--embed-model BAAI/bge-small-en-v1.5` to choose a smaller local model, or pass a bespoke fastembed model string. Use `--llm none` to skip LLM-assisted splitting.
-- **fastembed cache:** stored at `~/.cache/fastembed` by default. Override with `FASTEMBED_CACHE_PATH`.
-
-Example: switching an existing state to a different local model
-
-```bash
-# Smaller local model
-openclawbrain reembed --state ~/.openclawbrain/main/state.json \
-  --embedder local --embed-model BAAI/bge-small-en-v1.5 --backup
-
-# Bespoke fastembed model
-openclawbrain reembed --state ~/.openclawbrain/main/state.json \
-  --embedder local --embed-model my-org/my-embedding-model --backup
-```
-
-## Warm start from sessions
-
-If you have prior conversation logs, replay them. By default, `replay` runs
-`--mode edges-only` (cheap/fast, no LLM, no harvest):
-
-```bash
-openclawbrain replay --state /tmp/brain/state.json --sessions ./sessions/
-```
-
-`--sessions` now accepts more than plain OpenClaw JSONL files:
-- OpenClaw session directories with rotated `*.jsonl*` files
-- `sessions.json` session indices
-- nested Codex rollout trees such as `~/.codex/sessions`
-- direct Codex state sqlite files such as `~/.codex/state_5.sqlite`
-
-OpenClaw media uploads are usually logged as user text stubs like
-`[media attached: ...]`. Those stubs alone have little semantic value, so they
-often do not improve memory quality by themselves. The useful text typically
-arrives in later `toolResult` messages (OCR, image captions, audio transcript).
-
-Recommended approach:
-
-- Use dedicated media tools to emit transcript/OCR/caption text as `toolResult`.
-- Let OpenClawBrain attach allowlisted `toolResult` text to media-stub user
-  queries during replay and expose the same text to fast-learning windows.
-
-Replay controls for this behavior:
-
-```bash
-openclawbrain replay \
-  --state /tmp/brain/state.json \
-  --sessions ./sessions/ \
-  --include-tool-results \
-  --tool-result-allowlist image,openai-whisper,openai-whisper-api,openai-whisper-local,summarize \
-  --tool-result-max-chars 20000
-```
-
-- `--include-tool-results` / `--no-include-tool-results` (default enabled)
-- `--tool-result-allowlist` (comma-separated tool names)
-- `--tool-result-max-chars` (max allowlisted tool text appended per user query)
-
-To run the full pipeline explicitly, use `--mode full` (or legacy alias
-`--full-learning` / `--full-pipeline`).
-
-For cheap edge-only replay (no LLM, no harvest):
-
-```bash
-openclawbrain replay \
-  --state /tmp/brain/state.json \
-  --sessions ./sessions/ \
-  --mode edges-only
-```
-
-For transcript-backed fast-learning only (no harvest):
-
-```bash
-openclawbrain replay \
-  --state /tmp/brain/state.json \
-  --sessions ./sessions/ \
-  --mode fast-learning \
-  --resume \
-  --workers 4 \
-  --checkpoint /tmp/brain/replay_checkpoint.json
-```
-`--extract-learning-events` is an alias for `--fast-learning`.
-
-For cutover-friendly startup (inject quickly, then start daemon immediately):
-
-```bash
-openclawbrain replay \
-  --state /tmp/brain/state.json \
-  --sessions ./sessions/ \
-  --mode fast-learning \
-  --stop-after-fast-learning \
-  --checkpoint /tmp/brain/replay_checkpoint.json
-```
-`--workers` controls fast-learning LLM extraction concurrency (this stage is often the slowest, because it is LLM-bound).
-
-For durable long replays with periodic progress/checkpoint/state persistence:
-
-```bash
-openclawbrain replay \
-  --state /tmp/brain/state.json \
-  --sessions ./sessions/ \
-  --mode edges-only \
-  --resume \
-  --checkpoint /tmp/brain/replay_checkpoint.json \
-  --checkpoint-every-seconds 60 \
-  --checkpoint-every 1 \
-  --persist-state-every-seconds 30 \
-  --progress-every 250
-```
-By default, replay also emits progress heartbeats every 30 seconds; use `--quiet` to suppress banners/progress.
-
-When `--json` is set, progress is emitted as JSONL events:
-`{"type":"progress","phase":"replay",...}`.
-
-For simple true-parallel replay v0:
-
-```bash
-openclawbrain replay \
-  --state /tmp/brain/state.json \
-  --sessions ./sessions/ \
-  --mode edges-only \
-  --replay-workers 4 \
-  --checkpoint-every 1
-```
-`--replay-workers` controls edge replay workers. Values greater than `1` trade strict sequential replay behavior for a deterministic shard/merge approximation.
-
-Parallel replay v0 is an approximation: workers process deterministic shards and
-compute replay deltas without mutating shared state; the reducer applies those
-deltas in deterministic merge order, with checkpoints after each merge batch.
-
-To enable decay during an edges-only replay:
-
-```bash
-openclawbrain replay \
-  --state /tmp/brain/state.json \
-  --sessions ./sessions/ \
-  --mode edges-only \
-  --decay-during-replay \
-  --decay-interval 10
-```
-
-`--decay-interval N` controls how many learning steps occur between each decay
-pass (default 10).
-
-Missing or rotated session files are skipped with a warning instead of aborting
-the run, so long rebuilds survive file rotation.
-
-The fast-learning and harvest pipeline is sidecar-only to the core files:
-`learning_events.jsonl` is append-only, and `replay` updates `state.json` via the same graph mutation model as existing injection commands.
-
-## Async teacher routing (offline)
-
-`query` and daemon query stay LLM-free and fast. `async-route-pg` is a separate background loop that samples recent journaled queries, replays local traversal, asks a teacher model which candidate edges it would choose, then applies dense policy-gradient updates with `apply_outcome_pg`.
-
-Dry-run is the default (no writes), machine-readable JSON:
-
-```bash
-openclawbrain async-route-pg \
-  --state /tmp/brain/state.json \
-  --since-hours 24 \
-  --max-queries 200 \
-  --sample-rate 0.1 \
-  --teacher openai \
-  --teacher-model gpt-5-mini \
-  --json
-```
-
-Apply mode (writes updates):
-
-```bash
-openclawbrain async-route-pg \
-  --state /tmp/brain/state.json \
-  --since-hours 24 \
-  --max-queries 200 \
-  --sample-rate 0.1 \
-  --teacher openai \
-  --teacher-model gpt-5-mini \
-  --apply \
-  --json
-```
-
-Notes:
-- Default is dry-run (no state write); add `--apply` to persist updates.
-- If `OPENAI_API_KEY` is missing (or `--teacher none`), it still runs but reports teacher unavailable and applies no updates.
-- The updates improve edge weights/metadata that downstream `maintain` (`split/merge/prune/connect`) already consumes.
-
-## Learned route model training
-
-OpenClawBrain now supports `route_mode=learned` at runtime with a trainable low-rank route model (`openclawbrain.route_model`).
-
-OOTB behavior:
-- `openclawbrain init` writes `/path/to/brain/route_model.npz` using an identity-like bilinear model.
-- Daemon defaults to `route_mode=learned`, so new brains use bilinear runtime routing immediately.
-- Retrain anytime with `openclawbrain train-route-model ... --out /path/to/brain/route_model.npz`.
-
-Storage boundary modules:
-- `openclawbrain.storage.state_store`: `StateStore` / `JsonStateStore`
-- `openclawbrain.storage.event_store`: `EventStore` / `JsonlEventStore`
-
-Unified label schema:
-- `openclawbrain.labels.LabelRecord` with `reward_source` + `weight`
-- works across teacher labels, human corrections, self-learning events, and harvest outputs
-- **labels** = async teacher labels + human labels + self-learned labels + harvested labels
-- `--labels-out` appends JSONL records for long-lived label stores
-
-Training flow:
-
-```bash
-# 1) Build traces (optionally include query vectors)
-openclawbrain async-route-pg \
-  --state /tmp/brain/state.json \
-  --traces-out /tmp/brain/route_traces.jsonl \
-  --labels-out /tmp/brain/labels.jsonl \
-  --include-query-vector \
-  --teacher none
-
-# 2) Collect harvest/self labels (optional; appends)
-openclawbrain harvest \
-  --state /tmp/brain/state.json \
-  --labels-out /tmp/brain/labels.jsonl
-
-# 3) Train route model
-openclawbrain train-route-model \
-  --state /tmp/brain/state.json \
-  --traces-in /tmp/brain/route_traces.jsonl \
-  --labels-in /tmp/brain/labels.jsonl \
-  --out /tmp/brain/route_model.npz \
-  --rank 16 \
-  --epochs 3 \
-  --lr 0.01 \
-  --label-temp 0.5 \
-  --json
-
-# 4) Run daemon with learned route mode
-openclawbrain daemon \
-  --state /tmp/brain/state.json \
-  --route-mode learned \
-  --route-model /tmp/brain/route_model.npz
-```
-
-Important training guardrails:
-- trainable route traces come from `async-route-pg --traces-out`, not `replay` or `harvest`
-- `harvest --labels-out` remains valid for harvested feedback labels
-- `replay --traces-out`, `replay --labels-out`, and `harvest --traces-out` are rejected because they previously produced placeholder/non-trainable exports
-- `train-route-model` now fails fast with a detailed readiness summary when traces are missing required fields such as `query_vector` or indexed candidate targets
-
-## Design Tenets
-
-- No network calls in core.
-- No secret discovery (no dotfiles, no keychain lookup).
-- Embedder identity stored in state metadata; hard-fail on dimension mismatch.
-- One canonical state format (`state.json`).
-- Traversal defaults are budget-first for safety: `beam_width=8`, `max_hops=30`, `fire_threshold=0.01`.
-
-## Paper + links
-
-[jonathangu.com/openclawbrain](https://jonathangu.com/openclawbrain/) — 8 deterministic simulations + production deployment data.
-
-- PyPI: `pip install openclawbrain`
-- GitHub: [jonathangu/openclawbrain](https://github.com/jonathangu/openclawbrain)
-- ClawHub skill: https://clawhub.ai/skills/openclawbrain
-- ClawHub CLI: `clawhub install openclawbrain`
-- Benchmarks: `python3 benchmarks/run_benchmark.py` (deterministic per commit; timings vary by machine)
+- `docs/typescript-first-convergence.md`
+- `docs/contracts-v1.md`
+- `scripts/lifecycle-smoke.mjs`
+- `docs/release.md`
+- `contracts/README.md`
+- `packages/contracts/README.md`
+- `packages/compiler/README.md`
+- `packages/learner/README.md`
+- `packages/pack-format/README.md`

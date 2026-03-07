@@ -1,0 +1,604 @@
+import { mkdirSync, rmSync } from "node:fs";
+import path from "node:path";
+
+import {
+  CONTRACT_IDS,
+  type ArtifactManifestV1,
+  type FeedbackEventV1,
+  type InteractionEventV1,
+  type LearningSurfaceV1,
+  type NormalizedEventExportV1,
+  type NormalizedEventV1,
+  type PackBlockLearningSignalsV1,
+  type PackContextBlockRecordV1,
+  type PackGraphPayloadV1,
+  type PackVectorEntryV1,
+  type PackVectorsPayloadV1,
+  type RouterArtifactV1
+} from "@openclawbrain/contracts";
+import {
+  buildNormalizedEventExport,
+  createDefaultLearningSurface,
+  createExplicitEventRange,
+  validateNormalizedEventExport
+} from "@openclawbrain/event-export";
+import { computePayloadChecksum, loadPack, PACK_LAYOUT, type PackDescriptor, writePackFile } from "@openclawbrain/pack-format";
+import { buildArtifactProvenance } from "@openclawbrain/provenance";
+import { createWorkspaceMetadata, type WorkspaceMetadataInput } from "@openclawbrain/workspace-metadata";
+
+export interface CandidatePackEventExports {
+  interactionEvents: InteractionEventV1[];
+  feedbackEvents: FeedbackEventV1[];
+}
+
+export interface CandidatePackBuildInput {
+  packLabel: string;
+  workspace: WorkspaceMetadataInput;
+  eventRange: {
+    start: number;
+    end: number;
+  };
+  eventExports?: CandidatePackEventExports;
+  learnedRouting: boolean;
+  builtAt?: string;
+  offlineArtifacts?: string[];
+  structuralOps?: Partial<ArtifactManifestV1["graphDynamics"]["structuralOps"]>;
+}
+
+export interface CandidatePackFromNormalizedEventExportInput {
+  packLabel: string;
+  workspace: WorkspaceMetadataInput;
+  normalizedEventExport: NormalizedEventExportV1;
+  learnedRouting: boolean;
+  builtAt?: string;
+  offlineArtifacts?: string[];
+  structuralOps?: Partial<ArtifactManifestV1["graphDynamics"]["structuralOps"]>;
+}
+
+export interface CandidatePackPayloads {
+  graph: PackGraphPayloadV1;
+  vectors: PackVectorsPayloadV1;
+  router: RouterArtifactV1 | null;
+}
+
+export interface CandidatePackBuildResult {
+  manifest: ArtifactManifestV1;
+  payloads: CandidatePackPayloads;
+  summary: {
+    packId: string;
+    immutable: true;
+    routePolicy: ArtifactManifestV1["routePolicy"];
+    workspaceSnapshot: string;
+    eventRange: ArtifactManifestV1["provenance"]["eventRange"];
+    eventExportDigest: string | null;
+    learningSurface: ArtifactManifestV1["provenance"]["learningSurface"];
+    bootstrapping: ArtifactManifestV1["graphDynamics"]["bootstrapping"];
+  };
+}
+
+function stableHash(value: string): string {
+  let hash = 0;
+  for (const char of value) {
+    hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
+  }
+  return hash.toString(16).padStart(8, "0");
+}
+
+function structuralOpsSummary(input: CandidatePackBuildInput): Required<ArtifactManifestV1["graphDynamics"]["structuralOps"]> {
+  return {
+    split: input.structuralOps?.split ?? 0,
+    merge: input.structuralOps?.merge ?? 0,
+    prune: input.structuralOps?.prune ?? 0,
+    connect: input.structuralOps?.connect ?? 0
+  };
+}
+
+function keywordTokens(value: string): string[] {
+  return [...new Set(value.toLowerCase().split(/[^a-z0-9]+/u).filter((token) => token.length >= 3 && /[a-z]/u.test(token)))].slice(0, 16);
+}
+
+function eventPriority(event: NormalizedEventV1): number {
+  if (event.contract === CONTRACT_IDS.feedbackEvents) {
+    switch (event.kind) {
+      case "correction":
+      case "teaching":
+        return 5;
+      case "approval":
+      case "suppression":
+        return 4;
+      default:
+        return 4;
+    }
+  }
+
+  switch (event.kind) {
+    case "operator_override":
+      return 5;
+    case "memory_compiled":
+      return 4;
+    case "message_delivered":
+      return 3;
+    default:
+      return 3;
+  }
+}
+
+function sentenceCase(value: string): string {
+  return value.length === 0 ? value : `${value[0]?.toUpperCase() ?? ""}${value.slice(1)}`;
+}
+
+function learningSignals(input: {
+  role: PackBlockLearningSignalsV1["role"];
+  humanLabels?: number;
+  selfLabels?: number;
+  decayHalfLifeDays?: number | null;
+  hebbianPulse?: number;
+}): PackBlockLearningSignalsV1 {
+  return {
+    role: input.role,
+    humanLabels: input.humanLabels ?? 0,
+    selfLabels: input.selfLabels ?? 0,
+    decayHalfLifeDays: input.decayHalfLifeDays ?? null,
+    hebbianPulse: input.hebbianPulse ?? 0
+  };
+}
+
+function summarizeEvent(event: NormalizedEventV1): string {
+  if (event.contract === CONTRACT_IDS.feedbackEvents) {
+    const relation = event.relatedInteractionId === undefined ? "" : ` Related interaction: ${event.relatedInteractionId}.`;
+    return `${sentenceCase(event.kind)} feedback on ${event.channel} session ${event.sessionId}: ${event.content}.${relation}`;
+  }
+
+  const messagePart = event.messageId === undefined ? "" : ` Message: ${event.messageId}.`;
+  const packPart = event.packId === undefined ? "" : ` Pack: ${event.packId}.`;
+  return `Interaction ${event.kind} on ${event.channel} session ${event.sessionId}.${packPart}${messagePart}`;
+}
+
+function eventLearningSignals(event: NormalizedEventV1): PackBlockLearningSignalsV1 {
+  if (event.contract === CONTRACT_IDS.feedbackEvents) {
+    return learningSignals({
+      role: "feedback",
+      humanLabels: 1,
+      decayHalfLifeDays: 30,
+      hebbianPulse: eventPriority(event)
+    });
+  }
+
+  if (event.kind === "operator_override") {
+    return learningSignals({
+      role: "interaction",
+      humanLabels: 1,
+      decayHalfLifeDays: 30,
+      hebbianPulse: eventPriority(event)
+    });
+  }
+
+  if (event.kind === "memory_compiled") {
+    return learningSignals({
+      role: "interaction",
+      selfLabels: 1,
+      decayHalfLifeDays: 30,
+      hebbianPulse: eventPriority(event)
+    });
+  }
+
+  return learningSignals({
+    role: "interaction",
+    decayHalfLifeDays: 14,
+    hebbianPulse: 1
+  });
+}
+
+function eventBlock(packId: string, event: NormalizedEventV1): PackContextBlockRecordV1 {
+  const text = summarizeEvent(event);
+  return {
+    id: `${packId}:event:${event.eventId}`,
+    source: `${event.source.stream}:${event.kind}`,
+    text,
+    keywords: keywordTokens(`${event.kind} ${event.channel} ${event.source.stream} ${text}`),
+    priority: eventPriority(event),
+    learning: eventLearningSignals(event)
+  };
+}
+
+function staticLifecycleBlocks(
+  packId: string,
+  input: CandidatePackBuildInput,
+  workspace: ReturnType<typeof createWorkspaceMetadata>,
+  learningSurface: LearningSurfaceV1
+): PackContextBlockRecordV1[] {
+  const structuralOps = structuralOpsSummary(input);
+  const humanSources = learningSurface.labelSources.human.join(", ") || "feedback_events.v1";
+  const selfSources = learningSurface.labelSources.self.join(", ") || "interaction_events.v1:memory_compiled";
+
+  return [
+    {
+      id: `${packId}:feedback-scanner`,
+      source: "memory/2026-03-05-openclawbrain-vnext-roadmap.md",
+      text: "Always-on feedback scanner harvests human labels from local session logs with Ollama qwen3.5:9b-q4_K_M, checkpointed resumes, and deduplicated background scans.",
+      keywords: ["feedback", "scanner", "always", "background", "labels", "ollama", "qwen", "checkpoint", "dedup"],
+      priority: 5,
+      learning: learningSignals({
+        role: "label_surface",
+        humanLabels: learningSurface.labelHarvest.humanLabels,
+        decayHalfLifeDays: 30,
+        hebbianPulse: 5
+      })
+    },
+    {
+      id: `${packId}:fast-boot-defaults`,
+      source: "product/always-on-learning",
+      text: "Fast boot defaults stay live at startup so OpenClaw can answer immediately while passive background learning hydrates richer graph state.",
+      keywords: ["fast", "boot", "defaults", "startup", "background", "learning", "openclaw"],
+      priority: 5,
+      learning: learningSignals({
+        role: "boot_default",
+        decayHalfLifeDays: null,
+        hebbianPulse: 2
+      })
+    },
+    {
+      id: `${packId}:passive-background-learning`,
+      source: "product/always-on-learning",
+      text: `Learning cadence is ${learningSurface.learningCadence} with ${learningSurface.scanPolicy} scans across ${learningSurface.scanSurfaces.join(", ")}.`,
+      keywords: ["passive", "background", "always", "scan", "learning", ...keywordTokens(learningSurface.scanSurfaces.join(" "))],
+      priority: 5,
+      learning: learningSignals({
+        role: "background_expectation",
+        decayHalfLifeDays: 30,
+        hebbianPulse: 3
+      })
+    },
+    {
+      id: `${packId}:human-label-harvest`,
+      source: humanSources,
+      text: `Human label harvest is first-class with ${learningSurface.labelHarvest.humanLabels} labels sourced from ${humanSources}.`,
+      keywords: ["human", "labels", "harvest", "feedback", "approval", "teaching", "correction", "suppression"],
+      priority: 4,
+      learning: learningSignals({
+        role: "label_surface",
+        humanLabels: learningSurface.labelHarvest.humanLabels,
+        decayHalfLifeDays: 30,
+        hebbianPulse: Math.max(1, learningSurface.labelHarvest.humanLabels)
+      })
+    },
+    {
+      id: `${packId}:self-label-harvest`,
+      source: selfSources,
+      text: `Self label harvest stays visible with ${learningSurface.labelHarvest.selfLabels} memory-side labels sourced from ${selfSources}.`,
+      keywords: ["self", "labels", "harvest", "memory", "compiled", "graph"],
+      priority: 4,
+      learning: learningSignals({
+        role: "label_surface",
+        selfLabels: learningSurface.labelHarvest.selfLabels,
+        decayHalfLifeDays: 30,
+        hebbianPulse: Math.max(1, learningSurface.labelHarvest.selfLabels)
+      })
+    },
+    {
+      id: `${packId}:workspace`,
+      source: workspace.rootDir,
+      text: `Workspace snapshot ${workspace.snapshotId} for ${workspace.workspaceId} captured at ${workspace.capturedAt} with revision ${workspace.revision ?? "unversioned"}.`,
+      keywords: keywordTokens(
+        `workspace ${workspace.workspaceId} ${workspace.snapshotId} ${workspace.branch ?? ""} ${workspace.revision ?? ""} ${workspace.labels.join(" ")}`
+      ),
+      priority: 4,
+      learning: learningSignals({
+        role: "workspace",
+        decayHalfLifeDays: null,
+        hebbianPulse: 1
+      })
+    },
+    {
+      id: `${packId}:structural-ops`,
+      source: "docs/openclawbrain-openclaw-rearchitecture-plan.md",
+      text: `Structural graph learning stays first-class with Hebbian reinforcement, decay half-life 30 days, and ops split=${structuralOps.split}, merge=${structuralOps.merge}, prune=${structuralOps.prune}, connect=${structuralOps.connect}.`,
+      keywords: ["structural", "hebbian", "decay", "split", "merge", "prune", "connect", "graph", "memory"],
+      priority: 4,
+      learning: learningSignals({
+        role: "structural",
+        decayHalfLifeDays: 30,
+        hebbianPulse: 4
+      })
+    }
+  ];
+}
+
+function eventExportBlocks(packId: string, eventExport: NormalizedEventExportV1): PackContextBlockRecordV1[] {
+  const allEvents = [...eventExport.interactionEvents, ...eventExport.feedbackEvents];
+  const learningSurface = eventExport.provenance.learningSurface;
+  const summaryKeywords = keywordTokens(
+    `normalized event export ${eventExport.provenance.sourceStreams.join(" ")} interaction ${eventExport.provenance.interactionCount} feedback ${eventExport.provenance.feedbackCount} human ${learningSurface.labelHarvest.humanLabels} self ${learningSurface.labelHarvest.selfLabels}`
+  );
+
+  return [
+    {
+      id: `${packId}:event-export`,
+      source: `contracts/${CONTRACT_IDS.interactionEvents}+${CONTRACT_IDS.feedbackEvents}`,
+      text: `Normalized event export covers ${eventExport.provenance.interactionCount} interaction events and ${eventExport.provenance.feedbackCount} feedback events across sequences ${eventExport.range.start}-${eventExport.range.end}; harvested labels human=${learningSurface.labelHarvest.humanLabels}, self=${learningSurface.labelHarvest.selfLabels}.`,
+      keywords: summaryKeywords,
+      priority: 5,
+      learning: learningSignals({
+        role: "label_surface",
+        humanLabels: learningSurface.labelHarvest.humanLabels,
+        selfLabels: learningSurface.labelHarvest.selfLabels,
+        decayHalfLifeDays: 30,
+        hebbianPulse: 5
+      })
+    },
+    ...allEvents.map((event) => eventBlock(packId, event))
+  ];
+}
+
+function createGraphPayload(
+  packId: string,
+  input: CandidatePackBuildInput,
+  workspace: ReturnType<typeof createWorkspaceMetadata>,
+  eventExport: NormalizedEventExportV1 | null,
+  learningSurface: LearningSurfaceV1
+): PackGraphPayloadV1 {
+  return {
+    packId,
+    blocks: [...staticLifecycleBlocks(packId, input, workspace, learningSurface), ...(eventExport === null ? [] : eventExportBlocks(packId, eventExport))]
+  };
+}
+
+function learningVectorKeywords(block: PackContextBlockRecordV1): string[] {
+  const keywords: string[] = [block.learning.role];
+
+  if (block.learning.role === "boot_default") {
+    keywords.push("fast_boot");
+  }
+  if (block.learning.role === "background_expectation") {
+    keywords.push("passive_background", "always_on");
+  }
+  if (block.learning.humanLabels > 0) {
+    keywords.push("human_label");
+  }
+  if (block.learning.selfLabels > 0) {
+    keywords.push("self_label");
+  }
+  if (block.learning.hebbianPulse > 0) {
+    keywords.push("hebbian");
+  }
+  if (block.learning.decayHalfLifeDays !== null) {
+    keywords.push("decay");
+  }
+
+  return keywords;
+}
+
+function vectorEntryFromBlock(block: PackContextBlockRecordV1): PackVectorEntryV1 {
+  const keywords = [...new Set([...block.keywords, ...learningVectorKeywords(block)])];
+  const weights = Object.fromEntries(
+    keywords.map((keyword, index) => [keyword, Math.max(1, block.priority - Math.min(index, Math.max(0, block.priority - 1)))])
+  );
+
+  if (block.learning.humanLabels > 0) {
+    weights.human_label = Math.max(weights.human_label ?? 0, block.priority + block.learning.humanLabels);
+  }
+  if (block.learning.selfLabels > 0) {
+    weights.self_label = Math.max(weights.self_label ?? 0, block.priority + block.learning.selfLabels);
+  }
+  if (block.learning.hebbianPulse > 0) {
+    weights.hebbian = Math.max(weights.hebbian ?? 0, block.learning.hebbianPulse + 1);
+  }
+  if (block.learning.role === "boot_default") {
+    weights.fast_boot = Math.max(weights.fast_boot ?? 0, block.priority + 1);
+  }
+  if (block.learning.role === "background_expectation") {
+    weights.passive_background = Math.max(weights.passive_background ?? 0, block.priority + 1);
+  }
+
+  return {
+    blockId: block.id,
+    keywords,
+    boost:
+      Math.max(1, Math.ceil(block.priority / 2)) +
+      Math.min(3, block.learning.humanLabels + block.learning.selfLabels) +
+      Math.min(2, Math.ceil(block.learning.hebbianPulse / 3)),
+    weights
+  };
+}
+
+function createVectorsPayload(graph: PackGraphPayloadV1): PackVectorsPayloadV1 {
+  return {
+    packId: graph.packId,
+    entries: graph.blocks.map((block) => vectorEntryFromBlock(block))
+  };
+}
+
+function createRouterArtifact(packId: string, builtAt: string): RouterArtifactV1 {
+  return {
+    routerIdentity: `${packId}:route_fn`,
+    strategy: "keyword_overlap_v1",
+    trainedAt: builtAt,
+    requiresLearnedRouting: true
+  };
+}
+
+function resolveEventExport(input: CandidatePackBuildInput): NormalizedEventExportV1 | null {
+  if (input.eventExports === undefined) {
+    return null;
+  }
+
+  const eventExport = buildNormalizedEventExport(input.eventExports);
+  const validationErrors = validateNormalizedEventExport(eventExport);
+  if (validationErrors.length > 0) {
+    throw new Error(`normalized event export is invalid: ${validationErrors.join("; ")}`);
+  }
+
+  if (eventExport.range.start !== input.eventRange.start || eventExport.range.end !== input.eventRange.end) {
+    throw new Error(
+      `event export range ${eventExport.range.start}-${eventExport.range.end} does not match requested range ${input.eventRange.start}-${input.eventRange.end}`
+    );
+  }
+
+  return eventExport;
+}
+
+function defaultLearningSurface(workspace: ReturnType<typeof createWorkspaceMetadata>, offlineArtifacts: readonly string[]): LearningSurfaceV1 {
+  return createDefaultLearningSurface([
+    `workspace:${workspace.workspaceId}`,
+    ...offlineArtifacts.map((artifact) => `offline:${artifact}`)
+  ]);
+}
+
+export function buildCandidatePack(input: CandidatePackBuildInput): CandidatePackBuildResult {
+  const builtAt = input.builtAt ?? "2026-03-06T00:00:00.000Z";
+  const routePolicy = input.learnedRouting ? "requires_learned_routing" : "heuristic_allowed";
+  const eventExport = resolveEventExport(input);
+  const eventRange = eventExport?.range ?? createExplicitEventRange(input.eventRange);
+  const workspace = createWorkspaceMetadata(input.workspace);
+  const offlineArtifacts = input.offlineArtifacts ?? [];
+  const learningSurface = eventExport?.provenance.learningSurface ?? defaultLearningSurface(workspace, offlineArtifacts);
+  const seed = JSON.stringify({
+    packLabel: input.packLabel,
+    workspace,
+    eventRange,
+    learnedRouting: input.learnedRouting,
+    offlineArtifacts,
+    eventExportDigest: eventExport?.provenance.exportDigest ?? null,
+    learningSurface
+  });
+  const packId = `pack-${stableHash(seed)}`;
+
+  const graph = createGraphPayload(packId, input, workspace, eventExport, learningSurface);
+  const vectors = createVectorsPayload(graph);
+  const router = input.learnedRouting ? createRouterArtifact(packId, builtAt) : null;
+
+  const payloads: CandidatePackPayloads = {
+    graph,
+    vectors,
+    router
+  };
+
+  const manifest: ArtifactManifestV1 = {
+    contract: CONTRACT_IDS.artifactManifest,
+    packId,
+    immutable: true,
+    routePolicy,
+    runtimeAssets: {
+      graphPath: PACK_LAYOUT.graph,
+      vectorPath: PACK_LAYOUT.vectors,
+      router: input.learnedRouting
+        ? {
+            kind: "artifact",
+            identity: payloads.router?.routerIdentity ?? null,
+            artifactPath: PACK_LAYOUT.router
+          }
+        : {
+            kind: "none",
+            identity: null,
+            artifactPath: null
+          }
+    },
+    payloadChecksums: {
+      graph: computePayloadChecksum(payloads.graph),
+      vector: computePayloadChecksum(payloads.vectors),
+      router: payloads.router === null ? null : computePayloadChecksum(payloads.router)
+    },
+    modelFingerprints: input.learnedRouting
+      ? ["BAAI/bge-large-en-v1.5", "ollama:qwen3.5:9b-q4_K_M", payloads.router?.routerIdentity ?? "router:missing"]
+      : ["BAAI/bge-large-en-v1.5"],
+    provenance: buildArtifactProvenance({
+      workspace,
+      eventRange,
+      eventExports: eventExport?.provenance ?? null,
+      learningSurface,
+      builtAt,
+      offlineArtifacts
+    }),
+    graphDynamics: {
+      bootstrapping: {
+        fastBootDefaults: true,
+        passiveBackgroundLearning: true
+      },
+      hebbian: {
+        enabled: true,
+        learningRate: 0.1
+      },
+      decay: {
+        enabled: true,
+        halfLifeDays: 30
+      },
+      structuralOps: structuralOpsSummary(input)
+    }
+  };
+
+  return {
+    manifest,
+    payloads,
+    summary: {
+      packId,
+      immutable: true,
+      routePolicy,
+      workspaceSnapshot: workspace.snapshotId,
+      eventRange,
+      eventExportDigest: eventExport?.provenance.exportDigest ?? null,
+      learningSurface: manifest.provenance.learningSurface,
+      bootstrapping: manifest.graphDynamics.bootstrapping
+    }
+  };
+}
+
+export function buildCandidatePackFromNormalizedEventExport(
+  input: CandidatePackFromNormalizedEventExportInput
+): CandidatePackBuildResult {
+  const validationErrors = validateNormalizedEventExport(input.normalizedEventExport);
+  if (validationErrors.length > 0) {
+    throw new Error(`normalized event export is invalid: ${validationErrors.join("; ")}`);
+  }
+
+  const candidateInput: CandidatePackBuildInput = {
+    packLabel: input.packLabel,
+    workspace: input.workspace,
+    eventRange: {
+      start: input.normalizedEventExport.range.start,
+      end: input.normalizedEventExport.range.end
+    },
+    eventExports: {
+      interactionEvents: [...input.normalizedEventExport.interactionEvents],
+      feedbackEvents: [...input.normalizedEventExport.feedbackEvents]
+    },
+    learnedRouting: input.learnedRouting,
+    ...(input.builtAt !== undefined ? { builtAt: input.builtAt } : {}),
+    ...(input.offlineArtifacts !== undefined ? { offlineArtifacts: input.offlineArtifacts } : {}),
+    ...(input.structuralOps !== undefined ? { structuralOps: input.structuralOps } : {})
+  };
+
+  return buildCandidatePack(candidateInput);
+}
+
+export function materializeCandidatePack(rootDir: string, input: CandidatePackBuildInput): PackDescriptor {
+  const result = buildCandidatePack(input);
+  rmSync(rootDir, { recursive: true, force: true });
+  mkdirSync(rootDir, { recursive: true });
+
+  writePackFile(rootDir, PACK_LAYOUT.graph, result.payloads.graph);
+  writePackFile(rootDir, PACK_LAYOUT.vectors, result.payloads.vectors);
+  if (result.payloads.router !== null) {
+    writePackFile(rootDir, PACK_LAYOUT.router, result.payloads.router);
+  }
+  writePackFile(rootDir, PACK_LAYOUT.manifest, result.manifest);
+
+  return loadPack(path.resolve(rootDir));
+}
+
+export function materializeCandidatePackFromNormalizedEventExport(
+  rootDir: string,
+  input: CandidatePackFromNormalizedEventExportInput
+): PackDescriptor {
+  const result = buildCandidatePackFromNormalizedEventExport(input);
+  rmSync(rootDir, { recursive: true, force: true });
+  mkdirSync(rootDir, { recursive: true });
+
+  writePackFile(rootDir, PACK_LAYOUT.graph, result.payloads.graph);
+  writePackFile(rootDir, PACK_LAYOUT.vectors, result.payloads.vectors);
+  if (result.payloads.router !== null) {
+    writePackFile(rootDir, PACK_LAYOUT.router, result.payloads.router);
+  }
+  writePackFile(rootDir, PACK_LAYOUT.manifest, result.manifest);
+
+  return loadPack(path.resolve(rootDir));
+}

@@ -1,30 +1,39 @@
-name: Publish to PyPI
+name: Publish packages to npm
 
 on:
   push:
     tags:
       - "v*"
+  workflow_dispatch:
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
 
 permissions:
-  id-token: write  # Required for trusted publishing (OIDC)
+  id-token: write
   contents: read
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    environment: pypi
     steps:
       - uses: actions/checkout@v4
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-node@v4
         with:
-          python-version: "3.12"
+          node-version: "20"
+          cache: "pnpm"
+          registry-url: "https://registry.npmjs.org"
 
-      - name: Install build tools
-        run: pip install build
+      - name: Enable Corepack
+        run: corepack enable
 
-      - name: Build package
-        run: python -m build
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
 
-      - name: Publish to PyPI
-        uses: pypa/gh-action-pypi-publish@release/v1
+      - name: Verify release candidate
+        run: pnpm release:check
+
+      - name: Publish workspace packages
+        run: pnpm -r --filter "@openclawbrain/*" publish --access public --no-git-checks --provenance

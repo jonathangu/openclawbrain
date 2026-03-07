@@ -4,36 +4,136 @@
   "title": "runtime_compile.v1 response",
   "type": "object",
   "required": [
-    "contract_version",
-    "request_id",
-    "pack_id",
-    "context_blocks",
-    "suppressed_sources",
-    "routing",
+    "contract",
+    "packId",
+    "selectedContext",
     "diagnostics"
   ],
   "properties": {
-    "contract_version": {
+    "contract": {
       "const": "runtime_compile.v1"
     },
-    "request_id": {
-      "type": "string"
+    "packId": {
+      "type": "string",
+      "minLength": 1
     },
-    "pack_id": {
-      "type": "string"
-    },
-    "context_blocks": {
-      "type": "array"
-    },
-    "suppressed_sources": {
-      "type": "array"
-    },
-    "routing": {
-      "type": "object"
+    "selectedContext": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": [
+          "id",
+          "source",
+          "text"
+        ],
+        "properties": {
+          "id": {
+            "type": "string",
+            "minLength": 1
+          },
+          "source": {
+            "type": "string",
+            "minLength": 1
+          },
+          "text": {
+            "type": "string",
+            "minLength": 1
+          },
+          "tokenCount": {
+            "type": "integer",
+            "minimum": 0
+          },
+          "compactedFrom": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          }
+        },
+        "additionalProperties": false
+      }
     },
     "diagnostics": {
-      "type": "object"
+      "type": "object",
+      "required": [
+        "modeRequested",
+        "modeEffective",
+        "usedLearnedRouteFn",
+        "routerIdentity",
+        "candidateCount",
+        "selectedCount",
+        "selectedCharCount",
+        "selectedTokenCount",
+        "selectionStrategy",
+        "selectionDigest",
+        "compactionMode",
+        "compactionApplied",
+        "notes"
+      ],
+      "properties": {
+        "modeRequested": {
+          "enum": [
+            "heuristic",
+            "learned"
+          ]
+        },
+        "modeEffective": {
+          "enum": [
+            "heuristic",
+            "learned"
+          ]
+        },
+        "usedLearnedRouteFn": {
+          "type": "boolean"
+        },
+        "routerIdentity": {
+          "type": [
+            "string",
+            "null"
+          ]
+        },
+        "candidateCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "selectedCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "selectedCharCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "selectedTokenCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "selectionStrategy": {
+          "const": "pack_keyword_overlap_v1"
+        },
+        "selectionDigest": {
+          "type": "string",
+          "minLength": 1
+        },
+        "compactionMode": {
+          "enum": [
+            "none",
+            "native"
+          ]
+        },
+        "compactionApplied": {
+          "type": "boolean"
+        },
+        "notes": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "additionalProperties": false
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

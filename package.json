@@ -1,0 +1,49 @@
+{
+  "name": "openclawbrain-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TypeScript-first OpenClawBrain workspace for deterministic pack-backed context selection and native structural compaction.",
+  "license": "Apache-2.0",
+  "author": "Jonathan Gu <jonathangu@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jonathangu/openclawbrain.git"
+  },
+  "homepage": "https://github.com/jonathangu/openclawbrain#readme",
+  "bugs": {
+    "url": "https://github.com/jonathangu/openclawbrain/issues"
+  },
+  "packageManager": "pnpm@10.30.3",
+  "workspaces": [
+    "packages/*"
+  ],
+  "keywords": [
+    "openclawbrain",
+    "typescript",
+    "context-engineering",
+    "context-compaction",
+    "pack-backed-memory"
+  ],
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "clean": "pnpm -r clean && tsc -b --clean tsconfig.build.json && rm -rf .release",
+    "check": "pnpm test && pnpm lifecycle:smoke:built",
+    "lifecycle:smoke": "pnpm build && node ./scripts/lifecycle-smoke.mjs",
+    "lifecycle:smoke:built": "node ./scripts/lifecycle-smoke.mjs",
+    "release:check": "pnpm clean && pnpm check && pnpm release:pack",
+    "release:pack": "ROOT_DIR=$(pwd) && mkdir -p \"$ROOT_DIR/.release\" && pnpm -r --filter \"@openclawbrain/*\" pack --pack-destination \"$ROOT_DIR/.release\"",
+    "release:publish": "for pkg in packages/contracts packages/events packages/event-export packages/workspace-metadata packages/provenance packages/pack-format packages/activation packages/compiler packages/learner; do (cd \"$pkg\" && npm publish --access public); done",
+    "release:publish:dry-run": "for pkg in packages/contracts packages/events packages/event-export packages/workspace-metadata packages/provenance packages/pack-format packages/activation packages/compiler packages/learner; do (cd \"$pkg\" && npm publish --access public --dry-run); done",
+    "release:publish:provenance": "for pkg in packages/contracts packages/events packages/event-export packages/workspace-metadata packages/provenance packages/pack-format packages/activation packages/compiler packages/learner; do (cd \"$pkg\" && npm publish --access public --provenance); done",
+    "typecheck": "tsc -b --pretty false tsconfig.build.json",
+    "test": "pnpm build && pnpm -r test"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.8.2"
+  }
+}

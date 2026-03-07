@@ -4,73 +4,80 @@
   "title": "feedback_events.v1 event",
   "type": "object",
   "required": [
-    "contract_version",
-    "event_id",
-    "event_ts",
-    "agent_id",
-    "session_id",
-    "turn_id",
-    "request_id",
-    "pack_id",
-    "feedback_kind",
-    "source_kind",
-    "message_ref",
-    "affected_turn_id",
-    "affected_context_ids",
-    "dedup_key"
+    "contract",
+    "eventId",
+    "agentId",
+    "sessionId",
+    "channel",
+    "sequence",
+    "kind",
+    "createdAt",
+    "source",
+    "content"
   ],
   "properties": {
-    "contract_version": {
+    "contract": {
       "const": "feedback_events.v1"
     },
-    "event_id": {
-      "type": "string"
+    "eventId": {
+      "type": "string",
+      "minLength": 1
     },
-    "event_ts": {
-      "type": "string"
+    "agentId": {
+      "type": "string",
+      "minLength": 1
     },
-    "agent_id": {
-      "type": "string"
+    "sessionId": {
+      "type": "string",
+      "minLength": 1
     },
-    "session_id": {
-      "type": "string"
+    "channel": {
+      "type": "string",
+      "minLength": 1
     },
-    "turn_id": {
-      "type": "string"
+    "sequence": {
+      "type": "integer",
+      "minimum": 0
     },
-    "request_id": {
-      "type": "string"
-    },
-    "pack_id": {
-      "type": "string"
-    },
-    "feedback_kind": {
-      "type": "string"
-    },
-    "source_kind": {
-      "type": "string"
-    },
-    "message_ref": {
-      "type": "string"
-    },
-    "affected_turn_id": {
-      "type": "string"
-    },
-    "affected_context_ids": {
-      "type": "array"
-    },
-    "dedup_key": {
-      "type": "string"
-    },
-    "content": {
-      "type": [
-        "string",
-        "null"
+    "kind": {
+      "enum": [
+        "correction",
+        "teaching",
+        "approval",
+        "suppression"
       ]
     },
-    "metadata": {
-      "type": "object"
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "runtimeOwner",
+        "stream"
+      ],
+      "properties": {
+        "runtimeOwner": {
+          "const": "openclaw"
+        },
+        "stream": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "content": {
+      "type": "string",
+      "minLength": 1
+    },
+    "messageId": {
+      "type": "string"
+    },
+    "relatedInteractionId": {
+      "type": "string"
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

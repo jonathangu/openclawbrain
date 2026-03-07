@@ -4,78 +4,136 @@
   "title": "artifact_manifest.v1 manifest",
   "type": "object",
   "required": [
-    "contract_version",
-    "pack_id",
-    "agent_id",
-    "build_id",
-    "contract_versions",
-    "pack_checksum",
-    "compiler_fingerprint",
-    "model_fingerprint",
-    "runtime_compat",
-    "route_policy",
-    "serve_requirements",
-    "workspace_snapshot_id",
-    "event_range",
-    "checksums",
-    "eval_summary",
-    "created_at"
+    "contract",
+    "packId",
+    "immutable",
+    "routePolicy",
+    "runtimeAssets",
+    "payloadChecksums",
+    "modelFingerprints",
+    "provenance",
+    "graphDynamics"
   ],
   "properties": {
-    "contract_version": {
+    "contract": {
       "const": "artifact_manifest.v1"
     },
-    "pack_id": {
-      "type": "string"
+    "packId": {
+      "type": "string",
+      "minLength": 1
     },
-    "agent_id": {
-      "type": "string"
+    "immutable": {
+      "const": true
     },
-    "build_id": {
-      "type": "string"
-    },
-    "parent_pack_id": {
-      "type": [
-        "string",
-        "null"
+    "routePolicy": {
+      "enum": [
+        "heuristic_allowed",
+        "requires_learned_routing"
       ]
     },
-    "contract_versions": {
+    "runtimeAssets": {
+      "type": "object",
+      "required": [
+        "graphPath",
+        "vectorPath",
+        "router"
+      ],
+      "properties": {
+        "graphPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "vectorPath": {
+          "type": "string",
+          "minLength": 1
+        },
+        "router": {
+          "type": "object",
+          "required": [
+            "kind",
+            "identity",
+            "artifactPath"
+          ],
+          "properties": {
+            "kind": {
+              "enum": [
+                "none",
+                "stub",
+                "artifact"
+              ]
+            },
+            "identity": {
+              "type": [
+                "string",
+                "null"
+              ]
+            },
+            "artifactPath": {
+              "type": [
+                "string",
+                "null"
+              ]
+            }
+          },
+          "additionalProperties": false
+        }
+      },
+      "additionalProperties": false
+    },
+    "payloadChecksums": {
+      "type": "object",
+      "required": [
+        "graph",
+        "vector",
+        "router"
+      ],
+      "properties": {
+        "graph": {
+          "type": "string",
+          "minLength": 1
+        },
+        "vector": {
+          "type": "string",
+          "minLength": 1
+        },
+        "router": {
+          "type": [
+            "string",
+            "null"
+          ]
+        }
+      },
+      "additionalProperties": false
+    },
+    "modelFingerprints": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    },
+    "provenance": {
       "type": "object"
     },
-    "pack_checksum": {
-      "type": "string"
-    },
-    "compiler_fingerprint": {
-      "type": "object"
-    },
-    "model_fingerprint": {
-      "type": "object"
-    },
-    "runtime_compat": {
-      "type": "object"
-    },
-    "route_policy": {
-      "type": "object"
-    },
-    "serve_requirements": {
-      "type": "object"
-    },
-    "workspace_snapshot_id": {
-      "type": "string"
-    },
-    "event_range": {
-      "type": "object"
-    },
-    "checksums": {
-      "type": "object"
-    },
-    "eval_summary": {
-      "type": "object"
-    },
-    "created_at": {
-      "type": "string"
+    "graphDynamics": {
+      "type": "object",
+      "required": [
+        "hebbian",
+        "decay",
+        "structuralOps"
+      ],
+      "properties": {
+        "hebbian": {
+          "type": "object"
+        },
+        "decay": {
+          "type": "object"
+        },
+        "structuralOps": {
+          "type": "object"
+        }
+      },
+      "additionalProperties": false
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

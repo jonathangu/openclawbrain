@@ -1,21 +1,36 @@
 # Contracts v1
 
-Phase 1 contract scaffolding for the canonical OpenClaw/OpenClawBrain
-rearchitecture lives under [contracts/README.md](../contracts/README.md).
+Canonical contract scaffolding lives under `contracts/` and is implemented in TypeScript by `@openclawbrain/contracts`.
 
 Primary contract roots:
 
-- [contracts/runtime_compile/v1](../contracts/runtime_compile/v1)
-- [contracts/interaction_events/v1](../contracts/interaction_events/v1)
-- [contracts/feedback_events/v1](../contracts/feedback_events/v1)
-- [contracts/artifact_manifest/v1](../contracts/artifact_manifest/v1)
+- `contracts/runtime_compile/v1`
+- `contracts/interaction_events/v1`
+- `contracts/feedback_events/v1`
+- `contracts/artifact_manifest/v1`
 
-OpenClawBrain-side validation helpers and the legacy feedback bridge live in
-[openclawbrain/contracts/v1.py](../openclawbrain/contracts/v1.py).
+## Scope boundary
 
-Scope boundary for this landing:
+For this landing:
 
-- schemas and golden fixtures are normative
-- tests enforce explicit learned-routing fields where the canonical plan
-  requires them
-- no runtime or daemon cutover is implied by these files
+- the TypeScript package is the public implementation surface
+- the JSON schemas and golden fixtures under `contracts/` are synchronized documentation artifacts
+- compiler, pack-format, activation, and learner consume these shapes directly
+
+## Runtime compile v1
+
+`runtime_compile.v1` now documents the actual TS-first compile boundary:
+
+- max-block and max-character context budgets
+- explicit native compaction mode selection
+- token-aware selected-context blocks
+- deterministic pack-backed selection diagnostics and selection digests
+
+## Artifact manifest v1
+
+`artifact_manifest.v1` documents the immutable pack boundary used by activation and compilation:
+
+- graph/vector/router artifact paths
+- pack payload checksums
+- workspace and event-export provenance
+- graph dynamics including structural ops

@@ -1,0 +1,53 @@
+{
+  "name": "@openclawbrain/provenance",
+  "version": "0.1.0",
+  "description": "Pack provenance builders for OpenClawBrain workspace and event-export inputs.",
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "sideEffects": false,
+  "license": "Apache-2.0",
+  "author": "Jonathan Gu <jonathangu@gmail.com>",
+  "keywords": [
+    "openclawbrain",
+    "provenance",
+    "workspace",
+    "typescript"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jonathangu/openclawbrain.git",
+    "directory": "packages/provenance"
+  },
+  "homepage": "https://github.com/jonathangu/openclawbrain/tree/main/packages/provenance#readme",
+  "bugs": {
+    "url": "https://github.com/jonathangu/openclawbrain/issues"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "prepack": "pnpm run build",
+    "test": "node --test dist/test/*.test.js"
+  },
+  "dependencies": {
+    "@openclawbrain/contracts": "workspace:^",
+    "@openclawbrain/workspace-metadata": "workspace:^"
+  }
+}

@@ -1,1 +1,0 @@
-"""Evaluation example scripts."""

@@ -1,0 +1,29 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDir": ".",
+    "outDir": "dist",
+    "tsBuildInfoFile": "dist/.tsbuildinfo"
+  },
+  "references": [
+    {
+      "path": "../contracts"
+    },
+    {
+      "path": "../event-export"
+    },
+    {
+      "path": "../pack-format"
+    },
+    {
+      "path": "../provenance"
+    },
+    {
+      "path": "../workspace-metadata"
+    }
+  ],
+  "include": [
+    "src/**/*.ts",
+    "test/**/*.ts"
+  ]
+}

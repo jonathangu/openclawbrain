@@ -1,58 +1,82 @@
 # Release Checklist
 
-This document describes the minimal release flow for OpenClawBrain.
+This repo releases the full public TypeScript package lane.
 
-## 1) Create and verify the release commit
+## 1) Prepare package versions
 
-```bash
-git checkout chore/release-v12.2.6
-python3 -m pytest -q
-PYTHONPATH=. python3 -m openclawbrain --version
-```
+Bump the version for each public package that will be published:
 
-Expected version output for this release: `openclawbrain 12.2.6`.
+- `packages/contracts/package.json`
+- `packages/events/package.json`
+- `packages/event-export/package.json`
+- `packages/workspace-metadata/package.json`
+- `packages/provenance/package.json`
+- `packages/pack-format/package.json`
+- `packages/activation/package.json`
+- `packages/compiler/package.json`
+- `packages/learner/package.json`
 
-## 2) Tag the release
+Keep the root `package.json` version aligned with the workspace release candidate if you want a single workspace-level marker.
 
-```bash
-git tag -a v12.2.6 -m "OpenClawBrain v12.2.6"
-git push origin chore/release-v12.2.6
-git push origin v12.2.6
-```
-
-## 3) Build distribution artifacts
+## 2) Create and verify the release candidate
 
 ```bash
-python3 -m pip install --upgrade build
-python3 -m build
-ls -lh dist/
+corepack enable
+pnpm install --frozen-lockfile
+pnpm release:check
+ls -lh .release/
 ```
 
-## 4) Publish to PyPI
+Expected artifacts:
 
-Preferred: **GitHub Actions trusted publishing** (tag triggers `publish.yml`).
+- `openclawbrain-contracts-<version>.tgz`
+- `openclawbrain-events-<version>.tgz`
+- `openclawbrain-event-export-<version>.tgz`
+- `openclawbrain-workspace-metadata-<version>.tgz`
+- `openclawbrain-provenance-<version>.tgz`
+- `openclawbrain-pack-format-<version>.tgz`
+- `openclawbrain-activation-<version>.tgz`
+- `openclawbrain-compiler-<version>.tgz`
+- `openclawbrain-learner-<version>.tgz`
+
+## 3) Tag the release
 
 ```bash
-git push origin v12.2.6
+git checkout <release-branch>
+git tag -a v0.1.0 -m "OpenClawBrain TS workspace v0.1.0"
+git push origin <release-branch>
+git push origin v0.1.0
 ```
 
-Optional manual publish (only if you have Twine creds configured):
+## 4) Publish packages
+
+Preferred: GitHub Actions + npm trusted publishing.
+
+Pushing a `v*` tag triggers `.github/workflows/publish.yml`, which verifies the workspace and then publishes every public `@openclawbrain/*` package from the monorepo.
+
+Before relying on the workflow, configure npm trusted publishing for each package.
+
+Optional manual publish:
 
 ```bash
-python3 -m pip install --upgrade twine
-python3 -m twine upload dist/*
+pnpm release:publish:dry-run
+pnpm release:publish
 ```
+
+Use `pnpm release:publish:provenance` when you want the same recursive publish lane with provenance enabled from a local trusted environment.
 
 ## 5) Post-publish sanity checks
 
 ```bash
-python3 -m pip install --upgrade openclawbrain==12.2.6
-openclawbrain --version
-python3 -m openclawbrain --version
+npm view @openclawbrain/contracts version
+npm view @openclawbrain/events version
+npm view @openclawbrain/event-export version
+npm view @openclawbrain/workspace-metadata version
+npm view @openclawbrain/provenance version
+npm view @openclawbrain/pack-format version
+npm view @openclawbrain/activation version
+npm view @openclawbrain/compiler version
+npm view @openclawbrain/learner version
 ```
 
-Optional smoke check:
-
-```bash
-openclawbrain doctor --state /tmp/brain/state.json
-```
+As a final smoke check, install one or more packages from the registry in a clean directory and run the example snippets from the package READMEs.

@@ -1,18 +1,17 @@
-# Python
-__pycache__/
-**/__pycache__/
-*.py[cod]
-*$py.class
-*.egg-info/
-dist/
-build/
-*.egg
-.eggs/
+# Dependencies
+node_modules/
+.pnpm-store/
+.npm/
 
-# Virtual environments
-.venv/
-venv/
-env/
+# Build artifacts
+.release/
+coverage/
+packages/*/dist/
+*.tsbuildinfo
+packages/*/src/**/*.d.ts
+packages/*/src/**/*.js
+packages/*/src/**/*.js.map
+pnpm-debug.log*
 
 # IDE
 .vscode/
@@ -25,40 +24,7 @@ env/
 .DS_Store
 Thumbs.db
 
-# Testing
-.coverage
-htmlcov/
-.pytest_cache/
-.mypy_cache/
-
-# Data (user-specific)
-*.db
-data/
-/*.json
-experiments/
+# Local scratch
 scratch/
-!scratch/paper.tex
-
-# CrabPath data and benchmark artifacts
-state.json
-graph.json
-index.json
-texts.json
-benchmarks/results.json
-*.jsonl
-!benchmarks/queries.json
-
-# Public benchmark fixtures (required for reproducibility)
-!scripts/hotpot_subset_100.json
-
-# Optional external benchmark datasets and outputs (download separately)
-benchmarks/external/*.json
-benchmarks/external/.embedding_cache_*.json
-benchmarks/external/*_results.json
-
-*.events.db
-snapshots/
-
-/ignored
-sims/*_results.json
-sims/*.png
+tmp/
+worktrees/
