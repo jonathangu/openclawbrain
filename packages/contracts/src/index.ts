@@ -5,7 +5,8 @@ export const CONTRACT_IDS = {
   artifactManifest: "artifact_manifest.v1",
   feedbackEvents: "feedback_events.v1",
   interactionEvents: "interaction_events.v1",
-  runtimeCompile: "runtime_compile.v1"
+  runtimeCompile: "runtime_compile.v1",
+  teacherSupervisionArtifact: "teacher_supervision_artifact.v1"
 } as const;
 
 export type ContractId = (typeof CONTRACT_IDS)[keyof typeof CONTRACT_IDS];
@@ -16,6 +17,8 @@ export type RouterAssetKind = "none" | "stub" | "artifact";
 export type ActivationPointerSlot = "active" | "candidate" | "previous";
 export type InteractionEventKind = "memory_compiled" | "message_delivered" | "operator_override";
 export type FeedbackEventKind = "correction" | "teaching" | "approval" | "suppression";
+export type TeacherSupervisionKind = FeedbackEventKind | "operator_override";
+export type TeacherSupervisionFreshnessStatus = "fresh" | "stale";
 export type LearningBootProfile = "fast_boot_defaults";
 export type LearningCadence = "passive_background";
 export type LearningScanPolicy = "always_on";
@@ -26,7 +29,8 @@ export type LearningBlockRole =
   | "workspace"
   | "structural"
   | "interaction"
-  | "feedback";
+  | "feedback"
+  | "teacher_supervision";
 
 export interface LearningLabelSourcesV1 {
   human: string[];
@@ -196,6 +200,36 @@ export interface NormalizedEventExportV1 {
   feedbackEvents: FeedbackEventV1[];
   range: NormalizedEventRangeV1;
   provenance: EventExportProvenanceV1;
+}
+
+export interface TeacherSupervisionArtifactSourceV1 {
+  runtimeOwner: "openclaw";
+  sessionId: string;
+  channel: string;
+  sourceStreams: string[];
+  eventRange: Pick<NormalizedEventRangeV1, "start" | "end" | "count">;
+  eventExportDigest: string;
+}
+
+export interface TeacherSupervisionFreshnessV1 {
+  status: TeacherSupervisionFreshnessStatus;
+  observedAt: string;
+  newestSourceCreatedAt: string;
+  ageMs: number;
+  staleAfterMs: number;
+}
+
+export interface TeacherSupervisionArtifactV1 {
+  contract: typeof CONTRACT_IDS.teacherSupervisionArtifact;
+  artifactId: string;
+  dedupId: string;
+  kind: TeacherSupervisionKind;
+  createdAt: string;
+  source: TeacherSupervisionArtifactSourceV1;
+  sourceEventIds: string[];
+  relatedInteractionId: string | null;
+  content: string;
+  freshness: TeacherSupervisionFreshnessV1;
 }
 
 export interface WorkspaceMetadataV1 {
@@ -851,6 +885,70 @@ export function validateNormalizedEventRange(value: NormalizedEventRangeV1): str
   return errors;
 }
 
+export function validateTeacherSupervisionArtifact(value: TeacherSupervisionArtifactV1): string[] {
+  const errors: string[] = [];
+
+  pushWhenMissing(
+    errors,
+    value.contract === CONTRACT_IDS.teacherSupervisionArtifact,
+    "teacher_supervision_artifact.v1 contract is required"
+  );
+  pushWhenMissing(errors, value.artifactId.length > 0, "teacher supervision artifactId is required");
+  pushWhenMissing(errors, value.dedupId.length > 0, "teacher supervision dedupId is required");
+  pushWhenMissing(
+    errors,
+    value.kind === "correction" ||
+      value.kind === "teaching" ||
+      value.kind === "approval" ||
+      value.kind === "suppression" ||
+      value.kind === "operator_override",
+    "teacher supervision kind must be explicit"
+  );
+  pushWhenMissing(errors, isIsoDate(value.createdAt), "teacher supervision createdAt must be an ISO timestamp");
+  pushWhenMissing(errors, value.source.runtimeOwner === "openclaw", "teacher supervision source runtimeOwner must be openclaw");
+  pushWhenMissing(errors, value.source.sessionId.length > 0, "teacher supervision source sessionId is required");
+  pushWhenMissing(errors, value.source.channel.length > 0, "teacher supervision source channel is required");
+  pushWhenMissing(errors, value.source.sourceStreams.length > 0, "teacher supervision sourceStreams must not be empty");
+  pushWhenMissing(
+    errors,
+    new Set(value.source.sourceStreams.filter((stream) => stream.length > 0)).size === value.source.sourceStreams.length,
+    "teacher supervision sourceStreams must contain unique non-empty entries"
+  );
+  pushWhenMissing(errors, value.source.eventRange.count > 0, "teacher supervision eventRange.count must be positive");
+  pushWhenMissing(errors, value.source.eventRange.start >= 0, "teacher supervision eventRange.start must be non-negative");
+  pushWhenMissing(
+    errors,
+    value.source.eventRange.end >= value.source.eventRange.start,
+    "teacher supervision eventRange.end must be >= start"
+  );
+  pushWhenMissing(errors, value.source.eventExportDigest.length > 0, "teacher supervision eventExportDigest is required");
+  pushWhenMissing(errors, value.sourceEventIds.length > 0, "teacher supervision sourceEventIds must not be empty");
+  pushWhenMissing(
+    errors,
+    new Set(value.sourceEventIds.filter((eventId) => eventId.length > 0)).size === value.sourceEventIds.length,
+    "teacher supervision sourceEventIds must contain unique non-empty entries"
+  );
+  if (value.relatedInteractionId !== null) {
+    pushWhenMissing(errors, value.relatedInteractionId.length > 0, "teacher supervision relatedInteractionId must be non-empty when set");
+  }
+  pushWhenMissing(errors, value.content.length > 0, "teacher supervision content is required");
+  pushWhenMissing(
+    errors,
+    value.freshness.status === "fresh" || value.freshness.status === "stale",
+    "teacher supervision freshness.status must be fresh or stale"
+  );
+  pushWhenMissing(errors, isIsoDate(value.freshness.observedAt), "teacher supervision freshness.observedAt must be an ISO timestamp");
+  pushWhenMissing(
+    errors,
+    isIsoDate(value.freshness.newestSourceCreatedAt),
+    "teacher supervision freshness.newestSourceCreatedAt must be an ISO timestamp"
+  );
+  pushWhenMissing(errors, value.freshness.ageMs >= 0, "teacher supervision freshness.ageMs must be non-negative");
+  pushWhenMissing(errors, value.freshness.staleAfterMs > 0, "teacher supervision freshness.staleAfterMs must be positive");
+
+  return errors;
+}
+
 export function validateWorkspaceMetadata(value: WorkspaceMetadataV1): string[] {
   const errors: string[] = [];
 
@@ -932,7 +1030,8 @@ export function validatePackBlockLearningSignals(value: PackBlockLearningSignals
     "workspace",
     "structural",
     "interaction",
-    "feedback"
+    "feedback",
+    "teacher_supervision"
   ];
 
   pushWhenMissing(errors, allowedRoles.includes(value.role), `${prefix} role must be explicit`);
@@ -1401,6 +1500,36 @@ export const FIXTURE_NORMALIZED_EVENT_EXPORT: NormalizedEventExportV1 = buildNor
   interactionEvents: FIXTURE_INTERACTION_EVENTS,
   feedbackEvents: FIXTURE_FEEDBACK_EVENTS
 });
+
+export const FIXTURE_TEACHER_SUPERVISION_ARTIFACT: TeacherSupervisionArtifactV1 = {
+  contract: CONTRACT_IDS.teacherSupervisionArtifact,
+  artifactId: "teacher-sha256-6f0f75f1f8a145dbe4a7fa8d2b8ad9a70c1eb9c5f2451d3dfd1ef540bd692a86",
+  dedupId: "sha256-6f0f75f1f8a145dbe4a7fa8d2b8ad9a70c1eb9c5f2451d3dfd1ef540bd692a86",
+  kind: "teaching",
+  createdAt: (FIXTURE_FEEDBACK_EVENTS[0] as FeedbackEventV1).createdAt,
+  source: {
+    runtimeOwner: "openclaw",
+    sessionId: (FIXTURE_FEEDBACK_EVENTS[0] as FeedbackEventV1).sessionId,
+    channel: (FIXTURE_FEEDBACK_EVENTS[0] as FeedbackEventV1).channel,
+    sourceStreams: [(FIXTURE_FEEDBACK_EVENTS[0] as FeedbackEventV1).source.stream],
+    eventRange: {
+      start: FIXTURE_NORMALIZED_EVENT_EXPORT.range.start,
+      end: FIXTURE_NORMALIZED_EVENT_EXPORT.range.end,
+      count: FIXTURE_NORMALIZED_EVENT_EXPORT.range.count
+    },
+    eventExportDigest: FIXTURE_NORMALIZED_EVENT_EXPORT.provenance.exportDigest
+  },
+  sourceEventIds: [(FIXTURE_FEEDBACK_EVENTS[0] as FeedbackEventV1).eventId, (FIXTURE_INTERACTION_EVENTS[0] as InteractionEventV1).eventId],
+  relatedInteractionId: (FIXTURE_FEEDBACK_EVENTS[0] as FeedbackEventV1).relatedInteractionId ?? null,
+  content: (FIXTURE_FEEDBACK_EVENTS[0] as FeedbackEventV1).content,
+  freshness: {
+    status: "fresh",
+    observedAt: "2026-03-06T00:00:15.000Z",
+    newestSourceCreatedAt: (FIXTURE_FEEDBACK_EVENTS[0] as FeedbackEventV1).createdAt,
+    ageMs: 15_000,
+    staleAfterMs: 300_000
+  }
+};
 
 export const FIXTURE_WORKSPACE_METADATA: WorkspaceMetadataV1 = {
   workspaceId: "workspace-fixture",

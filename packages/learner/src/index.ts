@@ -16,7 +16,9 @@ import {
   type PackGraphPayloadV1,
   type PackVectorEntryV1,
   type PackVectorsPayloadV1,
-  type RouterArtifactV1
+  type RouterArtifactV1,
+  type TeacherSupervisionArtifactV1,
+  validateTeacherSupervisionArtifact
 } from "@openclawbrain/contracts";
 import {
   buildNormalizedEventDedupId,
@@ -50,6 +52,7 @@ export interface CandidatePackBuildInput {
     end: number;
   };
   eventExports?: CandidatePackEventExports;
+  teacherSupervisionArtifacts?: readonly TeacherSupervisionArtifactV1[];
   learnedRouting: boolean;
   builtAt?: string;
   offlineArtifacts?: string[];
@@ -60,15 +63,23 @@ export interface CandidatePackFromNormalizedEventExportInput {
   packLabel: string;
   workspace: WorkspaceMetadataInput;
   normalizedEventExport: NormalizedEventExportV1;
+  teacherSupervisionArtifacts?: readonly TeacherSupervisionArtifactV1[];
   learnedRouting: boolean;
   builtAt?: string;
   offlineArtifacts?: string[];
   structuralOps?: Partial<ArtifactManifestV1["graphDynamics"]["structuralOps"]>;
 }
 
+export interface BuildTeacherSupervisionArtifactsInput {
+  normalizedEventExport: NormalizedEventExportV1;
+  observedAt?: string;
+  staleAfterMs?: number;
+}
+
 interface CandidatePackBridgeInputBase {
   packLabel: string;
   workspace: WorkspaceMetadataInput;
+  teacherSupervisionArtifacts?: readonly TeacherSupervisionArtifactV1[];
   learnedRouting: boolean;
   builtAt?: string;
   offlineArtifacts?: string[];
@@ -141,6 +152,7 @@ export interface CandidatePackBundleMaterializationResult {
 
 export const DEFAULT_ALWAYS_ON_LEARNING_LIVE_SLICES_PER_CYCLE = 1;
 export const DEFAULT_ALWAYS_ON_LEARNING_BACKFILL_SLICES_PER_CYCLE = 1;
+export const DEFAULT_TEACHER_SUPERVISION_STALE_AFTER_MS = 5 * 60 * 1_000;
 
 export interface AlwaysOnLearningCadenceV1 {
   liveSlicesPerCycle: number;
@@ -168,6 +180,7 @@ export interface AdvanceAlwaysOnLearningRuntimeInput {
   workspace: WorkspaceMetadataInput;
   interactionEvents: readonly InteractionEventV1[];
   feedbackEvents: readonly FeedbackEventV1[];
+  teacherSupervisionArtifacts?: readonly TeacherSupervisionArtifactV1[];
   learnedRouting: boolean;
   state?: AlwaysOnLearningRuntimeStateV1;
   builtAt?: string;
@@ -318,6 +331,168 @@ function assertNonNegativeInteger(label: string, value: number): void {
   }
 }
 
+function newestIsoTimestamp(values: readonly string[]): string {
+  return [...values].sort((left, right) => Date.parse(right) - Date.parse(left))[0] ?? values[0] ?? "1970-01-01T00:00:00.000Z";
+}
+
+function compareTeacherSupervisionArtifacts(left: TeacherSupervisionArtifactV1, right: TeacherSupervisionArtifactV1): number {
+  if (left.freshness.status !== right.freshness.status) {
+    return left.freshness.status === "fresh" ? -1 : 1;
+  }
+  if (left.createdAt !== right.createdAt) {
+    return Date.parse(right.createdAt) - Date.parse(left.createdAt);
+  }
+
+  return left.artifactId.localeCompare(right.artifactId);
+}
+
+function cloneTeacherSupervisionArtifact(value: TeacherSupervisionArtifactV1): TeacherSupervisionArtifactV1 {
+  return structuredClone(value);
+}
+
+function normalizeTeacherSupervisionArtifacts(
+  artifacts: readonly TeacherSupervisionArtifactV1[] | undefined
+): TeacherSupervisionArtifactV1[] {
+  if (artifacts === undefined) {
+    return [];
+  }
+
+  const deduped = new Map<string, TeacherSupervisionArtifactV1>();
+
+  for (const artifact of artifacts) {
+    const validationErrors = validateTeacherSupervisionArtifact(artifact);
+    if (validationErrors.length > 0) {
+      throw new Error(`teacher supervision artifact is invalid: ${validationErrors.join("; ")}`);
+    }
+
+    const current = deduped.get(artifact.dedupId);
+    if (
+      current === undefined ||
+      Date.parse(artifact.freshness.observedAt) > Date.parse(current.freshness.observedAt) ||
+      (artifact.freshness.observedAt === current.freshness.observedAt && compareTeacherSupervisionArtifacts(artifact, current) < 0)
+    ) {
+      deduped.set(artifact.dedupId, cloneTeacherSupervisionArtifact(artifact));
+    }
+  }
+
+  return [...deduped.values()].sort(compareTeacherSupervisionArtifacts);
+}
+
+function teacherSupervisionContentForInteraction(event: InteractionEventV1): string {
+  const message = event.messageId === undefined ? "" : ` Message: ${event.messageId}.`;
+  const pack = event.packId === undefined ? "" : ` Pack: ${event.packId}.`;
+
+  return `Operator override on ${event.channel} session ${event.sessionId}.${pack}${message}`;
+}
+
+export function buildTeacherSupervisionArtifactsFromNormalizedEventExport(
+  input: BuildTeacherSupervisionArtifactsInput
+): TeacherSupervisionArtifactV1[] {
+  const validationErrors = validateNormalizedEventExport(input.normalizedEventExport);
+  if (validationErrors.length > 0) {
+    throw new Error(`normalized event export is invalid: ${validationErrors.join("; ")}`);
+  }
+
+  const staleAfterMs = input.staleAfterMs ?? DEFAULT_TEACHER_SUPERVISION_STALE_AFTER_MS;
+  assertPositiveInteger("staleAfterMs", staleAfterMs);
+
+  const observedAt =
+    input.observedAt ??
+    input.normalizedEventExport.range.lastCreatedAt ??
+    input.normalizedEventExport.range.firstCreatedAt ??
+    "1970-01-01T00:00:00.000Z";
+  const interactionsById = new Map(input.normalizedEventExport.interactionEvents.map((event) => [event.eventId, event]));
+  const artifacts: TeacherSupervisionArtifactV1[] = [];
+
+  for (const feedback of input.normalizedEventExport.feedbackEvents) {
+    const relatedInteraction = feedback.relatedInteractionId === undefined ? undefined : interactionsById.get(feedback.relatedInteractionId);
+    const sourceEvents: NormalizedEventV1[] = [feedback, ...(relatedInteraction === undefined ? [] : [relatedInteraction])];
+    const newestSourceCreatedAt = newestIsoTimestamp(sourceEvents.map((event) => event.createdAt));
+    const ageMs = Math.max(0, Date.parse(observedAt) - Date.parse(newestSourceCreatedAt));
+    const dedupId = checksumJsonPayload({
+      kind: feedback.kind,
+      feedbackDedupId: buildNormalizedEventDedupId(feedback),
+      relatedInteractionDedupId: relatedInteraction === undefined ? null : buildNormalizedEventDedupId(relatedInteraction),
+      content: feedback.content,
+      relatedInteractionId: feedback.relatedInteractionId ?? null
+    });
+
+    artifacts.push({
+      contract: CONTRACT_IDS.teacherSupervisionArtifact,
+      artifactId: `teacher-${dedupId}`,
+      dedupId,
+      kind: feedback.kind,
+      createdAt: feedback.createdAt,
+      source: {
+        runtimeOwner: "openclaw",
+        sessionId: feedback.sessionId,
+        channel: feedback.channel,
+        sourceStreams: [...new Set(sourceEvents.map((event) => event.source.stream))],
+        eventRange: {
+          start: input.normalizedEventExport.range.start,
+          end: input.normalizedEventExport.range.end,
+          count: input.normalizedEventExport.range.count
+        },
+        eventExportDigest: input.normalizedEventExport.provenance.exportDigest
+      },
+      sourceEventIds: [...new Set(sourceEvents.map((event) => event.eventId))],
+      relatedInteractionId: feedback.relatedInteractionId ?? null,
+      content: feedback.content,
+      freshness: {
+        status: ageMs <= staleAfterMs ? "fresh" : "stale",
+        observedAt,
+        newestSourceCreatedAt,
+        ageMs,
+        staleAfterMs
+      }
+    });
+  }
+
+  for (const interaction of input.normalizedEventExport.interactionEvents) {
+    if (interaction.kind !== "operator_override") {
+      continue;
+    }
+
+    const ageMs = Math.max(0, Date.parse(observedAt) - Date.parse(interaction.createdAt));
+    const dedupId = checksumJsonPayload({
+      kind: interaction.kind,
+      interactionDedupId: buildNormalizedEventDedupId(interaction)
+    });
+
+    artifacts.push({
+      contract: CONTRACT_IDS.teacherSupervisionArtifact,
+      artifactId: `teacher-${dedupId}`,
+      dedupId,
+      kind: "operator_override",
+      createdAt: interaction.createdAt,
+      source: {
+        runtimeOwner: "openclaw",
+        sessionId: interaction.sessionId,
+        channel: interaction.channel,
+        sourceStreams: [interaction.source.stream],
+        eventRange: {
+          start: input.normalizedEventExport.range.start,
+          end: input.normalizedEventExport.range.end,
+          count: input.normalizedEventExport.range.count
+        },
+        eventExportDigest: input.normalizedEventExport.provenance.exportDigest
+      },
+      sourceEventIds: [interaction.eventId],
+      relatedInteractionId: null,
+      content: teacherSupervisionContentForInteraction(interaction),
+      freshness: {
+        status: ageMs <= staleAfterMs ? "fresh" : "stale",
+        observedAt,
+        newestSourceCreatedAt: interaction.createdAt,
+        ageMs,
+        staleAfterMs
+      }
+    });
+  }
+
+  return normalizeTeacherSupervisionArtifacts(artifacts);
+}
+
 function normalizeAlwaysOnLearningCadence(
   input: Partial<AlwaysOnLearningCadenceV1> | undefined
 ): AlwaysOnLearningCadenceV1 {
@@ -432,6 +607,7 @@ function buildAlwaysOnLearningMaterializationJob(
     packLabel: input.packLabel,
     workspace: input.workspace,
     normalizedEventExport,
+    ...(input.teacherSupervisionArtifacts !== undefined ? { teacherSupervisionArtifacts: input.teacherSupervisionArtifacts } : {}),
     learnedRouting: input.learnedRouting,
     ...(input.builtAt !== undefined ? { builtAt: input.builtAt } : {}),
     ...(input.offlineArtifacts !== undefined ? { offlineArtifacts: input.offlineArtifacts } : {}),
@@ -576,6 +752,7 @@ export function buildCandidatePackFromNormalizedEventExportSlice(
     packLabel: input.packLabel,
     workspace: input.workspace,
     normalizedEventExport: input.normalizedEventExportSlice.export,
+    ...(input.teacherSupervisionArtifacts !== undefined ? { teacherSupervisionArtifacts: input.teacherSupervisionArtifacts } : {}),
     learnedRouting: input.learnedRouting,
     ...(input.builtAt !== undefined ? { builtAt: input.builtAt } : {}),
     ...(input.offlineArtifacts !== undefined ? { offlineArtifacts: input.offlineArtifacts } : {}),
@@ -605,6 +782,7 @@ export function buildCandidatePackBundleFromNormalizedEventExportBridge(
         packLabel,
         workspace: input.workspace,
         normalizedEventExportSlice: slice,
+        ...(input.teacherSupervisionArtifacts !== undefined ? { teacherSupervisionArtifacts: input.teacherSupervisionArtifacts } : {}),
         learnedRouting: input.learnedRouting,
         ...(input.builtAt !== undefined ? { builtAt: input.builtAt } : {}),
         ...(input.offlineArtifacts !== undefined ? { offlineArtifacts: input.offlineArtifacts } : {}),
@@ -756,6 +934,73 @@ function eventBlock(packId: string, event: NormalizedEventV1): PackContextBlockR
   };
 }
 
+function teacherSupervisionPriority(artifact: TeacherSupervisionArtifactV1): number {
+  const freshnessBoost = artifact.freshness.status === "fresh" ? 1 : 0;
+
+  switch (artifact.kind) {
+    case "correction":
+    case "teaching":
+    case "operator_override":
+      return 5 + freshnessBoost;
+    case "approval":
+    case "suppression":
+    default:
+      return 4 + freshnessBoost;
+  }
+}
+
+function teacherSupervisionLearningSignals(artifact: TeacherSupervisionArtifactV1): PackBlockLearningSignalsV1 {
+  return learningSignals({
+    role: "teacher_supervision",
+    humanLabels: 1,
+    decayHalfLifeDays: artifact.freshness.status === "fresh" ? 30 : 14,
+    hebbianPulse: teacherSupervisionPriority(artifact)
+  });
+}
+
+function summarizeTeacherSupervisionArtifact(artifact: TeacherSupervisionArtifactV1): string {
+  const related = artifact.relatedInteractionId === null ? "" : ` Related interaction: ${artifact.relatedInteractionId}.`;
+  return `Teacher ${artifact.kind} from ${artifact.source.channel} session ${artifact.source.sessionId} (${artifact.freshness.status}, ageMs=${artifact.freshness.ageMs}) observed at ${artifact.freshness.observedAt}: ${artifact.content}.${related}`;
+}
+
+function teacherSupervisionBlocks(packId: string, artifacts: readonly TeacherSupervisionArtifactV1[]): PackContextBlockRecordV1[] {
+  if (artifacts.length === 0) {
+    return [];
+  }
+
+  const freshCount = artifacts.filter((artifact) => artifact.freshness.status === "fresh").length;
+  const staleCount = artifacts.length - freshCount;
+
+  return [
+    {
+      id: `${packId}:teacher-supervision-summary`,
+      source: `contracts/${CONTRACT_IDS.teacherSupervisionArtifact}`,
+      text: `Teacher supervision artifacts stay canonical with ${artifacts.length} deduplicated records (fresh=${freshCount}, stale=${staleCount}) flowing into future candidate packs.`,
+      keywords: ["teacher", "supervision", "dedup", "fresh", "stale", "candidate", "pack"],
+      priority: 5,
+      learning: learningSignals({
+        role: "teacher_supervision",
+        humanLabels: artifacts.length,
+        decayHalfLifeDays: 30,
+        hebbianPulse: 5
+      })
+    },
+    ...artifacts.map((artifact) => {
+      const text = summarizeTeacherSupervisionArtifact(artifact);
+      return {
+        id: `${packId}:teacher:${artifact.artifactId}`,
+        source: `${artifact.source.sourceStreams.join("+")}:${artifact.kind}`,
+        text,
+        keywords: keywordTokens(
+          `${artifact.kind} ${artifact.source.channel} ${artifact.source.sessionId} ${artifact.freshness.status} ${artifact.source.sourceStreams.join(" ")} ${text}`
+        ),
+        priority: teacherSupervisionPriority(artifact),
+        learning: teacherSupervisionLearningSignals(artifact)
+      };
+    })
+  ];
+}
+
 function staticLifecycleBlocks(
   packId: string,
   input: CandidatePackBuildInput,
@@ -892,9 +1137,15 @@ function createGraphPayload(
   eventExport: NormalizedEventExportV1 | null,
   learningSurface: LearningSurfaceV1
 ): PackGraphPayloadV1 {
+  const teacherSupervisionArtifacts = normalizeTeacherSupervisionArtifacts(input.teacherSupervisionArtifacts);
+
   return {
     packId,
-    blocks: [...staticLifecycleBlocks(packId, input, workspace, learningSurface), ...(eventExport === null ? [] : eventExportBlocks(packId, eventExport))]
+    blocks: [
+      ...staticLifecycleBlocks(packId, input, workspace, learningSurface),
+      ...teacherSupervisionBlocks(packId, teacherSupervisionArtifacts),
+      ...(eventExport === null ? [] : eventExportBlocks(packId, eventExport))
+    ]
   };
 }
 
@@ -906,6 +1157,9 @@ function learningVectorKeywords(block: PackContextBlockRecordV1): string[] {
   }
   if (block.learning.role === "background_expectation") {
     keywords.push("passive_background", "always_on");
+  }
+  if (block.learning.role === "teacher_supervision") {
+    keywords.push("teacher", "supervision");
   }
   if (block.learning.humanLabels > 0) {
     keywords.push("human_label");
@@ -1006,6 +1260,7 @@ export function buildCandidatePack(input: CandidatePackBuildInput): CandidatePac
   const eventRange = eventExport?.range ?? createExplicitEventRange(input.eventRange);
   const workspace = createWorkspaceMetadata(input.workspace);
   const offlineArtifacts = input.offlineArtifacts ?? [];
+  const teacherSupervisionArtifacts = normalizeTeacherSupervisionArtifacts(input.teacherSupervisionArtifacts);
   const learningSurface = eventExport?.provenance.learningSurface ?? defaultLearningSurface(workspace, offlineArtifacts);
   const seed = JSON.stringify({
     packLabel: input.packLabel,
@@ -1014,7 +1269,8 @@ export function buildCandidatePack(input: CandidatePackBuildInput): CandidatePac
     learnedRouting: input.learnedRouting,
     offlineArtifacts,
     eventExportDigest: eventExport?.provenance.exportDigest ?? null,
-    learningSurface
+    learningSurface,
+    teacherSupervisionArtifacts
   });
   const packId = `pack-${stableHash(seed)}`;
 
@@ -1116,6 +1372,7 @@ export function buildCandidatePackFromNormalizedEventExport(
       interactionEvents: [...input.normalizedEventExport.interactionEvents],
       feedbackEvents: [...input.normalizedEventExport.feedbackEvents]
     },
+    ...(input.teacherSupervisionArtifacts !== undefined ? { teacherSupervisionArtifacts: input.teacherSupervisionArtifacts } : {}),
     learnedRouting: input.learnedRouting,
     ...(input.builtAt !== undefined ? { builtAt: input.builtAt } : {}),
     ...(input.offlineArtifacts !== undefined ? { offlineArtifacts: input.offlineArtifacts } : {}),

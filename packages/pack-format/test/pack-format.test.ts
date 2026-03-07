@@ -18,6 +18,7 @@ import {
 import {
   activatePack,
   computePayloadChecksum,
+  describeActivationObservability,
   describeActivationTarget,
   describePackCompileTarget,
   inspectActivationState,
@@ -145,6 +146,74 @@ function materializeTestPack(
 
   return loadPack(rootDir);
 }
+
+test("activation observability reports learned route freshness, graph dynamics, and promotion freshness", (t) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-observability-"));
+  const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-observability-"));
+  const candidateRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-candidate-observability-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(activeRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(candidateRoot, { recursive: true, force: true }));
+
+  materializeTestPack(activeRoot, {
+    packId: "pack-observability-active",
+    learnedRouting: false,
+    eventStart: 41,
+    builtAt: "2026-03-06T04:01:00.000Z"
+  });
+  const candidate = materializeTestPack(candidateRoot, {
+    packId: "pack-observability-candidate",
+    learnedRouting: true,
+    eventStart: 51,
+    builtAt: "2026-03-06T04:11:00.000Z"
+  });
+
+  activatePack(activationRoot, activeRoot, "2026-03-06T04:15:00.000Z");
+  stageCandidatePack(activationRoot, candidateRoot, "2026-03-06T04:20:00.000Z");
+
+  const staged = describeActivationObservability(activationRoot, "active", {
+    updatedAt: "2026-03-06T04:21:00.000Z"
+  });
+
+  assert.equal(staged.learnedRouteFn.required, false);
+  assert.equal(staged.learnedRouteFn.available, false);
+  assert.equal(staged.graphDynamics.packId, "pack-observability-active");
+  assert.equal(staged.graphDynamics.eventRange?.end, 42);
+  assert.equal(staged.promotionFreshness.promotionAllowed, true);
+  assert.equal(staged.promotionFreshness.activeBehindPromotionReadyCandidate, true);
+  assert.deepEqual(staged.promotionFreshness.candidateAheadBy, {
+    builtAt: true,
+    eventRangeEnd: true,
+    eventRangeCount: false,
+    workspaceSnapshot: false,
+    workspaceRevision: false,
+    eventExportDigest: true
+  });
+
+  promoteCandidatePack(activationRoot, "2026-03-06T04:25:00.000Z");
+
+  const promoted = describeActivationObservability(activationRoot, "active", {
+    requireActivationReady: true,
+    updatedAt: "2026-03-06T04:26:00.000Z"
+  });
+
+  assert.equal(promoted.target?.packId, "pack-observability-candidate");
+  assert.equal(promoted.learnedRouteFn.packId, "pack-observability-candidate");
+  assert.equal(promoted.learnedRouteFn.required, true);
+  assert.equal(promoted.learnedRouteFn.available, true);
+  assert.equal(promoted.learnedRouteFn.routerAssetKind, "artifact");
+  assert.equal(promoted.learnedRouteFn.routerIdentity, `${candidate.manifest.packId}:route_fn`);
+  assert.equal(promoted.learnedRouteFn.routeFnVersion, "learned_route_fn_v1");
+  assert.equal(promoted.learnedRouteFn.routerChecksum, candidate.manifest.payloadChecksums.router);
+  assert.equal(promoted.learnedRouteFn.routerTrainedAt, candidate.router?.trainedAt ?? null);
+  assert.equal(promoted.graphDynamics.packId, candidate.manifest.packId);
+  assert.equal(promoted.graphDynamics.graphChecksum, candidate.manifest.payloadChecksums.graph);
+  assert.deepEqual(promoted.graphDynamics.structuralOps, candidate.manifest.graphDynamics.structuralOps);
+  assert.equal(promoted.graphDynamics.builtAt, candidate.manifest.provenance.builtAt);
+  assert.equal(promoted.promotionFreshness.candidatePackId, null);
+  assert.equal(promoted.promotionFreshness.rollbackAllowed, true);
+});
 
 test("pack descriptors keep packs immutable and addressable", (t) => {
   const rootDir = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-pack-"));

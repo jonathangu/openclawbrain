@@ -34,15 +34,21 @@ This proves the learning lifecycle across:
 
 ```bash
 pnpm observability:smoke
+pnpm observability:report
 ```
 
 This proves the operator-facing diagnostics surface for:
 
 - activation health
-- promotion readiness
-- freshness inspection
+- promotion freshness
+- supervision freshness by source
+- teacher freshness
+- learned `route_fn` freshness/version
+- graph-dynamics freshness
 - learned `route_fn` evidence
-- deterministic fallback diagnostics
+- explicit fallback usage
+
+`pnpm observability:report` prints the local JSON report for those proofs. It only claims what is materialized inside the repo fixture lane; it does not claim live production telemetry coverage.
 
 ## 3) Reproduce consumer proof from the published packages
 
@@ -63,7 +69,7 @@ npm run smoke
 
 - package build and typecheck
 - mechanism proof via lifecycle smoke
-- operator observability proof via observability smoke
+- operator observability proof via observability smoke/report
 - publishable package surface and registry install path
 
 ### Maintained separately
