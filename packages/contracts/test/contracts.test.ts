@@ -26,8 +26,10 @@ import {
   validatePackGraphPayload,
   validatePackVectorsPayload,
   validateRouterArtifact,
+  validateRuntimeCompileExpectation,
   validateRuntimeCompileRequest,
   validateRuntimeCompileResponse,
+  validateRuntimeCompileTargetExpectation,
   validateWorkspaceMetadata
 } from "@openclawbrain/contracts";
 
@@ -90,6 +92,76 @@ test("learned routing responses must explicitly mark route_fn usage", () => {
   assert.deepEqual(errors, ["learned mode requires usedLearnedRouteFn=true"]);
 });
 
+test("runtime compile expectations validate shape and target compatibility", () => {
+  const target = {
+    packId: FIXTURE_ARTIFACT_MANIFEST.packId,
+    routePolicy: FIXTURE_ARTIFACT_MANIFEST.routePolicy,
+    routerIdentity: FIXTURE_ARTIFACT_MANIFEST.runtimeAssets.router.identity,
+    workspaceSnapshot: FIXTURE_ARTIFACT_MANIFEST.provenance.workspaceSnapshot,
+    workspaceRevision: FIXTURE_ARTIFACT_MANIFEST.provenance.workspace.revision,
+    eventRange: {
+      start: FIXTURE_ARTIFACT_MANIFEST.provenance.eventRange.start,
+      end: FIXTURE_ARTIFACT_MANIFEST.provenance.eventRange.end,
+      count: FIXTURE_ARTIFACT_MANIFEST.provenance.eventRange.count
+    },
+    eventExportDigest: FIXTURE_ARTIFACT_MANIFEST.provenance.eventExports?.exportDigest ?? null,
+    builtAt: FIXTURE_ARTIFACT_MANIFEST.provenance.builtAt
+  };
+
+  assert.deepEqual(
+    validateRuntimeCompileExpectation({
+      packId: FIXTURE_ARTIFACT_MANIFEST.packId,
+      workspaceSnapshot: FIXTURE_ARTIFACT_MANIFEST.provenance.workspaceSnapshot,
+      builtAt: FIXTURE_ARTIFACT_MANIFEST.provenance.builtAt
+    }),
+    []
+  );
+
+  assert.deepEqual(validateRuntimeCompileExpectation({ packId: "", builtAt: "not-an-iso-date" }), [
+    "runtime compile expectation packId must be non-empty when set",
+    "runtime compile expectation builtAt must be an ISO timestamp when set"
+  ]);
+
+  assert.deepEqual(
+    validateRuntimeCompileTargetExpectation(target, {
+      packId: FIXTURE_ARTIFACT_MANIFEST.packId,
+      workspaceSnapshot: FIXTURE_ARTIFACT_MANIFEST.provenance.workspaceSnapshot,
+      eventRange: {
+        start: FIXTURE_ARTIFACT_MANIFEST.provenance.eventRange.start,
+        end: FIXTURE_ARTIFACT_MANIFEST.provenance.eventRange.end,
+        count: FIXTURE_ARTIFACT_MANIFEST.provenance.eventRange.count
+      }
+    }),
+    []
+  );
+
+  assert.deepEqual(
+    validateRuntimeCompileTargetExpectation(target, {
+      workspaceSnapshot: "workspace-stale@snapshot",
+      eventRange: {
+        start: 1,
+        end: 2,
+        count: 3
+      }
+    }),
+    [
+      `runtime compile target workspaceSnapshot ${FIXTURE_ARTIFACT_MANIFEST.provenance.workspaceSnapshot} does not match expected workspace-stale@snapshot`,
+      `runtime compile target eventRange.start ${FIXTURE_ARTIFACT_MANIFEST.provenance.eventRange.start} does not match expected 1`,
+      `runtime compile target eventRange.end ${FIXTURE_ARTIFACT_MANIFEST.provenance.eventRange.end} does not match expected 2`,
+      `runtime compile target eventRange.count ${FIXTURE_ARTIFACT_MANIFEST.provenance.eventRange.count} does not match expected 3`
+    ]
+  );
+});
+
+test("runtime compile requests reject empty activePackId", () => {
+  const errors = validateRuntimeCompileRequest({
+    ...FIXTURE_RUNTIME_COMPILE_REQUEST,
+    activePackId: ""
+  });
+
+  assert.deepEqual(errors, ["activePackId must be non-empty when set"]);
+});
+
 test("activation pointers reject duplicate pack ids across slots", () => {
   const candidate = FIXTURE_ACTIVATION_POINTERS.candidate;
   if (candidate === null) {
@@ -103,6 +175,7 @@ test("activation pointers reject duplicate pack ids across slots", () => {
       slot: candidate.slot,
       packRootDir: candidate.packRootDir,
       manifestPath: candidate.manifestPath,
+      manifestDigest: candidate.manifestDigest,
       routePolicy: candidate.routePolicy,
       routerIdentity: candidate.routerIdentity,
       workspaceSnapshot: candidate.workspaceSnapshot,
@@ -117,4 +190,23 @@ test("activation pointers reject duplicate pack ids across slots", () => {
   });
 
   assert.deepEqual(errors, ["activation pointers must not reuse packId across slots: pack-active"]);
+});
+
+test("activation pointers require manifest digests", () => {
+  const active = FIXTURE_ACTIVATION_POINTERS.active;
+  if (active === null) {
+    throw new Error("active fixture is required for this test");
+  }
+
+  const errors = validateActivationPointers({
+    contract: CONTRACT_IDS.activationPointers,
+    active: {
+      ...active,
+      manifestDigest: "manifest-without-checksum-prefix"
+    },
+    candidate: FIXTURE_ACTIVATION_POINTERS.candidate,
+    previous: FIXTURE_ACTIVATION_POINTERS.previous
+  });
+
+  assert.deepEqual(errors, ["activation pointer manifestDigest must be a sha256 digest"]);
 });

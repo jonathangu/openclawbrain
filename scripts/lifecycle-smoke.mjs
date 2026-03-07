@@ -5,8 +5,8 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { activatePack, describeActivationTarget, inspectActivationState, loadPackFromActivation, promoteCandidatePack, stageCandidatePack } from "../packages/activation/dist/src/index.js";
-import { compileRuntime } from "../packages/compiler/dist/src/index.js";
+import { activatePack, describeActivationTarget, inspectActivationState, promoteCandidatePack, stageCandidatePack } from "../packages/activation/dist/src/index.js";
+import { compileRuntimeFromActivation } from "../packages/compiler/dist/src/index.js";
 import { CONTRACT_IDS } from "../packages/contracts/dist/src/index.js";
 import { buildNormalizedEventExport } from "../packages/event-export/dist/src/index.js";
 import { createFeedbackEvent, createInteractionEvent, sortNormalizedEvents } from "../packages/events/dist/src/index.js";
@@ -188,15 +188,9 @@ function main() {
     assert.equal(activeTarget?.workspaceSnapshot, "workspace-phase-2@snapshot-candidate");
     assert.equal(activeTarget?.eventExportDigest, candidateExport.provenance.exportDigest);
 
-    logStep("Compiling runtime context from the promoted active pack.");
+    logStep("Compiling runtime context from the promoted active activation slot.");
 
-    const activatedPack = loadPackFromActivation(activationRoot, "active", {
-      requireActivationReady: true
-    });
-
-    assert.equal(activatedPack?.manifest.packId, candidatePack.manifest.packId);
-
-    const compileResponse = compileRuntime(activatedPack, {
+    const compileResponse = compileRuntimeFromActivation(activationRoot, {
       contract: CONTRACT_IDS.runtimeCompile,
       agentId: "agent-lifecycle-smoke",
       userMessage: "Compile the activation promotion evidence for the Phase-2 lifecycle smoke lane.",
@@ -205,6 +199,21 @@ function main() {
       modeRequested: "heuristic",
       runtimeHints: ["activation", "promotion", "compiler", "evidence"],
       compactionMode: "native"
+    }, {
+      expectation: {
+        packId: candidatePack.manifest.packId,
+        routePolicy: candidatePack.manifest.routePolicy,
+        routerIdentity: candidatePack.router?.routerIdentity ?? null,
+        workspaceSnapshot: candidatePack.manifest.provenance.workspaceSnapshot,
+        workspaceRevision: candidatePack.manifest.provenance.workspace.revision,
+        eventRange: {
+          start: candidatePack.manifest.provenance.eventRange.start,
+          end: candidatePack.manifest.provenance.eventRange.end,
+          count: candidatePack.manifest.provenance.eventRange.count
+        },
+        eventExportDigest: candidatePack.manifest.provenance.eventExports?.exportDigest ?? null,
+        builtAt: candidatePack.manifest.provenance.builtAt
+      }
     });
 
     assert.equal(compileResponse.packId, candidatePack.manifest.packId);
