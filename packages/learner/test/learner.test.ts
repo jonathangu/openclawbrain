@@ -13,6 +13,7 @@ import {
 } from "@openclawbrain/contracts";
 import {
   advanceAlwaysOnLearningRuntime,
+  buildTeacherSupervisionArtifactsFromNormalizedEventExport,
   buildCandidatePack,
   buildCandidatePackBundleFromNormalizedEventExportBridge,
   buildCandidatePackFromNormalizedEventExport,
@@ -408,6 +409,47 @@ test("always-on learner keeps the evolving learned graph in runtime state across
   assert.equal((supervised.state.learnedGraph?.blocks.length ?? 0) > (initial.state.learnedGraph?.blocks.length ?? 0), true);
   assert.equal((supervised.state.learnedGraph?.evolution?.structuralOps.split ?? 0) >= 1, true);
   assert.equal((supervised.state.learnedGraph?.blocks.some((block) => (block.edges?.length ?? 0) > 0) ?? false), true);
+});
+
+test("teacher supervision artifacts dedupe repeated exports and land in future candidate packs", () => {
+  const teacherArtifacts = buildTeacherSupervisionArtifactsFromNormalizedEventExport({
+    normalizedEventExport: FIXTURE_NORMALIZED_EVENT_EXPORT,
+    observedAt: "2026-03-06T00:00:15.000Z"
+  });
+  const repeatedTeacherArtifacts = buildTeacherSupervisionArtifactsFromNormalizedEventExport({
+    normalizedEventExport: FIXTURE_NORMALIZED_EVENT_EXPORT,
+    observedAt: "2026-03-06T00:04:00.000Z"
+  });
+
+  assert.equal(teacherArtifacts.length, 2);
+  assert.deepEqual(
+    teacherArtifacts.map((artifact) => artifact.kind).sort(),
+    ["approval", "teaching"]
+  );
+  assert.equal(repeatedTeacherArtifacts[0]?.freshness.status, "fresh");
+  assert.equal(repeatedTeacherArtifacts[1]?.freshness.status, "fresh");
+
+  const result = buildCandidatePackFromNormalizedEventExport({
+    packLabel: "from-export-with-teacher",
+    workspace: {
+      workspaceId: "workspace-export",
+      snapshotId: "workspace-export@snapshot-2",
+      capturedAt: "2026-03-06T01:05:00.000Z",
+      rootDir: "/workspace/export",
+      revision: "workspace-export-teacher-rev"
+    },
+    normalizedEventExport: FIXTURE_NORMALIZED_EVENT_EXPORT,
+    teacherSupervisionArtifacts: [...teacherArtifacts, ...repeatedTeacherArtifacts],
+    learnedRouting: false
+  });
+
+  assert.equal(result.payloads.graph.blocks.some((block) => block.id.endsWith(":teacher-supervision-summary")), true);
+  assert.equal(result.payloads.graph.blocks.some((block) => block.learning.role === "teacher_supervision"), true);
+  assert.match(result.payloads.graph.blocks.map((block) => block.text).join("\n"), /Teacher teaching/);
+  assert.match(
+    result.payloads.graph.blocks.map((block) => block.text).join("\n"),
+    /deduplicated records \(fresh=2, stale=0\) flowing into future candidate packs/
+  );
 });
 
 test("always-on learner boots from live slices without blocking on passive backfill", () => {

@@ -19,3 +19,5 @@ pnpm add @openclawbrain/learner
 - embedded workspace snapshot provenance inside emitted manifests
 - on-disk materialization for coherent downstream activation and evaluation steps
 - bridge-slice and bridge-bundle materialization helpers for continuous learner refreshes
+- canonical teacher-supervision artifact builders with dedup and freshness metadata
+- teacher-supervision-aware candidate packs that carry fresh operator guidance into future graph/vector payloads
