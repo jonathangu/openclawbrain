@@ -4,6 +4,8 @@ This page shows an illustrative but generic OpenClaw turn wired through the curr
 
 It is an operator example, not a benchmark, a dashboard demo, or a captured production trace.
 
+If you want the smallest runnable consumer proof instead of the architectural walkthrough below, use `examples/npm-consumer/README.md`.
+
 ## Stack boundary
 
 - OpenClaw owns the live runtime, fail-open behavior, prompt assembly, and response delivery.

@@ -19,6 +19,21 @@ pnpm observability:smoke
 pnpm release:pack
 ```
 
+## Fresh npm consumer smoke
+
+For a true outside-consumer proof, run the checked-in npm example from a brand-new temp directory:
+
+```bash
+tmpdir="$(mktemp -d)"
+cp examples/npm-consumer/package.json "$tmpdir/package.json"
+cp examples/npm-consumer/smoke.mjs "$tmpdir/smoke.mjs"
+cd "$tmpdir"
+npm install
+npm run smoke
+```
+
+That path installs the published registry packages, imports the public ESM entrypoints with Node only, validates a `runtime_compile.v1` request, and builds a deterministic normalized event export from the split `contracts` + `events` + `event-export` surface.
+
 ## Package-scoped validation
 
 ```bash

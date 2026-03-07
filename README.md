@@ -47,6 +47,8 @@ For a package-first attach lane, start with:
 pnpm add @openclawbrain/contracts @openclawbrain/events @openclawbrain/event-export @openclawbrain/learner @openclawbrain/activation @openclawbrain/compiler
 ```
 
+For a copy-paste fresh-consumer proof that installs the published packages outside this workspace, use `examples/npm-consumer/README.md`.
+
 Add `@openclawbrain/pack-format`, `@openclawbrain/workspace-metadata`, and `@openclawbrain/provenance` only when you need to inspect or materialize the immutable artifact boundary directly.
 
 Add `@openclawbrain/openclaw` when you are wiring the OpenClaw-owned runtime integration layer itself.
