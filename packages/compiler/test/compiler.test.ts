@@ -10,16 +10,81 @@ import {
   FIXTURE_PACK_GRAPH,
   FIXTURE_PACK_VECTORS,
   FIXTURE_ROUTER_ARTIFACT,
+  type ArtifactManifestV1,
+  type PackGraphPayloadV1,
+  type PackVectorsPayloadV1,
+  type RouterArtifactV1,
   canonicalJson
 } from "@openclawbrain/contracts";
-import { compileRuntime, determineRouteMode, loadPackForCompile } from "@openclawbrain/compiler";
-import { PACK_LAYOUT, writePackFile } from "@openclawbrain/pack-format";
+import {
+  compileRuntime,
+  compileRuntimeFromActivation,
+  determineRouteMode,
+  loadPackForCompile
+} from "@openclawbrain/compiler";
+import {
+  PACK_LAYOUT,
+  activatePack,
+  computePayloadChecksum,
+  promoteCandidatePack,
+  stageCandidatePack,
+  writePackFile
+} from "@openclawbrain/pack-format";
 
 function materializeFixturePack(rootDir: string): void {
   writePackFile(rootDir, PACK_LAYOUT.graph, FIXTURE_PACK_GRAPH);
   writePackFile(rootDir, PACK_LAYOUT.vectors, FIXTURE_PACK_VECTORS);
   writePackFile(rootDir, PACK_LAYOUT.router, FIXTURE_ROUTER_ARTIFACT);
   writePackFile(rootDir, PACK_LAYOUT.manifest, FIXTURE_ARTIFACT_MANIFEST);
+}
+
+function materializeNamedPack(rootDir: string, options: { packId: string; learnedRouting: boolean }): void {
+  const graph: PackGraphPayloadV1 = {
+    ...FIXTURE_PACK_GRAPH,
+    packId: options.packId
+  };
+  const vectors: PackVectorsPayloadV1 = {
+    ...FIXTURE_PACK_VECTORS,
+    packId: options.packId
+  };
+  const router: RouterArtifactV1 | null = options.learnedRouting
+    ? {
+        ...FIXTURE_ROUTER_ARTIFACT,
+        routerIdentity: `${options.packId}:route_fn`
+      }
+    : null;
+  const manifest: ArtifactManifestV1 = {
+    ...FIXTURE_ARTIFACT_MANIFEST,
+    packId: options.packId,
+    routePolicy: options.learnedRouting ? "requires_learned_routing" : "heuristic_allowed",
+    runtimeAssets: {
+      graphPath: PACK_LAYOUT.graph,
+      vectorPath: PACK_LAYOUT.vectors,
+      router: options.learnedRouting
+        ? {
+            kind: "artifact",
+            identity: router?.routerIdentity ?? null,
+            artifactPath: PACK_LAYOUT.router
+          }
+        : {
+            kind: "none",
+            identity: null,
+            artifactPath: null
+          }
+    },
+    payloadChecksums: {
+      graph: computePayloadChecksum(graph),
+      vector: computePayloadChecksum(vectors),
+      router: router === null ? null : computePayloadChecksum(router)
+    }
+  };
+
+  writePackFile(rootDir, PACK_LAYOUT.graph, graph);
+  writePackFile(rootDir, PACK_LAYOUT.vectors, vectors);
+  if (router !== null) {
+    writePackFile(rootDir, PACK_LAYOUT.router, router);
+  }
+  writePackFile(rootDir, PACK_LAYOUT.manifest, manifest);
 }
 
 test("learned-required packs force learned mode and select scanner context", (t) => {
@@ -89,6 +154,104 @@ test("compileRuntime applies native structural compaction under a character budg
   assert.equal(response.diagnostics.selectedCharCount <= 180, true);
   assert.equal(response.selectedContext.some((block) => (block.compactedFrom?.length ?? 0) > 1), true);
   assert.match(response.diagnostics.notes.join(";"), /native_structural_compaction=applied/);
+});
+
+test("compileRuntime rejects stale activePackId expectations", (t) => {
+  const rootDir = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-compile-"));
+  t.after(() => rmSync(rootDir, { recursive: true, force: true }));
+  materializeFixturePack(rootDir);
+
+  assert.throws(
+    () =>
+      compileRuntime(rootDir, {
+        contract: CONTRACT_IDS.runtimeCompile,
+        agentId: "agent-stale-pack",
+        userMessage: "Run the scanner with qwen checkpoints.",
+        maxContextBlocks: 1,
+        modeRequested: "heuristic",
+        activePackId: "pack-stale-runtime-view",
+        runtimeHints: ["feedback scanner"]
+      }),
+    /activePackId pack-stale-runtime-view does not match loaded pack/
+  );
+});
+
+test("compileRuntimeFromActivation serves the active pack and respects promotion", (t) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-compile-"));
+  const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-pack-"));
+  const candidateRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-candidate-pack-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(activeRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(candidateRoot, { recursive: true, force: true }));
+
+  materializeNamedPack(activeRoot, {
+    packId: "pack-active-serving",
+    learnedRouting: false
+  });
+  materializeNamedPack(candidateRoot, {
+    packId: "pack-candidate-serving",
+    learnedRouting: true
+  });
+
+  activatePack(activationRoot, activeRoot, "2026-03-06T06:00:00.000Z");
+  stageCandidatePack(activationRoot, candidateRoot, "2026-03-06T06:05:00.000Z");
+
+  const activeResponse = compileRuntimeFromActivation(activationRoot, {
+    contract: CONTRACT_IDS.runtimeCompile,
+    agentId: "agent-active-serving",
+    userMessage: "feedback scanner manifest structural compaction context",
+    maxContextBlocks: 3,
+    maxContextChars: 180,
+    modeRequested: "heuristic",
+    activePackId: "pack-active-serving",
+    compactionMode: "native",
+    runtimeHints: ["pack-backed selection"]
+  });
+
+  assert.equal(activeResponse.packId, "pack-active-serving");
+  assert.equal(activeResponse.diagnostics.modeEffective, "heuristic");
+  assert.equal(activeResponse.diagnostics.compactionApplied, true);
+  assert.equal(activeResponse.diagnostics.selectedCharCount <= 180, true);
+
+  promoteCandidatePack(activationRoot, "2026-03-06T06:10:00.000Z");
+
+  const promotedResponse = compileRuntimeFromActivation(activationRoot, {
+    contract: CONTRACT_IDS.runtimeCompile,
+    agentId: "agent-promoted-serving",
+    userMessage: "feedback scanner manifest structural compaction context",
+    maxContextBlocks: 3,
+    maxContextChars: 180,
+    modeRequested: "heuristic",
+    activePackId: "pack-candidate-serving",
+    compactionMode: "native",
+    runtimeHints: ["pack-backed selection"]
+  });
+
+  assert.equal(promotedResponse.packId, "pack-candidate-serving");
+  assert.equal(promotedResponse.diagnostics.modeEffective, "learned");
+  assert.equal(promotedResponse.diagnostics.usedLearnedRouteFn, true);
+  assert.equal(promotedResponse.diagnostics.compactionApplied, true);
+});
+
+test("compileRuntimeFromActivation fails fast when no active pack is present", () => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-empty-activation-"));
+
+  try {
+    assert.throws(
+      () =>
+        compileRuntimeFromActivation(activationRoot, {
+          contract: CONTRACT_IDS.runtimeCompile,
+          agentId: "agent-empty-activation",
+          userMessage: "Compile scanner context.",
+          maxContextBlocks: 1,
+          modeRequested: "heuristic"
+        }),
+      /Activation slot active is empty/
+    );
+  } finally {
+    rmSync(activationRoot, { recursive: true, force: true });
+  }
 });
 
 test("pack load rejects tampered graph payloads", (t) => {

@@ -1,6 +1,7 @@
 import {
   CONTRACT_IDS,
   checksumJsonPayload,
+  type ActivationPointerSlot,
   type ContextCompactionMode,
   type PackContextBlockRecordV1,
   type PackVectorEntryV1,
@@ -11,7 +12,7 @@ import {
   validateRuntimeCompileRequest,
   validateRuntimeCompileResponse
 } from "@openclawbrain/contracts";
-import { loadPack, type PackDescriptor } from "@openclawbrain/pack-format";
+import { loadPack, loadPackFromActivation, type PackDescriptor } from "@openclawbrain/pack-format";
 
 export type LoadedPack = PackDescriptor;
 
@@ -25,6 +26,11 @@ export interface RankedContextBlock {
   tokenCount: number;
   compactedFrom?: string[];
   packOrder: number;
+}
+
+export interface ActivationCompileOptions {
+  slot?: ActivationPointerSlot;
+  requireActivationReady?: boolean;
 }
 
 function normalizeTokens(value: string): string[] {
@@ -215,8 +221,29 @@ export function determineRouteMode(pack: LoadedPack, requested: RouteMode): Rout
   return pack.manifest.routePolicy === "requires_learned_routing" ? "learned" : requested;
 }
 
+function assertRequestPackExpectation(pack: LoadedPack, request: RuntimeCompileRequestV1): void {
+  if (request.activePackId !== undefined && request.activePackId !== pack.manifest.packId) {
+    throw new Error(
+      `Compile request activePackId ${request.activePackId} does not match loaded pack ${pack.manifest.packId}`
+    );
+  }
+}
+
 export function loadPackForCompile(rootDir: string): LoadedPack {
   return loadPack(rootDir);
+}
+
+export function loadPackForActivationCompile(rootDir: string, options: ActivationCompileOptions = {}): LoadedPack {
+  const slot = options.slot ?? "active";
+  const pack = loadPackFromActivation(rootDir, slot, {
+    requireActivationReady: options.requireActivationReady !== false
+  });
+
+  if (pack === null) {
+    throw new Error(`Activation slot ${slot} is empty`);
+  }
+
+  return pack;
 }
 
 export function rankContextBlocks(pack: LoadedPack, request: RuntimeCompileRequestV1): RankedContextBlock[] {
@@ -281,6 +308,7 @@ export function compileRuntime(packOrRoot: LoadedPack | string, request: Runtime
   }
 
   const pack = typeof packOrRoot === "string" ? loadPackForCompile(packOrRoot) : packOrRoot;
+  assertRequestPackExpectation(pack, request);
   const modeEffective = determineRouteMode(pack, request.modeRequested);
   const usedLearnedRouteFn = modeEffective === "learned";
 
@@ -357,4 +385,12 @@ export function compileRuntime(packOrRoot: LoadedPack | string, request: Runtime
   }
 
   return response;
+}
+
+export function compileRuntimeFromActivation(
+  rootDir: string,
+  request: RuntimeCompileRequestV1,
+  options: ActivationCompileOptions = {}
+): RuntimeCompileResponseV1 {
+  return compileRuntime(loadPackForActivationCompile(rootDir, options), request);
 }
