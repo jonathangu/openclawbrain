@@ -1,9 +1,12 @@
 import {
+  createDefaultLearningSurface,
   type ArtifactProvenanceV1,
   type EventExportProvenanceV1,
+  type LearningSurfaceV1,
   type NormalizedEventRangeV1,
   type WorkspaceMetadataV1,
   validateEventExportProvenance,
+  validateLearningSurface,
   validateNormalizedEventRange,
   validateWorkspaceMetadata
 } from "@openclawbrain/contracts";
@@ -13,6 +16,7 @@ export interface BuildArtifactProvenanceInput {
   workspace: WorkspaceMetadataInput;
   eventRange: NormalizedEventRangeV1;
   eventExports?: EventExportProvenanceV1 | null;
+  learningSurface?: LearningSurfaceV1;
   builtAt: string;
   offlineArtifacts?: readonly string[];
 }
@@ -28,7 +32,8 @@ function isIsoDate(value: string): boolean {
 export function validateArtifactProvenance(value: ArtifactProvenanceV1): string[] {
   const errors = [
     ...validateWorkspaceMetadata(value.workspace),
-    ...validateNormalizedEventRange(value.eventRange)
+    ...validateNormalizedEventRange(value.eventRange),
+    ...validateLearningSurface(value.learningSurface)
   ];
 
   if (!isIsoDate(value.builtAt)) {
@@ -49,13 +54,18 @@ export function validateArtifactProvenance(value: ArtifactProvenanceV1): string[
 
 export function buildArtifactProvenance(input: BuildArtifactProvenanceInput): ArtifactProvenanceV1 {
   const workspace = createWorkspaceMetadata(input.workspace);
+  const offlineArtifacts = uniqueNonEmpty(input.offlineArtifacts ?? []);
   const provenance: ArtifactProvenanceV1 = {
     workspace,
     workspaceSnapshot: workspace.snapshotId,
     eventRange: input.eventRange,
     eventExports: input.eventExports ?? null,
+    learningSurface:
+      input.eventExports?.learningSurface ??
+      input.learningSurface ??
+      createDefaultLearningSurface([`workspace:${workspace.workspaceId}`, ...offlineArtifacts.map((artifact) => `offline:${artifact}`)]),
     builtAt: input.builtAt,
-    offlineArtifacts: uniqueNonEmpty(input.offlineArtifacts ?? [])
+    offlineArtifacts
   };
 
   const errors = validateArtifactProvenance(provenance);
@@ -66,4 +76,11 @@ export function buildArtifactProvenance(input: BuildArtifactProvenanceInput): Ar
   return provenance;
 }
 
-export { type ArtifactProvenanceV1, type EventExportProvenanceV1, type NormalizedEventRangeV1, type WorkspaceMetadataV1 };
+export {
+  type ArtifactProvenanceV1,
+  type EventExportProvenanceV1,
+  type LearningSurfaceV1,
+  type NormalizedEventRangeV1,
+  type WorkspaceMetadataV1,
+  validateLearningSurface
+};

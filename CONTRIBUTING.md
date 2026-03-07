@@ -13,10 +13,12 @@
 
 ## Release-readiness commands
 
+- `pnpm clean` removes generated `dist/` outputs and `.release/` tarballs.
 - `pnpm build` builds the public workspace packages.
 - `pnpm check` rebuilds the workspace and runs the package test suites.
 - `pnpm release:pack` creates package tarballs in `.release/` for all public workspace packages.
 - `pnpm release:check` performs a clean rebuild, reruns tests, and generates release tarballs.
+- `pnpm release:publish:dry-run` exercises the publish path without uploading packages.
 
 ## Code style
 

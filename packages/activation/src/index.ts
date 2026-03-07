@@ -1,7 +1,10 @@
 export {
   ACTIVATION_LAYOUT,
   activatePack,
+  describeActivationTarget,
+  describePackCompileTarget,
   inspectActivationState,
+  loadPackFromActivation,
   loadActivationPointers,
   promoteCandidatePack,
   rollbackActivePack,

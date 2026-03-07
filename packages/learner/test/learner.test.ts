@@ -12,7 +12,7 @@ import {
   materializeCandidatePackFromNormalizedEventExport
 } from "@openclawbrain/learner";
 
-test("learner emits deterministic immutable pack manifests", (t) => {
+test("learner emits deterministic immutable pack manifests for always-on learning", (t) => {
   const input = {
     packLabel: "demo",
     workspace: {
@@ -51,18 +51,24 @@ test("learner emits deterministic immutable pack manifests", (t) => {
   assert.equal(first.manifest.routePolicy, "requires_learned_routing");
   assert.equal(descriptor.manifest.packId, first.summary.packId);
   assert.equal(descriptor.router?.routerIdentity, `${first.summary.packId}:route_fn`);
-  assert.equal(descriptor.graph.blocks.length, 9);
+  assert.equal(descriptor.graph.blocks.length, 12);
   assert.equal(first.summary.eventRange.start, 101);
   assert.equal(first.summary.eventRange.end, 104);
   assert.equal(first.summary.eventRange.count, 4);
   assert.equal(first.summary.workspaceSnapshot, "workspace-1@snapshot-1");
+  assert.equal(first.summary.bootstrapping.fastBootDefaults, true);
+  assert.equal(first.summary.bootstrapping.passiveBackgroundLearning, true);
+  assert.equal(first.summary.learningSurface.bootProfile, "fast_boot_defaults");
+  assert.equal(first.summary.learningSurface.labelHarvest.humanLabels, FIXTURE_FEEDBACK_EVENTS.length);
   assert.equal(first.manifest.provenance.workspace.snapshotId, "workspace-1@snapshot-1");
   assert.equal(first.summary.eventExportDigest, first.manifest.provenance.eventExports?.exportDigest ?? null);
   assert.equal(first.manifest.provenance.eventExports?.interactionCount, FIXTURE_INTERACTION_EVENTS.length);
   assert.equal(first.manifest.provenance.eventExports?.feedbackCount, FIXTURE_FEEDBACK_EVENTS.length);
-  assert.match(descriptor.graph.blocks.map((block) => block.text).join("\n"), /Workspace snapshot workspace-1@snapshot-1/);
-  assert.match(descriptor.graph.blocks.map((block) => block.text).join("\n"), /Use the unified feedback scanner before enabling default loop scans/);
-  assert.equal(descriptor.vectors.entries.some((entry) => entry.blockId.endsWith("evt-feedback-fixture-1")), true);
+  assert.match(descriptor.graph.blocks.map((block) => block.text).join("\n"), /Fast boot defaults stay live at startup/);
+  assert.match(descriptor.graph.blocks.map((block) => block.text).join("\n"), /Human label harvest is first-class/);
+  assert.equal(descriptor.graph.blocks.some((block) => block.learning.role === "boot_default"), true);
+  assert.equal(descriptor.graph.blocks.some((block) => block.learning.humanLabels > 0), true);
+  assert.equal(descriptor.vectors.entries.some((entry) => entry.keywords.includes("fast_boot")), true);
 });
 
 test("learner rejects mismatched explicit event ranges when event exports are supplied", () => {
@@ -129,8 +135,10 @@ test("learner can materialize a candidate pack directly from a normalized event 
 
   assert.equal(result.summary.eventExportDigest, FIXTURE_NORMALIZED_EVENT_EXPORT.provenance.exportDigest);
   assert.equal(result.summary.workspaceSnapshot, "workspace-export@snapshot-1");
+  assert.equal(result.summary.learningSurface.labelHarvest.selfLabels, 1);
   assert.equal(descriptor.manifest.provenance.eventRange.firstEventId, "evt-interaction-fixture-1");
   assert.equal(descriptor.manifest.provenance.eventRange.lastEventId, "evt-feedback-fixture-2");
   assert.equal(descriptor.graph.blocks.some((block) => block.id.endsWith("evt-feedback-fixture-1")), true);
+  assert.equal(descriptor.graph.blocks.some((block) => block.learning.role === "label_surface"), true);
   assert.match(descriptor.graph.blocks.map((block) => block.source).join("\n"), /openclaw\/runtime\/whatsapp:teaching/);
 });

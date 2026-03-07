@@ -21,6 +21,7 @@ import {
   validateArtifactManifest,
   validateFeedbackEvent,
   validateInteractionEvent,
+  validateLearningSurface,
   validateNormalizedEventExport,
   validatePackGraphPayload,
   validatePackVectorsPayload,
@@ -36,6 +37,7 @@ test("canonical fixtures validate end-to-end", () => {
   assert.deepEqual(validateRuntimeCompileResponse(FIXTURE_RUNTIME_COMPILE_RESPONSE), []);
   assert.deepEqual(validateInteractionEvent(FIXTURE_INTERACTION_EVENT), []);
   assert.deepEqual(validateFeedbackEvent(FIXTURE_FEEDBACK_EVENT), []);
+  assert.deepEqual(validateLearningSurface(FIXTURE_NORMALIZED_EVENT_EXPORT.provenance.learningSurface), []);
   assert.deepEqual(validateNormalizedEventExport(FIXTURE_NORMALIZED_EVENT_EXPORT), []);
   assert.deepEqual(validateWorkspaceMetadata(FIXTURE_WORKSPACE_METADATA), []);
   assert.deepEqual(validateArtifactManifest(FIXTURE_ARTIFACT_MANIFEST), []);
@@ -56,6 +58,11 @@ test("normalized event export metadata is deterministically derived from interac
   assert.equal(rebuilt.provenance.interactionCount, FIXTURE_INTERACTION_EVENTS.length);
   assert.equal(rebuilt.provenance.feedbackCount, FIXTURE_FEEDBACK_EVENTS.length);
   assert.deepEqual(rebuilt.provenance.contracts, [CONTRACT_IDS.interactionEvents, CONTRACT_IDS.feedbackEvents]);
+  assert.equal(rebuilt.provenance.learningSurface.bootProfile, "fast_boot_defaults");
+  assert.equal(rebuilt.provenance.learningSurface.learningCadence, "passive_background");
+  assert.equal(rebuilt.provenance.learningSurface.labelHarvest.humanLabels, FIXTURE_FEEDBACK_EVENTS.length);
+  assert.equal(rebuilt.provenance.learningSurface.labelHarvest.selfLabels, 1);
+  assert.match(rebuilt.provenance.learningSurface.scanSurfaces.join("\n"), /memory_compiled/);
 });
 
 test("learned routing responses must explicitly mark route_fn usage", () => {
@@ -68,6 +75,14 @@ test("learned routing responses must explicitly mark route_fn usage", () => {
       modeEffective: "learned",
       usedLearnedRouteFn: false,
       routerIdentity: "router-stub",
+      candidateCount: 0,
+      selectedCount: 0,
+      selectedCharCount: 0,
+      selectedTokenCount: 0,
+      selectionStrategy: "pack_keyword_overlap_v1",
+      selectionDigest: "sha256-empty",
+      compactionMode: "native",
+      compactionApplied: false,
       notes: []
     }
   });

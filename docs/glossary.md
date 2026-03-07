@@ -8,7 +8,9 @@
 
 **Activation pointers**: Small metadata records that identify the active, candidate, and previous packs.
 
-**Runtime compile**: Deterministic context selection over an active pack for a single OpenClaw request.
+**Runtime compile**: Deterministic pack-backed context selection for a single OpenClaw request.
+
+**Native structural compaction**: Deterministic merging and truncation of pack-backed context blocks under an explicit runtime budget.
 
 **Normalized event export**: The learner input shape that packages interaction and feedback events with stable provenance metadata.
 

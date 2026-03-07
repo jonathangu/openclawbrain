@@ -6,6 +6,10 @@ on:
       - "v*"
   workflow_dispatch:
 
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: false
+
 permissions:
   id-token: write
   contents: read
@@ -32,4 +36,4 @@ jobs:
         run: pnpm release:check
 
       - name: Publish workspace packages
-        run: pnpm -r publish --access public --no-git-checks --provenance
+        run: pnpm -r --filter "@openclawbrain/*" publish --access public --no-git-checks --provenance

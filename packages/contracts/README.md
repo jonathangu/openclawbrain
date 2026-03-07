@@ -15,6 +15,7 @@ pnpm add @openclawbrain/contracts
 ## Includes
 
 - contract ids for runtime compile, interaction events, feedback events, manifests, and activation pointers
+- runtime compile request/response types for larger-context budgets and native structural compaction
 - workspace metadata and pack provenance shapes
 - payload validators for the current `v1` public shapes
 - canonical JSON and checksum helpers for immutable artifact payloads
@@ -35,8 +36,10 @@ const request = {
   contract: CONTRACT_IDS.runtimeCompile,
   agentId: "agent-1",
   userMessage: "compile feedback context",
-  maxContextBlocks: 2,
-  modeRequested: "heuristic"
+  maxContextBlocks: 3,
+  maxContextChars: 1600,
+  modeRequested: "heuristic",
+  compactionMode: "native"
 } as const;
 
 const errors = validateRuntimeCompileRequest(request);

@@ -4,7 +4,15 @@ import { tmpdir } from "node:os";
 import path from "node:path";
 import test from "node:test";
 
-import { activatePack, inspectActivationState, loadActivationPointers, promoteCandidatePack, stageCandidatePack } from "@openclawbrain/activation";
+import {
+  activatePack,
+  describeActivationTarget,
+  inspectActivationState,
+  loadActivationPointers,
+  loadPackFromActivation,
+  promoteCandidatePack,
+  stageCandidatePack
+} from "@openclawbrain/activation";
 import {
   FIXTURE_ARTIFACT_MANIFEST,
   FIXTURE_PACK_GRAPH,
@@ -136,6 +144,10 @@ test("activation package exposes staging and promotion with workspace provenance
   promoteCandidatePack(activationRoot, "2026-03-06T05:10:00.000Z");
 
   const pointers = loadActivationPointers(activationRoot).pointers;
+  const activeTarget = describeActivationTarget(activationRoot, "active", { requireActivationReady: true });
+  const activePack = loadPackFromActivation(activationRoot, "active", { requireActivationReady: true });
   assert.equal(pointers.active?.workspaceSnapshot, "workspace-candidate@snapshot-2");
   assert.equal(pointers.previous?.workspaceSnapshot, "workspace-active@snapshot-1");
+  assert.equal(activeTarget?.workspaceSnapshot, "workspace-candidate@snapshot-2");
+  assert.equal(activePack?.manifest.packId, pointers.active?.packId);
 });

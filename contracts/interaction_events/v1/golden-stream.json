@@ -1,127 +1,33 @@
 [
   {
-    "contract_version": "interaction_events.v1",
-    "schema_version": 1,
-    "event_id": "evt_1",
-    "event_kind": "turn_started",
-    "event_ts": "2026-03-06T10:00:00Z",
-    "agent_id": "main",
-    "session_id": "sess_456",
-    "turn_id": "turn_789",
-    "request_id": "req_123",
-    "pack_id": "brainpack_2026_03_06_001",
-    "payload": {
-      "user_message_ref": "message:user:turn_789"
-    }
+    "contract": "interaction_events.v1",
+    "eventId": "evt-interaction-fixture-1",
+    "agentId": "agent-fixture",
+    "sessionId": "session-fixture",
+    "channel": "whatsapp",
+    "sequence": 101,
+    "kind": "memory_compiled",
+    "createdAt": "2026-03-06T00:00:00.000Z",
+    "source": {
+      "runtimeOwner": "openclaw",
+      "stream": "openclaw/runtime/whatsapp"
+    },
+    "packId": "pack-fixture"
   },
   {
-    "contract_version": "interaction_events.v1",
-    "schema_version": 1,
-    "event_id": "evt_2",
-    "event_kind": "memory_compiled",
-    "event_ts": "2026-03-06T10:00:01Z",
-    "agent_id": "main",
-    "session_id": "sess_456",
-    "turn_id": "turn_789",
-    "request_id": "req_123",
-    "pack_id": "brainpack_2026_03_06_001",
-    "payload": {
-      "selected_context_ids": [
-        "ctx_1"
-      ],
-      "suppressed_source_refs": [
-        "memory:duplicate:ctx_legacy"
-      ],
-      "routing": {
-        "mode_requested": "learned",
-        "mode_effective": "learned",
-        "used_learned_route_fn": true,
-        "route_model_id": "route_model_2026_03_06",
-        "decision_trace_ref": "route_decision_req_123"
-      },
-      "compile_latency_ms": 18.7,
-      "candidate_count": 24,
-      "selected_count": 1
-    }
-  },
-  {
-    "contract_version": "interaction_events.v1",
-    "schema_version": 1,
-    "event_id": "evt_3",
-    "event_kind": "tool_called",
-    "event_ts": "2026-03-06T10:00:02Z",
-    "agent_id": "main",
-    "session_id": "sess_456",
-    "turn_id": "turn_789",
-    "request_id": "req_123",
-    "pack_id": "brainpack_2026_03_06_001",
-    "payload": {
-      "tool_name": "web_search",
-      "tool_call_id": "toolcall_1"
-    }
-  },
-  {
-    "contract_version": "interaction_events.v1",
-    "schema_version": 1,
-    "event_id": "evt_4",
-    "event_kind": "tool_result",
-    "event_ts": "2026-03-06T10:00:03Z",
-    "agent_id": "main",
-    "session_id": "sess_456",
-    "turn_id": "turn_789",
-    "request_id": "req_123",
-    "pack_id": "brainpack_2026_03_06_001",
-    "payload": {
-      "tool_name": "web_search",
-      "tool_call_id": "toolcall_1",
-      "status": "ok"
-    }
-  },
-  {
-    "contract_version": "interaction_events.v1",
-    "schema_version": 1,
-    "event_id": "evt_5",
-    "event_kind": "assistant_completed",
-    "event_ts": "2026-03-06T10:00:04Z",
-    "agent_id": "main",
-    "session_id": "sess_456",
-    "turn_id": "turn_789",
-    "request_id": "req_123",
-    "pack_id": "brainpack_2026_03_06_001",
-    "payload": {
-      "assistant_message_ref": "message:assistant:turn_789",
-      "finish_reason": "stop"
-    }
-  },
-  {
-    "contract_version": "interaction_events.v1",
-    "schema_version": 1,
-    "event_id": "evt_6",
-    "event_kind": "feedback_recorded",
-    "event_ts": "2026-03-06T10:05:00Z",
-    "agent_id": "main",
-    "session_id": "sess_456",
-    "turn_id": "turn_790",
-    "request_id": "req_124",
-    "pack_id": "brainpack_2026_03_06_001",
-    "payload": {
-      "feedback_event_id": "feedback_evt_1",
-      "feedback_kind": "correction"
-    }
-  },
-  {
-    "contract_version": "interaction_events.v1",
-    "schema_version": 1,
-    "event_id": "evt_7",
-    "event_kind": "session_closed",
-    "event_ts": "2026-03-06T10:05:10Z",
-    "agent_id": "main",
-    "session_id": "sess_456",
-    "turn_id": "turn_790",
-    "request_id": "req_124",
-    "pack_id": "brainpack_2026_03_06_001",
-    "payload": {
-      "close_reason": "assistant_complete"
-    }
+    "contract": "interaction_events.v1",
+    "eventId": "evt-interaction-fixture-2",
+    "agentId": "agent-fixture",
+    "sessionId": "session-fixture",
+    "channel": "whatsapp",
+    "sequence": 103,
+    "kind": "message_delivered",
+    "createdAt": "2026-03-06T00:02:00.000Z",
+    "source": {
+      "runtimeOwner": "openclaw",
+      "stream": "openclaw/runtime/whatsapp"
+    },
+    "packId": "pack-fixture",
+    "messageId": "msg-fixture-1"
   }
 ]

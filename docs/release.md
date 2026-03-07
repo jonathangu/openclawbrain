@@ -59,8 +59,11 @@ Before relying on the workflow, configure npm trusted publishing for each packag
 Optional manual publish:
 
 ```bash
-pnpm -r publish --access public --no-git-checks
+pnpm release:publish:dry-run
+pnpm release:publish
 ```
+
+Use `pnpm release:publish:provenance` when you want the same recursive publish lane with provenance enabled from a local trusted environment.
 
 ## 5) Post-publish sanity checks
 

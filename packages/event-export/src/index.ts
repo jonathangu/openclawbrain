@@ -1,12 +1,21 @@
 export {
   FIXTURE_NORMALIZED_EVENT_EXPORT,
+  buildLearningSurface,
   buildNormalizedEventExport,
   buildNormalizedEventRange,
+  createDefaultLearningSurface,
   createExplicitEventRange,
   validateEventExportProvenance,
+  validateLearningSurface,
   validateNormalizedEventExport,
   validateNormalizedEventRange,
   type EventExportProvenanceV1,
+  type LearningBootProfile,
+  type LearningCadence,
+  type LearningLabelHarvestV1,
+  type LearningLabelSourcesV1,
+  type LearningScanPolicy,
+  type LearningSurfaceV1,
   type NormalizedEventExportV1,
   type NormalizedEventRangeV1
 } from "@openclawbrain/contracts";

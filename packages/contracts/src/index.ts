@@ -16,26 +16,76 @@ export type RouterAssetKind = "none" | "stub" | "artifact";
 export type ActivationPointerSlot = "active" | "candidate" | "previous";
 export type InteractionEventKind = "memory_compiled" | "message_delivered" | "operator_override";
 export type FeedbackEventKind = "correction" | "teaching" | "approval" | "suppression";
+export type LearningBootProfile = "fast_boot_defaults";
+export type LearningCadence = "passive_background";
+export type LearningScanPolicy = "always_on";
+export type LearningBlockRole =
+  | "boot_default"
+  | "background_expectation"
+  | "label_surface"
+  | "workspace"
+  | "structural"
+  | "interaction"
+  | "feedback";
+
+export interface LearningLabelSourcesV1 {
+  human: string[];
+  self: string[];
+}
+
+export interface LearningLabelHarvestV1 {
+  humanLabels: number;
+  selfLabels: number;
+  corrections: number;
+  teachings: number;
+  approvals: number;
+  suppressions: number;
+  operatorOverrideLabels: number;
+  memoryCompileLabels: number;
+}
+
+export interface LearningSurfaceV1 {
+  bootProfile: LearningBootProfile;
+  learningCadence: LearningCadence;
+  scanPolicy: LearningScanPolicy;
+  scanSurfaces: string[];
+  labelSources: LearningLabelSourcesV1;
+  labelHarvest: LearningLabelHarvestV1;
+}
+
+export interface PackBlockLearningSignalsV1 {
+  role: LearningBlockRole;
+  humanLabels: number;
+  selfLabels: number;
+  decayHalfLifeDays: number | null;
+  hebbianPulse: number;
+}
+export type ContextCompactionMode = "none" | "native";
 
 export interface RuntimeCompileRequestV1 {
   contract: typeof CONTRACT_IDS.runtimeCompile;
   agentId: string;
   userMessage: string;
   maxContextBlocks: number;
+  maxContextChars?: number;
   modeRequested: RouteMode;
   activePackId?: string;
   runtimeHints?: string[];
+  compactionMode?: ContextCompactionMode;
 }
 
 export interface RuntimeContextBlockV1 {
   id: string;
   source: string;
   text: string;
+  tokenCount?: number;
+  compactedFrom?: string[];
 }
 
 export interface PackContextBlockRecordV1 extends RuntimeContextBlockV1 {
   keywords: string[];
   priority: number;
+  learning: PackBlockLearningSignalsV1;
 }
 
 export interface RuntimeCompileDiagnosticsV1 {
@@ -43,6 +93,14 @@ export interface RuntimeCompileDiagnosticsV1 {
   modeEffective: RouteMode;
   usedLearnedRouteFn: boolean;
   routerIdentity: string | null;
+  candidateCount: number;
+  selectedCount: number;
+  selectedCharCount: number;
+  selectedTokenCount: number;
+  selectionStrategy: "pack_keyword_overlap_v1";
+  selectionDigest: string;
+  compactionMode: ContextCompactionMode;
+  compactionApplied: boolean;
   notes: string[];
 }
 
@@ -51,6 +109,28 @@ export interface RuntimeCompileResponseV1 {
   packId: string;
   selectedContext: RuntimeContextBlockV1[];
   diagnostics: RuntimeCompileDiagnosticsV1;
+}
+
+export interface RuntimeCompileTargetV1 {
+  packId: string;
+  routePolicy: RoutePolicy;
+  routerIdentity: string | null;
+  workspaceSnapshot: string;
+  workspaceRevision: string | null;
+  eventRange: Pick<NormalizedEventRangeV1, "start" | "end" | "count">;
+  eventExportDigest: string | null;
+  builtAt: string;
+}
+
+export interface RuntimeCompileExpectationV1 {
+  packId?: string;
+  routePolicy?: RoutePolicy;
+  routerIdentity?: string | null;
+  workspaceSnapshot?: string;
+  workspaceRevision?: string | null;
+  eventRange?: Pick<NormalizedEventRangeV1, "start" | "end" | "count">;
+  eventExportDigest?: string | null;
+  builtAt?: string;
 }
 
 export interface NormalizedEventSourceV1 {
@@ -108,6 +188,7 @@ export interface EventExportProvenanceV1 {
   sourceStreams: string[];
   contracts: EventContractId[];
   exportDigest: string;
+  learningSurface: LearningSurfaceV1;
 }
 
 export interface NormalizedEventExportV1 {
@@ -155,10 +236,15 @@ export interface ArtifactManifestV1 {
     workspaceSnapshot: string;
     eventRange: NormalizedEventRangeV1;
     eventExports: EventExportProvenanceV1 | null;
+    learningSurface: LearningSurfaceV1;
     builtAt: string;
     offlineArtifacts: string[];
   };
   graphDynamics: {
+    bootstrapping: {
+      fastBootDefaults: boolean;
+      passiveBackgroundLearning: boolean;
+    };
     hebbian: {
       enabled: boolean;
       learningRate: number;
@@ -228,6 +314,10 @@ function isIsoDate(value: string): boolean {
   return !Number.isNaN(Date.parse(value));
 }
 
+function hasOwn(value: object, key: string): boolean {
+  return Object.prototype.hasOwnProperty.call(value, key);
+}
+
 function pushWhenMissing(errors: string[], condition: boolean, message: string): void {
   if (!condition) {
     errors.push(message);
@@ -267,6 +357,102 @@ function eventSequenceErrors(events: readonly NormalizedEventV1[]): string[] {
   }
 
   return errors;
+}
+
+export function createDefaultLearningSurface(scanSurfaces: readonly string[] = ["workspace_snapshot"]): LearningSurfaceV1 {
+  const surfaces = uniqueInOrder(scanSurfaces.map((surface) => surface.trim()).filter((surface) => surface.length > 0));
+
+  return {
+    bootProfile: "fast_boot_defaults",
+    learningCadence: "passive_background",
+    scanPolicy: "always_on",
+    scanSurfaces: surfaces.length === 0 ? ["workspace_snapshot"] : surfaces,
+    labelSources: {
+      human: [CONTRACT_IDS.feedbackEvents, `${CONTRACT_IDS.interactionEvents}:operator_override`],
+      self: [`${CONTRACT_IDS.interactionEvents}:memory_compiled`]
+    },
+    labelHarvest: {
+      humanLabels: 0,
+      selfLabels: 0,
+      corrections: 0,
+      teachings: 0,
+      approvals: 0,
+      suppressions: 0,
+      operatorOverrideLabels: 0,
+      memoryCompileLabels: 0
+    }
+  };
+}
+
+export function buildLearningSurface(events: readonly NormalizedEventV1[]): LearningSurfaceV1 {
+  if (events.length === 0) {
+    return createDefaultLearningSurface(["event_export:empty"]);
+  }
+
+  const sorted = sortNormalizedEvents(events);
+  const scanSurfaces = uniqueInOrder(sorted.map((event) => `${event.source.stream}:${event.kind}`));
+  const humanSources: string[] = [];
+  const selfSources: string[] = [];
+  let corrections = 0;
+  let teachings = 0;
+  let approvals = 0;
+  let suppressions = 0;
+  let operatorOverrideLabels = 0;
+  let memoryCompileLabels = 0;
+
+  for (const event of sorted) {
+    const surface = `${event.source.stream}:${event.kind}`;
+    if (event.contract === CONTRACT_IDS.feedbackEvents) {
+      humanSources.push(surface);
+      switch (event.kind) {
+        case "correction":
+          corrections += 1;
+          break;
+        case "teaching":
+          teachings += 1;
+          break;
+        case "approval":
+          approvals += 1;
+          break;
+        case "suppression":
+          suppressions += 1;
+          break;
+      }
+      continue;
+    }
+
+    if (event.kind === "operator_override") {
+      humanSources.push(surface);
+      operatorOverrideLabels += 1;
+      continue;
+    }
+
+    if (event.kind === "memory_compiled") {
+      selfSources.push(surface);
+      memoryCompileLabels += 1;
+    }
+  }
+
+  return {
+    bootProfile: "fast_boot_defaults",
+    learningCadence: "passive_background",
+    scanPolicy: "always_on",
+    scanSurfaces,
+    labelSources: {
+      human: uniqueInOrder(humanSources),
+      self: uniqueInOrder(selfSources)
+    },
+    labelHarvest: {
+      humanLabels: corrections + teachings + approvals + suppressions + operatorOverrideLabels,
+      selfLabels: memoryCompileLabels,
+      corrections,
+      teachings,
+      approvals,
+      suppressions,
+      operatorOverrideLabels,
+      memoryCompileLabels
+    }
+  };
 }
 
 export function canonicalJson(value: unknown): string {
@@ -375,9 +561,31 @@ export function buildNormalizedEventExport(value: {
       exportDigest: checksumJsonPayload({
         interactionEvents: sortNormalizedEvents(interactionEvents),
         feedbackEvents: sortNormalizedEvents(feedbackEvents)
-      })
+      }),
+      learningSurface: buildLearningSurface(events)
     }
   };
+}
+
+function validateRuntimeContextBlock(value: RuntimeContextBlockV1, label: string): string[] {
+  const errors: string[] = [];
+  pushWhenMissing(errors, value.id.length > 0, `${label} id is required`);
+  pushWhenMissing(errors, value.source.length > 0, `${label} source is required`);
+  pushWhenMissing(errors, value.text.length > 0, `${label} text is required`);
+
+  if (value.tokenCount !== undefined) {
+    pushWhenMissing(errors, value.tokenCount >= 0, `${label} tokenCount must be non-negative`);
+  }
+
+  if (value.compactedFrom !== undefined) {
+    pushWhenMissing(errors, value.compactedFrom.length > 0, `${label} compactedFrom must not be empty`);
+    const uniqueIds = new Set(value.compactedFrom.filter((id) => id.length > 0));
+    if (uniqueIds.size !== value.compactedFrom.length) {
+      errors.push(`${label} compactedFrom must contain unique non-empty ids`);
+    }
+  }
+
+  return errors;
 }
 
 export function validateRuntimeCompileRequest(value: RuntimeCompileRequestV1): string[] {
@@ -387,6 +595,15 @@ export function validateRuntimeCompileRequest(value: RuntimeCompileRequestV1): s
   pushWhenMissing(errors, value.userMessage.length > 0, "userMessage is required");
   pushWhenMissing(errors, value.maxContextBlocks >= 0, "maxContextBlocks must be non-negative");
   pushWhenMissing(errors, value.modeRequested === "heuristic" || value.modeRequested === "learned", "modeRequested must be heuristic or learned");
+
+  if (value.maxContextChars !== undefined) {
+    pushWhenMissing(errors, value.maxContextChars >= 0, "maxContextChars must be non-negative");
+  }
+
+  if (value.compactionMode !== undefined) {
+    pushWhenMissing(errors, value.compactionMode === "none" || value.compactionMode === "native", "compactionMode must be none or native");
+  }
+
   return errors;
 }
 
@@ -396,6 +613,19 @@ export function validateRuntimeCompileResponse(value: RuntimeCompileResponseV1):
   pushWhenMissing(errors, value.packId.length > 0, "packId is required");
   pushWhenMissing(errors, value.diagnostics.modeRequested === "heuristic" || value.diagnostics.modeRequested === "learned", "modeRequested must be explicit");
   pushWhenMissing(errors, value.diagnostics.modeEffective === "heuristic" || value.diagnostics.modeEffective === "learned", "modeEffective must be explicit");
+  pushWhenMissing(errors, value.diagnostics.candidateCount >= 0, "candidateCount must be non-negative");
+  pushWhenMissing(errors, value.diagnostics.selectedCount >= 0, "selectedCount must be non-negative");
+  pushWhenMissing(errors, value.diagnostics.selectedCount === value.selectedContext.length, "selectedCount must match selectedContext length");
+  pushWhenMissing(errors, value.diagnostics.candidateCount >= value.diagnostics.selectedCount, "candidateCount must be >= selectedCount");
+  pushWhenMissing(errors, value.diagnostics.selectedCharCount >= 0, "selectedCharCount must be non-negative");
+  pushWhenMissing(errors, value.diagnostics.selectedTokenCount >= 0, "selectedTokenCount must be non-negative");
+  pushWhenMissing(errors, value.diagnostics.selectionStrategy === "pack_keyword_overlap_v1", "selectionStrategy must be pack_keyword_overlap_v1");
+  pushWhenMissing(errors, value.diagnostics.selectionDigest.length > 0, "selectionDigest is required");
+  pushWhenMissing(
+    errors,
+    value.diagnostics.compactionMode === "none" || value.diagnostics.compactionMode === "native",
+    "compactionMode must be none or native"
+  );
 
   if (value.diagnostics.modeEffective === "learned" && !value.diagnostics.usedLearnedRouteFn) {
     errors.push("learned mode requires usedLearnedRouteFn=true");
@@ -408,6 +638,10 @@ export function validateRuntimeCompileResponse(value: RuntimeCompileResponseV1):
   if (value.diagnostics.usedLearnedRouteFn && value.diagnostics.routerIdentity === null) {
     errors.push("learned routing requires routerIdentity");
   }
+
+  value.selectedContext.forEach((block, index) => {
+    errors.push(...validateRuntimeContextBlock(block, `selectedContext[${index}]`));
+  });
 
   return errors;
 }
@@ -526,6 +760,74 @@ export function validateWorkspaceMetadata(value: WorkspaceMetadataV1): string[] 
   return errors;
 }
 
+export function validateLearningSurface(value: LearningSurfaceV1): string[] {
+  const errors: string[] = [];
+  pushWhenMissing(errors, value.bootProfile === "fast_boot_defaults", "learning surface bootProfile must be fast_boot_defaults");
+  pushWhenMissing(errors, value.learningCadence === "passive_background", "learning surface learningCadence must be passive_background");
+  pushWhenMissing(errors, value.scanPolicy === "always_on", "learning surface scanPolicy must be always_on");
+  pushWhenMissing(errors, value.scanSurfaces.length > 0, "learning surface requires at least one scan surface");
+
+  for (const surface of value.scanSurfaces) {
+    pushWhenMissing(errors, surface.length > 0, "learning surface scan surfaces must be non-empty");
+  }
+  for (const source of value.labelSources.human) {
+    pushWhenMissing(errors, source.length > 0, "learning surface human label sources must be non-empty");
+  }
+  for (const source of value.labelSources.self) {
+    pushWhenMissing(errors, source.length > 0, "learning surface self label sources must be non-empty");
+  }
+
+  pushWhenMissing(errors, value.labelHarvest.humanLabels >= 0, "learning surface humanLabels must be non-negative");
+  pushWhenMissing(errors, value.labelHarvest.selfLabels >= 0, "learning surface selfLabels must be non-negative");
+  pushWhenMissing(errors, value.labelHarvest.corrections >= 0, "learning surface corrections must be non-negative");
+  pushWhenMissing(errors, value.labelHarvest.teachings >= 0, "learning surface teachings must be non-negative");
+  pushWhenMissing(errors, value.labelHarvest.approvals >= 0, "learning surface approvals must be non-negative");
+  pushWhenMissing(errors, value.labelHarvest.suppressions >= 0, "learning surface suppressions must be non-negative");
+  pushWhenMissing(errors, value.labelHarvest.operatorOverrideLabels >= 0, "learning surface operatorOverrideLabels must be non-negative");
+  pushWhenMissing(errors, value.labelHarvest.memoryCompileLabels >= 0, "learning surface memoryCompileLabels must be non-negative");
+
+  const humanLabels =
+    value.labelHarvest.corrections +
+    value.labelHarvest.teachings +
+    value.labelHarvest.approvals +
+    value.labelHarvest.suppressions +
+    value.labelHarvest.operatorOverrideLabels;
+  const selfLabels = value.labelHarvest.memoryCompileLabels;
+
+  if (value.labelHarvest.humanLabels !== humanLabels) {
+    errors.push("learning surface humanLabels must equal feedback and operatorOverride labels");
+  }
+  if (value.labelHarvest.selfLabels !== selfLabels) {
+    errors.push("learning surface selfLabels must equal memoryCompileLabels");
+  }
+
+  return errors;
+}
+
+export function validatePackBlockLearningSignals(value: PackBlockLearningSignalsV1, blockId?: string): string[] {
+  const errors: string[] = [];
+  const prefix = blockId === undefined ? "pack block learning" : `pack block ${blockId}`;
+  const allowedRoles: LearningBlockRole[] = [
+    "boot_default",
+    "background_expectation",
+    "label_surface",
+    "workspace",
+    "structural",
+    "interaction",
+    "feedback"
+  ];
+
+  pushWhenMissing(errors, allowedRoles.includes(value.role), `${prefix} role must be explicit`);
+  pushWhenMissing(errors, value.humanLabels >= 0, `${prefix} humanLabels must be non-negative`);
+  pushWhenMissing(errors, value.selfLabels >= 0, `${prefix} selfLabels must be non-negative`);
+  pushWhenMissing(errors, value.hebbianPulse >= 0, `${prefix} hebbianPulse must be non-negative`);
+  if (value.decayHalfLifeDays !== null) {
+    pushWhenMissing(errors, value.decayHalfLifeDays >= 0, `${prefix} decayHalfLifeDays must be non-negative when set`);
+  }
+
+  return errors;
+}
+
 export function validateEventExportProvenance(
   value: EventExportProvenanceV1,
   eventRange?: NormalizedEventRangeV1
@@ -536,9 +838,13 @@ export function validateEventExportProvenance(
   pushWhenMissing(errors, value.feedbackCount >= 0, "feedbackCount must be non-negative");
   pushWhenMissing(errors, value.exportDigest.length > 0, "event export provenance requires exportDigest");
   pushWhenMissing(errors, value.sourceStreams.length > 0, "event export provenance requires at least one source stream");
+  errors.push(...validateLearningSurface(value.learningSurface));
 
   for (const stream of value.sourceStreams) {
     pushWhenMissing(errors, stream.length > 0, "event export provenance source streams must be non-empty");
+    if (!value.learningSurface.scanSurfaces.some((surface) => surface.startsWith(`${stream}:`))) {
+      errors.push(`event export provenance learningSurface must include a scan surface for ${stream}`);
+    }
   }
   for (const contract of value.contracts) {
     pushWhenMissing(
@@ -553,8 +859,13 @@ export function validateEventExportProvenance(
   if (value.channel !== null) {
     pushWhenMissing(errors, value.channel.length > 0, "event export provenance channel must be non-empty when set");
   }
-  if (eventRange !== undefined && value.interactionCount + value.feedbackCount !== eventRange.count) {
-    errors.push("event export provenance counts must match eventRange.count");
+  if (eventRange !== undefined) {
+    if (value.interactionCount + value.feedbackCount !== eventRange.count) {
+      errors.push("event export provenance counts must match eventRange.count");
+    }
+    if (value.learningSurface.labelHarvest.humanLabels + value.learningSurface.labelHarvest.selfLabels > eventRange.count) {
+      errors.push("learning surface labels cannot exceed eventRange.count");
+    }
   }
 
   return errors;
@@ -592,6 +903,13 @@ export function validateArtifactManifest(value: ArtifactManifestV1): string[] {
   pushWhenMissing(errors, isIsoDate(value.provenance.builtAt), "builtAt must be an ISO timestamp");
   pushWhenMissing(errors, value.provenance.workspaceSnapshot.length > 0, "workspaceSnapshot is required");
   errors.push(...validateWorkspaceMetadata(value.provenance.workspace));
+  errors.push(...validateLearningSurface(value.provenance.learningSurface));
+  pushWhenMissing(errors, value.graphDynamics.bootstrapping.fastBootDefaults === true, "graph bootstrapping fastBootDefaults must stay enabled");
+  pushWhenMissing(
+    errors,
+    value.graphDynamics.bootstrapping.passiveBackgroundLearning === true,
+    "graph bootstrapping passiveBackgroundLearning must stay enabled"
+  );
   pushWhenMissing(errors, value.graphDynamics.hebbian.learningRate >= 0, "hebbian learningRate must be non-negative");
   pushWhenMissing(errors, value.graphDynamics.decay.halfLifeDays >= 0, "decay halfLifeDays must be non-negative");
   errors.push(...validateNormalizedEventRange(value.provenance.eventRange));
@@ -602,6 +920,9 @@ export function validateArtifactManifest(value: ArtifactManifestV1): string[] {
 
   if (value.provenance.eventExports !== null) {
     errors.push(...validateEventExportProvenance(value.provenance.eventExports, value.provenance.eventRange));
+    if (canonicalJson(value.provenance.eventExports.learningSurface) !== canonicalJson(value.provenance.learningSurface)) {
+      errors.push("artifact provenance learningSurface must match event export learningSurface");
+    }
   }
 
   if (value.routePolicy === "requires_learned_routing") {
@@ -688,6 +1009,17 @@ export function validatePackGraphPayload(value: PackGraphPayloadV1, expectedPack
     pushWhenMissing(errors, block.text.length > 0, `graph block ${block.id || "<unknown>"} requires text`);
     pushWhenMissing(errors, block.priority >= 0, `graph block ${block.id || "<unknown>"} priority must be non-negative`);
     pushWhenMissing(errors, block.keywords.length > 0, `graph block ${block.id || "<unknown>"} requires keywords`);
+    errors.push(...validatePackBlockLearningSignals(block.learning, block.id));
+    if (block.tokenCount !== undefined) {
+      pushWhenMissing(errors, block.tokenCount >= 0, `graph block ${block.id || "<unknown>"} tokenCount must be non-negative`);
+    }
+    if (block.compactedFrom !== undefined) {
+      pushWhenMissing(errors, block.compactedFrom.length > 0, `graph block ${block.id || "<unknown>"} compactedFrom must not be empty`);
+      const compactedFrom = new Set(block.compactedFrom.filter((id) => id.length > 0));
+      if (compactedFrom.size !== block.compactedFrom.length) {
+        errors.push(`graph block ${block.id || "<unknown>"} compactedFrom must contain unique non-empty ids`);
+      }
+    }
     if (seen.has(block.id)) {
       errors.push(`graph block ids must be unique: ${block.id}`);
     }
@@ -747,23 +1079,63 @@ export const FIXTURE_PACK_GRAPH: PackGraphPayloadV1 = {
     {
       id: "ctx-feedback-scanner",
       source: "memory/2026-03-05-openclawbrain-vnext-roadmap.md",
-      text: "Unified feedback scanner runs against local session logs with Ollama qwen3.5:9b-q4_K_M and checkpointed replay.",
-      keywords: ["feedback", "scanner", "session", "logs", "ollama", "qwen", "checkpoint"],
-      priority: 5
+      text: "Always-on feedback scanner harvests human labels from local session logs with Ollama qwen3.5:9b-q4_K_M and checkpointed replay.",
+      keywords: ["feedback", "scanner", "always-on", "session", "logs", "ollama", "qwen", "checkpoint"],
+      priority: 5,
+      tokenCount: 16,
+      learning: {
+        role: "label_surface",
+        humanLabels: 2,
+        selfLabels: 0,
+        decayHalfLifeDays: 30,
+        hebbianPulse: 5
+      }
     },
     {
       id: "ctx-runtime-compile",
       source: "docs/openclawbrain-openclaw-rearchitecture-execution-plan.md",
-      text: "runtime_compile.v1 is the narrow OpenClaw to OpenClawBrain compile contract for promoted packs and manifest-gated routing.",
-      keywords: ["runtime", "compile", "contract", "pack", "manifest", "routing", "openclaw"],
-      priority: 4
+      text: "runtime_compile.v1 keeps fast boot defaults available while passive background learning hydrates promoted packs, explicit budgets, and manifest-gated routing.",
+      keywords: ["runtime", "compile", "fast", "boot", "passive", "background", "pack", "manifest", "routing", "openclaw", "budget"],
+      priority: 4,
+      tokenCount: 19,
+      learning: {
+        role: "boot_default",
+        humanLabels: 0,
+        selfLabels: 0,
+        decayHalfLifeDays: null,
+        hebbianPulse: 2
+      }
     },
     {
       id: "ctx-structural-ops",
       source: "docs/openclawbrain-openclaw-rearchitecture-plan.md",
-      text: "Structural graph operations like split, merge, prune, and connect remain first-class pack provenance.",
-      keywords: ["structural", "split", "merge", "prune", "connect", "graph", "memory"],
-      priority: 3
+      text: "Structural graph operations like split, merge, prune, and connect stay first-class beside Hebbian reinforcement and decay.",
+      keywords: ["structural", "split", "merge", "prune", "connect", "graph", "memory", "hebbian", "decay"],
+      priority: 3,
+      tokenCount: 15,
+      learning: {
+        role: "structural",
+        humanLabels: 0,
+        selfLabels: 0,
+        decayHalfLifeDays: 30,
+        hebbianPulse: 4
+      }
+    },
+    {
+      id: "ctx-context-compact",
+      source: "pack/pack-fixture:structural-compaction",
+      text: "Compacted pack context keeps fast boot defaults and passive background learning deterministic across human label, self label, and structural graph sources.",
+      keywords: ["pack", "structural", "compaction", "context", "deterministic", "fast", "boot", "background", "labels"],
+      priority: 4,
+      tokenCount: 18,
+      compactedFrom: ["ctx-feedback-scanner", "ctx-runtime-compile", "ctx-structural-ops"],
+      learning: {
+        role: "background_expectation",
+        humanLabels: 2,
+        selfLabels: 1,
+        decayHalfLifeDays: 30,
+        hebbianPulse: 4
+      }
     }
   ]
 };
@@ -773,11 +1145,13 @@ export const FIXTURE_PACK_VECTORS: PackVectorsPayloadV1 = {
   entries: [
     {
       blockId: "ctx-feedback-scanner",
-      keywords: ["feedback", "scanner", "ollama", "qwen", "checkpoint", "sessions"],
-      boost: 2,
+      keywords: ["feedback", "scanner", "human_label", "always_on", "ollama", "qwen", "checkpoint", "sessions"],
+      boost: 4,
       weights: {
         feedback: 5,
         scanner: 5,
+        human_label: 6,
+        always_on: 4,
         ollama: 4,
         qwen: 6,
         checkpoint: 3
@@ -785,28 +1159,47 @@ export const FIXTURE_PACK_VECTORS: PackVectorsPayloadV1 = {
     },
     {
       blockId: "ctx-runtime-compile",
-      keywords: ["runtime", "compile", "contract", "pack", "manifest", "routing", "openclaw"],
-      boost: 2,
+      keywords: ["runtime", "compile", "fast_boot", "passive_background", "pack", "manifest", "routing", "openclaw", "budget"],
+      boost: 3,
       weights: {
         runtime: 5,
         compile: 5,
-        contract: 4,
+        fast_boot: 5,
+        passive_background: 4,
         manifest: 4,
         pack: 3,
-        routing: 3
+        routing: 3,
+        budget: 3
       }
     },
     {
       blockId: "ctx-structural-ops",
-      keywords: ["structural", "split", "merge", "prune", "connect", "graph", "memory"],
-      boost: 1,
+      keywords: ["structural", "split", "merge", "prune", "connect", "graph", "memory", "hebbian", "decay"],
+      boost: 2,
       weights: {
         structural: 5,
         split: 4,
         merge: 4,
         prune: 3,
         connect: 3,
+        hebbian: 4,
+        decay: 3,
         memory: 2
+      }
+    },
+    {
+      blockId: "ctx-context-compact",
+      keywords: ["pack", "structural", "compaction", "context", "deterministic", "fast_boot", "passive_background", "human_label", "self_label"],
+      boost: 4,
+      weights: {
+        structural: 5,
+        compaction: 5,
+        context: 4,
+        deterministic: 4,
+        fast_boot: 4,
+        passive_background: 4,
+        human_label: 3,
+        self_label: 3
       }
     }
   ]
@@ -928,10 +1321,15 @@ export const FIXTURE_ARTIFACT_MANIFEST: ArtifactManifestV1 = {
     workspaceSnapshot: FIXTURE_WORKSPACE_METADATA.snapshotId,
     eventRange: FIXTURE_NORMALIZED_EVENT_EXPORT.range,
     eventExports: FIXTURE_NORMALIZED_EVENT_EXPORT.provenance,
+    learningSurface: FIXTURE_NORMALIZED_EVENT_EXPORT.provenance.learningSurface,
     builtAt: "2026-03-06T00:00:00.000Z",
     offlineArtifacts: ["feedback_events.v1", "runtime_compile.v1"]
   },
   graphDynamics: {
+    bootstrapping: {
+      fastBootDefaults: true,
+      passiveBackgroundLearning: true
+    },
     hebbian: {
       enabled: true,
       learningRate: 0.2
@@ -1011,25 +1409,56 @@ export const FIXTURE_RUNTIME_COMPILE_REQUEST: RuntimeCompileRequestV1 = {
   contract: CONTRACT_IDS.runtimeCompile,
   agentId: "agent-fixture",
   userMessage: "Compile scanner and manifest context for this turn.",
-  maxContextBlocks: 2,
+  maxContextBlocks: 3,
+  maxContextChars: 240,
   modeRequested: "heuristic",
-  runtimeHints: ["feedback scanner", "manifest"]
+  runtimeHints: ["feedback scanner", "manifest", "structural compaction"],
+  compactionMode: "native"
 };
+
+const FIXTURE_RUNTIME_COMPILE_SELECTED_CONTEXT: RuntimeContextBlockV1[] = [
+  {
+    id: "ctx-context-compact",
+    source: "pack/pack-fixture:structural-compaction",
+    text: "Pack-backed structural compaction keeps larger context windows deterministic across feedback, runtime compile, and structural graph sources.",
+    tokenCount: 16,
+    compactedFrom: ["ctx-feedback-scanner", "ctx-runtime-compile", "ctx-structural-ops"]
+  },
+  {
+    id: "ctx-feedback-scanner",
+    source: "memory/2026-03-05-openclawbrain-vnext-roadmap.md",
+    text: "Unified feedback scanner runs against local session logs with Ollama qwen3.5:9b-q4_K_M and checkpointed replay.",
+    tokenCount: 14
+  }
+];
 
 export const FIXTURE_RUNTIME_COMPILE_RESPONSE: RuntimeCompileResponseV1 = {
   contract: CONTRACT_IDS.runtimeCompile,
   packId: FIXTURE_ARTIFACT_MANIFEST.packId,
-  selectedContext: FIXTURE_PACK_GRAPH.blocks.slice(0, 2).map((block) => ({
-    id: block.id,
-    source: block.source,
-    text: block.text
-  })),
+  selectedContext: FIXTURE_RUNTIME_COMPILE_SELECTED_CONTEXT,
   diagnostics: {
     modeRequested: "heuristic",
     modeEffective: "learned",
     usedLearnedRouteFn: true,
     routerIdentity: FIXTURE_ROUTER_ARTIFACT.routerIdentity,
-    notes: ["selected_context_ids=ctx-feedback-scanner,ctx-runtime-compile", "router_strategy=keyword_overlap_v1"]
+    candidateCount: FIXTURE_PACK_GRAPH.blocks.length,
+    selectedCount: FIXTURE_RUNTIME_COMPILE_SELECTED_CONTEXT.length,
+    selectedCharCount: FIXTURE_RUNTIME_COMPILE_SELECTED_CONTEXT.reduce((sum, block) => sum + block.text.length, 0),
+    selectedTokenCount: FIXTURE_RUNTIME_COMPILE_SELECTED_CONTEXT.reduce((sum, block) => sum + (block.tokenCount ?? 0), 0),
+    selectionStrategy: "pack_keyword_overlap_v1",
+    selectionDigest: checksumJsonPayload({
+      packId: FIXTURE_ARTIFACT_MANIFEST.packId,
+      selectedContext: FIXTURE_RUNTIME_COMPILE_SELECTED_CONTEXT
+    }),
+    compactionMode: "native",
+    compactionApplied: true,
+    notes: [
+      "selected_context_ids=ctx-context-compact,ctx-feedback-scanner",
+      "selection_mode=token_match(feedback,scanner,manifest,structural,compaction)",
+      "selection_strategy=pack_keyword_overlap_v1",
+      "native_structural_compaction=applied",
+      "router_strategy=keyword_overlap_v1"
+    ]
   }
 };
 

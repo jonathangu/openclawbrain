@@ -4,52 +4,74 @@
   "title": "interaction_events.v1 event",
   "type": "object",
   "required": [
-    "contract_version",
-    "schema_version",
-    "event_id",
-    "event_kind",
-    "event_ts",
-    "agent_id",
-    "session_id",
-    "turn_id",
-    "request_id",
-    "pack_id",
-    "payload"
+    "contract",
+    "eventId",
+    "agentId",
+    "sessionId",
+    "channel",
+    "sequence",
+    "kind",
+    "createdAt",
+    "source"
   ],
   "properties": {
-    "contract_version": {
+    "contract": {
       "const": "interaction_events.v1"
     },
-    "schema_version": {
-      "const": 1
+    "eventId": {
+      "type": "string",
+      "minLength": 1
     },
-    "event_id": {
+    "agentId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sessionId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "channel": {
+      "type": "string",
+      "minLength": 1
+    },
+    "sequence": {
+      "type": "integer",
+      "minimum": 0
+    },
+    "kind": {
+      "enum": [
+        "memory_compiled",
+        "message_delivered",
+        "operator_override"
+      ]
+    },
+    "createdAt": {
+      "type": "string",
+      "format": "date-time"
+    },
+    "source": {
+      "type": "object",
+      "required": [
+        "runtimeOwner",
+        "stream"
+      ],
+      "properties": {
+        "runtimeOwner": {
+          "const": "openclaw"
+        },
+        "stream": {
+          "type": "string",
+          "minLength": 1
+        }
+      },
+      "additionalProperties": false
+    },
+    "packId": {
       "type": "string"
     },
-    "event_kind": {
+    "messageId": {
       "type": "string"
-    },
-    "event_ts": {
-      "type": "string"
-    },
-    "agent_id": {
-      "type": "string"
-    },
-    "session_id": {
-      "type": "string"
-    },
-    "turn_id": {
-      "type": "string"
-    },
-    "request_id": {
-      "type": "string"
-    },
-    "pack_id": {
-      "type": "string"
-    },
-    "payload": {
-      "type": "object"
     }
   },
-  "additionalProperties": true
+  "additionalProperties": false
 }

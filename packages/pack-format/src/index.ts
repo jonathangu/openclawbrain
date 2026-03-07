@@ -12,6 +12,7 @@ import {
   checksumJsonPayload,
   type PackGraphPayloadV1,
   type PackVectorsPayloadV1,
+  type RuntimeCompileTargetV1,
   type RouterArtifactV1,
   validateActivationPointers,
   validateArtifactManifest,
@@ -53,6 +54,7 @@ export interface ActivationSlotInspection {
   slot: ActivationPointerSlot;
   packId: string;
   routePolicy: ArtifactManifestV1["routePolicy"];
+  routerIdentity: string | null;
   workspaceSnapshot: string;
   workspaceRevision: string | null;
   eventRange: ActivationPointerRecordV1["eventRange"];
@@ -77,6 +79,10 @@ export interface ActivationInspection {
   previous: ActivationSlotInspection | null;
   promotion: ActivationOperationPreview;
   rollback: ActivationOperationPreview;
+}
+
+function compareIsoDates(left: string, right: string): number {
+  return Date.parse(left) - Date.parse(right);
 }
 
 function sha256File(filePath: string): string {
@@ -203,6 +209,23 @@ function buildActivationPointerRecord(
   };
 }
 
+function buildCompileTargetFromPack(pack: PackDescriptor): RuntimeCompileTargetV1 {
+  return {
+    packId: pack.manifest.packId,
+    routePolicy: pack.manifest.routePolicy,
+    routerIdentity: pack.manifest.runtimeAssets.router.identity,
+    workspaceSnapshot: pack.manifest.provenance.workspaceSnapshot,
+    workspaceRevision: pack.manifest.provenance.workspace.revision,
+    eventRange: {
+      start: pack.manifest.provenance.eventRange.start,
+      end: pack.manifest.provenance.eventRange.end,
+      count: pack.manifest.provenance.eventRange.count
+    },
+    eventExportDigest: pack.manifest.provenance.eventExports?.exportDigest ?? null,
+    builtAt: pack.manifest.provenance.builtAt
+  };
+}
+
 function ensurePackRecordMatchesManifest(
   record: ActivationPointerRecordV1,
   options: {
@@ -306,6 +329,7 @@ function inspectPointerRecord(
     slot,
     packId: record.packId,
     routePolicy: record.routePolicy,
+    routerIdentity: record.routerIdentity,
     workspaceSnapshot: record.workspaceSnapshot,
     workspaceRevision: record.workspaceRevision,
     eventRange: record.eventRange,
@@ -314,6 +338,32 @@ function inspectPointerRecord(
     activationReady: findings.length === 0,
     findings
   };
+}
+
+function promotionCoherenceFindings(active: RuntimeCompileTargetV1, candidate: RuntimeCompileTargetV1): string[] {
+  const findings: string[] = [];
+
+  if (compareIsoDates(candidate.builtAt, active.builtAt) < 0) {
+    findings.push("candidate pack builtAt must not precede active pack builtAt during promotion");
+  }
+  if (candidate.eventRange.end < active.eventRange.end) {
+    findings.push("candidate eventRange.end must be >= active eventRange.end during promotion");
+  }
+
+  return findings;
+}
+
+function rollbackCoherenceFindings(active: RuntimeCompileTargetV1, previous: RuntimeCompileTargetV1): string[] {
+  const findings: string[] = [];
+
+  if (compareIsoDates(previous.builtAt, active.builtAt) > 0) {
+    findings.push("previous pack builtAt must not follow active pack builtAt during rollback");
+  }
+  if (previous.eventRange.end > active.eventRange.end) {
+    findings.push("previous eventRange.end must be <= active eventRange.end during rollback");
+  }
+
+  return findings;
 }
 
 function duplicatePackIdError(slot: ActivationPointerSlot, record: ActivationPointerRecordV1): string {
@@ -353,6 +403,18 @@ function previewPromotionPointers(current: ActivationPointersV1, updatedAt: stri
     };
   }
 
+  if (activePack !== null) {
+    findings.push(...promotionCoherenceFindings(buildCompileTargetFromPack(activePack), buildCompileTargetFromPack(candidatePack)));
+  }
+
+  if (findings.length > 0) {
+    return {
+      allowed: false,
+      findings,
+      nextPointers: null
+    };
+  }
+
   return {
     allowed: true,
     findings: [],
@@ -368,6 +430,9 @@ function previewPromotionPointers(current: ActivationPointersV1, updatedAt: stri
 function previewRollbackPointers(current: ActivationPointersV1, updatedAt: string): ActivationOperationPreview {
   const findings: string[] = [];
 
+  if (current.active === null) {
+    findings.push("active pointer is required for rollback");
+  }
   if (current.previous === null) {
     findings.push("previous pointer is required for rollback");
   }
@@ -394,6 +459,18 @@ function previewRollbackPointers(current: ActivationPointersV1, updatedAt: strin
   }
 
   if (findings.length > 0 || previousPack === null) {
+    return {
+      allowed: false,
+      findings,
+      nextPointers: null
+    };
+  }
+
+  if (activePack !== null) {
+    findings.push(...rollbackCoherenceFindings(buildCompileTargetFromPack(activePack), buildCompileTargetFromPack(previousPack)));
+  }
+
+  if (findings.length > 0) {
     return {
       allowed: false,
       findings,
@@ -429,6 +506,39 @@ function assertPackIdAvailable(
   if (duplicateSlot !== undefined) {
     throw new Error(duplicatePackIdError(duplicateSlot, current[duplicateSlot] as ActivationPointerRecordV1));
   }
+}
+
+export function describePackCompileTarget(packOrRootDir: PackDescriptor | string): RuntimeCompileTargetV1 {
+  const pack = typeof packOrRootDir === "string" ? loadPack(packOrRootDir) : packOrRootDir;
+  return buildCompileTargetFromPack(pack);
+}
+
+export function loadPackFromActivation(
+  rootDir: string,
+  slot: ActivationPointerSlot = "active",
+  options: {
+    requireActivationReady?: boolean;
+  } = {}
+): PackDescriptor | null {
+  const record = loadActivationPointers(rootDir).pointers[slot];
+  if (record === null) {
+    return null;
+  }
+
+  return ensurePackRecordMatchesManifest(record, {
+    requireActivationReady: options.requireActivationReady === true
+  });
+}
+
+export function describeActivationTarget(
+  rootDir: string,
+  slot: ActivationPointerSlot = "active",
+  options: {
+    requireActivationReady?: boolean;
+  } = {}
+): RuntimeCompileTargetV1 | null {
+  const pack = loadPackFromActivation(rootDir, slot, options);
+  return pack === null ? null : buildCompileTargetFromPack(pack);
 }
 
 export function loadActivationPointers(rootDir: string): ActivationStateDescriptor {

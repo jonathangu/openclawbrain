@@ -1,36 +1,42 @@
 {
-  "contract_version": "runtime_compile.v1",
-  "request_id": "req_123",
-  "pack_id": "brainpack_2026_03_06_001",
-  "context_blocks": [
+  "contract": "runtime_compile.v1",
+  "packId": "pack-fixture",
+  "selectedContext": [
     {
-      "id": "ctx_1",
-      "kind": "memory",
-      "title": "Deploy failure summary",
-      "content": "The last deploy failed because the dist build was stale and missing plugin SDK files.",
-      "score": 0.93,
-      "sources": [
-        {
-          "kind": "memory",
-          "ref": "memory/2026-03-06#deploy-stale-dist"
-        }
+      "id": "ctx-context-compact",
+      "source": "pack/pack-fixture:structural-compaction",
+      "text": "Pack-backed structural compaction keeps larger context windows deterministic across feedback, runtime compile, and structural graph sources.",
+      "tokenCount": 16,
+      "compactedFrom": [
+        "ctx-feedback-scanner",
+        "ctx-runtime-compile",
+        "ctx-structural-ops"
       ]
+    },
+    {
+      "id": "ctx-feedback-scanner",
+      "source": "memory/2026-03-05-openclawbrain-vnext-roadmap.md",
+      "text": "Unified feedback scanner runs against local session logs with Ollama qwen3.5:9b-q4_K_M and checkpointed replay.",
+      "tokenCount": 14
     }
   ],
-  "suppressed_sources": [
-    "memory:duplicate:ctx_legacy"
-  ],
-  "routing": {
-    "mode_requested": "learned",
-    "mode_effective": "learned",
-    "used_learned_route_fn": true,
-    "route_model_id": "route_model_2026_03_06",
-    "decision_trace_ref": "route_decision_req_123"
-  },
   "diagnostics": {
-    "candidate_count": 24,
-    "selected_count": 1,
-    "compile_ms": 18.7,
-    "router": "learned_route_fn"
+    "modeRequested": "heuristic",
+    "modeEffective": "learned",
+    "usedLearnedRouteFn": true,
+    "routerIdentity": "pack-fixture:route_fn",
+    "candidateCount": 4,
+    "selectedCount": 2,
+    "selectedCharCount": 244,
+    "selectedTokenCount": 30,
+    "selectionStrategy": "pack_keyword_overlap_v1",
+    "selectionDigest": "sha256-runtime-compile-fixture",
+    "compactionMode": "native",
+    "compactionApplied": true,
+    "notes": [
+      "selected_context_ids=ctx-context-compact,ctx-feedback-scanner",
+      "selection_mode=token_match(feedback,scanner,manifest,structural,compaction)",
+      "selection_strategy=pack_keyword_overlap_v1"
+    ]
   }
 }

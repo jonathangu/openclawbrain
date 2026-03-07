@@ -18,9 +18,12 @@ import {
 import {
   activatePack,
   computePayloadChecksum,
+  describeActivationTarget,
+  describePackCompileTarget,
   inspectActivationState,
   loadActivationPointers,
   loadPack,
+  loadPackFromActivation,
   PACK_LAYOUT,
   promoteCandidatePack,
   rollbackActivePack,
@@ -35,6 +38,7 @@ function materializeTestPack(
     packId: string;
     learnedRouting: boolean;
     eventStart: number;
+    builtAt?: string;
   }
 ) {
   const graph = {
@@ -125,8 +129,10 @@ function materializeTestPack(
       : ["BAAI/bge-large-en-v1.5"],
     provenance: {
       ...FIXTURE_ARTIFACT_MANIFEST.provenance,
+      builtAt: options.builtAt ?? `2026-03-06T00:${String(options.eventStart).padStart(2, "0")}:30.000Z`,
       eventRange: eventExport.range,
-      eventExports: eventExport.provenance
+      eventExports: eventExport.provenance,
+      learningSurface: eventExport.provenance.learningSurface
     }
   };
 
@@ -150,10 +156,13 @@ test("pack descriptors keep packs immutable and addressable", (t) => {
   writePackFile(rootDir, PACK_LAYOUT.manifest, FIXTURE_ARTIFACT_MANIFEST);
 
   const descriptor = loadPack(rootDir);
+  const compileTarget = describePackCompileTarget(descriptor);
 
   assert.equal(descriptor.manifestPath, path.join(rootDir, "manifest.json"));
   assert.equal(descriptor.router?.routerIdentity, FIXTURE_ROUTER_ARTIFACT.routerIdentity);
   assert.equal(descriptor.graph.blocks[0]?.id, "ctx-feedback-scanner");
+  assert.equal(compileTarget.packId, FIXTURE_ARTIFACT_MANIFEST.packId);
+  assert.equal(compileTarget.workspaceSnapshot, FIXTURE_ARTIFACT_MANIFEST.provenance.workspaceSnapshot);
 });
 
 test("pack load rejects tampered graph payloads", (t) => {
@@ -242,6 +251,8 @@ test("promotion flips active and previous pointers while rollback restores the p
   rollbackActivePack(activationRoot, "2026-03-06T01:15:00.000Z");
 
   const rolledBack = loadActivationPointers(activationRoot).pointers;
+  const activeAfterRollback = loadPackFromActivation(activationRoot, "active", { requireActivationReady: true });
+  const activeTarget = describeActivationTarget(activationRoot, "active", { requireActivationReady: true });
   assert.equal(rolledBack.active?.packId, activePack.manifest.packId);
   assert.equal(rolledBack.candidate?.packId, candidatePack.manifest.packId);
   assert.equal(rolledBack.previous, null);
@@ -255,6 +266,8 @@ test("promotion flips active and previous pointers while rollback restores the p
     end: 21,
     count: 2
   });
+  assert.equal(activeAfterRollback?.manifest.packId, activePack.manifest.packId);
+  assert.equal(activeTarget?.packId, activePack.manifest.packId);
 });
 
 test("learned-routing packs with stub router metadata can be staged but not activated", (t) => {
@@ -304,4 +317,37 @@ test("learned-routing packs with stub router metadata can be staged but not acti
   assert.match(inspection.promotion.findings.join("; "), /runtimeAssets\.router\.kind=artifact/);
   assert.throws(() => promoteCandidatePack(activationRoot, "2026-03-06T02:10:00.000Z"), /Promotion blocked/);
   assert.throws(() => activatePack(activationRoot, candidateRoot, "2026-03-06T02:15:00.000Z"), /Pack is not activation-ready/);
+});
+
+test("promotion blocks stale candidate provenance from displacing a newer active pack", (t) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-"));
+  const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-"));
+  const candidateRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-candidate-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(activeRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(candidateRoot, { recursive: true, force: true }));
+
+  materializeTestPack(activeRoot, {
+    packId: "pack-active-newer",
+    learnedRouting: false,
+    eventStart: 20,
+    builtAt: "2026-03-06T04:00:00.000Z"
+  });
+  materializeTestPack(candidateRoot, {
+    packId: "pack-candidate-stale",
+    learnedRouting: true,
+    eventStart: 10,
+    builtAt: "2026-03-06T03:00:00.000Z"
+  });
+
+  activatePack(activationRoot, activeRoot, "2026-03-06T04:05:00.000Z");
+  stageCandidatePack(activationRoot, candidateRoot, "2026-03-06T04:10:00.000Z");
+
+  const inspection = inspectActivationState(activationRoot, "2026-03-06T04:11:00.000Z");
+
+  assert.equal(inspection.promotion.allowed, false);
+  assert.match(inspection.promotion.findings.join("; "), /candidate pack builtAt must not precede active pack builtAt/);
+  assert.match(inspection.promotion.findings.join("; "), /candidate eventRange\.end must be >= active eventRange\.end/);
+  assert.throws(() => promoteCandidatePack(activationRoot, "2026-03-06T04:15:00.000Z"), /Promotion blocked/);
 });

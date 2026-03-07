@@ -1,6 +1,6 @@
 # `@openclawbrain/provenance`
 
-Pack provenance builders for TypeScript-first OpenClawBrain workspace and event-export inputs.
+Pack provenance builders for always-on OpenClawBrain workspace and event-export inputs.
 
 ## Install
 
@@ -10,6 +10,6 @@ pnpm add @openclawbrain/provenance
 
 ## Includes
 
-- artifact provenance builders over workspace metadata and event-export provenance
-- provenance validation helpers for pack assembly
+- artifact provenance builders over workspace metadata, event-export provenance, and learning surfaces
+- default fast-boot/passive-background learning continuity when exports are absent
 - focused provenance surface for learner and activation flows

@@ -1,61 +1,92 @@
 {
-  "contract_version": "artifact_manifest.v1",
-  "pack_id": "brainpack_2026_03_06_001",
-  "agent_id": "main",
-  "build_id": "build_2026_03_06_001",
-  "parent_pack_id": "brainpack_2026_03_05_004",
-  "contract_versions": {
-    "runtime_compile": "runtime_compile.v1",
-    "interaction_events": "interaction_events.v1",
-    "feedback_events": "feedback_events.v1",
-    "artifact_manifest": "artifact_manifest.v1"
+  "contract": "artifact_manifest.v1",
+  "packId": "pack-fixture",
+  "immutable": true,
+  "routePolicy": "requires_learned_routing",
+  "runtimeAssets": {
+    "graphPath": "graph.json",
+    "vectorPath": "vectors.json",
+    "router": {
+      "kind": "artifact",
+      "identity": "pack-fixture:route_fn",
+      "artifactPath": "router/model.json"
+    }
   },
-  "pack_checksum": "sha256:pack123",
-  "compiler_fingerprint": {
-    "compiler": "openclawbrain-ts",
-    "version": "0.1.0",
-    "build_hash": "abc123def456"
+  "payloadChecksums": {
+    "graph": "sha256-graph-fixture",
+    "vector": "sha256-vector-fixture",
+    "router": "sha256-router-fixture"
   },
-  "model_fingerprint": {
-    "embedding_model": "BAAI/bge-large-en-v1.5",
-    "embedding_dimension": 1024,
-    "route_model_id": "route_model_2026_03_06"
+  "modelFingerprints": [
+    "BAAI/bge-large-en-v1.5",
+    "ollama:qwen3.5:9b-q4_K_M",
+    "pack-fixture:route_fn"
+  ],
+  "provenance": {
+    "workspace": {
+      "workspaceId": "workspace-fixture",
+      "snapshotId": "workspace-fixture@snapshot-2026-03-06",
+      "capturedAt": "2026-03-06T00:00:00.000Z",
+      "rootDir": "/workspace/openclawbrain",
+      "branch": "codex/20260306/ts-public-converge",
+      "revision": "fixture-rev-20260306",
+      "dirty": false,
+      "manifestDigest": "sha256-workspace-fixture",
+      "labels": [
+        "typescript-first",
+        "public-surface"
+      ],
+      "files": [
+        "README.md",
+        "packages/contracts/src/index.ts",
+        "packages/learner/src/index.ts"
+      ]
+    },
+    "workspaceSnapshot": "workspace-fixture@snapshot-2026-03-06",
+    "eventRange": {
+      "start": 101,
+      "end": 104,
+      "count": 4,
+      "firstEventId": "evt-interaction-fixture-1",
+      "lastEventId": "evt-feedback-fixture-2",
+      "firstCreatedAt": "2026-03-06T00:00:00.000Z",
+      "lastCreatedAt": "2026-03-06T00:03:00.000Z"
+    },
+    "eventExports": {
+      "runtimeOwner": "openclaw",
+      "sessionId": "session-fixture",
+      "channel": "whatsapp",
+      "interactionCount": 2,
+      "feedbackCount": 2,
+      "sourceStreams": [
+        "openclaw/runtime/whatsapp"
+      ],
+      "contracts": [
+        "interaction_events.v1",
+        "feedback_events.v1"
+      ],
+      "exportDigest": "sha256-event-export-fixture"
+    },
+    "builtAt": "2026-03-06T00:00:00.000Z",
+    "offlineArtifacts": [
+      "feedback_events.v1",
+      "runtime_compile.v1"
+    ]
   },
-  "runtime_compat": {
-    "openclaw_min": "0.10.0",
-    "openclawbrain_min": "0.1.0"
-  },
-  "route_policy": {
-    "mode_requested": "learned",
-    "route_model_id": "route_model_2026_03_06",
-    "decision_trace_refs_emitted": true
-  },
-  "serve_requirements": {
-    "requires_learned_routing": true,
-    "required_route_assets": [
-      "route-model.onnx",
-      "route-metadata.json"
-    ],
-    "embedding_model": "BAAI/bge-large-en-v1.5",
-    "embedding_dimension": 1024
-  },
-  "workspace_snapshot_id": "workspace_2026_03_06_001",
-  "event_range": {
-    "interaction_event_start_id": "evt_1",
-    "interaction_event_end_id": "evt_7",
-    "feedback_event_start_id": "feedback_evt_1",
-    "feedback_event_end_id": "feedback_evt_3"
-  },
-  "checksums": {
-    "graph.bin": "sha256:graph123",
-    "vectors.bin": "sha256:vectors123",
-    "route-model.onnx": "sha256:route123"
-  },
-  "eval_summary": {
-    "baseline_pack_id": "brainpack_2026_03_05_004",
-    "score_delta": 0.12,
-    "regressions": 0,
-    "status": "promotable"
-  },
-  "created_at": "2026-03-06T11:00:00Z"
+  "graphDynamics": {
+    "hebbian": {
+      "enabled": true,
+      "learningRate": 0.2
+    },
+    "decay": {
+      "enabled": true,
+      "halfLifeDays": 30
+    },
+    "structuralOps": {
+      "split": 1,
+      "merge": 0,
+      "prune": 2,
+      "connect": 3
+    }
+  }
 }

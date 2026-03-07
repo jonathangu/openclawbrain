@@ -1,21 +1,26 @@
 # OpenClawBrain
 
-OpenClawBrain is now a TypeScript-first `pnpm` workspace.
+OpenClawBrain is the TypeScript-first workspace for deterministic, pack-backed context products.
 
-The repo's forward surface ships the full public package lane for contracts, normalized event flows, artifact provenance, immutable pack artifacts, activation helpers, deterministic compilation, and learner-side candidate-pack assembly.
+The repo’s public story is now centered on four guarantees:
+
+- larger-context tolerance through explicit compile budgets and token-aware pack blocks
+- native structural compaction over pack-backed context instead of ad hoc prompt-side truncation
+- deterministic context selection from immutable packs, vectors, and manifest-gated routing artifacts
+- a clean repo/package boundary where the monorepo is private and the scoped TypeScript packages are the supported public surface
 
 ## Boundary
 
 The product boundary is intentionally narrow:
 
 - OpenClaw owns runtime orchestration, prompt assembly, diagnostics, sessions, and fail-open behavior.
-- OpenClawBrain owns contracts, event and export normalization, workspace and provenance metadata, immutable pack artifacts, activation helpers, deterministic compilation, and learner-side candidate-pack assembly from normalized OpenClaw event exports.
+- OpenClawBrain owns contracts, normalized event flows, workspace and provenance metadata, immutable pack artifacts, activation helpers, native structural compaction, deterministic compilation, and learner-side candidate-pack assembly.
 
 There is no Python daemon, socket, hook, or wheel-release lane in the supported surface of this repo.
 
-## Public surface
+## Public packages
 
-The supported public packages live under [`packages/`](packages):
+The supported packages live under `packages/`:
 
 - `@openclawbrain/contracts`
 - `@openclawbrain/events`
@@ -27,23 +32,21 @@ The supported public packages live under [`packages/`](packages):
 - `@openclawbrain/compiler`
 - `@openclawbrain/learner`
 
-- `@openclawbrain/contracts` defines canonical public payloads, validators, and checksum helpers.
-- `@openclawbrain/events` exposes normalized interaction and feedback event builders.
-- `@openclawbrain/event-export` derives deterministic event-export ranges and provenance.
-- `@openclawbrain/workspace-metadata` normalizes declared workspace snapshot metadata.
-- `@openclawbrain/provenance` builds pack provenance from workspace and event-export inputs.
-- `@openclawbrain/pack-format` handles immutable pack layout, validation, and activation-pointer helpers.
-- `@openclawbrain/activation` provides package-first activation inspection, staging, promotion, and rollback helpers.
-- `@openclawbrain/compiler` provides deterministic runtime compilation over a pack boundary.
-- `@openclawbrain/learner` assembles candidate packs from normalized event exports.
+## Context story
+
+- `@openclawbrain/contracts` defines `runtime_compile.v1`, immutable pack payloads, token-aware block metadata, and native compaction semantics.
+- `@openclawbrain/learner` emits deterministic candidate packs with structural-summary blocks that make large event exports serveable.
+- `@openclawbrain/pack-format` preserves the immutable graph/vector/router boundary that compilation reads from disk.
+- `@openclawbrain/compiler` performs deterministic pack-backed ranking, enforces learned-routing policy, and applies native structural compaction under character budgets.
+- `@openclawbrain/activation` promotes only activation-ready packs into active runtime slots.
 
 ## Package flow
 
 - `@openclawbrain/events` builds normalized interaction and feedback events.
 - `@openclawbrain/event-export` turns those events into deterministic export ranges and provenance.
-- `@openclawbrain/workspace-metadata` and `@openclawbrain/provenance` stamp artifact-side workspace and build provenance.
-- `@openclawbrain/learner` assembles deterministic candidate packs from event exports and workspace provenance.
-- `@openclawbrain/activation` stages, promotes, inspects, and rolls back pack activation state.
+- `@openclawbrain/workspace-metadata` and `@openclawbrain/provenance` stamp workspace and build provenance into immutable artifacts.
+- `@openclawbrain/learner` assembles candidate packs with structural summaries and deterministic ids.
+- `@openclawbrain/activation` stages, promotes, inspects, and rolls back activation state.
 - `@openclawbrain/compiler` consumes coherent pack artifacts for runtime-side context selection.
 
 ## Workspace
@@ -61,7 +64,7 @@ pnpm release:pack
 
 `pnpm release:pack` creates package tarballs in `.release/` for the full public package surface.
 
-For a full release-candidate pass, run:
+For a release-candidate pass, run:
 
 ```bash
 pnpm release:check
@@ -71,7 +74,11 @@ That command cleans the workspace, rebuilds it, reruns tests, and produces publi
 
 ## Docs
 
-- TypeScript-first workspace: [docs/typescript-first-convergence.md](docs/typescript-first-convergence.md)
-- Contracts overview: [contracts/README.md](contracts/README.md)
-- Release checklist: [docs/release.md](docs/release.md)
-- Public TypeScript packages: [packages/contracts/README.md](packages/contracts/README.md), [packages/events/README.md](packages/events/README.md), [packages/event-export/README.md](packages/event-export/README.md), [packages/workspace-metadata/README.md](packages/workspace-metadata/README.md), [packages/provenance/README.md](packages/provenance/README.md), [packages/pack-format/README.md](packages/pack-format/README.md), [packages/activation/README.md](packages/activation/README.md), [packages/compiler/README.md](packages/compiler/README.md), [packages/learner/README.md](packages/learner/README.md)
+- `docs/typescript-first-convergence.md`
+- `docs/contracts-v1.md`
+- `docs/release.md`
+- `contracts/README.md`
+- `packages/contracts/README.md`
+- `packages/compiler/README.md`
+- `packages/learner/README.md`
+- `packages/pack-format/README.md`
