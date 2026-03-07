@@ -65,6 +65,11 @@ function expectNormalizedEventExport(result: ReturnType<typeof runRuntimeTurn>["
   return result.normalizedEventExport;
 }
 
+function noteValue(notes: readonly string[], prefix: string): string | null {
+  const note = notes.find((entry) => entry.startsWith(prefix));
+  return note === undefined ? null : note.slice(prefix.length);
+}
+
 test("compileRuntimeContext consumes the active pack through activation pointers", (t) => {
   const rootDir = mkdtemp("openclawbrain-openclaw-compile-");
   const activePackRoot = path.join(rootDir, "active-pack");
@@ -442,6 +447,240 @@ test("runContinuousProductLoopTurn promotes fresher learned packs and later comp
   assert.equal(second.learning.promoted, true);
   assert.equal(second.state.activePackVersion, 3);
   assert.equal(second.state.packLineage.length, 3);
+});
+
+test("continuous product-loop soak proves repeated refresh movement or loud no-op diagnostics while compile stays on the hot path", (t) => {
+  const rootDir = mkdtemp("openclawbrain-openclaw-soak-");
+  const activePackRoot = path.join(rootDir, "active-pack");
+  const activationRoot = path.join(rootDir, "activation");
+  const loopRoot = path.join(rootDir, "product-loop");
+
+  t.after(() => rmSync(rootDir, { recursive: true, force: true }));
+
+  const { packId: seedPackId } = materializeActivePack(activePackRoot, activationRoot);
+  const compileSnapshots: Array<{
+    packId: string;
+    routerIdentity: string | null;
+    refreshStatus: string | null;
+    weightsChecksum: string | null;
+    freshnessChecksum: string | null;
+    noOpWarning: string | null;
+    notes: string[];
+  }> = [];
+
+  const snapshotActiveCompile = (message: string, runtimeHints: string[]) => {
+    const result = compileRuntimeContext({
+      activationRoot,
+      agentId: "runtime-soak",
+      message,
+      runtimeHints,
+      maxContextBlocks: 3
+    });
+
+    assert.equal(result.ok, true);
+    if (!result.ok) {
+      throw new Error("active compile snapshot should succeed");
+    }
+
+    const snapshot = {
+      packId: result.compileResponse.packId,
+      routerIdentity: result.compileResponse.diagnostics.routerIdentity,
+      refreshStatus: noteValue(result.compileResponse.diagnostics.notes, "router_refresh_status="),
+      weightsChecksum: noteValue(result.compileResponse.diagnostics.notes, "router_weights_checksum="),
+      freshnessChecksum: noteValue(result.compileResponse.diagnostics.notes, "router_freshness_checksum="),
+      noOpWarning: noteValue(result.compileResponse.diagnostics.notes, "router_noop_warning="),
+      notes: [...result.compileResponse.diagnostics.notes]
+    };
+
+    assert.match(snapshot.notes.join(";"), /brain_boundary=promoted_pack_compile_only/);
+    assert.equal(snapshot.routerIdentity, noteValue(snapshot.notes, "target_router_identity="));
+    compileSnapshots.push(snapshot);
+    return snapshot;
+  };
+
+  const first = runContinuousProductLoopTurn({
+    activationRoot,
+    loopRoot,
+    packLabel: "soak-loop",
+    workspace: {
+      workspaceId: "workspace-openclaw-soak",
+      snapshotId: "workspace-openclaw-soak@snapshot-1",
+      capturedAt: "2026-03-07T20:00:30.000Z",
+      rootDir: "/workspace/openclawbrain",
+      branch: "main",
+      revision: "runtime-soak-rev-1",
+      labels: ["openclaw", "runtime", "soak", "cycle-1"]
+    },
+    turn: {
+      agentId: "runtime-soak",
+      sessionId: "session-runtime-soak",
+      channel: "whatsapp",
+      userMessage: "Compile cycle one freshness evidence before promotion.",
+      runtimeHints: ["freshness", "promotion", "cycle-one"],
+      sequenceStart: 901,
+      compile: {
+        createdAt: "2026-03-07T20:00:00.000Z"
+      },
+      delivery: {
+        createdAt: "2026-03-07T20:01:00.000Z",
+        messageId: "msg-soak-1"
+      },
+      feedback: [
+        {
+          createdAt: "2026-03-07T20:02:00.000Z",
+          content: "Prefer the fresher learned route artifact for cycle one promotion evidence."
+        }
+      ]
+    },
+    candidateBuiltAt: "2026-03-07T20:03:00.000Z",
+    stageUpdatedAt: "2026-03-07T20:04:00.000Z",
+    promoteUpdatedAt: "2026-03-07T20:05:00.000Z"
+  });
+
+  assert.equal(first.compileActiveVersion, 1);
+  assert.equal(first.compileActivePackId, seedPackId);
+  assert.equal(first.turn.ok, true);
+  if (!first.turn.ok) {
+    throw new Error("cycle 1 compile should succeed");
+  }
+  assert.equal(first.turn.compileResponse.packId, seedPackId);
+  assert.equal(first.learning.materializationReason, "attach_bootstrap");
+  assert.equal(first.learning.promoted, true);
+  assert.equal(first.learning.promotionAllowed, true);
+  assert.notEqual(first.learning.candidatePack?.packId, first.turn.compileResponse.packId);
+
+  const afterFirst = snapshotActiveCompile("Compile the promoted pack after cycle one.", ["freshness", "promotion", "cycle-one"]);
+  assert.equal(afterFirst.packId, first.state.currentActivePack?.packId);
+  assert.equal(afterFirst.refreshStatus, "updated");
+  assert.equal(afterFirst.noOpWarning, null);
+
+  const second = runContinuousProductLoopTurn({
+    activationRoot,
+    loopRoot,
+    packLabel: "soak-loop",
+    workspace: {
+      workspaceId: "workspace-openclaw-soak",
+      snapshotId: "workspace-openclaw-soak@snapshot-2",
+      capturedAt: "2026-03-07T20:10:30.000Z",
+      rootDir: "/workspace/openclawbrain",
+      branch: "main",
+      revision: "runtime-soak-rev-2",
+      labels: ["openclaw", "runtime", "soak", "cycle-2"]
+    },
+    state: first.state,
+    turn: {
+      agentId: "runtime-soak",
+      sessionId: "session-runtime-soak",
+      channel: "whatsapp",
+      userMessage: "Compile cycle two freshness evidence after promotion.",
+      runtimeHints: ["freshness", "promotion", "cycle-two"],
+      sequenceStart: 904,
+      compile: {
+        createdAt: "2026-03-07T20:10:00.000Z"
+      },
+      delivery: {
+        createdAt: "2026-03-07T20:11:00.000Z",
+        messageId: "msg-soak-2"
+      },
+      feedback: [
+        {
+          createdAt: "2026-03-07T20:12:00.000Z",
+          content: "Prefer the newer cycle-two route update when promotion evidence mentions checksums."
+        }
+      ]
+    },
+    candidateBuiltAt: "2026-03-07T20:13:00.000Z",
+    stageUpdatedAt: "2026-03-07T20:14:00.000Z",
+    promoteUpdatedAt: "2026-03-07T20:15:00.000Z"
+  });
+
+  assert.equal(second.compileActiveVersion, 2);
+  assert.equal(second.compileActivePackId, afterFirst.packId);
+  assert.equal(second.turn.ok, true);
+  if (!second.turn.ok) {
+    throw new Error("cycle 2 compile should succeed");
+  }
+  assert.equal(second.turn.compileResponse.packId, afterFirst.packId);
+  assert.equal(second.learning.materializationReason, "fresh_live_events");
+  assert.equal(second.learning.promoted, true);
+  assert.equal(second.learning.promotionAllowed, true);
+  assert.notEqual(second.learning.candidatePack?.packId, second.turn.compileResponse.packId);
+
+  const afterSecond = snapshotActiveCompile("Compile the promoted pack after cycle two.", ["freshness", "promotion", "cycle-two"]);
+  assert.equal(afterSecond.packId, second.state.currentActivePack?.packId);
+  assert.equal(afterSecond.refreshStatus, "updated");
+  assert.equal(afterSecond.noOpWarning, null);
+  assert.notEqual(afterSecond.packId, afterFirst.packId);
+  assert.notEqual(afterSecond.routerIdentity, afterFirst.routerIdentity);
+  assert.notEqual(afterSecond.weightsChecksum, afterFirst.weightsChecksum);
+  assert.notEqual(afterSecond.freshnessChecksum, afterFirst.freshnessChecksum);
+
+  const third = runContinuousProductLoopTurn({
+    activationRoot,
+    loopRoot,
+    packLabel: "soak-loop",
+    workspace: {
+      workspaceId: "workspace-openclaw-soak",
+      snapshotId: "workspace-openclaw-soak@snapshot-3",
+      capturedAt: "2026-03-07T20:20:30.000Z",
+      rootDir: "/workspace/openclawbrain",
+      branch: "main",
+      revision: "runtime-soak-rev-3",
+      labels: ["openclaw", "runtime", "soak", "cycle-3"]
+    },
+    state: second.state,
+    turn: {
+      agentId: "runtime-soak",
+      sessionId: "session-runtime-soak",
+      channel: "whatsapp",
+      userMessage: "Compile cycle three freshness evidence after another learned refresh.",
+      runtimeHints: ["freshness", "promotion", "cycle-three"],
+      sequenceStart: 907,
+      compile: {
+        createdAt: "2026-03-07T20:20:00.000Z"
+      },
+      delivery: {
+        createdAt: "2026-03-07T20:21:00.000Z",
+        messageId: "msg-soak-3"
+      },
+      feedback: [
+        {
+          createdAt: "2026-03-07T20:22:00.000Z",
+          content: "Keep the newest cycle-three route evidence ahead of older promotion guidance."
+        }
+      ]
+    },
+    candidateBuiltAt: "2026-03-07T20:23:00.000Z",
+    stageUpdatedAt: "2026-03-07T20:24:00.000Z",
+    promoteUpdatedAt: "2026-03-07T20:25:00.000Z"
+  });
+
+  assert.equal(third.compileActiveVersion, 3);
+  assert.equal(third.compileActivePackId, afterSecond.packId);
+  assert.equal(third.turn.ok, true);
+  if (!third.turn.ok) {
+    throw new Error("cycle 3 compile should succeed");
+  }
+  assert.equal(third.turn.compileResponse.packId, afterSecond.packId);
+  assert.equal(third.learning.materializationReason, "fresh_live_events");
+  assert.equal(third.learning.promoted, true);
+  assert.equal(third.learning.promotionAllowed, true);
+  assert.notEqual(third.learning.candidatePack?.packId, third.turn.compileResponse.packId);
+
+  const afterThird = snapshotActiveCompile("Compile the promoted pack after cycle three.", ["freshness", "promotion", "cycle-three"]);
+  assert.equal(afterThird.packId, third.state.currentActivePack?.packId);
+  assert.equal(afterThird.refreshStatus, "updated");
+  assert.equal(afterThird.noOpWarning, null);
+  assert.notEqual(afterThird.packId, afterSecond.packId);
+  assert.notEqual(afterThird.routerIdentity, afterSecond.routerIdentity);
+  assert.notEqual(afterThird.weightsChecksum, afterSecond.weightsChecksum);
+  assert.notEqual(afterThird.freshnessChecksum, afterSecond.freshnessChecksum);
+  assert.equal(third.state.activePackVersion, 4);
+  assert.equal(third.state.packLineage.length, 4);
+  assert.deepEqual(
+    compileSnapshots.map((snapshot) => snapshot.refreshStatus),
+    ["updated", "updated", "updated"]
+  );
 });
 
 test("classifyFeedbackKind normalizes common operator cues", () => {
