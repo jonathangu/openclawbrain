@@ -50,9 +50,12 @@ This pass makes the repo/package story match the intended end state:
 ```bash
 pnpm install
 pnpm check
+pnpm lifecycle:smoke
 pnpm release:pack
 pnpm release:check
 ```
+
+`pnpm check` now includes the Phase-2 lifecycle proof after rebuilding the workspace, and `pnpm lifecycle:smoke` rebuilds first and then runs that proof directly against a temp workspace by chaining the public package APIs on disk from normalized events through activation and compilation.
 
 `pnpm release:pack` writes package tarballs to `.release/`, and `pnpm release:check` runs the clean release-candidate pass documented in `docs/release.md`.
 

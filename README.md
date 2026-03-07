@@ -9,6 +9,8 @@ The repo’s public story is now centered on four guarantees:
 - deterministic context selection from immutable packs, vectors, and manifest-gated routing artifacts
 - a clean repo/package boundary where the monorepo is private and the scoped TypeScript packages are the supported public surface
 
+Phase 2 is now explicit at the workspace root: the repo carries a deterministic lifecycle smoke that proves one true lifecycle across normalized events, event export, learner pack materialization, activation staging/promotion, and compiler runtime compilation against the promoted pack.
+
 ## Boundary
 
 The product boundary is intentionally narrow:
@@ -57,10 +59,19 @@ Requires Node 20+ and `pnpm` 10+.
 corepack enable
 pnpm install --frozen-lockfile
 pnpm check
+pnpm lifecycle:smoke
 pnpm release:pack
 ```
 
-`pnpm check` builds the workspace and runs the package tests.
+`pnpm check` builds the workspace, runs the package tests, and executes the root lifecycle smoke lane.
+
+`pnpm lifecycle:smoke` rebuilds the workspace and runs the Phase-2 lifecycle proof on a temp directory using the existing public package APIs on disk:
+
+- `@openclawbrain/events` creates normalized interaction and feedback events
+- `@openclawbrain/event-export` derives deterministic event export range and provenance
+- `@openclawbrain/learner` materializes active and candidate packs from those exports
+- `@openclawbrain/activation` stages and promotes the candidate pack into the active slot
+- `@openclawbrain/compiler` compiles runtime context from the promoted pack
 
 `pnpm release:pack` creates package tarballs in `.release/` for the full public package surface.
 
@@ -76,6 +87,7 @@ That command cleans the workspace, rebuilds it, reruns tests, and produces publi
 
 - `docs/typescript-first-convergence.md`
 - `docs/contracts-v1.md`
+- `scripts/lifecycle-smoke.mjs`
 - `docs/release.md`
 - `contracts/README.md`
 - `packages/contracts/README.md`
