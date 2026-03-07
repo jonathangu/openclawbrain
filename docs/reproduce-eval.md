@@ -41,8 +41,10 @@ This proves the operator-facing diagnostics surface for:
 
 - activation health
 - promotion freshness
+- rollback readiness and rollback lineage
 - supervision freshness by source
 - teacher freshness
+- async teacher-loop no-op detection
 - learned `route_fn` freshness/version
 - graph-dynamics freshness
 - learned `route_fn` evidence

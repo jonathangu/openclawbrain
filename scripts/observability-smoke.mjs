@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import assert from "node:assert/strict";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -12,6 +12,7 @@ import {
   describeActivationTarget,
   inspectActivationState,
   promoteCandidatePack,
+  rollbackActivePack,
   stageCandidatePack
 } from "../packages/activation/dist/src/index.js";
 import { compileRuntimeFromActivation, describeCompileFallbackUsage } from "../packages/compiler/dist/src/index.js";
@@ -22,7 +23,7 @@ import {
 } from "../packages/event-export/dist/src/index.js";
 import { createFeedbackEvent, createInteractionEvent, sortNormalizedEvents } from "../packages/events/dist/src/index.js";
 import { materializeCandidatePackFromNormalizedEventExport } from "../packages/learner/dist/src/index.js";
-import { compileRuntimeContext } from "../packages/openclaw/dist/src/index.js";
+import { compileRuntimeContext, createAsyncTeacherLiveLoop } from "../packages/openclaw/dist/src/index.js";
 
 function buildExport({
   agentId,
@@ -78,7 +79,43 @@ function buildExport({
   });
 }
 
-export function runObservabilityScenario(options = {}) {
+function summarizeSlot(slot) {
+  if (slot === null) {
+    return null;
+  }
+
+  return {
+    slot: slot.slot,
+    packId: slot.packId,
+    activationReady: slot.activationReady,
+    routePolicy: slot.routePolicy,
+    routerIdentity: slot.routerIdentity,
+    workspaceSnapshot: slot.workspaceSnapshot,
+    workspaceRevision: slot.workspaceRevision,
+    eventRange: slot.eventRange,
+    eventExportDigest: slot.eventExportDigest,
+    builtAt: slot.builtAt,
+    findings: slot.findings
+  };
+}
+
+function summarizeInspection(inspection) {
+  return {
+    active: summarizeSlot(inspection.active),
+    candidate: summarizeSlot(inspection.candidate),
+    previous: summarizeSlot(inspection.previous),
+    promotion: {
+      allowed: inspection.promotion.allowed,
+      findings: inspection.promotion.findings
+    },
+    rollback: {
+      allowed: inspection.rollback.allowed,
+      findings: inspection.rollback.findings
+    }
+  };
+}
+
+export async function runObservabilityScenario(options = {}) {
   const logPrefix = options.logPrefix ?? "observability:smoke";
   const emitSteps = options.emitSteps ?? true;
   const logStep = (message) => {
@@ -196,10 +233,19 @@ export function runObservabilityScenario(options = {}) {
     const stagedInspection = inspectActivationState(activationRoot, "2026-03-06T06:26:00.000Z");
     assert.equal(stagedInspection.active?.activationReady, true);
     assert.equal(stagedInspection.candidate?.activationReady, true);
+    assert.equal(stagedInspection.previous, null);
     assert.deepEqual(stagedInspection.active?.findings ?? [], []);
     assert.deepEqual(stagedInspection.candidate?.findings ?? [], []);
     assert.equal(stagedInspection.promotion.allowed, true);
     assert.deepEqual(stagedInspection.promotion.findings, []);
+    assert.equal(stagedInspection.rollback.allowed, false);
+
+    const stagedActiveTarget = describeActivationTarget(activationRoot, "active", { requireActivationReady: true });
+    const stagedCandidateTarget = describeActivationTarget(activationRoot, "candidate", { requireActivationReady: true });
+    assert.notEqual(stagedActiveTarget, null);
+    assert.notEqual(stagedCandidateTarget, null);
+    assert.equal(stagedActiveTarget?.packId, activePack.manifest.packId);
+    assert.equal(stagedCandidateTarget?.packId, candidatePack.manifest.packId);
 
     const stagedObservability = describeActivationObservability(activationRoot, "active", {
       updatedAt: "2026-03-06T06:26:00.000Z"
@@ -223,6 +269,7 @@ export function runObservabilityScenario(options = {}) {
     const promotedInspection = inspectActivationState(activationRoot, "2026-03-06T06:31:00.000Z");
     assert.equal(promotedInspection.active?.packId, candidatePack.manifest.packId);
     assert.equal(promotedInspection.previous?.packId, activePack.manifest.packId);
+    assert.equal(promotedInspection.candidate, null);
     assert.equal(promotedInspection.rollback.allowed, true);
     assert.deepEqual(promotedInspection.rollback.findings, []);
 
@@ -337,6 +384,42 @@ export function runObservabilityScenario(options = {}) {
       notes: ["selection_mode=priority_fallback", "selection_tiers=priority_fallback_only"]
     });
 
+    logStep("Detecting async-teacher no-op and duplicate export handling.");
+
+    const teacherLoop = createAsyncTeacherLiveLoop({
+      packLabel: "observability-teacher-loop",
+      workspace: {
+        workspaceId: "workspace-observability",
+        snapshotId: "workspace-observability@snapshot-candidate",
+        capturedAt: "2026-03-06T06:18:00.000Z",
+        rootDir: "/workspace/observability",
+        branch: "main",
+        revision: "observability-candidate-rev",
+        labels: ["observability", "teacher-loop"]
+      },
+      learnedRouting: true,
+      staleAfterMs: 600_000,
+      liveSliceSize: 2,
+      backfillSliceSize: 2
+    });
+
+    const acceptedExport = teacherLoop.enqueueNormalizedEventExport(candidateExport, {
+      observedAt: "2026-03-06T06:18:30.000Z"
+    });
+    const duplicateExport = teacherLoop.enqueueNormalizedEventExport(candidateExport, {
+      observedAt: "2026-03-06T06:18:45.000Z"
+    });
+    const teacherLoopSnapshot = await teacherLoop.flush();
+
+    assert.equal(acceptedExport.accepted, true);
+    assert.equal(acceptedExport.reason, null);
+    assert.equal(duplicateExport.accepted, false);
+    assert.equal(duplicateExport.reason, "duplicate_export");
+    assert.match(duplicateExport.notes.join(";"), /teacher_noop=duplicate_export/);
+    assert.equal(teacherLoopSnapshot.teacher.latestFreshness, "fresh");
+    assert.equal(teacherLoopSnapshot.teacher.artifactCount > 0, true);
+    assert.equal(teacherLoopSnapshot.learner.lastMaterialization?.candidate.summary.packId.length > 0, true);
+
     logStep("Proving the same diagnostics and hard failure through the OpenClaw serve path.");
 
     const served = compileRuntimeContext({
@@ -359,7 +442,10 @@ export function runObservabilityScenario(options = {}) {
       new RegExp(`target_router_identity=${candidatePack.router?.routerIdentity}`)
     );
 
-    rmSync(path.join(candidatePackRoot, "router", "model.json"), { force: true });
+    const candidateRouterPath = path.join(candidatePackRoot, "router", "model.json");
+    const originalCandidateRouterPayload = readFileSync(candidateRouterPath, "utf8");
+
+    rmSync(candidateRouterPath, { force: true });
 
     const hardFailure = compileRuntimeContext({
       activationRoot,
@@ -377,12 +463,77 @@ export function runObservabilityScenario(options = {}) {
     assert.match(hardFailure.error, /Learned-routing hotpath hard requirement violated/);
     assert.match(hardFailure.error, /router payload not found/);
 
+    writeFileSync(candidateRouterPath, originalCandidateRouterPayload);
+
+    logStep("Rolling back the promoted pack and proving active/candidate/previous state.");
+
+    rollbackActivePack(activationRoot, "2026-03-06T06:32:00.000Z");
+
+    const rolledBackInspection = inspectActivationState(activationRoot, "2026-03-06T06:33:00.000Z");
+    assert.equal(rolledBackInspection.active?.packId, activePack.manifest.packId);
+    assert.equal(rolledBackInspection.candidate?.packId, candidatePack.manifest.packId);
+    assert.equal(rolledBackInspection.previous, null);
+    assert.equal(rolledBackInspection.promotion.allowed, true);
+    assert.equal(rolledBackInspection.rollback.allowed, false);
+    assert.match(rolledBackInspection.rollback.findings.join(";"), /previous pointer is required for rollback/);
+
+    const rolledBackActiveTarget = describeActivationTarget(activationRoot, "active", { requireActivationReady: true });
+    const rolledBackCandidateTarget = describeActivationTarget(activationRoot, "candidate", { requireActivationReady: true });
+    const rolledBackObservability = describeActivationObservability(activationRoot, "active", {
+      requireActivationReady: true,
+      updatedAt: "2026-03-06T06:33:00.000Z"
+    });
+    assert.notEqual(rolledBackActiveTarget, null);
+    assert.notEqual(rolledBackCandidateTarget, null);
+    assert.equal(rolledBackActiveTarget?.packId, activePack.manifest.packId);
+    assert.equal(rolledBackCandidateTarget?.packId, candidatePack.manifest.packId);
+    assert.equal(rolledBackObservability.promotionFreshness.activePackId, activePack.manifest.packId);
+    assert.equal(rolledBackObservability.promotionFreshness.candidatePackId, candidatePack.manifest.packId);
+    assert.equal(rolledBackObservability.promotionFreshness.previousPackId, null);
+
     const report = {
+      activationSlots: {
+        staged: summarizeInspection(stagedInspection),
+        promoted: summarizeInspection(promotedInspection),
+        rolledBack: summarizeInspection(rolledBackInspection)
+      },
+      freshnessTargets: {
+        stagedActive: stagedActiveTarget,
+        stagedCandidate: stagedCandidateTarget,
+        promotedActive: activeTarget,
+        rolledBackActive: rolledBackActiveTarget,
+        rolledBackCandidate: rolledBackCandidateTarget
+      },
       supervisionFreshnessBySource: candidateEventObservability.supervisionFreshnessBySource,
       teacherFreshness: candidateEventObservability.teacherFreshness,
       learnedRouteFnFreshness: promotedObservability.learnedRouteFn,
       graphDynamicsFreshness: promotedObservability.graphDynamics,
       promotionFreshness: stagedObservability.promotionFreshness,
+      noOpDetection: {
+        acceptedExport,
+        duplicateExport,
+        snapshot: {
+          queue: teacherLoopSnapshot.queue,
+          latestFreshness: teacherLoopSnapshot.diagnostics.latestFreshness,
+          lastNoOpReason: teacherLoopSnapshot.diagnostics.lastNoOpReason,
+          notes: teacherLoopSnapshot.diagnostics.notes,
+          lastMaterializedPackId: teacherLoopSnapshot.learner.lastMaterialization?.candidate.summary.packId ?? null
+        }
+      },
+      rollback: {
+        before: {
+          allowed: promotedInspection.rollback.allowed,
+          findings: promotedInspection.rollback.findings,
+          activePackId: promotedInspection.active?.packId ?? null,
+          previousPackId: promotedInspection.previous?.packId ?? null
+        },
+        after: {
+          activePackId: rolledBackInspection.active?.packId ?? null,
+          candidatePackId: rolledBackInspection.candidate?.packId ?? null,
+          previousPackId: rolledBackInspection.previous?.packId ?? null,
+          findings: rolledBackInspection.rollback.findings
+        }
+      },
       fallbackUsage,
       servePath: {
         selectionDigest: served.compileResponse.diagnostics.selectionDigest,
@@ -405,7 +556,7 @@ export function runObservabilityScenario(options = {}) {
 
 if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
   try {
-    runObservabilityScenario();
+    await runObservabilityScenario();
   } catch (error) {
     console.error("[observability:smoke] failed");
     console.error(error instanceof Error ? error.stack ?? error.message : String(error));

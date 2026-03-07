@@ -3,7 +3,7 @@
 import { runObservabilityScenario } from "./observability-smoke.mjs";
 
 try {
-  runObservabilityScenario({
+  await runObservabilityScenario({
     logPrefix: "observability:report"
   });
 } catch (error) {
