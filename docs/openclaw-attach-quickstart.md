@@ -92,4 +92,4 @@ pnpm observability:smoke
 Those proofs cover normalized events, deterministic export, learner pack materialization, activation promotion, promoted-pack compilation, and operator diagnostics over health, freshness, learned-route evidence, and fallback.
 
 The detailed diagnostics contract lives in [`docs/operator-observability.md`](docs/operator-observability.md).
-The repo-wide convergence statement lives in [`docs/learning-first-convergence.md`](docs/learning-first-convergence.md).
+The repo-wide learning-first contract lives in [`docs/learning-first-convergence.md`](docs/learning-first-convergence.md).

@@ -130,7 +130,7 @@ function main() {
         snapshotId: "workspace-phase-2@snapshot-active",
         capturedAt: "2026-03-06T04:45:00.000Z",
         rootDir: "/workspace/phase-2",
-        branch: "codex/20260306/ts-public-converge",
+        branch: "main",
         revision: "phase-2-active-rev",
         labels: ["phase-2", "lifecycle", "active"]
       },
@@ -150,7 +150,7 @@ function main() {
         snapshotId: "workspace-phase-2@snapshot-candidate",
         capturedAt: "2026-03-06T04:55:00.000Z",
         rootDir: "/workspace/phase-2",
-        branch: "codex/20260306/ts-public-converge",
+        branch: "main",
         revision: "phase-2-candidate-rev",
         labels: ["phase-2", "lifecycle", "candidate"]
       },

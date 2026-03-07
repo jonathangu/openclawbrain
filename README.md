@@ -11,7 +11,7 @@ The promoted pack is the only supported learning/serve boundary in this repo.
 - compiler serves only from the promoted pack
 - if a pack requires learned routing, compile must use the pack's learned `route_fn`, surface `routerIdentity`, and report `usedLearnedRouteFn=true`
 
-That is the public story this repo now documents, tests, and publishes.
+This repo documents, tests, and publishes that boundary.
 
 ## Learning-first attach posture
 
@@ -54,9 +54,7 @@ The workspace root carries two deterministic proof lanes:
 - OpenClaw owns runtime orchestration, prompt assembly, diagnostics, sessions, and guarded fail-open behavior.
 - OpenClawBrain owns contracts, normalized event flows, workspace and provenance metadata, immutable pack artifacts, activation helpers, native structural compaction, deterministic compilation, and learner-side candidate-pack assembly.
 
-This GitHub repo is public. The supported public integration surface is narrower: the published `@openclawbrain/*` packages plus the versioned fixtures under `contracts/`. Workspace layout, root scripts, smoke lanes, and release plumbing are public proof-and-build machinery, not a second semver-stable API.
-
-There is no supported Python daemon, socket, hook, or wheel-release lane in that public integration surface.
+This GitHub repo is public. The supported integration surface is narrower: the published `@openclawbrain/*` packages plus the versioned fixtures under `contracts/`. Workspace layout, root scripts, smoke lanes, and release plumbing are proof-and-build machinery, not a second semver-stable API.
 
 ## Proof boundary
 
@@ -64,7 +62,6 @@ Those lanes prove the package/mechanism boundary implemented here today.
 
 - This repo directly proves the TypeScript package surface, lifecycle mechanics, and operator-observability APIs.
 - The broader comparative benchmark families live in the separate public proof repo: `https://github.com/jonathangu/brain-ground-zero`.
-- The deleted `docs/brains-dashboard/` route was a documentation placeholder, not a shipped dashboard application.
 
 ## Public packages
 

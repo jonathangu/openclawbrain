@@ -1407,7 +1407,7 @@ export const FIXTURE_WORKSPACE_METADATA: WorkspaceMetadataV1 = {
   snapshotId: "workspace-fixture@snapshot-2026-03-06",
   capturedAt: "2026-03-06T00:00:00.000Z",
   rootDir: "/workspace/openclawbrain",
-  branch: "codex/20260306/ts-public-converge",
+  branch: "main",
   revision: "fixture-rev-20260306",
   dirty: false,
   manifestDigest: "sha256-workspace-fixture",

@@ -1,6 +1,6 @@
-# Learning-First Convergence
+# Learning-First Contract
 
-This is the repo-wide convergence statement for OpenClawBrain's supported public shape today.
+This document defines OpenClawBrain's supported public shape.
 
 ## Top invariant
 
@@ -14,9 +14,9 @@ The promoted pack is the only supported learning/serve boundary.
 
 The public package surface, fixtures, smoke lanes, and docs should all describe that same path.
 
-## What converges here
+## End-to-end flow
 
-The end state is one coherent learning-first flow:
+The supported shape is one coherent learning-first flow:
 
 1. normalize interactions and feedback into stable contracts
 2. derive deterministic event-export ranges and provenance
@@ -56,7 +56,7 @@ Versioned schemas and fixtures under `contracts/` are part of the same supported
 
 Everything else in the repo is public documentation, proof machinery, or release plumbing for that surface.
 
-## Repo rules implied by convergence
+## Repo rules implied by this contract
 
 - docs should describe the promoted-pack learning path, not stale side stories
 - proofs should run through public packages on disk, not hidden hooks
@@ -66,7 +66,7 @@ Everything else in the repo is public documentation, proof machinery, or release
 
 ## Proof lanes
 
-The workspace already proves this convergence through two deterministic lanes:
+The workspace proves this contract through two deterministic lanes:
 
 - `pnpm lifecycle:smoke` validates the end-to-end path from normalized events to promoted-pack compilation
 - `pnpm observability:smoke` validates activation health, freshness, learned `route_fn` evidence, and explicit fallback diagnostics
