@@ -60,6 +60,38 @@ export interface PackBlockLearningSignalsV1 {
   decayHalfLifeDays: number | null;
   hebbianPulse: number;
 }
+
+export type PackGraphEdgeKindV1 = "split" | "merge" | "connect" | "feedback";
+
+export interface PackGraphEdgeV1 {
+  targetBlockId: string;
+  kind: PackGraphEdgeKindV1;
+  weight: number;
+}
+
+export interface PackBlockStateV1 {
+  strength: number;
+  freshness: number;
+  traversalBias: number;
+  evidenceCount: number;
+  splitDepth: number;
+  mergedFromCount: number;
+  pruned: boolean;
+}
+
+export interface PackGraphEvolutionV1 {
+  builtAt: string;
+  hebbianApplied: boolean;
+  decayApplied: boolean;
+  structuralOps: {
+    split: number;
+    merge: number;
+    prune: number;
+    connect: number;
+  };
+  prunedBlockIds: string[];
+  strongestBlockId: string | null;
+}
 export type ContextCompactionMode = "none" | "native";
 
 export interface RuntimeCompileRequestV1 {
@@ -86,6 +118,8 @@ export interface PackContextBlockRecordV1 extends RuntimeContextBlockV1 {
   keywords: string[];
   priority: number;
   learning: PackBlockLearningSignalsV1;
+  state?: PackBlockStateV1;
+  edges?: PackGraphEdgeV1[];
 }
 
 export interface RuntimeCompileDiagnosticsV1 {
@@ -302,6 +336,7 @@ export interface PackVectorsPayloadV1 {
 export interface PackGraphPayloadV1 {
   packId: string;
   blocks: PackContextBlockRecordV1[];
+  evolution?: PackGraphEvolutionV1;
 }
 
 export interface RouterArtifactV1 {
@@ -586,6 +621,66 @@ function validateRuntimeContextBlock(value: RuntimeContextBlockV1, label: string
     }
   }
 
+  return errors;
+}
+
+function validatePackGraphEdge(value: PackGraphEdgeV1, label: string): string[] {
+  const errors: string[] = [];
+  pushWhenMissing(errors, value.targetBlockId.length > 0, `${label} targetBlockId is required`);
+  pushWhenMissing(
+    errors,
+    value.kind === "split" || value.kind === "merge" || value.kind === "connect" || value.kind === "feedback",
+    `${label} kind must be split, merge, connect, or feedback`
+  );
+  pushWhenMissing(errors, Number.isFinite(value.weight) && value.weight >= 0, `${label} weight must be non-negative`);
+  return errors;
+}
+
+function validatePackBlockState(value: PackBlockStateV1, label: string): string[] {
+  const errors: string[] = [];
+  pushWhenMissing(errors, Number.isFinite(value.strength) && value.strength >= 0, `${label} strength must be non-negative`);
+  pushWhenMissing(
+    errors,
+    Number.isFinite(value.freshness) && value.freshness >= 0 && value.freshness <= 1,
+    `${label} freshness must be between 0 and 1`
+  );
+  pushWhenMissing(
+    errors,
+    Number.isFinite(value.traversalBias) && value.traversalBias >= 0,
+    `${label} traversalBias must be non-negative`
+  );
+  pushWhenMissing(
+    errors,
+    Number.isInteger(value.evidenceCount) && value.evidenceCount >= 0,
+    `${label} evidenceCount must be a non-negative integer`
+  );
+  pushWhenMissing(
+    errors,
+    Number.isInteger(value.splitDepth) && value.splitDepth >= 0,
+    `${label} splitDepth must be a non-negative integer`
+  );
+  pushWhenMissing(
+    errors,
+    Number.isInteger(value.mergedFromCount) && value.mergedFromCount >= 0,
+    `${label} mergedFromCount must be a non-negative integer`
+  );
+  return errors;
+}
+
+function validatePackGraphEvolution(value: PackGraphEvolutionV1): string[] {
+  const errors: string[] = [];
+  pushWhenMissing(errors, isIsoDate(value.builtAt), "graph evolution builtAt must be an ISO timestamp");
+  pushWhenMissing(errors, Number.isInteger(value.structuralOps.split) && value.structuralOps.split >= 0, "graph evolution split count must be non-negative");
+  pushWhenMissing(errors, Number.isInteger(value.structuralOps.merge) && value.structuralOps.merge >= 0, "graph evolution merge count must be non-negative");
+  pushWhenMissing(errors, Number.isInteger(value.structuralOps.prune) && value.structuralOps.prune >= 0, "graph evolution prune count must be non-negative");
+  pushWhenMissing(errors, Number.isInteger(value.structuralOps.connect) && value.structuralOps.connect >= 0, "graph evolution connect count must be non-negative");
+  const prunedIds = new Set(value.prunedBlockIds.filter((blockId) => blockId.length > 0));
+  if (prunedIds.size !== value.prunedBlockIds.length) {
+    errors.push("graph evolution prunedBlockIds must contain unique non-empty ids");
+  }
+  if (value.strongestBlockId !== null && value.strongestBlockId.length === 0) {
+    errors.push("graph evolution strongestBlockId must be null or a non-empty id");
+  }
   return errors;
 }
 
@@ -1139,10 +1234,28 @@ export function validatePackGraphPayload(value: PackGraphPayloadV1, expectedPack
         errors.push(`graph block ${block.id || "<unknown>"} compactedFrom must contain unique non-empty ids`);
       }
     }
+    if (block.state !== undefined) {
+      errors.push(...validatePackBlockState(block.state, `graph block ${block.id || "<unknown>"} state`));
+    }
+    if (block.edges !== undefined) {
+      const seenEdges = new Set<string>();
+      for (const [index, edge] of block.edges.entries()) {
+        errors.push(...validatePackGraphEdge(edge, `graph block ${block.id || "<unknown>"} edge[${index}]`));
+        const edgeIdentity = `${edge.kind}:${edge.targetBlockId}`;
+        if (seenEdges.has(edgeIdentity)) {
+          errors.push(`graph block ${block.id || "<unknown>"} must not repeat edge ${edgeIdentity}`);
+        }
+        seenEdges.add(edgeIdentity);
+      }
+    }
     if (seen.has(block.id)) {
       errors.push(`graph block ids must be unique: ${block.id}`);
     }
     seen.add(block.id);
+  }
+
+  if (value.evolution !== undefined) {
+    errors.push(...validatePackGraphEvolution(value.evolution));
   }
 
   return errors;

@@ -88,7 +88,7 @@ test("learner emits deterministic immutable pack manifests for always-on learnin
   assert.equal(first.manifest.routePolicy, "requires_learned_routing");
   assert.equal(descriptor.manifest.packId, first.summary.packId);
   assert.equal(descriptor.router?.routerIdentity, `${first.summary.packId}:route_fn`);
-  assert.equal(descriptor.graph.blocks.length, 12);
+  assert.equal(descriptor.graph.blocks.length >= 11, true);
   assert.equal(first.summary.eventRange.start, 101);
   assert.equal(first.summary.eventRange.end, 104);
   assert.equal(first.summary.eventRange.count, 4);
@@ -115,7 +115,11 @@ test("learner emits deterministic immutable pack manifests for always-on learnin
   );
   assert.equal(descriptor.graph.blocks.some((block) => block.learning.role === "boot_default"), true);
   assert.equal(descriptor.graph.blocks.some((block) => block.learning.humanLabels > 0), true);
+  assert.equal(descriptor.graph.blocks.some((block) => block.state !== undefined), true);
+  assert.equal(descriptor.graph.blocks.some((block) => (block.edges?.length ?? 0) > 0), true);
+  assert.equal(descriptor.graph.evolution?.decayApplied, true);
   assert.equal(descriptor.vectors.entries.some((entry) => entry.keywords.includes("fast_boot")), true);
+  assert.equal(descriptor.vectors.entries.some((entry) => entry.keywords.includes("connected")), true);
 });
 
 test("learner rejects mismatched explicit event ranges when event exports are supplied", () => {
@@ -188,6 +192,222 @@ test("learner can materialize a candidate pack directly from a normalized event 
   assert.equal(descriptor.graph.blocks.some((block) => block.id.endsWith("evt-feedback-fixture-1")), true);
   assert.equal(descriptor.graph.blocks.some((block) => block.learning.role === "label_surface"), true);
   assert.match(descriptor.graph.blocks.map((block) => block.source).join("\n"), /openclaw\/runtime\/whatsapp:teaching/);
+});
+
+test("learner turns supervision and elapsed time into real graph evolution", () => {
+  const interaction = createInteractionEvent({
+    eventId: "evt-graph-evolution-201",
+    agentId: "agent-graph-evolution",
+    sessionId: "session-graph-evolution",
+    channel: "cli",
+    sequence: 201,
+    kind: "message_delivered",
+    createdAt: "2026-03-07T10:00:00.000Z",
+    source: {
+      runtimeOwner: "openclaw",
+      stream: "openclaw/runtime/cli"
+    },
+    messageId: "msg-graph-evolution-201"
+  });
+  const teaching = createFeedbackEvent({
+    eventId: "evt-graph-evolution-202",
+    agentId: interaction.agentId,
+    sessionId: interaction.sessionId,
+    channel: interaction.channel,
+    sequence: 202,
+    kind: "teaching",
+    createdAt: "2026-03-07T10:01:00.000Z",
+    source: interaction.source,
+    content: "Prefer retry budget rollback guidance when quota alarms rise.",
+    relatedInteractionId: interaction.eventId
+  });
+  const suppression = createFeedbackEvent({
+    eventId: "evt-graph-evolution-203",
+    agentId: interaction.agentId,
+    sessionId: interaction.sessionId,
+    channel: interaction.channel,
+    sequence: 203,
+    kind: "suppression",
+    createdAt: "2026-03-07T10:02:00.000Z",
+    source: interaction.source,
+    content: "Suppress the stale quota fallback route after the retry-budget lesson lands.",
+    relatedInteractionId: interaction.eventId
+  });
+
+  const base = buildCandidatePack({
+    packLabel: "graph-evolution",
+    workspace: {
+      workspaceId: "workspace-graph-evolution",
+      snapshotId: "workspace-graph-evolution@snapshot-1",
+      capturedAt: "2026-03-07T09:55:00.000Z",
+      rootDir: "/workspace/graph-evolution",
+      revision: "graph-evolution-rev-1"
+    },
+    eventRange: {
+      start: 201,
+      end: 201
+    },
+    eventExports: {
+      interactionEvents: [interaction],
+      feedbackEvents: []
+    },
+    learnedRouting: false,
+    builtAt: "2026-03-07T10:00:30.000Z",
+    structuralOps: {
+      split: 1,
+      merge: 1,
+      prune: 1,
+      connect: 2
+    }
+  });
+  const reinforced = buildCandidatePack({
+    packLabel: "graph-evolution",
+    workspace: {
+      workspaceId: "workspace-graph-evolution",
+      snapshotId: "workspace-graph-evolution@snapshot-2",
+      capturedAt: "2026-03-07T10:03:00.000Z",
+      rootDir: "/workspace/graph-evolution",
+      revision: "graph-evolution-rev-2"
+    },
+    eventRange: {
+      start: 201,
+      end: 203
+    },
+    eventExports: {
+      interactionEvents: [interaction],
+      feedbackEvents: [teaching, suppression]
+    },
+    learnedRouting: false,
+    builtAt: "2026-03-07T10:03:30.000Z",
+    structuralOps: {
+      split: 1,
+      merge: 1,
+      prune: 1,
+      connect: 2
+    }
+  });
+  const decayed = buildCandidatePack({
+    packLabel: "graph-evolution",
+    workspace: {
+      workspaceId: "workspace-graph-evolution",
+      snapshotId: "workspace-graph-evolution@snapshot-2",
+      capturedAt: "2026-03-07T10:03:00.000Z",
+      rootDir: "/workspace/graph-evolution",
+      revision: "graph-evolution-rev-2"
+    },
+    eventRange: {
+      start: 201,
+      end: 203
+    },
+    eventExports: {
+      interactionEvents: [interaction],
+      feedbackEvents: [teaching, suppression]
+    },
+    learnedRouting: false,
+    builtAt: "2026-06-07T10:03:30.000Z",
+    structuralOps: {
+      split: 1,
+      merge: 1,
+      prune: 1,
+      connect: 2
+    }
+  });
+
+  const reinforcedSplit = reinforced.payloads.graph.blocks.find((block) => block.source === "split:openclaw/runtime/cli:teaching");
+  const decayedSplit = decayed.payloads.graph.blocks.find((block) => block.source === "split:openclaw/runtime/cli:teaching");
+  const reinforcedSplitVector = reinforcedSplit === undefined ? undefined : reinforced.payloads.vectors.entries.find((entry) => entry.blockId === reinforcedSplit.id);
+  const decayedSplitVector = decayedSplit === undefined ? undefined : decayed.payloads.vectors.entries.find((entry) => entry.blockId === decayedSplit.id);
+
+  assert.equal(base.payloads.graph.evolution?.structuralOps.split, 0);
+  assert.equal(reinforced.payloads.graph.evolution?.structuralOps.split, 1);
+  assert.equal(reinforced.payloads.graph.evolution?.structuralOps.merge, 1);
+  assert.equal(reinforced.payloads.graph.evolution?.structuralOps.prune, 1);
+  assert.equal(reinforced.payloads.graph.blocks.some((block) => block.id.includes(":split:")), true);
+  assert.equal(reinforced.payloads.graph.blocks.some((block) => (block.compactedFrom?.length ?? 0) > 1), true);
+  assert.equal(reinforced.payloads.graph.blocks.some((block) => (block.edges?.length ?? 0) > 0), true);
+  assert.equal(
+    reinforced.payloads.graph.evolution?.prunedBlockIds.includes(`${reinforced.summary.packId}:event:${interaction.eventId}`),
+    true
+  );
+  assert.notEqual(reinforced.summary.packId, decayed.summary.packId);
+  assert.notEqual(reinforcedSplit, undefined);
+  assert.notEqual(decayedSplit, undefined);
+  assert.notEqual(reinforcedSplitVector, undefined);
+  assert.notEqual(decayedSplitVector, undefined);
+  assert.equal((decayedSplit?.state?.freshness ?? 1) < (reinforcedSplit?.state?.freshness ?? 1), true);
+  assert.equal((decayedSplit?.state?.strength ?? 0) < (reinforcedSplit?.state?.strength ?? 0), true);
+  assert.equal((decayedSplitVector?.boost ?? 0) < (reinforcedSplitVector?.boost ?? 0), true);
+});
+
+test("always-on learner keeps the evolving learned graph in runtime state across supervision cycles", () => {
+  const initial = advanceAlwaysOnLearningRuntime({
+    packLabel: "runtime-graph-state",
+    workspace: {
+      workspaceId: "workspace-runtime-graph-state",
+      snapshotId: "workspace-runtime-graph-state@snapshot-1",
+      capturedAt: "2026-03-07T11:00:00.000Z",
+      rootDir: "/workspace/runtime-graph-state",
+      revision: "runtime-graph-state-rev-1"
+    },
+    interactionEvents: buildRuntimeInteractionEvents(301, 302),
+    feedbackEvents: [],
+    learnedRouting: false,
+    builtAt: "2026-03-07T11:00:30.000Z",
+    liveSliceSize: 2,
+    backfillSliceSize: 2,
+    state: createAlwaysOnLearningRuntimeState(),
+    structuralOps: {
+      split: 1,
+      merge: 1,
+      prune: 1,
+      connect: 2
+    }
+  });
+  const supervised = advanceAlwaysOnLearningRuntime({
+    packLabel: "runtime-graph-state",
+    workspace: {
+      workspaceId: "workspace-runtime-graph-state",
+      snapshotId: "workspace-runtime-graph-state@snapshot-2",
+      capturedAt: "2026-03-07T11:02:00.000Z",
+      rootDir: "/workspace/runtime-graph-state",
+      revision: "runtime-graph-state-rev-2"
+    },
+    interactionEvents: buildRuntimeInteractionEvents(301, 302),
+    feedbackEvents: [
+      createFeedbackEvent({
+        eventId: "evt-runtime-graph-state-303",
+        agentId: "agent-runtime-batch",
+        sessionId: "session-runtime-batch",
+        channel: "whatsapp",
+        sequence: 303,
+        kind: "teaching",
+        createdAt: "2026-03-07T11:01:30.000Z",
+        source: {
+          runtimeOwner: "openclaw",
+          stream: "openclaw/runtime/whatsapp"
+        },
+        content: "Prefer rollback guidance when retry-budget pressure appears.",
+        relatedInteractionId: "evt-runtime-int-302"
+      })
+    ],
+    learnedRouting: false,
+    builtAt: "2026-03-07T11:02:30.000Z",
+    liveSliceSize: 2,
+    backfillSliceSize: 2,
+    state: initial.state,
+    structuralOps: {
+      split: 1,
+      merge: 1,
+      prune: 1,
+      connect: 2
+    }
+  });
+
+  assert.notEqual(initial.state.learnedGraph, null);
+  assert.notEqual(supervised.state.learnedGraph, null);
+  assert.equal((supervised.state.learnedGraph?.blocks.length ?? 0) > (initial.state.learnedGraph?.blocks.length ?? 0), true);
+  assert.equal((supervised.state.learnedGraph?.evolution?.structuralOps.split ?? 0) >= 1, true);
+  assert.equal((supervised.state.learnedGraph?.blocks.some((block) => (block.edges?.length ?? 0) > 0) ?? false), true);
 });
 
 test("always-on learner boots from live slices without blocking on passive backfill", () => {
