@@ -115,7 +115,7 @@ ollama serve
 Pull the default local vNext model:
 
 ```bash
-ollama pull qwen3.5:35b-a3b
+ollama pull qwen3.5:9b-q4_K_M
 ```
 
 Use Ollama for replay fast-learning:
@@ -129,6 +129,8 @@ Use Ollama for async teacher labeling:
 ```bash
 openclawbrain async-route-pg --state ./brain/state.json --teacher ollama
 ```
+
+Override to any other Ollama model at runtime with `--llm-model`, `--teacher-model`, `OPENCLAWBRAIN_OLLAMA_MODEL`, or `OLLAMA_MODEL`; the 9B tag is only the default fallback.
 
 Single-writer lock:
 - Writer commands lock `state.json` via `state.json.lock` to prevent clobbered writes.
@@ -156,7 +158,7 @@ Reference implementation: `examples/ops/query_and_learn.py`
 from examples.ops.callbacks import make_embed_fn, make_llm_fn
 
 embed_fn = make_embed_fn("openai")  # or "local" for offline mode
-llm_fn = make_llm_fn("qwen3.5:35b-a3b")  # optional, for local Ollama-assisted merge
+llm_fn = make_llm_fn("qwen3.5:9b-q4_K_M")  # optional, for local Ollama-assisted merge
 ```
 
 Use this when building your query handler:

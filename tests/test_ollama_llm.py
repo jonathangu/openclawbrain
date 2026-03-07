@@ -44,3 +44,13 @@ def test_resolve_ollama_timeout_seconds(monkeypatch) -> None:
 
     monkeypatch.setenv("OPENCLAWBRAIN_OLLAMA_TIMEOUT_SECONDS", "not-a-number")
     assert module._resolve_ollama_timeout_seconds() == 600
+
+
+def test_resolve_ollama_model_uses_qwen35_9b_default_when_no_env(monkeypatch) -> None:
+    """Default Ollama fallback stays on the shipped Qwen 3.5 9B tag."""
+    module = importlib.import_module("openclawbrain.ollama_llm")
+
+    monkeypatch.delenv("OPENCLAWBRAIN_OLLAMA_MODEL", raising=False)
+    monkeypatch.delenv("OLLAMA_MODEL", raising=False)
+
+    assert module._resolve_ollama_model(None) == "qwen3.5:9b-q4_K_M"

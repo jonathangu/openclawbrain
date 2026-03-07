@@ -196,7 +196,7 @@ openclawbrain async-route-pg \
   --max-queries 200 \
   --sample-rate 0.1 \
   --teacher ollama \
-  --teacher-model qwen3.5:35b-a3b \
+  --teacher-model qwen3.5:9b-q4_K_M \
   --json
 ```
 
@@ -209,7 +209,7 @@ openclawbrain async-route-pg \
   --max-queries 200 \
   --sample-rate 0.1 \
   --teacher ollama \
-  --teacher-model qwen3.5:35b-a3b \
+  --teacher-model qwen3.5:9b-q4_K_M \
   --apply \
   --json
 ```

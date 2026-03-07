@@ -33,7 +33,7 @@ ollama serve
 Pull the recommended model:
 
 ```bash
-ollama pull qwen3.5:35b-a3b
+ollama pull qwen3.5:9b-q4_K_M
 ```
 
 Run replay with Ollama:
@@ -45,7 +45,7 @@ openclawbrain replay --state ./brain/state.json --sessions ./sessions/ --mode fu
 Optional: run async-route-pg with Ollama:
 
 ```bash
-openclawbrain async-route-pg --state ./brain/state.json --teacher ollama --teacher-model qwen3.5:35b-a3b
+openclawbrain async-route-pg --state ./brain/state.json --teacher ollama --teacher-model qwen3.5:9b-q4_K_M
 ```
 
 ## One-command orchestration
@@ -79,7 +79,7 @@ openclawbrain build-all
 Use a smaller fast-learning model with explicit worker parallelism:
 
 ```bash
-openclawbrain build-all --llm ollama --llm-model qwen3.5:35b-a3b --workers 8 --embed-model BAAI/bge-large-en-v1.5
+openclawbrain build-all --llm ollama --llm-model qwen3.5:9b-q4_K_M --workers 8 --embed-model BAAI/bge-large-en-v1.5
 ```
 
 For faster iteration, use prioritized and bounded replay when rebuilding large histories:
@@ -87,7 +87,7 @@ For faster iteration, use prioritized and bounded replay when rebuilding large h
 ```bash
 openclawbrain build-all \\
   --llm ollama \\
-  --llm-model qwen3.5:35b-a3b \\
+  --llm-model qwen3.5:9b-q4_K_M \\
   --workers 8 \\
   --replay-priority tool \\
   --replay-sample-rate 0.25 \\
@@ -107,7 +107,7 @@ Minimum enablement:
 ```bash
 ENABLE_ASYNC_TEACHER=1 \
 TEACHER_PROVIDER=ollama \
-TEACHER_MODEL=qwen3.5:35b-a3b \
+TEACHER_MODEL=qwen3.5:9b-q4_K_M \
 examples/ops/default_experience.sh
 ```
 
@@ -130,9 +130,11 @@ If present, the script sources:
 ~/.openclaw/credentials/env/openclawbrain.env
 ```
 
-This is the place to set `OPENCLAWBRAIN_DEFAULT_LLM=ollama` and `OPENCLAWBRAIN_OLLAMA_MODEL=qwen3.5:35b-a3b` so replay auto-selection stays local. The script does not print secrets.
+This is the place to set `OPENCLAWBRAIN_DEFAULT_LLM=ollama` and `OPENCLAWBRAIN_OLLAMA_MODEL=qwen3.5:9b-q4_K_M` so replay auto-selection stays local. The script does not print secrets.
 
 When `openclawbrain replay --llm auto` is used (the default), LLM selection is:
+
+The shipped 9B tag is only the default fallback; operators can still upgrade to any other Ollama model with `--llm-model`, `--teacher-model`, `OPENCLAWBRAIN_OLLAMA_MODEL`, or `OLLAMA_MODEL`.
 
 - If `OPENCLAWBRAIN_DEFAULT_LLM` is set to `none`, `openai`, `ollama`, or `openrouter`, that choice is honored.
 - Otherwise, prefer Ollama when `OPENCLAWBRAIN_OLLAMA_MODEL` or `OLLAMA_MODEL` is set.

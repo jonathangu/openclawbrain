@@ -14,7 +14,7 @@ It is designed to stay aligned with the actual product story:
 
 ## Production alignment vs simulation constraints
 
-- Production-default operator stack: local BGE-large embeddings plus a local async teacher such as Ollama `qwen3.5:35b`.
+- Production-default operator stack: local BGE-large embeddings plus a local async teacher such as Ollama `qwen3.5:9b-q4_K_M`.
 - This harness is deterministic on purpose, so it uses `HashEmbedder(dim=64)` and synthetic teacher labels instead of live model calls.
 - That makes it reproducible in CI while still exercising the same runtime routing and route-model training surfaces used by the product.
 

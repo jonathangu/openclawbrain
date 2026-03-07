@@ -129,7 +129,7 @@ Notes:
 
 - This harness is deterministic and CI-friendly; it uses a small hash embedder instead of live model calls.
 - `per_query_matrix.*` is the reviewable scenario-level evidence slice: it records which node IDs reached prompt context for each held-out query and mode.
-- The production default stack remains local BGE-large embeddings and a local async teacher such as Ollama `qwen3.5:35b`.
+- The production default stack remains local BGE-large embeddings and a local async teacher such as Ollama `qwen3.5:9b-q4_K_M`.
 
 ## External benchmarks (optional, dataset downloads required)
 

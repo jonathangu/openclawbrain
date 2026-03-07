@@ -1058,7 +1058,7 @@ def _render_report(
             "",
             "- It does not prove live OpenClaw end-task success in production sessions.",
             "- It does not cover scanner/harvester label quality directly; the harness fixes graph priors and isolates teacher-driven runtime routing.",
-            "- It uses deterministic synthetic vectors for CI reproducibility; production defaults remain local BGE-large embeddings plus a local async teacher such as Ollama `qwen3.5:35b`.",
+            "- It uses deterministic synthetic vectors for CI reproducibility; production defaults remain local BGE-large embeddings plus a local async teacher such as Ollama `qwen3.5:9b-q4_K_M`.",
         ]
     )
     return "\n".join(lines)
