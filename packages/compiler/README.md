@@ -46,4 +46,8 @@ const { target, response } = compileRuntimeFromActivation(
 );
 
 console.log(target.packId, response.packId);
+console.log(response.diagnostics.selectionDigest);
+console.log(response.diagnostics.notes);
 ```
+
+`response.diagnostics.notes` explicitly tells operators whether selection used token matching or deterministic priority fallback.

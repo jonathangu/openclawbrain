@@ -15,8 +15,9 @@
 
 - `pnpm clean` removes generated `dist/` outputs and `.release/` tarballs.
 - `pnpm build` builds the public workspace packages.
-- `pnpm check` typechecks and builds the workspace, runs the package test suites, and executes the root lifecycle smoke lane.
+- `pnpm check` typechecks and builds the workspace, runs the package test suites, and executes the root lifecycle and observability smoke lanes.
 - `pnpm lifecycle:smoke` runs the standalone end-to-end lifecycle proof from normalized events through activation promotion and runtime compilation.
+- `pnpm observability:smoke` runs the operator-facing proof for activation health, promotion readiness, freshness, and priority fallback diagnostics.
 - `pnpm release:pack` creates package tarballs in `.release/` for all public workspace packages.
 - `pnpm release:check` performs a clean rebuild, reruns tests, and generates release tarballs.
 - `pnpm release:publish:dry-run` exercises the publish path without uploading packages.

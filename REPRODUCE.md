@@ -15,6 +15,7 @@ cd <repo>
 pnpm install --frozen-lockfile
 pnpm check
 pnpm lifecycle:smoke
+pnpm observability:smoke
 pnpm release:pack
 ```
 
@@ -43,6 +44,7 @@ Published package names:
 - Node test runs for each package
 - Package fixture validation across the published workspace
 - Root Phase-2 lifecycle smoke across events, event export, learner pack materialization, activation promotion, and compiler runtime compilation
+- Root observability smoke across activation health, promotion readiness, freshness inspection, and deterministic priority fallback diagnostics
 
 ## Direct lifecycle proof
 
@@ -51,6 +53,14 @@ pnpm lifecycle:smoke
 ```
 
 That command rebuilds the workspace and then runs the same end-to-end lifecycle proof as `pnpm check`: it creates normalized events, exports them, materializes active/candidate packs, stages/promotes activation state, and compiles against the promoted pack inside a temp directory.
+
+## Direct observability proof
+
+```bash
+pnpm observability:smoke
+```
+
+That command rebuilds the workspace and proves the operator-facing diagnostics surface on a temp directory: it inspects activation health, verifies promotion and rollback readiness, reads the active freshness target, and compiles a request that must surface deterministic priority fallback in compile diagnostics.
 
 ## What `pnpm release:pack` covers
 

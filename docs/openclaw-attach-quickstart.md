@@ -10,6 +10,13 @@ The goal is **fast time-to-first-value**:
 - get useful context gains immediately
 - let deeper learning continue in the background without blocking runtime
 
+The first attach must follow four rules:
+
+- **no full history replay gate before first value**
+- **live events are learned first once attach is on**
+- **passive background learning stays on continuously**
+- **diagnostics prove health, promotions, freshness, and fallback**
+
 ## What the attach path must guarantee
 
 1. **Fast startup wins over full replay**
@@ -30,6 +37,31 @@ The goal is **fast time-to-first-value**:
 
 5. **Fail open, never block messaging**
    - If the brain is cold, missing, or mid-refresh, OpenClaw must still answer with its standard runtime path.
+
+6. **Diagnostics are part of the product contract**
+   - Operators must be able to prove activation health, promotion safety, freshness, and fallback from public APIs.
+   - The repo-level proof lane for that contract is `pnpm observability:smoke`.
+
+## Install and prove
+
+This repo is the TypeScript package surface and proof harness for the eventual single-path OpenClaw attach/install flow.
+
+```bash
+corepack enable
+pnpm install --frozen-lockfile
+pnpm check
+pnpm lifecycle:smoke
+pnpm observability:smoke
+```
+
+`pnpm lifecycle:smoke` proves that the attach path can materialize, stage, promote, and compile from a useful pack immediately.
+
+`pnpm observability:smoke` proves that the operator diagnostics surface can answer four questions without private runtime plumbing:
+
+- is the active slot healthy now?
+- can the candidate be promoted safely now?
+- what exact snapshot/export/build is runtime serving now?
+- did runtime serve token-matched context or deterministic fallback now?
 
 ## Operator expectation
 
@@ -57,6 +89,7 @@ Once attached, the default lifecycle should be:
 5. **Continuously harvest ongoing events** from the live OpenClaw stream.
 6. **Continuously materialize better candidate packs** from the growing event/export surface.
 7. **Promote safely** when activation-ready artifacts are available.
+8. **Inspect continuously** so health, freshness, and fallback stay visible to operators.
 
 ## Non-goals for first setup
 
@@ -71,22 +104,28 @@ The first setup should **not** require:
 
 Today this repository provides the TypeScript-first contracts, normalized events, event export, learner, activation, and compiler surface that the attach flow will use.
 
-The concrete proof path in the repo today is the lifecycle smoke:
+The concrete proof path in the repo today is the lifecycle plus observability smoke:
 
 ```bash
 pnpm check
 pnpm lifecycle:smoke
+pnpm observability:smoke
 ```
 
-That smoke proves the core artifact lifecycle:
+Those proofs cover:
 
 - normalized events
 - deterministic event export
 - learner pack materialization
 - activation staging/promotion
 - runtime compilation from the promoted pack
+- activation health and promotion readiness inspection
+- freshness inspection over workspace snapshot, event range, export digest, and build time
+- deterministic fallback diagnostics when token matching does not hit
 
 The eventual single-path OpenClaw attach/install flow should preserve the same invariants while optimizing for immediate usefulness and always-on passive learning.
+
+The detailed diagnostics contract lives in [`docs/operator-observability.md`](docs/operator-observability.md).
 
 ## Required doc promise
 
@@ -97,3 +136,4 @@ Public docs and install guidance should keep repeating these points clearly:
 - **passive history learning should stay on continuously**
 - **real-time event scanning and harvesting should stay on continuously**
 - **fresh live events should be learned first while old history catches up**
+- **diagnostics should prove health, promotions, freshness, and fallback**

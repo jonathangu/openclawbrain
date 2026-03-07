@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { execFileSync } from "node:child_process";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -17,6 +17,9 @@ const offenders = [];
 
 for (const relativePath of trackedFiles) {
   const absolutePath = path.join(rootDir, relativePath);
+  if (!existsSync(absolutePath)) {
+    continue;
+  }
   const source = readFileSync(absolutePath);
 
   if (source.includes(0)) {

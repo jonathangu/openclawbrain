@@ -2,14 +2,18 @@
 
 OpenClawBrain is the TypeScript-first workspace for deterministic, pack-backed context products.
 
-The repo’s public story is now centered on four guarantees:
+The repo’s public story is now centered on five guarantees:
 
 - larger-context tolerance through explicit compile budgets and token-aware pack blocks
 - native structural compaction over pack-backed context instead of ad hoc prompt-side truncation
 - deterministic context selection from immutable packs, vectors, and manifest-gated routing artifacts
+- operator-visible diagnostics that prove activation health, promotion safety, freshness, and runtime fallback
 - a clean repo/package boundary where the monorepo is private and the scoped TypeScript packages are the supported public surface
 
-Phase 2 is now explicit at the workspace root: the repo carries a deterministic lifecycle smoke that proves one true lifecycle across normalized events, event export, learner pack materialization, activation staging/promotion, and compiler runtime compilation against the promoted pack.
+The workspace root now carries two deterministic proof lanes:
+
+- `pnpm lifecycle:smoke` proves one true lifecycle across normalized events, event export, learner pack materialization, activation staging/promotion, and compiler runtime compilation against the promoted pack.
+- `pnpm observability:smoke` proves the operator-facing diagnostics story for health, promotions, freshness, and priority fallback.
 
 ## OpenClaw attach quickstart
 
@@ -19,12 +23,13 @@ That means:
 
 - do not block initial activation on a full history scan
 - bootstrap from current workspace state and recent normalized events
+- learn fresh live events first while older history catches up later
 - let OpenClaw compile useful context immediately after attach
-- keep passive historical replay/backfill running in the background
+- keep passive historical replay/backfill running in the background at all times
 - keep real-time event scanning and supervision harvest running continuously
 - keep OpenClaw as the sole runtime owner and fail open when brain artifacts are unavailable
 
-The operator-facing setup contract lives in [`docs/openclaw-attach-quickstart.md`](docs/openclaw-attach-quickstart.md).
+The operator-facing setup contract lives in [`docs/openclaw-attach-quickstart.md`](docs/openclaw-attach-quickstart.md), and the diagnostics contract lives in [`docs/operator-observability.md`](docs/operator-observability.md).
 
 ## Boundary
 
@@ -75,10 +80,11 @@ corepack enable
 pnpm install --frozen-lockfile
 pnpm check
 pnpm lifecycle:smoke
+pnpm observability:smoke
 pnpm release:pack
 ```
 
-`pnpm check` builds the workspace, runs the package tests, and executes the root lifecycle smoke lane.
+`pnpm check` builds the workspace, runs the package tests, and executes the root lifecycle and observability smoke lanes.
 
 `pnpm lifecycle:smoke` rebuilds the workspace and runs the Phase-2 lifecycle proof on a temp directory using the existing public package APIs on disk:
 
@@ -87,6 +93,12 @@ pnpm release:pack
 - `@openclawbrain/learner` materializes active and candidate packs from those exports
 - `@openclawbrain/activation` stages and promotes the candidate pack into the active slot
 - `@openclawbrain/compiler` compiles runtime context from the promoted pack
+
+`pnpm observability:smoke` rebuilds the workspace and proves the operator-facing diagnostics contract on a temp directory using the same public APIs on disk:
+
+- `@openclawbrain/activation.inspectActivationState()` proves active/candidate health and promotion or rollback readiness
+- `@openclawbrain/activation.describeActivationTarget()` proves freshness through pack id, workspace snapshot, event range, export digest, and built-at timestamps
+- `@openclawbrain/compiler.compileRuntimeFromActivation()` proves runtime fallback and selection state through stable compile diagnostics
 
 `pnpm release:pack` creates package tarballs in `.release/` for the full public package surface.
 
@@ -101,9 +113,10 @@ That command cleans the workspace, rebuilds it, reruns tests, and produces publi
 ## Docs
 
 - `docs/openclaw-attach-quickstart.md`
-- `docs/typescript-first-convergence.md`
+- `docs/operator-observability.md`
 - `docs/contracts-v1.md`
 - `scripts/lifecycle-smoke.mjs`
+- `scripts/observability-smoke.mjs`
 - `docs/release.md`
 - `contracts/README.md`
 - `packages/contracts/README.md`

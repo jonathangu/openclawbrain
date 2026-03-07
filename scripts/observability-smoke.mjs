@@ -1,0 +1,267 @@
+#!/usr/bin/env node
+
+import assert from "node:assert/strict";
+import { mkdtempSync, rmSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+
+import {
+  activatePack,
+  describeActivationTarget,
+  inspectActivationState,
+  promoteCandidatePack,
+  stageCandidatePack
+} from "../packages/activation/dist/src/index.js";
+import { compileRuntimeFromActivation } from "../packages/compiler/dist/src/index.js";
+import { CONTRACT_IDS } from "../packages/contracts/dist/src/index.js";
+import { buildNormalizedEventExport } from "../packages/event-export/dist/src/index.js";
+import { createFeedbackEvent, createInteractionEvent, sortNormalizedEvents } from "../packages/events/dist/src/index.js";
+import { materializeCandidatePackFromNormalizedEventExport } from "../packages/learner/dist/src/index.js";
+
+function logStep(message) {
+  console.log(`[observability:smoke] ${message}`);
+}
+
+function buildExport({
+  agentId,
+  sessionId,
+  channel,
+  sequenceStart,
+  createdAt,
+  streamSuffix,
+  interactionKind,
+  interactionMessageId,
+  interactionPackId,
+  feedbackKind,
+  feedbackContent
+}) {
+  const interaction = createInteractionEvent({
+    eventId: `${sessionId}:interaction:${sequenceStart}`,
+    agentId,
+    sessionId,
+    channel,
+    sequence: sequenceStart,
+    kind: interactionKind,
+    createdAt,
+    source: {
+      runtimeOwner: "openclaw",
+      stream: `openclaw/runtime/${streamSuffix}`
+    },
+    messageId: interactionMessageId,
+    ...(interactionPackId !== undefined ? { packId: interactionPackId } : {})
+  });
+
+  const feedback = createFeedbackEvent({
+    eventId: `${sessionId}:feedback:${sequenceStart + 1}`,
+    agentId,
+    sessionId,
+    channel,
+    sequence: sequenceStart + 1,
+    kind: feedbackKind,
+    createdAt: new Date(Date.parse(createdAt) + 60_000).toISOString(),
+    source: {
+      runtimeOwner: "openclaw",
+      stream: `openclaw/runtime/${streamSuffix}`
+    },
+    content: feedbackContent,
+    relatedInteractionId: interaction.eventId
+  });
+
+  const sorted = sortNormalizedEvents([interaction, feedback]);
+  assert.deepEqual(sorted.map((event) => event.eventId), [interaction.eventId, feedback.eventId]);
+
+  return buildNormalizedEventExport({
+    interactionEvents: [interaction],
+    feedbackEvents: [feedback]
+  });
+}
+
+function main() {
+  const rootDir = mkdtempSync(path.join(tmpdir(), "openclawbrain-observability-smoke-"));
+
+  try {
+    const activationRoot = path.join(rootDir, "activation");
+    const activePackRoot = path.join(rootDir, "packs", "active");
+    const candidatePackRoot = path.join(rootDir, "packs", "candidate");
+
+    logStep("Building fast-boot and promoted candidate exports.");
+
+    const activeExport = buildExport({
+      agentId: "agent-observability-smoke",
+      sessionId: "session-observability-active",
+      channel: "cli",
+      sequenceStart: 61,
+      createdAt: "2026-03-06T06:01:00.000Z",
+      streamSuffix: "observability-active",
+      interactionKind: "memory_compiled",
+      interactionMessageId: "msg-observability-active",
+      interactionPackId: "pack-observability-active",
+      feedbackKind: "approval",
+      feedbackContent: "Keep the fast-boot active pack healthy while live events continue to stream."
+    });
+
+    const candidateExport = buildExport({
+      agentId: "agent-observability-smoke",
+      sessionId: "session-observability-candidate",
+      channel: "cli",
+      sequenceStart: 71,
+      createdAt: "2026-03-06T06:11:00.000Z",
+      streamSuffix: "observability-candidate",
+      interactionKind: "operator_override",
+      interactionMessageId: "msg-observability-candidate",
+      interactionPackId: "pack-observability-candidate",
+      feedbackKind: "teaching",
+      feedbackContent: "Promote the fresher candidate once activation inspection proves it is healthy."
+    });
+
+    const activePack = materializeCandidatePackFromNormalizedEventExport(activePackRoot, {
+      packLabel: "observability-active",
+      workspace: {
+        workspaceId: "workspace-observability",
+        snapshotId: "workspace-observability@snapshot-active",
+        capturedAt: "2026-03-06T06:05:00.000Z",
+        rootDir: "/workspace/observability",
+        branch: "main",
+        revision: "observability-active-rev",
+        labels: ["observability", "active", "fast-boot"]
+      },
+      normalizedEventExport: activeExport,
+      learnedRouting: false,
+      builtAt: "2026-03-06T06:06:00.000Z",
+      offlineArtifacts: ["fast-boot"],
+      structuralOps: {
+        connect: 1
+      }
+    });
+
+    const candidatePack = materializeCandidatePackFromNormalizedEventExport(candidatePackRoot, {
+      packLabel: "observability-candidate",
+      workspace: {
+        workspaceId: "workspace-observability",
+        snapshotId: "workspace-observability@snapshot-candidate",
+        capturedAt: "2026-03-06T06:15:00.000Z",
+        rootDir: "/workspace/observability",
+        branch: "main",
+        revision: "observability-candidate-rev",
+        labels: ["observability", "candidate", "live-events-first"]
+      },
+      normalizedEventExport: candidateExport,
+      learnedRouting: true,
+      builtAt: "2026-03-06T06:16:00.000Z",
+      offlineArtifacts: ["fast-boot", "live-events-first"],
+      structuralOps: {
+        connect: 2,
+        split: 1
+      }
+    });
+
+    logStep("Inspecting activation health before promotion.");
+
+    activatePack(activationRoot, activePackRoot, "2026-03-06T06:20:00.000Z");
+    stageCandidatePack(activationRoot, candidatePackRoot, "2026-03-06T06:25:00.000Z");
+
+    const stagedInspection = inspectActivationState(activationRoot, "2026-03-06T06:26:00.000Z");
+    assert.equal(stagedInspection.active?.activationReady, true);
+    assert.equal(stagedInspection.candidate?.activationReady, true);
+    assert.deepEqual(stagedInspection.active?.findings ?? [], []);
+    assert.deepEqual(stagedInspection.candidate?.findings ?? [], []);
+    assert.equal(stagedInspection.promotion.allowed, true);
+    assert.deepEqual(stagedInspection.promotion.findings, []);
+
+    logStep("Promoting the fresher candidate and proving freshness.");
+
+    promoteCandidatePack(activationRoot, "2026-03-06T06:30:00.000Z");
+
+    const promotedInspection = inspectActivationState(activationRoot, "2026-03-06T06:31:00.000Z");
+    assert.equal(promotedInspection.active?.packId, candidatePack.manifest.packId);
+    assert.equal(promotedInspection.previous?.packId, activePack.manifest.packId);
+    assert.equal(promotedInspection.rollback.allowed, true);
+    assert.deepEqual(promotedInspection.rollback.findings, []);
+
+    const activeTarget = describeActivationTarget(activationRoot, "active", { requireActivationReady: true });
+    assert.notEqual(activeTarget, null);
+    assert.equal(activeTarget?.packId, candidatePack.manifest.packId);
+    assert.equal(activeTarget?.workspaceSnapshot, "workspace-observability@snapshot-candidate");
+    assert.equal(activeTarget?.workspaceRevision, "observability-candidate-rev");
+    assert.equal(activeTarget?.eventRange.end, candidateExport.range.end);
+    assert.equal(activeTarget?.eventExportDigest, candidateExport.provenance.exportDigest);
+    assert.equal(activeTarget?.builtAt, candidatePack.manifest.provenance.builtAt);
+
+    logStep("Compiling through the promoted slot and proving fallback diagnostics.");
+
+    const compile = compileRuntimeFromActivation(
+      activationRoot,
+      {
+        contract: CONTRACT_IDS.runtimeCompile,
+        agentId: "agent-observability-smoke",
+        userMessage: "zebra nebula quartz",
+        maxContextBlocks: 2,
+        maxContextChars: 320,
+        modeRequested: "heuristic",
+        compactionMode: "native"
+      },
+      {
+        expectedTarget: {
+          packId: candidatePack.manifest.packId,
+          routePolicy: candidatePack.manifest.routePolicy,
+          routerIdentity: candidatePack.router?.routerIdentity ?? null,
+          workspaceSnapshot: "workspace-observability@snapshot-candidate",
+          workspaceRevision: "observability-candidate-rev",
+          eventRange: {
+            start: candidateExport.range.start,
+            end: candidateExport.range.end,
+            count: candidateExport.range.count
+          },
+          eventExportDigest: candidateExport.provenance.exportDigest,
+          builtAt: candidatePack.manifest.provenance.builtAt
+        }
+      }
+    );
+
+    assert.equal(compile.target.packId, candidatePack.manifest.packId);
+    assert.equal(compile.response.diagnostics.modeRequested, "heuristic");
+    assert.equal(compile.response.diagnostics.modeEffective, "learned");
+    assert.equal(compile.response.diagnostics.usedLearnedRouteFn, true);
+    assert.equal(compile.response.diagnostics.selectionStrategy, "pack_keyword_overlap_v1");
+    assert.equal(typeof compile.response.diagnostics.selectionDigest, "string");
+    assert.equal(compile.response.diagnostics.selectionDigest.length > 0, true);
+    assert.match(compile.response.diagnostics.notes.join(";"), /selection_mode=priority_fallback/);
+
+    logStep("Observability smoke passed.");
+    console.log(
+      JSON.stringify(
+        {
+          health: {
+            activeReady: stagedInspection.active?.activationReady ?? false,
+            candidateReady: stagedInspection.candidate?.activationReady ?? false
+          },
+          promotion: {
+            canPromote: stagedInspection.promotion.allowed,
+            canRollback: promotedInspection.rollback.allowed,
+            promotedPackId: promotedInspection.active?.packId ?? null,
+            previousPackId: promotedInspection.previous?.packId ?? null
+          },
+          freshness: activeTarget,
+          fallback: {
+            modeRequested: compile.response.diagnostics.modeRequested,
+            modeEffective: compile.response.diagnostics.modeEffective,
+            selectionDigest: compile.response.diagnostics.selectionDigest,
+            notes: compile.response.diagnostics.notes
+          }
+        },
+        null,
+        2
+      )
+    );
+  } finally {
+    rmSync(rootDir, { recursive: true, force: true });
+  }
+}
+
+try {
+  main();
+} catch (error) {
+  console.error("[observability:smoke] failed");
+  console.error(error instanceof Error ? error.stack ?? error.message : String(error));
+  process.exitCode = 1;
+}
