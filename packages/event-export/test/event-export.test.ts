@@ -267,6 +267,44 @@ test("event-export bridge advances live slices before passive history catch-up",
   assert.equal(next.cursor.backfill.exhausted, true);
 });
 
+test("event-export bridge validation rejects incoherent observability metadata", () => {
+  const input = buildBridgeFixtureEvents();
+  const bridge = buildNormalizedEventExportBridge({
+    ...input,
+    liveSliceSize: 2,
+    backfillSliceSize: 2
+  });
+  const liveSlice = bridge.slices[0];
+
+  if (liveSlice === undefined) {
+    throw new Error("live slice fixture is required");
+  }
+
+  const errors = validateNormalizedEventExportBridge({
+    ...bridge,
+    dedupedInputCount: 1,
+    slices: [
+      {
+        ...liveSlice,
+        duplicateIdentityCount: bridge.duplicateIdentityCount + 1,
+        provenance: {
+          ...liveSlice.provenance,
+          dedupedEventCount: liveSlice.provenance.dedupedEventCount + 1,
+          sourceStreams: ["openclaw/runtime/stale"],
+          duplicateIdentityCount: liveSlice.provenance.duplicateIdentityCount
+        }
+      },
+      ...bridge.slices.slice(1)
+    ]
+  });
+
+  assert.match(errors.join(";"), /provenance dedupedEventCount must match slice dedupedEventCount/);
+  assert.match(errors.join(";"), /provenance duplicateIdentityCount must match slice duplicateIdentityCount/);
+  assert.match(errors.join(";"), /provenance sourceStreams must match export provenance sourceStreams/);
+  assert.match(errors.join(";"), /duplicateIdentityCount must match bridge duplicateIdentityCount/);
+  assert.match(errors.join(";"), /dedupedInputCount must be >= emitted slice event count/);
+});
+
 test("event-export bridge rejects inverted cursors and projects deterministic export bundles", () => {
   const input = buildBridgeFixtureEvents();
   const bridge = buildNormalizedEventExportBridge({

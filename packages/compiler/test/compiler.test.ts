@@ -800,7 +800,7 @@ test("resolveActivationCompileTarget validates manifest expectations before comp
   activatePack(activationRoot, packRoot, "2026-03-06T06:20:00.000Z");
 
   const resolved = resolveActivationCompileTarget(activationRoot, {
-    expectation: {
+    expectedTarget: {
       packId: FIXTURE_ARTIFACT_MANIFEST.packId,
       routePolicy: FIXTURE_ARTIFACT_MANIFEST.routePolicy,
       routerIdentity: FIXTURE_ROUTER_ARTIFACT.routerIdentity,
@@ -822,7 +822,7 @@ test("resolveActivationCompileTarget validates manifest expectations before comp
   assert.throws(
     () =>
       resolveActivationCompileTarget(activationRoot, {
-        expectation: {
+        expectedTarget: {
           workspaceSnapshot: "workspace-stale@snapshot"
         }
       }),
@@ -830,10 +830,9 @@ test("resolveActivationCompileTarget validates manifest expectations before comp
   );
 });
 
-test("resolveActivationCompileTarget accepts equivalent expectation aliases with different key order", (t: TestContext) => {
+test("resolveActivationCompileTarget rejects the removed legacy expectation alias", (t: TestContext) => {
   const fixture = setupActivatedCandidateFixture(t);
-
-  const resolved = resolveActivationCompileTarget(fixture.activationRoot, {
+  const legacyOptions = {
     expectation: {
       packId: fixture.candidatePackId,
       routePolicy: "requires_learned_routing",
@@ -847,26 +846,13 @@ test("resolveActivationCompileTarget accepts equivalent expectation aliases with
       },
       eventExportDigest: fixture.candidateExport.provenance.exportDigest,
       builtAt: fixture.candidateBuiltAt
-    },
-    expectedTarget: {
-      builtAt: fixture.candidateBuiltAt,
-      eventExportDigest: fixture.candidateExport.provenance.exportDigest,
-      eventRange: {
-        count: fixture.candidateExport.range.count,
-        end: fixture.candidateExport.range.end,
-        start: fixture.candidateExport.range.start
-      },
-      workspaceRevision: fixture.candidateWorkspaceRevision,
-      workspaceSnapshot: fixture.candidateWorkspaceSnapshot,
-      routerIdentity: fixture.candidateRouterIdentity,
-      routePolicy: "requires_learned_routing",
-      packId: fixture.candidatePackId
     }
-  });
+  } as unknown as Parameters<typeof resolveActivationCompileTarget>[1];
 
-  assert.equal(resolved.slot, "active");
-  assert.equal(resolved.target.packId, fixture.candidatePackId);
-  assert.equal(resolved.target.eventExportDigest, fixture.candidateExport.provenance.exportDigest);
+  assert.throws(
+    () => resolveActivationCompileTarget(fixture.activationRoot, legacyOptions),
+    /Activation compile options expectation has been removed; use expectedTarget/
+  );
 });
 
 test("compileRuntimeFromActivation compiles the promoted pack when expected provenance matches", (t: TestContext) => {
@@ -910,6 +896,16 @@ test("compileRuntimeFromActivation compiles the promoted pack when expected prov
   assert.equal(result.response.diagnostics.usedLearnedRouteFn, true);
   assert.equal(result.response.selectedContext.length > 0, true);
   assert.equal(result.response.selectedContext.some((block) => /activation promotion evidence/i.test(block.text)), true);
+  assert.match(result.response.diagnostics.notes.join(";"), /activation_slot=active/);
+  assert.match(result.response.diagnostics.notes.join(";"), new RegExp(`target_pack_id=${fixture.candidatePackId}`));
+  assert.match(
+    result.response.diagnostics.notes.join(";"),
+    new RegExp(`target_event_export_digest=${fixture.candidateExport.provenance.exportDigest}`)
+  );
+  assert.match(
+    result.response.diagnostics.notes.join(";"),
+    new RegExp(`target_workspace_snapshot=${fixture.candidateWorkspaceSnapshot}`)
+  );
 });
 
 test("compileRuntimeFromActivation rejects stale provenance expectations before compiling", (t: TestContext) => {

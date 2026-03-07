@@ -586,6 +586,18 @@ export function validateNormalizedEventExportSlice(value: NormalizedEventExportS
   if (value.dedupedEventCount !== value.eventIdentities.length) {
     errors.push("normalized event export slice dedupedEventCount must match eventIdentities length");
   }
+  if (value.dedupedEventCount < 0) {
+    errors.push("normalized event export slice dedupedEventCount must be non-negative");
+  }
+  if (value.duplicateIdentityCount < 0) {
+    errors.push("normalized event export slice duplicateIdentityCount must be non-negative");
+  }
+  if (value.provenance.dedupedEventCount !== value.dedupedEventCount) {
+    errors.push("normalized event export slice provenance dedupedEventCount must match slice dedupedEventCount");
+  }
+  if (value.provenance.duplicateIdentityCount !== value.duplicateIdentityCount) {
+    errors.push("normalized event export slice provenance duplicateIdentityCount must match slice duplicateIdentityCount");
+  }
 
   errors.push(...validateNormalizedEventExport(value.export));
   errors.push(...validateEventExportCursor(value.nextCursor));
@@ -602,6 +614,15 @@ export function validateNormalizedEventExportSlice(value: NormalizedEventExportS
   if (value.watermark.last?.eventId !== value.export.range.lastEventId) {
     errors.push("normalized event export slice last watermark must match export lastEventId");
   }
+  if (value.provenance.dedupedEventCount !== value.export.range.count) {
+    errors.push("normalized event export slice provenance dedupedEventCount must match export range count");
+  }
+  if (checksumJsonPayload(value.provenance.sourceStreams) !== checksumJsonPayload(value.export.provenance.sourceStreams)) {
+    errors.push("normalized event export slice provenance sourceStreams must match export provenance sourceStreams");
+  }
+  if (checksumJsonPayload(value.provenance.contracts) !== checksumJsonPayload(value.export.provenance.contracts)) {
+    errors.push("normalized event export slice provenance contracts must match export provenance contracts");
+  }
   if (value.lane === "live" && value.watermark.last?.eventId !== value.nextCursor.live.after?.eventId) {
     errors.push("live slice nextCursor.live.after must match the slice last watermark");
   }
@@ -616,6 +637,7 @@ export function validateNormalizedEventExportBridge(value: NormalizedEventExport
   const errors: string[] = [];
   const seenEventIdentities = new Set<string>();
   let backfillSeen = false;
+  let emittedEventCount = 0;
 
   if (value.runtimeOwner !== "openclaw") {
     errors.push("normalized event export bridge runtimeOwner must be openclaw");
@@ -638,6 +660,9 @@ export function validateNormalizedEventExportBridge(value: NormalizedEventExport
     if (slice.provenance.bridgeDigest !== value.bridgeDigest) {
       errors.push(`slices[${index}] provenance bridgeDigest must match bridge bridgeDigest`);
     }
+    if (slice.duplicateIdentityCount !== value.duplicateIdentityCount) {
+      errors.push(`slices[${index}] duplicateIdentityCount must match bridge duplicateIdentityCount`);
+    }
     if (slice.lane === "backfill") {
       backfillSeen = true;
     }
@@ -652,6 +677,12 @@ export function validateNormalizedEventExportBridge(value: NormalizedEventExport
       }
       seenEventIdentities.add(identity);
     }
+
+    emittedEventCount += slice.dedupedEventCount;
+  }
+
+  if (emittedEventCount > value.dedupedInputCount) {
+    errors.push("normalized event export bridge dedupedInputCount must be >= emitted slice event count");
   }
 
   if (value.slices.length > 0) {
@@ -660,6 +691,5 @@ export function validateNormalizedEventExportBridge(value: NormalizedEventExport
       errors.push("normalized event export bridge cursor must match the final slice nextCursor");
     }
   }
-
   return errors;
 }

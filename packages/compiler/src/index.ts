@@ -36,7 +36,6 @@ export interface ActivationCompileOptions {
   slot?: ActivationPointerSlot;
   requireActivationReady?: boolean;
   requirePromotionSafe?: boolean;
-  expectation?: RuntimeCompileExpectationV1;
   expectedTarget?: RuntimeCompileExpectationV1;
 }
 
@@ -51,6 +50,10 @@ export interface ActivationCompileResult extends RuntimeCompileResponseV1 {
   target: RuntimeCompileTargetV1;
   response: RuntimeCompileResponseV1;
 }
+
+type LegacyActivationCompileOptions = ActivationCompileOptions & {
+  expectation?: RuntimeCompileExpectationV1;
+};
 
 function normalizeTokens(value: string): string[] {
   return [...new Set(value.toLowerCase().split(/[^a-z0-9]+/u).filter((token) => token.length >= 2))];
@@ -188,6 +191,21 @@ function totalCharCount(blocks: readonly RuntimeContextBlockV1[]): number {
 
 function totalTokenCount(blocks: readonly RuntimeContextBlockV1[]): number {
   return blocks.reduce((sum, block) => sum + blockTokenCount(block), 0);
+}
+
+function mergeDiagnosticNotes(existing: readonly string[], additions: readonly (string | undefined)[]): string[] {
+  const seen = new Set<string>();
+  const merged: string[] = [];
+
+  for (const note of [...existing, ...additions]) {
+    if (note === undefined || note.length === 0 || seen.has(note)) {
+      continue;
+    }
+    seen.add(note);
+    merged.push(note);
+  }
+
+  return merged;
 }
 
 function truncateText(value: string, maxChars: number): string {
@@ -338,56 +356,12 @@ export function loadPackForCompile(rootDir: string): LoadedPack {
 }
 
 function resolveActivationCompileExpectation(options: ActivationCompileOptions): RuntimeCompileExpectationV1 | undefined {
-  const legacyExpectation = options.expectation;
-  const expectedTarget = options.expectedTarget;
-
-  if (legacyExpectation === undefined) {
-    return expectedTarget;
-  }
-  if (expectedTarget === undefined) {
-    return legacyExpectation;
+  const legacyOptions = options as LegacyActivationCompileOptions;
+  if (Object.prototype.hasOwnProperty.call(legacyOptions, "expectation")) {
+    throw new Error("Activation compile options expectation has been removed; use expectedTarget");
   }
 
-  const conflicts: string[] = [];
-
-  if ((legacyExpectation.packId ?? null) !== (expectedTarget.packId ?? null)) {
-    conflicts.push("packId");
-  }
-  if ((legacyExpectation.routePolicy ?? null) !== (expectedTarget.routePolicy ?? null)) {
-    conflicts.push("routePolicy");
-  }
-  if ((legacyExpectation.routerIdentity ?? null) !== (expectedTarget.routerIdentity ?? null)) {
-    conflicts.push("routerIdentity");
-  }
-  if ((legacyExpectation.workspaceSnapshot ?? null) !== (expectedTarget.workspaceSnapshot ?? null)) {
-    conflicts.push("workspaceSnapshot");
-  }
-  if ((legacyExpectation.workspaceRevision ?? null) !== (expectedTarget.workspaceRevision ?? null)) {
-    conflicts.push("workspaceRevision");
-  }
-
-  const legacyRange = legacyExpectation.eventRange;
-  const expectedRange = expectedTarget.eventRange;
-  if (
-    (legacyRange?.start ?? null) !== (expectedRange?.start ?? null) ||
-    (legacyRange?.end ?? null) !== (expectedRange?.end ?? null) ||
-    (legacyRange?.count ?? null) !== (expectedRange?.count ?? null)
-  ) {
-    conflicts.push("eventRange");
-  }
-
-  if ((legacyExpectation.eventExportDigest ?? null) !== (expectedTarget.eventExportDigest ?? null)) {
-    conflicts.push("eventExportDigest");
-  }
-  if ((legacyExpectation.builtAt ?? null) !== (expectedTarget.builtAt ?? null)) {
-    conflicts.push("builtAt");
-  }
-
-  if (conflicts.length > 0) {
-    throw new Error(`Activation compile options expectation and expectedTarget differ for: ${conflicts.join(", ")}`);
-  }
-
-  return expectedTarget;
+  return options.expectedTarget;
 }
 
 function assertActivationCompileSafety(rootDir: string, slot: ActivationPointerSlot, options: ActivationCompileOptions): void {
@@ -637,16 +611,24 @@ export function compileRuntimeFromActivation(
       : request;
   const response = compileRuntime(resolved.pack, compiledRequest);
   const freshnessNotes = activationFreshnessNotes(rootDir, resolved.slot, resolved.target);
-  const resolvedResponse =
-    freshnessNotes.length === 0
-      ? response
-      : {
-          ...response,
-          diagnostics: {
-            ...response.diagnostics,
-            notes: [...response.diagnostics.notes, ...freshnessNotes]
-          }
-        };
+  const targetNotes = [
+    `activation_slot=${resolved.slot}`,
+    `target_pack_id=${resolved.target.packId}`,
+    `target_route_policy=${resolved.target.routePolicy}`,
+    `target_workspace_snapshot=${resolved.target.workspaceSnapshot}`,
+    resolved.target.workspaceRevision === null ? undefined : `target_workspace_revision=${resolved.target.workspaceRevision}`,
+    `target_event_range=${resolved.target.eventRange.start}-${resolved.target.eventRange.end}#${resolved.target.eventRange.count}`,
+    resolved.target.eventExportDigest === null ? undefined : `target_event_export_digest=${resolved.target.eventExportDigest}`,
+    `target_built_at=${resolved.target.builtAt}`,
+    resolved.target.routerIdentity === null ? undefined : `target_router_identity=${resolved.target.routerIdentity}`
+  ];
+  const resolvedResponse = {
+    ...response,
+    diagnostics: {
+      ...response.diagnostics,
+      notes: mergeDiagnosticNotes(response.diagnostics.notes, [...freshnessNotes, ...targetNotes])
+    }
+  };
 
   const responseErrors = validateRuntimeCompileResponse(resolvedResponse);
   if (responseErrors.length > 0) {

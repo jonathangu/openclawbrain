@@ -666,7 +666,7 @@ function staticLifecycleBlocks(
   return [
     {
       id: `${packId}:feedback-scanner`,
-      source: "memory/2026-03-05-openclawbrain-vnext-roadmap.md",
+      source: "docs/openclaw-attach-quickstart.md",
       text: "Always-on feedback scanner harvests human labels from local session logs with Ollama qwen3.5:9b-q4_K_M, checkpointed resumes, and deduplicated background scans.",
       keywords: ["feedback", "scanner", "always", "background", "labels", "ollama", "qwen", "checkpoint", "dedup"],
       priority: 5,
@@ -743,7 +743,7 @@ function staticLifecycleBlocks(
     },
     {
       id: `${packId}:structural-ops`,
-      source: "docs/openclawbrain-openclaw-rearchitecture-plan.md",
+      source: "docs/typescript-first-convergence.md",
       text: `Structural graph learning stays first-class with Hebbian reinforcement, decay half-life 30 days, and ops split=${structuralOps.split}, merge=${structuralOps.merge}, prune=${structuralOps.prune}, connect=${structuralOps.connect}.`,
       keywords: ["structural", "hebbian", "decay", "split", "merge", "prune", "connect", "graph", "memory"],
       priority: 4,

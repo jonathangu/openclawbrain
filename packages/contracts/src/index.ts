@@ -1197,7 +1197,7 @@ export const FIXTURE_PACK_GRAPH: PackGraphPayloadV1 = {
   blocks: [
     {
       id: "ctx-feedback-scanner",
-      source: "memory/2026-03-05-openclawbrain-vnext-roadmap.md",
+      source: "docs/openclaw-attach-quickstart.md",
       text: "Always-on feedback scanner harvests human labels from local session logs with Ollama qwen3.5:9b-q4_K_M and checkpointed replay.",
       keywords: ["feedback", "scanner", "always-on", "session", "logs", "ollama", "qwen", "checkpoint"],
       priority: 5,
@@ -1212,7 +1212,7 @@ export const FIXTURE_PACK_GRAPH: PackGraphPayloadV1 = {
     },
     {
       id: "ctx-runtime-compile",
-      source: "docs/openclawbrain-openclaw-rearchitecture-execution-plan.md",
+      source: "docs/contracts-v1.md",
       text: "runtime_compile.v1 keeps fast boot defaults available while passive background learning hydrates promoted packs, explicit budgets, and manifest-gated routing.",
       keywords: ["runtime", "compile", "fast", "boot", "passive", "background", "pack", "manifest", "routing", "openclaw", "budget"],
       priority: 4,
@@ -1227,7 +1227,7 @@ export const FIXTURE_PACK_GRAPH: PackGraphPayloadV1 = {
     },
     {
       id: "ctx-structural-ops",
-      source: "docs/openclawbrain-openclaw-rearchitecture-plan.md",
+      source: "docs/typescript-first-convergence.md",
       text: "Structural graph operations like split, merge, prune, and connect stay first-class beside Hebbian reinforcement and decay.",
       keywords: ["structural", "split", "merge", "prune", "connect", "graph", "memory", "hebbian", "decay"],
       priority: 3,
