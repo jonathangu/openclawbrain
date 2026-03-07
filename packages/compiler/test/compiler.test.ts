@@ -211,6 +211,8 @@ test("compileRuntimeFromActivation serves the active pack and respects promotion
   });
 
   assert.equal(activeResponse.packId, "pack-active-serving");
+  assert.equal(activeResponse.target.packId, "pack-active-serving");
+  assert.equal(activeResponse.response.packId, "pack-active-serving");
   assert.equal(activeResponse.diagnostics.modeEffective, "heuristic");
   assert.equal(activeResponse.diagnostics.compactionApplied, true);
   assert.equal(activeResponse.diagnostics.selectedCharCount <= 180, true);
@@ -230,9 +232,101 @@ test("compileRuntimeFromActivation serves the active pack and respects promotion
   });
 
   assert.equal(promotedResponse.packId, "pack-candidate-serving");
+  assert.equal(promotedResponse.target.packId, "pack-candidate-serving");
+  assert.equal(promotedResponse.response.packId, "pack-candidate-serving");
   assert.equal(promotedResponse.diagnostics.modeEffective, "learned");
   assert.equal(promotedResponse.diagnostics.usedLearnedRouteFn, true);
   assert.equal(promotedResponse.diagnostics.compactionApplied, true);
+});
+
+test("compileRuntimeFromActivation returns target metadata and accepts expectedTarget", (t) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-bridge-activation-"));
+  const packRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-bridge-pack-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(packRoot, { recursive: true, force: true }));
+
+  materializeFixturePack(packRoot);
+  activatePack(activationRoot, packRoot, "2026-03-06T06:20:00.000Z");
+
+  const result = compileRuntimeFromActivation(
+    activationRoot,
+    {
+      contract: CONTRACT_IDS.runtimeCompile,
+      agentId: "agent-bridge-result",
+      userMessage: "Compile scanner context.",
+      maxContextBlocks: 1,
+      modeRequested: "heuristic",
+      runtimeHints: ["feedback scanner"]
+    },
+    {
+      expectedTarget: {
+        packId: FIXTURE_ARTIFACT_MANIFEST.packId,
+        workspaceSnapshot: FIXTURE_ARTIFACT_MANIFEST.provenance.workspaceSnapshot,
+        eventExportDigest: FIXTURE_ARTIFACT_MANIFEST.provenance.eventExports?.exportDigest ?? null
+      }
+    }
+  );
+
+  assert.equal(result.packId, FIXTURE_ARTIFACT_MANIFEST.packId);
+  assert.equal(result.response.packId, FIXTURE_ARTIFACT_MANIFEST.packId);
+  assert.equal(result.target.packId, FIXTURE_ARTIFACT_MANIFEST.packId);
+  assert.equal(result.target.workspaceSnapshot, FIXTURE_ARTIFACT_MANIFEST.provenance.workspaceSnapshot);
+  assert.equal(result.target.eventExportDigest, FIXTURE_ARTIFACT_MANIFEST.provenance.eventExports?.exportDigest ?? null);
+
+  assert.throws(
+    () =>
+      compileRuntimeFromActivation(
+        activationRoot,
+        {
+          contract: CONTRACT_IDS.runtimeCompile,
+          agentId: "agent-bridge-stale",
+          userMessage: "Compile scanner context.",
+          maxContextBlocks: 1,
+          modeRequested: "heuristic"
+        },
+        {
+          expectedTarget: {
+            workspaceSnapshot: "workspace-stale@snapshot"
+          }
+        }
+      ),
+    /Activation compile target mismatch: runtime compile target workspaceSnapshot/
+  );
+});
+
+test("compileRuntimeFromActivation rejects conflicting expectation aliases", (t) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-conflict-activation-"));
+  const packRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-conflict-pack-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(packRoot, { recursive: true, force: true }));
+
+  materializeFixturePack(packRoot);
+  activatePack(activationRoot, packRoot, "2026-03-06T06:21:00.000Z");
+
+  assert.throws(
+    () =>
+      compileRuntimeFromActivation(
+        activationRoot,
+        {
+          contract: CONTRACT_IDS.runtimeCompile,
+          agentId: "agent-bridge-conflict",
+          userMessage: "Compile scanner context.",
+          maxContextBlocks: 1,
+          modeRequested: "heuristic"
+        },
+        {
+          expectation: {
+            packId: FIXTURE_ARTIFACT_MANIFEST.packId
+          },
+          expectedTarget: {
+            packId: "pack-stale"
+          }
+        }
+      ),
+    /Conflicting compile expectations: packId differ between expectation and expectedTarget/
+  );
 });
 
 test("compileRuntimeFromActivation fails fast when no active pack is present", () => {

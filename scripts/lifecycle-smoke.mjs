@@ -5,7 +5,7 @@ import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
 
-import { activatePack, describeActivationTarget, inspectActivationState, promoteCandidatePack, stageCandidatePack } from "../packages/activation/dist/src/index.js";
+import { activatePack, inspectActivationState, promoteCandidatePack, stageCandidatePack } from "../packages/activation/dist/src/index.js";
 import { compileRuntimeFromActivation } from "../packages/compiler/dist/src/index.js";
 import { CONTRACT_IDS } from "../packages/contracts/dist/src/index.js";
 import { buildNormalizedEventExport } from "../packages/event-export/dist/src/index.js";
@@ -180,42 +180,41 @@ function main() {
 
     promoteCandidatePack(activationRoot, "2026-03-06T05:10:00.000Z");
 
-    const activeTarget = describeActivationTarget(activationRoot, "active", {
-      requireActivationReady: true
-    });
-
-    assert.equal(activeTarget?.packId, candidatePack.manifest.packId);
-    assert.equal(activeTarget?.workspaceSnapshot, "workspace-phase-2@snapshot-candidate");
-    assert.equal(activeTarget?.eventExportDigest, candidateExport.provenance.exportDigest);
-
     logStep("Compiling runtime context from the promoted active activation slot.");
 
-    const compileResponse = compileRuntimeFromActivation(activationRoot, {
-      contract: CONTRACT_IDS.runtimeCompile,
-      agentId: "agent-lifecycle-smoke",
-      userMessage: "Compile the activation promotion evidence for the Phase-2 lifecycle smoke lane.",
-      maxContextBlocks: 2,
-      maxContextChars: 480,
-      modeRequested: "heuristic",
-      runtimeHints: ["activation", "promotion", "compiler", "evidence"],
-      compactionMode: "native"
-    }, {
-      expectation: {
-        packId: candidatePack.manifest.packId,
-        routePolicy: candidatePack.manifest.routePolicy,
-        routerIdentity: candidatePack.router?.routerIdentity ?? null,
-        workspaceSnapshot: candidatePack.manifest.provenance.workspaceSnapshot,
-        workspaceRevision: candidatePack.manifest.provenance.workspace.revision,
-        eventRange: {
-          start: candidatePack.manifest.provenance.eventRange.start,
-          end: candidatePack.manifest.provenance.eventRange.end,
-          count: candidatePack.manifest.provenance.eventRange.count
-        },
-        eventExportDigest: candidatePack.manifest.provenance.eventExports?.exportDigest ?? null,
-        builtAt: candidatePack.manifest.provenance.builtAt
+    const { target: activeTarget, response: compileResponse } = compileRuntimeFromActivation(
+      activationRoot,
+      {
+        contract: CONTRACT_IDS.runtimeCompile,
+        agentId: "agent-lifecycle-smoke",
+        userMessage: "Compile the activation promotion evidence for the Phase-2 lifecycle smoke lane.",
+        maxContextBlocks: 2,
+        maxContextChars: 480,
+        modeRequested: "heuristic",
+        runtimeHints: ["activation", "promotion", "compiler", "evidence"],
+        compactionMode: "native"
+      },
+      {
+        expectedTarget: {
+          packId: candidatePack.manifest.packId,
+          routePolicy: candidatePack.manifest.routePolicy,
+          routerIdentity: candidatePack.router?.routerIdentity ?? null,
+          workspaceSnapshot: candidatePack.manifest.provenance.workspaceSnapshot,
+          workspaceRevision: candidatePack.manifest.provenance.workspace.revision,
+          eventRange: {
+            start: candidatePack.manifest.provenance.eventRange.start,
+            end: candidatePack.manifest.provenance.eventRange.end,
+            count: candidatePack.manifest.provenance.eventRange.count
+          },
+          eventExportDigest: candidatePack.manifest.provenance.eventExports?.exportDigest ?? null,
+          builtAt: candidatePack.manifest.provenance.builtAt
+        }
       }
-    });
+    );
 
+    assert.equal(activeTarget.packId, candidatePack.manifest.packId);
+    assert.equal(activeTarget.workspaceSnapshot, "workspace-phase-2@snapshot-candidate");
+    assert.equal(activeTarget.eventExportDigest, candidateExport.provenance.exportDigest);
     assert.equal(compileResponse.packId, candidatePack.manifest.packId);
     assert.equal(compileResponse.diagnostics.modeEffective, "learned");
     assert.equal(compileResponse.diagnostics.usedLearnedRouteFn, true);
@@ -233,7 +232,7 @@ function main() {
         {
           activePackId: activePack.manifest.packId,
           candidatePackId: candidatePack.manifest.packId,
-          promotedPackId: activeTarget?.packId ?? null,
+          promotedPackId: activeTarget.packId,
           selectedContextIds: compileResponse.selectedContext.map((block) => block.id),
           selectionDigest: compileResponse.diagnostics.selectionDigest
         },

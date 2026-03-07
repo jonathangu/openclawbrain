@@ -36,6 +36,7 @@ export interface ActivationCompileOptions {
   slot?: ActivationPointerSlot;
   requireActivationReady?: boolean;
   expectation?: RuntimeCompileExpectationV1;
+  expectedTarget?: RuntimeCompileExpectationV1;
 }
 
 export interface ActivationCompileResolution {
@@ -43,6 +44,11 @@ export interface ActivationCompileResolution {
   pack: LoadedPack;
   target: RuntimeCompileTargetV1;
 }
+
+export type ActivationCompileResult = RuntimeCompileResponseV1 & {
+  target: RuntimeCompileTargetV1;
+  response: RuntimeCompileResponseV1;
+};
 
 function normalizeTokens(value: string): string[] {
   return [...new Set(value.toLowerCase().split(/[^a-z0-9]+/u).filter((token) => token.length >= 2))];
@@ -244,6 +250,23 @@ export function loadPackForCompile(rootDir: string): LoadedPack {
   return loadPack(rootDir);
 }
 
+function resolveCompileExpectation(options: ActivationCompileOptions): RuntimeCompileExpectationV1 | undefined {
+  if (options.expectation !== undefined && options.expectedTarget !== undefined) {
+    const keys = [...new Set([...Object.keys(options.expectation), ...Object.keys(options.expectedTarget)])] as (keyof RuntimeCompileExpectationV1)[];
+    const conflicts = keys.filter(
+      (key) => JSON.stringify(options.expectation?.[key] ?? null) !== JSON.stringify(options.expectedTarget?.[key] ?? null)
+    );
+
+    if (conflicts.length > 0) {
+      throw new Error(
+        `Conflicting compile expectations: ${conflicts.join(', ')} differ between expectation and expectedTarget`
+      );
+    }
+  }
+
+  return options.expectedTarget ?? options.expectation;
+}
+
 export function resolveActivationCompileTarget(rootDir: string, options: ActivationCompileOptions = {}): ActivationCompileResolution {
   const slot = options.slot ?? "active";
   const pack = loadPackFromActivation(rootDir, slot, {
@@ -255,7 +278,7 @@ export function resolveActivationCompileTarget(rootDir: string, options: Activat
   }
 
   const target = describePackCompileTarget(pack);
-  const expectation = options.expectation;
+  const expectation = resolveCompileExpectation(options);
 
   if (expectation !== undefined) {
     const expectationErrors = validateRuntimeCompileExpectation(expectation);
@@ -425,7 +448,7 @@ export function compileRuntimeFromActivation(
   rootDir: string,
   request: RuntimeCompileRequestV1,
   options: ActivationCompileOptions = {}
-): RuntimeCompileResponseV1 {
+): ActivationCompileResult {
   const resolved = resolveActivationCompileTarget(rootDir, options);
   const compiledRequest =
     request.activePackId === undefined && resolved.slot === "active"
@@ -435,5 +458,11 @@ export function compileRuntimeFromActivation(
         }
       : request;
 
-  return compileRuntime(resolved.pack, compiledRequest);
+  const response = compileRuntime(resolved.pack, compiledRequest);
+
+  return {
+    ...response,
+    target: resolved.target,
+    response
+  };
 }

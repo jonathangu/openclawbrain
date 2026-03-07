@@ -13,7 +13,8 @@ pnpm add @openclawbrain/compiler
 ## Includes
 
 - pack loading for compile-time use
-- activation-root compile helpers for active-slot runtime integration
+- activation-aware compilation from promoted runtime slots
+- compile-target expectation checks over pack id, workspace snapshot, event range, and event-export digest
 - deterministic context ranking over graph blocks and vector keywords
 - larger-context budget enforcement via max-block and max-character limits
 - native structural compaction when selection pressure exceeds the runtime budget
@@ -25,7 +26,7 @@ pnpm add @openclawbrain/compiler
 import { compileRuntimeFromActivation } from "@openclawbrain/compiler";
 import { CONTRACT_IDS } from "@openclawbrain/contracts";
 
-const response = compileRuntimeFromActivation("/runtime/activation", {
+const { target, response } = compileRuntimeFromActivation("/runtime/activation", {
   contract: CONTRACT_IDS.runtimeCompile,
   agentId: "agent-1",
   userMessage: "compile manifest routing",
@@ -34,8 +35,9 @@ const response = compileRuntimeFromActivation("/runtime/activation", {
   modeRequested: "heuristic",
   compactionMode: "native"
 }, {
-  expectation: {
-    workspaceSnapshot: "workspace@snapshot-2026-03-06"
+  expectedTarget: {
+    workspaceSnapshot: "workspace@snapshot-2026-03-06",
+    eventExportDigest: "sha256-abc123"
   }
 });
 ```
