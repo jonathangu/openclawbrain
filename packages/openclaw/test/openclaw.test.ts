@@ -10,8 +10,16 @@ import {
   FIXTURE_INTERACTION_EVENTS,
   type NormalizedEventExportV1
 } from "@openclawbrain/contracts";
+import { describeCompileFallbackUsage } from "@openclawbrain/compiler";
 import { materializeAlwaysOnLearningCandidatePack, materializeCandidatePack } from "@openclawbrain/learner";
-import { activatePack } from "@openclawbrain/pack-format";
+import {
+  activatePack,
+  describeActivationObservability,
+  inspectActivationState,
+  loadPack,
+  promoteCandidatePack,
+  stageCandidatePack
+} from "@openclawbrain/pack-format";
 import {
   buildNormalizedRuntimeEventExport,
   buildCanonicalSupervision,
@@ -63,6 +71,42 @@ function mkdtemp(prefix: string): string {
 function expectNormalizedEventExport(result: ReturnType<typeof runRuntimeTurn>["eventExport"]): NormalizedEventExportV1 {
   assert.equal(result.ok, true);
   return result.normalizedEventExport;
+}
+
+function expectCompileSuccess(result: ReturnType<typeof compileRuntimeContext>) {
+  if (result.ok) {
+    return result;
+  }
+
+  throw new Error(`expected compile success, received failure: ${result.error}`);
+}
+
+function noteValue(notes: readonly string[], prefix: string): string | null {
+  const note = notes.find((entry) => entry.startsWith(prefix));
+  return note === undefined ? null : note.slice(prefix.length);
+}
+
+function summarizeGraphEvolution(rootDir: string, graphChecksum: string | null) {
+  const pack = loadPack(rootDir);
+  const evolution = pack.graph.evolution ?? null;
+
+  return {
+    packId: pack.manifest.packId,
+    graphChecksum,
+    blockCount: pack.graph.blocks.length,
+    strongestBlockId: evolution?.strongestBlockId ?? null,
+    builtAt: evolution?.builtAt ?? pack.manifest.provenance.builtAt,
+    hebbianApplied: evolution?.hebbianApplied ?? false,
+    decayApplied: evolution?.decayApplied ?? false,
+    structuralOps:
+      evolution?.structuralOps ?? {
+        split: 0,
+        merge: 0,
+        prune: 0,
+        connect: 0
+      },
+    prunedBlockCount: evolution?.prunedBlockIds.length ?? 0
+  };
 }
 
 test("compileRuntimeContext consumes the active pack through activation pointers", (t) => {
@@ -442,6 +486,236 @@ test("runContinuousProductLoopTurn promotes fresher learned packs and later comp
   assert.equal(second.learning.promoted, true);
   assert.equal(second.state.activePackVersion, 3);
   assert.equal(second.state.packLineage.length, 3);
+});
+
+test("runtime wrapper-path soak proves compile -> turn -> export -> background learning -> promotion -> later compile", async (t) => {
+  const rootDir = mkdtemp("openclawbrain-openclaw-wrapper-soak-");
+  const activePackRoot = path.join(rootDir, "active-pack");
+  const activationRoot = path.join(rootDir, "activation");
+  const exportRoot = path.join(rootDir, "runtime-export");
+  const candidateRoot = path.join(rootDir, "candidate-pack");
+  t.after(() => rmSync(rootDir, { recursive: true, force: true }));
+
+  const { packId: seedPackId } = materializeActivePack(activePackRoot, activationRoot);
+
+  const beforePromotionCompile = expectCompileSuccess(
+    compileRuntimeContext({
+      activationRoot,
+      agentId: "runtime-wrapper-soak",
+      message: "zebra nebula quartz",
+      maxContextBlocks: 2,
+      maxContextChars: 320,
+      mode: "heuristic"
+    })
+  );
+  const activeBefore = describeActivationObservability(activationRoot, "active", {
+    requireActivationReady: true
+  });
+  const beforeNotes = beforePromotionCompile.compileResponse.diagnostics.notes;
+
+  assert.equal(beforePromotionCompile.activePackId, seedPackId);
+  assert.equal(beforePromotionCompile.compileResponse.diagnostics.usedLearnedRouteFn, true);
+  assert.equal(beforePromotionCompile.compileResponse.diagnostics.routerIdentity, activeBefore.learnedRouteFn.routerIdentity);
+  assert.equal(noteValue(beforeNotes, "router_strategy="), activeBefore.learnedRouteFn.routeFnVersion);
+  assert.equal(activeBefore.learnedRouteFn.routerChecksum !== null, true);
+  assert.equal(noteValue(beforeNotes, "router_weights_checksum=") !== null, true);
+  assert.equal(noteValue(beforeNotes, "router_freshness_checksum=") !== null, true);
+
+  const beforeFallback = describeCompileFallbackUsage(beforePromotionCompile.compileResponse);
+  assert.equal(beforeFallback.priorityFallbackUsed, true);
+
+  const feedbackContent = "Prefer the fresher learned route artifact after promotion when compiling wrapper-path evidence.";
+  const turn = runRuntimeTurn(
+    {
+      agentId: "runtime-wrapper-soak",
+      sessionId: "session-wrapper-soak",
+      channel: "whatsapp",
+      sourceStream: "openclaw/runtime/wrapper-whatsapp-live",
+      userMessage: "Compile wrapper-path evidence before background promotion.",
+      runtimeHints: ["wrapper-path", "promotion", "evidence"],
+      sequenceStart: 901,
+      compile: {
+        createdAt: "2026-03-07T18:00:00.000Z"
+      },
+      delivery: {
+        createdAt: "2026-03-07T18:03:00.000Z",
+        messageId: "msg-wrapper-soak-1"
+      },
+      feedback: [
+        {
+          createdAt: "2026-03-07T18:02:00.000Z",
+          content: feedbackContent
+        }
+      ],
+      export: {
+        rootDir: exportRoot,
+        exportName: "runtime-wrapper-soak"
+      }
+    },
+    {
+      activationRoot
+    }
+  );
+
+  assert.equal(turn.ok, true);
+  assert.equal(turn.eventExport.ok, true);
+  assert.equal(turn.eventExport.wroteBundle, true);
+  if (!turn.ok || !turn.eventExport.ok || !turn.eventExport.wroteBundle) {
+    throw new Error("wrapper-path soak turn must compile and write a runtime export bundle");
+  }
+
+  const bundle = loadRuntimeEventExportBundle(turn.eventExport.rootDir);
+  const sourceEvents = [...bundle.normalizedEventExport.interactionEvents, ...bundle.normalizedEventExport.feedbackEvents].filter(
+    (event) => event.source.stream === "openclaw/runtime/wrapper-whatsapp-live"
+  );
+  const supervisionCountsBySource = [
+    {
+      sourceStream: "openclaw/runtime/wrapper-whatsapp-live",
+      eventCount: sourceEvents.length,
+      interactionCount: bundle.normalizedEventExport.interactionEvents.filter(
+        (event) => event.source.stream === "openclaw/runtime/wrapper-whatsapp-live"
+      ).length,
+      feedbackCount: bundle.normalizedEventExport.feedbackEvents.filter(
+        (event) => event.source.stream === "openclaw/runtime/wrapper-whatsapp-live"
+      ).length,
+      humanLabelCount: bundle.normalizedEventExport.feedbackEvents.filter(
+        (event) => event.source.stream === "openclaw/runtime/wrapper-whatsapp-live"
+      ).length,
+      selfLabelCount: bundle.normalizedEventExport.interactionEvents.filter(
+        (event) => event.source.stream === "openclaw/runtime/wrapper-whatsapp-live" && event.kind === "memory_compiled"
+      ).length
+    }
+  ];
+
+  assert.equal(supervisionCountsBySource.length, 1);
+  assert.equal(supervisionCountsBySource[0]?.sourceStream, "openclaw/runtime/wrapper-whatsapp-live");
+  assert.equal(supervisionCountsBySource[0]?.humanLabelCount, 1);
+  assert.equal(supervisionCountsBySource[0]?.selfLabelCount, 1);
+
+  const teacherLoop = createAsyncTeacherLiveLoop({
+    packLabel: "runtime-wrapper-soak",
+    workspace: {
+      workspaceId: "workspace-wrapper-soak",
+      snapshotId: "workspace-wrapper-soak@snapshot-2",
+      capturedAt: "2026-03-07T18:03:00.000Z",
+      rootDir: "/workspace/openclawbrain",
+      branch: "main",
+      revision: "runtime-wrapper-soak-rev-2",
+      labels: ["openclaw", "wrapper", "soak", "background-learning"]
+    },
+    learnedRouting: true,
+    builtAt: "2026-03-07T18:05:00.000Z",
+    liveSliceSize: 2,
+    backfillSliceSize: 2,
+    staleAfterMs: 300_000,
+    maxQueuedExports: 2
+  });
+
+  const enqueue = teacherLoop.enqueueNormalizedEventExport(bundle.normalizedEventExport, {
+    observedAt: "2026-03-07T18:04:00.000Z"
+  });
+  assert.equal(enqueue.accepted, true);
+
+  const snapshot = await teacherLoop.flush();
+  assert.equal(snapshot.teacher.artifactCount > 0, true);
+  assert.notEqual(snapshot.learner.lastMaterialization, null);
+
+  const materialization = snapshot.learner.lastMaterialization;
+  if (materialization === null) {
+    throw new Error("wrapper-path soak should materialize a candidate pack after background learning");
+  }
+
+  const candidateDescriptor = materializeAlwaysOnLearningCandidatePack(candidateRoot, materialization);
+  stageCandidatePack(activationRoot, candidateRoot, "2026-03-07T18:06:00.000Z");
+
+  const stagedInspection = inspectActivationState(activationRoot, "2026-03-07T18:06:00.000Z");
+  const stagedActive = describeActivationObservability(activationRoot, "active", {
+    requireActivationReady: true,
+    updatedAt: "2026-03-07T18:06:00.000Z"
+  });
+  const stagedCandidate = describeActivationObservability(activationRoot, "candidate", {
+    requireActivationReady: true,
+    updatedAt: "2026-03-07T18:06:00.000Z"
+  });
+  const stagedGraph = summarizeGraphEvolution(candidateRoot, stagedCandidate.graphDynamics.graphChecksum);
+
+  assert.equal(stagedInspection.candidate?.packId, candidateDescriptor.manifest.packId);
+  assert.equal(stagedInspection.promotion.allowed, true);
+  assert.equal(stagedActive.promotionFreshness.activeBehindPromotionReadyCandidate, true);
+  assert.equal(stagedCandidate.learnedRouteFn.routerIdentity, candidateDescriptor.router?.routerIdentity ?? null);
+  assert.equal(stagedCandidate.learnedRouteFn.routeFnVersion, candidateDescriptor.router?.strategy ?? null);
+  assert.equal(stagedGraph.blockCount > 0, true);
+  assert.equal(stagedGraph.graphChecksum !== null, true);
+  assert.equal(stagedGraph.strongestBlockId !== null, true);
+
+  promoteCandidatePack(activationRoot, "2026-03-07T18:07:00.000Z");
+
+  const afterPromotionCompile = expectCompileSuccess(
+    compileRuntimeContext({
+      activationRoot,
+      agentId: "runtime-wrapper-soak",
+      message: "Compile the fresher learned route artifact after promotion.",
+      maxContextBlocks: 3,
+      maxContextChars: 480,
+      mode: "heuristic",
+      runtimeHints: ["fresher", "learned", "route", "artifact", "promotion", "wrapper-path", "evidence"]
+    })
+  );
+  const activeAfter = describeActivationObservability(activationRoot, "active", {
+    requireActivationReady: true,
+    updatedAt: "2026-03-07T18:07:00.000Z"
+  });
+  const afterNotes = afterPromotionCompile.compileResponse.diagnostics.notes;
+  const afterFallback = describeCompileFallbackUsage(afterPromotionCompile.compileResponse);
+
+  assert.notEqual(afterPromotionCompile.activePackId, seedPackId);
+  assert.equal(afterPromotionCompile.activePackId, candidateDescriptor.manifest.packId);
+  assert.equal(afterPromotionCompile.compileResponse.diagnostics.routerIdentity, candidateDescriptor.router?.routerIdentity ?? null);
+  assert.equal(noteValue(afterNotes, "router_strategy="), activeAfter.learnedRouteFn.routeFnVersion);
+  assert.equal(activeAfter.learnedRouteFn.routerChecksum, candidateDescriptor.manifest.payloadChecksums.router);
+  assert.equal(noteValue(afterNotes, "router_weights_checksum=") !== null, true);
+  assert.equal(noteValue(afterNotes, "router_freshness_checksum=") !== null, true);
+  assert.equal(
+    afterPromotionCompile.compileResponse.selectedContext.some((block) => block.text.includes(feedbackContent)),
+    true
+  );
+  assert.equal(afterFallback.selectionMode === "token_match" || afterFallback.priorityFallbackUsed, true);
+
+  const report = {
+    initialCompile: {
+      packId: beforePromotionCompile.activePackId,
+      routerIdentity: beforePromotionCompile.compileResponse.diagnostics.routerIdentity,
+      routeFnVersion: activeBefore.learnedRouteFn.routeFnVersion,
+      routerChecksum: activeBefore.learnedRouteFn.routerChecksum,
+      weightsChecksum: noteValue(beforeNotes, "router_weights_checksum="),
+      freshnessChecksum: noteValue(beforeNotes, "router_freshness_checksum="),
+      fallbackUsage: beforeFallback
+    },
+    turn: {
+      packId: turn.activePackId,
+      exportDigest: bundle.normalizedEventExport.provenance.exportDigest,
+      supervisionCountsBySource
+    },
+    stagedFreshness: {
+      active: stagedInspection.active,
+      candidate: stagedInspection.candidate,
+      promotion: stagedInspection.promotion,
+      promotionFreshness: stagedActive.promotionFreshness
+    },
+    graphEvolution: stagedGraph,
+    laterCompile: {
+      packId: afterPromotionCompile.activePackId,
+      routerIdentity: afterPromotionCompile.compileResponse.diagnostics.routerIdentity,
+      routeFnVersion: activeAfter.learnedRouteFn.routeFnVersion,
+      routerChecksum: activeAfter.learnedRouteFn.routerChecksum,
+      weightsChecksum: noteValue(afterNotes, "router_weights_checksum="),
+      freshnessChecksum: noteValue(afterNotes, "router_freshness_checksum="),
+      fallbackUsage: afterFallback
+    }
+  };
+
+  assert.equal(report.stagedFreshness.promotion.allowed, true);
+  assert.equal(report.graphEvolution.graphChecksum, stagedCandidate.graphDynamics.graphChecksum);
 });
 
 test("classifyFeedbackKind normalizes common operator cues", () => {
