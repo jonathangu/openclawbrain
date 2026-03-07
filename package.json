@@ -38,9 +38,9 @@
     "observability:smoke:built": "node ./scripts/observability-smoke.mjs",
     "release:check": "pnpm clean && pnpm check && pnpm release:pack",
     "release:pack": "ROOT_DIR=$(pwd) && mkdir -p \"$ROOT_DIR/.release\" && pnpm -r --filter \"@openclawbrain/*\" pack --pack-destination \"$ROOT_DIR/.release\"",
-    "release:publish": "for pkg in packages/contracts packages/events packages/event-export packages/workspace-metadata packages/provenance packages/pack-format packages/activation packages/compiler packages/learner packages/openclaw; do (cd \"$pkg\" && pnpm publish --access public --no-git-checks); done",
-    "release:publish:dry-run": "for pkg in packages/contracts packages/events packages/event-export packages/workspace-metadata packages/provenance packages/pack-format packages/activation packages/compiler packages/learner packages/openclaw; do (cd \"$pkg\" && pnpm publish --access public --no-git-checks --dry-run); done",
-    "release:publish:provenance": "for pkg in packages/contracts packages/events packages/event-export packages/workspace-metadata packages/provenance packages/pack-format packages/activation packages/compiler packages/learner packages/openclaw; do (cd \"$pkg\" && pnpm publish --access public --no-git-checks --provenance); done",
+    "release:publish": "pnpm -r --filter \"@openclawbrain/*\" publish --access public --no-git-checks",
+    "release:publish:dry-run": "pnpm -r --filter \"@openclawbrain/*\" publish --access public --no-git-checks --dry-run",
+    "release:publish:provenance": "pnpm -r --filter \"@openclawbrain/*\" publish --access public --no-git-checks --provenance",
     "typecheck": "tsc -b --pretty false tsconfig.build.json",
     "test": "pnpm build && pnpm -r test",
     "guard:merge-markers": "node ./scripts/guard-merge-markers.mjs"

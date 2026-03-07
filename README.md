@@ -15,6 +15,14 @@ The workspace root now carries two deterministic proof lanes:
 - `pnpm lifecycle:smoke` proves one true lifecycle across normalized events, event export, learner pack materialization, activation staging/promotion, and compiler runtime compilation against the promoted pack.
 - `pnpm observability:smoke` proves the operator-facing diagnostics story for health, promotions, freshness, and priority fallback.
 
+## Versioning
+
+The current public npm/package lane is `0.1.x` across the workspace marker and every published `@openclawbrain/*` package in `packages/`.
+
+Historical repository tags such as `v12.x` belong to earlier legacy milestones. They remain in git history, but they are not the current TypeScript package line, changelog lane, or release automation trigger.
+
+Use `CHANGELOG.md` for package-release notes and `docs/release.md` for the active public release checklist.
+
 ## OpenClaw attach quickstart
 
 The attach/install story must optimize for **time-to-first-value**, not for full historical completeness before first use.

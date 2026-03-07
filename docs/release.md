@@ -2,6 +2,9 @@
 
 This repo releases the full public TypeScript package lane, including the OpenClaw runtime bridge package.
 
+The active public release line is `0.1.x` for the workspace marker and every published `@openclawbrain/*` package.
+Historical repository tags such as `v12.x` are legacy milestones only; they are not the current npm package lane and should not be reused for public TypeScript releases.
+
 ## 1) Prepare package versions
 
 Bump the version for each public package that will be published:
@@ -18,6 +21,8 @@ Bump the version for each public package that will be published:
 - `packages/openclaw/package.json`
 
 Keep the root `package.json` version aligned with the workspace release candidate if you want a single workspace-level marker.
+
+For the current public lane, use a matching `v0.1.x` git tag for the release.
 
 ## 2) Create and verify the release candidate
 
@@ -44,17 +49,21 @@ Expected artifacts:
 ## 3) Tag the release
 
 ```bash
+VERSION=0.1.1
 git checkout <release-branch>
-git tag -a v0.1.0 -m "OpenClawBrain TS workspace v0.1.0"
+git tag -a "v${VERSION}" -m "OpenClawBrain TS packages v${VERSION}"
 git push origin <release-branch>
-git push origin v0.1.0
+git push origin "v${VERSION}"
 ```
+
+`.github/workflows/publish.yml` listens only for `v0.1.*` tags so the public automation matches the current TypeScript package lane.
+If the project opens a new public minor line later, widen that workflow trigger in the same change that bumps package versions and release docs.
 
 ## 4) Publish packages
 
 Preferred: GitHub Actions + npm trusted publishing.
 
-Pushing a `v*` tag triggers `.github/workflows/publish.yml`, which verifies the workspace and then publishes every public `@openclawbrain/*` package from the monorepo.
+Pushing a `v0.1.*` tag triggers `.github/workflows/publish.yml`, which verifies the workspace and then publishes every public `@openclawbrain/*` package from the monorepo.
 
 Before relying on the workflow, configure npm trusted publishing for each package.
 
@@ -64,6 +73,8 @@ Optional manual publish:
 pnpm release:publish:dry-run
 pnpm release:publish
 ```
+
+The manual publish commands use the same recursive `@openclawbrain/*` package selection as the workflow so the package set stays in sync.
 
 Use `pnpm release:publish:provenance` when you want the same recursive publish lane with provenance enabled from a local trusted environment.
 
