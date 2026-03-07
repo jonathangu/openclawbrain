@@ -341,7 +341,10 @@ function isStrictlyFresherTarget(candidate: RuntimeCompileTargetV1, active: Runt
   return (
     compareIsoDates(candidate.builtAt, active.builtAt) > 0 ||
     candidate.eventRange.end > active.eventRange.end ||
-    candidate.eventRange.count > active.eventRange.count
+    candidate.eventRange.count > active.eventRange.count ||
+    candidate.workspaceSnapshot !== active.workspaceSnapshot ||
+    (candidate.workspaceRevision ?? null) !== (active.workspaceRevision ?? null) ||
+    (candidate.eventExportDigest ?? null) !== (active.eventExportDigest ?? null)
   );
 }
 
