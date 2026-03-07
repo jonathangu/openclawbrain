@@ -188,6 +188,24 @@ test("pack load rejects tampered graph payloads", (t) => {
   assert.throws(() => loadPack(rootDir), /graph checksum does not match manifest/);
 });
 
+test("pack load rejects manifest asset paths that escape the pack root", (t) => {
+  const rootDir = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-pack-"));
+  t.after(() => rmSync(rootDir, { recursive: true, force: true }));
+
+  writePackFile(rootDir, PACK_LAYOUT.graph, FIXTURE_PACK_GRAPH);
+  writePackFile(rootDir, PACK_LAYOUT.vectors, FIXTURE_PACK_VECTORS);
+  writePackFile(rootDir, PACK_LAYOUT.router, FIXTURE_ROUTER_ARTIFACT);
+  writePackFile(rootDir, PACK_LAYOUT.manifest, {
+    ...FIXTURE_ARTIFACT_MANIFEST,
+    runtimeAssets: {
+      ...FIXTURE_ARTIFACT_MANIFEST.runtimeAssets,
+      graphPath: "../graph.json"
+    }
+  });
+
+  assert.throws(() => loadPack(rootDir), /graphPath must not escape the pack root/);
+});
+
 test("promotion flips active and previous pointers while rollback restores the prior active pack", (t) => {
   const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-"));
   const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-"));

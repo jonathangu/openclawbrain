@@ -22,7 +22,13 @@ import {
   type PackVectorsPayloadV1,
   type RouterArtifactV1
 } from "@openclawbrain/contracts";
-import { compileRuntime, compileRuntimeFromActivation, determineRouteMode, loadPackForCompile } from "@openclawbrain/compiler";
+import {
+  compileRuntime,
+  compileRuntimeFromActivation,
+  determineRouteMode,
+  loadPackForCompile,
+  resolveActivationCompileTarget
+} from "@openclawbrain/compiler";
 import {
   PACK_LAYOUT,
   activatePack,
@@ -37,6 +43,60 @@ function materializeFixturePack(rootDir: string): void {
   writePackFile(rootDir, PACK_LAYOUT.vectors, FIXTURE_PACK_VECTORS);
   writePackFile(rootDir, PACK_LAYOUT.router, FIXTURE_ROUTER_ARTIFACT);
   writePackFile(rootDir, PACK_LAYOUT.manifest, FIXTURE_ARTIFACT_MANIFEST);
+}
+
+function materializeNamedPack(rootDir: string, options: { packId: string; learnedRouting: boolean }): void {
+  const graph: PackGraphPayloadV1 = {
+    ...FIXTURE_PACK_GRAPH,
+    packId: options.packId
+  };
+  const vectors: PackVectorsPayloadV1 = {
+    ...FIXTURE_PACK_VECTORS,
+    packId: options.packId
+  };
+  const router: RouterArtifactV1 | null =
+    options.learnedRouting
+      ? {
+          ...FIXTURE_ROUTER_ARTIFACT,
+          routerIdentity: `${options.packId}:route_fn`
+        }
+      : null;
+
+  const manifest: ArtifactManifestV1 = {
+    ...FIXTURE_ARTIFACT_MANIFEST,
+    packId: options.packId,
+    routePolicy: options.learnedRouting ? "requires_learned_routing" : "heuristic_allowed",
+    runtimeAssets: {
+      graphPath: PACK_LAYOUT.graph,
+      vectorPath: PACK_LAYOUT.vectors,
+      router: options.learnedRouting
+        ? {
+            kind: "artifact",
+            identity: router?.routerIdentity ?? null,
+            artifactPath: PACK_LAYOUT.router
+          }
+        : {
+            kind: "none",
+            identity: null,
+            artifactPath: null
+          }
+    },
+    payloadChecksums: {
+      graph: computePayloadChecksum(graph),
+      vector: computePayloadChecksum(vectors),
+      router: router === null ? null : computePayloadChecksum(router)
+    },
+    modelFingerprints: options.learnedRouting
+      ? ["BAAI/bge-large-en-v1.5", "ollama:qwen3.5:9b-q4_K_M", router?.routerIdentity ?? "router:missing"]
+      : ["BAAI/bge-large-en-v1.5"]
+  };
+
+  writePackFile(rootDir, PACK_LAYOUT.graph, graph);
+  writePackFile(rootDir, PACK_LAYOUT.vectors, vectors);
+  if (router !== null) {
+    writePackFile(rootDir, PACK_LAYOUT.router, router);
+  }
+  writePackFile(rootDir, PACK_LAYOUT.manifest, manifest);
 }
 
 interface BuildFixtureExportOptions {
@@ -168,14 +228,15 @@ function materializeActivationPack(rootDir: string, options: MaterializeActivati
     ]
   };
 
-  const router: RouterArtifactV1 | null = options.learnedRouting
-    ? {
-        ...FIXTURE_ROUTER_ARTIFACT,
-        routerIdentity: `${options.packId}:route_fn`,
-        trainedAt: options.builtAt,
-        requiresLearnedRouting: true
-      }
-    : null;
+  const router: RouterArtifactV1 | null =
+    options.learnedRouting
+      ? {
+          ...FIXTURE_ROUTER_ARTIFACT,
+          routerIdentity: `${options.packId}:route_fn`,
+          trainedAt: options.builtAt,
+          requiresLearnedRouting: true
+        }
+      : null;
 
   const manifest: ArtifactManifestV1 = {
     ...FIXTURE_ARTIFACT_MANIFEST,
@@ -374,6 +435,188 @@ test("compileRuntime applies native structural compaction under a character budg
   assert.match(response.diagnostics.notes.join(";"), /native_structural_compaction=applied/);
 });
 
+test("compileRuntime rejects stale activePackId expectations", (t: TestContext) => {
+  const rootDir = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-compile-"));
+  t.after(() => rmSync(rootDir, { recursive: true, force: true }));
+  materializeFixturePack(rootDir);
+
+  assert.throws(
+    () =>
+      compileRuntime(rootDir, {
+        contract: CONTRACT_IDS.runtimeCompile,
+        agentId: "agent-stale-pack",
+        userMessage: "Run the scanner with qwen checkpoints.",
+        maxContextBlocks: 1,
+        modeRequested: "heuristic",
+        activePackId: "pack-stale-runtime-view",
+        runtimeHints: ["feedback scanner"]
+      }),
+    /activePackId pack-stale-runtime-view does not match loaded pack/
+  );
+});
+
+test("compileRuntimeFromActivation serves the active pack and respects promotion", (t: TestContext) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-compile-"));
+  const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-pack-"));
+  const candidateRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-candidate-pack-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(activeRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(candidateRoot, { recursive: true, force: true }));
+
+  materializeNamedPack(activeRoot, {
+    packId: "pack-active-serving",
+    learnedRouting: false
+  });
+  materializeNamedPack(candidateRoot, {
+    packId: "pack-candidate-serving",
+    learnedRouting: true
+  });
+
+  activatePack(activationRoot, activeRoot, "2026-03-06T06:00:00.000Z");
+  stageCandidatePack(activationRoot, candidateRoot, "2026-03-06T06:05:00.000Z");
+
+  const activeCompile = compileRuntimeFromActivation(activationRoot, {
+    contract: CONTRACT_IDS.runtimeCompile,
+    agentId: "agent-active-serving",
+    userMessage: "feedback scanner manifest structural compaction context",
+    maxContextBlocks: 3,
+    maxContextChars: 180,
+    modeRequested: "heuristic",
+    activePackId: "pack-active-serving",
+    compactionMode: "native",
+    runtimeHints: ["pack-backed selection"]
+  });
+
+  assert.equal(activeCompile.slot, "active");
+  assert.equal(activeCompile.response.packId, "pack-active-serving");
+  assert.equal(activeCompile.target.packId, "pack-active-serving");
+  assert.equal(activeCompile.response.diagnostics.modeEffective, "heuristic");
+  assert.equal(activeCompile.response.diagnostics.compactionApplied, true);
+  assert.equal(activeCompile.response.diagnostics.selectedCharCount <= 180, true);
+
+  promoteCandidatePack(activationRoot, "2026-03-06T06:10:00.000Z");
+
+  const promotedCompile = compileRuntimeFromActivation(activationRoot, {
+    contract: CONTRACT_IDS.runtimeCompile,
+    agentId: "agent-promoted-serving",
+    userMessage: "feedback scanner manifest structural compaction context",
+    maxContextBlocks: 3,
+    maxContextChars: 180,
+    modeRequested: "heuristic",
+    activePackId: "pack-candidate-serving",
+    compactionMode: "native",
+    runtimeHints: ["pack-backed selection"]
+  });
+
+  assert.equal(promotedCompile.slot, "active");
+  assert.equal(promotedCompile.response.packId, "pack-candidate-serving");
+  assert.equal(promotedCompile.target.packId, "pack-candidate-serving");
+  assert.equal(promotedCompile.response.diagnostics.modeEffective, "learned");
+  assert.equal(promotedCompile.response.diagnostics.usedLearnedRouteFn, true);
+  assert.equal(promotedCompile.response.diagnostics.compactionApplied, true);
+});
+
+test("compileRuntimeFromActivation fails fast when no active pack is present", () => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-empty-activation-"));
+
+  try {
+    assert.throws(
+      () =>
+        compileRuntimeFromActivation(activationRoot, {
+          contract: CONTRACT_IDS.runtimeCompile,
+          agentId: "agent-empty-activation",
+          userMessage: "Compile scanner context.",
+          maxContextBlocks: 1,
+          modeRequested: "heuristic"
+        }),
+      /Activation slot active is empty/
+    );
+  } finally {
+    rmSync(activationRoot, { recursive: true, force: true });
+  }
+});
+
+test("resolveActivationCompileTarget validates manifest expectations before compile", (t: TestContext) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-expect-activation-"));
+  const packRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-expect-pack-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(packRoot, { recursive: true, force: true }));
+
+  materializeFixturePack(packRoot);
+  activatePack(activationRoot, packRoot, "2026-03-06T06:20:00.000Z");
+
+  const resolved = resolveActivationCompileTarget(activationRoot, {
+    expectation: {
+      packId: FIXTURE_ARTIFACT_MANIFEST.packId,
+      routePolicy: FIXTURE_ARTIFACT_MANIFEST.routePolicy,
+      routerIdentity: FIXTURE_ROUTER_ARTIFACT.routerIdentity,
+      workspaceSnapshot: FIXTURE_ARTIFACT_MANIFEST.provenance.workspaceSnapshot,
+      workspaceRevision: FIXTURE_ARTIFACT_MANIFEST.provenance.workspace.revision,
+      eventRange: {
+        start: FIXTURE_ARTIFACT_MANIFEST.provenance.eventRange.start,
+        end: FIXTURE_ARTIFACT_MANIFEST.provenance.eventRange.end,
+        count: FIXTURE_ARTIFACT_MANIFEST.provenance.eventRange.count
+      },
+      eventExportDigest: FIXTURE_ARTIFACT_MANIFEST.provenance.eventExports?.exportDigest ?? null,
+      builtAt: FIXTURE_ARTIFACT_MANIFEST.provenance.builtAt
+    }
+  });
+
+  assert.equal(resolved.slot, "active");
+  assert.equal(resolved.target.packId, FIXTURE_ARTIFACT_MANIFEST.packId);
+
+  assert.throws(
+    () =>
+      resolveActivationCompileTarget(activationRoot, {
+        expectation: {
+          workspaceSnapshot: "workspace-stale@snapshot"
+        }
+      }),
+    /Activation compile target mismatch: runtime compile target workspaceSnapshot/
+  );
+});
+
+test("resolveActivationCompileTarget accepts equivalent expectation aliases with different key order", (t: TestContext) => {
+  const fixture = setupActivatedCandidateFixture(t);
+
+  const resolved = resolveActivationCompileTarget(fixture.activationRoot, {
+    expectation: {
+      packId: fixture.candidatePackId,
+      routePolicy: "requires_learned_routing",
+      routerIdentity: fixture.candidateRouterIdentity,
+      workspaceSnapshot: fixture.candidateWorkspaceSnapshot,
+      workspaceRevision: fixture.candidateWorkspaceRevision,
+      eventRange: {
+        start: fixture.candidateExport.range.start,
+        end: fixture.candidateExport.range.end,
+        count: fixture.candidateExport.range.count
+      },
+      eventExportDigest: fixture.candidateExport.provenance.exportDigest,
+      builtAt: fixture.candidateBuiltAt
+    },
+    expectedTarget: {
+      builtAt: fixture.candidateBuiltAt,
+      eventExportDigest: fixture.candidateExport.provenance.exportDigest,
+      eventRange: {
+        count: fixture.candidateExport.range.count,
+        end: fixture.candidateExport.range.end,
+        start: fixture.candidateExport.range.start
+      },
+      workspaceRevision: fixture.candidateWorkspaceRevision,
+      workspaceSnapshot: fixture.candidateWorkspaceSnapshot,
+      routerIdentity: fixture.candidateRouterIdentity,
+      routePolicy: "requires_learned_routing",
+      packId: fixture.candidatePackId
+    }
+  });
+
+  assert.equal(resolved.slot, "active");
+  assert.equal(resolved.target.packId, fixture.candidatePackId);
+  assert.equal(resolved.target.eventExportDigest, fixture.candidateExport.provenance.exportDigest);
+});
+
 test("compileRuntimeFromActivation compiles the promoted pack when expected provenance matches", (t: TestContext) => {
   const fixture = setupActivatedCandidateFixture(t);
 
@@ -414,10 +657,7 @@ test("compileRuntimeFromActivation compiles the promoted pack when expected prov
   assert.equal(result.response.diagnostics.modeEffective, "learned");
   assert.equal(result.response.diagnostics.usedLearnedRouteFn, true);
   assert.equal(result.response.selectedContext.length > 0, true);
-  assert.equal(
-    result.response.selectedContext.some((block) => /activation promotion evidence/i.test(block.text)),
-    true
-  );
+  assert.equal(result.response.selectedContext.some((block) => /activation promotion evidence/i.test(block.text)), true);
 });
 
 test("compileRuntimeFromActivation rejects stale provenance expectations before compiling", (t: TestContext) => {
@@ -442,7 +682,7 @@ test("compileRuntimeFromActivation rejects stale provenance expectations before 
           }
         }
       ),
-    /activation compile target mismatch: expected workspaceSnapshot workspace-compile@snapshot-stale but found workspace-compile@snapshot-candidate; expected eventExportDigest sha256-stale but found sha256-/
+    /Activation compile target mismatch: runtime compile target workspaceSnapshot .* does not match expected workspace-compile@snapshot-stale; runtime compile target eventExportDigest .* does not match expected sha256-stale/
   );
 });
 
@@ -459,9 +699,7 @@ test("pack load rejects tampered graph payloads", (t: TestContext) => {
     path.join(rootDir, PACK_LAYOUT.graph),
     canonicalJson({
       ...FIXTURE_PACK_GRAPH,
-      blocks: FIXTURE_PACK_GRAPH.blocks.map((block, index) =>
-        index === 0 ? { ...block, text: `${block.text} tampered` } : block
-      )
+      blocks: FIXTURE_PACK_GRAPH.blocks.map((block, index) => (index === 0 ? { ...block, text: `${block.text} tampered` } : block))
     }),
     "utf8"
   );

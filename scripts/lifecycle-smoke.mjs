@@ -197,6 +197,8 @@ function main() {
       {
         expectedTarget: {
           packId: candidatePack.manifest.packId,
+          routePolicy: candidatePack.manifest.routePolicy,
+          routerIdentity: candidatePack.router?.routerIdentity ?? null,
           workspaceSnapshot: "workspace-phase-2@snapshot-candidate",
           workspaceRevision: "phase-2-candidate-rev",
           eventRange: {

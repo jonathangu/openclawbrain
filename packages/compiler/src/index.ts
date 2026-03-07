@@ -11,8 +11,10 @@ import {
   type RuntimeCompileResponseV1,
   type RuntimeCompileTargetV1,
   type RuntimeContextBlockV1,
+  validateRuntimeCompileExpectation,
   validateRuntimeCompileRequest,
-  validateRuntimeCompileResponse
+  validateRuntimeCompileResponse,
+  validateRuntimeCompileTargetExpectation
 } from "@openclawbrain/contracts";
 import { describePackCompileTarget, loadPack, loadPackFromActivation, type PackDescriptor } from "@openclawbrain/pack-format";
 
@@ -33,10 +35,18 @@ export interface RankedContextBlock {
 export interface ActivationCompileOptions {
   slot?: ActivationPointerSlot;
   requireActivationReady?: boolean;
+  expectation?: RuntimeCompileExpectationV1;
   expectedTarget?: RuntimeCompileExpectationV1;
 }
 
-export interface ActivationCompileResult {
+export interface ActivationCompileResolution {
+  slot: ActivationPointerSlot;
+  pack: LoadedPack;
+  target: RuntimeCompileTargetV1;
+}
+
+export interface ActivationCompileResult extends RuntimeCompileResponseV1 {
+  slot: ActivationPointerSlot;
   target: RuntimeCompileTargetV1;
   response: RuntimeCompileResponseV1;
 }
@@ -229,64 +239,103 @@ export function determineRouteMode(pack: LoadedPack, requested: RouteMode): Rout
   return pack.manifest.routePolicy === "requires_learned_routing" ? "learned" : requested;
 }
 
+function assertRequestPackExpectation(pack: LoadedPack, request: RuntimeCompileRequestV1): void {
+  if (request.activePackId !== undefined && request.activePackId !== pack.manifest.packId) {
+    throw new Error(`Compile request activePackId ${request.activePackId} does not match loaded pack ${pack.manifest.packId}`);
+  }
+}
+
 export function loadPackForCompile(rootDir: string): LoadedPack {
   return loadPack(rootDir);
 }
 
-function describeExpectedValue(value: string | number | null): string {
-  return value === null ? "null" : String(value);
+function resolveActivationCompileExpectation(options: ActivationCompileOptions): RuntimeCompileExpectationV1 | undefined {
+  const legacyExpectation = options.expectation;
+  const expectedTarget = options.expectedTarget;
+
+  if (legacyExpectation === undefined) {
+    return expectedTarget;
+  }
+  if (expectedTarget === undefined) {
+    return legacyExpectation;
+  }
+
+  const conflicts: string[] = [];
+
+  if ((legacyExpectation.packId ?? null) !== (expectedTarget.packId ?? null)) {
+    conflicts.push("packId");
+  }
+  if ((legacyExpectation.routePolicy ?? null) !== (expectedTarget.routePolicy ?? null)) {
+    conflicts.push("routePolicy");
+  }
+  if ((legacyExpectation.routerIdentity ?? null) !== (expectedTarget.routerIdentity ?? null)) {
+    conflicts.push("routerIdentity");
+  }
+  if ((legacyExpectation.workspaceSnapshot ?? null) !== (expectedTarget.workspaceSnapshot ?? null)) {
+    conflicts.push("workspaceSnapshot");
+  }
+  if ((legacyExpectation.workspaceRevision ?? null) !== (expectedTarget.workspaceRevision ?? null)) {
+    conflicts.push("workspaceRevision");
+  }
+
+  const legacyRange = legacyExpectation.eventRange;
+  const expectedRange = expectedTarget.eventRange;
+  if (
+    (legacyRange?.start ?? null) !== (expectedRange?.start ?? null) ||
+    (legacyRange?.end ?? null) !== (expectedRange?.end ?? null) ||
+    (legacyRange?.count ?? null) !== (expectedRange?.count ?? null)
+  ) {
+    conflicts.push("eventRange");
+  }
+
+  if ((legacyExpectation.eventExportDigest ?? null) !== (expectedTarget.eventExportDigest ?? null)) {
+    conflicts.push("eventExportDigest");
+  }
+  if ((legacyExpectation.builtAt ?? null) !== (expectedTarget.builtAt ?? null)) {
+    conflicts.push("builtAt");
+  }
+
+  if (conflicts.length > 0) {
+    throw new Error(`Activation compile options expectation and expectedTarget differ for: ${conflicts.join(", ")}`);
+  }
+
+  return expectedTarget;
 }
 
-export function findCompileTargetExpectationMismatches(
-  target: RuntimeCompileTargetV1,
-  expected: RuntimeCompileExpectationV1
-): string[] {
-  const mismatches: string[] = [];
+export function resolveActivationCompileTarget(rootDir: string, options: ActivationCompileOptions = {}): ActivationCompileResolution {
+  const slot = options.slot ?? "active";
+  const pack = loadPackFromActivation(rootDir, slot, {
+    requireActivationReady: options.requireActivationReady !== false
+  });
 
-  if (expected.packId !== undefined && target.packId !== expected.packId) {
-    mismatches.push(`expected packId ${describeExpectedValue(expected.packId)} but found ${describeExpectedValue(target.packId)}`);
-  }
-  if (expected.routePolicy !== undefined && target.routePolicy !== expected.routePolicy) {
-    mismatches.push(
-      `expected routePolicy ${describeExpectedValue(expected.routePolicy)} but found ${describeExpectedValue(target.routePolicy)}`
-    );
-  }
-  if (expected.routerIdentity !== undefined && target.routerIdentity !== expected.routerIdentity) {
-    mismatches.push(
-      `expected routerIdentity ${describeExpectedValue(expected.routerIdentity)} but found ${describeExpectedValue(target.routerIdentity)}`
-    );
-  }
-  if (expected.workspaceSnapshot !== undefined && target.workspaceSnapshot !== expected.workspaceSnapshot) {
-    mismatches.push(
-      `expected workspaceSnapshot ${describeExpectedValue(expected.workspaceSnapshot)} but found ${describeExpectedValue(target.workspaceSnapshot)}`
-    );
-  }
-  if (expected.workspaceRevision !== undefined && target.workspaceRevision !== expected.workspaceRevision) {
-    mismatches.push(
-      `expected workspaceRevision ${describeExpectedValue(expected.workspaceRevision)} but found ${describeExpectedValue(target.workspaceRevision)}`
-    );
-  }
-  if (expected.eventRange !== undefined) {
-    if (target.eventRange.start !== expected.eventRange.start) {
-      mismatches.push(`expected eventRange.start ${expected.eventRange.start} but found ${target.eventRange.start}`);
-    }
-    if (target.eventRange.end !== expected.eventRange.end) {
-      mismatches.push(`expected eventRange.end ${expected.eventRange.end} but found ${target.eventRange.end}`);
-    }
-    if (target.eventRange.count !== expected.eventRange.count) {
-      mismatches.push(`expected eventRange.count ${expected.eventRange.count} but found ${target.eventRange.count}`);
-    }
-  }
-  if (expected.eventExportDigest !== undefined && target.eventExportDigest !== expected.eventExportDigest) {
-    mismatches.push(
-      `expected eventExportDigest ${describeExpectedValue(expected.eventExportDigest)} but found ${describeExpectedValue(target.eventExportDigest)}`
-    );
-  }
-  if (expected.builtAt !== undefined && target.builtAt !== expected.builtAt) {
-    mismatches.push(`expected builtAt ${describeExpectedValue(expected.builtAt)} but found ${describeExpectedValue(target.builtAt)}`);
+  if (pack === null) {
+    throw new Error(`Activation slot ${slot} is empty`);
   }
 
-  return mismatches;
+  const target = describePackCompileTarget(pack);
+  const expectation = resolveActivationCompileExpectation(options);
+
+  if (expectation !== undefined) {
+    const expectationErrors = validateRuntimeCompileExpectation(expectation);
+    if (expectationErrors.length > 0) {
+      throw new Error(`Invalid compile expectation: ${expectationErrors.join("; ")}`);
+    }
+
+    const compatibilityErrors = validateRuntimeCompileTargetExpectation(target, expectation);
+    if (compatibilityErrors.length > 0) {
+      throw new Error(`Activation compile target mismatch: ${compatibilityErrors.join("; ")}`);
+    }
+  }
+
+  return {
+    slot,
+    pack,
+    target
+  };
+}
+
+export function loadPackForActivationCompile(rootDir: string, options: ActivationCompileOptions = {}): LoadedPack {
+  return resolveActivationCompileTarget(rootDir, options).pack;
 }
 
 export function rankContextBlocks(pack: LoadedPack, request: RuntimeCompileRequestV1): RankedContextBlock[] {
@@ -351,6 +400,7 @@ export function compileRuntime(packOrRoot: LoadedPack | string, request: Runtime
   }
 
   const pack = typeof packOrRoot === "string" ? loadPackForCompile(packOrRoot) : packOrRoot;
+  assertRequestPackExpectation(pack, request);
   const modeEffective = determineRouteMode(pack, request.modeRequested);
   const usedLearnedRouteFn = modeEffective === "learned";
 
@@ -362,15 +412,18 @@ export function compileRuntime(packOrRoot: LoadedPack | string, request: Runtime
   const maxBlocks = Math.max(0, request.maxContextBlocks);
   const matched = ranked.filter((entry) => entry.matchedTokens.length > 0);
   const candidatePool = matched.length > 0 ? matched : ranked;
-  const selected = maxBlocks === 0 ? [] : candidatePool.slice(0, maxBlocks).map((entry) =>
-    buildContextBlock({
-      id: entry.blockId,
-      source: entry.source,
-      text: entry.text,
-      tokenCount: entry.tokenCount,
-      ...(entry.compactedFrom !== undefined ? { compactedFrom: entry.compactedFrom } : {})
-    })
-  );
+  const selected =
+    maxBlocks === 0
+      ? []
+      : candidatePool.slice(0, maxBlocks).map((entry) =>
+          buildContextBlock({
+            id: entry.blockId,
+            source: entry.source,
+            text: entry.text,
+            tokenCount: entry.tokenCount,
+            ...(entry.compactedFrom !== undefined ? { compactedFrom: entry.compactedFrom } : {})
+          })
+        );
   const compactionMode = request.compactionMode ?? "native";
   const fitted = fitContextToCharBudget(selected, request.maxContextChars, compactionMode);
   const selectedContext = fitted.blocks;
@@ -434,24 +487,20 @@ export function compileRuntimeFromActivation(
   request: RuntimeCompileRequestV1,
   options: ActivationCompileOptions = {}
 ): ActivationCompileResult {
-  const slot = options.slot ?? "active";
-  const pack = loadPackFromActivation(rootDir, slot, {
-    requireActivationReady: options.requireActivationReady !== false
-  });
-
-  if (pack === null) {
-    throw new Error(`activation slot ${slot} is empty`);
-  }
-
-  const target = describePackCompileTarget(pack);
-  const mismatches = options.expectedTarget === undefined ? [] : findCompileTargetExpectationMismatches(target, options.expectedTarget);
-  if (mismatches.length > 0) {
-    throw new Error(`activation compile target mismatch: ${mismatches.join("; ")}`);
-  }
+  const resolved = resolveActivationCompileTarget(rootDir, options);
+  const compiledRequest =
+    request.activePackId === undefined && resolved.slot === "active"
+      ? {
+          ...request,
+          activePackId: resolved.target.packId
+        }
+      : request;
+  const response = compileRuntime(resolved.pack, compiledRequest);
 
   return {
-    target,
-    response: compileRuntime(pack, request)
+    ...response,
+    slot: resolved.slot,
+    target: resolved.target,
+    response
   };
 }
-
