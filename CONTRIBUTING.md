@@ -24,7 +24,7 @@
 ## Code style
 
 - No dedicated linter or formatter is currently required by the TypeScript workspace.
-- Keep public interfaces focused, deterministic, and backward-compatible where possible.
+- Keep public interfaces focused, deterministic, and stable for downstream package consumers.
 - Match the existing style of the package you touch.
 
 ## Test requirements

@@ -2,14 +2,13 @@
 
 OpenClawBrain is the TypeScript-first workspace for deterministic, pack-backed context products.
 
-The repo’s public story is now centered on four guarantees:
+The repo’s public story is centered on five guarantees:
 
-- larger-context tolerance through explicit compile budgets and token-aware pack blocks
-- native structural compaction over pack-backed context instead of ad hoc prompt-side truncation
-- deterministic context selection from immutable packs, vectors, and manifest-gated routing artifacts
-- a clean repo/package boundary where the monorepo is private and the scoped TypeScript packages are the supported public surface
-
-Phase 2 is now explicit at the workspace root: the repo carries a deterministic lifecycle smoke that proves one true lifecycle across normalized events, event export, learner pack materialization, activation staging/promotion, and compiler runtime compilation against the promoted pack.
+- TypeScript-first package surface published as `@openclawbrain/*`
+- fast boot from existing pack files with explicit compile budgets and token-aware pack blocks
+- always-on background learning that hydrates richer packs without blocking runtime answers
+- a strict runtime boundary where OpenClaw owns runtime orchestration and OpenClawBrain owns pack artifacts plus deterministic compile contracts
+- an honest proof boundary where `pnpm lifecycle:smoke` validates one end-to-end lifecycle from normalized events to compilation against the promoted pack
 
 ## Boundary
 
@@ -17,8 +16,6 @@ The product boundary is intentionally narrow:
 
 - OpenClaw owns runtime orchestration, prompt assembly, diagnostics, sessions, and fail-open behavior.
 - OpenClawBrain owns contracts, normalized event flows, workspace and provenance metadata, immutable pack artifacts, activation helpers, native structural compaction, deterministic compilation, and learner-side candidate-pack assembly.
-
-There is no Python daemon, socket, hook, or wheel-release lane in the supported surface of this repo.
 
 ## Public packages
 
@@ -37,9 +34,9 @@ The supported packages live under `packages/`:
 ## Context story
 
 - `@openclawbrain/contracts` defines `runtime_compile.v1`, immutable pack payloads, token-aware block metadata, and native compaction semantics.
-- `@openclawbrain/learner` emits deterministic candidate packs with structural-summary blocks that make large event exports serveable.
+- `@openclawbrain/learner` runs the teacher lane off the runtime hot path and emits deterministic candidate packs with structural-summary blocks that keep large event exports serveable.
 - `@openclawbrain/pack-format` preserves the immutable graph/vector/router boundary that compilation reads from disk.
-- `@openclawbrain/compiler` performs deterministic pack-backed ranking, enforces learned-routing policy, and applies native structural compaction under character budgets.
+- `@openclawbrain/compiler` answers from promoted pack files already on disk, performs deterministic pack-backed ranking, enforces learned-routing policy, and applies native structural compaction under character budgets.
 - `@openclawbrain/activation` promotes only activation-ready packs into active runtime slots.
 
 ## Package flow
@@ -85,7 +82,7 @@ That command cleans the workspace, rebuilds it, reruns tests, and produces publi
 
 ## Docs
 
-- `docs/typescript-first-convergence.md`
+- `docs/public-surface.md`
 - `docs/contracts-v1.md`
 - `scripts/lifecycle-smoke.mjs`
 - `docs/release.md`
