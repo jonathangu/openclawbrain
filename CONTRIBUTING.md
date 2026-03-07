@@ -13,9 +13,9 @@
 
 ## Release-readiness commands
 
-- `pnpm build` builds the public TypeScript packages.
+- `pnpm build` builds the public workspace packages.
 - `pnpm check` rebuilds the workspace and runs the package test suites.
-- `pnpm release:pack` creates package tarballs in `.release/`.
+- `pnpm release:pack` creates package tarballs in `.release/` for all public workspace packages.
 - `pnpm release:check` performs a clean rebuild, reruns tests, and generates release tarballs.
 
 ## Code style
@@ -27,15 +27,9 @@
 ## Test requirements
 
 - All workspace checks should pass before opening a PR.
-- Run `pnpm check` for changes that touch the TypeScript public surface.
+- Run `pnpm check` for changes that touch the TypeScript workspace surface.
 - Add or update tests when package behavior changes.
-
-## Legacy Python material
-
-Legacy Python graph, replay, benchmark, and CLI code still remains in-tree for migration and offline research. If you touch those areas, run the smallest relevant `pytest` slice in addition to the TypeScript checks.
 
 ## Releases
 
 The TypeScript package release flow lives in `docs/release.md`.
-
-The old PyPI release path is no longer the forward release story for this convergence branch.

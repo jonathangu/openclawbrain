@@ -2,7 +2,7 @@
 
 Candidate-pack assembly helpers for OpenClawBrain.
 
-This package stays on the artifact side of the boundary: it ingests normalized OpenClaw event exports, emits deterministic candidate pack payloads, and materializes pack directories for downstream validation and activation. It does not own runtime activation, daemon lifecycle, hook injection, or sockets.
+This package stays on the artifact side of the boundary: it ingests normalized OpenClaw event exports, emits deterministic candidate pack payloads, and materializes pack directories for downstream validation and activation.
 
 ## Install
 

@@ -6,7 +6,7 @@ This directory holds the versioned contract artifacts and golden fixtures for th
 
 - `@openclawbrain/contracts` is the public library surface for these payloads.
 - `contracts/` keeps the schema documents and golden JSON fixtures that support docs, parity checks, and cross-repo validation.
-- The canonical runtime boundary is now the TypeScript package surface, not the retired Python daemon/socket integration path.
+- The canonical boundary is the TypeScript package surface plus these versioned fixtures.
 
 ## Current contract families
 
@@ -22,4 +22,4 @@ Each version directory contains the schema for that payload family plus one or m
 - Import types, builders, and validators from `@openclawbrain/contracts` for application code.
 - Use the files in this directory when you need cross-repo fixture parity or human-readable contract references.
 
-The fixtures here describe the public artifact and runtime payload boundary only. They do not restore the old Python runtime-overlap model.
+The fixtures here describe the public artifact and runtime payload boundary only.

@@ -14,19 +14,35 @@ git clone <repo-url>
 cd <repo>
 pnpm install --frozen-lockfile
 pnpm check
+pnpm release:pack
 ```
 
 ## Package-scoped validation
 
 ```bash
-pnpm --filter @openclawbrain/contracts test
-pnpm --filter @openclawbrain/pack-format test
-pnpm --filter @openclawbrain/compiler test
-pnpm --filter @openclawbrain/learner test
+pnpm --filter @openclawbrain/<package-name> build
+pnpm --filter @openclawbrain/<package-name> test
 ```
+
+Published package names:
+
+- `contracts`
+- `events`
+- `event-export`
+- `workspace-metadata`
+- `provenance`
+- `pack-format`
+- `activation`
+- `compiler`
+- `learner`
 
 ## What `pnpm check` covers
 
 - TypeScript project-reference build for all public packages
 - Node test runs for each package
-- Contract, pack-format, compiler, and learner fixture validation
+- Package fixture validation across the published workspace
+
+## What `pnpm release:pack` covers
+
+- Tarball generation for every published `@openclawbrain/*` package
+- Packaged-file validation against each package's `files`, `exports`, and `prepack` hooks

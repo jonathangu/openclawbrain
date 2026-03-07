@@ -2,7 +2,7 @@
   "name": "openclawbrain-workspace",
   "version": "0.1.0",
   "private": true,
-  "description": "TypeScript-first convergence workspace for the public OpenClawBrain repo.",
+  "description": "Public OpenClawBrain TypeScript workspace. The root package is private; publish the scoped packages under packages/.",
   "license": "Apache-2.0",
   "author": "Jonathan Gu <jonathangu@gmail.com>",
   "repository": {
@@ -15,10 +15,7 @@
   },
   "packageManager": "pnpm@10.30.3",
   "workspaces": [
-    "packages/contracts",
-    "packages/pack-format",
-    "packages/compiler",
-    "packages/learner"
+    "packages/*"
   ],
   "keywords": [
     "openclawbrain",
@@ -35,7 +32,10 @@
     "clean": "pnpm -r clean && tsc -b --clean tsconfig.build.json && rm -rf .release",
     "check": "pnpm typecheck && pnpm test",
     "release:check": "pnpm clean && pnpm check && pnpm release:pack",
-    "release:pack": "ROOT_DIR=$(pwd) && mkdir -p \"$ROOT_DIR/.release\" && for pkg in packages/contracts packages/pack-format packages/compiler packages/learner; do (cd \"$pkg\" && pnpm pack --pack-destination \"$ROOT_DIR/.release\"); done",
+    "release:pack": "ROOT_DIR=$(pwd) && mkdir -p \"$ROOT_DIR/.release\" && pnpm -r --filter \"@openclawbrain/*\" pack --pack-destination \"$ROOT_DIR/.release\"",
+    "release:publish": "for pkg in packages/contracts packages/events packages/event-export packages/workspace-metadata packages/provenance packages/pack-format packages/activation packages/compiler packages/learner; do (cd \"$pkg\" && npm publish --access public); done",
+    "release:publish:dry-run": "for pkg in packages/contracts packages/events packages/event-export packages/workspace-metadata packages/provenance packages/pack-format packages/activation packages/compiler packages/learner; do (cd \"$pkg\" && npm publish --access public --dry-run); done",
+    "release:publish:provenance": "for pkg in packages/contracts packages/events packages/event-export packages/workspace-metadata packages/provenance packages/pack-format packages/activation packages/compiler packages/learner; do (cd \"$pkg\" && npm publish --access public --provenance); done",
     "typecheck": "tsc -b --pretty false tsconfig.build.json",
     "test": "pnpm run build && pnpm -r test"
   },

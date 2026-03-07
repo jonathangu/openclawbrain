@@ -6,12 +6,23 @@
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
   "sideEffects": false,
+  "license": "Apache-2.0",
+  "author": "Jonathan Gu <jonathangu@gmail.com>",
   "keywords": [
     "openclawbrain",
     "activation",
     "packs",
     "typescript"
   ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jonathangu/openclawbrain.git",
+    "directory": "packages/activation"
+  },
+  "homepage": "https://github.com/jonathangu/openclawbrain/tree/main/packages/activation#readme",
+  "bugs": {
+    "url": "https://github.com/jonathangu/openclawbrain/issues"
+  },
   "engines": {
     "node": ">=20"
   },
@@ -32,6 +43,7 @@
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean",
+    "prepack": "pnpm run build",
     "test": "node --test dist/test/*.test.js"
   },
   "dependencies": {

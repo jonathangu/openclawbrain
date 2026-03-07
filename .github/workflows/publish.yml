@@ -31,14 +31,5 @@ jobs:
       - name: Verify release candidate
         run: pnpm release:check
 
-      - name: Publish @openclawbrain/contracts
-        run: cd packages/contracts && npm publish --access public --provenance
-
-      - name: Publish @openclawbrain/pack-format
-        run: cd packages/pack-format && npm publish --access public --provenance
-
-      - name: Publish @openclawbrain/compiler
-        run: cd packages/compiler && npm publish --access public --provenance
-
-      - name: Publish @openclawbrain/learner
-        run: cd packages/learner && npm publish --access public --provenance
+      - name: Publish workspace packages
+        run: pnpm -r publish --access public --no-git-checks --provenance
