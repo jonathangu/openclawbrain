@@ -15,6 +15,7 @@ import {
   buildNormalizedEventExportBridge,
   buildNormalizedEventDedupId,
   createEventExportCursor,
+  describeNormalizedEventExportObservability,
   validateEventExportCursor,
   validateNormalizedEventExport,
   validateNormalizedEventExportBridge
@@ -131,6 +132,36 @@ test("event-export package derives deterministic range, provenance, and learning
   assert.equal(rebuilt.provenance.learningSurface.labelHarvest.humanLabels, FIXTURE_FEEDBACK_EVENTS.length);
   assert.equal(rebuilt.provenance.learningSurface.labelHarvest.selfLabels, 1);
   assert.match(rebuilt.provenance.learningSurface.scanSurfaces.join("\n"), /openclaw\/runtime\/whatsapp:teaching/);
+});
+
+test("event-export observability reports supervision freshness by source and latest teacher signal", () => {
+  const report = describeNormalizedEventExportObservability(FIXTURE_NORMALIZED_EVENT_EXPORT);
+
+  assert.equal(report.exportDigest, FIXTURE_NORMALIZED_EVENT_EXPORT.provenance.exportDigest);
+  assert.equal(report.range.end, 104);
+  assert.deepEqual(report.sourceStreams, ["openclaw/runtime/whatsapp"]);
+  assert.equal(report.supervisionFreshnessBySource.length, 1);
+  assert.deepEqual(report.supervisionFreshnessBySource[0], {
+    sourceStream: "openclaw/runtime/whatsapp",
+    eventCount: 4,
+    interactionCount: 2,
+    feedbackCount: 2,
+    humanLabelCount: 2,
+    selfLabelCount: 1,
+    freshestEventId: "evt-feedback-fixture-2",
+    freshestSequence: 104,
+    freshestCreatedAt: "2026-03-06T00:03:00.000Z",
+    freshestKind: "approval"
+  });
+  assert.deepEqual(report.teacherFreshness, {
+    freshestEventId: "evt-feedback-fixture-2",
+    freshestSequence: 104,
+    freshestCreatedAt: "2026-03-06T00:03:00.000Z",
+    freshestKind: "approval",
+    sourceStream: "openclaw/runtime/whatsapp",
+    humanLabelCount: 2,
+    sources: ["openclaw/runtime/whatsapp"]
+  });
 });
 
 test("event-export bridge emits deterministic live-first slices and non-blocking backfill cursors", () => {

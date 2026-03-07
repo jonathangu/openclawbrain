@@ -28,6 +28,7 @@ import {
 import {
   compileRuntime,
   compileRuntimeFromActivation,
+  describeCompileFallbackUsage,
   determineRouteMode,
   loadPackForCompile,
   rankContextBlocks,
@@ -652,6 +653,43 @@ test("compileRuntime fills fallback tiers after matched selection", (t: TestCont
 
   assert.deepEqual(response.selectedContext.map((block) => block.id), ["ctx-feedback-scanner", "ctx-runtime-compile"]);
   assert.match(response.diagnostics.notes.join(";"), /selection_tiers=token_match\+priority_fallback/);
+});
+
+test("compiler exposes fallback usage as an explicit report surface", (t: TestContext) => {
+  const rootDir = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-compile-fallback-report-"));
+  t.after(() => rmSync(rootDir, { recursive: true, force: true }));
+  materializeFixturePack(rootDir);
+
+  const priorityFallback = describeCompileFallbackUsage(
+    compileRuntime(rootDir, {
+      contract: CONTRACT_IDS.runtimeCompile,
+      agentId: "agent-fallback-report-priority",
+      userMessage: "zzzz qqqq",
+      maxContextBlocks: 1,
+      modeRequested: "heuristic",
+      runtimeHints: []
+    })
+  );
+
+  assert.equal(priorityFallback.selectionMode, "priority_fallback");
+  assert.equal(priorityFallback.selectionTiers, "priority_fallback_only");
+  assert.equal(priorityFallback.priorityFallbackUsed, true);
+
+  const mixedFallback = describeCompileFallbackUsage(
+    compileRuntime(rootDir, {
+      contract: CONTRACT_IDS.runtimeCompile,
+      agentId: "agent-fallback-report-mixed",
+      userMessage: "Run the scanner with qwen checkpoints.",
+      maxContextBlocks: 2,
+      modeRequested: "heuristic",
+      compactionMode: "none",
+      runtimeHints: []
+    })
+  );
+
+  assert.equal(mixedFallback.selectionMode, "token_match");
+  assert.equal(mixedFallback.selectionTiers, "token_match+priority_fallback");
+  assert.equal(mixedFallback.priorityFallbackUsed, true);
 });
 
 test("compileRuntime prunes overlapping compacted and raw context blocks", (t: TestContext) => {
