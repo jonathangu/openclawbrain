@@ -265,6 +265,89 @@ function buildCompileTargetFromPack(pack: PackDescriptor): RuntimeCompileTargetV
   };
 }
 
+function pointerPackIdentityFindings(
+  slot: ActivationPointerSlot,
+  record: ActivationPointerRecordV1,
+  pack: PackDescriptor
+): string[] {
+  const expected = buildActivationPointerRecord(slot, pack, record.updatedAt);
+  const errors: string[] = [];
+
+  if (path.resolve(record.packRootDir) !== path.resolve(expected.packRootDir)) {
+    errors.push(`pointer packRootDir ${record.packRootDir} does not match pack root ${expected.packRootDir}`);
+  }
+  if (path.resolve(record.manifestPath) !== path.resolve(expected.manifestPath)) {
+    errors.push(`pointer manifestPath ${record.manifestPath} does not match pack manifest ${expected.manifestPath}`);
+  }
+  if (record.manifestDigest !== expected.manifestDigest) {
+    errors.push(`pointer manifestDigest ${record.manifestDigest} does not match pack manifest digest ${expected.manifestDigest}`);
+  }
+  if (record.routePolicy !== expected.routePolicy) {
+    errors.push(`pointer routePolicy ${record.routePolicy} does not match pack routePolicy ${expected.routePolicy}`);
+  }
+  if (record.routerIdentity !== expected.routerIdentity) {
+    errors.push(`pointer routerIdentity ${record.routerIdentity ?? "null"} does not match pack router identity ${expected.routerIdentity ?? "null"}`);
+  }
+  if (record.workspaceSnapshot !== expected.workspaceSnapshot) {
+    errors.push(`pointer workspaceSnapshot ${record.workspaceSnapshot} does not match pack workspaceSnapshot ${expected.workspaceSnapshot}`);
+  }
+  if ((record.workspaceRevision ?? null) !== (expected.workspaceRevision ?? null)) {
+    errors.push(
+      `pointer workspaceRevision ${record.workspaceRevision ?? "null"} does not match pack workspace revision ${expected.workspaceRevision ?? "null"}`
+    );
+  }
+  if (record.eventRange.start !== expected.eventRange.start) {
+    errors.push(`pointer eventRange.start ${record.eventRange.start} does not match pack eventRange.start ${expected.eventRange.start}`);
+  }
+  if (record.eventRange.end !== expected.eventRange.end) {
+    errors.push(`pointer eventRange.end ${record.eventRange.end} does not match pack eventRange.end ${expected.eventRange.end}`);
+  }
+  if (record.eventRange.count !== expected.eventRange.count) {
+    errors.push(`pointer eventRange.count ${record.eventRange.count} does not match pack eventRange.count ${expected.eventRange.count}`);
+  }
+  if ((record.eventExportDigest ?? null) !== (expected.eventExportDigest ?? null)) {
+    errors.push(
+      `pointer eventExportDigest ${record.eventExportDigest ?? "null"} does not match pack event export digest ${expected.eventExportDigest ?? "null"}`
+    );
+  }
+  if (record.builtAt !== expected.builtAt) {
+    errors.push(`pointer builtAt ${record.builtAt} does not match pack builtAt ${expected.builtAt}`);
+  }
+
+  return errors;
+}
+
+function assertPointerPinnedToPack(slot: ActivationPointerSlot, record: ActivationPointerRecordV1 | null, pack: PackDescriptor): void {
+  if (record === null || record.packId !== pack.manifest.packId) {
+    return;
+  }
+
+  const errors = pointerPackIdentityFindings(slot, record, pack);
+  if (errors.length > 0) {
+    throw new Error(`${slot} pointer for packId ${record.packId} is already pinned to a different manifest: ${errors.join("; ")}`);
+  }
+}
+
+function assertRetainedPointerMatchesManifest(
+  slot: ActivationPointerSlot,
+  record: ActivationPointerRecordV1 | null,
+  options: {
+    requireActivationReady?: boolean;
+  } = {}
+): void {
+  if (record === null) {
+    return;
+  }
+
+  try {
+    ensurePackRecordMatchesManifest(record, {
+      requireActivationReady: options.requireActivationReady === true
+    });
+  } catch (error) {
+    throw new Error(`${slot} pointer cannot be retained: ${error instanceof Error ? error.message : String(error)}`);
+  }
+}
+
 function ensurePackRecordMatchesManifest(
   record: ActivationPointerRecordV1,
   options: {
@@ -341,12 +424,13 @@ function writeActivationPointers(rootDir: string, pointers: ActivationPointersV1
     throw new Error(`Invalid activation pointers: ${errors.join("; ")}`);
   }
 
-  const pointerPath = path.join(rootDir, ACTIVATION_LAYOUT.pointers);
+  const resolvedRootDir = path.resolve(rootDir);
+  const pointerPath = path.join(resolvedRootDir, ACTIVATION_LAYOUT.pointers);
   mkdirSync(path.dirname(pointerPath), { recursive: true });
   writeFileSync(pointerPath, canonicalJson(pointers), "utf8");
 
   return {
-    rootDir: path.resolve(rootDir),
+    rootDir: resolvedRootDir,
     pointerPath,
     pointers
   };
@@ -629,6 +713,8 @@ export function activatePack(rootDir: string, packRootDir: string, updatedAt = "
     throw new Error(`Pack is not activation-ready: ${activationErrors.join("; ")}`);
   }
 
+  assertPointerPinnedToPack("active", current.active, pack);
+
   if (current.active?.packId !== pack.manifest.packId) {
     assertPackIdAvailable(current, "active", pack.manifest.packId);
   }
@@ -650,6 +736,10 @@ export function activatePack(rootDir: string, packRootDir: string, updatedAt = "
 export function stageCandidatePack(rootDir: string, packRootDir: string, updatedAt = "2026-03-06T00:00:00.000Z"): ActivationStateDescriptor {
   const current = loadActivationPointers(rootDir).pointers;
   const pack = loadPack(path.resolve(packRootDir));
+
+  assertPointerPinnedToPack("candidate", current.candidate, pack);
+  assertRetainedPointerMatchesManifest("active", current.active, { requireActivationReady: true });
+  assertRetainedPointerMatchesManifest("previous", current.previous, { requireActivationReady: true });
   assertPackIdAvailable(current, "candidate", pack.manifest.packId);
 
   return writeActivationPointers(rootDir, {

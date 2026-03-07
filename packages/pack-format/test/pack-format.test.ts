@@ -444,3 +444,108 @@ test("rollback blocks previous packs whose manifests drift after promotion", (t)
   assert.match(inspection.rollback.findings.join("; "), /manifestDigest/);
   assert.throws(() => rollbackActivePack(activationRoot, "2026-03-06T07:15:00.000Z"), /manifestDigest/);
 });
+
+
+test("staging blocks when the retained active pointer drifts from its pinned manifest", (t) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-"));
+  const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-"));
+  const candidateRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-candidate-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(activeRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(candidateRoot, { recursive: true, force: true }));
+
+  const activePack = materializeTestPack(activeRoot, {
+    packId: "pack-active-staging-pinned",
+    learnedRouting: false,
+    eventStart: 10
+  });
+  materializeTestPack(candidateRoot, {
+    packId: "pack-candidate-staging-next",
+    learnedRouting: true,
+    eventStart: 20
+  });
+
+  activatePack(activationRoot, activeRoot, "2026-03-06T08:00:00.000Z");
+
+  writePackFile(activeRoot, PACK_LAYOUT.manifest, {
+    ...activePack.manifest,
+    modelFingerprints: [...activePack.manifest.modelFingerprints, "mutated-before-staging"]
+  });
+
+  assert.throws(
+    () => stageCandidatePack(activationRoot, candidateRoot, "2026-03-06T08:05:00.000Z"),
+    /active pointer cannot be retained: Invalid activation pointer: .*manifestDigest/
+  );
+});
+
+test("staging blocks when the retained previous pointer drifts from its pinned manifest", (t) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-"));
+  const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-"));
+  const candidateRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-candidate-"));
+  const nextCandidateRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-candidate-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(activeRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(candidateRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(nextCandidateRoot, { recursive: true, force: true }));
+
+  const activePack = materializeTestPack(activeRoot, {
+    packId: "pack-previous-staging-source",
+    learnedRouting: false,
+    eventStart: 10
+  });
+  materializeTestPack(candidateRoot, {
+    packId: "pack-active-staging-current",
+    learnedRouting: true,
+    eventStart: 20
+  });
+  materializeTestPack(nextCandidateRoot, {
+    packId: "pack-candidate-staging-future",
+    learnedRouting: true,
+    eventStart: 30
+  });
+
+  activatePack(activationRoot, activeRoot, "2026-03-06T09:00:00.000Z");
+  stageCandidatePack(activationRoot, candidateRoot, "2026-03-06T09:05:00.000Z");
+  promoteCandidatePack(activationRoot, "2026-03-06T09:10:00.000Z");
+
+  writePackFile(activeRoot, PACK_LAYOUT.manifest, {
+    ...activePack.manifest,
+    provenance: {
+      ...activePack.manifest.provenance,
+      offlineArtifacts: [...activePack.manifest.provenance.offlineArtifacts, "mutated-before-restaging"]
+    }
+  });
+
+  assert.throws(
+    () => stageCandidatePack(activationRoot, nextCandidateRoot, "2026-03-06T09:15:00.000Z"),
+    /previous pointer cannot be retained: Invalid activation pointer: .*manifestDigest/
+  );
+});
+
+test("activation blocks reusing an active packId after its pinned manifest drifts", (t) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-"));
+  const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(activeRoot, { recursive: true, force: true }));
+
+  const activePack = materializeTestPack(activeRoot, {
+    packId: "pack-active-manifest-pinned",
+    learnedRouting: true,
+    eventStart: 10
+  });
+
+  activatePack(activationRoot, activeRoot, "2026-03-06T10:00:00.000Z");
+
+  writePackFile(activeRoot, PACK_LAYOUT.manifest, {
+    ...activePack.manifest,
+    modelFingerprints: [...activePack.manifest.modelFingerprints, "mutated-before-reactivation"]
+  });
+
+  assert.throws(
+    () => activatePack(activationRoot, activeRoot, "2026-03-06T10:05:00.000Z"),
+    /active pointer for packId pack-active-manifest-pinned is already pinned to a different manifest: .*manifestDigest/
+  );
+});
