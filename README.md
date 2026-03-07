@@ -50,6 +50,7 @@ The workspace root carries two deterministic proof lanes:
 
 - `pnpm lifecycle:smoke` proves the learning lifecycle from normalized events to promoted-pack compilation
 - `pnpm observability:smoke` proves activation health, promotion safety, freshness, learned `route_fn` evidence, and explicit fallback diagnostics
+- `pnpm continuous-product-loop:smoke` proves the post-attach loop from live-style event export to canonical supervision, learner refresh, promotion, and later compile freshness
 
 - OpenClaw owns runtime orchestration, prompt assembly, diagnostics, sessions, and guarded fail-open behavior.
 - OpenClawBrain owns contracts, normalized event flows, workspace and provenance metadata, immutable pack artifacts, activation helpers, native structural compaction, deterministic compilation, and learner-side candidate-pack assembly.

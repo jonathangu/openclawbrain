@@ -32,6 +32,8 @@
     "build": "pnpm -r build",
     "clean": "pnpm -r clean && tsc -b --clean tsconfig.build.json && rm -rf .release",
     "check": "pnpm guard:merge-markers && pnpm test && pnpm lifecycle:smoke:built && pnpm observability:smoke:built",
+    "continuous-product-loop:smoke": "pnpm build && node ./scripts/continuous-product-loop-smoke.mjs",
+    "continuous-product-loop:smoke:built": "node ./scripts/continuous-product-loop-smoke.mjs",
     "lifecycle:smoke": "pnpm build && node ./scripts/lifecycle-smoke.mjs",
     "lifecycle:smoke:built": "node ./scripts/lifecycle-smoke.mjs",
     "observability:smoke": "pnpm build && node ./scripts/observability-smoke.mjs",

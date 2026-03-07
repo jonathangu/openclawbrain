@@ -14,10 +14,12 @@ import { materializeCandidatePack } from "@openclawbrain/learner";
 import { activatePack } from "@openclawbrain/pack-format";
 import {
   buildNormalizedRuntimeEventExport,
+  buildCanonicalSupervision,
   classifyFeedbackKind,
   compileRuntimeContext,
   loadRuntimeEventExportBundle,
   resolveActivePackForCompile,
+  runContinuousProductLoopTurn,
   runRuntimeTurn
 } from "@openclawbrain/openclaw";
 
@@ -306,6 +308,139 @@ test("runRuntimeTurn throws when a learned-required active route artifact is mis
       ),
     new RegExp(`Learned-routing hotpath hard requirement violated for active pack ${packId}`)
   );
+});
+
+test("runContinuousProductLoopTurn promotes fresher learned packs and later compiles use the newer route artifact", (t) => {
+  const rootDir = mkdtemp("openclawbrain-openclaw-product-loop-");
+  const activePackRoot = path.join(rootDir, "active-pack");
+  const activationRoot = path.join(rootDir, "activation");
+  const loopRoot = path.join(rootDir, "product-loop");
+  t.after(() => rmSync(rootDir, { recursive: true, force: true }));
+
+  const { packId: seedPackId } = materializeActivePack(activePackRoot, activationRoot);
+
+  const first = runContinuousProductLoopTurn({
+    activationRoot,
+    loopRoot,
+    packLabel: "post-attach-loop",
+    workspace: {
+      workspaceId: "workspace-openclaw-loop",
+      snapshotId: "workspace-openclaw-loop@snapshot-1",
+      capturedAt: "2026-03-07T18:00:30.000Z",
+      rootDir: "/workspace/openclawbrain",
+      branch: "main",
+      revision: "runtime-loop-rev-1",
+      labels: ["openclaw", "runtime", "loop"]
+    },
+    turn: {
+      agentId: "runtime-loop",
+      sessionId: "session-product-loop",
+      channel: "whatsapp",
+      userMessage: "Compile freshness evidence before promotion.",
+      runtimeHints: ["freshness", "promotion", "evidence"],
+      sequenceStart: 801,
+      compile: {
+        createdAt: "2026-03-07T18:00:00.000Z"
+      },
+      delivery: {
+        createdAt: "2026-03-07T18:01:00.000Z",
+        messageId: "msg-loop-1"
+      },
+      feedback: [
+        {
+          createdAt: "2026-03-07T18:02:00.000Z",
+          content: "Prefer the fresher learned route artifact after promotion when compiling freshness evidence."
+        }
+      ]
+    },
+    candidateBuiltAt: "2026-03-07T18:03:00.000Z",
+    stageUpdatedAt: "2026-03-07T18:04:00.000Z",
+    promoteUpdatedAt: "2026-03-07T18:05:00.000Z"
+  });
+
+  assert.equal(first.compileActiveVersion, 1);
+  assert.equal(first.compileActivePackId, seedPackId);
+  assert.equal(first.turn.eventExport.ok, true);
+  if (!first.turn.eventExport.ok || !first.turn.eventExport.wroteBundle) {
+    throw new Error("first product-loop turn should write a real event-export bundle");
+  }
+
+  const firstBundle = loadRuntimeEventExportBundle(first.turn.eventExport.rootDir);
+  const firstSupervision = buildCanonicalSupervision(firstBundle.normalizedEventExport);
+  assert.deepEqual(first.supervision, firstSupervision);
+  assert.equal(first.supervision?.humanLabelCount, 1);
+  assert.equal(first.supervision?.feedbackCounts.teachings, 1);
+  assert.equal(first.learning.promoted, true);
+  assert.equal(first.learning.promotionAllowed, true);
+  assert.equal(first.state.activePackVersion, 2);
+  assert.equal(first.state.packLineage.length, 2);
+  assert.notEqual(first.state.currentActivePack?.packId, seedPackId);
+  assert.notEqual(first.state.currentActivePack?.routerIdentity, `${seedPackId}:route_fn`);
+
+  const promotedAfterFirst = first.state.currentActivePack;
+  if (promotedAfterFirst === null) {
+    throw new Error("first product-loop turn should promote a fresher active pack");
+  }
+
+  const second = runContinuousProductLoopTurn({
+    activationRoot,
+    loopRoot,
+    packLabel: "post-attach-loop",
+    workspace: {
+      workspaceId: "workspace-openclaw-loop",
+      snapshotId: "workspace-openclaw-loop@snapshot-2",
+      capturedAt: "2026-03-07T18:10:30.000Z",
+      rootDir: "/workspace/openclawbrain",
+      branch: "main",
+      revision: "runtime-loop-rev-2",
+      labels: ["openclaw", "runtime", "loop", "follow-up"]
+    },
+    state: first.state,
+    turn: {
+      agentId: "runtime-loop",
+      sessionId: "session-product-loop",
+      channel: "whatsapp",
+      userMessage: "Compile the fresher learned route artifact after promotion.",
+      runtimeHints: ["freshness", "promotion", "learned", "route", "artifact"],
+      sequenceStart: 804,
+      compile: {
+        createdAt: "2026-03-07T18:10:00.000Z"
+      },
+      delivery: {
+        createdAt: "2026-03-07T18:11:00.000Z",
+        messageId: "msg-loop-2"
+      },
+      feedback: [
+        {
+          createdAt: "2026-03-07T18:12:00.000Z",
+          content: "Looks good. Keep the continuous post-attach product loop live."
+        }
+      ]
+    },
+    candidateBuiltAt: "2026-03-07T18:13:00.000Z",
+    stageUpdatedAt: "2026-03-07T18:14:00.000Z",
+    promoteUpdatedAt: "2026-03-07T18:15:00.000Z"
+  });
+
+  assert.equal(second.compileActiveVersion, 2);
+  assert.equal(second.compileActivePackId, promotedAfterFirst.packId);
+  assert.equal(second.turn.ok, true);
+  if (!second.turn.ok) {
+    return;
+  }
+
+  assert.equal(second.turn.activePackId, promotedAfterFirst.packId);
+  assert.equal(second.turn.compileResponse.diagnostics.usedLearnedRouteFn, true);
+  assert.equal(second.turn.compileResponse.diagnostics.routerIdentity, promotedAfterFirst.routerIdentity);
+  assert.equal(
+    second.turn.compileResponse.selectedContext.some((block) =>
+      block.text.includes("Prefer the fresher learned route artifact after promotion when compiling freshness evidence.")
+    ),
+    true
+  );
+  assert.equal(second.learning.promoted, true);
+  assert.equal(second.state.activePackVersion, 3);
+  assert.equal(second.state.packLineage.length, 3);
 });
 
 test("classifyFeedbackKind normalizes common operator cues", () => {
