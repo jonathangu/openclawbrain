@@ -100,6 +100,61 @@ function materializeNamedPack(rootDir: string, options: { packId: string; learne
   writePackFile(rootDir, PACK_LAYOUT.manifest, manifest);
 }
 
+function materializeCustomPack(
+  rootDir: string,
+  options: {
+    packId: string;
+    graph: PackGraphPayloadV1;
+    vectors: PackVectorsPayloadV1;
+    learnedRouting?: boolean;
+  }
+): void {
+  const learnedRouting = options.learnedRouting ?? false;
+  const router: RouterArtifactV1 | null =
+    learnedRouting
+      ? {
+          ...FIXTURE_ROUTER_ARTIFACT,
+          routerIdentity: `${options.packId}:route_fn`
+        }
+      : null;
+
+  const manifest: ArtifactManifestV1 = {
+    ...FIXTURE_ARTIFACT_MANIFEST,
+    packId: options.packId,
+    routePolicy: learnedRouting ? "requires_learned_routing" : "heuristic_allowed",
+    runtimeAssets: {
+      graphPath: PACK_LAYOUT.graph,
+      vectorPath: PACK_LAYOUT.vectors,
+      router: learnedRouting
+        ? {
+            kind: "artifact",
+            identity: router?.routerIdentity ?? null,
+            artifactPath: PACK_LAYOUT.router
+          }
+        : {
+            kind: "none",
+            identity: null,
+            artifactPath: null
+          }
+    },
+    payloadChecksums: {
+      graph: computePayloadChecksum(options.graph),
+      vector: computePayloadChecksum(options.vectors),
+      router: router === null ? null : computePayloadChecksum(router)
+    },
+    modelFingerprints: learnedRouting
+      ? ["BAAI/bge-large-en-v1.5", "ollama:qwen3.5:9b-q4_K_M", router?.routerIdentity ?? "router:missing"]
+      : ["BAAI/bge-large-en-v1.5"]
+  };
+
+  writePackFile(rootDir, PACK_LAYOUT.graph, options.graph);
+  writePackFile(rootDir, PACK_LAYOUT.vectors, options.vectors);
+  if (router !== null) {
+    writePackFile(rootDir, PACK_LAYOUT.router, router);
+  }
+  writePackFile(rootDir, PACK_LAYOUT.manifest, manifest);
+}
+
 interface BuildFixtureExportOptions {
   sessionId: string;
   sequenceStart: number;
@@ -493,6 +548,297 @@ test("compileRuntime prunes overlapping compacted and raw context blocks", (t: T
 
   assert.deepEqual(response.selectedContext.map((block) => block.id), ["ctx-context-compact"]);
   assert.match(response.diagnostics.notes.join(";"), /selection_compaction_deduped=3/);
+});
+
+test("compileRuntime changes route selection when graph evolution adds split and traversal state", (t: TestContext) => {
+  const baseRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-compile-graph-base-"));
+  const evolvedRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-compile-graph-evolved-"));
+
+  t.after(() => rmSync(baseRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(evolvedRoot, { recursive: true, force: true }));
+
+  const baseGraph: PackGraphPayloadV1 = {
+    packId: "pack-graph-base",
+    blocks: [
+      {
+        id: "ctx-route-base",
+        source: "runtime/route/base",
+        text: "Stable quota route stays active for live incidents.",
+        keywords: ["stable", "quota", "route", "active", "incidents"],
+        priority: 4,
+        tokenCount: 8,
+        learning: {
+          role: "interaction",
+          humanLabels: 0,
+          selfLabels: 0,
+          decayHalfLifeDays: 30,
+          hebbianPulse: 1
+        },
+        state: {
+          strength: 4,
+          freshness: 1,
+          traversalBias: 0,
+          evidenceCount: 1,
+          splitDepth: 0,
+          mergedFromCount: 0,
+          pruned: false
+        }
+      },
+      {
+        id: "ctx-runbook",
+        source: "docs/runbook.md",
+        text: "Escalation playbook keeps the route safe during incidents.",
+        keywords: ["escalation", "playbook", "route", "safe", "incidents"],
+        priority: 2,
+        tokenCount: 8,
+        learning: {
+          role: "workspace",
+          humanLabels: 0,
+          selfLabels: 0,
+          decayHalfLifeDays: null,
+          hebbianPulse: 1
+        },
+        state: {
+          strength: 2,
+          freshness: 1,
+          traversalBias: 0,
+          evidenceCount: 1,
+          splitDepth: 0,
+          mergedFromCount: 0,
+          pruned: false
+        }
+      }
+    ],
+    evolution: {
+      builtAt: "2026-03-07T09:00:00.000Z",
+      hebbianApplied: true,
+      decayApplied: true,
+      structuralOps: {
+        split: 0,
+        merge: 0,
+        prune: 0,
+        connect: 0
+      },
+      prunedBlockIds: [],
+      strongestBlockId: "ctx-route-base"
+    }
+  };
+
+  const baseVectors: PackVectorsPayloadV1 = {
+    packId: baseGraph.packId,
+    entries: [
+      {
+        blockId: "ctx-route-base",
+        keywords: ["stable", "quota", "route"],
+        boost: 1,
+        weights: {
+          stable: 4,
+          quota: 3,
+          route: 3
+        }
+      },
+      {
+        blockId: "ctx-runbook",
+        keywords: ["escalation", "playbook", "route"],
+        boost: 1,
+        weights: {
+          escalation: 3,
+          playbook: 3,
+          route: 2
+        }
+      }
+    ]
+  };
+
+  const evolvedGraph: PackGraphPayloadV1 = {
+    packId: "pack-graph-evolved",
+    blocks: [
+      {
+        id: "ctx-route-base",
+        source: "runtime/route/base",
+        text: "Stable quota route stays active for live incidents.",
+        keywords: ["stable", "quota", "route", "active", "incidents"],
+        priority: 4,
+        tokenCount: 8,
+        learning: {
+          role: "interaction",
+          humanLabels: 0,
+          selfLabels: 0,
+          decayHalfLifeDays: 30,
+          hebbianPulse: 1
+        },
+        state: {
+          strength: 4.2,
+          freshness: 1,
+          traversalBias: 1.2,
+          evidenceCount: 1,
+          splitDepth: 0,
+          mergedFromCount: 0,
+          pruned: false
+        },
+        edges: [
+          {
+            targetBlockId: "ctx-route-base:split:1",
+            kind: "split",
+            weight: 4
+          }
+        ]
+      },
+      {
+        id: "ctx-route-base:split:1",
+        source: "split:runtime/route/base",
+        text: "Focused memory on retry budget, rollback: Prefer retry budget rollback guidance when quota alarms rise.",
+        keywords: ["retry", "budget", "rollback", "quota", "alarms", "focused", "split"],
+        priority: 6,
+        tokenCount: 13,
+        compactedFrom: ["ctx-route-base"],
+        learning: {
+          role: "feedback",
+          humanLabels: 1,
+          selfLabels: 0,
+          decayHalfLifeDays: 30,
+          hebbianPulse: 6
+        },
+        state: {
+          strength: 8.4,
+          freshness: 1,
+          traversalBias: 4.8,
+          evidenceCount: 2,
+          splitDepth: 1,
+          mergedFromCount: 1,
+          pruned: false
+        },
+        edges: [
+          {
+            targetBlockId: "ctx-route-base",
+            kind: "merge",
+            weight: 3
+          },
+          {
+            targetBlockId: "ctx-runbook",
+            kind: "connect",
+            weight: 5
+          }
+        ]
+      },
+      {
+        id: "ctx-runbook",
+        source: "docs/runbook.md",
+        text: "Escalation playbook keeps the route safe during incidents.",
+        keywords: ["escalation", "playbook", "route", "safe", "incidents", "connected"],
+        priority: 2,
+        tokenCount: 8,
+        learning: {
+          role: "workspace",
+          humanLabels: 0,
+          selfLabels: 0,
+          decayHalfLifeDays: null,
+          hebbianPulse: 1
+        },
+        state: {
+          strength: 2.8,
+          freshness: 1,
+          traversalBias: 2.5,
+          evidenceCount: 1,
+          splitDepth: 0,
+          mergedFromCount: 0,
+          pruned: false
+        },
+        edges: [
+          {
+            targetBlockId: "ctx-route-base:split:1",
+            kind: "connect",
+            weight: 5
+          }
+        ]
+      }
+    ],
+    evolution: {
+      builtAt: "2026-03-07T09:10:00.000Z",
+      hebbianApplied: true,
+      decayApplied: true,
+      structuralOps: {
+        split: 1,
+        merge: 0,
+        prune: 0,
+        connect: 1
+      },
+      prunedBlockIds: [],
+      strongestBlockId: "ctx-route-base:split:1"
+    }
+  };
+
+  const evolvedVectors: PackVectorsPayloadV1 = {
+    packId: evolvedGraph.packId,
+    entries: [
+      {
+        blockId: "ctx-route-base",
+        keywords: ["stable", "quota", "route"],
+        boost: 1,
+        weights: {
+          stable: 4,
+          quota: 3,
+          route: 3
+        }
+      },
+      {
+        blockId: "ctx-route-base:split:1",
+        keywords: ["retry", "budget", "rollback", "split", "connected", "reinforced"],
+        boost: 5,
+        weights: {
+          retry: 7,
+          budget: 7,
+          rollback: 8,
+          split: 5,
+          connected: 4,
+          reinforced: 6
+        }
+      },
+      {
+        blockId: "ctx-runbook",
+        keywords: ["escalation", "playbook", "connected"],
+        boost: 2,
+        weights: {
+          escalation: 3,
+          playbook: 3,
+          connected: 5
+        }
+      }
+    ]
+  };
+
+  materializeCustomPack(baseRoot, {
+    packId: baseGraph.packId,
+    graph: baseGraph,
+    vectors: baseVectors
+  });
+  materializeCustomPack(evolvedRoot, {
+    packId: evolvedGraph.packId,
+    graph: evolvedGraph,
+    vectors: evolvedVectors
+  });
+
+  const baseResponse = compileRuntime(baseRoot, {
+    contract: CONTRACT_IDS.runtimeCompile,
+    agentId: "agent-graph-evolution-base",
+    userMessage: "retry budget rollback",
+    maxContextBlocks: 2,
+    modeRequested: "heuristic",
+    runtimeHints: []
+  });
+  const evolvedResponse = compileRuntime(evolvedRoot, {
+    contract: CONTRACT_IDS.runtimeCompile,
+    agentId: "agent-graph-evolution-evolved",
+    userMessage: "retry budget rollback",
+    maxContextBlocks: 2,
+    modeRequested: "heuristic",
+    runtimeHints: []
+  });
+
+  assert.deepEqual(baseResponse.selectedContext.map((block) => block.id), ["ctx-route-base", "ctx-runbook"]);
+  assert.deepEqual(evolvedResponse.selectedContext.map((block) => block.id), ["ctx-route-base:split:1", "ctx-runbook"]);
+  assert.match(evolvedResponse.diagnostics.notes.join(";"), /graph_evolution=split:1,merge:0,prune:0,connect:1/);
+  assert.match(evolvedResponse.diagnostics.notes.join(";"), /graph_traversal_activated=\d+/);
 });
 
 test("compileRuntime rejects stale activePackId expectations", (t: TestContext) => {

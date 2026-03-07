@@ -9,10 +9,12 @@ import {
   type FeedbackEventV1,
   type InteractionEventV1,
   type LearningSurfaceV1,
+  type PackBlockStateV1,
   type NormalizedEventExportV1,
   type NormalizedEventV1,
   type PackBlockLearningSignalsV1,
   type PackContextBlockRecordV1,
+  type PackGraphEdgeV1,
   type PackGraphPayloadV1,
   type PackVectorEntryV1,
   type PackVectorsPayloadV1,
@@ -159,6 +161,7 @@ export interface AlwaysOnLearningRuntimeStateV1 {
   cursor: EventExportCursorV1;
   pending: AlwaysOnLearningPendingSlicesV1;
   learnedEventExport: NormalizedEventExportV1 | null;
+  learnedGraph: PackGraphPayloadV1 | null;
   lastMaterializedAt: string | null;
   materializationCount: number;
 }
@@ -406,6 +409,7 @@ export function createAlwaysOnLearningRuntimeState(): AlwaysOnLearningRuntimeSta
     cursor: createEventExportCursor(),
     pending: createAlwaysOnLearningPendingSlices(),
     learnedEventExport: null,
+    learnedGraph: null,
     lastMaterializedAt: null,
     materializationCount: 0
   };
@@ -487,6 +491,7 @@ export function advanceAlwaysOnLearningRuntime(
       backfill: pending.backfill.slice(selectedBackfill.length).map(cloneNormalizedEventExportSlice)
     },
     learnedEventExport,
+    learnedGraph: materialization?.candidate.payloads.graph ?? current.learnedGraph,
     lastMaterializedAt: materialization?.candidate.manifest.provenance.builtAt ?? current.lastMaterializedAt,
     materializationCount: current.materializationCount + (materialization === null ? 0 : 1)
   };
@@ -646,6 +651,151 @@ function structuralOpsSummary(input: CandidatePackBuildInput): Required<Artifact
     prune: input.structuralOps?.prune ?? 0,
     connect: input.structuralOps?.connect ?? 0
   };
+}
+
+interface LearnerGraphBlockMeta {
+  createdAt: string;
+  sourceStream: string;
+  sessionId?: string;
+  channel?: string;
+  relatedInteractionId?: string;
+  syntheticRole: "base" | "split" | "merge";
+  splitDepth: number;
+}
+
+interface LearnerGraphEvolutionResult {
+  blocks: PackContextBlockRecordV1[];
+  evolution: NonNullable<PackGraphPayloadV1["evolution"]>;
+}
+
+interface ConnectPairCandidate {
+  leftId: string;
+  rightId: string;
+  score: number;
+}
+
+function roundMetric(value: number): number {
+  return Math.round(value * 1_000) / 1_000;
+}
+
+function clamp(value: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, value));
+}
+
+function estimateTokenCount(text: string): number {
+  return Math.max(1, keywordTokens(text).length);
+}
+
+function uniqueKeywords(values: readonly string[]): string[] {
+  return [...new Set(values)].slice(0, 16);
+}
+
+function genericKeyword(token: string): boolean {
+  return ["feedback", "interaction", "session", "openclaw", "runtime", "message", "memory", "pack"].includes(token);
+}
+
+function daysBetween(fromIso: string, toIso: string): number {
+  return Math.max(0, Date.parse(toIso) - Date.parse(fromIso)) / 86_400_000;
+}
+
+function compareIsoDates(left: string, right: string): number {
+  return Date.parse(left) - Date.parse(right);
+}
+
+function decayFreshness(createdAt: string, builtAt: string, halfLifeDays: number | null): number {
+  if (halfLifeDays === null) {
+    return 1;
+  }
+
+  return roundMetric(clamp(Math.pow(0.5, daysBetween(createdAt, builtAt) / halfLifeDays), 0.05, 1));
+}
+
+function keywordOverlap(left: readonly string[], right: readonly string[]): number {
+  const rightSet = new Set(right);
+  return left.reduce((count, keyword) => count + (rightSet.has(keyword) ? 1 : 0), 0);
+}
+
+function cloneGraphBlock(block: PackContextBlockRecordV1): PackContextBlockRecordV1 {
+  return structuredClone(block);
+}
+
+function addEdge(edgesById: Map<string, PackGraphEdgeV1[]>, fromId: string, edge: PackGraphEdgeV1): boolean {
+  const edges = edgesById.get(fromId);
+  if (edges === undefined) {
+    edgesById.set(fromId, [structuredClone(edge)]);
+    return true;
+  }
+
+  const existing = edges.find((candidate) => candidate.kind === edge.kind && candidate.targetBlockId === edge.targetBlockId);
+  if (existing !== undefined) {
+    existing.weight = Math.max(existing.weight, edge.weight);
+    return false;
+  }
+
+  edges.push(structuredClone(edge));
+  return true;
+}
+
+function topFocusKeywords(block: PackContextBlockRecordV1): string[] {
+  const focused = block.keywords.filter((keyword) => !genericKeyword(keyword));
+  return (focused.length > 0 ? focused : block.keywords).slice(0, 4);
+}
+
+function splitBlockText(parent: PackContextBlockRecordV1): string {
+  const focusKeywords = topFocusKeywords(parent);
+  const focus = focusKeywords.length === 0 ? "learned memory" : focusKeywords.join(", ");
+  const content = parent.text.split(/(?<=[.!?])/u).map((part) => part.trim()).find((part) => part.length >= 24) ?? parent.text;
+  return `Focused memory on ${focus}: ${content}`;
+}
+
+function mergeBlockText(left: PackContextBlockRecordV1, right: PackContextBlockRecordV1): string {
+  return `Merged memory path: ${left.text} ${right.text}`;
+}
+
+function buildBlockMetadata(
+  packId: string,
+  workspace: ReturnType<typeof createWorkspaceMetadata>,
+  eventExport: NormalizedEventExportV1 | null
+): Map<string, LearnerGraphBlockMeta> {
+  const metadata = new Map<string, LearnerGraphBlockMeta>();
+  const baseCreatedAt = workspace.capturedAt;
+
+  for (const [blockId, sourceStream] of [
+    [`${packId}:feedback-scanner`, "docs/openclaw-attach-quickstart.md"],
+    [`${packId}:fast-boot-defaults`, "product/always-on-learning"],
+    [`${packId}:passive-background-learning`, "product/always-on-learning"],
+    [`${packId}:human-label-harvest`, "feedback_events.v1"],
+    [`${packId}:self-label-harvest`, "interaction_events.v1:memory_compiled"],
+    [`${packId}:workspace`, workspace.rootDir],
+    [`${packId}:structural-ops`, "docs/learning-first-convergence.md"]
+  ] as const) {
+    metadata.set(blockId, {
+      createdAt: baseCreatedAt,
+      sourceStream,
+      syntheticRole: "base",
+      splitDepth: 0
+    });
+  }
+
+  if (eventExport === null) {
+    return metadata;
+  }
+
+  for (const event of [...eventExport.interactionEvents, ...eventExport.feedbackEvents]) {
+    metadata.set(`${packId}:event:${event.eventId}`, {
+      createdAt: event.createdAt,
+      sourceStream: event.source.stream,
+      sessionId: event.sessionId,
+      channel: event.channel,
+      ...(event.contract === CONTRACT_IDS.feedbackEvents && event.relatedInteractionId !== undefined
+        ? { relatedInteractionId: event.relatedInteractionId }
+        : {}),
+      syntheticRole: "base",
+      splitDepth: 0
+    });
+  }
+
+  return metadata;
 }
 
 function keywordTokens(value: string): string[] {
@@ -885,16 +1035,461 @@ function eventExportBlocks(packId: string, eventExport: NormalizedEventExportV1)
   ];
 }
 
+function addFeedbackEdges(
+  edgesById: Map<string, PackGraphEdgeV1[]>,
+  packId: string,
+  eventExport: NormalizedEventExportV1 | null
+): void {
+  if (eventExport === null) {
+    return;
+  }
+
+  for (const event of eventExport.feedbackEvents) {
+    if (event.relatedInteractionId === undefined) {
+      continue;
+    }
+
+    const feedbackBlockId = `${packId}:event:${event.eventId}`;
+    const interactionBlockId = `${packId}:event:${event.relatedInteractionId}`;
+    addEdge(edgesById, feedbackBlockId, {
+      targetBlockId: interactionBlockId,
+      kind: "feedback",
+      weight: Math.max(2, eventPriority(event))
+    });
+    addEdge(edgesById, interactionBlockId, {
+      targetBlockId: feedbackBlockId,
+      kind: "feedback",
+      weight: Math.max(2, eventPriority(event) - 1)
+    });
+  }
+}
+
+function connectPairs(
+  blocks: readonly PackContextBlockRecordV1[],
+  metadataById: ReadonlyMap<string, LearnerGraphBlockMeta>,
+  edgesById: Map<string, PackGraphEdgeV1[]>,
+  connectLimit: number
+): number {
+  const candidates: ConnectPairCandidate[] = [];
+
+  for (let index = 0; index < blocks.length; index += 1) {
+    const left = blocks[index];
+    if (left === undefined) {
+      continue;
+    }
+
+    for (let peerIndex = index + 1; peerIndex < blocks.length; peerIndex += 1) {
+      const right = blocks[peerIndex];
+      if (right === undefined) {
+        continue;
+      }
+
+      const leftMeta = metadataById.get(left.id);
+      const rightMeta = metadataById.get(right.id);
+      const overlap = keywordOverlap(left.keywords, right.keywords);
+      const sameStream = leftMeta?.sourceStream === rightMeta?.sourceStream ? 2 : 0;
+      const sameSession = leftMeta?.sessionId !== undefined && leftMeta.sessionId === rightMeta?.sessionId ? 1 : 0;
+      const score = overlap + sameStream + sameSession;
+      if (score < 3) {
+        continue;
+      }
+
+      candidates.push({
+        leftId: left.id,
+        rightId: right.id,
+        score
+      });
+    }
+  }
+
+  candidates.sort((left, right) => {
+    if (right.score !== left.score) {
+      return right.score - left.score;
+    }
+    if (left.leftId !== right.leftId) {
+      return left.leftId.localeCompare(right.leftId);
+    }
+    return left.rightId.localeCompare(right.rightId);
+  });
+
+  let applied = 0;
+  for (const candidate of candidates) {
+    if (applied >= connectLimit) {
+      break;
+    }
+
+    const weight = Math.max(2, candidate.score);
+    const createdLeft = addEdge(edgesById, candidate.leftId, {
+      targetBlockId: candidate.rightId,
+      kind: "connect",
+      weight
+    });
+    const createdRight = addEdge(edgesById, candidate.rightId, {
+      targetBlockId: candidate.leftId,
+      kind: "connect",
+      weight
+    });
+
+    if (createdLeft || createdRight) {
+      applied += 1;
+    }
+  }
+
+  return applied;
+}
+
+function splitBlocks(
+  packId: string,
+  blocks: PackContextBlockRecordV1[],
+  metadataById: Map<string, LearnerGraphBlockMeta>,
+  edgesById: Map<string, PackGraphEdgeV1[]>,
+  splitLimit: number
+): number {
+  const candidates = blocks
+    .filter(
+      (block) =>
+        block.id.includes(":event:") &&
+        (block.learning.humanLabels > 0 ||
+          block.learning.hebbianPulse >= 4 ||
+          block.source.includes(":teaching") ||
+          block.source.includes(":correction"))
+    )
+    .sort((left, right) => {
+      const leftScore = left.learning.hebbianPulse + left.learning.humanLabels + left.priority;
+      const rightScore = right.learning.hebbianPulse + right.learning.humanLabels + right.priority;
+      if (rightScore !== leftScore) {
+        return rightScore - leftScore;
+      }
+      return left.id.localeCompare(right.id);
+    });
+
+  let applied = 0;
+  for (const parent of candidates) {
+    if (applied >= splitLimit) {
+      break;
+    }
+
+    const meta = metadataById.get(parent.id);
+    if (meta === undefined) {
+      continue;
+    }
+
+    const blockId = `${parent.id}:split:${applied + 1}`;
+    const text = splitBlockText(parent);
+    const splitBlock: PackContextBlockRecordV1 = {
+      id: blockId,
+      source: `split:${parent.source}`,
+      text,
+      tokenCount: estimateTokenCount(text),
+      compactedFrom: [parent.id],
+      keywords: uniqueKeywords([...topFocusKeywords(parent), ...keywordTokens(text), "split", "focused"]),
+      priority: parent.priority + 1,
+      learning: learningSignals({
+        role: parent.learning.role,
+        humanLabels: parent.learning.humanLabels,
+        selfLabels: parent.learning.selfLabels,
+        decayHalfLifeDays: parent.learning.decayHalfLifeDays,
+        hebbianPulse: parent.learning.hebbianPulse + 2
+      })
+    };
+
+    blocks.push(splitBlock);
+    metadataById.set(blockId, {
+      createdAt: meta.createdAt,
+      sourceStream: meta.sourceStream,
+      ...(meta.sessionId !== undefined ? { sessionId: meta.sessionId } : {}),
+      ...(meta.channel !== undefined ? { channel: meta.channel } : {}),
+      ...(meta.relatedInteractionId !== undefined ? { relatedInteractionId: meta.relatedInteractionId } : {}),
+      syntheticRole: "split",
+      splitDepth: meta.splitDepth + 1
+    });
+    edgesById.set(blockId, []);
+    addEdge(edgesById, parent.id, { targetBlockId: blockId, kind: "split", weight: parent.learning.hebbianPulse + 1 });
+    addEdge(edgesById, blockId, { targetBlockId: parent.id, kind: "merge", weight: Math.max(1, parent.priority - 1) });
+    applied += 1;
+  }
+
+  return applied;
+}
+
+function mergeBlocks(
+  packId: string,
+  blocks: PackContextBlockRecordV1[],
+  metadataById: Map<string, LearnerGraphBlockMeta>,
+  edgesById: Map<string, PackGraphEdgeV1[]>,
+  mergeLimit: number
+): number {
+  const candidates: ConnectPairCandidate[] = [];
+
+  for (let index = 0; index < blocks.length; index += 1) {
+    const left = blocks[index];
+    if (left === undefined) {
+      continue;
+    }
+    if (left.compactedFrom !== undefined) {
+      continue;
+    }
+
+    for (let peerIndex = index + 1; peerIndex < blocks.length; peerIndex += 1) {
+      const right = blocks[peerIndex];
+      if (right === undefined || right.compactedFrom !== undefined) {
+        continue;
+      }
+
+      const leftMeta = metadataById.get(left.id);
+      const rightMeta = metadataById.get(right.id);
+      const overlap = keywordOverlap(left.keywords, right.keywords);
+      const related = leftMeta?.relatedInteractionId === right.id.replace(`${packId}:event:`, "") || rightMeta?.relatedInteractionId === left.id.replace(`${packId}:event:`, "") ? 3 : 0;
+      const score = overlap + related + (leftMeta?.sourceStream === rightMeta?.sourceStream ? 1 : 0);
+
+      if (score < 3) {
+        continue;
+      }
+
+      candidates.push({ leftId: left.id, rightId: right.id, score });
+    }
+  }
+
+  candidates.sort((left, right) => {
+    if (right.score !== left.score) {
+      return right.score - left.score;
+    }
+    if (left.leftId !== right.leftId) {
+      return left.leftId.localeCompare(right.leftId);
+    }
+    return left.rightId.localeCompare(right.rightId);
+  });
+
+  const used = new Set<string>();
+  let applied = 0;
+
+  for (const candidate of candidates) {
+    if (applied >= mergeLimit) {
+      break;
+    }
+    if (used.has(candidate.leftId) || used.has(candidate.rightId)) {
+      continue;
+    }
+
+    const left = blocks.find((block) => block.id === candidate.leftId);
+    const right = blocks.find((block) => block.id === candidate.rightId);
+    if (left === undefined || right === undefined) {
+      continue;
+    }
+
+    const leftMeta = metadataById.get(left.id);
+    const rightMeta = metadataById.get(right.id);
+    if (leftMeta === undefined || rightMeta === undefined) {
+      continue;
+    }
+
+    const blockId = `${packId}:merge:${applied + 1}`;
+    const text = mergeBlockText(left, right);
+    const mergedBlock: PackContextBlockRecordV1 = {
+      id: blockId,
+      source: `merge:${left.source}+${right.source}`,
+      text,
+      tokenCount: estimateTokenCount(text),
+      compactedFrom: [left.id, right.id],
+      keywords: uniqueKeywords([...left.keywords, ...right.keywords, "merge", "path", "connected"]),
+      priority: Math.max(left.priority, right.priority) + 1,
+      learning: learningSignals({
+        role: left.learning.role === right.learning.role ? left.learning.role : "structural",
+        humanLabels: left.learning.humanLabels + right.learning.humanLabels,
+        selfLabels: left.learning.selfLabels + right.learning.selfLabels,
+        decayHalfLifeDays: left.learning.decayHalfLifeDays ?? right.learning.decayHalfLifeDays,
+        hebbianPulse: left.learning.hebbianPulse + right.learning.hebbianPulse
+      })
+    };
+
+    blocks.push(mergedBlock);
+    metadataById.set(blockId, {
+      createdAt: compareIsoDates(leftMeta.createdAt, rightMeta.createdAt) >= 0 ? leftMeta.createdAt : rightMeta.createdAt,
+      sourceStream: `${leftMeta.sourceStream}|${rightMeta.sourceStream}`,
+      ...(leftMeta.sessionId !== undefined ? { sessionId: leftMeta.sessionId } : rightMeta.sessionId !== undefined ? { sessionId: rightMeta.sessionId } : {}),
+      ...(leftMeta.channel !== undefined ? { channel: leftMeta.channel } : rightMeta.channel !== undefined ? { channel: rightMeta.channel } : {}),
+      syntheticRole: "merge",
+      splitDepth: 0
+    });
+    edgesById.set(blockId, []);
+    addEdge(edgesById, blockId, { targetBlockId: left.id, kind: "merge", weight: Math.max(2, candidate.score) });
+    addEdge(edgesById, blockId, { targetBlockId: right.id, kind: "merge", weight: Math.max(2, candidate.score) });
+    addEdge(edgesById, left.id, { targetBlockId: blockId, kind: "connect", weight: Math.max(2, candidate.score - 1) });
+    addEdge(edgesById, right.id, { targetBlockId: blockId, kind: "connect", weight: Math.max(2, candidate.score - 1) });
+
+    used.add(left.id);
+    used.add(right.id);
+    applied += 1;
+  }
+
+  return applied;
+}
+
+function assignGraphState(
+  blocks: readonly PackContextBlockRecordV1[],
+  metadataById: ReadonlyMap<string, LearnerGraphBlockMeta>,
+  edgesById: ReadonlyMap<string, PackGraphEdgeV1[]>,
+  builtAt: string
+): void {
+  for (const block of blocks) {
+    const metadata = metadataById.get(block.id);
+    const freshness = decayFreshness(metadata?.createdAt ?? builtAt, builtAt, block.learning.decayHalfLifeDays);
+    const edgeCount = edgesById.get(block.id)?.length ?? 0;
+    const mergedFromCount = block.compactedFrom?.length ?? 0;
+    const splitDepth = metadata?.splitDepth ?? 0;
+    const hebbianGain = 1 + block.learning.humanLabels * 0.35 + block.learning.selfLabels * 0.2 + block.learning.hebbianPulse * 0.12;
+    const structuralGain = 1 + mergedFromCount * 0.1 + splitDepth * 0.12 + edgeCount * 0.06;
+    const evidenceCount = Math.max(1, block.learning.humanLabels + block.learning.selfLabels + mergedFromCount + (splitDepth > 0 ? 1 : 0));
+
+    const state: PackBlockStateV1 = {
+      strength: roundMetric(Math.max(0.25, block.priority * freshness * hebbianGain * structuralGain)),
+      freshness,
+      traversalBias: roundMetric(Math.max(0, freshness * 2 + edgeCount * 1.15 + mergedFromCount * 0.75 + splitDepth * 0.5)),
+      evidenceCount,
+      splitDepth,
+      mergedFromCount,
+      pruned: false
+    };
+
+    block.state = state;
+  }
+}
+
+function pruneBlocks(
+  blocks: readonly PackContextBlockRecordV1[],
+  metadataById: ReadonlyMap<string, LearnerGraphBlockMeta>,
+  eventExport: NormalizedEventExportV1 | null,
+  pruneLimit: number
+): string[] {
+  if (pruneLimit === 0) {
+    return [];
+  }
+
+  const suppressedInteractionIds = new Set(
+    eventExport?.feedbackEvents
+      .filter((event) => event.kind === "suppression" && event.relatedInteractionId !== undefined)
+      .map((event) => `${event.relatedInteractionId}`) ?? []
+  );
+
+  const candidates = blocks
+    .filter((block) => {
+      const meta = metadataById.get(block.id);
+      const eventId = block.id.includes(":event:") ? block.id.split(":event:")[1] : undefined;
+      const suppressed = eventId !== undefined && suppressedInteractionIds.has(eventId);
+      const lowStrength = (block.state?.strength ?? block.priority) <= 3.5;
+      const labelFree = block.learning.humanLabels === 0 && block.learning.selfLabels === 0;
+      const eventLike = meta?.syntheticRole === "base" && block.learning.role === "interaction";
+      return suppressed || (eventLike && labelFree && lowStrength);
+    })
+    .sort((left, right) => {
+      const leftEventId = left.id.includes(":event:") ? left.id.split(":event:")[1] : undefined;
+      const rightEventId = right.id.includes(":event:") ? right.id.split(":event:")[1] : undefined;
+      const leftSuppressed = leftEventId !== undefined && suppressedInteractionIds.has(leftEventId);
+      const rightSuppressed = rightEventId !== undefined && suppressedInteractionIds.has(rightEventId);
+      if (leftSuppressed !== rightSuppressed) {
+        return leftSuppressed ? -1 : 1;
+      }
+      const leftStrength = left.state?.strength ?? left.priority;
+      const rightStrength = right.state?.strength ?? right.priority;
+      if (leftStrength !== rightStrength) {
+        return leftStrength - rightStrength;
+      }
+      return left.id.localeCompare(right.id);
+    });
+
+  return candidates.slice(0, pruneLimit).map((block) => block.id);
+}
+
+function applyGraphEvolution(
+  packId: string,
+  builtAt: string,
+  blocks: readonly PackContextBlockRecordV1[],
+  metadataById: Map<string, LearnerGraphBlockMeta>,
+  structuralOps: Required<ArtifactManifestV1["graphDynamics"]["structuralOps"]>,
+  eventExport: NormalizedEventExportV1 | null
+): LearnerGraphEvolutionResult {
+  const workingBlocks = blocks.map((block) => cloneGraphBlock(block));
+  const edgesById = new Map<string, PackGraphEdgeV1[]>(workingBlocks.map((block) => [block.id, []] as const));
+
+  addFeedbackEdges(edgesById, packId, eventExport);
+  const appliedSplit = splitBlocks(packId, workingBlocks, metadataById, edgesById, structuralOps.split);
+  const appliedMerge = mergeBlocks(packId, workingBlocks, metadataById, edgesById, structuralOps.merge);
+  const appliedConnect = connectPairs(workingBlocks, metadataById, edgesById, structuralOps.connect);
+
+  assignGraphState(workingBlocks, metadataById, edgesById, builtAt);
+  const prunedBlockIds = pruneBlocks(workingBlocks, metadataById, eventExport, structuralOps.prune);
+  const pruned = new Set(prunedBlockIds);
+  const survivors = workingBlocks.filter((block) => !pruned.has(block.id));
+  const survivorIds = new Set(survivors.map((block) => block.id));
+
+  for (const block of survivors) {
+    const edges = (edgesById.get(block.id) ?? [])
+      .filter((edge) => survivorIds.has(edge.targetBlockId))
+      .sort((left, right) => {
+        if (right.weight !== left.weight) {
+          return right.weight - left.weight;
+        }
+        if (left.kind !== right.kind) {
+          return left.kind.localeCompare(right.kind);
+        }
+        return left.targetBlockId.localeCompare(right.targetBlockId);
+      });
+
+    if (edges.length > 0) {
+      block.edges = edges;
+    }
+  }
+
+  assignGraphState(survivors, metadataById, new Map(survivors.map((block) => [block.id, block.edges ?? []] as const)), builtAt);
+
+  survivors.sort((left, right) => {
+    const leftStrength = left.state?.strength ?? left.priority;
+    const rightStrength = right.state?.strength ?? right.priority;
+    if (rightStrength !== leftStrength) {
+      return rightStrength - leftStrength;
+    }
+    if (right.priority !== left.priority) {
+      return right.priority - left.priority;
+    }
+    return left.id.localeCompare(right.id);
+  });
+
+  const strongestBlockId = survivors[0]?.id ?? null;
+
+  return {
+    blocks: survivors,
+    evolution: {
+      builtAt,
+      hebbianApplied: true,
+      decayApplied: true,
+      structuralOps: {
+        split: appliedSplit,
+        merge: appliedMerge,
+        prune: prunedBlockIds.length,
+        connect: appliedConnect
+      },
+      prunedBlockIds,
+      strongestBlockId
+    }
+  };
+}
+
 function createGraphPayload(
   packId: string,
   input: CandidatePackBuildInput,
   workspace: ReturnType<typeof createWorkspaceMetadata>,
   eventExport: NormalizedEventExportV1 | null,
-  learningSurface: LearningSurfaceV1
+  learningSurface: LearningSurfaceV1,
+  builtAt: string
 ): PackGraphPayloadV1 {
+  const baseBlocks = [...staticLifecycleBlocks(packId, input, workspace, learningSurface), ...(eventExport === null ? [] : eventExportBlocks(packId, eventExport))];
+  const metadataById = buildBlockMetadata(packId, workspace, eventExport);
+  const evolved = applyGraphEvolution(packId, builtAt, baseBlocks, metadataById, structuralOpsSummary(input), eventExport);
+
   return {
     packId,
-    blocks: [...staticLifecycleBlocks(packId, input, workspace, learningSurface), ...(eventExport === null ? [] : eventExportBlocks(packId, eventExport))]
+    blocks: evolved.blocks,
+    evolution: evolved.evolution
   };
 }
 
@@ -918,6 +1513,24 @@ function learningVectorKeywords(block: PackContextBlockRecordV1): string[] {
   }
   if (block.learning.decayHalfLifeDays !== null) {
     keywords.push("decay");
+  }
+  if ((block.compactedFrom?.length ?? 0) > 1) {
+    keywords.push("merged");
+  }
+  if ((block.state?.splitDepth ?? 0) > 0) {
+    keywords.push("split");
+  }
+  if ((block.edges?.length ?? 0) > 0) {
+    keywords.push("connected");
+  }
+  if ((block.state?.strength ?? 0) >= 6) {
+    keywords.push("reinforced");
+  }
+  if ((block.state?.freshness ?? 1) < 0.5) {
+    keywords.push("decayed");
+  }
+  for (const edge of block.edges ?? []) {
+    keywords.push(edge.kind);
   }
 
   return keywords;
@@ -944,6 +1557,18 @@ function vectorEntryFromBlock(block: PackContextBlockRecordV1): PackVectorEntryV
   if (block.learning.role === "background_expectation") {
     weights.passive_background = Math.max(weights.passive_background ?? 0, block.priority + 1);
   }
+  if ((block.state?.strength ?? 0) > 0) {
+    weights.reinforced = Math.max(weights.reinforced ?? 0, Math.ceil(block.state?.strength ?? 0));
+  }
+  if ((block.state?.freshness ?? 1) < 1) {
+    weights.decayed = Math.max(weights.decayed ?? 0, Math.ceil((1 - (block.state?.freshness ?? 1)) * 4));
+  }
+  if ((block.edges?.length ?? 0) > 0) {
+    weights.connected = Math.max(weights.connected ?? 0, block.edges?.length ?? 0);
+    for (const edge of block.edges ?? []) {
+      weights[edge.kind] = Math.max(weights[edge.kind] ?? 0, Math.ceil(edge.weight));
+    }
+  }
 
   return {
     blockId: block.id,
@@ -951,7 +1576,10 @@ function vectorEntryFromBlock(block: PackContextBlockRecordV1): PackVectorEntryV
     boost:
       Math.max(1, Math.ceil(block.priority / 2)) +
       Math.min(3, block.learning.humanLabels + block.learning.selfLabels) +
-      Math.min(2, Math.ceil(block.learning.hebbianPulse / 3)),
+      Math.min(2, Math.ceil(block.learning.hebbianPulse / 3)) +
+      Math.min(3, Math.ceil((block.state?.traversalBias ?? 0) / 3)) +
+      Math.min(2, block.edges?.length ?? 0) -
+      ((block.state?.freshness ?? 1) < 0.35 ? 1 : 0),
     weights
   };
 }
@@ -1012,13 +1640,15 @@ export function buildCandidatePack(input: CandidatePackBuildInput): CandidatePac
     workspace,
     eventRange,
     learnedRouting: input.learnedRouting,
+    builtAt,
     offlineArtifacts,
+    structuralOps: structuralOpsSummary(input),
     eventExportDigest: eventExport?.provenance.exportDigest ?? null,
     learningSurface
   });
   const packId = `pack-${stableHash(seed)}`;
 
-  const graph = createGraphPayload(packId, input, workspace, eventExport, learningSurface);
+  const graph = createGraphPayload(packId, input, workspace, eventExport, learningSurface, builtAt);
   const vectors = createVectorsPayload(graph);
   const router = input.learnedRouting ? createRouterArtifact(packId, builtAt) : null;
 

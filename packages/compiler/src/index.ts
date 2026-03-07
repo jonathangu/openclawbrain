@@ -27,6 +27,8 @@ export interface RankedContextBlock {
   score: number;
   priority: number;
   matchedTokens: string[];
+  directMatchedTokens?: string[];
+  traversalScore?: number;
   tokenCount: number;
   compactedFrom?: string[];
   packOrder: number;
@@ -93,6 +95,13 @@ function buildKeywordWeights(block: PackContextBlockRecordV1, vectorEntry: PackV
   }
 
   return weights;
+}
+
+function baseBlockScore(block: PackContextBlockRecordV1): number {
+  const strength = block.state?.strength ?? block.priority;
+  const traversalBias = block.state?.traversalBias ?? 0;
+  const freshness = block.state?.freshness ?? 1;
+  return strength + traversalBias * 0.5 + freshness;
 }
 
 function blockTokenCount(block: Pick<RuntimeContextBlockV1, "text" | "tokenCount">): number {
@@ -452,14 +461,13 @@ export function loadPackForActivationCompile(rootDir: string, options: Activatio
 export function rankContextBlocks(pack: LoadedPack, request: RuntimeCompileRequestV1): RankedContextBlock[] {
   const tokens = requestTokens(request);
   const vectorsByBlockId = new Map(pack.vectors.entries.map((entry) => [entry.blockId, entry] as const));
-
-  return pack.graph.blocks
+  const direct = pack.graph.blocks
     .map((block, packOrder) => {
       const vectorEntry = vectorsByBlockId.get(block.id);
       const weights = buildKeywordWeights(block, vectorEntry);
       const textTokens = new Set(normalizeTokens(`${block.source} ${block.text}`));
       const matchedTokens: string[] = [];
-      let score = block.priority;
+      let score = baseBlockScore(block);
 
       for (const token of tokens) {
         const weightedScore = weights.get(token);
@@ -478,18 +486,57 @@ export function rankContextBlocks(pack: LoadedPack, request: RuntimeCompileReque
         score += vectorEntry.boost;
       }
 
+      if ((block.state?.freshness ?? 1) < 0.4) {
+        score -= 1;
+      }
+
       return {
         blockId: block.id,
         source: block.source,
         text: block.text,
         matchedTokens,
+        ...(matchedTokens.length > 0 ? { directMatchedTokens: [...matchedTokens] } : {}),
         priority: block.priority,
         score,
+        traversalScore: 0,
         tokenCount: block.tokenCount ?? estimateTokenCount(block.text),
         ...(block.compactedFrom !== undefined ? { compactedFrom: [...block.compactedFrom] } : {}),
         packOrder
       } satisfies RankedContextBlock;
-    })
+    });
+
+  const rankedById = new Map(direct.map((entry) => [entry.blockId, entry] as const));
+  const blocksById = new Map(pack.graph.blocks.map((block) => [block.id, block] as const));
+
+  for (const entry of direct) {
+    if (entry.matchedTokens.length === 0) {
+      continue;
+    }
+
+    const sourceBlock = blocksById.get(entry.blockId);
+    if (sourceBlock === undefined) {
+      continue;
+    }
+
+    for (const edge of sourceBlock.edges ?? []) {
+      const targetEntry = rankedById.get(edge.targetBlockId);
+      const targetBlock = blocksById.get(edge.targetBlockId);
+      if (targetEntry === undefined || targetBlock === undefined) {
+        continue;
+      }
+
+      const traversalScore = edge.weight + (sourceBlock.state?.traversalBias ?? 0) * 0.5 + (targetBlock.state?.freshness ?? 1);
+      targetEntry.score += traversalScore;
+      targetEntry.traversalScore = (targetEntry.traversalScore ?? 0) + traversalScore;
+      for (const token of entry.matchedTokens.slice(0, 2)) {
+        if (!targetEntry.matchedTokens.includes(token)) {
+          targetEntry.matchedTokens.push(token);
+        }
+      }
+    }
+  }
+
+  return direct
     .sort((left, right) => {
       if (right.matchedTokens.length !== left.matchedTokens.length) {
         return right.matchedTokens.length - left.matchedTokens.length;
@@ -527,6 +574,7 @@ export function compileRuntime(packOrRoot: LoadedPack | string, request: Runtime
   const compactionMode = request.compactionMode ?? "native";
   const fitted = fitContextToCharBudget(selected, request.maxContextChars, compactionMode);
   const selectedContext = fitted.blocks;
+  const traversalActivatedCount = ranked.filter((entry) => (entry.traversalScore ?? 0) > 0).length;
 
   const notes: string[] = [];
   notes.push(`selected_context_ids=${selectedContext.map((block) => block.id).join(",")}`);
@@ -545,7 +593,18 @@ export function compileRuntime(packOrRoot: LoadedPack | string, request: Runtime
   if (selection.overlapPrunedCount > 0) {
     notes.push(`selection_compaction_deduped=${selection.overlapPrunedCount}`);
   }
+  if (traversalActivatedCount > 0) {
+    notes.push(`graph_traversal_activated=${traversalActivatedCount}`);
+  }
   notes.push(`pack_graph_blocks=${pack.graph.blocks.length}`);
+  if (pack.graph.evolution !== undefined) {
+    notes.push(
+      `graph_evolution=split:${pack.graph.evolution.structuralOps.split},merge:${pack.graph.evolution.structuralOps.merge},prune:${pack.graph.evolution.structuralOps.prune},connect:${pack.graph.evolution.structuralOps.connect}`
+    );
+    if (pack.graph.evolution.strongestBlockId !== null) {
+      notes.push(`graph_strongest_block=${pack.graph.evolution.strongestBlockId}`);
+    }
+  }
   if (request.maxContextChars !== undefined) {
     notes.push(`max_context_chars=${request.maxContextChars}`);
   }
