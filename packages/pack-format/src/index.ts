@@ -99,8 +99,42 @@ function pushFileError(errors: string[], filePath: string, label: string): void 
   }
 }
 
+function validatePackAssetPath(assetPath: string, label: string): string[] {
+  const errors: string[] = [];
+
+  if (path.isAbsolute(assetPath)) {
+    errors.push(`${label} must be relative to the pack root`);
+  }
+
+  const segments = assetPath.split(/[\\/]+/u);
+  if (segments.includes("..")) {
+    errors.push(`${label} must not escape the pack root`);
+  }
+
+  return errors;
+}
+
+function resolvePackAssetPath(rootDir: string, assetPath: string, label: string): string {
+  const resolvedRootDir = path.resolve(rootDir);
+  const resolvedAssetPath = path.resolve(resolvedRootDir, assetPath);
+  const relativeAssetPath = path.relative(resolvedRootDir, resolvedAssetPath);
+
+  if (relativeAssetPath.startsWith("..") || path.isAbsolute(relativeAssetPath)) {
+    throw new Error(`Invalid pack descriptor: ${label} escapes pack root: ${assetPath}`);
+  }
+
+  return resolvedAssetPath;
+}
+
 export function validatePackDescriptor(manifest: ArtifactManifestV1): string[] {
   const errors = validateArtifactManifest(manifest);
+
+  errors.push(...validatePackAssetPath(manifest.runtimeAssets.graphPath, "graphPath"));
+  errors.push(...validatePackAssetPath(manifest.runtimeAssets.vectorPath, "vectorPath"));
+
+  if (manifest.runtimeAssets.router.artifactPath !== null) {
+    errors.push(...validatePackAssetPath(manifest.runtimeAssets.router.artifactPath, "router artifactPath"));
+  }
 
   if (!manifest.runtimeAssets.graphPath.endsWith(".json")) {
     errors.push("graph payload must be json-addressable in the initial layout");
@@ -108,6 +142,10 @@ export function validatePackDescriptor(manifest: ArtifactManifestV1): string[] {
 
   if (!manifest.runtimeAssets.vectorPath.endsWith(".json")) {
     errors.push("vector payload must be json-addressable in the initial layout");
+  }
+
+  if (manifest.runtimeAssets.router.artifactPath !== null && !manifest.runtimeAssets.router.artifactPath.endsWith(".json")) {
+    errors.push("router payload must be json-addressable in the initial layout");
   }
 
   if (manifest.routePolicy === "requires_learned_routing" && manifest.runtimeAssets.router.artifactPath === null) {
@@ -194,6 +232,7 @@ function buildActivationPointerRecord(
     packId: pack.manifest.packId,
     packRootDir: path.resolve(pack.rootDir),
     manifestPath: path.resolve(pack.manifestPath),
+    manifestDigest: sha256File(pack.manifestPath),
     routePolicy: pack.manifest.routePolicy,
     routerIdentity: pack.manifest.runtimeAssets.router.identity,
     workspaceSnapshot: pack.manifest.provenance.workspaceSnapshot,
@@ -237,6 +276,10 @@ function ensurePackRecordMatchesManifest(
 
   if (path.resolve(pack.manifestPath) !== path.resolve(record.manifestPath)) {
     errors.push(`pointer manifestPath ${record.manifestPath} does not match pack manifest ${pack.manifestPath}`);
+  }
+  const manifestDigest = sha256File(pack.manifestPath);
+  if (manifestDigest !== record.manifestDigest) {
+    errors.push(`pointer manifestDigest ${record.manifestDigest} does not match pack manifest digest ${manifestDigest}`);
   }
   if (pack.manifest.packId !== record.packId) {
     errors.push(`pointer packId ${record.packId} does not match manifest packId ${pack.manifest.packId}`);
@@ -647,9 +690,12 @@ export function loadPack(rootDir: string): PackDescriptor {
     throw new Error(`Invalid pack descriptor: ${manifestErrors.join("; ")}`);
   }
 
-  const graphPath = path.join(rootDir, manifest.runtimeAssets.graphPath);
-  const vectorPath = path.join(rootDir, manifest.runtimeAssets.vectorPath);
-  const routerPath = manifest.runtimeAssets.router.artifactPath === null ? null : path.join(rootDir, manifest.runtimeAssets.router.artifactPath);
+  const graphPath = resolvePackAssetPath(rootDir, manifest.runtimeAssets.graphPath, "graph payload");
+  const vectorPath = resolvePackAssetPath(rootDir, manifest.runtimeAssets.vectorPath, "vector payload");
+  const routerPath =
+    manifest.runtimeAssets.router.artifactPath === null
+      ? null
+      : resolvePackAssetPath(rootDir, manifest.runtimeAssets.router.artifactPath, "router payload");
 
   const fileErrors: string[] = [];
   pushFileError(fileErrors, graphPath, "graph payload");
