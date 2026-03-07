@@ -1,17 +1,20 @@
 import {
   CONTRACT_IDS,
   checksumJsonPayload,
+  type ActivationPointerSlot,
   type ContextCompactionMode,
   type PackContextBlockRecordV1,
   type PackVectorEntryV1,
   type RouteMode,
+  type RuntimeCompileExpectationV1,
   type RuntimeCompileRequestV1,
   type RuntimeCompileResponseV1,
+  type RuntimeCompileTargetV1,
   type RuntimeContextBlockV1,
   validateRuntimeCompileRequest,
   validateRuntimeCompileResponse
 } from "@openclawbrain/contracts";
-import { loadPack, type PackDescriptor } from "@openclawbrain/pack-format";
+import { describePackCompileTarget, loadPack, loadPackFromActivation, type PackDescriptor } from "@openclawbrain/pack-format";
 
 export type LoadedPack = PackDescriptor;
 
@@ -25,6 +28,17 @@ export interface RankedContextBlock {
   tokenCount: number;
   compactedFrom?: string[];
   packOrder: number;
+}
+
+export interface ActivationCompileOptions {
+  slot?: ActivationPointerSlot;
+  requireActivationReady?: boolean;
+  expectedTarget?: RuntimeCompileExpectationV1;
+}
+
+export interface ActivationCompileResult {
+  target: RuntimeCompileTargetV1;
+  response: RuntimeCompileResponseV1;
 }
 
 function normalizeTokens(value: string): string[] {
@@ -219,6 +233,62 @@ export function loadPackForCompile(rootDir: string): LoadedPack {
   return loadPack(rootDir);
 }
 
+function describeExpectedValue(value: string | number | null): string {
+  return value === null ? "null" : String(value);
+}
+
+export function findCompileTargetExpectationMismatches(
+  target: RuntimeCompileTargetV1,
+  expected: RuntimeCompileExpectationV1
+): string[] {
+  const mismatches: string[] = [];
+
+  if (expected.packId !== undefined && target.packId !== expected.packId) {
+    mismatches.push(`expected packId ${describeExpectedValue(expected.packId)} but found ${describeExpectedValue(target.packId)}`);
+  }
+  if (expected.routePolicy !== undefined && target.routePolicy !== expected.routePolicy) {
+    mismatches.push(
+      `expected routePolicy ${describeExpectedValue(expected.routePolicy)} but found ${describeExpectedValue(target.routePolicy)}`
+    );
+  }
+  if (expected.routerIdentity !== undefined && target.routerIdentity !== expected.routerIdentity) {
+    mismatches.push(
+      `expected routerIdentity ${describeExpectedValue(expected.routerIdentity)} but found ${describeExpectedValue(target.routerIdentity)}`
+    );
+  }
+  if (expected.workspaceSnapshot !== undefined && target.workspaceSnapshot !== expected.workspaceSnapshot) {
+    mismatches.push(
+      `expected workspaceSnapshot ${describeExpectedValue(expected.workspaceSnapshot)} but found ${describeExpectedValue(target.workspaceSnapshot)}`
+    );
+  }
+  if (expected.workspaceRevision !== undefined && target.workspaceRevision !== expected.workspaceRevision) {
+    mismatches.push(
+      `expected workspaceRevision ${describeExpectedValue(expected.workspaceRevision)} but found ${describeExpectedValue(target.workspaceRevision)}`
+    );
+  }
+  if (expected.eventRange !== undefined) {
+    if (target.eventRange.start !== expected.eventRange.start) {
+      mismatches.push(`expected eventRange.start ${expected.eventRange.start} but found ${target.eventRange.start}`);
+    }
+    if (target.eventRange.end !== expected.eventRange.end) {
+      mismatches.push(`expected eventRange.end ${expected.eventRange.end} but found ${target.eventRange.end}`);
+    }
+    if (target.eventRange.count !== expected.eventRange.count) {
+      mismatches.push(`expected eventRange.count ${expected.eventRange.count} but found ${target.eventRange.count}`);
+    }
+  }
+  if (expected.eventExportDigest !== undefined && target.eventExportDigest !== expected.eventExportDigest) {
+    mismatches.push(
+      `expected eventExportDigest ${describeExpectedValue(expected.eventExportDigest)} but found ${describeExpectedValue(target.eventExportDigest)}`
+    );
+  }
+  if (expected.builtAt !== undefined && target.builtAt !== expected.builtAt) {
+    mismatches.push(`expected builtAt ${describeExpectedValue(expected.builtAt)} but found ${describeExpectedValue(target.builtAt)}`);
+  }
+
+  return mismatches;
+}
+
 export function rankContextBlocks(pack: LoadedPack, request: RuntimeCompileRequestV1): RankedContextBlock[] {
   const tokens = requestTokens(request);
   const vectorsByBlockId = new Map(pack.vectors.entries.map((entry) => [entry.blockId, entry] as const));
@@ -358,3 +428,30 @@ export function compileRuntime(packOrRoot: LoadedPack | string, request: Runtime
 
   return response;
 }
+
+export function compileRuntimeFromActivation(
+  rootDir: string,
+  request: RuntimeCompileRequestV1,
+  options: ActivationCompileOptions = {}
+): ActivationCompileResult {
+  const slot = options.slot ?? "active";
+  const pack = loadPackFromActivation(rootDir, slot, {
+    requireActivationReady: options.requireActivationReady !== false
+  });
+
+  if (pack === null) {
+    throw new Error(`activation slot ${slot} is empty`);
+  }
+
+  const target = describePackCompileTarget(pack);
+  const mismatches = options.expectedTarget === undefined ? [] : findCompileTargetExpectationMismatches(target, options.expectedTarget);
+  if (mismatches.length > 0) {
+    throw new Error(`activation compile target mismatch: ${mismatches.join("; ")}`);
+  }
+
+  return {
+    target,
+    response: compileRuntime(pack, request)
+  };
+}
+
