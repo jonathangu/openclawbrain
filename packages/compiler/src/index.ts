@@ -104,6 +104,21 @@ function baseBlockScore(block: PackContextBlockRecordV1): number {
   return strength + traversalBias * 0.5 + freshness;
 }
 
+function routerPolicyUpdateForBlock(pack: LoadedPack, blockId: string) {
+  return pack.router?.policyUpdates.find((update) => update.blockId === blockId) ?? null;
+}
+
+function routerDeltaSummary(pack: LoadedPack): string | undefined {
+  if (pack.router === null || pack.router.policyUpdates.length === 0) {
+    return undefined;
+  }
+
+  return pack.router.policyUpdates
+    .slice(0, 3)
+    .map((update) => `${update.blockId}:${update.delta}`)
+    .join(",");
+}
+
 function blockTokenCount(block: Pick<RuntimeContextBlockV1, "text" | "tokenCount">): number {
   return block.tokenCount ?? estimateTokenCount(block.text);
 }
@@ -465,6 +480,7 @@ export function rankContextBlocks(pack: LoadedPack, request: RuntimeCompileReque
     .map((block, packOrder) => {
       const vectorEntry = vectorsByBlockId.get(block.id);
       const weights = buildKeywordWeights(block, vectorEntry);
+      const routerPolicyUpdate = routerPolicyUpdateForBlock(pack, block.id);
       const textTokens = new Set(normalizeTokens(`${block.source} ${block.text}`));
       const matchedTokens: string[] = [];
       let score = baseBlockScore(block);
@@ -480,10 +496,21 @@ export function rankContextBlocks(pack: LoadedPack, request: RuntimeCompileReque
           matchedTokens.push(token);
           score += 1;
         }
+
+        const routerWeight = routerPolicyUpdate?.tokenWeights[token];
+        if (routerWeight !== undefined) {
+          if (!matchedTokens.includes(token)) {
+            matchedTokens.push(token);
+          }
+          score += routerWeight;
+        }
       }
 
       if (matchedTokens.length > 0 && vectorEntry !== undefined) {
         score += vectorEntry.boost;
+      }
+      if (routerPolicyUpdate !== null) {
+        score += Math.max(-2, Math.min(3, routerPolicyUpdate.delta));
       }
 
       if ((block.state?.freshness ?? 1) < 0.4) {
@@ -613,6 +640,22 @@ export function compileRuntime(packOrRoot: LoadedPack | string, request: Runtime
   }
   if (usedLearnedRouteFn && pack.router !== null) {
     notes.push(`router_strategy=${pack.router.strategy}`);
+    notes.push(`router_refresh_status=${pack.router.training.status}`);
+    notes.push(`router_update_count=${pack.router.training.updateCount}`);
+    notes.push(`router_route_trace_count=${pack.router.training.routeTraceCount}`);
+    notes.push(`router_supervision_count=${pack.router.training.supervisionCount}`);
+    if (pack.router.training.eventExportDigest !== null) {
+      notes.push(`router_event_export_digest=${pack.router.training.eventExportDigest}`);
+    }
+    notes.push(`router_weights_checksum=${pack.router.training.weightsChecksum}`);
+    notes.push(`router_freshness_checksum=${pack.router.training.freshnessChecksum}`);
+    const topDeltas = routerDeltaSummary(pack);
+    if (topDeltas !== undefined) {
+      notes.push(`router_top_deltas=${topDeltas}`);
+    }
+    if (pack.router.training.noOpReason !== null) {
+      notes.push(`router_noop_warning=${pack.router.training.noOpReason}`);
+    }
   }
   notes.push("brain_boundary=promoted_pack_compile_only");
 
