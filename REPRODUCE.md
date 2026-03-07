@@ -37,6 +37,7 @@ Published package names:
 - `activation`
 - `compiler`
 - `learner`
+- `openclaw`
 
 ## What `pnpm check` covers
 

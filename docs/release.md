@@ -1,6 +1,6 @@
 # Release Checklist
 
-This repo releases the full public TypeScript package lane.
+This repo releases the full public TypeScript package lane, including the OpenClaw runtime bridge package.
 
 ## 1) Prepare package versions
 
@@ -15,6 +15,7 @@ Bump the version for each public package that will be published:
 - `packages/activation/package.json`
 - `packages/compiler/package.json`
 - `packages/learner/package.json`
+- `packages/openclaw/package.json`
 
 Keep the root `package.json` version aligned with the workspace release candidate if you want a single workspace-level marker.
 
@@ -38,6 +39,7 @@ Expected artifacts:
 - `openclawbrain-activation-<version>.tgz`
 - `openclawbrain-compiler-<version>.tgz`
 - `openclawbrain-learner-<version>.tgz`
+- `openclawbrain-openclaw-<version>.tgz`
 
 ## 3) Tag the release
 
@@ -77,6 +79,7 @@ npm view @openclawbrain/pack-format version
 npm view @openclawbrain/activation version
 npm view @openclawbrain/compiler version
 npm view @openclawbrain/learner version
+npm view @openclawbrain/openclaw version
 ```
 
 As a final smoke check, install one or more packages from the registry in a clean directory and run the example snippets from the package READMEs.

@@ -39,6 +39,8 @@ pnpm add @openclawbrain/contracts @openclawbrain/events @openclawbrain/event-exp
 
 Add `@openclawbrain/pack-format`, `@openclawbrain/workspace-metadata`, and `@openclawbrain/provenance` only when you need to inspect or materialize the immutable artifact boundary directly.
 
+Add `@openclawbrain/openclaw` when you are wiring the OpenClaw-owned runtime integration layer itself.
+
 ## Boundary
 
 The product boundary is intentionally narrow:
@@ -61,6 +63,7 @@ The supported packages live under `packages/`:
 - `@openclawbrain/activation`
 - `@openclawbrain/compiler`
 - `@openclawbrain/learner`
+- `@openclawbrain/openclaw`
 
 ## Context story
 
@@ -78,6 +81,7 @@ The supported packages live under `packages/`:
 - `@openclawbrain/learner` assembles candidate packs with structural summaries and deterministic ids.
 - `@openclawbrain/activation` stages, promotes, inspects, and rolls back activation state.
 - `@openclawbrain/compiler` consumes coherent pack artifacts for runtime-side context selection.
+- `@openclawbrain/openclaw` wraps the OpenClaw-owned runtime boundary: fail-open compile consumption, prompt-context formatting, and normalized runtime event export handoff.
 
 ## Workspace
 
@@ -131,4 +135,5 @@ That command cleans the workspace, rebuilds it, reruns tests, and produces publi
 - `packages/contracts/README.md`
 - `packages/compiler/README.md`
 - `packages/learner/README.md`
+- `packages/openclaw/README.md`
 - `packages/pack-format/README.md`

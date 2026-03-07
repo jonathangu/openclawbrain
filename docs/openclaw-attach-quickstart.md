@@ -60,6 +60,8 @@ For a package-first attach path inside OpenClaw, the narrow install lane is:
 pnpm add @openclawbrain/contracts @openclawbrain/events @openclawbrain/event-export @openclawbrain/learner @openclawbrain/activation @openclawbrain/compiler
 ```
 
+Add `@openclawbrain/openclaw` when you are wiring the OpenClaw-owned runtime integration layer itself; the narrow attach lane above remains the minimal install surface.
+
 That install set maps to the attach flow like this:
 
 - `@openclawbrain/events` and `@openclawbrain/event-export` normalize and bridge the live/backfill learning surface

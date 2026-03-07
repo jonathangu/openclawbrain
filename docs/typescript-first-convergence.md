@@ -47,6 +47,7 @@ The supported public packages are:
 - `@openclawbrain/activation`
 - `@openclawbrain/compiler`
 - `@openclawbrain/learner`
+- `@openclawbrain/openclaw`
 
 Everything else in the repo exists to document, test, or release that surface.
 
