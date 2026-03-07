@@ -1,7 +1,6 @@
 # Canonical Contracts
 
-This directory holds the Phase 1 canonical contract scaffolding from
-`docs/openclawbrain-openclaw-rearchitecture-plan.md`.
+This directory holds the canonical JSON schemas and golden fixtures for the public OpenClawBrain contract surface.
 
 Versioned artifacts currently landed:
 
@@ -13,8 +12,6 @@ Versioned artifacts currently landed:
 Each version directory contains:
 
 - a schema document for the contract shape
-- one or more golden JSON fixtures for cross-repo parity tests
+- one or more golden JSON fixtures for cross-package parity tests
 
-OpenClawBrain's local validator/normalizer for these files lives in
-`openclawbrain/contracts/v1.py`. The current runtime and daemon paths are
-intentionally unchanged in this phase.
+The TypeScript validators and builders for these files live in `packages/contracts/src/index.ts`.

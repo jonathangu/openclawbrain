@@ -1,0 +1,307 @@
+import assert from "node:assert/strict";
+import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
+import path from "node:path";
+import test from "node:test";
+
+import {
+  buildNormalizedEventExport,
+  canonicalJson,
+  CONTRACT_IDS,
+  createFeedbackEvent,
+  createInteractionEvent,
+  FIXTURE_ARTIFACT_MANIFEST,
+  FIXTURE_PACK_GRAPH,
+  FIXTURE_PACK_VECTORS,
+  FIXTURE_ROUTER_ARTIFACT
+} from "@openclawbrain/contracts";
+import {
+  activatePack,
+  computePayloadChecksum,
+  inspectActivationState,
+  loadActivationPointers,
+  loadPack,
+  PACK_LAYOUT,
+  promoteCandidatePack,
+  rollbackActivePack,
+  stageCandidatePack,
+  validatePackActivationReadiness,
+  writePackFile
+} from "@openclawbrain/pack-format";
+
+function materializeTestPack(
+  rootDir: string,
+  options: {
+    packId: string;
+    learnedRouting: boolean;
+    eventStart: number;
+  }
+) {
+  const graph = {
+    ...FIXTURE_PACK_GRAPH,
+    packId: options.packId,
+    blocks: FIXTURE_PACK_GRAPH.blocks.map((block) => ({
+      ...block,
+      id: `${options.packId}:${block.id}`
+    }))
+  };
+  const vectors = {
+    ...FIXTURE_PACK_VECTORS,
+    packId: options.packId,
+    entries: FIXTURE_PACK_VECTORS.entries.map((entry, index) => ({
+      ...entry,
+      blockId: graph.blocks[index]?.id ?? entry.blockId
+    }))
+  };
+  const router = options.learnedRouting
+    ? {
+        ...FIXTURE_ROUTER_ARTIFACT,
+        routerIdentity: `${options.packId}:route_fn`
+      }
+    : null;
+  const eventExport = buildNormalizedEventExport({
+    interactionEvents: [
+      createInteractionEvent({
+        eventId: `${options.packId}:interaction`,
+        agentId: "pack-test-agent",
+        sessionId: `${options.packId}:session`,
+        channel: "cli",
+        sequence: options.eventStart,
+        kind: "memory_compiled",
+        createdAt: `2026-03-06T00:${String(options.eventStart).padStart(2, "0")}:00.000Z`,
+        source: {
+          runtimeOwner: "openclaw",
+          stream: `openclaw/runtime/${options.packId}`
+        },
+        packId: options.packId
+      })
+    ],
+    feedbackEvents: [
+      createFeedbackEvent({
+        eventId: `${options.packId}:feedback`,
+        agentId: "pack-test-agent",
+        sessionId: `${options.packId}:session`,
+        channel: "cli",
+        sequence: options.eventStart + 1,
+        kind: "teaching",
+        createdAt: `2026-03-06T00:${String(options.eventStart + 1).padStart(2, "0")}:00.000Z`,
+        source: {
+          runtimeOwner: "openclaw",
+          stream: `openclaw/runtime/${options.packId}`
+        },
+        content: `Teach activation metadata for ${options.packId}.`,
+        relatedInteractionId: `${options.packId}:interaction`
+      })
+    ]
+  });
+
+  const manifest = {
+    ...FIXTURE_ARTIFACT_MANIFEST,
+    contract: CONTRACT_IDS.artifactManifest,
+    packId: options.packId,
+    routePolicy: options.learnedRouting ? "requires_learned_routing" : "heuristic_allowed",
+    runtimeAssets: {
+      graphPath: PACK_LAYOUT.graph,
+      vectorPath: PACK_LAYOUT.vectors,
+      router: options.learnedRouting
+        ? {
+            kind: "artifact" as const,
+            identity: router?.routerIdentity ?? null,
+            artifactPath: PACK_LAYOUT.router
+          }
+        : {
+            kind: "none" as const,
+            identity: null,
+            artifactPath: null
+          }
+    },
+    payloadChecksums: {
+      graph: computePayloadChecksum(graph),
+      vector: computePayloadChecksum(vectors),
+      router: router === null ? null : computePayloadChecksum(router)
+    },
+    modelFingerprints: options.learnedRouting
+      ? ["BAAI/bge-large-en-v1.5", "ollama:qwen3.5:9b-q4_K_M", router?.routerIdentity ?? "router:missing"]
+      : ["BAAI/bge-large-en-v1.5"],
+    provenance: {
+      ...FIXTURE_ARTIFACT_MANIFEST.provenance,
+      eventRange: eventExport.range,
+      eventExports: eventExport.provenance
+    }
+  };
+
+  writePackFile(rootDir, PACK_LAYOUT.graph, graph);
+  writePackFile(rootDir, PACK_LAYOUT.vectors, vectors);
+  if (router !== null) {
+    writePackFile(rootDir, PACK_LAYOUT.router, router);
+  }
+  writePackFile(rootDir, PACK_LAYOUT.manifest, manifest);
+
+  return loadPack(rootDir);
+}
+
+test("pack descriptors keep packs immutable and addressable", (t) => {
+  const rootDir = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-pack-"));
+  t.after(() => rmSync(rootDir, { recursive: true, force: true }));
+
+  writePackFile(rootDir, PACK_LAYOUT.graph, FIXTURE_PACK_GRAPH);
+  writePackFile(rootDir, PACK_LAYOUT.vectors, FIXTURE_PACK_VECTORS);
+  writePackFile(rootDir, PACK_LAYOUT.router, FIXTURE_ROUTER_ARTIFACT);
+  writePackFile(rootDir, PACK_LAYOUT.manifest, FIXTURE_ARTIFACT_MANIFEST);
+
+  const descriptor = loadPack(rootDir);
+
+  assert.equal(descriptor.manifestPath, path.join(rootDir, "manifest.json"));
+  assert.equal(descriptor.router?.routerIdentity, FIXTURE_ROUTER_ARTIFACT.routerIdentity);
+  assert.equal(descriptor.graph.blocks[0]?.id, "ctx-feedback-scanner");
+});
+
+test("pack load rejects tampered graph payloads", (t) => {
+  const rootDir = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-pack-"));
+  t.after(() => rmSync(rootDir, { recursive: true, force: true }));
+
+  writePackFile(rootDir, PACK_LAYOUT.graph, FIXTURE_PACK_GRAPH);
+  writePackFile(rootDir, PACK_LAYOUT.vectors, FIXTURE_PACK_VECTORS);
+  writePackFile(rootDir, PACK_LAYOUT.router, FIXTURE_ROUTER_ARTIFACT);
+  writePackFile(rootDir, PACK_LAYOUT.manifest, FIXTURE_ARTIFACT_MANIFEST);
+
+  writeFileSync(
+    path.join(rootDir, PACK_LAYOUT.graph),
+    canonicalJson({
+      ...FIXTURE_PACK_GRAPH,
+      blocks: FIXTURE_PACK_GRAPH.blocks.map((block, index) =>
+        index === 0 ? { ...block, text: `${block.text} tampered` } : block
+      )
+    }),
+    "utf8"
+  );
+
+  assert.throws(() => loadPack(rootDir), /graph checksum does not match manifest/);
+});
+
+test("promotion flips active and previous pointers while rollback restores the prior active pack", (t) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-"));
+  const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-"));
+  const candidateRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-candidate-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(activeRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(candidateRoot, { recursive: true, force: true }));
+
+  const activePack = materializeTestPack(activeRoot, {
+    packId: "pack-active-test",
+    learnedRouting: false,
+    eventStart: 10
+  });
+  const candidatePack = materializeTestPack(candidateRoot, {
+    packId: "pack-candidate-test",
+    learnedRouting: true,
+    eventStart: 20
+  });
+
+  activatePack(activationRoot, activeRoot, "2026-03-06T01:00:00.000Z");
+  stageCandidatePack(activationRoot, candidateRoot, "2026-03-06T01:05:00.000Z");
+
+  const staged = inspectActivationState(activationRoot, "2026-03-06T01:06:00.000Z");
+  assert.equal(staged.active?.packId, activePack.manifest.packId);
+  assert.equal(staged.candidate?.packId, candidatePack.manifest.packId);
+  assert.equal(staged.previous, null);
+  assert.equal(staged.candidate?.activationReady, true);
+  assert.deepEqual(staged.active?.eventRange, {
+    start: 10,
+    end: 11,
+    count: 2
+  });
+  assert.deepEqual(staged.candidate?.eventRange, {
+    start: 20,
+    end: 21,
+    count: 2
+  });
+  assert.equal(staged.candidate?.eventExportDigest, candidatePack.manifest.provenance.eventExports?.exportDigest ?? null);
+  assert.equal(staged.promotion.allowed, true);
+  assert.equal(staged.rollback.allowed, false);
+
+  promoteCandidatePack(activationRoot, "2026-03-06T01:10:00.000Z");
+
+  const promoted = loadActivationPointers(activationRoot).pointers;
+  assert.equal(promoted.active?.packId, candidatePack.manifest.packId);
+  assert.equal(promoted.previous?.packId, activePack.manifest.packId);
+  assert.equal(promoted.candidate, null);
+  assert.deepEqual(promoted.active?.eventRange, {
+    start: 20,
+    end: 21,
+    count: 2
+  });
+  assert.equal(promoted.active?.eventExportDigest, candidatePack.manifest.provenance.eventExports?.exportDigest ?? null);
+  assert.deepEqual(promoted.previous?.eventRange, {
+    start: 10,
+    end: 11,
+    count: 2
+  });
+
+  rollbackActivePack(activationRoot, "2026-03-06T01:15:00.000Z");
+
+  const rolledBack = loadActivationPointers(activationRoot).pointers;
+  assert.equal(rolledBack.active?.packId, activePack.manifest.packId);
+  assert.equal(rolledBack.candidate?.packId, candidatePack.manifest.packId);
+  assert.equal(rolledBack.previous, null);
+  assert.deepEqual(rolledBack.active?.eventRange, {
+    start: 10,
+    end: 11,
+    count: 2
+  });
+  assert.deepEqual(rolledBack.candidate?.eventRange, {
+    start: 20,
+    end: 21,
+    count: 2
+  });
+});
+
+test("learned-routing packs with stub router metadata can be staged but not activated", (t) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-"));
+  const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-"));
+  const candidateRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-candidate-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(activeRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(candidateRoot, { recursive: true, force: true }));
+
+  materializeTestPack(activeRoot, {
+    packId: "pack-active-test",
+    learnedRouting: false,
+    eventStart: 30
+  });
+  const candidatePack = materializeTestPack(candidateRoot, {
+    packId: "pack-candidate-stub-test",
+    learnedRouting: true,
+    eventStart: 40
+  });
+
+  writePackFile(candidateRoot, PACK_LAYOUT.manifest, {
+    ...candidatePack.manifest,
+    runtimeAssets: {
+      ...candidatePack.manifest.runtimeAssets,
+      router: {
+        ...candidatePack.manifest.runtimeAssets.router,
+        kind: "stub"
+      }
+    }
+  });
+
+  const readinessErrors = validatePackActivationReadiness(candidateRoot);
+  assert.deepEqual(readinessErrors, ["learned-routing packs require runtimeAssets.router.kind=artifact for activation"]);
+
+  activatePack(activationRoot, activeRoot, "2026-03-06T02:00:00.000Z");
+  stageCandidatePack(activationRoot, candidateRoot, "2026-03-06T02:05:00.000Z");
+
+  const inspection = inspectActivationState(activationRoot, "2026-03-06T02:06:00.000Z");
+  assert.equal(inspection.candidate?.activationReady, false);
+  assert.match(
+    inspection.candidate?.findings.join("; ") ?? "",
+    /runtimeAssets\.router\.kind=artifact/
+  );
+  assert.equal(inspection.promotion.allowed, false);
+  assert.match(inspection.promotion.findings.join("; "), /runtimeAssets\.router\.kind=artifact/);
+  assert.throws(() => promoteCandidatePack(activationRoot, "2026-03-06T02:10:00.000Z"), /Promotion blocked/);
+  assert.throws(() => activatePack(activationRoot, candidateRoot, "2026-03-06T02:15:00.000Z"), /Pack is not activation-ready/);
+});

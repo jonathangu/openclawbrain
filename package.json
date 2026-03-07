@@ -1,0 +1,43 @@
+{
+  "name": "openclawbrain-workspace",
+  "version": "0.1.0",
+  "private": true,
+  "description": "TypeScript-first convergence workspace for the public OpenClawBrain repo.",
+  "license": "Apache-2.0",
+  "author": "Jonathan Gu <jonathangu@gmail.com>",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/jonathangu/openclawbrain.git"
+  },
+  "homepage": "https://github.com/jonathangu/openclawbrain#readme",
+  "bugs": {
+    "url": "https://github.com/jonathangu/openclawbrain/issues"
+  },
+  "packageManager": "pnpm@10.30.3",
+  "workspaces": [
+    "packages/*"
+  ],
+  "keywords": [
+    "openclawbrain",
+    "typescript",
+    "workspace",
+    "memory"
+  ],
+  "engines": {
+    "node": ">=20",
+    "pnpm": ">=10"
+  },
+  "scripts": {
+    "build": "pnpm -r build",
+    "clean": "pnpm -r clean && tsc -b --clean tsconfig.build.json && rm -rf .release",
+    "check": "pnpm typecheck && pnpm test",
+    "release:check": "pnpm clean && pnpm check && pnpm release:pack",
+    "release:pack": "mkdir -p .release && pnpm -r pack --pack-destination ../../.release",
+    "typecheck": "tsc -b --pretty false tsconfig.build.json",
+    "test": "pnpm run build && pnpm -r test"
+  },
+  "devDependencies": {
+    "@types/node": "^24.0.0",
+    "typescript": "^5.8.2"
+  }
+}
