@@ -115,7 +115,6 @@ function buildKeywordWeights(block: PackContextBlockRecordV1, vectorEntry: PackV
   return weights;
 }
 
-<<<<<<< HEAD
 function routerPolicyUpdateForBlock(pack: LoadedPack, blockId: string) {
   return pack.router?.policyUpdates.find((update) => update.blockId === blockId) ?? null;
 }

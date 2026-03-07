@@ -344,6 +344,8 @@ export function runObservabilityScenario(options = {}) {
       agentId: "agent-observability-smoke",
       message: "zebra nebula quartz",
       maxContextBlocks: 2,
+      maxContextChars: 320,
+      compactionMode: "native",
       mode: "heuristic"
     });
 
@@ -364,6 +366,8 @@ export function runObservabilityScenario(options = {}) {
       agentId: "agent-observability-smoke",
       message: "zebra nebula quartz",
       maxContextBlocks: 2,
+      maxContextChars: 320,
+      compactionMode: "native",
       mode: "heuristic"
     });
 

@@ -14,6 +14,7 @@ import {
   sortNormalizedEvents,
   type ArtifactManifestV1,
   type ActivationPointerRecordV1,
+  type ContextCompactionMode,
   type FeedbackEventKind,
   type FeedbackEventV1,
   type InteractionEventV1,
@@ -91,7 +92,9 @@ export interface CompileRuntimeContextInput {
   message: string;
   agentId?: string;
   maxContextBlocks?: number;
+  maxContextChars?: number;
   mode?: RouteMode;
+  compactionMode?: ContextCompactionMode;
   runtimeHints?: readonly string[];
 }
 
@@ -1285,8 +1288,12 @@ export function compileRuntimeContext(input: CompileRuntimeContextInput): Runtim
       agentId,
       userMessage: normalizeNonEmptyString(input.message, "message"),
       maxContextBlocks: normalizeNonNegativeInteger(input.maxContextBlocks, "maxContextBlocks", 4),
+      ...(input.maxContextChars !== undefined
+        ? { maxContextChars: normalizeNonNegativeInteger(input.maxContextChars, "maxContextChars", input.maxContextChars) }
+        : {}),
       modeRequested: normalizeMode(input.mode),
       activePackId: target.activePointer.packId,
+      ...(input.compactionMode !== undefined ? { compactionMode: input.compactionMode } : {}),
       ...(runtimeHints.length > 0 ? { runtimeHints } : {})
     });
 
