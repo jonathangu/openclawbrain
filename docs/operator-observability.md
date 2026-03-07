@@ -2,6 +2,8 @@
 
 This is the operator-facing diagnostics contract for attached OpenClawBrain installs.
 
+In this public repo, the proof surface for that contract is `pnpm observability:smoke` plus the package APIs below. This document does not imply that a browser dashboard ships in this repo.
+
 The attach path must prove four things clearly and continuously:
 
 - **health**: the active and candidate slots are activation-ready or they explain exactly why not
@@ -27,12 +29,14 @@ pnpm install --frozen-lockfile
 pnpm observability:smoke
 ```
 
-That smoke exercises the public package surface only and asserts:
+That smoke exercises the public package surface only on temporary activation state and asserts:
 
 - `inspectActivationState()` reports healthy active and candidate slots
 - `promotion.allowed` becomes `true` before promotion and `rollback.allowed` becomes `true` after promotion
 - `describeActivationTarget()` surfaces the promoted pack id, workspace snapshot, workspace revision, event range, export digest, and build time
 - `compileRuntimeFromActivation()` emits compile diagnostics with a stable `selectionDigest`, explicit served-target notes, and an explicit `selection_mode=priority_fallback` note when token matching does not hit
+
+It does not stand up a live OpenClaw service or render a dashboard UI.
 
 ## Health and promotion checks
 
@@ -128,7 +132,7 @@ The most important notes to look for are:
 
 ## What operators should expect
 
-Healthy steady state looks like this:
+In an attached deployment, healthy steady state looks like this:
 
 - first value appears from the fast-boot pack before any full history replay finishes
 - live events keep landing while passive replay keeps improving candidate packs in the background

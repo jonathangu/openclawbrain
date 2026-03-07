@@ -2,6 +2,8 @@
 
 This document is the reproducibility entrypoint for the current public OpenClawBrain surface.
 
+It splits the proof story on purpose: this repo reproduces the TypeScript package and mechanism proofs implemented here, while the larger comparative benchmark harness lives in a separate public repo.
+
 ## 1) Bootstrap the TypeScript workspace
 
 ```bash
@@ -12,7 +14,7 @@ pnpm check
 pnpm release:pack
 ```
 
-## 2) Reproduce the mechanism proof in this repo
+## 2) Reproduce the mechanism proofs in this repo
 
 These are the proofs that are implemented directly in the TypeScript workspace today.
 
@@ -41,12 +43,12 @@ This proves the operator-facing diagnostics surface for:
 - freshness inspection
 - deterministic priority fallback
 
-## 3) Reproduce comparative benchmark proof families
+## 3) Reproduce comparative benchmark proof families in the separate proof repo
 
 The larger benchmark harness currently lives in the sibling public proof repo:
 - `https://github.com/jonathangu/brain-ground-zero`
 
-That repo is the source of truth for the currently published benchmark families such as recorded-session head-to-head and sparse-feedback proof bundles. It is separate from this repo's supported TypeScript package surface.
+That repo is the source of truth for the currently published benchmark families such as recorded-session head-to-head and sparse-feedback proof bundles. It is separate from this repo's supported TypeScript package surface, and this repo does not currently vendor or mirror that harness.
 
 ### Quickstart for the proof harness repo
 
@@ -87,6 +89,7 @@ python -m brain_ground_zero.cli multiseed \
 - sparse-feedback proof family
 
 ### Not claimed here
+- full comparative benchmark coverage inside this repo
 - live production answer-quality proof on served OpenClaw traffic
 - shadow-mode or online rollout proof
 

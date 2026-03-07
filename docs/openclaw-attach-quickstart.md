@@ -2,15 +2,17 @@
 
 This is the operator-facing setup contract for attaching OpenClawBrain to OpenClaw.
 
+In this public repo, that contract is expressed as TypeScript packages plus smoke-proofed mechanics. This repo does not itself ship the full OpenClaw host/runtime or an online rollout lane.
+
 The goal is not “perfect historical completeness before first use.”
 The goal is **fast time-to-first-value**:
 
 - attach the brain quickly
 - turn it on quickly
-- get useful context gains immediately
+- make deterministic pack-backed context available immediately
 - let deeper learning continue in the background without blocking runtime
 
-The first attach must follow four rules:
+The first attach must follow six rules:
 
 - **no full history replay gate before first value**
 - **live events are learned first once attach is on**
@@ -44,7 +46,7 @@ The first attach must follow four rules:
 
 ## Install and prove
 
-This public repo is the current TypeScript package surface and proof harness for OpenClaw attach/install work.
+This public repo is the current TypeScript package surface and proof harness for the attach/install boundary that an OpenClaw-owned integration layer consumes.
 
 ```bash
 corepack enable
@@ -71,7 +73,7 @@ That install set maps to the attach flow like this:
 - `@openclawbrain/activation` stages, promotes, and inspects runtime slots
 - `@openclawbrain/compiler` compiles from the promoted pack and emits operator-visible diagnostics
 
-`pnpm lifecycle:smoke` proves that the attach path can materialize, stage, promote, and compile from a useful pack immediately.
+`pnpm lifecycle:smoke` proves that the attach path can materialize, stage, promote, and compile from a promoted pack immediately.
 
 `pnpm observability:smoke` proves that the operator diagnostics surface can answer four questions without private runtime plumbing:
 
@@ -82,7 +84,7 @@ That install set maps to the attach flow like this:
 
 ## Operator expectation
 
-The setup experience should feel like this:
+For an attached deployment, the intended operator flow is:
 
 1. Install the OpenClawBrain packages or attach the OpenClaw integration.
 2. Point OpenClawBrain at the existing OpenClaw event/workspace surface.
@@ -95,7 +97,7 @@ The setup experience should feel like this:
    - self-detected failures/successes
    - harvested/derived supervision
 
-## Product behavior after attach
+## Intended behavior after attach
 
 Once attached, the default lifecycle should be:
 
@@ -139,6 +141,8 @@ Those proofs cover:
 - activation health and promotion readiness inspection
 - freshness inspection over workspace snapshot, event range, export digest, and build time
 - deterministic fallback diagnostics when token matching does not hit
+
+They do not by themselves prove a live OpenClaw rollout, a browser dashboard, or the larger comparative benchmark families.
 
 Any future tighter single-path OpenClaw attach/install UX should preserve the same invariants while keeping the supported package surface narrow.
 

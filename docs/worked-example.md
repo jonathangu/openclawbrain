@@ -1,8 +1,8 @@
 # Worked Example: One OpenClaw Turn End to End
 
-This page shows a realistic but generic OpenClaw turn wired through the current OpenClawBrain package surface.
+This page shows an illustrative but generic OpenClaw turn wired through the current OpenClawBrain package surface.
 
-It is an operator example, not a benchmark.
+It is an operator example, not a benchmark, a dashboard demo, or a captured production trace.
 
 ## Stack boundary
 
@@ -52,4 +52,4 @@ Relevant package surface:
 ## Claim boundary
 
 This worked example proves the intended package/runtime boundary and the operator story.
-It does not by itself prove comparative benchmark performance or live production answer quality.
+It does not by itself prove comparative benchmark performance, full benchmark coverage in this repo, or live production answer quality.

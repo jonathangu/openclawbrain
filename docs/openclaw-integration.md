@@ -2,6 +2,8 @@
 
 OpenClawBrain integrates behind an OpenClaw-owned runtime boundary.
 
+This document defines that boundary and the current public proof surface. It does not mean this repo ships a live OpenClaw runtime, a production rollout lane, or the full comparative benchmark harness.
+
 ## Boundary
 
 ### OpenClaw owns
@@ -61,11 +63,13 @@ These prove:
 - runtime compilation against promoted packs
 - operator-facing observability and freshness diagnostics
 
+They run against the public package surface in this repo and temporary activation state. They do not stand up a deployed OpenClaw service.
+
 ### Comparative benchmark proof
-The larger benchmark/proof harness currently lives in the sibling public repo:
+The larger comparative benchmark/proof harness currently lives in the sibling public repo:
 - `https://github.com/jonathangu/brain-ground-zero`
 
-Use that repo for the published recorded-session and sparse-feedback benchmark families. It is separate from the supported package surface in this repo.
+Use that repo for the published recorded-session and sparse-feedback benchmark families. It is separate from the supported package surface in this repo, and this repo does not currently ship those proof families directly.
 
 ## Failure semantics
 

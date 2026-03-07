@@ -2,7 +2,7 @@
 
 OpenClawBrain is the TypeScript-first workspace for deterministic, pack-backed context products.
 
-The repo’s public story is now centered on five guarantees:
+The repo’s public story is centered on five concrete claims:
 
 - larger-context tolerance through explicit compile budgets and token-aware pack blocks
 - native structural compaction over pack-backed context instead of ad hoc prompt-side truncation
@@ -14,6 +14,8 @@ The workspace root now carries two deterministic proof lanes:
 
 - `pnpm lifecycle:smoke` proves one true lifecycle across normalized events, event export, learner pack materialization, activation staging/promotion, and compiler runtime compilation against the promoted pack.
 - `pnpm observability:smoke` proves the operator-facing diagnostics story for health, promotions, freshness, and priority fallback.
+
+Those lanes prove the package and mechanism boundary implemented in this repo today. They do not claim a live OpenClaw production rollout, a bundled browser dashboard, or the full comparative benchmark harness inside this repo.
 
 ## Versioning
 
@@ -59,6 +61,12 @@ The product boundary is intentionally narrow:
 This GitHub repo is public. The supported public integration surface is narrower: the published `@openclawbrain/*` packages plus the versioned fixtures under `contracts/`. Workspace layout, root scripts, smoke lanes, and release plumbing are public proof-and-build machinery, not a second semver-stable API.
 
 There is no supported Python daemon, socket, hook, or wheel-release lane in that public integration surface.
+
+## Proof boundary
+
+- This repo directly proves the TypeScript package surface, lifecycle mechanics, and operator-observability APIs.
+- The broader comparative benchmark families live in the separate public proof repo: `https://github.com/jonathangu/brain-ground-zero`.
+- The `docs/brains-dashboard/` route in this repo is a documentation placeholder, not a shipped dashboard application.
 
 ## Public packages
 
@@ -108,7 +116,7 @@ pnpm observability:smoke
 pnpm release:pack
 ```
 
-`pnpm check` builds the workspace, runs the package tests, and executes the root lifecycle and observability smoke lanes.
+`pnpm check` builds the workspace, runs the package tests, and executes the root lifecycle and observability smoke lanes in this repo.
 
 `pnpm lifecycle:smoke` rebuilds the workspace and runs the current lifecycle proof on a temp directory using the existing public package APIs on disk:
 
