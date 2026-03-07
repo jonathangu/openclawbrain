@@ -846,7 +846,7 @@ function staticLifecycleBlocks(
     },
     {
       id: `${packId}:structural-ops`,
-      source: "docs/glossary.md",
+      source: "docs/typescript-first-convergence.md",
       text: `Structural graph learning stays first-class with Hebbian reinforcement, decay half-life 30 days, and ops split=${structuralOps.split}, merge=${structuralOps.merge}, prune=${structuralOps.prune}, connect=${structuralOps.connect}.`,
       keywords: ["structural", "hebbian", "decay", "split", "merge", "prune", "connect", "graph", "memory"],
       priority: 4,

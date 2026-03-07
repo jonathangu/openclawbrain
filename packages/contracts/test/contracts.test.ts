@@ -54,17 +54,16 @@ test("canonical fixture sources point at current repo docs", () => {
   const sources = FIXTURE_PACK_GRAPH.blocks.map((block) => block.source);
   const attachQuickstartDoc = fileURLToPath(new URL("../../../../docs/openclaw-attach-quickstart.md", import.meta.url));
   const contractsDoc = fileURLToPath(new URL("../../../../docs/contracts-v1.md", import.meta.url));
-  const glossaryDoc = fileURLToPath(new URL("../../../../docs/glossary.md", import.meta.url));
+  const convergenceDoc = fileURLToPath(new URL("../../../../docs/typescript-first-convergence.md", import.meta.url));
 
   assert.match(sources.join("\n"), /docs\/openclaw-attach-quickstart\.md/);
   assert.match(sources.join("\n"), /docs\/contracts-v1\.md/);
-  assert.match(sources.join("\n"), /docs\/glossary\.md/);
+  assert.match(sources.join("\n"), /docs\/typescript-first-convergence\.md/);
   assert.equal(existsSync(attachQuickstartDoc), true);
   assert.equal(existsSync(contractsDoc), true);
-  assert.equal(existsSync(glossaryDoc), true);
+  assert.equal(existsSync(convergenceDoc), true);
   assert.equal(sources.some((source) => source.includes("openclawbrain-openclaw-rearchitecture")), false);
   assert.equal(sources.includes("memory/2026-03-05-openclawbrain-vnext-roadmap.md"), false);
-  assert.equal(sources.includes("docs/typescript-first-convergence.md"), false);
 });
 
 test("runtime compile golden response stays in sync with the TS fixture", () => {
