@@ -16,7 +16,7 @@ import {
   validateRuntimeCompileResponse,
   validateRuntimeCompileTargetExpectation
 } from "@openclawbrain/contracts";
-import { describePackCompileTarget, loadPack, loadPackFromActivation, type PackDescriptor } from "@openclawbrain/pack-format";
+import { describePackCompileTarget, inspectActivationState, loadPack, loadPackFromActivation, type PackDescriptor } from "@openclawbrain/pack-format";
 
 export type LoadedPack = PackDescriptor;
 
@@ -35,6 +35,7 @@ export interface RankedContextBlock {
 export interface ActivationCompileOptions {
   slot?: ActivationPointerSlot;
   requireActivationReady?: boolean;
+  requirePromotionSafe?: boolean;
   expectation?: RuntimeCompileExpectationV1;
   expectedTarget?: RuntimeCompileExpectationV1;
 }
@@ -55,6 +56,10 @@ function normalizeTokens(value: string): string[] {
   return [...new Set(value.toLowerCase().split(/[^a-z0-9]+/u).filter((token) => token.length >= 2))];
 }
 
+function compareIsoDates(left: string, right: string): number {
+  return Date.parse(left) - Date.parse(right);
+}
+
 function estimateTokenCount(value: string): number {
   return normalizeTokens(value).length;
 }
@@ -67,17 +72,23 @@ function requestTokens(request: RuntimeCompileRequestV1): string[] {
 function buildKeywordWeights(block: PackContextBlockRecordV1, vectorEntry: PackVectorEntryV1 | undefined): Map<string, number> {
   const weights = new Map<string, number>();
 
+  function assignWeight(keyword: string, weight: number): void {
+    for (const token of normalizeTokens(keyword)) {
+      weights.set(token, Math.max(weights.get(token) ?? 0, weight));
+    }
+  }
+
   for (const keyword of block.keywords) {
-    weights.set(keyword.toLowerCase(), Math.max(weights.get(keyword.toLowerCase()) ?? 0, 3));
+    assignWeight(keyword, 3);
   }
 
   if (vectorEntry !== undefined) {
     for (const keyword of vectorEntry.keywords) {
-      weights.set(keyword.toLowerCase(), Math.max(weights.get(keyword.toLowerCase()) ?? 0, 4));
+      assignWeight(keyword, 4);
     }
     for (const [keyword, weight] of Object.entries(vectorEntry.weights ?? {})) {
       const numericWeight = Number.isFinite(weight) ? weight : 0;
-      weights.set(keyword.toLowerCase(), Math.max(weights.get(keyword.toLowerCase()) ?? 0, numericWeight));
+      assignWeight(keyword, numericWeight);
     }
   }
 
@@ -100,6 +111,75 @@ function buildContextBlock(block: RuntimeContextBlockV1): RuntimeContextBlockV1 
 
 function flattenContextIds(block: RuntimeContextBlockV1): string[] {
   return block.compactedFrom ?? [block.id];
+}
+
+function flattenRankedContextIds(block: Pick<RankedContextBlock, "blockId" | "compactedFrom">): string[] {
+  return block.compactedFrom ?? [block.blockId];
+}
+
+function buildSelectedContextBlock(entry: RankedContextBlock): RuntimeContextBlockV1 {
+  return buildContextBlock({
+    id: entry.blockId,
+    source: entry.source,
+    text: entry.text,
+    tokenCount: entry.tokenCount,
+    ...(entry.compactedFrom !== undefined ? { compactedFrom: entry.compactedFrom } : {})
+  });
+}
+
+function selectContextBlocks(
+  ranked: readonly RankedContextBlock[],
+  maxBlocks: number
+): { selected: RuntimeContextBlockV1[]; matchedSelectedCount: number; overlapPrunedCount: number } {
+  if (maxBlocks === 0) {
+    return {
+      selected: [],
+      matchedSelectedCount: 0,
+      overlapPrunedCount: 0
+    };
+  }
+
+  const selected: RuntimeContextBlockV1[] = [];
+  const coveredIds = new Set<string>();
+  let matchedSelectedCount = 0;
+  let overlapPrunedCount = 0;
+
+  const trySelect = (entry: RankedContextBlock, matchedTier: boolean): void => {
+    if (selected.length >= maxBlocks) {
+      return;
+    }
+
+    const coverageIds = flattenRankedContextIds(entry);
+    if (coverageIds.some((coverageId) => coveredIds.has(coverageId))) {
+      overlapPrunedCount += 1;
+      return;
+    }
+
+    selected.push(buildSelectedContextBlock(entry));
+    for (const coverageId of coverageIds) {
+      coveredIds.add(coverageId);
+    }
+
+    if (matchedTier) {
+      matchedSelectedCount += 1;
+    }
+  };
+
+  const matched = ranked.filter((entry) => entry.matchedTokens.length > 0);
+  const unmatched = ranked.filter((entry) => entry.matchedTokens.length === 0);
+
+  for (const entry of matched) {
+    trySelect(entry, true);
+  }
+  for (const entry of unmatched) {
+    trySelect(entry, false);
+  }
+
+  return {
+    selected,
+    matchedSelectedCount,
+    overlapPrunedCount
+  };
 }
 
 function totalCharCount(blocks: readonly RuntimeContextBlockV1[]): number {
@@ -239,6 +319,14 @@ export function determineRouteMode(pack: LoadedPack, requested: RouteMode): Rout
   return pack.manifest.routePolicy === "requires_learned_routing" ? "learned" : requested;
 }
 
+function isStrictlyFresherTarget(candidate: RuntimeCompileTargetV1, active: RuntimeCompileTargetV1): boolean {
+  return (
+    compareIsoDates(candidate.builtAt, active.builtAt) > 0 ||
+    candidate.eventRange.end > active.eventRange.end ||
+    candidate.eventRange.count > active.eventRange.count
+  );
+}
+
 function assertRequestPackExpectation(pack: LoadedPack, request: RuntimeCompileRequestV1): void {
   if (request.activePackId !== undefined && request.activePackId !== pack.manifest.packId) {
     throw new Error(`Compile request activePackId ${request.activePackId} does not match loaded pack ${pack.manifest.packId}`);
@@ -302,6 +390,54 @@ function resolveActivationCompileExpectation(options: ActivationCompileOptions):
   return expectedTarget;
 }
 
+function assertActivationCompileSafety(rootDir: string, slot: ActivationPointerSlot, options: ActivationCompileOptions): void {
+  if (slot !== "candidate" || options.requirePromotionSafe === false) {
+    return;
+  }
+
+  const inspection = inspectActivationState(rootDir);
+  if (!inspection.promotion.allowed) {
+    throw new Error(`Candidate compile blocked: ${inspection.promotion.findings.join("; ")}`);
+  }
+}
+
+function activationFreshnessNotes(rootDir: string, slot: ActivationPointerSlot, target: RuntimeCompileTargetV1): string[] {
+  if (slot !== "active") {
+    return [];
+  }
+
+  const inspection = inspectActivationState(rootDir);
+  const candidate = inspection.candidate;
+  if (candidate === null) {
+    return [];
+  }
+
+  if (!inspection.promotion.allowed) {
+    return [`candidate_rejected=${candidate.packId}:${inspection.promotion.findings.join(" | ")}`];
+  }
+
+  const candidateTarget: RuntimeCompileTargetV1 = {
+    packId: candidate.packId,
+    routePolicy: candidate.routePolicy,
+    routerIdentity: candidate.routerIdentity,
+    workspaceSnapshot: candidate.workspaceSnapshot,
+    workspaceRevision: candidate.workspaceRevision,
+    eventRange: {
+      start: candidate.eventRange.start,
+      end: candidate.eventRange.end,
+      count: candidate.eventRange.count
+    },
+    eventExportDigest: candidate.eventExportDigest,
+    builtAt: candidate.builtAt
+  };
+
+  if (!isStrictlyFresherTarget(candidateTarget, target)) {
+    return [];
+  }
+
+  return [`stale_route_warning=active pack ${target.packId} is behind promotion-ready candidate ${candidate.packId}`];
+}
+
 export function resolveActivationCompileTarget(rootDir: string, options: ActivationCompileOptions = {}): ActivationCompileResolution {
   const slot = options.slot ?? "active";
   const pack = loadPackFromActivation(rootDir, slot, {
@@ -326,6 +462,8 @@ export function resolveActivationCompileTarget(rootDir: string, options: Activat
       throw new Error(`Activation compile target mismatch: ${compatibilityErrors.join("; ")}`);
     }
   }
+
+  assertActivationCompileSafety(rootDir, slot, options);
 
   return {
     slot,
@@ -411,19 +549,8 @@ export function compileRuntime(packOrRoot: LoadedPack | string, request: Runtime
   const ranked = rankContextBlocks(pack, request);
   const maxBlocks = Math.max(0, request.maxContextBlocks);
   const matched = ranked.filter((entry) => entry.matchedTokens.length > 0);
-  const candidatePool = matched.length > 0 ? matched : ranked;
-  const selected =
-    maxBlocks === 0
-      ? []
-      : candidatePool.slice(0, maxBlocks).map((entry) =>
-          buildContextBlock({
-            id: entry.blockId,
-            source: entry.source,
-            text: entry.text,
-            tokenCount: entry.tokenCount,
-            ...(entry.compactedFrom !== undefined ? { compactedFrom: entry.compactedFrom } : {})
-          })
-        );
+  const selection = selectContextBlocks(ranked, maxBlocks);
+  const selected = selection.selected;
   const compactionMode = request.compactionMode ?? "native";
   const fitted = fitContextToCharBudget(selected, request.maxContextChars, compactionMode);
   const selectedContext = fitted.blocks;
@@ -431,7 +558,20 @@ export function compileRuntime(packOrRoot: LoadedPack | string, request: Runtime
   const notes: string[] = [];
   notes.push(`selected_context_ids=${selectedContext.map((block) => block.id).join(",")}`);
   notes.push(matched.length > 0 ? `selection_mode=token_match(${requestTokens(request).join(",")})` : "selection_mode=priority_fallback");
+  notes.push(
+    matched.length > 0 && selection.matchedSelectedCount < maxBlocks && selection.selected.length > selection.matchedSelectedCount
+      ? "selection_tiers=token_match+priority_fallback"
+      : matched.length > 0
+        ? "selection_tiers=token_match_only"
+        : "selection_tiers=priority_fallback_only"
+  );
   notes.push("selection_strategy=pack_keyword_overlap_v1");
+  if (modeEffective !== request.modeRequested) {
+    notes.push(`learned_required_enforced=requested_${request.modeRequested}->${modeEffective}`);
+  }
+  if (selection.overlapPrunedCount > 0) {
+    notes.push(`selection_overlap_pruned=${selection.overlapPrunedCount}`);
+  }
   notes.push(`pack_graph_blocks=${pack.graph.blocks.length}`);
   if (request.maxContextChars !== undefined) {
     notes.push(`max_context_chars=${request.maxContextChars}`);
@@ -496,11 +636,27 @@ export function compileRuntimeFromActivation(
         }
       : request;
   const response = compileRuntime(resolved.pack, compiledRequest);
+  const freshnessNotes = activationFreshnessNotes(rootDir, resolved.slot, resolved.target);
+  const resolvedResponse =
+    freshnessNotes.length === 0
+      ? response
+      : {
+          ...response,
+          diagnostics: {
+            ...response.diagnostics,
+            notes: [...response.diagnostics.notes, ...freshnessNotes]
+          }
+        };
+
+  const responseErrors = validateRuntimeCompileResponse(resolvedResponse);
+  if (responseErrors.length > 0) {
+    throw new Error(`Invalid compile response: ${responseErrors.join("; ")}`);
+  }
 
   return {
-    ...response,
+    ...resolvedResponse,
     slot: resolved.slot,
     target: resolved.target,
-    response
+    response: resolvedResponse
   };
 }

@@ -589,6 +589,10 @@ function validateRuntimeContextBlock(value: RuntimeContextBlockV1, label: string
   return errors;
 }
 
+function flattenRuntimeContextCoverageIds(value: Pick<RuntimeContextBlockV1, "id" | "compactedFrom">): string[] {
+  return value.compactedFrom ?? [value.id];
+}
+
 export function validateRuntimeCompileRequest(value: RuntimeCompileRequestV1): string[] {
   const errors: string[] = [];
   pushWhenMissing(errors, value.contract === CONTRACT_IDS.runtimeCompile, "runtime_compile.v1 contract is required");
@@ -713,6 +717,7 @@ export function validateRuntimeCompileTargetExpectation(
 
 export function validateRuntimeCompileResponse(value: RuntimeCompileResponseV1): string[] {
   const errors: string[] = [];
+  const selectedCoverage = new Map<string, string>();
   pushWhenMissing(errors, value.contract === CONTRACT_IDS.runtimeCompile, "runtime_compile.v1 contract is required");
   pushWhenMissing(errors, value.packId.length > 0, "packId is required");
   pushWhenMissing(errors, value.diagnostics.modeRequested === "heuristic" || value.diagnostics.modeRequested === "learned", "modeRequested must be explicit");
@@ -745,6 +750,15 @@ export function validateRuntimeCompileResponse(value: RuntimeCompileResponseV1):
 
   value.selectedContext.forEach((block, index) => {
     errors.push(...validateRuntimeContextBlock(block, `selectedContext[${index}]`));
+
+    for (const coverageId of flattenRuntimeContextCoverageIds(block)) {
+      const existingBlockId = selectedCoverage.get(coverageId);
+      if (existingBlockId !== undefined) {
+        errors.push(`selectedContext[${index}] overlaps block ${existingBlockId} via ${coverageId}`);
+        continue;
+      }
+      selectedCoverage.set(coverageId, block.id);
+    }
   });
 
   return errors;
@@ -1531,12 +1545,6 @@ const FIXTURE_RUNTIME_COMPILE_SELECTED_CONTEXT: RuntimeContextBlockV1[] = [
     text: "Pack-backed structural compaction keeps larger context windows deterministic across feedback, runtime compile, and structural graph sources.",
     tokenCount: 16,
     compactedFrom: ["ctx-feedback-scanner", "ctx-runtime-compile", "ctx-structural-ops"]
-  },
-  {
-    id: "ctx-feedback-scanner",
-    source: "memory/2026-03-05-openclawbrain-vnext-roadmap.md",
-    text: "Unified feedback scanner runs against local session logs with Ollama qwen3.5:9b-q4_K_M and checkpointed replay.",
-    tokenCount: 14
   }
 ];
 
@@ -1559,12 +1567,13 @@ export const FIXTURE_RUNTIME_COMPILE_RESPONSE: RuntimeCompileResponseV1 = {
       selectedContext: FIXTURE_RUNTIME_COMPILE_SELECTED_CONTEXT
     }),
     compactionMode: "native",
-    compactionApplied: true,
+    compactionApplied: false,
     notes: [
-      "selected_context_ids=ctx-context-compact,ctx-feedback-scanner",
+      "selected_context_ids=ctx-context-compact",
       "selection_mode=token_match(feedback,scanner,manifest,structural,compaction)",
+      "selection_tiers=token_match_only",
       "selection_strategy=pack_keyword_overlap_v1",
-      "native_structural_compaction=applied",
+      "selection_overlap_pruned=3",
       "router_strategy=keyword_overlap_v1"
     ]
   }

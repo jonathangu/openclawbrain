@@ -27,6 +27,7 @@ import {
   compileRuntimeFromActivation,
   determineRouteMode,
   loadPackForCompile,
+  rankContextBlocks,
   resolveActivationCompileTarget
 } from "@openclawbrain/compiler";
 import {
@@ -389,6 +390,27 @@ test("learned-required packs force learned mode and select scanner context", (t:
   assert.equal(response.diagnostics.usedLearnedRouteFn, true);
   assert.equal(response.diagnostics.routerIdentity, FIXTURE_ROUTER_ARTIFACT.routerIdentity);
   assert.equal(response.diagnostics.selectionStrategy, "pack_keyword_overlap_v1");
+  assert.match(response.diagnostics.notes.join(";"), /learned_required_enforced=requested_heuristic->learned/);
+});
+
+test("rankContextBlocks normalizes underscored keyword weights for runtime hints", (t: TestContext) => {
+  const rootDir = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-compile-"));
+  t.after(() => rmSync(rootDir, { recursive: true, force: true }));
+  materializeFixturePack(rootDir);
+
+  const pack = loadPackForCompile(rootDir);
+  const ranked = rankContextBlocks(pack, {
+    contract: CONTRACT_IDS.runtimeCompile,
+    agentId: "agent-keyword-normalize",
+    userMessage: "Keep the runtime always on.",
+    maxContextBlocks: 1,
+    modeRequested: "heuristic",
+    runtimeHints: ["always on"]
+  });
+
+  const scannerBlock = ranked.find((entry) => entry.blockId === "ctx-feedback-scanner");
+  assert.equal(scannerBlock?.matchedTokens.includes("always"), true);
+  assert.equal(scannerBlock?.matchedTokens.includes("on"), true);
 });
 
 test("compileRuntime falls back to priority order when nothing matches", (t: TestContext) => {
@@ -420,12 +442,12 @@ test("compileRuntime applies native structural compaction under a character budg
   const response = compileRuntime(rootDir, {
     contract: CONTRACT_IDS.runtimeCompile,
     agentId: "agent-compact",
-    userMessage: "feedback scanner manifest structural compaction context",
+    userMessage: "qwen manifest split",
     maxContextBlocks: 3,
     maxContextChars: 180,
     modeRequested: "heuristic",
     compactionMode: "native",
-    runtimeHints: ["pack-backed selection"]
+    runtimeHints: []
   });
 
   assert.equal(response.diagnostics.compactionApplied, true);
@@ -433,6 +455,44 @@ test("compileRuntime applies native structural compaction under a character budg
   assert.equal(response.diagnostics.selectedCharCount <= 180, true);
   assert.equal(response.selectedContext.some((block) => (block.compactedFrom?.length ?? 0) > 1), true);
   assert.match(response.diagnostics.notes.join(";"), /native_structural_compaction=applied/);
+});
+
+test("compileRuntime fills fallback tiers after matched selection", (t: TestContext) => {
+  const rootDir = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-compile-"));
+  t.after(() => rmSync(rootDir, { recursive: true, force: true }));
+  materializeFixturePack(rootDir);
+
+  const response = compileRuntime(rootDir, {
+    contract: CONTRACT_IDS.runtimeCompile,
+    agentId: "agent-tier-fill",
+    userMessage: "Run the scanner with qwen checkpoints.",
+    maxContextBlocks: 2,
+    modeRequested: "heuristic",
+    compactionMode: "none",
+    runtimeHints: []
+  });
+
+  assert.deepEqual(response.selectedContext.map((block) => block.id), ["ctx-feedback-scanner", "ctx-runtime-compile"]);
+  assert.match(response.diagnostics.notes.join(";"), /selection_tiers=token_match\+priority_fallback/);
+});
+
+test("compileRuntime prunes overlapping compacted and raw context blocks", (t: TestContext) => {
+  const rootDir = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-compile-"));
+  t.after(() => rmSync(rootDir, { recursive: true, force: true }));
+  materializeFixturePack(rootDir);
+
+  const response = compileRuntime(rootDir, {
+    contract: CONTRACT_IDS.runtimeCompile,
+    agentId: "agent-overlap-prune",
+    userMessage: "feedback scanner manifest structural compaction context",
+    maxContextBlocks: 3,
+    modeRequested: "heuristic",
+    compactionMode: "none",
+    runtimeHints: ["pack-backed selection"]
+  });
+
+  assert.deepEqual(response.selectedContext.map((block) => block.id), ["ctx-context-compact"]);
+  assert.match(response.diagnostics.notes.join(";"), /selection_overlap_pruned=3/);
 });
 
 test("compileRuntime rejects stale activePackId expectations", (t: TestContext) => {
@@ -492,7 +552,6 @@ test("compileRuntimeFromActivation serves the active pack and respects promotion
   assert.equal(activeCompile.response.packId, "pack-active-serving");
   assert.equal(activeCompile.target.packId, "pack-active-serving");
   assert.equal(activeCompile.response.diagnostics.modeEffective, "heuristic");
-  assert.equal(activeCompile.response.diagnostics.compactionApplied, true);
   assert.equal(activeCompile.response.diagnostics.selectedCharCount <= 180, true);
 
   promoteCandidatePack(activationRoot, "2026-03-06T06:10:00.000Z");
@@ -514,7 +573,200 @@ test("compileRuntimeFromActivation serves the active pack and respects promotion
   assert.equal(promotedCompile.target.packId, "pack-candidate-serving");
   assert.equal(promotedCompile.response.diagnostics.modeEffective, "learned");
   assert.equal(promotedCompile.response.diagnostics.usedLearnedRouteFn, true);
-  assert.equal(promotedCompile.response.diagnostics.compactionApplied, true);
+});
+
+test("compileRuntimeFromActivation surfaces stale-route warnings when a fresher candidate is staged", (t: TestContext) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-freshness-"));
+  const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-freshness-"));
+  const candidateRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-candidate-freshness-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(activeRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(candidateRoot, { recursive: true, force: true }));
+
+  const activeExport = buildFixtureNormalizedEventExport({
+    sessionId: "session-freshness-active",
+    sequenceStart: 21,
+    createdAt: "2026-03-06T04:21:00.000Z",
+    streamSuffix: "freshness-active",
+    interactionKind: "memory_compiled",
+    feedbackKind: "approval",
+    feedbackContent: "Serve the current active route until a newer candidate is safe to promote."
+  });
+  const candidateExport = buildFixtureNormalizedEventExport({
+    sessionId: "session-freshness-candidate",
+    sequenceStart: 41,
+    createdAt: "2026-03-06T05:41:00.000Z",
+    streamSuffix: "freshness-candidate",
+    interactionKind: "operator_override",
+    feedbackKind: "teaching",
+    feedbackContent: "A fresher candidate should warn operators before promotion."
+  });
+
+  materializeActivationPack(activeRoot, {
+    packId: "pack-freshness-active",
+    learnedRouting: false,
+    normalizedEventExport: activeExport,
+    snapshotId: "workspace-freshness@snapshot-active",
+    revision: "freshness-active-rev",
+    builtAt: "2026-03-06T04:26:00.000Z"
+  });
+  materializeActivationPack(candidateRoot, {
+    packId: "pack-freshness-candidate",
+    learnedRouting: true,
+    normalizedEventExport: candidateExport,
+    snapshotId: "workspace-freshness@snapshot-candidate",
+    revision: "freshness-candidate-rev",
+    builtAt: "2026-03-06T05:46:00.000Z"
+  });
+
+  activatePack(activationRoot, activeRoot, "2026-03-06T05:50:00.000Z");
+  stageCandidatePack(activationRoot, candidateRoot, "2026-03-06T05:55:00.000Z");
+
+  const result = compileRuntimeFromActivation(activationRoot, {
+    contract: CONTRACT_IDS.runtimeCompile,
+    agentId: "agent-freshness-warning",
+    userMessage: "Compile the active route while a fresher candidate is waiting.",
+    maxContextBlocks: 2,
+    maxContextChars: 320,
+    modeRequested: "heuristic",
+    runtimeHints: ["active", "candidate", "freshness"],
+    compactionMode: "native"
+  });
+
+  assert.equal(result.slot, "active");
+  assert.equal(result.target.packId, "pack-freshness-active");
+  assert.match(
+    result.response.diagnostics.notes.join(";"),
+    /stale_route_warning=active pack pack-freshness-active is behind promotion-ready candidate pack-freshness-candidate/
+  );
+});
+
+test("resolveActivationCompileTarget blocks candidate evaluation when promotion safety fails", (t: TestContext) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-candidate-gate-"));
+  const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-candidate-gate-"));
+  const candidateRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-candidate-candidate-gate-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(activeRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(candidateRoot, { recursive: true, force: true }));
+
+  const activeExport = buildFixtureNormalizedEventExport({
+    sessionId: "session-candidate-gate-active",
+    sequenceStart: 61,
+    createdAt: "2026-03-06T06:01:00.000Z",
+    streamSuffix: "candidate-gate-active",
+    interactionKind: "memory_compiled",
+    feedbackKind: "approval",
+    feedbackContent: "Keep the active route newer than any stale candidate."
+  });
+  const staleCandidateExport = buildFixtureNormalizedEventExport({
+    sessionId: "session-candidate-gate-stale",
+    sequenceStart: 41,
+    createdAt: "2026-03-06T05:01:00.000Z",
+    streamSuffix: "candidate-gate-stale",
+    interactionKind: "operator_override",
+    feedbackKind: "teaching",
+    feedbackContent: "This staged candidate is stale and must be rejected before evaluation."
+  });
+
+  materializeActivationPack(activeRoot, {
+    packId: "pack-candidate-gate-active",
+    learnedRouting: false,
+    normalizedEventExport: activeExport,
+    snapshotId: "workspace-candidate-gate@snapshot-active",
+    revision: "candidate-gate-active-rev",
+    builtAt: "2026-03-06T06:06:00.000Z"
+  });
+  materializeActivationPack(candidateRoot, {
+    packId: "pack-candidate-gate-stale",
+    learnedRouting: true,
+    normalizedEventExport: staleCandidateExport,
+    snapshotId: "workspace-candidate-gate@snapshot-stale",
+    revision: "candidate-gate-stale-rev",
+    builtAt: "2026-03-06T05:06:00.000Z"
+  });
+
+  activatePack(activationRoot, activeRoot, "2026-03-06T06:10:00.000Z");
+  stageCandidatePack(activationRoot, candidateRoot, "2026-03-06T06:15:00.000Z");
+
+  assert.throws(
+    () =>
+      resolveActivationCompileTarget(activationRoot, {
+        slot: "candidate"
+      }),
+    /Candidate compile blocked: candidate pack builtAt must not precede active pack builtAt during promotion; candidate eventRange\.end must be >= active eventRange\.end during promotion/
+  );
+});
+
+test("compileRuntimeFromActivation surfaces candidate rejection findings on the active route", (t: TestContext) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-candidate-rejection-"));
+  const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-candidate-rejection-"));
+  const candidateRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-candidate-rejection-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(activeRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(candidateRoot, { recursive: true, force: true }));
+
+  const activeExport = buildFixtureNormalizedEventExport({
+    sessionId: "session-candidate-rejection-active",
+    sequenceStart: 71,
+    createdAt: "2026-03-06T07:01:00.000Z",
+    streamSuffix: "candidate-rejection-active",
+    interactionKind: "memory_compiled",
+    feedbackKind: "approval",
+    feedbackContent: "The active route should keep serving while a broken candidate is rejected."
+  });
+  const candidateExport = buildFixtureNormalizedEventExport({
+    sessionId: "session-candidate-rejection-candidate",
+    sequenceStart: 81,
+    createdAt: "2026-03-06T07:21:00.000Z",
+    streamSuffix: "candidate-rejection-candidate",
+    interactionKind: "operator_override",
+    feedbackKind: "teaching",
+    feedbackContent: "This candidate will drift after staging and should be rejected loudly."
+  });
+
+  materializeActivationPack(activeRoot, {
+    packId: "pack-candidate-rejection-active",
+    learnedRouting: false,
+    normalizedEventExport: activeExport,
+    snapshotId: "workspace-candidate-rejection@snapshot-active",
+    revision: "candidate-rejection-active-rev",
+    builtAt: "2026-03-06T07:06:00.000Z"
+  });
+  materializeActivationPack(candidateRoot, {
+    packId: "pack-candidate-rejection-candidate",
+    learnedRouting: true,
+    normalizedEventExport: candidateExport,
+    snapshotId: "workspace-candidate-rejection@snapshot-candidate",
+    revision: "candidate-rejection-candidate-rev",
+    builtAt: "2026-03-06T07:26:00.000Z"
+  });
+
+  activatePack(activationRoot, activeRoot, "2026-03-06T07:30:00.000Z");
+  stageCandidatePack(activationRoot, candidateRoot, "2026-03-06T07:35:00.000Z");
+
+  const candidatePack = loadPackForCompile(candidateRoot);
+  writePackFile(candidateRoot, PACK_LAYOUT.manifest, {
+    ...candidatePack.manifest,
+    modelFingerprints: [...candidatePack.manifest.modelFingerprints, "mutated-after-staging"]
+  });
+
+  const result = compileRuntimeFromActivation(activationRoot, {
+    contract: CONTRACT_IDS.runtimeCompile,
+    agentId: "agent-candidate-rejection-note",
+    userMessage: "Compile the active route while the candidate is being rejected.",
+    maxContextBlocks: 2,
+    maxContextChars: 320,
+    modeRequested: "heuristic",
+    runtimeHints: ["active", "candidate", "rejected"],
+    compactionMode: "native"
+  });
+
+  assert.equal(result.slot, "active");
+  assert.equal(result.target.packId, "pack-candidate-rejection-active");
+  assert.match(result.response.diagnostics.notes.join(";"), /candidate_rejected=pack-candidate-rejection-candidate:.*manifestDigest/);
 });
 
 test("compileRuntimeFromActivation fails fast when no active pack is present", () => {

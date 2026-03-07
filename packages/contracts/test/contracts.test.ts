@@ -92,6 +92,38 @@ test("learned routing responses must explicitly mark route_fn usage", () => {
   assert.deepEqual(errors, ["learned mode requires usedLearnedRouteFn=true"]);
 });
 
+test("runtime compile responses reject overlapping compacted coverage", () => {
+  const selectedContext = [
+    {
+      id: "ctx-summary",
+      source: "pack/runtime-summary",
+      text: "Summary coverage for ctx-a and ctx-b.",
+      tokenCount: 6,
+      compactedFrom: ["ctx-a", "ctx-b"]
+    },
+    {
+      id: "ctx-a",
+      source: "memory/runtime-detail",
+      text: "Detailed runtime context for ctx-a.",
+      tokenCount: 5
+    }
+  ];
+
+  const errors = validateRuntimeCompileResponse({
+    ...FIXTURE_RUNTIME_COMPILE_RESPONSE,
+    selectedContext,
+    diagnostics: {
+      ...FIXTURE_RUNTIME_COMPILE_RESPONSE.diagnostics,
+      selectedCount: selectedContext.length,
+      selectedCharCount: selectedContext.reduce((sum, block) => sum + block.text.length, 0),
+      selectedTokenCount: selectedContext.reduce((sum, block) => sum + (block.tokenCount ?? 0), 0),
+      selectionDigest: "sha256-overlap"
+    }
+  });
+
+  assert.deepEqual(errors, ["selectedContext[1] overlaps block ctx-summary via ctx-a"]);
+});
+
 test("runtime compile expectations validate shape and target compatibility", () => {
   const target = {
     packId: FIXTURE_ARTIFACT_MANIFEST.packId,
