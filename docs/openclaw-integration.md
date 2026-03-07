@@ -1,0 +1,79 @@
+# OpenClaw Integration
+
+OpenClawBrain integrates behind an OpenClaw-owned runtime boundary.
+
+## Boundary
+
+### OpenClaw owns
+- session and channel orchestration
+- fail-open behavior
+- prompt assembly and hot-path serving
+- deployment, routing, and rollback controls
+
+### OpenClawBrain owns
+- contracts and typed event schemas
+- event normalization and export boundaries
+- workspace metadata and provenance
+- immutable pack format and activation helpers
+- deterministic compilation and learner behavior
+- optional OpenClaw-facing runtime bridge helpers via `@openclawbrain/openclaw`
+
+## Minimal package surface
+
+Start with the narrow package set:
+
+```bash
+pnpm add @openclawbrain/contracts @openclawbrain/events @openclawbrain/event-export @openclawbrain/learner @openclawbrain/activation @openclawbrain/compiler
+```
+
+Add these when needed:
+- `@openclawbrain/pack-format`
+- `@openclawbrain/workspace-metadata`
+- `@openclawbrain/provenance`
+- `@openclawbrain/openclaw` for the runtime-owned bridge layer itself
+
+## Bring-up sequence
+
+From the repo root:
+
+```bash
+corepack enable
+pnpm install --frozen-lockfile
+pnpm check
+pnpm release:pack
+```
+
+## Proofs available in this repo today
+
+### Mechanism proof
+Use the built-in smoke lanes:
+
+```bash
+pnpm lifecycle:smoke
+pnpm observability:smoke
+```
+
+These prove:
+- pack materialization
+- activation staging/promotion
+- runtime compilation against promoted packs
+- operator-facing observability and freshness diagnostics
+
+### Comparative benchmark proof
+The larger benchmark/proof harness currently lives in the sibling public repo:
+- `https://github.com/jonathangu/brain-ground-zero`
+
+Use that repo for the published recorded-session and sparse-feedback benchmark families until those proof harnesses are imported into this repo directly.
+
+## Failure semantics
+
+Integration stays fail-open:
+- OpenClaw continues serving if learning or artifact refresh is delayed
+- OpenClaw can fall back to core runtime behavior if brain artifacts are stale or unavailable
+- learning, harvesting, and graph updates stay off the hot path
+
+## Related docs
+- [openclaw-attach-quickstart.md](openclaw-attach-quickstart.md)
+- [operator-observability.md](operator-observability.md)
+- [reproduce-eval.md](reproduce-eval.md)
+- [typescript-first-convergence.md](typescript-first-convergence.md)

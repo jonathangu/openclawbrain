@@ -125,7 +125,9 @@ That command cleans the workspace, rebuilds it, reruns tests, and produces publi
 ## Docs
 
 - `docs/openclaw-attach-quickstart.md`
+- `docs/openclaw-integration.md`
 - `docs/operator-observability.md`
+- `docs/reproduce-eval.md`
 - `docs/typescript-first-convergence.md`
 - `docs/contracts-v1.md`
 - `scripts/lifecycle-smoke.mjs`

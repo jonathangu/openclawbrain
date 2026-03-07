@@ -83,3 +83,7 @@ npm view @openclawbrain/openclaw version
 ```
 
 As a final smoke check, install one or more packages from the registry in a clean directory and run the example snippets from the package READMEs.
+
+For broader proof and integration routes, also verify:
+- `docs/openclaw-integration.md`
+- `docs/reproduce-eval.md`
