@@ -48,12 +48,13 @@ Add `@openclawbrain/openclaw` when you want the typed OpenClaw bridge for promot
 
 ## What this repo proves
 
-The workspace root carries two deterministic proof lanes:
+The workspace root carries deterministic proof lanes:
 
 - `pnpm lifecycle:smoke` proves the learning lifecycle from normalized events to promoted-pack compilation
 - `pnpm observability:smoke` proves activation health, promotion freshness, rollback readiness, learned `route_fn` evidence, graph-dynamics freshness, supervision freshness, teacher freshness, async no-op detection, and explicit fallback usage
 - `pnpm observability:report` prints the repo-local JSON proof surface for those observability claims, including staged/promoted/rolled-back active-candidate-previous inspection
 - `pnpm continuous-product-loop:smoke` proves the post-attach loop from live-style event export to canonical supervision, learner refresh, promotion, and later compile freshness
+- `pnpm runtime-wrapper-path:smoke` proves the real OpenClaw wrapper-facing soak path from compile to exported turn, async background learning, promotion, and later compile with router/freshness diagnostics
 
 - OpenClaw owns runtime orchestration, prompt assembly, diagnostics, sessions, and guarded fail-open behavior.
 - OpenClawBrain owns contracts, normalized event flows, workspace and provenance metadata, immutable pack artifacts, activation helpers, native structural compaction, deterministic compilation, and learner-side candidate-pack assembly.
@@ -115,10 +116,11 @@ pnpm lifecycle:smoke
 pnpm observability:smoke
 pnpm observability:report
 pnpm release:status
+pnpm runtime-wrapper-path:smoke
 pnpm release:pack
 ```
 
-`pnpm check` builds the workspace, runs package tests, and executes the lifecycle plus observability smoke lanes.
+`pnpm check` builds the workspace, runs package tests, and executes the lifecycle, observability, and wrapper-path smoke lanes.
 
 `pnpm observability:report` proves only local artifact/export state inside this repo's temporary fixture lane; it does not claim live production supervision latency or external telemetry coverage.
 

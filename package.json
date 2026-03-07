@@ -31,7 +31,7 @@
   "scripts": {
     "build": "pnpm -r build",
     "clean": "pnpm -r clean && tsc -b --clean tsconfig.build.json && rm -rf .release",
-    "check": "pnpm guard:merge-markers && pnpm test && pnpm lifecycle:smoke:built && pnpm observability:smoke:built",
+    "check": "pnpm guard:merge-markers && pnpm test && pnpm lifecycle:smoke:built && pnpm observability:smoke:built && pnpm runtime-wrapper-path:smoke:built",
     "continuous-product-loop:smoke": "pnpm build && node ./scripts/continuous-product-loop-smoke.mjs",
     "continuous-product-loop:smoke:built": "node ./scripts/continuous-product-loop-smoke.mjs",
     "lifecycle:smoke": "pnpm build && node ./scripts/lifecycle-smoke.mjs",
@@ -40,6 +40,8 @@
     "observability:smoke:built": "node ./scripts/observability-smoke.mjs",
     "observability:report": "pnpm build && node ./scripts/observability-report.mjs",
     "observability:report:built": "node ./scripts/observability-report.mjs",
+    "runtime-wrapper-path:smoke": "pnpm build && node ./scripts/runtime-wrapper-path-soak.mjs",
+    "runtime-wrapper-path:smoke:built": "node ./scripts/runtime-wrapper-path-soak.mjs",
     "release:check": "pnpm clean && pnpm check && pnpm release:pack",
     "release:pack": "ROOT_DIR=$(pwd) && mkdir -p \"$ROOT_DIR/.release\" && pnpm -r --filter \"@openclawbrain/*\" pack --pack-destination \"$ROOT_DIR/.release\"",
     "release:publish": "pnpm -r --filter \"@openclawbrain/*\" publish --access public --no-git-checks",
