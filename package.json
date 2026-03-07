@@ -47,7 +47,8 @@
     "release:publish:provenance": "pnpm -r --filter \"@openclawbrain/*\" publish --access public --no-git-checks --provenance",
     "typecheck": "tsc -b --pretty false tsconfig.build.json",
     "test": "pnpm build && pnpm -r test",
-    "guard:merge-markers": "node ./scripts/guard-merge-markers.mjs"
+    "guard:merge-markers": "node ./scripts/guard-merge-markers.mjs",
+    "release:status": "node ./scripts/release-surface-status.mjs"
   },
   "devDependencies": {
     "@types/node": "^24.0.0",

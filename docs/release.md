@@ -1,15 +1,25 @@
 # Release Checklist
 
-This repo releases the full public TypeScript package lane, including the OpenClaw runtime bridge package.
+Use `pnpm release:status` before any release claim. It is the local source of truth for whether the current wave is still repo-only or has become a tagged release candidate.
 
-The GitHub repo is public. The root workspace package stays `private` only so the monorepo itself is not published to npm; the supported release surface is the `@openclawbrain/*` package set below.
+Today the truthful state is repo-only unless `HEAD` carries the matching `v<workspace-version>` tag. The GitHub repo can ship repo tip plus `.release/` tarballs without claiming npm publication.
 
-The active public release line is `0.1.x` for the workspace marker and every published `@openclawbrain/*` package.
-Historical repository tags such as `v12.x` are legacy milestones only; they are not the current npm package lane and should not be reused for public TypeScript releases.
+The root workspace package stays `private` only so the monorepo itself is not published to npm. The publishable surface is the versioned `@openclawbrain/*` package set below when a coordinated tag-and-publish wave is actually cut.
 
-## 1) Prepare package versions
+## 1) Check the shipping surface
 
-Bump the version for each public package that will be published:
+```bash
+pnpm release:status
+```
+
+Interpretation:
+
+- `shipSurface: "repo-tip"` means this wave ships the git repo tip and optional local tarballs only.
+- `shipSurface: "tagged-release-candidate"` means `HEAD` carries the matching `v<version>` tag, but you still must finish publish verification before claiming npm shipment.
+
+## 2) Prepare package versions
+
+Bump the version for each public package that will be published in the coordinated package wave:
 
 - `packages/contracts/package.json`
 - `packages/events/package.json`
@@ -23,10 +33,9 @@ Bump the version for each public package that will be published:
 - `packages/openclaw/package.json`
 
 Keep the root `package.json` version aligned with the workspace release candidate if you want a single workspace-level marker.
+Do not describe those versions as published until the tag and publish steps below have really happened.
 
-For the current public lane, use a matching `v0.1.x` git tag for the release.
-
-## 2) Create and verify the release candidate
+## 3) Create and verify local release artifacts
 
 ```bash
 corepack enable
@@ -48,7 +57,11 @@ Expected artifacts:
 - `openclawbrain-learner-<version>.tgz`
 - `openclawbrain-openclaw-<version>.tgz`
 
-## 3) Tag the release
+Those tarballs are a truthful distribution surface even before npm publication. Use them for outside-consumer smoke tests in the current repo-only wave.
+
+## 4) Tag the coordinated package wave
+
+Cut the release tag only in the same change that is actually intended to start package publication:
 
 ```bash
 VERSION=0.1.1
@@ -61,12 +74,11 @@ git push origin "v${VERSION}"
 `.github/workflows/publish.yml` listens only for `v0.1.*` tags so the public automation matches the current TypeScript package lane.
 If the project opens a new public minor line later, widen that workflow trigger in the same change that bumps package versions and release docs.
 
-## 4) Publish packages
+## 5) Publish packages
 
 Preferred: GitHub Actions + npm trusted publishing.
 
 Pushing a `v0.1.*` tag triggers `.github/workflows/publish.yml`, which verifies the workspace and then publishes every public `@openclawbrain/*` package from the monorepo.
-
 Before relying on the workflow, configure npm trusted publishing for each package.
 
 Optional manual publish:
@@ -77,10 +89,9 @@ pnpm release:publish
 ```
 
 The manual publish commands use the same recursive `@openclawbrain/*` package selection as the workflow so the package set stays in sync.
-
 Use `pnpm release:publish:provenance` when you want the same recursive publish lane with provenance enabled from a local trusted environment.
 
-## 5) Post-publish sanity checks
+## 6) Post-publish sanity checks
 
 ```bash
 npm view @openclawbrain/contracts version
@@ -95,8 +106,9 @@ npm view @openclawbrain/learner version
 npm view @openclawbrain/openclaw version
 ```
 
-As a final smoke check, install one or more packages from the registry in a clean directory and run the example snippets from the package READMEs.
+Only after those checks pass should you rewrite docs or operator notes to say that the package wave shipped on npm.
 
+For a clean outside-consumer proof before publication, use `examples/npm-consumer/README.md` with `.release/` tarballs.
 For broader proof and integration routes, also verify:
 - `docs/openclaw-integration.md`
 - `docs/reproduce-eval.md`

@@ -11,7 +11,7 @@ The promoted pack is the only supported learning/serve boundary in this repo.
 - compiler serves only from the promoted pack
 - if a pack requires learned routing, compile must use the pack's learned `route_fn`, surface `routerIdentity`, and report `usedLearnedRouteFn=true`
 
-This repo documents, tests, and publishes that boundary.
+This repo documents, tests, and can publish that boundary.
 
 ## Learning-first attach posture
 
@@ -29,10 +29,12 @@ Attach for fast time-to-first-value:
 
 The supported public integration surface is:
 
-- published `@openclawbrain/*` packages under `packages/`
+- versioned `@openclawbrain/*` packages under `packages/`
 - versioned schemas and fixtures under `contracts/`
 
-Everything else in the repo is public proof, documentation, or release machinery for that surface.
+For this wave, the truthful shipped artifact is the repo tip plus any locally packed tarballs from `.release/`.
+Do not claim npm publication for the current `0.1.1` line until a matching git tag is cut and post-publish checks pass.
+Run `pnpm release:status` to inspect that boundary from local repo state.
 
 For the narrow attach lane, start with:
 
@@ -56,7 +58,7 @@ The workspace root carries two deterministic proof lanes:
 - OpenClaw owns runtime orchestration, prompt assembly, diagnostics, sessions, and guarded fail-open behavior.
 - OpenClawBrain owns contracts, normalized event flows, workspace and provenance metadata, immutable pack artifacts, activation helpers, native structural compaction, deterministic compilation, and learner-side candidate-pack assembly.
 
-This GitHub repo is public. The supported integration surface is narrower: the published `@openclawbrain/*` packages plus the versioned fixtures under `contracts/`. Workspace layout, root scripts, smoke lanes, and release plumbing are proof-and-build machinery, not a second semver-stable API.
+This GitHub repo is public. The supported integration surface is narrower: the versioned `@openclawbrain/*` package set plus the versioned fixtures under `contracts/`. Workspace layout, root scripts, smoke lanes, and release plumbing are proof-and-build machinery, not a second semver-stable API.
 
 ## Proof boundary
 
@@ -112,6 +114,7 @@ pnpm check
 pnpm lifecycle:smoke
 pnpm observability:smoke
 pnpm observability:report
+pnpm release:status
 pnpm release:pack
 ```
 
@@ -119,13 +122,17 @@ pnpm release:pack
 
 `pnpm observability:report` proves only local artifact/export state inside this repo's temporary fixture lane; it does not claim live production supervision latency or external telemetry coverage.
 
-`pnpm release:pack` creates tarballs in `.release/` for every published `@openclawbrain/*` package.
+`pnpm release:status` prints the local shipping surface truth: repo-tip vs tagged release candidate, matching `v<version>` tag presence, version alignment, and available local tarballs.
 
-For a clean outside-consumer proof that installs published packages outside this workspace, use `examples/npm-consumer/README.md`.
+`pnpm release:pack` creates tarballs in `.release/` for every versioned `@openclawbrain/*` package.
+
+For a clean outside-consumer proof that installs the current wave without claiming registry publication, use `examples/npm-consumer/README.md` after `pnpm release:pack`.
 
 ## Versioning
 
-The current public npm lane is `0.1.x` across the workspace marker and the published `@openclawbrain/*` packages.
+The workspace and package versions are currently staged at `0.1.1` for the next coordinated package cut.
+Treat that as a release candidate marker inside git, not as proof that npm publication has already happened.
+A wave becomes a package-release candidate only when `pnpm release:status` shows the matching `v0.1.1` tag on `HEAD`; it becomes a published package wave only after the publish lane finishes and post-publish checks pass.
 
 Historical repository tags such as `v12.x` remain in git history, but they are not the current package line, changelog lane, or release trigger.
 

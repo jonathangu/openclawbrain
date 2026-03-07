@@ -35,7 +35,8 @@ Add these when needed:
 - `@openclawbrain/provenance`
 - `@openclawbrain/openclaw` for the typed OpenClaw bridge package itself
 
-The supported public integration boundary is the published `@openclawbrain/*` packages plus versioned fixtures under `contracts/`.
+The supported public integration boundary is the versioned `@openclawbrain/*` package set plus versioned fixtures under `contracts/`.
+For the current wave, treat the repo tip and `.release/` tarballs as the truthful distribution surface unless `pnpm release:status` shows a matching release tag on `HEAD`.
 
 ## Bring-up sequence
 
@@ -45,6 +46,7 @@ From the repo root:
 corepack enable
 pnpm install --frozen-lockfile
 pnpm check
+pnpm release:status
 pnpm release:pack
 ```
 
