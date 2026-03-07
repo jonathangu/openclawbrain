@@ -188,6 +188,24 @@ test("pack load rejects tampered graph payloads", (t) => {
   assert.throws(() => loadPack(rootDir), /graph checksum does not match manifest/);
 });
 
+test("pack load rejects manifest asset paths that escape the pack root", (t) => {
+  const rootDir = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-pack-"));
+  t.after(() => rmSync(rootDir, { recursive: true, force: true }));
+
+  writePackFile(rootDir, PACK_LAYOUT.graph, FIXTURE_PACK_GRAPH);
+  writePackFile(rootDir, PACK_LAYOUT.vectors, FIXTURE_PACK_VECTORS);
+  writePackFile(rootDir, PACK_LAYOUT.router, FIXTURE_ROUTER_ARTIFACT);
+  writePackFile(rootDir, PACK_LAYOUT.manifest, {
+    ...FIXTURE_ARTIFACT_MANIFEST,
+    runtimeAssets: {
+      ...FIXTURE_ARTIFACT_MANIFEST.runtimeAssets,
+      graphPath: "../graph.json"
+    }
+  });
+
+  assert.throws(() => loadPack(rootDir), /graphPath must not escape the pack root/);
+});
+
 test("promotion flips active and previous pointers while rollback restores the prior active pack", (t) => {
   const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-"));
   const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-"));
@@ -350,4 +368,79 @@ test("promotion blocks stale candidate provenance from displacing a newer active
   assert.match(inspection.promotion.findings.join("; "), /candidate pack builtAt must not precede active pack builtAt/);
   assert.match(inspection.promotion.findings.join("; "), /candidate eventRange\.end must be >= active eventRange\.end/);
   assert.throws(() => promoteCandidatePack(activationRoot, "2026-03-06T04:15:00.000Z"), /Promotion blocked/);
+});
+
+test("promotion blocks candidates whose manifests drift after staging", (t) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-"));
+  const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-"));
+  const candidateRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-candidate-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(activeRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(candidateRoot, { recursive: true, force: true }));
+
+  materializeTestPack(activeRoot, {
+    packId: "pack-active-stable",
+    learnedRouting: false,
+    eventStart: 10
+  });
+  const candidatePack = materializeTestPack(candidateRoot, {
+    packId: "pack-candidate-drifted",
+    learnedRouting: true,
+    eventStart: 20
+  });
+
+  activatePack(activationRoot, activeRoot, "2026-03-06T06:00:00.000Z");
+  stageCandidatePack(activationRoot, candidateRoot, "2026-03-06T06:05:00.000Z");
+
+  writePackFile(candidateRoot, PACK_LAYOUT.manifest, {
+    ...candidatePack.manifest,
+    modelFingerprints: [...candidatePack.manifest.modelFingerprints, "mutated-after-staging"]
+  });
+
+  const inspection = inspectActivationState(activationRoot, "2026-03-06T06:06:00.000Z");
+  assert.equal(inspection.candidate?.activationReady, false);
+  assert.match(inspection.candidate?.findings.join("; ") ?? "", /manifestDigest/);
+  assert.equal(inspection.promotion.allowed, false);
+  assert.match(inspection.promotion.findings.join("; "), /manifestDigest/);
+  assert.throws(() => promoteCandidatePack(activationRoot, "2026-03-06T06:10:00.000Z"), /manifestDigest/);
+});
+
+test("rollback blocks previous packs whose manifests drift after promotion", (t) => {
+  const activationRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-activation-"));
+  const activeRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-active-"));
+  const candidateRoot = mkdtempSync(path.join(tmpdir(), "openclawbrain-ts-candidate-"));
+
+  t.after(() => rmSync(activationRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(activeRoot, { recursive: true, force: true }));
+  t.after(() => rmSync(candidateRoot, { recursive: true, force: true }));
+
+  const activePack = materializeTestPack(activeRoot, {
+    packId: "pack-active-rollback-source",
+    learnedRouting: false,
+    eventStart: 10
+  });
+  materializeTestPack(candidateRoot, {
+    packId: "pack-candidate-rollback-target",
+    learnedRouting: true,
+    eventStart: 20
+  });
+
+  activatePack(activationRoot, activeRoot, "2026-03-06T07:00:00.000Z");
+  stageCandidatePack(activationRoot, candidateRoot, "2026-03-06T07:05:00.000Z");
+  promoteCandidatePack(activationRoot, "2026-03-06T07:10:00.000Z");
+
+  writePackFile(activeRoot, PACK_LAYOUT.manifest, {
+    ...activePack.manifest,
+    provenance: {
+      ...activePack.manifest.provenance,
+      offlineArtifacts: [...activePack.manifest.provenance.offlineArtifacts, "mutated-before-rollback"]
+    }
+  });
+
+  const inspection = inspectActivationState(activationRoot, "2026-03-06T07:11:00.000Z");
+  assert.equal(inspection.rollback.allowed, false);
+  assert.match(inspection.previous?.findings.join("; ") ?? "", /manifestDigest/);
+  assert.match(inspection.rollback.findings.join("; "), /manifestDigest/);
+  assert.throws(() => rollbackActivePack(activationRoot, "2026-03-06T07:15:00.000Z"), /manifestDigest/);
 });
