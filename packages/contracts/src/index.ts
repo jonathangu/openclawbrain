@@ -12,10 +12,12 @@ export type ContractId = (typeof CONTRACT_IDS)[keyof typeof CONTRACT_IDS];
 export type EventContractId = typeof CONTRACT_IDS.interactionEvents | typeof CONTRACT_IDS.feedbackEvents;
 export type RouteMode = "heuristic" | "learned";
 export type RoutePolicy = "heuristic_allowed" | "requires_learned_routing";
+export type RouterRefreshStatus = "updated" | "no_supervision";
 export type RouterAssetKind = "none" | "stub" | "artifact";
 export type ActivationPointerSlot = "active" | "candidate" | "previous";
 export type InteractionEventKind = "memory_compiled" | "message_delivered" | "operator_override";
 export type FeedbackEventKind = "correction" | "teaching" | "approval" | "suppression";
+export type RouterSupervisionKind = "route_trace" | "human_feedback" | "operator_override" | "self_memory";
 export type LearningBootProfile = "fast_boot_defaults";
 export type LearningCadence = "passive_background";
 export type LearningScanPolicy = "always_on";
@@ -304,11 +306,47 @@ export interface PackGraphPayloadV1 {
   blocks: PackContextBlockRecordV1[];
 }
 
+export interface RouterPolicyUpdateV1 {
+  blockId: string;
+  delta: number;
+  evidenceCount: number;
+  rewardSum: number;
+  tokenWeights: Record<string, number>;
+  traceIds: string[];
+}
+
+export interface RouterTraceV1 {
+  traceId: string;
+  sourceEventId: string;
+  sourceContract: EventContractId;
+  sourceKind: InteractionEventKind | FeedbackEventKind;
+  supervisionKind: RouterSupervisionKind;
+  targetBlockIds: string[];
+  reward: number;
+  queryTokens: string[];
+  queryVector: Record<string, number>;
+}
+
+export interface RouterRefreshDiagnosticsV1 {
+  status: RouterRefreshStatus;
+  eventExportDigest: string | null;
+  routeTraceCount: number;
+  supervisionCount: number;
+  updateCount: number;
+  queryChecksum: string;
+  weightsChecksum: string;
+  freshnessChecksum: string;
+  noOpReason: string | null;
+}
+
 export interface RouterArtifactV1 {
   routerIdentity: string;
   strategy: "learned_route_fn_v1";
   trainedAt: string;
   requiresLearnedRouting: boolean;
+  training: RouterRefreshDiagnosticsV1;
+  traces: RouterTraceV1[];
+  policyUpdates: RouterPolicyUpdateV1[];
 }
 
 function isIsoDate(value: string): boolean {
@@ -462,6 +500,53 @@ export function canonicalJson(value: unknown): string {
 
 export function checksumJsonPayload(value: unknown): string {
   return `sha256-${createHash("sha256").update(canonicalJson(value)).digest("hex")}`;
+}
+
+export function computeRouterQueryChecksum(traces: readonly RouterTraceV1[]): string {
+  return checksumJsonPayload(
+    traces.map((trace) => ({
+      traceId: trace.traceId,
+      sourceEventId: trace.sourceEventId,
+      sourceContract: trace.sourceContract,
+      sourceKind: trace.sourceKind,
+      supervisionKind: trace.supervisionKind,
+      targetBlockIds: [...trace.targetBlockIds],
+      reward: trace.reward,
+      queryTokens: [...trace.queryTokens],
+      queryVector: trace.queryVector
+    }))
+  );
+}
+
+export function computeRouterWeightsChecksum(policyUpdates: readonly RouterPolicyUpdateV1[]): string {
+  return checksumJsonPayload(
+    policyUpdates.map((update) => ({
+      blockId: update.blockId,
+      delta: update.delta,
+      evidenceCount: update.evidenceCount,
+      rewardSum: update.rewardSum,
+      tokenWeights: update.tokenWeights,
+      traceIds: [...update.traceIds]
+    }))
+  );
+}
+
+export function computeRouterFreshnessChecksum(input: {
+  trainedAt: string;
+  status: RouterRefreshStatus;
+  eventExportDigest: string | null;
+  routeTraceCount: number;
+  supervisionCount: number;
+  updateCount: number;
+}): string {
+  return checksumJsonPayload({
+    trainedAt: input.trainedAt,
+    status: input.status,
+    eventExportDigest: input.eventExportDigest,
+    routeTraceCount: input.routeTraceCount,
+    supervisionCount: input.supervisionCount,
+    updateCount: input.updateCount
+  });
 }
 
 export function createInteractionEvent(
@@ -1179,6 +1264,86 @@ export function validateRouterArtifact(value: RouterArtifactV1, manifest?: Artif
   pushWhenMissing(errors, value.routerIdentity.length > 0, "routerIdentity is required");
   pushWhenMissing(errors, value.strategy === "learned_route_fn_v1", "router strategy must be learned_route_fn_v1");
   pushWhenMissing(errors, isIsoDate(value.trainedAt), "router trainedAt must be an ISO timestamp");
+  pushWhenMissing(
+    errors,
+    value.training.status === "updated" || value.training.status === "no_supervision",
+    "router training status must be updated or no_supervision"
+  );
+  pushWhenMissing(errors, value.training.routeTraceCount === value.traces.length, "router routeTraceCount must match trace count");
+  pushWhenMissing(errors, value.training.updateCount === value.policyUpdates.length, "router updateCount must match policyUpdates length");
+
+  const supervisionCount = value.traces.filter((trace) => trace.supervisionKind !== "route_trace" && trace.reward !== 0).length;
+  pushWhenMissing(errors, value.training.supervisionCount === supervisionCount, "router supervisionCount must match supervised traces");
+  pushWhenMissing(errors, value.training.queryChecksum === computeRouterQueryChecksum(value.traces), "router queryChecksum does not match traces");
+  pushWhenMissing(
+    errors,
+    value.training.weightsChecksum === computeRouterWeightsChecksum(value.policyUpdates),
+    "router weightsChecksum does not match policyUpdates"
+  );
+  pushWhenMissing(
+    errors,
+    value.training.freshnessChecksum ===
+      computeRouterFreshnessChecksum({
+        trainedAt: value.trainedAt,
+        status: value.training.status,
+        eventExportDigest: value.training.eventExportDigest,
+        routeTraceCount: value.training.routeTraceCount,
+        supervisionCount: value.training.supervisionCount,
+        updateCount: value.training.updateCount
+      }),
+    "router freshnessChecksum does not match router freshness metadata"
+  );
+
+  if (value.training.status === "updated") {
+    pushWhenMissing(errors, value.training.updateCount > 0, "updated routers must record at least one policy update");
+    pushWhenMissing(errors, value.training.noOpReason === null, "updated routers must not set noOpReason");
+  }
+  if (value.training.status === "no_supervision") {
+    pushWhenMissing(errors, value.training.updateCount === 0, "no-supervision routers must not record policy updates");
+    pushWhenMissing(
+      errors,
+      typeof value.training.noOpReason === "string" && value.training.noOpReason.length > 0,
+      "no-supervision routers must expose a non-empty noOpReason"
+    );
+  }
+
+  const seenTraceIds = new Set<string>();
+  for (const trace of value.traces) {
+    pushWhenMissing(errors, trace.traceId.length > 0, "router traces require traceId");
+    pushWhenMissing(errors, trace.sourceEventId.length > 0, "router traces require sourceEventId");
+    pushWhenMissing(errors, trace.sourceKind.length > 0, "router traces require sourceKind");
+    pushWhenMissing(
+      errors,
+      trace.supervisionKind === "route_trace" ||
+        trace.supervisionKind === "human_feedback" ||
+        trace.supervisionKind === "operator_override" ||
+        trace.supervisionKind === "self_memory",
+      "router traces require a supported supervisionKind"
+    );
+    pushWhenMissing(errors, Number.isFinite(trace.reward), "router traces require finite reward values");
+    if (seenTraceIds.has(trace.traceId)) {
+      errors.push(`duplicate router traceId ${trace.traceId}`);
+    }
+    seenTraceIds.add(trace.traceId);
+    for (const weight of Object.values(trace.queryVector)) {
+      pushWhenMissing(errors, Number.isFinite(weight), "router trace queryVector values must be finite");
+    }
+  }
+
+  const seenBlockIds = new Set<string>();
+  for (const update of value.policyUpdates) {
+    pushWhenMissing(errors, update.blockId.length > 0, "router policyUpdates require blockId");
+    pushWhenMissing(errors, Number.isFinite(update.delta), "router policyUpdates require finite delta values");
+    pushWhenMissing(errors, Number.isFinite(update.rewardSum), "router policyUpdates require finite rewardSum values");
+    pushWhenMissing(errors, update.evidenceCount > 0, "router policyUpdates require evidenceCount > 0");
+    if (seenBlockIds.has(update.blockId)) {
+      errors.push(`duplicate router policy update blockId ${update.blockId}`);
+    }
+    seenBlockIds.add(update.blockId);
+    for (const weight of Object.values(update.tokenWeights)) {
+      pushWhenMissing(errors, Number.isFinite(weight), "router policy update tokenWeights must be finite");
+    }
+  }
 
   if (manifest !== undefined) {
     if (manifest.routePolicy === "requires_learned_routing") {
@@ -1186,6 +1351,15 @@ export function validateRouterArtifact(value: RouterArtifactV1, manifest?: Artif
     }
     if (manifest.runtimeAssets.router.identity !== null && value.routerIdentity !== manifest.runtimeAssets.router.identity) {
       errors.push(`router identity ${value.routerIdentity} does not match manifest router identity ${manifest.runtimeAssets.router.identity}`);
+    }
+    if (
+      manifest.provenance.eventExports?.exportDigest !== undefined &&
+      manifest.provenance.eventExports !== null &&
+      value.training.eventExportDigest !== manifest.provenance.eventExports.exportDigest
+    ) {
+      errors.push(
+        `router eventExportDigest ${value.training.eventExportDigest ?? "null"} does not match manifest event export digest ${manifest.provenance.eventExports.exportDigest}`
+      );
     }
   }
 
@@ -1324,13 +1498,6 @@ export const FIXTURE_PACK_VECTORS: PackVectorsPayloadV1 = {
   ]
 };
 
-export const FIXTURE_ROUTER_ARTIFACT: RouterArtifactV1 = {
-  routerIdentity: "pack-fixture:route_fn",
-  strategy: "learned_route_fn_v1",
-  trainedAt: "2026-03-06T00:00:00.000Z",
-  requiresLearnedRouting: true
-};
-
 export const FIXTURE_INTERACTION_EVENTS: InteractionEventV1[] = [
   createInteractionEvent({
     eventId: "evt-interaction-fixture-1",
@@ -1401,6 +1568,142 @@ export const FIXTURE_NORMALIZED_EVENT_EXPORT: NormalizedEventExportV1 = buildNor
   interactionEvents: FIXTURE_INTERACTION_EVENTS,
   feedbackEvents: FIXTURE_FEEDBACK_EVENTS
 });
+
+const FIXTURE_ROUTER_TRACES: RouterTraceV1[] = [
+  {
+    traceId: "trace-fixture-memory-compiled",
+    sourceEventId: "evt-interaction-fixture-1",
+    sourceContract: CONTRACT_IDS.interactionEvents,
+    sourceKind: "memory_compiled",
+    supervisionKind: "self_memory",
+    targetBlockIds: ["ctx-runtime-compile", "ctx-context-compact"],
+    reward: 2,
+    queryTokens: ["memory", "compiled", "runtime", "pack"],
+    queryVector: {
+      memory: 2,
+      compiled: 1,
+      runtime: 1,
+      pack: 1
+    }
+  },
+  {
+    traceId: "trace-fixture-feedback-scanner",
+    sourceEventId: "evt-feedback-fixture-1",
+    sourceContract: CONTRACT_IDS.feedbackEvents,
+    sourceKind: "teaching",
+    supervisionKind: "human_feedback",
+    targetBlockIds: ["ctx-feedback-scanner", "ctx-runtime-compile"],
+    reward: 4,
+    queryTokens: ["feedback", "scanner", "default", "loop", "scans"],
+    queryVector: {
+      feedback: 3,
+      scanner: 3,
+      default: 1,
+      loop: 1,
+      scans: 1
+    }
+  },
+  {
+    traceId: "trace-fixture-approval-route",
+    sourceEventId: "evt-feedback-fixture-2",
+    sourceContract: CONTRACT_IDS.feedbackEvents,
+    sourceKind: "approval",
+    supervisionKind: "human_feedback",
+    targetBlockIds: ["ctx-runtime-compile", "ctx-context-compact"],
+    reward: 2,
+    queryTokens: ["learned", "routing", "promotion", "compile", "diagnostics"],
+    queryVector: {
+      learned: 1,
+      routing: 2,
+      promotion: 1,
+      compile: 2,
+      diagnostics: 1
+    }
+  },
+  {
+    traceId: "trace-fixture-message-route",
+    sourceEventId: "evt-interaction-fixture-2",
+    sourceContract: CONTRACT_IDS.interactionEvents,
+    sourceKind: "message_delivered",
+    supervisionKind: "route_trace",
+    targetBlockIds: ["ctx-context-compact"],
+    reward: 0,
+    queryTokens: ["message", "delivered", "route"],
+    queryVector: {
+      message: 1,
+      delivered: 1,
+      route: 1
+    }
+  }
+];
+
+const FIXTURE_ROUTER_POLICY_UPDATES: RouterPolicyUpdateV1[] = [
+  {
+    blockId: "ctx-feedback-scanner",
+    delta: 11,
+    evidenceCount: 2,
+    rewardSum: 6,
+    tokenWeights: {
+      feedback: 5,
+      scanner: 5,
+      default: 1
+    },
+    traceIds: ["trace-fixture-feedback-scanner", "trace-fixture-approval-route"]
+  },
+  {
+    blockId: "ctx-runtime-compile",
+    delta: 8,
+    evidenceCount: 3,
+    rewardSum: 8,
+    tokenWeights: {
+      runtime: 2,
+      compile: 3,
+      routing: 2,
+      promotion: 1
+    },
+    traceIds: ["trace-fixture-memory-compiled", "trace-fixture-feedback-scanner", "trace-fixture-approval-route"]
+  },
+  {
+    blockId: "ctx-context-compact",
+    delta: 5,
+    evidenceCount: 2,
+    rewardSum: 4,
+    tokenWeights: {
+      pack: 1,
+      compile: 1,
+      diagnostics: 1,
+      route: 2
+    },
+    traceIds: ["trace-fixture-memory-compiled", "trace-fixture-approval-route"]
+  }
+];
+
+export const FIXTURE_ROUTER_ARTIFACT: RouterArtifactV1 = {
+  routerIdentity: "pack-fixture:route_fn",
+  strategy: "learned_route_fn_v1",
+  trainedAt: "2026-03-06T00:00:00.000Z",
+  requiresLearnedRouting: true,
+  training: {
+    status: "updated",
+    eventExportDigest: FIXTURE_NORMALIZED_EVENT_EXPORT.provenance.exportDigest,
+    routeTraceCount: FIXTURE_ROUTER_TRACES.length,
+    supervisionCount: FIXTURE_ROUTER_TRACES.filter((trace) => trace.supervisionKind !== "route_trace" && trace.reward !== 0).length,
+    updateCount: FIXTURE_ROUTER_POLICY_UPDATES.length,
+    queryChecksum: computeRouterQueryChecksum(FIXTURE_ROUTER_TRACES),
+    weightsChecksum: computeRouterWeightsChecksum(FIXTURE_ROUTER_POLICY_UPDATES),
+    freshnessChecksum: computeRouterFreshnessChecksum({
+      trainedAt: "2026-03-06T00:00:00.000Z",
+      status: "updated",
+      eventExportDigest: FIXTURE_NORMALIZED_EVENT_EXPORT.provenance.exportDigest,
+      routeTraceCount: FIXTURE_ROUTER_TRACES.length,
+      supervisionCount: FIXTURE_ROUTER_TRACES.filter((trace) => trace.supervisionKind !== "route_trace" && trace.reward !== 0).length,
+      updateCount: FIXTURE_ROUTER_POLICY_UPDATES.length
+    }),
+    noOpReason: null
+  },
+  traces: FIXTURE_ROUTER_TRACES,
+  policyUpdates: FIXTURE_ROUTER_POLICY_UPDATES
+};
 
 export const FIXTURE_WORKSPACE_METADATA: WorkspaceMetadataV1 = {
   workspaceId: "workspace-fixture",

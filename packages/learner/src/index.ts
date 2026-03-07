@@ -4,6 +4,9 @@ import path from "node:path";
 import {
   CONTRACT_IDS,
   checksumJsonPayload,
+  computeRouterFreshnessChecksum,
+  computeRouterQueryChecksum,
+  computeRouterWeightsChecksum,
   sortNormalizedEvents,
   type ArtifactManifestV1,
   type FeedbackEventV1,
@@ -14,6 +17,9 @@ import {
   type PackBlockLearningSignalsV1,
   type PackContextBlockRecordV1,
   type PackGraphPayloadV1,
+  type RouterPolicyUpdateV1,
+  type RouterSupervisionKind,
+  type RouterTraceV1,
   type PackVectorEntryV1,
   type PackVectorsPayloadV1,
   type RouterArtifactV1
@@ -101,6 +107,15 @@ export interface CandidatePackBuildResult {
     eventExportDigest: string | null;
     learningSurface: ArtifactManifestV1["provenance"]["learningSurface"];
     bootstrapping: ArtifactManifestV1["graphDynamics"]["bootstrapping"];
+    learnedRouter: {
+      routerIdentity: string | null;
+      refreshStatus: RouterArtifactV1["training"]["status"] | null;
+      updateCount: number;
+      supervisionCount: number;
+      weightsChecksum: string | null;
+      visibleDelta: string[];
+      noOpReason: string | null;
+    };
   };
 }
 
@@ -963,12 +978,292 @@ function createVectorsPayload(graph: PackGraphPayloadV1): PackVectorsPayloadV1 {
   };
 }
 
-function createRouterArtifact(packId: string, builtAt: string): RouterArtifactV1 {
+function countKeywordWeights(value: string): Record<string, number> {
+  const counts = new Map<string, number>();
+
+  for (const token of value.toLowerCase().split(/[^a-z0-9]+/u)) {
+    if (token.length < 3 || !/[a-z]/u.test(token)) {
+      continue;
+    }
+    counts.set(token, (counts.get(token) ?? 0) + 1);
+  }
+
+  return Object.fromEntries(counts.entries());
+}
+
+function lifecycleBlockIds(packId: string): {
+  feedbackScanner: string;
+  fastBootDefaults: string;
+  passiveBackgroundLearning: string;
+  humanLabelHarvest: string;
+  selfLabelHarvest: string;
+  workspace: string;
+  structuralOps: string;
+} {
+  return {
+    feedbackScanner: `${packId}:feedback-scanner`,
+    fastBootDefaults: `${packId}:fast-boot-defaults`,
+    passiveBackgroundLearning: `${packId}:passive-background-learning`,
+    humanLabelHarvest: `${packId}:human-label-harvest`,
+    selfLabelHarvest: `${packId}:self-label-harvest`,
+    workspace: `${packId}:workspace`,
+    structuralOps: `${packId}:structural-ops`
+  };
+}
+
+function eventQueryTokens(event: NormalizedEventV1): string[] {
+  const base =
+    event.contract === CONTRACT_IDS.feedbackEvents
+      ? `${event.content} ${summarizeEvent(event)} ${event.relatedInteractionId ?? ""} ${event.messageId ?? ""}`
+      : `${summarizeEvent(event)} ${event.packId ?? ""} ${event.messageId ?? ""}`;
+  return keywordTokens(`${event.kind} ${event.channel} ${event.source.stream} ${base}`);
+}
+
+function supervisionKindForEvent(event: NormalizedEventV1): RouterSupervisionKind {
+  if (event.contract === CONTRACT_IDS.feedbackEvents) {
+    return "human_feedback";
+  }
+  if (event.kind === "operator_override") {
+    return "operator_override";
+  }
+  if (event.kind === "memory_compiled") {
+    return "self_memory";
+  }
+  return "route_trace";
+}
+
+function rewardForEvent(event: NormalizedEventV1): number {
+  if (event.contract === CONTRACT_IDS.feedbackEvents) {
+    switch (event.kind) {
+      case "correction":
+        return 4;
+      case "teaching":
+        return 3;
+      case "approval":
+        return 2;
+      case "suppression":
+        return -3;
+    }
+  }
+
+  switch (event.kind) {
+    case "operator_override":
+      return 4;
+    case "memory_compiled":
+      return 2;
+    default:
+      return 0;
+  }
+}
+
+function targetBlockIdsForEvent(packId: string, event: NormalizedEventV1): string[] {
+  const lifecycleIds = lifecycleBlockIds(packId);
+  const targetBlockIds = new Set<string>([`${packId}:event:${event.eventId}`]);
+
+  if (event.contract === CONTRACT_IDS.feedbackEvents) {
+    targetBlockIds.add(lifecycleIds.feedbackScanner);
+    targetBlockIds.add(lifecycleIds.humanLabelHarvest);
+    targetBlockIds.add(lifecycleIds.fastBootDefaults);
+    if (event.kind === "suppression") {
+      targetBlockIds.add(lifecycleIds.passiveBackgroundLearning);
+    } else {
+      targetBlockIds.add(lifecycleIds.workspace);
+    }
+    if (event.relatedInteractionId !== undefined) {
+      targetBlockIds.add(`${packId}:event:${event.relatedInteractionId}`);
+    }
+    return [...targetBlockIds];
+  }
+
+  if (event.kind === "operator_override") {
+    targetBlockIds.add(lifecycleIds.humanLabelHarvest);
+    targetBlockIds.add(lifecycleIds.workspace);
+    return [...targetBlockIds];
+  }
+
+  if (event.kind === "memory_compiled") {
+    targetBlockIds.add(lifecycleIds.selfLabelHarvest);
+    targetBlockIds.add(lifecycleIds.structuralOps);
+    return [...targetBlockIds];
+  }
+
+  targetBlockIds.add(lifecycleIds.passiveBackgroundLearning);
+  return [...targetBlockIds];
+}
+
+function buildRouterTrace(packId: string, event: NormalizedEventV1): RouterTraceV1 {
+  const queryTokens = eventQueryTokens(event);
+  const traceId = `trace-${stableHash(checksumJsonPayload({ packId, eventId: event.eventId, kind: event.kind, queryTokens }))}`;
+
+  return {
+    traceId,
+    sourceEventId: event.eventId,
+    sourceContract: event.contract,
+    sourceKind: event.kind,
+    supervisionKind: supervisionKindForEvent(event),
+    targetBlockIds: targetBlockIdsForEvent(packId, event),
+    reward: rewardForEvent(event),
+    queryTokens,
+    queryVector: countKeywordWeights(
+      event.contract === CONTRACT_IDS.feedbackEvents ? `${event.content} ${summarizeEvent(event)}` : summarizeEvent(event)
+    )
+  };
+}
+
+function buildBlockTokenWeights(block: PackContextBlockRecordV1, vectorEntry: PackVectorEntryV1 | undefined): Map<string, number> {
+  const weights = new Map<string, number>();
+  const assign = (keyword: string, weight: number): void => {
+    for (const token of keywordTokens(keyword)) {
+      weights.set(token, Math.max(weights.get(token) ?? 0, weight));
+    }
+  };
+
+  for (const keyword of block.keywords) {
+    assign(keyword, 1);
+  }
+
+  if (vectorEntry !== undefined) {
+    for (const keyword of vectorEntry.keywords) {
+      assign(keyword, 2);
+    }
+    for (const [keyword, weight] of Object.entries(vectorEntry.weights ?? {})) {
+      assign(keyword, Math.max(1, Math.round(weight)));
+    }
+  }
+
+  return weights;
+}
+
+function summarizeVisibleLearnedDelta(router: RouterArtifactV1 | null): CandidatePackBuildResult["summary"]["learnedRouter"] {
+  return {
+    routerIdentity: router?.routerIdentity ?? null,
+    refreshStatus: router?.training.status ?? null,
+    updateCount: router?.training.updateCount ?? 0,
+    supervisionCount: router?.training.supervisionCount ?? 0,
+    weightsChecksum: router?.training.weightsChecksum ?? null,
+    visibleDelta: router?.policyUpdates.slice(0, 3).map((update) => `${update.blockId}:${update.delta}`) ?? [],
+    noOpReason: router?.training.noOpReason ?? null
+  };
+}
+
+function createRouterArtifact(
+  packId: string,
+  builtAt: string,
+  graph: PackGraphPayloadV1,
+  vectors: PackVectorsPayloadV1,
+  eventExport: NormalizedEventExportV1 | null
+): RouterArtifactV1 {
+  const traces = eventExport === null ? [] : sortNormalizedEvents([...eventExport.interactionEvents, ...eventExport.feedbackEvents]).map((event) => buildRouterTrace(packId, event));
+  const blockIds = new Set(graph.blocks.map((block) => block.id));
+  const vectorEntries = new Map(vectors.entries.map((entry) => [entry.blockId, entry] as const));
+  const policyUpdatesByBlock = new Map<
+    string,
+    {
+      blockId: string;
+      delta: number;
+      evidenceCount: number;
+      rewardSum: number;
+      tokenWeights: Map<string, number>;
+      traceIds: Set<string>;
+    }
+  >();
+
+  for (const trace of traces) {
+    if (trace.reward === 0) {
+      continue;
+    }
+
+    const targetIds = trace.targetBlockIds.filter((blockId) => blockIds.has(blockId));
+
+    for (const block of graph.blocks) {
+      const vectorEntry = vectorEntries.get(block.id);
+      const blockWeights = buildBlockTokenWeights(block, vectorEntry);
+      const overlap = trace.queryTokens.filter((token) => blockWeights.has(token));
+      const targeted = targetIds.includes(block.id);
+      const overlapScore = overlap.reduce((sum, token) => sum + Math.max(1, Math.min(3, blockWeights.get(token) ?? 1)), 0);
+      let delta = 0;
+
+      if (targeted) {
+        delta += trace.reward * 3;
+      }
+      if (overlapScore > 0) {
+        delta += trace.reward > 0 ? overlapScore : -Math.min(overlapScore, Math.abs(trace.reward) * 2);
+      }
+
+      if (delta === 0) {
+        continue;
+      }
+
+      const current =
+        policyUpdatesByBlock.get(block.id) ?? {
+          blockId: block.id,
+          delta: 0,
+          evidenceCount: 0,
+          rewardSum: 0,
+          tokenWeights: new Map<string, number>(),
+          traceIds: new Set<string>()
+        };
+
+      current.delta += delta;
+      current.evidenceCount += 1;
+      current.rewardSum += trace.reward;
+      current.traceIds.add(trace.traceId);
+
+      for (const token of targeted ? trace.queryTokens : overlap) {
+        current.tokenWeights.set(token, (current.tokenWeights.get(token) ?? 0) + (trace.reward > 0 ? 1 : -1));
+      }
+
+      policyUpdatesByBlock.set(block.id, current);
+    }
+  }
+
+  const policyUpdates: RouterPolicyUpdateV1[] = [...policyUpdatesByBlock.values()]
+    .map((update) => ({
+      blockId: update.blockId,
+      delta: update.delta,
+      evidenceCount: update.evidenceCount,
+      rewardSum: update.rewardSum,
+      tokenWeights: Object.fromEntries([...update.tokenWeights.entries()].sort(([left], [right]) => left.localeCompare(right))),
+      traceIds: [...update.traceIds].sort()
+    }))
+    .sort((left, right) => Math.abs(right.delta) - Math.abs(left.delta) || right.evidenceCount - left.evidenceCount || left.blockId.localeCompare(right.blockId));
+
+  const supervisionCount = traces.filter((trace) => trace.supervisionKind !== "route_trace" && trace.reward !== 0).length;
+  const status = policyUpdates.length > 0 ? "updated" : "no_supervision";
+  const noOpReason =
+    policyUpdates.length > 0
+      ? null
+      : eventExport === null
+        ? "no normalized event export supplied for learned routing refresh"
+        : supervisionCount === 0
+          ? "no canonical supervision found in normalized event export"
+          : "supervision produced no learned routing delta";
+
   return {
     routerIdentity: `${packId}:route_fn`,
     strategy: "learned_route_fn_v1",
     trainedAt: builtAt,
-    requiresLearnedRouting: true
+    requiresLearnedRouting: true,
+    training: {
+      status,
+      eventExportDigest: eventExport?.provenance.exportDigest ?? null,
+      routeTraceCount: traces.length,
+      supervisionCount,
+      updateCount: policyUpdates.length,
+      queryChecksum: computeRouterQueryChecksum(traces),
+      weightsChecksum: computeRouterWeightsChecksum(policyUpdates),
+      freshnessChecksum: computeRouterFreshnessChecksum({
+        trainedAt: builtAt,
+        status,
+        eventExportDigest: eventExport?.provenance.exportDigest ?? null,
+        routeTraceCount: traces.length,
+        supervisionCount,
+        updateCount: policyUpdates.length
+      }),
+      noOpReason
+    },
+    traces,
+    policyUpdates
   };
 }
 
@@ -1020,7 +1315,7 @@ export function buildCandidatePack(input: CandidatePackBuildInput): CandidatePac
 
   const graph = createGraphPayload(packId, input, workspace, eventExport, learningSurface);
   const vectors = createVectorsPayload(graph);
-  const router = input.learnedRouting ? createRouterArtifact(packId, builtAt) : null;
+  const router = input.learnedRouting ? createRouterArtifact(packId, builtAt, graph, vectors, eventExport) : null;
 
   const payloads: CandidatePackPayloads = {
     graph,
@@ -1092,7 +1387,8 @@ export function buildCandidatePack(input: CandidatePackBuildInput): CandidatePac
       eventRange,
       eventExportDigest: eventExport?.provenance.exportDigest ?? null,
       learningSurface: manifest.provenance.learningSurface,
-      bootstrapping: manifest.graphDynamics.bootstrapping
+      bootstrapping: manifest.graphDynamics.bootstrapping,
+      learnedRouter: summarizeVisibleLearnedDelta(router)
     }
   };
 }

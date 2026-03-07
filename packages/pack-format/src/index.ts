@@ -198,6 +198,14 @@ export function validatePackActivationReadiness(packOrRootDir: PackDescriptor | 
       `learned-routing packs require router identity ${manifest.runtimeAssets.router.identity ?? "null"} but found ${router.routerIdentity}`
     );
   }
+  if (
+    manifest.provenance.eventExports !== null &&
+    router.training.eventExportDigest !== manifest.provenance.eventExports.exportDigest
+  ) {
+    errors.push(
+      `learned-routing packs require router event export digest ${manifest.provenance.eventExports.exportDigest} but found ${router.training.eventExportDigest ?? "null"}`
+    );
+  }
 
   return errors;
 }

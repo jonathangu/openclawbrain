@@ -539,3 +539,121 @@ test("learner builds deterministic slice packs and bridge bundle materialization
   assert.equal(materializedBundle.entries[0]?.descriptor.manifest.routePolicy, "heuristic_allowed");
   assert.match(materializedBundle.entries[0]?.rootDir ?? "", /01-live-103-104-/);
 });
+
+test("changed supervision changes learned router identity, checksum, weights, and visible delta", () => {
+  const workspace = {
+    workspaceId: "workspace-router-delta",
+    snapshotId: "workspace-router-delta@snapshot-1",
+    capturedAt: "2026-03-07T10:15:00.000Z",
+    rootDir: "/workspace/router-delta",
+    revision: "router-delta-rev"
+  } as const;
+  const interaction = createInteractionEvent({
+    eventId: "evt-router-delta-interaction",
+    agentId: "agent-router-delta",
+    sessionId: "session-router-delta",
+    channel: "cli",
+    sequence: 200,
+    kind: "message_delivered",
+    createdAt: "2026-03-07T10:15:00.000Z",
+    source: {
+      runtimeOwner: "openclaw",
+      stream: "openclaw/runtime/router-delta"
+    },
+    messageId: "msg-router-delta"
+  });
+  const scannerFeedback = createFeedbackEvent({
+    eventId: "evt-router-delta-feedback-scanner",
+    agentId: interaction.agentId,
+    sessionId: interaction.sessionId,
+    channel: interaction.channel,
+    sequence: 201,
+    kind: "teaching",
+    createdAt: "2026-03-07T10:16:00.000Z",
+    source: interaction.source,
+    content: "Teach the feedback scanner and checkpoint resume path for this route refresh.",
+    relatedInteractionId: interaction.eventId
+  });
+  const structuralFeedback = createFeedbackEvent({
+    eventId: "evt-router-delta-feedback-structural",
+    agentId: interaction.agentId,
+    sessionId: interaction.sessionId,
+    channel: interaction.channel,
+    sequence: 201,
+    kind: "teaching",
+    createdAt: "2026-03-07T10:16:00.000Z",
+    source: interaction.source,
+    content: "Teach structural graph prune connect merge routing for this route refresh.",
+    relatedInteractionId: interaction.eventId
+  });
+
+  const scannerPack = buildCandidatePack({
+    packLabel: "router-delta",
+    workspace,
+    eventRange: {
+      start: 200,
+      end: 201
+    },
+    eventExports: {
+      interactionEvents: [interaction],
+      feedbackEvents: [scannerFeedback]
+    },
+    learnedRouting: true,
+    builtAt: "2026-03-07T10:17:00.000Z"
+  });
+  const structuralPack = buildCandidatePack({
+    packLabel: "router-delta",
+    workspace,
+    eventRange: {
+      start: 200,
+      end: 201
+    },
+    eventExports: {
+      interactionEvents: [interaction],
+      feedbackEvents: [structuralFeedback]
+    },
+    learnedRouting: true,
+    builtAt: "2026-03-07T10:17:00.000Z"
+  });
+
+  const scannerRouter = scannerPack.payloads.router;
+  const structuralRouter = structuralPack.payloads.router;
+  const scannerStructuralDelta = scannerRouter?.policyUpdates.find((update) => update.blockId.endsWith(":structural-ops"))?.delta ?? 0;
+  const structuralStructuralDelta = structuralRouter?.policyUpdates.find((update) => update.blockId.endsWith(":structural-ops"))?.delta ?? 0;
+
+  assert.notEqual(scannerRouter, null);
+  assert.notEqual(structuralRouter, null);
+  assert.notEqual(scannerRouter?.routerIdentity, structuralRouter?.routerIdentity);
+  assert.notEqual(scannerPack.manifest.payloadChecksums.router, structuralPack.manifest.payloadChecksums.router);
+  assert.notEqual(scannerRouter?.training.weightsChecksum, structuralRouter?.training.weightsChecksum);
+  assert.notDeepEqual(scannerPack.summary.learnedRouter.visibleDelta, structuralPack.summary.learnedRouter.visibleDelta);
+  assert.equal(scannerPack.summary.learnedRouter.refreshStatus, "updated");
+  assert.equal(structuralPack.summary.learnedRouter.refreshStatus, "updated");
+  assert.equal(scannerPack.summary.learnedRouter.updateCount > 0, true);
+  assert.equal(structuralPack.summary.learnedRouter.updateCount > 0, true);
+  assert.equal(structuralStructuralDelta > scannerStructuralDelta, true);
+});
+
+test("learned routing without supervision emits loud no-op refresh diagnostics", () => {
+  const pack = buildCandidatePack({
+    packLabel: "router-noop",
+    workspace: {
+      workspaceId: "workspace-router-noop",
+      snapshotId: "workspace-router-noop@snapshot-1",
+      capturedAt: "2026-03-07T11:00:00.000Z",
+      rootDir: "/workspace/router-noop"
+    },
+    eventRange: {
+      start: 0,
+      end: -1
+    },
+    learnedRouting: true,
+    builtAt: "2026-03-07T11:00:30.000Z"
+  });
+
+  assert.equal(pack.payloads.router?.training.status, "no_supervision");
+  assert.equal(pack.payloads.router?.training.updateCount, 0);
+  assert.match(pack.payloads.router?.training.noOpReason ?? "", /no normalized event export supplied/);
+  assert.deepEqual(pack.summary.learnedRouter.visibleDelta, []);
+  assert.match(pack.summary.learnedRouter.noOpReason ?? "", /no normalized event export supplied/);
+});
