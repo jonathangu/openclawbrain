@@ -1781,7 +1781,6 @@ export const FIXTURE_NORMALIZED_EVENT_EXPORT: NormalizedEventExportV1 = buildNor
   feedbackEvents: FIXTURE_FEEDBACK_EVENTS
 });
 
-<<<<<<< HEAD
 const FIXTURE_ROUTER_TRACES: RouterTraceV1[] = [
   {
     traceId: "trace-fixture-memory-compiled",

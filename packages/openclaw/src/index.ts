@@ -11,13 +11,17 @@ import {
   checksumJsonPayload,
   createFeedbackEvent,
   createInteractionEvent,
+  sortNormalizedEvents,
+  type ArtifactManifestV1,
   type ActivationPointerRecordV1,
   type FeedbackEventKind,
   type FeedbackEventV1,
   type InteractionEventV1,
   type NormalizedEventExportV1,
+  type NormalizedEventV1,
   type RouteMode,
   type RuntimeCompileResponseV1,
+  type RuntimeCompileTargetV1,
   type TeacherSupervisionArtifactV1,
   validateNormalizedEventExport
 } from "@openclawbrain/contracts";
@@ -26,14 +30,24 @@ import {
   advanceAlwaysOnLearningRuntime,
   buildTeacherSupervisionArtifactsFromNormalizedEventExport,
   createAlwaysOnLearningRuntimeState,
+  materializeAlwaysOnLearningCandidatePack,
   type AdvanceAlwaysOnLearningRuntimeInput,
+  type AlwaysOnLearningCadenceV1,
   type AlwaysOnLearningMaterializationJobV1,
   type AlwaysOnLearningRuntimeStateV1
 } from "@openclawbrain/learner";
-import { inspectActivationState, type ActivationSlotInspection } from "@openclawbrain/pack-format";
+import {
+  describeActivationTarget,
+  describePackCompileTarget,
+  inspectActivationState,
+  promoteCandidatePack,
+  stageCandidatePack,
+  type ActivationSlotInspection
+} from "@openclawbrain/pack-format";
 
 const DEFAULT_AGENT_ID = "openclaw-runtime";
 const FEEDBACK_KINDS = new Set<FeedbackEventKind>(["correction", "teaching", "approval", "suppression"]);
+
 export const DEFAULT_ASYNC_TEACHER_QUEUE_CAPACITY = 8;
 
 
@@ -270,6 +284,109 @@ export interface AsyncTeacherEnqueueResultV1 {
   reason: Exclude<TeacherLoopNoOpReason, "none"> | null;
 }
 
+export interface CanonicalSupervisionFeedbackRecordV1 {
+  eventId: string;
+  kind: FeedbackEventKind;
+  sequence: number;
+  createdAt: string;
+  content: string;
+  relatedInteractionId: string | null;
+}
+
+export interface CanonicalSupervisionV1 {
+  runtimeOwner: "openclaw";
+  exportDigest: string;
+  supervisionDigest: string;
+  sessionId: string | null;
+  channel: string | null;
+  eventRange: Pick<NormalizedEventExportV1["range"], "start" | "end" | "count">;
+  sourceStreams: string[];
+  humanLabelCount: number;
+  selfLabelCount: number;
+  feedbackCounts: {
+    corrections: number;
+    teachings: number;
+    approvals: number;
+    suppressions: number;
+  };
+  compilePackIds: string[];
+  relatedInteractionIds: string[];
+  feedback: CanonicalSupervisionFeedbackRecordV1[];
+}
+
+export interface ContinuousProductLoopPackVersionV1 {
+  version: number;
+  packId: string;
+  routePolicy: RuntimeCompileTargetV1["routePolicy"];
+  routerIdentity: string | null;
+  workspaceSnapshot: string;
+  workspaceRevision: string | null;
+  eventRange: RuntimeCompileTargetV1["eventRange"];
+  eventExportDigest: string | null;
+  builtAt: string;
+}
+
+export interface ContinuousProductLoopStateV1 {
+  runtimeOwner: "openclaw";
+  activationRoot: string;
+  loopRoot: string;
+  interactionEvents: InteractionEventV1[];
+  feedbackEvents: FeedbackEventV1[];
+  learner: AlwaysOnLearningRuntimeStateV1;
+  activePackVersion: number;
+  currentActivePack: ContinuousProductLoopPackVersionV1 | null;
+  candidatePack: ContinuousProductLoopPackVersionV1 | null;
+  packLineage: ContinuousProductLoopPackVersionV1[];
+  nextPackVersion: number;
+  promotionCount: number;
+  lastSupervision: CanonicalSupervisionV1 | null;
+}
+
+export interface ContinuousProductLoopLearningUpdateV1 {
+  warnings: string[];
+  supervisionDigest: string | null;
+  bridgeDigest: string | null;
+  selectedSliceIds: string[];
+  materializationJobId: string | null;
+  materializationReason: AlwaysOnLearningMaterializationJobV1["reason"] | null;
+  materializationLane: AlwaysOnLearningMaterializationJobV1["lane"] | null;
+  candidateRootDir: string | null;
+  candidatePack: ContinuousProductLoopPackVersionV1 | null;
+  promotionAllowed: boolean;
+  promotionFindings: string[];
+  promoted: boolean;
+}
+
+export interface RunContinuousProductLoopTurnInput {
+  activationRoot: string;
+  loopRoot: string;
+  packLabel: string;
+  workspace: AdvanceAlwaysOnLearningRuntimeInput["workspace"];
+  turn: OpenClawRuntimeTurnInput;
+  state?: ContinuousProductLoopStateV1;
+  learnedRouting?: boolean;
+  failOpen?: boolean;
+  autoPromote?: boolean;
+  candidateBuiltAt?: string | null;
+  stageUpdatedAt?: string | null;
+  promoteUpdatedAt?: string | null;
+  offlineArtifacts?: string[];
+  structuralOps?: Partial<ArtifactManifestV1["graphDynamics"]["structuralOps"]>;
+  liveSliceSize?: number;
+  backfillSliceSize?: number;
+  cadence?: Partial<AlwaysOnLearningCadenceV1>;
+}
+
+export interface ContinuousProductLoopTurnResultV1 {
+  runtimeOwner: "openclaw";
+  compileActiveVersion: number;
+  compileActivePackId: string | null;
+  turn: RuntimeTurnResult;
+  supervision: CanonicalSupervisionV1 | null;
+  learning: ContinuousProductLoopLearningUpdateV1;
+  state: ContinuousProductLoopStateV1;
+}
+
 function toErrorMessage(error: unknown): string {
   return error instanceof Error ? error.message : String(error);
 }
@@ -304,7 +421,21 @@ function cloneTeacherSupervisionArtifacts(value: readonly TeacherSupervisionArti
   return [...structuredClone(value)];
 }
 
-function buildNormalizedEventDedupId(event: InteractionEventV1 | FeedbackEventV1): string {
+function cloneCanonicalSupervision(value: CanonicalSupervisionV1): CanonicalSupervisionV1 {
+  return structuredClone(value);
+}
+
+function cloneContinuousProductLoopPackVersion(
+  value: ContinuousProductLoopPackVersionV1
+): ContinuousProductLoopPackVersionV1 {
+  return structuredClone(value);
+}
+
+function cloneContinuousProductLoopState(value: ContinuousProductLoopStateV1): ContinuousProductLoopStateV1 {
+  return structuredClone(value);
+}
+
+function buildNormalizedEventDedupId(event: NormalizedEventV1): string {
   return checksumJsonPayload({
     contract: event.contract,
     eventId: event.eventId,
@@ -321,6 +452,257 @@ function buildNormalizedEventDedupId(event: InteractionEventV1 | FeedbackEventV1
     relatedInteractionId: "relatedInteractionId" in event ? event.relatedInteractionId ?? null : null
   });
 }
+
+function mergeRuntimeEventHistory(
+  current: Pick<ContinuousProductLoopStateV1, "interactionEvents" | "feedbackEvents">,
+  incoming: NormalizedEventExportV1
+): Pick<ContinuousProductLoopStateV1, "interactionEvents" | "feedbackEvents"> {
+  const merged = sortNormalizedEvents([
+    ...current.interactionEvents,
+    ...current.feedbackEvents,
+    ...incoming.interactionEvents,
+    ...incoming.feedbackEvents
+  ]);
+  const deduped: NormalizedEventV1[] = [];
+  const seen = new Set<string>();
+
+  for (const event of merged) {
+    const dedupId = buildNormalizedEventDedupId(event);
+    if (seen.has(dedupId)) {
+      continue;
+    }
+
+    seen.add(dedupId);
+    deduped.push(event);
+  }
+
+  return {
+    interactionEvents: deduped.filter((event): event is InteractionEventV1 => event.contract === CONTRACT_IDS.interactionEvents),
+    feedbackEvents: deduped.filter((event): event is FeedbackEventV1 => event.contract === CONTRACT_IDS.feedbackEvents)
+  };
+}
+
+function buildContinuousTurnExport(turn: OpenClawRuntimeTurnInput, loopRoot: string): RuntimeTurnExportInput {
+  const exportSeed = checksumJsonPayload({
+    sessionId: turn.sessionId,
+    channel: turn.channel,
+    sourceStream: turn.sourceStream ?? null,
+    userMessage: turn.userMessage,
+    createdAt: turn.createdAt ?? null,
+    sequenceStart: turn.sequenceStart ?? null,
+    compileCreatedAt: turn.compile?.createdAt ?? null,
+    delivery:
+      turn.delivery === false
+        ? false
+        : turn.delivery === undefined || turn.delivery === null
+          ? null
+          : turn.delivery === true
+            ? true
+            : {
+                createdAt: turn.delivery.createdAt ?? null,
+                messageId: turn.delivery.messageId ?? null,
+                sequence: turn.delivery.sequence ?? null
+              },
+    feedback: (turn.feedback ?? [])
+      .filter((item): item is RuntimeTurnFeedbackInput => item !== null)
+      .map((item) => ({
+        content: item.content,
+        createdAt: item.createdAt ?? null,
+        sequence: item.sequence ?? null,
+        kind: item.kind ?? null,
+        messageId: item.messageId ?? null,
+        relatedInteractionId: item.relatedInteractionId ?? null
+      }))
+  })
+    .replace(/^sha256-/u, "")
+    .slice(0, 12);
+  const exportName = `${turn.sessionId}-${exportSeed}`;
+
+  return {
+    rootDir: path.join(loopRoot, "event-exports", exportName),
+    exportName
+  };
+}
+
+function withContinuousTurnExport(turn: OpenClawRuntimeTurnInput, loopRoot: string): OpenClawRuntimeTurnInput {
+  if (turn.export !== undefined && turn.export !== null) {
+    return {
+      ...turn,
+      export: {
+        ...turn.export
+      }
+    };
+  }
+
+  return {
+    ...turn,
+    export: buildContinuousTurnExport(turn, loopRoot)
+  };
+}
+
+function buildPackVersion(version: number, target: RuntimeCompileTargetV1): ContinuousProductLoopPackVersionV1 {
+  return {
+    version,
+    packId: target.packId,
+    routePolicy: target.routePolicy,
+    routerIdentity: target.routerIdentity,
+    workspaceSnapshot: target.workspaceSnapshot,
+    workspaceRevision: target.workspaceRevision,
+    eventRange: {
+      start: target.eventRange.start,
+      end: target.eventRange.end,
+      count: target.eventRange.count
+    },
+    eventExportDigest: target.eventExportDigest,
+    builtAt: target.builtAt
+  };
+}
+
+function buildLearningCandidateTarget(
+  candidate: AlwaysOnLearningMaterializationJobV1["candidate"]
+): RuntimeCompileTargetV1 {
+  return {
+    packId: candidate.summary.packId,
+    routePolicy: candidate.summary.routePolicy,
+    routerIdentity: candidate.payloads.router?.routerIdentity ?? null,
+    workspaceSnapshot: candidate.summary.workspaceSnapshot,
+    workspaceRevision: candidate.manifest.provenance.workspace.revision,
+    eventRange: {
+      start: candidate.summary.eventRange.start,
+      end: candidate.summary.eventRange.end,
+      count: candidate.summary.eventRange.count
+    },
+    eventExportDigest: candidate.summary.eventExportDigest,
+    builtAt: candidate.manifest.provenance.builtAt
+  };
+}
+
+function registerPackVersion(
+  state: ContinuousProductLoopStateV1,
+  target: RuntimeCompileTargetV1
+): ContinuousProductLoopPackVersionV1 {
+  const existing = state.packLineage.find((entry) => entry.packId === target.packId);
+  if (existing !== undefined) {
+    return cloneContinuousProductLoopPackVersion(existing);
+  }
+
+  const created = buildPackVersion(state.nextPackVersion, target);
+  state.packLineage.push(cloneContinuousProductLoopPackVersion(created));
+  state.nextPackVersion += 1;
+  return created;
+}
+
+function tryReadActivePackTarget(rootDir: string): RuntimeCompileTargetV1 | null {
+  try {
+    return describeActivationTarget(rootDir, "active", { requireActivationReady: true });
+  } catch {
+    return null;
+  }
+}
+
+function syncContinuousActivePack(state: ContinuousProductLoopStateV1): ContinuousProductLoopPackVersionV1 | null {
+  const activeTarget = tryReadActivePackTarget(state.activationRoot);
+  if (activeTarget === null) {
+    state.currentActivePack = null;
+    state.activePackVersion = 0;
+    return null;
+  }
+
+  const activePack = registerPackVersion(state, activeTarget);
+  state.currentActivePack = cloneContinuousProductLoopPackVersion(activePack);
+  state.activePackVersion = activePack.version;
+  return activePack;
+}
+
+function buildContinuousPackRoot(loopRoot: string, packVersion: ContinuousProductLoopPackVersionV1): string {
+  return path.join(loopRoot, "packs", `v${String(packVersion.version).padStart(4, "0")}-${packVersion.packId}`);
+}
+
+export function buildCanonicalSupervision(normalizedEventExport: NormalizedEventExportV1): CanonicalSupervisionV1 {
+  const feedback = normalizedEventExport.feedbackEvents.map((event) => ({
+    eventId: event.eventId,
+    kind: event.kind,
+    sequence: event.sequence,
+    createdAt: event.createdAt,
+    content: event.content,
+    relatedInteractionId: event.relatedInteractionId ?? null
+  } satisfies CanonicalSupervisionFeedbackRecordV1));
+  const compilePackIds = [
+    ...new Set(
+      normalizedEventExport.interactionEvents.flatMap((event) =>
+        event.kind === "memory_compiled" && event.packId ? [event.packId] : []
+      )
+    )
+  ];
+  const relatedInteractionIds = [...new Set(feedback.flatMap((event) => (event.relatedInteractionId ? [event.relatedInteractionId] : [])))];
+  const feedbackCounts = {
+    corrections: feedback.filter((event) => event.kind === "correction").length,
+    teachings: feedback.filter((event) => event.kind === "teaching").length,
+    approvals: feedback.filter((event) => event.kind === "approval").length,
+    suppressions: feedback.filter((event) => event.kind === "suppression").length
+  };
+  const supervisionDigest = checksumJsonPayload({
+    exportDigest: normalizedEventExport.provenance.exportDigest,
+    eventRange: {
+      start: normalizedEventExport.range.start,
+      end: normalizedEventExport.range.end,
+      count: normalizedEventExport.range.count
+    },
+    sourceStreams: normalizedEventExport.provenance.sourceStreams,
+    humanLabelCount: normalizedEventExport.provenance.learningSurface.labelHarvest.humanLabels,
+    selfLabelCount: normalizedEventExport.provenance.learningSurface.labelHarvest.selfLabels,
+    feedback,
+    compilePackIds,
+    relatedInteractionIds
+  });
+
+  return {
+    runtimeOwner: "openclaw",
+    exportDigest: normalizedEventExport.provenance.exportDigest,
+    supervisionDigest,
+    sessionId: normalizedEventExport.provenance.sessionId,
+    channel: normalizedEventExport.provenance.channel,
+    eventRange: {
+      start: normalizedEventExport.range.start,
+      end: normalizedEventExport.range.end,
+      count: normalizedEventExport.range.count
+    },
+    sourceStreams: [...normalizedEventExport.provenance.sourceStreams],
+    humanLabelCount: normalizedEventExport.provenance.learningSurface.labelHarvest.humanLabels,
+    selfLabelCount: normalizedEventExport.provenance.learningSurface.labelHarvest.selfLabels,
+    feedbackCounts,
+    compilePackIds,
+    relatedInteractionIds,
+    feedback
+  };
+}
+
+export function createContinuousProductLoopState(input: {
+  activationRoot: string;
+  loopRoot: string;
+}): ContinuousProductLoopStateV1 {
+  const activationRoot = path.resolve(normalizeNonEmptyString(input.activationRoot, "activationRoot"));
+  const loopRoot = path.resolve(normalizeNonEmptyString(input.loopRoot, "loopRoot"));
+  const activeTarget = tryReadActivePackTarget(activationRoot);
+  const activePack = activeTarget === null ? null : buildPackVersion(1, activeTarget);
+
+  return {
+    runtimeOwner: "openclaw",
+    activationRoot,
+    loopRoot,
+    interactionEvents: [],
+    feedbackEvents: [],
+    learner: createAlwaysOnLearningRuntimeState(),
+    activePackVersion: activePack?.version ?? 0,
+    currentActivePack: activePack === null ? null : cloneContinuousProductLoopPackVersion(activePack),
+    candidatePack: null,
+    packLineage: activePack === null ? [] : [cloneContinuousProductLoopPackVersion(activePack)],
+    nextPackVersion: activePack === null ? 1 : 2,
+    promotionCount: 0,
+    lastSupervision: null
+  };
+}
+
 
 function mergeUniqueEvents<T extends InteractionEventV1 | FeedbackEventV1>(
   current: readonly T[],
@@ -583,7 +965,6 @@ export class AsyncTeacherLiveLoop {
 export function createAsyncTeacherLiveLoop(input: AsyncTeacherLiveLoopInput): AsyncTeacherLiveLoop {
   return new AsyncTeacherLiveLoop(input);
 }
-
 
 function readJsonFile<T>(filePath: string): T {
   return JSON.parse(readFileSync(filePath, "utf8")) as T;
@@ -1218,4 +1599,146 @@ export function runRuntimeTurn(turn: OpenClawRuntimeTurnInput, options: RunRunti
       warnings
     };
   }
+}
+
+export function runContinuousProductLoopTurn(
+  input: RunContinuousProductLoopTurnInput
+): ContinuousProductLoopTurnResultV1 {
+  const activationRoot = path.resolve(normalizeNonEmptyString(input.activationRoot, "activationRoot"));
+  const loopRoot = path.resolve(normalizeNonEmptyString(input.loopRoot, "loopRoot"));
+  const failOpen = input.failOpen !== false;
+  const currentState = cloneContinuousProductLoopState(
+    input.state ??
+      createContinuousProductLoopState({
+        activationRoot,
+        loopRoot
+      })
+  );
+
+  currentState.activationRoot = activationRoot;
+  currentState.loopRoot = loopRoot;
+
+  const activeBeforeTurn = syncContinuousActivePack(currentState);
+  const compileActiveVersion = activeBeforeTurn?.version ?? 0;
+  const compileActivePackId = activeBeforeTurn?.packId ?? null;
+  const turn = withContinuousTurnExport(input.turn, loopRoot);
+  const turnResult = runRuntimeTurn(turn, {
+    activationRoot,
+    failOpen
+  });
+  const learningWarnings: string[] = [];
+  let supervision: CanonicalSupervisionV1 | null = null;
+  const learning: ContinuousProductLoopLearningUpdateV1 = {
+    warnings: learningWarnings,
+    supervisionDigest: null,
+    bridgeDigest: null,
+    selectedSliceIds: [],
+    materializationJobId: null,
+    materializationReason: null,
+    materializationLane: null,
+    candidateRootDir: null,
+    candidatePack: currentState.candidatePack === null ? null : cloneContinuousProductLoopPackVersion(currentState.candidatePack),
+    promotionAllowed: false,
+    promotionFindings: [],
+    promoted: false
+  };
+
+  if (!turnResult.eventExport.ok) {
+    learningWarnings.push(`continuous learner skipped: ${turnResult.eventExport.error}`);
+    return {
+      runtimeOwner: "openclaw",
+      compileActiveVersion,
+      compileActivePackId,
+      turn: turnResult,
+      supervision,
+      learning,
+      state: cloneContinuousProductLoopState(currentState)
+    };
+  }
+
+  const normalizedEventExport = turnResult.eventExport.normalizedEventExport;
+  supervision = buildCanonicalSupervision(normalizedEventExport);
+  learning.supervisionDigest = supervision.supervisionDigest;
+  currentState.lastSupervision = cloneCanonicalSupervision(supervision);
+
+  const mergedHistory = mergeRuntimeEventHistory(currentState, normalizedEventExport);
+  currentState.interactionEvents = mergedHistory.interactionEvents;
+  currentState.feedbackEvents = mergedHistory.feedbackEvents;
+
+  try {
+    const learnerResult = advanceAlwaysOnLearningRuntime({
+      packLabel: input.packLabel,
+      workspace: input.workspace,
+      interactionEvents: currentState.interactionEvents,
+      feedbackEvents: currentState.feedbackEvents,
+      learnedRouting: input.learnedRouting ?? true,
+      state: currentState.learner,
+      builtAt: normalizeIsoTimestamp(
+        input.candidateBuiltAt,
+        "candidateBuiltAt",
+        normalizedEventExport.range.lastCreatedAt ?? normalizedEventExport.range.firstCreatedAt
+      ),
+      ...(input.offlineArtifacts !== undefined ? { offlineArtifacts: input.offlineArtifacts } : {}),
+      ...(input.structuralOps !== undefined ? { structuralOps: input.structuralOps } : {}),
+      ...(input.liveSliceSize !== undefined ? { liveSliceSize: input.liveSliceSize } : {}),
+      ...(input.backfillSliceSize !== undefined ? { backfillSliceSize: input.backfillSliceSize } : {}),
+      ...(input.cadence !== undefined ? { cadence: input.cadence } : {})
+    });
+
+    currentState.learner = structuredClone(learnerResult.state);
+    learning.bridgeDigest = learnerResult.bridge.bridgeDigest;
+    learning.selectedSliceIds = learnerResult.selectedSlices.map((slice) => slice.sliceId);
+    learning.materializationJobId = learnerResult.materialization?.jobId ?? null;
+    learning.materializationReason = learnerResult.materialization?.reason ?? null;
+    learning.materializationLane = learnerResult.materialization?.lane ?? null;
+
+    if (learnerResult.materialization !== null) {
+      const candidatePack = registerPackVersion(currentState, buildLearningCandidateTarget(learnerResult.materialization.candidate));
+      const candidateRootDir = buildContinuousPackRoot(loopRoot, candidatePack);
+      const descriptor = materializeAlwaysOnLearningCandidatePack(candidateRootDir, learnerResult.materialization);
+      const candidateTarget = describePackCompileTarget(descriptor);
+
+      learning.candidateRootDir = candidateRootDir;
+      learning.candidatePack = cloneContinuousProductLoopPackVersion(candidatePack);
+      currentState.candidatePack = cloneContinuousProductLoopPackVersion(candidatePack);
+
+      const stagedAt = normalizeIsoTimestamp(input.stageUpdatedAt, "stageUpdatedAt", descriptor.manifest.provenance.builtAt);
+
+      stageCandidatePack(activationRoot, candidateRootDir, stagedAt);
+
+      const stagedInspection = inspectActivationState(activationRoot, stagedAt);
+      learning.promotionAllowed = stagedInspection.promotion.allowed;
+      learning.promotionFindings = [...stagedInspection.promotion.findings];
+
+      if ((input.autoPromote ?? true) && stagedInspection.promotion.allowed) {
+        const promotedAt = normalizeIsoTimestamp(input.promoteUpdatedAt, "promoteUpdatedAt", stagedAt);
+
+        promoteCandidatePack(activationRoot, promotedAt);
+        currentState.promotionCount += 1;
+        currentState.candidatePack = null;
+        learning.promoted = true;
+
+        const activePack = registerPackVersion(currentState, candidateTarget);
+        currentState.currentActivePack = cloneContinuousProductLoopPackVersion(activePack);
+        currentState.activePackVersion = activePack.version;
+        syncContinuousActivePack(currentState);
+      }
+    }
+  } catch (error) {
+    if (!failOpen) {
+      throw error;
+    }
+
+    learningWarnings.push(`continuous learner failed open: ${toErrorMessage(error)}`);
+  }
+
+  return {
+    runtimeOwner: "openclaw",
+    compileActiveVersion,
+    compileActivePackId,
+    turn: turnResult,
+    supervision,
+    learning,
+    state: cloneContinuousProductLoopState(currentState)
+  };
 }
