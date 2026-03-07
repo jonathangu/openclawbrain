@@ -2,6 +2,8 @@
 
 This repo releases the full public TypeScript package lane, including the OpenClaw runtime bridge package.
 
+The GitHub repo is public. The root workspace package stays `private` only so the monorepo itself is not published to npm; the supported release surface is the `@openclawbrain/*` package set below.
+
 The active public release line is `0.1.x` for the workspace marker and every published `@openclawbrain/*` package.
 Historical repository tags such as `v12.x` are legacy milestones only; they are not the current npm package lane and should not be reused for public TypeScript releases.
 

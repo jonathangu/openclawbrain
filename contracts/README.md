@@ -6,7 +6,8 @@ This directory holds the versioned contract artifacts and golden fixtures for th
 
 - `@openclawbrain/contracts` is the public library surface for these payloads.
 - `contracts/` keeps synchronized schemas and golden JSON fixtures for docs, parity checks, and cross-repo validation.
-- The canonical boundary is the TypeScript package surface plus these versioned fixtures.
+- The canonical supported contract boundary is the published TypeScript package surface plus these versioned fixtures.
+- The rest of the repo may be public, but it is documentation, proof, and release machinery rather than a second contract API.
 
 ## Current contract families
 

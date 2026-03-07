@@ -13,8 +13,8 @@ Primary contract roots:
 
 For this landing:
 
-- the TypeScript package is the public implementation surface
-- the JSON schemas and golden fixtures under `contracts/` are synchronized documentation artifacts
+- the published TypeScript packages plus the JSON schemas and golden fixtures under `contracts/` are the supported public contract surface
+- the rest of the workspace is public documentation and proof machinery, not a second contract API
 - compiler, pack-format, activation, and learner consume these shapes directly
 
 ## Runtime compile v1

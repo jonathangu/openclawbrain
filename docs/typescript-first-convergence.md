@@ -1,10 +1,10 @@
 # TypeScript-First Convergence
 
-This is the repo-wide convergence statement for OpenClawBrain's supported end state.
+This is the repo-wide convergence statement for OpenClawBrain's supported public shape today.
 
 The project is converging on one narrow, public, package-first surface:
 
-- TypeScript packages under `packages/` are the supported implementation boundary
+- this GitHub repo is public, but the supported public API boundary is the published TypeScript packages under `packages/` plus versioned fixtures under `contracts/`
 - immutable pack artifacts are the runtime and release boundary
 - OpenClaw remains the runtime owner for sessions, prompts, fail-open behavior, and operator UX
 - OpenClawBrain owns contracts, normalized event flows, learner materialization, activation safety, and deterministic compilation
@@ -49,7 +49,7 @@ The supported public packages are:
 - `@openclawbrain/learner`
 - `@openclawbrain/openclaw`
 
-Everything else in the repo exists to document, test, or release that surface.
+Everything else in the repo is public documentation, proof machinery, or release plumbing for that surface; it is not a second semver-stable integration boundary.
 
 ## Repo rules implied by convergence
 

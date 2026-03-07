@@ -44,7 +44,7 @@ The first attach must follow four rules:
 
 ## Install and prove
 
-This repo is the TypeScript package surface and proof harness for the eventual single-path OpenClaw attach/install flow.
+This public repo is the current TypeScript package surface and proof harness for OpenClaw attach/install work.
 
 ```bash
 corepack enable
@@ -61,6 +61,8 @@ pnpm add @openclawbrain/contracts @openclawbrain/events @openclawbrain/event-exp
 ```
 
 Add `@openclawbrain/openclaw` when you are wiring the OpenClaw-owned runtime integration layer itself; the narrow attach lane above remains the minimal install surface.
+
+That package lane is the supported public attach surface. The workspace root, smoke lanes, and docs in this repo exist to build, prove, and release that lane; they are not a separate runtime product.
 
 That install set maps to the attach flow like this:
 
@@ -117,7 +119,7 @@ The first setup should **not** require:
 
 ## Current repo stance
 
-Today this repository provides the TypeScript-first contracts, normalized events, event export, learner, activation, and compiler surface that the attach flow will use.
+Today this repository exposes the documented package-first attach surface used here: contracts, normalized events, event export, learner, activation, compiler, and the optional `@openclawbrain/openclaw` bridge package.
 
 The concrete proof path in the repo today is the lifecycle plus observability smoke:
 
@@ -138,7 +140,7 @@ Those proofs cover:
 - freshness inspection over workspace snapshot, event range, export digest, and build time
 - deterministic fallback diagnostics when token matching does not hit
 
-The eventual single-path OpenClaw attach/install flow should preserve the same invariants while optimizing for immediate usefulness and always-on passive learning.
+Any future tighter single-path OpenClaw attach/install UX should preserve the same invariants while keeping the supported package surface narrow.
 
 The detailed diagnostics contract lives in [`docs/operator-observability.md`](docs/operator-observability.md).
 The repo-wide convergence statement lives in [`docs/typescript-first-convergence.md`](docs/typescript-first-convergence.md).

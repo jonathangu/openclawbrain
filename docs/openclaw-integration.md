@@ -32,6 +32,8 @@ Add these when needed:
 - `@openclawbrain/provenance`
 - `@openclawbrain/openclaw` for the runtime-owned bridge layer itself
 
+This GitHub repo is public. The supported integration boundary is the published `@openclawbrain/*` packages plus versioned fixtures under `contracts/`; workspace scripts, smoke lanes, and repo layout are proof/release machinery, not a separate runtime API.
+
 ## Bring-up sequence
 
 From the repo root:
@@ -63,7 +65,7 @@ These prove:
 The larger benchmark/proof harness currently lives in the sibling public repo:
 - `https://github.com/jonathangu/brain-ground-zero`
 
-Use that repo for the published recorded-session and sparse-feedback benchmark families until those proof harnesses are imported into this repo directly.
+Use that repo for the published recorded-session and sparse-feedback benchmark families. It is separate from the supported package surface in this repo.
 
 ## Failure semantics
 

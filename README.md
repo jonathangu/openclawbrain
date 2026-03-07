@@ -8,7 +8,7 @@ The repo’s public story is now centered on five guarantees:
 - native structural compaction over pack-backed context instead of ad hoc prompt-side truncation
 - deterministic context selection from immutable packs, vectors, and manifest-gated routing artifacts
 - operator-visible diagnostics that prove activation health, promotion safety, freshness, and runtime fallback
-- a clean repo/package boundary where the monorepo is private and the scoped TypeScript packages are the supported public surface
+- a clean public-repo/package boundary where this GitHub repo is public, but the supported public surface is the scoped TypeScript packages plus versioned fixtures under `contracts/`
 
 The workspace root now carries two deterministic proof lanes:
 
@@ -56,7 +56,9 @@ The product boundary is intentionally narrow:
 - OpenClaw owns runtime orchestration, prompt assembly, diagnostics, sessions, and fail-open behavior.
 - OpenClawBrain owns contracts, normalized event flows, workspace and provenance metadata, immutable pack artifacts, activation helpers, native structural compaction, deterministic compilation, and learner-side candidate-pack assembly.
 
-There is no Python daemon, socket, hook, or wheel-release lane in the supported surface of this repo.
+This GitHub repo is public. The supported public integration surface is narrower: the published `@openclawbrain/*` packages plus the versioned fixtures under `contracts/`. Workspace layout, root scripts, smoke lanes, and release plumbing are public proof-and-build machinery, not a second semver-stable API.
+
+There is no supported Python daemon, socket, hook, or wheel-release lane in that public integration surface.
 
 ## Public packages
 
@@ -72,6 +74,8 @@ The supported packages live under `packages/`:
 - `@openclawbrain/compiler`
 - `@openclawbrain/learner`
 - `@openclawbrain/openclaw`
+
+The root workspace package remains `private` in `package.json` so the monorepo itself is not published to npm; that does not mean the GitHub repo is private.
 
 ## Context story
 
@@ -106,7 +110,7 @@ pnpm release:pack
 
 `pnpm check` builds the workspace, runs the package tests, and executes the root lifecycle and observability smoke lanes.
 
-`pnpm lifecycle:smoke` rebuilds the workspace and runs the Phase-2 lifecycle proof on a temp directory using the existing public package APIs on disk:
+`pnpm lifecycle:smoke` rebuilds the workspace and runs the current lifecycle proof on a temp directory using the existing public package APIs on disk:
 
 - `@openclawbrain/events` creates normalized interaction and feedback events
 - `@openclawbrain/event-export` derives deterministic event export range and provenance

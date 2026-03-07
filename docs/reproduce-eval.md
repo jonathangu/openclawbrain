@@ -46,7 +46,7 @@ This proves the operator-facing diagnostics surface for:
 The larger benchmark harness currently lives in the sibling public proof repo:
 - `https://github.com/jonathangu/brain-ground-zero`
 
-That repo is the source of truth for the currently published benchmark families such as recorded-session head-to-head and sparse-feedback proof bundles.
+That repo is the source of truth for the currently published benchmark families such as recorded-session head-to-head and sparse-feedback proof bundles. It is separate from this repo's supported TypeScript package surface.
 
 ### Quickstart for the proof harness repo
 
