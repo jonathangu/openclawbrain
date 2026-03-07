@@ -52,12 +52,30 @@ export interface ActivationCompileResult extends RuntimeCompileResponseV1 {
   response: RuntimeCompileResponseV1;
 }
 
+export interface CompileFallbackUsageReport {
+  packId: string;
+  modeRequested: RouteMode;
+  modeEffective: RouteMode;
+  usedLearnedRouteFn: boolean;
+  routerIdentity: string | null;
+  selectionDigest: string;
+  selectionMode: "token_match" | "priority_fallback" | null;
+  selectionTiers: "token_match+priority_fallback" | "token_match_only" | "priority_fallback_only" | null;
+  priorityFallbackUsed: boolean;
+  notes: string[];
+}
+
 function normalizeTokens(value: string): string[] {
   return [...new Set(value.toLowerCase().split(/[^a-z0-9]+/u).filter((token) => token.length >= 2))];
 }
 
 function compareIsoDates(left: string, right: string): number {
   return Date.parse(left) - Date.parse(right);
+}
+
+function noteValue(notes: readonly string[], prefix: string): string | null {
+  const match = notes.find((note) => note.startsWith(prefix));
+  return match === undefined ? null : match.slice(prefix.length);
 }
 
 function estimateTokenCount(value: string): number {
@@ -639,5 +657,42 @@ export function compileRuntimeFromActivation(
     slot: resolved.slot,
     target: resolved.target,
     response: resolvedResponse
+  };
+}
+
+export function describeCompileFallbackUsage(response: RuntimeCompileResponseV1): CompileFallbackUsageReport {
+  const selectionModeValue = noteValue(response.diagnostics.notes, "selection_mode=");
+  const selectionTiersValue = noteValue(response.diagnostics.notes, "selection_tiers=");
+  const selectionMode =
+    selectionModeValue === null
+      ? null
+      : selectionModeValue.startsWith("token_match(")
+        ? "token_match"
+        : selectionModeValue === "priority_fallback"
+          ? "priority_fallback"
+          : null;
+  const selectionTiers =
+    selectionTiersValue === "token_match+priority_fallback" ||
+    selectionTiersValue === "token_match_only" ||
+    selectionTiersValue === "priority_fallback_only"
+      ? selectionTiersValue
+      : null;
+
+  return {
+    packId: response.packId,
+    modeRequested: response.diagnostics.modeRequested,
+    modeEffective: response.diagnostics.modeEffective,
+    usedLearnedRouteFn: response.diagnostics.usedLearnedRouteFn,
+    routerIdentity: response.diagnostics.routerIdentity,
+    selectionDigest: response.diagnostics.selectionDigest,
+    selectionMode,
+    selectionTiers,
+    priorityFallbackUsed:
+      selectionMode === "priority_fallback" ||
+      selectionTiers === "token_match+priority_fallback" ||
+      selectionTiers === "priority_fallback_only",
+    notes: response.diagnostics.notes.filter(
+      (note) => note.startsWith("selection_mode=") || note.startsWith("selection_tiers=")
+    )
   };
 }

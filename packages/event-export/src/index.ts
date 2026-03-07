@@ -44,3 +44,10 @@ export {
   type NormalizedEventExportBridgeV1,
   type NormalizedEventExportSliceV1
 } from "./bridge.js";
+
+export {
+  describeNormalizedEventExportObservability,
+  type NormalizedEventExportObservabilityReport,
+  type SupervisionFreshnessBySource,
+  type TeacherFreshness
+} from "./observability.js";

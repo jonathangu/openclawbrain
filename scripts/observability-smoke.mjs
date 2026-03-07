@@ -4,24 +4,25 @@ import assert from "node:assert/strict";
 import { mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 
 import {
   activatePack,
+  describeActivationObservability,
   describeActivationTarget,
   inspectActivationState,
   promoteCandidatePack,
   stageCandidatePack
 } from "../packages/activation/dist/src/index.js";
-import { compileRuntimeFromActivation } from "../packages/compiler/dist/src/index.js";
+import { compileRuntimeFromActivation, describeCompileFallbackUsage } from "../packages/compiler/dist/src/index.js";
 import { CONTRACT_IDS } from "../packages/contracts/dist/src/index.js";
-import { buildNormalizedEventExport } from "../packages/event-export/dist/src/index.js";
+import {
+  buildNormalizedEventExport,
+  describeNormalizedEventExportObservability
+} from "../packages/event-export/dist/src/index.js";
 import { createFeedbackEvent, createInteractionEvent, sortNormalizedEvents } from "../packages/events/dist/src/index.js";
 import { materializeCandidatePackFromNormalizedEventExport } from "../packages/learner/dist/src/index.js";
 import { compileRuntimeContext } from "../packages/openclaw/dist/src/index.js";
-
-function logStep(message) {
-  console.log(`[observability:smoke] ${message}`);
-}
 
 function buildExport({
   agentId,
@@ -77,7 +78,14 @@ function buildExport({
   });
 }
 
-function main() {
+export function runObservabilityScenario(options = {}) {
+  const logPrefix = options.logPrefix ?? "observability:smoke";
+  const emitSteps = options.emitSteps ?? true;
+  const logStep = (message) => {
+    if (emitSteps) {
+      console.log(`[${logPrefix}] ${message}`);
+    }
+  };
   const rootDir = mkdtempSync(path.join(tmpdir(), "openclawbrain-observability-smoke-"));
 
   try {
@@ -161,6 +169,30 @@ function main() {
     activatePack(activationRoot, activePackRoot, "2026-03-06T06:20:00.000Z");
     stageCandidatePack(activationRoot, candidatePackRoot, "2026-03-06T06:25:00.000Z");
 
+    const candidateEventObservability = describeNormalizedEventExportObservability(candidateExport);
+    assert.equal(candidateEventObservability.supervisionFreshnessBySource.length, 1);
+    assert.deepEqual(candidateEventObservability.supervisionFreshnessBySource[0], {
+      sourceStream: "openclaw/runtime/observability-candidate",
+      eventCount: 2,
+      interactionCount: 1,
+      feedbackCount: 1,
+      humanLabelCount: 2,
+      selfLabelCount: 0,
+      freshestEventId: "session-observability-candidate:feedback:72",
+      freshestSequence: 72,
+      freshestCreatedAt: "2026-03-06T06:12:00.000Z",
+      freshestKind: "teaching"
+    });
+    assert.deepEqual(candidateEventObservability.teacherFreshness, {
+      freshestEventId: "session-observability-candidate:feedback:72",
+      freshestSequence: 72,
+      freshestCreatedAt: "2026-03-06T06:12:00.000Z",
+      freshestKind: "teaching",
+      sourceStream: "openclaw/runtime/observability-candidate",
+      humanLabelCount: 2,
+      sources: ["openclaw/runtime/observability-candidate"]
+    });
+
     const stagedInspection = inspectActivationState(activationRoot, "2026-03-06T06:26:00.000Z");
     assert.equal(stagedInspection.active?.activationReady, true);
     assert.equal(stagedInspection.candidate?.activationReady, true);
@@ -168,6 +200,21 @@ function main() {
     assert.deepEqual(stagedInspection.candidate?.findings ?? [], []);
     assert.equal(stagedInspection.promotion.allowed, true);
     assert.deepEqual(stagedInspection.promotion.findings, []);
+
+    const stagedObservability = describeActivationObservability(activationRoot, "active", {
+      updatedAt: "2026-03-06T06:26:00.000Z"
+    });
+    assert.equal(stagedObservability.learnedRouteFn.required, false);
+    assert.equal(stagedObservability.learnedRouteFn.available, false);
+    assert.equal(stagedObservability.promotionFreshness.activeBehindPromotionReadyCandidate, true);
+    assert.deepEqual(stagedObservability.promotionFreshness.candidateAheadBy, {
+      builtAt: true,
+      eventRangeEnd: true,
+      eventRangeCount: false,
+      workspaceSnapshot: true,
+      workspaceRevision: true,
+      eventExportDigest: true
+    });
 
     logStep("Promoting the fresher candidate and proving freshness.");
 
@@ -178,6 +225,27 @@ function main() {
     assert.equal(promotedInspection.previous?.packId, activePack.manifest.packId);
     assert.equal(promotedInspection.rollback.allowed, true);
     assert.deepEqual(promotedInspection.rollback.findings, []);
+
+    const promotedObservability = describeActivationObservability(activationRoot, "active", {
+      requireActivationReady: true,
+      updatedAt: "2026-03-06T06:31:00.000Z"
+    });
+    assert.equal(promotedObservability.learnedRouteFn.packId, candidatePack.manifest.packId);
+    assert.equal(promotedObservability.learnedRouteFn.required, true);
+    assert.equal(promotedObservability.learnedRouteFn.available, true);
+    assert.equal(promotedObservability.learnedRouteFn.routerIdentity, candidatePack.router?.routerIdentity ?? null);
+    assert.equal(promotedObservability.learnedRouteFn.routeFnVersion, "learned_route_fn_v1");
+    assert.equal(promotedObservability.learnedRouteFn.routerChecksum, candidatePack.manifest.payloadChecksums.router);
+    assert.equal(promotedObservability.learnedRouteFn.routerTrainedAt, candidatePack.router?.trainedAt ?? null);
+    assert.equal(promotedObservability.graphDynamics.packId, candidatePack.manifest.packId);
+    assert.equal(promotedObservability.graphDynamics.graphChecksum, candidatePack.manifest.payloadChecksums.graph);
+    assert.equal(promotedObservability.graphDynamics.builtAt, candidatePack.manifest.provenance.builtAt);
+    assert.deepEqual(promotedObservability.graphDynamics.structuralOps, {
+      split: 1,
+      merge: 0,
+      prune: 0,
+      connect: 2
+    });
 
     const activeTarget = describeActivationTarget(activationRoot, "active", { requireActivationReady: true });
     assert.notEqual(activeTarget, null);
@@ -255,6 +323,20 @@ function main() {
     );
     assert.match(compile.response.diagnostics.notes.join(";"), /selection_mode=priority_fallback/);
 
+    const fallbackUsage = describeCompileFallbackUsage(compile.response);
+    assert.deepEqual(fallbackUsage, {
+      packId: candidatePack.manifest.packId,
+      modeRequested: "heuristic",
+      modeEffective: "learned",
+      usedLearnedRouteFn: true,
+      routerIdentity: candidatePack.router?.routerIdentity ?? null,
+      selectionDigest: compile.response.diagnostics.selectionDigest,
+      selectionMode: "priority_fallback",
+      selectionTiers: "priority_fallback_only",
+      priorityFallbackUsed: true,
+      notes: ["selection_mode=priority_fallback", "selection_tiers=priority_fallback_only"]
+    });
+
     logStep("Proving the same diagnostics and hard failure through the OpenClaw serve path.");
 
     const served = compileRuntimeContext({
@@ -291,53 +373,38 @@ function main() {
     assert.match(hardFailure.error, /Learned-routing hotpath hard requirement violated/);
     assert.match(hardFailure.error, /router payload not found/);
 
+    const report = {
+      supervisionFreshnessBySource: candidateEventObservability.supervisionFreshnessBySource,
+      teacherFreshness: candidateEventObservability.teacherFreshness,
+      learnedRouteFnFreshness: promotedObservability.learnedRouteFn,
+      graphDynamicsFreshness: promotedObservability.graphDynamics,
+      promotionFreshness: stagedObservability.promotionFreshness,
+      fallbackUsage,
+      servePath: {
+        selectionDigest: served.compileResponse.diagnostics.selectionDigest,
+        notes: served.compileResponse.diagnostics.notes,
+        hardFailure: {
+          fallbackToStaticContext: hardFailure.fallbackToStaticContext,
+          hardRequirementViolated: hardFailure.hardRequirementViolated,
+          error: hardFailure.error
+        }
+      }
+    };
+
     logStep("Observability smoke passed.");
-    console.log(
-      JSON.stringify(
-        {
-          health: {
-            activeReady: stagedInspection.active?.activationReady ?? false,
-            candidateReady: stagedInspection.candidate?.activationReady ?? false
-          },
-          promotion: {
-            canPromote: stagedInspection.promotion.allowed,
-            canRollback: promotedInspection.rollback.allowed,
-            promotedPackId: promotedInspection.active?.packId ?? null,
-            previousPackId: promotedInspection.previous?.packId ?? null
-          },
-          freshness: activeTarget,
-          fallback: {
-            slot: compile.slot,
-            packId: compile.target.packId,
-            workspaceSnapshot: compile.target.workspaceSnapshot,
-            modeRequested: compile.response.diagnostics.modeRequested,
-            modeEffective: compile.response.diagnostics.modeEffective,
-            selectionDigest: compile.response.diagnostics.selectionDigest,
-            notes: compile.response.diagnostics.notes
-          },
-          servePath: {
-            selectionDigest: served.compileResponse.diagnostics.selectionDigest,
-            notes: served.compileResponse.diagnostics.notes,
-            hardFailure: {
-              fallbackToStaticContext: hardFailure.fallbackToStaticContext,
-              hardRequirementViolated: hardFailure.hardRequirementViolated,
-              error: hardFailure.error
-            }
-          }
-        },
-        null,
-        2
-      )
-    );
+    console.log(JSON.stringify(report, null, 2));
+    return report;
   } finally {
     rmSync(rootDir, { recursive: true, force: true });
   }
 }
 
-try {
-  main();
-} catch (error) {
-  console.error("[observability:smoke] failed");
-  console.error(error instanceof Error ? error.stack ?? error.message : String(error));
-  process.exitCode = 1;
+if (process.argv[1] !== undefined && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  try {
+    runObservabilityScenario();
+  } catch (error) {
+    console.error("[observability:smoke] failed");
+    console.error(error instanceof Error ? error.stack ?? error.message : String(error));
+    process.exitCode = 1;
+  }
 }

@@ -1,6 +1,7 @@
 export {
   ACTIVATION_LAYOUT,
   activatePack,
+  describeActivationObservability,
   describeActivationTarget,
   describePackCompileTarget,
   inspectActivationState,
@@ -10,8 +11,14 @@ export {
   rollbackActivePack,
   stageCandidatePack,
   validatePackActivationReadiness,
+  type ActivationObservabilityOptions,
+  type ActivationObservabilityReport,
   type ActivationInspection,
   type ActivationOperationPreview,
+  type GraphDynamicsFreshnessReport,
+  type LearnedRouteFnFreshnessReport,
+  type PromotionFreshnessDeltaReport,
+  type PromotionFreshnessReport,
   type ActivationSlotInspection,
   type ActivationStateDescriptor
 } from "@openclawbrain/pack-format";

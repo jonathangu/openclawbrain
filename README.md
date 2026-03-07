@@ -49,7 +49,8 @@ Add `@openclawbrain/openclaw` when you want the typed OpenClaw bridge for promot
 The workspace root carries two deterministic proof lanes:
 
 - `pnpm lifecycle:smoke` proves the learning lifecycle from normalized events to promoted-pack compilation
-- `pnpm observability:smoke` proves activation health, promotion safety, freshness, learned `route_fn` evidence, and explicit fallback diagnostics
+- `pnpm observability:smoke` proves activation health, promotion freshness, learned `route_fn` evidence, graph-dynamics freshness, supervision freshness, teacher freshness, and explicit fallback usage
+- `pnpm observability:report` prints the repo-local JSON proof surface for those observability claims
 
 - OpenClaw owns runtime orchestration, prompt assembly, diagnostics, sessions, and guarded fail-open behavior.
 - OpenClawBrain owns contracts, normalized event flows, workspace and provenance metadata, immutable pack artifacts, activation helpers, native structural compaction, deterministic compilation, and learner-side candidate-pack assembly.
@@ -112,10 +113,13 @@ pnpm install --frozen-lockfile
 pnpm check
 pnpm lifecycle:smoke
 pnpm observability:smoke
+pnpm observability:report
 pnpm release:pack
 ```
 
 `pnpm check` builds the workspace, runs package tests, and executes the lifecycle plus observability smoke lanes.
+
+`pnpm observability:report` proves only local artifact/export state inside this repo's temporary fixture lane; it does not claim live production supervision latency or external telemetry coverage.
 
 `pnpm release:pack` creates tarballs in `.release/` for every published `@openclawbrain/*` package.
 

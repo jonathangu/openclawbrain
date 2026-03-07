@@ -81,8 +81,171 @@ export interface ActivationInspection {
   rollback: ActivationOperationPreview;
 }
 
+export interface LearnedRouteFnFreshnessReport {
+  packId: string | null;
+  required: boolean;
+  available: boolean;
+  routerAssetKind: ArtifactManifestV1["runtimeAssets"]["router"]["kind"] | null;
+  routerIdentity: string | null;
+  routeFnVersion: RouterArtifactV1["strategy"] | null;
+  routerChecksum: string | null;
+  routerTrainedAt: string | null;
+  packBuiltAt: string | null;
+  workspaceSnapshot: string | null;
+  eventExportDigest: string | null;
+}
+
+export interface GraphDynamicsFreshnessReport {
+  packId: string | null;
+  graphChecksum: string | null;
+  builtAt: string | null;
+  workspaceSnapshot: string | null;
+  eventRange: RuntimeCompileTargetV1["eventRange"] | null;
+  eventExportDigest: string | null;
+  bootstrapping: ArtifactManifestV1["graphDynamics"]["bootstrapping"] | null;
+  hebbian: ArtifactManifestV1["graphDynamics"]["hebbian"] | null;
+  decay: ArtifactManifestV1["graphDynamics"]["decay"] | null;
+  structuralOps: ArtifactManifestV1["graphDynamics"]["structuralOps"] | null;
+}
+
+export interface PromotionFreshnessDeltaReport {
+  builtAt: boolean;
+  eventRangeEnd: boolean;
+  eventRangeCount: boolean;
+  workspaceSnapshot: boolean;
+  workspaceRevision: boolean;
+  eventExportDigest: boolean;
+}
+
+export interface PromotionFreshnessReport {
+  activePackId: string | null;
+  candidatePackId: string | null;
+  previousPackId: string | null;
+  activeUpdatedAt: string | null;
+  candidateUpdatedAt: string | null;
+  previousUpdatedAt: string | null;
+  promotionAllowed: boolean;
+  promotionFindings: string[];
+  rollbackAllowed: boolean;
+  rollbackFindings: string[];
+  activeBehindPromotionReadyCandidate: boolean;
+  candidateAheadBy: PromotionFreshnessDeltaReport | null;
+}
+
+export interface ActivationObservabilityReport {
+  slot: ActivationPointerSlot;
+  target: RuntimeCompileTargetV1 | null;
+  learnedRouteFn: LearnedRouteFnFreshnessReport;
+  graphDynamics: GraphDynamicsFreshnessReport;
+  promotionFreshness: PromotionFreshnessReport;
+}
+
+export interface ActivationObservabilityOptions {
+  requireActivationReady?: boolean;
+  updatedAt?: string;
+}
+
 function compareIsoDates(left: string, right: string): number {
   return Date.parse(left) - Date.parse(right);
+}
+
+function isStrictlyFresherTarget(candidate: RuntimeCompileTargetV1, active: RuntimeCompileTargetV1): boolean {
+  return (
+    compareIsoDates(candidate.builtAt, active.builtAt) > 0 ||
+    candidate.eventRange.end > active.eventRange.end ||
+    candidate.eventRange.count > active.eventRange.count ||
+    candidate.workspaceSnapshot !== active.workspaceSnapshot ||
+    (candidate.workspaceRevision ?? null) !== (active.workspaceRevision ?? null) ||
+    (candidate.eventExportDigest ?? null) !== (active.eventExportDigest ?? null)
+  );
+}
+
+function promotionFreshnessDelta(
+  active: RuntimeCompileTargetV1,
+  candidate: RuntimeCompileTargetV1
+): PromotionFreshnessDeltaReport {
+  return {
+    builtAt: compareIsoDates(candidate.builtAt, active.builtAt) > 0,
+    eventRangeEnd: candidate.eventRange.end > active.eventRange.end,
+    eventRangeCount: candidate.eventRange.count > active.eventRange.count,
+    workspaceSnapshot: candidate.workspaceSnapshot !== active.workspaceSnapshot,
+    workspaceRevision: (candidate.workspaceRevision ?? null) !== (active.workspaceRevision ?? null),
+    eventExportDigest: (candidate.eventExportDigest ?? null) !== (active.eventExportDigest ?? null)
+  };
+}
+
+function emptyLearnedRouteFnFreshness(): LearnedRouteFnFreshnessReport {
+  return {
+    packId: null,
+    required: false,
+    available: false,
+    routerAssetKind: null,
+    routerIdentity: null,
+    routeFnVersion: null,
+    routerChecksum: null,
+    routerTrainedAt: null,
+    packBuiltAt: null,
+    workspaceSnapshot: null,
+    eventExportDigest: null
+  };
+}
+
+function emptyGraphDynamicsFreshness(): GraphDynamicsFreshnessReport {
+  return {
+    packId: null,
+    graphChecksum: null,
+    builtAt: null,
+    workspaceSnapshot: null,
+    eventRange: null,
+    eventExportDigest: null,
+    bootstrapping: null,
+    hebbian: null,
+    decay: null,
+    structuralOps: null
+  };
+}
+
+function describeLearnedRouteFnFreshness(pack: PackDescriptor | null): LearnedRouteFnFreshnessReport {
+  if (pack === null) {
+    return emptyLearnedRouteFnFreshness();
+  }
+
+  return {
+    packId: pack.manifest.packId,
+    required: pack.manifest.routePolicy === "requires_learned_routing",
+    available: pack.router !== null,
+    routerAssetKind: pack.manifest.runtimeAssets.router.kind,
+    routerIdentity: pack.manifest.runtimeAssets.router.identity,
+    routeFnVersion: pack.router?.strategy ?? null,
+    routerChecksum: pack.manifest.payloadChecksums.router,
+    routerTrainedAt: pack.router?.trainedAt ?? null,
+    packBuiltAt: pack.manifest.provenance.builtAt,
+    workspaceSnapshot: pack.manifest.provenance.workspaceSnapshot,
+    eventExportDigest: pack.manifest.provenance.eventExports?.exportDigest ?? null
+  };
+}
+
+function describeGraphDynamicsFreshness(pack: PackDescriptor | null): GraphDynamicsFreshnessReport {
+  if (pack === null) {
+    return emptyGraphDynamicsFreshness();
+  }
+
+  return {
+    packId: pack.manifest.packId,
+    graphChecksum: pack.manifest.payloadChecksums.graph,
+    builtAt: pack.manifest.provenance.builtAt,
+    workspaceSnapshot: pack.manifest.provenance.workspaceSnapshot,
+    eventRange: {
+      start: pack.manifest.provenance.eventRange.start,
+      end: pack.manifest.provenance.eventRange.end,
+      count: pack.manifest.provenance.eventRange.count
+    },
+    eventExportDigest: pack.manifest.provenance.eventExports?.exportDigest ?? null,
+    bootstrapping: { ...pack.manifest.graphDynamics.bootstrapping },
+    hebbian: { ...pack.manifest.graphDynamics.hebbian },
+    decay: { ...pack.manifest.graphDynamics.decay },
+    structuralOps: { ...pack.manifest.graphDynamics.structuralOps }
+  };
 }
 
 function sha256File(filePath: string): string {
@@ -262,6 +425,23 @@ function buildCompileTargetFromPack(pack: PackDescriptor): RuntimeCompileTargetV
     },
     eventExportDigest: pack.manifest.provenance.eventExports?.exportDigest ?? null,
     builtAt: pack.manifest.provenance.builtAt
+  };
+}
+
+function buildCompileTargetFromInspection(inspection: ActivationSlotInspection): RuntimeCompileTargetV1 {
+  return {
+    packId: inspection.packId,
+    routePolicy: inspection.routePolicy,
+    routerIdentity: inspection.routerIdentity,
+    workspaceSnapshot: inspection.workspaceSnapshot,
+    workspaceRevision: inspection.workspaceRevision,
+    eventRange: {
+      start: inspection.eventRange.start,
+      end: inspection.eventRange.end,
+      count: inspection.eventRange.count
+    },
+    eventExportDigest: inspection.eventExportDigest,
+    builtAt: inspection.builtAt
   };
 }
 
@@ -702,6 +882,56 @@ export function inspectActivationState(rootDir: string, updatedAt = "2026-03-06T
     previous: inspectPointerRecord("previous", state.pointers.previous),
     promotion: previewPromotionPointers(state.pointers, updatedAt),
     rollback: previewRollbackPointers(state.pointers, updatedAt)
+  };
+}
+
+export function describeActivationObservability(
+  rootDir: string,
+  slot: ActivationPointerSlot = "active",
+  options: ActivationObservabilityOptions = {}
+): ActivationObservabilityReport {
+  const inspection = inspectActivationState(rootDir, options.updatedAt);
+  const selectedInspection =
+    slot === "active" ? inspection.active : slot === "candidate" ? inspection.candidate : inspection.previous;
+  const target = selectedInspection === null ? null : buildCompileTargetFromInspection(selectedInspection);
+  let pack: PackDescriptor | null = null;
+
+  try {
+    pack = loadPackFromActivation(rootDir, slot, {
+      requireActivationReady: options.requireActivationReady === true
+    });
+  } catch {
+    pack = null;
+  }
+
+  const activeTarget = inspection.active === null ? null : buildCompileTargetFromInspection(inspection.active);
+  const candidateTarget = inspection.candidate === null ? null : buildCompileTargetFromInspection(inspection.candidate);
+  const candidateAheadBy =
+    activeTarget !== null && candidateTarget !== null ? promotionFreshnessDelta(activeTarget, candidateTarget) : null;
+
+  return {
+    slot,
+    target,
+    learnedRouteFn: describeLearnedRouteFnFreshness(pack),
+    graphDynamics: describeGraphDynamicsFreshness(pack),
+    promotionFreshness: {
+      activePackId: inspection.active?.packId ?? null,
+      candidatePackId: inspection.candidate?.packId ?? null,
+      previousPackId: inspection.previous?.packId ?? null,
+      activeUpdatedAt: inspection.pointers.active?.updatedAt ?? null,
+      candidateUpdatedAt: inspection.pointers.candidate?.updatedAt ?? null,
+      previousUpdatedAt: inspection.pointers.previous?.updatedAt ?? null,
+      promotionAllowed: inspection.promotion.allowed,
+      promotionFindings: [...inspection.promotion.findings],
+      rollbackAllowed: inspection.rollback.allowed,
+      rollbackFindings: [...inspection.rollback.findings],
+      activeBehindPromotionReadyCandidate:
+        activeTarget !== null &&
+        candidateTarget !== null &&
+        inspection.promotion.allowed &&
+        isStrictlyFresherTarget(candidateTarget, activeTarget),
+      candidateAheadBy
+    }
   };
 }
 
