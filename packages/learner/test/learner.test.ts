@@ -14,12 +14,17 @@ import {
 import {
   advanceAlwaysOnLearningRuntime,
   buildCandidatePack,
+  buildCandidatePackBundleFromNormalizedEventExportBridge,
   buildCandidatePackFromNormalizedEventExport,
+  buildCandidatePackFromNormalizedEventExportSlice,
   createAlwaysOnLearningRuntimeState,
   materializeAlwaysOnLearningCandidatePack,
   materializeCandidatePack,
+  materializeCandidatePackBundleFromNormalizedEventExportBridge,
+  materializeCandidatePackFromNormalizedEventExportSlice,
   materializeCandidatePackFromNormalizedEventExport
 } from "@openclawbrain/learner";
+import { buildNormalizedEventExportBridge } from "@openclawbrain/event-export";
 
 test("learner emits deterministic immutable pack manifests for always-on learning", (t) => {
   const input = {
@@ -298,4 +303,90 @@ test("always-on learner materialization hook emits a real candidate pack from th
     result.materialization?.candidate.summary.eventExportDigest ?? null
   );
   assert.equal(descriptor.manifest.routePolicy, "requires_learned_routing");
+});
+
+test("learner builds deterministic slice packs and bridge bundle materializations", (t) => {
+  const workspace = {
+    workspaceId: "workspace-bridge",
+    snapshotId: "workspace-bridge@snapshot-1",
+    capturedAt: "2026-03-07T08:20:00.000Z",
+    rootDir: "/workspace/bridge",
+    revision: "workspace-bridge-rev"
+  } as const;
+  const bridge = buildNormalizedEventExportBridge({
+    interactionEvents: FIXTURE_INTERACTION_EVENTS,
+    feedbackEvents: FIXTURE_FEEDBACK_EVENTS,
+    liveSliceSize: 2,
+    backfillSliceSize: 2
+  });
+  const firstSlice = bridge.slices[0] as NonNullable<(typeof bridge.slices)[number]>;
+  const sliceRootDir = path.join(tmpdir(), `openclawbrain-ts-bridge-slice-${Date.now()}`);
+  const bundleRootDir = path.join(tmpdir(), `openclawbrain-ts-bridge-bundle-${Date.now()}`);
+
+  t.after(() => rmSync(sliceRootDir, { recursive: true, force: true }));
+  t.after(() => rmSync(bundleRootDir, { recursive: true, force: true }));
+
+  const sliceCandidate = buildCandidatePackFromNormalizedEventExportSlice({
+    packLabel: "bridge-slice",
+    workspace,
+    normalizedEventExportSlice: firstSlice,
+    learnedRouting: true,
+    structuralOps: {
+      split: 1
+    }
+  });
+  const sliceDescriptor = materializeCandidatePackFromNormalizedEventExportSlice(sliceRootDir, {
+    packLabel: "bridge-slice",
+    workspace,
+    normalizedEventExportSlice: firstSlice,
+    learnedRouting: true,
+    structuralOps: {
+      split: 1
+    }
+  });
+  const bundle = buildCandidatePackBundleFromNormalizedEventExportBridge({
+    packLabel: "bridge-bundle",
+    workspace,
+    normalizedEventExportBridge: bridge,
+    learnedRouting: false,
+    structuralOps: {
+      connect: 1
+    }
+  });
+  const materializedBundle = materializeCandidatePackBundleFromNormalizedEventExportBridge(bundleRootDir, {
+    packLabel: "bridge-bundle",
+    workspace,
+    normalizedEventExportBridge: bridge,
+    learnedRouting: false,
+    structuralOps: {
+      connect: 1
+    }
+  });
+
+  assert.equal(sliceCandidate.summary.eventExportDigest, firstSlice.export.provenance.exportDigest);
+  assert.equal(sliceDescriptor.manifest.provenance.eventExports?.exportDigest, firstSlice.export.provenance.exportDigest);
+  assert.equal(bundle.entries.length, bridge.slices.length);
+  assert.equal(bundle.entries[0]?.packLabel, "bridge-bundle-01-live-103-104");
+  assert.equal(bundle.entries[1]?.packLabel, "bridge-bundle-02-backfill-101-102");
+  assert.deepEqual(
+    bundle.entries.map((entry) => entry.normalizedEventExport.provenance.exportDigest),
+    bridge.slices.map((slice) => slice.export.provenance.exportDigest)
+  );
+  assert.equal(
+    bundle.bundleDigest,
+    buildCandidatePackBundleFromNormalizedEventExportBridge({
+      packLabel: "bridge-bundle",
+      workspace,
+      normalizedEventExportBridge: bridge,
+      learnedRouting: false,
+      structuralOps: {
+        connect: 1
+      }
+    }).bundleDigest
+  );
+  assert.equal(materializedBundle.entries.length, bridge.slices.length);
+  assert.equal(materializedBundle.entries[0]?.descriptor.manifest.provenance.eventExports?.exportDigest, bridge.slices[0]?.export.provenance.exportDigest);
+  assert.equal(materializedBundle.entries[1]?.descriptor.manifest.provenance.eventExports?.exportDigest, bridge.slices[1]?.export.provenance.exportDigest);
+  assert.equal(materializedBundle.entries[0]?.descriptor.manifest.routePolicy, "heuristic_allowed");
+  assert.match(materializedBundle.entries[0]?.rootDir ?? "", /01-live-103-104-/);
 });

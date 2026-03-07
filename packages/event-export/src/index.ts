@@ -25,6 +25,7 @@ export {
   DEFAULT_EVENT_EXPORT_BACKFILL_SLICE_SIZE,
   DEFAULT_EVENT_EXPORT_LIVE_SLICE_SIZE,
   buildEventExportWatermark,
+  buildNormalizedEventExportBundle,
   buildNormalizedEventDedupId,
   buildNormalizedEventExportBridge,
   createEventExportCursor,
@@ -37,6 +38,8 @@ export {
   type EventExportLaneV1,
   type EventExportSliceProvenanceV1,
   type EventExportWatermarkV1,
+  type NormalizedEventExportBundleEntryV1,
+  type NormalizedEventExportBundleV1,
   type NormalizedEventExportBridgeV1,
   type NormalizedEventExportSliceV1
 } from "./bridge.js";

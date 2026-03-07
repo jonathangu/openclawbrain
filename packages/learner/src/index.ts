@@ -26,6 +26,8 @@ import {
   createEventExportCursor,
   createExplicitEventRange,
   validateNormalizedEventExport,
+  validateNormalizedEventExportBridge,
+  validateNormalizedEventExportSlice,
   type EventExportCursorV1,
   type EventExportLaneV1,
   type NormalizedEventExportBridgeV1,
@@ -64,6 +66,23 @@ export interface CandidatePackFromNormalizedEventExportInput {
   structuralOps?: Partial<ArtifactManifestV1["graphDynamics"]["structuralOps"]>;
 }
 
+interface CandidatePackBridgeInputBase {
+  packLabel: string;
+  workspace: WorkspaceMetadataInput;
+  learnedRouting: boolean;
+  builtAt?: string;
+  offlineArtifacts?: string[];
+  structuralOps?: Partial<ArtifactManifestV1["graphDynamics"]["structuralOps"]>;
+}
+
+export interface CandidatePackFromNormalizedEventExportSliceInput extends CandidatePackBridgeInputBase {
+  normalizedEventExportSlice: NormalizedEventExportSliceV1;
+}
+
+export interface CandidatePackBundleFromNormalizedEventExportBridgeInput extends CandidatePackBridgeInputBase {
+  normalizedEventExportBridge: NormalizedEventExportBridgeV1;
+}
+
 export interface CandidatePackPayloads {
   graph: PackGraphPayloadV1;
   vectors: PackVectorsPayloadV1;
@@ -83,6 +102,41 @@ export interface CandidatePackBuildResult {
     learningSurface: ArtifactManifestV1["provenance"]["learningSurface"];
     bootstrapping: ArtifactManifestV1["graphDynamics"]["bootstrapping"];
   };
+}
+
+export interface CandidatePackBundleEntry {
+  lane: EventExportLaneV1;
+  sliceId: string;
+  packLabel: string;
+  normalizedEventExport: NormalizedEventExportV1;
+  nextCursor: EventExportCursorV1;
+  watermark: NormalizedEventExportSliceV1["watermark"];
+  build: CandidatePackBuildResult;
+}
+
+export interface CandidatePackBundleBuildResult {
+  runtimeOwner: "openclaw";
+  bridgeDigest: string;
+  bundleDigest: string;
+  cursor: EventExportCursorV1;
+  dedupedInputCount: number;
+  duplicateIdentityCount: number;
+  entries: CandidatePackBundleEntry[];
+}
+
+export interface MaterializedCandidatePackBundleEntry extends CandidatePackBundleEntry {
+  rootDir: string;
+  descriptor: PackDescriptor;
+}
+
+export interface CandidatePackBundleMaterializationResult {
+  runtimeOwner: "openclaw";
+  bridgeDigest: string;
+  bundleDigest: string;
+  cursor: EventExportCursorV1;
+  dedupedInputCount: number;
+  duplicateIdentityCount: number;
+  entries: MaterializedCandidatePackBundleEntry[];
 }
 
 export const DEFAULT_ALWAYS_ON_LEARNING_LIVE_SLICES_PER_CYCLE = 1;
@@ -156,6 +210,54 @@ function stableHash(value: string): string {
     hash = (hash * 31 + char.charCodeAt(0)) >>> 0;
   }
   return hash.toString(16).padStart(8, "0");
+}
+
+function cloneCursor(value: EventExportCursorV1): EventExportCursorV1 {
+  return {
+    runtimeOwner: value.runtimeOwner,
+    live: {
+      after: value.live.after === null ? null : { ...value.live.after },
+      exhausted: value.live.exhausted
+    },
+    backfill: {
+      before: value.backfill.before === null ? null : { ...value.backfill.before },
+      exhausted: value.backfill.exhausted
+    }
+  };
+}
+
+function cloneSliceWatermark(value: NormalizedEventExportSliceV1["watermark"]): NormalizedEventExportSliceV1["watermark"] {
+  return {
+    first: value.first === null ? null : { ...value.first },
+    last: value.last === null ? null : { ...value.last }
+  };
+}
+
+function materializeCandidatePackResult(rootDir: string, result: CandidatePackBuildResult): PackDescriptor {
+  rmSync(rootDir, { recursive: true, force: true });
+  mkdirSync(rootDir, { recursive: true });
+
+  writePackFile(rootDir, PACK_LAYOUT.graph, result.payloads.graph);
+  writePackFile(rootDir, PACK_LAYOUT.vectors, result.payloads.vectors);
+  if (result.payloads.router !== null) {
+    writePackFile(rootDir, PACK_LAYOUT.router, result.payloads.router);
+  }
+  writePackFile(rootDir, PACK_LAYOUT.manifest, result.manifest);
+
+  return loadPack(path.resolve(rootDir));
+}
+
+function buildBridgePackLabel(basePackLabel: string, slice: NormalizedEventExportSliceV1, index: number): string {
+  return `${basePackLabel}-${String(index + 1).padStart(2, "0")}-${slice.lane}-${slice.export.range.start}-${slice.export.range.end}`;
+}
+
+function buildBundleEntryRootDir(rootDir: string, entry: CandidatePackBundleEntry, index: number): string {
+  const digestSuffix = entry.sliceId.replace(/^sha256-/u, "").slice(0, 12);
+
+  return path.join(
+    rootDir,
+    `${String(index + 1).padStart(2, "0")}-${entry.lane}-${entry.normalizedEventExport.range.start}-${entry.normalizedEventExport.range.end}-${digestSuffix}`
+  );
 }
 
 function assertPositiveInteger(label: string, value: number): void {
@@ -357,6 +459,81 @@ export function materializeAlwaysOnLearningCandidatePack(
   job: AlwaysOnLearningMaterializationJobV1
 ): PackDescriptor {
   return materializeCandidatePackFromNormalizedEventExport(rootDir, job.candidateInput);
+}
+
+export function buildCandidatePackFromNormalizedEventExportSlice(
+  input: CandidatePackFromNormalizedEventExportSliceInput
+): CandidatePackBuildResult {
+  const validationErrors = validateNormalizedEventExportSlice(input.normalizedEventExportSlice);
+  if (validationErrors.length > 0) {
+    throw new Error(`normalized event export slice is invalid: ${validationErrors.join("; ")}`);
+  }
+
+  return buildCandidatePackFromNormalizedEventExport({
+    packLabel: input.packLabel,
+    workspace: input.workspace,
+    normalizedEventExport: input.normalizedEventExportSlice.export,
+    learnedRouting: input.learnedRouting,
+    ...(input.builtAt !== undefined ? { builtAt: input.builtAt } : {}),
+    ...(input.offlineArtifacts !== undefined ? { offlineArtifacts: input.offlineArtifacts } : {}),
+    ...(input.structuralOps !== undefined ? { structuralOps: input.structuralOps } : {})
+  });
+}
+
+export function buildCandidatePackBundleFromNormalizedEventExportBridge(
+  input: CandidatePackBundleFromNormalizedEventExportBridgeInput
+): CandidatePackBundleBuildResult {
+  const validationErrors = validateNormalizedEventExportBridge(input.normalizedEventExportBridge);
+  if (validationErrors.length > 0) {
+    throw new Error(`normalized event export bridge is invalid: ${validationErrors.join("; ")}`);
+  }
+
+  const entries = input.normalizedEventExportBridge.slices.map((slice, index): CandidatePackBundleEntry => {
+    const packLabel = buildBridgePackLabel(input.packLabel, slice, index);
+
+    return {
+      lane: slice.lane,
+      sliceId: slice.sliceId,
+      packLabel,
+      normalizedEventExport: slice.export,
+      nextCursor: cloneCursor(slice.nextCursor),
+      watermark: cloneSliceWatermark(slice.watermark),
+      build: buildCandidatePackFromNormalizedEventExportSlice({
+        packLabel,
+        workspace: input.workspace,
+        normalizedEventExportSlice: slice,
+        learnedRouting: input.learnedRouting,
+        ...(input.builtAt !== undefined ? { builtAt: input.builtAt } : {}),
+        ...(input.offlineArtifacts !== undefined ? { offlineArtifacts: input.offlineArtifacts } : {}),
+        ...(input.structuralOps !== undefined ? { structuralOps: input.structuralOps } : {})
+      })
+    };
+  });
+
+  const bundleDigest = checksumJsonPayload({
+    runtimeOwner: input.normalizedEventExportBridge.runtimeOwner,
+    bridgeDigest: input.normalizedEventExportBridge.bridgeDigest,
+    cursor: input.normalizedEventExportBridge.cursor,
+    entries: entries.map((entry) => ({
+      lane: entry.lane,
+      sliceId: entry.sliceId,
+      packLabel: entry.packLabel,
+      packId: entry.build.summary.packId,
+      nextCursor: entry.nextCursor
+    })),
+    dedupedInputCount: input.normalizedEventExportBridge.dedupedInputCount,
+    duplicateIdentityCount: input.normalizedEventExportBridge.duplicateIdentityCount
+  });
+
+  return {
+    runtimeOwner: input.normalizedEventExportBridge.runtimeOwner,
+    bridgeDigest: input.normalizedEventExportBridge.bridgeDigest,
+    bundleDigest,
+    cursor: cloneCursor(input.normalizedEventExportBridge.cursor),
+    dedupedInputCount: input.normalizedEventExportBridge.dedupedInputCount,
+    duplicateIdentityCount: input.normalizedEventExportBridge.duplicateIdentityCount,
+    entries
+  };
 }
 
 function structuralOpsSummary(input: CandidatePackBuildInput): Required<ArtifactManifestV1["graphDynamics"]["structuralOps"]> {
@@ -847,17 +1024,7 @@ export function buildCandidatePackFromNormalizedEventExport(
 
 export function materializeCandidatePack(rootDir: string, input: CandidatePackBuildInput): PackDescriptor {
   const result = buildCandidatePack(input);
-  rmSync(rootDir, { recursive: true, force: true });
-  mkdirSync(rootDir, { recursive: true });
-
-  writePackFile(rootDir, PACK_LAYOUT.graph, result.payloads.graph);
-  writePackFile(rootDir, PACK_LAYOUT.vectors, result.payloads.vectors);
-  if (result.payloads.router !== null) {
-    writePackFile(rootDir, PACK_LAYOUT.router, result.payloads.router);
-  }
-  writePackFile(rootDir, PACK_LAYOUT.manifest, result.manifest);
-
-  return loadPack(path.resolve(rootDir));
+  return materializeCandidatePackResult(rootDir, result);
 }
 
 export function materializeCandidatePackFromNormalizedEventExport(
@@ -865,15 +1032,43 @@ export function materializeCandidatePackFromNormalizedEventExport(
   input: CandidatePackFromNormalizedEventExportInput
 ): PackDescriptor {
   const result = buildCandidatePackFromNormalizedEventExport(input);
+  return materializeCandidatePackResult(rootDir, result);
+}
+
+export function materializeCandidatePackFromNormalizedEventExportSlice(
+  rootDir: string,
+  input: CandidatePackFromNormalizedEventExportSliceInput
+): PackDescriptor {
+  const result = buildCandidatePackFromNormalizedEventExportSlice(input);
+  return materializeCandidatePackResult(rootDir, result);
+}
+
+export function materializeCandidatePackBundleFromNormalizedEventExportBridge(
+  rootDir: string,
+  input: CandidatePackBundleFromNormalizedEventExportBridgeInput
+): CandidatePackBundleMaterializationResult {
+  const bundle = buildCandidatePackBundleFromNormalizedEventExportBridge(input);
+
   rmSync(rootDir, { recursive: true, force: true });
   mkdirSync(rootDir, { recursive: true });
 
-  writePackFile(rootDir, PACK_LAYOUT.graph, result.payloads.graph);
-  writePackFile(rootDir, PACK_LAYOUT.vectors, result.payloads.vectors);
-  if (result.payloads.router !== null) {
-    writePackFile(rootDir, PACK_LAYOUT.router, result.payloads.router);
-  }
-  writePackFile(rootDir, PACK_LAYOUT.manifest, result.manifest);
+  const entries = bundle.entries.map((entry, index): MaterializedCandidatePackBundleEntry => {
+    const entryRootDir = buildBundleEntryRootDir(rootDir, entry, index);
 
-  return loadPack(path.resolve(rootDir));
+    return {
+      ...entry,
+      rootDir: path.resolve(entryRootDir),
+      descriptor: materializeCandidatePackResult(entryRootDir, entry.build)
+    };
+  });
+
+  return {
+    runtimeOwner: bundle.runtimeOwner,
+    bridgeDigest: bundle.bridgeDigest,
+    bundleDigest: bundle.bundleDigest,
+    cursor: cloneCursor(bundle.cursor),
+    dedupedInputCount: bundle.dedupedInputCount,
+    duplicateIdentityCount: bundle.duplicateIdentityCount,
+    entries
+  };
 }

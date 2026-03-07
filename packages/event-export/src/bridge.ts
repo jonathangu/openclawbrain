@@ -75,6 +75,28 @@ export interface NormalizedEventExportBridgeV1 {
   bridgeDigest: string;
 }
 
+export interface NormalizedEventExportBundleEntryV1 {
+  lane: EventExportLaneV1;
+  sliceId: string;
+  export: NormalizedEventExportV1;
+  eventIdentities: string[];
+  watermark: {
+    first: EventExportWatermarkV1 | null;
+    last: EventExportWatermarkV1 | null;
+  };
+  nextCursor: EventExportCursorV1;
+}
+
+export interface NormalizedEventExportBundleV1 {
+  runtimeOwner: NormalizedEventSourceV1["runtimeOwner"];
+  bridgeDigest: string;
+  bundleDigest: string;
+  cursor: EventExportCursorV1;
+  dedupedInputCount: number;
+  duplicateIdentityCount: number;
+  entries: NormalizedEventExportBundleEntryV1[];
+}
+
 export interface BuildNormalizedEventExportBridgeInput {
   interactionEvents: readonly InteractionEventV1[];
   feedbackEvents: readonly FeedbackEventV1[];
@@ -443,6 +465,50 @@ export function buildNormalizedEventExportBridge(input: BuildNormalizedEventExpo
   return bridge;
 }
 
+export function buildNormalizedEventExportBundle(bridge: NormalizedEventExportBridgeV1): NormalizedEventExportBundleV1 {
+  const errors = validateNormalizedEventExportBridge(bridge);
+  if (errors.length > 0) {
+    throw new Error(`Invalid normalized event export bridge: ${errors.join("; ")}`);
+  }
+
+  const entries = bridge.slices.map<NormalizedEventExportBundleEntryV1>((slice) => ({
+    lane: slice.lane,
+    sliceId: slice.sliceId,
+    export: slice.export,
+    eventIdentities: [...slice.eventIdentities],
+    watermark: {
+      first: slice.watermark.first === null ? null : { ...slice.watermark.first },
+      last: slice.watermark.last === null ? null : { ...slice.watermark.last }
+    },
+    nextCursor: cloneCursor(slice.nextCursor)
+  }));
+
+  const bundleDigest = checksumJsonPayload({
+    runtimeOwner: bridge.runtimeOwner,
+    bridgeDigest: bridge.bridgeDigest,
+    cursor: bridge.cursor,
+    entries: entries.map((entry) => ({
+      lane: entry.lane,
+      sliceId: entry.sliceId,
+      exportDigest: entry.export.provenance.exportDigest,
+      eventIdentities: entry.eventIdentities,
+      nextCursor: entry.nextCursor
+    })),
+    dedupedInputCount: bridge.dedupedInputCount,
+    duplicateIdentityCount: bridge.duplicateIdentityCount
+  });
+
+  return {
+    runtimeOwner: bridge.runtimeOwner,
+    bridgeDigest: bridge.bridgeDigest,
+    bundleDigest,
+    cursor: cloneCursor(bridge.cursor),
+    dedupedInputCount: bridge.dedupedInputCount,
+    duplicateIdentityCount: bridge.duplicateIdentityCount,
+    entries
+  };
+}
+
 export function validateEventExportWatermark(value: EventExportWatermarkV1): string[] {
   const errors: string[] = [];
 
@@ -479,6 +545,9 @@ export function validateEventExportCursor(value: EventExportCursorV1): string[] 
   }
   if (value.backfill.before !== null) {
     errors.push(...validateEventExportWatermark(value.backfill.before));
+  }
+  if (value.live.after !== null && value.backfill.before !== null && compareEventKeys(value.backfill.before, value.live.after) > 0) {
+    errors.push("event export cursor backfill.before must not sort after live.after");
   }
 
   return errors;

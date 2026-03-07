@@ -17,3 +17,4 @@ pnpm add @openclawbrain/learner
 - structural graph learning metadata spanning Hebbian reinforcement, decay, and split/merge/prune/connect ops
 - embedded workspace snapshot provenance inside emitted manifests
 - on-disk materialization for coherent downstream activation and eval steps
+- bridge-slice and bridge-bundle pack materialization helpers for continuous learner refreshes

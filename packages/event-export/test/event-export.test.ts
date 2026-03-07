@@ -9,9 +9,12 @@ import {
 } from "@openclawbrain/contracts";
 import {
   FIXTURE_NORMALIZED_EVENT_EXPORT,
+  buildNormalizedEventExportBundle,
   buildNormalizedEventExport,
   buildNormalizedEventExportBridge,
   buildNormalizedEventDedupId,
+  createEventExportCursor,
+  validateEventExportCursor,
   validateNormalizedEventExport,
   validateNormalizedEventExportBridge
 } from "@openclawbrain/event-export";
@@ -262,4 +265,40 @@ test("event-export bridge advances live slices before passive history catch-up",
   assert.equal(next.cursor.live.exhausted, true);
   assert.equal(next.cursor.backfill.before?.sequence, 100);
   assert.equal(next.cursor.backfill.exhausted, true);
+});
+
+test("event-export bridge rejects inverted cursors and projects deterministic export bundles", () => {
+  const input = buildBridgeFixtureEvents();
+  const bridge = buildNormalizedEventExportBridge({
+    ...input,
+    liveSliceSize: 2,
+    backfillSliceSize: 2
+  });
+  const invalidCursor = createEventExportCursor();
+
+  invalidCursor.live.after = bridge.slices[0]?.watermark.first ?? null;
+  invalidCursor.backfill.before = bridge.slices[0]?.watermark.last ?? null;
+
+  assert.match(validateEventExportCursor(invalidCursor).join("\n"), /backfill\.before must not sort after live\.after/);
+  assert.throws(
+    () =>
+      buildNormalizedEventExportBridge({
+        ...input,
+        cursor: invalidCursor,
+        liveSliceSize: 2,
+        backfillSliceSize: 2
+      }),
+    /backfill\.before must not sort after live\.after/
+  );
+
+  const bundle = buildNormalizedEventExportBundle(bridge);
+
+  assert.equal(bundle.bridgeDigest, bridge.bridgeDigest);
+  assert.equal(bundle.cursor.live.after?.eventId, bridge.cursor.live.after?.eventId);
+  assert.equal(bundle.entries.length, bridge.slices.length);
+  assert.deepEqual(
+    bundle.entries.map((entry) => entry.export.provenance.exportDigest),
+    bridge.slices.map((slice) => slice.export.provenance.exportDigest)
+  );
+  assert.deepEqual(buildNormalizedEventExportBundle(bridge), bundle);
 });
