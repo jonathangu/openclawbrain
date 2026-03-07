@@ -15,6 +15,15 @@ importers:
         specifier: ^5.8.2
         version: 5.9.3
 
+  packages/activation:
+    dependencies:
+      '@openclawbrain/contracts':
+        specifier: workspace:^
+        version: link:../contracts
+      '@openclawbrain/pack-format':
+        specifier: workspace:^
+        version: link:../pack-format
+
   packages/compiler:
     dependencies:
       '@openclawbrain/contracts':
@@ -26,16 +35,52 @@ importers:
 
   packages/contracts: {}
 
+  packages/event-export:
+    dependencies:
+      '@openclawbrain/contracts':
+        specifier: workspace:^
+        version: link:../contracts
+
+  packages/events:
+    dependencies:
+      '@openclawbrain/contracts':
+        specifier: workspace:^
+        version: link:../contracts
+
   packages/learner:
     dependencies:
       '@openclawbrain/contracts':
         specifier: workspace:^
         version: link:../contracts
+      '@openclawbrain/event-export':
+        specifier: workspace:^
+        version: link:../event-export
       '@openclawbrain/pack-format':
         specifier: workspace:^
         version: link:../pack-format
+      '@openclawbrain/provenance':
+        specifier: workspace:^
+        version: link:../provenance
+      '@openclawbrain/workspace-metadata':
+        specifier: workspace:^
+        version: link:../workspace-metadata
 
   packages/pack-format:
+    dependencies:
+      '@openclawbrain/contracts':
+        specifier: workspace:^
+        version: link:../contracts
+
+  packages/provenance:
+    dependencies:
+      '@openclawbrain/contracts':
+        specifier: workspace:^
+        version: link:../contracts
+      '@openclawbrain/workspace-metadata':
+        specifier: workspace:^
+        version: link:../workspace-metadata
+
+  packages/workspace-metadata:
     dependencies:
       '@openclawbrain/contracts':
         specifier: workspace:^

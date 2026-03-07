@@ -1,13 +1,18 @@
-# Node / TypeScript workspace
-node_modules/
-.pnpm-store/
-.release/
-coverage/
-*.tsbuildinfo
-
-# Generated build output
-build/
+# Python
+__pycache__/
+**/__pycache__/
+*.py[cod]
+*$py.class
+*.egg-info/
 dist/
+build/
+*.egg
+.eggs/
+
+# Virtual environments
+.venv/
+venv/
+env/
 
 # IDE
 .vscode/
@@ -16,15 +21,56 @@ dist/
 *.swo
 *~
 
+# Node / TypeScript workspace
+node_modules/
+.pnpm-store/
+.npm/
+.release/
+coverage/
+*.tsbuildinfo
+pnpm-debug.log*
+
 # OS
 .DS_Store
 Thumbs.db
 
-# Local data and scratch
+# Testing
+.coverage
+htmlcov/
+.pytest_cache/
+.mypy_cache/
+
+# Data (user-specific)
 *.db
-*.events.db
-*.jsonl
 data/
+/*.json
+!/package.json
+!/tsconfig.base.json
+!/tsconfig.build.json
 experiments/
 scratch/
+!scratch/paper.tex
+
+# CrabPath data and benchmark artifacts
+state.json
+graph.json
+index.json
+texts.json
+benchmarks/results.json
+*.jsonl
+!benchmarks/queries.json
+
+# Public benchmark fixtures (required for reproducibility)
+!scripts/hotpot_subset_100.json
+
+# Optional external benchmark datasets and outputs (download separately)
+benchmarks/external/*.json
+benchmarks/external/.embedding_cache_*.json
+benchmarks/external/*_results.json
+
+*.events.db
 snapshots/
+
+/ignored
+sims/*_results.json
+sims/*.png

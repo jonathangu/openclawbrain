@@ -1,0 +1,40 @@
+{
+  "name": "@openclawbrain/events",
+  "version": "0.1.0",
+  "description": "Normalized interaction and feedback event builders for OpenClawBrain.",
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "sideEffects": false,
+  "keywords": [
+    "openclawbrain",
+    "events",
+    "contracts",
+    "typescript"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "node --test dist/test/*.test.js"
+  },
+  "dependencies": {
+    "@openclawbrain/contracts": "workspace:^"
+  }
+}

@@ -4,6 +4,8 @@ Canonical TypeScript contracts for the TypeScript-first OpenClawBrain build.
 
 This package is the starting point if you need the public artifact and runtime payload shapes without pulling in pack loading or compilation logic.
 
+If you want narrower public surfaces, the workspace also publishes `@openclawbrain/events`, `@openclawbrain/event-export`, `@openclawbrain/workspace-metadata`, and `@openclawbrain/provenance`.
+
 ## Install
 
 ```bash
@@ -13,7 +15,7 @@ pnpm add @openclawbrain/contracts
 ## Includes
 
 - contract ids for runtime compile, interaction events, feedback events, manifests, and activation pointers
-- normalized interaction/feedback event builders plus derived event-export metadata helpers
+- workspace metadata and pack provenance shapes
 - payload validators for the current `v1` public shapes
 - canonical JSON and checksum helpers for immutable artifact payloads
 

@@ -1,0 +1,40 @@
+{
+  "name": "@openclawbrain/event-export",
+  "version": "0.1.0",
+  "description": "Deterministic normalized event-export builders and provenance helpers for OpenClawBrain.",
+  "type": "module",
+  "main": "./dist/src/index.js",
+  "types": "./dist/src/index.d.ts",
+  "sideEffects": false,
+  "keywords": [
+    "openclawbrain",
+    "event-export",
+    "provenance",
+    "typescript"
+  ],
+  "engines": {
+    "node": ">=20"
+  },
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "import": "./dist/src/index.js",
+      "default": "./dist/src/index.js"
+    },
+    "./package.json": "./package.json"
+  },
+  "files": [
+    "dist/src"
+  ],
+  "publishConfig": {
+    "access": "public"
+  },
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean",
+    "test": "node --test dist/test/*.test.js"
+  },
+  "dependencies": {
+    "@openclawbrain/contracts": "workspace:^"
+  }
+}

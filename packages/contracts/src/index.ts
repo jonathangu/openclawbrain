@@ -117,6 +117,19 @@ export interface NormalizedEventExportV1 {
   provenance: EventExportProvenanceV1;
 }
 
+export interface WorkspaceMetadataV1 {
+  workspaceId: string;
+  snapshotId: string;
+  capturedAt: string;
+  rootDir: string;
+  branch: string | null;
+  revision: string | null;
+  dirty: boolean;
+  manifestDigest: string | null;
+  labels: string[];
+  files: string[];
+}
+
 export interface ArtifactManifestV1 {
   contract: typeof CONTRACT_IDS.artifactManifest;
   packId: string;
@@ -138,6 +151,7 @@ export interface ArtifactManifestV1 {
   };
   modelFingerprints: string[];
   provenance: {
+    workspace: WorkspaceMetadataV1;
     workspaceSnapshot: string;
     eventRange: NormalizedEventRangeV1;
     eventExports: EventExportProvenanceV1 | null;
@@ -162,6 +176,8 @@ export interface ArtifactManifestV1 {
   };
 }
 
+export type ArtifactProvenanceV1 = ArtifactManifestV1["provenance"];
+
 export interface ActivationPointerRecordV1 {
   slot: ActivationPointerSlot;
   packId: string;
@@ -169,6 +185,8 @@ export interface ActivationPointerRecordV1 {
   manifestPath: string;
   routePolicy: RoutePolicy;
   routerIdentity: string | null;
+  workspaceSnapshot: string;
+  workspaceRevision: string | null;
   eventRange: Pick<NormalizedEventRangeV1, "start" | "end" | "count">;
   eventExportDigest: string | null;
   builtAt: string;
@@ -481,6 +499,33 @@ export function validateNormalizedEventRange(value: NormalizedEventRangeV1): str
   return errors;
 }
 
+export function validateWorkspaceMetadata(value: WorkspaceMetadataV1): string[] {
+  const errors: string[] = [];
+
+  pushWhenMissing(errors, value.workspaceId.length > 0, "workspaceId is required");
+  pushWhenMissing(errors, value.snapshotId.length > 0, "snapshotId is required");
+  pushWhenMissing(errors, isIsoDate(value.capturedAt), "workspace capturedAt must be an ISO timestamp");
+  pushWhenMissing(errors, value.rootDir.length > 0, "workspace rootDir is required");
+
+  if (value.branch !== null && value.branch.length === 0) {
+    errors.push("workspace branch must be null or non-empty");
+  }
+  if (value.revision !== null && value.revision.length === 0) {
+    errors.push("workspace revision must be null or non-empty");
+  }
+  if (value.manifestDigest !== null && value.manifestDigest.length === 0) {
+    errors.push("workspace manifestDigest must be null or non-empty");
+  }
+  if (value.labels.some((label) => label.length === 0)) {
+    errors.push("workspace labels must be non-empty");
+  }
+  if (value.files.some((file) => file.length === 0)) {
+    errors.push("workspace files must be non-empty");
+  }
+
+  return errors;
+}
+
 export function validateEventExportProvenance(
   value: EventExportProvenanceV1,
   eventRange?: NormalizedEventRangeV1
@@ -546,9 +591,14 @@ export function validateArtifactManifest(value: ArtifactManifestV1): string[] {
   pushWhenMissing(errors, value.payloadChecksums.vector.length > 0, "vector checksum is required");
   pushWhenMissing(errors, isIsoDate(value.provenance.builtAt), "builtAt must be an ISO timestamp");
   pushWhenMissing(errors, value.provenance.workspaceSnapshot.length > 0, "workspaceSnapshot is required");
+  errors.push(...validateWorkspaceMetadata(value.provenance.workspace));
   pushWhenMissing(errors, value.graphDynamics.hebbian.learningRate >= 0, "hebbian learningRate must be non-negative");
   pushWhenMissing(errors, value.graphDynamics.decay.halfLifeDays >= 0, "decay halfLifeDays must be non-negative");
   errors.push(...validateNormalizedEventRange(value.provenance.eventRange));
+
+  if (value.provenance.workspace.snapshotId !== value.provenance.workspaceSnapshot) {
+    errors.push("workspaceSnapshot must match provenance.workspace.snapshotId");
+  }
 
   if (value.provenance.eventExports !== null) {
     errors.push(...validateEventExportProvenance(value.provenance.eventExports, value.provenance.eventRange));
@@ -584,6 +634,7 @@ export function validateActivationPointerRecord(
     value.routePolicy === "heuristic_allowed" || value.routePolicy === "requires_learned_routing",
     "activation pointer routePolicy must be explicit"
   );
+  pushWhenMissing(errors, value.workspaceSnapshot.length > 0, "activation pointer workspaceSnapshot is required");
   pushWhenMissing(errors, isIsoDate(value.builtAt), "activation pointer builtAt must be an ISO timestamp");
   pushWhenMissing(errors, isIsoDate(value.updatedAt), "activation pointer updatedAt must be an ISO timestamp");
   pushWhenMissing(errors, value.eventRange.count > 0, "activation pointers require a non-empty eventRange");
@@ -839,6 +890,19 @@ export const FIXTURE_NORMALIZED_EVENT_EXPORT: NormalizedEventExportV1 = buildNor
   feedbackEvents: FIXTURE_FEEDBACK_EVENTS
 });
 
+export const FIXTURE_WORKSPACE_METADATA: WorkspaceMetadataV1 = {
+  workspaceId: "workspace-fixture",
+  snapshotId: "workspace-fixture@snapshot-2026-03-06",
+  capturedAt: "2026-03-06T00:00:00.000Z",
+  rootDir: "/workspace/openclawbrain",
+  branch: "codex/20260306/ts-public-converge",
+  revision: "fixture-rev-20260306",
+  dirty: false,
+  manifestDigest: "sha256-workspace-fixture",
+  labels: ["typescript-first", "public-surface"],
+  files: ["README.md", "packages/contracts/src/index.ts", "packages/learner/src/index.ts"]
+};
+
 export const FIXTURE_ARTIFACT_MANIFEST: ArtifactManifestV1 = {
   contract: CONTRACT_IDS.artifactManifest,
   packId: FIXTURE_PACK_GRAPH.packId,
@@ -860,7 +924,8 @@ export const FIXTURE_ARTIFACT_MANIFEST: ArtifactManifestV1 = {
   },
   modelFingerprints: ["BAAI/bge-large-en-v1.5", "ollama:qwen3.5:9b-q4_K_M", FIXTURE_ROUTER_ARTIFACT.routerIdentity],
   provenance: {
-    workspaceSnapshot: "workspace-fixture",
+    workspace: FIXTURE_WORKSPACE_METADATA,
+    workspaceSnapshot: FIXTURE_WORKSPACE_METADATA.snapshotId,
     eventRange: FIXTURE_NORMALIZED_EVENT_EXPORT.range,
     eventExports: FIXTURE_NORMALIZED_EVENT_EXPORT.provenance,
     builtAt: "2026-03-06T00:00:00.000Z",
@@ -893,6 +958,8 @@ export const FIXTURE_ACTIVATION_POINTERS: ActivationPointersV1 = {
     manifestPath: "/packs/pack-active/manifest.json",
     routePolicy: "heuristic_allowed",
     routerIdentity: null,
+    workspaceSnapshot: "workspace-active@snapshot-2026-03-06",
+    workspaceRevision: "workspace-active-rev",
     eventRange: {
       start: 1,
       end: 25,
@@ -909,6 +976,8 @@ export const FIXTURE_ACTIVATION_POINTERS: ActivationPointersV1 = {
     manifestPath: "/packs/pack-candidate/manifest.json",
     routePolicy: "requires_learned_routing",
     routerIdentity: "pack-candidate:route_fn",
+    workspaceSnapshot: FIXTURE_WORKSPACE_METADATA.snapshotId,
+    workspaceRevision: FIXTURE_WORKSPACE_METADATA.revision,
     eventRange: {
       start: 26,
       end: 40,
@@ -925,6 +994,8 @@ export const FIXTURE_ACTIVATION_POINTERS: ActivationPointersV1 = {
     manifestPath: "/packs/pack-previous/manifest.json",
     routePolicy: "heuristic_allowed",
     routerIdentity: null,
+    workspaceSnapshot: "workspace-previous@snapshot-2026-03-05",
+    workspaceRevision: "workspace-previous-rev",
     eventRange: {
       start: 0,
       end: 0,

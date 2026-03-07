@@ -11,6 +11,7 @@ import {
   FIXTURE_INTERACTION_EVENT,
   FIXTURE_INTERACTION_EVENTS,
   FIXTURE_NORMALIZED_EVENT_EXPORT,
+  FIXTURE_WORKSPACE_METADATA,
   FIXTURE_PACK_GRAPH,
   FIXTURE_PACK_VECTORS,
   FIXTURE_ROUTER_ARTIFACT,
@@ -25,7 +26,8 @@ import {
   validatePackVectorsPayload,
   validateRouterArtifact,
   validateRuntimeCompileRequest,
-  validateRuntimeCompileResponse
+  validateRuntimeCompileResponse,
+  validateWorkspaceMetadata
 } from "@openclawbrain/contracts";
 
 test("canonical fixtures validate end-to-end", () => {
@@ -35,6 +37,7 @@ test("canonical fixtures validate end-to-end", () => {
   assert.deepEqual(validateInteractionEvent(FIXTURE_INTERACTION_EVENT), []);
   assert.deepEqual(validateFeedbackEvent(FIXTURE_FEEDBACK_EVENT), []);
   assert.deepEqual(validateNormalizedEventExport(FIXTURE_NORMALIZED_EVENT_EXPORT), []);
+  assert.deepEqual(validateWorkspaceMetadata(FIXTURE_WORKSPACE_METADATA), []);
   assert.deepEqual(validateArtifactManifest(FIXTURE_ARTIFACT_MANIFEST), []);
   assert.deepEqual(validatePackGraphPayload(FIXTURE_PACK_GRAPH, FIXTURE_ARTIFACT_MANIFEST.packId), []);
   assert.deepEqual(validatePackVectorsPayload(FIXTURE_PACK_VECTORS, FIXTURE_PACK_GRAPH), []);
@@ -87,6 +90,8 @@ test("activation pointers reject duplicate pack ids across slots", () => {
       manifestPath: candidate.manifestPath,
       routePolicy: candidate.routePolicy,
       routerIdentity: candidate.routerIdentity,
+      workspaceSnapshot: candidate.workspaceSnapshot,
+      workspaceRevision: candidate.workspaceRevision,
       eventRange: candidate.eventRange,
       eventExportDigest: candidate.eventExportDigest,
       builtAt: candidate.builtAt,

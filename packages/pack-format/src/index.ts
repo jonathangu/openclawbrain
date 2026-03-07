@@ -53,6 +53,8 @@ export interface ActivationSlotInspection {
   slot: ActivationPointerSlot;
   packId: string;
   routePolicy: ArtifactManifestV1["routePolicy"];
+  workspaceSnapshot: string;
+  workspaceRevision: string | null;
   eventRange: ActivationPointerRecordV1["eventRange"];
   eventExportDigest: string | null;
   builtAt: string;
@@ -188,6 +190,8 @@ function buildActivationPointerRecord(
     manifestPath: path.resolve(pack.manifestPath),
     routePolicy: pack.manifest.routePolicy,
     routerIdentity: pack.manifest.runtimeAssets.router.identity,
+    workspaceSnapshot: pack.manifest.provenance.workspaceSnapshot,
+    workspaceRevision: pack.manifest.provenance.workspace.revision,
     eventRange: {
       start: pack.manifest.provenance.eventRange.start,
       end: pack.manifest.provenance.eventRange.end,
@@ -220,6 +224,16 @@ function ensurePackRecordMatchesManifest(
   if (pack.manifest.runtimeAssets.router.identity !== record.routerIdentity) {
     errors.push(
       `pointer routerIdentity ${record.routerIdentity ?? "null"} does not match manifest router identity ${pack.manifest.runtimeAssets.router.identity ?? "null"}`
+    );
+  }
+  if (pack.manifest.provenance.workspaceSnapshot !== record.workspaceSnapshot) {
+    errors.push(
+      `pointer workspaceSnapshot ${record.workspaceSnapshot} does not match manifest workspaceSnapshot ${pack.manifest.provenance.workspaceSnapshot}`
+    );
+  }
+  if ((pack.manifest.provenance.workspace.revision ?? null) !== record.workspaceRevision) {
+    errors.push(
+      `pointer workspaceRevision ${record.workspaceRevision ?? "null"} does not match manifest workspace revision ${pack.manifest.provenance.workspace.revision ?? "null"}`
     );
   }
   if (pack.manifest.provenance.eventRange.start !== record.eventRange.start) {
@@ -292,6 +306,8 @@ function inspectPointerRecord(
     slot,
     packId: record.packId,
     routePolicy: record.routePolicy,
+    workspaceSnapshot: record.workspaceSnapshot,
+    workspaceRevision: record.workspaceRevision,
     eventRange: record.eventRange,
     eventExportDigest: record.eventExportDigest,
     builtAt: record.builtAt,

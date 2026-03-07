@@ -15,7 +15,10 @@
   },
   "packageManager": "pnpm@10.30.3",
   "workspaces": [
-    "packages/*"
+    "packages/contracts",
+    "packages/pack-format",
+    "packages/compiler",
+    "packages/learner"
   ],
   "keywords": [
     "openclawbrain",
@@ -32,7 +35,7 @@
     "clean": "pnpm -r clean && tsc -b --clean tsconfig.build.json && rm -rf .release",
     "check": "pnpm typecheck && pnpm test",
     "release:check": "pnpm clean && pnpm check && pnpm release:pack",
-    "release:pack": "mkdir -p .release && pnpm -r pack --pack-destination ../../.release",
+    "release:pack": "ROOT_DIR=$(pwd) && mkdir -p \"$ROOT_DIR/.release\" && for pkg in packages/contracts packages/pack-format packages/compiler packages/learner; do (cd \"$pkg\" && pnpm pack --pack-destination \"$ROOT_DIR/.release\"); done",
     "typecheck": "tsc -b --pretty false tsconfig.build.json",
     "test": "pnpm run build && pnpm -r test"
   },

@@ -1,34 +1,67 @@
 # Release Checklist
 
-This repo publishes TypeScript packages from the `pnpm` workspace.
+This branch releases the public TypeScript packages, not the legacy Python wheel.
 
-## 1) Prepare the release
+## 1) Prepare package versions
+
+Bump the version for each public package that will be published:
+
+- `packages/contracts/package.json`
+- `packages/pack-format/package.json`
+- `packages/compiler/package.json`
+- `packages/learner/package.json`
+
+Keep the root `package.json` version aligned with the workspace release candidate if you want a single branch-level marker.
+
+## 2) Create and verify the release candidate
 
 ```bash
+corepack enable
 pnpm install --frozen-lockfile
-pnpm check
+pnpm release:check
+ls -lh .release/
 ```
 
-Update the affected package versions in `packages/*/package.json` and refresh `CHANGELOG.md`.
+Expected artifacts:
 
-## 2) Create the tag
+- `openclawbrain-contracts-<version>.tgz`
+- `openclawbrain-pack-format-<version>.tgz`
+- `openclawbrain-compiler-<version>.tgz`
+- `openclawbrain-learner-<version>.tgz`
+
+## 3) Tag the release
 
 ```bash
-git tag -a release-vX.Y.Z -m "OpenClawBrain release vX.Y.Z"
-git push origin release-vX.Y.Z
+git checkout <release-branch>
+git tag -a v0.1.0 -m "OpenClawBrain TS workspace v0.1.0"
+git push origin <release-branch>
+git push origin v0.1.0
 ```
 
-## 3) Publish
+## 4) Publish packages
 
-Pushing a `release-v*` tag triggers `.github/workflows/publish.yml`.
+Preferred: GitHub Actions + npm trusted publishing.
 
-That workflow:
+Pushing a `v*` tag triggers `.github/workflows/publish.yml`, which verifies the workspace and then publishes the four `@openclawbrain/*` packages.
 
-- installs Node 20 and `pnpm`
-- runs `pnpm install --frozen-lockfile`
-- runs `pnpm check`
-- publishes the public workspace packages to npm
+Before relying on the workflow, configure npm trusted publishing for each package.
 
-## 4) Post-publish verification
+Optional manual publish:
 
-Install the published packages into a clean project and verify the expected entrypoints resolve.
+```bash
+(cd packages/contracts && npm publish --access public)
+(cd packages/pack-format && npm publish --access public)
+(cd packages/compiler && npm publish --access public)
+(cd packages/learner && npm publish --access public)
+```
+
+## 5) Post-publish sanity checks
+
+```bash
+npm view @openclawbrain/contracts version
+npm view @openclawbrain/pack-format version
+npm view @openclawbrain/compiler version
+npm view @openclawbrain/learner version
+```
+
+As a final smoke check, install one or more packages from the registry in a clean directory and run the example snippets from the package READMEs.

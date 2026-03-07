@@ -15,7 +15,15 @@ import {
 test("learner emits deterministic immutable pack manifests", (t) => {
   const input = {
     packLabel: "demo",
-    workspaceSnapshot: "workspace-1",
+    workspace: {
+      workspaceId: "workspace-1",
+      snapshotId: "workspace-1@snapshot-1",
+      capturedAt: "2026-03-06T00:00:00.000Z",
+      rootDir: "/workspace/demo",
+      branch: "main",
+      revision: "demo-rev-1",
+      labels: ["demo", "typescript"]
+    },
     eventRange: {
       start: 101,
       end: 104
@@ -43,13 +51,16 @@ test("learner emits deterministic immutable pack manifests", (t) => {
   assert.equal(first.manifest.routePolicy, "requires_learned_routing");
   assert.equal(descriptor.manifest.packId, first.summary.packId);
   assert.equal(descriptor.router?.routerIdentity, `${first.summary.packId}:route_fn`);
-  assert.equal(descriptor.graph.blocks.length, 8);
+  assert.equal(descriptor.graph.blocks.length, 9);
   assert.equal(first.summary.eventRange.start, 101);
   assert.equal(first.summary.eventRange.end, 104);
   assert.equal(first.summary.eventRange.count, 4);
+  assert.equal(first.summary.workspaceSnapshot, "workspace-1@snapshot-1");
+  assert.equal(first.manifest.provenance.workspace.snapshotId, "workspace-1@snapshot-1");
   assert.equal(first.summary.eventExportDigest, first.manifest.provenance.eventExports?.exportDigest ?? null);
   assert.equal(first.manifest.provenance.eventExports?.interactionCount, FIXTURE_INTERACTION_EVENTS.length);
   assert.equal(first.manifest.provenance.eventExports?.feedbackCount, FIXTURE_FEEDBACK_EVENTS.length);
+  assert.match(descriptor.graph.blocks.map((block) => block.text).join("\n"), /Workspace snapshot workspace-1@snapshot-1/);
   assert.match(descriptor.graph.blocks.map((block) => block.text).join("\n"), /Use the unified feedback scanner before enabling default loop scans/);
   assert.equal(descriptor.vectors.entries.some((entry) => entry.blockId.endsWith("evt-feedback-fixture-1")), true);
 });
@@ -59,7 +70,12 @@ test("learner rejects mismatched explicit event ranges when event exports are su
     () =>
       buildCandidatePack({
         packLabel: "bad-range",
-        workspaceSnapshot: "workspace-1",
+        workspace: {
+          workspaceId: "workspace-1",
+          snapshotId: "workspace-1@snapshot-bad-range",
+          capturedAt: "2026-03-06T00:00:00.000Z",
+          rootDir: "/workspace/demo"
+        },
         eventRange: {
           start: 100,
           end: 104
@@ -80,7 +96,13 @@ test("learner can materialize a candidate pack directly from a normalized event 
 
   const result = buildCandidatePackFromNormalizedEventExport({
     packLabel: "from-export",
-    workspaceSnapshot: "workspace-export",
+    workspace: {
+      workspaceId: "workspace-export",
+      snapshotId: "workspace-export@snapshot-1",
+      capturedAt: "2026-03-06T01:00:00.000Z",
+      rootDir: "/workspace/export",
+      revision: "workspace-export-rev"
+    },
     normalizedEventExport: FIXTURE_NORMALIZED_EVENT_EXPORT,
     learnedRouting: true,
     structuralOps: {
@@ -90,7 +112,13 @@ test("learner can materialize a candidate pack directly from a normalized event 
   });
   const descriptor = materializeCandidatePackFromNormalizedEventExport(rootDir, {
     packLabel: "from-export",
-    workspaceSnapshot: "workspace-export",
+    workspace: {
+      workspaceId: "workspace-export",
+      snapshotId: "workspace-export@snapshot-1",
+      capturedAt: "2026-03-06T01:00:00.000Z",
+      rootDir: "/workspace/export",
+      revision: "workspace-export-rev"
+    },
     normalizedEventExport: FIXTURE_NORMALIZED_EVENT_EXPORT,
     learnedRouting: true,
     structuralOps: {
@@ -100,6 +128,7 @@ test("learner can materialize a candidate pack directly from a normalized event 
   });
 
   assert.equal(result.summary.eventExportDigest, FIXTURE_NORMALIZED_EVENT_EXPORT.provenance.exportDigest);
+  assert.equal(result.summary.workspaceSnapshot, "workspace-export@snapshot-1");
   assert.equal(descriptor.manifest.provenance.eventRange.firstEventId, "evt-interaction-fixture-1");
   assert.equal(descriptor.manifest.provenance.eventRange.lastEventId, "evt-feedback-fixture-2");
   assert.equal(descriptor.graph.blocks.some((block) => block.id.endsWith("evt-feedback-fixture-1")), true);

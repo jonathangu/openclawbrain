@@ -4,6 +4,8 @@ Immutable pack layout helpers for OpenClawBrain.
 
 Install this after `@openclawbrain/contracts` if you need to read, verify, write, stage, promote, or roll back pack artifacts on disk.
 
+If you only need the activation-facing API, use `@openclawbrain/activation` as the narrower package surface.
+
 ## Install
 
 ```bash

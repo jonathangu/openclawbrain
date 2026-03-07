@@ -1,25 +1,20 @@
-name: Publish packages
+name: Publish packages to npm
 
 on:
   push:
     tags:
-      - "release-v*"
+      - "v*"
   workflow_dispatch:
 
 permissions:
-  contents: read
   id-token: write
+  contents: read
 
 jobs:
   publish:
     runs-on: ubuntu-latest
-    environment: npm
     steps:
       - uses: actions/checkout@v4
-
-      - uses: pnpm/action-setup@v4
-        with:
-          version: 10.30.3
 
       - uses: actions/setup-node@v4
         with:
@@ -27,11 +22,23 @@ jobs:
           cache: "pnpm"
           registry-url: "https://registry.npmjs.org"
 
+      - name: Enable Corepack
+        run: corepack enable
+
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
-      - name: Validate workspace
-        run: pnpm check
+      - name: Verify release candidate
+        run: pnpm release:check
 
-      - name: Publish packages
-        run: pnpm -r publish --access public --no-git-checks --provenance
+      - name: Publish @openclawbrain/contracts
+        run: cd packages/contracts && npm publish --access public --provenance
+
+      - name: Publish @openclawbrain/pack-format
+        run: cd packages/pack-format && npm publish --access public --provenance
+
+      - name: Publish @openclawbrain/compiler
+        run: cd packages/compiler && npm publish --access public --provenance
+
+      - name: Publish @openclawbrain/learner
+        run: cd packages/learner && npm publish --access public --provenance

@@ -2,8 +2,6 @@ import { mkdirSync, rmSync } from "node:fs";
 import path from "node:path";
 
 import {
-  buildNormalizedEventExport,
-  createExplicitEventRange,
   CONTRACT_IDS,
   type ArtifactManifestV1,
   type FeedbackEventV1,
@@ -14,10 +12,16 @@ import {
   type PackGraphPayloadV1,
   type PackVectorEntryV1,
   type PackVectorsPayloadV1,
-  type RouterArtifactV1,
-  validateNormalizedEventExport
+  type RouterArtifactV1
 } from "@openclawbrain/contracts";
+import {
+  buildNormalizedEventExport,
+  createExplicitEventRange,
+  validateNormalizedEventExport
+} from "@openclawbrain/event-export";
 import { computePayloadChecksum, loadPack, PACK_LAYOUT, type PackDescriptor, writePackFile } from "@openclawbrain/pack-format";
+import { buildArtifactProvenance } from "@openclawbrain/provenance";
+import { createWorkspaceMetadata, type WorkspaceMetadataInput } from "@openclawbrain/workspace-metadata";
 
 export interface CandidatePackEventExports {
   interactionEvents: InteractionEventV1[];
@@ -26,7 +30,7 @@ export interface CandidatePackEventExports {
 
 export interface CandidatePackBuildInput {
   packLabel: string;
-  workspaceSnapshot: string;
+  workspace: WorkspaceMetadataInput;
   eventRange: {
     start: number;
     end: number;
@@ -40,7 +44,7 @@ export interface CandidatePackBuildInput {
 
 export interface CandidatePackFromNormalizedEventExportInput {
   packLabel: string;
-  workspaceSnapshot: string;
+  workspace: WorkspaceMetadataInput;
   normalizedEventExport: NormalizedEventExportV1;
   learnedRouting: boolean;
   builtAt?: string;
@@ -61,6 +65,7 @@ export interface CandidatePackBuildResult {
     packId: string;
     immutable: true;
     routePolicy: ArtifactManifestV1["routePolicy"];
+    workspaceSnapshot: string;
     eventRange: ArtifactManifestV1["provenance"]["eventRange"];
     eventExportDigest: string | null;
   };
@@ -139,7 +144,11 @@ function eventBlock(packId: string, event: NormalizedEventV1): PackContextBlockR
   };
 }
 
-function staticLifecycleBlocks(packId: string, input: CandidatePackBuildInput): PackContextBlockRecordV1[] {
+function staticLifecycleBlocks(
+  packId: string,
+  input: CandidatePackBuildInput,
+  workspace = createWorkspaceMetadata(input.workspace)
+): PackContextBlockRecordV1[] {
   const structuralOps = structuralOpsSummary(input);
 
   return [
@@ -155,6 +164,15 @@ function staticLifecycleBlocks(packId: string, input: CandidatePackBuildInput): 
       source: "docs/openclawbrain-openclaw-rearchitecture-execution-plan.md",
       text: "runtime_compile.v1 gives OpenClaw a narrow compile boundary over promoted immutable packs and manifest-gated learned routing.",
       keywords: ["runtime", "compile", "contract", "pack", "manifest", "learned", "routing", "openclaw"],
+      priority: 4
+    },
+    {
+      id: `${packId}:workspace`,
+      source: workspace.rootDir,
+      text: `Workspace snapshot ${workspace.snapshotId} for ${workspace.workspaceId} captured at ${workspace.capturedAt} with revision ${workspace.revision ?? "unversioned"}.`,
+      keywords: keywordTokens(
+        `workspace ${workspace.workspaceId} ${workspace.snapshotId} ${workspace.branch ?? ""} ${workspace.revision ?? ""} ${workspace.labels.join(" ")}`
+      ),
       priority: 4
     },
     {
@@ -185,10 +203,15 @@ function eventExportBlocks(packId: string, eventExport: NormalizedEventExportV1)
   ];
 }
 
-function createGraphPayload(packId: string, input: CandidatePackBuildInput, eventExport: NormalizedEventExportV1 | null): PackGraphPayloadV1 {
+function createGraphPayload(
+  packId: string,
+  input: CandidatePackBuildInput,
+  workspace: ReturnType<typeof createWorkspaceMetadata>,
+  eventExport: NormalizedEventExportV1 | null
+): PackGraphPayloadV1 {
   return {
     packId,
-    blocks: [...staticLifecycleBlocks(packId, input), ...(eventExport === null ? [] : eventExportBlocks(packId, eventExport))]
+    blocks: [...staticLifecycleBlocks(packId, input, workspace), ...(eventExport === null ? [] : eventExportBlocks(packId, eventExport))]
   };
 }
 
@@ -246,9 +269,10 @@ export function buildCandidatePack(input: CandidatePackBuildInput): CandidatePac
   const routePolicy = input.learnedRouting ? "requires_learned_routing" : "heuristic_allowed";
   const eventExport = resolveEventExport(input);
   const eventRange = eventExport?.range ?? createExplicitEventRange(input.eventRange);
+  const workspace = createWorkspaceMetadata(input.workspace);
   const seed = JSON.stringify({
     packLabel: input.packLabel,
-    workspaceSnapshot: input.workspaceSnapshot,
+    workspace,
     eventRange,
     learnedRouting: input.learnedRouting,
     offlineArtifacts: input.offlineArtifacts ?? [],
@@ -256,7 +280,7 @@ export function buildCandidatePack(input: CandidatePackBuildInput): CandidatePac
   });
   const packId = `pack-${stableHash(seed)}`;
 
-  const graph = createGraphPayload(packId, input, eventExport);
+  const graph = createGraphPayload(packId, input, workspace, eventExport);
   const vectors = createVectorsPayload(graph);
   const router = input.learnedRouting ? createRouterArtifact(packId, builtAt) : null;
 
@@ -294,13 +318,13 @@ export function buildCandidatePack(input: CandidatePackBuildInput): CandidatePac
     modelFingerprints: input.learnedRouting
       ? ["BAAI/bge-large-en-v1.5", "ollama:qwen3.5:9b-q4_K_M", payloads.router?.routerIdentity ?? "router:missing"]
       : ["BAAI/bge-large-en-v1.5"],
-    provenance: {
-      workspaceSnapshot: input.workspaceSnapshot,
+    provenance: buildArtifactProvenance({
+      workspace,
       eventRange,
       eventExports: eventExport?.provenance ?? null,
       builtAt,
       offlineArtifacts: input.offlineArtifacts ?? []
-    },
+    }),
     graphDynamics: {
       hebbian: {
         enabled: true,
@@ -321,6 +345,7 @@ export function buildCandidatePack(input: CandidatePackBuildInput): CandidatePac
       packId,
       immutable: true,
       routePolicy,
+      workspaceSnapshot: workspace.snapshotId,
       eventRange,
       eventExportDigest: eventExport?.provenance.exportDigest ?? null
     }
@@ -337,7 +362,7 @@ export function buildCandidatePackFromNormalizedEventExport(
 
   const candidateInput: CandidatePackBuildInput = {
     packLabel: input.packLabel,
-    workspaceSnapshot: input.workspaceSnapshot,
+    workspace: input.workspace,
     eventRange: {
       start: input.normalizedEventExport.range.start,
       end: input.normalizedEventExport.range.end
