@@ -4,7 +4,8 @@
  * DAG-based conversation summarization with incremental compaction,
  * full-text search, and sub-agent expansion.
  */
-import { readFileSync } from "node:fs";
+import { readFileSync, writeFileSync } from "node:fs";
+import { join } from "node:path";
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import { resolveLcmConfig } from "./src/db/config.js";
 import { LcmContextEngine } from "./src/engine.js";
@@ -45,7 +46,11 @@ type PluginEnvSnapshot = {
   pluginSummaryProvider: string;
   openclawProvider: string;
   openclawDefaultModel: string;
+  agentDir: string;
+  home: string;
 };
+
+type ReadEnvFn = (key: string) => string | undefined;
 
 type CompleteSimpleOptions = {
   apiKey?: string;
@@ -90,6 +95,10 @@ type RuntimeModelAuth = {
   }) => Promise<RuntimeModelAuthResult | undefined>;
 };
 
+const MODEL_AUTH_PR_URL = "https://github.com/openclaw/openclaw/pull/41090";
+const MODEL_AUTH_MERGE_COMMIT = "4790e40";
+const MODEL_AUTH_REQUIRED_RELEASE = "the first OpenClaw release after 2026.3.8";
+
 /** Capture plugin env values once during initialization. */
 function snapshotPluginEnv(env: NodeJS.ProcessEnv = process.env): PluginEnvSnapshot {
   return {
@@ -99,6 +108,8 @@ function snapshotPluginEnv(env: NodeJS.ProcessEnv = process.env): PluginEnvSnaps
     pluginSummaryProvider: "",
     openclawProvider: env.OPENCLAW_PROVIDER?.trim() ?? "",
     openclawDefaultModel: "",
+    agentDir: env.OPENCLAW_AGENT_DIR?.trim() || env.PI_CODING_AGENT_DIR?.trim() || "",
+    home: env.HOME?.trim() ?? "",
   };
 }
 
@@ -116,6 +127,58 @@ function readDefaultModelFromConfig(config: unknown): string {
   const primary = (model as { primary?: unknown } | undefined)?.primary;
   return typeof primary === "string" ? primary.trim() : "";
 }
+
+/** Resolve common provider API keys from environment. */
+function resolveApiKey(provider: string, readEnv: ReadEnvFn): string | undefined {
+  const keyMap: Record<string, string[]> = {
+    openai: ["OPENAI_API_KEY"],
+    anthropic: ["ANTHROPIC_API_KEY"],
+    google: ["GOOGLE_API_KEY", "GEMINI_API_KEY"],
+    groq: ["GROQ_API_KEY"],
+    xai: ["XAI_API_KEY"],
+    mistral: ["MISTRAL_API_KEY"],
+    together: ["TOGETHER_API_KEY"],
+    openrouter: ["OPENROUTER_API_KEY"],
+    "github-copilot": ["GITHUB_COPILOT_API_KEY", "GITHUB_TOKEN"],
+  };
+
+  const providerKey = provider.trim().toLowerCase();
+  const keys = keyMap[providerKey] ?? [];
+  const normalizedProviderEnv = `${providerKey.replace(/[^a-z0-9]/g, "_").toUpperCase()}_API_KEY`;
+  keys.push(normalizedProviderEnv);
+
+  for (const key of keys) {
+    const value = readEnv(key)?.trim();
+    if (value) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+type AuthProfileCredential =
+  | { type: "api_key"; provider: string; key?: string; email?: string }
+  | { type: "token"; provider: string; token?: string; expires?: number; email?: string }
+  | ({
+      type: "oauth";
+      provider: string;
+      access?: string;
+      refresh?: string;
+      expires?: number;
+      email?: string;
+    } & Record<string, unknown>);
+
+type AuthProfileStore = {
+  profiles: Record<string, AuthProfileCredential>;
+  order?: Record<string, string[]>;
+};
+
+type PiAiOAuthCredentials = {
+  refresh: string;
+  access: string;
+  expires: number;
+  [key: string]: unknown;
+};
 
 type PiAiModule = {
   completeSimple?: (
@@ -148,6 +211,11 @@ type PiAiModule = {
   ) => Promise<Record<string, unknown> & { content?: Array<{ type: string; text?: string }> }>;
   getModel?: (provider: string, modelId: string) => unknown;
   getModels?: (provider: string) => unknown[];
+  getEnvApiKey?: (provider: string) => string | undefined;
+  getOAuthApiKey?: (
+    providerId: string,
+    credentials: Record<string, PiAiOAuthCredentials>,
+  ) => Promise<{ apiKey: string; newCredentials: PiAiOAuthCredentials } | null>;
 };
 
 /** Narrow unknown values to plain objects. */
@@ -251,14 +319,11 @@ function resolveProviderApiFromRuntimeConfig(
   return typeof api === "string" && api.trim() ? api.trim() : undefined;
 }
 
-/** Resolve runtime.modelAuth from plugin runtime, even before plugin-sdk typings land locally. */
-function getRuntimeModelAuth(api: OpenClawPluginApi): RuntimeModelAuth {
+/** Resolve runtime.modelAuth from plugin runtime when available. */
+function getRuntimeModelAuth(api: OpenClawPluginApi): RuntimeModelAuth | undefined {
   const runtime = api.runtime as OpenClawPluginApi["runtime"] & {
     modelAuth?: RuntimeModelAuth;
   };
-  if (!runtime.modelAuth) {
-    throw new Error("OpenClaw runtime.modelAuth is required by lossless-claw.");
-  }
   return runtime.modelAuth;
 }
 
@@ -290,6 +355,294 @@ function buildModelAuthLookupModel(params: {
 function resolveApiKeyFromAuthResult(auth: RuntimeModelAuthResult | undefined): string | undefined {
   const apiKey = auth?.apiKey?.trim();
   return apiKey ? apiKey : undefined;
+}
+
+function buildLegacyAuthFallbackWarning(): string {
+  return [
+    "[lcm] OpenClaw runtime.modelAuth is unavailable; using legacy auth-profiles fallback.",
+    `Stock lossless-claw 0.2.7 expects OpenClaw plugin runtime support from PR #41090 (${MODEL_AUTH_PR_URL}).`,
+    `OpenClaw 2026.3.8 and 2026.3.8-beta.1 do not include merge commit ${MODEL_AUTH_MERGE_COMMIT};`,
+    `${MODEL_AUTH_REQUIRED_RELEASE} is required for stock lossless-claw 0.2.7 without this fallback patch.`,
+  ].join(" ");
+}
+
+/** Parse auth-profiles JSON into a minimal store shape. */
+function parseAuthProfileStore(raw: string): AuthProfileStore | undefined {
+  try {
+    const parsed = JSON.parse(raw) as unknown;
+    if (!isRecord(parsed) || !isRecord(parsed.profiles)) {
+      return undefined;
+    }
+
+    const profiles: Record<string, AuthProfileCredential> = {};
+    for (const [profileId, value] of Object.entries(parsed.profiles)) {
+      if (!isRecord(value)) {
+        continue;
+      }
+      const type = value.type;
+      const provider = typeof value.provider === "string" ? value.provider.trim() : "";
+      if (!provider || (type !== "api_key" && type !== "token" && type !== "oauth")) {
+        continue;
+      }
+      profiles[profileId] = value as AuthProfileCredential;
+    }
+
+    const rawOrder = isRecord(parsed.order) ? parsed.order : undefined;
+    const order: Record<string, string[]> | undefined = rawOrder
+      ? Object.entries(rawOrder).reduce<Record<string, string[]>>((acc, [provider, value]) => {
+          if (!Array.isArray(value)) {
+            return acc;
+          }
+          const ids = value
+            .map((entry) => (typeof entry === "string" ? entry.trim() : ""))
+            .filter(Boolean);
+          if (ids.length > 0) {
+            acc[provider] = ids;
+          }
+          return acc;
+        }, {})
+      : undefined;
+
+    return {
+      profiles,
+      ...(order && Object.keys(order).length > 0 ? { order } : {}),
+    };
+  } catch {
+    return undefined;
+  }
+}
+
+/** Merge auth stores, letting later stores override earlier profiles/order. */
+function mergeAuthProfileStores(stores: AuthProfileStore[]): AuthProfileStore | undefined {
+  if (stores.length === 0) {
+    return undefined;
+  }
+  const merged: AuthProfileStore = { profiles: {} };
+  for (const store of stores) {
+    merged.profiles = { ...merged.profiles, ...store.profiles };
+    if (store.order) {
+      merged.order = { ...(merged.order ?? {}), ...store.order };
+    }
+  }
+  return merged;
+}
+
+/** Determine candidate auth store paths ordered by precedence. */
+function resolveAuthStorePaths(params: { agentDir?: string; envSnapshot: PluginEnvSnapshot }): string[] {
+  const paths: string[] = [];
+  const directAgentDir = params.agentDir?.trim();
+  if (directAgentDir) {
+    paths.push(join(directAgentDir, "auth-profiles.json"));
+  }
+
+  const envAgentDir = params.envSnapshot.agentDir;
+  if (envAgentDir) {
+    paths.push(join(envAgentDir, "auth-profiles.json"));
+  }
+
+  const home = params.envSnapshot.home;
+  if (home) {
+    paths.push(join(home, ".openclaw", "agents", "main", "agent", "auth-profiles.json"));
+  }
+
+  return [...new Set(paths)];
+}
+
+/** Build profile selection order for provider auth lookup. */
+function resolveAuthProfileCandidates(params: {
+  provider: string;
+  store: AuthProfileStore;
+  authProfileId?: string;
+  runtimeConfig?: unknown;
+}): string[] {
+  const candidates: string[] = [];
+  const normalizedProvider = normalizeProviderId(params.provider);
+  const push = (value: string | undefined) => {
+    const profileId = value?.trim();
+    if (!profileId) {
+      return;
+    }
+    if (!candidates.includes(profileId)) {
+      candidates.push(profileId);
+    }
+  };
+
+  push(params.authProfileId);
+
+  const storeOrder = findProviderConfigValue(params.store.order, params.provider);
+  for (const profileId of storeOrder ?? []) {
+    push(profileId);
+  }
+
+  if (isRecord(params.runtimeConfig)) {
+    const auth = params.runtimeConfig.auth;
+    if (isRecord(auth)) {
+      const order = findProviderConfigValue(
+        isRecord(auth.order) ? (auth.order as Record<string, unknown>) : undefined,
+        params.provider,
+      );
+      if (Array.isArray(order)) {
+        for (const profileId of order) {
+          if (typeof profileId === "string") {
+            push(profileId);
+          }
+        }
+      }
+    }
+  }
+
+  for (const [profileId, credential] of Object.entries(params.store.profiles)) {
+    if (normalizeProviderId(credential.provider) === normalizedProvider) {
+      push(profileId);
+    }
+  }
+
+  return candidates;
+}
+
+/** Resolve OAuth/api-key/token credentials from auth-profiles store. */
+async function resolveApiKeyFromAuthProfiles(params: {
+  provider: string;
+  authProfileId?: string;
+  agentDir?: string;
+  runtimeConfig?: unknown;
+  piAiModule: PiAiModule;
+  envSnapshot: PluginEnvSnapshot;
+}): Promise<string | undefined> {
+  const storesWithPaths = resolveAuthStorePaths({
+    agentDir: params.agentDir,
+    envSnapshot: params.envSnapshot,
+  })
+    .map((path) => {
+      try {
+        const parsed = parseAuthProfileStore(readFileSync(path, "utf8"));
+        return parsed ? { path, store: parsed } : undefined;
+      } catch {
+        return undefined;
+      }
+    })
+    .filter((entry): entry is { path: string; store: AuthProfileStore } => !!entry);
+  if (storesWithPaths.length === 0) {
+    return undefined;
+  }
+
+  const mergedStore = mergeAuthProfileStores(storesWithPaths.map((entry) => entry.store));
+  if (!mergedStore) {
+    return undefined;
+  }
+
+  const candidates = resolveAuthProfileCandidates({
+    provider: params.provider,
+    store: mergedStore,
+    authProfileId: params.authProfileId,
+    runtimeConfig: params.runtimeConfig,
+  });
+  if (candidates.length === 0) {
+    return undefined;
+  }
+
+  const persistPath =
+    params.agentDir?.trim() ? join(params.agentDir.trim(), "auth-profiles.json") : storesWithPaths[0]?.path;
+
+  for (const profileId of candidates) {
+    const credential = mergedStore.profiles[profileId];
+    if (!credential) {
+      continue;
+    }
+    if (normalizeProviderId(credential.provider) !== normalizeProviderId(params.provider)) {
+      continue;
+    }
+
+    if (credential.type === "api_key") {
+      const key = credential.key?.trim();
+      if (key) {
+        return key;
+      }
+      continue;
+    }
+
+    if (credential.type === "token") {
+      const token = credential.token?.trim();
+      if (!token) {
+        continue;
+      }
+      const expires = credential.expires;
+      if (typeof expires === "number" && Number.isFinite(expires) && expires > 0 && Date.now() >= expires) {
+        continue;
+      }
+      return token;
+    }
+
+    const access = credential.access?.trim();
+    const expires = credential.expires;
+    const isExpired =
+      typeof expires === "number" && Number.isFinite(expires) && expires > 0 && Date.now() >= expires;
+
+    if (!isExpired && access) {
+      if (
+        (credential.provider === "google-gemini-cli" || credential.provider === "google-antigravity") &&
+        typeof credential.projectId === "string" &&
+        credential.projectId.trim()
+      ) {
+        return JSON.stringify({
+          token: access,
+          projectId: credential.projectId.trim(),
+        });
+      }
+      return access;
+    }
+
+    if (typeof params.piAiModule.getOAuthApiKey !== "function") {
+      continue;
+    }
+
+    try {
+      const oauthCredential = {
+        access: credential.access ?? "",
+        refresh: credential.refresh ?? "",
+        expires: typeof credential.expires === "number" ? credential.expires : 0,
+        ...(typeof credential.projectId === "string" ? { projectId: credential.projectId } : {}),
+        ...(typeof credential.accountId === "string" ? { accountId: credential.accountId } : {}),
+      };
+      const refreshed = await params.piAiModule.getOAuthApiKey(params.provider, {
+        [params.provider]: oauthCredential,
+      });
+      if (!refreshed?.apiKey) {
+        continue;
+      }
+      mergedStore.profiles[profileId] = {
+        ...credential,
+        ...refreshed.newCredentials,
+        type: "oauth",
+      };
+      if (persistPath) {
+        try {
+          writeFileSync(
+            persistPath,
+            JSON.stringify(
+              {
+                version: 1,
+                profiles: mergedStore.profiles,
+                ...(mergedStore.order ? { order: mergedStore.order } : {}),
+              },
+              null,
+              2,
+            ),
+            "utf8",
+          );
+        } catch {
+          // Ignore persistence errors: refreshed credentials remain usable in-memory for this run.
+        }
+      }
+      return refreshed.apiKey;
+    } catch {
+      if (access) {
+        return access;
+      }
+    }
+  }
+
+  return undefined;
 }
 
 /** Build a minimal but useful sub-agent prompt. */
@@ -353,6 +706,7 @@ function createLcmDependencies(api: OpenClawPluginApi): LcmDependencies {
   const envSnapshot = snapshotPluginEnv();
   envSnapshot.openclawDefaultModel = readDefaultModelFromConfig(api.config);
   const modelAuth = getRuntimeModelAuth(api);
+  const readEnv: ReadEnvFn = (key) => process.env[key];
   const pluginConfig =
     api.pluginConfig && typeof api.pluginConfig === "object" && !Array.isArray(api.pluginConfig)
       ? api.pluginConfig
@@ -369,6 +723,10 @@ function createLcmDependencies(api: OpenClawPluginApi): LcmDependencies {
     if (typeof summaryProvider === "string") {
       envSnapshot.pluginSummaryProvider = summaryProvider.trim();
     }
+  }
+
+  if (!modelAuth) {
+    api.logger.warn(buildLegacyAuthFallbackWarning());
   }
 
   return {
@@ -447,8 +805,11 @@ function createLcmDependencies(api: OpenClawPluginApi): LcmDependencies {
                 maxTokens: 8_000,
               };
 
-        let resolvedApiKey = apiKey?.trim();
-        if (!resolvedApiKey) {
+        let resolvedApiKey = apiKey?.trim() || resolveApiKey(providerId, readEnv);
+        if (!resolvedApiKey && typeof mod.getEnvApiKey === "function") {
+          resolvedApiKey = mod.getEnvApiKey(providerId)?.trim();
+        }
+        if (!resolvedApiKey && modelAuth) {
           try {
             resolvedApiKey = resolveApiKeyFromAuthResult(
               await modelAuth.resolveApiKeyForProvider({
@@ -463,6 +824,16 @@ function createLcmDependencies(api: OpenClawPluginApi): LcmDependencies {
               err instanceof Error ? err.message : err,
             );
           }
+        }
+        if (!resolvedApiKey) {
+          resolvedApiKey = await resolveApiKeyFromAuthProfiles({
+            provider: providerId,
+            authProfileId,
+            agentDir,
+            runtimeConfig,
+            piAiModule: mod,
+            envSnapshot,
+          });
         }
 
         const completeOptions = buildCompleteSimpleOptions({
@@ -587,28 +958,76 @@ function createLcmDependencies(api: OpenClawPluginApi): LcmDependencies {
       return { provider, model: raw };
     },
     getApiKey: async (provider, model, options) => {
-      try {
-        return resolveApiKeyFromAuthResult(
-          await modelAuth.getApiKeyForModel({
-            model: buildModelAuthLookupModel({ provider, model }),
-            cfg: api.config,
-            ...(options?.profileId ? { profileId: options.profileId } : {}),
-            ...(options?.preferredProfile ? { preferredProfile: options.preferredProfile } : {}),
-          }),
-        );
-      } catch {
-        return undefined;
+      const envKey = resolveApiKey(provider, readEnv);
+      if (envKey) {
+        return envKey;
       }
+
+      if (modelAuth) {
+        try {
+          const modelAuthKey = resolveApiKeyFromAuthResult(
+            await modelAuth.getApiKeyForModel({
+              model: buildModelAuthLookupModel({ provider, model }),
+              cfg: api.config,
+              ...(options?.profileId ? { profileId: options.profileId } : {}),
+              ...(options?.preferredProfile ? { preferredProfile: options.preferredProfile } : {}),
+            }),
+          );
+          if (modelAuthKey) {
+            return modelAuthKey;
+          }
+        } catch {
+          // Fall through to auth-profile lookup for older OpenClaw runtimes.
+        }
+      }
+
+      const piAiModuleId = "@mariozechner/pi-ai";
+      const mod = (await import(piAiModuleId)) as PiAiModule;
+      return resolveApiKeyFromAuthProfiles({
+        provider,
+        authProfileId: options?.profileId,
+        agentDir: api.resolvePath("."),
+        runtimeConfig: api.config,
+        piAiModule: mod,
+        envSnapshot,
+      });
     },
     requireApiKey: async (provider, model, options) => {
-      const key = await resolveApiKeyFromAuthResult(
-        await modelAuth.getApiKeyForModel({
-          model: buildModelAuthLookupModel({ provider, model }),
-          cfg: api.config,
-          ...(options?.profileId ? { profileId: options.profileId } : {}),
-          ...(options?.preferredProfile ? { preferredProfile: options.preferredProfile } : {}),
-        }),
-      );
+      const key = await (async () => {
+        const envKey = resolveApiKey(provider, readEnv);
+        if (envKey) {
+          return envKey;
+        }
+
+        if (modelAuth) {
+          try {
+            const modelAuthKey = resolveApiKeyFromAuthResult(
+              await modelAuth.getApiKeyForModel({
+                model: buildModelAuthLookupModel({ provider, model }),
+                cfg: api.config,
+                ...(options?.profileId ? { profileId: options.profileId } : {}),
+                ...(options?.preferredProfile ? { preferredProfile: options.preferredProfile } : {}),
+              }),
+            );
+            if (modelAuthKey) {
+              return modelAuthKey;
+            }
+          } catch {
+            // Fall through to auth-profile lookup for older OpenClaw runtimes.
+          }
+        }
+
+        const piAiModuleId = "@mariozechner/pi-ai";
+        const mod = (await import(piAiModuleId)) as PiAiModule;
+        return resolveApiKeyFromAuthProfiles({
+          provider,
+          authProfileId: options?.profileId,
+          agentDir: api.resolvePath("."),
+          runtimeConfig: api.config,
+          piAiModule: mod,
+          envSnapshot,
+        });
+      })();
       if (!key) {
         throw new Error(`Missing API key for provider '${provider}' (model '${model}').`);
       }
