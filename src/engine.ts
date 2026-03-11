@@ -32,6 +32,7 @@ import {
   parseFileBlocks,
 } from "./large-files.js";
 import { RetrievalEngine } from "./retrieval.js";
+import { compileSessionPatterns, matchesSessionPattern } from "./session-patterns.js";
 import {
   ConversationStore,
   type CreateMessagePartInput,
@@ -593,6 +594,7 @@ export class LcmContextEngine implements ContextEngine {
   private retrieval: RetrievalEngine;
   private migrated = false;
   private readonly fts5Available: boolean;
+  private readonly ignoreSessionPatterns: RegExp[];
   private sessionOperationQueues = new Map<string, Promise<void>>();
   private largeFileTextSummarizerResolved = false;
   private largeFileTextSummarizer?: (prompt: string) => Promise<string | null>;
@@ -601,6 +603,7 @@ export class LcmContextEngine implements ContextEngine {
   constructor(deps: LcmDependencies) {
     this.deps = deps;
     this.config = deps.config;
+    this.ignoreSessionPatterns = compileSessionPatterns(this.config.ignoreSessionPatterns);
 
     const db = getLcmConnection(this.config.databasePath);
     this.fts5Available = getLcmDbFeatures(db).fts5Available;
@@ -611,6 +614,11 @@ export class LcmContextEngine implements ContextEngine {
     if (!this.fts5Available) {
       this.deps.log.warn(
         "[lcm] FTS5 unavailable in the current Node runtime; full_text search will fall back to LIKE and indexing is disabled",
+      );
+    }
+    if (this.config.ignoreSessionPatterns.length > 0) {
+      this.deps.log.info(
+        `[lcm] Ignoring sessions matching ${this.config.ignoreSessionPatterns.length} pattern(s): ${this.config.ignoreSessionPatterns.join(", ")}`,
       );
     }
 
@@ -640,6 +648,14 @@ export class LcmContextEngine implements ContextEngine {
     );
 
     this.retrieval = new RetrievalEngine(this.conversationStore, this.summaryStore);
+  }
+
+  /** Check whether a session key should be excluded from LCM processing. */
+  private shouldIgnoreSession(sessionId: string): boolean {
+    if (!sessionId.trim() || this.ignoreSessionPatterns.length === 0) {
+      return false;
+    }
+    return matchesSessionPattern(sessionId, this.ignoreSessionPatterns);
   }
 
   /** Ensure DB schema is up-to-date. Called lazily on first bootstrap/ingest/assemble/compact. */
@@ -1005,6 +1021,13 @@ export class LcmContextEngine implements ContextEngine {
   }
 
   async bootstrap(params: { sessionId: string; sessionFile: string }): Promise<BootstrapResult> {
+    if (this.shouldIgnoreSession(params.sessionId)) {
+      return {
+        bootstrapped: false,
+        importedMessages: 0,
+        reason: "session excluded by pattern",
+      };
+    }
     this.ensureMigrated();
 
     const result = await this.withSessionQueue(params.sessionId, async () =>
@@ -1190,6 +1213,9 @@ export class LcmContextEngine implements ContextEngine {
     message: AgentMessage;
     isHeartbeat?: boolean;
   }): Promise<IngestResult> {
+    if (this.shouldIgnoreSession(params.sessionId)) {
+      return { ingested: false };
+    }
     this.ensureMigrated();
     return this.withSessionQueue(params.sessionId, () => this.ingestSingle(params));
   }
@@ -1199,6 +1225,9 @@ export class LcmContextEngine implements ContextEngine {
     messages: AgentMessage[];
     isHeartbeat?: boolean;
   }): Promise<IngestBatchResult> {
+    if (this.shouldIgnoreSession(params.sessionId)) {
+      return { ingestedCount: 0 };
+    }
     this.ensureMigrated();
     if (params.messages.length === 0) {
       return { ingestedCount: 0 };
@@ -1229,6 +1258,9 @@ export class LcmContextEngine implements ContextEngine {
     tokenBudget?: number;
     legacyCompactionParams?: Record<string, unknown>;
   }): Promise<void> {
+    if (this.shouldIgnoreSession(params.sessionId)) {
+      return;
+    }
     this.ensureMigrated();
 
     const ingestBatch: AgentMessage[] = [];
@@ -1303,6 +1335,12 @@ export class LcmContextEngine implements ContextEngine {
     messages: AgentMessage[];
     tokenBudget?: number;
   }): Promise<AssembleResult> {
+    if (this.shouldIgnoreSession(params.sessionId)) {
+      return {
+        messages: params.messages,
+        estimatedTokens: 0,
+      };
+    }
     try {
       this.ensureMigrated();
 
@@ -1481,6 +1519,13 @@ export class LcmContextEngine implements ContextEngine {
     /** Force compaction even if below threshold */
     force?: boolean;
   }): Promise<CompactResult> {
+    if (this.shouldIgnoreSession(params.sessionId)) {
+      return {
+        ok: true,
+        compacted: false,
+        reason: "session excluded",
+      };
+    }
     this.ensureMigrated();
     return this.withSessionQueue(params.sessionId, async () => {
       const { sessionId, force = false } = params;
@@ -1621,6 +1666,12 @@ export class LcmContextEngine implements ContextEngine {
     childSessionKey: string;
     ttlMs?: number;
   }): Promise<SubagentSpawnPreparation | undefined> {
+    if (
+      this.shouldIgnoreSession(params.parentSessionKey)
+      || this.shouldIgnoreSession(params.childSessionKey)
+    ) {
+      return undefined;
+    }
     this.ensureMigrated();
 
     const childSessionKey = params.childSessionKey.trim();
@@ -1658,6 +1709,9 @@ export class LcmContextEngine implements ContextEngine {
     childSessionKey: string;
     reason: SubagentEndReason;
   }): Promise<void> {
+    if (this.shouldIgnoreSession(params.childSessionKey)) {
+      return;
+    }
     const childSessionKey = params.childSessionKey.trim();
     if (!childSessionKey) {
       return;
