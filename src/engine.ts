@@ -14,7 +14,7 @@ import type {
   SubagentEndReason,
   SubagentSpawnPreparation,
 } from "openclaw/plugin-sdk";
-import { ContextAssembler } from "./assembler.js";
+import { ContextAssembler, type AssembleContextResult } from "./assembler.js";
 import { CompactionEngine, type CompactionConfig } from "./compaction.js";
 import type { LcmConfig } from "./db/config.js";
 import { getLcmConnection, closeLcmConnection } from "./db/connection.js";
@@ -601,6 +601,7 @@ export class LcmContextEngine implements ContextEngine {
   private deps: LcmDependencies;
   private brainService: BrainService | null = null;
   private brainAssembler: BrainAssemblerExtension | null = null;
+  private pendingBrainEpisodeBySession = new Map<string, string>();
 
   constructor(deps: LcmDependencies) {
     this.deps = deps;
@@ -1206,6 +1207,7 @@ export class LcmContextEngine implements ContextEngine {
     if (this.brainService) {
       await this.brainService.harvestFromMessage({
         conversationId,
+        episodeId: this.pendingBrainEpisodeBySession.get(sessionId),
         role: stored.role,
         content: stored.content,
       });
@@ -1335,35 +1337,6 @@ export class LcmContextEngine implements ContextEngine {
     try {
       this.ensureMigrated();
 
-      const conversation = await this.conversationStore.getConversationBySessionId(
-        params.sessionId,
-      );
-      if (!conversation) {
-        return {
-          messages: params.messages,
-          estimatedTokens: 0,
-        };
-      }
-
-      const contextItems = await this.summaryStore.getContextItems(conversation.conversationId);
-      if (contextItems.length === 0) {
-        return {
-          messages: params.messages,
-          estimatedTokens: 0,
-        };
-      }
-
-      // Guard against incomplete bootstrap/coverage: if the DB only has
-      // raw context items and clearly trails the current live history, keep
-      // the live path to avoid dropping prompt context.
-      const hasSummaryItems = contextItems.some((item) => item.itemType === "summary");
-      if (!hasSummaryItems && contextItems.length < params.messages.length) {
-        return {
-          messages: params.messages,
-          estimatedTokens: 0,
-        };
-      }
-
       const tokenBudget =
         typeof params.tokenBudget === "number" &&
         Number.isFinite(params.tokenBudget) &&
@@ -1371,11 +1344,68 @@ export class LcmContextEngine implements ContextEngine {
           ? Math.floor(params.tokenBudget)
           : 128_000;
 
-      const assembled = await this.assembler.assemble({
-        conversationId: conversation.conversationId,
+      const brainDecision = this.brainAssembler?.decide({
         tokenBudget,
-        freshTailCount: this.config.freshTailCount,
+        liveMessages: params.messages,
       });
+      let conversation = await this.conversationStore.getConversationBySessionId(
+        params.sessionId,
+      );
+      if (!conversation && brainDecision?.mode === "use_brain") {
+        conversation = await this.conversationStore.getOrCreateConversation(params.sessionId);
+      }
+      if (!conversation) {
+        if (brainDecision && this.brainService && brainDecision.mode !== "use_brain") {
+          this.brainService.noteAssemblyDecision({
+            mode: brainDecision.mode,
+            footer: `[brain] bypassed: ${brainDecision.mode}.`,
+          });
+        }
+        this.pendingBrainEpisodeBySession.delete(params.sessionId);
+        return {
+          messages: params.messages,
+          estimatedTokens: 0,
+        };
+      }
+
+      const contextItems = await this.summaryStore.getContextItems(conversation.conversationId);
+      const hasSummaryItems = contextItems.some((item) => item.itemType === "summary");
+      const canUseAssembledContext =
+        contextItems.length > 0
+        && (hasSummaryItems || contextItems.length >= params.messages.length);
+
+      let assembled: AssembleContextResult;
+      if (canUseAssembledContext) {
+        assembled = await this.assembler.assemble({
+          conversationId: conversation.conversationId,
+          tokenBudget,
+          freshTailCount: this.config.freshTailCount,
+        });
+      } else if (brainDecision?.mode === "use_brain") {
+        assembled = {
+          messages: params.messages,
+          estimatedTokens: estimateSessionTokenCountForAfterTurn(params.messages),
+          stats: {
+            rawMessageCount: params.messages.length,
+            summaryCount: hasSummaryItems ? 1 : 0,
+            totalContextItems: contextItems.length,
+          },
+        };
+      } else {
+        if (brainDecision && this.brainService && brainDecision.mode !== "use_brain") {
+          this.brainService.noteAssemblyDecision({
+            mode: brainDecision.mode,
+            conversationId: conversation.conversationId,
+            footer: `[brain] bypassed: ${brainDecision.mode}.`,
+          });
+        }
+        this.pendingBrainEpisodeBySession.delete(params.sessionId);
+        return {
+          messages: params.messages,
+          estimatedTokens: 0,
+        };
+      }
+
       const hybrid = this.brainAssembler
         ? await this.brainAssembler.augmentAssembly({
             conversationId: conversation.conversationId,
@@ -1384,10 +1414,16 @@ export class LcmContextEngine implements ContextEngine {
             liveMessages: params.messages,
           })
         : assembled;
+      if (hybrid.brainDecision?.episodeId) {
+        this.pendingBrainEpisodeBySession.set(params.sessionId, hybrid.brainDecision.episodeId);
+      } else {
+        this.pendingBrainEpisodeBySession.delete(params.sessionId);
+      }
 
       // If assembly produced no messages for a non-empty live session,
       // fail safe to the live context.
       if (hybrid.messages.length === 0 && params.messages.length > 0) {
+        this.pendingBrainEpisodeBySession.delete(params.sessionId);
         return {
           messages: params.messages,
           estimatedTokens: 0,
@@ -1403,6 +1439,7 @@ export class LcmContextEngine implements ContextEngine {
       };
       return result;
     } catch {
+      this.pendingBrainEpisodeBySession.delete(params.sessionId);
       return {
         messages: params.messages,
         estimatedTokens: 0,

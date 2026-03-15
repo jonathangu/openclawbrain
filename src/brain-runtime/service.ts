@@ -64,6 +64,16 @@ export class BrainService {
   private embeddingClient: BrainEmbeddingFn | null;
   private config: BrainConfig;
   private initialized = false;
+  private latestEpisodeByConversation = new Map<number, string>();
+  private lastAssemblyDecision:
+    | {
+        mode: "use_brain" | "skip_short_static_lookup" | "skip_no_embedding" | "skip_uninitialized" | "skip_budget_too_small";
+        conversationId?: number;
+        episodeId?: string | null;
+        traceId?: string | null;
+        footer?: string | null;
+      }
+    | null = null;
 
   constructor(params: {
     deps: LcmDependencies;
@@ -176,6 +186,14 @@ export class BrainService {
     return this.initialized;
   }
 
+  isEmbeddingConfigured(): boolean {
+    return Boolean(this.embeddingClient);
+  }
+
+  noteAssemblyDecision(decision: NonNullable<BrainService["lastAssemblyDecision"]>): void {
+    this.lastAssemblyDecision = decision;
+  }
+
   async query(params: {
     conversationId: number;
     queryText: string;
@@ -215,6 +233,7 @@ export class BrainService {
       packVersion: this.store.getCurrentPackVersion(),
     });
     this.store.insertEpisode(episode);
+    this.latestEpisodeByConversation.set(params.conversationId, episode.id);
 
     const trace = recordTrace({
       traversalResult,
@@ -268,8 +287,11 @@ export class BrainService {
           ? true
           : episode.conversationId === params.conversationId
       ));
-
-    const recentEpisode = recentEpisodes[0];
+    const exactEpisode =
+      typeof params.conversationId === "number"
+        ? this.store.getEpisode(this.latestEpisodeByConversation.get(params.conversationId) ?? "")
+        : null;
+    const recentEpisode = exactEpisode ?? recentEpisodes[0] ?? null;
     const connectedNodes = new Set<string>();
     for (const firedNodeId of recentEpisode?.firedNodes ?? []) {
       if (connectedNodes.has(firedNodeId)) {
@@ -297,8 +319,9 @@ export class BrainService {
       this.store.insertEdge(reverse);
     }
 
-    for (const episode of recentEpisodes.slice(0, 3)) {
-      if (episode.reward === null) {
+    const targetEpisodes = exactEpisode ? [exactEpisode] : recentEpisodes.slice(0, 3);
+    for (const episode of targetEpisodes) {
+      if (episode && episode.reward === null) {
         this.store.insertLabel({
           episodeId: episode.id,
           source: "human",
@@ -334,6 +357,7 @@ export class BrainService {
       pendingLabels: this.store.getPendingLabels().length,
       recentTraceCount: recentTraces.length,
       lastTraceFooter: recentTraces[0]?.footer ?? null,
+      lastAssemblyDecision: this.lastAssemblyDecision,
       brainRoot: this.config.root,
       ...health,
     };
@@ -382,6 +406,7 @@ export class BrainService {
 
   async harvestFromMessage(params: {
     conversationId: number;
+    episodeId?: string;
     role: string;
     content: string;
   }): Promise<void> {

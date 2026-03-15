@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { mkdtempSync, readFileSync, rmSync } from "node:fs";
+import { mkdtempSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import type { AgentMessage } from "@mariozechner/pi-agent-core";
@@ -115,6 +115,17 @@ function createEngineWithConfig(overrides: Partial<LcmConfig>): LcmContextEngine
     ...overrides,
   };
   return new LcmContextEngine(createTestDeps(config));
+}
+
+function embedForBrain(text: string): Float32Array {
+  const normalized = text.toLowerCase();
+  if (normalized.includes("pull request") || normalized.includes("gh pr create")) {
+    return new Float32Array([1, 0, 0]);
+  }
+  if (normalized.includes("deployment") || normalized.includes("ci")) {
+    return new Float32Array([0, 1, 0]);
+  }
+  return new Float32Array([0.5, 0.5, 0]);
 }
 
 async function withTempHome<T>(run: (homeDir: string) => Promise<T>): Promise<T> {
@@ -755,6 +766,92 @@ describe("LcmContextEngine.assemble canonical path", () => {
 
     expect(result.messages).toBe(liveMessages);
     expect(result.estimatedTokens).toBe(0);
+  });
+
+  it("still routes through the brain when LCM context trails live history", async () => {
+    const previousOpenAiApiKey = process.env.OPENAI_API_KEY;
+    process.env.OPENAI_API_KEY = "test-key";
+    const brainRoot = mkdtempSync(join(tmpdir(), "openclawbrain-engine-state-"));
+    const workspaceRoot = mkdtempSync(join(tmpdir(), "openclawbrain-engine-workspace-"));
+    tempDirs.push(brainRoot, workspaceRoot);
+    try {
+      writeFileSync(
+        join(workspaceRoot, "PLAYBOOK.md"),
+        "# Pull Requests\n\nUse gh pr create for pull request workflows.\n",
+        "utf8",
+      );
+
+      const fetchMock = vi.fn(async () => ({
+        ok: true,
+        json: async () => ({ data: [{ embedding: Array.from(embedForBrain("gh pr create pull request")) }] }),
+      }));
+      vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+      const engine = createEngineWithConfig({
+        brain: {
+          enabled: true,
+          root: brainRoot,
+          budgetFraction: 0.3,
+          maxHops: 8,
+          maxSeeds: 10,
+          semanticThreshold: 0.1,
+          servingTemperature: 0.1,
+          learningTemperature: 1,
+          learningRate: 0.01,
+          baselineAlpha: 0.1,
+          decayRate: 0.995,
+          trainerIntervalMs: 10_000,
+          teacherEnabled: false,
+          teacherProvider: "",
+          teacherModel: "",
+          mutationsEnabled: true,
+          replayEpisodeCount: 100,
+          minFiredPerQuery: 1,
+          maxDormantPercent: 0.3,
+          maxOrphanCount: 10,
+          embeddingProvider: "openai",
+          embeddingModel: "text-embedding-3-small",
+          embeddingBaseUrl: "https://example.invalid/v1",
+        },
+      });
+      const brainService = engine.getBrainService();
+      expect(brainService).not.toBeNull();
+      await brainService!.init({
+        workspaceRoot,
+        embedFn: async (text) => embedForBrain(text),
+      });
+      expect(await brainService!.status()).toEqual(
+        expect.objectContaining({
+          initialized: true,
+          currentPackVersion: 1,
+        }),
+      );
+
+      const sessionId = "session-brain-trailing-live";
+      await engine.ingest({
+        sessionId,
+        message: { role: "user", content: "persisted message only" } as AgentMessage,
+      });
+
+      const result = await engine.assemble({
+        sessionId,
+        messages: [
+          { role: "user", content: "How do I open a pull request?" },
+          { role: "assistant", content: "Let me think." },
+        ] as AgentMessage[],
+        tokenBudget: 10_000,
+      });
+
+      expect(typeof result.messages[0]?.content).toBe("string");
+      expect(result.messages[0]?.content).toContain("OpenClawBrain retrieved context");
+      expect(result.messages[0]?.content).toContain("Correction Cards");
+    } finally {
+      if (previousOpenAiApiKey === undefined) {
+        delete process.env.OPENAI_API_KEY;
+      } else {
+        process.env.OPENAI_API_KEY = previousOpenAiApiKey;
+      }
+    }
   });
 
   it("drops orphan tool results during assembled transcript repair", async () => {

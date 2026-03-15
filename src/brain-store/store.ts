@@ -189,6 +189,16 @@ export class BrainStore {
     return rows.map((r) => this.toEpisode(r));
   }
 
+  getRecentEpisodesForConversation(conversationId: number, limit: number): Episode[] {
+    const rows = this.db.prepare(`
+      SELECT * FROM brain_episodes
+      WHERE conversation_id = ?
+      ORDER BY created_at DESC
+      LIMIT ?
+    `).all(conversationId, limit) as Record<string, unknown>[];
+    return rows.map((r) => this.toEpisode(r));
+  }
+
   getEpisodesForUpdate(limit: number): Episode[] {
     const rows = this.db.prepare(`
       SELECT * FROM brain_episodes WHERE reward IS NOT NULL AND updated = 0 ORDER BY created_at ASC LIMIT ?

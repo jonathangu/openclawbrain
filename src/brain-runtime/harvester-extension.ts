@@ -67,17 +67,23 @@ export class LabelHarvester {
    */
   async harvestFromMessage(params: {
     conversationId: number;
+    episodeId?: string;
     role: string;
     content: string;
   }): Promise<void> {
     const result = this.detectLabel(params.role, params.content);
     if (!result) return;
 
-    // Apply label to the most recent episode in this conversation
-    const recentEpisodes = this.store.getRecentEpisodes(5);
-    const matchingEpisode = recentEpisodes.find(
-      (ep) => ep.conversationId === params.conversationId,
-    );
+    const matchingEpisode =
+      (() => {
+        if (!params.episodeId) {
+          return null;
+        }
+        const episode = this.store.getEpisode(params.episodeId);
+        return episode?.conversationId === params.conversationId ? episode : null;
+      })()
+      ?? this.store.getRecentEpisodesForConversation(params.conversationId, 5)[0]
+      ?? null;
 
     if (!matchingEpisode) return;
 
