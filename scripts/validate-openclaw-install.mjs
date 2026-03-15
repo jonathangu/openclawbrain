@@ -55,6 +55,7 @@ function run(command, commandArgs, options = {}) {
     env,
     encoding: "utf8",
     stdio: ["ignore", "pipe", "pipe"],
+    ...(typeof options.timeoutMs === "number" ? { timeout: options.timeoutMs } : {}),
   });
 }
 
@@ -120,14 +121,6 @@ function updateConfig(options = {}) {
   config.plugins.entries.openclawbrain.enabled = true;
   config.plugins.entries.openclawbrain.config = {
     enabled: true,
-    dbPath: lcmDbPath,
-    brainRoot,
-    brainEnabled: true,
-    brainShadowMode: options.shadowMode ?? false,
-    brainWorkerMode: process.env.OPENCLAWBRAIN_VALIDATION_WORKER_MODE?.trim() || "child",
-    brainEmbeddingProvider: cleanEnv().OPENCLAWBRAIN_EMBEDDING_PROVIDER,
-    brainEmbeddingModel: cleanEnv().OPENCLAWBRAIN_EMBEDDING_MODEL,
-    brainEmbeddingBaseUrl: cleanEnv().OPENCLAWBRAIN_EMBEDDING_BASE_URL,
   };
   config.plugins.slots.contextEngine = "openclawbrain";
 
@@ -136,6 +129,34 @@ function updateConfig(options = {}) {
     config.agents ??= {};
     config.agents.defaults ??= {};
     config.agents.defaults.model = { primary: validationModel };
+
+    const [providerId, ...modelParts] = validationModel.split("/");
+    const modelId = modelParts.join("/").trim();
+    if (providerId?.trim() === "ollama" && modelId) {
+      config.models ??= {};
+      config.models.providers ??= {};
+      const providerKey = config.models.providers.ollama ? "ollama" : "ollama";
+      const existing = config.models.providers[providerKey] ?? {};
+      config.models.providers[providerKey] = {
+        ...existing,
+        api: "ollama",
+        baseUrl: process.env.OPENCLAWBRAIN_VALIDATION_MODEL_BASE_URL?.trim() || "http://127.0.0.1:11434",
+        apiKey: (existing.apiKey && String(existing.apiKey).trim()) || "ollama-local",
+        models: Array.isArray(existing.models) && existing.models.length > 0
+          ? existing.models
+          : [
+              {
+                id: modelId,
+                name: modelId,
+                reasoning: false,
+                input: ["text"],
+                cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+                contextWindow: 262144,
+                maxTokens: 16384,
+              },
+            ],
+      };
+    }
   }
 
   writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
@@ -163,6 +184,7 @@ function collectStrings(value, out = []) {
 function maybeRunAgentChecks(report) {
   const validationModel = process.env.OPENCLAWBRAIN_VALIDATION_MODEL?.trim();
   const embeddingModel = cleanEnv().OPENCLAWBRAIN_EMBEDDING_MODEL;
+  const agentTimeoutMs = Number.parseInt(process.env.OPENCLAWBRAIN_VALIDATION_AGENT_TIMEOUT_MS?.trim() || "120000", 10);
   if (!validationModel || !embeddingModel) {
     report.skipped.push({
       phase: "agent-routing",
@@ -181,7 +203,7 @@ function maybeRunAgentChecks(report) {
     "--message",
     "How do I open a pull request again?",
     "--json",
-  ]);
+  ], { timeoutMs: agentTimeoutMs });
   report.agent.recurrentQuery = extractJson(recurrentOutput);
 
   const recurrentStatus = extractJson(run("node", ["bin/openclawbrain.js", "status"]));
@@ -213,7 +235,7 @@ function maybeRunAgentChecks(report) {
     "--message",
     "open PLAYBOOK.md",
     "--json",
-  ]);
+  ], { timeoutMs: agentTimeoutMs });
   report.agent.shortLookup = extractJson(shortLookupOutput);
   const shortStatus = extractJson(run("node", ["bin/openclawbrain.js", "status"]));
   report.assertions.shortLookup = {
@@ -229,7 +251,7 @@ function maybeRunAgentChecks(report) {
     "--message",
     "How do I open a pull request again?",
     "--json",
-  ]);
+  ], { timeoutMs: agentTimeoutMs });
   report.agent.shadowQuery = extractJson(shadowOutput);
   const shadowStatus = extractJson(run("node", ["bin/openclawbrain.js", "status"]));
   const shadowTrace = extractJson(run("node", ["bin/openclawbrain.js", "trace"]));
