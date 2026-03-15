@@ -30,6 +30,21 @@ export type EdgeKind =
 
 export const START_NODE_ID = "__START__";
 
+export interface SeedWeightUpdate {
+  kind: "seed";
+  nodeId: string;
+  delta: number;
+}
+
+export interface EdgeWeightUpdate {
+  kind: "edge";
+  source: string;
+  target: string;
+  delta: number;
+}
+
+export type PolicyWeightUpdate = SeedWeightUpdate | EdgeWeightUpdate;
+
 export type TrustLevel = "human" | "scanner" | "teacher" | "self";
 
 export type RewardSource = TrustLevel;
@@ -89,10 +104,16 @@ export type TraversalAction =
 export interface SeedScore {
   nodeId: string;
   priorScore: number;
-  learnedScore: number;
+  learnedSeedWeight: number;
   policyScore: number;
   probability: number;
   chosen: boolean;
+}
+
+export interface SeedWeight {
+  nodeId: string;
+  weight: number;
+  updatedAt: number;
 }
 
 /**
@@ -111,6 +132,8 @@ export interface TrajectoryStep {
     action: TraversalAction;
     score: number;
     probability: number;
+    priorScore?: number;
+    learnedSeedWeight?: number;
   }>;
   chosenAction: TraversalAction;
   chosenActionProbability: number;

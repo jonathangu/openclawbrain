@@ -34,6 +34,7 @@ export class BrainGraph {
   private nodes: Map<string, BrainNode> = new Map();
   private outEdges: Map<string, BrainEdge[]> = new Map();
   private inEdges: Map<string, BrainEdge[]> = new Map();
+  private seedWeights: Map<string, number> = new Map();
 
   addNode(node: BrainNode): void {
     this.nodes.set(node.id, node);
@@ -43,6 +44,7 @@ export class BrainGraph {
 
   removeNode(nodeId: string): void {
     this.nodes.delete(nodeId);
+    this.seedWeights.delete(nodeId);
     // Remove all edges involving this node
     const out = this.outEdges.get(nodeId) ?? [];
     for (const edge of out) {
@@ -138,6 +140,33 @@ export class BrainGraph {
     return [...new Set(edges.map((e) => e.target))];
   }
 
+  getSeedWeight(nodeId: string): number {
+    return this.seedWeights.get(nodeId) ?? 0;
+  }
+
+  getSeedWeights(nodeIds: string[]): Record<string, number> {
+    const weights: Record<string, number> = {};
+    for (const nodeId of nodeIds) {
+      weights[nodeId] = this.getSeedWeight(nodeId);
+    }
+    return weights;
+  }
+
+  setSeedWeight(nodeId: string, weight: number): void {
+    if (!this.nodes.has(nodeId)) {
+      return;
+    }
+    this.seedWeights.set(nodeId, weight);
+  }
+
+  getAllSeedWeights(): Array<{ nodeId: string; weight: number }> {
+    return [...this.seedWeights.entries()].map(([nodeId, weight]) => ({ nodeId, weight }));
+  }
+
+  hasSeedWeights(): boolean {
+    return this.seedWeights.size > 0;
+  }
+
   clone(): BrainGraph {
     const clone = new BrainGraph();
     for (const node of this.nodes.values()) {
@@ -153,6 +182,9 @@ export class BrainGraph {
         ...edge,
         metadata: { ...edge.metadata },
       });
+    }
+    for (const { nodeId, weight } of this.getAllSeedWeights()) {
+      clone.setSeedWeight(nodeId, weight);
     }
     return clone;
   }
@@ -284,5 +316,6 @@ export class BrainGraph {
     this.nodes.clear();
     this.outEdges.clear();
     this.inEdges.clear();
+    this.seedWeights.clear();
   }
 }

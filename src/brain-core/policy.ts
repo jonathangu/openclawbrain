@@ -15,7 +15,7 @@ import type {
   TraversalState,
   PolicyParams,
 } from "./types.js";
-import { DEFAULT_POLICY_PARAMS, START_NODE_ID as START } from "./types.js";
+import { DEFAULT_POLICY_PARAMS } from "./types.js";
 import { BrainGraph, cosineSimilarity } from "./graph.js";
 
 /**
@@ -46,10 +46,14 @@ export function scoreAction(
   const targetNode = graph.getNode(action.targetNodeId);
   if (!targetNode) return -Infinity;
 
+  if (state.currentNodeId === null) {
+    const seedPrior = action.seedScore ?? 0;
+    const learnedSeedWeight = graph.getSeedWeight(action.targetNodeId);
+    return seedPrior + learnedSeedWeight;
+  }
+
   // Find edge from current position to target
-  const edge = state.currentNodeId
-    ? graph.getEdge(state.currentNodeId, action.targetNodeId)
-    : graph.getEdge(START, action.targetNodeId);
+  const edge = graph.getEdge(state.currentNodeId, action.targetNodeId);
 
   // Base score from edge weight and prior
   const edgeScore = edge ? edge.weight * edge.prior : 0;
@@ -62,9 +66,8 @@ export function scoreAction(
 
   // Edge kind bias
   const kindBias = edge ? (params.edgeKindBias[edge.kind] ?? 0) : 0;
-  const seedPrior = state.currentNodeId === null ? (action.seedScore ?? 0) : 0;
 
-  return edgeScore + relevance + kindBias + seedPrior;
+  return edgeScore + relevance + kindBias;
 }
 
 /**

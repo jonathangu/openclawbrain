@@ -1,5 +1,5 @@
 import { computeHealth } from "../brain-core/health.js";
-import type { BrainConfig, BrainNode } from "../brain-core/types.js";
+import type { BrainConfig, BrainNode, SeedWeight } from "../brain-core/types.js";
 import type { BrainGraph } from "../brain-core/graph.js";
 import { PackManager } from "../brain-core/pack.js";
 import type { BrainStore } from "../brain-store/store.js";
@@ -8,10 +8,20 @@ export function flattenEdges(graph: BrainGraph) {
   return graph.getAllEdges();
 }
 
+export function flattenSeedWeights(graph: BrainGraph): SeedWeight[] {
+  const now = Date.now();
+  return graph.getAllSeedWeights().map((seedWeight) => ({
+    nodeId: seedWeight.nodeId,
+    weight: seedWeight.weight,
+    updatedAt: now,
+  }));
+}
+
 export function populateGraph(
   graph: BrainGraph,
   nodes: BrainNode[],
   edges: ReturnType<typeof flattenEdges>,
+  seedWeights: SeedWeight[] = [],
 ): void {
   graph.clear();
   for (const node of nodes) {
@@ -20,10 +30,13 @@ export function populateGraph(
   for (const edge of edges) {
     graph.addEdge(edge);
   }
+  for (const seedWeight of seedWeights) {
+    graph.setSeedWeight(seedWeight.nodeId, seedWeight.weight);
+  }
 }
 
 export function reloadGraphFromStore(store: BrainStore, graph: BrainGraph): void {
-  populateGraph(graph, store.getAllNodes(), store.loadAllEdges());
+  populateGraph(graph, store.getAllNodes(), store.loadAllEdges(), store.loadAllSeedWeights());
 }
 
 export function promoteGraphSnapshot(params: {
@@ -48,6 +61,7 @@ export function promoteGraphSnapshot(params: {
     version: pack.version,
     nodes: params.graph.getAllNodes(),
     edges: flattenEdges(params.graph),
+    seedWeights: flattenSeedWeights(params.graph),
     metadata: {
       reason: params.reason,
       ...params.metadata,

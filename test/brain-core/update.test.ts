@@ -2,7 +2,6 @@ import { describe, it, expect } from "vitest";
 import { computeReinforceUpdates, updateBaseline, applyWeightUpdates } from "../../src/brain-core/update.js";
 import { BrainGraph } from "../../src/brain-core/graph.js";
 import type { Episode, TrajectoryStep, BrainNode, BrainEdge } from "../../src/brain-core/types.js";
-import { START_NODE_ID } from "../../src/brain-core/types.js";
 
 function makeNode(id: string): BrainNode {
   return {
@@ -100,14 +99,14 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
     }
   });
 
-  it("updates seed-phase transitions through the virtual start head", () => {
+  it("updates seed-phase transitions through explicit seed weights", () => {
     const episode = makeEpisode([makeStep(null, "b", 0.6)], 1.0);
     const updates = computeReinforceUpdates(episode, 0.1, 0.0);
 
     expect(updates).toEqual([
       expect.objectContaining({
-        source: START_NODE_ID,
-        target: "b",
+        kind: "seed",
+        nodeId: "b",
       }),
     ]);
     expect(updates[0]?.delta).toBeGreaterThan(0);
@@ -147,30 +146,20 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
       graph.addNode(makeNode("b"));
       graph.addEdge(makeEdge("a", "b", 0.5));
 
-      applyWeightUpdates(graph, [{ source: "a", target: "b", delta: 0.2 }]);
+      applyWeightUpdates(graph, [{ kind: "edge", source: "a", target: "b", delta: 0.2 }]);
 
       const edge = graph.getEdge("a", "b");
       expect(edge?.weight).toBeCloseTo(0.7);
     });
 
-    it("creates valid updates for seed edges too", () => {
+    it("creates valid updates for seed weights too", () => {
       const graph = new BrainGraph();
       graph.addNode(makeNode("b"));
-      graph.addEdge({
-        source: START_NODE_ID,
-        target: "b",
-        kind: "seed",
-        weight: 0.5,
-        prior: 0.5,
-        metadata: {},
-        decayedAt: Date.now(),
-        createdAt: Date.now(),
-      });
+      graph.setSeedWeight("b", 0.5);
 
-      applyWeightUpdates(graph, [{ source: START_NODE_ID, target: "b", delta: 0.2 }]);
+      applyWeightUpdates(graph, [{ kind: "seed", nodeId: "b", delta: 0.2 }]);
 
-      const edge = graph.getEdge(START_NODE_ID, "b");
-      expect(edge?.weight).toBeCloseTo(0.7);
+      expect(graph.getSeedWeight("b")).toBeCloseTo(0.7);
     });
 
     it("clamps weights to [-10, 10]", () => {
@@ -179,7 +168,7 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
       graph.addNode(makeNode("b"));
       graph.addEdge(makeEdge("a", "b", 9.5));
 
-      applyWeightUpdates(graph, [{ source: "a", target: "b", delta: 5.0 }]);
+      applyWeightUpdates(graph, [{ kind: "edge", source: "a", target: "b", delta: 5.0 }]);
 
       const edge = graph.getEdge("a", "b");
       expect(edge?.weight).toBe(10);

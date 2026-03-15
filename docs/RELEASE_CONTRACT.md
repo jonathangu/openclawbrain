@@ -33,8 +33,8 @@ These are true in the current repo and can be claimed now.
   - Updates are computed across the recorded trajectory, not as a single one-step chosen-edge patch.
   - See: `src/brain-core/update.ts`, `src/brain-worker/worker.ts`, `test/brain-core/update.test.ts`
 - **Learned seed routing**
-  - The repo already learns from the virtual `__START__` / `START_NODE_ID` head, so seed selection is part of the learnable policy surface.
-  - See: `src/brain-core/types.ts`, `src/brain-core/traverse.ts`, `src/brain-core/update.ts`, `test/brain-core/update.test.ts`
+  - The repo now persists explicit per-node seed weights, so seed selection is part of the learnable policy surface rather than a fake edge-only update.
+  - See: `src/brain-core/types.ts`, `src/brain-core/traverse.ts`, `src/brain-core/update.ts`, `src/brain-store/store.ts`, `test/brain-core/seed-policy.test.ts`
 - **Immutable promoted packs**
   - Serving happens from promoted snapshots; mutable working state is promoted into immutable pack snapshots.
   - See: `src/brain-core/pack.ts`, `src/brain-store/store.ts`, `src/brain-runtime/service.ts`, `test/brain-runtime/service.test.ts`

@@ -43,6 +43,12 @@ export function runBrainMigrations(db: DatabaseSync): void {
     CREATE INDEX IF NOT EXISTS brain_edges_target_idx ON brain_edges(target);
     CREATE INDEX IF NOT EXISTS brain_nodes_kind_idx ON brain_nodes(kind);
 
+    CREATE TABLE IF NOT EXISTS brain_seed_weights (
+      node_id       TEXT PRIMARY KEY,
+      weight        REAL NOT NULL DEFAULT 0.0,
+      updated_at    INTEGER NOT NULL
+    );
+
     -- ═══════════════════════════════════════════
     -- Episodes (full traversal records)
     -- ═══════════════════════════════════════════

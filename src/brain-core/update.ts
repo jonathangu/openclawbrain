@@ -18,15 +18,9 @@
  * The full-trajectory sum is achieved by accumulating updates across all steps.
  */
 
-import type { Episode } from "./types.js";
+import type { Episode, PolicyWeightUpdate } from "./types.js";
 import { START_NODE_ID } from "./types.js";
 import type { BrainGraph } from "./graph.js";
-
-export interface WeightUpdate {
-  source: string;
-  target: string;
-  delta: number;
-}
 
 /**
  * Compute REINFORCE weight updates from a completed episode.
@@ -38,13 +32,13 @@ export function computeReinforceUpdates(
   episode: Episode,
   learningRate: number,
   baseline: number,
-): WeightUpdate[] {
+): PolicyWeightUpdate[] {
   if (episode.reward === null) return [];
 
   const advantage = episode.reward - baseline;
   if (Math.abs(advantage) < 1e-8) return [];
 
-  const updates: Map<string, WeightUpdate> = new Map();
+  const updates: Map<string, PolicyWeightUpdate> = new Map();
 
   // Sum over all trajectory steps l = 0 to T (full-trajectory, not one-step)
   for (const step of episode.trajectory) {
@@ -59,14 +53,25 @@ export function computeReinforceUpdates(
     // Δρ ∝ (z - baseline) × ∂logP/∂ρ
     const delta = learningRate * advantage * gradLogP;
 
+    if (sourceId === START_NODE_ID) {
+      const key = `seed→${targetId}`;
+      const existing = updates.get(key);
+      if (existing && existing.kind === "seed") {
+        existing.delta += delta;
+      } else {
+        updates.set(key, { kind: "seed", nodeId: targetId, delta });
+      }
+      continue;
+    }
+
     // Accumulate: the full-trajectory sum means each step adds to the gradient
     const key = `${sourceId}→${targetId}`;
 
     const existing = updates.get(key);
-    if (existing) {
+    if (existing && existing.kind === "edge") {
       existing.delta += delta;
     } else {
-      updates.set(key, { source: sourceId, target: targetId, delta });
+      updates.set(key, { kind: "edge", source: sourceId, target: targetId, delta });
     }
   }
 
@@ -97,9 +102,15 @@ export function updateBaseline(
  */
 export function applyWeightUpdates(
   graph: BrainGraph,
-  updates: WeightUpdate[],
+  updates: PolicyWeightUpdate[],
 ): void {
   for (const update of updates) {
+    if (update.kind === "seed") {
+      const nextWeight = Math.max(-10, Math.min(10, graph.getSeedWeight(update.nodeId) + update.delta));
+      graph.setSeedWeight(update.nodeId, nextWeight);
+      continue;
+    }
+
     const edge = graph.getEdge(update.source, update.target);
     if (!edge) continue;
 

@@ -26,6 +26,7 @@ import type {
   BrainEvidenceKind,
   BrainEvidenceResolution,
   ResolvedLabel,
+  SeedWeight,
 } from "../brain-core/types.js";
 
 // ═══════════════════════════════════════════
@@ -91,12 +92,14 @@ export class BrainStore {
 
   clearGraph(): void {
     this.db.exec(`
+      DELETE FROM brain_seed_weights;
       DELETE FROM brain_edges;
       DELETE FROM brain_nodes;
     `);
   }
 
   deleteNode(id: string): void {
+    this.db.prepare(`DELETE FROM brain_seed_weights WHERE node_id = ?`).run(id);
     this.db.prepare(`DELETE FROM brain_edges WHERE source = ? OR target = ?`).run(id, id);
     this.db.prepare(`DELETE FROM brain_nodes WHERE id = ?`).run(id);
   }
@@ -164,6 +167,50 @@ export class BrainStore {
       decayedAt: row.decayed_at as number,
       createdAt: row.created_at as number,
     };
+  }
+
+  // ─── Seed Weights ───
+
+  setSeedWeight(nodeId: string, weight: number): void {
+    this.db.prepare(`
+      INSERT INTO brain_seed_weights (node_id, weight, updated_at)
+      VALUES (?, ?, ?)
+      ON CONFLICT(node_id) DO UPDATE SET weight = excluded.weight, updated_at = excluded.updated_at
+    `).run(nodeId, weight, Date.now());
+  }
+
+  getSeedWeight(nodeId: string): SeedWeight | null {
+    const row = this.db.prepare(`SELECT * FROM brain_seed_weights WHERE node_id = ?`).get(nodeId) as Record<string, unknown> | undefined;
+    if (!row) {
+      return null;
+    }
+    return {
+      nodeId: row.node_id as string,
+      weight: row.weight as number,
+      updatedAt: row.updated_at as number,
+    };
+  }
+
+  getSeedWeights(nodeIds: string[]): Record<string, number> {
+    if (nodeIds.length === 0) {
+      return {};
+    }
+    const placeholders = nodeIds.map(() => "?").join(", ");
+    const rows = this.db.prepare(`SELECT node_id, weight FROM brain_seed_weights WHERE node_id IN (${placeholders})`).all(...nodeIds) as Array<{ node_id: string; weight: number }>;
+    const weights: Record<string, number> = {};
+    for (const row of rows) {
+      weights[row.node_id] = row.weight;
+    }
+    return weights;
+  }
+
+  getAllSeedWeights(): SeedWeight[] {
+    const rows = this.db.prepare(`SELECT * FROM brain_seed_weights`).all() as Record<string, unknown>[];
+    return rows.map((row) => ({
+      nodeId: row.node_id as string,
+      weight: row.weight as number,
+      updatedAt: row.updated_at as number,
+    }));
   }
 
   // ─── Episodes ───
@@ -638,6 +685,10 @@ export class BrainStore {
     return rows.map((r) => this.toEdge(r));
   }
 
+  loadAllSeedWeights(): SeedWeight[] {
+    return this.getAllSeedWeights();
+  }
+
   getCurrentPackVersion(): number | null {
     if (!this.options.brainRoot) {
       return null;
@@ -658,6 +709,7 @@ export class BrainStore {
     version: number;
     nodes: BrainNode[];
     edges: BrainEdge[];
+    seedWeights?: SeedWeight[];
     metadata: Record<string, unknown>;
   }): string {
     if (!this.options.brainRoot) {
@@ -688,6 +740,11 @@ export class BrainStore {
       `${params.edges.map((edge) => JSON.stringify(edge)).join("\n")}\n`,
       "utf8",
     );
+    writeFileSync(
+      join(packDir, "seed-weights.jsonl"),
+      `${(params.seedWeights ?? []).map((seedWeight) => JSON.stringify(seedWeight)).join("\n")}${(params.seedWeights ?? []).length > 0 ? "\n" : ""}`,
+      "utf8",
+    );
 
     return packDir;
   }
@@ -695,6 +752,7 @@ export class BrainStore {
   readPackSnapshot(version: number): {
     nodes: BrainNode[];
     edges: BrainEdge[];
+    seedWeights: SeedWeight[];
     metadata: Record<string, unknown>;
   } | null {
     if (!this.options.brainRoot) {
@@ -704,6 +762,7 @@ export class BrainStore {
     const packDir = this.getPackDir(version);
     const nodesFile = join(packDir, "nodes.jsonl");
     const edgesFile = join(packDir, "edges.jsonl");
+    const seedWeightsFile = join(packDir, "seed-weights.jsonl");
     const metadataFile = join(packDir, "metadata.json");
     if (!existsSync(nodesFile) || !existsSync(edgesFile)) {
       return null;
@@ -723,11 +782,18 @@ export class BrainStore {
         : null,
     }));
     const edges = parseJsonl(readFileSync(edgesFile, "utf8")) as unknown as BrainEdge[];
+    const seedWeights = existsSync(seedWeightsFile)
+      ? parseJsonl(readFileSync(seedWeightsFile, "utf8")).map((row) => ({
+          nodeId: row.nodeId as string,
+          weight: Number(row.weight ?? 0),
+          updatedAt: Number(row.updatedAt ?? 0),
+        }))
+      : [];
     const metadata = existsSync(metadataFile)
       ? JSON.parse(readFileSync(metadataFile, "utf8")) as Record<string, unknown>
       : {};
 
-    return { nodes, edges, metadata };
+    return { nodes, edges, seedWeights, metadata };
   }
 
   private getPacksDir(): string {

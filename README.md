@@ -191,7 +191,7 @@ openclawbrain doctor
 - If embeddings are not configured, learned retrieval and `brain_teach` stay disabled.
 - If the background worker is unavailable, serving still uses the last promoted pack.
 - `brain_teach` now binds taught corrections to the active conversation when invoked from a live tool session.
-- Seed learning is persisted through a virtual `__START__` policy head and exposed in traces.
+- Seed learning is persisted as explicit per-node seed weights and exposed in traces.
 
 ## Operational gaps still open
 

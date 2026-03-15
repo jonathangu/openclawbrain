@@ -1,5 +1,5 @@
 import type { BrainConfig, BrainEdge } from "../brain-core/types.js";
-import { START_NODE_ID, trustRank } from "../brain-core/types.js";
+import { trustRank } from "../brain-core/types.js";
 import type { BrainStore } from "../brain-store/store.js";
 import type { BrainGraph } from "../brain-core/graph.js";
 import type { BrainTeacher } from "../brain-core/teacher.js";
@@ -201,6 +201,11 @@ export class BrainWorker {
       applyWeightUpdates(this.graph, updates);
 
       for (const update of updates) {
+        if (update.kind === "seed") {
+          this.store.setSeedWeight(update.nodeId, this.graph.getSeedWeight(update.nodeId));
+          continue;
+        }
+
         const edge = this.graph.getEdge(update.source, update.target);
         if (edge) {
           this.store.updateEdgeWeight(edge.source, edge.target, edge.kind, edge.weight);
@@ -211,7 +216,7 @@ export class BrainWorker {
         const createdEdge: BrainEdge = {
           source: update.source,
           target: update.target,
-          kind: update.source === START_NODE_ID ? "seed" : "learned",
+          kind: "learned",
           weight: Math.max(-10, Math.min(10, update.delta)),
           prior: 0.5,
           metadata: { createdBy: "reinforce" },

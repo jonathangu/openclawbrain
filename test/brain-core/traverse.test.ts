@@ -56,7 +56,7 @@ describe("traverse", () => {
     const graph = new BrainGraph();
     graph.addNode(makeNode("a", new Float32Array([1, 0, 0])));
     graph.addNode(makeNode("b", new Float32Array([1, 0, 0])));
-    graph.addEdge(makeEdge("__START__", "a", "seed", 1.0));
+    graph.setSeedWeight("a", 1.0);
 
     const result = traverse({
       graph,

@@ -108,24 +108,25 @@ describe("integration: full learning pipeline", () => {
     const initialEdgeAC = graph.getEdge("a", "c");
     const initialWeightAB = initialEdgeAB?.weight ?? 0.5;
     const initialWeightAC = initialEdgeAC?.weight ?? 0.5;
+    const chosenSeed = result.seedScores.find((seed) => seed.chosen)?.nodeId ?? null;
+    const initialSeedWeight = chosenSeed ? graph.getSeedWeight(chosenSeed) : 0;
 
     const updates = computeReinforceUpdates(episode, 0.1, 0.0);
     applyWeightUpdates(graph, updates);
 
     // Step 6: Verify learning happened
-    // The edges that were traversed should have changed weight
     if (updates.length > 0) {
       const updatedEdgeAB = graph.getEdge("a", "b");
       const updatedEdgeAC = graph.getEdge("a", "c");
+      const updatedSeedWeight = chosenSeed ? graph.getSeedWeight(chosenSeed) : 0;
 
-      // At least one edge should have changed
       const abChanged = updatedEdgeAB && Math.abs(updatedEdgeAB.weight - initialWeightAB) > 0.001;
       const acChanged = updatedEdgeAC && Math.abs(updatedEdgeAC.weight - initialWeightAC) > 0.001;
-      expect(abChanged || acChanged).toBe(true);
+      const seedChanged = chosenSeed !== null && Math.abs(updatedSeedWeight - initialSeedWeight) > 0.001;
+      expect(abChanged || acChanged || seedChanged).toBe(true);
 
-      // With positive reward and zero baseline, traversed edges should strengthen
       for (const update of updates) {
-        expect(update.delta).toBeGreaterThan(0); // Positive reward → positive delta
+        expect(update.delta).toBeGreaterThan(0);
       }
     }
   });

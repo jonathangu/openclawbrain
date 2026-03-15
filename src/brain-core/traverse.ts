@@ -20,7 +20,7 @@ import type {
   NodeKind,
   SeedScore,
 } from "./types.js";
-import { DEFAULT_POLICY_PARAMS, START_NODE_ID as START_NODE } from "./types.js";
+import { DEFAULT_POLICY_PARAMS } from "./types.js";
 import type { BrainGraph } from "./graph.js";
 import { softmaxPolicy, sampleAction } from "./policy.js";
 
@@ -138,11 +138,10 @@ export function traverse(options: TraverseOptions): TraverseResult {
         const traverseEntry = distribution.find(
           (entry) => entry.action.type === "traverse" && entry.action.targetNodeId === seed.nodeId,
         );
-        const seedEdge = graph.getEdge(START_NODE, seed.nodeId);
         return {
           nodeId: seed.nodeId,
           priorScore: seed.score,
-          learnedScore: seedEdge ? seedEdge.weight * seedEdge.prior : 0,
+          learnedSeedWeight: graph.getSeedWeight(seed.nodeId),
           policyScore: traverseEntry?.score ?? seed.score,
           probability: traverseEntry?.probability ?? 0,
           chosen: sampled.action.type === "traverse" && sampled.action.targetNodeId === seed.nodeId,
@@ -167,6 +166,10 @@ export function traverse(options: TraverseOptions): TraverseResult {
         action: d.action,
         score: d.score,
         probability: d.probability,
+        priorScore: d.action.type === "traverse" && state.currentNodeId === null ? d.action.seedScore : undefined,
+        learnedSeedWeight: d.action.type === "traverse" && state.currentNodeId === null
+          ? graph.getSeedWeight(d.action.targetNodeId)
+          : undefined,
       })),
       chosenAction: sampled.action,
       chosenActionProbability: sampled.probability,

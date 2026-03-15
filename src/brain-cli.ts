@@ -10,6 +10,7 @@ import { runBrainMigrations } from "./brain-store/migrations.js";
 import { initBrain } from "./brain-store/init.js";
 import { createEmbeddingClient } from "./brain-store/embedding.js";
 import { resolveLcmConfig } from "./db/config.js";
+import { flattenSeedWeights } from "./brain-runtime/graph-io.js";
 
 function printJson(payload: unknown): void {
   process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
@@ -87,6 +88,7 @@ async function commandInit(workspaceArg?: string): Promise<void> {
     version: pack.version,
     nodes: graph.getAllNodes(),
     edges: flattenEdges(graph),
+    seedWeights: flattenSeedWeights(graph),
     metadata: { reason: "cli-init", workspaceRoot, summary: result.summary },
   });
   store.promotePack(pack.version);
@@ -135,7 +137,7 @@ function commandStatus(): void {
       episodeId: store.getTrainingState("last_assembly_episode_id"),
       traceId: store.getTrainingState("last_assembly_trace_id"),
     },
-    seedLearningEnabled: graph.getOutgoingEdges("__START__").length > 0,
+    seedLearningEnabled: graph.hasSeedWeights(),
     recentTraceCount: store.getRecentTraces(5).length,
     ...health,
   });
@@ -193,6 +195,7 @@ function commandPromote(): void {
     version: pack.version,
     nodes: graph.getAllNodes(),
     edges: flattenEdges(graph),
+    seedWeights: flattenSeedWeights(graph),
     metadata: { reason: "cli-promote" },
   });
   store.promotePack(pack.version);

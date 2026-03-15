@@ -12,7 +12,7 @@ import type {
   NodeKind,
   TraversalResult,
 } from "../brain-core/types.js";
-import { DEFAULT_BRAIN_CONFIG, START_NODE_ID } from "../brain-core/types.js";
+import { DEFAULT_BRAIN_CONFIG } from "../brain-core/types.js";
 import { BrainGraph } from "../brain-core/graph.js";
 import { traverse } from "../brain-core/traverse.js";
 import { recordEpisode } from "../brain-core/episode.js";
@@ -105,7 +105,7 @@ export class BrainService {
       log: params.deps.log,
     });
 
-    populateGraph(this.mutableGraph, this.store.getAllNodes(), this.store.loadAllEdges());
+    populateGraph(this.mutableGraph, this.store.getAllNodes(), this.store.loadAllEdges(), this.store.loadAllSeedWeights());
     this.reloadServingGraph();
 
     const persistence = {
@@ -613,7 +613,7 @@ export class BrainService {
       pendingLabels: this.store.getPendingLabels().length,
       pendingLabelsBySource: this.store.countPendingLabelsBySource(),
       mutationBacklog: this.store.countMutationsByStatus(),
-      seedLearningEnabled: this.mutableGraph.getOutgoingEdges(START_NODE_ID).length > 0,
+      seedLearningEnabled: this.mutableGraph.hasSeedWeights(),
       recentTraceCount: recentTraces.length,
       lastTraceFooter: recentTraces[0]?.footer ?? null,
       lastAssemblyDecision: this.lastAssemblyDecision,
@@ -696,7 +696,7 @@ export class BrainService {
       return;
     }
 
-    populateGraph(this.servingGraph, snapshot.nodes, snapshot.edges);
+    populateGraph(this.servingGraph, snapshot.nodes, snapshot.edges, snapshot.seedWeights);
     this.initialized = true;
   }
 
