@@ -1,8 +1,8 @@
 # OpenClawBrain v2 — Release Contract
 
-This document is the fast truth surface for the repo.
+This is the fast truth surface for the repo.
 
-Use these three public labels consistently:
+Use these public labels consistently:
 
 - **paper-faithful core**
 - **live-path implemented**
@@ -14,115 +14,74 @@ Current truthful state:
 - **live-path implemented:** yes
 - **operationally validated:** not yet
 
-That is the whole point of this contract: the repo is already past “foundation only,” but it is not yet at a fully proven 1.0 operating state.
+That is the contract. The repo is already beyond "foundation only," but it is not yet at an honest 1.0 operating state.
 
-## 1. Algorithmic claims true now (`paper-faithful core`)
+## 1. True in code now
 
-These are true in the current repo and can be claimed now.
+These are safe public claims today.
 
-- **Finite horizon traversal**
-  - The traversal path is bounded by explicit hop limits and a `STOP` action in the policy/traversal code.
-  - See: `src/brain-core/traverse.ts`, `test/brain-core/traverse.test.ts`
-- **Terminal reward rather than per-step reward shaping**
-  - Episodes are recorded first, then rewards/labels are attached afterward and consumed by the worker during update.
-  - See: `src/brain-core/episode.ts`, `src/brain-worker/worker.ts`, `test/brain-core/integration.test.ts`
+### Paper-faithful routing core
+- **Finite-horizon traversal with `STOP`**
+  - Code: `src/brain-core/traverse.ts`, `test/brain-core/traverse.test.ts`
+- **Terminal reward with baseline, not shaping rewards**
+  - Code: `src/brain-core/episode.ts`, `src/brain-core/update.ts`, `src/brain-worker/worker.ts`, `test/brain-core/update.test.ts`
 - **Stochastic policy over actions**
-  - The route policy samples traversal decisions from a distribution rather than hard-coding a deterministic next edge only.
-  - See: `src/brain-core/policy.ts`, `src/brain-core/traverse.ts`, `test/brain-core/policy.test.ts`
+  - Code: `src/brain-core/policy.ts`, `src/brain-core/traverse.ts`, `test/brain-core/policy.test.ts`
 - **Full-trajectory REINFORCE updates**
-  - Updates are computed across the recorded trajectory, not as a single one-step chosen-edge patch.
-  - See: `src/brain-core/update.ts`, `src/brain-worker/worker.ts`, `test/brain-core/update.test.ts`
-- **Learned seed routing**
-  - The repo now persists explicit per-node seed weights, so seed selection is part of the learnable policy surface rather than a fake edge-only update.
-  - See: `src/brain-core/types.ts`, `src/brain-core/traverse.ts`, `src/brain-core/update.ts`, `src/brain-store/store.ts`, `test/brain-core/seed-policy.test.ts`
-- **Immutable promoted packs**
-  - Serving happens from promoted snapshots; mutable working state is promoted into immutable pack snapshots.
-  - See: `src/brain-core/pack.ts`, `src/brain-store/store.ts`, `src/brain-runtime/service.ts`, `test/brain-runtime/service.test.ts`
+  - Code: `src/brain-core/update.ts`, `src/brain-worker/worker.ts`, `test/brain-core/integration.test.ts`
+- **Learned seed routing as part of the policy surface**
+  - Code: `src/brain-core/types.ts`, `src/brain-core/traverse.ts`, `src/brain-core/update.ts`, `src/brain-store/store.ts`, `test/brain-core/seed-policy.test.ts`
+- **Immutable promoted packs for serving**
+  - Code: `src/brain-core/pack.ts`, `src/brain-runtime/service.ts`, `src/brain-store/store.ts`, `test/brain-runtime/service.test.ts`
 
-### Claims this section does **not** make
-
-Do **not** collapse these truths into claims like:
-
-- “the full learning product is finished”
-- “the repo is operationally proven”
-- “the worker/process boundary is already production-safe”
-
-Those belong to the operational section below, and they are not done yet.
-
-## 2. Product claims true now (`live-path implemented`)
-
-These product-path behaviors are already wired into the real OpenClawBrain runtime.
-
-- **Recurrence gate + explicit runtime decisions**
-  - The assembler classifies each turn as `use_brain`, `shadow`, or a named bypass such as `skip_no_query`, `skip_short_static_lookup`, `skip_no_embedding`, `skip_uninitialized`, and `skip_budget_too_small`.
-  - See: `src/brain-runtime/assembler-extension.ts`, `test/brain-runtime/assembler-extension.test.ts`
-- **Shadow mode**
-  - Shadow mode is a first-class runtime decision: it records route episodes/traces without injecting the brain context block into the prompt.
-  - See: `src/brain-runtime/assembler-extension.ts`, `src/brain-runtime/service.ts`
+### Live runtime path
+- **Explicit runtime decisions** (`use_brain`, `shadow`, named skip modes)
+  - Code: `src/brain-runtime/assembler-extension.ts`, `test/brain-runtime/assembler-extension.test.ts`
 - **Correction-first assembly**
-  - Injected brain context is structured with correction cards first, then route-selected evidence, then toolcards/playbooks, then transcript support.
-  - See: `src/brain-runtime/assembler-extension.ts`
+  - Code: `src/brain-runtime/assembler-extension.ts`
 - **Immediate `brain_teach` retrieval path**
-  - `brain_teach` embeds the taught node immediately, links it to recent route context/seed region, applies an inhibitory edge toward the misroute when applicable, and promotes a new pack.
-  - See: `src/brain-runtime/service.ts`, `src/brain-runtime/tools.ts`, `test/brain-runtime/service.test.ts`
+  - Code: `src/brain-runtime/service.ts`, `src/brain-runtime/tools.ts`, `test/brain-runtime/service.test.ts`
+- **Episode and trace recording on the live path**
+  - Code: `src/brain-runtime/service.ts`, `src/brain-core/trace.ts`, `test/brain-runtime/service.test.ts`
+- **Serve from the last promoted pack even when the worker is unavailable**
+  - Code: `src/brain-runtime/service.ts`, `test/brain-runtime/service.test.ts`, `scripts/validate-brain-runtime-behavior.ts`
+- **Child-worker mode exists and is real**
+  - Code: `openclaw.plugin.json`, `src/brain-runtime/service.ts`, `src/brain-worker/child-runner.ts`, `test/brain-runtime/service.test.ts`
+
+## 2. Implemented but not frozen
+
+These are real enough to build on, but not frozen enough to oversell.
+
+- **Host-surface validation harness**
+  - Current files: `scripts/validate-openclaw-install.mjs`, `scripts/validate-brain-runtime-behavior.ts`
+  - Truth: recurrent routing, shadow mode, and current host checks run; frozen host-surface teach/worker-down proof is still incomplete.
+- **Child-worker serving boundary**
+  - Current files: `src/brain-runtime/service.ts`, `src/brain-worker/child-runner.ts`
+  - Truth: the child worker exists and heartbeats are surfaced, but lifecycle control still lives mostly inside `service.ts` and needs a cleaner supervisor boundary.
+- **Raw evidence → resolved labels flow**
+  - Current files: `src/brain-runtime/harvester-extension.ts`, `src/brain-runtime/evidence-detectors.ts`, `src/brain-harvest/*.ts`, `src/brain-worker/worker.ts`, `src/brain-store/store.ts`
+  - Truth: explicit evidence tables and trust-ordered resolution are real, but source extraction still leans heavily on heuristics.
 - **Replay-gated promotion**
-  - The worker runs a replay gate before promotion and blocks promotion when health/replay conditions fail.
-  - See: `src/brain-worker/worker.ts`, `src/brain-core/pack.ts`, `test/brain-core/replay.test.ts`
-- **Episode + trace recording on the live path**
-  - `BrainService.query()` records both episodes and traces against the active promoted pack.
-  - See: `src/brain-runtime/service.ts`, `test/brain-runtime/service.test.ts`
-- **Serve-from-last-promoted-pack fallback**
-  - The serving path reads from the current promoted snapshot and does not require mutable-worker success to continue serving.
-  - See: `src/brain-runtime/service.ts`, `README.md#fallback-behavior`, `test/brain-runtime/service.test.ts`
-- **Out-of-process learner with operator heartbeat truth**
-  - The learner can run under a supervised child worker with PID/heartbeat/operator status exposed through service status, CLI status/doctor, and the worker lease file.
-  - See: `src/brain-runtime/service.ts`, `src/brain-worker/child-runner.ts`, `test/brain-runtime/service.test.ts`
+  - Current files: `src/brain-core/replay.ts`, `src/brain-core/pack.ts`, `src/brain-worker/worker.ts`
+  - Truth: promotion gates exist, but mutation evaluation is still closer to proposal-by-proposal than bundle-level replay decisions.
 
-### How to describe the repo publicly right now
+## 3. Not done yet
 
-Short honest version:
+These are still active work and must not be described as complete.
 
-> OpenClawBrain v2 already has a paper-faithful routing core and a real live runtime path. What is still unfinished is the operational hardening and proof layer.
+- **Frozen host-surface proof for `brain_teach` and worker-down fail-open**
+  - Primary files: `scripts/validate-openclaw-install.mjs`, `src/brain-runtime/tools.ts`, `src/brain-runtime/service.ts`
+- **Resolved short-static-lookup host-surface semantics**
+  - Primary files: `src/brain-runtime/assembler-extension.ts`, `scripts/validate-openclaw-install.mjs`
+- **Bundle-based mutation evaluation with clear pass/fail explanations**
+  - Primary files: `src/brain-core/mutator.ts`, `src/brain-worker/worker.ts`, `src/brain-store/store.ts`, `src/brain-store/migrations.ts`
+- **Frozen proof ladder with dated release artifacts**
+  - Primary files: `docs/EVIDENCE.md`, `docs/evidence/`, `scripts/validate-openclaw-install.mjs`
+- **Green full-repo `npx tsc --noEmit`**
+  - Primary files: `tsconfig.json`, `package.json`, SDK-boundary imports
+- **Boring install / recovery path for another operator**
+  - Primary files: `README.md`, `docs/configuration.md`, `openclaw.plugin.json`, future release workflow/evidence files
 
-That sentence is safe. Stronger “fully done / fully proven / production validated” wording is not.
+## Safe public summary
 
-## 3. Operational claims not yet true (`operationally validated`)
-
-These are **not** true yet and should be described as active work, not delivered fact.
-
-- **Frozen benchmark and proof artifacts**
-  - The repo does not yet ship a frozen evidence ladder that ties mechanism tests, replay benchmarks, shadow-mode benchmarks, and live-install proofs into one reproducible artifact structure.
-- **Full host-app validation matrix**
-  - There is not yet a disposable host-app harness run that another machine can execute end to end with real validation model + embedding config to validate linked install, init, routing decisions, teach retrieval, shadow behavior, and worker-down fail-open behavior on the actual agent surface.
-- **Green full-repo typecheck**
-  - Full `npx tsc --noEmit` is still affected by upstream `openclaw/plugin-sdk` type drift.
-- **Structured evidence harvesting**
-  - Raw evidence → resolved-label plumbing is now real, with explicit episode attribution through turn completion and one-winner-per-episode resolution inside each worker evidence pass.
-  - Remaining gap: source detection still leans heavily on heuristic/pattern signals rather than richer structured human/self/scanner evidence inputs.
-  - Current evidence: `src/brain-runtime/harvester-extension.ts`, `src/brain-worker/worker.ts`
-- **Bundle-based mutation evaluation**
-  - Mutation replay is still closer to proposal-by-proposal evaluation than the intended clustered bundle evaluation with explicit pass/fail explanations.
-  - Current evidence: `src/brain-worker/worker.ts`
-
-## What 1.0 means from here
-
-The repo reaches an honest 1.0 only when all three labels are true at once:
-
-1. **paper-faithful core** — already true
-2. **live-path implemented** — already true
-3. **operationally validated** — still to finish
-
-The shortest path from the current state is:
-
-1. freeze this contract in the README/site
-2. build the disposable OpenClaw install validation harness
-3. move the learner out of process
-4. replace heuristic harvesting with structured evidence flow
-5. upgrade mutation replay to bundle evaluation
-6. freeze evidence artifacts and packaging/install recovery
-
-Until then, the correct public framing is:
-
-- **paper-faithful core:** yes
-- **live-path implemented:** yes
-- **operationally validated:** not yet
+> OpenClawBrain v2 already has a paper-faithful routing core and a real live runtime path. What remains is the operational hardening, host-surface proof, mutation-bundle evaluation, and release-evidence layer.

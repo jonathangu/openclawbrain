@@ -12,7 +12,7 @@ The earlier spike is archived at [jonathangu/openclawbrain-v1-spike-archive](htt
 | --- | --- | --- |
 | **paper-faithful core** | true now | finite-horizon traversal, terminal reward, stochastic policy, full-trajectory REINFORCE updates, learned seed routing, and immutable promoted packs are all implemented in the current repo |
 | **live-path implemented** | true now | the OpenClaw runtime already has recurrence gating, explicit skip reasons, shadow mode, correction-first context injection, immediate `brain_teach` retrieval, and replay-gated promotion wired into the live path |
-| **operationally validated** | not yet | the learner is still in-process, install-validation artifacts are not frozen yet, full host-app smoke coverage is not locked down yet, and full-repo `npx tsc --noEmit` is not green yet |
+| **operationally validated** | not yet | child-worker mode is real, but frozen host-surface teach/worker-down proof, bundle-level mutation validation, dated evidence artifacts, and full-repo `npx tsc --noEmit` are still unfinished |
 
 If you want the exact contract rather than the pitch, read [docs/RELEASE_CONTRACT.md](docs/RELEASE_CONTRACT.md).
 
@@ -220,20 +220,22 @@ openclawbrain doctor
 
 This repo is already beyond “foundation only,” but it is **not** yet operationally validated end to end.
 
-- Embedding support currently targets OpenAI-compatible `/v1/embeddings` APIs, including local Ollama-style endpoints.
-- The learner can run as a supervised child worker, but the full disposable install validation matrix for worker-down behavior is not frozen yet.
-- Structured evidence harvesting now exists end to end (raw evidence → resolved labels with explicit episode attribution), but source detection still leans on heuristics/patterns more than the intended richer human/self/scanner evidence flow.
-- Full OpenClaw end-to-end install validation is not yet frozen into a disposable host-app harness with reproducible artifacts.
+- Embedding support currently targets tested OpenAI-compatible `/v1/embeddings` APIs, including local Ollama-style endpoints.
+- Child-worker mode is implemented and real, but the lifecycle boundary still needs cleaner supervision, restart accounting, and harder operator truth.
+- Structured evidence harvesting now exists end to end (raw evidence → resolved labels with explicit episode attribution), but source detection still leans on heuristics more than the intended richer human/self/scanner evidence flow.
+- Full OpenClaw host-surface validation is still missing frozen proof for deterministic `brain_teach`, worker-down fail-open, and the remaining short-static-lookup semantic drift classification.
+- Replay-gated promotion exists, but mutation evaluation has not yet reached the intended bundle-level replay contract.
 - Upstream `openclaw/plugin-sdk` type drift still affects full-repo `npx tsc --noEmit`.
 
 ## Finish path to 1.0
 
-1. **Freeze the release contract** so the README, docs, and public claims line up with repo reality.
-2. **Build a disposable OpenClaw install validation harness** that proves the plugin on the real host surface.
-3. **Move the learner out of process** into a supervised child worker while keeping fail-open serving against the last promoted pack.
-4. **Finish structured evidence harvesting** so source detection grows beyond regex/heuristic-heavy signals across human, self, scanner, and teacher inputs.
+1. **Align repo truth with repo reality** so the README and canonical docs cleanly separate what is true now, implemented-but-not-frozen, and not done yet.
+2. **Finish the real OpenClaw host-surface validation harness** for recurrent routing, static bypass, shadow mode, `brain_teach`, worker-down fail-open, and explicit skip modes.
+3. **Harden the child worker** into the real learner boundary with clearer supervision, restart accounting, and doctor/status truth.
+4. **Finish the evidence pipeline** so structured evidence tied to exact episodes outruns heuristic-only harvesting.
 5. **Upgrade mutation evaluation to replay-gated bundles** instead of proposal-by-proposal promotion.
-6. **Freeze proof artifacts and harden packaging** until another OpenClaw operator can install, initialize, validate, and recover the plugin without local tribal knowledge.
+6. **Freeze the proof ladder** with dated artifact bundles under `docs/evidence/`.
+7. **Clean the packaging and type surface** until another OpenClaw operator can install, validate, and recover the plugin without tribal knowledge.
 
 ### Recommended starting configuration
 
@@ -290,9 +292,16 @@ For most long-lived LCM setups, a good starting point is:
 
 ## Documentation
 
+Canonical starting docs:
+
 - [Release contract](docs/RELEASE_CONTRACT.md)
+- [Definitive end-state guide](docs/END_STATE.md)
+- [Evidence ladder](docs/EVIDENCE.md)
+
+Supporting docs:
+
 - [Configuration guide](docs/configuration.md)
-- [Architecture](docs/architecture.md)
+- [LCM architecture](docs/architecture.md)
 - [Agent tools](docs/agent-tools.md)
 - [TUI Reference](docs/tui.md)
 - [lcm-tui](tui/README.md)
@@ -327,7 +336,7 @@ OPENCLAWBRAIN_VALIDATION_MODEL=openai/gpt-4.1-mini \
 node scripts/validate-openclaw-install.mjs
 ```
 
-Current state: install + temp-home isolation + config wiring + fixture workspace + `openclawbrain init/status/doctor` are wired. The disposable harness now proves immediate `brain_teach` retrieval plus worker-down fail-open serving with deterministic runtime probes, and shadow-mode host-surface assertion wiring is present. The remaining gap is the full host-app routing matrix run with real validation model + embedding config.
+Current state: install + temp-home isolation + config wiring + fixture workspace + `openclawbrain init/status/doctor` are wired. The disposable harness now proves immediate `brain_teach` retrieval plus worker-down fail-open serving at the deterministic runtime layer, and it exercises recurrent/shadow host-surface routing with real local validation config. The remaining host-surface gaps are frozen proof for deterministic `brain_teach`, explicit worker-down/last-promoted-pack assertions, `skip_no_embedding` / `skip_uninitialized`, and the short-static-lookup semantic drift classification.
 
 ### Project structure
 
