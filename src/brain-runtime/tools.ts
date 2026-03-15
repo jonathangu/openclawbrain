@@ -18,7 +18,11 @@ const jsonResult = (payload: unknown) => ({
 // ─── Types ───
 
 interface BrainToolDeps {
-  teach: (instruction: string, kind?: string, tags?: string[]) => Promise<{ nodeId: string }>;
+  teach: (
+    instruction: string,
+    kind?: string,
+    tags?: string[],
+  ) => Promise<{ nodeId: string; packVersion?: number | null }>;
   status: () => Promise<Record<string, unknown>>;
   getTrace: (traceId?: string) => Promise<Record<string, unknown> | null>;
 }
@@ -53,6 +57,7 @@ export function createBrainTeachTool(deps: BrainToolDeps) {
       return jsonResult({
         success: true,
         nodeId: result.nodeId,
+        packVersion: result.packVersion ?? null,
         message: `Brain will remember: "${instruction.slice(0, 80)}${instruction.length > 80 ? "..." : ""}"`,
       });
     },

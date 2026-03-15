@@ -22,12 +22,13 @@ export class BrainWorker {
     private config: BrainConfig,
     private log: { info: (msg: string) => void; error: (msg: string) => void; warn: (msg: string) => void },
     private hooks: {
+      isEnabled?: () => boolean;
       onPromotionReady?: (params: { healthJson: string }) => Promise<void> | void;
     } = {},
   ) {}
 
   start(): void {
-    if (this.interval || !this.config.enabled) {
+    if (this.interval || !this.config.enabled || this.hooks.isEnabled?.() === false) {
       return;
     }
 
@@ -50,6 +51,9 @@ export class BrainWorker {
 
   async tick(): Promise<void> {
     if (this.running) {
+      return;
+    }
+    if (this.hooks.isEnabled?.() === false) {
       return;
     }
 

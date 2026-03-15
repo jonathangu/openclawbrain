@@ -1321,14 +1321,14 @@ const lcmPlugin = {
       }),
     );
 
-    api.registerTool(() =>
+    api.registerTool((ctx) =>
       createBrainTeachTool({
         teach: async (instruction, kind, tags) => {
           const brain = lcm.getBrainService();
           if (!brain) {
             throw new Error("OpenClawBrain runtime is unavailable");
           }
-          const conversationId = undefined;
+          const conversationId = await lcm.getConversationIdForSessionKey(ctx.sessionKey);
           return brain.teach({ instruction, conversationId, kind, tags });
         },
         status: async () => lcm.getBrainService()?.status() ?? { enabled: false },

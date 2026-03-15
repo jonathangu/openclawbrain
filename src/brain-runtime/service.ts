@@ -145,6 +145,7 @@ export class BrainService {
       this.config,
       params.deps.log,
       {
+        isEnabled: () => this.isEnabled(),
         onPromotionReady: async ({ healthJson }) => {
           await this.promoteMutableGraph("worker", { healthJson });
         },
@@ -153,6 +154,9 @@ export class BrainService {
   }
 
   startWorker(): void {
+    if (!this.isEnabled()) {
+      return;
+    }
     this.worker.start();
   }
 

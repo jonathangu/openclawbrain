@@ -1,4 +1,4 @@
-import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { join, resolve } from "node:path";
 import process from "node:process";
 import { DatabaseSync } from "node:sqlite";
@@ -17,7 +17,7 @@ function printJson(payload: unknown): void {
 
 function usage(): never {
   process.stderr.write(
-    "Usage: openclawbrain <init|status|trace|replay|promote|rollback|disable|doctor> [args]\n",
+    "Usage: openclawbrain <init|status|trace|replay|promote|rollback|disable|enable|doctor> [args]\n",
   );
   process.exit(1);
 }
@@ -191,6 +191,19 @@ function commandDisable(): void {
   });
 }
 
+function commandEnable(): void {
+  const { brainConfig } = loadStore();
+  const disabledFile = join(brainConfig.root, "DISABLED");
+  if (existsSync(disabledFile)) {
+    rmSync(disabledFile);
+  }
+  printJson({
+    command: "enable",
+    disabledFile,
+    enabled: true,
+  });
+}
+
 function commandDoctor(): void {
   const { brainConfig, store, graph } = loadStore();
   const currentPackVersion = store.getCurrentPackVersion();
@@ -232,6 +245,9 @@ async function main(): Promise<void> {
       return;
     case "disable":
       commandDisable();
+      return;
+    case "enable":
+      commandEnable();
       return;
     case "doctor":
       commandDoctor();

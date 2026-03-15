@@ -164,6 +164,7 @@ openclawbrain replay
 openclawbrain promote
 openclawbrain rollback [version]
 openclawbrain disable
+openclawbrain enable
 openclawbrain doctor
 ```
 
@@ -172,6 +173,7 @@ openclawbrain doctor
 - If the brain has not been initialized, the plugin serves LCM-only context.
 - If embeddings are not configured, learned retrieval and `brain_teach` stay disabled.
 - If the background worker is unavailable, serving still uses the last promoted pack.
+- `brain_teach` now binds taught corrections to the active conversation when invoked from a live tool session.
 
 ## Limitations
 

@@ -659,6 +659,10 @@ export class LcmContextEngine implements ContextEngine {
     return this.brainService;
   }
 
+  async getConversationIdForSessionKey(sessionKey: string): Promise<number | undefined> {
+    return this.resolveConversationIdForSessionKey(sessionKey);
+  }
+
   /** Ensure DB schema is up-to-date. Called lazily on first bootstrap/ingest/assemble/compact. */
   private ensureMigrated(): void {
     if (this.migrated) {
