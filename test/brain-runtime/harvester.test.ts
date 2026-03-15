@@ -123,6 +123,17 @@ describe("LabelHarvester", () => {
       expect(result!.source).toBe("scanner");
       expect(result!.value).toBeGreaterThan(0);
     });
+
+    it("detects structured scanner guidance without relying on one exact pattern", () => {
+      const { harvester } = setup();
+      const result = harvester.detectLabel(
+        "assistant",
+        "## Deployment checklist\n- Inspect docs/DEPLOY.md\n- Run `pnpm test`\n- Run `openclawbrain doctor`\n- Retry the rollout only after verification",
+      );
+      expect(result).not.toBeNull();
+      expect(result!.source).toBe("scanner");
+      expect(result!.reason).toContain("scanner heuristic");
+    });
   });
 
   describe("harvestFromMessage", () => {
@@ -150,6 +161,8 @@ describe("LabelHarvester", () => {
       expect(evidence).toHaveLength(1);
       expect(evidence[0]?.episodeId).toBe("ep_older");
       expect(evidence[0]?.kind).toBe("self_result");
+      expect(evidence[0]?.metadata?.attributionMode).toBe("explicit");
+      expect(evidence[0]?.metadata?.explicitEpisodeId).toBe("ep_older");
     });
 
     it("prefers the resolver-provided pending episode for the conversation", async () => {
@@ -174,7 +187,8 @@ describe("LabelHarvester", () => {
       const evidence = store.getPendingEvidence();
       expect(evidence).toHaveLength(1);
       expect(evidence[0]?.episodeId).toBe("ep_pending");
-      expect(evidence[0]?.metadata?.exactEpisodeId).toBe("ep_pending");
+      expect(evidence[0]?.metadata?.resolvedEpisodeId).toBe("ep_pending");
+      expect(evidence[0]?.metadata?.attributionMode).toBe("resolver");
     });
 
     it("falls back to the most recent episode in the same conversation", async () => {
@@ -201,6 +215,8 @@ describe("LabelHarvester", () => {
       expect(evidence).toHaveLength(1);
       expect(evidence[0]?.episodeId).toBe("ep_target");
       expect(evidence[0]?.kind).toBe("human_feedback");
+      expect(evidence[0]?.metadata?.attributionMode).toBe("recent_conversation_fallback");
+      expect(evidence[0]?.metadata?.matchedEpisodeId).toBe("ep_target");
     });
   });
 });

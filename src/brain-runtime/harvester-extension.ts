@@ -30,19 +30,28 @@ export class LabelHarvester {
     const result = this.detectLabel(params.role, params.content);
     if (!result) return;
 
-    const exactEpisodeId = params.episodeId ?? this.resolveEpisodeIdForConversation?.(params.conversationId) ?? null;
-    const matchingEpisode =
-      (() => {
-        if (!exactEpisodeId) {
-          return null;
-        }
-        const episode = this.store.getEpisode(exactEpisodeId);
-        return episode?.conversationId === params.conversationId ? episode : null;
-      })()
+    const explicitEpisodeId = params.episodeId ?? null;
+    const resolvedEpisodeId = explicitEpisodeId
+      ?? this.resolveEpisodeIdForConversation?.(params.conversationId)
+      ?? null;
+    const matchedResolvedEpisode = (() => {
+      if (!resolvedEpisodeId) {
+        return null;
+      }
+      const episode = this.store.getEpisode(resolvedEpisodeId);
+      return episode?.conversationId === params.conversationId ? episode : null;
+    })();
+    const matchingEpisode = matchedResolvedEpisode
       ?? this.store.getRecentEpisodesForConversation(params.conversationId, 5)[0]
       ?? null;
 
     if (!matchingEpisode) return;
+
+    const attributionMode = matchedResolvedEpisode
+      ? explicitEpisodeId
+        ? "explicit"
+        : "resolver"
+      : "recent_conversation_fallback";
 
     this.store.insertEvidence({
       episodeId: matchingEpisode.id,
@@ -55,7 +64,10 @@ export class LabelHarvester {
       contentSnippet: params.content.slice(0, 240),
       metadata: {
         harvestedFromRole: params.role,
-        exactEpisodeId,
+        explicitEpisodeId,
+        resolvedEpisodeId,
+        matchedEpisodeId: matchingEpisode.id,
+        attributionMode,
       },
     });
 

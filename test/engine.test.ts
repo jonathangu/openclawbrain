@@ -1596,6 +1596,34 @@ describe("LcmContextEngine fidelity and token budget", () => {
     ]);
   });
 
+  it("passes the completed-turn brain episode explicitly through afterTurn ingestion and clears the pending slot", async () => {
+    const engine = createEngine();
+    const sessionId = "after-turn-brain-episode";
+    const harvestFromMessage = vi.fn(async () => undefined);
+    const privateEngine = engine as unknown as {
+      brainService: { harvestFromMessage: typeof harvestFromMessage } | null;
+      pendingBrainEpisodeBySession: Map<string, string>;
+    };
+
+    privateEngine.brainService = { harvestFromMessage };
+    privateEngine.pendingBrainEpisodeBySession.set(sessionId, "ep_turn_1");
+
+    await engine.afterTurn({
+      sessionId,
+      sessionFile: createSessionFilePath("after-turn-brain-episode"),
+      messages: [makeMessage({ role: "assistant", content: "Runbook:\n1. Inspect CI logs\n2. Retry deployment" })],
+      prePromptMessageCount: 0,
+    });
+
+    expect(harvestFromMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        episodeId: "ep_turn_1",
+        role: "assistant",
+      }),
+    );
+    expect(privateEngine.pendingBrainEpisodeBySession.has(sessionId)).toBe(false);
+  });
+
   it("afterTurn runs proactive threshold compaction when tokenBudget is provided", async () => {
     const engine = createEngine();
     const sessionId = "after-turn-proactive-compact";

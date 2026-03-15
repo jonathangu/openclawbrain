@@ -1154,6 +1154,7 @@ export class LcmContextEngine implements ContextEngine {
     sessionId: string;
     message: AgentMessage;
     isHeartbeat?: boolean;
+    brainEpisodeId?: string;
   }): Promise<IngestResult> {
     const { sessionId, message, isHeartbeat } = params;
     if (isHeartbeat) {
@@ -1210,7 +1211,7 @@ export class LcmContextEngine implements ContextEngine {
     if (this.brainService) {
       await this.brainService.harvestFromMessage({
         conversationId,
-        episodeId: this.pendingBrainEpisodeBySession.get(sessionId),
+        episodeId: params.brainEpisodeId ?? this.pendingBrainEpisodeBySession.get(sessionId),
         role: stored.role,
         content: stored.content,
       });
@@ -1223,6 +1224,7 @@ export class LcmContextEngine implements ContextEngine {
     sessionId: string;
     message: AgentMessage;
     isHeartbeat?: boolean;
+    brainEpisodeId?: string;
   }): Promise<IngestResult> {
     this.ensureMigrated();
     return this.withSessionQueue(params.sessionId, () => this.ingestSingle(params));
@@ -1232,6 +1234,7 @@ export class LcmContextEngine implements ContextEngine {
     sessionId: string;
     messages: AgentMessage[];
     isHeartbeat?: boolean;
+    brainEpisodeId?: string;
   }): Promise<IngestBatchResult> {
     this.ensureMigrated();
     if (params.messages.length === 0) {
@@ -1244,6 +1247,7 @@ export class LcmContextEngine implements ContextEngine {
           sessionId: params.sessionId,
           message,
           isHeartbeat: params.isHeartbeat,
+          brainEpisodeId: params.brainEpisodeId,
         });
         if (result.ingested) {
           ingestedCount += 1;
@@ -1279,14 +1283,18 @@ export class LcmContextEngine implements ContextEngine {
       return;
     }
 
+    const completedTurnBrainEpisodeId = this.pendingBrainEpisodeBySession.get(params.sessionId);
     try {
       await this.ingestBatch({
         sessionId: params.sessionId,
         messages: ingestBatch,
         isHeartbeat: params.isHeartbeat === true,
+        brainEpisodeId: completedTurnBrainEpisodeId,
       });
     } catch {
       // Continue with proactive compaction even if ingest fails.
+    } finally {
+      this.pendingBrainEpisodeBySession.delete(params.sessionId);
     }
 
     const tokenBudget =
