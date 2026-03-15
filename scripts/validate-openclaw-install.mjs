@@ -123,6 +123,7 @@ function updateConfig() {
     dbPath: lcmDbPath,
     brainRoot,
     brainEnabled: true,
+    brainWorkerMode: process.env.OPENCLAWBRAIN_VALIDATION_WORKER_MODE?.trim() || "child",
     brainEmbeddingProvider: cleanEnv().OPENCLAWBRAIN_EMBEDDING_PROVIDER,
     brainEmbeddingModel: cleanEnv().OPENCLAWBRAIN_EMBEDDING_MODEL,
     brainEmbeddingBaseUrl: cleanEnv().OPENCLAWBRAIN_EMBEDDING_BASE_URL,
@@ -177,7 +178,20 @@ function maybeRunAgentChecks(report) {
     lastAssemblyMode: recurrentStatus.lastAssemblyDecision?.mode ?? null,
     traceId: recurrentTrace?.trace?.id ?? null,
     episodeId: recurrentTrace?.trace?.episodeId ?? null,
+    workerMode: recurrentStatus.workerMode ?? null,
+    workerPid: recurrentStatus.workerPid ?? null,
+    workerHealthy: recurrentStatus.workerHealthy ?? null,
+    workerLastHeartbeatAt: recurrentStatus.workerLastHeartbeatAt ?? null,
   };
+
+  if ((recurrentStatus.workerMode ?? null) === "child") {
+    if (!recurrentStatus.workerPid) {
+      throw new Error("Validation harness expected a child worker PID after recurrent host-agent query, but none was reported.");
+    }
+    if (recurrentStatus.workerHealthy !== true) {
+      throw new Error("Validation harness expected the child worker to report healthy after recurrent host-agent query.");
+    }
+  }
 
   const shortLookupOutput = run("openclaw", [
     "agent",
@@ -236,6 +250,7 @@ try {
     brainRoot,
     contextEngineSlot: "openclawbrain",
     validationModel: process.env.OPENCLAWBRAIN_VALIDATION_MODEL?.trim() || null,
+    workerMode: process.env.OPENCLAWBRAIN_VALIDATION_WORKER_MODE?.trim() || "child",
     embeddingProvider: cleanEnv().OPENCLAWBRAIN_EMBEDDING_PROVIDER,
     embeddingModel: cleanEnv().OPENCLAWBRAIN_EMBEDDING_MODEL || null,
   };
