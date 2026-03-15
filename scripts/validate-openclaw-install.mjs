@@ -141,17 +141,6 @@ function updateConfig(options = {}) {
   writeFileSync(configPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
 }
 
-function requireEmbeddingConfig() {
-  if (!cleanEnv().OPENCLAWBRAIN_EMBEDDING_MODEL) {
-    throw new Error(
-      [
-        "Embedding config is required for init.",
-        "Set OPENCLAWBRAIN_VALIDATION_EMBEDDING_MODEL (and optionally provider/base URL) before running the harness.",
-      ].join(" "),
-    );
-  }
-}
-
 function collectStrings(value, out = []) {
   if (typeof value === "string") {
     out.push(value);
@@ -173,10 +162,13 @@ function collectStrings(value, out = []) {
 
 function maybeRunAgentChecks(report) {
   const validationModel = process.env.OPENCLAWBRAIN_VALIDATION_MODEL?.trim();
-  if (!validationModel) {
+  const embeddingModel = cleanEnv().OPENCLAWBRAIN_EMBEDDING_MODEL;
+  if (!validationModel || !embeddingModel) {
     report.skipped.push({
       phase: "agent-routing",
-      reason: "OPENCLAWBRAIN_VALIDATION_MODEL is unset, so host-app local agent checks were not attempted.",
+      reason: !validationModel
+        ? "OPENCLAWBRAIN_VALIDATION_MODEL is unset, so host-app local agent checks were not attempted."
+        : "OPENCLAWBRAIN_VALIDATION_EMBEDDING_MODEL is unset, so host-app local agent checks were not attempted.",
     });
     return;
   }
@@ -286,6 +278,7 @@ const report = {
   init: null,
   doctor: null,
   status: null,
+  runtime: null,
   agent: {},
   assertions: {},
   skipped: [],
@@ -317,10 +310,30 @@ try {
     process.exit(0);
   }
 
-  requireEmbeddingConfig();
-  report.init = extractJson(run("node", ["bin/openclawbrain.js", "init", fixtureWorkspace]));
-  report.status = extractJson(run("node", ["bin/openclawbrain.js", "status"]));
-  report.doctor = extractJson(run("node", ["bin/openclawbrain.js", "doctor"]));
+  report.runtime = extractJson(run("pnpm", [
+    "exec",
+    "tsx",
+    "scripts/validate-brain-runtime-behavior.ts",
+    "--workspace",
+    fixtureWorkspace,
+    "--brain-root",
+    brainRoot,
+    "--lcm-db",
+    lcmDbPath,
+  ]));
+  report.assertions.teachRetrieval = report.runtime.teachRetrieval;
+  report.assertions.workerDownFailOpen = report.runtime.workerDownFailOpen;
+
+  if (cleanEnv().OPENCLAWBRAIN_EMBEDDING_MODEL) {
+    report.init = extractJson(run("node", ["bin/openclawbrain.js", "init", fixtureWorkspace]));
+    report.status = extractJson(run("node", ["bin/openclawbrain.js", "status"]));
+    report.doctor = extractJson(run("node", ["bin/openclawbrain.js", "doctor"]));
+  } else {
+    report.skipped.push({
+      phase: "cli-init",
+      reason: "OPENCLAWBRAIN_VALIDATION_EMBEDDING_MODEL is unset, so CLI init/status/doctor checks were not attempted in the disposable harness.",
+    });
+  }
 
   maybeRunAgentChecks(report);
 

@@ -157,7 +157,7 @@ describe("BrainService", () => {
     expect(status.currentPackVersion).toBe(1);
   });
 
-  it("teaches a correction against the active conversation and only labels matching episodes", async () => {
+  it("teaches a correction against the active conversation, labels only matching episodes, and retrieves it immediately", async () => {
     const workspaceRoot = makeTempDir("openclawbrain-workspace-");
     const brainRoot = makeTempDir("openclawbrain-state-");
     writeFileSync(
@@ -205,6 +205,20 @@ describe("BrainService", () => {
     const status = await service.status();
     expect(status.pendingLabels).toBe(1);
     expect(status.currentPackVersion).toBe(taught.packVersion);
+
+    const retrieved = await service.query({
+      conversationId: 7,
+      queryText: "deployment failed again",
+      budgetChars: 4000,
+      queryEmbedding: embed("deployment ci"),
+    });
+
+    expect(retrieved).not.toBeNull();
+    expect(retrieved?.episode.packVersion).toBe(taught.packVersion);
+    expect(retrieved?.fired.some((node) => node.kind === "correction" && node.content.includes("inspect CI logs before retrying"))).toBe(true);
+
+    const trace = await service.getTrace();
+    expect(trace?.firedNodes).toContain(taught.nodeId);
   });
 
   it("runs the learner in a supervised child process and reports heartbeat truth", async () => {
@@ -230,6 +244,71 @@ describe("BrainService", () => {
       expect(status.workerStatus).toBe("running");
       expect(status.workerPid).toEqual(expect.any(Number));
       expect(status.workerHealthy).toBe(true);
+    } finally {
+      service.stopWorker();
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+  });
+
+  it("keeps serving from the last promoted pack when the child worker dies", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-state-");
+    writeFileSync(
+      join(workspaceRoot, "PLAYBOOK.md"),
+      "# Pull Requests\n\nUse gh pr create for pull request workflows.\n",
+      "utf8",
+    );
+
+    const service = new BrainService({
+      deps: createDeps(brainRoot, {
+        workerMode: "child",
+        trainerIntervalMs: 200,
+        workerHeartbeatTimeoutMs: 150,
+        workerRestartDelayMs: 5_000,
+      }),
+    });
+
+    try {
+      await service.init({
+        workspaceRoot,
+        embedFn: async (text) => embed(text),
+      });
+      service.startWorker();
+      await waitFor(async () => {
+        const status = await service.status();
+        return Boolean(status.workerPid) && status.workerHealthy === true;
+      });
+
+      const beforeCrash = await service.query({
+        conversationId: 42,
+        queryText: "how do I open a pull request?",
+        budgetChars: 4000,
+        queryEmbedding: embed("gh pr create pull request"),
+      });
+      expect(beforeCrash).not.toBeNull();
+
+      const childPid = (await service.status()).workerPid as number;
+      process.kill(childPid, "SIGKILL");
+      await waitFor(() => Boolean((service as any).workerLastExit), 1_500);
+      await new Promise((resolve) => setTimeout(resolve, 250));
+
+      const statusAfterCrash = await service.status();
+      expect(statusAfterCrash.workerMode).toBe("child");
+      expect(statusAfterCrash.workerHealthy).toBe(false);
+      expect(statusAfterCrash.currentPackVersion).toBe(1);
+      expect(statusAfterCrash.workerLastExit).toEqual(expect.objectContaining({
+        signal: "SIGKILL",
+      }));
+
+      const afterCrash = await service.query({
+        conversationId: 42,
+        queryText: "how do I open a pull request again?",
+        budgetChars: 4000,
+        queryEmbedding: embed("gh pr create pull request"),
+      });
+      expect(afterCrash).not.toBeNull();
+      expect(afterCrash?.episode.packVersion).toBe(1);
+      expect(afterCrash?.fired.some((node) => node.content.includes("gh pr create"))).toBe(true);
     } finally {
       service.stopWorker();
       await new Promise((resolve) => setTimeout(resolve, 250));

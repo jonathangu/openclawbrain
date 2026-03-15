@@ -73,7 +73,10 @@ These product-path behaviors are already wired into the real OpenClawBrain runti
   - See: `src/brain-runtime/service.ts`, `test/brain-runtime/service.test.ts`
 - **Serve-from-last-promoted-pack fallback**
   - The serving path reads from the current promoted snapshot and does not require mutable-worker success to continue serving.
-  - See: `src/brain-runtime/service.ts`, `README.md#fallback-behavior`
+  - See: `src/brain-runtime/service.ts`, `README.md#fallback-behavior`, `test/brain-runtime/service.test.ts`
+- **Out-of-process learner with operator heartbeat truth**
+  - The learner can run under a supervised child worker with PID/heartbeat/operator status exposed through service status, CLI status/doctor, and the worker lease file.
+  - See: `src/brain-runtime/service.ts`, `src/brain-worker/child-runner.ts`, `test/brain-runtime/service.test.ts`
 
 ### How to describe the repo publicly right now
 
@@ -87,13 +90,10 @@ That sentence is safe. Stronger “fully done / fully proven / production valida
 
 These are **not** true yet and should be described as active work, not delivered fact.
 
-- **Out-of-process learner**
-  - The learner still runs in-process via `setInterval` inside the plugin runtime.
-  - Current evidence: `src/brain-worker/worker.ts`, `src/brain-runtime/service.ts`
 - **Frozen benchmark and proof artifacts**
   - The repo does not yet ship a frozen evidence ladder that ties mechanism tests, replay benchmarks, shadow-mode benchmarks, and live-install proofs into one reproducible artifact structure.
-- **Full install validation matrix**
-  - There is not yet a disposable host-app harness that another machine can run to validate linked install, init, routing decisions, teach retrieval, shadow behavior, and worker-down fail-open behavior.
+- **Full host-app validation matrix**
+  - There is not yet a disposable host-app harness run that another machine can execute end to end with real validation model + embedding config to validate linked install, init, routing decisions, teach retrieval, shadow behavior, and worker-down fail-open behavior on the actual agent surface.
 - **Green full-repo typecheck**
   - Full `npx tsc --noEmit` is still affected by upstream `openclaw/plugin-sdk` type drift.
 - **Structured evidence harvesting**

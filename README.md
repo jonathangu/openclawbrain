@@ -198,7 +198,7 @@ openclawbrain doctor
 This repo is already beyond “foundation only,” but it is **not** yet operationally validated end to end.
 
 - Embedding support currently targets OpenAI-compatible `/v1/embeddings` APIs.
-- The learner still runs as an in-process plugin worker, not a supervised subprocess.
+- The learner can run as a supervised child worker, but the full disposable install validation matrix for worker-down behavior is not frozen yet.
 - Harvesting is still pattern-heavy and narrower than the intended human/self/scanner evidence flow.
 - Full OpenClaw end-to-end install validation is not yet frozen into a disposable host-app harness with reproducible artifacts.
 - Upstream `openclaw/plugin-sdk` type drift still affects full-repo `npx tsc --noEmit`.
@@ -304,7 +304,7 @@ OPENCLAWBRAIN_VALIDATION_MODEL=openai/gpt-4.1-mini \
 node scripts/validate-openclaw-install.mjs
 ```
 
-Current state: install + temp-home isolation + config wiring + fixture workspace + `openclawbrain init/status/doctor` are wired. Shadow-mode assertion wiring is present; `brain_teach` and worker-down assertions are still being added.
+Current state: install + temp-home isolation + config wiring + fixture workspace + `openclawbrain init/status/doctor` are wired. The disposable harness now proves immediate `brain_teach` retrieval plus worker-down fail-open serving with deterministic runtime probes, and shadow-mode host-surface assertion wiring is present. The remaining gap is the full host-app routing matrix run with real validation model + embedding config.
 
 ### Project structure
 
