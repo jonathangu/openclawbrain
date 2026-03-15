@@ -14,6 +14,7 @@ export class LabelHarvester {
   constructor(
     private store: BrainStore,
     private log: { info: (msg: string) => void; warn: (msg: string) => void },
+    private resolveEpisodeIdForConversation?: (conversationId: number) => string | null | undefined,
   ) {}
 
   /**
@@ -29,12 +30,13 @@ export class LabelHarvester {
     const result = this.detectLabel(params.role, params.content);
     if (!result) return;
 
+    const exactEpisodeId = params.episodeId ?? this.resolveEpisodeIdForConversation?.(params.conversationId) ?? null;
     const matchingEpisode =
       (() => {
-        if (!params.episodeId) {
+        if (!exactEpisodeId) {
           return null;
         }
-        const episode = this.store.getEpisode(params.episodeId);
+        const episode = this.store.getEpisode(exactEpisodeId);
         return episode?.conversationId === params.conversationId ? episode : null;
       })()
       ?? this.store.getRecentEpisodesForConversation(params.conversationId, 5)[0]
@@ -53,6 +55,7 @@ export class LabelHarvester {
       contentSnippet: params.content.slice(0, 240),
       metadata: {
         harvestedFromRole: params.role,
+        exactEpisodeId,
       },
     });
 

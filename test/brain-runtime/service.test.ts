@@ -206,6 +206,12 @@ describe("BrainService", () => {
     expect(status.pendingLabels).toBe(1);
     expect(status.currentPackVersion).toBe(taught.packVersion);
 
+    const pendingEvidence = (service as unknown as {
+      store: { getPendingEvidence: (limit?: number) => Array<{ metadata?: Record<string, unknown> }> };
+    }).store.getPendingEvidence();
+    expect(pendingEvidence[0]?.metadata?.extractor).toBe("brain_teach");
+    expect(pendingEvidence[0]?.metadata?.correctedEpisodeId).toBeDefined();
+
     const retrieved = await service.query({
       conversationId: 7,
       queryText: "deployment failed again",

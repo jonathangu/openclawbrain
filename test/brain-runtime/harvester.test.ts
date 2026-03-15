@@ -10,7 +10,7 @@ import type { Episode } from "../../src/brain-core/types.js";
 
 const tempDirs: string[] = [];
 
-function setup() {
+function setup(resolveEpisodeIdForConversation?: (conversationId: number) => string | null | undefined) {
   const dir = mkdtempSync(join(tmpdir(), "brain-harvester-test-"));
   tempDirs.push(dir);
   const db = new DatabaseSync(join(dir, "test.db"));
@@ -19,7 +19,7 @@ function setup() {
   runBrainMigrations(db);
   const store = new BrainStore(db);
   const log = { info: vi.fn(), warn: vi.fn() };
-  const harvester = new LabelHarvester(store, log);
+  const harvester = new LabelHarvester(store, log, resolveEpisodeIdForConversation);
   return { store, harvester };
 }
 
@@ -150,6 +150,31 @@ describe("LabelHarvester", () => {
       expect(evidence).toHaveLength(1);
       expect(evidence[0]?.episodeId).toBe("ep_older");
       expect(evidence[0]?.kind).toBe("self_result");
+    });
+
+    it("prefers the resolver-provided pending episode for the conversation", async () => {
+      const { store, harvester } = setup((conversationId) => conversationId === 7 ? "ep_pending" : null);
+      store.insertEpisode(makeEpisode({
+        id: "ep_pending",
+        conversationId: 7,
+        createdAt: Date.now() - 10_000,
+      }));
+      store.insertEpisode(makeEpisode({
+        id: "ep_newer",
+        conversationId: 7,
+        createdAt: Date.now(),
+      }));
+
+      await harvester.harvestFromMessage({
+        conversationId: 7,
+        role: "user",
+        content: "Perfect, that's exactly right!",
+      });
+
+      const evidence = store.getPendingEvidence();
+      expect(evidence).toHaveLength(1);
+      expect(evidence[0]?.episodeId).toBe("ep_pending");
+      expect(evidence[0]?.metadata?.exactEpisodeId).toBe("ep_pending");
     });
 
     it("falls back to the most recent episode in the same conversation", async () => {

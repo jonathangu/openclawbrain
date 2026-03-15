@@ -98,7 +98,11 @@ export class BrainService {
     runBrainMigrations(db);
 
     this.store = new BrainStore(db, { brainRoot: this.config.root });
-    this.harvesterImpl = new LabelHarvester(this.store, params.deps.log);
+    this.harvesterImpl = new LabelHarvester(
+      this.store,
+      params.deps.log,
+      (conversationId) => this.latestEpisodeByConversation.get(conversationId) ?? null,
+    );
     this.embeddingClient = createEmbeddingClient({
       config: runtimeConfig,
       getApiKey: (provider, model) => params.deps.getApiKey(provider, model),
@@ -557,6 +561,8 @@ export class BrainService {
           contentSnippet: params.instruction.slice(0, 240),
           metadata: {
             taughtNodeId: node.id,
+            correctedEpisodeId: episode.id,
+            extractor: "brain_teach",
             via: "brain_teach",
           },
         });
