@@ -1,0 +1,356 @@
+/**
+ * SQLite persistence for the brain's learned retrieval graph.
+ *
+ * Follows the same patterns as LCM's ConversationStore and SummaryStore:
+ * - Constructor takes DatabaseSync
+ * - Snake_case DB rows → camelCase TypeScript objects
+ * - Prepared statements for performance
+ */
+
+import type { DatabaseSync } from "node:sqlite";
+import { randomUUID } from "node:crypto";
+import type {
+  BrainNode,
+  BrainEdge,
+  EdgeKind,
+  Episode,
+  Label,
+  RewardSource,
+  Pack,
+  MutationProposal,
+  MutationStatus,
+  DecisionTrace,
+} from "./types.js";
+
+// ═══════════════════════════════════════════
+// Embedding serialization
+// ═══════════════════════════════════════════
+
+function serializeEmbedding(emb: Float32Array | null): Buffer | null {
+  if (!emb) return null;
+  return Buffer.from(emb.buffer, emb.byteOffset, emb.byteLength);
+}
+
+function deserializeEmbedding(blob: Buffer | Uint8Array | null): Float32Array | null {
+  if (!blob) return null;
+  const buf = blob instanceof Buffer ? blob : Buffer.from(blob);
+  return new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4);
+}
+
+// ═══════════════════════════════════════════
+// BrainStore
+// ═══════════════════════════════════════════
+
+export class BrainStore {
+  constructor(private db: DatabaseSync) {}
+
+  // ─── Nodes ───
+
+  insertNode(node: BrainNode): void {
+    this.db.prepare(`
+      INSERT INTO brain_nodes (id, kind, content, embedding, source_uri, trust, tags, token_count, metadata, created_at, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      node.id, node.kind, node.content,
+      serializeEmbedding(node.embedding),
+      node.sourceUri, node.trust,
+      JSON.stringify(node.tags), node.tokenCount,
+      JSON.stringify(node.metadata),
+      node.createdAt, node.updatedAt,
+    );
+  }
+
+  getNode(id: string): BrainNode | null {
+    const row = this.db.prepare(`SELECT * FROM brain_nodes WHERE id = ?`).get(id) as Record<string, unknown> | undefined;
+    return row ? this.toNode(row) : null;
+  }
+
+  getAllNodes(): BrainNode[] {
+    const rows = this.db.prepare(`SELECT * FROM brain_nodes`).all() as Record<string, unknown>[];
+    return rows.map((r) => this.toNode(r));
+  }
+
+  updateNodeEmbedding(id: string, embedding: Float32Array): void {
+    this.db.prepare(`UPDATE brain_nodes SET embedding = ?, updated_at = ? WHERE id = ?`)
+      .run(serializeEmbedding(embedding), Date.now(), id);
+  }
+
+  deleteNode(id: string): void {
+    this.db.prepare(`DELETE FROM brain_edges WHERE source = ? OR target = ?`).run(id, id);
+    this.db.prepare(`DELETE FROM brain_nodes WHERE id = ?`).run(id);
+  }
+
+  private toNode(row: Record<string, unknown>): BrainNode {
+    return {
+      id: row.id as string,
+      kind: row.kind as BrainNode["kind"],
+      content: row.content as string,
+      embedding: deserializeEmbedding(row.embedding as Buffer | null),
+      sourceUri: (row.source_uri as string) || null,
+      trust: row.trust as BrainNode["trust"],
+      tags: JSON.parse((row.tags as string) || "[]"),
+      tokenCount: (row.token_count as number) || 0,
+      metadata: JSON.parse((row.metadata as string) || "{}"),
+      createdAt: row.created_at as number,
+      updatedAt: row.updated_at as number,
+    };
+  }
+
+  // ─── Edges ───
+
+  insertEdge(edge: BrainEdge): void {
+    this.db.prepare(`
+      INSERT OR REPLACE INTO brain_edges (source, target, kind, weight, prior, metadata, decayed_at, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      edge.source, edge.target, edge.kind,
+      edge.weight, edge.prior,
+      JSON.stringify(edge.metadata),
+      edge.decayedAt, edge.createdAt,
+    );
+  }
+
+  getOutgoingEdges(source: string): BrainEdge[] {
+    const rows = this.db.prepare(`SELECT * FROM brain_edges WHERE source = ?`).all(source) as Record<string, unknown>[];
+    return rows.map((r) => this.toEdge(r));
+  }
+
+  updateEdgeWeight(source: string, target: string, kind: EdgeKind, weight: number): void {
+    this.db.prepare(`UPDATE brain_edges SET weight = ? WHERE source = ? AND target = ? AND kind = ?`)
+      .run(weight, source, target, kind);
+  }
+
+  decayAllWeights(rate: number): void {
+    const now = Date.now();
+    this.db.prepare(`
+      UPDATE brain_edges SET weight = weight * ? + prior * (1.0 - ?), decayed_at = ?
+    `).run(rate, rate, now);
+  }
+
+  private toEdge(row: Record<string, unknown>): BrainEdge {
+    return {
+      source: row.source as string,
+      target: row.target as string,
+      kind: row.kind as EdgeKind,
+      weight: row.weight as number,
+      prior: row.prior as number,
+      metadata: JSON.parse((row.metadata as string) || "{}"),
+      decayedAt: row.decayed_at as number,
+      createdAt: row.created_at as number,
+    };
+  }
+
+  // ─── Episodes ───
+
+  insertEpisode(episode: Episode): void {
+    this.db.prepare(`
+      INSERT INTO brain_episodes (id, conversation_id, query_text, query_embedding, trajectory, fired_nodes, vetoed_nodes, context_chars, reward, reward_source, pack_version, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      episode.id, episode.conversationId, episode.queryText,
+      serializeEmbedding(episode.queryEmbedding),
+      JSON.stringify(episode.trajectory),
+      JSON.stringify(episode.firedNodes),
+      JSON.stringify(episode.vetoedNodes),
+      episode.contextChars, episode.reward, episode.rewardSource,
+      episode.packVersion, episode.createdAt,
+    );
+  }
+
+  getEpisode(id: string): Episode | null {
+    const row = this.db.prepare(`SELECT * FROM brain_episodes WHERE id = ?`).get(id) as Record<string, unknown> | undefined;
+    return row ? this.toEpisode(row) : null;
+  }
+
+  getRecentEpisodes(limit: number): Episode[] {
+    const rows = this.db.prepare(`SELECT * FROM brain_episodes ORDER BY created_at DESC LIMIT ?`).all(limit) as Record<string, unknown>[];
+    return rows.map((r) => this.toEpisode(r));
+  }
+
+  getEpisodesForUpdate(limit: number): Episode[] {
+    const rows = this.db.prepare(`
+      SELECT * FROM brain_episodes WHERE reward IS NOT NULL AND updated = 0 ORDER BY created_at ASC LIMIT ?
+    `).all(limit) as Record<string, unknown>[];
+    return rows.map((r) => this.toEpisode(r));
+  }
+
+  getUnlabeledEpisodes(limit: number): Episode[] {
+    const rows = this.db.prepare(`
+      SELECT * FROM brain_episodes WHERE reward IS NULL ORDER BY created_at ASC LIMIT ?
+    `).all(limit) as Record<string, unknown>[];
+    return rows.map((r) => this.toEpisode(r));
+  }
+
+  setEpisodeReward(id: string, reward: number, source: RewardSource): void {
+    this.db.prepare(`UPDATE brain_episodes SET reward = ?, reward_source = ? WHERE id = ?`)
+      .run(reward, source, id);
+  }
+
+  markEpisodeUpdated(id: string): void {
+    this.db.prepare(`UPDATE brain_episodes SET updated = 1 WHERE id = ?`).run(id);
+  }
+
+  private toEpisode(row: Record<string, unknown>): Episode {
+    return {
+      id: row.id as string,
+      conversationId: (row.conversation_id as number) ?? null,
+      queryText: (row.query_text as string) || "",
+      queryEmbedding: deserializeEmbedding(row.query_embedding as Buffer | null),
+      trajectory: JSON.parse((row.trajectory as string) || "[]"),
+      firedNodes: JSON.parse((row.fired_nodes as string) || "[]"),
+      vetoedNodes: JSON.parse((row.vetoed_nodes as string) || "[]"),
+      contextChars: (row.context_chars as number) || 0,
+      reward: (row.reward as number) ?? null,
+      rewardSource: (row.reward_source as RewardSource) ?? null,
+      packVersion: (row.pack_version as number) ?? null,
+      createdAt: row.created_at as number,
+    };
+  }
+
+  // ─── Labels ───
+
+  insertLabel(params: { episodeId: string; source: RewardSource; value: number; confidence?: number; reason?: string }): Label {
+    const id = `bl_${randomUUID().slice(0, 8)}`;
+    const now = Date.now();
+    this.db.prepare(`
+      INSERT INTO brain_labels (id, episode_id, source, value, confidence, reason, applied, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, 0, ?)
+    `).run(id, params.episodeId, params.source, params.value, params.confidence ?? 1.0, params.reason ?? null, now);
+    return {
+      id, episodeId: params.episodeId, source: params.source,
+      value: params.value, confidence: params.confidence ?? 1.0,
+      reason: params.reason ?? null, applied: false, createdAt: now,
+    };
+  }
+
+  getPendingLabels(): Label[] {
+    const rows = this.db.prepare(`SELECT * FROM brain_labels WHERE applied = 0 ORDER BY created_at ASC`).all() as Record<string, unknown>[];
+    return rows.map((r) => ({
+      id: r.id as string,
+      episodeId: r.episode_id as string,
+      source: r.source as RewardSource,
+      value: r.value as number,
+      confidence: (r.confidence as number) ?? 1.0,
+      reason: (r.reason as string) ?? null,
+      applied: false,
+      createdAt: r.created_at as number,
+    }));
+  }
+
+  markLabelApplied(id: string): void {
+    this.db.prepare(`UPDATE brain_labels SET applied = 1 WHERE id = ?`).run(id);
+  }
+
+  // ─── Packs ───
+
+  insertPack(params: { nodeCount: number; edgeCount: number; healthJson: string }): Pack {
+    const now = Date.now();
+    this.db.prepare(`
+      INSERT INTO brain_packs (node_count, edge_count, health_json, created_at) VALUES (?, ?, ?, ?)
+    `).run(params.nodeCount, params.edgeCount, params.healthJson, now);
+
+    const row = this.db.prepare(`SELECT last_insert_rowid() as version`).get() as { version: number };
+    return {
+      version: row.version, nodeCount: params.nodeCount, edgeCount: params.edgeCount,
+      healthJson: params.healthJson, promotedAt: null, rolledBack: false, createdAt: now,
+    };
+  }
+
+  getCurrentPack(): Pack | null {
+    const row = this.db.prepare(`
+      SELECT * FROM brain_packs WHERE promoted_at IS NOT NULL AND rolled_back = 0 ORDER BY version DESC LIMIT 1
+    `).get() as Record<string, unknown> | undefined;
+    if (!row) return null;
+    return {
+      version: row.version as number, nodeCount: row.node_count as number,
+      edgeCount: row.edge_count as number, healthJson: row.health_json as string,
+      promotedAt: (row.promoted_at as number) ?? null, rolledBack: !!(row.rolled_back as number),
+      createdAt: row.created_at as number,
+    };
+  }
+
+  promotePack(version: number): void {
+    this.db.prepare(`UPDATE brain_packs SET promoted_at = ? WHERE version = ?`).run(Date.now(), version);
+  }
+
+  rollbackPack(version: number): void {
+    this.db.prepare(`UPDATE brain_packs SET rolled_back = 1 WHERE version = ?`).run(version);
+  }
+
+  // ─── Mutations ───
+
+  insertMutation(mutation: MutationProposal): void {
+    this.db.prepare(`
+      INSERT INTO brain_mutations (id, kind, proposal, evidence, expected_gain, status, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      mutation.id, mutation.kind, JSON.stringify(mutation.proposal),
+      mutation.evidence ? JSON.stringify(mutation.evidence) : null,
+      mutation.expectedGain, mutation.status, mutation.createdAt,
+    );
+  }
+
+  resolveMutation(id: string, status: MutationStatus): void {
+    this.db.prepare(`UPDATE brain_mutations SET status = ?, resolved_at = ? WHERE id = ?`)
+      .run(status, Date.now(), id);
+  }
+
+  // ─── Traces ───
+
+  insertTrace(trace: DecisionTrace): void {
+    this.db.prepare(`
+      INSERT INTO brain_traces (id, episode_id, pack_version, query_text, seed_scores, trajectory, fired_nodes, vetoed_nodes, context_chars, footer, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      trace.id, trace.episodeId, trace.packVersion, trace.queryText,
+      JSON.stringify(trace.seedScores), JSON.stringify(trace.trajectory),
+      JSON.stringify(trace.firedNodes), JSON.stringify(trace.vetoedNodes),
+      trace.contextChars, trace.footer, trace.createdAt,
+    );
+  }
+
+  getRecentTraces(limit: number): DecisionTrace[] {
+    const rows = this.db.prepare(`SELECT * FROM brain_traces ORDER BY created_at DESC LIMIT ?`).all(limit) as Record<string, unknown>[];
+    return rows.map((r) => this.toTrace(r));
+  }
+
+  getTrace(id: string): DecisionTrace | null {
+    const row = this.db.prepare(`SELECT * FROM brain_traces WHERE id = ?`).get(id) as Record<string, unknown> | undefined;
+    return row ? this.toTrace(row) : null;
+  }
+
+  private toTrace(row: Record<string, unknown>): DecisionTrace {
+    return {
+      id: row.id as string,
+      episodeId: (row.episode_id as string) ?? null,
+      packVersion: (row.pack_version as number) ?? null,
+      queryText: (row.query_text as string) || "",
+      seedScores: JSON.parse((row.seed_scores as string) || "[]"),
+      trajectory: JSON.parse((row.trajectory as string) || "[]"),
+      firedNodes: JSON.parse((row.fired_nodes as string) || "[]"),
+      vetoedNodes: JSON.parse((row.vetoed_nodes as string) || "[]"),
+      contextChars: (row.context_chars as number) || 0,
+      footer: (row.footer as string) || "",
+      createdAt: row.created_at as number,
+    };
+  }
+
+  // ─── Training State ───
+
+  getTrainingState(key: string): string | null {
+    const row = this.db.prepare(`SELECT value FROM brain_training_state WHERE key = ?`).get(key) as { value: string } | undefined;
+    return row?.value ?? null;
+  }
+
+  setTrainingState(key: string, value: string | number): void {
+    this.db.prepare(`INSERT OR REPLACE INTO brain_training_state (key, value) VALUES (?, ?)`)
+      .run(key, String(value));
+  }
+
+  // ─── Bulk load into BrainGraph ───
+
+  loadAllEdges(): BrainEdge[] {
+    const rows = this.db.prepare(`SELECT * FROM brain_edges`).all() as Record<string, unknown>[];
+    return rows.map((r) => this.toEdge(r));
+  }
+}

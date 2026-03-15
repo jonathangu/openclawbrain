@@ -13,6 +13,11 @@ import { createLcmDescribeTool } from "./src/tools/lcm-describe-tool.js";
 import { createLcmExpandQueryTool } from "./src/tools/lcm-expand-query-tool.js";
 import { createLcmExpandTool } from "./src/tools/lcm-expand-tool.js";
 import { createLcmGrepTool } from "./src/tools/lcm-grep-tool.js";
+import {
+  createBrainTeachTool,
+  createBrainStatusTool,
+  createBrainTraceTool,
+} from "./src/brain-runtime/tools.js";
 import type { LcmDependencies } from "./src/types.js";
 
 /** Parse `agent:<agentId>:<suffix...>` session keys. */
@@ -1266,10 +1271,10 @@ function createLcmDependencies(api: OpenClawPluginApi): LcmDependencies {
 }
 
 const lcmPlugin = {
-  id: "lossless-claw",
-  name: "Lossless Context Management",
+  id: "openclawbrain",
+  name: "OpenClawBrain",
   description:
-    "DAG-based conversation summarization with incremental compaction, full-text search, and sub-agent expansion",
+    "Lossless transcript memory plus a pack-based learning layer for OpenClaw",
 
   configSchema: {
     parse(value: unknown) {
@@ -1285,7 +1290,7 @@ const lcmPlugin = {
     const deps = createLcmDependencies(api);
     const lcm = new LcmContextEngine(deps);
 
-    api.registerContextEngine("lossless-claw", () => lcm);
+    api.registerContextEngine("openclawbrain", () => lcm);
     api.registerTool((ctx) =>
       createLcmGrepTool({
         deps,
@@ -1316,8 +1321,50 @@ const lcmPlugin = {
       }),
     );
 
+    api.registerTool(() =>
+      createBrainTeachTool({
+        teach: async (instruction, kind, tags) => {
+          const brain = lcm.getBrainService();
+          if (!brain) {
+            throw new Error("OpenClawBrain runtime is unavailable");
+          }
+          const conversationId = undefined;
+          return brain.teach({ instruction, conversationId, kind, tags });
+        },
+        status: async () => lcm.getBrainService()?.status() ?? { enabled: false },
+        getTrace: async (traceId?: string) =>
+          ((await lcm.getBrainService()?.getTrace(traceId)) as unknown as Record<string, unknown> | null) ?? null,
+      }),
+    );
+    api.registerTool(() =>
+      createBrainStatusTool({
+        teach: async () => ({ nodeId: "" }),
+        status: async () => lcm.getBrainService()?.status() ?? { enabled: false },
+        getTrace: async (traceId?: string) =>
+          ((await lcm.getBrainService()?.getTrace(traceId)) as unknown as Record<string, unknown> | null) ?? null,
+      }),
+    );
+    api.registerTool(() =>
+      createBrainTraceTool({
+        teach: async () => ({ nodeId: "" }),
+        status: async () => lcm.getBrainService()?.status() ?? { enabled: false },
+        getTrace: async (traceId?: string) =>
+          ((await lcm.getBrainService()?.getTrace(traceId)) as unknown as Record<string, unknown> | null) ?? null,
+      }),
+    );
+
+    api.registerService({
+      id: "brain-worker",
+      start: () => {
+        lcm.getBrainService()?.startWorker();
+      },
+      stop: () => {
+        lcm.getBrainService()?.stopWorker();
+      },
+    });
+
     api.logger.info(
-      `[lcm] Plugin loaded (enabled=${deps.config.enabled}, db=${deps.config.databasePath}, threshold=${deps.config.contextThreshold})`,
+      `[openclawbrain] Plugin loaded (enabled=${deps.config.enabled}, db=${deps.config.databasePath}, threshold=${deps.config.contextThreshold})`,
     );
   },
 };

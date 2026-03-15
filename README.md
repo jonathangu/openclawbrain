@@ -1,19 +1,25 @@
-# lossless-claw
+# OpenClawBrain v2
 
-Lossless Context Management plugin for [OpenClaw](https://github.com/openclaw/openclaw), based on the [LCM paper](https://papers.voltropy.com/LCM). Replaces OpenClaw's built-in sliding-window compaction with a DAG-based summarization system that preserves every message while keeping active context within model token limits.
+OpenClawBrain v2 is a clean rebuild on top of [lossless-claw](https://github.com/Martian-Engineering/lossless-claw). The goal is a production-ready OpenClaw plugin that keeps lossless transcript memory while adding a correctly wired learning layer for retrieval and correction routing.
+
+This repo is the active v2 codebase.
+
+The earlier spike is archived at [jonathangu/openclawbrain-v1-spike-archive](https://github.com/jonathangu/openclawbrain-v1-spike-archive).
 
 ## Table of contents
 
 - [What it does](#what-it-does)
 - [Quick start](#quick-start)
 - [Configuration](#configuration)
+- [Operator Commands](#operator-commands)
+- [Fallback Behavior](#fallback-behavior)
+- [Limitations](#limitations)
+- [Roadmap](#roadmap)
 - [Documentation](#documentation)
 - [Development](#development)
 - [License](#license)
 
-## What it does
-
-Two ways to learn: read the below, or [check out this super cool animated visualization](https://losslesscontext.ai).
+## What it does today
 
 When a conversation grows beyond the model's context window, OpenClaw (just like all of the other agents) normally truncates older messages. LCM instead:
 
@@ -25,7 +31,7 @@ When a conversation grows beyond the model's context window, OpenClaw (just like
 
 Nothing is lost. Raw messages stay in the database. Summaries link back to their source messages. Agents can drill into any summary to recover the original detail.
 
-**It feels like talking to an agent that never forgets. Because it doesn't. In normal operation, you'll never need to think about compaction again.**
+Today this repo ships the proven lossless-claw baseline while the learning layer is being rebuilt behind explicit module boundaries, tests, and operator commands. The README will only claim learned retrieval once it is wired end to end.
 
 ## Quick start
 
@@ -37,24 +43,24 @@ Nothing is lost. Raw messages stay in the database. Summaries link back to their
 
 ### Install the plugin
 
-Use OpenClaw's plugin installer (recommended):
+Use OpenClaw's plugin installer once the package is published:
 
 ```bash
-openclaw plugins install @martian-engineering/lossless-claw
+openclaw plugins install @jonathangu/openclawbrain
 ```
 
 If you're running from a local OpenClaw checkout, use:
 
 ```bash
-pnpm openclaw plugins install @martian-engineering/lossless-claw
+pnpm openclaw plugins install @jonathangu/openclawbrain
 ```
 
 For local plugin development, link your working copy instead of copying files:
 
 ```bash
-openclaw plugins install --link /path/to/lossless-claw
+openclaw plugins install --link /path/to/openclawbrain
 # or from a local OpenClaw checkout:
-# pnpm openclaw plugins install --link /path/to/lossless-claw
+# pnpm openclaw plugins install --link /path/to/openclawbrain
 ```
 
 The install command records the plugin, enables it, and applies compatible slot selection (including `contextEngine` when applicable).
@@ -63,13 +69,13 @@ The install command records the plugin, enables it, and applies compatible slot 
 
 In most cases, no manual JSON edits are needed after `openclaw plugins install`.
 
-If you need to set it manually, ensure the context engine slot points at lossless-claw:
+If you need to set it manually, ensure the context engine slot points at `openclawbrain`:
 
 ```json
 {
   "plugins": {
     "slots": {
-      "contextEngine": "lossless-claw"
+      "contextEngine": "openclawbrain"
     }
   }
 }
@@ -77,24 +83,37 @@ If you need to set it manually, ensure the context engine slot points at lossles
 
 Restart OpenClaw after configuration changes.
 
+### Initialize the brain index
+
+The lossless transcript path works immediately. Learned retrieval needs an explicit init pass:
+
+```bash
+openclawbrain init /path/to/your/workspace
+```
+
+`openclawbrain init` scans the workspace, chunks source material, computes embeddings, builds the initial graph, writes `state.db`, creates pack `v000001`, and promotes it.
+
 ## Configuration
 
 LCM is configured through a combination of plugin config and environment variables. Environment variables take precedence for backward compatibility.
 
 ### Plugin config
 
-Add a `lossless-claw` entry under `plugins.entries` in your OpenClaw config:
+Add an `openclawbrain` entry under `plugins.entries` in your OpenClaw config:
 
 ```json
 {
   "plugins": {
     "entries": {
-      "lossless-claw": {
+      "openclawbrain": {
         "enabled": true,
         "config": {
           "freshTailCount": 32,
           "contextThreshold": 0.75,
-          "incrementalMaxDepth": -1
+          "incrementalMaxDepth": -1,
+          "brainRoot": "~/.openclaw/openclawbrain",
+          "brainEmbeddingProvider": "openai",
+          "brainEmbeddingModel": "text-embedding-3-large"
         }
       }
     }
@@ -125,6 +144,46 @@ Add a `lossless-claw` entry under `plugins.entries` in your OpenClaw config:
 | `LCM_SUMMARY_PROVIDER` | *(from OpenClaw)* | Provider override for summarization |
 | `LCM_AUTOCOMPACT_DISABLED` | `false` | Disable automatic compaction after turns |
 | `LCM_PRUNE_HEARTBEAT_OK` | `false` | Retroactively delete `HEARTBEAT_OK` turn cycles from LCM storage |
+| `OPENCLAWBRAIN_ENABLED` | `true` | Enable/disable the learning layer |
+| `OPENCLAWBRAIN_ROOT` | `~/.openclaw/openclawbrain` | Root directory for `state.db` and immutable packs |
+| `OPENCLAWBRAIN_EMBEDDING_PROVIDER` | `openai` | Embedding provider |
+| `OPENCLAWBRAIN_EMBEDDING_MODEL` | `""` | Embedding model required for `init`, retrieval, and `brain_teach` |
+| `OPENCLAWBRAIN_EMBEDDING_BASE_URL` | `""` | Optional embeddings API base URL override |
+| `OPENCLAWBRAIN_MAX_HOPS` | `8` | Hard traversal cap |
+| `OPENCLAWBRAIN_MAX_SEEDS` | `10` | Max seed nodes per query |
+| `OPENCLAWBRAIN_SEMANTIC_THRESHOLD` | `0.7` | Minimum seed similarity |
+| `OPENCLAWBRAIN_TRAINER_INTERVAL_MS` | `30000` | Background worker interval |
+
+## Operator Commands
+
+```bash
+openclawbrain init [workspace]
+openclawbrain status
+openclawbrain trace [traceId]
+openclawbrain replay
+openclawbrain promote
+openclawbrain rollback [version]
+openclawbrain disable
+openclawbrain doctor
+```
+
+## Fallback Behavior
+
+- If the brain has not been initialized, the plugin serves LCM-only context.
+- If embeddings are not configured, learned retrieval and `brain_teach` stay disabled.
+- If the background worker is unavailable, serving still uses the last promoted pack.
+
+## Limitations
+
+- Embedding support currently targets OpenAI-compatible `/v1/embeddings` APIs.
+- The worker records structural mutation proposals but does not auto-promote them yet.
+- Upstream `openclaw/plugin-sdk` type drift still affects full-repo `tsc --noEmit`.
+
+## Roadmap
+
+- Finish mutation replay-gate application for connect/prune/inject.
+- Extend embedding adapters beyond OpenAI-compatible providers.
+- Expand end-to-end runtime tests against a full OpenClaw install.
 
 ### Recommended starting configuration
 

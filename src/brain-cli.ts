@@ -1,0 +1,247 @@
+import { existsSync, mkdirSync, writeFileSync } from "node:fs";
+import { join, resolve } from "node:path";
+import process from "node:process";
+import { DatabaseSync } from "node:sqlite";
+import { BrainGraph } from "./brain-core/graph.js";
+import { computeHealth } from "./brain-core/health.js";
+import { PackManager } from "./brain-core/pack.js";
+import { BrainStore } from "./brain-store/store.js";
+import { runBrainMigrations } from "./brain-store/migrations.js";
+import { initBrain } from "./brain-store/init.js";
+import { createEmbeddingClient } from "./brain-store/embedding.js";
+import { resolveLcmConfig } from "./db/config.js";
+
+function printJson(payload: unknown): void {
+  process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+}
+
+function usage(): never {
+  process.stderr.write(
+    "Usage: openclawbrain <init|status|trace|replay|promote|rollback|disable|doctor> [args]\n",
+  );
+  process.exit(1);
+}
+
+function loadStore() {
+  const config = resolveLcmConfig(process.env, {});
+  const brainConfig = config.brain;
+  if (!brainConfig) {
+    throw new Error("OpenClawBrain configuration is unavailable");
+  }
+
+  mkdirSync(brainConfig.root, { recursive: true });
+  const dbPath = join(brainConfig.root, "state.db");
+  const db = new DatabaseSync(dbPath);
+  db.exec("PRAGMA journal_mode = WAL");
+  db.exec("PRAGMA foreign_keys = ON");
+  runBrainMigrations(db);
+  const store = new BrainStore(db, { brainRoot: brainConfig.root });
+  const graph = new BrainGraph();
+  for (const node of store.getAllNodes()) {
+    graph.addNode(node);
+  }
+  for (const edge of store.loadAllEdges()) {
+    graph.addEdge(edge);
+  }
+
+  return { config, brainConfig, store, graph };
+}
+
+function flattenEdges(graph: BrainGraph) {
+  return graph.getAllNodes().flatMap((node) => graph.getOutgoingEdges(node.id));
+}
+
+async function commandInit(workspaceArg?: string): Promise<void> {
+  const { brainConfig, store, graph } = loadStore();
+  const embedFn = createEmbeddingClient({ config: brainConfig });
+  if (!embedFn) {
+    throw new Error("OPENCLAWBRAIN_EMBEDDING_MODEL is required for init");
+  }
+
+  const workspaceRoot = resolve(workspaceArg ?? process.cwd());
+  const result = await initBrain({
+    workspaceRoot,
+    embedFn,
+    semanticThreshold: brainConfig.semanticThreshold,
+    log: { info: () => {}, warn: () => {} },
+  });
+
+  store.clearGraph();
+  graph.clear();
+  for (const node of result.nodes) {
+    graph.addNode(node);
+    store.insertNode(node);
+  }
+  for (const edge of result.edges) {
+    graph.addEdge(edge);
+    store.insertEdge(edge);
+  }
+
+  const health = computeHealth(graph, [], 0);
+  const pack = store.insertPack({
+    nodeCount: health.nodeCount,
+    edgeCount: health.edgeCount,
+    healthJson: JSON.stringify(health),
+  });
+  store.writePackSnapshot({
+    version: pack.version,
+    nodes: graph.getAllNodes(),
+    edges: flattenEdges(graph),
+    metadata: { reason: "cli-init", workspaceRoot, summary: result.summary },
+  });
+  store.promotePack(pack.version);
+
+  printJson({
+    command: "init",
+    workspaceRoot,
+    summary: result.summary,
+    packVersion: pack.version,
+  });
+}
+
+function commandStatus(): void {
+  const { store, graph, brainConfig } = loadStore();
+  const recentEpisodes = store.getRecentEpisodes(100);
+  const currentPack = store.getCurrentPackVersion();
+  const health = computeHealth(graph, recentEpisodes, currentPack ?? 0);
+
+  printJson({
+    command: "status",
+    brainRoot: brainConfig.root,
+    disabled: existsSync(join(brainConfig.root, "DISABLED")),
+    currentPackVersion: currentPack,
+    pendingLabels: store.getPendingLabels().length,
+    recentTraceCount: store.getRecentTraces(5).length,
+    ...health,
+  });
+}
+
+function commandTrace(traceId?: string): void {
+  const { store } = loadStore();
+  const trace = traceId ? store.getTrace(traceId) : store.getRecentTraces(1)[0] ?? null;
+  printJson({
+    command: "trace",
+    trace,
+  });
+}
+
+function commandReplay(): void {
+  const { store, graph, brainConfig } = loadStore();
+  const gate = new PackManager(
+    {
+      insertPack: (params) => store.insertPack(params),
+      promotePack: (version) => store.promotePack(version),
+      rollbackPack: (version) => store.rollbackPack(version),
+    },
+    graph,
+    { info: () => {}, warn: () => {} },
+  ).replayGate(store.getRecentEpisodes(brainConfig.replayEpisodeCount), {
+    minFiredPerQuery: brainConfig.minFiredPerQuery,
+    maxDormantPercent: brainConfig.maxDormantPercent,
+    maxOrphanCount: brainConfig.maxOrphanCount,
+  });
+  printJson({
+    command: "replay",
+    ...gate,
+  });
+}
+
+function commandPromote(): void {
+  const { store, graph } = loadStore();
+  const health = computeHealth(graph, store.getRecentEpisodes(100), store.getCurrentPackVersion() ?? 0);
+  const pack = store.insertPack({
+    nodeCount: health.nodeCount,
+    edgeCount: health.edgeCount,
+    healthJson: JSON.stringify(health),
+  });
+  store.writePackSnapshot({
+    version: pack.version,
+    nodes: graph.getAllNodes(),
+    edges: flattenEdges(graph),
+    metadata: { reason: "cli-promote" },
+  });
+  store.promotePack(pack.version);
+  printJson({
+    command: "promote",
+    version: pack.version,
+  });
+}
+
+function commandRollback(versionArg?: string): void {
+  const { store } = loadStore();
+  const version = versionArg ? Number.parseInt(versionArg, 10) : store.getCurrentPackVersion();
+  if (!version) {
+    throw new Error("No pack version available to roll back");
+  }
+  store.rollbackPack(version);
+  printJson({
+    command: "rollback",
+    version,
+    currentPackVersion: store.getCurrentPackVersion(),
+  });
+}
+
+function commandDisable(): void {
+  const { brainConfig } = loadStore();
+  const disabledFile = join(brainConfig.root, "DISABLED");
+  writeFileSync(disabledFile, "disabled\n", "utf8");
+  printJson({
+    command: "disable",
+    disabledFile,
+  });
+}
+
+function commandDoctor(): void {
+  const { brainConfig, store, graph } = loadStore();
+  const currentPackVersion = store.getCurrentPackVersion();
+  const snapshot = currentPackVersion !== null ? store.readPackSnapshot(currentPackVersion) : null;
+  printJson({
+    command: "doctor",
+    brainRoot: brainConfig.root,
+    stateDbExists: existsSync(join(brainConfig.root, "state.db")),
+    currentPackVersion,
+    currentPackSnapshotExists: snapshot !== null,
+    embeddingConfigured: brainConfig.embeddingModel.trim().length > 0,
+    disabled: existsSync(join(brainConfig.root, "DISABLED")),
+    nodeCount: graph.nodeCount(),
+    edgeCount: graph.edgeCount(),
+    lastTraceId: store.getRecentTraces(1)[0]?.id ?? null,
+  });
+}
+
+async function main(): Promise<void> {
+  const [command, arg] = process.argv.slice(2);
+  switch (command) {
+    case "init":
+      await commandInit(arg);
+      return;
+    case "status":
+      commandStatus();
+      return;
+    case "trace":
+      commandTrace(arg);
+      return;
+    case "replay":
+      commandReplay();
+      return;
+    case "promote":
+      commandPromote();
+      return;
+    case "rollback":
+      commandRollback(arg);
+      return;
+    case "disable":
+      commandDisable();
+      return;
+    case "doctor":
+      commandDoctor();
+      return;
+    default:
+      usage();
+  }
+}
+
+void main().catch((error) => {
+  process.stderr.write(`${(error as Error).message}\n`);
+  process.exit(1);
+});

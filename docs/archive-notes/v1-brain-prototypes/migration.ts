@@ -1,0 +1,144 @@
+/**
+ * SQLite schema for the brain's learned retrieval graph.
+ *
+ * These tables live alongside LCM's existing tables in the same database.
+ * All brain tables are prefixed with "brain_" to avoid collisions.
+ */
+
+import type { DatabaseSync } from "node:sqlite";
+
+export function runBrainMigrations(db: DatabaseSync): void {
+  db.exec(`
+    -- ═══════════════════════════════════════════
+    -- Brain Knowledge Graph
+    -- ═══════════════════════════════════════════
+
+    CREATE TABLE IF NOT EXISTS brain_nodes (
+      id            TEXT PRIMARY KEY,
+      kind          TEXT NOT NULL,
+      content       TEXT NOT NULL,
+      embedding     BLOB,
+      source_uri    TEXT,
+      trust         TEXT NOT NULL DEFAULT 'scanner',
+      tags          TEXT NOT NULL DEFAULT '[]',
+      token_count   INTEGER NOT NULL DEFAULT 0,
+      metadata      TEXT NOT NULL DEFAULT '{}',
+      created_at    INTEGER NOT NULL,
+      updated_at    INTEGER NOT NULL
+    );
+
+    CREATE TABLE IF NOT EXISTS brain_edges (
+      source        TEXT NOT NULL,
+      target        TEXT NOT NULL,
+      kind          TEXT NOT NULL,
+      weight        REAL NOT NULL DEFAULT 0.5,
+      prior         REAL NOT NULL DEFAULT 0.5,
+      metadata      TEXT NOT NULL DEFAULT '{}',
+      decayed_at    INTEGER NOT NULL,
+      created_at    INTEGER NOT NULL,
+      PRIMARY KEY (source, target, kind)
+    );
+
+    CREATE INDEX IF NOT EXISTS brain_edges_source_idx ON brain_edges(source);
+    CREATE INDEX IF NOT EXISTS brain_edges_target_idx ON brain_edges(target);
+    CREATE INDEX IF NOT EXISTS brain_nodes_kind_idx ON brain_nodes(kind);
+
+    -- ═══════════════════════════════════════════
+    -- Episodes (full traversal records)
+    -- ═══════════════════════════════════════════
+
+    CREATE TABLE IF NOT EXISTS brain_episodes (
+      id                TEXT PRIMARY KEY,
+      conversation_id   INTEGER,
+      query_text        TEXT,
+      query_embedding   BLOB,
+      trajectory        TEXT NOT NULL,
+      fired_nodes       TEXT NOT NULL,
+      vetoed_nodes      TEXT NOT NULL DEFAULT '[]',
+      context_chars     INTEGER NOT NULL DEFAULT 0,
+      reward            REAL,
+      reward_source     TEXT,
+      pack_version      INTEGER,
+      updated           INTEGER NOT NULL DEFAULT 0,
+      created_at        INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS brain_episodes_created_idx ON brain_episodes(created_at);
+
+    -- ═══════════════════════════════════════════
+    -- Labels (pending reward signals)
+    -- ═══════════════════════════════════════════
+
+    CREATE TABLE IF NOT EXISTS brain_labels (
+      id            TEXT PRIMARY KEY,
+      episode_id    TEXT NOT NULL,
+      source        TEXT NOT NULL,
+      value         REAL NOT NULL,
+      confidence    REAL NOT NULL DEFAULT 1.0,
+      reason        TEXT,
+      applied       INTEGER NOT NULL DEFAULT 0,
+      created_at    INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS brain_labels_episode_idx ON brain_labels(episode_id);
+    CREATE INDEX IF NOT EXISTS brain_labels_applied_idx ON brain_labels(applied);
+
+    -- ═══════════════════════════════════════════
+    -- Packs (immutable serving snapshots)
+    -- ═══════════════════════════════════════════
+
+    CREATE TABLE IF NOT EXISTS brain_packs (
+      version       INTEGER PRIMARY KEY AUTOINCREMENT,
+      node_count    INTEGER NOT NULL,
+      edge_count    INTEGER NOT NULL,
+      health_json   TEXT NOT NULL,
+      promoted_at   INTEGER,
+      rolled_back   INTEGER NOT NULL DEFAULT 0,
+      created_at    INTEGER NOT NULL
+    );
+
+    -- ═══════════════════════════════════════════
+    -- Mutation Proposals
+    -- ═══════════════════════════════════════════
+
+    CREATE TABLE IF NOT EXISTS brain_mutations (
+      id            TEXT PRIMARY KEY,
+      kind          TEXT NOT NULL,
+      proposal      TEXT NOT NULL,
+      evidence      TEXT,
+      expected_gain REAL,
+      status        TEXT NOT NULL DEFAULT 'pending',
+      created_at    INTEGER NOT NULL,
+      resolved_at   INTEGER
+    );
+
+    -- ═══════════════════════════════════════════
+    -- Decision Traces
+    -- ═══════════════════════════════════════════
+
+    CREATE TABLE IF NOT EXISTS brain_traces (
+      id            TEXT PRIMARY KEY,
+      episode_id    TEXT,
+      pack_version  INTEGER,
+      query_text    TEXT,
+      seed_scores   TEXT NOT NULL,
+      trajectory    TEXT NOT NULL,
+      fired_nodes   TEXT NOT NULL,
+      vetoed_nodes  TEXT NOT NULL DEFAULT '[]',
+      context_chars INTEGER NOT NULL,
+      footer        TEXT NOT NULL,
+      created_at    INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS brain_traces_created_idx ON brain_traces(created_at DESC);
+
+    -- ═══════════════════════════════════════════
+    -- Training State (key-value)
+    -- ═══════════════════════════════════════════
+
+    CREATE TABLE IF NOT EXISTS brain_training_state (
+      key           TEXT PRIMARY KEY,
+      value         TEXT NOT NULL
+    );
+  `);
+}

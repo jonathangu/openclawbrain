@@ -1,5 +1,5 @@
 {
-  "id": "lossless-claw",
+  "id": "openclawbrain",
   "uiHints": {
     "contextThreshold": {
       "label": "Context Threshold",
@@ -24,6 +24,18 @@
     "summaryProvider": {
       "label": "Summary Provider",
       "help": "Provider override for LCM summarization (e.g., 'openai-resp')"
+    },
+    "brainRoot": {
+      "label": "Brain Root",
+      "help": "Directory containing OpenClawBrain state.db and immutable packs"
+    },
+    "brainEmbeddingProvider": {
+      "label": "Embedding Provider",
+      "help": "Provider used for learned retrieval embeddings"
+    },
+    "brainEmbeddingModel": {
+      "label": "Embedding Model",
+      "help": "Embedding model used for init, retrieval, and brain_teach"
     }
   },
   "configSchema": {
@@ -70,6 +82,38 @@
       },
       "summaryProvider": {
         "type": "string"
+      },
+      "brainEnabled": {
+        "type": "boolean"
+      },
+      "brainRoot": {
+        "type": "string"
+      },
+      "brainEmbeddingProvider": {
+        "type": "string"
+      },
+      "brainEmbeddingModel": {
+        "type": "string"
+      },
+      "brainEmbeddingBaseUrl": {
+        "type": "string"
+      },
+      "brainMaxHops": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "brainMaxSeeds": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "brainSemanticThreshold": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "brainTrainerIntervalMs": {
+        "type": "integer",
+        "minimum": 1000
       }
     }
   }

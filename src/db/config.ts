@@ -1,5 +1,31 @@
 import { homedir } from "os";
-import { join } from "path";
+import { dirname, join } from "path";
+
+export type OpenClawBrainRuntimeConfig = {
+  enabled: boolean;
+  root: string;
+  budgetFraction: number;
+  maxHops: number;
+  maxSeeds: number;
+  semanticThreshold: number;
+  servingTemperature: number;
+  learningTemperature: number;
+  learningRate: number;
+  baselineAlpha: number;
+  decayRate: number;
+  trainerIntervalMs: number;
+  teacherEnabled: boolean;
+  teacherProvider: string;
+  teacherModel: string;
+  mutationsEnabled: boolean;
+  replayEpisodeCount: number;
+  minFiredPerQuery: number;
+  maxDormantPercent: number;
+  maxOrphanCount: number;
+  embeddingProvider: string;
+  embeddingModel: string;
+  embeddingBaseUrl: string;
+};
 
 export type LcmConfig = {
   enabled: boolean;
@@ -24,6 +50,8 @@ export type LcmConfig = {
   timezone: string;
   /** When true, retroactively delete HEARTBEAT_OK turn cycles from LCM storage. */
   pruneHeartbeatOk: boolean;
+  /** OpenClawBrain v2 runtime settings. */
+  brain?: OpenClawBrainRuntimeConfig;
 };
 
 /** Safely coerce an unknown value to a finite number, or return undefined. */
@@ -64,17 +92,22 @@ export function resolveLcmConfig(
   pluginConfig?: Record<string, unknown>,
 ): LcmConfig {
   const pc = pluginConfig ?? {};
+  const databasePath =
+    env.LCM_DATABASE_PATH
+    ?? toStr(pc.dbPath)
+    ?? toStr(pc.databasePath)
+    ?? join(homedir(), ".openclaw", "lcm.db");
+  const brainRoot =
+    env.OPENCLAWBRAIN_ROOT?.trim()
+    ?? toStr(pc.brainRoot)
+    ?? join(dirname(databasePath), "openclawbrain");
 
   return {
     enabled:
       env.LCM_ENABLED !== undefined
         ? env.LCM_ENABLED !== "false"
         : toBool(pc.enabled) ?? true,
-    databasePath:
-      env.LCM_DATABASE_PATH
-      ?? toStr(pc.dbPath)
-      ?? toStr(pc.databasePath)
-      ?? join(homedir(), ".openclaw", "lcm.db"),
+    databasePath,
     contextThreshold:
       (env.LCM_CONTEXT_THRESHOLD !== undefined ? parseFloat(env.LCM_CONTEXT_THRESHOLD) : undefined)
         ?? toNumber(pc.contextThreshold) ?? 0.75,
@@ -123,5 +156,90 @@ export function resolveLcmConfig(
       env.LCM_PRUNE_HEARTBEAT_OK !== undefined
         ? env.LCM_PRUNE_HEARTBEAT_OK === "true"
         : toBool(pc.pruneHeartbeatOk) ?? false,
+    brain: {
+      enabled:
+        env.OPENCLAWBRAIN_ENABLED !== undefined
+          ? env.OPENCLAWBRAIN_ENABLED !== "false"
+          : toBool(pc.brainEnabled) ?? true,
+      root: brainRoot,
+      budgetFraction:
+        (env.OPENCLAWBRAIN_BUDGET_FRACTION !== undefined
+          ? parseFloat(env.OPENCLAWBRAIN_BUDGET_FRACTION)
+          : undefined) ?? toNumber(pc.brainBudgetFraction) ?? 0.3,
+      maxHops:
+        (env.OPENCLAWBRAIN_MAX_HOPS !== undefined
+          ? parseInt(env.OPENCLAWBRAIN_MAX_HOPS, 10)
+          : undefined) ?? toNumber(pc.brainMaxHops) ?? 8,
+      maxSeeds:
+        (env.OPENCLAWBRAIN_MAX_SEEDS !== undefined
+          ? parseInt(env.OPENCLAWBRAIN_MAX_SEEDS, 10)
+          : undefined) ?? toNumber(pc.brainMaxSeeds) ?? 10,
+      semanticThreshold:
+        (env.OPENCLAWBRAIN_SEMANTIC_THRESHOLD !== undefined
+          ? parseFloat(env.OPENCLAWBRAIN_SEMANTIC_THRESHOLD)
+          : undefined) ?? toNumber(pc.brainSemanticThreshold) ?? 0.7,
+      servingTemperature:
+        (env.OPENCLAWBRAIN_SERVING_TEMPERATURE !== undefined
+          ? parseFloat(env.OPENCLAWBRAIN_SERVING_TEMPERATURE)
+          : undefined) ?? toNumber(pc.brainServingTemperature) ?? 0.1,
+      learningTemperature:
+        (env.OPENCLAWBRAIN_LEARNING_TEMPERATURE !== undefined
+          ? parseFloat(env.OPENCLAWBRAIN_LEARNING_TEMPERATURE)
+          : undefined) ?? toNumber(pc.brainLearningTemperature) ?? 1.0,
+      learningRate:
+        (env.OPENCLAWBRAIN_LEARNING_RATE !== undefined
+          ? parseFloat(env.OPENCLAWBRAIN_LEARNING_RATE)
+          : undefined) ?? toNumber(pc.brainLearningRate) ?? 0.01,
+      baselineAlpha:
+        (env.OPENCLAWBRAIN_BASELINE_ALPHA !== undefined
+          ? parseFloat(env.OPENCLAWBRAIN_BASELINE_ALPHA)
+          : undefined) ?? toNumber(pc.brainBaselineAlpha) ?? 0.1,
+      decayRate:
+        (env.OPENCLAWBRAIN_DECAY_RATE !== undefined
+          ? parseFloat(env.OPENCLAWBRAIN_DECAY_RATE)
+          : undefined) ?? toNumber(pc.brainDecayRate) ?? 0.995,
+      trainerIntervalMs:
+        (env.OPENCLAWBRAIN_TRAINER_INTERVAL_MS !== undefined
+          ? parseInt(env.OPENCLAWBRAIN_TRAINER_INTERVAL_MS, 10)
+          : undefined) ?? toNumber(pc.brainTrainerIntervalMs) ?? 30_000,
+      teacherEnabled:
+        env.OPENCLAWBRAIN_TEACHER_ENABLED !== undefined
+          ? env.OPENCLAWBRAIN_TEACHER_ENABLED !== "false"
+          : toBool(pc.brainTeacherEnabled) ?? true,
+      teacherProvider:
+        env.OPENCLAWBRAIN_TEACHER_PROVIDER?.trim() ?? toStr(pc.brainTeacherProvider) ?? "",
+      teacherModel:
+        env.OPENCLAWBRAIN_TEACHER_MODEL?.trim() ?? toStr(pc.brainTeacherModel) ?? "",
+      mutationsEnabled:
+        env.OPENCLAWBRAIN_MUTATIONS_ENABLED !== undefined
+          ? env.OPENCLAWBRAIN_MUTATIONS_ENABLED !== "false"
+          : toBool(pc.brainMutationsEnabled) ?? true,
+      replayEpisodeCount:
+        (env.OPENCLAWBRAIN_REPLAY_EPISODE_COUNT !== undefined
+          ? parseInt(env.OPENCLAWBRAIN_REPLAY_EPISODE_COUNT, 10)
+          : undefined) ?? toNumber(pc.brainReplayEpisodeCount) ?? 100,
+      minFiredPerQuery:
+        (env.OPENCLAWBRAIN_MIN_FIRED_PER_QUERY !== undefined
+          ? parseFloat(env.OPENCLAWBRAIN_MIN_FIRED_PER_QUERY)
+          : undefined) ?? toNumber(pc.brainMinFiredPerQuery) ?? 1.0,
+      maxDormantPercent:
+        (env.OPENCLAWBRAIN_MAX_DORMANT_PERCENT !== undefined
+          ? parseFloat(env.OPENCLAWBRAIN_MAX_DORMANT_PERCENT)
+          : undefined) ?? toNumber(pc.brainMaxDormantPercent) ?? 0.3,
+      maxOrphanCount:
+        (env.OPENCLAWBRAIN_MAX_ORPHAN_COUNT !== undefined
+          ? parseInt(env.OPENCLAWBRAIN_MAX_ORPHAN_COUNT, 10)
+          : undefined) ?? toNumber(pc.brainMaxOrphanCount) ?? 10,
+      embeddingProvider:
+        env.OPENCLAWBRAIN_EMBEDDING_PROVIDER?.trim()
+        ?? toStr(pc.brainEmbeddingProvider)
+        ?? "openai",
+      embeddingModel:
+        env.OPENCLAWBRAIN_EMBEDDING_MODEL?.trim() ?? toStr(pc.brainEmbeddingModel) ?? "",
+      embeddingBaseUrl:
+        env.OPENCLAWBRAIN_EMBEDDING_BASE_URL?.trim()
+        ?? toStr(pc.brainEmbeddingBaseUrl)
+        ?? "",
+    },
   };
 }

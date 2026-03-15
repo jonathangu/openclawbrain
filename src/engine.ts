@@ -32,6 +32,8 @@ import {
   parseFileBlocks,
 } from "./large-files.js";
 import { RetrievalEngine } from "./retrieval.js";
+import { BrainAssemblerExtension } from "./brain-runtime/assembler-extension.js";
+import { BrainService } from "./brain-runtime/service.js";
 import {
   ConversationStore,
   type CreateMessagePartInput,
@@ -573,8 +575,8 @@ function messageIdentity(role: string, content: string): string {
 
 export class LcmContextEngine implements ContextEngine {
   readonly info: ContextEngineInfo = {
-    id: "lcm",
-    name: "Lossless Context Management Engine",
+    id: "openclawbrain",
+    name: "OpenClawBrain Engine",
     version: "0.1.0",
     ownsCompaction: true,
   };
@@ -597,6 +599,8 @@ export class LcmContextEngine implements ContextEngine {
   private largeFileTextSummarizerResolved = false;
   private largeFileTextSummarizer?: (prompt: string) => Promise<string | null>;
   private deps: LcmDependencies;
+  private brainService: BrainService | null = null;
+  private brainAssembler: BrainAssemblerExtension | null = null;
 
   constructor(deps: LcmDependencies) {
     this.deps = deps;
@@ -640,6 +644,19 @@ export class LcmContextEngine implements ContextEngine {
     );
 
     this.retrieval = new RetrievalEngine(this.conversationStore, this.summaryStore);
+
+    if (this.config.brain?.enabled) {
+      try {
+        this.brainService = new BrainService({ deps });
+        this.brainAssembler = new BrainAssemblerExtension(this.brainService);
+      } catch (error) {
+        this.deps.log.warn(`[brain] Failed to initialize runtime: ${(error as Error).message}`);
+      }
+    }
+  }
+
+  getBrainService(): BrainService | null {
+    return this.brainService;
   }
 
   /** Ensure DB schema is up-to-date. Called lazily on first bootstrap/ingest/assemble/compact. */
@@ -1182,6 +1199,14 @@ export class LcmContextEngine implements ContextEngine {
     // Append to context items so assembler can see it
     await this.summaryStore.appendContextMessage(conversationId, msgRecord.messageId);
 
+    if (this.brainService) {
+      await this.brainService.harvestFromMessage({
+        conversationId,
+        role: stored.role,
+        content: stored.content,
+      });
+    }
+
     return { ingested: true };
   }
 
@@ -1347,10 +1372,18 @@ export class LcmContextEngine implements ContextEngine {
         tokenBudget,
         freshTailCount: this.config.freshTailCount,
       });
+      const hybrid = this.brainAssembler
+        ? await this.brainAssembler.augmentAssembly({
+            conversationId: conversation.conversationId,
+            tokenBudget,
+            assembled,
+            liveMessages: params.messages,
+          })
+        : assembled;
 
       // If assembly produced no messages for a non-empty live session,
       // fail safe to the live context.
-      if (assembled.messages.length === 0 && params.messages.length > 0) {
+      if (hybrid.messages.length === 0 && params.messages.length > 0) {
         return {
           messages: params.messages,
           estimatedTokens: 0,
@@ -1358,10 +1391,10 @@ export class LcmContextEngine implements ContextEngine {
       }
 
       const result: AssembleResultWithSystemPrompt = {
-        messages: assembled.messages,
-        estimatedTokens: assembled.estimatedTokens,
-        ...(assembled.systemPromptAddition
-          ? { systemPromptAddition: assembled.systemPromptAddition }
+        messages: hybrid.messages,
+        estimatedTokens: hybrid.estimatedTokens,
+        ...(hybrid.systemPromptAddition
+          ? { systemPromptAddition: hybrid.systemPromptAddition }
           : {}),
       };
       return result;
