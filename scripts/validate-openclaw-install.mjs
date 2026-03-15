@@ -185,6 +185,8 @@ function maybeRunAgentChecks(report) {
   const validationModel = process.env.OPENCLAWBRAIN_VALIDATION_MODEL?.trim();
   const embeddingModel = cleanEnv().OPENCLAWBRAIN_EMBEDDING_MODEL;
   const agentTimeoutMs = Number.parseInt(process.env.OPENCLAWBRAIN_VALIDATION_AGENT_TIMEOUT_MS?.trim() || "120000", 10);
+  const agentTimeoutSeconds = Math.max(1, Math.ceil(agentTimeoutMs / 1000));
+  const agentCommandTimeoutMs = agentTimeoutMs + 15_000;
   if (!validationModel || !embeddingModel) {
     report.skipped.push({
       phase: "agent-routing",
@@ -195,16 +197,34 @@ function maybeRunAgentChecks(report) {
     return;
   }
 
-  const recurrentOutput = run("openclaw", [
-    "agent",
-    "--local",
-    "--to",
-    "+15550001111",
-    "--message",
-    "How do I open a pull request again?",
-    "--json",
-  ], { timeoutMs: agentTimeoutMs });
-  report.agent.recurrentQuery = extractJson(recurrentOutput);
+  function runAgentCheck({ to, message, extraEnv }) {
+    return extractJson(run("openclaw", [
+      "agent",
+      "--local",
+      "--to",
+      to,
+      "--message",
+      message,
+      "--json",
+      "--timeout",
+      String(agentTimeoutSeconds),
+    ], {
+      timeoutMs: agentCommandTimeoutMs,
+      env: extraEnv,
+    }));
+  }
+
+  function assertAgentCompleted(label, result) {
+    if (result?.meta?.aborted) {
+      throw new Error(`Validation harness expected ${label} to complete within ${agentTimeoutSeconds}s, but the embedded OpenClaw agent aborted/timed out.`);
+    }
+  }
+
+  report.agent.recurrentQuery = runAgentCheck({
+    to: "+15550001111",
+    message: "How do I open a pull request again?",
+  });
+  assertAgentCompleted("recurrent host-agent query", report.agent.recurrentQuery);
 
   const recurrentStatus = extractJson(run("node", ["bin/openclawbrain.js", "status"]));
   const recurrentTrace = extractJson(run("node", ["bin/openclawbrain.js", "trace"]));
@@ -216,6 +236,7 @@ function maybeRunAgentChecks(report) {
     workerPid: recurrentStatus.workerPid ?? null,
     workerHealthy: recurrentStatus.workerHealthy ?? null,
     workerLastHeartbeatAt: recurrentStatus.workerLastHeartbeatAt ?? null,
+    aborted: report.agent.recurrentQuery?.meta?.aborted ?? null,
   };
 
   if ((recurrentStatus.workerMode ?? null) === "child") {
@@ -227,34 +248,25 @@ function maybeRunAgentChecks(report) {
     }
   }
 
-  const shortLookupOutput = run("openclaw", [
-    "agent",
-    "--local",
-    "--to",
-    "+15550002222",
-    "--message",
-    "open PLAYBOOK.md",
-    "--json",
-  ], { timeoutMs: agentTimeoutMs });
-  report.agent.shortLookup = extractJson(shortLookupOutput);
+  report.agent.shortLookup = runAgentCheck({
+    to: "+15550002222",
+    message: "open PLAYBOOK.md",
+  });
+  assertAgentCompleted("short lookup host-agent query", report.agent.shortLookup);
   const shortStatus = extractJson(run("node", ["bin/openclawbrain.js", "status"]));
   report.assertions.shortLookup = {
     lastAssemblyMode: shortStatus.lastAssemblyDecision?.mode ?? null,
+    aborted: report.agent.shortLookup?.meta?.aborted ?? null,
   };
 
-  updateConfig({ shadowMode: true });
-  const shadowOutput = run("openclaw", [
-    "agent",
-    "--local",
-    "--to",
-    "+15550003333",
-    "--message",
-    "How do I open a pull request again?",
-    "--json",
-  ], { timeoutMs: agentTimeoutMs });
-  report.agent.shadowQuery = extractJson(shadowOutput);
-  const shadowStatus = extractJson(run("node", ["bin/openclawbrain.js", "status"]));
-  const shadowTrace = extractJson(run("node", ["bin/openclawbrain.js", "trace"]));
+  report.agent.shadowQuery = runAgentCheck({
+    to: "+15550003333",
+    message: "How do I open a pull request again?",
+    extraEnv: { OPENCLAWBRAIN_SHADOW_MODE: "true" },
+  });
+  assertAgentCompleted("shadow-mode host-agent query", report.agent.shadowQuery);
+  const shadowStatus = extractJson(run("node", ["bin/openclawbrain.js", "status"], { env: { OPENCLAWBRAIN_SHADOW_MODE: "true" } }));
+  const shadowTrace = extractJson(run("node", ["bin/openclawbrain.js", "trace"], { env: { OPENCLAWBRAIN_SHADOW_MODE: "true" } }));
   const shadowVisibleText = collectStrings(report.agent.shadowQuery).join("\n");
   const injectedContextVisible =
     shadowVisibleText.includes("OpenClawBrain retrieved context.")
@@ -266,8 +278,8 @@ function maybeRunAgentChecks(report) {
     traceId: shadowTrace?.trace?.id ?? null,
     episodeId: shadowTrace?.trace?.episodeId ?? null,
     injectedContextVisible,
+    aborted: report.agent.shadowQuery?.meta?.aborted ?? null,
   };
-  updateConfig({ shadowMode: false });
 
   if (shadowStatus.lastAssemblyDecision?.mode !== "shadow") {
     throw new Error(`Validation harness expected shadow mode decision, got ${shadowStatus.lastAssemblyDecision?.mode ?? "null"}.`);
@@ -321,6 +333,7 @@ try {
     workerMode: process.env.OPENCLAWBRAIN_VALIDATION_WORKER_MODE?.trim() || "child",
     embeddingProvider: cleanEnv().OPENCLAWBRAIN_EMBEDDING_PROVIDER,
     embeddingModel: cleanEnv().OPENCLAWBRAIN_EMBEDDING_MODEL || null,
+    agentTimeoutMs: Number.parseInt(process.env.OPENCLAWBRAIN_VALIDATION_AGENT_TIMEOUT_MS?.trim() || "120000", 10),
   };
 
   if (setupOnly) {
