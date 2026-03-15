@@ -8,7 +8,10 @@ import { PackManager } from "./brain-core/pack.js";
 import { BrainStore } from "./brain-store/store.js";
 import { runBrainMigrations } from "./brain-store/migrations.js";
 import { initBrain } from "./brain-store/init.js";
-import { createEmbeddingClient } from "./brain-store/embedding.js";
+import {
+  createEmbeddingClient,
+  describeEmbeddingConfig,
+} from "./brain-store/embedding.js";
 import { resolveLcmConfig } from "./db/config.js";
 import { flattenSeedWeights } from "./brain-runtime/graph-io.js";
 
@@ -107,6 +110,7 @@ function commandStatus(): void {
   const currentPack = store.getCurrentPackVersion();
   const health = computeHealth(graph, recentEpisodes, currentPack ?? 0);
   const currentSnapshot = currentPack !== null ? store.readPackSnapshot(currentPack) : null;
+  const embeddingConfig = describeEmbeddingConfig(brainConfig);
 
   const workerPid = Number.parseInt(store.getTrainingState("worker_pid") ?? "0", 10) || null;
   const workerLastHeartbeatAt = Number.parseInt(store.getTrainingState("worker_last_heartbeat_at") ?? "0", 10) || null;
@@ -115,6 +119,11 @@ function commandStatus(): void {
     brainRoot: brainConfig.root,
     disabled: existsSync(join(brainConfig.root, "DISABLED")),
     shadowMode: brainConfig.shadowMode,
+    embeddingProvider: brainConfig.embeddingProvider,
+    embeddingModel: brainConfig.embeddingModel,
+    embeddingBaseUrl: brainConfig.embeddingModel ? embeddingConfig.baseUrl : "",
+    embeddingAuthMode: embeddingConfig.authMode,
+    embeddingConfigError: embeddingConfig.error,
     workerMode: brainConfig.workerMode,
     workerPid,
     workerStatus: store.getTrainingState("worker_status"),
@@ -249,6 +258,7 @@ function commandDoctor(): void {
   const workerLastTickAt = store.getTrainingState("worker_last_tick_at");
   const workerLastHeartbeatAt = store.getTrainingState("worker_last_heartbeat_at");
   const workerPid = store.getTrainingState("worker_pid");
+  const embeddingConfig = describeEmbeddingConfig(brainConfig);
   printJson({
     command: "doctor",
     brainRoot: brainConfig.root,
@@ -256,6 +266,11 @@ function commandDoctor(): void {
     currentPackVersion,
     currentPackSnapshotExists: snapshot !== null,
     embeddingConfigured: brainConfig.embeddingModel.trim().length > 0,
+    embeddingProvider: brainConfig.embeddingProvider,
+    embeddingModel: brainConfig.embeddingModel,
+    embeddingBaseUrl: brainConfig.embeddingModel.trim().length > 0 ? embeddingConfig.baseUrl : "",
+    embeddingAuthMode: embeddingConfig.authMode,
+    embeddingConfigError: embeddingConfig.error,
     shadowMode: brainConfig.shadowMode,
     workerMode: brainConfig.workerMode,
     workerPid: workerPid ? Number.parseInt(workerPid, 10) : null,

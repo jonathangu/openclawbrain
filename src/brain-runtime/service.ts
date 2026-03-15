@@ -24,7 +24,11 @@ import { PackManager } from "../brain-core/pack.js";
 import { BrainStore } from "../brain-store/store.js";
 import { runBrainMigrations } from "../brain-store/migrations.js";
 import { initBrain as runInit } from "../brain-store/init.js";
-import { createEmbeddingClient, type BrainEmbeddingFn } from "../brain-store/embedding.js";
+import {
+  createEmbeddingClient,
+  describeEmbeddingConfig,
+  type BrainEmbeddingFn,
+} from "../brain-store/embedding.js";
 import { LabelHarvester } from "./harvester-extension.js";
 import { BrainWorker } from "../brain-worker/worker.js";
 import type { CompletionContentBlock, LcmDependencies } from "../types.js";
@@ -598,10 +602,17 @@ export class BrainService {
     const workerHeartbeatAt = Number.parseInt(this.store.getTrainingState("worker_last_heartbeat_at") ?? "0", 10) || this.workerLastHeartbeatAt;
     const workerStatus = this.store.getTrainingState("worker_status") ?? (this.config.workerMode === "child" ? "unknown" : "running");
 
+    const embeddingConfig = describeEmbeddingConfig(this.config);
+
     return {
       initialized: this.initialized,
       enabled: this.isEnabled(),
       embeddingConfigured: Boolean(this.embeddingClient),
+      embeddingProvider: this.config.embeddingProvider,
+      embeddingModel: this.config.embeddingModel,
+      embeddingBaseUrl: this.config.embeddingModel ? embeddingConfig.baseUrl : "",
+      embeddingAuthMode: embeddingConfig.authMode,
+      embeddingConfigError: embeddingConfig.error,
       currentPackVersion: this.store.getCurrentPackVersion(),
       currentPackPromotedAt: currentPack?.promotedAt ?? null,
       shadowMode: this.config.shadowMode,

@@ -137,6 +137,26 @@ Add an `openclawbrain` entry under `plugins.entries` in your OpenClaw config:
 }
 ```
 
+For local dogfood or other self-hosted installs, Ollama is now a first-class embedding option too:
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "openclawbrain": {
+        "enabled": true,
+        "config": {
+          "brainEmbeddingProvider": "ollama",
+          "brainEmbeddingModel": "bge-large:latest"
+        }
+      }
+    }
+  }
+}
+```
+
+That defaults to Ollama's local OpenAI-compatible embeddings endpoint at `http://127.0.0.1:11434/v1`.
+
 ### Environment variables
 
 | Variable | Default | Description |
@@ -162,9 +182,10 @@ Add an `openclawbrain` entry under `plugins.entries` in your OpenClaw config:
 | `LCM_PRUNE_HEARTBEAT_OK` | `false` | Retroactively delete `HEARTBEAT_OK` turn cycles from LCM storage |
 | `OPENCLAWBRAIN_ENABLED` | `true` | Enable/disable the learning layer |
 | `OPENCLAWBRAIN_ROOT` | `~/.openclaw/openclawbrain` | Root directory for `state.db` and immutable packs |
-| `OPENCLAWBRAIN_EMBEDDING_PROVIDER` | `openai` | Embedding provider |
+| `OPENCLAWBRAIN_EMBEDDING_PROVIDER` | `openai` | Embedding provider (`openai`, `openai-resp`, or `ollama`) |
 | `OPENCLAWBRAIN_EMBEDDING_MODEL` | `""` | Embedding model required for `init`, retrieval, and `brain_teach` |
-| `OPENCLAWBRAIN_EMBEDDING_BASE_URL` | `""` | Optional embeddings API base URL override |
+| `OPENCLAWBRAIN_EMBEDDING_BASE_URL` | `""` | Optional embeddings API base URL override; `ollama` defaults to `http://127.0.0.1:11434/v1` |
+| `OPENCLAWBRAIN_EMBEDDING_API_KEY` | `""` | Optional explicit API key for authenticated embedding proxies / nonstandard OpenAI-compatible endpoints |
 | `OPENCLAWBRAIN_MAX_HOPS` | `8` | Hard traversal cap |
 | `OPENCLAWBRAIN_MAX_SEEDS` | `10` | Max seed nodes per query |
 | `OPENCLAWBRAIN_SEMANTIC_THRESHOLD` | `0.7` | Minimum seed similarity |
@@ -189,6 +210,8 @@ openclawbrain doctor
 
 - If the brain has not been initialized, the plugin serves LCM-only context.
 - If embeddings are not configured, learned retrieval and `brain_teach` stay disabled.
+- Local loopback embedding endpoints (for example Ollama on `127.0.0.1` / `localhost`) do not require a bearer token; remote OpenAI-compatible endpoints still do unless you provide `OPENCLAWBRAIN_EMBEDDING_API_KEY`.
+- `openclawbrain status` and `openclawbrain doctor` expose the resolved embedding provider / model / base URL / auth mode so operator truth stays visible.
 - If the background worker is unavailable, serving still uses the last promoted pack.
 - `brain_teach` now binds taught corrections to the active conversation when invoked from a live tool session.
 - Seed learning is persisted as explicit per-node seed weights and exposed in traces.
@@ -197,7 +220,7 @@ openclawbrain doctor
 
 This repo is already beyond “foundation only,” but it is **not** yet operationally validated end to end.
 
-- Embedding support currently targets OpenAI-compatible `/v1/embeddings` APIs.
+- Embedding support currently targets OpenAI-compatible `/v1/embeddings` APIs, including local Ollama-style endpoints.
 - The learner can run as a supervised child worker, but the full disposable install validation matrix for worker-down behavior is not frozen yet.
 - Harvesting is still pattern-heavy and narrower than the intended human/self/scanner evidence flow.
 - Full OpenClaw end-to-end install validation is not yet frozen into a disposable host-app harness with reproducible artifacts.
