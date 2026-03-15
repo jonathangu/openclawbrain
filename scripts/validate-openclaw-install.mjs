@@ -214,16 +214,28 @@ function maybeRunAgentChecks(report) {
     }));
   }
 
+  function runPrimedAgentCheck({ to, primerMessage = "hi", message, extraEnv }) {
+    const primer = runAgentCheck({ to, message: primerMessage, extraEnv });
+    assertAgentCompleted(`primer host-agent query (${to})`, primer);
+    const result = runAgentCheck({ to, message, extraEnv });
+    return {
+      primer,
+      result,
+    };
+  }
+
   function assertAgentCompleted(label, result) {
     if (result?.meta?.aborted) {
       throw new Error(`Validation harness expected ${label} to complete within ${agentTimeoutSeconds}s, but the embedded OpenClaw agent aborted/timed out.`);
     }
   }
 
-  report.agent.recurrentQuery = runAgentCheck({
+  const recurrentCheck = runPrimedAgentCheck({
     to: "+15550001111",
     message: "How do I open a pull request again?",
   });
+  report.agent.recurrentPrimer = recurrentCheck.primer;
+  report.agent.recurrentQuery = recurrentCheck.result;
   assertAgentCompleted("recurrent host-agent query", report.agent.recurrentQuery);
 
   const recurrentStatus = extractJson(run("node", ["bin/openclawbrain.js", "status"]));
@@ -248,10 +260,12 @@ function maybeRunAgentChecks(report) {
     }
   }
 
-  report.agent.shortLookup = runAgentCheck({
+  const shortLookupCheck = runPrimedAgentCheck({
     to: "+15550002222",
     message: "open PLAYBOOK.md",
   });
+  report.agent.shortLookupPrimer = shortLookupCheck.primer;
+  report.agent.shortLookup = shortLookupCheck.result;
   assertAgentCompleted("short lookup host-agent query", report.agent.shortLookup);
   const shortStatus = extractJson(run("node", ["bin/openclawbrain.js", "status"]));
   report.assertions.shortLookup = {
@@ -259,11 +273,13 @@ function maybeRunAgentChecks(report) {
     aborted: report.agent.shortLookup?.meta?.aborted ?? null,
   };
 
-  report.agent.shadowQuery = runAgentCheck({
+  const shadowCheck = runPrimedAgentCheck({
     to: "+15550003333",
     message: "How do I open a pull request again?",
     extraEnv: { OPENCLAWBRAIN_SHADOW_MODE: "true" },
   });
+  report.agent.shadowPrimer = shadowCheck.primer;
+  report.agent.shadowQuery = shadowCheck.result;
   assertAgentCompleted("shadow-mode host-agent query", report.agent.shadowQuery);
   const shadowStatus = extractJson(run("node", ["bin/openclawbrain.js", "status"], { env: { OPENCLAWBRAIN_SHADOW_MODE: "true" } }));
   const shadowTrace = extractJson(run("node", ["bin/openclawbrain.js", "trace"], { env: { OPENCLAWBRAIN_SHADOW_MODE: "true" } }));
