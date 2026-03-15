@@ -6,6 +6,16 @@ This repo is the active v2 codebase.
 
 The earlier spike is archived at [jonathangu/openclawbrain-v1-spike-archive](https://github.com/jonathangu/openclawbrain-v1-spike-archive).
 
+## Release truth in 30 seconds
+
+| Public label | Status | What it means right now |
+| --- | --- | --- |
+| **paper-faithful core** | true now | finite-horizon traversal, terminal reward, stochastic policy, full-trajectory REINFORCE updates, learned seed routing, and immutable promoted packs are all implemented in the current repo |
+| **live-path implemented** | true now | the OpenClaw runtime already has recurrence gating, explicit skip reasons, shadow mode, correction-first context injection, immediate `brain_teach` retrieval, and replay-gated promotion wired into the live path |
+| **operationally validated** | not yet | the learner is still in-process, install-validation artifacts are not frozen yet, full host-app smoke coverage is not locked down yet, and full-repo `npx tsc --noEmit` is not green yet |
+
+If you want the exact contract rather than the pitch, read [docs/RELEASE_CONTRACT.md](docs/RELEASE_CONTRACT.md).
+
 ## Table of contents
 
 - [What it does](#what-it-does)
@@ -13,8 +23,8 @@ The earlier spike is archived at [jonathangu/openclawbrain-v1-spike-archive](htt
 - [Configuration](#configuration)
 - [Operator Commands](#operator-commands)
 - [Fallback Behavior](#fallback-behavior)
-- [Limitations](#limitations)
-- [Roadmap](#roadmap)
+- [Operational gaps still open](#operational-gaps-still-open)
+- [Finish path to 1.0](#finish-path-to-10)
 - [Documentation](#documentation)
 - [Development](#development)
 - [License](#license)
@@ -183,20 +193,24 @@ openclawbrain doctor
 - `brain_teach` now binds taught corrections to the active conversation when invoked from a live tool session.
 - Seed learning is persisted through a virtual `__START__` policy head and exposed in traces.
 
-## Limitations
+## Operational gaps still open
+
+This repo is already beyond “foundation only,” but it is **not** yet operationally validated end to end.
 
 - Embedding support currently targets OpenAI-compatible `/v1/embeddings` APIs.
-- The worker is still an in-process plugin service, not a supervised subprocess.
-- Scanner harvesting is still heuristic and narrower than the long-term product plan.
-- Full OpenClaw end-to-end runtime validation still needs a live host-app smoke test pass.
-- Upstream `openclaw/plugin-sdk` type drift still affects full-repo `tsc --noEmit`.
+- The learner still runs as an in-process plugin worker, not a supervised subprocess.
+- Harvesting is still pattern-heavy and narrower than the intended human/self/scanner evidence flow.
+- Full OpenClaw end-to-end install validation is not yet frozen into a disposable host-app harness with reproducible artifacts.
+- Upstream `openclaw/plugin-sdk` type drift still affects full-repo `npx tsc --noEmit`.
 
-## Roadmap
+## Finish path to 1.0
 
-- Expand scanner/self harvesting beyond regex-backed heuristics into richer structured outcomes.
-- Externalize the worker into a supervised subprocess once the in-process alpha path is stable.
-- Extend embedding adapters beyond OpenAI-compatible providers.
-- Expand end-to-end runtime tests and shadow-mode evals against a full OpenClaw install.
+1. **Freeze the release contract** so the README, docs, and public claims line up with repo reality.
+2. **Build a disposable OpenClaw install validation harness** that proves the plugin on the real host surface.
+3. **Move the learner out of process** into a supervised child worker while keeping fail-open serving against the last promoted pack.
+4. **Replace regex-heavy harvesting with structured evidence flow** across human, self, scanner, and teacher inputs.
+5. **Upgrade mutation evaluation to replay-gated bundles** instead of proposal-by-proposal promotion.
+6. **Freeze proof artifacts and harden packaging** until another OpenClaw operator can install, initialize, validate, and recover the plugin without local tribal knowledge.
 
 ### Recommended starting configuration
 
@@ -253,12 +267,9 @@ For most long-lived LCM setups, a good starting point is:
 
 ## Documentation
 
+- [Release contract](docs/RELEASE_CONTRACT.md)
 - [Configuration guide](docs/configuration.md)
 - [Architecture](docs/architecture.md)
-- [End State](END_STATE.md)
-- [RL Contract](RL_CONTRACT.md)
-- [Graph Schema](GRAPH_SCHEMA.md)
-- [Promotion Gates](PROMOTION_GATES.md)
 - [Agent tools](docs/agent-tools.md)
 - [TUI Reference](docs/tui.md)
 - [lcm-tui](tui/README.md)
@@ -276,6 +287,24 @@ npx tsc --noEmit
 # Run a specific test file
 npx vitest test/engine.test.ts
 ```
+
+### Validation harness (Phase 1 scaffold)
+
+A disposable host-app validation scaffold now lives at:
+
+```bash
+node scripts/validate-openclaw-install.mjs --setup-only
+```
+
+Full init + host-app routing checks require explicit embedding/model env:
+
+```bash
+OPENCLAWBRAIN_VALIDATION_EMBEDDING_MODEL=text-embedding-3-small \
+OPENCLAWBRAIN_VALIDATION_MODEL=openai/gpt-4.1-mini \
+node scripts/validate-openclaw-install.mjs
+```
+
+Current state: install + temp-home isolation + config wiring + fixture workspace + `openclawbrain init/status/doctor` are wired. `brain_teach`, shadow-mode, and worker-down assertions are still being added.
 
 ### Project structure
 
@@ -312,6 +341,7 @@ src/
     common.ts               # Shared tool utilities
 test/                       # Vitest test suite
 specs/                      # Design specifications
+scripts/                    # Validation harnesses and operator helpers
 openclaw.plugin.json        # Plugin manifest with config schema and UI hints
 tui/                        # Interactive terminal UI (Go)
   main.go                   # Entry point and bubbletea app
