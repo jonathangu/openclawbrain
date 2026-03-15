@@ -1,187 +1,106 @@
 # Agent tools
 
-LCM provides four tools for agents to search, inspect, and recall information from compacted conversation history.
+OpenClawBrain exposes two tool families:
 
-## Usage patterns
+1. **LCM recall tools** — search and expand compacted conversation history
+2. **Brain runtime tools** — teach the live routing layer, inspect status, inspect traces
 
-### Escalation pattern: grep → describe → expand_query
+## LCM recall tools
 
-Most recall tasks follow this escalation:
+Use these when you need recall from compacted history.
 
-1. **`lcm_grep`** — Find relevant summaries or messages by keyword/regex
-2. **`lcm_describe`** — Inspect a specific summary's full content (cheap, no sub-agent)
-3. **`lcm_expand_query`** — Deep recall: spawn a sub-agent to expand the DAG and answer a focused question
+### Escalation pattern: `lcm_grep` → `lcm_describe` → `lcm_expand_query`
 
-Start with grep. If the snippet is enough, stop. If you need full summary content, use describe. If you need details that were compressed away, use expand_query.
+1. **`lcm_grep`** — find relevant summaries or messages by keyword/regex
+2. **`lcm_describe`** — inspect a specific summary or file cheaply
+3. **`lcm_expand_query`** — deep recall through bounded sub-agent expansion
 
-### When to expand
+Start with grep. Expand only when the summary is too compressed for the task.
 
-Summaries are lossy by design. The "Expand for details about:" footer at the end of each summary lists what was dropped. Use `lcm_expand_query` when you need:
-
-- Exact commands, error messages, or config values
-- File paths and specific code changes
-- Decision rationale beyond what the summary captured
-- Tool call sequences and their outputs
-- Verbatim quotes or specific data points
-
-`lcm_expand_query` is bounded (~120s, scoped sub-agent) and relatively cheap. Don't ration it.
-
-## Tool reference
-
-### lcm_grep
-
+### `lcm_grep`
 Search across messages and/or summaries using regex or full-text search.
 
-**Parameters:**
+### `lcm_describe`
+Read the full content and metadata for a summary or stored large file.
 
-| Param | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `pattern` | string | ✅ | — | Search pattern |
-| `mode` | string | | `"regex"` | `"regex"` or `"full_text"` |
-| `scope` | string | | `"both"` | `"messages"`, `"summaries"`, or `"both"` |
-| `conversationId` | number | | current | Specific conversation to search |
-| `allConversations` | boolean | | `false` | Search all conversations |
-| `since` | string | | — | ISO timestamp lower bound |
-| `before` | string | | — | ISO timestamp upper bound |
-| `limit` | number | | 50 | Max results (1–200) |
+### `lcm_expand_query`
+Answer a focused question by expanding summaries through the DAG.
 
-**Returns:** Array of matches with:
-- `id` — Message or summary ID
-- `type` — `"message"` or `"summary"`
-- `snippet` — Truncated content around the match
-- `conversationId` — Which conversation
-- `createdAt` — Timestamp
-- For summaries: `depth`, `kind`, `summaryId`
+### `lcm_expand`
+Low-level DAG expansion tool used internally by the delegated expansion sub-agent.
 
-**Examples:**
+## Brain runtime tools
 
-```
-# Full-text search across all conversations
-lcm_grep(pattern: "database migration", mode: "full_text", allConversations: true)
+Use these when working with the learned routing layer directly.
 
-# Regex search in summaries only
-lcm_grep(pattern: "config\\.threshold.*0\\.[0-9]+", scope: "summaries")
+### `brain_teach`
+Teach the brain a correction or reusable guidance.
 
-# Recent messages containing a specific term
-lcm_grep(pattern: "deployment", since: "2026-02-19T00:00:00Z", scope: "messages")
-```
+Current truth:
+- immediate retrieval is wired into the runtime
+- taught nodes are embedded immediately when embeddings are configured
+- taught corrections bind most strongly when invoked from a live tool session on the active conversation
 
-### lcm_describe
+Primary code:
+- `src/brain-runtime/tools.ts`
+- `src/brain-runtime/service.ts`
+- `test/brain-runtime/service.test.ts`
 
-Look up metadata and content for a specific summary or stored file.
+### `brain_status`
+Inspect operator/runtime truth for the brain layer.
 
-**Parameters:**
+Typical surfaces include:
+- enabled / disabled state
+- embedding configuration truth
+- worker mode / PID / heartbeat / health
+- current promoted pack metadata
+- last assembly decision
+- graph/health counters
 
-| Param | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `id` | string | ✅ | — | `sum_xxx` for summaries, `file_xxx` for files |
-| `conversationId` | number | | current | Scope to a specific conversation |
-| `allConversations` | boolean | | `false` | Allow cross-conversation lookups |
+Primary code:
+- `src/brain-runtime/tools.ts`
+- `src/brain-runtime/service.ts`
+- `src/brain-cli.ts`
 
-**Returns for summaries:**
-- Full summary content
-- Metadata: depth, kind, token count, created timestamp
-- Time range (earliestAt, latestAt)
-- Descendant count
-- Parent summary IDs (for condensed summaries)
-- Child summary IDs
-- Source message IDs (for leaf summaries)
-- File IDs referenced in the summary
+### `brain_trace`
+Inspect the most recent trace or a specific trace id.
 
-**Returns for files:**
-- File content (full text)
-- Metadata: fileName, mimeType, byteSize
-- Exploration summary
-- Storage path
+Typical surfaces include:
+- chosen seed
+- seed scores
+- fired nodes
+- pack version
+- route footer / summary
+- episode linkage
 
-**Examples:**
+Primary code:
+- `src/brain-runtime/tools.ts`
+- `src/brain-runtime/service.ts`
+- `src/brain-core/trace.ts`
 
-```
-# Inspect a summary from context
-lcm_describe(id: "sum_abc123def456")
+## When to use what
 
-# Retrieve a stored large file
-lcm_describe(id: "file_789abc012345")
-```
+- Need compacted history recall? use **LCM tools**
+- Need to teach/update the current routing layer? use **`brain_teach`**
+- Need current runtime/operator truth? use **`brain_status`**
+- Need to inspect a specific routing decision? use **`brain_trace`**
 
-### lcm_expand_query
+## Prompting guidance for agents
 
-Answer a focused question by expanding summaries through the DAG. Spawns a bounded sub-agent that walks parent links down to source material and returns a compact answer.
-
-**Parameters:**
-
-| Param | Type | Required | Default | Description |
-|-------|------|----------|---------|-------------|
-| `prompt` | string | ✅ | — | The question to answer |
-| `query` | string | ✅* | — | Text query to find summaries (if no `summaryIds`) |
-| `summaryIds` | string[] | ✅* | — | Specific summary IDs to expand (if no `query`) |
-| `maxTokens` | number | | 2000 | Answer length cap |
-| `conversationId` | number | | current | Scope to a specific conversation |
-| `allConversations` | boolean | | `false` | Search across all conversations |
-
-*One of `query` or `summaryIds` is required.
-
-**Returns:**
-- `answer` — The focused answer text
-- `citedIds` — Summary IDs that contributed to the answer
-- `expandedSummaryCount` — How many summaries were expanded
-- `totalSourceTokens` — Total tokens read from the DAG
-- `truncated` — Whether the answer was truncated to fit maxTokens
-
-**Examples:**
-
-```
-# Find and expand summaries about a topic
-lcm_expand_query(
-  query: "OAuth authentication fix",
-  prompt: "What was the root cause and what commits fixed it?"
-)
-
-# Expand specific summaries you already have
-lcm_expand_query(
-  summaryIds: ["sum_abc123", "sum_def456"],
-  prompt: "What were the exact file changes?"
-)
-
-# Cross-conversation search
-lcm_expand_query(
-  query: "deployment procedure",
-  prompt: "What's the current deployment process?",
-  allConversations: true
-)
-```
-
-### lcm_expand
-
-Low-level DAG expansion tool. **Only available to sub-agents** spawned by `lcm_expand_query`. Main agents should always use `lcm_expand_query` instead.
-
-This tool is what the expansion sub-agent uses internally to walk the summary DAG, read source messages, and build its answer.
-
-## Tips for agent developers
-
-### Configuring agent prompts
-
-Add instructions to your agent's system prompt so it knows when to use LCM tools:
+A good agent prompt should make both tool families explicit:
 
 ```markdown
-## Memory & Context
+## Memory and routing tools
 
-Use LCM tools for recall:
-1. `lcm_grep` — Search all conversations by keyword/regex
-2. `lcm_describe` — Inspect a specific summary (cheap, no sub-agent)
-3. `lcm_expand_query` — Deep recall with sub-agent expansion
+For recall from compacted history:
+- `lcm_grep`
+- `lcm_describe`
+- `lcm_expand_query`
 
-When summaries in context have an "Expand for details about:" footer
-listing something you need, use `lcm_expand_query` to get the full detail.
+For the live learned routing layer:
+- `brain_teach`
+- `brain_status`
+- `brain_trace`
+
+Use LCM tools for recall. Use brain tools only when you are teaching or auditing the routing layer itself.
 ```
-
-### Conversation scoping
-
-By default, tools operate on the current conversation. Use `allConversations: true` to search across all of them (all agents, all sessions). Use `conversationId` to target a specific conversation you already know about (from previous grep results).
-
-### Performance considerations
-
-- `lcm_grep` and `lcm_describe` are fast (direct database queries)
-- `lcm_expand_query` spawns a sub-agent and takes ~30–120 seconds
-- The sub-agent has a 120-second timeout with cleanup guarantees
-- Token caps (`LCM_MAX_EXPAND_TOKENS`) prevent runaway expansion

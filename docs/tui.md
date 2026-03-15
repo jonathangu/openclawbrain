@@ -1,12 +1,12 @@
 # TUI Reference
 
-The Lossless Claw TUI (`lcm-tui`) is an interactive terminal application for inspecting, debugging, and maintaining the LCM database. It provides direct visibility into what the model sees (context assembly), how summaries are structured (DAG hierarchy), and tools for surgical repairs when things go wrong.
+The OpenClawBrain TUI (`lcm-tui`) is an interactive terminal application for inspecting, debugging, and maintaining the inherited LCM substrate. It provides direct visibility into what the model sees (context assembly), how summaries are structured (DAG hierarchy), and tools for surgical repairs when things go wrong.
 
 ## Installation
 
 **From GitHub releases:**
 
-Download the latest binary for your platform from [Releases](https://github.com/Martian-Engineering/lossless-claw/releases).
+Download the latest binary for your platform from the OpenClawBrain release surface that ships this repo's TUI assets.
 
 **Build from source:**
 

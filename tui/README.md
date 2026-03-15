@@ -1,6 +1,6 @@
 # lcm-tui
 
-Interactive terminal UI for inspecting, debugging, and maintaining the [Lossless Claw](https://github.com/Martian-Engineering/lossless-claw) database. Browse conversations, navigate the summary DAG, see exactly what the model sees in context, and perform surgical repairs — all from the terminal.
+Interactive terminal UI for inspecting, debugging, and maintaining OpenClawBrain's inherited LCM database. Browse conversations, navigate the summary DAG, see exactly what the model sees in context, and perform surgical repairs — all from the terminal.
 
 ## Install
 
@@ -62,6 +62,8 @@ lcm-tui prompts --list                               # show active prompt source
 ## Documentation
 
 Full reference with keybindings, screen descriptions, flag tables, and troubleshooting: **[docs/tui.md](../docs/tui.md)**
+
+Note: this TUI is inherited from the lossless-claw substrate, so the Go module path still reflects that historical origin even though this repo's canonical product identity is OpenClawBrain.
 
 ## Architecture
 

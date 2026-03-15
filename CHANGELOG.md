@@ -1,4 +1,4 @@
-# @martian-engineering/lossless-claw
+# @jonathangu/openclawbrain
 
 ## 0.3.0
 

@@ -1,8 +1,8 @@
 /**
- * @martian-engineering/lossless-claw — Lossless Context Management plugin for OpenClaw
+ * @jonathangu/openclawbrain — OpenClawBrain v2 for OpenClaw
  *
- * DAG-based conversation summarization with incremental compaction,
- * full-text search, and sub-agent expansion.
+ * Lossless transcript memory plus the learned routing/runtime layer:
+ * LCM compaction/recall, brain assembly decisions, and `brain_*` tools.
  */
 import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";

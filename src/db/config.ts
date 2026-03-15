@@ -86,9 +86,9 @@ function toStr(value: unknown): string | undefined {
 }
 
 /**
- * Resolve LCM configuration with three-tier precedence:
+ * Resolve LCM + OpenClawBrain configuration with three-tier precedence:
  *   1. Environment variables (highest — backward compat)
- *   2. Plugin config object (from plugins.entries.lossless-claw.config)
+ *   2. Plugin config object (from plugins.entries.openclawbrain.config)
  *   3. Hardcoded defaults (lowest)
  */
 export function resolveLcmConfig(
