@@ -1,4 +1,4 @@
-import type { BrainConfig, BrainEdge } from "../brain-core/types.js";
+import type { BrainConfig, BrainEdge, BrainEvidence, Episode } from "../brain-core/types.js";
 import { trustRank } from "../brain-core/types.js";
 import type { BrainStore } from "../brain-store/store.js";
 import type { BrainGraph } from "../brain-core/graph.js";
@@ -8,6 +8,87 @@ import type { PackManager } from "../brain-core/pack.js";
 import { computeReinforceUpdates, updateBaseline, applyWeightUpdates } from "../brain-core/update.js";
 import { decayAllWeights } from "../brain-core/decay.js";
 import { computeHealth } from "../brain-core/health.js";
+
+function compareEvidencePriority(left: BrainEvidence, right: BrainEvidence): number {
+  const trustDelta = trustRank(left.source) - trustRank(right.source);
+  if (trustDelta !== 0) {
+    return trustDelta;
+  }
+
+  const confidenceDelta = left.confidence - right.confidence;
+  if (confidenceDelta !== 0) {
+    return confidenceDelta;
+  }
+
+  return left.createdAt - right.createdAt;
+}
+
+function losingEvidenceResolution(
+  winner: BrainEvidence,
+  loser: BrainEvidence,
+): { resolution: "discarded_lower_trust" | "discarded_duplicate"; note: string } {
+  const winnerTrust = trustRank(winner.source);
+  const loserTrust = trustRank(loser.source);
+  if (winnerTrust > loserTrust) {
+    return {
+      resolution: "discarded_lower_trust",
+      note: `pending evidence from ${winner.source} outranks ${loser.source}`,
+    };
+  }
+
+  if (winner.value === loser.value) {
+    return {
+      resolution: "discarded_duplicate",
+      note: `matching ${loser.source} evidence already queued`,
+    };
+  }
+
+  if (winner.confidence !== loser.confidence) {
+    return {
+      resolution: "discarded_duplicate",
+      note: `same-trust evidence superseded by higher-confidence ${winner.source} evidence`,
+    };
+  }
+
+  return {
+    resolution: "discarded_duplicate",
+    note: `same-trust evidence superseded by newer ${winner.source} evidence`,
+  };
+}
+
+function classifyEvidenceAgainstEpisode(
+  episode: Episode,
+  evidence: BrainEvidence,
+): { resolution: "discarded_lower_trust" | "discarded_duplicate"; note: string } | null {
+  if (episode.reward === null || episode.rewardSource === null) {
+    return null;
+  }
+
+  const existingTrust = trustRank(episode.rewardSource);
+  const newTrust = trustRank(evidence.source);
+  if (existingTrust > newTrust) {
+    return {
+      resolution: "discarded_lower_trust",
+      note: `existing reward from ${episode.rewardSource} outranks ${evidence.source}`,
+    };
+  }
+
+  if (existingTrust === newTrust) {
+    if (episode.reward === evidence.value) {
+      return {
+        resolution: "discarded_duplicate",
+        note: "matching reward already present",
+      };
+    }
+
+    return {
+      resolution: "discarded_duplicate",
+      note: `existing ${episode.rewardSource} reward already present; equal-trust override is not applied automatically`,
+    };
+  }
+
+  return null;
+}
 
 export class BrainWorker {
   private interval: ReturnType<typeof setInterval> | null = null;
@@ -74,6 +155,8 @@ export class BrainWorker {
 
   private async processEvidence(): Promise<void> {
     const pending = this.store.getPendingEvidence(100);
+    const candidatesByEpisode = new Map<string, { episode: Episode; evidence: BrainEvidence[] }>();
+
     for (const evidence of pending) {
       const episode = this.store.getEpisode(evidence.episodeId);
       if (!episode) {
@@ -89,51 +172,85 @@ export class BrainWorker {
         continue;
       }
 
-      if (episode.reward !== null && episode.rewardSource !== null) {
-        const existingTrust = trustRank(episode.rewardSource);
-        const newTrust = trustRank(evidence.source);
-        if (existingTrust > newTrust) {
-          this.store.resolveEvidence({
-            evidenceId: evidence.id,
-            episodeId: episode.id,
-            source: evidence.source,
-            value: evidence.value,
-            confidence: evidence.confidence,
-            resolution: "discarded_lower_trust",
-            note: `existing reward from ${episode.rewardSource} outranks ${evidence.source}`,
-          });
+      const episodeClassification = classifyEvidenceAgainstEpisode(episode, evidence);
+      if (episodeClassification) {
+        this.store.resolveEvidence({
+          evidenceId: evidence.id,
+          episodeId: episode.id,
+          source: evidence.source,
+          value: evidence.value,
+          confidence: evidence.confidence,
+          resolution: episodeClassification.resolution,
+          note: episodeClassification.note,
+        });
+        continue;
+      }
+
+      const staged = candidatesByEpisode.get(episode.id);
+      if (staged) {
+        staged.evidence.push(evidence);
+      } else {
+        candidatesByEpisode.set(episode.id, { episode, evidence: [evidence] });
+      }
+    }
+
+    for (const { episode, evidence } of candidatesByEpisode.values()) {
+      let winner: BrainEvidence | null = null;
+      const losers: Array<{ evidence: BrainEvidence; resolution: "discarded_lower_trust" | "discarded_duplicate"; note: string }> = [];
+
+      for (const candidate of evidence) {
+        if (!winner) {
+          winner = candidate;
           continue;
         }
-        if (existingTrust === newTrust && episode.reward === evidence.value) {
-          this.store.resolveEvidence({
-            evidenceId: evidence.id,
-            episodeId: episode.id,
-            source: evidence.source,
-            value: evidence.value,
-            confidence: evidence.confidence,
-            resolution: "discarded_duplicate",
-            note: "matching reward already present",
+
+        if (compareEvidencePriority(candidate, winner) > 0) {
+          losers.push({
+            evidence: winner,
+            ...losingEvidenceResolution(candidate, winner),
           });
+          winner = candidate;
           continue;
         }
+
+        losers.push({
+          evidence: candidate,
+          ...losingEvidenceResolution(winner, candidate),
+        });
+      }
+
+      for (const loser of losers) {
+        this.store.resolveEvidence({
+          evidenceId: loser.evidence.id,
+          episodeId: episode.id,
+          source: loser.evidence.source,
+          value: loser.evidence.value,
+          confidence: loser.evidence.confidence,
+          resolution: loser.resolution,
+          note: loser.note,
+        });
+      }
+
+      if (!winner) {
+        continue;
       }
 
       const label = this.store.insertLabel({
         episodeId: episode.id,
-        source: evidence.source,
-        value: evidence.value,
-        confidence: evidence.confidence,
-        reason: evidence.reason ?? undefined,
+        source: winner.source,
+        value: winner.value,
+        confidence: winner.confidence,
+        reason: winner.reason ?? undefined,
       });
       this.store.resolveEvidence({
-        evidenceId: evidence.id,
+        evidenceId: winner.id,
         episodeId: episode.id,
-        source: evidence.source,
-        value: evidence.value,
-        confidence: evidence.confidence,
+        source: winner.source,
+        value: winner.value,
+        confidence: winner.confidence,
         resolution: "promoted_to_label",
         labelId: label.id,
-        note: evidence.kind,
+        note: winner.kind,
       });
     }
   }

@@ -97,8 +97,9 @@ These are **not** true yet and should be described as active work, not delivered
 - **Green full-repo typecheck**
   - Full `npx tsc --noEmit` is still affected by upstream `openclaw/plugin-sdk` type drift.
 - **Structured evidence harvesting**
-  - Harvesting still leans heavily on pattern detection rather than the target structured human/self/scanner evidence flow.
-  - Current evidence: `src/brain-runtime/harvester-extension.ts`
+  - Raw evidence → resolved-label plumbing is now real, with explicit episode attribution through turn completion and one-winner-per-episode resolution inside each worker evidence pass.
+  - Remaining gap: source detection still leans heavily on heuristic/pattern signals rather than richer structured human/self/scanner evidence inputs.
+  - Current evidence: `src/brain-runtime/harvester-extension.ts`, `src/brain-worker/worker.ts`
 - **Bundle-based mutation evaluation**
   - Mutation replay is still closer to proposal-by-proposal evaluation than the intended clustered bundle evaluation with explicit pass/fail explanations.
   - Current evidence: `src/brain-worker/worker.ts`

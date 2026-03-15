@@ -222,7 +222,7 @@ This repo is already beyond “foundation only,” but it is **not** yet operati
 
 - Embedding support currently targets OpenAI-compatible `/v1/embeddings` APIs, including local Ollama-style endpoints.
 - The learner can run as a supervised child worker, but the full disposable install validation matrix for worker-down behavior is not frozen yet.
-- Harvesting is still pattern-heavy and narrower than the intended human/self/scanner evidence flow.
+- Structured evidence harvesting now exists end to end (raw evidence → resolved labels with explicit episode attribution), but source detection still leans on heuristics/patterns more than the intended richer human/self/scanner evidence flow.
 - Full OpenClaw end-to-end install validation is not yet frozen into a disposable host-app harness with reproducible artifacts.
 - Upstream `openclaw/plugin-sdk` type drift still affects full-repo `npx tsc --noEmit`.
 
@@ -231,7 +231,7 @@ This repo is already beyond “foundation only,” but it is **not** yet operati
 1. **Freeze the release contract** so the README, docs, and public claims line up with repo reality.
 2. **Build a disposable OpenClaw install validation harness** that proves the plugin on the real host surface.
 3. **Move the learner out of process** into a supervised child worker while keeping fail-open serving against the last promoted pack.
-4. **Replace regex-heavy harvesting with structured evidence flow** across human, self, scanner, and teacher inputs.
+4. **Finish structured evidence harvesting** so source detection grows beyond regex/heuristic-heavy signals across human, self, scanner, and teacher inputs.
 5. **Upgrade mutation evaluation to replay-gated bundles** instead of proposal-by-proposal promotion.
 6. **Freeze proof artifacts and harden packaging** until another OpenClaw operator can install, initialize, validate, and recover the plugin without local tribal knowledge.
 
