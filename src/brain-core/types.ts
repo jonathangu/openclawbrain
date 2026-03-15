@@ -155,6 +155,47 @@ export interface Label {
   createdAt: number;
 }
 
+export type BrainEvidenceKind =
+  | "human_feedback"
+  | "self_result"
+  | "scanner_signal"
+  | "teacher_review"
+  | "teach_correction";
+
+export interface BrainEvidence {
+  id: string;
+  episodeId: string;
+  conversationId: number | null;
+  source: RewardSource;
+  kind: BrainEvidenceKind;
+  value: number;
+  confidence: number;
+  reason: string | null;
+  contentSnippet: string | null;
+  metadata: Record<string, unknown>;
+  resolved: boolean;
+  createdAt: number;
+}
+
+export type BrainEvidenceResolution =
+  | "promoted_to_label"
+  | "discarded_missing_episode"
+  | "discarded_lower_trust"
+  | "discarded_duplicate";
+
+export interface ResolvedLabel {
+  id: string;
+  evidenceId: string;
+  episodeId: string;
+  source: RewardSource;
+  value: number;
+  confidence: number;
+  resolution: BrainEvidenceResolution;
+  labelId: string | null;
+  note: string | null;
+  createdAt: number;
+}
+
 // ═══════════════════════════════════════════
 // Packs & Mutations
 // ═══════════════════════════════════════════
@@ -240,6 +281,9 @@ export interface BrainConfig {
   baselineAlpha: number;
   decayRate: number;
   trainerIntervalMs: number;
+  workerMode: "child" | "in_process";
+  workerHeartbeatTimeoutMs: number;
+  workerRestartDelayMs: number;
   teacherEnabled: boolean;
   mutationsEnabled: boolean;
   replayEpisodeCount: number;
@@ -267,6 +311,9 @@ export const DEFAULT_BRAIN_CONFIG: BrainConfig = {
   baselineAlpha: 0.1,
   decayRate: 0.995,
   trainerIntervalMs: 30_000,
+  workerMode: "child",
+  workerHeartbeatTimeoutMs: 90_000,
+  workerRestartDelayMs: 5_000,
   teacherEnabled: true,
   mutationsEnabled: true,
   replayEpisodeCount: 100,

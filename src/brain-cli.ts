@@ -106,13 +106,24 @@ function commandStatus(): void {
   const health = computeHealth(graph, recentEpisodes, currentPack ?? 0);
   const currentSnapshot = currentPack !== null ? store.readPackSnapshot(currentPack) : null;
 
+  const workerPid = Number.parseInt(store.getTrainingState("worker_pid") ?? "0", 10) || null;
+  const workerLastHeartbeatAt = Number.parseInt(store.getTrainingState("worker_last_heartbeat_at") ?? "0", 10) || null;
   printJson({
     command: "status",
     brainRoot: brainConfig.root,
     disabled: existsSync(join(brainConfig.root, "DISABLED")),
     shadowMode: brainConfig.shadowMode,
+    workerMode: brainConfig.workerMode,
+    workerPid,
+    workerStatus: store.getTrainingState("worker_status"),
+    workerLastHeartbeatAt,
+    workerHealthy: brainConfig.workerMode === "child"
+      ? Boolean(workerLastHeartbeatAt && (Date.now() - workerLastHeartbeatAt) < brainConfig.workerHeartbeatTimeoutMs)
+      : true,
     currentPackVersion: currentPack,
     currentPackMetadata: currentSnapshot?.metadata ?? null,
+    pendingEvidence: store.getPendingEvidence(100).length,
+    pendingEvidenceBySource: store.countPendingEvidenceBySource(),
     pendingLabels: store.getPendingLabels().length,
     pendingLabelsBySource: store.countPendingLabelsBySource(),
     mutationBacklog: store.countMutationsByStatus(),
@@ -233,6 +244,8 @@ function commandDoctor(): void {
   const currentPackVersion = store.getCurrentPackVersion();
   const snapshot = currentPackVersion !== null ? store.readPackSnapshot(currentPackVersion) : null;
   const workerLastTickAt = store.getTrainingState("worker_last_tick_at");
+  const workerLastHeartbeatAt = store.getTrainingState("worker_last_heartbeat_at");
+  const workerPid = store.getTrainingState("worker_pid");
   printJson({
     command: "doctor",
     brainRoot: brainConfig.root,
@@ -241,8 +254,13 @@ function commandDoctor(): void {
     currentPackSnapshotExists: snapshot !== null,
     embeddingConfigured: brainConfig.embeddingModel.trim().length > 0,
     shadowMode: brainConfig.shadowMode,
+    workerMode: brainConfig.workerMode,
+    workerPid: workerPid ? Number.parseInt(workerPid, 10) : null,
+    workerStatus: store.getTrainingState("worker_status"),
     disabled: existsSync(join(brainConfig.root, "DISABLED")),
     workerLastTickAt: workerLastTickAt ? Number.parseInt(workerLastTickAt, 10) : null,
+    workerLastHeartbeatAt: workerLastHeartbeatAt ? Number.parseInt(workerLastHeartbeatAt, 10) : null,
+    pendingEvidence: store.getPendingEvidence(100).length,
     mutationBacklog: store.countMutationsByStatus(),
     orphanedTraceRows: store.countOrphanedTraceRows(),
     nodeCount: graph.nodeCount(),

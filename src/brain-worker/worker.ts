@@ -60,6 +60,7 @@ export class BrainWorker {
     this.running = true;
     try {
       this.store.setTrainingState("worker_last_tick_at", Date.now());
+      await this.processEvidence();
       await this.processLabels();
       await this.runTeacher();
       await this.applyUpdates();
@@ -68,6 +69,72 @@ export class BrainWorker {
       await this.checkPromotion();
     } finally {
       this.running = false;
+    }
+  }
+
+  private async processEvidence(): Promise<void> {
+    const pending = this.store.getPendingEvidence(100);
+    for (const evidence of pending) {
+      const episode = this.store.getEpisode(evidence.episodeId);
+      if (!episode) {
+        this.store.resolveEvidence({
+          evidenceId: evidence.id,
+          episodeId: evidence.episodeId,
+          source: evidence.source,
+          value: evidence.value,
+          confidence: evidence.confidence,
+          resolution: "discarded_missing_episode",
+          note: evidence.reason ?? "episode missing",
+        });
+        continue;
+      }
+
+      if (episode.reward !== null && episode.rewardSource !== null) {
+        const existingTrust = trustRank(episode.rewardSource);
+        const newTrust = trustRank(evidence.source);
+        if (existingTrust > newTrust) {
+          this.store.resolveEvidence({
+            evidenceId: evidence.id,
+            episodeId: episode.id,
+            source: evidence.source,
+            value: evidence.value,
+            confidence: evidence.confidence,
+            resolution: "discarded_lower_trust",
+            note: `existing reward from ${episode.rewardSource} outranks ${evidence.source}`,
+          });
+          continue;
+        }
+        if (existingTrust === newTrust && episode.reward === evidence.value) {
+          this.store.resolveEvidence({
+            evidenceId: evidence.id,
+            episodeId: episode.id,
+            source: evidence.source,
+            value: evidence.value,
+            confidence: evidence.confidence,
+            resolution: "discarded_duplicate",
+            note: "matching reward already present",
+          });
+          continue;
+        }
+      }
+
+      const label = this.store.insertLabel({
+        episodeId: episode.id,
+        source: evidence.source,
+        value: evidence.value,
+        confidence: evidence.confidence,
+        reason: evidence.reason ?? undefined,
+      });
+      this.store.resolveEvidence({
+        evidenceId: evidence.id,
+        episodeId: episode.id,
+        source: evidence.source,
+        value: evidence.value,
+        confidence: evidence.confidence,
+        resolution: "promoted_to_label",
+        labelId: label.id,
+        note: evidence.kind,
+      });
     }
   }
 
@@ -101,11 +168,16 @@ export class BrainWorker {
     for (const episode of unlabeled) {
       const { score, reason } = await this.teacher.evaluate(episode);
       if (Math.abs(score) > 0.05) {
-        this.store.insertLabel({
+        this.store.insertEvidence({
           episodeId: episode.id,
+          conversationId: episode.conversationId,
           source: "teacher",
+          kind: "teacher_review",
           value: score,
+          confidence: 0.6,
           reason,
+          contentSnippet: episode.queryText.slice(0, 240),
+          metadata: { queryText: episode.queryText },
         });
       }
     }

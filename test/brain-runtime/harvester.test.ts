@@ -146,9 +146,10 @@ describe("LabelHarvester", () => {
         content: "Successfully deployed to production",
       });
 
-      const labels = store.getPendingLabels();
-      expect(labels).toHaveLength(1);
-      expect(labels[0]?.episodeId).toBe("ep_older");
+      const evidence = store.getPendingEvidence();
+      expect(evidence).toHaveLength(1);
+      expect(evidence[0]?.episodeId).toBe("ep_older");
+      expect(evidence[0]?.kind).toBe("self_result");
     });
 
     it("falls back to the most recent episode in the same conversation", async () => {
@@ -171,9 +172,10 @@ describe("LabelHarvester", () => {
         content: "Perfect, that's exactly right!",
       });
 
-      const labels = store.getPendingLabels();
-      expect(labels).toHaveLength(1);
-      expect(labels[0]?.episodeId).toBe("ep_target");
+      const evidence = store.getPendingEvidence();
+      expect(evidence).toHaveLength(1);
+      expect(evidence[0]?.episodeId).toBe("ep_target");
+      expect(evidence[0]?.kind).toBe("human_feedback");
     });
   });
 });

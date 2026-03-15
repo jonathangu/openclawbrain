@@ -84,6 +84,44 @@ export function runBrainMigrations(db: DatabaseSync): void {
     CREATE INDEX IF NOT EXISTS brain_labels_applied_idx ON brain_labels(applied);
 
     -- ═══════════════════════════════════════════
+    -- Raw Evidence + Resolved Label Decisions
+    -- ═══════════════════════════════════════════
+
+    CREATE TABLE IF NOT EXISTS brain_evidence (
+      id              TEXT PRIMARY KEY,
+      episode_id      TEXT NOT NULL,
+      conversation_id INTEGER,
+      source          TEXT NOT NULL,
+      kind            TEXT NOT NULL,
+      value           REAL NOT NULL,
+      confidence      REAL NOT NULL DEFAULT 1.0,
+      reason          TEXT,
+      content_snippet TEXT,
+      metadata        TEXT NOT NULL DEFAULT '{}',
+      resolved        INTEGER NOT NULL DEFAULT 0,
+      created_at      INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS brain_evidence_episode_idx ON brain_evidence(episode_id);
+    CREATE INDEX IF NOT EXISTS brain_evidence_resolved_idx ON brain_evidence(resolved, created_at);
+
+    CREATE TABLE IF NOT EXISTS brain_resolved_labels (
+      id            TEXT PRIMARY KEY,
+      evidence_id   TEXT NOT NULL,
+      episode_id    TEXT NOT NULL,
+      source        TEXT NOT NULL,
+      value         REAL NOT NULL,
+      confidence    REAL NOT NULL DEFAULT 1.0,
+      resolution    TEXT NOT NULL,
+      label_id      TEXT,
+      note          TEXT,
+      created_at    INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS brain_resolved_labels_episode_idx ON brain_resolved_labels(episode_id, created_at);
+    CREATE INDEX IF NOT EXISTS brain_resolved_labels_evidence_idx ON brain_resolved_labels(evidence_id);
+
+    -- ═══════════════════════════════════════════
     -- Packs (immutable serving snapshots)
     -- ═══════════════════════════════════════════
 

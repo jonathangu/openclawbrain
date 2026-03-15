@@ -36,6 +36,10 @@
     "brainEmbeddingModel": {
       "label": "Embedding Model",
       "help": "Embedding model used for init, retrieval, and brain_teach"
+    },
+    "brainWorkerMode": {
+      "label": "Worker Mode",
+      "help": "Run the learner in a supervised child process (default) or fall back to in-process mode"
     }
   },
   "configSchema": {
@@ -114,6 +118,18 @@
       "brainTrainerIntervalMs": {
         "type": "integer",
         "minimum": 1000
+      },
+      "brainWorkerMode": {
+        "type": "string",
+        "enum": ["child", "in_process"]
+      },
+      "brainWorkerHeartbeatTimeoutMs": {
+        "type": "integer",
+        "minimum": 1000
+      },
+      "brainWorkerRestartDelayMs": {
+        "type": "integer",
+        "minimum": 0
       }
     }
   }

@@ -1,7 +1,9 @@
 import { randomUUID } from "node:crypto";
+import { fork, type ChildProcess } from "node:child_process";
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import { fileURLToPath } from "node:url";
 import type { OpenClawBrainRuntimeConfig } from "../db/config.js";
 import type {
   BrainConfig,
@@ -25,11 +27,8 @@ import { initBrain as runInit } from "../brain-store/init.js";
 import { createEmbeddingClient, type BrainEmbeddingFn } from "../brain-store/embedding.js";
 import { LabelHarvester } from "./harvester-extension.js";
 import { BrainWorker } from "../brain-worker/worker.js";
-import type { LcmDependencies } from "../types.js";
-
-function flattenEdges(graph: BrainGraph) {
-  return graph.getAllEdges();
-}
+import type { CompletionContentBlock, LcmDependencies } from "../types.js";
+import { flattenEdges, populateGraph, promoteGraphSnapshot, reloadGraphFromStore } from "./graph-io.js";
 
 function buildBrainConfig(
   runtimeConfig: OpenClawBrainRuntimeConfig,
@@ -42,25 +41,25 @@ function buildBrainConfig(
   };
 }
 
-function populateGraph(graph: BrainGraph, nodes: BrainNode[], edges: ReturnType<typeof flattenEdges>): void {
-  graph.clear();
-  for (const node of nodes) {
-    graph.addNode(node);
-  }
-  for (const edge of edges) {
-    graph.addEdge(edge);
-  }
-}
-
 export class BrainService {
+  private deps: LcmDependencies;
   private store: BrainStore;
   private mutableGraph = new BrainGraph();
   private servingGraph = new BrainGraph();
-  private worker: BrainWorker;
+  private worker: BrainWorker | null;
+  private workerChild: ChildProcess | null = null;
+  private workerShouldRun = false;
+  private workerRestartTimer: ReturnType<typeof setTimeout> | null = null;
+  private workerLastHeartbeatAt: number | null = null;
+  private workerLastReadyAt: number | null = null;
+  private workerLastExit:
+    | { code: number | null; signal: NodeJS.Signals | null; at: number }
+    | null = null;
   private harvesterImpl: LabelHarvester;
   private packManager: PackManager;
   private embeddingClient: BrainEmbeddingFn | null;
   private config: BrainConfig;
+  private resolvedTeacherModel: { provider: string; model: string } | null;
   private initialized = false;
   private latestEpisodeByConversation = new Map<number, string>();
   private lastAssemblyDecision:
@@ -78,12 +77,19 @@ export class BrainService {
     config?: Partial<BrainConfig>;
     runtimeConfig?: OpenClawBrainRuntimeConfig;
   }) {
+    this.deps = params.deps;
     const runtimeConfig = params.runtimeConfig ?? params.deps.config.brain;
     if (!runtimeConfig) {
       throw new Error("OpenClawBrain runtime configuration is missing");
     }
 
     this.config = buildBrainConfig(runtimeConfig, params.config);
+    this.resolvedTeacherModel = this.config.teacherEnabled
+      ? params.deps.resolveModel(
+          this.config.teacherModel || undefined,
+          this.config.teacherProvider || undefined,
+        )
+      : null;
     mkdirSync(this.config.root, { recursive: true });
 
     const db = new DatabaseSync(join(this.config.root, "state.db"));
@@ -101,30 +107,6 @@ export class BrainService {
 
     populateGraph(this.mutableGraph, this.store.getAllNodes(), this.store.loadAllEdges());
     this.reloadServingGraph();
-
-    const teacher =
-      this.config.teacherEnabled
-        ? new BrainTeacher(
-            async (request) =>
-              params.deps.complete({
-                provider: request.provider,
-                model: request.model,
-                apiKey: request.apiKey,
-                messages: request.messages,
-                system: request.system,
-                maxTokens: request.maxTokens,
-                temperature: request.temperature,
-              }),
-            () =>
-              params.deps.resolveModel(
-                this.config.teacherModel || undefined,
-                this.config.teacherProvider || undefined,
-              ),
-            (provider, model) => params.deps.getApiKey(provider, model),
-            this.mutableGraph,
-            params.deps.log,
-          )
-        : null;
 
     const persistence = {
       insertNode: (node: Parameters<BrainStore["insertNode"]>[0]) => this.store.insertNode(node),
@@ -145,32 +127,220 @@ export class BrainService {
       this.mutableGraph,
       params.deps.log,
     );
-    this.worker = new BrainWorker(
-      this.store,
-      this.mutableGraph,
-      teacher,
-      mutator,
-      this.packManager,
-      this.config,
-      params.deps.log,
-      {
-        isEnabled: () => this.isEnabled(),
-        onPromotionReady: async ({ healthJson }) => {
-          await this.promoteMutableGraph("worker", { healthJson });
+
+    if (this.config.workerMode === "in_process") {
+      const teacher =
+        this.config.teacherEnabled && this.resolvedTeacherModel
+          ? new BrainTeacher(
+              async (request) =>
+                params.deps.complete({
+                  provider: request.provider,
+                  model: request.model,
+                  apiKey: request.apiKey,
+                  messages: request.messages,
+                  system: request.system,
+                  maxTokens: request.maxTokens,
+                  temperature: request.temperature,
+                }),
+              () => this.resolvedTeacherModel as { provider: string; model: string },
+              (provider, model) => params.deps.getApiKey(provider, model),
+              this.mutableGraph,
+              params.deps.log,
+            )
+          : null;
+
+      this.worker = new BrainWorker(
+        this.store,
+        this.mutableGraph,
+        teacher,
+        mutator,
+        this.packManager,
+        this.config,
+        params.deps.log,
+        {
+          isEnabled: () => this.isEnabled(),
+          onPromotionReady: async ({ healthJson }) => {
+            await this.promoteMutableGraph("worker", { healthJson });
+          },
         },
-      },
-    );
+      );
+    } else {
+      this.worker = null;
+    }
   }
 
   startWorker(): void {
     if (!this.isEnabled()) {
       return;
     }
-    this.worker.start();
+    this.workerShouldRun = true;
+    if (this.config.workerMode === "in_process") {
+      this.store.setTrainingState("worker_mode", "in_process");
+      this.store.setTrainingState("worker_status", "running");
+      this.worker?.start();
+      return;
+    }
+    this.ensureChildWorker();
   }
 
   stopWorker(): void {
-    this.worker.stop();
+    this.workerShouldRun = false;
+    if (this.workerRestartTimer) {
+      clearTimeout(this.workerRestartTimer);
+      this.workerRestartTimer = null;
+    }
+    if (this.config.workerMode === "in_process") {
+      this.store.setTrainingState("worker_status", "stopped");
+      this.worker?.stop();
+      return;
+    }
+    if (this.workerChild) {
+      this.workerChild.send({ type: "shutdown" });
+      const child = this.workerChild;
+      setTimeout(() => {
+        if (this.workerChild === child) {
+          this.workerChild.kill("SIGTERM");
+        }
+      }, 2_000);
+    }
+  }
+
+  private ensureChildWorker(): void {
+    if (this.workerChild || !this.isEnabled()) {
+      return;
+    }
+
+    const child = fork(
+      fileURLToPath(new URL("../brain-worker/child-runner.ts", import.meta.url)),
+      [],
+      {
+        execArgv: ["--import", "tsx/esm"],
+        stdio: ["ignore", "pipe", "pipe", "ipc"],
+        env: {
+          ...process.env,
+          OPENCLAWBRAIN_CHILD_CONFIG_JSON: JSON.stringify(this.config),
+          OPENCLAWBRAIN_CHILD_TEACHER_MODEL_JSON: this.resolvedTeacherModel
+            ? JSON.stringify(this.resolvedTeacherModel)
+            : "",
+        },
+      },
+    );
+    this.workerChild = child;
+    this.store.setTrainingState("worker_mode", "child");
+
+    child.stdout?.on("data", (chunk) => {
+      const text = String(chunk).trim();
+      if (text) {
+        this.deps.log.info(text);
+      }
+    });
+    child.stderr?.on("data", (chunk) => {
+      const text = String(chunk).trim();
+      if (text) {
+        this.deps.log.warn(text);
+      }
+    });
+    child.on("message", (message) => {
+      void this.handleChildWorkerMessage(message as Record<string, unknown>, child);
+    });
+    child.on("exit", (code, signal) => {
+      this.workerLastExit = {
+        code,
+        signal: signal as NodeJS.Signals | null,
+        at: Date.now(),
+      };
+      if (this.workerChild === child) {
+        this.workerChild = null;
+      }
+      if (this.workerShouldRun && this.isEnabled()) {
+        this.workerRestartTimer = setTimeout(() => {
+          this.workerRestartTimer = null;
+          this.ensureChildWorker();
+        }, this.config.workerRestartDelayMs);
+      }
+    });
+  }
+
+  private async handleChildWorkerMessage(message: Record<string, unknown>, child: ChildProcess): Promise<void> {
+    switch (message.type) {
+      case "worker-ready": {
+        this.workerLastReadyAt = Date.now();
+        this.workerLastHeartbeatAt = Date.now();
+        return;
+      }
+      case "worker-heartbeat": {
+        const at = Number(message.at ?? Date.now());
+        this.workerLastHeartbeatAt = at;
+        return;
+      }
+      case "pack-promoted": {
+        this.reloadMutableGraphFromStore();
+        this.reloadServingGraph();
+        return;
+      }
+      case "teacher-complete": {
+        const provider = typeof message.provider === "string"
+          ? message.provider
+          : this.resolvedTeacherModel?.provider;
+        const model = typeof message.model === "string"
+          ? message.model
+          : this.resolvedTeacherModel?.model;
+        const requestId = String(message.requestId ?? "");
+        if (!provider || !model || !requestId) {
+          child.send?.({
+            type: "teacher-complete-result",
+            requestId,
+            ok: false,
+            error: "teacher completion request missing provider/model/requestId",
+          });
+          return;
+        }
+        try {
+          const apiKey = await this.deps.getApiKey(provider, model);
+          const result = await this.deps.complete({
+            provider,
+            model,
+            apiKey,
+            messages: Array.isArray(message.messages)
+              ? message.messages as Array<{ role: string; content: unknown }>
+              : [],
+            system: typeof message.system === "string" ? message.system : undefined,
+            maxTokens: Number(message.maxTokens ?? 200),
+            temperature: typeof message.temperature === "number" ? message.temperature : undefined,
+          });
+          child.send?.({
+            type: "teacher-complete-result",
+            requestId,
+            ok: true,
+            content: (result.content ?? []) as CompletionContentBlock[],
+          });
+        } catch (error) {
+          child.send?.({
+            type: "teacher-complete-result",
+            requestId,
+            ok: false,
+            error: (error as Error).message,
+          });
+        }
+        return;
+      }
+      case "worker-error": {
+        this.deps.log.error(`[brain] child worker error: ${String(message.error ?? "unknown error")}`);
+        return;
+      }
+      default:
+        return;
+    }
+  }
+
+  private notifyWorkerGraphReload(): void {
+    if (this.workerChild) {
+      this.workerChild.send({ type: "reload-graph" });
+    }
+  }
+
+  private reloadMutableGraphFromStore(): void {
+    reloadGraphFromStore(this.store, this.mutableGraph);
   }
 
   get harvester(): LabelHarvester {
@@ -264,6 +434,7 @@ export class BrainService {
     kind?: string;
     tags?: string[];
   }): Promise<{ nodeId: string; packVersion: number | null }> {
+    this.reloadMutableGraphFromStore();
     if (!this.embeddingClient) {
       throw new Error("Embedding model is required before brain_teach can make knowledge retrievable");
     }
@@ -374,11 +545,26 @@ export class BrainService {
     const targetEpisodes = exactEpisode ? [exactEpisode] : recentEpisodes.slice(0, 1);
     for (const episode of targetEpisodes) {
       if (episode && episode.reward === null) {
+        const reason = `correction taught: "${params.instruction.slice(0, 80)}"`;
+        this.store.insertEvidence({
+          episodeId: episode.id,
+          conversationId: episode.conversationId,
+          source: "human",
+          kind: "teach_correction",
+          value: -0.5,
+          confidence: 1.0,
+          reason,
+          contentSnippet: params.instruction.slice(0, 240),
+          metadata: {
+            taughtNodeId: node.id,
+            via: "brain_teach",
+          },
+        });
         this.store.insertLabel({
           episodeId: episode.id,
           source: "human",
           value: -0.5,
-          reason: `correction taught: "${params.instruction.slice(0, 80)}"`,
+          reason,
         });
       }
     }
@@ -387,10 +573,12 @@ export class BrainService {
       taughtNodeId: node.id,
       conversationId: params.conversationId ?? null,
     });
+    this.notifyWorkerGraphReload();
     return { nodeId: node.id, packVersion };
   }
 
   async status(): Promise<Record<string, unknown>> {
+    this.reloadMutableGraphFromStore();
     const recentEpisodes = this.store.getRecentEpisodes(100);
     const currentPack = this.store.getCurrentPack();
     const health = computeHealth(
@@ -400,6 +588,10 @@ export class BrainService {
     );
     const recentTraces = this.store.getRecentTraces(5);
 
+    const workerPid = Number.parseInt(this.store.getTrainingState("worker_pid") ?? "0", 10) || null;
+    const workerHeartbeatAt = Number.parseInt(this.store.getTrainingState("worker_last_heartbeat_at") ?? "0", 10) || this.workerLastHeartbeatAt;
+    const workerStatus = this.store.getTrainingState("worker_status") ?? (this.config.workerMode === "child" ? "unknown" : "running");
+
     return {
       initialized: this.initialized,
       enabled: this.isEnabled(),
@@ -407,6 +599,17 @@ export class BrainService {
       currentPackVersion: this.store.getCurrentPackVersion(),
       currentPackPromotedAt: currentPack?.promotedAt ?? null,
       shadowMode: this.config.shadowMode,
+      workerMode: this.config.workerMode,
+      workerPid,
+      workerStatus,
+      workerLastHeartbeatAt: workerHeartbeatAt,
+      workerLastReadyAt: this.workerLastReadyAt,
+      workerHealthy: this.config.workerMode === "child"
+        ? Boolean(workerHeartbeatAt && (Date.now() - workerHeartbeatAt) < this.config.workerHeartbeatTimeoutMs)
+        : true,
+      workerLastExit: this.workerLastExit,
+      pendingEvidence: this.store.getPendingEvidence(100).length,
+      pendingEvidenceBySource: this.store.countPendingEvidenceBySource(),
       pendingLabels: this.store.getPendingLabels().length,
       pendingLabelsBySource: this.store.countPendingLabelsBySource(),
       mutationBacklog: this.store.countMutationsByStatus(),
@@ -459,6 +662,7 @@ export class BrainService {
       workspaceRoot: params.workspaceRoot,
       summary: result.summary,
     });
+    this.notifyWorkerGraphReload();
     return result.summary;
   }
 
@@ -472,7 +676,10 @@ export class BrainService {
   }
 
   async promoteLatestCandidate(): Promise<number | null> {
-    return this.promoteMutableGraph("manual-promote", {});
+    this.reloadMutableGraphFromStore();
+    const version = await this.promoteMutableGraph("manual-promote", {});
+    this.notifyWorkerGraphReload();
+    return version;
   }
 
   rollback(version: number): void {
@@ -497,27 +704,16 @@ export class BrainService {
     reason: string,
     metadata: Record<string, unknown>,
   ): Promise<number | null> {
-    if (this.mutableGraph.nodeCount() === 0) {
-      return null;
-    }
-
-    const health = computeHealth(
-      this.mutableGraph,
-      this.store.getRecentEpisodes(this.config.replayEpisodeCount),
-      this.store.getCurrentPackVersion() ?? 0,
-    );
-    const pack = this.packManager.buildCandidate(health);
-    this.store.writePackSnapshot({
-      version: pack.version,
-      nodes: this.mutableGraph.getAllNodes(),
-      edges: flattenEdges(this.mutableGraph),
-      metadata: {
-        reason,
-        ...metadata,
-      },
+    this.reloadMutableGraphFromStore();
+    const version = promoteGraphSnapshot({
+      store: this.store,
+      graph: this.mutableGraph,
+      packManager: this.packManager,
+      config: this.config,
+      reason,
+      metadata,
     });
-    this.packManager.promote(pack.version);
     this.reloadServingGraph();
-    return pack.version;
+    return version;
   }
 }

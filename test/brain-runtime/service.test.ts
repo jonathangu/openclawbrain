@@ -24,7 +24,10 @@ function embed(text: string): Float32Array {
   return new Float32Array([0.5, 0.5, 0]);
 }
 
-function createDeps(brainRoot: string): LcmDependencies {
+function createDeps(
+  brainRoot: string,
+  overrides?: Partial<NonNullable<LcmDependencies["config"]["brain"]>>,
+): LcmDependencies {
   return {
     config: {
       enabled: true,
@@ -58,6 +61,9 @@ function createDeps(brainRoot: string): LcmDependencies {
         baselineAlpha: 0.1,
         decayRate: 0.995,
         trainerIntervalMs: 10_000,
+        workerMode: "in_process",
+        workerHeartbeatTimeoutMs: 5_000,
+        workerRestartDelayMs: 100,
         teacherEnabled: false,
         teacherProvider: "",
         teacherModel: "",
@@ -70,6 +76,7 @@ function createDeps(brainRoot: string): LcmDependencies {
         embeddingProvider: "openai",
         embeddingModel: "text-embedding-3-small",
         embeddingBaseUrl: "https://example.invalid/v1",
+        ...overrides,
       },
     },
     complete: vi.fn(async () => ({ content: [{ type: "text", text: "{}" }] })),
@@ -92,6 +99,17 @@ function createDeps(brainRoot: string): LcmDependencies {
       debug: vi.fn(),
     },
   };
+}
+
+async function waitFor(predicate: () => Promise<boolean> | boolean, timeoutMs = 3_000): Promise<void> {
+  const deadline = Date.now() + timeoutMs;
+  while (Date.now() < deadline) {
+    if (await predicate()) {
+      return;
+    }
+    await new Promise((resolve) => setTimeout(resolve, 50));
+  }
+  throw new Error(`Condition not met within ${timeoutMs}ms`);
 }
 
 afterEach(() => {
@@ -187,5 +205,34 @@ describe("BrainService", () => {
     const status = await service.status();
     expect(status.pendingLabels).toBe(1);
     expect(status.currentPackVersion).toBe(taught.packVersion);
+  });
+
+  it("runs the learner in a supervised child process and reports heartbeat truth", async () => {
+    const brainRoot = makeTempDir("openclawbrain-state-");
+    const service = new BrainService({
+      deps: createDeps(brainRoot, {
+        workerMode: "child",
+        trainerIntervalMs: 200,
+        workerHeartbeatTimeoutMs: 5_000,
+        workerRestartDelayMs: 100,
+      }),
+    });
+
+    try {
+      service.startWorker();
+      await waitFor(async () => {
+        const status = await service.status();
+        return Boolean(status.workerPid) && status.workerMode === "child" && status.workerHealthy === true;
+      });
+
+      const status = await service.status();
+      expect(status.workerMode).toBe("child");
+      expect(status.workerStatus).toBe("running");
+      expect(status.workerPid).toEqual(expect.any(Number));
+      expect(status.workerHealthy).toBe(true);
+    } finally {
+      service.stopWorker();
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
   });
 });

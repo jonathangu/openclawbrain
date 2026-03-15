@@ -22,6 +22,10 @@ import type {
   MutationProposal,
   MutationStatus,
   DecisionTrace,
+  BrainEvidence,
+  BrainEvidenceKind,
+  BrainEvidenceResolution,
+  ResolvedLabel,
 } from "../brain-core/types.js";
 
 // ═══════════════════════════════════════════
@@ -291,6 +295,165 @@ export class BrainStore {
 
   markLabelApplied(id: string): void {
     this.db.prepare(`UPDATE brain_labels SET applied = 1 WHERE id = ?`).run(id);
+  }
+
+  // ─── Raw Evidence + Resolved Labels ───
+
+  insertEvidence(params: {
+    episodeId: string;
+    conversationId?: number | null;
+    source: RewardSource;
+    kind: BrainEvidenceKind;
+    value: number;
+    confidence?: number;
+    reason?: string;
+    contentSnippet?: string;
+    metadata?: Record<string, unknown>;
+  }): BrainEvidence {
+    const id = `be_${randomUUID().slice(0, 8)}`;
+    const now = Date.now();
+    this.db.prepare(`
+      INSERT INTO brain_evidence (id, episode_id, conversation_id, source, kind, value, confidence, reason, content_snippet, metadata, resolved, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 0, ?)
+    `).run(
+      id,
+      params.episodeId,
+      params.conversationId ?? null,
+      params.source,
+      params.kind,
+      params.value,
+      params.confidence ?? 1.0,
+      params.reason ?? null,
+      params.contentSnippet ?? null,
+      JSON.stringify(params.metadata ?? {}),
+      now,
+    );
+    return {
+      id,
+      episodeId: params.episodeId,
+      conversationId: params.conversationId ?? null,
+      source: params.source,
+      kind: params.kind,
+      value: params.value,
+      confidence: params.confidence ?? 1.0,
+      reason: params.reason ?? null,
+      contentSnippet: params.contentSnippet ?? null,
+      metadata: params.metadata ?? {},
+      resolved: false,
+      createdAt: now,
+    };
+  }
+
+  getPendingEvidence(limit = 100): BrainEvidence[] {
+    const rows = this.db.prepare(`
+      SELECT *
+      FROM brain_evidence
+      WHERE resolved = 0
+      ORDER BY created_at ASC
+      LIMIT ?
+    `).all(limit) as Record<string, unknown>[];
+    return rows.map((row) => this.toEvidence(row));
+  }
+
+  countPendingEvidenceBySource(): Record<RewardSource, number> {
+    const rows = this.db.prepare(`
+      SELECT source, COUNT(*) as count
+      FROM brain_evidence
+      WHERE resolved = 0
+      GROUP BY source
+    `).all() as Array<{ source: RewardSource; count: number }>;
+
+    const counts: Record<RewardSource, number> = {
+      human: 0,
+      self: 0,
+      scanner: 0,
+      teacher: 0,
+    };
+    for (const row of rows) {
+      counts[row.source] = row.count;
+    }
+    return counts;
+  }
+
+  resolveEvidence(params: {
+    evidenceId: string;
+    episodeId: string;
+    source: RewardSource;
+    value: number;
+    confidence: number;
+    resolution: BrainEvidenceResolution;
+    labelId?: string | null;
+    note?: string | null;
+  }): ResolvedLabel {
+    const id = `br_${randomUUID().slice(0, 8)}`;
+    const now = Date.now();
+    this.db.prepare(`UPDATE brain_evidence SET resolved = 1 WHERE id = ?`).run(params.evidenceId);
+    this.db.prepare(`
+      INSERT INTO brain_resolved_labels (id, evidence_id, episode_id, source, value, confidence, resolution, label_id, note, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id,
+      params.evidenceId,
+      params.episodeId,
+      params.source,
+      params.value,
+      params.confidence,
+      params.resolution,
+      params.labelId ?? null,
+      params.note ?? null,
+      now,
+    );
+    return {
+      id,
+      evidenceId: params.evidenceId,
+      episodeId: params.episodeId,
+      source: params.source,
+      value: params.value,
+      confidence: params.confidence,
+      resolution: params.resolution,
+      labelId: params.labelId ?? null,
+      note: params.note ?? null,
+      createdAt: now,
+    };
+  }
+
+  getResolvedLabelsForEpisode(episodeId: string, limit = 20): ResolvedLabel[] {
+    const rows = this.db.prepare(`
+      SELECT *
+      FROM brain_resolved_labels
+      WHERE episode_id = ?
+      ORDER BY created_at DESC
+      LIMIT ?
+    `).all(episodeId, limit) as Record<string, unknown>[];
+    return rows.map((row) => ({
+      id: row.id as string,
+      evidenceId: row.evidence_id as string,
+      episodeId: row.episode_id as string,
+      source: row.source as RewardSource,
+      value: row.value as number,
+      confidence: (row.confidence as number) ?? 1.0,
+      resolution: row.resolution as BrainEvidenceResolution,
+      labelId: (row.label_id as string) ?? null,
+      note: (row.note as string) ?? null,
+      createdAt: row.created_at as number,
+    }));
+  }
+
+  private toEvidence(row: Record<string, unknown>): BrainEvidence {
+    return {
+      id: row.id as string,
+      episodeId: row.episode_id as string,
+      conversationId: (row.conversation_id as number) ?? null,
+      source: row.source as RewardSource,
+      kind: row.kind as BrainEvidenceKind,
+      value: row.value as number,
+      confidence: (row.confidence as number) ?? 1.0,
+      reason: (row.reason as string) ?? null,
+      contentSnippet: (row.content_snippet as string) ?? null,
+      metadata: JSON.parse((row.metadata as string) || "{}"),
+      resolved: !!(row.resolved as number),
+      createdAt: row.created_at as number,
+    };
   }
 
   // ─── Packs ───

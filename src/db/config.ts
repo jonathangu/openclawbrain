@@ -14,6 +14,9 @@ export type OpenClawBrainRuntimeConfig = {
   baselineAlpha: number;
   decayRate: number;
   trainerIntervalMs: number;
+  workerMode?: "child" | "in_process";
+  workerHeartbeatTimeoutMs?: number;
+  workerRestartDelayMs?: number;
   teacherEnabled: boolean;
   teacherProvider: string;
   teacherModel: string;
@@ -203,6 +206,18 @@ export function resolveLcmConfig(
         (env.OPENCLAWBRAIN_TRAINER_INTERVAL_MS !== undefined
           ? parseInt(env.OPENCLAWBRAIN_TRAINER_INTERVAL_MS, 10)
           : undefined) ?? toNumber(pc.brainTrainerIntervalMs) ?? 30_000,
+      workerMode:
+        env.OPENCLAWBRAIN_WORKER_MODE?.trim() === "in_process"
+          ? "in_process"
+          : ((toStr(pc.brainWorkerMode) === "in_process" ? "in_process" : undefined) ?? "child"),
+      workerHeartbeatTimeoutMs:
+        (env.OPENCLAWBRAIN_WORKER_HEARTBEAT_TIMEOUT_MS !== undefined
+          ? parseInt(env.OPENCLAWBRAIN_WORKER_HEARTBEAT_TIMEOUT_MS, 10)
+          : undefined) ?? toNumber(pc.brainWorkerHeartbeatTimeoutMs) ?? 90_000,
+      workerRestartDelayMs:
+        (env.OPENCLAWBRAIN_WORKER_RESTART_DELAY_MS !== undefined
+          ? parseInt(env.OPENCLAWBRAIN_WORKER_RESTART_DELAY_MS, 10)
+          : undefined) ?? toNumber(pc.brainWorkerRestartDelayMs) ?? 5_000,
       teacherEnabled:
         env.OPENCLAWBRAIN_TEACHER_ENABLED !== undefined
           ? env.OPENCLAWBRAIN_TEACHER_ENABLED !== "false"
