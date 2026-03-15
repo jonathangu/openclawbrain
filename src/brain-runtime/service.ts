@@ -64,6 +64,7 @@ export class BrainService {
   private embeddingClient: BrainEmbeddingFn | null;
   private config: BrainConfig;
   private resolvedTeacherModel: { provider: string; model: string } | null;
+  private teacherConfigError: string | null = null;
   private initialized = false;
   private latestEpisodeByConversation = new Map<number, string>();
   private lastAssemblyDecision:
@@ -88,12 +89,22 @@ export class BrainService {
     }
 
     this.config = buildBrainConfig(runtimeConfig, params.config);
-    this.resolvedTeacherModel = this.config.teacherEnabled
-      ? params.deps.resolveModel(
+    if (this.config.teacherEnabled) {
+      try {
+        this.resolvedTeacherModel = params.deps.resolveModel(
           this.config.teacherModel || undefined,
           this.config.teacherProvider || undefined,
-        )
-      : null;
+        );
+      } catch (error) {
+        this.resolvedTeacherModel = null;
+        this.teacherConfigError = (error as Error).message;
+        params.deps.log.warn(
+          `[brain] Teacher disabled: ${this.teacherConfigError}`,
+        );
+      }
+    } else {
+      this.resolvedTeacherModel = null;
+    }
     mkdirSync(this.config.root, { recursive: true });
 
     const db = new DatabaseSync(join(this.config.root, "state.db"));
@@ -616,6 +627,11 @@ export class BrainService {
       currentPackVersion: this.store.getCurrentPackVersion(),
       currentPackPromotedAt: currentPack?.promotedAt ?? null,
       shadowMode: this.config.shadowMode,
+      teacherEnabled: this.config.teacherEnabled,
+      teacherConfigured: Boolean(this.resolvedTeacherModel),
+      teacherProvider: this.resolvedTeacherModel?.provider ?? this.config.teacherProvider,
+      teacherModel: this.resolvedTeacherModel?.model ?? this.config.teacherModel,
+      teacherConfigError: this.teacherConfigError,
       workerMode: this.config.workerMode,
       workerPid,
       workerStatus,

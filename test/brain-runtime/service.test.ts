@@ -157,6 +157,28 @@ describe("BrainService", () => {
     expect(status.currentPackVersion).toBe(1);
   });
 
+  it("fails open when teacher resolution has no model and reports that truth in status", async () => {
+    const brainRoot = makeTempDir("openclawbrain-state-");
+    const deps = createDeps(brainRoot, {
+      teacherEnabled: true,
+      teacherProvider: "",
+      teacherModel: "",
+    });
+    deps.resolveModel = vi.fn(() => {
+      throw new Error("No model configured for LCM summarization.");
+    });
+
+    const service = new BrainService({ deps });
+    const status = await service.status();
+
+    expect(status.teacherEnabled).toBe(true);
+    expect(status.teacherConfigured).toBe(false);
+    expect(status.teacherConfigError).toBe("No model configured for LCM summarization.");
+    expect(deps.log.warn).toHaveBeenCalledWith(
+      "[brain] Teacher disabled: No model configured for LCM summarization.",
+    );
+  });
+
   it("teaches a correction against the active conversation, labels only matching episodes, and retrieves it immediately", async () => {
     const workspaceRoot = makeTempDir("openclawbrain-workspace-");
     const brainRoot = makeTempDir("openclawbrain-state-");
