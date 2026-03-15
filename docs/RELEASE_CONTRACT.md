@@ -53,11 +53,11 @@ Those belong to the operational section below, and they are not done yet.
 
 These product-path behaviors are already wired into the real OpenClawBrain runtime.
 
-- **Recurrence gate + explicit skip reasons**
-  - The assembler decides whether to use brain routing or bypass with explicit reasons such as `skip_short_static_lookup`, `skip_no_embedding`, `skip_uninitialized`, and `skip_budget_too_small`.
+- **Recurrence gate + explicit runtime decisions**
+  - The assembler classifies each turn as `use_brain`, `shadow`, or a named bypass such as `skip_no_query`, `skip_short_static_lookup`, `skip_no_embedding`, `skip_uninitialized`, and `skip_budget_too_small`.
   - See: `src/brain-runtime/assembler-extension.ts`, `test/brain-runtime/assembler-extension.test.ts`
 - **Shadow mode**
-  - Shadow mode records route episodes/traces without injecting the brain context block into the prompt.
+  - Shadow mode is a first-class runtime decision: it records route episodes/traces without injecting the brain context block into the prompt.
   - See: `src/brain-runtime/assembler-extension.ts`, `src/brain-runtime/service.ts`
 - **Correction-first assembly**
   - Injected brain context is structured with correction cards first, then route-selected evidence, then toolcards/playbooks, then transcript support.

@@ -304,7 +304,7 @@ OPENCLAWBRAIN_VALIDATION_MODEL=openai/gpt-4.1-mini \
 node scripts/validate-openclaw-install.mjs
 ```
 
-Current state: install + temp-home isolation + config wiring + fixture workspace + `openclawbrain init/status/doctor` are wired. `brain_teach`, shadow-mode, and worker-down assertions are still being added.
+Current state: install + temp-home isolation + config wiring + fixture workspace + `openclawbrain init/status/doctor` are wired. Shadow-mode assertion wiring is present; `brain_teach` and worker-down assertions are still being added.
 
 ### Project structure
 

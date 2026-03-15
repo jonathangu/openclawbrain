@@ -64,7 +64,7 @@ export class BrainService {
   private latestEpisodeByConversation = new Map<number, string>();
   private lastAssemblyDecision:
     | {
-        mode: "use_brain" | "skip_short_static_lookup" | "skip_no_embedding" | "skip_uninitialized" | "skip_budget_too_small";
+        mode: "use_brain" | "shadow" | "skip_no_query" | "skip_short_static_lookup" | "skip_no_embedding" | "skip_uninitialized" | "skip_budget_too_small";
         conversationId?: number;
         episodeId?: string | null;
         traceId?: string | null;

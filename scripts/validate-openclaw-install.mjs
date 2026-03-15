@@ -111,7 +111,7 @@ function writeFixtureWorkspace() {
   );
 }
 
-function updateConfig() {
+function updateConfig(options = {}) {
   const config = JSON.parse(readFileSync(configPath, "utf8"));
   config.plugins ??= {};
   config.plugins.slots ??= {};
@@ -123,6 +123,7 @@ function updateConfig() {
     dbPath: lcmDbPath,
     brainRoot,
     brainEnabled: true,
+    brainShadowMode: options.shadowMode ?? false,
     brainWorkerMode: process.env.OPENCLAWBRAIN_VALIDATION_WORKER_MODE?.trim() || "child",
     brainEmbeddingProvider: cleanEnv().OPENCLAWBRAIN_EMBEDDING_PROVIDER,
     brainEmbeddingModel: cleanEnv().OPENCLAWBRAIN_EMBEDDING_MODEL,
@@ -149,6 +150,25 @@ function requireEmbeddingConfig() {
       ].join(" "),
     );
   }
+}
+
+function collectStrings(value, out = []) {
+  if (typeof value === "string") {
+    out.push(value);
+    return out;
+  }
+  if (Array.isArray(value)) {
+    for (const item of value) {
+      collectStrings(item, out);
+    }
+    return out;
+  }
+  if (value && typeof value === "object") {
+    for (const entry of Object.values(value)) {
+      collectStrings(entry, out);
+    }
+  }
+  return out;
 }
 
 function maybeRunAgentChecks(report) {
@@ -208,14 +228,47 @@ function maybeRunAgentChecks(report) {
     lastAssemblyMode: shortStatus.lastAssemblyDecision?.mode ?? null,
   };
 
+  updateConfig({ shadowMode: true });
+  const shadowOutput = run("openclaw", [
+    "agent",
+    "--local",
+    "--to",
+    "+15550003333",
+    "--message",
+    "How do I open a pull request again?",
+    "--json",
+  ]);
+  report.agent.shadowQuery = extractJson(shadowOutput);
+  const shadowStatus = extractJson(run("node", ["bin/openclawbrain.js", "status"]));
+  const shadowTrace = extractJson(run("node", ["bin/openclawbrain.js", "trace"]));
+  const shadowVisibleText = collectStrings(report.agent.shadowQuery).join("\n");
+  const injectedContextVisible =
+    shadowVisibleText.includes("OpenClawBrain retrieved context.")
+    || shadowVisibleText.includes("## Correction Cards")
+    || shadowVisibleText.includes("Use gh pr create for pull requests.");
+  report.assertions.shadowMode = {
+    shadowMode: shadowStatus.shadowMode ?? null,
+    lastAssemblyMode: shadowStatus.lastAssemblyDecision?.mode ?? null,
+    traceId: shadowTrace?.trace?.id ?? null,
+    episodeId: shadowTrace?.trace?.episodeId ?? null,
+    injectedContextVisible,
+  };
+  updateConfig({ shadowMode: false });
+
+  if (shadowStatus.lastAssemblyDecision?.mode !== "shadow") {
+    throw new Error(`Validation harness expected shadow mode decision, got ${shadowStatus.lastAssemblyDecision?.mode ?? "null"}.`);
+  }
+  if (!shadowTrace?.trace?.id || !shadowTrace?.trace?.episodeId) {
+    throw new Error("Validation harness expected shadow mode to record a trace and episode id.");
+  }
+  if (injectedContextVisible) {
+    throw new Error("Validation harness expected shadow mode to avoid visible brain-context injection in the host response.");
+  }
+
   report.skipped.push(
     {
       phase: "brain-teach",
       reason: "Phase-1 harness scaffold still needs a deterministic host-surface path for brain_teach assertion wiring.",
-    },
-    {
-      phase: "shadow-mode",
-      reason: "Phase-1 harness scaffold still needs a dedicated shadow-mode config/run branch.",
     },
     {
       phase: "worker-down",

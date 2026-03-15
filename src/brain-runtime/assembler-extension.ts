@@ -6,6 +6,8 @@ import type { BrainService } from "./service.js";
 type AgentMessage = Parameters<ContextEngine["ingest"]>[0]["message"];
 export type BrainAssemblyDecisionMode =
   | "use_brain"
+  | "shadow"
+  | "skip_no_query"
   | "skip_short_static_lookup"
   | "skip_no_embedding"
   | "skip_uninitialized"
@@ -29,6 +31,10 @@ function decisionFooter(mode: BrainAssemblyDecisionMode): string {
   switch (mode) {
     case "use_brain":
       return "[brain] used graph retrieval for this turn.";
+    case "shadow":
+      return "[brain shadow] recorded routing without injecting learned context.";
+    case "skip_no_query":
+      return "[brain] bypassed: no user query text.";
     case "skip_short_static_lookup":
       return "[brain] bypassed: short static lookup.";
     case "skip_no_embedding":
@@ -123,6 +129,9 @@ export class BrainAssemblerExtension {
     if (params.tokenBudget < 512) {
       return { mode: "skip_budget_too_small", queryText };
     }
+    if (!queryText) {
+      return { mode: "skip_no_query", queryText };
+    }
 
     const normalized = queryText.toLowerCase();
     const recurrent = looksRecurrentOrProcedural(queryText);
@@ -138,11 +147,11 @@ export class BrainAssemblerExtension {
         || normalized.includes(".md")
         || normalized.includes(".json")
         || normalized.includes("/"));
-    if (!queryText || looksStaticLookup) {
+    if (looksStaticLookup) {
       return { mode: "skip_short_static_lookup", queryText };
     }
 
-    return { mode: "use_brain", queryText };
+    return { mode: this.brain.isShadowMode() ? "shadow" : "use_brain", queryText };
   }
 
   async augmentAssembly(params: {
@@ -155,7 +164,7 @@ export class BrainAssemblerExtension {
       tokenBudget: params.tokenBudget,
       liveMessages: params.liveMessages,
     });
-    if (decision.mode !== "use_brain") {
+    if (decision.mode !== "use_brain" && decision.mode !== "shadow") {
       this.brain.noteAssemblyDecision({
         mode: decision.mode,
         conversationId: params.conversationId,
@@ -177,15 +186,15 @@ export class BrainAssemblerExtension {
     });
     if (!result) {
       this.brain.noteAssemblyDecision({
-        mode: "use_brain",
+        mode: decision.mode,
         conversationId: params.conversationId,
-        footer: decisionFooter("use_brain"),
+        footer: decisionFooter(decision.mode),
       });
       return {
         ...params.assembled,
         brainDecision: {
-          mode: "use_brain",
-          footer: decisionFooter("use_brain"),
+          mode: decision.mode,
+          footer: decisionFooter(decision.mode),
         },
       };
     }
@@ -194,22 +203,22 @@ export class BrainAssemblerExtension {
       role: "user",
       content: buildBrainContextBlock(result),
     } as AgentMessage;
-    if (this.brain.isShadowMode()) {
+    if (decision.mode === "shadow") {
       this.brain.noteAssemblyDecision({
-        mode: "use_brain",
+        mode: "shadow",
         conversationId: params.conversationId,
         episodeId: result.episode.id,
         traceId: result.trace.id,
-        footer: `[brain shadow] ${result.trace.footer}`,
+        footer: decisionFooter("shadow"),
       });
 
       return {
         ...params.assembled,
         brainDecision: {
-          mode: "use_brain",
+          mode: "shadow",
           episodeId: result.episode.id,
           traceId: result.trace.id,
-          footer: `[brain shadow] ${result.trace.footer}`,
+          footer: decisionFooter("shadow"),
         },
       };
     }

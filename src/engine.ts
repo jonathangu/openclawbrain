@@ -1351,14 +1351,16 @@ export class LcmContextEngine implements ContextEngine {
         tokenBudget,
         liveMessages: params.messages,
       });
+      const shouldRouteThroughBrain =
+        brainDecision?.mode === "use_brain" || brainDecision?.mode === "shadow";
       let conversation = await this.conversationStore.getConversationBySessionId(
         params.sessionId,
       );
-      if (!conversation && brainDecision?.mode === "use_brain") {
+      if (!conversation && shouldRouteThroughBrain) {
         conversation = await this.conversationStore.getOrCreateConversation(params.sessionId);
       }
       if (!conversation) {
-        if (brainDecision && this.brainService && brainDecision.mode !== "use_brain") {
+        if (brainDecision && this.brainService && !shouldRouteThroughBrain) {
           this.brainService.noteAssemblyDecision({
             mode: brainDecision.mode,
             footer: `[brain] bypassed: ${brainDecision.mode}.`,
@@ -1384,7 +1386,7 @@ export class LcmContextEngine implements ContextEngine {
           tokenBudget,
           freshTailCount: this.config.freshTailCount,
         });
-      } else if (brainDecision?.mode === "use_brain") {
+      } else if (shouldRouteThroughBrain) {
         assembled = {
           messages: params.messages,
           estimatedTokens: estimateSessionTokenCountForAfterTurn(params.messages),
