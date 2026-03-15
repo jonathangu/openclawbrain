@@ -24,8 +24,11 @@ export type EdgeKind =
   | "sibling"          // Same-document adjacency (prior = 1.0)
   | "semantic"         // Embedding cosine similarity (prior = cosine)
   | "learned"          // Created by learning (prior = 0.5)
+  | "seed"             // Learned seed-head parameter from __START__
   | "inhibitory"       // Suppresses traversal (weight < 0)
   | "bridge";          // Links brain node to LCM summary
+
+export const START_NODE_ID = "__START__";
 
 export type TrustLevel = "human" | "scanner" | "teacher" | "self";
 
@@ -80,8 +83,17 @@ export interface TraversalState {
  * Our action set: A(s) = { traverse(neighbor) } ∪ { STOP }
  */
 export type TraversalAction =
-  | { type: "traverse"; targetNodeId: string }
+  | { type: "traverse"; targetNodeId: string; seedScore?: number }
   | { type: "stop" };
+
+export interface SeedScore {
+  nodeId: string;
+  priorScore: number;
+  learnedScore: number;
+  policyScore: number;
+  probability: number;
+  chosen: boolean;
+}
 
 /**
  * One step of a recorded trajectory.
@@ -202,7 +214,7 @@ export interface DecisionTrace {
   episodeId: string | null;
   packVersion: number | null;
   queryText: string;
-  seedScores: Array<{ nodeId: string; score: number }>;
+  seedScores: SeedScore[];
   trajectory: TrajectoryStep[];
   firedNodes: string[];
   vetoedNodes: string[];
@@ -234,6 +246,7 @@ export interface BrainConfig {
   minFiredPerQuery: number;
   maxDormantPercent: number;
   maxOrphanCount: number;
+  shadowMode: boolean;
   embeddingProvider: string;
   embeddingModel: string;
   embeddingBaseUrl: string;
@@ -260,6 +273,7 @@ export const DEFAULT_BRAIN_CONFIG: BrainConfig = {
   minFiredPerQuery: 1.0,
   maxDormantPercent: 0.3,
   maxOrphanCount: 10,
+  shadowMode: false,
   embeddingProvider: "openai",
   embeddingModel: "",
   embeddingBaseUrl: "",
@@ -304,6 +318,7 @@ export const DEFAULT_POLICY_PARAMS: PolicyParams = {
     sibling: 0.0,
     semantic: 0.1,
     learned: 0.2,
+    seed: 0.15,
     inhibitory: -10.0,
     bridge: 0.0,
   },

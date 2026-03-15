@@ -10,7 +10,7 @@ import type {
   NodeKind,
   TraversalResult,
 } from "../brain-core/types.js";
-import { DEFAULT_BRAIN_CONFIG } from "../brain-core/types.js";
+import { DEFAULT_BRAIN_CONFIG, START_NODE_ID } from "../brain-core/types.js";
 import { BrainGraph } from "../brain-core/graph.js";
 import { traverse } from "../brain-core/traverse.js";
 import { recordEpisode } from "../brain-core/episode.js";
@@ -28,9 +28,7 @@ import { BrainWorker } from "../brain-worker/worker.js";
 import type { LcmDependencies } from "../types.js";
 
 function flattenEdges(graph: BrainGraph) {
-  return graph
-    .getAllNodes()
-    .flatMap((node) => graph.getOutgoingEdges(node.id));
+  return graph.getAllEdges();
 }
 
 function buildBrainConfig(
@@ -129,6 +127,7 @@ export class BrainService {
         : null;
 
     const persistence = {
+      insertNode: (node: Parameters<BrainStore["insertNode"]>[0]) => this.store.insertNode(node),
       insertEdge: (edge: Parameters<BrainStore["insertEdge"]>[0]) => this.store.insertEdge(edge),
       deleteNode: (id: string) => this.store.deleteNode(id),
       deleteEdge: (source: string, target: string, kind: string) =>
@@ -190,8 +189,16 @@ export class BrainService {
     return Boolean(this.embeddingClient);
   }
 
+  isShadowMode(): boolean {
+    return this.config.shadowMode;
+  }
+
   noteAssemblyDecision(decision: NonNullable<BrainService["lastAssemblyDecision"]>): void {
     this.lastAssemblyDecision = decision;
+    this.store.setTrainingState("last_assembly_mode", decision.mode);
+    this.store.setTrainingState("last_assembly_footer", decision.footer ?? "");
+    this.store.setTrainingState("last_assembly_episode_id", decision.episodeId ?? "");
+    this.store.setTrainingState("last_assembly_trace_id", decision.traceId ?? "");
   }
 
   async query(params: {
@@ -293,6 +300,13 @@ export class BrainService {
         : null;
     const recentEpisode = exactEpisode ?? recentEpisodes[0] ?? null;
     const connectedNodes = new Set<string>();
+    const firstTraversalStep = recentEpisode?.trajectory.find(
+      (step) => step.chosenAction.type === "traverse",
+    );
+    const chosenSeedNodeId =
+      firstTraversalStep?.chosenAction.type === "traverse"
+        ? firstTraversalStep.chosenAction.targetNodeId
+        : null;
     for (const firedNodeId of recentEpisode?.firedNodes ?? []) {
       if (connectedNodes.has(firedNodeId)) {
         continue;
@@ -318,8 +332,46 @@ export class BrainService {
       this.store.insertEdge(edge);
       this.store.insertEdge(reverse);
     }
+    if (chosenSeedNodeId && !connectedNodes.has(chosenSeedNodeId)) {
+      const now = Date.now();
+      const seedEdge = {
+        source: chosenSeedNodeId,
+        target: node.id,
+        kind: "learned" as const,
+        weight: 1.0,
+        prior: 1.0,
+        metadata: { taught: true, seedRegion: true, conversationId: params.conversationId ?? null },
+        decayedAt: now,
+        createdAt: now,
+      };
+      const reverseSeedEdge = {
+        ...seedEdge,
+        source: node.id,
+        target: chosenSeedNodeId,
+      };
+      this.mutableGraph.addEdge(seedEdge);
+      this.mutableGraph.addEdge(reverseSeedEdge);
+      this.store.insertEdge(seedEdge);
+      this.store.insertEdge(reverseSeedEdge);
+    }
 
-    const targetEpisodes = exactEpisode ? [exactEpisode] : recentEpisodes.slice(0, 3);
+    const misroutedTargetId = recentEpisode?.firedNodes.at(-1) ?? null;
+    if (chosenSeedNodeId && misroutedTargetId && misroutedTargetId !== node.id) {
+      const inhibitoryEdge = {
+        source: chosenSeedNodeId,
+        target: misroutedTargetId,
+        kind: "inhibitory" as const,
+        weight: -1.0,
+        prior: -1.0,
+        metadata: { taught: true, reason: "human correction", conversationId: params.conversationId ?? null },
+        decayedAt: Date.now(),
+        createdAt: Date.now(),
+      };
+      this.mutableGraph.addEdge(inhibitoryEdge);
+      this.store.insertEdge(inhibitoryEdge);
+    }
+
+    const targetEpisodes = exactEpisode ? [exactEpisode] : recentEpisodes.slice(0, 1);
     for (const episode of targetEpisodes) {
       if (episode && episode.reward === null) {
         this.store.insertLabel({
@@ -354,10 +406,16 @@ export class BrainService {
       embeddingConfigured: Boolean(this.embeddingClient),
       currentPackVersion: this.store.getCurrentPackVersion(),
       currentPackPromotedAt: currentPack?.promotedAt ?? null,
+      shadowMode: this.config.shadowMode,
       pendingLabels: this.store.getPendingLabels().length,
+      pendingLabelsBySource: this.store.countPendingLabelsBySource(),
+      mutationBacklog: this.store.countMutationsByStatus(),
+      seedLearningEnabled: this.mutableGraph.getOutgoingEdges(START_NODE_ID).length > 0,
       recentTraceCount: recentTraces.length,
       lastTraceFooter: recentTraces[0]?.footer ?? null,
       lastAssemblyDecision: this.lastAssemblyDecision,
+      lastPromotionReason: this.store.getTrainingState("last_promotion_reason"),
+      lastReplayFailureReason: this.store.getTrainingState("last_replay_failure_reason"),
       brainRoot: this.config.root,
       ...health,
     };

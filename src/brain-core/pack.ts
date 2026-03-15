@@ -41,33 +41,68 @@ export class PackManager {
   replayGate(
     recentEpisodes: Episode[],
     config: { minFiredPerQuery: number; maxDormantPercent: number; maxOrphanCount: number },
-  ): { passed: boolean; reason: string } {
+    candidateGraph: BrainGraph = this.graph,
+  ): { passed: boolean; reason: string; health: HealthMetrics } {
     if (recentEpisodes.length === 0) {
-      return { passed: true, reason: "no episodes to replay" };
+      return {
+        passed: true,
+        reason: "no episodes to replay",
+        health: computeHealth(candidateGraph, recentEpisodes, 0),
+      };
     }
 
-    const health = computeHealth(this.graph, recentEpisodes, 0);
+    const health = computeHealth(candidateGraph, recentEpisodes, 0);
 
     if (health.firedPerQuery < config.minFiredPerQuery) {
-      return { passed: false, reason: `firedPerQuery ${health.firedPerQuery.toFixed(2)} < ${config.minFiredPerQuery}` };
+      return {
+        passed: false,
+        reason: `firedPerQuery ${health.firedPerQuery.toFixed(2)} < ${config.minFiredPerQuery}`,
+        health,
+      };
     }
     if (health.dormantPercent > config.maxDormantPercent) {
-      return { passed: false, reason: `dormantPercent ${(health.dormantPercent * 100).toFixed(1)}% > ${(config.maxDormantPercent * 100).toFixed(1)}%` };
+      return {
+        passed: false,
+        reason: `dormantPercent ${(health.dormantPercent * 100).toFixed(1)}% > ${(config.maxDormantPercent * 100).toFixed(1)}%`,
+        health,
+      };
     }
     if (health.orphanCount > config.maxOrphanCount) {
-      return { passed: false, reason: `orphanCount ${health.orphanCount} > ${config.maxOrphanCount}` };
+      return {
+        passed: false,
+        reason: `orphanCount ${health.orphanCount} > ${config.maxOrphanCount}`,
+        health,
+      };
     }
 
     // Check no human-labeled episodes regressed
     const humanEpisodes = recentEpisodes.filter((ep) => ep.rewardSource === "human" && ep.reward !== null);
     for (const ep of humanEpisodes) {
-      const replay = replayEpisode(ep, this.graph);
+      const replay = replayEpisode(ep, candidateGraph);
       if (replay.wouldChange && ep.reward! > 0) {
-        return { passed: false, reason: `human-positive episode ${ep.id} would change routing` };
+        return {
+          passed: false,
+          reason: `human-positive episode ${ep.id} would change routing`,
+          health,
+        };
       }
     }
 
-    return { passed: true, reason: "all gates passed" };
+    const selfNegativeEpisodes = recentEpisodes.filter(
+      (ep) => ep.rewardSource === "self" && ep.reward !== null && ep.reward < 0,
+    );
+    for (const ep of selfNegativeEpisodes) {
+      const replay = replayEpisode(ep, candidateGraph);
+      if (!replay.wouldChange) {
+        return {
+          passed: false,
+          reason: `self-negative episode ${ep.id} did not change routing`,
+          health,
+        };
+      }
+    }
+
+    return { passed: true, reason: "all gates passed", health };
   }
 
   promote(version: number): void {

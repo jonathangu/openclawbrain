@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { scoreAction, softmaxPolicy, sampleAction, logProbability } from "../../src/brain-core/policy.js";
 import { BrainGraph } from "../../src/brain-core/graph.js";
-import { DEFAULT_POLICY_PARAMS } from "../../src/brain-core/types.js";
+import { DEFAULT_POLICY_PARAMS, START_NODE_ID } from "../../src/brain-core/types.js";
 import type { TraversalState, BrainNode, BrainEdge } from "../../src/brain-core/types.js";
 
 function makeNode(id: string, embedding?: Float32Array): BrainNode {
@@ -72,6 +72,28 @@ describe("policy", () => {
       const state = makeState("a");
       const scoreB = scoreAction({ type: "traverse", targetNodeId: "b" }, state, graph);
       const scoreC = scoreAction({ type: "traverse", targetNodeId: "c" }, state, graph);
+
+      expect(scoreB).toBeGreaterThan(scoreC);
+    });
+
+    it("learns seed-head preference from __START__ edges", () => {
+      const graph = new BrainGraph();
+      graph.addNode(makeNode("b", new Float32Array([1, 0, 0])));
+      graph.addNode(makeNode("c", new Float32Array([1, 0, 0])));
+      graph.addEdge({
+        source: START_NODE_ID,
+        target: "b",
+        kind: "seed",
+        weight: 1.5,
+        prior: 0.5,
+        metadata: {},
+        decayedAt: Date.now(),
+        createdAt: Date.now(),
+      });
+
+      const state = makeState(null);
+      const scoreB = scoreAction({ type: "traverse", targetNodeId: "b", seedScore: 0.8 }, state, graph);
+      const scoreC = scoreAction({ type: "traverse", targetNodeId: "c", seedScore: 0.8 }, state, graph);
 
       expect(scoreB).toBeGreaterThan(scoreC);
     });

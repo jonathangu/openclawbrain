@@ -18,7 +18,8 @@
  * The full-trajectory sum is achieved by accumulating updates across all steps.
  */
 
-import type { Episode, TrajectoryStep } from "./types.js";
+import type { Episode } from "./types.js";
+import { START_NODE_ID } from "./types.js";
 import type { BrainGraph } from "./graph.js";
 
 export interface WeightUpdate {
@@ -49,10 +50,8 @@ export function computeReinforceUpdates(
   for (const step of episode.trajectory) {
     if (step.chosenAction.type !== "traverse") continue;
 
-    const sourceId = step.stateSnapshot.currentNodeId;
+    const sourceId = step.stateSnapshot.currentNodeId ?? START_NODE_ID;
     const targetId = step.chosenAction.targetNodeId;
-
-    if (!sourceId && !targetId) continue;
 
     // ∂logP(a_l|s_l)/∂ρ for the softmax = (1 - P(a_l|s_l))
     const gradLogP = 1 - step.chosenActionProbability;
@@ -61,17 +60,14 @@ export function computeReinforceUpdates(
     const delta = learningRate * advantage * gradLogP;
 
     // Accumulate: the full-trajectory sum means each step adds to the gradient
-    const key = sourceId
-      ? `${sourceId}→${targetId}`
-      : `seed→${targetId}`;
+    const key = `${sourceId}→${targetId}`;
 
     const existing = updates.get(key);
     if (existing) {
       existing.delta += delta;
-    } else if (sourceId) {
+    } else {
       updates.set(key, { source: sourceId, target: targetId, delta });
     }
-    // Skip seed-phase edges (no source node to update weight for)
   }
 
   return [...updates.values()];

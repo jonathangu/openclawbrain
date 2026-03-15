@@ -48,7 +48,7 @@ function loadStore() {
 }
 
 function flattenEdges(graph: BrainGraph) {
-  return graph.getAllNodes().flatMap((node) => graph.getOutgoingEdges(node.id));
+  return graph.getAllEdges();
 }
 
 async function commandInit(workspaceArg?: string): Promise<void> {
@@ -104,13 +104,27 @@ function commandStatus(): void {
   const recentEpisodes = store.getRecentEpisodes(100);
   const currentPack = store.getCurrentPackVersion();
   const health = computeHealth(graph, recentEpisodes, currentPack ?? 0);
+  const currentSnapshot = currentPack !== null ? store.readPackSnapshot(currentPack) : null;
 
   printJson({
     command: "status",
     brainRoot: brainConfig.root,
     disabled: existsSync(join(brainConfig.root, "DISABLED")),
+    shadowMode: brainConfig.shadowMode,
     currentPackVersion: currentPack,
+    currentPackMetadata: currentSnapshot?.metadata ?? null,
     pendingLabels: store.getPendingLabels().length,
+    pendingLabelsBySource: store.countPendingLabelsBySource(),
+    mutationBacklog: store.countMutationsByStatus(),
+    lastPromotionReason: store.getTrainingState("last_promotion_reason"),
+    lastReplayFailureReason: store.getTrainingState("last_replay_failure_reason"),
+    lastAssemblyDecision: {
+      mode: store.getTrainingState("last_assembly_mode"),
+      footer: store.getTrainingState("last_assembly_footer"),
+      episodeId: store.getTrainingState("last_assembly_episode_id"),
+      traceId: store.getTrainingState("last_assembly_trace_id"),
+    },
+    seedLearningEnabled: graph.getOutgoingEdges("__START__").length > 0,
     recentTraceCount: store.getRecentTraces(5).length,
     ...health,
   });
@@ -119,9 +133,17 @@ function commandStatus(): void {
 function commandTrace(traceId?: string): void {
   const { store } = loadStore();
   const trace = traceId ? store.getTrace(traceId) : store.getRecentTraces(1)[0] ?? null;
+  const chosenSeed = trace?.seedScores.find((seed) => seed.chosen) ?? null;
   printJson({
     command: "trace",
     trace,
+    chosenSeed,
+    finalSectionOrder: [
+      "correction_cards",
+      "route_selected_evidence",
+      "toolcards_and_workflows",
+      "transcript_support",
+    ],
   });
 }
 
@@ -142,7 +164,9 @@ function commandReplay(): void {
   });
   printJson({
     command: "replay",
-    ...gate,
+    passed: gate.passed,
+    reason: gate.reason,
+    health: gate.health,
   });
 }
 
@@ -208,6 +232,7 @@ function commandDoctor(): void {
   const { brainConfig, store, graph } = loadStore();
   const currentPackVersion = store.getCurrentPackVersion();
   const snapshot = currentPackVersion !== null ? store.readPackSnapshot(currentPackVersion) : null;
+  const workerLastTickAt = store.getTrainingState("worker_last_tick_at");
   printJson({
     command: "doctor",
     brainRoot: brainConfig.root,
@@ -215,7 +240,11 @@ function commandDoctor(): void {
     currentPackVersion,
     currentPackSnapshotExists: snapshot !== null,
     embeddingConfigured: brainConfig.embeddingModel.trim().length > 0,
+    shadowMode: brainConfig.shadowMode,
     disabled: existsSync(join(brainConfig.root, "DISABLED")),
+    workerLastTickAt: workerLastTickAt ? Number.parseInt(workerLastTickAt, 10) : null,
+    mutationBacklog: store.countMutationsByStatus(),
+    orphanedTraceRows: store.countOrphanedTraceRows(),
     nodeCount: graph.nodeCount(),
     edgeCount: graph.edgeCount(),
     lastTraceId: store.getRecentTraces(1)[0]?.id ?? null,

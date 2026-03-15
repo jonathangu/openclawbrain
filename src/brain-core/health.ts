@@ -6,7 +6,7 @@ import type { HealthMetrics, NodeKind, EdgeKind, Episode } from "./types.js";
 import type { BrainGraph } from "./graph.js";
 
 const NODE_KINDS: NodeKind[] = ["chunk", "workflow", "correction", "toolcard", "episode_anchor", "summary_bridge"];
-const EDGE_KINDS: EdgeKind[] = ["sibling", "semantic", "learned", "inhibitory", "bridge"];
+const EDGE_KINDS: EdgeKind[] = ["sibling", "semantic", "learned", "seed", "inhibitory", "bridge"];
 
 export function computeFiredPerQuery(episodes: Episode[]): number {
   if (episodes.length === 0) return 0;
@@ -32,10 +32,8 @@ export function computeInhibitoryPercent(graph: BrainGraph): number {
   if (totalEdges === 0) return 0;
 
   let inhibCount = 0;
-  for (const node of graph.getAllNodes()) {
-    for (const edge of graph.getOutgoingEdges(node.id)) {
-      if (edge.kind === "inhibitory" || edge.weight < 0) inhibCount++;
-    }
+  for (const edge of graph.getAllEdges()) {
+    if (edge.kind === "inhibitory" || edge.weight < 0) inhibCount++;
   }
   return inhibCount / totalEdges;
 }
@@ -75,23 +73,19 @@ export function computeHealth(
 
   const edgesByKind = {} as Record<EdgeKind, number>;
   for (const kind of EDGE_KINDS) edgesByKind[kind] = 0;
-  for (const node of graph.getAllNodes()) {
-    for (const edge of graph.getOutgoingEdges(node.id)) {
-      edgesByKind[edge.kind]++;
-    }
+  for (const edge of graph.getAllEdges()) {
+    edgesByKind[edge.kind]++;
   }
 
   // Cross-file edge percent: edges connecting nodes from different sourceUris
   let crossFileCount = 0;
   let totalEdgeCount = 0;
-  for (const node of graph.getAllNodes()) {
-    for (const edge of graph.getOutgoingEdges(node.id)) {
-      totalEdgeCount++;
-      const sourceNode = graph.getNode(edge.source);
-      const targetNode = graph.getNode(edge.target);
-      if (sourceNode && targetNode && sourceNode.sourceUri !== targetNode.sourceUri) {
-        crossFileCount++;
-      }
+  for (const edge of graph.getAllEdges()) {
+    totalEdgeCount++;
+    const sourceNode = graph.getNode(edge.source);
+    const targetNode = graph.getNode(edge.target);
+    if (sourceNode && targetNode && sourceNode.sourceUri !== targetNode.sourceUri) {
+      crossFileCount++;
     }
   }
 

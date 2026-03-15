@@ -52,6 +52,32 @@ describe("traverse", () => {
     expect(result.trajectory.at(-1)?.chosenAction.type).toBe("stop");
   });
 
+  it("records seed priors, probabilities, and the chosen seed", () => {
+    const graph = new BrainGraph();
+    graph.addNode(makeNode("a", new Float32Array([1, 0, 0])));
+    graph.addNode(makeNode("b", new Float32Array([1, 0, 0])));
+    graph.addEdge(makeEdge("__START__", "a", "seed", 1.0));
+
+    const result = traverse({
+      graph,
+      queryEmbedding: new Float32Array([1, 0, 0]),
+      queryText: "hello",
+      maxHops: 3,
+      budgetChars: 400,
+      temperature: 0.1,
+      maxSeeds: 5,
+      semanticThreshold: 0.1,
+    });
+
+    expect(result.seedScores.length).toBeGreaterThan(0);
+    expect(result.seedScores[0]).toEqual(expect.objectContaining({
+      nodeId: expect.any(String),
+      priorScore: expect.any(Number),
+      probability: expect.any(Number),
+      chosen: expect.any(Boolean),
+    }));
+  });
+
   it("avoids infinite traversal by respecting max hops", () => {
     const graph = new BrainGraph();
     graph.addNode(makeNode("a", new Float32Array([1, 0, 0])));

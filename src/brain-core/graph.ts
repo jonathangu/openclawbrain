@@ -73,6 +73,10 @@ export class BrainGraph {
     return [...this.nodes.values()];
   }
 
+  getAllEdges(): BrainEdge[] {
+    return [...this.outEdges.values()].flatMap((edges) => edges);
+  }
+
   getNodesByKind(kind: NodeKind): BrainNode[] {
     return [...this.nodes.values()].filter((n) => n.kind === kind);
   }
@@ -134,6 +138,25 @@ export class BrainGraph {
     return [...new Set(edges.map((e) => e.target))];
   }
 
+  clone(): BrainGraph {
+    const clone = new BrainGraph();
+    for (const node of this.nodes.values()) {
+      clone.addNode({
+        ...node,
+        embedding: node.embedding ? new Float32Array(node.embedding) : null,
+        tags: [...node.tags],
+        metadata: { ...node.metadata },
+      });
+    }
+    for (const edge of this.getAllEdges()) {
+      clone.addEdge({
+        ...edge,
+        metadata: { ...edge.metadata },
+      });
+    }
+    return clone;
+  }
+
   /**
    * Seed selection: top-k nodes by cosine similarity to query embedding.
    * Linear scan — fine for <10K nodes.
@@ -166,7 +189,7 @@ export class BrainGraph {
   getActionSet(
     currentNodeId: string | null,
     visited: Set<string>,
-    seeds?: Array<{ nodeId: string }>,
+    seeds?: Array<{ nodeId: string; score?: number }>,
   ): TraversalAction[] {
     const actions: TraversalAction[] = [];
 
@@ -175,7 +198,7 @@ export class BrainGraph {
       if (seeds) {
         for (const seed of seeds) {
           if (!visited.has(seed.nodeId)) {
-            actions.push({ type: "traverse", targetNodeId: seed.nodeId });
+            actions.push({ type: "traverse", targetNodeId: seed.nodeId, seedScore: seed.score });
           }
         }
       }

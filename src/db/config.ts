@@ -22,6 +22,7 @@ export type OpenClawBrainRuntimeConfig = {
   minFiredPerQuery: number;
   maxDormantPercent: number;
   maxOrphanCount: number;
+  shadowMode: boolean;
   embeddingProvider: string;
   embeddingModel: string;
   embeddingBaseUrl: string;
@@ -230,6 +231,10 @@ export function resolveLcmConfig(
         (env.OPENCLAWBRAIN_MAX_ORPHAN_COUNT !== undefined
           ? parseInt(env.OPENCLAWBRAIN_MAX_ORPHAN_COUNT, 10)
           : undefined) ?? toNumber(pc.brainMaxOrphanCount) ?? 10,
+      shadowMode:
+        env.OPENCLAWBRAIN_SHADOW_MODE !== undefined
+          ? env.OPENCLAWBRAIN_SHADOW_MODE === "true"
+          : toBool(pc.brainShadowMode) ?? false,
       embeddingProvider:
         env.OPENCLAWBRAIN_EMBEDDING_PROVIDER?.trim()
         ?? toStr(pc.brainEmbeddingProvider)

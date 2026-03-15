@@ -9,6 +9,7 @@ function createBrainStub(overrides?: {
     isEnabled: () => true,
     isInitialized: () => true,
     isEmbeddingConfigured: () => true,
+    isShadowMode: () => false,
     noteAssemblyDecision: vi.fn(),
     query: overrides?.query ?? vi.fn(async () => null),
   };

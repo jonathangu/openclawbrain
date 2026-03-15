@@ -31,7 +31,13 @@ When a conversation grows beyond the model's context window, OpenClaw (just like
 
 Nothing is lost. Raw messages stay in the database. Summaries link back to their source messages. Agents can drill into any summary to recover the original detail.
 
-Today this repo ships the proven lossless-claw baseline while the learning layer is being rebuilt behind explicit module boundaries, tests, and operator commands. The README will only claim learned retrieval once it is wired end to end.
+Today this repo ships a working hybrid runtime:
+
+1. The LCM substrate still persists, compacts, and recalls transcript history.
+2. The brain runtime explicitly decides whether to route through learned retrieval or bypass with a concrete skip reason.
+3. Learned traversal now includes a seed-head policy over candidate seed regions, not just post-seed edge updates.
+4. `brain_teach` embeds taught nodes immediately, connects them into the recent route, and promotes a new immutable pack.
+5. The worker applies full-trajectory REINFORCE updates, decay, scanner/self/human/teacher labels, candidate-graph mutation replay, and replay-gated promotion.
 
 ## Quick start
 
@@ -152,6 +158,7 @@ Add an `openclawbrain` entry under `plugins.entries` in your OpenClaw config:
 | `OPENCLAWBRAIN_MAX_HOPS` | `8` | Hard traversal cap |
 | `OPENCLAWBRAIN_MAX_SEEDS` | `10` | Max seed nodes per query |
 | `OPENCLAWBRAIN_SEMANTIC_THRESHOLD` | `0.7` | Minimum seed similarity |
+| `OPENCLAWBRAIN_SHADOW_MODE` | `false` | Record brain routes and traces without injecting learned context into the prompt |
 | `OPENCLAWBRAIN_TRAINER_INTERVAL_MS` | `30000` | Background worker interval |
 
 ## Operator Commands
@@ -174,18 +181,22 @@ openclawbrain doctor
 - If embeddings are not configured, learned retrieval and `brain_teach` stay disabled.
 - If the background worker is unavailable, serving still uses the last promoted pack.
 - `brain_teach` now binds taught corrections to the active conversation when invoked from a live tool session.
+- Seed learning is persisted through a virtual `__START__` policy head and exposed in traces.
 
 ## Limitations
 
 - Embedding support currently targets OpenAI-compatible `/v1/embeddings` APIs.
-- The worker records structural mutation proposals but does not auto-promote them yet.
+- The worker is still an in-process plugin service, not a supervised subprocess.
+- Scanner harvesting is still heuristic and narrower than the long-term product plan.
+- Full OpenClaw end-to-end runtime validation still needs a live host-app smoke test pass.
 - Upstream `openclaw/plugin-sdk` type drift still affects full-repo `tsc --noEmit`.
 
 ## Roadmap
 
-- Finish mutation replay-gate application for connect/prune/inject.
+- Expand scanner/self harvesting beyond regex-backed heuristics into richer structured outcomes.
+- Externalize the worker into a supervised subprocess once the in-process alpha path is stable.
 - Extend embedding adapters beyond OpenAI-compatible providers.
-- Expand end-to-end runtime tests against a full OpenClaw install.
+- Expand end-to-end runtime tests and shadow-mode evals against a full OpenClaw install.
 
 ### Recommended starting configuration
 
@@ -244,6 +255,10 @@ For most long-lived LCM setups, a good starting point is:
 
 - [Configuration guide](docs/configuration.md)
 - [Architecture](docs/architecture.md)
+- [End State](END_STATE.md)
+- [RL Contract](RL_CONTRACT.md)
+- [Graph Schema](GRAPH_SCHEMA.md)
+- [Promotion Gates](PROMOTION_GATES.md)
 - [Agent tools](docs/agent-tools.md)
 - [TUI Reference](docs/tui.md)
 - [lcm-tui](tui/README.md)

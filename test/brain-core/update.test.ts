@@ -2,6 +2,7 @@ import { describe, it, expect } from "vitest";
 import { computeReinforceUpdates, updateBaseline, applyWeightUpdates } from "../../src/brain-core/update.js";
 import { BrainGraph } from "../../src/brain-core/graph.js";
 import type { Episode, TrajectoryStep, BrainNode, BrainEdge } from "../../src/brain-core/types.js";
+import { START_NODE_ID } from "../../src/brain-core/types.js";
 
 function makeNode(id: string): BrainNode {
   return {
@@ -99,6 +100,19 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
     }
   });
 
+  it("updates seed-phase transitions through the virtual start head", () => {
+    const episode = makeEpisode([makeStep(null, "b", 0.6)], 1.0);
+    const updates = computeReinforceUpdates(episode, 0.1, 0.0);
+
+    expect(updates).toEqual([
+      expect.objectContaining({
+        source: START_NODE_ID,
+        target: "b",
+      }),
+    ]);
+    expect(updates[0]?.delta).toBeGreaterThan(0);
+  });
+
   it("zero advantage produces no updates", () => {
     const episode = makeEpisode([makeStep("a", "b", 0.5)], 0.5);
     const updates = computeReinforceUpdates(episode, 0.1, 0.5); // baseline = reward
@@ -136,6 +150,26 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
       applyWeightUpdates(graph, [{ source: "a", target: "b", delta: 0.2 }]);
 
       const edge = graph.getEdge("a", "b");
+      expect(edge?.weight).toBeCloseTo(0.7);
+    });
+
+    it("creates valid updates for seed edges too", () => {
+      const graph = new BrainGraph();
+      graph.addNode(makeNode("b"));
+      graph.addEdge({
+        source: START_NODE_ID,
+        target: "b",
+        kind: "seed",
+        weight: 0.5,
+        prior: 0.5,
+        metadata: {},
+        decayedAt: Date.now(),
+        createdAt: Date.now(),
+      });
+
+      applyWeightUpdates(graph, [{ source: START_NODE_ID, target: "b", delta: 0.2 }]);
+
+      const edge = graph.getEdge(START_NODE_ID, "b");
       expect(edge?.weight).toBeCloseTo(0.7);
     });
 

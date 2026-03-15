@@ -269,6 +269,26 @@ export class BrainStore {
     }));
   }
 
+  countPendingLabelsBySource(): Record<RewardSource, number> {
+    const rows = this.db.prepare(`
+      SELECT source, COUNT(*) as count
+      FROM brain_labels
+      WHERE applied = 0
+      GROUP BY source
+    `).all() as Array<{ source: RewardSource; count: number }>;
+
+    const counts: Record<RewardSource, number> = {
+      human: 0,
+      self: 0,
+      scanner: 0,
+      teacher: 0,
+    };
+    for (const row of rows) {
+      counts[row.source] = row.count;
+    }
+    return counts;
+  }
+
   markLabelApplied(id: string): void {
     this.db.prepare(`UPDATE brain_labels SET applied = 1 WHERE id = ?`).run(id);
   }
@@ -346,6 +366,54 @@ export class BrainStore {
   resolveMutation(id: string, status: MutationStatus): void {
     this.db.prepare(`UPDATE brain_mutations SET status = ?, resolved_at = ? WHERE id = ?`)
       .run(status, Date.now(), id);
+  }
+
+  getMutationsByStatus(status: MutationStatus, limit = 50): MutationProposal[] {
+    const rows = this.db.prepare(`
+      SELECT * FROM brain_mutations
+      WHERE status = ?
+      ORDER BY created_at ASC
+      LIMIT ?
+    `).all(status, limit) as Record<string, unknown>[];
+    return rows.map((row) => ({
+      id: row.id as string,
+      kind: row.kind as MutationProposal["kind"],
+      proposal: JSON.parse((row.proposal as string) || "{}"),
+      evidence: row.evidence ? JSON.parse(row.evidence as string) : null,
+      expectedGain: (row.expected_gain as number) ?? null,
+      status: row.status as MutationStatus,
+      createdAt: row.created_at as number,
+      resolvedAt: (row.resolved_at as number) ?? null,
+    }));
+  }
+
+  countMutationsByStatus(): Record<MutationStatus, number> {
+    const rows = this.db.prepare(`
+      SELECT status, COUNT(*) as count
+      FROM brain_mutations
+      GROUP BY status
+    `).all() as Array<{ status: MutationStatus; count: number }>;
+
+    const counts: Record<MutationStatus, number> = {
+      pending: 0,
+      validated: 0,
+      promoted: 0,
+      rejected: 0,
+    };
+    for (const row of rows) {
+      counts[row.status] = row.count;
+    }
+    return counts;
+  }
+
+  countOrphanedTraceRows(): number {
+    const row = this.db.prepare(`
+      SELECT COUNT(*) as count
+      FROM brain_traces t
+      LEFT JOIN brain_episodes e ON e.id = t.episode_id
+      WHERE t.episode_id IS NOT NULL AND e.id IS NULL
+    `).get() as { count: number };
+    return row.count ?? 0;
   }
 
   // ─── Traces ───

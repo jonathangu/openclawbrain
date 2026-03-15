@@ -32,7 +32,10 @@ import {
   parseFileBlocks,
 } from "./large-files.js";
 import { RetrievalEngine } from "./retrieval.js";
-import { BrainAssemblerExtension } from "./brain-runtime/assembler-extension.js";
+import {
+  BrainAssemblerExtension,
+  type BrainAssembledContextResult,
+} from "./brain-runtime/assembler-extension.js";
 import { BrainService } from "./brain-runtime/service.js";
 import {
   ConversationStore,
@@ -1392,7 +1395,7 @@ export class LcmContextEngine implements ContextEngine {
           },
         };
       } else {
-        if (brainDecision && this.brainService && brainDecision.mode !== "use_brain") {
+        if (brainDecision && this.brainService) {
           this.brainService.noteAssemblyDecision({
             mode: brainDecision.mode,
             conversationId: conversation.conversationId,
@@ -1406,7 +1409,7 @@ export class LcmContextEngine implements ContextEngine {
         };
       }
 
-      const hybrid = this.brainAssembler
+      const hybrid: AssembleContextResult | BrainAssembledContextResult = this.brainAssembler
         ? await this.brainAssembler.augmentAssembly({
             conversationId: conversation.conversationId,
             tokenBudget,

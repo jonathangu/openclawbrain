@@ -112,6 +112,17 @@ describe("LabelHarvester", () => {
       expect(result).not.toBeNull();
       expect(result!.value).toBeGreaterThan(0);
     });
+
+    it("detects scanner workflow patterns", () => {
+      const { harvester } = setup();
+      const result = harvester.detectLabel(
+        "assistant",
+        "Runbook:\n1. Inspect CI logs\n2. Retry deployment with the known-safe flag",
+      );
+      expect(result).not.toBeNull();
+      expect(result!.source).toBe("scanner");
+      expect(result!.value).toBeGreaterThan(0);
+    });
   });
 
   describe("harvestFromMessage", () => {

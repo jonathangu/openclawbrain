@@ -53,6 +53,16 @@ const TOOL_SUCCESS_PATTERNS = [
   /\bdeployed\b/i,
   /\bcreated\s+(commit|pr|branch)\b/i,
   /\b\d+\s+pass(ed|ing)\b/i,
+  /\bfixed\b/i,
+  /\bresolved\b/i,
+];
+
+const SCANNER_POSITIVE_PATTERNS = [
+  /\n1\.\s.+\n2\.\s.+/i,
+  /\b(runbook|workflow|playbook)\b/i,
+  /\bissue\b.+\bpr\b.+\bcommit\b/i,
+  /\bexpand for details about\b/i,
+  /\bsummary bridge\b/i,
 ];
 
 export class LabelHarvester {
@@ -108,6 +118,9 @@ export class LabelHarvester {
     if (role === "tool" || role === "assistant") {
       const self = this.detectSelfLabel(content);
       if (self) return self;
+
+      const scanner = this.detectScannerLabel(content);
+      if (scanner) return scanner;
     }
 
     return null;
@@ -136,6 +149,15 @@ export class LabelHarvester {
     for (const pattern of TOOL_SUCCESS_PATTERNS) {
       if (pattern.test(content)) {
         return { value: 0.5, source: "self", reason: `tool success: ${pattern.source}` };
+      }
+    }
+    return null;
+  }
+
+  detectScannerLabel(content: string): HarvestResult | null {
+    for (const pattern of SCANNER_POSITIVE_PATTERNS) {
+      if (pattern.test(content)) {
+        return { value: 0.25, source: "scanner", reason: `scanner pattern: ${pattern.source}` };
       }
     }
     return null;

@@ -83,6 +83,25 @@ function buildBrainContextBlock(result: TraversalResult): string {
   return sections.join("\n");
 }
 
+function looksRecurrentOrProcedural(queryText: string): boolean {
+  const normalized = queryText.toLowerCase();
+  return [
+    /\bagain\b/,
+    /\bremember\b/,
+    /\blast time\b/,
+    /\bprevious(ly)?\b/,
+    /\busually\b/,
+    /\bworkflow\b/,
+    /\bplaybook\b/,
+    /\bhow do (we|i)\b/,
+    /\bwhat did we\b/,
+    /\bwhy did\b/,
+    /\bdeploy(ment)?\b/,
+    /\bfix\b/,
+    /\bcorrect\b/,
+  ].some((pattern) => pattern.test(normalized));
+}
+
 export class BrainAssemblerExtension {
   constructor(private brain: BrainService) {}
 
@@ -106,13 +125,18 @@ export class BrainAssemblerExtension {
     }
 
     const normalized = queryText.toLowerCase();
+    const recurrent = looksRecurrentOrProcedural(queryText);
     const looksStaticLookup =
-      queryText.length < 48
+      !recurrent
+      && queryText.length < 72
       && (normalized.startsWith("read ")
         || normalized.startsWith("show ")
         || normalized.startsWith("open ")
+        || normalized.startsWith("cat ")
+        || normalized.startsWith("grep ")
         || normalized.includes(".ts")
         || normalized.includes(".md")
+        || normalized.includes(".json")
         || normalized.includes("/"));
     if (!queryText || looksStaticLookup) {
       return { mode: "skip_short_static_lookup", queryText };
@@ -170,6 +194,25 @@ export class BrainAssemblerExtension {
       role: "user",
       content: buildBrainContextBlock(result),
     } as AgentMessage;
+    if (this.brain.isShadowMode()) {
+      this.brain.noteAssemblyDecision({
+        mode: "use_brain",
+        conversationId: params.conversationId,
+        episodeId: result.episode.id,
+        traceId: result.trace.id,
+        footer: `[brain shadow] ${result.trace.footer}`,
+      });
+
+      return {
+        ...params.assembled,
+        brainDecision: {
+          mode: "use_brain",
+          episodeId: result.episode.id,
+          traceId: result.trace.id,
+          footer: `[brain shadow] ${result.trace.footer}`,
+        },
+      };
+    }
     this.brain.noteAssemblyDecision({
       mode: "use_brain",
       conversationId: params.conversationId,

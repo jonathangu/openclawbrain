@@ -16,12 +16,11 @@ import type {
   TraversalState,
   TraversalAction,
   TrajectoryStep,
-  Episode,
-  DecisionTrace,
   PolicyParams,
   NodeKind,
+  SeedScore,
 } from "./types.js";
-import { DEFAULT_POLICY_PARAMS } from "./types.js";
+import { DEFAULT_POLICY_PARAMS, START_NODE_ID as START_NODE } from "./types.js";
 import type { BrainGraph } from "./graph.js";
 import { softmaxPolicy, sampleAction } from "./policy.js";
 
@@ -41,7 +40,7 @@ export interface TraverseResult {
   firedNodes: Array<{ nodeId: string; kind: NodeKind; content: string; tokenCount: number }>;
   vetoedNodes: Array<{ nodeId: string; reason: string }>;
   trajectory: TrajectoryStep[];
-  seedScores: Array<{ nodeId: string; score: number }>;
+  seedScores: SeedScore[];
   contextChars: number;
   footer: string;
 }
@@ -70,9 +69,9 @@ export function traverse(options: TraverseOptions): TraverseResult {
   };
 
   // Step 1: Seed selection
-  const seedScores = graph.seedByEmbedding(queryEmbedding, maxSeeds, semanticThreshold);
+  const seedCandidates = graph.seedByEmbedding(queryEmbedding, maxSeeds, semanticThreshold);
 
-  if (seedScores.length === 0) {
+  if (seedCandidates.length === 0) {
     return {
       firedNodes: [],
       vetoedNodes: [],
@@ -97,6 +96,7 @@ export function traverse(options: TraverseOptions): TraverseResult {
   const trajectory: TrajectoryStep[] = [];
   const firedNodes: Array<{ nodeId: string; kind: NodeKind; content: string; tokenCount: number }> = [];
   const vetoedNodes: Array<{ nodeId: string; reason: string }> = [];
+  let seedScores: SeedScore[] = [];
 
   // Step 2: Traversal loop
   for (let hop = 0; hop < maxHops; hop++) {
@@ -104,7 +104,7 @@ export function traverse(options: TraverseOptions): TraverseResult {
     const actions = graph.getActionSet(
       state.currentNodeId,
       state.visited,
-      state.currentNodeId === null ? seedScores : undefined,
+      state.currentNodeId === null ? seedCandidates : undefined,
     );
 
     if (actions.length === 0) break; // Dead end
@@ -132,6 +132,23 @@ export function traverse(options: TraverseOptions): TraverseResult {
 
     // Sample action (stochastic)
     const sampled = sampleAction(distribution);
+
+    if (state.currentNodeId === null) {
+      seedScores = seedCandidates.map((seed) => {
+        const traverseEntry = distribution.find(
+          (entry) => entry.action.type === "traverse" && entry.action.targetNodeId === seed.nodeId,
+        );
+        const seedEdge = graph.getEdge(START_NODE, seed.nodeId);
+        return {
+          nodeId: seed.nodeId,
+          priorScore: seed.score,
+          learnedScore: seedEdge ? seedEdge.weight * seedEdge.prior : 0,
+          policyScore: traverseEntry?.score ?? seed.score,
+          probability: traverseEntry?.probability ?? 0,
+          chosen: sampled.action.type === "traverse" && sampled.action.targetNodeId === seed.nodeId,
+        };
+      });
+    }
 
     // Find STOP probability for trace
     const stopEntry = distribution.find((d) => d.action.type === "stop");
@@ -196,7 +213,8 @@ export function traverse(options: TraverseOptions): TraverseResult {
 
   const contextChars = firedNodes.reduce((sum, n) => sum + n.content.length, 0);
 
-  const footer = `Brain · ${seedScores.length} seeds · ${state.hopCount} hops · ${firedNodes.length} fired · ${vetoedNodes.length} veto · ${contextChars} chars`;
+  const chosenSeed = seedScores.find((seed) => seed.chosen)?.nodeId ?? "none";
+  const footer = `Brain · ${seedScores.length} seeds · start ${chosenSeed} · ${state.hopCount} hops · ${firedNodes.length} fired · ${vetoedNodes.length} veto · ${contextChars} chars`;
 
   return {
     firedNodes,

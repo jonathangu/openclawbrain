@@ -6,11 +6,12 @@
  */
 
 import { randomUUID } from "node:crypto";
-import type { Episode, MutationProposal } from "./types.js";
+import type { Episode, MutationProposal, BrainNode } from "./types.js";
 import type { BrainGraph } from "./graph.js";
 import { cosineSimilarity } from "./graph.js";
 
 export interface BrainMutationPersistence {
+  insertNode(node: BrainNode): void;
   insertEdge(edge: {
     source: string;
     target: string;
@@ -42,7 +43,7 @@ export class BrainMutator {
 
     proposals.push(...this.proposePrunes());
     proposals.push(...this.proposeConnections(recentEpisodes));
-    proposals.push(...this.proposeMerges());
+    proposals.push(...this.proposeInjects(recentEpisodes));
 
     return proposals;
   }
@@ -113,29 +114,38 @@ export class BrainMutator {
     return proposals.slice(0, 3);
   }
 
-  /**
-   * Merge: near-duplicate nodes that always co-fire.
-   * Signal: cosine similarity > 0.9 and high co-fire rate.
-   */
-  private proposeMerges(): MutationProposal[] {
+  private proposeInjects(episodes: Episode[]): MutationProposal[] {
     const proposals: MutationProposal[] = [];
-    const nodes = this.graph.getAllNodes().filter((n) => n.embedding);
+    const seenQueries = new Set<string>();
 
-    for (let i = 0; i < nodes.length && proposals.length < 3; i++) {
-      for (let j = i + 1; j < nodes.length && proposals.length < 3; j++) {
-        const sim = cosineSimilarity(nodes[i].embedding!, nodes[j].embedding!);
-        if (sim > 0.92) {
-          proposals.push({
-            id: `bm_${randomUUID().slice(0, 8)}`,
-            kind: "merge",
-            proposal: { nodeA: nodes[i].id, nodeB: nodes[j].id, similarity: sim },
-            evidence: null,
-            expectedGain: 0.02,
-            status: "pending",
-            createdAt: Date.now(),
-            resolvedAt: null,
-          });
-        }
+    for (const episode of episodes) {
+      if (episode.reward === null || episode.reward < 0.6) {
+        continue;
+      }
+      if (seenQueries.has(episode.queryText)) {
+        continue;
+      }
+      seenQueries.add(episode.queryText);
+      if (episode.firedNodes.length < 2) {
+        continue;
+      }
+
+      proposals.push({
+        id: `bm_${randomUUID().slice(0, 8)}`,
+        kind: "inject",
+        proposal: {
+          nodeKind: "episode_anchor",
+          content: episode.queryText,
+          firedNodes: episode.firedNodes,
+        },
+        evidence: { episodeId: episode.id, reward: episode.reward },
+        expectedGain: 0.05,
+        status: "pending",
+        createdAt: Date.now(),
+        resolvedAt: null,
+      });
+      if (proposals.length >= 3) {
+        break;
       }
     }
 
@@ -145,14 +155,46 @@ export class BrainMutator {
   /**
    * Apply a validated mutation to the graph and store.
    */
-  applyMutation(proposal: MutationProposal): void {
+  private applyMutationToGraph(targetGraph: BrainGraph, proposal: MutationProposal): {
+    insertedEdges?: Array<{
+      source: string;
+      target: string;
+      kind: "learned";
+      weight: number;
+      prior: number;
+      metadata: Record<string, unknown>;
+      decayedAt: number;
+      createdAt: number;
+    }>;
+    deletedEdges?: Array<{ source: string; target: string; kind: string }>;
+    deletedNodes?: string[];
+    insertedNodes?: BrainNode[];
+  } {
     const p = proposal.proposal as Record<string, unknown>;
+    const result: {
+      insertedEdges?: Array<{
+        source: string;
+        target: string;
+        kind: "learned";
+        weight: number;
+        prior: number;
+        metadata: Record<string, unknown>;
+        decayedAt: number;
+        createdAt: number;
+      }>;
+      deletedEdges?: Array<{ source: string; target: string; kind: string }>;
+      deletedNodes?: string[];
+      insertedNodes?: BrainNode[];
+    } = {};
 
     switch (proposal.kind) {
       case "prune": {
-        this.graph.removeEdge(p.source as string, p.target as string, p.edgeKind as any);
-        this.persistence.deleteEdge(p.source as string, p.target as string, p.edgeKind as string);
-        this.log.info(`[brain] Applied prune: ${p.source}→${p.target}`);
+        targetGraph.removeEdge(p.source as string, p.target as string, p.edgeKind as any);
+        result.deletedEdges = [{
+          source: p.source as string,
+          target: p.target as string,
+          kind: p.edgeKind as string,
+        }];
         break;
       }
       case "connect": {
@@ -167,35 +209,73 @@ export class BrainMutator {
           decayedAt: now,
           createdAt: now,
         };
-        this.graph.addEdge(edge);
-        this.persistence.insertEdge(edge);
-        this.log.info(`[brain] Applied connect: ${p.nodeA}↔${p.nodeB}`);
+        targetGraph.addEdge(edge);
+        result.insertedEdges = [edge];
         break;
       }
-      case "merge": {
-        // Keep nodeA, redirect edges from nodeB to nodeA, delete nodeB
-        const nodeB = this.graph.getNode(p.nodeB as string);
-        if (nodeB) {
-          for (const edge of this.graph.getIncomingEdges(nodeB.id)) {
-            if (edge.source !== p.nodeA) {
-              const redirected = { ...edge, target: p.nodeA as string };
-              this.graph.addEdge(redirected);
-            }
-          }
-          for (const edge of this.graph.getOutgoingEdges(nodeB.id)) {
-            if (edge.target !== p.nodeA) {
-              const redirected = { ...edge, source: p.nodeA as string };
-              this.graph.addEdge(redirected);
-            }
-          }
-          this.graph.removeNode(nodeB.id);
-          this.persistence.deleteNode(nodeB.id);
-          this.log.info(`[brain] Applied merge: ${p.nodeB} → ${p.nodeA}`);
-        }
+      case "inject": {
+        const now = Date.now();
+        const node: BrainNode = {
+          id: `bn_${randomUUID().slice(0, 12)}`,
+          kind: "episode_anchor",
+          content: String(p.content ?? ""),
+          embedding: null,
+          sourceUri: null,
+          trust: "scanner",
+          tags: ["episode-anchor"],
+          tokenCount: Math.ceil(String(p.content ?? "").length / 4),
+          metadata: {
+            mutationId: proposal.id,
+            firedNodes: Array.isArray(p.firedNodes) ? p.firedNodes : [],
+          },
+          createdAt: now,
+          updatedAt: now,
+        };
+        targetGraph.addNode(node);
+        result.insertedNodes = [node];
+
+        const firedNodes = Array.isArray(p.firedNodes) ? p.firedNodes.filter((value): value is string => typeof value === "string") : [];
+        result.insertedEdges = firedNodes.map((firedNodeId) => {
+          const edge = {
+            source: node.id,
+            target: firedNodeId,
+            kind: "learned" as const,
+            weight: 0.4,
+            prior: 0.4,
+            metadata: { mutationId: proposal.id },
+            decayedAt: now,
+            createdAt: now,
+          };
+          targetGraph.addEdge(edge);
+          return edge;
+        });
         break;
       }
     }
 
+    return result;
+  }
+
+  applyToCandidateGraph(targetGraph: BrainGraph, proposal: MutationProposal): void {
+    this.applyMutationToGraph(targetGraph, proposal);
+  }
+
+  applyMutation(proposal: MutationProposal): void {
+    const result = this.applyMutationToGraph(this.graph, proposal);
+    for (const edge of result.insertedEdges ?? []) {
+      this.persistence.insertEdge(edge);
+    }
+    for (const node of result.insertedNodes ?? []) {
+      this.persistence.insertNode(node);
+    }
+    for (const edge of result.deletedEdges ?? []) {
+      this.persistence.deleteEdge(edge.source, edge.target, edge.kind);
+    }
+    for (const nodeId of result.deletedNodes ?? []) {
+      this.persistence.deleteNode(nodeId);
+    }
+
     this.persistence.resolveMutation(proposal.id, "promoted");
+    this.log.info(`[brain] Applied ${proposal.kind}: ${proposal.id}`);
   }
 }

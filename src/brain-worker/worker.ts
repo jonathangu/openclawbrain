@@ -1,5 +1,5 @@
-import type { BrainConfig } from "../brain-core/types.js";
-import { trustRank } from "../brain-core/types.js";
+import type { BrainConfig, BrainEdge } from "../brain-core/types.js";
+import { START_NODE_ID, trustRank } from "../brain-core/types.js";
 import type { BrainStore } from "../brain-store/store.js";
 import type { BrainGraph } from "../brain-core/graph.js";
 import type { BrainTeacher } from "../brain-core/teacher.js";
@@ -59,6 +59,7 @@ export class BrainWorker {
 
     this.running = true;
     try {
+      this.store.setTrainingState("worker_last_tick_at", Date.now());
       await this.processLabels();
       await this.runTeacher();
       await this.applyUpdates();
@@ -131,7 +132,22 @@ export class BrainWorker {
         const edge = this.graph.getEdge(update.source, update.target);
         if (edge) {
           this.store.updateEdgeWeight(edge.source, edge.target, edge.kind, edge.weight);
+          continue;
         }
+
+        const now = Date.now();
+        const createdEdge: BrainEdge = {
+          source: update.source,
+          target: update.target,
+          kind: update.source === START_NODE_ID ? "seed" : "learned",
+          weight: Math.max(-10, Math.min(10, update.delta)),
+          prior: 0.5,
+          metadata: { createdBy: "reinforce" },
+          decayedAt: now,
+          createdAt: now,
+        };
+        this.graph.addEdge(createdEdge);
+        this.store.insertEdge(createdEdge);
       }
 
       this.store.markEpisodeUpdated(episode.id);
@@ -166,18 +182,38 @@ export class BrainWorker {
 
   private async checkPromotion(): Promise<void> {
     const recentEpisodes = this.store.getRecentEpisodes(this.config.replayEpisodeCount);
-    const health = computeHealth(this.graph, recentEpisodes, this.store.getCurrentPackVersion() ?? 0);
+    const pendingMutations = this.store.getMutationsByStatus("pending", 5);
+    const candidateGraph = this.graph.clone();
+    const candidateMutations = pendingMutations.filter((proposal) =>
+      proposal.kind === "connect" || proposal.kind === "prune" || proposal.kind === "inject",
+    );
+    for (const proposal of candidateMutations) {
+      this.mutator.applyToCandidateGraph(candidateGraph, proposal);
+    }
+
     const gate = this.packManager.replayGate(recentEpisodes, {
       minFiredPerQuery: this.config.minFiredPerQuery,
       maxDormantPercent: this.config.maxDormantPercent,
       maxOrphanCount: this.config.maxOrphanCount,
-    });
+    }, candidateGraph);
 
     if (!gate.passed) {
+      this.store.setTrainingState("last_replay_failure_reason", gate.reason);
       this.log.warn(`[brain] Replay gate blocked promotion: ${gate.reason}`);
+      for (const proposal of candidateMutations) {
+        this.store.resolveMutation(proposal.id, "rejected");
+      }
       return;
     }
 
+    for (const proposal of candidateMutations) {
+      this.mutator.applyMutation(proposal);
+    }
+    const health = computeHealth(this.graph, recentEpisodes, this.store.getCurrentPackVersion() ?? 0);
+    this.store.setTrainingState("last_promotion_reason", candidateMutations.length > 0
+      ? `candidate graph promoted with ${candidateMutations.length} mutation(s)`
+      : "weights and decay passed replay gate");
+    this.store.setTrainingState("last_replay_failure_reason", "");
     await this.hooks.onPromotionReady?.({
       healthJson: JSON.stringify(health),
     });

@@ -57,6 +57,7 @@ describe("mutator", () => {
 
     const mutator = new BrainMutator(
       {
+        insertNode: vi.fn(),
         insertEdge: vi.fn(),
         deleteNode: vi.fn(),
         deleteEdge: vi.fn(),
@@ -82,6 +83,7 @@ describe("mutator", () => {
     graph.addEdge(makeEdge("a", "b", 0.01, 0.01));
 
     const persistence = {
+      insertNode: vi.fn(),
       insertEdge: vi.fn(),
       deleteNode: vi.fn(),
       deleteEdge: vi.fn(),
@@ -93,5 +95,29 @@ describe("mutator", () => {
 
     mutator.applyMutation(proposal!);
     expect(persistence.deleteEdge).toHaveBeenCalled();
+  });
+
+  it("proposes inject mutations for strong rewarded episodes", () => {
+    const graph = new BrainGraph();
+    graph.addNode(makeNode("a", new Float32Array([1, 0, 0])));
+    graph.addNode(makeNode("b", new Float32Array([1, 0, 0])));
+
+    const mutator = new BrainMutator(
+      {
+        insertNode: vi.fn(),
+        insertEdge: vi.fn(),
+        deleteNode: vi.fn(),
+        deleteEdge: vi.fn(),
+        resolveMutation: vi.fn(),
+      },
+      graph,
+      { info: vi.fn() },
+    );
+
+    const proposals = mutator.proposeMutations([
+      makeEpisode(["a", "b"], 0.9),
+    ]);
+
+    expect(proposals.some((proposal) => proposal.kind === "inject")).toBe(true);
   });
 });

@@ -66,6 +66,7 @@ function createDeps(brainRoot: string): LcmDependencies {
         minFiredPerQuery: 1,
         maxDormantPercent: 0.3,
         maxOrphanCount: 10,
+        shadowMode: false,
         embeddingProvider: "openai",
         embeddingModel: "text-embedding-3-small",
         embeddingBaseUrl: "https://example.invalid/v1",
