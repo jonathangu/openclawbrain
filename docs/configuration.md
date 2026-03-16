@@ -2,20 +2,29 @@
 
 This guide covers the practical operator setup for **OpenClawBrain v2**.
 
-For repo truth, read:
+If you want the repo's exact truth contract first, read:
 - `README.md`
 - `docs/RELEASE_CONTRACT.md`
-- `docs/END_STATE.md`
+- `docs/EVIDENCE.md`
 
-## Quick start
+## Happy-path operator flow
 
-Install the plugin with OpenClaw's plugin installer:
+1. install the plugin with the OpenClaw plugin installer
+2. configure embeddings and choose a `brainRoot`
+3. prefer `brainWorkerMode=child`
+4. run `openclawbrain init <workspace>`
+5. check `openclawbrain status`
+6. run the validation harnesses appropriate to the claim you want to make
+
+## Install
+
+Published package:
 
 ```bash
 openclaw plugins install @jonathangu/openclawbrain
 ```
 
-If you're running from a local OpenClaw checkout:
+From a local OpenClaw checkout:
 
 ```bash
 pnpm openclaw plugins install @jonathangu/openclawbrain
@@ -27,13 +36,15 @@ For local development, link your working copy:
 openclaw plugins install --link /path/to/openclawbrain
 ```
 
-`openclaw plugins install` handles plugin registration, enabling, and compatible slot selection automatically.
+The plugin installer is the supported install boundary.
 
-## Context engine slot
+## Important host-seam truth
 
-On current OpenClaw hosts, **do not manually write** `plugins.slots.contextEngine` for OpenClawBrain. The linked/package installer is the supported path, and OpenClawBrain now falls back to hook-based integration on hosts where the older `registerContextEngine` seam is gone.
+On current OpenClaw hosts, **do not manually write** `plugins.slots.contextEngine` for OpenClawBrain.
 
-If you are debugging an older host build, treat any manual slot override as version-specific surgery rather than a stable setup step.
+That older seam is not the stable install story anymore. OpenClawBrain now uses a hook-based compatibility bridge on hosts where `api.registerContextEngine` is gone.
+
+If you are debugging an older host build, treat any manual slot override as version-specific surgery rather than normal operator setup.
 
 ## Recommended starting configuration
 
@@ -66,7 +77,7 @@ Why these defaults:
 
 ## Initialization
 
-The transcript layer works immediately after install. Learned retrieval needs an explicit init:
+The transcript-memory layer works immediately after install. Learned retrieval needs an explicit init pass:
 
 ```bash
 openclawbrain init /path/to/workspace
@@ -76,7 +87,7 @@ That creates the initial graph, writes `state.db`, snapshots pack `v000001`, and
 
 ## Embeddings
 
-OpenClawBrain currently targets tested OpenAI-compatible embeddings APIs.
+OpenClawBrain currently targets tested OpenAI-compatible `/v1/embeddings` APIs.
 
 ### Local Ollama
 
@@ -95,7 +106,11 @@ OpenClawBrain currently targets tested OpenAI-compatible embeddings APIs.
 }
 ```
 
-This defaults to `http://127.0.0.1:11434/v1`.
+Default base URL:
+
+```text
+http://127.0.0.1:11434/v1
+```
 
 ### Remote OpenAI-compatible endpoint
 
@@ -115,7 +130,7 @@ This defaults to `http://127.0.0.1:11434/v1`.
 }
 ```
 
-If the endpoint requires auth, provide `OPENCLAWBRAIN_EMBEDDING_API_KEY`.
+If the remote endpoint requires auth, set `OPENCLAWBRAIN_EMBEDDING_API_KEY`.
 
 ## Important environment variables
 
@@ -129,8 +144,19 @@ If the endpoint requires auth, provide `OPENCLAWBRAIN_EMBEDDING_API_KEY`.
 | `OPENCLAWBRAIN_EMBEDDING_PROVIDER` | Embedding provider (`openai`, `openai-resp`, `ollama`) |
 | `OPENCLAWBRAIN_EMBEDDING_MODEL` | Embedding model used for init/retrieval/teach |
 | `OPENCLAWBRAIN_EMBEDDING_BASE_URL` | Optional embeddings API base URL |
-| `OPENCLAWBRAIN_EMBEDDING_API_KEY` | Optional explicit auth for remote embedding endpoints |
+| `OPENCLAWBRAIN_EMBEDDING_API_KEY` | Optional auth for remote embedding endpoints |
 | `OPENCLAWBRAIN_SHADOW_MODE` | Record routing without injecting learned context |
+| `OPENCLAWBRAIN_WORKER_MODE` | Worker mode; prefer `child` for the real operator boundary |
+
+## Child-worker boundary
+
+`brainWorkerMode=child` is the recommended serving boundary.
+
+Why:
+- serving reads immutable promoted packs
+- the learner runs in a separate supervised child process
+- status/doctor surfaces can report PID, heartbeat, restart, and exit truth clearly
+- `in_process` remains useful for development or debugging, but it should not be treated as the production operator boundary
 
 ## Operator commands
 
@@ -148,13 +174,17 @@ openclawbrain doctor
 
 ## Validation commands
 
-Deterministic runtime proof harness:
+### Deterministic runtime proof harness
 
 ```bash
-node scripts/validate-brain-runtime-behavior.ts
+pnpm exec tsx scripts/validate-brain-runtime-behavior.ts
 ```
 
-Disposable host-surface harness:
+Use this when you want a real signal on:
+- immediate post-teach retrieval
+- serve-from-last-promoted-pack after worker failure
+
+### Disposable host-surface harness
 
 ```bash
 node scripts/validate-openclaw-install.mjs --setup-only
@@ -164,6 +194,21 @@ OPENCLAWBRAIN_VALIDATION_EMBEDDING_MODEL=bge-large:latest \
 OPENCLAWBRAIN_VALIDATION_MODEL=ollama/qwen2.5:7b-instruct \
 node scripts/validate-openclaw-install.mjs
 ```
+
+Current honest status:
+- sterile preflight/config seam repairs are real
+- deterministic runtime proof is real
+- the full sterile host harness is still not frozen end to end because it currently stalls during `openclawbrain init`
+
+So treat the host harness as active proof work, not a closed release gate.
+
+## Fallback behavior
+
+- if the brain has not been initialized, OpenClawBrain serves transcript-memory context only
+- if embeddings are not configured, learned retrieval and `brain_teach` stay disabled
+- local loopback embedding endpoints do not require a bearer token by default
+- if the worker is unavailable, serving still uses the last promoted pack
+- `openclawbrain status` and `openclawbrain doctor` expose embedding and worker truth so operator state stays visible
 
 ## Session reset note
 
