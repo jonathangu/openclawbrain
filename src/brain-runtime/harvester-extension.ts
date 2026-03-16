@@ -28,6 +28,7 @@ export class LabelHarvester {
    */
   async harvestFromMessage(params: {
     conversationId: number;
+    messageId?: number;
     episodeId?: string;
     role: string;
     content: string;
@@ -71,6 +72,7 @@ export class LabelHarvester {
         contentSnippet: params.content.slice(0, 240),
         metadata: {
           harvestedFromRole: params.role,
+          messageId: params.messageId ?? null,
           explicitEpisodeId,
           resolvedEpisodeId,
           matchedEpisodeId: matchingEpisode.id,
@@ -79,6 +81,7 @@ export class LabelHarvester {
           evidenceIndex: index,
           evidenceCount: results.length,
           messagePartCount: params.messageParts?.length ?? 0,
+          ...(result.metadata ?? {}),
         },
       });
 

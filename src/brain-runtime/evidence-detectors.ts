@@ -5,6 +5,7 @@ import { detectSelfEvidence, detectStructuredSelfEvidence } from "../brain-harve
 
 export type HarvestMessagePart = {
   partType: string;
+  ordinal?: number;
   textContent?: string | null;
   toolCallId?: string | null;
   toolName?: string | null;
@@ -20,6 +21,7 @@ export interface HarvestResult {
   confidence?: number;
   kind: BrainEvidenceKind;
   extractor?: string;
+  metadata?: Record<string, unknown>;
 }
 
 export function detectEvidenceBatch(

@@ -1263,6 +1263,7 @@ export class LcmContextEngine implements ContextEngine {
     if (this.brainService) {
       await this.brainService.harvestFromMessage({
         conversationId,
+        messageId: msgRecord.messageId,
         episodeId: params.brainEpisodeId ?? this.pendingBrainEpisodeBySession.get(sessionId),
         role: stored.role,
         content: stored.content,

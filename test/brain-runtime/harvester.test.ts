@@ -111,7 +111,11 @@ describe("LabelHarvester", () => {
       const result = harvester.detectLabel("tool", "", [
         {
           partType: "tool",
-          toolOutput: JSON.stringify({ ok: false, code: "ENOENT" }),
+          ordinal: 2,
+          toolCallId: "call_1",
+          toolName: "bash",
+          toolInput: JSON.stringify({ command: "pnpm test" }),
+          toolOutput: JSON.stringify({ ok: false, code: "ENOENT", exitCode: 2, filesTouched: ["docs/EVIDENCE.md"] }),
           metadata: JSON.stringify({ originalRole: "toolResult", rawType: "tool_result" }),
         },
       ]);
@@ -119,6 +123,15 @@ describe("LabelHarvester", () => {
       expect(result!.source).toBe("self");
       expect(result!.value).toBeLessThan(0);
       expect(result!.extractor).toBe("structured_tool_result");
+      expect(result!.metadata).toMatchObject({
+        partOrdinal: 2,
+        toolCallId: "call_1",
+        toolName: "bash",
+        command: "pnpm test",
+        exitCode: 2,
+        filesTouched: ["docs/EVIDENCE.md"],
+        rawType: "tool_result",
+      });
     });
 
     it("detects structured tool-result success without relying on text keywords", () => {
@@ -294,12 +307,17 @@ describe("LabelHarvester", () => {
 
       await harvester.harvestFromMessage({
         conversationId: 7,
+        messageId: 42,
         role: "tool",
         content: "",
         messageParts: [
           {
             partType: "tool",
-            toolOutput: JSON.stringify({ ok: false, code: "ENOENT" }),
+            ordinal: 1,
+            toolCallId: "call_1",
+            toolName: "bash",
+            toolInput: JSON.stringify({ command: "pnpm test" }),
+            toolOutput: JSON.stringify({ ok: false, code: "ENOENT", exitCode: 2, filesTouched: ["docs/EVIDENCE.md"], artifactPath: "docs/evidence/run.txt" }),
             metadata: JSON.stringify({ originalRole: "toolResult", rawType: "tool_result" }),
           },
         ],
@@ -309,8 +327,18 @@ describe("LabelHarvester", () => {
       expect(evidence).toHaveLength(1);
       expect(evidence[0]?.episodeId).toBe("ep_pending");
       expect(evidence[0]?.source).toBe("self");
-      expect(evidence[0]?.metadata?.extractor).toBe("structured_tool_result");
-      expect(evidence[0]?.metadata?.messagePartCount).toBe(1);
+      expect(evidence[0]?.metadata).toMatchObject({
+        messageId: 42,
+        extractor: "structured_tool_result",
+        messagePartCount: 1,
+        partOrdinal: 1,
+        toolCallId: "call_1",
+        toolName: "bash",
+        command: "pnpm test",
+        exitCode: 2,
+        filesTouched: ["docs/EVIDENCE.md"],
+        artifactPath: "docs/evidence/run.txt",
+      });
     });
   });
 });

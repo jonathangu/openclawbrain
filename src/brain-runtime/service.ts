@@ -599,11 +599,13 @@ export class BrainService {
 
   async harvestFromMessage(params: {
     conversationId: number;
+    messageId?: number;
     episodeId?: string;
     role: string;
     content: string;
     messageParts?: Array<{
       partType: string;
+      ordinal?: number;
       textContent?: string | null;
       toolCallId?: string | null;
       toolName?: string | null;

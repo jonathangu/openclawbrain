@@ -32,11 +32,14 @@ function parseJson(value: string | null | undefined): unknown {
   }
 }
 
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
 function readPartMetadata(part: HarvestMessagePart): Record<string, unknown> {
-  const parsed = parseJson(part.metadata);
-  return parsed && typeof parsed === "object" && !Array.isArray(parsed)
-    ? parsed as Record<string, unknown>
-    : {};
+  return asRecord(parseJson(part.metadata)) ?? {};
 }
 
 function isStructuredToolResultPart(part: HarvestMessagePart): boolean {
@@ -52,11 +55,133 @@ function isStructuredToolResultPart(part: HarvestMessagePart): boolean {
     || rawType === "function_call_output";
 }
 
+function readString(record: Record<string, unknown> | null, keys: string[]): string | undefined {
+  if (!record) {
+    return undefined;
+  }
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value.trim();
+    }
+  }
+  return undefined;
+}
+
+function readNumber(record: Record<string, unknown> | null, keys: string[]): number | undefined {
+  if (!record) {
+    return undefined;
+  }
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+  }
+  return undefined;
+}
+
+function readStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0);
+  }
+  if (typeof value === "string" && value.trim().length > 0) {
+    return [value.trim()];
+  }
+  return [];
+}
+
+function readCommand(value: unknown): string | undefined {
+  if (typeof value === "string" && value.trim().length > 0) {
+    return value.trim();
+  }
+  if (Array.isArray(value)) {
+    const parts = value.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0);
+    return parts.length > 0 ? parts.join(" ") : undefined;
+  }
+  return undefined;
+}
+
+function extractCommand(input: unknown, output: unknown): string | undefined {
+  const inputRecord = asRecord(input);
+  const outputRecord = asRecord(output);
+
+  return readString(inputRecord, ["command", "cmd", "shellCommand"])
+    ?? readCommand(inputRecord?.args)
+    ?? readString(outputRecord, ["command", "cmd", "shellCommand"])
+    ?? readCommand(outputRecord?.args)
+    ?? (typeof input === "string" && input.trim().length > 0 ? input.trim() : undefined);
+}
+
+function extractFilesTouched(input: unknown, output: unknown): string[] | undefined {
+  const inputRecord = asRecord(input);
+  const outputRecord = asRecord(output);
+  const collected = new Set<string>();
+
+  for (const value of [
+    outputRecord?.filesTouched,
+    outputRecord?.changedFiles,
+    outputRecord?.files,
+    outputRecord?.paths,
+    inputRecord?.filesTouched,
+    inputRecord?.files,
+    inputRecord?.paths,
+    readString(outputRecord, ["filePath", "path"]),
+    readString(inputRecord, ["filePath", "path"]),
+  ]) {
+    for (const item of readStringArray(value)) {
+      collected.add(item);
+    }
+  }
+
+  return collected.size > 0 ? Array.from(collected) : undefined;
+}
+
+function extractArtifactPath(output: unknown): string | undefined {
+  const record = asRecord(output);
+  return readString(record, ["artifactPath", "outputPath", "reportPath", "logPath"]);
+}
+
+function buildStructuredToolMetadata(part: HarvestMessagePart): Record<string, unknown> {
+  const metadata = readPartMetadata(part);
+  const rawType = typeof metadata.rawType === "string" ? metadata.rawType : null;
+  const parsedInput = parseJson(part.toolInput);
+  const parsedOutput = parseJson(part.toolOutput);
+  const result: Record<string, unknown> = {
+    toolCallId: part.toolCallId ?? null,
+    toolName: part.toolName ?? null,
+    partOrdinal: part.ordinal ?? null,
+    rawType,
+  };
+
+  const exitCode = readNumber(asRecord(parsedOutput), ["exitCode"]);
+  if (exitCode !== undefined) {
+    result.exitCode = exitCode;
+  }
+
+  const command = extractCommand(parsedInput, parsedOutput);
+  if (command) {
+    result.command = command;
+  }
+
+  const filesTouched = extractFilesTouched(parsedInput, parsedOutput);
+  if (filesTouched) {
+    result.filesTouched = filesTouched;
+  }
+
+  const artifactPath = extractArtifactPath(parsedOutput);
+  if (artifactPath) {
+    result.artifactPath = artifactPath;
+  }
+
+  return result;
+}
+
 function classifyStructuredToolOutput(output: unknown): { ok: boolean; reason: string } | null {
-  if (!output || typeof output !== "object" || Array.isArray(output)) {
+  const record = asRecord(output);
+  if (!record) {
     return null;
   }
-  const record = output as Record<string, unknown>;
 
   if (record.isError === true || record.error !== undefined || record.errors !== undefined) {
     return { ok: false, reason: "structured tool output indicates error" };
@@ -89,6 +214,7 @@ export function detectStructuredSelfEvidence(messageParts?: HarvestMessagePart[]
     }
 
     const metadata = readPartMetadata(part);
+    const evidenceMetadata = buildStructuredToolMetadata(part);
     if (metadata.isError === true) {
       return {
         value: -0.5,
@@ -97,6 +223,7 @@ export function detectStructuredSelfEvidence(messageParts?: HarvestMessagePart[]
         confidence: 0.9,
         kind: "self_result",
         extractor: "structured_tool_result",
+        metadata: evidenceMetadata,
       };
     }
 
@@ -112,6 +239,7 @@ export function detectStructuredSelfEvidence(messageParts?: HarvestMessagePart[]
       confidence: 0.9,
       kind: "self_result",
       extractor: "structured_tool_result",
+      metadata: evidenceMetadata,
     };
   }
 
