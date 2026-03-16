@@ -32,6 +32,7 @@ export function detectScannerEvidence(content: string): HarvestResult | null {
         reason: `scanner marker: ${pattern.source}`,
         confidence: 0.7,
         kind: "scanner_signal",
+        extractor: "scanner_marker",
       };
     }
   }
@@ -92,5 +93,6 @@ export function detectScannerEvidence(content: string): HarvestResult | null {
     reason: `scanner heuristic: ${signals.join(", ")}`,
     confidence: Math.min(0.8, 0.5 + signals.length * 0.05),
     kind: "scanner_signal",
+    extractor: "scanner_heuristic",
   };
 }

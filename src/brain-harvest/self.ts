@@ -30,6 +30,7 @@ export function detectSelfEvidence(content: string): HarvestResult | null {
         reason: `tool failure: ${pattern.source}`,
         confidence: 0.7,
         kind: "self_result",
+        extractor: "self_pattern",
       };
     }
   }
@@ -41,6 +42,7 @@ export function detectSelfEvidence(content: string): HarvestResult | null {
         reason: `tool success: ${pattern.source}`,
         confidence: 0.7,
         kind: "self_result",
+        extractor: "self_pattern",
       };
     }
   }

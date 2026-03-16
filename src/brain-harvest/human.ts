@@ -26,6 +26,7 @@ export function detectHumanEvidence(content: string): HarvestResult | null {
         reason: `negative pattern: ${pattern.source}`,
         confidence: 0.9,
         kind: "human_feedback",
+        extractor: "human_pattern",
       };
     }
   }
@@ -37,6 +38,7 @@ export function detectHumanEvidence(content: string): HarvestResult | null {
         reason: `positive pattern: ${pattern.source}`,
         confidence: 0.9,
         kind: "human_feedback",
+        extractor: "human_pattern",
       };
     }
   }

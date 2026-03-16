@@ -41,6 +41,7 @@ Primary surfaces:
 - `test/brain-core/update.test.ts`
 - `test/brain-core/seed-policy.test.ts`
 - `test/brain-runtime/service.test.ts`
+- `test/brain-runtime/harvester.test.ts`
 - `src/brain-runtime/worker-supervisor.ts`
 - `src/brain-worker/protocol.ts`
 - `scripts/validate-brain-runtime-behavior.ts`
@@ -52,6 +53,7 @@ Required claims:
 - immediate `brain_teach` retrieval works
 - serve-from-last-promoted-pack survives worker crash at runtime level
 - child-worker supervision records restart truth, reload acknowledgements, stale-lease takeover, and second-writer refusal
+- raw harvesting preserves multiple concurrent evidence signals with extractor metadata before worker-side trust resolution collapses them into labels
 
 ### Level 2 — Recorded replay proofs
 

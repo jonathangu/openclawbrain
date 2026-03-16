@@ -8,7 +8,7 @@
  */
 
 import type { BrainStore } from "../brain-store/store.js";
-import { detectEvidence, type HarvestResult } from "./evidence-detectors.js";
+import { detectEvidence, detectEvidenceBatch, type HarvestResult } from "./evidence-detectors.js";
 
 export class LabelHarvester {
   constructor(
@@ -27,8 +27,8 @@ export class LabelHarvester {
     role: string;
     content: string;
   }): Promise<void> {
-    const result = this.detectLabel(params.role, params.content);
-    if (!result) return;
+    const results = this.detectLabels(params.role, params.content);
+    if (results.length === 0) return;
 
     const explicitEpisodeId = params.episodeId ?? null;
     const resolvedEpisodeId = explicitEpisodeId
@@ -53,30 +53,39 @@ export class LabelHarvester {
         : "resolver"
       : "recent_conversation_fallback";
 
-    this.store.insertEvidence({
-      episodeId: matchingEpisode.id,
-      conversationId: params.conversationId,
-      source: result.source,
-      kind: result.kind,
-      value: result.value,
-      confidence: result.confidence,
-      reason: result.reason,
-      contentSnippet: params.content.slice(0, 240),
-      metadata: {
-        harvestedFromRole: params.role,
-        explicitEpisodeId,
-        resolvedEpisodeId,
-        matchedEpisodeId: matchingEpisode.id,
-        attributionMode,
-      },
-    });
+    for (const [index, result] of results.entries()) {
+      this.store.insertEvidence({
+        episodeId: matchingEpisode.id,
+        conversationId: params.conversationId,
+        source: result.source,
+        kind: result.kind,
+        value: result.value,
+        confidence: result.confidence,
+        reason: result.reason,
+        contentSnippet: params.content.slice(0, 240),
+        metadata: {
+          harvestedFromRole: params.role,
+          explicitEpisodeId,
+          resolvedEpisodeId,
+          matchedEpisodeId: matchingEpisode.id,
+          attributionMode,
+          extractor: result.extractor ?? null,
+          evidenceIndex: index,
+          evidenceCount: results.length,
+        },
+      });
 
-    this.log.info(
-      `[brain] Harvested ${result.source} evidence: ${result.value.toFixed(2)} for episode ${matchingEpisode.id} (${result.reason})`,
-    );
+      this.log.info(
+        `[brain] Harvested ${result.source} evidence: ${result.value.toFixed(2)} for episode ${matchingEpisode.id} (${result.reason})`,
+      );
+    }
   }
 
   detectLabel(role: string, content: string): HarvestResult | null {
     return detectEvidence(role, content);
+  }
+
+  detectLabels(role: string, content: string): HarvestResult[] {
+    return detectEvidenceBatch(role, content);
   }
 }

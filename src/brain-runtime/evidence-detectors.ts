@@ -9,16 +9,40 @@ export interface HarvestResult {
   reason: string;
   confidence?: number;
   kind: BrainEvidenceKind;
+  extractor?: string;
 }
 
-export function detectEvidence(role: string, content: string): HarvestResult | null {
+export function detectEvidenceBatch(role: string, content: string): HarvestResult[] {
   if (role === "user") {
-    return detectHumanEvidence(content);
+    const human = detectHumanEvidence(content);
+    return human ? [human] : [];
   }
 
   if (role === "tool" || role === "assistant") {
-    return detectSelfEvidence(content) ?? detectScannerEvidence(content);
+    const results = [
+      detectSelfEvidence(content),
+      detectScannerEvidence(content),
+    ].filter((result): result is HarvestResult => result !== null);
+
+    const deduped = new Map<string, HarvestResult>();
+    for (const result of results) {
+      const key = [
+        result.source,
+        result.kind,
+        result.value,
+        result.reason,
+        result.extractor ?? "",
+      ].join("::");
+      if (!deduped.has(key)) {
+        deduped.set(key, result);
+      }
+    }
+    return Array.from(deduped.values());
   }
 
-  return null;
+  return [];
+}
+
+export function detectEvidence(role: string, content: string): HarvestResult | null {
+  return detectEvidenceBatch(role, content)[0] ?? null;
 }

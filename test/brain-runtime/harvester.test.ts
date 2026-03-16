@@ -134,6 +134,17 @@ describe("LabelHarvester", () => {
       expect(result!.source).toBe("scanner");
       expect(result!.reason).toContain("scanner heuristic");
     });
+
+    it("detects multiple evidence signals from one assistant message when both are present", () => {
+      const { harvester } = setup();
+      const results = harvester.detectLabels(
+        "assistant",
+        "Successfully deployed to production.\n\nRunbook:\n1. Inspect CI logs\n2. Retry deployment with the known-safe flag",
+      );
+      expect(results).toHaveLength(2);
+      expect(results.map((result) => result.source).sort()).toEqual(["scanner", "self"]);
+      expect(results.map((result) => result.extractor).sort()).toEqual(["scanner_heuristic", "self_pattern"]);
+    });
   });
 
   describe("harvestFromMessage", () => {
@@ -217,6 +228,29 @@ describe("LabelHarvester", () => {
       expect(evidence[0]?.kind).toBe("human_feedback");
       expect(evidence[0]?.metadata?.attributionMode).toBe("recent_conversation_fallback");
       expect(evidence[0]?.metadata?.matchedEpisodeId).toBe("ep_target");
+    });
+
+    it("persists multiple raw evidence rows from one harvested assistant message", async () => {
+      const { store, harvester } = setup((conversationId) => conversationId === 7 ? "ep_pending" : null);
+      store.insertEpisode(makeEpisode({
+        id: "ep_pending",
+        conversationId: 7,
+        createdAt: Date.now(),
+      }));
+
+      await harvester.harvestFromMessage({
+        conversationId: 7,
+        role: "assistant",
+        content: "Successfully deployed to production.\n\n## Deployment checklist\n- Inspect docs/DEPLOY.md\n- Run `pnpm test`\n- Retry deployment only after verification",
+      });
+
+      const evidence = store.getPendingEvidence();
+      expect(evidence).toHaveLength(2);
+      expect(evidence.every((row) => row.episodeId === "ep_pending")).toBe(true);
+      expect(evidence.map((row) => row.source).sort()).toEqual(["scanner", "self"]);
+      expect(evidence.map((row) => row.metadata?.extractor).sort()).toEqual(["scanner_heuristic", "self_pattern"]);
+      expect(evidence.map((row) => row.metadata?.evidenceCount)).toEqual([2, 2]);
+      expect(evidence.map((row) => row.metadata?.attributionMode)).toEqual(["resolver", "resolver"]);
     });
   });
 });
