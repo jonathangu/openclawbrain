@@ -211,7 +211,7 @@ openclawbrain doctor
 This repo is already beyond “foundation only,” but it is **not** yet operationally validated end to end.
 
 - Embedding support currently targets tested OpenAI-compatible `/v1/embeddings` APIs, including local Ollama-style endpoints.
-- Child-worker mode is implemented and real, but the lifecycle boundary still needs cleaner supervision, restart accounting, and harder operator truth.
+- Child-worker mode now runs behind a dedicated supervisor with explicit protocol messages, restart accounting, reload acknowledgements, and stronger status/doctor truth; the remaining operator-proof gap is on the host-surface seam, not the learner boundary itself.
 - Structured evidence harvesting now exists end to end (raw evidence → resolved labels with explicit episode attribution), but source detection still leans on heuristics more than the intended richer human/self/scanner evidence flow.
 - Deterministic session-bound `brain_teach` proof now exists, but the current raw host lane is blocked by stale OpenClaw seam drift (`plugins.slots.contextEngine` / `api.registerContextEngine`) and the final narrow worker-down host claim is still unfrozen.
 - Replay-gated promotion exists, but mutation evaluation has not yet reached the intended bundle-level replay contract.
@@ -221,11 +221,10 @@ This repo is already beyond “foundation only,” but it is **not** yet operati
 
 1. **Align repo truth with repo reality** so the README and canonical docs cleanly separate what is true now, implemented-but-not-frozen, and not done yet.
 2. **Finish the real OpenClaw host-surface validation harness** by adapting the stale current-OpenClaw plugin/config seam first, then freezing recurrent routing, static bypass, shadow mode, worker-down fail-open, and explicit skip modes on that repaired boundary.
-3. **Harden the child worker** into the real learner boundary with clearer supervision, restart accounting, and doctor/status truth.
-4. **Finish the evidence pipeline** so structured evidence tied to exact episodes outruns heuristic-only harvesting.
-5. **Upgrade mutation evaluation to replay-gated bundles** instead of proposal-by-proposal promotion.
-6. **Freeze the proof ladder** with dated artifact bundles under `docs/evidence/`.
-7. **Clean the packaging and type surface** until another OpenClaw operator can install, validate, and recover the plugin without tribal knowledge.
+3. **Finish the evidence pipeline** so structured evidence tied to exact episodes outruns heuristic-only harvesting.
+4. **Upgrade mutation evaluation to replay-gated bundles** instead of proposal-by-proposal promotion.
+5. **Freeze the proof ladder** with dated artifact bundles under `docs/evidence/`.
+6. **Clean the packaging and type surface** until another OpenClaw operator can install, validate, and recover the plugin without tribal knowledge.
 
 ### Recommended starting configuration
 

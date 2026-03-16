@@ -6,45 +6,24 @@ import { BrainGraph } from "../brain-core/graph.js";
 import { BrainMutator } from "../brain-core/mutator.js";
 import { PackManager } from "../brain-core/pack.js";
 import { BrainTeacher, type BrainTeacherCompletion } from "../brain-core/teacher.js";
-import type { CompletionContentBlock, LcmDependencies } from "../types.js";
-import type { OpenClawBrainRuntimeConfig } from "../db/config.js";
+import type { BrainConfig } from "../brain-core/types.js";
+import type { LcmDependencies } from "../types.js";
 import { runBrainMigrations } from "../brain-store/migrations.js";
 import { BrainStore } from "../brain-store/store.js";
 import { promoteGraphSnapshot, reloadGraphFromStore } from "../brain-runtime/graph-io.js";
+import type { ChildToParentMessage, ParentToChildMessage } from "./protocol.js";
 import { BrainWorker } from "./worker.js";
-
-type ChildToParentMessage =
-  | { type: "worker-ready"; pid: number }
-  | { type: "worker-heartbeat"; pid: number; at: number }
-  | {
-      type: "teacher-complete";
-      requestId: string;
-      provider?: string;
-      model: string;
-      messages: Array<{ role: string; content: unknown }>;
-      system?: string;
-      maxTokens: number;
-      temperature?: number;
-    }
-  | { type: "pack-promoted"; pid: number; version: number | null }
-  | { type: "worker-error"; pid: number; error: string };
-
-type ParentToChildMessage =
-  | { type: "teacher-complete-result"; requestId: string; ok: true; content: CompletionContentBlock[] }
-  | { type: "teacher-complete-result"; requestId: string; ok: false; error: string }
-  | { type: "reload-graph" }
-  | { type: "shutdown" };
 
 function send(message: ChildToParentMessage): void {
   process.send?.(message);
 }
 
-function parseConfig(): OpenClawBrainRuntimeConfig {
+function parseConfig(): BrainConfig {
   const raw = process.env.OPENCLAWBRAIN_CHILD_CONFIG_JSON;
   if (!raw) {
     throw new Error("OPENCLAWBRAIN_CHILD_CONFIG_JSON is required");
   }
-  return JSON.parse(raw) as OpenClawBrainRuntimeConfig;
+  return JSON.parse(raw) as BrainConfig;
 }
 
 function parseResolvedTeacherModel(): { provider: string; model: string } | null {
@@ -72,7 +51,7 @@ class LeaseManager {
   private readonly startedAt = Date.now();
 
   constructor(
-    private config: OpenClawBrainRuntimeConfig,
+    private config: BrainConfig,
     private store: BrainStore,
   ) {
     this.leasePath = join(config.root, "worker-lease.json");
@@ -86,7 +65,8 @@ class LeaseManager {
       && isPidAlive(existing.pid)
       && (Date.now() - existing.heartbeatAt) < this.config.workerHeartbeatTimeoutMs
     ) {
-      throw new Error(`worker lease already held by pid ${existing.pid}`);
+      const heldPid = existing.pid;
+      throw new Error(`worker lease already held by pid ${heldPid}`);
     }
     this.refresh("running");
     this.store.setTrainingState("worker_started_at", this.startedAt);
@@ -104,7 +84,7 @@ class LeaseManager {
     this.store.setTrainingState("worker_pid", process.pid);
     this.store.setTrainingState("worker_status", status);
     this.store.setTrainingState("worker_last_heartbeat_at", now);
-    send({ type: "worker-heartbeat", pid: process.pid, at: now });
+    send({ type: "heartbeat", pid: process.pid, at: now, status });
   }
 
   release(status = "stopped"): void {
@@ -255,6 +235,12 @@ async function main(): Promise<void> {
         lease.refresh("running");
         send({ type: "pack-promoted", pid: process.pid, version });
       },
+      onTickResult: ({ ok, at, error }) => {
+        store.setTrainingState("worker_last_tick_result_at", at);
+        store.setTrainingState("worker_last_tick_ok", ok ? "true" : "false");
+        store.setTrainingState("worker_last_tick_error", error ?? "");
+        send({ type: "tick-result", pid: process.pid, at, ok, error });
+      },
     },
   );
 
@@ -279,7 +265,16 @@ async function main(): Promise<void> {
     }
     if (message.type === "reload-graph") {
       reloadGraphFromStore(store, graph);
+      const reloadedAt = Date.now();
+      store.setTrainingState("worker_last_reload_ack_at", reloadedAt);
       lease.refresh("running");
+      send({
+        type: "reload-graph-ack",
+        pid: process.pid,
+        at: reloadedAt,
+        nodeCount: graph.nodeCount(),
+        edgeCount: graph.edgeCount(),
+      });
       return;
     }
     if (message.type === "shutdown") {
@@ -301,22 +296,26 @@ async function main(): Promise<void> {
     process.exit(0);
   });
   process.on("uncaughtException", (error) => {
-    send({ type: "worker-error", pid: process.pid, error: error.message });
+    send({ type: "fatal-error", pid: process.pid, error: error.message });
     cleanup("crashed");
     process.exit(1);
   });
   process.on("unhandledRejection", (error) => {
     const message = error instanceof Error ? error.message : String(error);
-    send({ type: "worker-error", pid: process.pid, error: message });
+    send({ type: "fatal-error", pid: process.pid, error: message });
     cleanup("crashed");
     process.exit(1);
   });
 
   worker.start();
-  send({ type: "worker-ready", pid: process.pid });
+  const readyAt = Date.now();
+  store.setTrainingState("worker_last_ready_at", readyAt);
+  send({ type: "ready", pid: process.pid, at: readyAt });
 }
 
 void main().catch((error) => {
-  process.stderr.write(`${(error as Error).message}\n`);
+  const message = (error as Error).message;
+  send({ type: "fatal-error", pid: process.pid, error: message });
+  process.stderr.write(`${message}\n`);
   process.exit(1);
 });

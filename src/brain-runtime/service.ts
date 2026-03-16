@@ -1,9 +1,7 @@
 import { randomUUID } from "node:crypto";
-import { fork, type ChildProcess } from "node:child_process";
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { fileURLToPath } from "node:url";
 import type { OpenClawBrainRuntimeConfig } from "../db/config.js";
 import type {
   BrainConfig,
@@ -31,8 +29,11 @@ import {
 } from "../brain-store/embedding.js";
 import { LabelHarvester } from "./harvester-extension.js";
 import { BrainWorker } from "../brain-worker/worker.js";
-import type { CompletionContentBlock, LcmDependencies } from "../types.js";
+import type { LcmDependencies } from "../types.js";
+import type { WorkerTeacherCompleteRequestMessage } from "../brain-worker/protocol.js";
 import { flattenEdges, populateGraph, promoteGraphSnapshot, reloadGraphFromStore } from "./graph-io.js";
+import { readWorkerRuntimeState } from "./worker-state.js";
+import { WorkerSupervisor } from "./worker-supervisor.js";
 
 function buildBrainConfig(
   runtimeConfig: OpenClawBrainRuntimeConfig,
@@ -51,14 +52,7 @@ export class BrainService {
   private mutableGraph = new BrainGraph();
   private servingGraph = new BrainGraph();
   private worker: BrainWorker | null;
-  private workerChild: ChildProcess | null = null;
-  private workerShouldRun = false;
-  private workerRestartTimer: ReturnType<typeof setTimeout> | null = null;
-  private workerLastHeartbeatAt: number | null = null;
-  private workerLastReadyAt: number | null = null;
-  private workerLastExit:
-    | { code: number | null; signal: NodeJS.Signals | null; at: number }
-    | null = null;
+  private childSupervisor: WorkerSupervisor | null = null;
   private harvesterImpl: LabelHarvester;
   private packManager: PackManager;
   private embeddingClient: BrainEmbeddingFn | null;
@@ -148,6 +142,7 @@ export class BrainService {
     );
 
     if (this.config.workerMode === "in_process") {
+      this.deps.log.warn("[brain] in_process worker mode is dev-only; use child mode for production operator truth");
       const teacher =
         this.config.teacherEnabled && this.resolvedTeacherModel
           ? new BrainTeacher(
@@ -185,6 +180,64 @@ export class BrainService {
       );
     } else {
       this.worker = null;
+      this.childSupervisor = new WorkerSupervisor({
+        config: this.config,
+        store: this.store,
+        log: params.deps.log,
+        teacherModel: this.resolvedTeacherModel,
+        isEnabled: () => this.isEnabled(),
+        onPackPromoted: () => {
+          this.reloadMutableGraphFromStore();
+          this.reloadServingGraph();
+        },
+        onTeacherComplete: async (
+          message: WorkerTeacherCompleteRequestMessage,
+          teacherModel,
+        ) => {
+          const provider = typeof message.provider === "string"
+            ? message.provider
+            : teacherModel?.provider;
+          const model = typeof message.model === "string"
+            ? message.model
+            : teacherModel?.model;
+          const requestId = String(message.requestId ?? "");
+          if (!provider || !model || !requestId) {
+            return {
+              type: "teacher-complete-result",
+              requestId,
+              ok: false,
+              error: "teacher completion request missing provider/model/requestId",
+            };
+          }
+          try {
+            const apiKey = await this.deps.getApiKey(provider, model);
+            const result = await this.deps.complete({
+              provider,
+              model,
+              apiKey,
+              messages: Array.isArray(message.messages)
+                ? message.messages as Array<{ role: string; content: unknown }>
+                : [],
+              system: typeof message.system === "string" ? message.system : undefined,
+              maxTokens: Number(message.maxTokens ?? 200),
+              temperature: typeof message.temperature === "number" ? message.temperature : undefined,
+            });
+            return {
+              type: "teacher-complete-result",
+              requestId,
+              ok: true,
+              content: result.content ?? [],
+            };
+          } catch (error) {
+            return {
+              type: "teacher-complete-result",
+              requestId,
+              ok: false,
+              error: (error as Error).message,
+            };
+          }
+        },
+      });
     }
   }
 
@@ -192,170 +245,26 @@ export class BrainService {
     if (!this.isEnabled()) {
       return;
     }
-    this.workerShouldRun = true;
     if (this.config.workerMode === "in_process") {
       this.store.setTrainingState("worker_mode", "in_process");
       this.store.setTrainingState("worker_status", "running");
       this.worker?.start();
       return;
     }
-    this.ensureChildWorker();
+    this.childSupervisor?.start();
   }
 
   stopWorker(): void {
-    this.workerShouldRun = false;
-    if (this.workerRestartTimer) {
-      clearTimeout(this.workerRestartTimer);
-      this.workerRestartTimer = null;
-    }
     if (this.config.workerMode === "in_process") {
       this.store.setTrainingState("worker_status", "stopped");
       this.worker?.stop();
       return;
     }
-    if (this.workerChild) {
-      this.workerChild.send({ type: "shutdown" });
-      const child = this.workerChild;
-      setTimeout(() => {
-        if (this.workerChild === child) {
-          this.workerChild.kill("SIGTERM");
-        }
-      }, 2_000);
-    }
-  }
-
-  private ensureChildWorker(): void {
-    if (this.workerChild || !this.isEnabled()) {
-      return;
-    }
-
-    const child = fork(
-      fileURLToPath(new URL("../brain-worker/child-runner.ts", import.meta.url)),
-      [],
-      {
-        execArgv: ["--import", "tsx/esm"],
-        stdio: ["ignore", "pipe", "pipe", "ipc"],
-        env: {
-          ...process.env,
-          OPENCLAWBRAIN_CHILD_CONFIG_JSON: JSON.stringify(this.config),
-          OPENCLAWBRAIN_CHILD_TEACHER_MODEL_JSON: this.resolvedTeacherModel
-            ? JSON.stringify(this.resolvedTeacherModel)
-            : "",
-        },
-      },
-    );
-    this.workerChild = child;
-    this.store.setTrainingState("worker_mode", "child");
-
-    child.stdout?.on("data", (chunk) => {
-      const text = String(chunk).trim();
-      if (text) {
-        this.deps.log.info(text);
-      }
-    });
-    child.stderr?.on("data", (chunk) => {
-      const text = String(chunk).trim();
-      if (text) {
-        this.deps.log.warn(text);
-      }
-    });
-    child.on("message", (message) => {
-      void this.handleChildWorkerMessage(message as Record<string, unknown>, child);
-    });
-    child.on("exit", (code, signal) => {
-      this.workerLastExit = {
-        code,
-        signal: signal as NodeJS.Signals | null,
-        at: Date.now(),
-      };
-      if (this.workerChild === child) {
-        this.workerChild = null;
-      }
-      if (this.workerShouldRun && this.isEnabled()) {
-        this.workerRestartTimer = setTimeout(() => {
-          this.workerRestartTimer = null;
-          this.ensureChildWorker();
-        }, this.config.workerRestartDelayMs);
-      }
-    });
-  }
-
-  private async handleChildWorkerMessage(message: Record<string, unknown>, child: ChildProcess): Promise<void> {
-    switch (message.type) {
-      case "worker-ready": {
-        this.workerLastReadyAt = Date.now();
-        this.workerLastHeartbeatAt = Date.now();
-        return;
-      }
-      case "worker-heartbeat": {
-        const at = Number(message.at ?? Date.now());
-        this.workerLastHeartbeatAt = at;
-        return;
-      }
-      case "pack-promoted": {
-        this.reloadMutableGraphFromStore();
-        this.reloadServingGraph();
-        return;
-      }
-      case "teacher-complete": {
-        const provider = typeof message.provider === "string"
-          ? message.provider
-          : this.resolvedTeacherModel?.provider;
-        const model = typeof message.model === "string"
-          ? message.model
-          : this.resolvedTeacherModel?.model;
-        const requestId = String(message.requestId ?? "");
-        if (!provider || !model || !requestId) {
-          child.send?.({
-            type: "teacher-complete-result",
-            requestId,
-            ok: false,
-            error: "teacher completion request missing provider/model/requestId",
-          });
-          return;
-        }
-        try {
-          const apiKey = await this.deps.getApiKey(provider, model);
-          const result = await this.deps.complete({
-            provider,
-            model,
-            apiKey,
-            messages: Array.isArray(message.messages)
-              ? message.messages as Array<{ role: string; content: unknown }>
-              : [],
-            system: typeof message.system === "string" ? message.system : undefined,
-            maxTokens: Number(message.maxTokens ?? 200),
-            temperature: typeof message.temperature === "number" ? message.temperature : undefined,
-          });
-          child.send?.({
-            type: "teacher-complete-result",
-            requestId,
-            ok: true,
-            content: (result.content ?? []) as CompletionContentBlock[],
-          });
-        } catch (error) {
-          child.send?.({
-            type: "teacher-complete-result",
-            requestId,
-            ok: false,
-            error: (error as Error).message,
-          });
-        }
-        return;
-      }
-      case "worker-error": {
-        this.deps.log.error(`[brain] child worker error: ${String(message.error ?? "unknown error")}`);
-        return;
-      }
-      default:
-        return;
-    }
+    this.childSupervisor?.stop();
   }
 
   private notifyWorkerGraphReload(): void {
-    if (this.workerChild) {
-      this.workerChild.send({ type: "reload-graph" });
-    }
+    this.childSupervisor?.requestGraphReload();
   }
 
   private reloadMutableGraphFromStore(): void {
@@ -608,10 +517,7 @@ export class BrainService {
       currentPack?.version ?? this.store.getCurrentPackVersion() ?? 0,
     );
     const recentTraces = this.store.getRecentTraces(5);
-
-    const workerPid = Number.parseInt(this.store.getTrainingState("worker_pid") ?? "0", 10) || null;
-    const workerHeartbeatAt = Number.parseInt(this.store.getTrainingState("worker_last_heartbeat_at") ?? "0", 10) || this.workerLastHeartbeatAt;
-    const workerStatus = this.store.getTrainingState("worker_status") ?? (this.config.workerMode === "child" ? "unknown" : "running");
+    const workerState = readWorkerRuntimeState(this.store, this.config);
 
     const embeddingConfig = describeEmbeddingConfig(this.config);
 
@@ -632,15 +538,7 @@ export class BrainService {
       teacherProvider: this.resolvedTeacherModel?.provider ?? this.config.teacherProvider,
       teacherModel: this.resolvedTeacherModel?.model ?? this.config.teacherModel,
       teacherConfigError: this.teacherConfigError,
-      workerMode: this.config.workerMode,
-      workerPid,
-      workerStatus,
-      workerLastHeartbeatAt: workerHeartbeatAt,
-      workerLastReadyAt: this.workerLastReadyAt,
-      workerHealthy: this.config.workerMode === "child"
-        ? Boolean(workerHeartbeatAt && (Date.now() - workerHeartbeatAt) < this.config.workerHeartbeatTimeoutMs)
-        : true,
-      workerLastExit: this.workerLastExit,
+      ...workerState,
       pendingEvidence: this.store.getPendingEvidence(100).length,
       pendingEvidenceBySource: this.store.countPendingEvidenceBySource(),
       pendingLabels: this.store.getPendingLabels().length,

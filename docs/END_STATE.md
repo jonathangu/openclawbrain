@@ -132,22 +132,23 @@ Goal: make the child worker the real learner boundary without affecting serving.
 
 ### Main files
 - `src/brain-runtime/service.ts`
-- future: `src/brain-runtime/worker-supervisor.ts`
+- `src/brain-runtime/worker-supervisor.ts`
 - `src/brain-worker/child-runner.ts`
-- future: `src/brain-worker/protocol.ts`
+- `src/brain-worker/protocol.ts`
 - `src/brain-cli.ts`
+- `test/brain-runtime/service.test.ts`
 
 ### What is already real
 - `brainWorkerMode` supports `child` and `in_process`
-- child worker heartbeat / PID truth already surfaces through status
-- lease protection exists in the child runner
+- child lifecycle logic now lives behind `WorkerSupervisor` instead of staying embedded in `service.ts`
+- explicit worker protocol messages now exist for `ready`, `heartbeat`, `reload-graph`, `reload-graph-ack`, `tick-result`, `shutdown`, and `fatal-error`
+- restart accounting and richer operator truth now surface through runtime status + CLI doctor/status
+- `in_process` is now marked and surfaced as a dev-only fallback
+- crash / stale-lease / second-writer / reload-ack coverage now exists in `test/brain-runtime/service.test.ts`
 
 ### What remains
-- pull child lifecycle logic out of `service.ts` into a cleaner supervisor
-- define explicit worker protocol messages (`ready`, `heartbeat`, `reload-graph`, `reload-graph-ack`, `tick-result`, `shutdown`, `fatal-error`)
-- add restart accounting and better doctor/status reporting
-- make `in_process` clearly dev-only
-- add crash / stale-lease / second-writer / reload-ack tests
+- keep child-worker operator truth frozen while later phases evolve the evidence pipeline and replay bundle gates
+- preserve the narrow production claim: serving continues from immutable promoted packs even when the worker crashes or restarts
 
 ## Phase 3 — Finish the evidence pipeline
 

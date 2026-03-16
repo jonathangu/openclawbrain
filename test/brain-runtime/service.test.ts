@@ -317,7 +317,7 @@ describe("BrainService", () => {
 
       const childPid = (await service.status()).workerPid as number;
       process.kill(childPid, "SIGKILL");
-      await waitFor(() => Boolean((service as any).workerLastExit), 1_500);
+      await waitFor(async () => Boolean((await service.status()).workerLastExit), 1_500);
       await new Promise((resolve) => setTimeout(resolve, 250));
 
       const statusAfterCrash = await service.status();
@@ -339,6 +339,148 @@ describe("BrainService", () => {
       expect(afterCrash?.fired.some((node) => node.content.includes("gh pr create"))).toBe(true);
     } finally {
       service.stopWorker();
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+  });
+
+  it("records worker restart accounting after a crash and restart", async () => {
+    const brainRoot = makeTempDir("openclawbrain-state-");
+    const service = new BrainService({
+      deps: createDeps(brainRoot, {
+        workerMode: "child",
+        trainerIntervalMs: 200,
+        workerHeartbeatTimeoutMs: 5_000,
+        workerRestartDelayMs: 100,
+      }),
+    });
+
+    try {
+      service.startWorker();
+      await waitFor(async () => Boolean((await service.status()).workerPid));
+      const firstPid = (await service.status()).workerPid as number;
+      process.kill(firstPid, "SIGKILL");
+      await waitFor(async () => {
+        const status = await service.status();
+        return status.workerRestartCount === 1
+          && status.workerLastRestartAt !== null
+          && status.workerPid !== null
+          && status.workerPid !== firstPid
+          && status.workerHealthy === true;
+      }, 5_000);
+    } finally {
+      service.stopWorker();
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+  });
+
+  it("records reload acknowledgements from the child worker", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-state-");
+    writeFileSync(join(workspaceRoot, "PLAYBOOK.md"), "# Pull Requests\n\nUse gh pr create.\n", "utf8");
+
+    const service = new BrainService({
+      deps: createDeps(brainRoot, {
+        workerMode: "child",
+        trainerIntervalMs: 200,
+        workerHeartbeatTimeoutMs: 5_000,
+        workerRestartDelayMs: 100,
+      }),
+    });
+
+    try {
+      service.startWorker();
+      await waitFor(async () => Boolean((await service.status()).workerPid));
+      await service.init({
+        workspaceRoot,
+        embedFn: async (text) => embed(text),
+      });
+      await waitFor(async () => {
+        const status = await service.status();
+        return Boolean(status.workerLastReloadRequestedAt) && Boolean(status.workerLastReloadAckAt);
+      });
+
+      const status = await service.status();
+      expect(status.workerLastReloadRequestedAt).toEqual(expect.any(Number));
+      expect(status.workerLastReloadAckAt).toEqual(expect.any(Number));
+      expect(Number(status.workerLastReloadAckAt)).toBeGreaterThanOrEqual(Number(status.workerLastReloadRequestedAt));
+    } finally {
+      service.stopWorker();
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+  });
+
+  it("ignores a stale worker lease and starts a fresh child worker", async () => {
+    const brainRoot = makeTempDir("openclawbrain-state-");
+    writeFileSync(
+      join(brainRoot, "worker-lease.json"),
+      JSON.stringify({
+        pid: 999999,
+        startedAt: Date.now() - 10_000,
+        heartbeatAt: Date.now() - 10_000,
+        status: "running",
+      }),
+      "utf8",
+    );
+
+    const service = new BrainService({
+      deps: createDeps(brainRoot, {
+        workerMode: "child",
+        trainerIntervalMs: 200,
+        workerHeartbeatTimeoutMs: 150,
+        workerRestartDelayMs: 100,
+      }),
+    });
+
+    try {
+      service.startWorker();
+      await waitFor(async () => {
+        const status = await service.status();
+        return Boolean(status.workerPid) && status.workerHealthy === true;
+      });
+      expect((await service.status()).workerLastFatalError).toBeNull();
+    } finally {
+      service.stopWorker();
+      await new Promise((resolve) => setTimeout(resolve, 250));
+    }
+  });
+
+  it("refuses a second live child worker on the same brain root", async () => {
+    const brainRoot = makeTempDir("openclawbrain-state-");
+    const primary = new BrainService({
+      deps: createDeps(brainRoot, {
+        workerMode: "child",
+        trainerIntervalMs: 200,
+        workerHeartbeatTimeoutMs: 5_000,
+        workerRestartDelayMs: 500,
+      }),
+    });
+    const secondary = new BrainService({
+      deps: createDeps(brainRoot, {
+        workerMode: "child",
+        trainerIntervalMs: 200,
+        workerHeartbeatTimeoutMs: 5_000,
+        workerRestartDelayMs: 500,
+      }),
+    });
+
+    try {
+      primary.startWorker();
+      await waitFor(async () => Boolean((await primary.status()).workerPid));
+
+      secondary.startWorker();
+      await waitFor(async () => {
+        const status = await secondary.status();
+        return status.workerLastFatalError === `worker lease already held by pid ${(await primary.status()).workerPid}`;
+      }, 3_000);
+
+      const primaryStatus = await primary.status();
+      const secondaryStatus = await secondary.status();
+      expect(primaryStatus.workerHealthy).toBe(true);
+      expect(secondaryStatus.workerPid).toBe(primaryStatus.workerPid);
+      expect(secondaryStatus.workerLastFatalError).toContain("worker lease already held by pid");
+    } finally {
+      secondary.stopWorker();
+      primary.stopWorker();
       await new Promise((resolve) => setTimeout(resolve, 250));
     }
   });

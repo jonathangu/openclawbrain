@@ -14,6 +14,7 @@ import {
 } from "./brain-store/embedding.js";
 import { resolveLcmConfig } from "./db/config.js";
 import { flattenSeedWeights } from "./brain-runtime/graph-io.js";
+import { readWorkerRuntimeState } from "./brain-runtime/worker-state.js";
 
 function printJson(payload: unknown): void {
   process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
@@ -111,9 +112,8 @@ function commandStatus(): void {
   const health = computeHealth(graph, recentEpisodes, currentPack ?? 0);
   const currentSnapshot = currentPack !== null ? store.readPackSnapshot(currentPack) : null;
   const embeddingConfig = describeEmbeddingConfig(brainConfig);
+  const workerState = readWorkerRuntimeState(store, brainConfig);
 
-  const workerPid = Number.parseInt(store.getTrainingState("worker_pid") ?? "0", 10) || null;
-  const workerLastHeartbeatAt = Number.parseInt(store.getTrainingState("worker_last_heartbeat_at") ?? "0", 10) || null;
   printJson({
     command: "status",
     brainRoot: brainConfig.root,
@@ -124,13 +124,7 @@ function commandStatus(): void {
     embeddingBaseUrl: brainConfig.embeddingModel ? embeddingConfig.baseUrl : "",
     embeddingAuthMode: embeddingConfig.authMode,
     embeddingConfigError: embeddingConfig.error,
-    workerMode: brainConfig.workerMode,
-    workerPid,
-    workerStatus: store.getTrainingState("worker_status"),
-    workerLastHeartbeatAt,
-    workerHealthy: brainConfig.workerMode === "child"
-      ? Boolean(workerLastHeartbeatAt && (Date.now() - workerLastHeartbeatAt) < brainConfig.workerHeartbeatTimeoutMs)
-      : true,
+    ...workerState,
     currentPackVersion: currentPack,
     currentPackMetadata: currentSnapshot?.metadata ?? null,
     pendingEvidence: store.getPendingEvidence(100).length,
@@ -255,10 +249,8 @@ function commandDoctor(): void {
   const { brainConfig, store, graph } = loadStore();
   const currentPackVersion = store.getCurrentPackVersion();
   const snapshot = currentPackVersion !== null ? store.readPackSnapshot(currentPackVersion) : null;
-  const workerLastTickAt = store.getTrainingState("worker_last_tick_at");
-  const workerLastHeartbeatAt = store.getTrainingState("worker_last_heartbeat_at");
-  const workerPid = store.getTrainingState("worker_pid");
   const embeddingConfig = describeEmbeddingConfig(brainConfig);
+  const workerState = readWorkerRuntimeState(store, brainConfig);
   printJson({
     command: "doctor",
     brainRoot: brainConfig.root,
@@ -272,12 +264,8 @@ function commandDoctor(): void {
     embeddingAuthMode: embeddingConfig.authMode,
     embeddingConfigError: embeddingConfig.error,
     shadowMode: brainConfig.shadowMode,
-    workerMode: brainConfig.workerMode,
-    workerPid: workerPid ? Number.parseInt(workerPid, 10) : null,
-    workerStatus: store.getTrainingState("worker_status"),
+    ...workerState,
     disabled: existsSync(join(brainConfig.root, "DISABLED")),
-    workerLastTickAt: workerLastTickAt ? Number.parseInt(workerLastTickAt, 10) : null,
-    workerLastHeartbeatAt: workerLastHeartbeatAt ? Number.parseInt(workerLastHeartbeatAt, 10) : null,
     pendingEvidence: store.getPendingEvidence(100).length,
     mutationBacklog: store.countMutationsByStatus(),
     orphanedTraceRows: store.countOrphanedTraceRows(),

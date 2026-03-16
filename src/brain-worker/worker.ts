@@ -105,6 +105,7 @@ export class BrainWorker {
     private hooks: {
       isEnabled?: () => boolean;
       onPromotionReady?: (params: { healthJson: string }) => Promise<void> | void;
+      onTickResult?: (params: { ok: boolean; at: number; error?: string }) => void;
     } = {},
   ) {}
 
@@ -114,9 +115,15 @@ export class BrainWorker {
     }
 
     this.interval = setInterval(() => {
-      void this.tick().catch((error) => {
-        this.log.error(`[brain] Worker tick failed: ${(error as Error).message}`);
-      });
+      void this.tick()
+        .then(() => {
+          this.hooks.onTickResult?.({ ok: true, at: Date.now() });
+        })
+        .catch((error) => {
+          const message = (error as Error).message;
+          this.log.error(`[brain] Worker tick failed: ${message}`);
+          this.hooks.onTickResult?.({ ok: false, at: Date.now(), error: message });
+        });
     }, this.config.trainerIntervalMs);
     this.log.info(`[brain] Worker started (interval=${this.config.trainerIntervalMs}ms)`);
   }
