@@ -395,7 +395,6 @@ src/
     lcm-conversation-scope.ts # Conversation scoping utilities
     common.ts               # Shared tool utilities
 test/                       # Vitest test suite
-specs/                      # Design specifications
 scripts/                    # Validation harnesses and operator helpers
 openclaw.plugin.json        # Plugin manifest with config schema and UI hints
 tui/                        # Interactive terminal UI (Go)
