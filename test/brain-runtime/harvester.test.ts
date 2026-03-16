@@ -219,6 +219,59 @@ describe("LabelHarvester", () => {
       });
     });
 
+    it("detects structured scanner guidance from explicit non-tool message parts", () => {
+      const { harvester } = setup();
+      const result = harvester.detectLabel(
+        "assistant",
+        "## Incident workflow\n1. Open the captured snapshot\n2. Compare the rollout notes before retrying",
+        [
+          {
+            partType: "file",
+            ordinal: 1,
+            textContent: "docs/evidence/run.txt",
+            metadata: JSON.stringify({
+              originalRole: "assistant",
+              rawType: "file",
+              raw: { path: "docs/evidence/run.txt", fileName: "run.txt" },
+            }),
+          },
+          {
+            partType: "snapshot",
+            ordinal: 2,
+            metadata: JSON.stringify({
+              originalRole: "assistant",
+              rawType: "snapshot",
+              raw: { title: "worker crash snapshot", path: "docs/evidence/snapshot.json" },
+            }),
+          },
+          {
+            partType: "subtask",
+            ordinal: 3,
+            metadata: JSON.stringify({
+              originalRole: "assistant",
+              rawType: "subtask",
+              raw: { title: "verify deployment report", taskId: "task_123" },
+            }),
+          },
+        ],
+      );
+      expect(result).not.toBeNull();
+      expect(result!.source).toBe("scanner");
+      expect(result!.extractor).toBe("structured_guidance_parts");
+      expect(result!.metadata).toMatchObject({
+        structuredPartTypes: ["file", "snapshot", "subtask"],
+        pathHints: expect.arrayContaining(["docs/evidence/run.txt", "run.txt", "docs/evidence/snapshot.json"]),
+        labels: expect.arrayContaining([
+          "docs/evidence/run.txt",
+          "run.txt",
+          "worker crash snapshot",
+          "docs/evidence/snapshot.json",
+          "verify deployment report",
+        ]),
+        partOrdinals: [1, 2, 3],
+      });
+    });
+
     it("detects multiple evidence signals from one assistant message when both are present", () => {
       const { harvester } = setup();
       const results = harvester.detectLabels(
@@ -382,6 +435,70 @@ describe("LabelHarvester", () => {
         commands: ["pnpm test", "gh pr view 12"],
         fileHints: ["docs/evidence/run.txt"],
         partOrdinals: [1, 2],
+      });
+    });
+
+    it("persists structured scanner metadata when guidance is backed by explicit non-tool parts", async () => {
+      const { store, harvester } = setup((conversationId) => conversationId === 7 ? "ep_pending" : null);
+      store.insertEpisode(makeEpisode({
+        id: "ep_pending",
+        conversationId: 7,
+        createdAt: Date.now(),
+      }));
+
+      await harvester.harvestFromMessage({
+        conversationId: 7,
+        messageId: 78,
+        role: "assistant",
+        content: "## Incident workflow\n1. Open the captured snapshot\n2. Compare the rollout notes before retrying",
+        messageParts: [
+          {
+            partType: "file",
+            ordinal: 1,
+            textContent: "docs/evidence/run.txt",
+            metadata: JSON.stringify({
+              originalRole: "assistant",
+              rawType: "file",
+              raw: { path: "docs/evidence/run.txt", fileName: "run.txt" },
+            }),
+          },
+          {
+            partType: "snapshot",
+            ordinal: 2,
+            metadata: JSON.stringify({
+              originalRole: "assistant",
+              rawType: "snapshot",
+              raw: { title: "worker crash snapshot", path: "docs/evidence/snapshot.json" },
+            }),
+          },
+          {
+            partType: "subtask",
+            ordinal: 3,
+            metadata: JSON.stringify({
+              originalRole: "assistant",
+              rawType: "subtask",
+              raw: { title: "verify deployment report", taskId: "task_123" },
+            }),
+          },
+        ],
+      });
+
+      const evidence = store.getPendingEvidence();
+      expect(evidence).toHaveLength(1);
+      expect(evidence[0]?.source).toBe("scanner");
+      expect(evidence[0]?.metadata).toMatchObject({
+        messageId: 78,
+        extractor: "structured_guidance_parts",
+        structuredPartTypes: ["file", "snapshot", "subtask"],
+        pathHints: expect.arrayContaining(["docs/evidence/run.txt", "run.txt", "docs/evidence/snapshot.json"]),
+        labels: expect.arrayContaining([
+          "docs/evidence/run.txt",
+          "run.txt",
+          "worker crash snapshot",
+          "docs/evidence/snapshot.json",
+          "verify deployment report",
+        ]),
+        partOrdinals: [1, 2, 3],
       });
     });
 

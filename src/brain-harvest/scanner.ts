@@ -17,6 +17,7 @@ const HEADING_PATTERN = /^\s{0,3}#{1,6}\s+\S.+$/m;
 const FILE_REF_PATTERN = /(?:^|[\s(])(?:\.?\/)?[\w./-]+\.(?:md|txt|ts|tsx|js|jsx|json|yaml|yml|sh|mjs)(?=$|[\s):,])/gim;
 const IMPERATIVE_STEP_PATTERN = /^\s*(?:[-*]\s+|\d+\.\s+)?(?:inspect|check|retry|run|use|open|read|edit|verify|restart|re-?run|apply|deploy|create|install|record|compare|promote|rollback)\b/gim;
 const STRUCTURED_TOOL_NAMES = new Set(["bash", "git", "gh", "pnpm", "npm", "node", "openclaw", "python", "python3", "curl", "ollama", "codex", "claude"]);
+const STRUCTURED_GUIDANCE_PART_TYPES = new Set(["file", "snapshot", "subtask", "patch", "compaction", "step_start", "step_finish", "retry"]);
 
 type ContentSignalSummary = {
   docMarker: string | null;
@@ -126,6 +127,34 @@ function collectStructuredFileHints(part: HarvestMessagePart, metadata: Record<s
   return Array.from(collected);
 }
 
+function collectStructuredPartDetails(part: HarvestMessagePart, metadata: Record<string, unknown>): {
+  paths: string[];
+  labels: string[];
+} {
+  const rawRecord = asRecord(metadata.raw);
+  const paths = new Set<string>();
+  const labels = new Set<string>();
+
+  for (const value of [
+    readString(rawRecord, ["path", "filePath", "artifactPath", "storageUri", "sourcePath", "targetPath", "outputPath"]),
+    readString(rawRecord, ["fileName", "title", "label", "name", "summaryId", "taskId", "stepId"]),
+    readString(rawRecord, ["summary", "description"]),
+    typeof part.textContent === "string" && part.textContent.trim().length > 0 ? part.textContent.trim() : undefined,
+  ]) {
+    for (const item of readStringArray(value)) {
+      if (/[/\\.]|^[A-Z0-9_-]+$/i.test(item)) {
+        paths.add(item);
+      }
+      labels.add(item);
+    }
+  }
+
+  return {
+    paths: Array.from(paths),
+    labels: Array.from(labels),
+  };
+}
+
 function collectContentSignals(content: string): ContentSignalSummary {
   const signals: string[] = [];
   let score = 0;
@@ -189,17 +218,27 @@ function collectContentSignals(content: string): ContentSignalSummary {
   };
 }
 
+function hasGuidanceShape(contentSignals: ContentSignalSummary): boolean {
+  return Boolean(contentSignals.docMarker)
+    || contentSignals.numberedSteps >= 2
+    || (contentSignals.hasHeading && contentSignals.bulletLines >= 2)
+    || contentSignals.imperativeLines >= 2;
+}
+
 function detectStructuredScannerEvidence(
   contentSignals: ContentSignalSummary,
   messageParts?: HarvestMessagePart[],
 ): HarvestResult | null {
-  if (!messageParts || messageParts.length === 0) {
+  if (!messageParts || messageParts.length === 0 || !hasGuidanceShape(contentSignals)) {
     return null;
   }
 
   const toolNames = new Set<string>();
   const commands = new Set<string>();
-  const fileHints = new Set<string>();
+  const toolFileHints = new Set<string>();
+  const structuredPartTypes = new Set<string>();
+  const structuredPaths = new Set<string>();
+  const structuredLabels = new Set<string>();
   const partOrdinals: number[] = [];
   const rawTypes = new Set<string>();
 
@@ -210,13 +249,14 @@ function detectStructuredScannerEvidence(
       rawTypes.add(rawType);
     }
 
+    if (typeof part.ordinal === "number") {
+      partOrdinals.push(part.ordinal);
+    }
+
     if (part.partType === "tool") {
       const toolName = typeof part.toolName === "string" ? part.toolName.trim() : "";
       if (toolName && STRUCTURED_TOOL_NAMES.has(toolName)) {
         toolNames.add(toolName);
-        if (typeof part.ordinal === "number") {
-          partOrdinals.push(part.ordinal);
-        }
       }
 
       const command = extractCommand(parseJson(part.toolInput));
@@ -225,41 +265,61 @@ function detectStructuredScannerEvidence(
       }
 
       for (const hint of collectStructuredFileHints(part, metadata)) {
-        fileHints.add(hint);
+        toolFileHints.add(hint);
+      }
+      continue;
+    }
+
+    if (STRUCTURED_GUIDANCE_PART_TYPES.has(part.partType)) {
+      structuredPartTypes.add(part.partType);
+      const details = collectStructuredPartDetails(part, metadata);
+      for (const path of details.paths) {
+        structuredPaths.add(path);
+      }
+      for (const label of details.labels) {
+        structuredLabels.add(label);
       }
     }
   }
 
-  const hasGuidanceShape = Boolean(contentSignals.docMarker)
-    || contentSignals.numberedSteps >= 2
-    || (contentSignals.hasHeading && contentSignals.bulletLines >= 2)
-    || contentSignals.imperativeLines >= 2;
-
-  if (!hasGuidanceShape) {
-    return null;
+  if (toolNames.size > 0 && (commands.size > 0 || toolFileHints.size > 0)) {
+    return {
+      value: 0.25,
+      source: "scanner",
+      reason: `scanner structured tool-chain: tools=${Array.from(toolNames).join(",")}`,
+      confidence: 0.85,
+      kind: "scanner_signal",
+      extractor: "structured_tool_chain",
+      metadata: {
+        toolNames: Array.from(toolNames),
+        commands: Array.from(commands),
+        fileHints: Array.from(toolFileHints),
+        partOrdinals,
+        rawTypes: Array.from(rawTypes),
+        guidanceSignals: contentSignals.signals,
+      },
+    };
   }
 
-  if (toolNames.size === 0 || (commands.size === 0 && fileHints.size === 0)) {
+  if (structuredPartTypes.size === 0 || (structuredPaths.size === 0 && structuredLabels.size === 0)) {
     return null;
   }
-
-  const metadata: Record<string, unknown> = {
-    toolNames: Array.from(toolNames),
-    commands: Array.from(commands),
-    fileHints: Array.from(fileHints),
-    partOrdinals,
-    rawTypes: Array.from(rawTypes),
-    guidanceSignals: contentSignals.signals,
-  };
 
   return {
     value: 0.25,
     source: "scanner",
-    reason: `scanner structured tool-chain: tools=${Array.from(toolNames).join(",")}`,
-    confidence: 0.85,
+    reason: `scanner structured guidance parts: ${Array.from(structuredPartTypes).join(",")}`,
+    confidence: 0.83,
     kind: "scanner_signal",
-    extractor: "structured_tool_chain",
-    metadata,
+    extractor: "structured_guidance_parts",
+    metadata: {
+      structuredPartTypes: Array.from(structuredPartTypes),
+      pathHints: Array.from(structuredPaths),
+      labels: Array.from(structuredLabels),
+      partOrdinals,
+      rawTypes: Array.from(rawTypes),
+      guidanceSignals: contentSignals.signals,
+    },
   };
 }
 
