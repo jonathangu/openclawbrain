@@ -1,8 +1,8 @@
 #!/usr/bin/env node
 
-import { execFileSync } from "node:child_process";
-import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
-import { tmpdir } from "node:os";
+import { execFileSync, spawnSync } from "node:child_process";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, readdirSync, rmSync, writeFileSync } from "node:fs";
+import { homedir, tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
@@ -12,17 +12,40 @@ const repoRoot = resolve(__dirname, "..");
 const args = new Set(process.argv.slice(2));
 const keepTemp = args.has("--keep-temp");
 const setupOnly = args.has("--setup-only");
+const sterileLane = args.has("--sterile-lane")
+  || Boolean(
+    process.env.OPENCLAWBRAIN_VALIDATION_ROOT
+    || process.env.OPENCLAWBRAIN_VALIDATION_CONFIG_PATH
+    || process.env.OPENCLAWBRAIN_VALIDATION_STATE_DIR,
+  );
+const validationLaneName = process.env.OPENCLAWBRAIN_VALIDATION_LANE_NAME?.trim() || "ocbphase1";
+const defaultValidationRoot = resolve(process.env.HOME ?? homedir(), `.openclaw-${validationLaneName}`);
+const validationRoot = sterileLane
+  ? resolve(process.env.OPENCLAWBRAIN_VALIDATION_ROOT ?? process.env.OPENCLAWBRAIN_VALIDATION_STATE_DIR ?? defaultValidationRoot)
+  : mkdtempSync(join(tmpdir(), "openclawbrain-validate-"));
+const validationHome = sterileLane ? (process.env.HOME ?? homedir()) : join(validationRoot, "home");
+const validationStateDir = sterileLane ? validationRoot : join(validationHome, ".openclaw");
+const fixtureWorkspace = sterileLane
+  ? resolve(process.env.OPENCLAWBRAIN_VALIDATION_WORKSPACE ?? join(process.env.HOME ?? homedir(), ".openclaw", `workspace-${validationLaneName}`))
+  : join(validationRoot, "workspace-fixture");
+const lcmDbPath = process.env.OPENCLAWBRAIN_VALIDATION_LCM_DB_PATH?.trim() || join(validationStateDir, "lcm.db");
+const brainRoot = process.env.OPENCLAWBRAIN_VALIDATION_BRAIN_ROOT?.trim() || join(validationStateDir, "openclawbrain");
+const configPath = resolve(process.env.OPENCLAWBRAIN_VALIDATION_CONFIG_PATH ?? join(validationStateDir, "openclaw.json"));
+const validationRecordFile = process.env.OPENCLAWBRAIN_VALIDATION_RECORD_FILE?.trim() || join(validationStateDir, "validation-records", "validation-assemble.jsonl");
+const validationGatewayPort = Number.parseInt(process.env.OPENCLAWBRAIN_VALIDATION_GATEWAY_PORT?.trim() || "19031", 10);
+const gitSha = execFileSync("git", ["rev-parse", "HEAD"], { cwd: repoRoot, encoding: "utf8" }).trim();
+const artifactDate = new Date().toISOString().slice(0, 10);
+const artifactDir = resolve(
+  process.env.OPENCLAWBRAIN_VALIDATION_ARTIFACT_DIR
+  ?? join(repoRoot, "docs", "evidence", artifactDate, gitSha),
+);
 
-const tempRoot = mkdtempSync(join(tmpdir(), "openclawbrain-validate-"));
-const tempHome = join(tempRoot, "home");
-const fixtureWorkspace = join(tempRoot, "workspace-fixture");
-const lcmDbPath = join(tempHome, ".openclaw", "lcm.db");
-const brainRoot = join(tempHome, ".openclaw", "openclawbrain");
-const configPath = join(tempHome, ".openclaw", "openclaw.json");
-const validationRecordFile = join(tempRoot, "validation-assemble.jsonl");
-
-mkdirSync(tempHome, { recursive: true });
+mkdirSync(validationHome, { recursive: true });
+mkdirSync(validationStateDir, { recursive: true });
+mkdirSync(dirname(configPath), { recursive: true });
+mkdirSync(dirname(validationRecordFile), { recursive: true });
 mkdirSync(fixtureWorkspace, { recursive: true });
+mkdirSync(artifactDir, { recursive: true });
 
 function cleanEnv(extra = {}) {
   const env = { ...process.env };
@@ -31,7 +54,11 @@ function cleanEnv(extra = {}) {
       delete env[key];
     }
   }
-  env.HOME = tempHome;
+  if (!sterileLane) {
+    env.HOME = validationHome;
+  }
+  env.OPENCLAW_CONFIG_PATH = configPath;
+  env.OPENCLAW_STATE_DIR = validationStateDir;
   env.LCM_DATABASE_PATH = lcmDbPath;
   env.OPENCLAWBRAIN_ROOT = brainRoot;
   env.OPENCLAWBRAIN_EMBEDDING_PROVIDER =
@@ -69,6 +96,190 @@ function runPassthrough(command, commandArgs, options = {}) {
     encoding: "utf8",
     stdio: ["ignore", "inherit", "inherit"],
   });
+}
+
+function runCapture(command, commandArgs, options = {}) {
+  const env = cleanEnv(options.env);
+  const result = spawnSync(command, commandArgs, {
+    cwd: options.cwd ?? repoRoot,
+    env,
+    encoding: "utf8",
+    ...(typeof options.timeoutMs === "number" ? { timeout: options.timeoutMs } : {}),
+  });
+  return {
+    command,
+    args: commandArgs,
+    cwd: options.cwd ?? repoRoot,
+    exitCode: typeof result.status === "number" ? result.status : 1,
+    signal: result.signal ?? null,
+    ok: (result.status ?? 1) === 0 && !result.error,
+    stdout: result.stdout ?? "",
+    stderr: result.stderr ?? "",
+    error: result.error ? String(result.error) : null,
+  };
+}
+
+function tryExtractJson(text) {
+  try {
+    return extractJson(text);
+  } catch {
+    return null;
+  }
+}
+
+function writeJsonArtifact(name, payload) {
+  writeFileSync(join(artifactDir, name), `${JSON.stringify(payload, null, 2)}\n`, "utf8");
+}
+
+function writeTextArtifact(name, text) {
+  writeFileSync(join(artifactDir, name), text, "utf8");
+}
+
+function buildConfigSnapshot() {
+  let config = null;
+  try {
+    config = JSON.parse(readFileSync(configPath, "utf8"));
+  } catch {}
+  return {
+    gitSha,
+    artifactDir,
+    validationMode: sterileLane ? "sterile-lane" : "temp-home",
+    validationLaneName,
+    validationRoot,
+    validationHome,
+    validationStateDir,
+    fixtureWorkspace,
+    configPath,
+    lcmDbPath,
+    brainRoot,
+    validationRecordFile,
+    validationGatewayPort,
+    config,
+  };
+}
+
+function collectLogFiles(root, depth = 2) {
+  if (!existsSync(root) || depth < 0) {
+    return [];
+  }
+  const out = [];
+  for (const entry of readdirSync(root, { withFileTypes: true })) {
+    const fullPath = join(root, entry.name);
+    if (entry.isDirectory()) {
+      out.push(...collectLogFiles(fullPath, depth - 1));
+      continue;
+    }
+    if (!entry.isFile()) {
+      continue;
+    }
+    if (/\.(log|jsonl)$/i.test(entry.name)) {
+      out.push(fullPath);
+    }
+  }
+  return out;
+}
+
+function buildLogsSnapshot(diagnostics = {}) {
+  const sections = [];
+  const commandOrder = [
+    ["statusAll", "openclaw status --all"],
+    ["gatewayProbe", "openclaw gateway probe"],
+    ["gatewayStatus", "openclaw gateway status"],
+    ["doctor", "openclaw doctor --non-interactive"],
+    ["channelsStatus", "openclaw channels status --probe"],
+  ];
+  for (const [key, label] of commandOrder) {
+    const capture = diagnostics[key];
+    if (!capture) {
+      continue;
+    }
+    sections.push(`## ${label}\n`);
+    sections.push(capture.stdout || "<no stdout>");
+    if (capture.stderr) {
+      sections.push(`\n[stderr]\n${capture.stderr}`);
+    }
+    sections.push("\n");
+  }
+
+  for (const logPath of collectLogFiles(validationStateDir)) {
+    try {
+      const contents = readFileSync(logPath, "utf8");
+      sections.push(`## file:${logPath}\n`);
+      sections.push(contents || "<empty file>");
+      sections.push("\n");
+    } catch {}
+  }
+
+  if (existsSync(validationRecordFile)) {
+    try {
+      sections.push(`## file:${validationRecordFile}\n`);
+      sections.push(readFileSync(validationRecordFile, "utf8") || "<empty file>");
+      sections.push("\n");
+    } catch {}
+  }
+
+  return sections.join("\n");
+}
+
+function buildSummary(report, error = null) {
+  const lines = [
+    "# OpenClawBrain validation summary",
+    "",
+    `- commit: \`${gitSha}\``,
+    `- validation mode: ${sterileLane ? "sterile-lane" : "temp-home"}`,
+    `- config path: \`${configPath}\``,
+    `- state dir: \`${validationStateDir}\``,
+    `- workspace: \`${fixtureWorkspace}\``,
+    `- artifact dir: \`${artifactDir}\``,
+    "",
+    "## Assertions",
+  ];
+
+  for (const [name, value] of Object.entries(report.assertions ?? {})) {
+    lines.push(`- ${name}: ${JSON.stringify(value)}`);
+  }
+
+  lines.push("", "## Skipped");
+  for (const entry of report.skipped ?? []) {
+    lines.push(`- ${entry.phase}: ${entry.reason}`);
+  }
+
+  if (error) {
+    lines.push("", "## Failure", `- ${error}`);
+  }
+
+  return `${lines.join("\n")}\n`;
+}
+
+function captureDiagnosticArtifacts() {
+  const status = runCapture("openclaw", ["status", "--json", "--timeout", "10000"]);
+  const statusAll = runCapture("openclaw", ["status", "--all", "--timeout", "10000"]);
+  const gatewayProbe = runCapture("openclaw", ["gateway", "probe"]);
+  const gatewayStatus = runCapture("openclaw", ["gateway", "status"]);
+  const doctor = runCapture("openclaw", ["doctor", "--non-interactive"]);
+  const channelsStatus = runCapture("openclaw", ["channels", "status", "--probe"]);
+  return {
+    status: { ...status, parsed: tryExtractJson(status.stdout) },
+    statusAll,
+    gatewayProbe,
+    gatewayStatus,
+    doctor,
+    channelsStatus,
+  };
+}
+
+function writeArtifactBundle(report, error = null) {
+  writeJsonArtifact("config-snapshot.json", buildConfigSnapshot());
+  writeJsonArtifact("validation-report.json", report);
+  writeJsonArtifact("status.json", report.diagnostics?.status ?? null);
+  writeJsonArtifact("doctor.json", report.diagnostics?.doctor ?? null);
+  writeJsonArtifact("trace.json", report.trace ?? { skipped: true, reason: "No trace snapshot captured." });
+  writeTextArtifact("status-all.txt", report.diagnostics?.statusAll?.stdout ?? "");
+  writeTextArtifact("gateway-probe.txt", report.diagnostics?.gatewayProbe?.stdout ?? "");
+  writeTextArtifact("gateway-status.txt", report.diagnostics?.gatewayStatus?.stdout ?? "");
+  writeTextArtifact("channels-status.txt", report.diagnostics?.channelsStatus?.stdout ?? "");
+  writeTextArtifact("logs.txt", buildLogsSnapshot(report.diagnostics));
+  writeTextArtifact("summary.md", buildSummary(report, error));
 }
 
 function extractJson(text) {
@@ -133,8 +344,16 @@ function writeFixtureWorkspace() {
   );
 }
 
-function updateConfig(options = {}) {
+function updateConfig() {
   const config = JSON.parse(readFileSync(configPath, "utf8"));
+  config.gateway ??= {};
+  config.gateway.mode ??= "local";
+  config.gateway.port = validationGatewayPort;
+
+  config.agents ??= {};
+  config.agents.defaults ??= {};
+  config.agents.defaults.workspace = fixtureWorkspace;
+
   config.plugins ??= {};
   config.plugins.slots ??= {};
   config.plugins.entries ??= {};
@@ -147,8 +366,6 @@ function updateConfig(options = {}) {
 
   const validationModel = process.env.OPENCLAWBRAIN_VALIDATION_MODEL?.trim();
   if (validationModel) {
-    config.agents ??= {};
-    config.agents.defaults ??= {};
     config.agents.defaults.model = { primary: validationModel };
 
     const [providerId, ...modelParts] = validationModel.split("/");
@@ -237,10 +454,6 @@ function maybeRunAgentChecks(report) {
 
   function runStatus(extraEnv) {
     return extractJson(run("node", ["bin/openclawbrain.js", "status"], { env: extraEnv }));
-  }
-
-  function runTrace(extraEnv) {
-    return extractJson(run("node", ["bin/openclawbrain.js", "trace"], { env: extraEnv }));
   }
 
   function sleepMs(ms) {
@@ -445,7 +658,7 @@ function maybeRunAgentChecks(report) {
     throw new Error(`Validation harness expected no-embedding host-agent query to bypass brain retrieval without creating a trace, got ${JSON.stringify(noEmbeddingValidation.record?.traceId)}.`);
   }
 
-  const uninitializedBrainRoot = join(tempHome, ".openclaw", "openclawbrain-uninitialized");
+  const uninitializedBrainRoot = join(validationStateDir, "openclawbrain-uninitialized");
   mkdirSync(uninitializedBrainRoot, { recursive: true });
   const uninitializedRecordStart = readValidationRecords().length;
   const uninitializedCheck = runPrimedAgentCheck({
@@ -565,10 +778,15 @@ function maybeRunAgentChecks(report) {
 }
 
 const report = {
-  tempRoot,
-  tempHome,
+  validationRoot,
+  validationHome,
+  validationStateDir,
   fixtureWorkspace,
   configPath,
+  artifactDir,
+  gitSha,
+  diagnostics: null,
+  trace: null,
   setup: {},
   init: null,
   doctor: null,
@@ -584,12 +802,16 @@ try {
 
   runPassthrough("openclaw", ["plugins", "install", "--link", repoRoot]);
   updateConfig();
+  report.diagnostics = captureDiagnosticArtifacts();
 
   report.setup = {
     linkedPlugin: repoRoot,
     lcmDbPath,
     brainRoot,
     contextEngineSlot: "openclawbrain",
+    validationMode: sterileLane ? "sterile-lane" : "temp-home",
+    validationLaneName,
+    validationGatewayPort,
     validationModel: process.env.OPENCLAWBRAIN_VALIDATION_MODEL?.trim() || null,
     workerMode: process.env.OPENCLAWBRAIN_VALIDATION_WORKER_MODE?.trim() || "child",
     embeddingProvider: cleanEnv().OPENCLAWBRAIN_EMBEDDING_PROVIDER,
@@ -602,6 +824,7 @@ try {
       phase: "init-and-agent-checks",
       reason: "--setup-only was requested.",
     });
+    writeArtifactBundle(report);
     process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
     process.exit(0);
   }
@@ -624,6 +847,11 @@ try {
     report.init = extractJson(run("node", ["bin/openclawbrain.js", "init", fixtureWorkspace]));
     report.status = extractJson(run("node", ["bin/openclawbrain.js", "status"]));
     report.doctor = extractJson(run("node", ["bin/openclawbrain.js", "doctor"]));
+    const traceCapture = runCapture("node", ["bin/openclawbrain.js", "trace"]);
+    report.trace = {
+      ...traceCapture,
+      parsed: tryExtractJson(traceCapture.stdout),
+    };
   } else {
     report.skipped.push({
       phase: "cli-init",
@@ -632,18 +860,21 @@ try {
   }
 
   maybeRunAgentChecks(report);
+  writeArtifactBundle(report);
 
   process.stdout.write(`${JSON.stringify(report, null, 2)}\n`);
 } catch (error) {
+  const errorMessage = error instanceof Error ? error.message : String(error);
+  writeArtifactBundle(report, errorMessage);
   const payload = {
     ok: false,
-    error: (error instanceof Error ? error.message : String(error)),
+    error: errorMessage,
     report,
   };
   process.stderr.write(`${JSON.stringify(payload, null, 2)}\n`);
   process.exitCode = 1;
 } finally {
-  if (!keepTemp) {
-    rmSync(tempRoot, { recursive: true, force: true });
+  if (!keepTemp && !sterileLane) {
+    rmSync(validationRoot, { recursive: true, force: true });
   }
 }

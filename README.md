@@ -328,15 +328,27 @@ A disposable host-app validation scaffold now lives at:
 node scripts/validate-openclaw-install.mjs --setup-only
 ```
 
+For Phase 1 close-out work, prefer the explicit sterile validation lane instead of a mixed live-machine layout:
+
+```bash
+OPENCLAWBRAIN_VALIDATION_LANE_NAME=ocbphase1 \
+OPENCLAWBRAIN_VALIDATION_GATEWAY_PORT=19031 \
+node scripts/validate-openclaw-install.mjs --sterile-lane --setup-only
+```
+
 Full init + host-app routing checks require explicit embedding/model env:
 
 ```bash
+OPENCLAWBRAIN_VALIDATION_LANE_NAME=ocbphase1 \
+OPENCLAWBRAIN_VALIDATION_GATEWAY_PORT=19031 \
 OPENCLAWBRAIN_VALIDATION_EMBEDDING_MODEL=text-embedding-3-small \
 OPENCLAWBRAIN_VALIDATION_MODEL=openai/gpt-4.1-mini \
-node scripts/validate-openclaw-install.mjs
+node scripts/validate-openclaw-install.mjs --sterile-lane
 ```
 
-Current state: install + temp-home isolation + config wiring + fixture workspace + `openclawbrain init/status/doctor` are wired. The disposable harness now proves immediate `brain_teach` retrieval plus worker-down fail-open serving at the deterministic runtime layer, and it exercises recurrent/shadow host-surface routing with real local validation config. The remaining host-surface gaps are frozen proof for deterministic `brain_teach`, explicit worker-down/last-promoted-pack assertions, `skip_no_embedding` / `skip_uninitialized`, and the short-static-lookup semantic drift classification.
+Each serious run now writes a predictable artifact bundle under `docs/evidence/YYYY-MM-DD/<git-sha>/`, including the pre-run diagnostic ladder (`openclaw status`, `status --all`, `gateway probe`, `gateway status`, `doctor`, and `channels status --probe`).
+
+Current state: install/config wiring + fixture workspace + `openclawbrain init/status/doctor` are wired, and the harness can now target either temp-home isolation or a named sterile lane. The deterministic runtime layer already proves immediate `brain_teach` retrieval plus worker-down fail-open serving. Raw prompt-driven `openclaw agent --local` is **not** the release proof boundary for `brain_teach`; closing that claim requires the deterministic session-bound harness, while the host harness remains responsible for recurrent/shadow/skip-mode proof and the narrow worker-down serving claim.
 
 ### Project structure
 

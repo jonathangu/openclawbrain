@@ -54,7 +54,10 @@ These are real enough to build on, but not frozen enough to oversell.
 
 - **Host-surface validation harness**
   - Current files: `scripts/validate-openclaw-install.mjs`, `scripts/validate-brain-runtime-behavior.ts`
-  - Truth: recurrent routing, shadow mode, and current host checks run; frozen host-surface teach/worker-down proof is still incomplete.
+  - Truth: recurrent routing, shadow mode, and current host checks run inside a dedicated sterile validation lane with per-run diagnostic artifacts; frozen host-surface teach/worker-down proof is still incomplete.
+  - Boundary: raw prompt-driven `openclaw agent --local` is **not** the release proof boundary for `brain_teach`; that claim must be closed by a deterministic session-bound harness or remain explicitly out of scope for raw host prompting.
+  - Boundary: short-static host drift must be explained or truth-frozen before it is described as resolved.
+  - Boundary: worker-down host proof is claimed only at the exact host-visible boundary actually proven (continued serving from the last promoted pack + unhealthy worker status / exit truth), not as a stronger deterministic crash-observation claim.
 - **Child-worker serving boundary**
   - Current files: `src/brain-runtime/service.ts`, `src/brain-worker/child-runner.ts`
   - Truth: the child worker exists and heartbeats are surfaced, but lifecycle control still lives mostly inside `service.ts` and needs a cleaner supervisor boundary.
@@ -70,7 +73,8 @@ These are real enough to build on, but not frozen enough to oversell.
 These are still active work and must not be described as complete.
 
 - **Frozen host-surface proof for `brain_teach` and worker-down fail-open**
-  - Primary files: `scripts/validate-openclaw-install.mjs`, `src/brain-runtime/tools.ts`, `src/brain-runtime/service.ts`
+  - Primary files: `scripts/validate-openclaw-install.mjs`, `scripts/validate-brain-teach-session-bound.ts` (future), `src/brain-runtime/tools.ts`, `src/brain-runtime/service.ts`
+  - Required truth before this is marked done: deterministic session-bound `brain_teach` proof or explicit out-of-scope wording for raw host prompting, plus a narrow host worker-down claim that matches the actual artifact bundle.
 - **Resolved short-static-lookup host-surface semantics**
   - Primary files: `src/brain-runtime/assembler-extension.ts`, `scripts/validate-openclaw-install.mjs`
 - **Bundle-based mutation evaluation with clear pass/fail explanations**

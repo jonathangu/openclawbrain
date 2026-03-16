@@ -20,6 +20,13 @@ Each bundle should contain at minimum:
 - `logs.txt`
 - `summary.md`
 
+For Level 4 host-install runs, the bundle should also include the pre-run diagnostic ladder outputs:
+
+- `status-all.txt`
+- `gateway-probe.txt`
+- `gateway-status.txt`
+- `channels-status.txt`
+
 If a proof run is partial, the `summary.md` should say exactly what was and was not proven.
 
 ## Proof ladder
@@ -84,10 +91,10 @@ Primary surfaces:
 
 Required claims:
 - recurrent route used
-- static lookup bypassed when appropriate
+- static lookup bypassed when appropriate, or the remaining host-surface drift is explicitly classified/truth-frozen
 - shadow mode recorded
-- host-surface `brain_teach` retrieval proven or honestly classified as not currently drivable
-- worker-down fail-open proven on the host surface
+- `brain_teach` proven by a deterministic session-bound harness, or honestly classified as out of scope for raw prompt-driven host proof
+- worker-down host proof stays narrow: last-promoted-pack serving continues and host status surfaces unhealthy/exit truth
 - `skip_no_embedding` and `skip_uninitialized` asserted explicitly
 
 ## Release checklist
@@ -109,6 +116,6 @@ As of the current trunk:
 - **Level 1:** materially real
 - **Level 2:** present but not yet bundle-complete
 - **Level 3:** partially real on the host surface
-- **Level 4:** not frozen; deterministic host-surface `brain_teach` and worker-down proof still remain open
+- **Level 4:** not frozen; deterministic session-bound `brain_teach` proof, short-static host drift classification, and the final narrow worker-down host claim still remain open
 
 That means the repo is already beyond theory-only, but it does **not** yet have a frozen release-evidence ladder.
