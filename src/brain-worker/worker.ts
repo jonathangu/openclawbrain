@@ -9,10 +9,39 @@ import { computeReinforceUpdates, updateBaseline, applyWeightUpdates } from "../
 import { decayAllWeights } from "../brain-core/decay.js";
 import { computeHealth } from "../brain-core/health.js";
 
+function readExtractor(evidence: BrainEvidence): string | null {
+  const extractor = evidence.metadata?.extractor;
+  return typeof extractor === "string" && extractor.length > 0 ? extractor : null;
+}
+
+function evidenceSpecificityRank(evidence: BrainEvidence): number {
+  const extractor = readExtractor(evidence);
+  if (evidence.source === "scanner") {
+    switch (extractor) {
+      case "structured_guidance_parts":
+        return 3;
+      case "structured_tool_chain":
+        return 2;
+      case "scanner_marker":
+        return 1;
+      case "scanner_heuristic":
+      default:
+        return 0;
+    }
+  }
+
+  return 0;
+}
+
 function compareEvidencePriority(left: BrainEvidence, right: BrainEvidence): number {
   const trustDelta = trustRank(left.source) - trustRank(right.source);
   if (trustDelta !== 0) {
     return trustDelta;
+  }
+
+  const specificityDelta = evidenceSpecificityRank(left) - evidenceSpecificityRank(right);
+  if (specificityDelta !== 0) {
+    return specificityDelta;
   }
 
   const confidenceDelta = left.confidence - right.confidence;
@@ -40,6 +69,15 @@ function losingEvidenceResolution(
     return {
       resolution: "discarded_duplicate",
       note: `matching ${loser.source} evidence already queued`,
+    };
+  }
+
+  const winnerSpecificity = evidenceSpecificityRank(winner);
+  const loserSpecificity = evidenceSpecificityRank(loser);
+  if (winnerSpecificity !== loserSpecificity) {
+    return {
+      resolution: "discarded_duplicate",
+      note: `same-trust evidence superseded by more-structured ${winner.source} evidence`,
     };
   }
 

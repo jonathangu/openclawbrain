@@ -157,6 +157,45 @@ describe("BrainWorker evidence resolution", () => {
     expect(resolved.find((entry) => entry.value === -0.5)?.resolution).toBe("discarded_duplicate");
   });
 
+  it("prefers structured scanner evidence over heuristic scanner evidence within the same trust band", async () => {
+    const { store, worker } = setup();
+    store.insertEpisode(makeEpisode({ id: "ep_2b", conversationId: 82 }));
+    store.insertEvidence({
+      episodeId: "ep_2b",
+      conversationId: 82,
+      source: "scanner",
+      kind: "scanner_signal",
+      value: -0.25,
+      confidence: 0.95,
+      reason: "heuristic scanner signal",
+      metadata: { extractor: "scanner_heuristic" },
+    });
+    store.insertEvidence({
+      episodeId: "ep_2b",
+      conversationId: 82,
+      source: "scanner",
+      kind: "scanner_signal",
+      value: 0.25,
+      confidence: 0.6,
+      reason: "structured guidance signal",
+      metadata: { extractor: "structured_guidance_parts" },
+    });
+
+    await (worker as any).processEvidence();
+
+    const pendingLabels = store.getPendingLabels();
+    expect(pendingLabels).toHaveLength(1);
+    expect(pendingLabels[0]?.source).toBe("scanner");
+    expect(pendingLabels[0]?.value).toBe(0.25);
+    expect(pendingLabels[0]?.confidence).toBe(0.6);
+
+    const resolved = store.getResolvedLabelsForEpisode("ep_2b", 10);
+    expect(resolved).toHaveLength(2);
+    expect(resolved.find((entry) => entry.value === 0.25)?.resolution).toBe("promoted_to_label");
+    expect(resolved.find((entry) => entry.value === -0.25)?.resolution).toBe("discarded_duplicate");
+    expect(resolved.find((entry) => entry.value === -0.25)?.note).toContain("more-structured scanner evidence");
+  });
+
   it("does not auto-override an existing equal-trust reward", async () => {
     const { store, worker } = setup();
     store.insertEpisode(makeEpisode({
