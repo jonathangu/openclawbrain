@@ -116,6 +116,33 @@ describe("BrainAssemblerExtension", () => {
     });
   });
 
+  it("prefers explicit file-open commands over procedural keyword matches", async () => {
+    const brain = createBrainStub();
+    const extension = new BrainAssemblerExtension(brain as never);
+
+    const result = await extension.augmentAssembly({
+      conversationId: 8,
+      tokenBudget: 4096,
+      assembled: {
+        messages: [{ role: "user", content: "open PLAYBOOK.md" }],
+        estimatedTokens: 4,
+        stats: {
+          rawMessageCount: 1,
+          summaryCount: 0,
+          totalContextItems: 1,
+        },
+      },
+      liveMessages: [{ role: "user", content: "open PLAYBOOK.md" }],
+    });
+
+    expect(result.brainDecision?.mode).toBe("skip_short_static_lookup");
+    expect(brain.noteAssemblyDecision).toHaveBeenCalledWith({
+      mode: "skip_short_static_lookup",
+      conversationId: 8,
+      footer: "[brain] bypassed: short static lookup.",
+    });
+  });
+
   it("returns unchanged assembly when disabled or uninitialized", async () => {
     const brain = createBrainStub({ enabled: false });
     const extension = new BrainAssemblerExtension(brain as never);

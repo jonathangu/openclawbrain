@@ -1,8 +1,8 @@
 import { randomUUID } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { appendFileSync, mkdirSync, readFileSync } from "node:fs";
 import { mkdir, writeFile } from "node:fs/promises";
 import { homedir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import type {
   ContextEngine,
   ContextEngineInfo,
@@ -37,6 +37,57 @@ import {
   type BrainAssembledContextResult,
 } from "./brain-runtime/assembler-extension.js";
 import { BrainService } from "./brain-runtime/service.js";
+
+function extractLatestUserText(messages: AgentMessage[]): string | null {
+  for (let index = messages.length - 1; index >= 0; index -= 1) {
+    const message = messages[index];
+    if (message?.role !== "user") {
+      continue;
+    }
+    const content = message.content;
+    if (typeof content === "string") {
+      return content;
+    }
+    if (Array.isArray(content)) {
+      const text = content
+        .map((part) => {
+          if (typeof part === "string") {
+            return part;
+          }
+          if (
+            part
+            && typeof part === "object"
+            && "type" in part
+            && (part as { type?: unknown }).type === "text"
+            && "text" in part
+            && typeof (part as { text?: unknown }).text === "string"
+          ) {
+            return (part as { text: string }).text;
+          }
+          return "";
+        })
+        .join("")
+        .trim();
+      if (text) {
+        return text;
+      }
+    }
+  }
+  return null;
+}
+
+function appendValidationAssemblyRecord(record: Record<string, unknown>) {
+  const path = process.env.OPENCLAWBRAIN_VALIDATION_RECORD_FILE?.trim();
+  if (!path) {
+    return;
+  }
+  try {
+    mkdirSync(dirname(path), { recursive: true });
+    appendFileSync(path, `${JSON.stringify({ at: Date.now(), ...record })}\n`);
+  } catch {
+    // Validation logging is best-effort and must never affect runtime behavior.
+  }
+}
 import {
   ConversationStore,
   type CreateMessagePartInput,
@@ -1374,6 +1425,16 @@ export class LcmContextEngine implements ContextEngine {
             footer: `[brain] bypassed: ${brainDecision.mode}.`,
           });
         }
+        appendValidationAssemblyRecord({
+          sessionId: params.sessionId,
+          conversationId: null,
+          queryText: extractLatestUserText(params.messages),
+          mode: brainDecision?.mode ?? null,
+          footer: brainDecision ? `[brain] bypassed: ${brainDecision.mode}.` : null,
+          traceId: null,
+          episodeId: null,
+          tokenBudget,
+        });
         this.pendingBrainEpisodeBySession.delete(params.sessionId);
         return {
           messages: params.messages,
@@ -1412,6 +1473,16 @@ export class LcmContextEngine implements ContextEngine {
             footer: `[brain] bypassed: ${brainDecision.mode}.`,
           });
         }
+        appendValidationAssemblyRecord({
+          sessionId: params.sessionId,
+          conversationId: conversation.conversationId,
+          queryText: extractLatestUserText(params.messages),
+          mode: brainDecision?.mode ?? null,
+          footer: brainDecision ? `[brain] bypassed: ${brainDecision.mode}.` : null,
+          traceId: null,
+          episodeId: null,
+          tokenBudget,
+        });
         this.pendingBrainEpisodeBySession.delete(params.sessionId);
         return {
           messages: params.messages,
@@ -1432,6 +1503,16 @@ export class LcmContextEngine implements ContextEngine {
       } else {
         this.pendingBrainEpisodeBySession.delete(params.sessionId);
       }
+      appendValidationAssemblyRecord({
+        sessionId: params.sessionId,
+        conversationId: conversation.conversationId,
+        queryText: extractLatestUserText(params.messages),
+        mode: hybrid.brainDecision?.mode ?? null,
+        footer: hybrid.brainDecision?.footer ?? null,
+        traceId: hybrid.brainDecision?.traceId ?? null,
+        episodeId: hybrid.brainDecision?.episodeId ?? null,
+        tokenBudget,
+      });
 
       // If assembly produced no messages for a non-empty live session,
       // fail safe to the live context.

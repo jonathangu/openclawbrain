@@ -89,25 +89,6 @@ function buildBrainContextBlock(result: TraversalResult): string {
   return sections.join("\n");
 }
 
-function looksRecurrentOrProcedural(queryText: string): boolean {
-  const normalized = queryText.toLowerCase();
-  return [
-    /\bagain\b/,
-    /\bremember\b/,
-    /\blast time\b/,
-    /\bprevious(ly)?\b/,
-    /\busually\b/,
-    /\bworkflow\b/,
-    /\bplaybook\b/,
-    /\bhow do (we|i)\b/,
-    /\bwhat did we\b/,
-    /\bwhy did\b/,
-    /\bdeploy(ment)?\b/,
-    /\bfix\b/,
-    /\bcorrect\b/,
-  ].some((pattern) => pattern.test(normalized));
-}
-
 export class BrainAssemblerExtension {
   constructor(private brain: BrainService) {}
 
@@ -134,10 +115,8 @@ export class BrainAssemblerExtension {
     }
 
     const normalized = queryText.toLowerCase();
-    const recurrent = looksRecurrentOrProcedural(queryText);
     const looksStaticLookup =
-      !recurrent
-      && queryText.length < 72
+      queryText.length < 72
       && (normalized.startsWith("read ")
         || normalized.startsWith("show ")
         || normalized.startsWith("open ")

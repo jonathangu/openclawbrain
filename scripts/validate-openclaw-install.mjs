@@ -490,8 +490,17 @@ function maybeRunAgentChecks(report) {
     report.agent.workerDownPrimer = workerDownPrimer;
     assertAgentCompleted("worker-down host-agent primer", workerDownPrimer);
     const workerDownPrimerStatus = runStatus();
+    let workerDownCrashTrigger = workerDownPrimerStatus.workerPid ? "sigkill" : "no_pid";
     if (workerDownPrimerStatus.workerPid) {
-      process.kill(workerDownPrimerStatus.workerPid, "SIGKILL");
+      try {
+        process.kill(workerDownPrimerStatus.workerPid, "SIGKILL");
+      } catch (error) {
+        if ((error && typeof error === "object" && "code" in error && error.code === "ESRCH")) {
+          workerDownCrashTrigger = "already_exited";
+        } else {
+          throw error;
+        }
+      }
       sleepMs(250);
     }
     const workerDownQuery = runAgentCheck({
@@ -511,6 +520,7 @@ function maybeRunAgentChecks(report) {
       || workerDownVisibleText.includes("pull request");
     report.assertions.workerDownHostFailOpen = {
       workerPidBeforeCrash: workerDownPrimerStatus.workerPid ?? null,
+      crashTrigger: workerDownCrashTrigger,
       currentPackVersionBeforeCrash: workerDownPrimerStatus.currentPackVersion ?? null,
       currentPackVersionAfterCrash: workerDownStatus.currentPackVersion ?? null,
       validationRecordCountBefore: workerDownRecordStart,
