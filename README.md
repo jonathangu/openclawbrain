@@ -85,7 +85,7 @@ The install command records the plugin and enables it.
 
 In most cases, no manual JSON edits are needed after `openclaw plugins install`.
 
-Important current truth: older OpenClaw builds exposed a `plugins.slots.contextEngine` seam, but the current host build used for Phase 1 validation no longer accepts that slot and no longer exposes `api.registerContextEngine`. Until OpenClawBrain adapts to the current plugin/memory seam, do **not** treat old `contextEngine` slot examples as valid host-surface setup guidance.
+Important current truth: older OpenClaw builds exposed a `plugins.slots.contextEngine` seam, but the current host build used for Phase 1 validation no longer accepts that slot. OpenClawBrain now has a hook-based compatibility bridge for hosts that no longer expose `api.registerContextEngine`, but the old `contextEngine` slot examples are still invalid host-surface setup guidance and the sterile harness/proof lane still needs to be rerun on the repaired seam.
 
 Restart OpenClaw after configuration changes.
 
@@ -213,7 +213,7 @@ This repo is already beyond “foundation only,” but it is **not** yet operati
 - Embedding support currently targets tested OpenAI-compatible `/v1/embeddings` APIs, including local Ollama-style endpoints.
 - Child-worker mode now runs behind a dedicated supervisor with explicit protocol messages, restart accounting, reload acknowledgements, and stronger status/doctor truth; the remaining operator-proof gap is on the host-surface seam, not the learner boundary itself.
 - Structured evidence harvesting now exists end to end (raw evidence → resolved labels with explicit episode attribution), harvested completions can now persist multiple concurrent raw signals with extractor metadata before worker resolution, structured tool-result/function-output parts now feed self-evidence detection before regex fallback while recording richer raw-evidence metadata (`messageId`, tool/call identity, command/exit-code/file/artifact hints when available), scanner guidance can now bind to explicit structured message parts — both tool chains and non-tool guidance parts like file/snapshot/subtask blocks — when runbook/checklist-style messages are backed by real structured metadata, and worker-side same-trust scanner resolution now prefers those structured scanner signals when scanner evidence conflicts while still keeping the stronger-confidence label when same-value scanner signals merely corroborate each other. The remaining gap is that source detection still leans on heuristics more than the intended richer human/self/scanner evidence flow.
-- Deterministic session-bound `brain_teach` proof now exists, but the current raw host lane is blocked by stale OpenClaw seam drift (`plugins.slots.contextEngine` / `api.registerContextEngine`) and the final narrow worker-down host claim is still unfrozen.
+- Deterministic session-bound `brain_teach` proof now exists, and plugin registration no longer hard-fails on hosts without `api.registerContextEngine` thanks to a hook-based compatibility bridge; however, the raw host lane still needs the sterile harness/config to stop using the dead `plugins.slots.contextEngine` slot and the final narrow worker-down host claim is still unfrozen.
 - Replay-gated promotion exists, but mutation evaluation has not yet reached the intended bundle-level replay contract.
 - Upstream `openclaw/plugin-sdk` type drift still affects full-repo `npx tsc --noEmit`.
 
@@ -356,7 +356,7 @@ pnpm exec tsx scripts/validate-short-static-classification.ts \
   --workspace "$HOME/.openclaw/workspace-ocbphase1"
 ```
 
-On the current OpenClaw host build, that classifier truthfully freezes the remaining “short-static drift” question as **stale host seam drift first**: the host config rejects `plugins.slots.contextEngine`, and plugin register fails because `api.registerContextEngine` is gone. Until that seam is adapted, raw host-path short-static probing is not a valid semantic proof boundary.
+On the current OpenClaw host build, that classifier truthfully froze the remaining “short-static drift” question as **stale host seam drift first**. OpenClawBrain now has a hook-based fallback for hosts without `api.registerContextEngine`, but the sterile harness/config still rejects `plugins.slots.contextEngine`, so raw host-path short-static probing is not yet a valid semantic proof boundary until that harness lane is rerun on the repaired seam.
 
 Current state: install/config wiring + fixture workspace + `openclawbrain init/status/doctor` are wired, and the harness can now target either temp-home isolation or a named sterile lane. The deterministic runtime layer already proves immediate `brain_teach` retrieval plus worker-down fail-open serving, and the session-bound harness now proves `brain_teach` deterministically at the correct seam with 20/20 identical passes. Raw prompt-driven `openclaw agent --local` is **not** the release proof boundary for `brain_teach`; on the current OpenClaw host, the remaining host work is to adapt the stale plugin/config seam and then freeze recurrent/shadow/skip-mode plus the narrow worker-down serving claim on that repaired boundary.
 

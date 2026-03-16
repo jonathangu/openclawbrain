@@ -4,20 +4,23 @@ import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import lcmPlugin from "../index.js";
+import { LcmContextEngine } from "../src/engine.js";
 import { closeLcmConnection } from "../src/db/connection.js";
 
 type RegisteredEngineFactory = (() => unknown) | undefined;
 
 function buildApi(
   pluginConfig: Record<string, unknown>,
-  options?: { includeModelAuth?: boolean; agentDir?: string },
+  options?: { includeModelAuth?: boolean; agentDir?: string; includeRegisterContextEngine?: boolean },
 ): {
   api: OpenClawPluginApi;
   getFactory: () => RegisteredEngineFactory;
+  getHooks: () => Map<string, Function>;
   infoLog: ReturnType<typeof vi.fn>;
   warnLog: ReturnType<typeof vi.fn>;
 } {
   let factory: RegisteredEngineFactory;
+  const hooks = new Map<string, Function>();
   const infoLog = vi.fn();
   const warnLog = vi.fn();
   const agentDir = options?.agentDir ?? "/tmp/fake-agent";
@@ -58,9 +61,13 @@ function buildApi(
       error: vi.fn(),
       debug: vi.fn(),
     },
-    registerContextEngine: vi.fn((_id: string, nextFactory: () => unknown) => {
-      factory = nextFactory;
-    }),
+    ...(options?.includeRegisterContextEngine === false
+      ? {}
+      : {
+          registerContextEngine: vi.fn((_id: string, nextFactory: () => unknown) => {
+            factory = nextFactory;
+          }),
+        }),
     registerTool: vi.fn(),
     registerHook: vi.fn(),
     registerHttpHandler: vi.fn(),
@@ -72,12 +79,15 @@ function buildApi(
     registerProvider: vi.fn(),
     registerCommand: vi.fn(),
     resolvePath: vi.fn(() => agentDir),
-    on: vi.fn(),
+    on: vi.fn((hookName: string, handler: Function) => {
+      hooks.set(hookName, handler);
+    }),
   } as unknown as OpenClawPluginApi;
 
   return {
     api,
     getFactory: () => factory,
+    getHooks: () => hooks,
     infoLog,
     warnLog,
   };
@@ -141,6 +151,78 @@ describe("lcm plugin registration", () => {
     expect(infoLog).toHaveBeenCalledWith(
       `[openclawbrain] Plugin loaded (enabled=true, db=${dbPath}, threshold=0.33)`,
     );
+  });
+
+  it("registers a hook compatibility bridge when registerContextEngine is unavailable", async () => {
+    const assembleSpy = vi.spyOn(LcmContextEngine.prototype, "assemble").mockResolvedValue({
+      messages: [
+        { role: "assistant", content: "<summary id=\"sum_1\">Earlier context</summary>" },
+        { role: "user", content: "latest prompt" },
+      ] as any,
+      estimatedTokens: 42,
+      systemPromptAddition: "Use lcm_expand_query for exact details.",
+    } as any);
+    const afterTurnSpy = vi.spyOn(LcmContextEngine.prototype, "afterTurn").mockResolvedValue();
+
+    const { api, getFactory, getHooks, warnLog } = buildApi(
+      { enabled: true },
+      { includeRegisterContextEngine: false },
+    );
+
+    lcmPlugin.register(api);
+
+    expect(getFactory()).toBeUndefined();
+    const hooks = getHooks();
+    expect(hooks.has("before_prompt_build")).toBe(true);
+    expect(hooks.has("agent_end")).toBe(true);
+    expect(hooks.has("session_end")).toBe(true);
+    expect(warnLog).toHaveBeenCalledWith(
+      "[openclawbrain] registerContextEngine unavailable; using hook compatibility bridge for prompt assembly/after-turn ingest.",
+    );
+
+    const beforePromptBuild = hooks.get("before_prompt_build")!;
+    const beforePromptResult = await beforePromptBuild(
+      {
+        prompt: "latest prompt",
+        messages: [{ role: "user", content: "latest prompt" }],
+      },
+      {
+        sessionId: "sess_1",
+        sessionKey: "main:sess_1",
+      },
+    );
+    expect(assembleSpy).toHaveBeenCalledWith({
+      sessionId: "sess_1",
+      messages: [{ role: "user", content: "latest prompt" }],
+    });
+    expect(beforePromptResult).toEqual({
+      prependContext: expect.stringContaining("Earlier context"),
+    });
+    expect(beforePromptResult.prependContext).toContain("Use lcm_expand_query for exact details.");
+
+    const agentEnd = hooks.get("agent_end")!;
+    await agentEnd(
+      {
+        messages: [
+          { role: "user", content: "latest prompt" },
+          { role: "assistant", content: "final answer" },
+        ],
+        success: true,
+      },
+      {
+        sessionId: "sess_1",
+        sessionKey: "main:sess_1",
+      },
+    );
+    expect(afterTurnSpy).toHaveBeenCalledWith({
+      sessionId: "sess_1",
+      sessionFile: "",
+      messages: [
+        { role: "user", content: "latest prompt" },
+        { role: "assistant", content: "final answer" },
+      ],
+      prePromptMessageCount: 1,
+    });
   });
 
   it("inherits OpenClaw's default model for summarization when no LCM model override is set", () => {

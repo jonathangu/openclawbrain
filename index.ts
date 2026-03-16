@@ -1270,6 +1270,194 @@ function createLcmDependencies(api: OpenClawPluginApi): LcmDependencies {
   };
 }
 
+type ContextEngineRegisteringApi = OpenClawPluginApi & {
+  registerContextEngine?: (id: string, factory: () => unknown) => void;
+};
+
+function normalizePromptText(value: unknown): string {
+  if (typeof value === "string") {
+    return value.trim();
+  }
+  if (Array.isArray(value)) {
+    return value
+      .map((entry) => normalizePromptText(entry))
+      .filter((entry) => entry.length > 0)
+      .join("\n")
+      .trim();
+  }
+  if (!value || typeof value !== "object") {
+    return "";
+  }
+
+  const record = value as Record<string, unknown>;
+  return [
+    normalizePromptText(record.text),
+    normalizePromptText(record.content),
+    normalizePromptText(record.value),
+    normalizePromptText(record.thinking),
+    normalizePromptText(record.summary),
+  ]
+    .filter((entry, index, arr) => entry.length > 0 && arr.indexOf(entry) === index)
+    .join("\n")
+    .trim();
+}
+
+function normalizePromptRole(message: unknown): string {
+  if (!message || typeof message !== "object") {
+    return "message";
+  }
+  const role = (message as { role?: unknown }).role;
+  return typeof role === "string" && role.trim().length > 0 ? role.trim() : "message";
+}
+
+function promptMessageSignature(message: unknown): string {
+  if (!message || typeof message !== "object") {
+    return JSON.stringify(message);
+  }
+  const record = message as Record<string, unknown>;
+  return JSON.stringify({
+    role: normalizePromptRole(record),
+    content: normalizePromptText(record.content),
+  });
+}
+
+function extractPrependedMessages(assembledMessages: unknown[], liveMessages: unknown[]): unknown[] {
+  if (assembledMessages.length === 0) {
+    return [];
+  }
+  if (liveMessages.length === 0) {
+    return assembledMessages;
+  }
+
+  const assembledSignatures = assembledMessages.map((message) => promptMessageSignature(message));
+  const liveSignatures = liveMessages.map((message) => promptMessageSignature(message));
+  const maxOverlap = Math.min(assembledSignatures.length, liveSignatures.length);
+
+  for (let overlap = maxOverlap; overlap > 0; overlap -= 1) {
+    const assembledTail = assembledSignatures.slice(-overlap);
+    const liveTail = liveSignatures.slice(-overlap);
+    if (assembledTail.join("\u0000") === liveTail.join("\u0000")) {
+      return assembledMessages.slice(0, assembledMessages.length - overlap);
+    }
+  }
+
+  return assembledMessages;
+}
+
+function formatPrependedContext(messages: unknown[], systemPromptAddition?: string): string | undefined {
+  const sections: string[] = [];
+  const promptAddition = typeof systemPromptAddition === "string" ? systemPromptAddition.trim() : "";
+  if (promptAddition) {
+    sections.push(promptAddition);
+  }
+
+  const renderedMessages = messages
+    .map((message) => {
+      const text = normalizePromptText((message as { content?: unknown } | null)?.content);
+      if (!text) {
+        return "";
+      }
+      return `### ${normalizePromptRole(message)}\n${text}`;
+    })
+    .filter((entry) => entry.length > 0);
+
+  if (renderedMessages.length > 0) {
+    sections.push([
+      "## OpenClawBrain recalled context",
+      "",
+      renderedMessages.join("\n\n"),
+    ].join("\n"));
+  }
+
+  if (sections.length === 0) {
+    return undefined;
+  }
+  return sections.join("\n\n");
+}
+
+function registerHookCompatibilityBridge(
+  api: OpenClawPluginApi,
+  lcm: LcmContextEngine,
+  deps: ReturnType<typeof createLcmDependencies>,
+): void {
+  const prePromptMessageCounts = new Map<string, number>();
+  const sessionIdsByKey = new Map<string, string>();
+
+  const rememberSession = (sessionId?: string | null, sessionKey?: string | null) => {
+    if (typeof sessionId === "string" && sessionId.trim().length > 0 && typeof sessionKey === "string" && sessionKey.trim().length > 0) {
+      sessionIdsByKey.set(sessionKey.trim(), sessionId.trim());
+    }
+  };
+
+  const resolveHookSessionId = async (ctx: { sessionId?: string; sessionKey?: string }): Promise<string | undefined> => {
+    if (typeof ctx.sessionId === "string" && ctx.sessionId.trim().length > 0) {
+      rememberSession(ctx.sessionId, ctx.sessionKey);
+      return ctx.sessionId.trim();
+    }
+    if (typeof ctx.sessionKey === "string" && ctx.sessionKey.trim().length > 0) {
+      const key = ctx.sessionKey.trim();
+      const remembered = sessionIdsByKey.get(key);
+      if (remembered) {
+        return remembered;
+      }
+      const resolved = await deps.resolveSessionIdFromSessionKey(key);
+      if (resolved) {
+        sessionIdsByKey.set(key, resolved);
+        return resolved;
+      }
+      return key;
+    }
+    return undefined;
+  };
+
+  api.on("before_prompt_build", async (event, ctx) => {
+    const sessionId = await resolveHookSessionId(ctx);
+    if (!sessionId) {
+      return undefined;
+    }
+    prePromptMessageCounts.set(sessionId, Array.isArray(event.messages) ? event.messages.length : 0);
+
+    const assembled = await lcm.assemble({
+      sessionId,
+      messages: Array.isArray(event.messages) ? event.messages as Parameters<LcmContextEngine["assemble"]>[0]["messages"] : [],
+    }) as AssembleResultWithSystemPrompt;
+    const prependedMessages = extractPrependedMessages(assembled.messages as unknown[], Array.isArray(event.messages) ? event.messages : []);
+    const prependContext = formatPrependedContext(prependedMessages, assembled.systemPromptAddition);
+    if (!prependContext) {
+      return undefined;
+    }
+    return { prependContext };
+  });
+
+  api.on("agent_end", async (event, ctx) => {
+    const sessionId = await resolveHookSessionId(ctx);
+    if (!sessionId) {
+      return;
+    }
+    const prePromptMessageCount = prePromptMessageCounts.get(sessionId) ?? 0;
+    prePromptMessageCounts.delete(sessionId);
+    await lcm.afterTurn({
+      sessionId,
+      sessionFile: "",
+      messages: Array.isArray(event.messages) ? event.messages as Parameters<LcmContextEngine["afterTurn"]>[0]["messages"] : [],
+      prePromptMessageCount,
+    });
+  });
+
+  api.on("session_end", async (_event, ctx) => {
+    prePromptMessageCounts.delete(ctx.sessionId);
+    for (const [sessionKey, sessionId] of sessionIdsByKey.entries()) {
+      if (sessionId === ctx.sessionId) {
+        sessionIdsByKey.delete(sessionKey);
+      }
+    }
+  });
+
+  api.logger.warn(
+    "[openclawbrain] registerContextEngine unavailable; using hook compatibility bridge for prompt assembly/after-turn ingest.",
+  );
+}
+
 const lcmPlugin = {
   id: "openclawbrain",
   name: "OpenClawBrain",
@@ -1290,7 +1478,12 @@ const lcmPlugin = {
     const deps = createLcmDependencies(api);
     const lcm = new LcmContextEngine(deps);
 
-    api.registerContextEngine("openclawbrain", () => lcm);
+    const contextApi = api as ContextEngineRegisteringApi;
+    if (typeof contextApi.registerContextEngine === "function") {
+      contextApi.registerContextEngine("openclawbrain", () => lcm);
+    } else {
+      registerHookCompatibilityBridge(api, lcm, deps);
+    }
     api.registerTool((ctx) =>
       createLcmGrepTool({
         deps,
