@@ -56,6 +56,7 @@ Required claims:
 - raw harvesting preserves multiple concurrent evidence signals with extractor metadata before worker-side trust resolution collapses them into labels
 - structured tool-result/function-output parts can generate self-evidence even when flattened stored text is empty
 - structured self-evidence records richer raw metadata when available (`messageId`, tool/call identity, command/exit-code/file/artifact hints)
+- scanner guidance can also record structured tool-chain metadata when a runbook/checklist message is backed by explicit tool-call parts
 - explicit episode attribution, resolver attribution, and recent-conversation fallback are all audited rather than implied
 
 ### Level 2 — Recorded replay proofs

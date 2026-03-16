@@ -1,4 +1,4 @@
-import type { HarvestResult } from "../brain-runtime/evidence-detectors.js";
+import type { HarvestMessagePart, HarvestResult } from "../brain-runtime/evidence-detectors.js";
 
 const EXPLICIT_SCANNER_PATTERNS = [
   /\bexpand for details about\b/i,
@@ -16,6 +16,19 @@ const BULLET_PATTERN = /^\s*[-*]\s+\S.+$/gm;
 const HEADING_PATTERN = /^\s{0,3}#{1,6}\s+\S.+$/m;
 const FILE_REF_PATTERN = /(?:^|[\s(])(?:\.?\/)?[\w./-]+\.(?:md|txt|ts|tsx|js|jsx|json|yaml|yml|sh|mjs)(?=$|[\s):,])/gim;
 const IMPERATIVE_STEP_PATTERN = /^\s*(?:[-*]\s+|\d+\.\s+)?(?:inspect|check|retry|run|use|open|read|edit|verify|restart|re-?run|apply|deploy|create|install|record|compare|promote|rollback)\b/gim;
+const STRUCTURED_TOOL_NAMES = new Set(["bash", "git", "gh", "pnpm", "npm", "node", "openclaw", "python", "python3", "curl", "ollama", "codex", "claude"]);
+
+type ContentSignalSummary = {
+  docMarker: string | null;
+  numberedSteps: number;
+  bulletLines: number;
+  commandLines: number;
+  imperativeLines: number;
+  hasHeading: boolean;
+  fileRefs: number;
+  score: number;
+  signals: string[];
+};
 
 function countMatches(pattern: RegExp, content: string): number {
   const flags = pattern.flags.includes("g") ? pattern.flags : `${pattern.flags}g`;
@@ -23,25 +36,104 @@ function countMatches(pattern: RegExp, content: string): number {
   return Array.from(content.matchAll(matcher)).length;
 }
 
-export function detectScannerEvidence(content: string): HarvestResult | null {
-  for (const pattern of EXPLICIT_SCANNER_PATTERNS) {
-    if (pattern.test(content)) {
-      return {
-        value: 0.25,
-        source: "scanner",
-        reason: `scanner marker: ${pattern.source}`,
-        confidence: 0.7,
-        kind: "scanner_signal",
-        extractor: "scanner_marker",
-      };
+function parseJson(value: string | null | undefined): unknown {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return null;
+  }
+  try {
+    return JSON.parse(value);
+  } catch {
+    return value;
+  }
+}
+
+function asRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function readPartMetadata(part: HarvestMessagePart): Record<string, unknown> {
+  return asRecord(parseJson(part.metadata)) ?? {};
+}
+
+function readString(record: Record<string, unknown> | null, keys: string[]): string | undefined {
+  if (!record) {
+    return undefined;
+  }
+  for (const key of keys) {
+    const value = record[key];
+    if (typeof value === "string" && value.trim().length > 0) {
+      return value.trim();
+    }
+  }
+  return undefined;
+}
+
+function readStringArray(value: unknown): string[] {
+  if (Array.isArray(value)) {
+    return value.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0);
+  }
+  if (typeof value === "string" && value.trim().length > 0) {
+    return [value.trim()];
+  }
+  return [];
+}
+
+function readCommand(value: unknown): string | undefined {
+  if (typeof value === "string" && value.trim().length > 0) {
+    return value.trim();
+  }
+  if (Array.isArray(value)) {
+    const parts = value.filter((entry): entry is string => typeof entry === "string" && entry.trim().length > 0);
+    return parts.length > 0 ? parts.join(" ") : undefined;
+  }
+  return undefined;
+}
+
+function extractCommand(input: unknown): string | undefined {
+  const inputRecord = asRecord(input);
+  return readString(inputRecord, ["command", "cmd", "shellCommand"])
+    ?? readCommand(inputRecord?.args)
+    ?? (typeof input === "string" && input.trim().length > 0 ? input.trim() : undefined);
+}
+
+function collectStructuredFileHints(part: HarvestMessagePart, metadata: Record<string, unknown>): string[] {
+  const parsedInput = parseJson(part.toolInput);
+  const parsedOutput = parseJson(part.toolOutput);
+  const inputRecord = asRecord(parsedInput);
+  const outputRecord = asRecord(parsedOutput);
+  const rawRecord = asRecord(metadata.raw);
+  const collected = new Set<string>();
+
+  for (const value of [
+    outputRecord?.filesTouched,
+    outputRecord?.changedFiles,
+    outputRecord?.files,
+    outputRecord?.paths,
+    inputRecord?.filesTouched,
+    inputRecord?.files,
+    inputRecord?.paths,
+    readString(outputRecord, ["artifactPath", "outputPath", "reportPath", "logPath", "filePath", "path"]),
+    readString(inputRecord, ["artifactPath", "outputPath", "reportPath", "logPath", "filePath", "path"]),
+    readString(rawRecord, ["path", "filePath", "artifactPath"]),
+  ]) {
+    for (const item of readStringArray(value)) {
+      collected.add(item);
     }
   }
 
+  return Array.from(collected);
+}
+
+function collectContentSignals(content: string): ContentSignalSummary {
   const signals: string[] = [];
   let score = 0;
+  let docMarker: string | null = null;
 
   for (const pattern of DOC_MARKER_PATTERNS) {
     if (pattern.test(content)) {
+      docMarker = pattern.source;
       signals.push(`doc:${pattern.source}`);
       score += 1.0;
       break;
@@ -72,7 +164,8 @@ export function detectScannerEvidence(content: string): HarvestResult | null {
     score += 0.8;
   }
 
-  if (HEADING_PATTERN.test(content) && (numberedSteps >= 1 || bulletLines >= 2)) {
+  const hasHeading = HEADING_PATTERN.test(content);
+  if (hasHeading && (numberedSteps >= 1 || bulletLines >= 2)) {
     signals.push("heading");
     score += 0.4;
   }
@@ -83,16 +176,133 @@ export function detectScannerEvidence(content: string): HarvestResult | null {
     score += 0.3;
   }
 
-  if (score < 1.8) {
+  return {
+    docMarker,
+    numberedSteps,
+    bulletLines,
+    commandLines,
+    imperativeLines,
+    hasHeading,
+    fileRefs,
+    score,
+    signals,
+  };
+}
+
+function detectStructuredScannerEvidence(
+  contentSignals: ContentSignalSummary,
+  messageParts?: HarvestMessagePart[],
+): HarvestResult | null {
+  if (!messageParts || messageParts.length === 0) {
+    return null;
+  }
+
+  const toolNames = new Set<string>();
+  const commands = new Set<string>();
+  const fileHints = new Set<string>();
+  const partOrdinals: number[] = [];
+  const rawTypes = new Set<string>();
+
+  for (const part of messageParts) {
+    const metadata = readPartMetadata(part);
+    const rawType = typeof metadata.rawType === "string" ? metadata.rawType : null;
+    if (rawType) {
+      rawTypes.add(rawType);
+    }
+
+    if (part.partType === "tool") {
+      const toolName = typeof part.toolName === "string" ? part.toolName.trim() : "";
+      if (toolName && STRUCTURED_TOOL_NAMES.has(toolName)) {
+        toolNames.add(toolName);
+        if (typeof part.ordinal === "number") {
+          partOrdinals.push(part.ordinal);
+        }
+      }
+
+      const command = extractCommand(parseJson(part.toolInput));
+      if (command) {
+        commands.add(command);
+      }
+
+      for (const hint of collectStructuredFileHints(part, metadata)) {
+        fileHints.add(hint);
+      }
+    }
+  }
+
+  const hasGuidanceShape = Boolean(contentSignals.docMarker)
+    || contentSignals.numberedSteps >= 2
+    || (contentSignals.hasHeading && contentSignals.bulletLines >= 2)
+    || contentSignals.imperativeLines >= 2;
+
+  if (!hasGuidanceShape) {
+    return null;
+  }
+
+  if (toolNames.size === 0 || (commands.size === 0 && fileHints.size === 0)) {
+    return null;
+  }
+
+  const metadata: Record<string, unknown> = {
+    toolNames: Array.from(toolNames),
+    commands: Array.from(commands),
+    fileHints: Array.from(fileHints),
+    partOrdinals,
+    rawTypes: Array.from(rawTypes),
+    guidanceSignals: contentSignals.signals,
+  };
+
+  return {
+    value: 0.25,
+    source: "scanner",
+    reason: `scanner structured tool-chain: tools=${Array.from(toolNames).join(",")}`,
+    confidence: 0.85,
+    kind: "scanner_signal",
+    extractor: "structured_tool_chain",
+    metadata,
+  };
+}
+
+export function detectScannerEvidence(content: string, messageParts?: HarvestMessagePart[]): HarvestResult | null {
+  for (const pattern of EXPLICIT_SCANNER_PATTERNS) {
+    if (pattern.test(content)) {
+      return {
+        value: 0.25,
+        source: "scanner",
+        reason: `scanner marker: ${pattern.source}`,
+        confidence: 0.7,
+        kind: "scanner_signal",
+        extractor: "scanner_marker",
+        metadata: { marker: pattern.source },
+      };
+    }
+  }
+
+  const contentSignals = collectContentSignals(content);
+  const structured = detectStructuredScannerEvidence(contentSignals, messageParts);
+  if (structured) {
+    return structured;
+  }
+
+  if (contentSignals.score < 1.8) {
     return null;
   }
 
   return {
     value: 0.25,
     source: "scanner",
-    reason: `scanner heuristic: ${signals.join(", ")}`,
-    confidence: Math.min(0.8, 0.5 + signals.length * 0.05),
+    reason: `scanner heuristic: ${contentSignals.signals.join(", ")}`,
+    confidence: Math.min(0.8, 0.5 + contentSignals.signals.length * 0.05),
     kind: "scanner_signal",
     extractor: "scanner_heuristic",
+    metadata: {
+      guidanceSignals: contentSignals.signals,
+      numberedSteps: contentSignals.numberedSteps,
+      bulletLines: contentSignals.bulletLines,
+      commandLines: contentSignals.commandLines,
+      imperativeLines: contentSignals.imperativeLines,
+      fileRefs: contentSignals.fileRefs,
+      hasHeading: contentSignals.hasHeading,
+    },
   };
 }

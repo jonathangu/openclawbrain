@@ -176,6 +176,47 @@ describe("LabelHarvester", () => {
       expect(result).not.toBeNull();
       expect(result!.source).toBe("scanner");
       expect(result!.reason).toContain("scanner heuristic");
+      expect(result!.metadata).toMatchObject({
+        guidanceSignals: expect.arrayContaining(["heading"]),
+        fileRefs: 1,
+        hasHeading: true,
+      });
+    });
+
+    it("detects structured scanner tool-chain guidance from message parts", () => {
+      const { harvester } = setup();
+      const result = harvester.detectLabel(
+        "assistant",
+        "## Release runbook\n1. Inspect the deploy report\n2. Compare the current branch state before promotion",
+        [
+          {
+            partType: "tool",
+            ordinal: 1,
+            toolCallId: "call_1",
+            toolName: "bash",
+            toolInput: JSON.stringify({ command: "pnpm test" }),
+            toolOutput: JSON.stringify({ artifactPath: "docs/evidence/run.txt" }),
+            metadata: JSON.stringify({ originalRole: "assistant", rawType: "function_call" }),
+          },
+          {
+            partType: "tool",
+            ordinal: 2,
+            toolCallId: "call_2",
+            toolName: "gh",
+            toolInput: JSON.stringify({ command: "gh pr view 12" }),
+            metadata: JSON.stringify({ originalRole: "assistant", rawType: "function_call" }),
+          },
+        ],
+      );
+      expect(result).not.toBeNull();
+      expect(result!.source).toBe("scanner");
+      expect(result!.extractor).toBe("structured_tool_chain");
+      expect(result!.metadata).toMatchObject({
+        toolNames: ["bash", "gh"],
+        commands: ["pnpm test", "gh pr view 12"],
+        fileHints: ["docs/evidence/run.txt"],
+        partOrdinals: [1, 2],
+      });
     });
 
     it("detects multiple evidence signals from one assistant message when both are present", () => {
@@ -295,6 +336,53 @@ describe("LabelHarvester", () => {
       expect(evidence.map((row) => row.metadata?.extractor).sort()).toEqual(["scanner_heuristic", "self_pattern"]);
       expect(evidence.map((row) => row.metadata?.evidenceCount)).toEqual([2, 2]);
       expect(evidence.map((row) => row.metadata?.attributionMode)).toEqual(["resolver", "resolver"]);
+    });
+
+    it("persists structured scanner metadata when guidance is backed by explicit tool-call parts", async () => {
+      const { store, harvester } = setup((conversationId) => conversationId === 7 ? "ep_pending" : null);
+      store.insertEpisode(makeEpisode({
+        id: "ep_pending",
+        conversationId: 7,
+        createdAt: Date.now(),
+      }));
+
+      await harvester.harvestFromMessage({
+        conversationId: 7,
+        messageId: 77,
+        role: "assistant",
+        content: "## Release runbook\n1. Inspect the deploy report\n2. Compare the current branch state before promotion",
+        messageParts: [
+          {
+            partType: "tool",
+            ordinal: 1,
+            toolCallId: "call_1",
+            toolName: "bash",
+            toolInput: JSON.stringify({ command: "pnpm test" }),
+            toolOutput: JSON.stringify({ artifactPath: "docs/evidence/run.txt" }),
+            metadata: JSON.stringify({ originalRole: "assistant", rawType: "function_call" }),
+          },
+          {
+            partType: "tool",
+            ordinal: 2,
+            toolCallId: "call_2",
+            toolName: "gh",
+            toolInput: JSON.stringify({ command: "gh pr view 12" }),
+            metadata: JSON.stringify({ originalRole: "assistant", rawType: "function_call" }),
+          },
+        ],
+      });
+
+      const evidence = store.getPendingEvidence();
+      expect(evidence).toHaveLength(1);
+      expect(evidence[0]?.source).toBe("scanner");
+      expect(evidence[0]?.metadata).toMatchObject({
+        messageId: 77,
+        extractor: "structured_tool_chain",
+        toolNames: ["bash", "gh"],
+        commands: ["pnpm test", "gh pr view 12"],
+        fileHints: ["docs/evidence/run.txt"],
+        partOrdinals: [1, 2],
+      });
     });
 
     it("persists structured tool-result evidence even when flattened text is empty", async () => {

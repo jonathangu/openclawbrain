@@ -39,7 +39,7 @@ export function detectEvidenceBatch(
     const self = structuredSelf ?? detectSelfEvidence(content);
     const results = [
       self,
-      detectScannerEvidence(content),
+      detectScannerEvidence(content, messageParts),
     ].filter((result): result is HarvestResult => result !== null);
 
     const deduped = new Map<string, HarvestResult>();
