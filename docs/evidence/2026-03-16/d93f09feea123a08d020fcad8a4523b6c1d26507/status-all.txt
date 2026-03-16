@@ -1,0 +1,60 @@
+[plugins] [openclawbrain] Plugin loaded (enabled=true, db=/Users/cormorantai/.openclaw-ocbphase1/lcm.db, threshold=0.75)
+OpenClaw status --all
+
+Overview
+┌─────────────────┬────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ Item            │ Value                                                                                              │
+├─────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Version         │ 2026.3.13                                                                                          │
+│ OS              │ macos 26.3 (arm64)                                                                                 │
+│ Node            │ 22.22.0                                                                                            │
+│ Config          │ ~/.openclaw-ocbphase1/openclaw.json                                                                │
+│ Dashboard       │ http://127.0.0.1:19031/                                                                            │
+│ Tailscale       │ off · Running · cormorantais-mac-mini.tail499c70.ts.net                                            │
+│ Channel         │ dev (main)                                                                                         │
+│ Git             │ main · @ 66e02b29                                                                                  │
+│ Update          │ git main · ↔ origin/main · behind 544 · npm latest 2026.3.13 · deps stale                         │
+│ Gateway         │ local · ws://127.0.0.1:19031 (local loopback) · unreachable (connect failed: connect ECONNREFUSED  │
+│                 │ 127.0.0.1:19031)                                                                                   │
+│ Security        │ Run: openclaw security audit --deep                                                                │
+│ Gateway self    │ unknown                                                                                            │
+│ Gateway service │ LaunchAgent not installed                                                                          │
+│ Node service    │ LaunchAgent not installed                                                                          │
+│ Agents          │ 1 total · 1 bootstrapping · 0 active · 1 sessions                                                  │
+└─────────────────┴────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+Channels
+┌──────────┬─────────┬────────┬────────────────────────────────────────────────────────────────────────────────────────┐
+│ Channel  │ Enabled │ State  │ Detail                                                                                 │
+├──────────┼─────────┼────────┼────────────────────────────────────────────────────────────────────────────────────────┤
+└──────────┴─────────┴────────┴────────────────────────────────────────────────────────────────────────────────────────┘
+
+Agents
+┌────────────┬────────────────┬──────────┬──────────┬──────────────────────────────────────────────────────────────────┐
+│ Agent      │ Bootstrap file │ Sessions │ Active   │ Store                                                            │
+├────────────┼────────────────┼──────────┼──────────┼──────────────────────────────────────────────────────────────────┤
+│ main       │ PRESENT        │        1 │ 4h ago   │ ~/.openclaw-ocbphase1/agents/main/sessions/sessions.json         │
+└────────────┴────────────────┴──────────┴──────────┴──────────────────────────────────────────────────────────────────┘
+
+Diagnosis (read-only)
+
+Gateway connection details:
+  Gateway target: ws://127.0.0.1:19031
+  Source: local loopback
+  Config: /Users/cormorantai/.openclaw-ocbphase1/openclaw.json
+  Bind: loopback
+
+✓ Config: /Users/cormorantai/.openclaw-ocbphase1/openclaw.json
+✓ Restart sentinel: none
+✓ Port 19031
+✓ Tailscale: off · Running · cormorantais-mac-mini.tail499c70.ts.net
+  ips: 100.73.247.26, fd7a:115c:a1e0::e932:f71a
+✓ Skills: 9 eligible · 0 missing · /Users/cormorantai/.openclaw/workspace-ocbphase1
+! Channel issues skipped (gateway unreachable)
+
+Gateway health:
+  connect failed: connect ECONNREFUSED 127.0.0.1:19031
+
+Pasteable debug report. Auth tokens redacted.
+Troubleshooting: https://docs.openclaw.ai/troubleshooting
+

@@ -1,0 +1,41 @@
+│
+◇  Config warnings ────────────────────────────────────────────────────────╮
+│                                                                          │
+│  - plugins.entries.ollama: plugin ollama: plugin id mismatch (manifest   │
+│    uses "ollama", entry hints "ollama-provider")                         │
+│  - plugins.entries.sglang: plugin sglang: plugin id mismatch (manifest   │
+│    uses "sglang", entry hints "sglang-provider")                         │
+│  - plugins.entries.vllm: plugin vllm: plugin id mismatch (manifest uses  │
+│    "vllm", entry hints "vllm-provider")                                  │
+│                                                                          │
+├──────────────────────────────────────────────────────────────────────────╯
+│
+◇  Doctor changes ──────────────────────────────╮
+│                                               │
+│  Telegram configured, enabled automatically.  │
+│                                               │
+├───────────────────────────────────────────────╯
+│
+◇  Doctor ──────────────────────────────────────────────╮
+│                                                       │
+│  Run "openclaw doctor --fix" to apply these changes.  │
+│                                                       │
+├───────────────────────────────────────────────────────╯
+Service: LaunchAgent (not loaded)
+File logs: /tmp/openclaw/openclaw-2026-03-16.log
+
+Config (cli): ~/.openclaw-ocbphase1/openclaw.json
+Config (service): ~/.openclaw-ocbphase1/openclaw.json
+
+Gateway: bind=loopback (127.0.0.1), port=19031 (env/config)
+Probe target: ws://127.0.0.1:19031
+Dashboard: http://127.0.0.1:19031/
+Probe note: Loopback-only gateway; only local clients can connect.
+
+Runtime: unknown (Bad request.
+Could not find service "ai.openclaw.gateway" in domain for user gui: 501)
+
+
+
+Troubles: run openclaw status
+Troubleshooting: https://docs.openclaw.ai/troubleshooting
