@@ -1,22 +1,24 @@
 /**
  * Compatibility bridge for plugin-sdk context-engine symbols.
  *
- * This module intentionally exports only stable plugin-sdk surface area.
+ * This module exports stable plugin-sdk surface area plus shims for
+ * types that were previously exported but are now removed.
  */
 
 export type {
   ContextEngine,
   ContextEngineInfo,
   AssembleResult,
+  AssembleResultWithSystemPrompt,
   CompactResult,
   IngestResult,
   IngestBatchResult,
   BootstrapResult,
   SubagentSpawnPreparation,
   SubagentEndReason,
-} from "openclaw/plugin-sdk";
+  ContextEngineFactory,
+  OpenClawPluginToolContext,
+  AgentMessage,
+} from "./openclaw-sdk-compat.js";
 
-export {
-  registerContextEngine,
-  type ContextEngineFactory,
-} from "openclaw/plugin-sdk";
+export { type PluginRuntime, type RuntimeLogger } from "openclaw/plugin-sdk";

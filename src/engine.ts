@@ -7,13 +7,15 @@ import type {
   ContextEngine,
   ContextEngineInfo,
   AssembleResult,
+  AssembleResultWithSystemPrompt,
   BootstrapResult,
   CompactResult,
   IngestBatchResult,
   IngestResult,
   SubagentEndReason,
   SubagentSpawnPreparation,
-} from "openclaw/plugin-sdk";
+  AgentMessage,
+} from "./openclaw-sdk-compat.js";
 import { ContextAssembler, type AssembleContextResult } from "./assembler.js";
 import { CompactionEngine, type CompactionConfig } from "./compaction.js";
 import type { LcmConfig } from "./db/config.js";
@@ -97,8 +99,8 @@ import { SummaryStore } from "./store/summary-store.js";
 import { createLcmSummarizeFromLegacyParams } from "./summarize.js";
 import type { LcmDependencies } from "./types.js";
 
-type AgentMessage = Parameters<ContextEngine["ingest"]>[0]["message"];
-type AssembleResultWithSystemPrompt = AssembleResult & { systemPromptAddition?: string };
+// Re-export AssembleResultWithSystemPrompt from compat layer
+export type { AssembleResultWithSystemPrompt } from "./openclaw-sdk-compat.js";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 

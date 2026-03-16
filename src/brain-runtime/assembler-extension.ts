@@ -1,9 +1,8 @@
 import type { AssembleContextResult } from "../assembler.js";
-import type { ContextEngine } from "openclaw/plugin-sdk";
+import type { ContextEngine, AgentMessage } from "../openclaw-sdk-compat.js";
 import type { TraversalResult } from "../brain-core/types.js";
 import type { BrainService } from "./service.js";
 
-type AgentMessage = Parameters<ContextEngine["ingest"]>[0]["message"];
 export type BrainAssemblyDecisionMode =
   | "use_brain"
   | "shadow"

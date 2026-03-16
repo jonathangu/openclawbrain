@@ -1,4 +1,4 @@
-import type { ContextEngine } from "openclaw/plugin-sdk";
+import type { ContextEngine, AgentMessage, BrainDecisionMetadata } from "./openclaw-sdk-compat.js";
 import { sanitizeToolUseResultPairing } from "./transcript-repair.js";
 import type {
   ConversationStore,
@@ -6,8 +6,6 @@ import type {
   MessageRole,
 } from "./store/conversation-store.js";
 import type { SummaryStore, ContextItemRecord, SummaryRecord } from "./store/summary-store.js";
-
-type AgentMessage = Parameters<ContextEngine["ingest"]>[0]["message"];
 
 // ── Public types ─────────────────────────────────────────────────────────────
 
@@ -25,6 +23,8 @@ export interface AssembleContextResult {
   estimatedTokens: number;
   /** Optional dynamic system prompt guidance derived from DAG state */
   systemPromptAddition?: string;
+  /** Optional brain assembly decision metadata */
+  brainDecision?: BrainDecisionMetadata;
   /** Stats about what was assembled */
   stats: {
     rawMessageCount: number;

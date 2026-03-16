@@ -8,7 +8,7 @@ import { readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import { resolveLcmConfig } from "./src/db/config.js";
-import { LcmContextEngine } from "./src/engine.js";
+import { LcmContextEngine, type AssembleResultWithSystemPrompt } from "./src/engine.js";
 import { createLcmDescribeTool } from "./src/tools/lcm-describe-tool.js";
 import { createLcmExpandQueryTool } from "./src/tools/lcm-expand-query-tool.js";
 import { createLcmExpandTool } from "./src/tools/lcm-expand-tool.js";
@@ -1096,7 +1096,11 @@ function createLcmDependencies(api: OpenClawPluginApi): LcmDependencies {
       }
     },
     callGateway: async (params) => {
-      const sub = api.runtime.subagent;
+      // Stub for removed subagent API - the SDK no longer exposes this
+      const sub = (api.runtime as any).subagent;
+      if (!sub) {
+        throw new Error("Gateway subagent API not available in this OpenClaw version");
+      }
       switch (params.method) {
         case "agent":
           return sub.run({
@@ -1521,7 +1525,7 @@ const lcmPlugin = {
           if (!brain) {
             throw new Error("OpenClawBrain runtime is unavailable");
           }
-          const conversationId = await lcm.getConversationIdForSessionKey(ctx.sessionKey);
+          const conversationId = await lcm.getConversationIdForSessionKey(ctx.sessionKey ?? "");
           return brain.teach({ instruction, conversationId, kind, tags });
         },
         status: async () => lcm.getBrainService()?.status() ?? { enabled: false },
