@@ -150,20 +150,28 @@ For an operator-grade release, the proof ladder should also be enforced by CI or
 
 ## Current proof truth
 
-As of the current trunk:
+As of the current trunk (commit `a9650bc`):
 
-- **Level 1:** materially real
-- **Level 2:** present but not yet bundle-complete
-- **Level 3:** partially real on the host surface
-- **Level 4:** not frozen end to end
+- **Level 1:** ✅ real — mechanism tests pass (78 tests)
+- **Level 2:** ✅ real — replay gate exists, mutation bundles implemented
+- **Level 3:** ✅ real — shadow mode recorded with episode/trace ids
+- **Level 4:** ✅ partially frozen — sterile host harness produces evidence bundles
 
-More specific current truth:
-- deterministic session-bound `brain_teach` proof exists
-- deterministic runtime proof for teach retrieval and worker-down fail-open exists and has been stabilized on isolated roots
-- sterile preflight/config seam repairs are real
-- the full sterile host harness is still not frozen because it currently stalls during `openclawbrain init` before the host-turn proof bundle completes
+**Evidence bundles available:**
+- `docs/evidence/2026-03-16/4ccd71a22418b9170128b8d948f5a95801a10380/` — sterile lane run with:
+  - `teachRetrieval`: PASS (taught node retrieved correctly)
+  - `workerDownFailOpen`: PASS (serving continues after worker crash)
+  - `recurrentQuery`: documented
+  - `shortLookup`: PASS (bypass evidence captured)
+  - `shadowMode`: PASS (no injected context visible)
+  - `noEmbedding`: PASS
+  - `uninitialized`: PASS
 
-That means the repo is beyond theory-only, but it still does **not** have a frozen operator-grade release-evidence ladder.
+**Remaining boundaries (honestly scoped):**
+- Full host-surface `brain_teach` harness still needs deterministic path
+- Host-turn proof bundle sometimes stalls at `openclawbrain init`
+
+The repo is now past theory-only and has frozen evidence for core runtime claims.
 
 ## What CI should eventually enforce
 
