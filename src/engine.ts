@@ -1247,13 +1247,14 @@ export class LcmContextEngine implements ContextEngine {
       content: stored.content,
       tokenCount: stored.tokenCount,
     });
+    const messageParts = buildMessageParts({
+      sessionId,
+      message: messageForParts,
+      fallbackContent: stored.content,
+    });
     await this.conversationStore.createMessageParts(
       msgRecord.messageId,
-      buildMessageParts({
-        sessionId,
-        message: messageForParts,
-        fallbackContent: stored.content,
-      }),
+      messageParts,
     );
 
     // Append to context items so assembler can see it
@@ -1265,6 +1266,7 @@ export class LcmContextEngine implements ContextEngine {
         episodeId: params.brainEpisodeId ?? this.pendingBrainEpisodeBySession.get(sessionId),
         role: stored.role,
         content: stored.content,
+        messageParts,
       });
     }
 

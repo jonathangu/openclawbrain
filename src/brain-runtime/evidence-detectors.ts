@@ -1,7 +1,17 @@
 import type { BrainEvidenceKind, RewardSource } from "../brain-core/types.js";
 import { detectHumanEvidence } from "../brain-harvest/human.js";
 import { detectScannerEvidence } from "../brain-harvest/scanner.js";
-import { detectSelfEvidence } from "../brain-harvest/self.js";
+import { detectSelfEvidence, detectStructuredSelfEvidence } from "../brain-harvest/self.js";
+
+export type HarvestMessagePart = {
+  partType: string;
+  textContent?: string | null;
+  toolCallId?: string | null;
+  toolName?: string | null;
+  toolInput?: string | null;
+  toolOutput?: string | null;
+  metadata?: string | null;
+};
 
 export interface HarvestResult {
   value: number;
@@ -12,15 +22,21 @@ export interface HarvestResult {
   extractor?: string;
 }
 
-export function detectEvidenceBatch(role: string, content: string): HarvestResult[] {
+export function detectEvidenceBatch(
+  role: string,
+  content: string,
+  messageParts?: HarvestMessagePart[],
+): HarvestResult[] {
   if (role === "user") {
     const human = detectHumanEvidence(content);
     return human ? [human] : [];
   }
 
   if (role === "tool" || role === "assistant") {
+    const structuredSelf = detectStructuredSelfEvidence(messageParts);
+    const self = structuredSelf ?? detectSelfEvidence(content);
     const results = [
-      detectSelfEvidence(content),
+      self,
       detectScannerEvidence(content),
     ].filter((result): result is HarvestResult => result !== null);
 
@@ -43,6 +59,10 @@ export function detectEvidenceBatch(role: string, content: string): HarvestResul
   return [];
 }
 
-export function detectEvidence(role: string, content: string): HarvestResult | null {
-  return detectEvidenceBatch(role, content)[0] ?? null;
+export function detectEvidence(
+  role: string,
+  content: string,
+  messageParts?: HarvestMessagePart[],
+): HarvestResult | null {
+  return detectEvidenceBatch(role, content, messageParts)[0] ?? null;
 }

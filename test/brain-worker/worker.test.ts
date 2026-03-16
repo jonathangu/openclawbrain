@@ -183,4 +183,35 @@ describe("BrainWorker evidence resolution", () => {
     expect(resolved[0]?.resolution).toBe("discarded_duplicate");
     expect(resolved[0]?.note).toContain("equal-trust override");
   });
+
+  it("promotes higher-trust evidence over an existing lower-trust reward", async () => {
+    const { store, worker } = setup();
+    store.insertEpisode(makeEpisode({
+      id: "ep_4",
+      conversationId: 10,
+      reward: -0.5,
+      rewardSource: "self",
+    }));
+    store.insertEvidence({
+      episodeId: "ep_4",
+      conversationId: 10,
+      source: "human",
+      kind: "human_feedback",
+      value: 0.8,
+      confidence: 0.95,
+      reason: "user confirmed correct behavior",
+    });
+
+    await (worker as any).processEvidence();
+    await (worker as any).processLabels();
+
+    const episode = store.getEpisode("ep_4");
+    expect(episode?.reward).toBe(0.8);
+    expect(episode?.rewardSource).toBe("human");
+
+    const resolved = store.getResolvedLabelsForEpisode("ep_4", 10);
+    expect(resolved).toHaveLength(1);
+    expect(resolved[0]?.resolution).toBe("promoted_to_label");
+    expect(resolved[0]?.source).toBe("human");
+  });
 });

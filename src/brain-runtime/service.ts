@@ -602,6 +602,15 @@ export class BrainService {
     episodeId?: string;
     role: string;
     content: string;
+    messageParts?: Array<{
+      partType: string;
+      textContent?: string | null;
+      toolCallId?: string | null;
+      toolName?: string | null;
+      toolInput?: string | null;
+      toolOutput?: string | null;
+      metadata?: string | null;
+    }>;
   }): Promise<void> {
     await this.harvesterImpl.harvestFromMessage(params);
   }

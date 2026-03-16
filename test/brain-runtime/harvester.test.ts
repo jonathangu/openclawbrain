@@ -106,6 +106,36 @@ describe("LabelHarvester", () => {
       expect(result!.value).toBeGreaterThan(0);
     });
 
+    it("detects structured tool-result failure without relying on text keywords", () => {
+      const { harvester } = setup();
+      const result = harvester.detectLabel("tool", "", [
+        {
+          partType: "tool",
+          toolOutput: JSON.stringify({ ok: false, code: "ENOENT" }),
+          metadata: JSON.stringify({ originalRole: "toolResult", rawType: "tool_result" }),
+        },
+      ]);
+      expect(result).not.toBeNull();
+      expect(result!.source).toBe("self");
+      expect(result!.value).toBeLessThan(0);
+      expect(result!.extractor).toBe("structured_tool_result");
+    });
+
+    it("detects structured tool-result success without relying on text keywords", () => {
+      const { harvester } = setup();
+      const result = harvester.detectLabel("tool", "", [
+        {
+          partType: "tool",
+          toolOutput: JSON.stringify({ ok: true, cwd: "/tmp" }),
+          metadata: JSON.stringify({ originalRole: "toolResult", rawType: "function_call_output" }),
+        },
+      ]);
+      expect(result).not.toBeNull();
+      expect(result!.source).toBe("self");
+      expect(result!.value).toBeGreaterThan(0);
+      expect(result!.extractor).toBe("structured_tool_result");
+    });
+
     it("detects test pass", () => {
       const { harvester } = setup();
       const result = harvester.detectLabel("assistant", "All 247 tests passed");
@@ -227,6 +257,7 @@ describe("LabelHarvester", () => {
       expect(evidence[0]?.episodeId).toBe("ep_target");
       expect(evidence[0]?.kind).toBe("human_feedback");
       expect(evidence[0]?.metadata?.attributionMode).toBe("recent_conversation_fallback");
+      expect(evidence[0]?.metadata?.explicitEpisodeId).toBe("ep_other");
       expect(evidence[0]?.metadata?.matchedEpisodeId).toBe("ep_target");
     });
 
@@ -251,6 +282,35 @@ describe("LabelHarvester", () => {
       expect(evidence.map((row) => row.metadata?.extractor).sort()).toEqual(["scanner_heuristic", "self_pattern"]);
       expect(evidence.map((row) => row.metadata?.evidenceCount)).toEqual([2, 2]);
       expect(evidence.map((row) => row.metadata?.attributionMode)).toEqual(["resolver", "resolver"]);
+    });
+
+    it("persists structured tool-result evidence even when flattened text is empty", async () => {
+      const { store, harvester } = setup((conversationId) => conversationId === 7 ? "ep_pending" : null);
+      store.insertEpisode(makeEpisode({
+        id: "ep_pending",
+        conversationId: 7,
+        createdAt: Date.now(),
+      }));
+
+      await harvester.harvestFromMessage({
+        conversationId: 7,
+        role: "tool",
+        content: "",
+        messageParts: [
+          {
+            partType: "tool",
+            toolOutput: JSON.stringify({ ok: false, code: "ENOENT" }),
+            metadata: JSON.stringify({ originalRole: "toolResult", rawType: "tool_result" }),
+          },
+        ],
+      });
+
+      const evidence = store.getPendingEvidence();
+      expect(evidence).toHaveLength(1);
+      expect(evidence[0]?.episodeId).toBe("ep_pending");
+      expect(evidence[0]?.source).toBe("self");
+      expect(evidence[0]?.metadata?.extractor).toBe("structured_tool_result");
+      expect(evidence[0]?.metadata?.messagePartCount).toBe(1);
     });
   });
 });

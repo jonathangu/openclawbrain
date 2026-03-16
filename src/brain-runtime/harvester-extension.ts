@@ -8,7 +8,12 @@
  */
 
 import type { BrainStore } from "../brain-store/store.js";
-import { detectEvidence, detectEvidenceBatch, type HarvestResult } from "./evidence-detectors.js";
+import {
+  detectEvidence,
+  detectEvidenceBatch,
+  type HarvestMessagePart,
+  type HarvestResult,
+} from "./evidence-detectors.js";
 
 export class LabelHarvester {
   constructor(
@@ -26,8 +31,9 @@ export class LabelHarvester {
     episodeId?: string;
     role: string;
     content: string;
+    messageParts?: HarvestMessagePart[];
   }): Promise<void> {
-    const results = this.detectLabels(params.role, params.content);
+    const results = this.detectLabels(params.role, params.content, params.messageParts);
     if (results.length === 0) return;
 
     const explicitEpisodeId = params.episodeId ?? null;
@@ -72,6 +78,7 @@ export class LabelHarvester {
           extractor: result.extractor ?? null,
           evidenceIndex: index,
           evidenceCount: results.length,
+          messagePartCount: params.messageParts?.length ?? 0,
         },
       });
 
@@ -81,11 +88,11 @@ export class LabelHarvester {
     }
   }
 
-  detectLabel(role: string, content: string): HarvestResult | null {
-    return detectEvidence(role, content);
+  detectLabel(role: string, content: string, messageParts?: HarvestMessagePart[]): HarvestResult | null {
+    return detectEvidence(role, content, messageParts);
   }
 
-  detectLabels(role: string, content: string): HarvestResult[] {
-    return detectEvidenceBatch(role, content);
+  detectLabels(role: string, content: string, messageParts?: HarvestMessagePart[]): HarvestResult[] {
+    return detectEvidenceBatch(role, content, messageParts);
   }
 }

@@ -62,8 +62,8 @@ These are real enough to build on, but not frozen enough to oversell.
   - Current files: `src/brain-runtime/service.ts`, `src/brain-runtime/worker-supervisor.ts`, `src/brain-worker/child-runner.ts`, `src/brain-worker/protocol.ts`, `src/brain-cli.ts`
   - Truth: the child worker now runs behind a dedicated supervisor boundary with explicit protocol messages, restart accounting, reload acknowledgements, lease protection, and stronger status/doctor truth. `in_process` mode remains available only as a dev-only fallback and must not be treated as the production operator boundary.
 - **Raw evidence → resolved labels flow**
-  - Current files: `src/brain-runtime/harvester-extension.ts`, `src/brain-runtime/evidence-detectors.ts`, `src/brain-harvest/*.ts`, `src/brain-worker/worker.ts`, `src/brain-store/store.ts`
-  - Truth: explicit evidence tables and trust-ordered resolution are real; harvested assistant/tool messages can now persist multiple concurrent raw signals with extractor metadata before worker resolution. The remaining gap is that source extraction itself still leans heavily on heuristics.
+  - Current files: `src/brain-runtime/harvester-extension.ts`, `src/brain-runtime/evidence-detectors.ts`, `src/brain-harvest/*.ts`, `src/brain-worker/worker.ts`, `src/brain-store/store.ts`, `src/engine.ts`
+  - Truth: explicit evidence tables and trust-ordered resolution are real; harvested assistant/tool messages can now persist multiple concurrent raw signals with extractor metadata before worker resolution, and structured tool-result/function-output parts now feed self-evidence detection before regex fallback. The remaining gap is that source extraction itself still leans heavily on heuristics, especially for scanner-style evidence.
 - **Replay-gated promotion**
   - Current files: `src/brain-core/replay.ts`, `src/brain-core/pack.ts`, `src/brain-worker/worker.ts`
   - Truth: promotion gates exist, but mutation evaluation is still closer to proposal-by-proposal than bundle-level replay decisions.

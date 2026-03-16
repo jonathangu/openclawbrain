@@ -1564,7 +1564,7 @@ describe("LcmContextEngine fidelity and token budget", () => {
     });
 
     const assembledText = assembled.messages
-      .map((message) => (typeof message.content === "string" ? message.content : ""))
+      .map((message: AgentMessage) => (typeof message.content === "string" ? message.content : ""))
       .join("\n");
     expect(assembledText).toContain("keep this turn");
     expect(assembledText).not.toContain("heartbeat poll");
@@ -1619,9 +1619,48 @@ describe("LcmContextEngine fidelity and token budget", () => {
       expect.objectContaining({
         episodeId: "ep_turn_1",
         role: "assistant",
+        messageParts: expect.arrayContaining([
+          expect.objectContaining({
+            partType: "text",
+          }),
+        ]),
       }),
     );
     expect(privateEngine.pendingBrainEpisodeBySession.has(sessionId)).toBe(false);
+  });
+
+  it("passes structured tool-result parts into harvesting even when stored text is empty", async () => {
+    const engine = createEngine();
+    const sessionId = "structured-tool-result-harvest";
+    const harvestFromMessage = vi.fn(async () => undefined);
+    const privateEngine = engine as unknown as {
+      brainService: { harvestFromMessage: typeof harvestFromMessage } | null;
+    };
+
+    privateEngine.brainService = { harvestFromMessage };
+
+    await engine.ingest({
+      sessionId,
+      message: {
+        role: "toolResult",
+        toolCallId: "call_1",
+        content: [{ type: "tool_result", tool_use_id: "call_1", output: { ok: false, code: "ENOENT" } }],
+      } as unknown as AgentMessage,
+    });
+
+    expect(harvestFromMessage).toHaveBeenCalledWith(
+      expect.objectContaining({
+        role: "tool",
+        content: "",
+        messageParts: expect.arrayContaining([
+          expect.objectContaining({
+            partType: "tool",
+            toolCallId: "call_1",
+            toolOutput: JSON.stringify({ ok: false, code: "ENOENT" }),
+          }),
+        ]),
+      }),
+    );
   });
 
   it("afterTurn runs proactive threshold compaction when tokenBudget is provided", async () => {
