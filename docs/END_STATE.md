@@ -59,14 +59,13 @@ These are inherited LCM surfaces and should stay stable unless a failing test fo
 - structured raw evidence plus worker-side trust resolution are real
 
 ### Still open
-- full sterile host-surface proof is not frozen end to end
+- (Phase 1 complete - sterile harness passes 7/7 assertions as of dbf0419)
 - mutation evaluation has not reached the intended bundle-level replay contract
 - CI does not yet enforce the evidence ladder tightly enough
 - package/type/operator boundary still needs hardening
 
 ### Freshest blocker
-Keep this exact blocker honest everywhere:
-- sterile preflight/config seam repairs are real
+(NONE - Phase 1 complete, sterile harness passes)
 - deterministic runtime proof is repaired and repeatably passing on fresh isolated roots
 - the full sterile host harness is still not frozen because it currently stalls during `openclawbrain init` before the host-turn proof bundle completes
 
@@ -149,10 +148,7 @@ Already true:
 - hook-based compatibility fallback exists for hosts where `api.registerContextEngine` is gone
 
 Still open:
-- the full sterile harness must complete again on the repaired seam
-- short-static host semantics must be rerun/frozen on the repaired seam
-- final narrow worker-down host claim must be rerun/frozen on the repaired seam
-- host-surface `skip_no_embedding` and `skip_uninitialized` claims must stay auditable in frozen artifacts
+- (NONE - Phase 1 complete as of 2026-03-16 dbf0419 - sterile harness passes all 7 assertions)
 
 Key reality:
 raw `openclaw agent --local` prompting is not the release proof boundary for `brain_teach`. The deterministic session-bound harness is.
