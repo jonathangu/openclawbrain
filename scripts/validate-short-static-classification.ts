@@ -375,8 +375,8 @@ function runHostPreflight(): HostPreflight {
   if (textContainsAny(combinedOutput, ['plugins.slots.contextEngine', 'unrecognized key: "contextEngine"'])) {
     reasons.push("OpenClaw config schema no longer accepts `plugins.slots.contextEngine` in the sterile host lane.");
   }
-  if (textContainsAny(combinedOutput, ['api.registerContextEngine is not a function', 'hasRegisterContextEngine":false'])) {
-    reasons.push("The current OpenClaw plugin API no longer exposes `registerContextEngine`, so the host harness seam used by this repo is stale.");
+  if (textContainsAny(combinedOutput, ['openclawbrain failed during register', 'api.registerContextEngine is not a function'])) {
+    reasons.push("OpenClawBrain still failed during plugin register on the current host seam, so turn-level host probes are not trustworthy yet.");
   }
 
   return {

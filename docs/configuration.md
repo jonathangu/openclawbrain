@@ -31,17 +31,9 @@ openclaw plugins install --link /path/to/openclawbrain
 
 ## Context engine slot
 
-If you must set it manually, point the context engine slot at `openclawbrain`:
+On current OpenClaw hosts, **do not manually write** `plugins.slots.contextEngine` for OpenClawBrain. The linked/package installer is the supported path, and OpenClawBrain now falls back to hook-based integration on hosts where the older `registerContextEngine` seam is gone.
 
-```json
-{
-  "plugins": {
-    "slots": {
-      "contextEngine": "openclawbrain"
-    }
-  }
-}
-```
+If you are debugging an older host build, treat any manual slot override as version-specific surgery rather than a stable setup step.
 
 ## Recommended starting configuration
 

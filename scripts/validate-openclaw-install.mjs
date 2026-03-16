@@ -355,14 +355,16 @@ function updateConfig() {
   config.agents.defaults.workspace = fixtureWorkspace;
 
   config.plugins ??= {};
-  config.plugins.slots ??= {};
+  if (!config.plugins.slots || typeof config.plugins.slots !== "object" || Array.isArray(config.plugins.slots)) {
+    config.plugins.slots = {};
+  }
+  delete config.plugins.slots.contextEngine;
   config.plugins.entries ??= {};
   config.plugins.entries.openclawbrain ??= {};
   config.plugins.entries.openclawbrain.enabled = true;
   config.plugins.entries.openclawbrain.config = {
     enabled: true,
   };
-  config.plugins.slots.contextEngine = "openclawbrain";
 
   const validationModel = process.env.OPENCLAWBRAIN_VALIDATION_MODEL?.trim();
   if (validationModel) {
@@ -808,7 +810,7 @@ try {
     linkedPlugin: repoRoot,
     lcmDbPath,
     brainRoot,
-    contextEngineSlot: "openclawbrain",
+    manualContextEngineSlot: null,
     validationMode: sterileLane ? "sterile-lane" : "temp-home",
     validationLaneName,
     validationGatewayPort,

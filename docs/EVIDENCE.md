@@ -126,6 +126,6 @@ As of the current trunk:
 - **Level 1:** materially real
 - **Level 2:** present but not yet bundle-complete
 - **Level 3:** partially real on the host surface
-- **Level 4:** not frozen; deterministic session-bound `brain_teach` proof now exists under `docs/evidence/YYYY-MM-DD/<git-sha>/brain-teach-session-bound/`, OpenClawBrain now has a hook-based registration fallback for hosts without `api.registerContextEngine`, but short-static host classification remains truth-frozen as stale current-OpenClaw host seam drift until the sterile harness/config stops using `plugins.slots.contextEngine` and the host lane is rerun; the final narrow worker-down host claim still remains open
+- **Level 4:** not frozen; deterministic session-bound `brain_teach` proof now exists under `docs/evidence/YYYY-MM-DD/<git-sha>/brain-teach-session-bound/`, OpenClawBrain now has a hook-based registration fallback for hosts without `api.registerContextEngine`, and the sterile harness no longer writes the dead `plugins.slots.contextEngine` slot. Short-static host classification and the final narrow worker-down host claim still need to be rerun/frozen on that repaired seam.
 
 That means the repo is already beyond theory-only, but it does **not** yet have a frozen release-evidence ladder.
