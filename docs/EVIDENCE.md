@@ -57,7 +57,7 @@ Required claims:
 - structured tool-result/function-output parts can generate self-evidence even when flattened stored text is empty
 - structured self-evidence records richer raw metadata when available (`messageId`, tool/call identity, command/exit-code/file/artifact hints)
 - scanner guidance can also record structured metadata when a runbook/checklist message is backed by explicit message parts, including tool chains and non-tool guidance parts like file/snapshot/subtask blocks
-- worker-side same-trust scanner resolution now prefers structured scanner extractors over heuristic scanner-only signals when they compete on the same episode
+- worker-side same-trust scanner resolution now prefers structured scanner extractors over heuristic scanner-only signals when they conflict on the same episode, while same-value corroborating scanner signals still keep the stronger-confidence label
 - explicit episode attribution, resolver attribution, and recent-conversation fallback are all audited rather than implied
 
 ### Level 2 — Recorded replay proofs

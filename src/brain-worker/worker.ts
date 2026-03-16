@@ -39,9 +39,11 @@ function compareEvidencePriority(left: BrainEvidence, right: BrainEvidence): num
     return trustDelta;
   }
 
-  const specificityDelta = evidenceSpecificityRank(left) - evidenceSpecificityRank(right);
-  if (specificityDelta !== 0) {
-    return specificityDelta;
+  if (left.value !== right.value) {
+    const specificityDelta = evidenceSpecificityRank(left) - evidenceSpecificityRank(right);
+    if (specificityDelta !== 0) {
+      return specificityDelta;
+    }
   }
 
   const confidenceDelta = left.confidence - right.confidence;
