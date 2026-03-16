@@ -1,0 +1,94 @@
+{
+  "gitSha": "1fc8ee6fd7892e3deb27d111434df948bca2a66b",
+  "artifactDir": "/Users/cormorantai/openclawbrain/docs/evidence/2026-03-16/1fc8ee6fd7892e3deb27d111434df948bca2a66b",
+  "validationMode": "sterile-lane",
+  "validationLaneName": "ocbphase1",
+  "validationRoot": "/Users/cormorantai/.openclaw-ocbphase1",
+  "validationHome": "/Users/cormorantai",
+  "validationStateDir": "/Users/cormorantai/.openclaw-ocbphase1",
+  "fixtureWorkspace": "/Users/cormorantai/.openclaw-ocbphase1/workspace-fixture",
+  "configPath": "/Users/cormorantai/.openclaw-ocbphase1/openclaw.json",
+  "lcmDbPath": "/Users/cormorantai/.openclaw-ocbphase1/lcm.db",
+  "brainRoot": "/Users/cormorantai/.openclaw-ocbphase1/openclawbrain",
+  "validationRecordFile": "/Users/cormorantai/.openclaw-ocbphase1/validation-records/validation-assemble.jsonl",
+  "validationGatewayPort": 19031,
+  "config": {
+    "meta": {
+      "lastTouchedVersion": "2026.3.13",
+      "lastTouchedAt": "2026-03-16T15:23:45.483Z"
+    },
+    "models": {
+      "providers": {
+        "ollama": {
+          "baseUrl": "http://127.0.0.1:11434",
+          "apiKey": "ollama-local",
+          "api": "ollama",
+          "models": [
+            {
+              "id": "qwen2.5:7b-instruct",
+              "name": "qwen2.5:7b-instruct",
+              "reasoning": false,
+              "input": [
+                "text"
+              ],
+              "cost": {
+                "input": 0,
+                "output": 0,
+                "cacheRead": 0,
+                "cacheWrite": 0
+              },
+              "contextWindow": 262144,
+              "maxTokens": 16384
+            }
+          ]
+        }
+      }
+    },
+    "agents": {
+      "defaults": {
+        "model": {
+          "primary": "ollama/qwen2.5:7b-instruct"
+        },
+        "workspace": "/Users/cormorantai/.openclaw-ocbphase1/workspace-fixture",
+        "compaction": {
+          "mode": "safeguard"
+        }
+      }
+    },
+    "commands": {
+      "native": "auto",
+      "nativeSkills": "auto",
+      "restart": true,
+      "ownerDisplay": "raw"
+    },
+    "gateway": {
+      "port": 19031,
+      "mode": "local"
+    },
+    "plugins": {
+      "load": {
+        "paths": [
+          "/Users/cormorantai/openclawbrain"
+        ]
+      },
+      "slots": {},
+      "entries": {
+        "openclawbrain": {
+          "enabled": true,
+          "config": {
+            "enabled": true
+          }
+        }
+      },
+      "installs": {
+        "openclawbrain": {
+          "source": "path",
+          "sourcePath": "/Users/cormorantai/openclawbrain",
+          "installPath": "/Users/cormorantai/openclawbrain",
+          "version": "0.3.0",
+          "installedAt": "2026-03-16T15:23:45.475Z"
+        }
+      }
+    }
+  }
+}

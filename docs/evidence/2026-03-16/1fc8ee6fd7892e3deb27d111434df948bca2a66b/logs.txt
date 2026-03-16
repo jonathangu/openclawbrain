@@ -1,0 +1,357 @@
+## openclaw status --all
+
+[plugins] [openclawbrain] Plugin loaded (enabled=true, db=/Users/cormorantai/.openclaw-ocbphase1/lcm.db, threshold=0.75)
+[plugins] [openclawbrain] Plugin loaded (enabled=true, db=/Users/cormorantai/.openclaw-ocbphase1/lcm.db, threshold=0.75)
+OpenClaw status --all
+
+Overview
+┌─────────────────┬────────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ Item            │ Value                                                                                              │
+├─────────────────┼────────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Version         │ 2026.3.13                                                                                          │
+│ OS              │ macos 26.3 (arm64)                                                                                 │
+│ Node            │ 22.22.0                                                                                            │
+│ Config          │ $OPENCLAW_HOME/openclaw.json                                                                       │
+│ Dashboard       │ http://127.0.0.1:19031/                                                                            │
+│ Tailscale       │ off · Running · cormorantais-mac-mini.tail499c70.ts.net                                            │
+│ Channel         │ dev (main)                                                                                         │
+│ Git             │ main · @ 66e02b29                                                                                  │
+│ Update          │ git main · ↔ origin/main · behind 615 · npm latest 2026.3.13 · deps ok                            │
+│ Gateway         │ local · ws://127.0.0.1:19031 (local loopback) · unreachable (connect failed: connect ECONNREFUSED  │
+│                 │ 127.0.0.1:19031)                                                                                   │
+│ Security        │ Run: openclaw security audit --deep                                                                │
+│ Gateway self    │ unknown                                                                                            │
+│ Gateway service │ LaunchAgent not installed                                                                          │
+│ Node service    │ LaunchAgent not installed                                                                          │
+│ Agents          │ 1 total · 0 bootstrapping · 0 active · 1 sessions                                                  │
+└─────────────────┴────────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+Channels
+┌──────────┬─────────┬────────┬────────────────────────────────────────────────────────────────────────────────────────┐
+│ Channel  │ Enabled │ State  │ Detail                                                                                 │
+├──────────┼─────────┼────────┼────────────────────────────────────────────────────────────────────────────────────────┤
+└──────────┴─────────┴────────┴────────────────────────────────────────────────────────────────────────────────────────┘
+
+Agents
+┌────────────┬────────────────┬──────────┬──────────┬──────────────────────────────────────────────────────────────────┐
+│ Agent      │ Bootstrap file │ Sessions │ Active   │ Store                                                            │
+├────────────┼────────────────┼──────────┼──────────┼──────────────────────────────────────────────────────────────────┤
+│ main       │ ABSENT         │        1 │ 4h ago   │ $OPENCLAW_HOME/agents/main/sessions/sessions.json                │
+└────────────┴────────────────┴──────────┴──────────┴──────────────────────────────────────────────────────────────────┘
+
+Diagnosis (read-only)
+
+Gateway connection details:
+  Gateway target: ws://127.0.0.1:19031
+  Source: local loopback
+  Config: /Users/cormorantai/.openclaw-ocbphase1/openclaw.json
+  Bind: loopback
+
+✓ Config: /Users/cormorantai/.openclaw-ocbphase1/openclaw.json
+✓ Restart sentinel: none
+✓ Port 19031
+✓ Tailscale: off · Running · cormorantais-mac-mini.tail499c70.ts.net
+  ips: 100.73.247.26, fd7a:115c:a1e0::e932:f71a
+✓ Skills: 9 eligible · 0 missing · /Users/cormorantai/.openclaw-ocbphase1/workspace-fixture
+! Channel issues skipped (gateway unreachable)
+
+Gateway health:
+  connect failed: connect ECONNREFUSED 127.0.0.1:19031
+
+Pasteable debug report. Auth tokens redacted.
+Troubleshooting: https://docs.openclaw.ai/troubleshooting
+
+
+
+[stderr]
+[plugins] plugins.allow is empty; discovered non-bundled plugins may auto-load: openclawbrain (/Users/cormorantai/openclawbrain/index.ts). Set plugins.allow to explicit trusted ids.
+[plugins] plugins.allow is empty; discovered non-bundled plugins may auto-load: openclawbrain (/Users/cormorantai/openclawbrain/index.ts). Set plugins.allow to explicit trusted ids.
+
+
+
+## openclaw gateway probe
+
+[plugins] [openclawbrain] Plugin loaded (enabled=true, db=/Users/cormorantai/.openclaw-ocbphase1/lcm.db, threshold=0.75)
+│
+◇  Doctor changes ──────────────────────────────╮
+│                                               │
+│  Telegram configured, enabled automatically.  │
+│                                               │
+├───────────────────────────────────────────────╯
+│
+◇  Doctor ──────────────────────────────────────────────╮
+│                                                       │
+│  Run "openclaw doctor --fix" to apply these changes.  │
+│                                                       │
+├───────────────────────────────────────────────────────╯
+Gateway Status
+Reachable: no
+Probe budget: 3000ms
+
+Discovery (this machine)
+Found 4 gateway(s) via Bonjour (local.)
+
+Targets
+Local loopback ws://127.0.0.1:19031
+  Connect: failed - connect failed: connect ECONNREFUSED 127.0.0.1:19031
+
+
+
+[stderr]
+[plugins] plugins.allow is empty; discovered non-bundled plugins may auto-load: openclawbrain (/Users/cormorantai/openclawbrain/index.ts). Set plugins.allow to explicit trusted ids.
+
+
+
+## openclaw gateway status
+
+[plugins] [openclawbrain] Plugin loaded (enabled=true, db=/Users/cormorantai/.openclaw-ocbphase1/lcm.db, threshold=0.75)
+│
+◇  Doctor changes ──────────────────────────────╮
+│                                               │
+│  Telegram configured, enabled automatically.  │
+│                                               │
+├───────────────────────────────────────────────╯
+│
+◇  Doctor ──────────────────────────────────────────────╮
+│                                                       │
+│  Run "openclaw doctor --fix" to apply these changes.  │
+│                                                       │
+├───────────────────────────────────────────────────────╯
+Service: LaunchAgent (not loaded)
+File logs: /tmp/openclaw/openclaw-2026-03-16.log
+
+Config (cli): $OPENCLAW_HOME/openclaw.json
+Config (service): $OPENCLAW_HOME/openclaw.json
+
+Gateway: bind=loopback (127.0.0.1), port=19031 (env/config)
+Probe target: ws://127.0.0.1:19031
+Dashboard: http://127.0.0.1:19031/
+Probe note: Loopback-only gateway; only local clients can connect.
+
+Runtime: unknown (Bad request.
+Could not find service "ai.openclaw.gateway" in domain for user gui: 501)
+
+
+
+Troubles: run openclaw status
+Troubleshooting: https://docs.openclaw.ai/troubleshooting
+
+
+[stderr]
+[plugins] plugins.allow is empty; discovered non-bundled plugins may auto-load: openclawbrain (/Users/cormorantai/openclawbrain/index.ts). Set plugins.allow to explicit trusted ids.
+Service config looks out of date or non-standard.
+Service config issue: Gateway service PATH is not set; the daemon should use a minimal PATH.
+Recommendation: run "openclaw doctor" (or "openclaw doctor --repair").
+RPC probe: failed
+RPC target: ws://127.0.0.1:19031
+  gateway url override requires explicit credentials
+  Fix: pass --token or --password (or gatewayToken in tools).
+  Config: /Users/cormorantai/.openclaw-ocbphase1/openclaw.json
+Service unit not found.
+Service not installed. Run: openclaw gateway install
+File logs: /tmp/openclaw/openclaw-2026-03-16.log
+Other gateway-like services detected (best effort):
+- com.openclawbrain.daemon.activation.0ec88212fa7d (user, plist: /Users/cormorantai/Library/LaunchAgents/com.openclawbrain.daemon.activation.0ec88212fa7d.plist)
+- com.openclawbrain.daemon.activation.546e84bf06ac (user, plist: /Users/cormorantai/Library/LaunchAgents/com.openclawbrain.daemon.activation.546e84bf06ac.plist)
+- com.openclawbrain.daemon.activation.b3eeb450ca08 (user, plist: /Users/cormorantai/Library/LaunchAgents/com.openclawbrain.daemon.activation.b3eeb450ca08.plist)
+Cleanup hint: launchctl bootout gui/$UID/ai.openclaw.gateway
+Cleanup hint: rm ~/Library/LaunchAgents/ai.openclaw.gateway.plist
+Recommendation: run a single gateway per machine for most setups. One gateway supports multiple agents (see docs: /gateway#multiple-gateways-same-host).
+If you need multiple gateways (e.g., a rescue bot on the same host), isolate ports + config/state (see docs: /gateway#multiple-gateways-same-host).
+
+
+
+## openclaw doctor --non-interactive
+
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+██░▄▄▄░██░▄▄░██░▄▄▄██░▀██░██░▄▄▀██░████░▄▄▀██░███░██
+██░███░██░▀▀░██░▄▄▄██░█░█░██░█████░████░▀▀░██░█░█░██
+██░▀▀▀░██░█████░▀▀▀██░██▄░██░▀▀▄██░▀▀░█░██░██▄▀▄▀▄██
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+                  🦞 OPENCLAW 🦞                    
+ 
+┌  OpenClaw doctor
+[plugins] [openclawbrain] Plugin loaded (enabled=true, db=/Users/cormorantai/.openclaw-ocbphase1/lcm.db, threshold=0.75)
+│
+◇  Install ─────────────────────────────────────────────────────────╮
+│                                                                   │
+│  - package-lock.json present in a pnpm workspace. If you ran npm  │
+│    install, remove it and reinstall with pnpm.                    │
+│                                                                   │
+├───────────────────────────────────────────────────────────────────╯
+│
+◇  Doctor changes ──────────────────────────────╮
+│                                               │
+│  Telegram configured, enabled automatically.  │
+│                                               │
+├───────────────────────────────────────────────╯
+│
+◇  Doctor ──────────────────────────────────────────────╮
+│                                                       │
+│  Run "openclaw doctor --fix" to apply these changes.  │
+│                                                       │
+├───────────────────────────────────────────────────────╯
+│
+◇  Gateway auth ──────────────────────────────────────────────────╮
+│                                                                 │
+│  Gateway auth is off or missing a token. Token auth is now the  │
+│  recommended default (including loopback).                      │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────╯
+│
+◇  State integrity ────────────────────────────────────────────────────────╮
+│                                                                          │
+│  - OAuth dir not present ($OPENCLAW_HOME/credentials). Skipping create   │
+│    because no WhatsApp/pairing channel config is active.                 │
+│  - Multiple state directories detected. This can split session history.  │
+│    - /Users/cormorantai/.openclaw                                        │
+│    Active state dir: $OPENCLAW_HOME                                      │
+│                                                                          │
+├──────────────────────────────────────────────────────────────────────────╯
+│
+◇  Other gateway-like services detected ───────────────────────────────────────╮
+│                                                                              │
+│  - com.openclawbrain.daemon.activation.0ec88212fa7d (user, plist:            │
+│    /Users/cormorantai/Library/LaunchAgents/com.openclawbrain.daemon.activat  │
+│  ion.0ec88212fa7d.plist)                                                     │
+│  - com.openclawbrain.daemon.activation.546e84bf06ac (user, plist:            │
+│    /Users/cormorantai/Library/LaunchAgents/com.openclawbrain.daemon.activat  │
+│  ion.546e84bf06ac.plist)                                                     │
+│  - com.openclawbrain.daemon.activation.b3eeb450ca08 (user, plist:            │
+│    /Users/cormorantai/Library/LaunchAgents/com.openclawbrain.daemon.activat  │
+│  ion.b3eeb450ca08.plist)                                                     │
+│                                                                              │
+├──────────────────────────────────────────────────────────────────────────────╯
+│
+◇  Cleanup hints ─────────────────────────────────────────╮
+│                                                         │
+│  - launchctl bootout gui/$UID/ai.openclaw.gateway       │
+│  - rm ~/Library/LaunchAgents/ai.openclaw.gateway.plist  │
+│                                                         │
+├─────────────────────────────────────────────────────────╯
+│
+◇  Gateway recommendation ───────────────────────────────────────────────╮
+│                                                                        │
+│  Recommendation: run a single gateway per machine for most setups.     │
+│  One gateway supports multiple agents.                                 │
+│  If you need multiple gateways (e.g., a rescue bot on the same host),  │
+│  isolate ports + config/state (see docs:                               │
+│  /gateway#multiple-gateways-same-host).                                │
+│                                                                        │
+├────────────────────────────────────────────────────────────────────────╯
+│
+◇  Security ─────────────────────────────────╮
+│                                            │
+│  - No channel security warnings detected.  │
+│  - Run: openclaw security audit --deep     │
+│                                            │
+├────────────────────────────────────────────╯
+│
+◇  Skills status ────────────╮
+│                            │
+│  Eligible: 9               │
+│  Missing requirements: 43  │
+│  Blocked by allowlist: 0   │
+│                            │
+├────────────────────────────╯
+│
+◇  Plugins ──────╮
+│                │
+│  Loaded: 8     │
+│  Disabled: 34  │
+│  Errors: 0     │
+│                │
+├────────────────╯
+│
+◇  Gateway ──────────────╮
+│                        │
+│  Gateway not running.  │
+│                        │
+├────────────────────────╯
+│
+◇  Gateway connection ───────────────────────────────────────────╮
+│                                                                │
+│  Gateway target: ws://127.0.0.1:19031                          │
+│  Source: local loopback                                        │
+│  Config: /Users/cormorantai/.openclaw-ocbphase1/openclaw.json  │
+│  Bind: loopback                                                │
+│                                                                │
+├────────────────────────────────────────────────────────────────╯
+│
+◇  Gateway ────────────────────────╮
+│                                  │
+│  Gateway service not installed.  │
+│                                  │
+├──────────────────────────────────╯
+Run "openclaw doctor --fix" to apply changes.
+│
+└  Doctor complete.
+
+
+
+[stderr]
+[plugins] plugins.allow is empty; discovered non-bundled plugins may auto-load: openclawbrain (/Users/cormorantai/openclawbrain/index.ts). Set plugins.allow to explicit trusted ids.
+
+
+
+## openclaw channels status --probe
+
+[plugins] [openclawbrain] Plugin loaded (enabled=true, db=/Users/cormorantai/.openclaw-ocbphase1/lcm.db, threshold=0.75)
+│
+◇  Doctor changes ──────────────────────────────╮
+│                                               │
+│  Telegram configured, enabled automatically.  │
+│                                               │
+├───────────────────────────────────────────────╯
+│
+◇  Doctor ──────────────────────────────────────────────╮
+│                                                       │
+│  Run "openclaw doctor --fix" to apply these changes.  │
+│                                                       │
+├───────────────────────────────────────────────────────╯
+Checking channel status (probe)…
+Gateway not reachable; showing config-only status.
+Config: /Users/cormorantai/.openclaw-ocbphase1/openclaw.json
+Mode: local
+
+
+Tip: https://docs.openclaw.ai/cli#status adds gateway health probes to status output (requires a reachable gateway).
+
+
+[stderr]
+[plugins] plugins.allow is empty; discovered non-bundled plugins may auto-load: openclawbrain (/Users/cormorantai/openclawbrain/index.ts). Set plugins.allow to explicit trusted ids.
+Gateway not reachable: Error: gateway closed (1006 abnormal closure (no close frame)): no close reason
+Gateway target: ws://127.0.0.1:19031
+Source: local loopback
+Config: /Users/cormorantai/.openclaw-ocbphase1/openclaw.json
+Bind: loopback
+
+
+
+## file:/Users/cormorantai/.openclaw-ocbphase1/logs/config-audit.jsonl
+
+{"ts":"2026-03-16T04:04:15.354Z","source":"config-io","event":"config.write","configPath":"/Users/cormorantai/.openclaw-ocbphase1/openclaw.json","pid":68382,"ppid":68381,"cwd":"/Users/cormorantai/openclawbrain","argv":["/opt/homebrew/Cellar/node@22/22.22.0/bin/node","/opt/homebrew/bin/openclaw","plugins","install","--link","/Users/cormorantai/openclawbrain"],"execArgv":["--disable-warning=ExperimentalWarning"],"watchMode":false,"watchSession":null,"watchCommand":null,"existsBefore":false,"previousHash":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","nextHash":"91f275980114a67741b7f7e76c22409dada3581a5c8b0d901465ee80897e5d3e","previousBytes":null,"nextBytes":693,"changedPathCount":null,"hasMetaBefore":false,"hasMetaAfter":true,"gatewayModeBefore":null,"gatewayModeAfter":null,"suspicious":[],"result":"rename"}
+{"ts":"2026-03-16T04:05:42.764Z","source":"config-io","event":"config.write","configPath":"/Users/cormorantai/.openclaw-ocbphase1/openclaw.json","pid":68908,"ppid":68907,"cwd":"/Users/cormorantai/openclawbrain","argv":["/opt/homebrew/Cellar/node@22/22.22.0/bin/node","/opt/homebrew/bin/openclaw","plugins","install","--link","/Users/cormorantai/openclawbrain"],"execArgv":["--disable-warning=ExperimentalWarning"],"watchMode":false,"watchSession":null,"watchCommand":null,"existsBefore":true,"previousHash":"21f78c45f162e963520a409452bec17e90ecf01601f27cee9a9c80ac60fbf559","nextHash":"755ca625612a011a5343ba5340d2d861956ed45ab6405c64bb7ce8d0ff7bbb0b","previousBytes":983,"nextBytes":1042,"changedPathCount":null,"hasMetaBefore":true,"hasMetaAfter":true,"gatewayModeBefore":"local","gatewayModeAfter":"local","suspicious":[],"result":"rename"}
+{"ts":"2026-03-16T04:24:19.356Z","source":"config-io","event":"config.write","configPath":"/Users/cormorantai/.openclaw-ocbphase1/openclaw.json","pid":75699,"ppid":75698,"cwd":"/Users/cormorantai/openclawbrain","argv":["/opt/homebrew/Cellar/node@22/22.22.0/bin/node","/opt/homebrew/bin/openclaw","plugins","install","--link","/Users/cormorantai/openclawbrain"],"execArgv":["--disable-warning=ExperimentalWarning"],"watchMode":false,"watchSession":null,"watchCommand":null,"existsBefore":true,"previousHash":"755ca625612a011a5343ba5340d2d861956ed45ab6405c64bb7ce8d0ff7bbb0b","nextHash":"b84565773eb916660b513c133b04e179654e5db8162c8005ae2033564a9983f1","previousBytes":1042,"nextBytes":1042,"changedPathCount":null,"hasMetaBefore":true,"hasMetaAfter":true,"gatewayModeBefore":"local","gatewayModeAfter":"local","suspicious":[],"result":"rename"}
+{"ts":"2026-03-16T08:50:19.843Z","source":"config-io","event":"config.write","configPath":"/Users/cormorantai/.openclaw-ocbphase1/openclaw.json","pid":46503,"ppid":46502,"cwd":"/Users/cormorantai/openclawbrain","argv":["/opt/homebrew/Cellar/node@22/22.22.0/bin/node","/opt/homebrew/bin/openclaw","plugins","install","--link","/Users/cormorantai/openclawbrain"],"execArgv":["--disable-warning=ExperimentalWarning"],"watchMode":false,"watchSession":null,"watchCommand":null,"existsBefore":true,"previousHash":"5f67da851cc11886db6edfad4dea3a7e98328ded0336b228995b7c53d6275f69","nextHash":"8e2fea8982b2c60a699277c064b8905e69b25d649a8b46d427f5e8b710edf837","previousBytes":1737,"nextBytes":1737,"changedPathCount":null,"hasMetaBefore":true,"hasMetaAfter":true,"gatewayModeBefore":"local","gatewayModeAfter":"local","suspicious":[],"result":"rename"}
+{"ts":"2026-03-16T08:55:33.959Z","source":"config-io","event":"config.write","configPath":"/Users/cormorantai/.openclaw-ocbphase1/openclaw.json","pid":48474,"ppid":48473,"cwd":"/Users/cormorantai/openclawbrain","argv":["/opt/homebrew/Cellar/node@22/22.22.0/bin/node","/opt/homebrew/bin/openclaw","plugins","install","--link","/Users/cormorantai/openclawbrain"],"execArgv":["--disable-warning=ExperimentalWarning"],"watchMode":false,"watchSession":null,"watchCommand":null,"existsBefore":true,"previousHash":"4e6005203d622e121c9f603884affb7d26f21e67309e691df6e12f11209ecbf9","nextHash":"5fc30857e6d339aa3a1ea454559ec50427df93660c9a415546e96ae1f0175c0c","previousBytes":1693,"nextBytes":1693,"changedPathCount":null,"hasMetaBefore":true,"hasMetaAfter":true,"gatewayModeBefore":"local","gatewayModeAfter":"local","suspicious":[],"result":"rename"}
+{"ts":"2026-03-16T11:33:31.029Z","source":"config-io","event":"config.write","configPath":"/Users/cormorantai/.openclaw-ocbphase1/openclaw.json","pid":90752,"ppid":90751,"cwd":"/Users/cormorantai/openclawbrain","argv":["/opt/homebrew/Cellar/node@22/22.22.0/bin/node","/opt/homebrew/bin/openclaw","plugins","install","--link","/Users/cormorantai/openclawbrain"],"execArgv":["--disable-warning=ExperimentalWarning"],"watchMode":false,"watchSession":null,"watchCommand":null,"existsBefore":true,"previousHash":"5fc30857e6d339aa3a1ea454559ec50427df93660c9a415546e96ae1f0175c0c","nextHash":"14083e3ec990ab864f7f9182a3b7a23df5a9cca5976dfe70b52d25aa461396c4","previousBytes":1693,"nextBytes":1693,"changedPathCount":null,"hasMetaBefore":true,"hasMetaAfter":true,"gatewayModeBefore":"local","gatewayModeAfter":"local","suspicious":[],"result":"rename"}
+{"ts":"2026-03-16T11:45:54.906Z","source":"config-io","event":"config.write","configPath":"/Users/cormorantai/.openclaw-ocbphase1/openclaw.json","pid":94719,"ppid":94718,"cwd":"/Users/cormorantai/openclawbrain","argv":["/opt/homebrew/Cellar/node@22/22.22.0/bin/node","/opt/homebrew/bin/openclaw","plugins","install","--link","/Users/cormorantai/openclawbrain"],"execArgv":["--disable-warning=ExperimentalWarning"],"watchMode":false,"watchSession":null,"watchCommand":null,"existsBefore":true,"previousHash":"14083e3ec990ab864f7f9182a3b7a23df5a9cca5976dfe70b52d25aa461396c4","nextHash":"6be073d7a792a059818194b828a76fd92210d2d15fd7900aebe5c809545d572f","previousBytes":1693,"nextBytes":1693,"changedPathCount":null,"hasMetaBefore":true,"hasMetaAfter":true,"gatewayModeBefore":"local","gatewayModeAfter":"local","suspicious":[],"result":"rename"}
+{"ts":"2026-03-16T11:49:07.300Z","source":"config-io","event":"config.write","configPath":"/Users/cormorantai/.openclaw-ocbphase1/openclaw.json","pid":95707,"ppid":95706,"cwd":"/Users/cormorantai/openclawbrain","argv":["/opt/homebrew/Cellar/node@22/22.22.0/bin/node","/opt/homebrew/bin/openclaw","plugins","install","--link","/Users/cormorantai/openclawbrain"],"execArgv":["--disable-warning=ExperimentalWarning"],"watchMode":false,"watchSession":null,"watchCommand":null,"existsBefore":true,"previousHash":"56b2a60a67d23a24efcea84bd9f14160e21674749bd9bad526ebbac76bdfc66a","nextHash":"d000ea8b43aa3de7a87970304fd47a9c1ef5c39e788d9327f63a59dfdf87cb4e","previousBytes":1701,"nextBytes":1701,"changedPathCount":null,"hasMetaBefore":true,"hasMetaAfter":true,"gatewayModeBefore":"local","gatewayModeAfter":"local","suspicious":[],"result":"rename"}
+{"ts":"2026-03-16T15:23:45.483Z","source":"config-io","event":"config.write","configPath":"/Users/cormorantai/.openclaw-ocbphase1/openclaw.json","pid":51626,"ppid":51625,"cwd":"/Users/cormorantai/openclawbrain","argv":["/opt/homebrew/Cellar/node@22/22.22.0/bin/node","/opt/homebrew/bin/openclaw","plugins","install","--link","/Users/cormorantai/openclawbrain"],"execArgv":["--disable-warning=ExperimentalWarning"],"watchMode":false,"watchSession":null,"watchCommand":null,"existsBefore":true,"previousHash":"d000ea8b43aa3de7a87970304fd47a9c1ef5c39e788d9327f63a59dfdf87cb4e","nextHash":"c1e9c0f88699ec6f83b25e55bd97dc7d01de08c4e32c6a381e8a3aad5c301ca1","previousBytes":1701,"nextBytes":1701,"changedPathCount":null,"hasMetaBefore":true,"hasMetaAfter":true,"gatewayModeBefore":"local","gatewayModeAfter":"local","suspicious":[],"result":"rename"}
+
+
+
+## file:/Users/cormorantai/.openclaw-ocbphase1/validation-records/validation-assemble.jsonl
+
+{"at":1773635202790,"sessionId":"475abd74-ed4f-4334-a896-8ffd7d81eec7","conversationId":1,"queryText":"open PLAYBOOK.md","mode":"skip_short_static_lookup","footer":"[brain] bypassed: short static lookup.","traceId":null,"episodeId":null,"tokenBudget":262144}
+{"at":1773635212771,"sessionId":"475abd74-ed4f-4334-a896-8ffd7d81eec7","conversationId":1,"queryText":"How do I open a pull request again?","mode":"use_brain","footer":"Brain · 1 seeds · start bn_40502fac-df0 · 4 hops · 4 fired · 0 veto · 391 chars","traceId":"bt_c79a93d6","episodeId":"be_5a29c9cf-99b","tokenBudget":262144}
+
+
+
+## file:/Users/cormorantai/.openclaw-ocbphase1/validation-records/validation-assemble.jsonl
+
+{"at":1773635202790,"sessionId":"475abd74-ed4f-4334-a896-8ffd7d81eec7","conversationId":1,"queryText":"open PLAYBOOK.md","mode":"skip_short_static_lookup","footer":"[brain] bypassed: short static lookup.","traceId":null,"episodeId":null,"tokenBudget":262144}
+{"at":1773635212771,"sessionId":"475abd74-ed4f-4334-a896-8ffd7d81eec7","conversationId":1,"queryText":"How do I open a pull request again?","mode":"use_brain","footer":"Brain · 1 seeds · start bn_40502fac-df0 · 4 hops · 4 fired · 0 veto · 391 chars","traceId":"bt_c79a93d6","episodeId":"be_5a29c9cf-99b","tokenBudget":262144}
+
+
