@@ -27,6 +27,12 @@ function trimTrailingSlashes(value: string): string {
   return value.replace(/\/+$/, "");
 }
 
+function resolveEmbeddingTimeoutMs(): number {
+  const raw = process.env.OPENCLAWBRAIN_EMBEDDING_TIMEOUT_MS?.trim();
+  const parsed = raw ? Number.parseInt(raw, 10) : 10000;
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : 10000;
+}
+
 function resolveExplicitBaseUrl(config: OpenClawBrainRuntimeConfig): string | null {
   const explicit = config.embeddingBaseUrl.trim();
   return explicit ? trimTrailingSlashes(explicit) : null;
@@ -152,14 +158,29 @@ export function createEmbeddingClient(options: BrainEmbeddingOptions): BrainEmbe
       headers.authorization = `Bearer ${apiKey}`;
     }
 
-    const response = await fetch(`${baseUrl}/embeddings`, {
-      method: "POST",
-      headers,
-      body: JSON.stringify({
-        model: config.embeddingModel,
-        input: text,
-      }),
-    });
+    const timeoutMs = resolveEmbeddingTimeoutMs();
+    const controller = new AbortController();
+    const timer = setTimeout(() => controller.abort(), timeoutMs);
+
+    let response;
+    try {
+      response = await fetch(`${baseUrl}/embeddings`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({
+          model: config.embeddingModel,
+          input: text,
+        }),
+        signal: controller.signal,
+      });
+    } catch (error) {
+      if ((error as { name?: string }).name === "AbortError") {
+        throw new Error(`Embedding request timed out after ${timeoutMs}ms: ${baseUrl}/embeddings`);
+      }
+      throw error;
+    } finally {
+      clearTimeout(timer);
+    }
 
     if (!response.ok) {
       const body = await response.text();

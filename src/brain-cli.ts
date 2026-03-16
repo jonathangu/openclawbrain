@@ -20,6 +20,17 @@ function printJson(payload: unknown): void {
   process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
 }
 
+function buildInitLog(): { info: (msg: string) => void; warn: (msg: string) => void } {
+  const verbose = /^(1|true|yes)$/i.test(process.env.OPENCLAWBRAIN_INIT_VERBOSE ?? "");
+  if (!verbose) {
+    return { info: () => {}, warn: () => {} };
+  }
+  return {
+    info: (msg: string) => process.stderr.write(`${msg}\n`),
+    warn: (msg: string) => process.stderr.write(`${msg}\n`),
+  };
+}
+
 function usage(): never {
   process.stderr.write(
     "Usage: openclawbrain <init|status|trace|replay|promote|rollback|disable|enable|doctor> [args]\n",
@@ -68,7 +79,7 @@ async function commandInit(workspaceArg?: string): Promise<void> {
     workspaceRoot,
     embedFn,
     semanticThreshold: brainConfig.semanticThreshold,
-    log: { info: () => {}, warn: () => {} },
+    log: buildInitLog(),
   });
 
   store.clearGraph();

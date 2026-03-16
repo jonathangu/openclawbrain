@@ -25,14 +25,17 @@ const validationRoot = sterileLane
   : mkdtempSync(join(tmpdir(), "openclawbrain-validate-"));
 const validationHome = sterileLane ? (process.env.HOME ?? homedir()) : join(validationRoot, "home");
 const validationStateDir = sterileLane ? validationRoot : join(validationHome, ".openclaw");
-const fixtureWorkspace = sterileLane
-  ? resolve(process.env.OPENCLAWBRAIN_VALIDATION_WORKSPACE ?? join(process.env.HOME ?? homedir(), ".openclaw", `workspace-${validationLaneName}`))
-  : join(validationRoot, "workspace-fixture");
+const fixtureWorkspace = resolve(
+  process.env.OPENCLAWBRAIN_VALIDATION_WORKSPACE
+  ?? join(validationRoot, "workspace-fixture"),
+);
 const lcmDbPath = process.env.OPENCLAWBRAIN_VALIDATION_LCM_DB_PATH?.trim() || join(validationStateDir, "lcm.db");
 const brainRoot = process.env.OPENCLAWBRAIN_VALIDATION_BRAIN_ROOT?.trim() || join(validationStateDir, "openclawbrain");
 const configPath = resolve(process.env.OPENCLAWBRAIN_VALIDATION_CONFIG_PATH ?? join(validationStateDir, "openclaw.json"));
 const validationRecordFile = process.env.OPENCLAWBRAIN_VALIDATION_RECORD_FILE?.trim() || join(validationStateDir, "validation-records", "validation-assemble.jsonl");
 const validationGatewayPort = Number.parseInt(process.env.OPENCLAWBRAIN_VALIDATION_GATEWAY_PORT?.trim() || "19031", 10);
+const initTimeoutMs = Number.parseInt(process.env.OPENCLAWBRAIN_VALIDATION_INIT_TIMEOUT_MS?.trim() || "60000", 10);
+const embeddingTimeoutMs = Number.parseInt(process.env.OPENCLAWBRAIN_VALIDATION_EMBEDDING_TIMEOUT_MS?.trim() || "5000", 10);
 const gitSha = execFileSync("git", ["rev-parse", "HEAD"], { cwd: repoRoot, encoding: "utf8" }).trim();
 const artifactDate = new Date().toISOString().slice(0, 10);
 const artifactDir = resolve(
@@ -54,6 +57,7 @@ function cleanEnv(extra = {}) {
       delete env[key];
     }
   }
+  env.OPENCLAW_HOME = validationStateDir;
   if (!sterileLane) {
     env.HOME = validationHome;
   }
@@ -117,6 +121,21 @@ function runCapture(command, commandArgs, options = {}) {
     stderr: result.stderr ?? "",
     error: result.error ? String(result.error) : null,
   };
+}
+
+function runJsonCapture(command, commandArgs, options = {}) {
+  const capture = runCapture(command, commandArgs, options);
+  if (options.artifactName) {
+    writeJsonArtifact(options.artifactName, capture);
+  }
+  if (!capture.ok) {
+    const detail = [capture.error, capture.stderr, capture.stdout]
+      .filter(Boolean)
+      .join("\n")
+      .slice(0, 4000);
+    throw new Error(`${options.label ?? command} failed: ${detail}`);
+  }
+  return extractJson(capture.stdout);
 }
 
 function tryExtractJson(text) {
@@ -314,6 +333,32 @@ function readValidationRecords() {
   } catch {
     return [];
   }
+}
+
+function resetFixtureWorkspace() {
+  rmSync(fixtureWorkspace, { recursive: true, force: true });
+  mkdirSync(fixtureWorkspace, { recursive: true });
+}
+
+function collectWorkspaceInventory(root, depth = 3) {
+  const out = [];
+  function walk(dir, level = 0) {
+    if (!existsSync(dir) || level > depth) {
+      return;
+    }
+    for (const entry of readdirSync(dir, { withFileTypes: true })) {
+      if (entry.name.startsWith(".")) {
+        continue;
+      }
+      const fullPath = join(dir, entry.name);
+      out.push(fullPath.replace(`${root}/`, ""));
+      if (entry.isDirectory()) {
+        walk(fullPath, level + 1);
+      }
+    }
+  }
+  walk(root, 0);
+  return out.sort();
 }
 
 function writeFixtureWorkspace() {
@@ -800,7 +845,9 @@ const report = {
 };
 
 try {
+  resetFixtureWorkspace();
   writeFixtureWorkspace();
+  writeJsonArtifact("workspace-inventory.json", collectWorkspaceInventory(fixtureWorkspace));
 
   runPassthrough("openclaw", ["plugins", "install", "--link", repoRoot]);
   updateConfig();
@@ -846,7 +893,19 @@ try {
   report.assertions.workerDownFailOpen = report.runtime.workerDownFailOpen;
 
   if (cleanEnv().OPENCLAWBRAIN_EMBEDDING_MODEL) {
-    report.init = extractJson(run("node", ["bin/openclawbrain.js", "init", fixtureWorkspace]));
+    report.init = runJsonCapture(
+      "node",
+      ["bin/openclawbrain.js", "init", fixtureWorkspace],
+      {
+        timeoutMs: initTimeoutMs,
+        label: "openclawbrain init",
+        artifactName: "init-capture.json",
+        env: {
+          OPENCLAWBRAIN_INIT_VERBOSE: "1",
+          OPENCLAWBRAIN_EMBEDDING_TIMEOUT_MS: String(embeddingTimeoutMs),
+        },
+      },
+    );
     report.status = extractJson(run("node", ["bin/openclawbrain.js", "status"]));
     report.doctor = extractJson(run("node", ["bin/openclawbrain.js", "doctor"]));
     const traceCapture = runCapture("node", ["bin/openclawbrain.js", "trace"]);
