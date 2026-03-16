@@ -59,7 +59,7 @@ These are inherited LCM surfaces and should stay stable unless a failing test fo
 - structured raw evidence plus worker-side trust resolution are real
 
 ### Still open
-- Phase 4: mutation bundles (not yet implemented - requires new code)
+- Phase 4: mutation bundles (DONE - bundle evaluation, clustering, replay gates)
 - Phase 5: CI proof ladder (DONE - .github/workflows/publish.yml runs tests)
 - Phase 6: package/type cleanup (DONE - tsc --noEmit green for src, SDK compat layer added)
 
