@@ -1,5 +1,5 @@
-import { writeFileSync } from "node:fs";
-import { join, resolve } from "node:path";
+import { mkdirSync, writeFileSync } from "node:fs";
+import { dirname, join, resolve } from "node:path";
 import process from "node:process";
 import { BrainService } from "../src/brain-runtime/service.js";
 import type { LcmDependencies } from "../src/types.js";
@@ -123,10 +123,23 @@ async function waitFor(predicate: () => Promise<boolean> | boolean, timeoutMs = 
 
 async function main() {
   const { workspaceRoot, brainRoot, lcmDbPath } = parseArgs(process.argv.slice(2));
+  const dbDir = dirname(lcmDbPath);
+  const fixtureWorkspace = join(workspaceRoot, ".openclawbrain-runtime-proof");
+  const teachBrainRoot = join(brainRoot, "teach-runtime");
+  const failOpenBrainRoot = join(brainRoot, "fail-open-runtime");
+  const teachLcmDbPath = join(dbDir, "teach-runtime.lcm.db");
+  const failOpenLcmDbPath = join(dbDir, "fail-open-runtime.lcm.db");
+
+  mkdirSync(fixtureWorkspace, { recursive: true });
 
   writeFileSync(
-    join(workspaceRoot, "DEPLOY.md"),
+    join(fixtureWorkspace, "DEPLOY.md"),
     "# Deploy\n\nCheck CI logs before retrying a deployment.\n",
+    "utf8",
+  );
+  writeFileSync(
+    join(fixtureWorkspace, "PLAYBOOK.md"),
+    "# Pull Requests\n\nUse `gh pr create` for pull request workflows.\nIf the branch is not pushed yet, push it first and then open the PR.\n",
     "utf8",
   );
 
@@ -142,10 +155,10 @@ async function main() {
   }) as typeof fetch;
 
   const runtimeService = new BrainService({
-    deps: createDeps(brainRoot, lcmDbPath),
+    deps: createDeps(teachBrainRoot, teachLcmDbPath),
   });
   await runtimeService.init({
-    workspaceRoot,
+    workspaceRoot: fixtureWorkspace,
     embedFn: async (text) => embed(text),
   });
 
@@ -170,21 +183,32 @@ async function main() {
   const retrieveTrace = await runtimeService.getTrace();
 
   const failOpenService = new BrainService({
-    deps: createDeps(brainRoot, lcmDbPath, {
+    deps: createDeps(failOpenBrainRoot, failOpenLcmDbPath, {
       workerMode: "child",
       trainerIntervalMs: 200,
       workerHeartbeatTimeoutMs: 150,
       workerRestartDelayMs: 5_000,
     }),
   });
+  await failOpenService.init({
+    workspaceRoot: fixtureWorkspace,
+    embedFn: async (text) => embed(text),
+  });
+
   failOpenService.startWorker();
   await waitFor(async () => {
     const status = await failOpenService.status();
     return Boolean(status.workerPid) && status.workerHealthy === true;
   });
+  const beforeCrash = await failOpenService.query({
+    conversationId: 42,
+    queryText: "how do I open a pull request?",
+    budgetChars: 4000,
+    queryEmbedding: embed("gh pr create pull request"),
+  });
   const childPid = (await failOpenService.status()).workerPid as number;
   process.kill(childPid, "SIGKILL");
-  await waitFor(() => Boolean((failOpenService as any).workerLastExit), 1_500);
+  await waitFor(async () => Boolean((await failOpenService.status()).workerLastExit), 5_000);
   await new Promise((resolve) => setTimeout(resolve, 250));
 
   const statusAfterCrash = await failOpenService.status();
@@ -210,6 +234,9 @@ async function main() {
       retrievedPackVersion: retrieved?.episode.packVersion ?? null,
     },
     workerDownFailOpen: {
+      servedBeforeCrash: beforeCrash !== null,
+      servedPullRequestGuidanceBeforeCrash:
+        beforeCrash?.fired.some((node) => node.content.includes("gh pr create")) ?? false,
       workerHealthyAfterCrash: statusAfterCrash.workerHealthy ?? null,
       workerLastExit: statusAfterCrash.workerLastExit ?? null,
       currentPackVersion: statusAfterCrash.currentPackVersion ?? null,
@@ -224,7 +251,9 @@ async function main() {
     throw new Error(`Teach retrieval assertion failed: ${JSON.stringify(payload.teachRetrieval)}`);
   }
   if (
-    payload.workerDownFailOpen.workerHealthyAfterCrash !== false
+    !payload.workerDownFailOpen.servedBeforeCrash
+    || !payload.workerDownFailOpen.servedPullRequestGuidanceBeforeCrash
+    || payload.workerDownFailOpen.workerHealthyAfterCrash !== false
     || !payload.workerDownFailOpen.workerLastExit
     || !payload.workerDownFailOpen.servedAfterCrash
     || !payload.workerDownFailOpen.servedPullRequestGuidance
