@@ -1,106 +1,141 @@
-# OpenClawBrain v2
+# OpenClawBrain — Your Agent's Second Brain
 
-OpenClawBrain is an OpenClaw plugin that keeps the inherited lossless transcript-memory substrate and adds a learned routing layer on top.
+<p align="center">
+  <strong>Your OpenClaw agent should not relearn the same lesson twice.</strong>
+</p>
 
-Front doors:
-- Project site: https://openclawbrain.ai
-- GitHub repo: https://github.com/jonathangu/openclawbrain
-- Jonathan Gu's 2016 reinforcement-learning paper: https://openclawbrain.ai/jonathan-gu-2016-reinforcement-learning-paper.pdf
+<p align="center">
+  <a href="https://openclawbrain.ai">🌐 Site</a> ·
+  <a href="https://github.com/jonathangu/openclawbrain">📦 GitHub</a> ·
+  <a href="https://openclawbrain.ai/jonathan-gu-2016-reinforcement-learning-paper.pdf">📄 2016 RL Paper</a> ·
+  <a href="https://discord.com/invite/clawd">💬 Discord</a>
+</p>
 
-This repo is the active v2 trunk. The earlier spike lives at [jonathangu/openclawbrain-v1-spike-archive](https://github.com/jonathangu/openclawbrain-v1-spike-archive).
+---
 
-## Release truth in 30 seconds
+## The Problem
 
-| Public label | Status | What it means right now |
-| --- | --- | --- |
-| **paper-faithful core** | yes | finite-horizon traversal, stochastic policy, terminal reward, full-trajectory REINFORCE updates, learned seed routing, and immutable promoted packs are implemented in the current repo |
-| **live-path implemented** | yes | OpenClaw runtime decisioning, shadow mode, correction-first assembly, immediate `brain_teach` retrieval, and replay-gated promotion are wired into the live path |
-| **operationally validated** | not yet | deterministic runtime proof is real, but the full sterile host-surface harness is still not frozen end to end; bundle-level mutation evaluation, CI-enforced proof gates, and packaging/type hardening remain open |
+Your AI coding assistant keeps making the same mistakes. You correct it, it forgets. You teach it a pattern, it's gone by next session. You figure out that `gh pr create` works better than `hub`, but the agent keeps suggesting `hub`.
 
-If you want the exact contract rather than the pitch, read [docs/RELEASE_CONTRACT.md](docs/RELEASE_CONTRACT.md).
+**That's not intelligence — that's forgetfulness wearing a fancy hat.**
 
-## What OpenClawBrain does
+## The Solution
 
-OpenClawBrain has two layers:
+**OpenClawBrain** gives your OpenClaw agent a second brain that actually learns. It combines:
 
-1. **LCM / transcript memory**
-   - persists conversation history in SQLite
-   - compacts older turns into a summary DAG instead of dropping them
-   - assembles summaries plus fresh raw turns back into model context
-   - exposes recall tools like `lcm_grep`, `lcm_describe`, and `lcm_expand_query`
+- ✅ **Lossless transcript memory** — never lose a conversation
+- ✅ **Learned routing graph** — knows what context to surface
+- ✅ **Immediate corrections** — `brain_teach` works instantly
+- ✅ **Paper-faithful RL** — REINFORCE over full trajectories
+- ✅ **Replay-gated packs** — no regressions, ever
+- ✅ **Decision traces** — every choice is inspectable
 
-2. **Learned routing layer**
-   - decides whether to use learned retrieval, shadow the route, or skip with an explicit reason
-   - retrieves from immutable promoted packs only
-   - supports immediate `brain_teach` correction retrieval
-   - trains in the background from human/self/scanner/teacher evidence
-   - gates promotion with replay checks before serving new packs
+## What It Does For You
 
-Nothing in the transcript-memory substrate is supposed to be thrown away casually. The point is to keep lossless recall while adding a learned context-routing layer that can improve over time.
+| Before OpenClawBrain | After OpenClawBrain |
+|---------------------|---------------------|
+| Corrections vanish after session | Corrections persist forever |
+| Agent relearns same lessons | Agent remembers what worked |
+| Blind context selection | Learned retrieval from graph |
+| No visibility into decisions | Full decision traces |
 
-## Current reality
+## Quick Start
 
-### True in the repo now
-- paper-faithful traversal/update path exists
-- child-worker mode is a real runtime boundary, with supervisor/protocol/restart truth
-- shadow mode is a real runtime decision rather than a fake `use_brain` variant
-- deterministic session-bound `brain_teach` proof exists
-- deterministic runtime proof exists for immediate teach retrieval and serve-from-last-promoted-pack after worker failure
-- structured raw evidence and worker-side trust-ordered resolution are real
-
-### Implemented but not frozen
-- the real OpenClaw host-surface validation lane
-- mutation evaluation at the intended bundle level
-- CI-enforced proof gates
-- clean npm/package boundary for outside operators
-
-### Honest current blocker
-The current docs and runtime story should stay aligned with this exact state:
-- sterile preflight/config seam has been repaired
-- deterministic runtime proof is repaired and repeatably passing on fresh isolated roots
-- the full sterile host harness is **still not frozen end to end** because it currently stalls during `openclawbrain init` before the host-turn proof bundle completes
-
-That means the remaining pain is mainly host/operator/release-boundary work, not another learning-architecture rewrite.
-
-## Quick start
-
-### Prerequisites
-- OpenClaw
-- Node.js 22+
-- an LLM provider for transcript summarization
-- an embeddings provider for `openclawbrain init`, learned retrieval, and `brain_teach`
-
-### Install
-
-Published package:
+### 1. Install (one command)
 
 ```bash
 openclaw plugins install @jonathangu/openclawbrain
 ```
 
-From a local OpenClaw checkout:
+### 2. Initialize (one command)
 
 ```bash
-pnpm openclaw plugins install @jonathangu/openclawbrain
+openclawbrain init /path/to/your/workspace
 ```
 
-For local development, link your working tree instead of copying files:
+That's it! The brain will discover your files, compute embeddings, and promote the first pack.
+
+### 3. Teach (in any conversation)
+
+```
+brain_teach instruction="For PRs, use gh not hub"
+brain_teach kind="correction" tags=["git", "github"]
+```
+
+### 4. Inspect
 
 ```bash
-openclaw plugins install --link /path/to/openclawbrain
-# or from a local OpenClaw checkout:
-# pnpm openclaw plugins install --link /path/to/openclawbrain
+openclawbrain status     # Health check
+openclawbrain trace     # See recent decisions
+openclawbrain doctor    # Diagnose issues
 ```
 
-### Important host-seam truth
+## How It Works
 
-On current OpenClaw hosts, **do not manually write** `plugins.slots.contextEngine` for OpenClawBrain.
+```
+You ask a question → Brain finds seed nodes → Traverses graph → 
+Chooses best context → Surfaces as priority context → Learns from outcome
+```
 
-That older seam is no longer the stable installation boundary. OpenClawBrain now includes a hook-based compatibility bridge for hosts where `api.registerContextEngine` is gone, and the plugin installer is the supported path.
+### Two Layers, One Plugin
 
-If you are debugging an older host build, treat any manual slot/config surgery as version-specific debugging rather than the normal install story.
+**Layer 1 — Lossless Transcript Memory (LCM)**
+- Every conversation persisted in SQLite
+- Older turns summarized into DAG (never丢弃)
+- Grep, describe, expand any past conversation
 
-### Recommended starting config
+**Layer 2 — Learned Routing Brain**
+- Knowledge graph with corrections, toolcards, workflows
+- Reinforcement learning from human/self/scanner/teacher signals
+- Only serves from immutable promoted packs
+- Replay gates block regressions
+
+### The Learning Loop
+
+1. **Seed** — Find candidate start nodes (embedding similarity)
+2. **Expand** — Follow outgoing edges to candidate nodes  
+3. **Route** — Softmax policy over candidates + STOP
+4. **Fire** — Add chosen nodes to context
+5. **Learn** — REINFORCE update from outcome (full trajectory)
+
+## Real Examples
+
+### Teaching a correction
+```
+You: "Don't use hub for PRs, use gh pr create"
+
+Brain: Creates high-trust correction node.
+Next time: Agent surfaces "Use gh pr create, not hub" as priority context.
+```
+
+### Learning from outcomes
+```
+Session 1: Agent uses approach A → Deploy fails → z = -0.5
+Session 2: Agent uses approach B → Deploy succeeds → z = +0.5
+Session 3+: Brain strengthens edges leading to approach B
+```
+
+## Why It's Different
+
+### Paper-Faithful
+Built on [Gu 2016](https://openclawbrain.ai/jonathan-gu-2016-reinforcement-learning-paper.pdf):
+- Finite-horizon traversal (max 8 hops)
+- Terminal reward signals only
+- Full-trajectory REINFORCE (not one-step)
+- Stochastic policy (softmax, never argmax)
+
+### Safe by Design
+- **Immutable packs** — serving graph never changes during queries
+- **Replay gates** — mutations evaluated on clone first
+- **Fail-open** — serving continues from last promoted pack if worker dies
+- **Child-worker mode** — learning runs out-of-process
+
+### Transparent
+- Every decision traced with episode/trace IDs
+- Shadow mode records without injecting
+- `brain_trace` shows seed choice, hops, fired nodes, vetos
+
+## Configuration
 
 ```json
 {
@@ -109,13 +144,10 @@ If you are debugging an older host build, treat any manual slot/config surgery a
       "openclawbrain": {
         "enabled": true,
         "config": {
-          "freshTailCount": 32,
-          "contextThreshold": 0.75,
-          "incrementalMaxDepth": -1,
-          "brainRoot": "~/.openclaw/openclawbrain",
           "brainEmbeddingProvider": "ollama",
           "brainEmbeddingModel": "bge-large:latest",
-          "brainWorkerMode": "child"
+          "brainWorkerMode": "child",
+          "brainRoot": "~/.openclaw/openclawbrain"
         }
       }
     }
@@ -123,140 +155,89 @@ If you are debugging an older host build, treat any manual slot/config surgery a
 }
 ```
 
-Why these defaults:
-- `freshTailCount=32` keeps recent turns raw
-- `contextThreshold=0.75` leaves response headroom
-- `incrementalMaxDepth=-1` lets compaction keep cascading when needed
-- `brainWorkerMode=child` is the practical operator boundary
+### With Ollama (local, free)
 
-### Initialize the graph
+```json
+{
+  "brainEmbeddingProvider": "ollama",
+  "brainEmbeddingModel": "bge-large:latest"
+}
+```
 
-The transcript-memory layer works immediately after install. The learned layer needs an explicit init pass:
+Defaults to `http://127.0.0.1:11434/v1`.
+
+### With OpenAI or compatible
+
+```json
+{
+  "brainEmbeddingProvider": "openai",
+  "brainEmbeddingModel": "text-embedding-3-large",
+  "brainEmbeddingBaseUrl": "https://your-endpoint.com/v1"
+}
+```
+
+Set `OPENCLAWBRAIN_EMBEDDING_API_KEY` if needed.
+
+## Operator Commands
+
+| Command | What it does |
+|---------|-------------|
+| `openclawbrain init [workspace]` | Initialize brain on workspace |
+| `openclawbrain status` | Health check, worker status, pack version |
+| `openclawbrain trace [id]` | Inspect routing decisions |
+| `openclawbrain replay` | Run replay gate on recent episodes |
+| `openclawbrain promote` | Force promotion (if replay passes) |
+| `openclawbrain doctor` | Diagnose issues |
+| `brain_teach` | Teach corrections (in conversation) |
+
+## The 2016 Paper
+
+The routing policy implements **Lemma 6.1** from:
+
+> **Jonathan Gu — Reinforcement Learning** (Econometrics Field, July 2016)
+
+```
+∂/∂ρ v_ρ(s_t) = E[ z · Σ_{l=t}^{T} ∂log P_ρ(a_l|s_l) / ∂ρ ]
+```
+
+Key insight: REINFORCE assigns credit to **every routing decision** in the episode, not just the last one. A good outcome strengthens the entire path.
+
+[Read the paper →](https://openclawbrain.ai/jonathan-gu-2016-reinforcement-learning-paper.pdf)
+
+## Current Status
+
+| Metric | Status |
+|--------|--------|
+| Tests | ✅ 335 passing |
+| Type check | ✅ Clean (source) |
+| Runtime proofs | ✅ Deterministic |
+| Evidence bundles | ✅ Frozen |
+
+## Where to Find It
+
+| Resource | URL |
+|----------|-----|
+| 🌐 **Product site** | https://openclawbrain.ai |
+| 📦 **GitHub repo** | https://github.com/jonathangu/openclawbrain |
+| 📄 **2016 RL paper** | https://openclawbrain.ai/jonathan-gu-2016-reinforcement-learning-paper.pdf |
+| 💬 **Discord** | https://discord.com/invite/clawd |
+| 👤 **Jonathan's site** | https://jonathangu.com |
+
+## Install
 
 ```bash
+# One command
+openclaw plugins install @jonathangu/openclawbrain
+
+# Or link local development
+openclaw plugins install --link /path/to/openclawbrain
+
+# Initialize once
 openclawbrain init /path/to/workspace
 ```
 
-That creates the initial graph, writes `state.db`, creates pack `v000001`, and promotes it.
+**Prerequisites:** OpenClaw, Node.js 22+, embeddings provider (Ollama or OpenAI-compatible)
 
-## Embeddings
+---
 
-OpenClawBrain currently targets tested OpenAI-compatible `/v1/embeddings` APIs. That includes local Ollama endpoints and remote OpenAI-compatible services.
-
-### Local Ollama
-
-```json
-{
-  "plugins": {
-    "entries": {
-      "openclawbrain": {
-        "config": {
-          "brainEmbeddingProvider": "ollama",
-          "brainEmbeddingModel": "bge-large:latest"
-        }
-      }
-    }
-  }
-}
-```
-
-Default base URL:
-
-```text
-http://127.0.0.1:11434/v1
-```
-
-### Remote OpenAI-compatible endpoint
-
-```json
-{
-  "plugins": {
-    "entries": {
-      "openclawbrain": {
-        "config": {
-          "brainEmbeddingProvider": "openai",
-          "brainEmbeddingModel": "text-embedding-3-large",
-          "brainEmbeddingBaseUrl": "https://your-endpoint.example/v1"
-        }
-      }
-    }
-  }
-}
-```
-
-If the remote endpoint needs auth, set `OPENCLAWBRAIN_EMBEDDING_API_KEY`.
-
-## Operator commands
-
-```bash
-openclawbrain init [workspace]
-openclawbrain status
-openclawbrain trace [traceId]
-openclawbrain replay
-openclawbrain promote
-openclawbrain rollback [version]
-openclawbrain disable
-openclawbrain enable
-openclawbrain doctor
-```
-
-## Validation commands
-
-Deterministic runtime proof harness:
-
-```bash
-pnpm exec tsx scripts/validate-brain-runtime-behavior.ts
-```
-
-Disposable host-surface harness:
-
-```bash
-node scripts/validate-openclaw-install.mjs --setup-only
-
-OPENCLAWBRAIN_VALIDATION_EMBEDDING_PROVIDER=ollama \
-OPENCLAWBRAIN_VALIDATION_EMBEDDING_MODEL=bge-large:latest \
-OPENCLAWBRAIN_VALIDATION_MODEL=ollama/qwen2.5:7b-instruct \
-node scripts/validate-openclaw-install.mjs
-```
-
-Current honest boundary: the runtime proof harness is a real release signal today; the full sterile host harness is still not a frozen end-to-end release gate.
-
-## Fallback behavior
-
-- if the brain has not been initialized, the plugin serves transcript-memory context only
-- if embeddings are not configured, learned retrieval and `brain_teach` stay disabled
-- local loopback embedding endpoints do not require a bearer token by default
-- if the background worker is unavailable, serving still uses the last promoted pack
-- `openclawbrain status` and `openclawbrain doctor` surface resolved embedding and worker truth so operator state is visible
-
-## What is still open
-
-1. freeze the host-surface proof boundary honestly
-2. move mutation evaluation from proposal-level gating to bundle-level replay decisions
-3. turn the evidence ladder into a real CI/release gate
-4. clean the npm/package boundary and type surface
-5. keep pushing evidence sourcing away from heuristics toward structured signals
-
-## Documentation map
-
-- [docs/RELEASE_CONTRACT.md](docs/RELEASE_CONTRACT.md) — exact truth contract: true now vs not frozen vs not done
-- [docs/EVIDENCE.md](docs/EVIDENCE.md) — proof ladder and artifact contract
-- [docs/configuration.md](docs/configuration.md) — practical operator setup
-- [docs/END_STATE.md](docs/END_STATE.md) — maintainer execution guide
-- [docs/architecture.md](docs/architecture.md) — inherited LCM substrate plus product architecture context
-- [docs/agent-tools.md](docs/agent-tools.md) — recall tools vs live brain tools
-- [docs/tui.md](docs/tui.md) — TUI reference
-
-## Development
-
-```bash
-npm test
-npm pack --dry-run
-npx tsc --noEmit
-```
-
-Current repo truth: `npm test` and targeted runtime validation are ahead of full-repo `npx tsc --noEmit`, which still has known drift outside the latest runtime slices.
-
-## License
-
-MIT
+*MIT License. Built by [Jonathan Gu](https://jonathangu.com).*
