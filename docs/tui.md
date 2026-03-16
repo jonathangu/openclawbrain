@@ -1,12 +1,18 @@
 # TUI Reference
 
-The OpenClawBrain TUI (`lcm-tui`) is an interactive terminal application for inspecting, debugging, and maintaining the inherited LCM substrate. It provides direct visibility into what the model sees (context assembly), how summaries are structured (DAG hierarchy), and tools for surgical repairs when things go wrong.
+The OpenClawBrain TUI (`lcm-tui`) is an interactive terminal application for inspecting, debugging, and maintaining the inherited LCM substrate. It is still a substrate-level tool, which is why some internal naming and the Go module path still reflect the older lossless-claw origin.
+
+What it is for:
+- inspect what the model actually sees in context
+- inspect summary DAG structure and quality
+- repair or rewrite bad summaries surgically
+- debug large-file interception and context assembly
 
 ## Installation
 
-**From GitHub releases:**
+**From releases:**
 
-Download the latest binary for your platform from the OpenClawBrain release surface that ships this repo's TUI assets.
+Download the latest binary for your platform from this repo's release surface when TUI assets are published there.
 
 **Build from source:**
 
@@ -14,7 +20,8 @@ Download the latest binary for your platform from the OpenClawBrain release surf
 cd tui
 go build -o lcm-tui .
 # or: make build
-# or: go install github.com/Martian-Engineering/lossless-claw/tui@latest
+# historical module path, still current in go.mod:
+# go install github.com/Martian-Engineering/lossless-claw/tui@latest
 ```
 
 Requires Go 1.24+.

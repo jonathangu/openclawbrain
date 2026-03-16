@@ -1,6 +1,29 @@
 # Architecture
 
-This document describes how lossless-claw works internally — the data model, compaction lifecycle, context assembly, and expansion system.
+This document explains the architecture that OpenClawBrain is built on.
+
+Important framing:
+- the **transcript-memory substrate** is inherited from lossless-claw / LCM
+- the **learned routing layer** is the OpenClawBrain-specific addition on top
+- this doc covers both, so deeper sections will still talk in substrate terms where that is the real implementation boundary
+
+## Architecture in one minute
+
+OpenClawBrain has two cooperating layers:
+
+1. **LCM substrate**
+   - persists messages and message parts
+   - compacts old history into a summary DAG
+   - assembles summaries plus fresh raw turns back into model context
+   - supports expansion back into compressed detail
+
+2. **Learned routing layer**
+   - decides whether to use learned retrieval, shadow the route, or skip with an explicit reason
+   - retrieves from immutable promoted packs only
+   - records episodes and traces on the live path
+   - trains in the background from structured evidence and replay-gated promotion
+
+The repo identity is OpenClawBrain. The substrate history is still real, but it should not be confused with the whole product story.
 
 ## Data model
 
@@ -9,216 +32,179 @@ This document describes how lossless-claw works internally — the data model, c
 Every OpenClaw session maps to a **conversation**. The first time a session ingests a message, LCM creates a conversation record keyed by the runtime session ID.
 
 Messages are stored with:
-- **seq** — Monotonically increasing sequence number within the conversation
+- **seq** — monotonically increasing sequence number within the conversation
 - **role** — `user`, `assistant`, `system`, or `tool`
-- **content** — Plain text extraction of the message
-- **tokenCount** — Estimated token count (~4 chars/token)
-- **createdAt** — Insertion timestamp
+- **content** — plain-text extraction of the message
+- **tokenCount** — estimated token count (~4 chars/token)
+- **createdAt** — insertion timestamp
 
-Each message also has **message_parts** — structured content blocks that preserve the original shape (text blocks, tool calls, tool results, reasoning, file content, etc.). This allows the assembler to reconstruct rich content when building model context, not just flat text.
+Each message also has **message_parts** — structured content blocks that preserve the original shape (text blocks, tool calls, tool results, reasoning, file content, and so on). That lets the assembler reconstruct rich content instead of only flattened text.
 
 ### The summary DAG
 
-Summaries form a directed acyclic graph with two node types:
+Summaries form a directed acyclic graph with two main node types:
 
-**Leaf summaries** (depth 0, kind `"leaf"`):
-- Created from a chunk of raw messages
-- Linked to source messages via `summary_messages`
-- Contain a narrative summary with timestamps
-- Typically 800–1200 tokens
+**Leaf summaries** (depth 0, kind `"leaf"`)
+- created from a chunk of raw messages
+- linked to source messages via `summary_messages`
+- contain a narrative summary with timestamps
+- typically 800–1200 tokens
 
-**Condensed summaries** (depth 1+, kind `"condensed"`):
-- Created from a chunk of summaries at the same depth
-- Linked to parent summaries via `summary_parents`
-- Each depth tier uses a progressively more abstract prompt
-- Typically 1500–2000 tokens
+**Condensed summaries** (depth 1+, kind `"condensed"`)
+- created from a chunk of summaries at the same depth
+- linked to parent summaries via `summary_parents`
+- use progressively more abstract prompts as depth increases
+- typically 1500–2000 tokens
 
 Every summary carries:
-- **summaryId** — `sum_` + 16 hex chars (SHA-256 of content + timestamp)
-- **conversationId** — Which conversation it belongs to
-- **depth** — Position in the hierarchy (0 = leaf)
-- **earliestAt / latestAt** — Time range of source material
-- **descendantCount** — Total number of ancestor summaries (transitive)
-- **fileIds** — References to large files mentioned in the source
-- **tokenCount** — Estimated tokens
+- **summaryId** — `sum_` + 16 hex chars
+- **conversationId** — which conversation it belongs to
+- **depth** — hierarchy position
+- **earliestAt / latestAt** — source time range
+- **descendantCount** — total transitive ancestor coverage
+- **fileIds** — referenced large files
+- **tokenCount** — estimated tokens
 
 ### Context items
 
-The **context_items** table maintains the ordered list of what the model sees for each conversation. Each entry is either a message reference or a summary reference, identified by ordinal.
+The `context_items` table maintains the ordered list of what the model sees for each conversation. Each entry is either a message reference or a summary reference.
 
-When compaction creates a summary from a range of messages (or summaries), the source items are replaced by a single summary item. This keeps the context list compact while preserving ordering.
+When compaction creates a summary from a range of messages or summaries, the source items are replaced by a single summary item. That keeps the active context compact while preserving ordering.
 
 ## Compaction lifecycle
 
 ### Ingestion
 
-When OpenClaw processes a turn, it calls the context engine's lifecycle hooks:
+When OpenClaw processes a turn, it calls the context engine lifecycle hooks:
 
-1. **bootstrap** — On session start, reconciles the JSONL session file with the LCM database. Imports any messages that exist in the file but not in LCM (crash recovery).
-2. **ingest** / **ingestBatch** — Persists new messages to the database and appends them to context_items.
-3. **afterTurn** — After the model responds, ingests new messages, then evaluates whether compaction should run.
+1. **bootstrap** — reconciles the JSONL session file with the LCM database for crash recovery
+2. **ingest / ingestBatch** — persists new messages and appends them to `context_items`
+3. **afterTurn** — ingests new messages, then evaluates whether compaction should run
 
 ### Leaf compaction
 
-The **leaf pass** converts raw messages into leaf summaries:
-
-1. Identify the oldest contiguous chunk of raw messages outside the **fresh tail** (protected recent messages).
-2. Cap the chunk at `leafChunkTokens` (default 20k tokens).
-3. Concatenate message content with timestamps.
-4. Resolve the most recent prior summary for continuity (passed as `previous_context` so the LLM avoids repeating known information).
-5. Send to the LLM with the leaf prompt.
-6. Normalize provider response blocks (Anthropic/OpenAI text, output_text, and nested content/summary shapes) into plain text.
-7. If normalization is empty, log provider/model/block-type diagnostics and fall back to deterministic truncation.
-8. If the summary is larger than the input (LLM failure), retry with the aggressive prompt. If still too large, fall back to deterministic truncation.
-9. Persist the summary, link to source messages, and replace the message range in context_items.
+The leaf pass converts raw messages into leaf summaries:
+1. identify the oldest contiguous chunk of raw messages outside the protected fresh tail
+2. cap the chunk at `leafChunkTokens`
+3. concatenate message content with timestamps
+4. pass prior summary context for continuity when available
+5. summarize with the leaf prompt
+6. normalize provider output into plain text
+7. fall back deterministically if normalization is empty or poor
+8. persist the summary and replace the source range in `context_items`
 
 ### Condensation
 
-The **condensed pass** merges summaries at the same depth into a higher-level summary:
-
-1. Find the shallowest depth with enough contiguous same-depth summaries (≥ `leafMinFanout` for d0, ≥ `condensedMinFanout` for d1+).
-2. Concatenate their content with time range headers.
-3. Send to the LLM with the depth-appropriate prompt (d1, d2, or d3+).
-4. Apply the same escalation strategy (normal → aggressive → truncation fallback).
-5. Persist with depth = targetDepth + 1, link to parent summaries, replace the range in context_items.
+The condensed pass merges summaries at the same depth into a higher-level summary:
+1. find the shallowest eligible depth with enough contiguous same-depth summaries
+2. concatenate content with time-range headers
+3. summarize with the depth-appropriate prompt
+4. use the same escalation path (normal → aggressive → deterministic fallback)
+5. persist the new summary and replace the source range in `context_items`
 
 ### Compaction modes
 
-**Incremental (after each turn):**
-- Checks if raw tokens outside the fresh tail exceed `leafChunkTokens`
-- If so, runs one leaf pass
-- If `incrementalMaxDepth != 0`, follows with condensation passes up to that depth (`-1` for unlimited)
-- Best-effort: failures don't break the conversation
+**Incremental**
+- runs after turns when raw tokens outside the fresh tail exceed the configured threshold
+- may continue with condensation passes depending on `incrementalMaxDepth`
+- failures are best-effort and should not break the conversation
 
-**Full sweep (manual `/compact` or overflow):**
-- Phase 1: Repeatedly runs leaf passes until no more eligible chunks
-- Phase 2: Repeatedly runs condensation passes starting from the shallowest eligible depth
-- Each pass checks for progress; stops if no tokens were saved
+**Full sweep**
+- repeatedly runs leaf passes, then condensation passes, until no further savings are found
+- used for manual `/compact` and overflow recovery
 
-**Budget-targeted (`compactUntilUnder`):**
-- Runs up to `maxRounds` (default 10) of full sweeps
-- Stops when context is under the target token count
-- Used by the overflow recovery path
+**Budget-targeted**
+- runs bounded rounds of full sweeps until context falls under a target budget
 
-### Three-level escalation
+### Three-level summarization escalation
 
-Every summarization attempt follows this escalation:
+Every summarization attempt follows the same escalation:
+1. **normal** — standard prompt
+2. **aggressive** — tighter prompt with lower token target
+3. **fallback** — deterministic truncation
 
-1. **Normal** — Standard prompt, temperature 0.2
-2. **Aggressive** — Tighter prompt requesting only durable facts, temperature 0.1, lower target tokens
-3. **Fallback** — Deterministic truncation to ~512 tokens with `[Truncated for context management]` marker
-
-This ensures compaction always makes progress, even if the LLM produces poor output.
+That guarantees compaction still makes progress when model output is weak or malformed.
 
 ## Context assembly
 
-The assembler runs before each model turn and builds the message array:
+Before each model turn, the assembler builds the message array from summaries plus the fresh raw tail:
 
-```
+```text
 [summary₁, summary₂, ..., summaryₙ, message₁, message₂, ..., messageₘ]
  ├── budget-constrained ──┤  ├──── fresh tail (always included) ────┤
 ```
 
-### Steps
+Steps:
+1. fetch `context_items` in order
+2. resolve each item into either reconstructed rich messages or XML-wrapped summaries
+3. split into evictable prefix and protected fresh tail
+4. always include the fresh tail, even if it is expensive
+5. backfill the remaining budget from the newest evictable items
+6. normalize assistant content blocks and sanitize tool pairing
 
-1. Fetch all context_items ordered by ordinal.
-2. Resolve each item — summaries become user messages with XML wrappers; messages are reconstructed from parts.
-3. Split into evictable prefix and protected fresh tail (last `freshTailCount` raw messages).
-4. Compute fresh tail token cost (always included, even if over budget).
-5. Fill remaining budget from the evictable set, keeping newest items and dropping oldest.
-6. Normalize assistant content to array blocks (Anthropic API compatibility).
-7. Sanitize tool-use/result pairing (ensures every tool_result has a matching tool_use).
+## XML summary format
 
-### XML summary format
-
-Summaries are presented to the model as user messages wrapped in XML:
+Summaries are shown to the model as user messages with XML wrappers, for example:
 
 ```xml
 <summary id="sum_abc123" kind="leaf" depth="0" descendant_count="0"
          earliest_at="2026-02-17T07:37:00" latest_at="2026-02-17T08:23:00">
   <content>
-    ...summary text with timestamps...
+    ...summary text...
 
     Expand for details about: exact error messages, full config diff, intermediate debugging steps
   </content>
 </summary>
 ```
 
-Condensed summaries also include parent references:
-
-```xml
-<summary id="sum_def456" kind="condensed" depth="1" descendant_count="8" ...>
-  <parents>
-    <summary_ref id="sum_aaa111" />
-    <summary_ref id="sum_bbb222" />
-  </parents>
-  <content>...</content>
-</summary>
-```
-
-The XML attributes give the model enough metadata to reason about summary age, scope, and how to drill deeper. The `<parents>` section enables targeted expansion of specific source summaries.
+That metadata gives the model temporal scope, hierarchy, and a hint about what can be expanded for detail.
 
 ## Expansion system
 
 When summaries are too compressed for a task, agents use `lcm_expand_query` to recover detail.
 
-### How it works
+High-level flow:
+1. agent calls `lcm_expand_query` with a prompt and either `summaryIds` or a search query
+2. matching summaries are located if needed
+3. a bounded delegated expansion grant is created
+4. a sub-agent walks the DAG, source messages, and referenced files
+5. the sub-agent returns a focused answer with cited summary IDs
+6. the grant is revoked and cleaned up
 
-1. Agent calls `lcm_expand_query` with a `prompt` and either `summaryIds` or a `query`.
-2. If `query` is provided, `lcm_grep` finds matching summaries first.
-3. A **delegation grant** is created, scoping the sub-agent to the relevant conversation(s) with a token cap.
-4. A sub-agent session is spawned with the expansion task.
-5. The sub-agent walks the DAG: it can read summary content, follow parent links, access source messages, and inspect stored files.
-6. The sub-agent returns a focused answer (default ≤ 2000 tokens) with cited summary IDs.
-7. The grant is revoked and the sub-agent session is cleaned up.
+This is the right tool family for compacted-memory recall. It is separate from the learned-routing tools like `brain_teach`, `brain_status`, and `brain_trace`.
 
-### Security model
+## Large-file handling
 
-Expansion uses a delegation grant system:
+Large file blocks are intercepted at ingestion when they exceed the configured threshold:
+1. parse file blocks from message content
+2. store oversized file content separately on disk
+3. generate a lightweight exploration summary
+4. insert a `large_files` record with metadata
+5. replace the in-message payload with a compact reference
 
-- **Grants** are created at spawn time, scoped to specific conversation IDs
-- **Token caps** limit how much content the sub-agent can access
-- **TTL** ensures grants expire even if cleanup fails
-- **Revocation** happens on completion, cancellation, or sweep
-
-The sub-agent only gets `lcm_expand` (the low-level tool), not `lcm_expand_query` — preventing recursive sub-agent spawning.
-
-## Large file handling
-
-Files embedded in user messages (typically via `<file>` blocks from tool output) are checked at ingestion:
-
-1. Parse file blocks from message content.
-2. For each block exceeding `largeFileTokenThreshold` (default 25k tokens):
-   - Generate a unique file ID (`file_` prefix)
-   - Store the content to `~/.openclaw/lcm-files/<conversation_id>/<file_id>.<ext>`
-   - Generate a ~200 token exploration summary (structural analysis, key sections, etc.)
-   - Insert a `large_files` record with metadata
-   - Replace the file block in the message with a compact reference
-3. The `lcm_describe` tool can retrieve full file content by ID.
-
-This prevents a single large file paste from consuming the entire context window while keeping the content accessible.
+This keeps huge file pastes from consuming the entire active context while preserving access to the content.
 
 ## Session reconciliation
 
-LCM handles crash recovery through **bootstrap reconciliation**:
-
-1. On session start, read the JSONL session file (OpenClaw's ground truth).
-2. Compare against the LCM database.
-3. Find the most recent message that exists in both (the "anchor").
-4. Import any messages after the anchor that are in JSONL but not in LCM.
-
-This handles the case where OpenClaw wrote messages to the session file but crashed before LCM could persist them.
+LCM handles crash recovery through bootstrap reconciliation:
+1. read the JSONL session file
+2. compare it to the LCM database
+3. find the newest shared anchor message
+4. import any later JSONL messages missing from the database
 
 ## Operation serialization
 
-All mutating operations (ingest, compact) are serialized per-session using a promise queue. This prevents races between concurrent afterTurn/compact calls for the same conversation without blocking operations on different conversations.
+Mutating operations are serialized per session using a promise queue. That prevents races between concurrent ingest/compact activity for the same conversation without blocking different conversations.
 
-## Authentication
+## Learned-layer overlay
 
-LCM needs to call an LLM for summarization. It resolves credentials through a three-tier cascade:
+On top of the substrate above, OpenClawBrain adds:
+- runtime decisioning (`use_brain`, `shadow`, explicit skip modes)
+- correction-first learned retrieval from immutable promoted packs
+- immediate `brain_teach` updates when embeddings are configured
+- episode/trace recording
+- structured evidence harvesting
+- replay-gated promotion
+- supervised child-worker learning boundary
 
-1. **Auth profiles** — OpenClaw's OAuth/token/API-key profile system (`auth-profiles.json`), checked in priority order
-2. **Environment variables** — Standard provider env vars (`ANTHROPIC_API_KEY`, etc.)
-3. **Custom provider key** — From models config (e.g., `models.json`)
-
-For OAuth providers (e.g., Anthropic via Claude Max), LCM handles token refresh and credential persistence automatically.
+That overlay is what turns the inherited transcript-memory system into OpenClawBrain as a product.

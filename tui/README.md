@@ -1,18 +1,21 @@
 # lcm-tui
 
-Interactive terminal UI for inspecting, debugging, and maintaining OpenClawBrain's inherited LCM database. Browse conversations, navigate the summary DAG, see exactly what the model sees in context, and perform surgical repairs — all from the terminal.
+Interactive terminal UI for inspecting, debugging, and maintaining OpenClawBrain's inherited LCM database. Browse conversations, navigate the summary DAG, see exactly what the model sees in context, and perform surgical repairs from the terminal.
+
+Important identity note: this tool is part of the inherited LCM substrate. The product identity is OpenClawBrain, but the Go module path still reflects the older lossless-claw origin.
 
 ## Install
 
 **From releases:**
 
-Download the latest binary from [GitHub Releases](https://github.com/Martian-Engineering/lossless-claw/releases).
+Download the latest binary from this repo's Releases page when TUI assets are published there.
 
 **From source:**
 
 ```bash
 go build -o lcm-tui .
-# or: go install github.com/Martian-Engineering/lossless-claw/tui@latest
+# historical module path, still current in go.mod:
+# go install github.com/Martian-Engineering/lossless-claw/tui@latest
 ```
 
 Requires Go 1.24+.
@@ -63,8 +66,6 @@ lcm-tui prompts --list                               # show active prompt source
 
 Full reference with keybindings, screen descriptions, flag tables, and troubleshooting: **[docs/tui.md](../docs/tui.md)**
 
-Note: this TUI is inherited from the lossless-claw substrate, so the Go module path still reflects that historical origin even though this repo's canonical product identity is OpenClawBrain.
-
 ## Architecture
 
 The TUI reads directly from the LCM SQLite database (`~/.openclaw/lcm.db`) and session JSONL files (`~/.openclaw/agents/`). Write operations (rewrite, repair, dissolve, transplant, backfill) use transactions. Changes take effect on the next conversation turn — no restart needed.
@@ -73,4 +74,4 @@ Rewrite, repair, and backfill compaction operations call provider APIs directly.
 
 ## License
 
-Part of the [Lossless Claw](https://github.com/Martian-Engineering/lossless-claw) monorepo.
+MIT (see the repo root `LICENSE`).
