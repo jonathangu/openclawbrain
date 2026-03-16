@@ -93,7 +93,7 @@ Required claims:
 - recurrent route used
 - static lookup bypassed when appropriate, or the remaining host-surface drift is explicitly classified/truth-frozen
 - shadow mode recorded
-- `brain_teach` proven by a deterministic session-bound harness, or honestly classified as out of scope for raw prompt-driven host proof
+- `brain_teach` proven by a deterministic session-bound harness (`scripts/validate-brain-teach-session-bound.ts`) with 20/20 identical passes, or honestly classified as out of scope for raw prompt-driven host proof
 - worker-down host proof stays narrow: last-promoted-pack serving continues and host status surfaces unhealthy/exit truth
 - `skip_no_embedding` and `skip_uninitialized` asserted explicitly
 
@@ -116,6 +116,6 @@ As of the current trunk:
 - **Level 1:** materially real
 - **Level 2:** present but not yet bundle-complete
 - **Level 3:** partially real on the host surface
-- **Level 4:** not frozen; deterministic session-bound `brain_teach` proof, short-static host drift classification, and the final narrow worker-down host claim still remain open
+- **Level 4:** not frozen; short-static host drift classification and the final narrow worker-down host claim still remain open, but deterministic session-bound `brain_teach` proof now exists under `docs/evidence/YYYY-MM-DD/<git-sha>/brain-teach-session-bound/`
 
 That means the repo is already beyond theory-only, but it does **not** yet have a frozen release-evidence ladder.

@@ -348,7 +348,18 @@ node scripts/validate-openclaw-install.mjs --sterile-lane
 
 Each serious run now writes a predictable artifact bundle under `docs/evidence/YYYY-MM-DD/<git-sha>/`, including the pre-run diagnostic ladder (`openclaw status`, `status --all`, `gateway probe`, `gateway status`, `doctor`, and `channels status --probe`).
 
-Current state: install/config wiring + fixture workspace + `openclawbrain init/status/doctor` are wired, and the harness can now target either temp-home isolation or a named sterile lane. The deterministic runtime layer already proves immediate `brain_teach` retrieval plus worker-down fail-open serving. Raw prompt-driven `openclaw agent --local` is **not** the release proof boundary for `brain_teach`; closing that claim requires the deterministic session-bound harness, while the host harness remains responsible for recurrent/shadow/skip-mode proof and the narrow worker-down serving claim.
+The deterministic session-bound `brain_teach` harness now lives at:
+
+```bash
+pnpm exec tsx scripts/validate-brain-teach-session-bound.ts \
+  --state-dir "$HOME/.openclaw-ocbphase1" \
+  --workspace "$HOME/.openclaw/workspace-ocbphase1" \
+  --repetitions 20
+```
+
+It binds the real registered `brain_teach` tool to a deterministic `ctx.sessionKey`, proves the teach action is recorded against the warmup episode, runs follow-up runtime assembly through the real retrieval path, and writes artifacts under `docs/evidence/YYYY-MM-DD/<git-sha>/brain-teach-session-bound/`.
+
+Current state: install/config wiring + fixture workspace + `openclawbrain init/status/doctor` are wired, and the harness can now target either temp-home isolation or a named sterile lane. The deterministic runtime layer already proves immediate `brain_teach` retrieval plus worker-down fail-open serving, and the session-bound harness now proves `brain_teach` deterministically at the correct seam with 20/20 identical passes. Raw prompt-driven `openclaw agent --local` is **not** the release proof boundary for `brain_teach`; the host harness remains responsible for recurrent/shadow/skip-mode proof and the narrow worker-down serving claim.
 
 ### Project structure
 

@@ -73,7 +73,7 @@ These are real enough to build on, but not frozen enough to oversell.
 These are still active work and must not be described as complete.
 
 - **Frozen host-surface proof for `brain_teach` and worker-down fail-open**
-  - Primary files: `scripts/validate-openclaw-install.mjs`, `scripts/validate-brain-teach-session-bound.ts` (future), `src/brain-runtime/tools.ts`, `src/brain-runtime/service.ts`
+  - Primary files: `scripts/validate-openclaw-install.mjs`, `scripts/validate-brain-teach-session-bound.ts`, `src/brain-runtime/tools.ts`, `src/brain-runtime/service.ts`
   - Required truth before this is marked done: deterministic session-bound `brain_teach` proof or explicit out-of-scope wording for raw host prompting, plus a narrow host worker-down claim that matches the actual artifact bundle.
 - **Resolved short-static-lookup host-surface semantics**
   - Primary files: `src/brain-runtime/assembler-extension.ts`, `scripts/validate-openclaw-install.mjs`
