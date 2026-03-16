@@ -1,0 +1,91 @@
+{
+  "gitSha": "7f8dbcb27e741abdeefd5656c210639d0acdd440",
+  "artifactDir": "/Users/cormorantai/openclawbrain/docs/evidence/2026-03-16/7f8dbcb27e741abdeefd5656c210639d0acdd440",
+  "validationMode": "sterile-lane",
+  "validationLaneName": "ocbphase1",
+  "validationRoot": "/Users/cormorantai/.openclaw-ocbphase1-short-static/preflight",
+  "validationHome": "/Users/cormorantai",
+  "validationStateDir": "/Users/cormorantai/.openclaw-ocbphase1-short-static/preflight",
+  "fixtureWorkspace": "/Users/cormorantai/.openclaw/workspace-ocbphase1",
+  "configPath": "/Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/openclaw.json",
+  "lcmDbPath": "/Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/lcm.db",
+  "brainRoot": "/Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/openclawbrain",
+  "validationRecordFile": "/Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/validation-records/validation-assemble.jsonl",
+  "validationGatewayPort": 19130,
+  "config": {
+    "commands": {
+      "native": "auto",
+      "nativeSkills": "auto"
+    },
+    "plugins": {
+      "load": {
+        "paths": [
+          "/Users/cormorantai/openclawbrain"
+        ]
+      },
+      "entries": {
+        "openclawbrain": {
+          "enabled": true,
+          "config": {
+            "enabled": true
+          }
+        }
+      },
+      "installs": {
+        "openclawbrain": {
+          "source": "path",
+          "sourcePath": "/Users/cormorantai/openclawbrain",
+          "installPath": "/Users/cormorantai/openclawbrain",
+          "version": "0.3.0",
+          "installedAt": "2026-03-16T04:41:04.149Z"
+        }
+      },
+      "slots": {
+        "contextEngine": "openclawbrain"
+      }
+    },
+    "meta": {
+      "lastTouchedVersion": "2026.2.17",
+      "lastTouchedAt": "2026-03-16T04:41:04.496Z"
+    },
+    "gateway": {
+      "mode": "local",
+      "port": 19130
+    },
+    "agents": {
+      "defaults": {
+        "workspace": "/Users/cormorantai/.openclaw/workspace-ocbphase1",
+        "model": {
+          "primary": "ollama/qwen2.5:7b-instruct"
+        }
+      }
+    },
+    "models": {
+      "providers": {
+        "ollama": {
+          "api": "ollama",
+          "baseUrl": "http://127.0.0.1:11434",
+          "apiKey": "ollama-local",
+          "models": [
+            {
+              "id": "qwen2.5:7b-instruct",
+              "name": "qwen2.5:7b-instruct",
+              "reasoning": false,
+              "input": [
+                "text"
+              ],
+              "cost": {
+                "input": 0,
+                "output": 0,
+                "cacheRead": 0,
+                "cacheWrite": 0
+              },
+              "contextWindow": 262144,
+              "maxTokens": 16384
+            }
+          ]
+        }
+      }
+    }
+  }
+}

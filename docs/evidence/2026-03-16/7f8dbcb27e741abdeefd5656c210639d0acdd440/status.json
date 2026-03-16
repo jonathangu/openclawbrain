@@ -1,0 +1,200 @@
+{
+  "command": "openclaw",
+  "args": [
+    "status",
+    "--json",
+    "--timeout",
+    "10000"
+  ],
+  "cwd": "/Users/cormorantai/openclawbrain",
+  "exitCode": 0,
+  "signal": null,
+  "ok": true,
+  "stdout": "{\n  \"heartbeat\": {\n    \"defaultAgentId\": \"main\",\n    \"agents\": [\n      {\n        \"agentId\": \"main\",\n        \"enabled\": true,\n        \"every\": \"30m\",\n        \"everyMs\": 1800000\n      }\n    ]\n  },\n  \"channelSummary\": [],\n  \"queuedSystemEvents\": [],\n  \"sessions\": {\n    \"paths\": [\n      \"/Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/agents/main/sessions/sessions.json\"\n    ],\n    \"count\": 0,\n    \"defaults\": {\n      \"model\": \"claude-opus-4-6\",\n      \"contextTokens\": 200000\n    },\n    \"recent\": [],\n    \"byAgent\": [\n      {\n        \"agentId\": \"main\",\n        \"path\": \"/Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/agents/main/sessions/sessions.json\",\n        \"count\": 0,\n        \"recent\": []\n      }\n    ]\n  },\n  \"os\": {\n    \"platform\": \"darwin\",\n    \"arch\": \"arm64\",\n    \"release\": \"25.3.0\",\n    \"label\": \"macos 26.3 (arm64)\"\n  },\n  \"update\": {\n    \"root\": \"/Users/cormorantai/openclawbrain/node_modules/openclaw\",\n    \"installKind\": \"package\",\n    \"packageManager\": \"pnpm\",\n    \"deps\": {\n      \"manager\": \"pnpm\",\n      \"status\": \"unknown\",\n      \"lockfilePath\": \"/Users/cormorantai/openclawbrain/node_modules/openclaw/pnpm-lock.yaml\",\n      \"markerPath\": \"/Users/cormorantai/openclawbrain/node_modules/openclaw/node_modules/.modules.yaml\",\n      \"reason\": \"lockfile missing\"\n    },\n    \"registry\": {\n      \"latestVersion\": \"2026.3.13\"\n    }\n  },\n  \"updateChannel\": \"stable\",\n  \"updateChannelSource\": \"default\",\n  \"memory\": {\n    \"agentId\": \"main\",\n    \"backend\": \"builtin\",\n    \"files\": 0,\n    \"chunks\": 0,\n    \"dirty\": true,\n    \"workspaceDir\": \"/Users/cormorantai/.openclaw/workspace\",\n    \"dbPath\": \"/Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/memory/main.sqlite\",\n    \"provider\": \"gemini\",\n    \"model\": \"gemini-embedding-001\",\n    \"requestedProvider\": \"auto\",\n    \"sources\": [\n      \"memory\"\n    ],\n    \"extraPaths\": [],\n    \"sourceCounts\": [\n      {\n        \"source\": \"memory\",\n        \"files\": 0,\n        \"chunks\": 0\n      }\n    ],\n    \"cache\": {\n      \"enabled\": true,\n      \"entries\": 0\n    },\n    \"fts\": {\n      \"enabled\": true,\n      \"available\": true\n    },\n    \"vector\": {\n      \"enabled\": true,\n      \"available\": true,\n      \"extensionPath\": \"/Users/cormorantai/openclawbrain/node_modules/sqlite-vec-darwin-arm64/vec0.dylib\"\n    },\n    \"batch\": {\n      \"enabled\": false,\n      \"failures\": 0,\n      \"limit\": 2,\n      \"wait\": true,\n      \"concurrency\": 2,\n      \"pollIntervalMs\": 2000,\n      \"timeoutMs\": 3600000\n    },\n    \"custom\": {\n      \"searchMode\": \"hybrid\"\n    }\n  },\n  \"memoryPlugin\": {\n    \"enabled\": true,\n    \"slot\": \"memory-core\"\n  },\n  \"gateway\": {\n    \"mode\": \"local\",\n    \"url\": \"ws://127.0.0.1:18789\",\n    \"urlSource\": \"local loopback\",\n    \"misconfigured\": false,\n    \"reachable\": false,\n    \"connectLatencyMs\": null,\n    \"self\": null,\n    \"error\": \"connect failed: unauthorized: gateway token missing (provide gateway auth token)\"\n  },\n  \"gatewayService\": {\n    \"label\": \"LaunchAgent\",\n    \"installed\": false,\n    \"loadedText\": \"not loaded\",\n    \"runtimeShort\": \"unknown\"\n  },\n  \"nodeService\": {\n    \"label\": \"LaunchAgent\",\n    \"installed\": false,\n    \"loadedText\": \"not loaded\",\n    \"runtimeShort\": \"unknown\"\n  },\n  \"agents\": {\n    \"defaultId\": \"main\",\n    \"agents\": [\n      {\n        \"id\": \"main\",\n        \"workspaceDir\": \"/Users/cormorantai/.openclaw/workspace\",\n        \"bootstrapPending\": true,\n        \"sessionsPath\": \"/Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/agents/main/sessions/sessions.json\",\n        \"sessionsCount\": 0,\n        \"lastUpdatedAt\": null,\n        \"lastActiveAgeMs\": null\n      }\n    ],\n    \"totalSessions\": 0,\n    \"bootstrapPendingCount\": 1\n  },\n  \"securityAudit\": {\n    \"ts\": 1773636068494,\n    \"summary\": {\n      \"critical\": 2,\n      \"warn\": 1,\n      \"info\": 1\n    },\n    \"findings\": [\n      {\n        \"checkId\": \"summary.attack_surface\",\n        \"severity\": \"info\",\n        \"title\": \"Attack surface summary\",\n        \"detail\": \"groups: open=0, allowlist=0\\ntools.elevated: enabled\\nhooks.webhooks: disabled\\nhooks.internal: disabled\\nbrowser control: enabled\"\n      },\n      {\n        \"checkId\": \"gateway.trusted_proxies_missing\",\n        \"severity\": \"warn\",\n        \"title\": \"Reverse proxy headers are not trusted\",\n        \"detail\": \"gateway.bind is loopback and gateway.trustedProxies is empty. If you expose the Control UI through a reverse proxy, configure trusted proxies so local-client checks cannot be spoofed.\",\n        \"remediation\": \"Set gateway.trustedProxies to your proxy IPs or keep the Control UI local-only.\"\n      },\n      {\n        \"checkId\": \"gateway.loopback_no_auth\",\n        \"severity\": \"critical\",\n        \"title\": \"Gateway auth missing on loopback\",\n        \"detail\": \"gateway.bind is loopback but no gateway auth secret is configured. If the Control UI is exposed through a reverse proxy, unauthenticated access is possible.\",\n        \"remediation\": \"Set gateway.auth (token recommended) or keep the Control UI local-only.\"\n      },\n      {\n        \"checkId\": \"browser.control_no_auth\",\n        \"severity\": \"critical\",\n        \"title\": \"Browser control has no auth\",\n        \"detail\": \"Browser control HTTP routes are enabled but no gateway.auth token/password is configured. Any local process (or SSRF to loopback) can call browser control endpoints.\",\n        \"remediation\": \"Set gateway.auth.token (recommended) or gateway.auth.password so browser control HTTP routes require authentication. Restarting the gateway will auto-generate gateway.auth.token when browser control is enabled.\"\n      }\n    ]\n  }\n}\n",
+  "stderr": "Invalid config at /Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/openclaw.json:\\n- plugins.slots: Unrecognized key: \"contextEngine\"\nConfig invalid\nFile: ~/.openclaw-ocbphase1-short-static/preflight/openclaw.json\nProblem:\n  - plugins.slots: Unrecognized key: \"contextEngine\"\n\nRun: openclaw doctor --fix\nInvalid config at /Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/openclaw.json:\\n- plugins.slots: Unrecognized key: \"contextEngine\"\n",
+  "error": null,
+  "parsed": {
+    "heartbeat": {
+      "defaultAgentId": "main",
+      "agents": [
+        {
+          "agentId": "main",
+          "enabled": true,
+          "every": "30m",
+          "everyMs": 1800000
+        }
+      ]
+    },
+    "channelSummary": [],
+    "queuedSystemEvents": [],
+    "sessions": {
+      "paths": [
+        "/Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/agents/main/sessions/sessions.json"
+      ],
+      "count": 0,
+      "defaults": {
+        "model": "claude-opus-4-6",
+        "contextTokens": 200000
+      },
+      "recent": [],
+      "byAgent": [
+        {
+          "agentId": "main",
+          "path": "/Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/agents/main/sessions/sessions.json",
+          "count": 0,
+          "recent": []
+        }
+      ]
+    },
+    "os": {
+      "platform": "darwin",
+      "arch": "arm64",
+      "release": "25.3.0",
+      "label": "macos 26.3 (arm64)"
+    },
+    "update": {
+      "root": "/Users/cormorantai/openclawbrain/node_modules/openclaw",
+      "installKind": "package",
+      "packageManager": "pnpm",
+      "deps": {
+        "manager": "pnpm",
+        "status": "unknown",
+        "lockfilePath": "/Users/cormorantai/openclawbrain/node_modules/openclaw/pnpm-lock.yaml",
+        "markerPath": "/Users/cormorantai/openclawbrain/node_modules/openclaw/node_modules/.modules.yaml",
+        "reason": "lockfile missing"
+      },
+      "registry": {
+        "latestVersion": "2026.3.13"
+      }
+    },
+    "updateChannel": "stable",
+    "updateChannelSource": "default",
+    "memory": {
+      "agentId": "main",
+      "backend": "builtin",
+      "files": 0,
+      "chunks": 0,
+      "dirty": true,
+      "workspaceDir": "/Users/cormorantai/.openclaw/workspace",
+      "dbPath": "/Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/memory/main.sqlite",
+      "provider": "gemini",
+      "model": "gemini-embedding-001",
+      "requestedProvider": "auto",
+      "sources": [
+        "memory"
+      ],
+      "extraPaths": [],
+      "sourceCounts": [
+        {
+          "source": "memory",
+          "files": 0,
+          "chunks": 0
+        }
+      ],
+      "cache": {
+        "enabled": true,
+        "entries": 0
+      },
+      "fts": {
+        "enabled": true,
+        "available": true
+      },
+      "vector": {
+        "enabled": true,
+        "available": true,
+        "extensionPath": "/Users/cormorantai/openclawbrain/node_modules/sqlite-vec-darwin-arm64/vec0.dylib"
+      },
+      "batch": {
+        "enabled": false,
+        "failures": 0,
+        "limit": 2,
+        "wait": true,
+        "concurrency": 2,
+        "pollIntervalMs": 2000,
+        "timeoutMs": 3600000
+      },
+      "custom": {
+        "searchMode": "hybrid"
+      }
+    },
+    "memoryPlugin": {
+      "enabled": true,
+      "slot": "memory-core"
+    },
+    "gateway": {
+      "mode": "local",
+      "url": "ws://127.0.0.1:18789",
+      "urlSource": "local loopback",
+      "misconfigured": false,
+      "reachable": false,
+      "connectLatencyMs": null,
+      "self": null,
+      "error": "connect failed: unauthorized: gateway token missing (provide gateway auth token)"
+    },
+    "gatewayService": {
+      "label": "LaunchAgent",
+      "installed": false,
+      "loadedText": "not loaded",
+      "runtimeShort": "unknown"
+    },
+    "nodeService": {
+      "label": "LaunchAgent",
+      "installed": false,
+      "loadedText": "not loaded",
+      "runtimeShort": "unknown"
+    },
+    "agents": {
+      "defaultId": "main",
+      "agents": [
+        {
+          "id": "main",
+          "workspaceDir": "/Users/cormorantai/.openclaw/workspace",
+          "bootstrapPending": true,
+          "sessionsPath": "/Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/agents/main/sessions/sessions.json",
+          "sessionsCount": 0,
+          "lastUpdatedAt": null,
+          "lastActiveAgeMs": null
+        }
+      ],
+      "totalSessions": 0,
+      "bootstrapPendingCount": 1
+    },
+    "securityAudit": {
+      "ts": 1773636068494,
+      "summary": {
+        "critical": 2,
+        "warn": 1,
+        "info": 1
+      },
+      "findings": [
+        {
+          "checkId": "summary.attack_surface",
+          "severity": "info",
+          "title": "Attack surface summary",
+          "detail": "groups: open=0, allowlist=0\ntools.elevated: enabled\nhooks.webhooks: disabled\nhooks.internal: disabled\nbrowser control: enabled"
+        },
+        {
+          "checkId": "gateway.trusted_proxies_missing",
+          "severity": "warn",
+          "title": "Reverse proxy headers are not trusted",
+          "detail": "gateway.bind is loopback and gateway.trustedProxies is empty. If you expose the Control UI through a reverse proxy, configure trusted proxies so local-client checks cannot be spoofed.",
+          "remediation": "Set gateway.trustedProxies to your proxy IPs or keep the Control UI local-only."
+        },
+        {
+          "checkId": "gateway.loopback_no_auth",
+          "severity": "critical",
+          "title": "Gateway auth missing on loopback",
+          "detail": "gateway.bind is loopback but no gateway auth secret is configured. If the Control UI is exposed through a reverse proxy, unauthenticated access is possible.",
+          "remediation": "Set gateway.auth (token recommended) or keep the Control UI local-only."
+        },
+        {
+          "checkId": "browser.control_no_auth",
+          "severity": "critical",
+          "title": "Browser control has no auth",
+          "detail": "Browser control HTTP routes are enabled but no gateway.auth token/password is configured. Any local process (or SSRF to loopback) can call browser control endpoints.",
+          "remediation": "Set gateway.auth.token (recommended) or gateway.auth.password so browser control HTTP routes require authentication. Restarting the gateway will auto-generate gateway.auth.token when browser control is enabled."
+        }
+      ]
+    }
+  }
+}

@@ -1,0 +1,428 @@
+## openclaw status --all
+
+OpenClaw status --all
+
+Overview
+┌─────────────────┬───────────────────────────────────────────────────────────────────────────────────────────────────┐
+│ Item            │ Value                                                                                             │
+├─────────────────┼───────────────────────────────────────────────────────────────────────────────────────────────────┤
+│ Version         │ 2026.2.17                                                                                         │
+│ OS              │ macos 26.3 (arm64)                                                                                │
+│ Node            │ 22.22.0                                                                                           │
+│ Config          │ ~/.openclaw-ocbphase1-short-static/preflight/openclaw.json                                        │
+│ Dashboard       │ http://127.0.0.1:18789/                                                                           │
+│ Tailscale       │ off · Running · cormorantais-mac-mini.tail499c70.ts.net                                           │
+│ Channel         │ stable (default)                                                                                  │
+│ Update          │ pnpm · npm update 2026.3.13                                                                       │
+│ Gateway         │ local · ws://127.0.0.1:18789 (local loopback) · unreachable (connect failed: unauthorized:        │
+│                 │ gateway token missing (provide gateway auth token))                                               │
+│ Security        │ Run: openclaw security audit --deep                                                               │
+│ Gateway self    │ unknown                                                                                           │
+│ Gateway service │ LaunchAgent not installed                                                                         │
+│ Node service    │ LaunchAgent not installed                                                                         │
+│ Agents          │ 1 total · 1 bootstrapping · 0 active · 0 sessions                                                 │
+└─────────────────┴───────────────────────────────────────────────────────────────────────────────────────────────────┘
+
+Channels
+┌──────────┬─────────┬────────┬───────────────────────────────────────────────────────────────────────────────────────┐
+│ Channel  │ Enabled │ State  │ Detail                                                                                │
+├──────────┼─────────┼────────┼───────────────────────────────────────────────────────────────────────────────────────┤
+└──────────┴─────────┴────────┴───────────────────────────────────────────────────────────────────────────────────────┘
+
+Agents
+┌────────────┬───────────┬──────────┬──────────┬──────────────────────────────────────────────────────────────────────┐
+│ Agent      │ Bootstrap │ Sessions │ Active   │ Store                                                                │
+├────────────┼───────────┼──────────┼──────────┼──────────────────────────────────────────────────────────────────────┤
+│ main       │ PENDING   │        0 │ unknown  │ ~/.openclaw-ocbphase1-short-static/preflight/agents/main/sessions/   │
+│            │           │          │          │ sessions.json                                                        │
+└────────────┴───────────┴──────────┴──────────┴──────────────────────────────────────────────────────────────────────┘
+
+Diagnosis (read-only)
+
+Gateway connection details:
+  Gateway target: ws://127.0.0.1:18789
+  Source: local loopback
+  Config: /Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/openclaw.json
+  Bind: loopback
+
+! Config: /Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/openclaw.json
+  - plugins.slots: Unrecognized key: "contextEngine"
+✓ Restart sentinel: none
+! Port 18789
+  Port 18789 is already in use.
+  - pid 40240 cormorantai: openclaw-gateway (127.0.0.1:18789)
+  - Gateway already running locally. Stop it (openclaw gateway stop) or use a different port.
+✓ Tailscale: off · Running · cormorantais-mac-mini.tail499c70.ts.net
+  ips: 100.73.247.26, fd7a:115c:a1e0::e932:f71a
+✓ Skills: 8 eligible · 0 missing · /Users/cormorantai/.openclaw/workspace
+! Channel issues skipped (gateway unreachable)
+
+Gateway health:
+  connect failed: unauthorized: gateway token missing (provide gateway auth token)
+
+Pasteable debug report. Auth tokens redacted.
+Troubleshooting: https://docs.openclaw.ai/troubleshooting
+
+
+
+[stderr]
+Invalid config at /Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/openclaw.json:\n- plugins.slots: Unrecognized key: "contextEngine"
+Config invalid
+File: ~/.openclaw-ocbphase1-short-static/preflight/openclaw.json
+Problem:
+  - plugins.slots: Unrecognized key: "contextEngine"
+
+Run: openclaw doctor --fix
+Invalid config at /Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/openclaw.json:\n- plugins.slots: Unrecognized key: "contextEngine"
+
+
+
+## openclaw gateway probe
+
+│
+◇  Config ───────────────────────────────────────────────────╮
+│                                                            │
+│  Config invalid; doctor will run with best-effort config.  │
+│                                                            │
+├────────────────────────────────────────────────────────────╯
+│
+◇  Doctor changes ──────────────────────────────╮
+│                                               │
+│  Telegram configured, enabled automatically.  │
+│                                               │
+├───────────────────────────────────────────────╯
+│
+◇  Unknown config keys ───────────╮
+│                                 │
+│  - plugins.slots.contextEngine  │
+│                                 │
+├─────────────────────────────────╯
+│
+◇  Doctor ──────────────────────────────────────────────╮
+│                                                       │
+│  Run "openclaw doctor --fix" to apply these changes.  │
+│  Run "openclaw doctor --fix" to remove these keys.    │
+│                                                       │
+├───────────────────────────────────────────────────────╯
+Gateway Status
+Reachable: no
+Probe budget: 3000ms
+
+Discovery (this machine)
+Found 4 gateway(s) via Bonjour (local.)
+
+Targets
+Local loopback ws://127.0.0.1:18789
+  Connect: failed - connect failed: unauthorized: gateway token missing (provide gateway auth token)
+
+
+
+[stderr]
+Invalid config at /Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/openclaw.json:\n- plugins.slots: Unrecognized key: "contextEngine"
+Config invalid
+File: ~/.openclaw-ocbphase1-short-static/preflight/openclaw.json
+Problem:
+  - plugins.slots: Unrecognized key: "contextEngine"
+
+Run: openclaw doctor --fix
+
+
+
+## openclaw gateway status
+
+│
+◇  Config ───────────────────────────────────────────────────╮
+│                                                            │
+│  Config invalid; doctor will run with best-effort config.  │
+│                                                            │
+├────────────────────────────────────────────────────────────╯
+│
+◇  Doctor changes ──────────────────────────────╮
+│                                               │
+│  Telegram configured, enabled automatically.  │
+│                                               │
+├───────────────────────────────────────────────╯
+│
+◇  Unknown config keys ───────────╮
+│                                 │
+│  - plugins.slots.contextEngine  │
+│                                 │
+├─────────────────────────────────╯
+│
+◇  Doctor ──────────────────────────────────────────────╮
+│                                                       │
+│  Run "openclaw doctor --fix" to apply these changes.  │
+│  Run "openclaw doctor --fix" to remove these keys.    │
+│                                                       │
+├───────────────────────────────────────────────────────╯
+Service: LaunchAgent (not loaded)
+File logs: /tmp/openclaw/openclaw-2026-03-15.log
+
+Config (cli): ~/.openclaw-ocbphase1-short-static/preflight/openclaw.json (invalid)
+Config (service): ~/.openclaw-ocbphase1-short-static/preflight/openclaw.json (invalid)
+
+Gateway: bind=loopback (127.0.0.1), port=18789 (env/config)
+Probe target: ws://127.0.0.1:18789
+Dashboard: http://127.0.0.1:18789/
+Probe note: Loopback-only gateway; only local clients can connect.
+
+Runtime: unknown (Bad request.
+Could not find service "ai.openclaw.gateway" in domain for user gui: 501)
+
+Listening: 127.0.0.1:18789
+
+
+Troubles: run openclaw status
+Troubleshooting: https://docs.openclaw.ai/troubleshooting
+
+
+[stderr]
+Invalid config at /Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/openclaw.json:\n- plugins.slots: Unrecognized key: "contextEngine"
+Config invalid
+File: ~/.openclaw-ocbphase1-short-static/preflight/openclaw.json
+Problem:
+  - plugins.slots: Unrecognized key: "contextEngine"
+
+Run: openclaw doctor --fix
+Service config looks out of date or non-standard.
+Service config issue: Gateway service PATH is not set; the daemon should use a minimal PATH.
+Recommendation: run "openclaw doctor" (or "openclaw doctor --repair").
+Config issue: plugins.slots: Unrecognized key: "contextEngine"
+Service config issue: plugins.slots: Unrecognized key: "contextEngine"
+RPC probe: failed
+RPC target: ws://127.0.0.1:18789
+  gateway url override requires explicit credentials
+  Fix: pass --token or --password (or gatewayToken in tools).
+  Config: /Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/openclaw.json
+Service unit not found.
+Service not installed. Run: openclaw gateway install
+File logs: /tmp/openclaw/openclaw-2026-03-15.log
+Port 18789 is already in use.
+- pid 40240 cormorantai: openclaw-gateway (127.0.0.1:18789)
+- Gateway already running locally. Stop it (openclaw gateway stop) or use a different port.
+Other gateway-like services detected (best effort):
+- com.openclawbrain.daemon.activation.0ec88212fa7d (user, plist: /Users/cormorantai/Library/LaunchAgents/com.openclawbrain.daemon.activation.0ec88212fa7d.plist)
+- com.openclawbrain.daemon.activation.546e84bf06ac (user, plist: /Users/cormorantai/Library/LaunchAgents/com.openclawbrain.daemon.activation.546e84bf06ac.plist)
+- com.openclawbrain.daemon.activation.b3eeb450ca08 (user, plist: /Users/cormorantai/Library/LaunchAgents/com.openclawbrain.daemon.activation.b3eeb450ca08.plist)
+Cleanup hint: launchctl bootout gui/$UID/ai.openclaw.gateway
+Cleanup hint: rm ~/Library/LaunchAgents/ai.openclaw.gateway.plist
+Recommendation: run a single gateway per machine for most setups. One gateway supports multiple agents (see docs: /gateway#multiple-gateways-same-host).
+If you need multiple gateways (e.g., a rescue bot on the same host), isolate ports + config/state (see docs: /gateway#multiple-gateways-same-host).
+
+
+
+## openclaw doctor --non-interactive
+
+▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄▄
+██░▄▄▄░██░▄▄░██░▄▄▄██░▀██░██░▄▄▀██░████░▄▄▀██░███░██
+██░███░██░▀▀░██░▄▄▄██░█░█░██░█████░████░▀▀░██░█░█░██
+██░▀▀▀░██░█████░▀▀▀██░██▄░██░▀▀▄██░▀▀░█░██░██▄▀▄▀▄██
+▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀▀
+                  🦞 OPENCLAW 🦞                    
+ 
+┌  OpenClaw doctor
+│
+◇  Config ───────────────────────────────────────────────────╮
+│                                                            │
+│  Config invalid; doctor will run with best-effort config.  │
+│                                                            │
+├────────────────────────────────────────────────────────────╯
+│
+◇  Doctor changes ──────────────────────────────╮
+│                                               │
+│  Telegram configured, enabled automatically.  │
+│                                               │
+├───────────────────────────────────────────────╯
+│
+◇  Unknown config keys ───────────╮
+│                                 │
+│  - plugins.slots.contextEngine  │
+│                                 │
+├─────────────────────────────────╯
+│
+◇  Doctor ──────────────────────────────────────────────╮
+│                                                       │
+│  Run "openclaw doctor --fix" to apply these changes.  │
+│  Run "openclaw doctor --fix" to remove these keys.    │
+│                                                       │
+├───────────────────────────────────────────────────────╯
+│
+◇  Gateway auth ──────────────────────────────────────────────────╮
+│                                                                 │
+│  Gateway auth is off or missing a token. Token auth is now the  │
+│  recommended default (including loopback).                      │
+│                                                                 │
+├─────────────────────────────────────────────────────────────────╯
+│
+◇  State integrity ────────────────────────────────────────────────────────╮
+│                                                                          │
+│  - CRITICAL: Session store dir missing                                   │
+│    (~/.openclaw-ocbphase1-short-static/preflight/agents/main/sessions).  │
+│  - CRITICAL: OAuth dir missing                                           │
+│    (~/.openclaw-ocbphase1-short-static/preflight/credentials).           │
+│  - Multiple state directories detected. This can split session history.  │
+│    - ~/.openclaw                                                         │
+│    Active state dir: ~/.openclaw-ocbphase1-short-static/preflight        │
+│                                                                          │
+├──────────────────────────────────────────────────────────────────────────╯
+│
+◇  Other gateway-like services detected ───────────────────────────────────────╮
+│                                                                              │
+│  - com.openclawbrain.daemon.activation.0ec88212fa7d (user, plist:            │
+│    /Users/cormorantai/Library/LaunchAgents/com.openclawbrain.daemon.activat  │
+│  ion.0ec88212fa7d.plist)                                                     │
+│  - com.openclawbrain.daemon.activation.546e84bf06ac (user, plist:            │
+│    /Users/cormorantai/Library/LaunchAgents/com.openclawbrain.daemon.activat  │
+│  ion.546e84bf06ac.plist)                                                     │
+│  - com.openclawbrain.daemon.activation.b3eeb450ca08 (user, plist:            │
+│    /Users/cormorantai/Library/LaunchAgents/com.openclawbrain.daemon.activat  │
+│  ion.b3eeb450ca08.plist)                                                     │
+│                                                                              │
+├──────────────────────────────────────────────────────────────────────────────╯
+│
+◇  Cleanup hints ─────────────────────────────────────────╮
+│                                                         │
+│  - launchctl bootout gui/$UID/ai.openclaw.gateway       │
+│  - rm ~/Library/LaunchAgents/ai.openclaw.gateway.plist  │
+│                                                         │
+├─────────────────────────────────────────────────────────╯
+│
+◇  Gateway recommendation ───────────────────────────────────────────────╮
+│                                                                        │
+│  Recommendation: run a single gateway per machine for most setups.     │
+│  One gateway supports multiple agents.                                 │
+│  If you need multiple gateways (e.g., a rescue bot on the same host),  │
+│  isolate ports + config/state (see docs:                               │
+│  /gateway#multiple-gateways-same-host).                                │
+│                                                                        │
+├────────────────────────────────────────────────────────────────────────╯
+│
+◇  Security ─────────────────────────────────╮
+│                                            │
+│  - No channel security warnings detected.  │
+│  - Run: openclaw security audit --deep     │
+│                                            │
+├────────────────────────────────────────────╯
+│
+◇  Skills status ────────────╮
+│                            │
+│  Eligible: 8               │
+│  Missing requirements: 42  │
+│  Blocked by allowlist: 0   │
+│                            │
+├────────────────────────────╯
+│
+◇  Plugins ─────────╮
+│                   │
+│  Loaded: 4        │
+│  Disabled: 32     │
+│  Errors: 1        │
+│  - openclawbrain  │
+│                   │
+├───────────────────╯
+│
+◇  Plugin diagnostics ───────────────────────────────────────────────╮
+│                                                                    │
+│  - ERROR openclawbrain: plugin failed during register: TypeError:  │
+│    api.registerContextEngine is not a function                     │
+│    (/Users/cormorantai/openclawbrain/index.ts)                     │
+│                                                                    │
+├────────────────────────────────────────────────────────────────────╯
+│
+◇  Shell completion ────────────────────────────────────────────────────╮
+│                                                                       │
+│  Shell completion is configured in your zsh profile but the cache is  │
+│  missing.                                                             │
+│  Regenerating cache...                                                │
+│                                                                       │
+├───────────────────────────────────────────────────────────────────────╯
+│
+◇  Shell completion ───────────────────────────────────────────────────────────╮
+│                                                                              │
+│  Completion cache regenerated at                                             │
+│  /Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/completions/  │
+│  openclaw.zsh                                                                │
+│                                                                              │
+├──────────────────────────────────────────────────────────────────────────────╯
+│
+◇  Gateway ──────────────╮
+│                        │
+│  Gateway not running.  │
+│                        │
+├────────────────────────╯
+│
+◇  Gateway connection ─────────────────────────────────────────────────────────╮
+│                                                                              │
+│  Gateway target: ws://127.0.0.1:19130                                        │
+│  Source: local loopback                                                      │
+│  Config:                                                                     │
+│  /Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/openclaw.jso  │
+│  n                                                                           │
+│  Bind: loopback                                                              │
+│                                                                              │
+├──────────────────────────────────────────────────────────────────────────────╯
+│
+◇  Gateway ────────────────────────╮
+│                                  │
+│  Gateway service not installed.  │
+│                                  │
+├──────────────────────────────────╯
+Run "openclaw doctor --fix" to apply changes.
+│
+└  Doctor complete.
+
+
+
+[stderr]
+Invalid config at /Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/openclaw.json:\n- plugins.slots: Unrecognized key: "contextEngine"
+Invalid config at /Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/openclaw.json:\n- plugins.slots: Unrecognized key: "contextEngine"
+Invalid config:
+- plugins.slots: Unrecognized key: "contextEngine"
+
+
+
+## openclaw channels status --probe
+
+│
+◇  Config ───────────────────────────────────────────────────╮
+│                                                            │
+│  Config invalid; doctor will run with best-effort config.  │
+│                                                            │
+├────────────────────────────────────────────────────────────╯
+│
+◇  Doctor changes ──────────────────────────────╮
+│                                               │
+│  Telegram configured, enabled automatically.  │
+│                                               │
+├───────────────────────────────────────────────╯
+│
+◇  Unknown config keys ───────────╮
+│                                 │
+│  - plugins.slots.contextEngine  │
+│                                 │
+├─────────────────────────────────╯
+│
+◇  Doctor ──────────────────────────────────────────────╮
+│                                                       │
+│  Run "openclaw doctor --fix" to apply these changes.  │
+│  Run "openclaw doctor --fix" to remove these keys.    │
+│                                                       │
+├───────────────────────────────────────────────────────╯
+
+
+[stderr]
+Invalid config at /Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/openclaw.json:\n- plugins.slots: Unrecognized key: "contextEngine"
+Config invalid
+File: ~/.openclaw-ocbphase1-short-static/preflight/openclaw.json
+Problem:
+  - plugins.slots: Unrecognized key: "contextEngine"
+
+Run: openclaw doctor --fix
+
+
+
+## file:/Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/logs/config-audit.jsonl
+
+{"ts":"2026-03-16T04:41:04.496Z","source":"config-io","event":"config.write","configPath":"/Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/openclaw.json","pid":81681,"ppid":81680,"cwd":"/Users/cormorantai/openclawbrain","argv":["/opt/homebrew/Cellar/node@22/22.22.0/bin/node","/Users/cormorantai/openclawbrain/node_modules/.bin/openclaw","plugins","install","--link","/Users/cormorantai/openclawbrain"],"execArgv":["--disable-warning=ExperimentalWarning"],"watchMode":false,"watchSession":null,"watchCommand":null,"existsBefore":false,"previousHash":"e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855","nextHash":"f546452200ec4584bad2e23842a2ad9cedec0f5cba4d3a5b1a86897e88ef5ad0","previousBytes":null,"nextBytes":645,"changedPathCount":null,"hasMetaBefore":false,"hasMetaAfter":true,"gatewayModeBefore":null,"gatewayModeAfter":null,"suspicious":[],"result":"rename"}
+
+

@@ -1,0 +1,11 @@
+{
+  "command": "node",
+  "args": [
+    "-e",
+    "const sdk = require(\"openclaw/plugin-sdk\"); console.log(JSON.stringify({ hasRegisterContextEngine: typeof sdk.registerContextEngine === \"function\", keys: Object.keys(sdk).sort().filter((key) => key.toLowerCase().includes(\"context\") || key.toLowerCase().includes(\"memory\")).slice(0, 50) }));"
+  ],
+  "status": 0,
+  "stdout": "{\"hasRegisterContextEngine\":false,\"keys\":[\"buildPendingHistoryContextFromMap\",\"buildSlackThreadingToolContext\",\"createReplyPrefixContext\",\"toLocationContext\"]}\n",
+  "stderr": "Invalid config at /Users/cormorantai/.openclaw-ocbphase1-short-static/preflight/openclaw.json:\\n- plugins.slots: Unrecognized key: \"contextEngine\"\n",
+  "error": null
+}

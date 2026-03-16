@@ -1,0 +1,44 @@
+│
+◇  Config ───────────────────────────────────────────────────╮
+│                                                            │
+│  Config invalid; doctor will run with best-effort config.  │
+│                                                            │
+├────────────────────────────────────────────────────────────╯
+│
+◇  Doctor changes ──────────────────────────────╮
+│                                               │
+│  Telegram configured, enabled automatically.  │
+│                                               │
+├───────────────────────────────────────────────╯
+│
+◇  Unknown config keys ───────────╮
+│                                 │
+│  - plugins.slots.contextEngine  │
+│                                 │
+├─────────────────────────────────╯
+│
+◇  Doctor ──────────────────────────────────────────────╮
+│                                                       │
+│  Run "openclaw doctor --fix" to apply these changes.  │
+│  Run "openclaw doctor --fix" to remove these keys.    │
+│                                                       │
+├───────────────────────────────────────────────────────╯
+Service: LaunchAgent (not loaded)
+File logs: /tmp/openclaw/openclaw-2026-03-15.log
+
+Config (cli): ~/.openclaw-ocbphase1-short-static/preflight/openclaw.json (invalid)
+Config (service): ~/.openclaw-ocbphase1-short-static/preflight/openclaw.json (invalid)
+
+Gateway: bind=loopback (127.0.0.1), port=18789 (env/config)
+Probe target: ws://127.0.0.1:18789
+Dashboard: http://127.0.0.1:18789/
+Probe note: Loopback-only gateway; only local clients can connect.
+
+Runtime: unknown (Bad request.
+Could not find service "ai.openclaw.gateway" in domain for user gui: 501)
+
+Listening: 127.0.0.1:18789
+
+
+Troubles: run openclaw status
+Troubleshooting: https://docs.openclaw.ai/troubleshooting
