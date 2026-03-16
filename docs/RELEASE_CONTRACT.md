@@ -53,10 +53,10 @@ These are safe public claims today.
 These are real enough to build on, but not frozen enough to oversell.
 
 - **Host-surface validation harness**
-  - Current files: `scripts/validate-openclaw-install.mjs`, `scripts/validate-brain-runtime-behavior.ts`
-  - Truth: recurrent routing, shadow mode, and current host checks run inside a dedicated sterile validation lane with per-run diagnostic artifacts; frozen host-surface teach/worker-down proof is still incomplete.
-  - Boundary: raw prompt-driven `openclaw agent --local` is **not** the release proof boundary for `brain_teach`; that claim must be closed by a deterministic session-bound harness or remain explicitly out of scope for raw host prompting.
-  - Boundary: short-static host drift must be explained or truth-frozen before it is described as resolved.
+  - Current files: `scripts/validate-openclaw-install.mjs`, `scripts/validate-brain-runtime-behavior.ts`, `scripts/validate-short-static-classification.ts`
+  - Truth: recurrent routing, shadow mode, and current host checks run inside a dedicated sterile validation lane with per-run diagnostic artifacts; deterministic session-bound `brain_teach` proof now exists, but the current raw host lane is blocked by stale OpenClaw seam drift (`plugins.slots.contextEngine` rejected, `api.registerContextEngine` removed) and the final narrow worker-down host claim is still incomplete.
+  - Boundary: raw prompt-driven `openclaw agent --local` is **not** the release proof boundary for `brain_teach`; that claim is now closed by the deterministic session-bound harness rather than raw host prompting.
+  - Boundary: short-static host drift is currently truth-frozen as stale current-OpenClaw host seam drift, not as a resolved semantic behavior claim.
   - Boundary: worker-down host proof is claimed only at the exact host-visible boundary actually proven (continued serving from the last promoted pack + unhealthy worker status / exit truth), not as a stronger deterministic crash-observation claim.
 - **Child-worker serving boundary**
   - Current files: `src/brain-runtime/service.ts`, `src/brain-worker/child-runner.ts`
@@ -72,11 +72,11 @@ These are real enough to build on, but not frozen enough to oversell.
 
 These are still active work and must not be described as complete.
 
-- **Frozen host-surface proof for `brain_teach` and worker-down fail-open**
-  - Primary files: `scripts/validate-openclaw-install.mjs`, `scripts/validate-brain-teach-session-bound.ts`, `src/brain-runtime/tools.ts`, `src/brain-runtime/service.ts`
-  - Required truth before this is marked done: deterministic session-bound `brain_teach` proof or explicit out-of-scope wording for raw host prompting, plus a narrow host worker-down claim that matches the actual artifact bundle.
-- **Resolved short-static-lookup host-surface semantics**
-  - Primary files: `src/brain-runtime/assembler-extension.ts`, `scripts/validate-openclaw-install.mjs`
+- **Frozen host-surface proof for worker-down fail-open on the current host seam**
+  - Primary files: `scripts/validate-openclaw-install.mjs`, `scripts/validate-brain-teach-session-bound.ts`, `scripts/validate-short-static-classification.ts`, `src/brain-runtime/tools.ts`, `src/brain-runtime/service.ts`
+  - Required truth before this is marked done: keep deterministic session-bound `brain_teach` proof frozen, adapt the current OpenClaw host seam, and then land a narrow host worker-down claim that matches the actual artifact bundle.
+- **Resolved short-static-lookup host-surface semantics on the adapted current host seam**
+  - Primary files: `src/brain-runtime/assembler-extension.ts`, `scripts/validate-openclaw-install.mjs`, `scripts/validate-short-static-classification.ts`
 - **Bundle-based mutation evaluation with clear pass/fail explanations**
   - Primary files: `src/brain-core/mutator.ts`, `src/brain-worker/worker.ts`, `src/brain-store/store.ts`, `src/brain-store/migrations.ts`
 - **Frozen proof ladder with dated release artifacts**

@@ -116,6 +116,6 @@ As of the current trunk:
 - **Level 1:** materially real
 - **Level 2:** present but not yet bundle-complete
 - **Level 3:** partially real on the host surface
-- **Level 4:** not frozen; short-static host drift classification and the final narrow worker-down host claim still remain open, but deterministic session-bound `brain_teach` proof now exists under `docs/evidence/YYYY-MM-DD/<git-sha>/brain-teach-session-bound/`
+- **Level 4:** not frozen; deterministic session-bound `brain_teach` proof now exists under `docs/evidence/YYYY-MM-DD/<git-sha>/brain-teach-session-bound/`, short-static host classification is currently truth-frozen as stale current-OpenClaw host seam drift under `docs/evidence/YYYY-MM-DD/<git-sha>/short-static-classification/`, and the final narrow worker-down host claim still remains open
 
 That means the repo is already beyond theory-only, but it does **not** yet have a frozen release-evidence ladder.

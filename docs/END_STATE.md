@@ -117,14 +117,14 @@ Goal: prove behavior on the actual OpenClaw host surface, not just the lower-lev
 - current local-Ollama harness runs end to end on the non-skipped matrix
 
 ### Still open
-- deterministic host-surface `brain_teach` proof
+- adapt the current OpenClaw host seam first (`plugins.slots.contextEngine` / `api.registerContextEngine` drift), then rerun host-path proof on that repaired boundary
 - deterministic host-surface worker-down / last-promoted-pack fail-open proof
 - explicit `skip_no_embedding` and `skip_uninitialized` assertions on the host surface
 - frozen evidence bundle per run under `docs/evidence/YYYY-MM-DD/<git-sha>/`
-- short-static-lookup semantic drift (`open PLAYBOOK.md` still surfacing as `use_brain` on the host path)
+- short-static-lookup host semantics on the adapted current host seam
 
 ### Key reality to remember
-`openclaw agent --local` currently exposes session targeting, timeout, delivery, and verbose controls, but no explicit deterministic “force this tool call” control. If host-surface `brain_teach` remains impossible to drive honestly through that CLI, the harness must classify that truthfully or use a lower-level host harness.
+`openclaw agent --local` currently exposes session targeting, timeout, delivery, and verbose controls, but no explicit deterministic “force this tool call” control. Deterministic `brain_teach` proof is now closed by the session-bound harness; raw host-path semantic claims still have to respect the current host/plugin seam that actually exists.
 
 ## Phase 2 — Harden the child worker
 

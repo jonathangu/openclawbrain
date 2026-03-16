@@ -79,23 +79,13 @@ openclaw plugins install --link /path/to/openclawbrain
 # pnpm openclaw plugins install --link /path/to/openclawbrain
 ```
 
-The install command records the plugin, enables it, and applies compatible slot selection (including `contextEngine` when applicable).
+The install command records the plugin and enables it.
 
 ### Configure OpenClaw
 
 In most cases, no manual JSON edits are needed after `openclaw plugins install`.
 
-If you need to set it manually, ensure the context engine slot points at `openclawbrain`:
-
-```json
-{
-  "plugins": {
-    "slots": {
-      "contextEngine": "openclawbrain"
-    }
-  }
-}
-```
+Important current truth: older OpenClaw builds exposed a `plugins.slots.contextEngine` seam, but the current host build used for Phase 1 validation no longer accepts that slot and no longer exposes `api.registerContextEngine`. Until OpenClawBrain adapts to the current plugin/memory seam, do **not** treat old `contextEngine` slot examples as valid host-surface setup guidance.
 
 Restart OpenClaw after configuration changes.
 
@@ -223,14 +213,14 @@ This repo is already beyond “foundation only,” but it is **not** yet operati
 - Embedding support currently targets tested OpenAI-compatible `/v1/embeddings` APIs, including local Ollama-style endpoints.
 - Child-worker mode is implemented and real, but the lifecycle boundary still needs cleaner supervision, restart accounting, and harder operator truth.
 - Structured evidence harvesting now exists end to end (raw evidence → resolved labels with explicit episode attribution), but source detection still leans on heuristics more than the intended richer human/self/scanner evidence flow.
-- Full OpenClaw host-surface validation is still missing frozen proof for deterministic `brain_teach`, worker-down fail-open, and the remaining short-static-lookup semantic drift classification.
+- Deterministic session-bound `brain_teach` proof now exists, but the current raw host lane is blocked by stale OpenClaw seam drift (`plugins.slots.contextEngine` / `api.registerContextEngine`) and the final narrow worker-down host claim is still unfrozen.
 - Replay-gated promotion exists, but mutation evaluation has not yet reached the intended bundle-level replay contract.
 - Upstream `openclaw/plugin-sdk` type drift still affects full-repo `npx tsc --noEmit`.
 
 ## Finish path to 1.0
 
 1. **Align repo truth with repo reality** so the README and canonical docs cleanly separate what is true now, implemented-but-not-frozen, and not done yet.
-2. **Finish the real OpenClaw host-surface validation harness** for recurrent routing, static bypass, shadow mode, `brain_teach`, worker-down fail-open, and explicit skip modes.
+2. **Finish the real OpenClaw host-surface validation harness** by adapting the stale current-OpenClaw plugin/config seam first, then freezing recurrent routing, static bypass, shadow mode, worker-down fail-open, and explicit skip modes on that repaired boundary.
 3. **Harden the child worker** into the real learner boundary with clearer supervision, restart accounting, and doctor/status truth.
 4. **Finish the evidence pipeline** so structured evidence tied to exact episodes outruns heuristic-only harvesting.
 5. **Upgrade mutation evaluation to replay-gated bundles** instead of proposal-by-proposal promotion.
@@ -359,7 +349,17 @@ pnpm exec tsx scripts/validate-brain-teach-session-bound.ts \
 
 It binds the real registered `brain_teach` tool to a deterministic `ctx.sessionKey`, proves the teach action is recorded against the warmup episode, runs follow-up runtime assembly through the real retrieval path, and writes artifacts under `docs/evidence/YYYY-MM-DD/<git-sha>/brain-teach-session-bound/`.
 
-Current state: install/config wiring + fixture workspace + `openclawbrain init/status/doctor` are wired, and the harness can now target either temp-home isolation or a named sterile lane. The deterministic runtime layer already proves immediate `brain_teach` retrieval plus worker-down fail-open serving, and the session-bound harness now proves `brain_teach` deterministically at the correct seam with 20/20 identical passes. Raw prompt-driven `openclaw agent --local` is **not** the release proof boundary for `brain_teach`; the host harness remains responsible for recurrent/shadow/skip-mode proof and the narrow worker-down serving claim.
+The current short-static host-path classifier now lives at:
+
+```bash
+pnpm exec tsx scripts/validate-short-static-classification.ts \
+  --state-dir "$HOME/.openclaw-ocbphase1-short-static" \
+  --workspace "$HOME/.openclaw/workspace-ocbphase1"
+```
+
+On the current OpenClaw host build, that classifier truthfully freezes the remaining “short-static drift” question as **stale host seam drift first**: the host config rejects `plugins.slots.contextEngine`, and plugin register fails because `api.registerContextEngine` is gone. Until that seam is adapted, raw host-path short-static probing is not a valid semantic proof boundary.
+
+Current state: install/config wiring + fixture workspace + `openclawbrain init/status/doctor` are wired, and the harness can now target either temp-home isolation or a named sterile lane. The deterministic runtime layer already proves immediate `brain_teach` retrieval plus worker-down fail-open serving, and the session-bound harness now proves `brain_teach` deterministically at the correct seam with 20/20 identical passes. Raw prompt-driven `openclaw agent --local` is **not** the release proof boundary for `brain_teach`; on the current OpenClaw host, the remaining host work is to adapt the stale plugin/config seam and then freeze recurrent/shadow/skip-mode plus the narrow worker-down serving claim on that repaired boundary.
 
 ### Project structure
 
