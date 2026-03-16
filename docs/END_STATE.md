@@ -61,7 +61,7 @@ These are inherited LCM surfaces and should stay stable unless a failing test fo
 ### Still open
 - Phase 4: mutation bundles (not yet implemented - requires new code)
 - Phase 5: CI proof ladder (DONE - .github/workflows/publish.yml runs tests)
-- Phase 6: package/type cleanup (tsc has SDK drift errors, but runtime works - 335 tests pass)
+- Phase 6: package/type cleanup (DONE - tsc --noEmit green for src, SDK compat layer added)
 
 ## Current code map
 
