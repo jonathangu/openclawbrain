@@ -157,6 +157,23 @@ export function runBrainMigrations(db: DatabaseSync): void {
     );
 
     -- ═══════════════════════════════════════════
+    -- Mutation Bundles
+    -- ═══════════════════════════════════════════
+
+    CREATE TABLE IF NOT EXISTS brain_mutation_bundles (
+      id              TEXT PRIMARY KEY,
+      mutation_ids    TEXT NOT NULL,  -- JSON array of mutation proposal IDs
+      bundle_size     INTEGER NOT NULL,
+      status          TEXT NOT NULL DEFAULT 'pending',  -- pending, evaluating, promoted, rejected
+      base_score      REAL,           -- graph score before mutations
+      candidate_score REAL,           -- graph score after mutations
+      expected_gain   REAL,
+      rejection_reason TEXT,
+      created_at      INTEGER NOT NULL,
+      resolved_at     INTEGER
+    );
+
+    -- ═══════════════════════════════════════════
     -- Decision Traces
     -- ═══════════════════════════════════════════
 
