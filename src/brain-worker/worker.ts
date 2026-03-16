@@ -8,6 +8,7 @@ import type { PackManager } from "../brain-core/pack.js";
 import { computeReinforceUpdates, updateBaseline, applyWeightUpdates } from "../brain-core/update.js";
 import { decayAllWeights } from "../brain-core/decay.js";
 import { computeHealth } from "../brain-core/health.js";
+import { clusterMutationsIntoBundles, evaluateBundle, DEFAULT_BUNDLE_CONFIG } from "../brain-core/bundle-evaluator.js";
 
 function readExtractor(evidence: BrainEvidence): string | null {
   const extractor = evidence.metadata?.extractor;
@@ -423,12 +424,59 @@ export class BrainWorker {
 
   private async checkPromotion(): Promise<void> {
     const recentEpisodes = this.store.getRecentEpisodes(this.config.replayEpisodeCount);
-    const pendingMutations = this.store.getMutationsByStatus("pending", 5);
-    const candidateGraph = this.graph.clone();
+    const pendingMutations = this.store.getMutationsByStatus("pending", 20); // Get more for bundling
+
+    // Filter to supported mutation kinds
     const candidateMutations = pendingMutations.filter((proposal) =>
       proposal.kind === "connect" || proposal.kind === "prune" || proposal.kind === "inject",
     );
-    for (const proposal of candidateMutations) {
+
+    // Cluster mutations into bundles
+    const bundles = clusterMutationsIntoBundles(candidateMutations, {
+      ...DEFAULT_BUNDLE_CONFIG,
+      minBundleSize: Math.min(3, candidateMutations.length),
+    });
+
+    if (bundles.length === 0) {
+      // Fall back to old behavior if no bundles
+      await this.checkPromotionLegacy(recentEpisodes, candidateMutations);
+      return;
+    }
+
+    // Evaluate each bundle
+    for (const bundle of bundles) {
+      const evalResult = await evaluateBundle(bundle, this.graph, recentEpisodes);
+
+      if (evalResult.shouldPromote) {
+        // Apply mutations from the bundle
+        for (const proposal of bundle.proposals) {
+          this.mutator.applyMutation(proposal);
+        }
+        this.log.info(`[brain] Bundle ${bundle.id} promoted (${bundle.bundleSize} mutations, score ${evalResult.candidateScore.toFixed(3)} vs ${evalResult.baseScore.toFixed(3)})`);
+      } else {
+        // Reject all mutations in the bundle
+        for (const proposal of bundle.proposals) {
+          this.store.resolveMutation(proposal.id, "rejected");
+        }
+        this.log.info(`[brain] Bundle ${bundle.id} rejected: ${evalResult.rejectionReason}`);
+      }
+    }
+
+    // Report health after bundle evaluation
+    const health = computeHealth(this.graph, recentEpisodes, this.store.getCurrentPackVersion() ?? 0);
+    this.store.setTrainingState("last_promotion_reason", `Bundle evaluation complete: ${bundles.filter(b => b.status === "promoted").length} promoted`);
+    this.store.setTrainingState("last_replay_failure_reason", "");
+    await this.hooks.onPromotionReady?.({
+      healthJson: JSON.stringify(health),
+    });
+  }
+
+  /**
+   * Legacy single-mutation promotion (fallback when bundling not applicable)
+   */
+  private async checkPromotionLegacy(recentEpisodes: Episode[], pendingMutations: Array<{ id: string; kind: string }>): Promise<void> {
+    const candidateGraph = this.graph.clone();
+    for (const proposal of pendingMutations) {
       this.mutator.applyToCandidateGraph(candidateGraph, proposal);
     }
 
@@ -441,18 +489,18 @@ export class BrainWorker {
     if (!gate.passed) {
       this.store.setTrainingState("last_replay_failure_reason", gate.reason);
       this.log.warn(`[brain] Replay gate blocked promotion: ${gate.reason}`);
-      for (const proposal of candidateMutations) {
+      for (const proposal of pendingMutations) {
         this.store.resolveMutation(proposal.id, "rejected");
       }
       return;
     }
 
-    for (const proposal of candidateMutations) {
+    for (const proposal of pendingMutations) {
       this.mutator.applyMutation(proposal);
     }
     const health = computeHealth(this.graph, recentEpisodes, this.store.getCurrentPackVersion() ?? 0);
-    this.store.setTrainingState("last_promotion_reason", candidateMutations.length > 0
-      ? `candidate graph promoted with ${candidateMutations.length} mutation(s)`
+    this.store.setTrainingState("last_promotion_reason", pendingMutations.length > 0
+      ? `candidate graph promoted with ${pendingMutations.length} mutation(s)`
       : "weights and decay passed replay gate");
     this.store.setTrainingState("last_replay_failure_reason", "");
     await this.hooks.onPromotionReady?.({
