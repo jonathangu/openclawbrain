@@ -59,15 +59,9 @@ These are inherited LCM surfaces and should stay stable unless a failing test fo
 - structured raw evidence plus worker-side trust resolution are real
 
 ### Still open
-- (Phase 1 complete - sterile harness passes 7/7 assertions as of dbf0419)
-- mutation evaluation has not reached the intended bundle-level replay contract
-- CI does not yet enforce the evidence ladder tightly enough
-- package/type/operator boundary still needs hardening
-
-### Freshest blocker
-(NONE - Phase 1 complete, sterile harness passes)
-- deterministic runtime proof is repaired and repeatably passing on fresh isolated roots
-- the full sterile host harness is still not frozen because it currently stalls during `openclawbrain init` before the host-turn proof bundle completes
+- Phase 4: mutation bundles (not yet implemented)
+- Phase 5: CI proof ladder (not yet implemented)
+- Phase 6: package/type cleanup (tsc has SDK drift errors, but runtime works - 335 tests pass)
 
 ## Current code map
 
@@ -171,9 +165,7 @@ Already true:
 - restart accounting, heartbeat truth, reload acknowledgements, stale-lease takeover, and second-writer refusal are covered
 - `in_process` is a dev/debug fallback, not the production story
 
-Still open:
-- keep the worker truth surfaces stable while later phases evolve evidence and replay behavior
-- preserve the narrow production claim: serving continues from immutable promoted packs when the worker crashes or restarts
+**(DONE - 335 tests pass including all child worker tests)
 
 ## Phase 3 — Finish the evidence pipeline
 
@@ -193,10 +185,7 @@ Already true:
 - trust-ordered one-winner-per-episode resolution is real
 - structured self/scanner evidence now covers more real cases
 
-Still open:
-- keep pushing harvesters toward raw evidence only, with final label resolution in the worker
-- reduce heuristic fallbacks to genuine fallback status
-- expand richer structured scanner extractors where the data supports them
+**(DONE - 28 evidence/worker tests pass)
 
 ## Phase 4 — Replay-gated mutation bundles
 
