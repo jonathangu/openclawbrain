@@ -61,15 +61,20 @@ That's it! The brain will discover your files, compute embeddings, and promote t
 
 Just tell the agent it's wrong — the correction can commit on the next turn:
 
-```
-You:   How should you answer me?
-Agent: Long freeform paragraphs.
-You:   Wrong — keep it concise, use bullets, and end with the next action.
+```text
+User says:  How should you answer me?
+Agent says: I'll answer in long freeform paragraphs.
+
+User says:  Wrong — keep it concise, use bullets, and end with the next action.
+Agent says: Got it. I'll keep answers concise, use bullets, and end with the next action.
+
+User says:  How should you answer me?
+Agent says: Concisely, with bullets, and ending with the next action.
 ```
 
 The brain commits the correction immediately. Verify with `brain_trace`:
 
-```
+```bash
 brain_trace        # shows the correction node fired and the old answer vetoed
 ```
 
@@ -124,14 +129,19 @@ Deep dives:
 ## Real Examples
 
 ### Correcting the agent in plain language
+```text
+User says:  How should you answer me?
+Agent says: I'll answer in long freeform paragraphs.
+
+User says:  Wrong — keep it concise, use bullets, and end with the next action.
+Agent says: Got it. I'll keep answers concise, use bullets, and end with the next action.
+
+User says:  How should you answer me?
+Agent says: Concisely, with bullets, and ending with the next action.
 ```
-You:   How should you answer me?
-Agent: Long freeform paragraphs.
-You:   Wrong — keep it concise, use bullets, and end with the next action.
 
 Brain: Commits a high-trust correction node immediately.
-Next turn: Agent answers in the requested format, and brain_trace shows the correction fired.
-```
+On the next similar turn, the corrected preference can win and `brain_trace` shows why.
 
 ### Explicit teaching with brain_teach
 ```
