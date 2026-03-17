@@ -47,6 +47,8 @@ Your AI coding assistant keeps making the same mistakes. You correct it, it forg
 openclaw plugins install @jonathangu/openclawbrain
 ```
 
+> **Source checkout?** Clone the [GitHub repo](https://github.com/jonathangu/openclawbrain) only if you want to develop or contribute. Normal usage installs from the published package above.
+
 ### 2. Initialize (one command)
 
 ```bash
@@ -55,11 +57,26 @@ openclawbrain init /path/to/your/workspace
 
 That's it! The brain will discover your files, compute embeddings, and promote the first pack.
 
-### 3. Teach (in any conversation)
+### 3. Correct (in any conversation)
+
+Just tell the agent it's wrong — the correction sticks on the next turn:
 
 ```
-brain_teach instruction="For PRs, use gh not hub"
-brain_teach kind="correction" tags=["git", "github"]
+You:   What's the codeword?
+Agent: hippo
+You:   Wrong — it changed to giraffe.
+```
+
+The brain commits the correction immediately. Verify with `brain_trace`:
+
+```
+brain_trace        # shows the correction node fired and the old answer vetoed
+```
+
+For bulk or structured teaching, use `brain_teach` directly:
+
+```
+brain_teach instruction="For PRs, use gh not hub" kind="correction" tags=["git","github"]
 ```
 
 ### 4. Inspect
@@ -106,12 +123,22 @@ Deep dives:
 
 ## Real Examples
 
-### Teaching a correction
+### Correcting the agent in plain language
 ```
-You: "Don't use hub for PRs, use gh pr create"
+You:   What's the codeword?
+Agent: hippo
+You:   Wrong — it changed to giraffe.
 
-Brain: Creates high-trust correction node.
-Next time: Agent surfaces "Use gh pr create, not hub" as priority context.
+Brain: Commits a high-trust correction node immediately.
+Next turn: Agent answers "giraffe" and brain_trace shows the correction fired.
+```
+
+### Explicit teaching with brain_teach
+```
+brain_teach instruction="For PRs, use gh not hub" kind="correction" tags=["git","github"]
+
+Brain: Creates a correction node. Next time the agent considers hub,
+       it surfaces "Use gh pr create, not hub" as priority context.
 ```
 
 ### Learning from outcomes
@@ -194,7 +221,7 @@ Set `OPENCLAWBRAIN_EMBEDDING_API_KEY` if needed.
 | `openclawbrain replay` | Run replay gate on recent episodes |
 | `openclawbrain promote` | Force promotion (if replay passes) |
 | `openclawbrain doctor` | Diagnose issues |
-| `brain_teach` | Teach corrections (in conversation) |
+| `brain_teach` | Explicitly teach corrections or instructions (in conversation) |
 
 ## The 2016 Paper
 
@@ -232,14 +259,18 @@ Key insight: REINFORCE assigns credit to **every routing decision** in the episo
 ## Install
 
 ```bash
-# One command
+# Normal install — from the published package
 openclaw plugins install @jonathangu/openclawbrain
-
-# Or link local development
-openclaw plugins install --link /path/to/openclawbrain
 
 # Initialize once
 openclawbrain init /path/to/workspace
+```
+
+For development or contributing, clone the repo and link locally:
+
+```bash
+git clone https://github.com/jonathangu/openclawbrain.git
+openclaw plugins install --link /path/to/openclawbrain
 ```
 
 **Prerequisites:** OpenClaw, Node.js 22+, embeddings provider (Ollama or OpenAI-compatible)
