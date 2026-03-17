@@ -150,26 +150,26 @@ For an operator-grade release, the proof ladder should also be enforced by CI or
 
 ## Current proof truth
 
-As of the current trunk (commit `a9650bc`):
+As of the current trunk (commit `f0df9e8`):
 
-- **Level 1:** ✅ real — mechanism tests pass (78 tests)
+- **Level 1:** ✅ real — mechanism tests pass (335 tests)
 - **Level 2:** ✅ real — replay gate exists, mutation bundles implemented
 - **Level 3:** ✅ real — shadow mode recorded with episode/trace ids
-- **Level 4:** ✅ partially frozen — sterile host harness produces evidence bundles
+- **Level 4:** ✅ frozen — sterile host harness passes all 7 assertions
 
 **Evidence bundles available:**
-- `docs/evidence/2026-03-16/4ccd71a22418b9170128b8d948f5a95801a10380/` — sterile lane run with:
+- `docs/evidence/2026-03-16/dbf0419...` — sterile lane run with all 7 assertions passing:
   - `teachRetrieval`: PASS (taught node retrieved correctly)
   - `workerDownFailOpen`: PASS (serving continues after worker crash)
-  - `recurrentQuery`: documented
+  - `recurrentQuery`: PASS
   - `shortLookup`: PASS (bypass evidence captured)
   - `shadowMode`: PASS (no injected context visible)
   - `noEmbedding`: PASS
   - `uninitialized`: PASS
 
 **Remaining boundaries (honestly scoped):**
-- Full host-surface `brain_teach` harness still needs deterministic path
-- Host-turn proof bundle sometimes stalls at `openclawbrain init`
+- Raw prompt-driven `openclaw agent --local` is **not** the release proof boundary for `brain_teach` — the deterministic session-bound harness is the proof surface
+- Full end-to-end host-surface proof bundle capture is pending host-seam adaptation in the sterile lane
 
 The repo is now past theory-only and has frozen evidence for core runtime claims.
 

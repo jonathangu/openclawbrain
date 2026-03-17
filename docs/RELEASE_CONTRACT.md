@@ -10,9 +10,9 @@ Use these public labels consistently:
 Current truthful state:
 - **paper-faithful core:** yes
 - **live-path implemented:** yes
-- **operationally validated:** not yet
+- **operationally validated:** sterile harness passes 7/7; full host-surface proof bundle pending host-seam adaptation
 
-That is the contract. The repo is beyond "foundation only," but it is not yet at an honest operator-grade 1.0.
+That is the contract. The repo is beyond "foundation only," with a paper-faithful core and real live runtime. The sterile host harness passes all 7 runtime assertions. The remaining gap is the full end-to-end host-surface proof bundle capture.
 
 ## 1. True in code now
 
