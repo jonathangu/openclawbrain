@@ -361,12 +361,18 @@ export class BrainService {
     conversationId?: number;
     kind?: string;
     tags?: string[];
+    metadata?: Record<string, unknown>;
+    via?: string;
   }): Promise<{ nodeId: string; packVersion: number | null }> {
     this.reloadMutableGraphFromStore();
     if (!this.embeddingClient) {
       throw new Error("Embedding model is required before brain_teach can make knowledge retrievable");
     }
 
+    const teachVia = typeof params.via === "string" && params.via.trim().length > 0
+      ? params.via.trim()
+      : undefined;
+    const provenanceMetadata = params.metadata ?? {};
     const nodeKind = (params.kind ?? "correction") as NodeKind;
     const now = Date.now();
     const node: BrainNode = {
@@ -378,7 +384,11 @@ export class BrainService {
       trust: "human",
       tags: params.tags ?? [],
       tokenCount: Math.ceil(params.instruction.length / 4),
-      metadata: { taught: true },
+      metadata: {
+        taught: true,
+        ...provenanceMetadata,
+        ...(teachVia ? { via: teachVia } : {}),
+      },
       createdAt: now,
       updatedAt: now,
     };
@@ -484,10 +494,11 @@ export class BrainService {
           reason,
           contentSnippet: params.instruction.slice(0, 240),
           metadata: {
+            ...provenanceMetadata,
             taughtNodeId: node.id,
             correctedEpisodeId: episode.id,
-            extractor: "brain_teach",
-            via: "brain_teach",
+            extractor: teachVia ?? "brain_teach",
+            via: teachVia ?? "brain_teach",
           },
         });
         this.store.insertLabel({

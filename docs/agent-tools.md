@@ -65,6 +65,32 @@ Primary code:
 - `src/brain-runtime/service.ts`
 - `test/brain-runtime/service.test.ts`
 
+### `brain_teach_user_correction`
+Commit an **explicit user-authored correction** to the learned layer.
+
+Use it when:
+- the user clearly corrected a fact, rule, or durable preference in chat
+- the corrected value is clear enough to canonicalize into a durable instruction
+- the memory should persist beyond the current sentence
+
+Do **not** use it for:
+- model guesses
+- inferred preferences
+- self-critique
+- weak hints
+- ambiguous dissatisfaction
+
+Current truth:
+- this is a provenance-grounded write path for explicit user corrections only
+- it reuses the immediate `BrainService.teach(...)` runtime path
+- correction metadata is recorded with `sourceAuthority: "user_explicit"`, `sourceQuote`, and `via: "brain_teach_user_correction"`
+- it is intentionally **not** a freeform graph-mutation or promote/demote interface
+
+Example:
+- user says `wrong, it changed to giraffe`
+- agent commits `The codeword is giraffe.` via `brain_teach_user_correction`
+- later retrieval should surface `giraffe`
+
 ### `brain_status`
 Inspect current operator/runtime truth for the learned layer.
 
@@ -129,8 +155,24 @@ For recall from compacted history:
 
 For the live learned routing layer:
 - brain_teach
+- brain_teach_user_correction
 - brain_status
 - brain_trace
+
+When the user explicitly corrects a fact, rule, or durable preference, call
+`brain_teach_user_correction` before answering.
+
+Use it only when:
+- the correction is directly stated by the user
+- the corrected value is clear enough to canonicalize
+- the memory should persist beyond the current sentence
+
+Do not use it for:
+- model guesses
+- inferred preferences
+- self-critique
+- weak hints
+- ambiguous dissatisfaction
 
 Use LCM tools for recall.
 Use brain tools only when teaching or auditing the routing layer itself.

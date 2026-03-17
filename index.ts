@@ -15,6 +15,7 @@ import { createLcmExpandTool } from "./src/tools/lcm-expand-tool.js";
 import { createLcmGrepTool } from "./src/tools/lcm-grep-tool.js";
 import {
   createBrainTeachTool,
+  createBrainTeachUserCorrectionTool,
   createBrainStatusTool,
   createBrainTraceTool,
 } from "./src/brain-runtime/tools.js";
@@ -1518,36 +1519,54 @@ const lcmPlugin = {
       }),
     );
 
+    const createBrainToolDeps = (sessionKey?: string) => ({
+      teach: async (instruction: string, kind?: string, tags?: string[]) => {
+        const brain = lcm.getBrainService();
+        if (!brain) {
+          throw new Error("OpenClawBrain runtime is unavailable");
+        }
+        const conversationId = await lcm.getConversationIdForSessionKey(sessionKey ?? "");
+        return brain.teach({ instruction, conversationId, kind, tags });
+      },
+      teachUserCorrection: async (
+        canonicalInstruction: string,
+        sourceQuote: string,
+        tags?: string[],
+      ) => {
+        const brain = lcm.getBrainService();
+        if (!brain) {
+          throw new Error("OpenClawBrain runtime is unavailable");
+        }
+        const conversationId = await lcm.getConversationIdForSessionKey(sessionKey ?? "");
+        return brain.teach({
+          instruction: canonicalInstruction,
+          conversationId,
+          kind: "correction",
+          tags,
+          metadata: {
+            sourceAuthority: "user_explicit",
+            sourceQuote,
+            via: "brain_teach_user_correction",
+          },
+          via: "brain_teach_user_correction",
+        });
+      },
+      status: async () => lcm.getBrainService()?.status() ?? { enabled: false },
+      getTrace: async (traceId?: string) =>
+        ((await lcm.getBrainService()?.getTrace(traceId)) as unknown as Record<string, unknown> | null) ?? null,
+    });
+
     api.registerTool((ctx) =>
-      createBrainTeachTool({
-        teach: async (instruction, kind, tags) => {
-          const brain = lcm.getBrainService();
-          if (!brain) {
-            throw new Error("OpenClawBrain runtime is unavailable");
-          }
-          const conversationId = await lcm.getConversationIdForSessionKey(ctx.sessionKey ?? "");
-          return brain.teach({ instruction, conversationId, kind, tags });
-        },
-        status: async () => lcm.getBrainService()?.status() ?? { enabled: false },
-        getTrace: async (traceId?: string) =>
-          ((await lcm.getBrainService()?.getTrace(traceId)) as unknown as Record<string, unknown> | null) ?? null,
-      }),
+      createBrainTeachTool(createBrainToolDeps(ctx.sessionKey)),
+    );
+    api.registerTool((ctx) =>
+      createBrainTeachUserCorrectionTool(createBrainToolDeps(ctx.sessionKey)),
     );
     api.registerTool(() =>
-      createBrainStatusTool({
-        teach: async () => ({ nodeId: "" }),
-        status: async () => lcm.getBrainService()?.status() ?? { enabled: false },
-        getTrace: async (traceId?: string) =>
-          ((await lcm.getBrainService()?.getTrace(traceId)) as unknown as Record<string, unknown> | null) ?? null,
-      }),
+      createBrainStatusTool(createBrainToolDeps(undefined)),
     );
     api.registerTool(() =>
-      createBrainTraceTool({
-        teach: async () => ({ nodeId: "" }),
-        status: async () => lcm.getBrainService()?.status() ?? { enabled: false },
-        getTrace: async (traceId?: string) =>
-          ((await lcm.getBrainService()?.getTrace(traceId)) as unknown as Record<string, unknown> | null) ?? null,
-      }),
+      createBrainTraceTool(createBrainToolDeps(undefined)),
     );
 
     api.registerService({
