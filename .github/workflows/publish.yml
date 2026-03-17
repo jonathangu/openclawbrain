@@ -36,6 +36,9 @@ jobs:
       - name: Run tests
         run: npm test
 
+      - name: Verify package
+        run: npm run release:verify
+
       - name: Read package version
         id: package
         run: |

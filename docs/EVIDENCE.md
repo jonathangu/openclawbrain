@@ -158,7 +158,7 @@ As of the current trunk (commit `f0df9e8`):
 - **Level 4:** ✅ frozen — sterile host harness passes all 7 assertions
 
 **Evidence bundles available:**
-- `docs/evidence/2026-03-16/dbf0419...` — sterile lane run with all 7 assertions passing:
+- `docs/evidence/2026-03-16/4ccd71a22418b9170128b8d948f5a95801a10380/` — sterile lane run with all 7 assertions passing:
   - `teachRetrieval`: PASS (taught node retrieved correctly)
   - `workerDownFailOpen`: PASS (serving continues after worker crash)
   - `recurrentQuery`: PASS

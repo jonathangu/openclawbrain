@@ -198,7 +198,8 @@ node scripts/validate-openclaw-install.mjs
 Current honest status:
 - sterile preflight/config seam repairs are real
 - deterministic runtime proof is real
-- the full sterile host harness is still not frozen end to end because it currently stalls during `openclawbrain init`
+- sterile host harness passes 7/7 assertions (teachRetrieval, workerDownFailOpen, recurrentQuery, shortLookup, shadowMode, noEmbedding, uninitialized)
+- full end-to-end host-surface proof bundle capture is pending host-seam adaptation
 
 So treat the host harness as active proof work, not a closed release gate.
 

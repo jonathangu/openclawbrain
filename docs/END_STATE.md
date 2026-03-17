@@ -201,13 +201,10 @@ Primary files:
 - `src/brain-store/migrations.ts`
 
 Current truth:
-proposal-level replay-gated promotion exists, but the bundle-level end state does not.
+bundle-level mutation evaluation exists with clustering and comparative replay gates.
 
 Still open:
-- persist mutation bundles
-- cluster proposals by graph neighborhood
-- evaluate bundles against comparative replay
-- reject on regression, collapse, context bloat, or orphan spikes
+- (NONE - Phase 4 complete as of commit 2651527)
 
 ## Phase 5 — Freeze the proof ladder
 
