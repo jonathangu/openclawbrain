@@ -77,6 +77,11 @@ You ask a question → Brain finds seed nodes → Traverses graph →
 Chooses best context → Surfaces as priority context → Learns from outcome
 ```
 
+Deep dives:
+- [`docs/routing-prior.md`](docs/routing-prior.md) — why summaries are a routing/search prior rather than the truth layer
+- [`docs/corrections.md`](docs/corrections.md) — how explicit user corrections become durable current truth
+- [`docs/architecture.md`](docs/architecture.md) — full system architecture
+
 ### Two Layers, One Plugin
 
 **Layer 1 — Lossless Transcript Memory (LCM)**
@@ -208,8 +213,8 @@ Key insight: REINFORCE assigns credit to **every routing decision** in the episo
 
 | Metric | Status |
 |--------|--------|
-| Tests | ✅ 335 passing |
-| Type check | ✅ Clean (source) |
+| Tests | ✅ 340 passing |
+| Type check | ✅ Clean (`tsc --noEmit`) |
 | Runtime proofs | ✅ Deterministic |
 | Evidence bundles | ✅ Frozen |
 

@@ -44,6 +44,8 @@ export function getLcmConnection(dbPath: string): DatabaseSync {
 
   // Enable WAL mode for better concurrent read performance
   db.exec("PRAGMA journal_mode = WAL");
+  // Give concurrent writers a short wait window instead of failing immediately.
+  db.exec("PRAGMA busy_timeout = 5000");
   // Enable foreign key enforcement
   db.exec("PRAGMA foreign_keys = ON");
 

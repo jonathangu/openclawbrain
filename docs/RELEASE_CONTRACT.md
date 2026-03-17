@@ -35,10 +35,10 @@ These are safe public claims today.
 ### Live runtime path
 - **Explicit runtime decisions** (`use_brain`, `shadow`, named skip modes)
   - Code: `src/brain-runtime/assembler-extension.ts`, `test/brain-runtime/assembler-extension.test.ts`
-- **Correction-first assembly**
-  - Code: `src/brain-runtime/assembler-extension.ts`
-- **Immediate `brain_teach` retrieval path**
-  - Code: `src/brain-runtime/service.ts`, `src/brain-runtime/tools.ts`, `test/brain-runtime/service.test.ts`
+- **Correction-first assembly and summary-aware routing guidance**
+  - Code: `src/brain-runtime/assembler-extension.ts`, `src/brain-runtime/summary-routing-policy.ts`, `src/assembler.ts`
+- **Immediate `brain_teach` retrieval path and explicit user-correction commit lane**
+  - Code: `src/brain-runtime/service.ts`, `src/brain-runtime/tools.ts`, `src/brain-runtime/user-memory-proposals.ts`, `test/brain-runtime/service.test.ts`
 - **Episode and trace recording on the live path**
   - Code: `src/brain-runtime/service.ts`, `src/brain-core/trace.ts`, `test/brain-runtime/service.test.ts`
 - **Serve from the last promoted pack even when the worker is unavailable**
