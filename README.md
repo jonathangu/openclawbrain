@@ -140,8 +140,11 @@ User says:  How should you answer me?
 Agent says: Concisely, with bullets, and ending with the next action.
 ```
 
-Brain: Commits a high-trust correction node immediately.
-On the next similar turn, the corrected preference can win and `brain_trace` shows why.
+Behind the scenes:
+- the user's correction is committed as durable memory
+- on the next similar question, that correction is retrieved as priority context before the agent answers
+- the stale default answer loses because the retrieved correction outranks it
+- `brain_trace` shows the retrieved context, the fired correction, and the losing path
 
 ### Explicit teaching with brain_teach
 ```
