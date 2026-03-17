@@ -8,7 +8,7 @@
   <a href="https://openclawbrain.ai">🌐 Site</a> ·
   <a href="https://github.com/jonathangu/openclawbrain">📦 GitHub</a> ·
   <a href="https://openclawbrain.ai/jonathan-gu-2016-reinforcement-learning-paper.pdf">📄 2016 RL Paper</a> ·
-  <a href="https://discord.com/invite/clawd">💬 Discord</a>
+  <a href="mailto:asianendowment@gmail.com">✉️ Contact</a>
 </p>
 
 ---
