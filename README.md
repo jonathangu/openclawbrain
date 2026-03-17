@@ -25,7 +25,7 @@ Your AI coding assistant keeps making the same mistakes. You correct it, it forg
 
 - ✅ **Lossless transcript memory** — never lose a conversation
 - ✅ **Learned routing graph** — knows what context to surface
-- ✅ **Immediate corrections** — `brain_teach` works instantly
+- ✅ **Immediate corrections** — explicit user corrections can commit immediately and win on the next turn
 - ✅ **Paper-faithful RL** — REINFORCE over full trajectories
 - ✅ **Replay-gated packs** — no regressions, ever
 - ✅ **Decision traces** — every choice is inspectable
@@ -78,6 +78,7 @@ Chooses best context → Surfaces as priority context → Learns from outcome
 ```
 
 Deep dives:
+- [`docs/release-notes-0.3.2.md`](docs/release-notes-0.3.2.md) — what actually shipped in 0.3.2
 - [`docs/routing-prior.md`](docs/routing-prior.md) — why summaries are a routing/search prior rather than the truth layer
 - [`docs/corrections.md`](docs/corrections.md) — how explicit user corrections become durable current truth
 - [`docs/architecture.md`](docs/architecture.md) — full system architecture
@@ -86,7 +87,7 @@ Deep dives:
 
 **Layer 1 — Lossless Transcript Memory (LCM)**
 - Every conversation persisted in SQLite
-- Older turns summarized into DAG (never丢弃)
+- Older turns summarized into a DAG without throwing history away
 - Grep, describe, expand any past conversation
 
 **Layer 2 — Learned Routing Brain**

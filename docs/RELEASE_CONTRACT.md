@@ -95,8 +95,6 @@ These are still active work and must not be described as complete.
   - Primary files: future workflow surfaces, `package.json`, `docs/EVIDENCE.md`
 - **Clean npm/package boundary for outside operators**
   - Primary files: `package.json`, release workflow, docs packaging boundary
-- **Green full-repo `npx tsc --noEmit`**
-  - Primary files: `tsconfig.json`, `package.json`, SDK-boundary imports
 - **Boring install / validation / recovery path for another operator**
   - Primary files: `README.md`, `docs/configuration.md`, `openclaw.plugin.json`, validation scripts
 
