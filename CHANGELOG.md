@@ -6,11 +6,38 @@ It should help an operator understand two different truths:
 - what was actually published to npm
 - what has landed on `main` since that publish
 
-## Unreleased (current trunk after 0.3.2)
+## Unreleased (current trunk after 0.3.3)
 
-The current repo may move ahead of the published `0.3.2` package again. If it does, this section should describe that drift plainly instead of pretending the last npm release says everything.
+The current repo may move ahead of the published `0.3.3` package again. If it does, this section should describe that drift plainly instead of pretending the last npm release says everything.
 
-At the moment, trunk is aligned with the published `0.3.2` package for the correction/routing release slice.
+At the moment, trunk is aligned with the published `0.3.3` package for the Eagle child-worker launch fix.
+
+## 0.3.3
+
+Published package: `@jonathangu/openclawbrain@0.3.3`
+
+Git tag: `v0.3.3`
+
+Deep release note:
+- [`docs/release-notes-0.3.3.md`](docs/release-notes-0.3.3.md)
+
+### Published notes
+
+- fixes the launchd-served child-worker boot regression where Node resolved `tsx/esm` from `/` and crash-looped operator installs
+- resolves the child worker loader to an absolute `file://` import and launches the child from the plugin root so module resolution no longer depends on service cwd
+- restores truthful `brainWorkerMode=child` operation on Eagle and other launchd-style operator installs using linked local plugin paths
+- adds a focused runtime test that reproduces the exact `cwd=/` worker-launch seam and proves the child boots without `Cannot find package 'tsx'` failures
+- passes:
+  - Eagle live child-worker validation (`workerHealthy=true` after restart on the real Eagle profile)
+  - full test suite
+  - `npm pack --dry-run`
+  - repo-wide release verification via `npm run release:verify`
+
+### Why this release matters
+
+0.3.3 closes a real operator-facing reliability bug in the supervised child-worker boundary.
+The plugin already worked in local/dev contexts, but launchd-served installs could silently fall back to a crash loop because the worker loader depended on cwd-sensitive `tsx` resolution.
+This release makes the child-worker launch path deterministic again, which is the honest production boundary for OpenClawBrain.
 
 ## 0.3.2
 
