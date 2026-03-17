@@ -1,4 +1,4 @@
-import type { BrainConfig, BrainEdge, BrainEvidence, Episode } from "../brain-core/types.js";
+import type { BrainConfig, BrainEdge, BrainEvidence, Episode, MutationProposal } from "../brain-core/types.js";
 import { trustRank } from "../brain-core/types.js";
 import type { BrainStore } from "../brain-store/store.js";
 import type { BrainGraph } from "../brain-core/graph.js";
@@ -474,7 +474,7 @@ export class BrainWorker {
   /**
    * Legacy single-mutation promotion (fallback when bundling not applicable)
    */
-  private async checkPromotionLegacy(recentEpisodes: Episode[], pendingMutations: Array<{ id: string; kind: string }>): Promise<void> {
+  private async checkPromotionLegacy(recentEpisodes: Episode[], pendingMutations: MutationProposal[]): Promise<void> {
     const candidateGraph = this.graph.clone();
     for (const proposal of pendingMutations) {
       this.mutator.applyToCandidateGraph(candidateGraph, proposal);

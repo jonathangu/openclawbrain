@@ -50,8 +50,7 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
     const updates = computeReinforceUpdates(episode, 0.1, 0.0);
 
     expect(updates.length).toBe(1);
-    expect(updates[0].source).toBe("a");
-    expect(updates[0].target).toBe("b");
+    expect(updates[0]).toMatchObject({ kind: "edge", source: "a", target: "b" });
     expect(updates[0].delta).toBeGreaterThan(0); // Positive reward → strengthen
   });
 
@@ -88,7 +87,9 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
     // All 3 edges should receive updates (full-trajectory sum)
     expect(updates.length).toBe(3);
 
-    const edges = updates.map((u) => `${u.source}→${u.target}`);
+    const edges = updates
+      .filter((u): u is Extract<(typeof updates)[number], { kind: "edge" }> => u.kind === "edge")
+      .map((u) => `${u.source}→${u.target}`);
     expect(edges).toContain("a→b");
     expect(edges).toContain("b→c");
     expect(edges).toContain("c→d");

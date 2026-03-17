@@ -46,6 +46,13 @@ export interface BootstrapResult {
 /** Result from compact */
 export interface CompactResult {
 	ok?: boolean;
+	compacted?: boolean;
+	reason?: string;
+	result?: {
+		tokensBefore?: number;
+		tokensAfter?: number;
+		details?: Record<string, unknown>;
+	};
 }
 
 /** Result from ingest */
@@ -100,7 +107,7 @@ export interface ContextEngineAssembleContext {
 /** Message shape for context engine */
 export interface ContextEngineMessage {
 	role: string;
-	content: string | Array<{ type?: string; text?: string }>;
+	content?: unknown;
 	name?: string;
 	toolCallId?: string;
 }
@@ -149,8 +156,10 @@ export interface OpenClawPluginToolContext {
 /** Agent message shape used in the codebase */
 export interface AgentMessage {
 	role: string;
-	content: string | Array<{ type?: string; text?: string }>;
+	content?: unknown;
 	name?: string;
 	toolCallId?: string;
 	toolName?: string;
+	isError?: boolean;
+	timestamp?: number;
 }

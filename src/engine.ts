@@ -489,11 +489,15 @@ type StoredMessage = {
  * Normalize AgentMessage variants into the storage shape used by LCM.
  */
 function toStoredMessage(message: AgentMessage): StoredMessage {
+  const bashOutputMessage = message as unknown as {
+    command?: unknown;
+    output?: unknown;
+  };
   const content =
     "content" in message
       ? extractMessageContent(message.content)
       : "output" in message
-        ? `$ ${(message as { command: string; output: string }).command}\n${(message as { command: string; output: string }).output}`
+        ? `$ ${typeof bashOutputMessage.command === "string" ? bashOutputMessage.command : ""}\n${typeof bashOutputMessage.output === "string" ? bashOutputMessage.output : ""}`
         : "";
   const runtimeRole = toRuntimeRoleForTokenEstimate(message.role);
   const tokenCount =

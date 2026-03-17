@@ -1,9 +1,9 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
-import type { AgentMessage } from "@mariozechner/pi-agent-core";
 import { afterEach, describe, expect, it, vi } from "vitest";
-import type { OpenClawPluginApi, OpenClawPluginToolContext } from "openclaw/plugin-sdk";
+import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
+import type { AgentMessage, OpenClawPluginToolContext } from "../src/openclaw-sdk-compat.js";
 import lcmPlugin from "../index.js";
 import { closeLcmConnection } from "../src/db/connection.js";
 
@@ -146,7 +146,9 @@ describe("brain_teach_user_correction plugin session binding", () => {
       getConversationStore: () => {
         getConversationBySessionId: (id: string) => Promise<{ conversationId: number } | null>;
       };
-      getBrainService: () => { teach: (params: Record<string, unknown>) => Promise<unknown> } | null;
+      getBrainService: () => {
+        teachUserCorrection: (params: Record<string, unknown>) => Promise<unknown>;
+      } | null;
     };
 
     await engine.ingest({
@@ -163,7 +165,7 @@ describe("brain_teach_user_correction plugin session binding", () => {
     const brain = engine.getBrainService();
     expect(brain).not.toBeNull();
 
-    const teachSpy = vi.spyOn(brain!, "teach").mockResolvedValue({
+    const teachSpy = vi.spyOn(brain!, "teachUserCorrection").mockResolvedValue({
       nodeId: "bn_codeword",
       packVersion: 2,
     });
@@ -178,15 +180,10 @@ describe("brain_teach_user_correction plugin session binding", () => {
     });
 
     expect(teachSpy).toHaveBeenCalledWith({
-      instruction: "The codeword is giraffe.",
+      canonicalInstruction: "The codeword is giraffe.",
+      sourceQuote: "wrong, it changed to giraffe",
       conversationId: conversation?.conversationId,
-      kind: "correction",
       tags: ["demo", "codeword"],
-      metadata: {
-        sourceAuthority: "user_explicit",
-        sourceQuote: "wrong, it changed to giraffe",
-        via: "brain_teach_user_correction",
-      },
       via: "brain_teach_user_correction",
     });
   });
