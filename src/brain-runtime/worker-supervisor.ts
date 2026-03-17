@@ -1,5 +1,6 @@
 import { fork, type ChildProcess } from "node:child_process";
-import { fileURLToPath } from "node:url";
+import { createRequire } from "node:module";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import type { BrainConfig } from "../brain-core/types.js";
 import type { BrainStore } from "../brain-store/store.js";
 import type {
@@ -8,6 +9,19 @@ import type {
   ParentToChildMessage,
   WorkerTeacherCompleteRequestMessage,
 } from "../brain-worker/protocol.js";
+
+const childRunnerPath = fileURLToPath(new URL("../brain-worker/child-runner.ts", import.meta.url));
+const pluginRoot = fileURLToPath(new URL("../../", import.meta.url));
+const requireFromHere = createRequire(import.meta.url);
+
+export function resolveChildWorkerExecArgv(): string[] {
+  try {
+    const tsxLoaderPath = requireFromHere.resolve("tsx/esm");
+    return ["--import", pathToFileURL(tsxLoaderPath).href];
+  } catch {
+    return ["--import", "tsx/esm"];
+  }
+}
 
 export class WorkerSupervisor {
   private child: ChildProcess | null = null;
@@ -76,10 +90,11 @@ export class WorkerSupervisor {
     }
 
     const child = fork(
-      fileURLToPath(new URL("../brain-worker/child-runner.ts", import.meta.url)),
+      childRunnerPath,
       [],
       {
-        execArgv: ["--import", "tsx/esm"],
+        cwd: pluginRoot,
+        execArgv: resolveChildWorkerExecArgv(),
         stdio: ["ignore", "pipe", "pipe", "ipc"],
         env: {
           ...process.env,
