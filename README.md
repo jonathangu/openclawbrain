@@ -15,7 +15,7 @@
 
 ## The Problem
 
-Your AI coding assistant keeps making the same mistakes. You correct it, it forgets. You teach it a pattern, it's gone by next session. You figure out that `gh pr create` works better than `hub`, but the agent keeps suggesting `hub`.
+Your AI assistant keeps making the same mistakes. You correct it, it forgets. You teach it a preference, it's gone by next session. You tell it to keep answers concise and end with the next action, and by tomorrow it's rambling again.
 
 **That's not intelligence — that's forgetfulness wearing a fancy hat.**
 
@@ -59,12 +59,12 @@ That's it! The brain will discover your files, compute embeddings, and promote t
 
 ### 3. Correct (in any conversation)
 
-Just tell the agent it's wrong — the correction sticks on the next turn:
+Just tell the agent it's wrong — the correction can commit on the next turn:
 
 ```
-You:   What's the codeword?
-Agent: hippo
-You:   Wrong — it changed to giraffe.
+You:   How should you answer me?
+Agent: Long freeform paragraphs.
+You:   Wrong — keep it concise, use bullets, and end with the next action.
 ```
 
 The brain commits the correction immediately. Verify with `brain_trace`:
@@ -76,7 +76,7 @@ brain_trace        # shows the correction node fired and the old answer vetoed
 For bulk or structured teaching, use `brain_teach` directly:
 
 ```
-brain_teach instruction="For PRs, use gh not hub" kind="correction" tags=["git","github"]
+brain_teach instruction="Keep answers concise, use bullets, and end with the next action" kind="correction" tags=["style","preferences"]
 ```
 
 ### 4. Inspect
@@ -125,20 +125,20 @@ Deep dives:
 
 ### Correcting the agent in plain language
 ```
-You:   What's the codeword?
-Agent: hippo
-You:   Wrong — it changed to giraffe.
+You:   How should you answer me?
+Agent: Long freeform paragraphs.
+You:   Wrong — keep it concise, use bullets, and end with the next action.
 
 Brain: Commits a high-trust correction node immediately.
-Next turn: Agent answers "giraffe" and brain_trace shows the correction fired.
+Next turn: Agent answers in the requested format, and brain_trace shows the correction fired.
 ```
 
 ### Explicit teaching with brain_teach
 ```
-brain_teach instruction="For PRs, use gh not hub" kind="correction" tags=["git","github"]
+brain_teach instruction="Keep answers concise, use bullets, and end with the next action" kind="correction" tags=["style","preferences"]
 
-Brain: Creates a correction node. Next time the agent considers hub,
-       it surfaces "Use gh pr create, not hub" as priority context.
+Brain: Creates a correction node. Next time the agent answers,
+       it surfaces that preference as priority context.
 ```
 
 ### Learning from outcomes
