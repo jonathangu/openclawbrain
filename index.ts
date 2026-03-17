@@ -1538,16 +1538,11 @@ const lcmPlugin = {
           throw new Error("OpenClawBrain runtime is unavailable");
         }
         const conversationId = await lcm.getConversationIdForSessionKey(sessionKey ?? "");
-        return brain.teach({
-          instruction: canonicalInstruction,
+        return brain.teachUserCorrection({
+          canonicalInstruction,
+          sourceQuote,
           conversationId,
-          kind: "correction",
           tags,
-          metadata: {
-            sourceAuthority: "user_explicit",
-            sourceQuote,
-            via: "brain_teach_user_correction",
-          },
           via: "brain_teach_user_correction",
         });
       },

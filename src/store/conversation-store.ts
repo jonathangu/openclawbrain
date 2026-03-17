@@ -389,6 +389,21 @@ export class ConversationStore {
     return row ? toMessageRecord(row) : null;
   }
 
+  async getRecentMessages(conversationId: ConversationId, limit = 6): Promise<MessageRecord[]> {
+    const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.floor(limit)) : 6;
+    const rows = this.db
+      .prepare(
+        `SELECT message_id, conversation_id, seq, role, content, token_count, created_at
+       FROM messages
+       WHERE conversation_id = ?
+       ORDER BY seq DESC
+       LIMIT ?`,
+      )
+      .all(conversationId, safeLimit) as unknown as MessageRow[];
+
+    return rows.map(toMessageRecord).reverse();
+  }
+
   async hasMessage(
     conversationId: ConversationId,
     role: MessageRole,

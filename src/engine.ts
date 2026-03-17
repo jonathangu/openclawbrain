@@ -38,6 +38,7 @@ import {
   BrainAssemblerExtension,
   type BrainAssembledContextResult,
 } from "./brain-runtime/assembler-extension.js";
+import type { UserMemoryObservation } from "./brain-runtime/user-memory-proposals.js";
 import { BrainService } from "./brain-runtime/service.js";
 
 function extractLatestUserText(messages: AgentMessage[]): string | null {
@@ -1271,6 +1272,20 @@ export class LcmContextEngine implements ContextEngine {
         content: stored.content,
         messageParts,
       });
+
+      if (stored.role === "user") {
+        try {
+          const observation = await this.buildUserMemoryObservation({
+            conversationId,
+            messageId: msgRecord.messageId,
+            episodeId: params.brainEpisodeId ?? this.pendingBrainEpisodeBySession.get(sessionId),
+            userText: stored.content,
+          });
+          await this.brainService.observeUserTurn(observation);
+        } catch {
+          // User-memory observation is best-effort and must fail open.
+        }
+      }
     }
 
     return { ingested: true };
@@ -1859,6 +1874,37 @@ export class LcmContextEngine implements ContextEngine {
   }
 
   // ── Public accessors for retrieval (used by subagent expansion) ─────────
+
+  private async buildUserMemoryObservation(params: {
+    conversationId: number;
+    messageId: number;
+    episodeId?: string;
+    userText: string;
+  }): Promise<UserMemoryObservation> {
+    const recentMessages = (await this.conversationStore.getRecentMessages(params.conversationId, 7))
+      .filter((message) => message.messageId !== params.messageId)
+      .slice(-6)
+      .map((message) => ({
+        role: message.role,
+        content: message.content,
+      }));
+    const recentSummaries = (await this.summaryStore.getRecentContextSummaries(params.conversationId, 2))
+      .map((summary) => ({
+        summaryId: summary.summaryId,
+        kind: summary.kind,
+        depth: summary.depth,
+        content: summary.content,
+      }));
+
+    return {
+      conversationId: params.conversationId,
+      messageId: params.messageId,
+      episodeId: params.episodeId,
+      userText: params.userText,
+      recentMessages,
+      recentSummaries,
+    };
+  }
 
   getRetrieval(): RetrievalEngine {
     return this.retrieval;

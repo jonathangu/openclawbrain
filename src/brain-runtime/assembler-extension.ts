@@ -2,6 +2,7 @@ import type { AssembleContextResult } from "../assembler.js";
 import type { ContextEngine, AgentMessage } from "../openclaw-sdk-compat.js";
 import type { TraversalResult } from "../brain-core/types.js";
 import type { BrainService } from "./service.js";
+import { decideSummaryRouting } from "./summary-routing-policy.js";
 
 export type BrainAssemblyDecisionMode =
   | "use_brain"
@@ -88,6 +89,19 @@ function buildBrainContextBlock(result: TraversalResult): string {
   return sections.join("\n");
 }
 
+function buildSummaryRoutingPrompt(mode: ReturnType<typeof decideSummaryRouting>["mode"]): string | undefined {
+  switch (mode) {
+    case "summary_suffices":
+      return "This turn looks like a broad recap. Summary-level context is a reasonable starting point unless the user asks for exact proof or current-truth conflict resolution.";
+    case "prefer_typed_memory":
+      return "This turn looks current-truth or conflict-sensitive. Prefer explicit correction cards and typed memory over summary recap; if typed memory is missing, expand toward source before asserting specifics.";
+    case "expand_to_source":
+      return "This turn looks precision-sensitive against compacted history. Use summaries only to locate the region, then expand toward source material before asserting exact details.";
+    default:
+      return undefined;
+  }
+}
+
 export class BrainAssemblerExtension {
   constructor(private brain: BrainService) {}
 
@@ -142,6 +156,11 @@ export class BrainAssemblerExtension {
       tokenBudget: params.tokenBudget,
       liveMessages: params.liveMessages,
     });
+    const summaryRouting = decideSummaryRouting({
+      queryText: decision.queryText,
+      summaryMetadata: params.assembled.summaryMetadata,
+    });
+    const summaryRoutingPrompt = buildSummaryRoutingPrompt(summaryRouting.mode);
     if (decision.mode !== "use_brain" && decision.mode !== "shadow") {
       this.brain.noteAssemblyDecision({
         mode: decision.mode,
@@ -150,6 +169,7 @@ export class BrainAssemblerExtension {
       });
       return {
         ...params.assembled,
+        systemPromptAddition: [params.assembled.systemPromptAddition, summaryRoutingPrompt].filter(Boolean).join("\n\n") || undefined,
         brainDecision: {
           mode: decision.mode,
           footer: decisionFooter(decision.mode),
@@ -170,6 +190,7 @@ export class BrainAssemblerExtension {
       });
       return {
         ...params.assembled,
+        systemPromptAddition: [params.assembled.systemPromptAddition, summaryRoutingPrompt].filter(Boolean).join("\n\n") || undefined,
         brainDecision: {
           mode: decision.mode,
           footer: decisionFooter(decision.mode),
@@ -192,6 +213,7 @@ export class BrainAssemblerExtension {
 
       return {
         ...params.assembled,
+        systemPromptAddition: [params.assembled.systemPromptAddition, summaryRoutingPrompt].filter(Boolean).join("\n\n") || undefined,
         brainDecision: {
           mode: "shadow",
           episodeId: result.episode.id,
@@ -215,6 +237,7 @@ export class BrainAssemblerExtension {
       systemPromptAddition: [
         params.assembled.systemPromptAddition,
         "OpenClawBrain sections are ranked by trust: correction cards, evidence, playbooks, then transcript support.",
+        summaryRoutingPrompt,
       ]
         .filter(Boolean)
         .join("\n\n"),

@@ -20,6 +20,10 @@ export type OpenClawBrainRuntimeConfig = {
   teacherEnabled: boolean;
   teacherProvider: string;
   teacherModel: string;
+  autoUserCorrectionsEnabled: boolean;
+  autoUserCorrectionsProvider: string;
+  autoUserCorrectionsModel: string;
+  autoUserCorrectionsMinConfidence: number;
   mutationsEnabled: boolean;
   replayEpisodeCount: number;
   minFiredPerQuery: number;
@@ -226,6 +230,22 @@ export function resolveLcmConfig(
         env.OPENCLAWBRAIN_TEACHER_PROVIDER?.trim() ?? toStr(pc.brainTeacherProvider) ?? "",
       teacherModel:
         env.OPENCLAWBRAIN_TEACHER_MODEL?.trim() ?? toStr(pc.brainTeacherModel) ?? "",
+      autoUserCorrectionsEnabled:
+        env.OPENCLAWBRAIN_AUTO_USER_CORRECTIONS_ENABLED !== undefined
+          ? env.OPENCLAWBRAIN_AUTO_USER_CORRECTIONS_ENABLED !== "false"
+          : toBool(pc.brainAutoUserCorrectionsEnabled) ?? false,
+      autoUserCorrectionsProvider:
+        env.OPENCLAWBRAIN_AUTO_USER_CORRECTIONS_PROVIDER?.trim()
+        ?? toStr(pc.brainAutoUserCorrectionsProvider)
+        ?? "",
+      autoUserCorrectionsModel:
+        env.OPENCLAWBRAIN_AUTO_USER_CORRECTIONS_MODEL?.trim()
+        ?? toStr(pc.brainAutoUserCorrectionsModel)
+        ?? "",
+      autoUserCorrectionsMinConfidence:
+        (env.OPENCLAWBRAIN_AUTO_USER_CORRECTIONS_MIN_CONFIDENCE !== undefined
+          ? parseFloat(env.OPENCLAWBRAIN_AUTO_USER_CORRECTIONS_MIN_CONFIDENCE)
+          : undefined) ?? toNumber(pc.brainAutoUserCorrectionsMinConfidence) ?? 0.8,
       mutationsEnabled:
         env.OPENCLAWBRAIN_MUTATIONS_ENABLED !== undefined
           ? env.OPENCLAWBRAIN_MUTATIONS_ENABLED !== "false"

@@ -21,6 +21,9 @@ function embed(text: string): Float32Array {
   if (normalized.includes("deployment") || normalized.includes("ci")) {
     return new Float32Array([0, 1, 0]);
   }
+  if (normalized.includes("codeword") || normalized.includes("hippo") || normalized.includes("giraffe")) {
+    return new Float32Array([1, 0, 1]);
+  }
   return new Float32Array([0.5, 0.5, 0]);
 }
 
@@ -67,6 +70,10 @@ function createDeps(
         teacherEnabled: false,
         teacherProvider: "",
         teacherModel: "",
+    autoUserCorrectionsEnabled: false,
+    autoUserCorrectionsProvider: "",
+    autoUserCorrectionsModel: "",
+    autoUserCorrectionsMinConfidence: 0.8,
         mutationsEnabled: true,
         replayEpisodeCount: 100,
         minFiredPerQuery: 1,
@@ -247,6 +254,145 @@ describe("BrainService", () => {
 
     const trace = await service.getTrace();
     expect(trace?.firedNodes).toContain(taught.nodeId);
+  });
+
+  it("commits fast explicit user corrections immediately from recent context", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-codeword-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-codeword-state-");
+    writeFileSync(
+      join(workspaceRoot, "CODEWORD.md"),
+      "# Demo\n\nThe codeword is hippo.\n",
+      "utf8",
+    );
+
+    const fetchMock = vi.fn(async (_input: unknown, init?: { body?: unknown }) => {
+      const rawBody = typeof init?.body === "string" ? init.body : "{}";
+      const parsed = JSON.parse(rawBody) as { input?: string | string[] };
+      const input = Array.isArray(parsed.input) ? parsed.input[0] : parsed.input ?? "";
+      return {
+        ok: true,
+        json: async () => ({ data: [{ embedding: Array.from(embed(String(input))) }] }),
+      };
+    });
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    const service = new BrainService({ deps: createDeps(brainRoot) });
+    await service.init({
+      workspaceRoot,
+      embedFn: async (text) => embed(text),
+    });
+
+    await service.teachUserCorrection({
+      canonicalInstruction: "The codeword is hippo.",
+      sourceQuote: "the codeword is hippo",
+      sourceMessageId: 1,
+      conversationId: 17,
+      via: "demo_seed",
+    });
+
+    await service.query({
+      conversationId: 17,
+      queryText: "what's the codeword?",
+      budgetChars: 4000,
+      queryEmbedding: embed("what's the codeword?"),
+    });
+
+    await service.observeUserTurn({
+      conversationId: 17,
+      messageId: 3,
+      userText: "wrong, the codeword is giraffe",
+      recentMessages: [
+        { role: "assistant", content: "The codeword is hippo." },
+        { role: "user", content: "what's the codeword?" },
+      ],
+      recentSummaries: [],
+    });
+
+    const status = await service.status();
+    expect(status.currentPackVersion).toBeGreaterThanOrEqual(3);
+
+    const matchingNode = (service as unknown as {
+      store: { getAllNodes: () => Array<{ metadata?: Record<string, unknown>; content: string }> };
+    }).store.getAllNodes().find((node) => node.content.includes("The codeword is giraffe."));
+
+    expect(matchingNode?.metadata).toMatchObject({
+      sourceAuthority: "user_explicit",
+      sourceMessageId: 3,
+      via: "brain_auto_user_correction_fast",
+      proposalLane: "fast_deterministic",
+    });
+  });
+
+  it("queues async user-correction proposals off-path and commits high-confidence results", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-async-codeword-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-async-codeword-state-");
+    writeFileSync(
+      join(workspaceRoot, "CODEWORD.md"),
+      "# Demo\n\nThe codeword is hippo.\n",
+      "utf8",
+    );
+
+    const fetchMock = vi.fn(async (_input: unknown, init?: { body?: unknown }) => {
+      const rawBody = typeof init?.body === "string" ? init.body : "{}";
+      const parsed = JSON.parse(rawBody) as { input?: string | string[] };
+      const input = Array.isArray(parsed.input) ? parsed.input[0] : parsed.input ?? "";
+      return {
+        ok: true,
+        json: async () => ({ data: [{ embedding: Array.from(embed(String(input))) }] }),
+      };
+    });
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    const deps = createDeps(brainRoot, {
+      autoUserCorrectionsEnabled: true,
+      autoUserCorrectionsProvider: "openai",
+      autoUserCorrectionsModel: "gpt-5.4-mini",
+      autoUserCorrectionsMinConfidence: 0.75,
+    });
+    deps.complete = vi.fn(async () => ({
+      content: [{ type: "text", text: JSON.stringify({
+        kind: "explicit_correction",
+        canonicalInstruction: "The codeword is giraffe.",
+        confidence: 0.93,
+        reason: "latest user turn explicitly corrected the codeword",
+      }) }],
+    }));
+
+    const service = new BrainService({ deps });
+    await service.init({
+      workspaceRoot,
+      embedFn: async (text) => embed(text),
+    });
+
+    await service.observeUserTurn({
+      conversationId: 17,
+      messageId: 4,
+      episodeId: "ep_async_1",
+      userText: "no, use the new one",
+      recentMessages: [
+        { role: "assistant", content: "The codeword is hippo." },
+        { role: "user", content: "what's the codeword?" },
+      ],
+      recentSummaries: [
+        {
+          summaryId: "sum_1",
+          kind: "leaf",
+          depth: 1,
+          content: "The user asked about the codeword and the assistant answered hippo.",
+        },
+      ],
+    });
+
+    await waitFor(async () => {
+      const nodes = (service as unknown as {
+        store: { getAllNodes: () => Array<{ content: string }> };
+      }).store.getAllNodes();
+      return nodes.some((node) => node.content.includes("The codeword is giraffe."));
+    });
+
+    const status = await service.status();
+    expect(status.pendingUserObservationCount).toBe(0);
+    expect(deps.complete).toHaveBeenCalledTimes(1);
   });
 
   it("runs the learner in a supervised child process and reports heartbeat truth", async () => {

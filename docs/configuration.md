@@ -147,6 +147,29 @@ If the remote endpoint requires auth, set `OPENCLAWBRAIN_EMBEDDING_API_KEY`.
 | `OPENCLAWBRAIN_EMBEDDING_API_KEY` | Optional auth for remote embedding endpoints |
 | `OPENCLAWBRAIN_SHADOW_MODE` | Record routing without injecting learned context |
 | `OPENCLAWBRAIN_WORKER_MODE` | Worker mode; prefer `child` for the real operator boundary |
+| `OPENCLAWBRAIN_AUTO_USER_CORRECTIONS_ENABLED` | Enable async user-correction proposals grounded in explicit user turns |
+| `OPENCLAWBRAIN_AUTO_USER_CORRECTIONS_PROVIDER` | Provider override for async user-correction proposals |
+| `OPENCLAWBRAIN_AUTO_USER_CORRECTIONS_MODEL` | Model override for async user-correction proposals |
+| `OPENCLAWBRAIN_AUTO_USER_CORRECTIONS_MIN_CONFIDENCE` | Minimum confidence required before auto-committing a correction |
+
+## Summary-aware correction lanes
+
+OpenClawBrain now has two complementary user-correction paths:
+
+- **fast deterministic lane** — catches obvious explicit corrections immediately on ingest
+- **async proposal lane** — lets a model read recent messages plus recent LCM summaries and propose a typed correction write off the hot path
+
+Both lanes follow the same authority rule:
+
+- **LCM summaries are context, not truth**
+- **the explicit user quote is the authority**
+- **the committed typed correction memory becomes the durable current-truth layer**
+
+At serve time, LCM summaries also act as a routing prior:
+
+- broad recap questions may stay at summary level
+- precision/conflict-sensitive questions should expand back toward source
+- explicit correction cards outrank summary recap when they conflict
 
 ## Child-worker boundary
 

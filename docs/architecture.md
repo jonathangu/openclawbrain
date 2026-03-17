@@ -22,8 +22,18 @@ OpenClawBrain has two cooperating layers:
    - retrieves from immutable promoted packs only
    - records episodes and traces on the live path
    - trains in the background from structured evidence and replay-gated promotion
+   - treats LCM summaries as a routing prior rather than canonical truth
+   - commits explicit user corrections through a provenance-grounded teach path
 
 The repo identity is OpenClawBrain. The substrate history is still real, but it should not be confused with the whole product story.
+
+A useful mental model is:
+
+- **LCM summary DAG = search/value abstraction over long history**
+- **raw transcript expansion = precision path back to source**
+- **typed brain memories = durable current-truth overlay**
+
+That means summary nodes help the runtime decide *where to look* and *when to expand*, while explicit user-grounded correction memories decide *what should currently win* when older transcript abstractions conflict.
 
 ## Data model
 

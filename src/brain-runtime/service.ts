@@ -34,6 +34,12 @@ import type { WorkerTeacherCompleteRequestMessage } from "../brain-worker/protoc
 import { flattenEdges, populateGraph, promoteGraphSnapshot, reloadGraphFromStore } from "./graph-io.js";
 import { readWorkerRuntimeState } from "./worker-state.js";
 import { WorkerSupervisor } from "./worker-supervisor.js";
+import {
+  proposeUserCorrectionFast,
+  proposeUserCorrectionWithModel,
+  type UserMemoryObservation,
+  type UserMemoryProposal,
+} from "./user-memory-proposals.js";
 
 function buildBrainConfig(
   runtimeConfig: OpenClawBrainRuntimeConfig,
@@ -59,7 +65,12 @@ export class BrainService {
   private config: BrainConfig;
   private resolvedTeacherModel: { provider: string; model: string } | null;
   private teacherConfigError: string | null = null;
+  private resolvedAutoUserCorrectionsModel: { provider: string; model: string } | null = null;
+  private autoUserCorrectionsConfigError: string | null = null;
   private initialized = false;
+  private userObservationQueue: Promise<void> = Promise.resolve();
+  private pendingUserObservationCount = 0;
+  private committedUserCorrectionMessageIds = new Set<number>();
   private latestEpisodeByConversation = new Map<number, string>();
   private lastAssemblyDecision:
     | {
@@ -98,6 +109,23 @@ export class BrainService {
       }
     } else {
       this.resolvedTeacherModel = null;
+    }
+
+    if (this.config.autoUserCorrectionsEnabled) {
+      try {
+        this.resolvedAutoUserCorrectionsModel = params.deps.resolveModel(
+          this.config.autoUserCorrectionsModel || undefined,
+          this.config.autoUserCorrectionsProvider || undefined,
+        );
+      } catch (error) {
+        this.resolvedAutoUserCorrectionsModel = null;
+        this.autoUserCorrectionsConfigError = (error as Error).message;
+        params.deps.log.warn(
+          `[brain] Auto user corrections disabled: ${this.autoUserCorrectionsConfigError}`,
+        );
+      }
+    } else {
+      this.resolvedAutoUserCorrectionsModel = null;
     }
     mkdirSync(this.config.root, { recursive: true });
 
@@ -356,6 +384,136 @@ export class BrainService {
     };
   }
 
+  async teachUserCorrection(params: {
+    canonicalInstruction: string;
+    sourceQuote: string;
+    conversationId?: number;
+    sourceMessageId?: number;
+    tags?: string[];
+    metadata?: Record<string, unknown>;
+    via?: string;
+  }): Promise<{ nodeId: string; packVersion: number | null }> {
+    return this.teach({
+      instruction: params.canonicalInstruction,
+      conversationId: params.conversationId,
+      kind: "correction",
+      tags: params.tags,
+      metadata: {
+        sourceAuthority: "user_explicit",
+        sourceQuote: params.sourceQuote,
+        ...(typeof params.sourceMessageId === "number" ? { sourceMessageId: params.sourceMessageId } : {}),
+        ...(params.metadata ?? {}),
+      },
+      via: params.via ?? "brain_teach_user_correction",
+    });
+  }
+
+  private shouldRunAutoUserCorrectionProposal(): boolean {
+    return this.config.autoUserCorrectionsEnabled && !!this.resolvedAutoUserCorrectionsModel;
+  }
+
+  private hasCommittedUserCorrectionForMessage(messageId: number): boolean {
+    if (this.committedUserCorrectionMessageIds.has(messageId)) {
+      return true;
+    }
+    return this.store.getAllNodes().some((node) => node.metadata?.sourceMessageId === messageId);
+  }
+
+  private async commitObservedUserCorrection(params: {
+    observation: UserMemoryObservation;
+    proposal: Extract<UserMemoryProposal, { kind: "explicit_correction" }>;
+    via: string;
+    extraMetadata?: Record<string, unknown>;
+  }): Promise<{ nodeId: string; packVersion: number | null } | null> {
+    if (this.hasCommittedUserCorrectionForMessage(params.observation.messageId)) {
+      return null;
+    }
+
+    const committed = await this.teachUserCorrection({
+      canonicalInstruction: params.proposal.canonicalInstruction,
+      sourceQuote: params.observation.userText,
+      conversationId: params.observation.conversationId,
+      sourceMessageId: params.observation.messageId,
+      tags: ["user-correction", "auto"],
+      metadata: {
+        proposalConfidence: params.proposal.confidence,
+        proposalReason: params.proposal.reason,
+        ...(params.extraMetadata ?? {}),
+      },
+      via: params.via,
+    });
+    this.committedUserCorrectionMessageIds.add(params.observation.messageId);
+    return committed;
+  }
+
+  private enqueueUserObservation(observation: UserMemoryObservation): void {
+    this.pendingUserObservationCount += 1;
+    this.userObservationQueue = this.userObservationQueue
+      .catch(() => {})
+      .then(async () => {
+        try {
+          if (this.hasCommittedUserCorrectionForMessage(observation.messageId)) {
+            return;
+          }
+          const model = this.resolvedAutoUserCorrectionsModel;
+          if (!model) {
+            return;
+          }
+          const apiKey = await this.deps.getApiKey(model.provider, model.model);
+          const proposal = await proposeUserCorrectionWithModel({
+            complete: this.deps.complete,
+            provider: model.provider,
+            model: model.model,
+            apiKey,
+            observation,
+          });
+          if (proposal.kind !== "explicit_correction") {
+            return;
+          }
+          if (proposal.confidence < this.config.autoUserCorrectionsMinConfidence) {
+            return;
+          }
+          await this.commitObservedUserCorrection({
+            observation,
+            proposal,
+            via: "brain_auto_user_correction_async",
+            extraMetadata: { proposalLane: "async_model" },
+          });
+        } catch (error) {
+          this.deps.log.warn(`[brain] Auto user correction proposal failed: ${(error as Error).message}`);
+        } finally {
+          this.pendingUserObservationCount = Math.max(0, this.pendingUserObservationCount - 1);
+        }
+      });
+  }
+
+  async observeUserTurn(observation: UserMemoryObservation): Promise<void> {
+    if (!this.embeddingClient) {
+      return;
+    }
+    if (this.hasCommittedUserCorrectionForMessage(observation.messageId)) {
+      return;
+    }
+
+    const fastProposal = proposeUserCorrectionFast(observation);
+    if (fastProposal.kind === "explicit_correction") {
+      await this.commitObservedUserCorrection({
+        observation,
+        proposal: fastProposal,
+        via: "brain_auto_user_correction_fast",
+        extraMetadata: { proposalLane: "fast_deterministic" },
+      });
+    }
+
+    if (!this.shouldRunAutoUserCorrectionProposal()) {
+      return;
+    }
+    if (this.hasCommittedUserCorrectionForMessage(observation.messageId)) {
+      return;
+    }
+    this.enqueueUserObservation(observation);
+  }
+
   async teach(params: {
     instruction: string;
     conversationId?: number;
@@ -549,6 +707,15 @@ export class BrainService {
       teacherProvider: this.resolvedTeacherModel?.provider ?? this.config.teacherProvider,
       teacherModel: this.resolvedTeacherModel?.model ?? this.config.teacherModel,
       teacherConfigError: this.teacherConfigError,
+      autoUserCorrectionsEnabled: this.config.autoUserCorrectionsEnabled,
+      autoUserCorrectionsConfigured: Boolean(this.resolvedAutoUserCorrectionsModel),
+      autoUserCorrectionsProvider:
+        this.resolvedAutoUserCorrectionsModel?.provider ?? this.config.autoUserCorrectionsProvider,
+      autoUserCorrectionsModel:
+        this.resolvedAutoUserCorrectionsModel?.model ?? this.config.autoUserCorrectionsModel,
+      autoUserCorrectionsMinConfidence: this.config.autoUserCorrectionsMinConfidence,
+      autoUserCorrectionsConfigError: this.autoUserCorrectionsConfigError,
+      pendingUserObservationCount: this.pendingUserObservationCount,
       ...workerState,
       pendingEvidence: this.store.getPendingEvidence(100).length,
       pendingEvidenceBySource: this.store.countPendingEvidenceBySource(),

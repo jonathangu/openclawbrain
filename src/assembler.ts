@@ -16,6 +16,22 @@ export interface AssembleContextInput {
   freshTailCount?: number;
 }
 
+export interface AssembledSummaryMetadataItem {
+  summaryId: string;
+  kind: SummaryRecord["kind"];
+  depth: number;
+  descendantCount: number;
+  earliestAt: Date | null;
+  latestAt: Date | null;
+}
+
+export interface AssembledSummaryMetadata {
+  totalCount: number;
+  maxDepth: number;
+  condensedCount: number;
+  items: AssembledSummaryMetadataItem[];
+}
+
 export interface AssembleContextResult {
   /** Ordered messages ready for the model */
   messages: AgentMessage[];
@@ -23,6 +39,8 @@ export interface AssembleContextResult {
   estimatedTokens: number;
   /** Optional dynamic system prompt guidance derived from DAG state */
   systemPromptAddition?: string;
+  /** Summary metadata exposed to runtime policy layers */
+  summaryMetadata?: AssembledSummaryMetadata;
   /** Optional brain assembly decision metadata */
   brainDecision?: BrainDecisionMetadata;
   /** Stats about what was assembled */
@@ -541,6 +559,8 @@ interface ResolvedItem {
   isMessage: boolean;
   /** Summary metadata used for dynamic system prompt guidance */
   summarySignal?: SummaryPromptSignal;
+  /** Rich summary metadata exposed to later runtime policy layers */
+  summaryMetadata?: AssembledSummaryMetadataItem;
 }
 
 // ── ContextAssembler ─────────────────────────────────────────────────────────
@@ -584,6 +604,7 @@ export class ContextAssembler {
     let rawMessageCount = 0;
     let summaryCount = 0;
     const summarySignals: SummaryPromptSignal[] = [];
+    const summaryMetadataItems: AssembledSummaryMetadataItem[] = [];
     for (const item of resolved) {
       if (item.isMessage) {
         rawMessageCount++;
@@ -592,10 +613,21 @@ export class ContextAssembler {
         if (item.summarySignal) {
           summarySignals.push(item.summarySignal);
         }
+        if (item.summaryMetadata) {
+          summaryMetadataItems.push(item.summaryMetadata);
+        }
       }
     }
 
     const systemPromptAddition = buildSystemPromptAddition(summarySignals);
+    const summaryMetadata = summaryMetadataItems.length > 0
+      ? {
+          totalCount: summaryMetadataItems.length,
+          maxDepth: summaryMetadataItems.reduce((deepest, item) => Math.max(deepest, item.depth), 0),
+          condensedCount: summaryMetadataItems.filter((item) => item.kind === "condensed").length,
+          items: summaryMetadataItems,
+        }
+      : undefined;
 
     // Step 3: Split into evictable prefix and protected fresh tail
     const tailStart = Math.max(0, resolved.length - freshTailCount);
@@ -669,6 +701,7 @@ export class ContextAssembler {
       messages: sanitizeToolUseResultPairing(rawMessages) as AgentMessage[],
       estimatedTokens,
       systemPromptAddition,
+      summaryMetadata,
       stats: {
         rawMessageCount,
         summaryCount,
@@ -798,6 +831,14 @@ export class ContextAssembler {
         kind: summary.kind,
         depth: summary.depth,
         descendantCount: summary.descendantCount,
+      },
+      summaryMetadata: {
+        summaryId: summary.summaryId,
+        kind: summary.kind,
+        depth: summary.depth,
+        descendantCount: summary.descendantCount,
+        earliestAt: summary.earliestAt,
+        latestAt: summary.latestAt,
       },
     };
   }

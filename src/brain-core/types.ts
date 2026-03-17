@@ -308,6 +308,10 @@ export interface BrainConfig {
   workerHeartbeatTimeoutMs: number;
   workerRestartDelayMs: number;
   teacherEnabled: boolean;
+  autoUserCorrectionsEnabled: boolean;
+  autoUserCorrectionsProvider: string;
+  autoUserCorrectionsModel: string;
+  autoUserCorrectionsMinConfidence: number;
   mutationsEnabled: boolean;
   replayEpisodeCount: number;
   minFiredPerQuery: number;
@@ -338,6 +342,10 @@ export const DEFAULT_BRAIN_CONFIG: BrainConfig = {
   workerHeartbeatTimeoutMs: 90_000,
   workerRestartDelayMs: 5_000,
   teacherEnabled: true,
+  autoUserCorrectionsEnabled: false,
+  autoUserCorrectionsProvider: "",
+  autoUserCorrectionsModel: "",
+  autoUserCorrectionsMinConfidence: 0.8,
   mutationsEnabled: true,
   replayEpisodeCount: 100,
   minFiredPerQuery: 1.0,

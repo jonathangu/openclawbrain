@@ -240,4 +240,43 @@ describe("BrainAssemblerExtension", () => {
       footer: "[brain shadow] recorded routing without injecting learned context.",
     });
   });
+
+  it("adds summary-routing guidance for precision-sensitive questions over summaries", async () => {
+    const brain = createBrainStub({
+      query: async () => makeTraversalResult(),
+    });
+    const extension = new BrainAssemblerExtension(brain as never);
+
+    const result = await extension.augmentAssembly({
+      conversationId: 42,
+      tokenBudget: 4096,
+      assembled: {
+        messages: [{ role: "user", content: "summary tail" }],
+        estimatedTokens: 2,
+        summaryMetadata: {
+          totalCount: 2,
+          maxDepth: 3,
+          condensedCount: 2,
+          items: [
+            {
+              summaryId: "sum_1",
+              kind: "condensed",
+              depth: 3,
+              descendantCount: 12,
+              earliestAt: null,
+              latestAt: null,
+            },
+          ],
+        },
+        stats: {
+          rawMessageCount: 1,
+          summaryCount: 1,
+          totalContextItems: 2,
+        },
+      },
+      liveMessages: [{ role: "user", content: "what exact file path was mentioned?" }],
+    });
+
+    expect(result.systemPromptAddition).toContain("expand toward source material before asserting exact details");
+  });
 });

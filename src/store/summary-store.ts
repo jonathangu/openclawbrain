@@ -520,6 +520,23 @@ export class SummaryStore {
     return rows.map(toContextItemRecord);
   }
 
+  async getRecentContextSummaries(conversationId: number, limit = 2): Promise<SummaryRecord[]> {
+    const safeLimit = Number.isFinite(limit) ? Math.max(1, Math.floor(limit)) : 2;
+    const rows = this.db
+      .prepare(
+        `SELECT s.summary_id, s.conversation_id, s.kind, s.depth, s.content, s.token_count,
+                s.file_ids, s.earliest_at, s.latest_at, s.descendant_count, s.created_at,
+                s.descendant_token_count, s.source_message_token_count
+       FROM context_items ci
+       JOIN summaries s ON s.summary_id = ci.summary_id
+       WHERE ci.conversation_id = ? AND ci.item_type = 'summary'
+       ORDER BY ci.ordinal DESC
+       LIMIT ?`,
+      )
+      .all(conversationId, safeLimit) as unknown as SummaryRow[];
+    return rows.map(toSummaryRecord).reverse();
+  }
+
   async getDistinctDepthsInContext(
     conversationId: number,
     options?: { maxOrdinalExclusive?: number },
