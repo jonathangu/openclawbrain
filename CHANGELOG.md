@@ -6,11 +6,35 @@ It should help an operator understand two different truths:
 - what was actually published to npm
 - what has landed on `main` since that publish
 
-## Unreleased (current trunk after 0.3.4)
+## Unreleased (current trunk after 0.3.5)
 
-The current repo may move ahead of the published `0.3.4` package again. If it does, this section should describe that drift plainly instead of pretending the last npm release says everything.
+The current repo may move ahead of the published `0.3.5` package again. If it does, this section should describe that drift plainly instead of pretending the last npm release says everything.
 
-At the moment, trunk is aligned with the published `0.3.4` package for the teacher-pollution exclusion fix.
+At the moment, trunk is intended to align with the published `0.3.5` package for the prompt-fallback/runtime-guard hardening and teacher-status truth update.
+
+## 0.3.5
+
+Published package: `@jonathangu/openclawbrain@0.3.5`
+
+Git tag: `v0.3.5`
+
+Deep release note:
+- [`docs/release-notes-0.3.5.md`](docs/release-notes-0.3.5.md)
+
+### Published notes
+
+- hardens the prompt-assembly compatibility bridge so usable `event.prompt` text still flows when `before_prompt_build` arrives with an empty or non-text message envelope
+- adds focused teacher-status truth coverage so a fresh watch heartbeat with `no_teacher_artifacts` does not get mislabeled as stale/unhealthy
+- recovers the `packages/openclaw` front-door package tree into the public repo so the shipped install surface matches the package that owns the installed runtime guard
+- preserves the single extra-LLM design: local Ollama teacher remains `qwen3.5:9b`; no extra model roles were added
+- passes:
+  - focused regression coverage for prompt fallback and teacher-status truth
+  - live host verification after reinstall/relink, including clean runtime-guard prompt probes and `teacher healthy=yes stale=no`
+
+### Why this release matters
+
+0.3.5 turns a local runtime repair into a truthful public ship.
+The install surface that actually owns the generated runtime hook is now present in the public repo, the hook handles prompt-envelope edge cases more gracefully, and teacher health reporting is more honest when the latest cycle is a genuine no-op.
 
 ## 0.3.4
 

@@ -225,6 +225,45 @@ describe("lcm plugin registration", () => {
     });
   });
 
+  it("falls back to event.prompt when the compatibility bridge receives an empty message list", async () => {
+    const assembleSpy = vi.spyOn(LcmContextEngine.prototype, "assemble").mockResolvedValue({
+      messages: [
+        { role: "assistant", content: "<summary id=\"sum_1\">Earlier context</summary>" },
+        { role: "user", content: "latest prompt" },
+      ] as any,
+      estimatedTokens: 42,
+      systemPromptAddition: "Use lcm_expand_query for exact details.",
+    } as any);
+
+    const { api, getHooks } = buildApi(
+      { enabled: true },
+      { includeRegisterContextEngine: false },
+    );
+
+    lcmPlugin.register(api);
+
+    const beforePromptBuild = getHooks().get("before_prompt_build")!;
+    const beforePromptResult = await beforePromptBuild(
+      {
+        prompt: "latest prompt",
+        messages: [],
+      },
+      {
+        sessionId: "sess_1",
+        sessionKey: "main:sess_1",
+      },
+    );
+
+    expect(assembleSpy).toHaveBeenCalledWith({
+      sessionId: "sess_1",
+      messages: [{ role: "user", content: "latest prompt" }],
+    });
+    expect(beforePromptResult).toEqual({
+      prependContext: expect.stringContaining("Earlier context"),
+    });
+    expect(beforePromptResult.prependContext).not.toContain("### user\nlatest prompt");
+  });
+
   it("inherits OpenClaw's default model for summarization when no LCM model override is set", () => {
     const { api, getFactory } = buildApi({
       enabled: true,

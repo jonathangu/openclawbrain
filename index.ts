@@ -1380,6 +1380,19 @@ function formatPrependedContext(messages: unknown[], systemPromptAddition?: stri
   return sections.join("\n\n");
 }
 
+function resolveBeforePromptBuildMessages(event: { prompt?: unknown; messages?: unknown }): unknown[] {
+  if (Array.isArray(event.messages) && event.messages.length > 0) {
+    return event.messages;
+  }
+
+  const promptText = normalizePromptText(event.prompt);
+  if (!promptText) {
+    return Array.isArray(event.messages) ? event.messages : [];
+  }
+
+  return [{ role: "user", content: promptText }];
+}
+
 function registerHookCompatibilityBridge(
   api: OpenClawPluginApi,
   lcm: LcmContextEngine,
@@ -1420,13 +1433,15 @@ function registerHookCompatibilityBridge(
     if (!sessionId) {
       return undefined;
     }
-    prePromptMessageCounts.set(sessionId, Array.isArray(event.messages) ? event.messages.length : 0);
+    const liveMessages = Array.isArray(event.messages) ? event.messages : [];
+    const assembleMessages = resolveBeforePromptBuildMessages(event as { prompt?: unknown; messages?: unknown });
+    prePromptMessageCounts.set(sessionId, liveMessages.length);
 
     const assembled = await lcm.assemble({
       sessionId,
-      messages: Array.isArray(event.messages) ? event.messages as Parameters<LcmContextEngine["assemble"]>[0]["messages"] : [],
+      messages: assembleMessages as Parameters<LcmContextEngine["assemble"]>[0]["messages"],
     }) as AssembleResultWithSystemPrompt;
-    const prependedMessages = extractPrependedMessages(assembled.messages as unknown[], Array.isArray(event.messages) ? event.messages : []);
+    const prependedMessages = extractPrependedMessages(assembled.messages as unknown[], assembleMessages);
     const prependContext = formatPrependedContext(prependedMessages, assembled.systemPromptAddition);
     if (!prependContext) {
       return undefined;
