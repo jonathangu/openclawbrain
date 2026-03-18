@@ -6,11 +6,37 @@ It should help an operator understand two different truths:
 - what was actually published to npm
 - what has landed on `main` since that publish
 
-## Unreleased (current trunk after 0.3.3)
+## Unreleased (current trunk after 0.3.4)
 
-The current repo may move ahead of the published `0.3.3` package again. If it does, this section should describe that drift plainly instead of pretending the last npm release says everything.
+The current repo may move ahead of the published `0.3.4` package again. If it does, this section should describe that drift plainly instead of pretending the last npm release says everything.
 
-At the moment, trunk is aligned with the published `0.3.3` package for the Eagle child-worker launch fix.
+At the moment, trunk is aligned with the published `0.3.4` package for the teacher-pollution exclusion fix.
+
+## 0.3.4
+
+Published package: `@jonathangu/openclawbrain@0.3.4`
+
+Git tag: `v0.3.4`
+
+Deep release note:
+- [`docs/release-notes-0.3.4.md`](docs/release-notes-0.3.4.md)
+
+### Published notes
+
+- stops heartbeat prompts, startup/reset scaffolding, and metadata wrapper text from being misclassified as human supervision evidence
+- adds a dedicated system-message filter at the evidence-detection boundary
+- preserves genuine human correction and teaching signals while excluding operational scaffolding
+- adds focused unit and integration tests for both exclusion and inclusion behavior
+- passes:
+  - full test suite
+  - `npm pack --dry-run`
+  - explicit exclusion/inclusion regression coverage for teacher-pollution cases
+
+### Why this release matters
+
+0.3.4 closes a real learning-integrity bug.
+The system should learn from actual human supervision, not from runtime scaffolding that happens to contain imperative language.
+This release makes the passive-learning boundary more honest and reduces fake supervision entering the route-learning substrate.
 
 ## 0.3.3
 

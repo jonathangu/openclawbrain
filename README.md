@@ -100,7 +100,7 @@ Chooses best context → Surfaces as priority context → Learns from outcome
 ```
 
 Deep dives:
-- [`docs/release-notes-0.3.2.md`](docs/release-notes-0.3.2.md) — what actually shipped in 0.3.2
+- [`docs/release-notes-0.3.4.md`](docs/release-notes-0.3.4.md) — what actually shipped in 0.3.4
 - [`docs/routing-prior.md`](docs/routing-prior.md) — why summaries are a routing/search prior rather than the truth layer
 - [`docs/corrections.md`](docs/corrections.md) — how explicit user corrections become durable current truth
 - [`docs/architecture.md`](docs/architecture.md) — full system architecture

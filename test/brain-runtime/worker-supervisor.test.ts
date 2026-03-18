@@ -1,12 +1,14 @@
 import { mkdtempSync, mkdirSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { fileURLToPath } from "node:url";
 import { fork } from "node:child_process";
 import { afterEach, describe, expect, it } from "vitest";
 import { DEFAULT_BRAIN_CONFIG } from "../../src/brain-core/types.js";
 import { resolveChildWorkerExecArgv } from "../../src/brain-runtime/worker-supervisor.js";
 
 const tempDirs: string[] = [];
+const childRunnerPath = fileURLToPath(new URL("../../src/brain-worker/child-runner.ts", import.meta.url));
 
 function makeTempDir(prefix: string): string {
   const dir = mkdtempSync(join(tmpdir(), prefix));
@@ -35,7 +37,6 @@ describe("resolveChildWorkerExecArgv", () => {
     const brainRoot = makeTempDir("ocb-worker-supervisor-");
     mkdirSync(brainRoot, { recursive: true });
 
-    const childRunnerPath = "/Users/cormorantai/openclawbrain/src/brain-worker/child-runner.ts";
     const childConfig = {
       ...DEFAULT_BRAIN_CONFIG,
       root: brainRoot,
