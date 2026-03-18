@@ -1,6 +1,11 @@
 # OpenClawBrain 0.3.5 release notes
 
-Published package: `@jonathangu/openclawbrain@0.3.5`
+Published packages for the `0.3.5` wave:
+
+- canonical front door: `@openclawbrain/openclaw@0.3.5`
+- compatibility package: `@jonathangu/openclawbrain@0.3.5`
+
+New installs and reinstalls should use the canonical front door. The compatibility package remains for older plugin/wrapper installs that have not migrated yet.
 
 ## What changed
 

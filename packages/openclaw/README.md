@@ -7,9 +7,48 @@ This is the default front door for first-time OpenClawBrain users.
 - Start here when you want one package to import from instead of guessing across the `@openclawbrain/*` split.
 - The stable front-door names are `@openclawbrain/openclaw` and `openclawbrain`.
 - If you are validating this repo-tip checkout, prepare the checkout with `pnpm install --frozen-lockfile`, run `pnpm release:status`, then `pnpm release:pack`, then install the local `.release/*.tgz` tarballs.
-- If you are intentionally consuming a later tagged and published wave, install it with `npm install @openclawbrain/openclaw`.
+- For the current published wave, install it with `npm install -g @openclawbrain/openclaw@0.3.5`.
 - Use the `openclawbrain` CLI for status, rollback, and narrow scanner scans; `openclawbrain-ops` stays available as a compatibility alias.
 - `npm exec openclawbrain -- --help` works after either install path, but the exact quickstart commands remain the clearest first attach path.
+
+The compatibility package `@jonathangu/openclawbrain@0.3.5` remains published for older plugin/wrapper installs, but it is not the main operator path.
+
+Decision and migration note: [`docs/lifecycle.md`](../../docs/lifecycle.md)
+
+## Operator quickstart
+
+Install or upgrade through the same lane:
+
+```bash
+npm install -g @openclawbrain/openclaw@0.3.5
+openclawbrain install --openclaw-home ~/.openclaw
+openclaw gateway restart
+openclawbrain status --openclaw-home ~/.openclaw --detailed
+```
+
+Verify the installed target:
+
+```bash
+openclawbrain status --openclaw-home ~/.openclaw --detailed
+openclawbrain status --openclaw-home ~/.openclaw --json
+```
+
+Remove only the OpenClaw profile hook and keep brain data:
+
+```bash
+openclawbrain detach --openclaw-home ~/.openclaw
+openclaw gateway restart
+```
+
+Remove the hook and purge the OpenClawBrain data for that install:
+
+```bash
+openclawbrain uninstall --openclaw-home ~/.openclaw --purge-data
+openclaw gateway restart
+npm uninstall -g @openclawbrain/openclaw
+```
+
+If you want explicit uninstall semantics without purging, use `openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data`. `detach` remains the simpler keep-data path.
 
 Use this package when OpenClaw needs the narrow supported operator bridge captured by `OPERATOR_API_CONTRACT_V1`:
 
@@ -22,7 +61,7 @@ Use this package when OpenClaw needs the narrow supported operator bridge captur
 
 The supported operator contract is intentionally decomposed into bootstrap/attach, status, export, refresh, promote, rollback, and proof/observability. The post-attach loop stays off the hot path: it exports turns, builds candidate packs, and promotes them later rather than mutating the current active pack in place.
 
-Read `docs/operator-api-contract.md` for the family-by-family contract map and the explicitly quarantined surfaces.
+Use `docs/lifecycle.md` for the copy-paste install/upgrade/verify/remove story. The rest of this README is the family-by-family contract map and the explicitly quarantined surfaces.
 
 ## Operator boundary
 
@@ -101,12 +140,12 @@ This package stays fail-open for non-learned-required compile misses, and event-
 
 Keep `install` as the front-door lifecycle command:
 
-- `openclawbrain install` is the default attach path. On many-profile hosts, pass `--openclaw-home <path>` or set `OPENCLAW_HOME` so the target profile is explicit instead of guessed.
+- `openclawbrain install --openclaw-home <path>` is the default attach path. On many-profile hosts, pass `--openclaw-home <path>` or set `OPENCLAW_HOME` so the target profile is explicit instead of guessed.
 - `openclawbrain install` now writes only the real profile hook and activation state. It no longer creates `BRAIN.md` or rewrites `AGENTS.md`.
 - `openclawbrain detach --openclaw-home <path>` removes only the OpenClaw profile hook. It preserves OpenClawBrain activation data and now says so plainly in both human output and JSON.
 - `openclawbrain uninstall --openclaw-home <path> --keep-data|--purge-data` removes the profile hook and forces the operator to pick the data outcome explicitly.
 - `--restart <never|safe|external>` is guidance only for detach/uninstall. The default `safe` guidance stays conservative: restart the running OpenClaw profile before expecting hook-state changes to take effect; otherwise the next launch picks them up.
-- plain `status` stays the human answer to “How’s the brain?” and now keeps compact lifecycle truth visible without dumping teacher/no-op or other proof chatter by default; use `--detailed` when you want the dense operator report.
+- plain `status` stays the human answer to “How’s the brain?” and now keeps compact lifecycle truth visible without dumping teacher/no-op or other proof chatter by default; use `--openclaw-home <path> --detailed` when you want the dense operator report for one installed target.
 
 ## Narrow operator contract
 

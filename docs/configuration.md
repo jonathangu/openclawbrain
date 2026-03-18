@@ -4,39 +4,79 @@ This guide covers the practical operator setup for **OpenClawBrain v2**.
 
 If you want the repo's exact truth contract first, read:
 - `README.md`
+- `docs/lifecycle.md`
 - `docs/RELEASE_CONTRACT.md`
 - `docs/EVIDENCE.md`
 
 ## Happy-path operator flow
 
-1. install the plugin with the OpenClaw plugin installer
-2. configure embeddings and choose a `brainRoot`
-3. prefer `brainWorkerMode=child`
-4. run `openclawbrain init <workspace>`
-5. check `openclawbrain status`
+1. install the published front-door package: `npm install -g @openclawbrain/openclaw@0.3.5`
+2. attach it to one OpenClaw home with `openclawbrain install --openclaw-home ~/.openclaw`
+3. run `openclaw gateway restart`
+4. verify with `openclawbrain status --openclaw-home ~/.openclaw --detailed`
+5. configure embeddings and choose a `brainRoot` if you need to tune defaults
 6. run the validation harnesses appropriate to the claim you want to make
 
-## Install
+## Canonical install, upgrade, remove, and verify path
 
-Published package:
-
-```bash
-openclaw plugins install @jonathangu/openclawbrain
-```
-
-From a local OpenClaw checkout:
+Front door package:
 
 ```bash
-pnpm openclaw plugins install @jonathangu/openclawbrain
+npm install -g @openclawbrain/openclaw@0.3.5
 ```
 
-For local development, link your working copy:
+Install or attach:
 
 ```bash
-openclaw plugins install --link /path/to/openclawbrain
+openclawbrain install --openclaw-home ~/.openclaw
+openclaw gateway restart
+openclawbrain status --openclaw-home ~/.openclaw --detailed
 ```
 
-The plugin installer is the supported install boundary.
+Upgrade uses the same lane:
+
+```bash
+npm install -g @openclawbrain/openclaw@0.3.5
+openclawbrain install --openclaw-home ~/.openclaw
+openclaw gateway restart
+openclawbrain status --openclaw-home ~/.openclaw --detailed
+```
+
+Verify the target install at any time:
+
+```bash
+openclawbrain status --openclaw-home ~/.openclaw --detailed
+openclawbrain status --openclaw-home ~/.openclaw --json
+```
+
+Remove only the profile hook and keep OpenClawBrain data:
+
+```bash
+openclawbrain detach --openclaw-home ~/.openclaw
+openclaw gateway restart
+```
+
+Remove the profile hook and purge OpenClawBrain data for that install:
+
+```bash
+openclawbrain uninstall --openclaw-home ~/.openclaw --purge-data
+openclaw gateway restart
+npm uninstall -g @openclawbrain/openclaw
+```
+
+If you want to remove the hook but keep the data, use `detach` or `openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data`. `detach` is the simpler keep-data path.
+
+## Compatibility path
+
+`@jonathangu/openclawbrain@0.3.5` remains published for older plugin or wrapper installs:
+
+```bash
+openclaw plugins install @jonathangu/openclawbrain@0.3.5
+```
+
+Keep that as compatibility guidance only. It is no longer the main operator story.
+
+Decision and migration note: [`docs/lifecycle.md`](lifecycle.md)
 
 ## Important host-seam truth
 
@@ -75,9 +115,9 @@ Why these defaults:
 - `incrementalMaxDepth=-1` lets compaction keep cascading when needed
 - `brainWorkerMode=child` is the practical serving boundary
 
-## Initialization
+## Optional workspace bootstrap
 
-The transcript-memory layer works immediately after install. Learned retrieval needs an explicit init pass:
+The lifecycle path above is the canonical install lane. If you want to prebuild a workspace snapshot after attach, run:
 
 ```bash
 openclawbrain init /path/to/workspace
@@ -184,15 +224,17 @@ Why:
 ## Operator commands
 
 ```bash
+openclawbrain install --openclaw-home ~/.openclaw
+openclawbrain status --openclaw-home ~/.openclaw --detailed
+openclawbrain status --openclaw-home ~/.openclaw --json
 openclawbrain init [workspace]
-openclawbrain status
-openclawbrain trace [traceId]
 openclawbrain replay
 openclawbrain promote
 openclawbrain rollback [version]
 openclawbrain disable
 openclawbrain enable
-openclawbrain doctor
+openclawbrain detach --openclaw-home ~/.openclaw
+openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data|--purge-data
 ```
 
 ## Validation commands
@@ -232,7 +274,7 @@ So treat the host harness as active proof work, not a closed release gate.
 - if embeddings are not configured, learned retrieval and `brain_teach` stay disabled
 - local loopback embedding endpoints do not require a bearer token by default
 - if the worker is unavailable, serving still uses the last promoted pack
-- `openclawbrain status` and `openclawbrain doctor` expose embedding and worker truth so operator state stays visible
+- `openclawbrain status --openclaw-home ~/.openclaw --detailed` keeps embedding, worker, and hook truth visible for one installed target
 
 ## Session reset note
 

@@ -1,5 +1,7 @@
 # OpenClawBrain — Your Agent's Second Brain
 
+> If you landed here through `@jonathangu/openclawbrain`, treat that package as the compatibility lane. New installs and reinstalls should use `@openclawbrain/openclaw@0.3.5`.
+
 <p align="center">
   <strong>Your OpenClaw agent should not relearn the same lesson twice.</strong>
 </p>
@@ -39,25 +41,89 @@ Your AI assistant keeps making the same mistakes. You correct it, it forgets. Yo
 | Blind context selection | Learned retrieval from graph |
 | No visibility into decisions | Full decision traces |
 
-## Quick Start
+## Canonical Operator Path
 
-### 1. Install (one command)
+Use one operator lane across GitHub and the site.
+
+Current public packages for the `0.3.5` wave:
+- canonical front door: `@openclawbrain/openclaw@0.3.5`
+- compatibility package: `@jonathangu/openclawbrain@0.3.5`
+
+New installs, upgrades, detach/uninstall flows, and verification should use the canonical front door. Keep the compatibility package only for older plugin/wrapper installs that have not migrated yet.
+
+### Install
 
 ```bash
-openclaw plugins install @jonathangu/openclawbrain
+npm install -g @openclawbrain/openclaw@0.3.5
+openclawbrain install --openclaw-home ~/.openclaw
+openclaw gateway restart
+openclawbrain status --openclaw-home ~/.openclaw --detailed
 ```
 
-> **Source checkout?** Clone the [GitHub repo](https://github.com/jonathangu/openclawbrain) only if you want to develop or contribute. Normal usage installs from the published package above.
+`openclawbrain install` attaches OpenClawBrain to one OpenClaw home. `openclaw gateway restart` makes the new hook live immediately. `status --detailed` is the first verification read.
 
-### 2. Initialize (one command)
+### Upgrade
+
+```bash
+npm install -g @openclawbrain/openclaw@0.3.5
+openclawbrain install --openclaw-home ~/.openclaw
+openclaw gateway restart
+openclawbrain status --openclaw-home ~/.openclaw --detailed
+```
+
+Upgrade uses the same lane: refresh the global CLI, rerun `install` for the target OpenClaw home, restart the gateway, then verify.
+
+### Verify
+
+Use the detailed status view as the human check and JSON when you want the canonical machine-readable answer:
+
+```bash
+openclawbrain status --openclaw-home ~/.openclaw --detailed
+openclawbrain status --openclaw-home ~/.openclaw --json
+```
+
+### Remove
+
+Remove only the OpenClaw profile hook and keep OpenClawBrain data:
+
+```bash
+openclawbrain detach --openclaw-home ~/.openclaw
+openclaw gateway restart
+```
+
+Remove the hook and purge OpenClawBrain data for that install:
+
+```bash
+openclawbrain uninstall --openclaw-home ~/.openclaw --purge-data
+openclaw gateway restart
+npm uninstall -g @openclawbrain/openclaw
+```
+
+If you want to remove the hook but keep the data, use `detach` or `openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data`. `detach` is the simpler keep-data path.
+
+### Compatibility Path
+
+The older plugin/wrapper package still exists for compatibility with existing installs:
+
+```bash
+openclaw plugins install @jonathangu/openclawbrain@0.3.5
+```
+
+Treat that as a secondary path, not the main operator story.
+
+Decision and migration note: see [`docs/lifecycle.md`](docs/lifecycle.md).
+
+> **Source checkout?** Clone the [GitHub repo](https://github.com/jonathangu/openclawbrain) only if you want to develop or contribute. Normal usage should use the published front-door package above.
+
+### Optional Workspace Bootstrap
+
+If you want to prebuild a workspace snapshot after the lifecycle attach above, run:
 
 ```bash
 openclawbrain init /path/to/your/workspace
 ```
 
-That's it! The brain will discover your files, compute embeddings, and promote the first pack.
-
-### 3. Correct (in any conversation)
+### Correct (in any conversation)
 
 Just tell the agent it's wrong — the correction can commit on the next turn:
 
@@ -84,12 +150,12 @@ For bulk or structured teaching, use `brain_teach` directly:
 brain_teach instruction="Keep answers concise, use bullets, and end with the next action" kind="correction" tags=["style","preferences"]
 ```
 
-### 4. Inspect
+### Inspect
 
 ```bash
-openclawbrain status     # Health check
-openclawbrain trace     # See recent decisions
-openclawbrain doctor    # Diagnose issues
+openclawbrain status --openclaw-home ~/.openclaw --detailed
+openclawbrain status --openclaw-home ~/.openclaw --json
+brain_trace        # See recent routing decisions in conversation
 ```
 
 ## How It Works
@@ -100,7 +166,9 @@ Chooses best context → Surfaces as priority context → Learns from outcome
 ```
 
 Deep dives:
-- [`docs/release-notes-0.3.4.md`](docs/release-notes-0.3.4.md) — what actually shipped in 0.3.4
+- [`docs/lifecycle.md`](docs/lifecycle.md) — canonical install, upgrade, verify, detach, uninstall, and migration decision
+- [`docs/configuration.md`](docs/configuration.md) — practical operator install, upgrade, remove, and config guide
+- [`docs/release-notes-0.3.5.md`](docs/release-notes-0.3.5.md) — what actually shipped in 0.3.5
 - [`docs/routing-prior.md`](docs/routing-prior.md) — why summaries are a routing/search prior rather than the truth layer
 - [`docs/corrections.md`](docs/corrections.md) — how explicit user corrections become durable current truth
 - [`docs/architecture.md`](docs/architecture.md) — full system architecture
@@ -228,13 +296,15 @@ Set `OPENCLAWBRAIN_EMBEDDING_API_KEY` if needed.
 
 | Command | What it does |
 |---------|-------------|
-| `openclawbrain init [workspace]` | Initialize brain on workspace |
-| `openclawbrain status` | Health check, worker status, pack version |
-| `openclawbrain trace [id]` | Inspect routing decisions |
-| `openclawbrain replay` | Run replay gate on recent episodes |
-| `openclawbrain promote` | Force promotion (if replay passes) |
-| `openclawbrain doctor` | Diagnose issues |
-| `brain_teach` | Explicitly teach corrections or instructions (in conversation) |
+| `openclawbrain install --openclaw-home ~/.openclaw` | Attach OpenClawBrain to one OpenClaw home |
+| `openclaw gateway restart` | Reload the gateway after install, detach, or uninstall |
+| `openclawbrain status --openclaw-home ~/.openclaw --detailed` | Human verification for lifecycle, worker, and pack truth |
+| `openclawbrain status --openclaw-home ~/.openclaw --json` | Canonical machine-readable verification for one installed target |
+| `openclawbrain init [workspace]` | Optional workspace bootstrap after attach |
+| `openclawbrain detach --openclaw-home ~/.openclaw` | Remove only the profile hook and keep data |
+| `openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data|--purge-data` | Remove the hook and choose the data outcome explicitly |
+| `brain_trace` | Inspect routing decisions inside the agent/tool lane |
+| `brain_teach` | Explicitly teach corrections or instructions in conversation |
 
 ## The 2016 Paper
 
@@ -269,22 +339,48 @@ Key insight: REINFORCE assigns credit to **every routing decision** in the episo
 | 💬 **Discord** | https://discord.com/invite/clawd |
 | 👤 **Jonathan's site** | https://jonathangu.com |
 
-## Install
+## Lifecycle Summary
 
 ```bash
-# Normal install — from the published package
-openclaw plugins install @jonathangu/openclawbrain
+# Install
+npm install -g @openclawbrain/openclaw@0.3.5
+openclawbrain install --openclaw-home ~/.openclaw
+openclaw gateway restart
+openclawbrain status --openclaw-home ~/.openclaw --detailed
 
-# Initialize once
-openclawbrain init /path/to/workspace
+# Upgrade
+npm install -g @openclawbrain/openclaw@0.3.5
+openclawbrain install --openclaw-home ~/.openclaw
+openclaw gateway restart
+openclawbrain status --openclaw-home ~/.openclaw --detailed
+
+# Verify
+openclawbrain status --openclaw-home ~/.openclaw --detailed
+openclawbrain status --openclaw-home ~/.openclaw --json
+
+# Remove but keep data
+openclawbrain detach --openclaw-home ~/.openclaw
+openclaw gateway restart
+
+# Uninstall but keep data
+openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data
+openclaw gateway restart
+
+# Remove and purge data
+openclawbrain uninstall --openclaw-home ~/.openclaw --purge-data
+openclaw gateway restart
+npm uninstall -g @openclawbrain/openclaw
 ```
 
-For development or contributing, clone the repo and link locally:
+Compatibility path for older installs:
 
 ```bash
-git clone https://github.com/jonathangu/openclawbrain.git
-openclaw plugins install --link /path/to/openclawbrain
+openclaw plugins install @jonathangu/openclawbrain@0.3.5
 ```
+
+Canonical lifecycle and migration note: [`docs/lifecycle.md`](docs/lifecycle.md)
+
+For development or contributing, clone the repo and link locally instead of treating that checkout as the normal operator lane.
 
 **Prerequisites:** OpenClaw, Node.js 22+, embeddings provider (Ollama or OpenAI-compatible)
 
