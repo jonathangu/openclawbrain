@@ -2,6 +2,7 @@ import { existsSync, readFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
+import { describeOpenClawBrainInstallLayout, findInstalledOpenClawBrainPlugin } from "./openclaw-plugin-install.js";
 const REQUIRED_RUNTIME_GUARD_EXPORTS = [
     "createBeforePromptBuildHandler",
     "isActivationRootPlaceholder",
@@ -10,26 +11,25 @@ const REQUIRED_RUNTIME_GUARD_EXPORTS = [
 ];
 export function inspectInstalledOpenClawBrainExtension(openclawHome, extensionId = "openclawbrain") {
     const resolvedOpenclawHome = path.resolve(openclawHome);
-    const extensionsDir = path.join(resolvedOpenclawHome, "extensions");
-    const extensionDir = path.join(extensionsDir, extensionId);
+    const installedPlugin = findInstalledOpenClawBrainPlugin(resolvedOpenclawHome, extensionId);
+    const extensionsDir = installedPlugin.extensionsDir;
     if (!existsSync(extensionsDir)) {
         throw new Error(`[shadow-extension-load-proof] OpenClaw extensions dir is missing: ${extensionsDir}`);
     }
-    if (!existsSync(extensionDir)) {
-        throw new Error(`[shadow-extension-load-proof] Installed extension dir is missing: ${extensionDir}`);
+    if (installedPlugin.selectedInstall === null) {
+        throw new Error(`[shadow-extension-load-proof] Installed extension dir is missing for plugin ${JSON.stringify(extensionId)} under ${extensionsDir}`);
     }
-    const manifestPath = path.join(extensionDir, "openclaw.plugin.json");
-    const packageJsonPath = path.join(extensionDir, "package.json");
-    const runtimeGuardPath = path.join(extensionDir, "runtime-guard.js");
-    if (!existsSync(manifestPath)) {
-        throw new Error(`[shadow-extension-load-proof] Plugin manifest missing: ${manifestPath}`);
+    if (installedPlugin.additionalInstalls.length > 0) {
+        throw new Error(`[shadow-extension-load-proof] Multiple installed plugin dirs matched ${JSON.stringify(extensionId)} under ${extensionsDir} ` +
+            `(matched=${[installedPlugin.selectedInstall, ...installedPlugin.additionalInstalls]
+                .map((install) => install.extensionDir)
+                .join(", ")})`);
     }
-    if (!existsSync(packageJsonPath)) {
-        throw new Error(`[shadow-extension-load-proof] Package manifest missing: ${packageJsonPath}`);
-    }
-    if (!existsSync(runtimeGuardPath)) {
-        throw new Error(`[shadow-extension-load-proof] Installed runtime-guard.js is missing: ${runtimeGuardPath}`);
-    }
+    const selectedInstall = installedPlugin.selectedInstall;
+    const extensionDir = selectedInstall.extensionDir;
+    const manifestPath = selectedInstall.manifestPath;
+    const packageJsonPath = selectedInstall.packageJsonPath;
+    const runtimeGuardPath = selectedInstall.runtimeGuardPath;
     const manifest = readRequiredJson(manifestPath, "plugin manifest");
     if (manifest.id !== extensionId) {
         throw new Error(`[shadow-extension-load-proof] Plugin manifest id must be ${JSON.stringify(extensionId)} at ${manifestPath} ` +
@@ -41,12 +41,16 @@ export function inspectInstalledOpenClawBrainExtension(openclawHome, extensionId
     const packageJson = readRequiredJson(packageJsonPath, "package manifest");
     const configuredEntries = readConfiguredEntries(packageJson, packageJsonPath);
     const loaderEntryPath = resolveLoaderEntryPath(extensionDir, configuredEntries);
+    const resolvedRuntimeGuardPath = runtimeGuardPath ?? path.join(path.dirname(loaderEntryPath), "runtime-guard.js");
+    if (!existsSync(resolvedRuntimeGuardPath)) {
+        throw new Error(`[shadow-extension-load-proof] Installed runtime-guard.js is missing: ${resolvedRuntimeGuardPath}`);
+    }
     if (packageJson.type !== "module") {
         throw new Error(`[shadow-extension-load-proof] Installed package manifest must declare \"type\": \"module\" at ${packageJsonPath} ` +
             `(received=${describeValue(packageJson.type)})`);
     }
-    if (packageJson.name !== extensionId) {
-        throw new Error(`[shadow-extension-load-proof] Installed package manifest name must match plugin id ${JSON.stringify(extensionId)} at ${packageJsonPath} ` +
+    if (packageJson.name !== extensionId && packageJson.name !== "@openclawbrain/openclaw") {
+        throw new Error(`[shadow-extension-load-proof] Installed package manifest name must match ${JSON.stringify(extensionId)} or \"@openclawbrain/openclaw\" at ${packageJsonPath} ` +
             `(received=${describeValue(packageJson.name)})`);
     }
     if (typeof packageJson.version === "string" &&
@@ -59,10 +63,11 @@ export function inspectInstalledOpenClawBrainExtension(openclawHome, extensionId
         openclawHome: resolvedOpenclawHome,
         extensionsDir,
         extensionDir,
+        installLayout: selectedInstall.installLayout,
         manifestPath,
         packageJsonPath,
         loaderEntryPath,
-        runtimeGuardPath,
+        runtimeGuardPath: resolvedRuntimeGuardPath,
         manifest,
         packageJson,
         configuredEntries
@@ -70,14 +75,14 @@ export function inspectInstalledOpenClawBrainExtension(openclawHome, extensionId
 }
 export async function proveInstalledOpenClawBrainExtensionLoad(openclawHome, extensionId = "openclawbrain") {
     const inspected = inspectInstalledOpenClawBrainExtension(openclawHome, extensionId);
-    const runtimeGuardModule = await importWithHelpfulError(inspected.runtimeGuardPath, "runtime-guard.js");
+    const runtimeGuardModule = await importWithHelpfulError(inspected.runtimeGuardPath, `runtime-guard.js (${describeOpenClawBrainInstallLayout(inspected.installLayout)})`);
     const runtimeGuardExportNames = Object.keys(runtimeGuardModule).sort((left, right) => left.localeCompare(right));
     const missingRuntimeGuardExports = REQUIRED_RUNTIME_GUARD_EXPORTS.filter((exportName) => !runtimeGuardExportNames.includes(exportName));
     if (missingRuntimeGuardExports.length > 0) {
         throw new Error(`[shadow-extension-load-proof] Installed runtime-guard.js is missing required exports ` +
             `${missingRuntimeGuardExports.join(", ")} at ${inspected.runtimeGuardPath}`);
     }
-    const loaderModule = await importWithHelpfulError(inspected.loaderEntryPath, "loader entry");
+    const loaderModule = await importWithHelpfulError(inspected.loaderEntryPath, `loader entry (${describeOpenClawBrainInstallLayout(inspected.installLayout)})`);
     if (typeof loaderModule.default !== "function") {
         throw new Error(`[shadow-extension-load-proof] Installed loader entry default export must be a function at ${inspected.loaderEntryPath} ` +
             `(received=${describeValue(loaderModule.default)})`);

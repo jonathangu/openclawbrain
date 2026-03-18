@@ -51,6 +51,10 @@ Current public packages for the `0.3.5` wave:
 
 New installs, upgrades, detach/uninstall flows, and verification should use the canonical front door. Keep the compatibility package only for older plugin/wrapper installs that have not migrated yet.
 
+The canonical package now supports two truthful hook layouts:
+- CLI-managed generated shadow extension via `openclawbrain install`
+- native package plugin via `openclaw plugins install @openclawbrain/openclaw@0.3.5`, followed by `openclawbrain install` to pin the activation root once the CLI is available
+
 ### Install
 
 ```bash
@@ -61,6 +65,17 @@ openclawbrain status --openclaw-home ~/.openclaw --detailed
 ```
 
 `openclawbrain install` attaches OpenClawBrain to one OpenClaw home. `openclaw gateway restart` makes the new hook live immediately. `status --detailed` is the first verification read.
+
+If you want OpenClaw itself to own the plugin package directory, the native package lane is also supported:
+
+```bash
+openclaw plugins install @openclawbrain/openclaw@0.3.5
+openclawbrain install --openclaw-home ~/.openclaw
+openclaw gateway restart
+openclawbrain status --openclaw-home ~/.openclaw --detailed
+```
+
+`openclawbrain install` remains the activation-root pinning step for either layout. `status --openclaw-home` now tells you whether the hook came from the generated shadow extension or the native package plugin.
 
 ### Upgrade
 
@@ -100,6 +115,8 @@ npm uninstall -g @openclawbrain/openclaw
 ```
 
 If you want to remove the hook but keep the data, use `detach` or `openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data`. `detach` is the simpler keep-data path.
+
+`detach` and `uninstall` remove whichever OpenClawBrain hook layout is present for that OpenClaw home. The data semantics stay explicit: `detach` always keeps data, `uninstall --keep-data` keeps it explicitly, and `uninstall --purge-data` removes it.
 
 ### Compatibility Path
 

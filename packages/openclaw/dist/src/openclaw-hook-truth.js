@@ -1,5 +1,6 @@
-import { existsSync, readFileSync } from "node:fs";
+import { readFileSync } from "node:fs";
 import path from "node:path";
+import { describeOpenClawBrainInstallLayout, findInstalledOpenClawBrainPlugin } from "./openclaw-plugin-install.js";
 function toErrorMessage(error) {
     return error instanceof Error ? error.message : String(error);
 }
@@ -33,6 +34,45 @@ function shortenPath(fullPath) {
         return "~" + fullPath.slice(homeDir.length);
     }
     return fullPath;
+}
+function inspectInstalledHookActivationRoot(loaderEntryPath) {
+    let content;
+    try {
+        content = readFileSync(loaderEntryPath, "utf8");
+    }
+    catch (error) {
+        return {
+            ready: false,
+            detail: `installed loader entry ${shortenPath(loaderEntryPath)} could not be read: ${toErrorMessage(error)}`
+        };
+    }
+    const match = content.match(/const\s+ACTIVATION_ROOT\s*=\s*["'`]([^"'`]+)["'`]/) ??
+        content.match(/activationRoot:\s*["'`]([^"'`]+)["'`]/);
+    if (!match || !match[1]) {
+        return {
+            ready: false,
+            detail: `installed loader entry ${shortenPath(loaderEntryPath)} does not declare a pinned activation root`
+        };
+    }
+    const activationRoot = match[1].trim();
+    if (activationRoot === "__ACTIVATION_ROOT__" || activationRoot === "__ACTIVATION_" + "ROOT__") {
+        return {
+            ready: false,
+            detail: `installed loader entry ${shortenPath(loaderEntryPath)} still contains the ACTIVATION_ROOT placeholder; rerun openclawbrain install/attach to pin the runtime hook`
+        };
+    }
+    return {
+        ready: true,
+        detail: `installed loader entry ${shortenPath(loaderEntryPath)} pins activation root ${shortenPath(path.resolve(activationRoot))}`
+    };
+}
+function describeAdditionalInstallDetail(additionalInstalls) {
+    if (additionalInstalls.length === 0) {
+        return "";
+    }
+    return `; additional OpenClawBrain installs also exist at ${additionalInstalls
+        .map((install) => shortenPath(install.extensionDir))
+        .join(", ")}`;
 }
 export function inspectOpenClawBrainPluginAllowlist(openclawHome) {
     const { path: openclawJsonPath, config } = readOpenClawJsonConfig(openclawHome);
@@ -70,9 +110,12 @@ export function inspectOpenClawBrainHookStatus(openclawHome) {
         return {
             scope: "activation_root_only",
             openclawHome: null,
+            extensionDir: null,
             hookPath: null,
             runtimeGuardPath: null,
             manifestPath: null,
+            packageJsonPath: null,
+            installLayout: null,
             installState: "unverified",
             loadability: "unverified",
             pluginAllowlistState: "unverified",
@@ -81,66 +124,101 @@ export function inspectOpenClawBrainHookStatus(openclawHome) {
         };
     }
     const resolvedHome = path.resolve(openclawHome);
-    const extensionDir = path.join(resolvedHome, "extensions", "openclawbrain");
-    const hookPath = path.join(extensionDir, "index.ts");
-    const runtimeGuardPath = path.join(extensionDir, "runtime-guard.js");
-    const manifestPath = path.join(extensionDir, "openclaw.plugin.json");
-    if (!(existsSync(hookPath) && existsSync(runtimeGuardPath) && existsSync(manifestPath))) {
+    const installedPlugin = findInstalledOpenClawBrainPlugin(resolvedHome);
+    if (installedPlugin.selectedInstall === null ||
+        installedPlugin.selectedInstall.loaderEntryPath === null ||
+        installedPlugin.selectedInstall.runtimeGuardPath === null) {
+        const incompleteInstall = installedPlugin.selectedInstall;
         return {
             scope: "exact_openclaw_home",
             openclawHome: resolvedHome,
-            hookPath,
-            runtimeGuardPath,
-            manifestPath,
+            extensionDir: incompleteInstall?.extensionDir ?? null,
+            hookPath: incompleteInstall?.loaderEntryPath ?? null,
+            runtimeGuardPath: incompleteInstall?.runtimeGuardPath ?? null,
+            manifestPath: incompleteInstall?.manifestPath ?? null,
+            packageJsonPath: incompleteInstall?.packageJsonPath ?? null,
+            installLayout: incompleteInstall?.installLayout ?? null,
             installState: "not_installed",
             loadability: "not_installed",
             pluginAllowlistState: "unverified",
             desynced: false,
-            detail: `profile hook is not present at ${shortenPath(extensionDir)}`
+            detail: incompleteInstall === null
+                ? `profile hook is not present under ${shortenPath(installedPlugin.extensionsDir)}`
+                : `profile hook is incomplete under ${shortenPath(incompleteInstall.extensionDir)}`
         };
     }
+    const selectedInstall = installedPlugin.selectedInstall;
+    const additionalInstallDetail = describeAdditionalInstallDetail(installedPlugin.additionalInstalls);
     const allowlist = inspectOpenClawBrainPluginAllowlist(resolvedHome);
+    const layoutLabel = describeOpenClawBrainInstallLayout(selectedInstall.installLayout);
+    const activationRootState = inspectInstalledHookActivationRoot(selectedInstall.loaderEntryPath);
     if (allowlist.state === "blocked") {
         return {
             scope: "exact_openclaw_home",
             openclawHome: resolvedHome,
-            hookPath,
-            runtimeGuardPath,
-            manifestPath,
+            extensionDir: selectedInstall.extensionDir,
+            hookPath: selectedInstall.loaderEntryPath,
+            runtimeGuardPath: selectedInstall.runtimeGuardPath,
+            manifestPath: selectedInstall.manifestPath,
+            packageJsonPath: selectedInstall.packageJsonPath,
+            installLayout: selectedInstall.installLayout,
             installState: "blocked_by_allowlist",
             loadability: "blocked",
             pluginAllowlistState: allowlist.state,
             desynced: true,
-            detail: `profile hook files exist at ${shortenPath(extensionDir)}, but ${allowlist.detail}; ` +
-                "the on-disk hook is desynced and OpenClaw will not load it"
+            detail: `profile hook is installed via ${layoutLabel} at ${shortenPath(selectedInstall.extensionDir)}, but ${allowlist.detail}; ` +
+                `the on-disk hook is not loadable and OpenClaw will not load it${additionalInstallDetail}`
         };
     }
     if (allowlist.state === "invalid") {
         return {
             scope: "exact_openclaw_home",
             openclawHome: resolvedHome,
-            hookPath,
-            runtimeGuardPath,
-            manifestPath,
+            extensionDir: selectedInstall.extensionDir,
+            hookPath: selectedInstall.loaderEntryPath,
+            runtimeGuardPath: selectedInstall.runtimeGuardPath,
+            manifestPath: selectedInstall.manifestPath,
+            packageJsonPath: selectedInstall.packageJsonPath,
+            installLayout: selectedInstall.installLayout,
             installState: "blocked_by_allowlist",
             loadability: "blocked",
             pluginAllowlistState: allowlist.state,
             desynced: true,
-            detail: `profile hook files exist at ${shortenPath(extensionDir)}, but ${allowlist.detail}; ` +
-                "treat hook-load state as broken until install/attach repairs the config"
+            detail: `profile hook is installed via ${layoutLabel} at ${shortenPath(selectedInstall.extensionDir)}, but ${allowlist.detail}; ` +
+                `treat hook-load state as broken until install/attach repairs the config${additionalInstallDetail}`
+        };
+    }
+    if (!activationRootState.ready) {
+        return {
+            scope: "exact_openclaw_home",
+            openclawHome: resolvedHome,
+            extensionDir: selectedInstall.extensionDir,
+            hookPath: selectedInstall.loaderEntryPath,
+            runtimeGuardPath: selectedInstall.runtimeGuardPath,
+            manifestPath: selectedInstall.manifestPath,
+            packageJsonPath: selectedInstall.packageJsonPath,
+            installLayout: selectedInstall.installLayout,
+            installState: "installed",
+            loadability: "blocked",
+            pluginAllowlistState: allowlist.state,
+            desynced: true,
+            detail: `profile hook is installed via ${layoutLabel} at ${shortenPath(selectedInstall.extensionDir)}, but ${activationRootState.detail}${additionalInstallDetail}`
         };
     }
     return {
         scope: "exact_openclaw_home",
         openclawHome: resolvedHome,
-        hookPath,
-        runtimeGuardPath,
-        manifestPath,
+        extensionDir: selectedInstall.extensionDir,
+        hookPath: selectedInstall.loaderEntryPath,
+        runtimeGuardPath: selectedInstall.runtimeGuardPath,
+        manifestPath: selectedInstall.manifestPath,
+        packageJsonPath: selectedInstall.packageJsonPath,
+        installLayout: selectedInstall.installLayout,
         installState: "installed",
         loadability: "loadable",
         pluginAllowlistState: allowlist.state,
         desynced: false,
-        detail: `profile hook is installed at ${shortenPath(extensionDir)}`
+        detail: `profile hook is installed via ${layoutLabel} at ${shortenPath(selectedInstall.extensionDir)}${additionalInstallDetail}`
     };
 }
 export function summarizeOpenClawBrainHookLoad(inspection, statusProbeReady) {

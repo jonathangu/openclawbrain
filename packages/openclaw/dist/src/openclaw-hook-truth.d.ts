@@ -1,3 +1,4 @@
+import { type OpenClawBrainInstallLayout } from "./openclaw-plugin-install.js";
 export type OpenClawBrainHookInstallState = "installed" | "not_installed" | "blocked_by_allowlist" | "unverified";
 export type OpenClawBrainHookLoadability = "loadable" | "blocked" | "not_installed" | "unverified";
 export type OpenClawBrainHookLoadProof = "status_probe_ready" | "not_ready";
@@ -5,9 +6,12 @@ export type OpenClawBrainPluginAllowlistState = "unrestricted" | "allowed" | "bl
 export interface OpenClawBrainHookInspection {
     scope: "exact_openclaw_home" | "activation_root_only";
     openclawHome: string | null;
+    extensionDir: string | null;
     hookPath: string | null;
     runtimeGuardPath: string | null;
     manifestPath: string | null;
+    packageJsonPath: string | null;
+    installLayout: OpenClawBrainInstallLayout | null;
     installState: OpenClawBrainHookInstallState;
     loadability: OpenClawBrainHookLoadability;
     pluginAllowlistState: OpenClawBrainPluginAllowlistState;

@@ -14,6 +14,7 @@ import { inspectActivationState, loadPackFromActivation, promoteCandidatePack, r
 import { resolveActivationRoot } from "./resolve-activation-root.js";
 import { describeOpenClawHomeInspection, discoverOpenClawHomes, formatOpenClawHomeLayout, formatOpenClawHomeProfileSource, inspectOpenClawHome } from "./openclaw-home-layout.js";
 import { inspectOpenClawBrainHookStatus, inspectOpenClawBrainPluginAllowlist } from "./openclaw-hook-truth.js";
+import { describeOpenClawBrainInstallLayout, findInstalledOpenClawBrainPlugin } from "./openclaw-plugin-install.js";
 import { DEFAULT_WATCH_POLL_INTERVAL_SECONDS, buildNormalizedEventExportFromScannedEvents, bootstrapRuntimeAttach, buildOperatorSurfaceReport, clearOpenClawProfileRuntimeLoadProof, compileRuntimeContext, createAsyncTeacherLiveLoop, createOpenClawLocalSessionTail, createRuntimeEventExportScanner, describeCurrentProfileBrainStatus, formatOperatorRollbackReport, listOpenClawProfileRuntimeLoadProofs, loadRuntimeEventExportBundle, loadWatchTeacherSnapshotState, persistWatchTeacherSnapshot, rollbackRuntimeAttach, resolveAttachmentRuntimeLoadProofsPath, resolveOperatorTeacherSnapshotPath, resolveAsyncTeacherLiveLoopSnapshotPath, resolveWatchSessionTailCursorPath, resolveWatchStateRoot, resolveWatchTeacherSnapshotPath, scanLiveEventExport, scanRecordedSession, summarizeLearningPathFromMaterialization, summarizeNormalizedEventExportLabelFlow, writeScannedEventExportBundle } from "./index.js";
 import { appendLearningUpdateLogs } from "./learning-spine.js";
 import { buildPassiveLearningSessionExportFromOpenClawSessionStore } from "./local-session-passive-learning.js";
@@ -64,7 +65,9 @@ function discoverInstallCandidateOpenClawHomes(homeDir = getCliHomeDir()) {
 function summarizeSharedActivationRootReferenceProof(reference) {
     switch (reference.installState) {
         case "installed":
-            return "hook installed and loadable";
+            return reference.serveAttachmentState === "attached"
+                ? "hook installed and loadable"
+                : "hook files exist, but the current install is not loadable yet";
         case "blocked_by_allowlist":
             return "hook files exist but OpenClaw will not load them because plugins.allow blocks openclawbrain";
         case "not_installed":
@@ -122,7 +125,9 @@ function findInstalledHookReferencesForActivationRoot(input) {
             installState: installHook.state === "installed" || installHook.state === "blocked_by_allowlist"
                 ? installHook.state
                 : "not_installed",
-            serveAttachmentState: installHook.state === "installed" ? "attached" : "half_attached",
+            serveAttachmentState: installHook.state === "installed" && installHook.loadability === "loadable"
+                ? "attached"
+                : "half_attached",
             hookDetail: installHook.detail
         };
         return path.resolve(installedActivationRoot) === resolvedActivationRoot
@@ -503,7 +508,7 @@ function operatorCliHelp() {
         "  --help                      Show this help.",
         "",
         "Lifecycle flow:",
-        "  1. install            openclawbrain install — safe first-time default; pass --openclaw-home when more than one OpenClaw home/layout is present",
+        "  1. install            openclawbrain install — safe first-time default; writes the generated shadow hook or pins an already-installed native package plugin for one OpenClaw home",
         "  2. attach             openclawbrain attach --openclaw-home <path> [--activation-root <path>] — explicit reattach/manual hook path for known brain data; use install first",
         "  3. status             openclawbrain status --activation-root <path> — answer \"How's the brain?\" for that boundary",
         "  4. status --detailed  openclawbrain status --activation-root <path> --detailed — explain serve path, freshness, backlog, and failure mode",
@@ -519,6 +524,7 @@ function operatorCliHelp() {
         "  scan         inspect one recorded session or live event export without claiming a daemon is running",
         "  learn        one-shot local-session learning pass against the resolved activation root",
         "  status --teacher-snapshot keeps the current live-first / principal-priority / passive-backfill learner order visible when that snapshot exists",
+        "  native package installs still need the openclawbrain CLI available because install/attach pin the activation root for that package copy",
         "  watch/daemon persist their operator snapshot at <activation-root>/watch/teacher-snapshot.json; --teacher-snapshot overrides the default path",
         "  watch teacher defaults come from install-written provider-defaults.json under the activation root; OPENCLAWBRAIN_TEACHER_* and OPENCLAWBRAIN_EMBEDDER_* are host-shell overrides only, not live gateway wiring",
         "",
@@ -678,12 +684,16 @@ function summarizeStatusInstallHook(openclawHome) {
     const hook = inspectOpenClawBrainHookStatus(openclawHome);
     return {
         state: hook.installState === "unverified" ? "unknown" : hook.installState,
+        loadability: hook.loadability,
+        installLayout: hook.installLayout,
+        hookPath: hook.hookPath,
         detail: hook.detail
     };
 }
 function summarizeStatusHookLoad(installHook, status) {
     return {
         installState: installHook.state === "unknown" ? "unverified" : installHook.state,
+        loadability: installHook.loadability,
         loadProof: status.hook.loadProof,
         detail: status.hook.detail
     };
@@ -1243,7 +1253,9 @@ function formatAttachedProfileTruthDetailedList(entries) {
             .join(" ");
 }
 function summarizeDisplayedStatus(status, installHook) {
-    return installHook.state === "blocked_by_allowlist" ? "fail" : status.brainStatus.status;
+    return installHook.state === "blocked_by_allowlist" || status.hook.loadability === "blocked"
+        ? "fail"
+        : status.brainStatus.status;
 }
 function buildCompactStatusHeader(status, report, options) {
     const installHook = summarizeStatusInstallHook(options.openclawHome);
@@ -1262,7 +1274,7 @@ function buildCompactStatusHeader(status, report, options) {
     });
     return [
         `lifecycle   attach=${status.attachment.state} learner=${yesNo(status.passiveLearning.learnerRunning)} watch=${summarizeStatusWatchState(status)} export=${status.passiveLearning.exportState} promote=${summarizeStatusPromotionState(status)} serve=${summarizeStatusServeReality(status)}`,
-        `hook        install=${hookLoad.installState} loadProof=${hookLoad.loadProof} detail=${hookLoad.detail}`,
+        `hook        install=${hookLoad.installState} loadability=${hookLoad.loadability} loadProof=${hookLoad.loadProof} layout=${status.hook.installLayout ?? "unverified"} detail=${hookLoad.detail}`,
         `attachTruth current=${attachmentTruth.currentProfileLabel} hook=${attachmentTruth.hookFiles} config=${attachmentTruth.configLoad} runtime=${attachmentTruth.runtimeLoad} watcher=${attachmentTruth.watcher} attachedSet=${formatAttachedProfileTruthCompactList(attachmentTruth.attachedProfiles)} why=${attachmentTruth.detail}`,
         `passive     firstExport=${yesNo(status.passiveLearning.firstExportOccurred)} backlog=${status.passiveLearning.backlogState} pending=${formatStatusNullableNumber(status.passiveLearning.pendingLive)}/${formatStatusNullableNumber(status.passiveLearning.pendingBackfill)}`,
         `serving     pack=${status.passiveLearning.currentServingPackId ?? "none"} lastExport=${status.passiveLearning.lastExportAt ?? "none"} lastPromotion=${status.passiveLearning.lastPromotionAt ?? "none"}`,
@@ -1293,7 +1305,7 @@ function formatCurrentProfileStatusSummary(status, report, targetInspection, opt
     const profileIdSuffix = status.profile.profileId === null ? "" : ` id=${status.profile.profileId}`;
     const targetLine = targetInspection === null
         ? `target      activation=${status.host.activationRoot} source=activation_root_only`
-        : `target      activation=${status.host.activationRoot} ${formatOpenClawTargetLine(targetInspection)} hook=${shortenPath(path.join(targetInspection.openclawHome, "extensions", "openclawbrain", "index.ts"))}`;
+        : `target      activation=${status.host.activationRoot} ${formatOpenClawTargetLine(targetInspection)} hook=${status.hook.hookPath === null ? "unverified" : shortenPath(status.hook.hookPath)}`;
     return [
         `STATUS ${displayedStatus}`,
         ...buildCompactStatusHeader(status, report, options),
@@ -1555,6 +1567,7 @@ function shouldWriteProfileHookProviderDefaults(parsed, activationPlan, isInstal
 }
 function buildInstallBrainFeedbackSummary(input) {
     const providerDefaultsPath = resolveOpenClawBrainProviderDefaultsPath(input.parsed.activationRoot);
+    const hookLayout = describeOpenClawBrainInstallLayout(input.hookLayout);
     const embedderState = input.embedderProvision === null ? "unchanged" : input.embedderProvision.state;
     const teacherDefaults = input.providerDefaults?.defaults.teacher;
     const teacherProvider = teacherDefaults?.provider ?? "unknown";
@@ -1598,15 +1611,16 @@ function buildInstallBrainFeedbackSummary(input) {
             gatewayStatusCommand: buildGatewayStatusCommand(profileName)
         };
     const provedNow = input.activationPlan.action === "bootstrap"
-        ? `hook written, activation root ready, seed/current-profile attach bootstrapped, learner service ${input.learnerService.state}, provider defaults ${input.providerDefaults === null ? "kept" : "written"}`
-        : `hook written, activation root kept, active pack ${input.activationPlan.activePackId ?? "unknown"} preserved, learner service ${input.learnerService.state}${input.providerDefaults === null ? "" : ", provider defaults written"}`;
+        ? `${hookLayout} prepared, activation root ready, seed/current-profile attach bootstrapped, learner service ${input.learnerService.state}, provider defaults ${input.providerDefaults === null ? "kept" : "written"}`
+        : `${hookLayout} prepared, activation root kept, active pack ${input.activationPlan.activePackId ?? "unknown"} preserved, learner service ${input.learnerService.state}${input.providerDefaults === null ? "" : ", provider defaults written"}`;
     const notYetProved = input.learnerService.state === "deferred"
         ? `OpenClaw has not reloaded this hook yet, and passive learner auto-start was deferred; restart plus status still must prove serve-path load, while learner-service start remains a separate operator check`
         : input.activationPlan.action === "bootstrap"
             ? `Passive learning is wired for this activation root, but OpenClaw has not reloaded the hook yet; restart plus status still must prove live startup/load and the first exported turn`
             : `Passive learning is wired for this activation root, but this ${input.parsed.command} run does not itself prove live startup/load after restart`;
     return {
-        hookPath: input.extensionDir,
+        hookPath: input.hookPath,
+        hookLayout: input.hookLayout,
         providerDefaultsPath,
         profile: {
             exactProfileName: profileName,
@@ -1644,7 +1658,7 @@ function buildInstallBrainFeedbackSummary(input) {
             profileName === null
                 ? "profile     exactName=unresolved selector=current_profile casing=not_available"
                 : `profile     exactName=${quoteShellArg(profileName)} source=${profileSource} casing=preserved`,
-            `hook        written=${shortenPath(input.extensionDir)}`,
+            `hook        layout=${input.hookLayout} path=${shortenPath(input.hookPath)}`,
             `activation  root=${shortenPath(input.parsed.activationRoot)} source=${formatInstallActivationRootSource(input.parsed.activationRootSource)}`,
             `attachment  policy=${attachment.policy} rootMode=${attachment.activationRootMode} sameGatewayProof=${attachment.sameGatewayProof} detail=${attachment.detail}`,
             `defaults    provider-defaults=${shortenPath(providerDefaultsPath)} state=${input.providerDefaults === null ? "unchanged" : "written"}`,
@@ -1758,6 +1772,14 @@ function buildStatusNextStep(status, report, options) {
             return "Repair the OpenClaw plugin allowlist mismatch before trusting serve-path status again.";
         }
         return ("Repair the OpenClaw plugin allowlist mismatch " +
+            `(rerun ${buildInstallCommand(options.openclawHome)} or ${buildAttachCommand(options.openclawHome, status.host.activationRoot)}) ` +
+            "before trusting serve-path status again.");
+    }
+    if (status.hook.loadability === "blocked") {
+        if (options.openclawHome === null) {
+            return "Repair the installed hook so it pins a real activation root before trusting serve-path status again.";
+        }
+        return (`Repair the installed ${status.hook.installLayout === "native_package_plugin" ? "native package plugin" : "profile hook"} ` +
             `(rerun ${buildInstallCommand(options.openclawHome)} or ${buildAttachCommand(options.openclawHome, status.host.activationRoot)}) ` +
             "before trusting serve-path status again.");
     }
@@ -2839,6 +2861,43 @@ function buildExtensionPluginManifest() {
         }
     }, null, 2) + "\n";
 }
+function pinInstalledHookActivationRoot(loaderEntryPath, activationRoot) {
+    const loaderSource = readFileSync(loaderEntryPath, "utf8");
+    const pinnedActivationRoot = `const ACTIVATION_ROOT = ${JSON.stringify(activationRoot)};`;
+    const nextLoaderSource = loaderSource.replace(/const\s+ACTIVATION_ROOT\s*=\s*["'`][^"'`]*["'`];/, pinnedActivationRoot);
+    if (nextLoaderSource === loaderSource) {
+        throw new Error(`Installed loader entry ${loaderEntryPath} does not expose a patchable ACTIVATION_ROOT constant`);
+    }
+    writeFileSync(loaderEntryPath, nextLoaderSource, "utf8");
+}
+function resolveProfileHookInstallTarget(openclawHome) {
+    const installedPlugin = findInstalledOpenClawBrainPlugin(openclawHome);
+    if (installedPlugin.additionalInstalls.length > 0) {
+        throw new Error(`Refusing to modify ${openclawHome} because multiple OpenClawBrain plugin installs are present under ${installedPlugin.extensionsDir}: ` +
+            [installedPlugin.selectedInstall, ...installedPlugin.additionalInstalls]
+                .filter((install) => install !== null)
+                .map((install) => install.extensionDir)
+                .join(", "));
+    }
+    if (installedPlugin.selectedInstall !== null &&
+        installedPlugin.selectedInstall.installLayout === "native_package_plugin" &&
+        installedPlugin.selectedInstall.loaderEntryPath !== null &&
+        installedPlugin.selectedInstall.runtimeGuardPath !== null) {
+        return {
+            installLayout: installedPlugin.selectedInstall.installLayout,
+            extensionDir: installedPlugin.selectedInstall.extensionDir,
+            hookPath: installedPlugin.selectedInstall.loaderEntryPath,
+            writeMode: "pin_native_package"
+        };
+    }
+    const extensionDir = path.join(openclawHome, "extensions", "openclawbrain");
+    return {
+        installLayout: "generated_shadow_extension",
+        extensionDir,
+        hookPath: path.join(extensionDir, "index.ts"),
+        writeMode: "write_shadow_extension"
+    };
+}
 function formatContextForHuman(result) {
     if (!result.ok) {
         if (result.fallbackToStaticContext) {
@@ -3142,13 +3201,14 @@ function runProfileHookAttachCommand(parsed) {
     const commandLabel = parsed.command.toUpperCase();
     const isInstall = parsed.command === "install";
     const targetInspection = inspectOpenClawHome(parsed.openclawHome);
-    const extensionDir = path.join(parsed.openclawHome, "extensions", "openclawbrain");
+    const installTarget = resolveProfileHookInstallTarget(parsed.openclawHome);
+    const extensionDir = installTarget.extensionDir;
     steps.push(`Target OpenClaw home: ${parsed.openclawHome} (${formatInstallOpenClawHomeSource(parsed.openclawHomeSource)})`);
     steps.push(isInstall
         ? "Lifecycle mode: install is the safe first-time default for wiring one profile to one activation root."
         : "Lifecycle mode: attach is the explicit reattach/manual profile-hook path; use install for first-time setup.");
     steps.push(`Detected layout: ${formatOpenClawTargetExplanation(targetInspection)}`);
-    steps.push(`Target hook path: ${extensionDir}`);
+    steps.push(`Target hook path: ${installTarget.hookPath} (${describeOpenClawBrainInstallLayout(installTarget.installLayout)})`);
     // 1. Validate --openclaw-home exists and has openclaw.json
     validateOpenClawHome(parsed.openclawHome);
     // 2. Inspect the activation root before writing profile hook artifacts.
@@ -3210,59 +3270,60 @@ function runProfileHookAttachCommand(parsed) {
             ? `Kept inspected activation state: active pack ${activationPlan.activePackId}`
             : `Reused inspected activation state for explicit attach: active pack ${activationPlan.activePackId}`);
     }
-    // 7-10. Write extension files
-    mkdirSync(extensionDir, { recursive: true });
-    // 5. Write index.ts
-    const indexTsPath = path.join(extensionDir, "index.ts");
-    writeFileSync(indexTsPath, buildExtensionIndexTs(parsed.activationRoot), "utf8");
-    steps.push(`Wrote extension: ${indexTsPath}`);
-    // 5b. Write runtime-guard files (imported by index.ts as ./runtime-guard.js)
-    const runtimeGuardPaths = resolveExtensionRuntimeGuardPath();
-    if (runtimeGuardPaths.ts !== null) {
-        const runtimeGuardTsPath = path.join(extensionDir, "runtime-guard.ts");
-        writeFileSync(runtimeGuardTsPath, readFileSync(runtimeGuardPaths.ts, "utf8"), "utf8");
-        steps.push(`Wrote extension runtime-guard source: ${runtimeGuardTsPath}`);
+    // 7-10. Prepare the hook layout that OpenClaw will actually load.
+    if (installTarget.writeMode === "pin_native_package") {
+        pinInstalledHookActivationRoot(installTarget.hookPath, parsed.activationRoot);
+        steps.push(`Pinned native package plugin loader: ${installTarget.hookPath}`);
     }
-    const runtimeGuardJsPath = path.join(extensionDir, "runtime-guard.js");
-    writeFileSync(runtimeGuardJsPath, readFileSync(runtimeGuardPaths.js, "utf8"), "utf8");
-    steps.push(`Wrote extension runtime-guard: ${runtimeGuardJsPath}`);
-    // 6. Write package.json
-    const packageJsonPath = path.join(extensionDir, "package.json");
-    writeFileSync(packageJsonPath, buildExtensionPackageJson(), "utf8");
-    steps.push(`Wrote package.json: ${packageJsonPath}`);
-    // 7. npm install
-    const releaseTarballInstall = resolveExtensionInstallReleaseTarballs();
-    try {
-        if (releaseTarballInstall !== null) {
-            execFileSync(resolveNpmCommand(), ["install", "--ignore-scripts", "--no-save", ...releaseTarballInstall.tarballs], { cwd: extensionDir, stdio: "pipe" });
-            steps.push(`Installed extension dependencies from release artifacts: ${releaseTarballInstall.tarballs.length} tarballs from ${releaseTarballInstall.artifactDir}`);
+    else {
+        mkdirSync(extensionDir, { recursive: true });
+        const indexTsPath = path.join(extensionDir, "index.ts");
+        writeFileSync(indexTsPath, buildExtensionIndexTs(parsed.activationRoot), "utf8");
+        steps.push(`Wrote extension: ${indexTsPath}`);
+        const runtimeGuardPaths = resolveExtensionRuntimeGuardPath();
+        if (runtimeGuardPaths.ts !== null) {
+            const runtimeGuardTsPath = path.join(extensionDir, "runtime-guard.ts");
+            writeFileSync(runtimeGuardTsPath, readFileSync(runtimeGuardPaths.ts, "utf8"), "utf8");
+            steps.push(`Wrote extension runtime-guard source: ${runtimeGuardTsPath}`);
         }
-        else {
-            execSync("npm install --ignore-scripts", { cwd: extensionDir, stdio: "pipe" });
-            steps.push("Ran npm install --ignore-scripts");
+        const runtimeGuardJsPath = path.join(extensionDir, "runtime-guard.js");
+        writeFileSync(runtimeGuardJsPath, readFileSync(runtimeGuardPaths.js, "utf8"), "utf8");
+        steps.push(`Wrote extension runtime-guard: ${runtimeGuardJsPath}`);
+        const packageJsonPath = path.join(extensionDir, "package.json");
+        writeFileSync(packageJsonPath, buildExtensionPackageJson(), "utf8");
+        steps.push(`Wrote package.json: ${packageJsonPath}`);
+        const releaseTarballInstall = resolveExtensionInstallReleaseTarballs();
+        try {
+            if (releaseTarballInstall !== null) {
+                execFileSync(resolveNpmCommand(), ["install", "--ignore-scripts", "--no-save", ...releaseTarballInstall.tarballs], { cwd: extensionDir, stdio: "pipe" });
+                steps.push(`Installed extension dependencies from release artifacts: ${releaseTarballInstall.tarballs.length} tarballs from ${releaseTarballInstall.artifactDir}`);
+            }
+            else {
+                execSync("npm install --ignore-scripts", { cwd: extensionDir, stdio: "pipe" });
+                steps.push("Ran npm install --ignore-scripts");
+                const linkedPackages = installExtensionFromLocalWorkspaceBuild(extensionDir);
+                if (linkedPackages !== null) {
+                    steps.push(`Linked coherent local workspace packages: ${linkedPackages.join(", ")}`);
+                }
+            }
+        }
+        catch (err) {
+            const message = err instanceof Error ? err.message : String(err);
+            if (releaseTarballInstall !== null) {
+                throw new Error(`Extension dependency install from release artifacts failed: ${message}`);
+            }
             const linkedPackages = installExtensionFromLocalWorkspaceBuild(extensionDir);
             if (linkedPackages !== null) {
                 steps.push(`Linked coherent local workspace packages: ${linkedPackages.join(", ")}`);
             }
+            else {
+                steps.push(`npm install failed (non-fatal): ${message}`);
+            }
         }
+        const manifestPath = path.join(extensionDir, "openclaw.plugin.json");
+        writeFileSync(manifestPath, buildExtensionPluginManifest(), "utf8");
+        steps.push(`Wrote manifest: ${manifestPath}`);
     }
-    catch (err) {
-        const message = err instanceof Error ? err.message : String(err);
-        if (releaseTarballInstall !== null) {
-            throw new Error(`Extension dependency install from release artifacts failed: ${message}`);
-        }
-        const linkedPackages = installExtensionFromLocalWorkspaceBuild(extensionDir);
-        if (linkedPackages !== null) {
-            steps.push(`Linked coherent local workspace packages: ${linkedPackages.join(", ")}`);
-        }
-        else {
-            steps.push(`npm install failed (non-fatal): ${message}`);
-        }
-    }
-    // 8. Write plugin manifest
-    const manifestPath = path.join(extensionDir, "openclaw.plugin.json");
-    writeFileSync(manifestPath, buildExtensionPluginManifest(), "utf8");
-    steps.push(`Wrote manifest: ${manifestPath}`);
     const pluginConfigRepair = ensureOpenClawBrainPluginConfig(parsed.openclawHome);
     steps.push(pluginConfigRepair.detail);
     const learnerService = ensureLifecycleLearnerService(parsed.activationRoot);
@@ -3270,7 +3331,8 @@ function runProfileHookAttachCommand(parsed) {
     const brainFeedback = buildInstallBrainFeedbackSummary({
         parsed,
         targetInspection,
-        extensionDir,
+        hookPath: installTarget.hookPath,
+        hookLayout: installTarget.installLayout,
         activationPlan,
         learnerService,
         embedderProvision,
@@ -3291,7 +3353,7 @@ function runProfileHookAttachCommand(parsed) {
             : null
     ].filter((step) => step !== null);
     const preflightSummary = [
-        `Hook: installed at ${shortenPath(extensionDir)}`,
+        `Hook: ${describeOpenClawBrainInstallLayout(installTarget.installLayout)} at ${shortenPath(installTarget.hookPath)}`,
         parsed.shared
             ? "Attachment policy: shared activation root declared; same-gateway many-profile load/serve proof is still not checked in"
             : "Attachment policy: dedicated activation root for this profile/home boundary",
@@ -3324,7 +3386,7 @@ function runProfileHookAttachCommand(parsed) {
                 ? `Embedder: ensured default Ollama model ${embedderProvision.model} before brain init`
                 : `Embedder: skipped default Ollama model ${embedderProvision.model} via ${parsed.skipEmbedderProvisionSource === "flag" ? "--skip-embedder-provision" : OPENCLAWBRAIN_INSTALL_SKIP_EMBEDDER_PROVISION_ENV}`,
         ...(providerDefaults === null ? [] : [`${providerDefaults.lifecycleSummary} (${shortenPath(providerDefaults.path)})`]),
-        `Profile hook: installed at ${shortenPath(extensionDir)}`,
+        `Profile hook: ${describeOpenClawBrainInstallLayout(installTarget.installLayout)} at ${shortenPath(installTarget.hookPath)}`,
         `Learner service: ${learnerService.state} for ${shortenPath(parsed.activationRoot)}`,
         activationPlan.resolution === "new_root"
             ? `Activation data: initialized at ${shortenPath(parsed.activationRoot)}`
@@ -3401,6 +3463,7 @@ function runProfileHookAttachCommand(parsed) {
             learnerService,
             brainFeedback: {
                 hookPath: brainFeedback.hookPath,
+                hookLayout: brainFeedback.hookLayout,
                 providerDefaultsPath: brainFeedback.providerDefaultsPath,
                 profile: brainFeedback.profile,
                 attachment: brainFeedback.attachment,
@@ -3584,14 +3647,29 @@ function resolveCleanupActivationRoot(openclawHome, explicitActivationRoot) {
     return resolved.trim().length === 0 ? null : path.resolve(resolved);
 }
 function removeProfileHookup(openclawHome, steps) {
-    const extensionDir = path.join(openclawHome, "extensions", "openclawbrain");
-    if (!existsSync(extensionDir)) {
-        steps.push(`Profile hookup already absent: ${extensionDir}`);
-        return extensionDir;
+    const installedPlugin = findInstalledOpenClawBrainPlugin(openclawHome);
+    const installs = installedPlugin.selectedInstall === null
+        ? []
+        : [installedPlugin.selectedInstall, ...installedPlugin.additionalInstalls];
+    if (installs.length === 0) {
+        steps.push(`Profile hookup already absent under ${installedPlugin.extensionsDir}`);
+        return {
+            primaryPath: path.join(openclawHome, "extensions", "openclawbrain"),
+            removedPaths: []
+        };
     }
-    rmSync(extensionDir, { recursive: true, force: true });
-    steps.push(`Removed profile hookup: ${extensionDir}`);
-    return extensionDir;
+    const removedPaths = [];
+    for (const install of installs
+        .slice()
+        .sort((left, right) => right.extensionDir.length - left.extensionDir.length)) {
+        rmSync(install.extensionDir, { recursive: true, force: true });
+        removedPaths.push(install.extensionDir);
+        steps.push(`Removed ${describeOpenClawBrainInstallLayout(install.installLayout)}: ${install.extensionDir}`);
+    }
+    return {
+        primaryPath: removedPaths[0],
+        removedPaths
+    };
 }
 function summarizeKeptActivationData(activationRoot) {
     if (activationRoot === null) {
@@ -3636,7 +3714,7 @@ function runDetachCommand(parsed) {
     clearCleanupRuntimeLoadProof(activationRoot, parsed.openclawHome, steps);
     const learnerService = resolveCleanupLearnerServiceOutcome(activationRoot, parsed.openclawHome);
     const pluginConfigCleanup = scrubOpenClawBrainPluginConfig(parsed.openclawHome);
-    const extensionDir = removeProfileHookup(parsed.openclawHome, steps);
+    const removedHookup = removeProfileHookup(parsed.openclawHome, steps);
     const legacyResidue = removeLegacyProfileResidue(parsed.openclawHome);
     const activationData = summarizeKeptActivationData(activationRoot);
     const restartGuidance = buildRestartGuidance(parsed.restart);
@@ -3667,7 +3745,8 @@ function runDetachCommand(parsed) {
                 profileSource: targetInspection.profileSource,
                 configuredProfileIds: targetInspection.configuredProfileIds
             },
-            extensionDir,
+            extensionDir: removedHookup.primaryPath,
+            removedHookDirs: removedHookup.removedPaths,
             activationRoot,
             dataAction: "kept",
             activationDataState: activationData.activationDataState,
@@ -3727,7 +3806,7 @@ function runUninstallCommand(parsed) {
         learnerService.matchesRequestedActivationRoot !== false) {
         throw new Error(`Refusing to purge activation root ${path.resolve(activationRoot)} because the background learner service for this exact root could not be removed. ${learnerService.detail}`);
     }
-    const extensionDir = removeProfileHookup(parsed.openclawHome, steps);
+    const removedHookup = removeProfileHookup(parsed.openclawHome, steps);
     const legacyResidue = removeLegacyProfileResidue(parsed.openclawHome);
     let activationData;
     if (parsed.dataMode === "purge") {
@@ -3785,7 +3864,8 @@ function runUninstallCommand(parsed) {
                 profileSource: targetInspection.profileSource,
                 configuredProfileIds: targetInspection.configuredProfileIds
             },
-            extensionDir,
+            extensionDir: removedHookup.primaryPath,
+            removedHookDirs: removedHookup.removedPaths,
             activationRoot,
             dataAction: parsed.dataMode,
             activationDataState: activationData.activationDataState,

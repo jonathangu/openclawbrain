@@ -13,6 +13,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describeOpenClawHomeInspection, discoverOpenClawHomes, formatOpenClawHomeLayout, inspectOpenClawHome } from "./openclaw-home-layout.js";
+import { findInstalledOpenClawBrainPlugin } from "./openclaw-plugin-install.js";
 function getHomeDir() {
     return process.env.HOME ?? process.env.USERPROFILE ?? "~";
 }
@@ -68,11 +69,19 @@ function extractActivationRootFromExtension(filePath) {
     }
 }
 function readActivationRootFromOpenClawHome(openclawHome) {
-    const extensionIndex = path.join(path.resolve(openclawHome), "extensions", "openclawbrain", "index.ts");
-    if (!existsSync(extensionIndex)) {
+    const installedPlugin = findInstalledOpenClawBrainPlugin(openclawHome);
+    if (installedPlugin.selectedInstall === null ||
+        installedPlugin.selectedInstall.loaderEntryPath === null ||
+        installedPlugin.selectedInstall.runtimeGuardPath === null) {
         return null;
     }
-    return extractActivationRootFromExtension(extensionIndex);
+    if (installedPlugin.additionalInstalls.length > 0) {
+        return {
+            activationRoot: null,
+            diagnostic: `multiple OpenClawBrain plugin installs are present under ${installedPlugin.extensionsDir}`
+        };
+    }
+    return extractActivationRootFromExtension(installedPlugin.selectedInstall.loaderEntryPath);
 }
 /**
  * Scan discoverable ~/.openclaw* directories for installed hooks and record
@@ -82,14 +91,26 @@ function scanInstalledProfileActivationRoots() {
     const probes = [];
     for (const inspection of discoverOpenClawHomes(path.resolve(getHomeDir()))) {
         const openclawHome = inspection.openclawHome;
-        const extensionIndex = path.join(openclawHome, "extensions", "openclawbrain", "index.ts");
-        if (!existsSync(extensionIndex)) {
+        const installedPlugin = findInstalledOpenClawBrainPlugin(openclawHome);
+        if (installedPlugin.selectedInstall === null ||
+            installedPlugin.selectedInstall.loaderEntryPath === null ||
+            installedPlugin.selectedInstall.runtimeGuardPath === null) {
             continue;
         }
-        const found = extractActivationRootFromExtension(extensionIndex);
+        if (installedPlugin.additionalInstalls.length > 0) {
+            probes.push({
+                openclawHome,
+                extensionEntryPath: installedPlugin.selectedInstall.loaderEntryPath,
+                activationRoot: null,
+                diagnostic: `multiple OpenClawBrain plugin installs are present under ${installedPlugin.extensionsDir}`,
+                inspection
+            });
+            continue;
+        }
+        const found = extractActivationRootFromExtension(installedPlugin.selectedInstall.loaderEntryPath);
         probes.push({
             openclawHome,
-            extensionIndex,
+            extensionEntryPath: installedPlugin.selectedInstall.loaderEntryPath,
             activationRoot: found.activationRoot,
             diagnostic: found.diagnostic,
             inspection
@@ -109,7 +130,7 @@ function buildUnpinnedResolutionRefusal(input) {
             details.push(`  - ${probe.openclawHome} [${inspectionSummary}] -> ${probe.activationRoot}`);
             continue;
         }
-        details.push(`  - ${probe.openclawHome} [${inspectionSummary}] -> unresolved: ${probe.diagnostic ?? `installed extension ${probe.extensionIndex} is unresolved`}`);
+        details.push(`  - ${probe.openclawHome} [${inspectionSummary}] -> unresolved: ${probe.diagnostic ?? `installed extension ${probe.extensionEntryPath} is unresolved`}`);
     }
     return [
         "Refusing to auto-select an activation root from unpinned host state.",

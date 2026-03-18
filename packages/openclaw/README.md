@@ -10,6 +10,7 @@ This is the default front door for first-time OpenClawBrain users.
 - For the current published wave, install it with `npm install -g @openclawbrain/openclaw@0.3.5`.
 - Use the `openclawbrain` CLI for status, rollback, and narrow scanner scans; `openclawbrain-ops` stays available as a compatibility alias.
 - `npm exec openclawbrain -- --help` works after either install path, but the exact quickstart commands remain the clearest first attach path.
+- OpenClaw can also install this same package as a native plugin package; keep the `openclawbrain` CLI available and run `openclawbrain install --openclaw-home <path>` afterward to pin the activation root for that installed copy.
 
 The compatibility package `@jonathangu/openclawbrain@0.3.5` remains published for older plugin/wrapper installs, but it is not the main operator path.
 
@@ -25,6 +26,17 @@ openclawbrain install --openclaw-home ~/.openclaw
 openclaw gateway restart
 openclawbrain status --openclaw-home ~/.openclaw --detailed
 ```
+
+If you want OpenClaw to own the plugin package directory itself, the native package lane is:
+
+```bash
+openclaw plugins install @openclawbrain/openclaw@0.3.5
+openclawbrain install --openclaw-home ~/.openclaw
+openclaw gateway restart
+openclawbrain status --openclaw-home ~/.openclaw --detailed
+```
+
+The CLI still pins the activation root for either layout. `status --openclaw-home` now tells the truth about whether the loaded hook is the generated shadow extension or the native package plugin.
 
 Verify the installed target:
 
@@ -49,6 +61,8 @@ npm uninstall -g @openclawbrain/openclaw
 ```
 
 If you want explicit uninstall semantics without purging, use `openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data`. `detach` remains the simpler keep-data path.
+
+`detach` and `uninstall` remove whichever OpenClawBrain hook layout is installed for that OpenClaw home. The data outcome is still explicit: `detach` keeps data, `uninstall --keep-data` keeps it explicitly, and `uninstall --purge-data` deletes it.
 
 Use this package when OpenClaw needs the narrow supported operator bridge captured by `OPERATOR_API_CONTRACT_V1`:
 

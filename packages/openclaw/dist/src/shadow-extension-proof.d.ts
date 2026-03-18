@@ -1,3 +1,4 @@
+import { type OpenClawBrainInstallLayout } from "./openclaw-plugin-install.js";
 export interface InstalledExtensionPackageJson {
     name?: unknown;
     version?: unknown;
@@ -19,6 +20,7 @@ export interface ShadowProfileExtensionInstall {
     openclawHome: string;
     extensionsDir: string;
     extensionDir: string;
+    installLayout: OpenClawBrainInstallLayout;
     manifestPath: string;
     packageJsonPath: string;
     loaderEntryPath: string;

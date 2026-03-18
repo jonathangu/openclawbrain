@@ -6148,7 +6148,7 @@ function buildOperatorFindings(report) {
         findings.push({ severity, code, summary, detail });
     };
     if (report.hook.desynced) {
-        push("fail", "hook_desynced", "profile hook is blocked by OpenClaw config desync", report.hook.detail);
+        push("fail", "hook_desynced", "profile hook is present but not loadable", report.hook.detail);
     }
     else if (report.attachmentTruth.state === "not_attached") {
         push("fail", "current_profile_not_attached", "current profile is not attached", report.attachmentTruth.detail);
@@ -6393,8 +6393,8 @@ function summarizeOperatorAttachmentTruth(report) {
             watchOnly: false,
             activationRoot: report.activationRoot,
             servingSlot: report.active === null ? "none" : "active",
-            detail: report.hook.installState === "blocked_by_allowlist"
-                ? "current profile hook files exist, but OpenClaw will not load them until the plugin allowlist/config desync is repaired"
+            detail: report.hook.loadability === "blocked"
+                ? "current profile hook files exist, but OpenClaw will not load them until the installed hook is repaired"
                 : "current profile hook is present on the selected OpenClaw home"
         };
     }
@@ -6421,7 +6421,7 @@ function summarizeCurrentProfileBrainSummary(input) {
         return "Brain is not attached to the current Profile.";
     }
     if (input.hookDesynced) {
-        return "Brain hook files exist, but OpenClaw config currently blocks them from loading.";
+        return "Brain hook files exist, but the installed hook is not loadable yet.";
     }
     if (input.attachmentState === "unknown") {
         return input.watchOnly
@@ -6603,9 +6603,12 @@ function buildCurrentProfileBrainStatusFromReport(report, policyMode, profileId)
             noun: "Hook",
             scope: report.hook.scope,
             openclawHome: report.hook.openclawHome,
+            extensionDir: report.hook.extensionDir,
             hookPath: report.hook.hookPath,
             runtimeGuardPath: report.hook.runtimeGuardPath,
             manifestPath: report.hook.manifestPath,
+            packageJsonPath: report.hook.packageJsonPath,
+            installLayout: report.hook.installLayout,
             installState: report.hook.installState,
             loadability: report.hook.loadability,
             loadProof: report.hook.loadProof,

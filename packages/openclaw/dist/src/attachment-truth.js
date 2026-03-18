@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, realpathSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { inspectOpenClawHome } from "./openclaw-home-layout.js";
+import { resolveOpenClawHomeFromExtensionEntryPath } from "./openclaw-plugin-install.js";
 const ATTACHMENT_RUNTIME_LOAD_PROOFS_CONTRACT = "openclaw_profile_runtime_load_proofs.v1";
 const ATTACHMENT_TRUTH_DIRNAME = "attachment-truth";
 const ATTACHMENT_RUNTIME_LOAD_PROOFS_BASENAME = "runtime-load-proofs.json";
@@ -128,7 +129,11 @@ function writeRuntimeLoadProofs(proofPath, proofs) {
     writeFileSync(proofPath, `${JSON.stringify(proofs, null, 2)}\n`, "utf8");
 }
 function deriveOpenClawHomeFromExtensionEntryPath(extensionEntryPath) {
-    return canonicalizeFilesystemPath(path.resolve(path.dirname(canonicalizeFilesystemPath(extensionEntryPath)), "..", ".."));
+    const openclawHome = resolveOpenClawHomeFromExtensionEntryPath(extensionEntryPath);
+    if (openclawHome === null) {
+        throw new Error(`extension entry path ${extensionEntryPath} is not nested under an OpenClaw extensions dir`);
+    }
+    return canonicalizeFilesystemPath(openclawHome);
 }
 export function resolveAttachmentRuntimeLoadProofsPath(activationRoot) {
     return path.join(path.resolve(activationRoot), ATTACHMENT_TRUTH_DIRNAME, ATTACHMENT_RUNTIME_LOAD_PROOFS_BASENAME);

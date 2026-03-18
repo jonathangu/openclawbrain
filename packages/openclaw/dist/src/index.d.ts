@@ -1561,9 +1561,12 @@ export interface OperatorRouteFnFreshnessSummary {
 interface OperatorHookSummary {
     scope: "exact_openclaw_home" | "activation_root_only";
     openclawHome: string | null;
+    extensionDir: string | null;
     hookPath: string | null;
     runtimeGuardPath: string | null;
     manifestPath: string | null;
+    packageJsonPath: string | null;
+    installLayout: import("./openclaw-plugin-install.js").OpenClawBrainInstallLayout | null;
     installState: CurrentProfileHookInstallStateV1;
     loadability: CurrentProfileHookLoadabilityV1;
     loadProof: CurrentProfileHookLoadProofV1;

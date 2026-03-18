@@ -40,7 +40,8 @@
   "files": [
     "dist/src",
     "dist/extension",
-    "extension"
+    "extension",
+    "openclaw.plugin.json"
   ],
   "publishConfig": {
     "access": "public"
@@ -56,6 +57,11 @@
   "bin": {
     "openclawbrain": "./dist/src/cli.js",
     "openclawbrain-ops": "./dist/src/cli.js"
+  },
+  "openclaw": {
+    "extensions": [
+      "./dist/extension/index.js"
+    ]
   },
   "scripts": {
     "build": "rm -rf dist && tsc -b",
