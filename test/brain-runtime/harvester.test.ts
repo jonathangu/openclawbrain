@@ -51,6 +51,41 @@ afterEach(() => {
 });
 
 describe("LabelHarvester", () => {
+  describe("system message filtering", () => {
+    it("blocks heartbeat prompts from producing evidence", () => {
+      const { harvester } = setup();
+      expect(harvester.detectLabel("user", "Read HEARTBEAT.md if it exists (workspace context). Follow it strictly.")).toBeNull();
+    });
+
+    it("blocks metadata wrappers from producing evidence", () => {
+      const { harvester } = setup();
+      expect(harvester.detectLabel("user", 'Conversation info (untrusted metadata):\n```json\n{"chat_id":"telegram:123"}\n```')).toBeNull();
+    });
+
+    it("blocks NO_REPLY from producing evidence", () => {
+      const { harvester } = setup();
+      expect(harvester.detectLabel("user", "NO_REPLY")).toBeNull();
+    });
+
+    it("blocks HEARTBEAT_OK from producing evidence", () => {
+      const { harvester } = setup();
+      expect(harvester.detectLabel("user", "HEARTBEAT_OK")).toBeNull();
+    });
+
+    it("blocks session startup from producing evidence", () => {
+      const { harvester } = setup();
+      expect(harvester.detectLabel("user", "A new session was started via /new or /reset.")).toBeNull();
+    });
+
+    it("still allows real corrections through", () => {
+      const { harvester } = setup();
+      const result = harvester.detectLabel("user", "No, that's not right. Use the other approach.");
+      expect(result).not.toBeNull();
+      expect(result!.source).toBe("human");
+      expect(result!.value).toBeLessThan(0);
+    });
+  });
+
   describe("detectLabel (human patterns)", () => {
     it("detects negative human correction", () => {
       const { harvester } = setup();

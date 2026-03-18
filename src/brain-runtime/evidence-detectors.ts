@@ -2,6 +2,7 @@ import type { BrainEvidenceKind, RewardSource } from "../brain-core/types.js";
 import { detectHumanEvidence } from "../brain-harvest/human.js";
 import { detectScannerEvidence } from "../brain-harvest/scanner.js";
 import { detectSelfEvidence, detectStructuredSelfEvidence } from "../brain-harvest/self.js";
+import { isSystemMessage } from "../brain-harvest/system-filter.js";
 
 export type HarvestMessagePart = {
   partType: string;
@@ -29,6 +30,13 @@ export function detectEvidenceBatch(
   content: string,
   messageParts?: HarvestMessagePart[],
 ): HarvestResult[] {
+  // Gate: never extract evidence from system/runtime scaffolding.
+  // This prevents heartbeat prompts, metadata wrappers, boot text,
+  // and other operational messages from polluting the learning substrate.
+  if (isSystemMessage(content)) {
+    return [];
+  }
+
   if (role === "user") {
     const human = detectHumanEvidence(content);
     return human ? [human] : [];
