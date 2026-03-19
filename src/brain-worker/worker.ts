@@ -18,6 +18,7 @@ import { computeReinforceUpdates, updateBaseline, applyWeightUpdates } from "../
 import { decayAllWeights } from "../brain-core/decay.js";
 import { computeHealth } from "../brain-core/health.js";
 import { clusterMutationsIntoBundles, evaluateBundle, DEFAULT_BUNDLE_CONFIG } from "../brain-core/bundle-evaluator.js";
+import type { BundleEvaluationConfig, MutationBundle } from "../brain-core/bundle-evaluator.js";
 
 function readExtractor(evidence: BrainEvidence): string | null {
   const extractor = evidence.metadata?.extractor;
@@ -428,6 +429,7 @@ export class BrainWorker {
     const proposals = this.mutator.proposeMutations(this.store.getRecentEpisodes(50));
     for (const proposal of proposals) {
       this.store.insertMutation(proposal);
+      this.recordMutationProposed(proposal);
     }
   }
 
@@ -459,10 +461,11 @@ export class BrainWorker {
     );
 
     // Cluster mutations into bundles
-    const bundles = clusterMutationsIntoBundles(candidateMutations, {
+    const bundleConfig: BundleEvaluationConfig = {
       ...DEFAULT_BUNDLE_CONFIG,
       minBundleSize: Math.min(3, candidateMutations.length),
-    });
+    };
+    const bundles = clusterMutationsIntoBundles(candidateMutations, bundleConfig);
 
     if (bundles.length === 0) {
       // Fall back to old behavior if no bundles
@@ -477,40 +480,62 @@ export class BrainWorker {
         id: bundle.id,
         mutationIds: bundle.mutationIds,
         bundleSize: bundle.bundleSize,
+        status: "evaluating",
         expectedGain: bundle.expectedGain,
         createdAt: bundle.createdAt,
       });
+      this.recordBundleEvaluationStarted(bundle, recentEpisodes, candidateMutations.length, bundleConfig);
 
-      const evalResult = await evaluateBundle(bundle, this.graph, recentEpisodes);
+      const evalResult = await evaluateBundle(bundle, this.graph, recentEpisodes, bundleConfig);
+      const qualifyingEpisodeIds = recentEpisodes
+        .filter((episode) => episode.reward !== null && episode.reward >= bundleConfig.minRewardThreshold)
+        .map((episode) => episode.id);
+
       bundle.status = evalResult.verdict.status;
       bundle.baseScore = evalResult.baseScore;
       bundle.candidateScore = evalResult.candidateScore;
       bundle.rejectionReason = evalResult.rejectionReason;
       bundle.resolvedAt = evalResult.verdict.resolvedAt;
       bundleVerdicts.push(evalResult.verdict);
+      this.recordBundleEvaluationCompleted(bundle, qualifyingEpisodeIds, evalResult.shouldPromote, evalResult.rejectionReason);
+
+      if (evalResult.shouldPromote) {
+        for (const proposal of bundle.proposals) {
+          this.mutator.applyMutation(proposal);
+        }
+        this.recordPromotionDecision("promotion_accepted", {
+          gate: "bundle_evaluation",
+          bundle,
+          reason: evalResult.verdict.reason.summary,
+          metadata: {
+            verdict: evalResult.verdict,
+          },
+        });
+        this.log.info(`[brain] Bundle ${bundle.id} promoted (${bundle.bundleSize} mutations, score ${evalResult.candidateScore.toFixed(3)} vs ${evalResult.baseScore.toFixed(3)})`);
+      } else {
+        for (const proposal of bundle.proposals) {
+          this.store.resolveMutation(proposal.id, "rejected");
+        }
+        this.recordPromotionDecision("promotion_rejected", {
+          gate: "bundle_evaluation",
+          bundle,
+          reason: evalResult.verdict.reason.summary,
+          metadata: {
+            verdict: evalResult.verdict,
+          },
+        });
+        this.log.info(`[brain] Bundle ${bundle.id} rejected (${evalResult.verdict.reason.code}): ${evalResult.verdict.reason.summary}`);
+      }
+
       this.store.resolveMutationBundle({
         id: bundle.id,
-        status: evalResult.verdict.status,
+        status: bundle.status,
         baseScore: evalResult.baseScore,
         candidateScore: evalResult.candidateScore,
         rejectionReason: evalResult.rejectionReason,
         verdict: evalResult.verdict,
         resolvedAt: evalResult.verdict.resolvedAt,
       });
-
-      if (evalResult.shouldPromote) {
-        // Apply mutations from the bundle
-        for (const proposal of bundle.proposals) {
-          this.mutator.applyMutation(proposal);
-        }
-        this.log.info(`[brain] Bundle ${bundle.id} promoted (${bundle.bundleSize} mutations, score ${evalResult.candidateScore.toFixed(3)} vs ${evalResult.baseScore.toFixed(3)})`);
-      } else {
-        // Reject all mutations in the bundle
-        for (const proposal of bundle.proposals) {
-          this.store.resolveMutation(proposal.id, "rejected");
-        }
-        this.log.info(`[brain] Bundle ${bundle.id} rejected (${evalResult.verdict.reason.code}): ${evalResult.verdict.reason.summary}`);
-      }
     }
 
     // Report health after bundle evaluation
@@ -579,6 +604,9 @@ export class BrainWorker {
       for (const proposal of pendingMutations) {
         this.store.resolveMutation(proposal.id, "rejected");
       }
+      if (pendingMutations.length > 0) {
+        this.recordLegacyPromotionDecision("promotion_rejected", pendingMutations, gate.reason, gate.health);
+      }
       return;
     }
 
@@ -605,9 +633,129 @@ export class BrainWorker {
       createdAt: Date.now(),
     };
     this.persistPromotionVerdict(verdict);
+    if (pendingMutations.length > 0) {
+      this.recordLegacyPromotionDecision("promotion_accepted", pendingMutations, gate.reason.summary, health);
+    }
     await this.hooks.onPromotionReady?.({
       healthJson: JSON.stringify(health),
       promotionVerdict: verdict,
+    });
+  }
+
+  private recordMutationProposed(proposal: MutationProposal): void {
+    this.store.appendLearningJournal({
+      eventType: "mutation_proposed",
+      mutationId: proposal.id,
+      mutationIds: [proposal.id],
+      packVersion: this.store.getCurrentPackVersion(),
+      payload: {
+        mutationKind: proposal.kind,
+        expectedGain: proposal.expectedGain,
+        proposal: proposal.proposal,
+        evidence: proposal.evidence,
+      },
+    });
+  }
+
+  private recordBundleEvaluationStarted(
+    bundle: MutationBundle,
+    recentEpisodes: Episode[],
+    candidateMutationCount: number,
+    config: BundleEvaluationConfig,
+  ): void {
+    this.store.appendLearningJournal({
+      eventType: "bundle_evaluation_started",
+      bundleId: bundle.id,
+      mutationIds: bundle.mutationIds,
+      packVersion: this.store.getCurrentPackVersion(),
+      payload: {
+        mutationKinds: bundle.proposals.map((proposal) => proposal.kind),
+        bundleSize: bundle.bundleSize,
+        expectedGain: bundle.expectedGain,
+        candidateMutationCount,
+        recentEpisodeIds: recentEpisodes.map((episode) => episode.id),
+        config: {
+          minBundleSize: config.minBundleSize,
+          maxBundleSize: config.maxBundleSize,
+          minRewardThreshold: config.minRewardThreshold,
+          maxContextInflation: config.maxContextInflation,
+          minImprovementRatio: config.minImprovementRatio,
+        },
+      },
+    });
+  }
+
+  private recordBundleEvaluationCompleted(
+    bundle: MutationBundle,
+    qualifyingEpisodeIds: string[],
+    shouldPromote: boolean,
+    rejectionReason: string | null,
+  ): void {
+    this.store.appendLearningJournal({
+      eventType: "bundle_evaluation_completed",
+      bundleId: bundle.id,
+      mutationIds: bundle.mutationIds,
+      packVersion: this.store.getCurrentPackVersion(),
+      payload: {
+        mutationKinds: bundle.proposals.map((proposal) => proposal.kind),
+        bundleSize: bundle.bundleSize,
+        expectedGain: bundle.expectedGain,
+        qualifyingEpisodeIds,
+        baseScore: bundle.baseScore ?? 0,
+        candidateScore: bundle.candidateScore ?? 0,
+        shouldPromote,
+        rejectionReason,
+      },
+    });
+  }
+
+  private recordPromotionDecision(
+    eventType: "promotion_accepted" | "promotion_rejected",
+    params: {
+      gate: "bundle_evaluation";
+      bundle: MutationBundle;
+      reason: string | null;
+      metadata: Record<string, unknown>;
+    },
+  ): void {
+    this.store.appendLearningJournal({
+      eventType,
+      bundleId: params.bundle.id,
+      mutationIds: params.bundle.mutationIds,
+      packVersion: this.store.getCurrentPackVersion(),
+      payload: {
+        gate: params.gate,
+        mutationKinds: params.bundle.proposals.map((proposal) => proposal.kind),
+        mutationCount: params.bundle.bundleSize,
+        reason: params.reason,
+        baseScore: params.bundle.baseScore,
+        candidateScore: params.bundle.candidateScore,
+        metadata: params.metadata,
+      },
+    });
+  }
+
+  private recordLegacyPromotionDecision(
+    eventType: "promotion_accepted" | "promotion_rejected",
+    pendingMutations: MutationProposal[],
+    reason: string | null,
+    health: ReturnType<PackManager["replayGate"]>["health"],
+  ): void {
+    this.store.appendLearningJournal({
+      eventType,
+      mutationIds: pendingMutations.map((proposal) => proposal.id),
+      packVersion: this.store.getCurrentPackVersion(),
+      payload: {
+        gate: "replay_gate",
+        mutationKinds: pendingMutations.map((proposal) => proposal.kind),
+        mutationCount: pendingMutations.length,
+        reason,
+        baseScore: null,
+        candidateScore: null,
+        metadata: {
+          health,
+        },
+      },
     });
   }
 }

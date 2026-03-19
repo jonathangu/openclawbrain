@@ -331,6 +331,82 @@ export interface PromotionRunVerdict {
   createdAt: number;
 }
 
+export type LearningJournalEventType =
+  | "mutation_proposed"
+  | "bundle_evaluation_started"
+  | "bundle_evaluation_completed"
+  | "promotion_accepted"
+  | "promotion_rejected";
+
+export interface BundleEvaluationConfigSnapshot {
+  minBundleSize: number;
+  maxBundleSize: number;
+  minRewardThreshold: number;
+  maxContextInflation: number;
+  minImprovementRatio: number;
+}
+
+export interface MutationProposedJournalPayload {
+  mutationKind: MutationKind;
+  expectedGain: number | null;
+  proposal: unknown;
+  evidence: unknown | null;
+}
+
+export interface BundleEvaluationStartedJournalPayload {
+  mutationKinds: MutationKind[];
+  bundleSize: number;
+  expectedGain: number;
+  candidateMutationCount: number;
+  recentEpisodeIds: string[];
+  config: BundleEvaluationConfigSnapshot;
+}
+
+export interface BundleEvaluationCompletedJournalPayload {
+  mutationKinds: MutationKind[];
+  bundleSize: number;
+  expectedGain: number;
+  qualifyingEpisodeIds: string[];
+  baseScore: number;
+  candidateScore: number;
+  shouldPromote: boolean;
+  rejectionReason: string | null;
+}
+
+export interface PromotionJournalPayload {
+  gate: "bundle_evaluation" | "replay_gate";
+  mutationKinds: MutationKind[];
+  mutationCount: number;
+  reason: string | null;
+  baseScore: number | null;
+  candidateScore: number | null;
+  metadata: Record<string, unknown>;
+}
+
+export interface LearningJournalRecordBase<TEvent extends LearningJournalEventType, TPayload> {
+  id: string;
+  eventType: TEvent;
+  mutationId: string | null;
+  mutationIds: string[];
+  bundleId: string | null;
+  packVersion: number | null;
+  payload: TPayload;
+  createdAt: number;
+}
+
+export type MutationProposedJournalRecord = LearningJournalRecordBase<"mutation_proposed", MutationProposedJournalPayload>;
+export type BundleEvaluationStartedJournalRecord = LearningJournalRecordBase<"bundle_evaluation_started", BundleEvaluationStartedJournalPayload>;
+export type BundleEvaluationCompletedJournalRecord = LearningJournalRecordBase<"bundle_evaluation_completed", BundleEvaluationCompletedJournalPayload>;
+export type PromotionAcceptedJournalRecord = LearningJournalRecordBase<"promotion_accepted", PromotionJournalPayload>;
+export type PromotionRejectedJournalRecord = LearningJournalRecordBase<"promotion_rejected", PromotionJournalPayload>;
+
+export type LearningJournalRecord =
+  | MutationProposedJournalRecord
+  | BundleEvaluationStartedJournalRecord
+  | BundleEvaluationCompletedJournalRecord
+  | PromotionAcceptedJournalRecord
+  | PromotionRejectedJournalRecord;
+
 // ═══════════════════════════════════════════
 // Health Metrics
 // ═══════════════════════════════════════════

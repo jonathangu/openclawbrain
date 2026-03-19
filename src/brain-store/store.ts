@@ -20,9 +20,9 @@ import type {
   RewardSource,
   Pack,
   MutationProposal,
-  MutationStatus,
-  MutationBundleStatus,
   MutationBundleRecord,
+  MutationBundleStatus,
+  MutationStatus,
   BundleEvaluationVerdict,
   DecisionTrace,
   BrainEvidence,
@@ -30,6 +30,12 @@ import type {
   BrainEvidenceResolution,
   ResolvedLabel,
   SeedWeight,
+  LearningJournalEventType,
+  LearningJournalRecord,
+  MutationProposedJournalPayload,
+  BundleEvaluationStartedJournalPayload,
+  BundleEvaluationCompletedJournalPayload,
+  PromotionJournalPayload,
 } from "../brain-core/types.js";
 
 // ═══════════════════════════════════════════
@@ -45,6 +51,24 @@ function deserializeEmbedding(blob: Buffer | Uint8Array | null): Float32Array | 
   if (!blob) return null;
   const buf = blob instanceof Buffer ? blob : Buffer.from(blob);
   return new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4);
+}
+
+export interface LearningJournalInsert {
+  eventType: LearningJournalEventType;
+  mutationId?: string | null;
+  mutationIds?: string[];
+  bundleId?: string | null;
+  packVersion?: number | null;
+  payload: LearningJournalRecord["payload"];
+  createdAt?: number;
+}
+
+export interface LearningJournalQuery {
+  limit?: number;
+  eventTypes?: LearningJournalEventType[];
+  mutationId?: string;
+  bundleId?: string;
+  since?: number;
 }
 
 // ═══════════════════════════════════════════
@@ -658,6 +682,28 @@ export class BrainStore {
     );
   }
 
+  updateMutationBundle(
+    id: string,
+    params: {
+      status: MutationBundleStatus;
+      baseScore?: number | null;
+      candidateScore?: number | null;
+      rejectionReason?: string | null;
+      verdict?: BundleEvaluationVerdict | null;
+      resolvedAt?: number | null;
+    },
+  ): void {
+    this.resolveMutationBundle({
+      id,
+      status: params.status,
+      baseScore: params.baseScore ?? null,
+      candidateScore: params.candidateScore ?? null,
+      rejectionReason: params.rejectionReason ?? null,
+      verdict: params.verdict ?? null,
+      resolvedAt: params.resolvedAt ?? null,
+    });
+  }
+
   getMutationsByStatus(status: MutationStatus, limit = 50): MutationProposal[] {
     const rows = this.db.prepare(`
       SELECT * FROM brain_mutations
@@ -716,6 +762,22 @@ export class BrainStore {
     return counts;
   }
 
+  getMutationBundle(id: string): MutationBundleRecord | null {
+    const row = this.db.prepare(`SELECT * FROM brain_mutation_bundles WHERE id = ?`).get(id) as Record<string, unknown> | undefined;
+    return row ? this.toMutationBundle(row) : null;
+  }
+
+  getMutationBundlesByStatus(status: MutationBundleStatus, limit = 50): MutationBundleRecord[] {
+    const rows = this.db.prepare(`
+      SELECT *
+      FROM brain_mutation_bundles
+      WHERE status = ?
+      ORDER BY created_at DESC
+      LIMIT ?
+    `).all(status, limit) as Record<string, unknown>[];
+    return rows.map((row) => this.toMutationBundle(row));
+  }
+
   getRecentMutationBundles(limit = 20): MutationBundleRecord[] {
     const rows = this.db.prepare(`
       SELECT *
@@ -723,21 +785,73 @@ export class BrainStore {
       ORDER BY created_at DESC
       LIMIT ?
     `).all(limit) as Record<string, unknown>[];
-    return rows.map((row) => ({
-      id: row.id as string,
-      mutationIds: JSON.parse((row.mutation_ids as string) || "[]"),
-      bundleSize: Number(row.bundle_size ?? 0),
-      status: row.status as MutationBundleStatus,
-      baseScore: row.base_score === null ? null : Number(row.base_score),
-      candidateScore: row.candidate_score === null ? null : Number(row.candidate_score),
-      expectedGain: Number(row.expected_gain ?? 0),
-      rejectionReason: (row.rejection_reason as string) ?? null,
-      verdict: row.verdict_json
-        ? JSON.parse(row.verdict_json as string) as BundleEvaluationVerdict
-        : null,
-      createdAt: Number(row.created_at ?? 0),
-      resolvedAt: row.resolved_at === null ? null : Number(row.resolved_at),
-    }));
+    return rows.map((row) => this.toMutationBundle(row));
+  }
+
+  appendLearningJournal(params: LearningJournalInsert): LearningJournalRecord {
+    const id = `bj_${randomUUID().slice(0, 8)}`;
+    const createdAt = params.createdAt ?? Date.now();
+    this.db.prepare(`
+      INSERT INTO brain_learning_journal (id, event_type, mutation_id, mutation_ids, bundle_id, pack_version, payload, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id,
+      params.eventType,
+      params.mutationId ?? null,
+      JSON.stringify(params.mutationIds ?? []),
+      params.bundleId ?? null,
+      params.packVersion ?? null,
+      JSON.stringify(params.payload),
+      createdAt,
+    );
+    return this.toLearningJournalRecord({
+      id,
+      event_type: params.eventType,
+      mutation_id: params.mutationId ?? null,
+      mutation_ids: JSON.stringify(params.mutationIds ?? []),
+      bundle_id: params.bundleId ?? null,
+      pack_version: params.packVersion ?? null,
+      payload: JSON.stringify(params.payload),
+      created_at: createdAt,
+    });
+  }
+
+  getLearningJournal(query: LearningJournalQuery = {}): LearningJournalRecord[] {
+    const filters: string[] = [];
+    const args: Array<number | string> = [];
+
+    if (query.eventTypes && query.eventTypes.length > 0) {
+      filters.push(`event_type IN (${query.eventTypes.map(() => "?").join(", ")})`);
+      args.push(...query.eventTypes);
+    }
+    if (query.bundleId) {
+      filters.push("bundle_id = ?");
+      args.push(query.bundleId);
+    }
+    if (typeof query.since === "number") {
+      filters.push("created_at >= ?");
+      args.push(query.since);
+    }
+
+    const whereClause = filters.length > 0 ? `WHERE ${filters.join(" AND ")}` : "";
+    const rows = this.db.prepare(`
+      SELECT *
+      FROM brain_learning_journal
+      ${whereClause}
+      ORDER BY created_at ASC
+    `).all(...args) as Record<string, unknown>[];
+
+    let records = rows.map((row) => this.toLearningJournalRecord(row));
+    if (query.mutationId) {
+      const mutationId = query.mutationId;
+      records = records.filter((record) =>
+        record.mutationId === mutationId || record.mutationIds.includes(mutationId),
+      );
+    }
+    if (typeof query.limit === "number" && query.limit >= 0) {
+      records = records.slice(Math.max(0, records.length - query.limit));
+    }
+    return records;
   }
 
   countOrphanedTraceRows(): number {
@@ -800,6 +914,71 @@ export class BrainStore {
       rolledBack: !!(row.rolled_back as number),
       createdAt: row.created_at as number,
     };
+  }
+
+  private toMutationBundle(row: Record<string, unknown>): MutationBundleRecord {
+    return {
+      id: row.id as string,
+      mutationIds: JSON.parse((row.mutation_ids as string) || "[]"),
+      bundleSize: Number(row.bundle_size ?? 0),
+      status: row.status as MutationBundleStatus,
+      baseScore: row.base_score === null ? null : Number(row.base_score),
+      candidateScore: row.candidate_score === null ? null : Number(row.candidate_score),
+      expectedGain: Number(row.expected_gain ?? 0),
+      rejectionReason: (row.rejection_reason as string) ?? null,
+      verdict: row.verdict_json
+        ? JSON.parse(row.verdict_json as string) as BundleEvaluationVerdict
+        : null,
+      createdAt: Number(row.created_at ?? 0),
+      resolvedAt: row.resolved_at === null ? null : Number(row.resolved_at),
+    };
+  }
+
+  private toLearningJournalRecord(row: Record<string, unknown>): LearningJournalRecord {
+    const base = {
+      id: row.id as string,
+      mutationId: (row.mutation_id as string) ?? null,
+      mutationIds: JSON.parse((row.mutation_ids as string) || "[]"),
+      bundleId: (row.bundle_id as string) ?? null,
+      packVersion: (row.pack_version as number) ?? null,
+      createdAt: row.created_at as number,
+    };
+    const payloadRaw = JSON.parse((row.payload as string) || "{}");
+
+    switch (row.event_type) {
+      case "mutation_proposed":
+        return {
+          ...base,
+          eventType: "mutation_proposed",
+          payload: payloadRaw as MutationProposedJournalPayload,
+        };
+      case "bundle_evaluation_started":
+        return {
+          ...base,
+          eventType: "bundle_evaluation_started",
+          payload: payloadRaw as BundleEvaluationStartedJournalPayload,
+        };
+      case "bundle_evaluation_completed":
+        return {
+          ...base,
+          eventType: "bundle_evaluation_completed",
+          payload: payloadRaw as BundleEvaluationCompletedJournalPayload,
+        };
+      case "promotion_accepted":
+        return {
+          ...base,
+          eventType: "promotion_accepted",
+          payload: payloadRaw as PromotionJournalPayload,
+        };
+      case "promotion_rejected":
+        return {
+          ...base,
+          eventType: "promotion_rejected",
+          payload: payloadRaw as PromotionJournalPayload,
+        };
+      default:
+        throw new Error(`Unknown learning journal event type: ${String(row.event_type)}`);
+    }
   }
 
   // ─── Training State ───

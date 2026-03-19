@@ -737,11 +737,8 @@ export class BrainService {
       lastPromotionReason: this.store.getTrainingState("last_promotion_reason"),
       lastPromotionVerdict: this.store.getTrainingStateJson("last_promotion_verdict_json"),
       lastReplayFailureReason: this.store.getTrainingState("last_replay_failure_reason"),
-<<<<<<< HEAD
       lastReplayGateVerdict: this.store.getTrainingStateJson("last_replay_gate_verdict_json"),
-=======
       promotionStory,
->>>>>>> 6f316e8 (feat: add promotion story surfaces)
       brainRoot: this.config.root,
       ...health,
     };

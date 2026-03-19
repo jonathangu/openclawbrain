@@ -173,6 +173,27 @@ export function runBrainMigrations(db: DatabaseSync): void {
       resolved_at     INTEGER
     );
 
+    CREATE INDEX IF NOT EXISTS brain_mutation_bundles_status_idx ON brain_mutation_bundles(status, created_at);
+
+    -- ═══════════════════════════════════════════
+    -- Learning Journal
+    -- ═══════════════════════════════════════════
+
+    CREATE TABLE IF NOT EXISTS brain_learning_journal (
+      id              TEXT PRIMARY KEY,
+      event_type      TEXT NOT NULL,
+      mutation_id     TEXT,
+      mutation_ids    TEXT NOT NULL DEFAULT '[]',
+      bundle_id       TEXT,
+      pack_version    INTEGER,
+      payload         TEXT NOT NULL DEFAULT '{}',
+      created_at      INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS brain_learning_journal_created_idx ON brain_learning_journal(created_at);
+    CREATE INDEX IF NOT EXISTS brain_learning_journal_event_idx ON brain_learning_journal(event_type, created_at);
+    CREATE INDEX IF NOT EXISTS brain_learning_journal_bundle_idx ON brain_learning_journal(bundle_id, created_at);
+
     -- ═══════════════════════════════════════════
     -- Decision Traces
     -- ═══════════════════════════════════════════
