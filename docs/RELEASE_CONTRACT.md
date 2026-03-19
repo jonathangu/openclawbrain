@@ -79,9 +79,13 @@ These are real enough to build on, but not frozen enough to oversell.
 - Boundary: mutation evaluation is still closer to proposal-level checks than the intended bundle-level replay contract.
 
 ### Packaging and release boundary
-- Current files: `package.json`, `README.md`, `docs/EVIDENCE.md`, future CI/release workflow surfaces
-- Truth: the package publishes and the repo has a documented proof ladder.
-- Boundary: release verification and package boundaries are still looser than the intended operator-grade release standard.
+- Current files: `package.json`, `packages/openclaw/package.json`, `packages/cli/package.json`, `README.md`, `docs/lifecycle.md`, `docs/configuration.md`, `docs/EVIDENCE.md`, future CI/release workflow surfaces
+- Truth: the split packages are published and the public-registry operator lane is real:
+  - `openclaw plugins install @openclawbrain/openclaw@0.4.0`
+  - `npx @openclawbrain/cli@0.4.0 openclawbrain install --openclaw-home ~/.openclaw`
+  - `openclaw gateway restart`
+  - `npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed`
+- Boundary: some hosts still warn about a plugin id mismatch because the manifest uses `openclawbrain` while the package/entry hint uses `openclaw`; release verification and docs alignment still need to keep that caveat visible rather than implying the seam is fixed.
 
 ## 3. Not done yet
 
@@ -93,11 +97,11 @@ These are still active work and must not be described as complete.
   - Primary files: `src/brain-core/mutator.ts`, `src/brain-worker/worker.ts`, `src/brain-store/store.ts`, `src/brain-store/migrations.ts`
 - **CI-enforced proof ladder / release gates**
   - Primary files: future workflow surfaces, `package.json`, `docs/EVIDENCE.md`
-- **Clean npm/package boundary for outside operators**
-  - Primary files: `package.json`, release workflow, docs packaging boundary
+- **Host/plugin id alignment for the split packages**
+  - Primary files: `packages/openclaw/openclaw.plugin.json`, `packages/openclaw/package.json`, `README.md`, docs packaging boundary
 - **Boring install / validation / recovery path for another operator**
   - Primary files: `README.md`, `docs/configuration.md`, `openclaw.plugin.json`, validation scripts
 
 ## Safe public summary
 
-> OpenClawBrain v2 already has a paper-faithful routing core and a real live runtime path. The remaining work is mainly host-surface proof, release engineering, bundle-level mutation evaluation, packaging hardening, and cleaner operator truth.
+> OpenClawBrain v2 already has a paper-faithful routing core, a real live runtime path, and a published split-package operator lane. The remaining work is mainly host-surface proof, release engineering, bundle-level mutation evaluation, plugin-id seam cleanup, and cleaner operator truth.

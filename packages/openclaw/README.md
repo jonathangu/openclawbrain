@@ -1,10 +1,17 @@
 # @openclawbrain/openclaw
 
-Staged package split note:
+`@openclawbrain/openclaw@0.4.0` is the published OpenClawBrain plugin/runtime payload for OpenClaw.
 
-- `@openclawbrain/openclaw` is the plugin/runtime payload for OpenClaw.
-- The operator CLI surface is moving to `@openclawbrain/cli`.
-- Public docs are not flipped yet; treat this package split as repo-stage work until the release lane is ready.
+Use it with the published operator CLI:
+
+```bash
+openclaw plugins install @openclawbrain/openclaw@0.4.0
+npx @openclawbrain/cli@0.4.0 openclawbrain install --openclaw-home ~/.openclaw
+openclaw gateway restart
+npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed
+```
+
+Current host/plugin caveat: some hosts still warn about a plugin id mismatch because the plugin manifest id is `openclawbrain` while the package/entry hint is `openclaw`. The install still works; treat that warning as currently cosmetic.
 
 ## What stays here
 
@@ -33,8 +40,8 @@ import {
 
 Use `@openclawbrain/cli` for:
 
-- `openclawbrain install --openclaw-home <path>`
-- `openclawbrain status --openclaw-home <path> --detailed`
+- `npx @openclawbrain/cli@0.4.0 openclawbrain install --openclaw-home <path>`
+- `npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home <path> --detailed`
 - daemon, import/export, and other operator commands
 
 If you install this plugin package into OpenClaw before the CLI package is installed, the extension will fail open and tell you to install `@openclawbrain/cli` before pinning the activation root.

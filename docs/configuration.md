@@ -10,61 +10,69 @@ If you want the repo's exact truth contract first, read:
 
 ## Happy-path operator flow
 
-1. install the published front-door package: `npm install -g @openclawbrain/openclaw@0.3.5`
-2. attach it to one OpenClaw home with `openclawbrain install --openclaw-home ~/.openclaw`
+These examples intentionally use the exact public-registry flow that already passed on `redogfood`.
+
+1. install the published plugin/runtime payload into OpenClaw: `openclaw plugins install @openclawbrain/openclaw@0.4.0`
+2. attach it to one OpenClaw home with `npx @openclawbrain/cli@0.4.0 openclawbrain install --openclaw-home ~/.openclaw`
 3. run `openclaw gateway restart`
-4. verify with `openclawbrain status --openclaw-home ~/.openclaw --detailed`
+4. verify with `npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed`
 5. configure embeddings and choose a `brainRoot` if you need to tune defaults
 6. run the validation harnesses appropriate to the claim you want to make
 
 ## Canonical install, upgrade, remove, and verify path
 
-Front door package:
+Front door packages:
 
 ```bash
-npm install -g @openclawbrain/openclaw@0.3.5
+openclaw plugins install @openclawbrain/openclaw@0.4.0
 ```
 
 Install or attach:
 
 ```bash
-openclawbrain install --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.0 openclawbrain install --openclaw-home ~/.openclaw
 openclaw gateway restart
-openclawbrain status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed
 ```
 
 Upgrade uses the same lane:
 
 ```bash
-npm install -g @openclawbrain/openclaw@0.3.5
-openclawbrain install --openclaw-home ~/.openclaw
+openclaw plugins install @openclawbrain/openclaw@0.4.0
+npx @openclawbrain/cli@0.4.0 openclawbrain install --openclaw-home ~/.openclaw
 openclaw gateway restart
-openclawbrain status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed
 ```
 
 Verify the target install at any time:
 
 ```bash
-openclawbrain status --openclaw-home ~/.openclaw --detailed
-openclawbrain status --openclaw-home ~/.openclaw --json
+npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --json
 ```
 
 Remove only the profile hook and keep OpenClawBrain data:
 
 ```bash
-openclawbrain detach --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.0 openclawbrain detach --openclaw-home ~/.openclaw
+openclaw gateway restart
+```
+
+Remove the profile hook and keep data explicitly:
+
+```bash
+npx @openclawbrain/cli@0.4.0 openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data
 openclaw gateway restart
 ```
 
 Remove the profile hook and purge OpenClawBrain data for that install:
 
 ```bash
-openclawbrain uninstall --openclaw-home ~/.openclaw --purge-data
+npx @openclawbrain/cli@0.4.0 openclawbrain uninstall --openclaw-home ~/.openclaw --purge-data
 openclaw gateway restart
-npm uninstall -g @openclawbrain/openclaw
 ```
 
-If you want to remove the hook but keep the data, use `detach` or `openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data`. `detach` is the simpler keep-data path.
+If you want to remove the hook but keep the data, use `detach` or `npx @openclawbrain/cli@0.4.0 openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data`. `detach` is the simpler keep-data path. The plugin payload itself lives under OpenClaw's plugin manager, so remove `@openclawbrain/openclaw` there separately only if you want the package files gone too.
 
 ## Compatibility path
 
@@ -83,6 +91,10 @@ Decision and migration note: [`docs/lifecycle.md`](lifecycle.md)
 On current OpenClaw hosts, **do not manually write** `plugins.slots.contextEngine` for OpenClawBrain.
 
 That older seam is not the stable install story anymore. OpenClawBrain now uses a hook-based compatibility bridge on hosts where `api.registerContextEngine` is gone.
+
+Current install caveat:
+- some hosts still warn about a plugin id mismatch because the plugin manifest uses `openclawbrain` while the package/entry hint uses `openclaw`
+- the install still works; treat that warning as currently cosmetic rather than a failed attach
 
 If you are debugging an older host build, treat any manual slot override as version-specific surgery rather than normal operator setup.
 
@@ -120,7 +132,7 @@ Why these defaults:
 The lifecycle path above is the canonical install lane. If you want to prebuild a workspace snapshot after attach, run:
 
 ```bash
-openclawbrain init /path/to/workspace
+npx @openclawbrain/cli@0.4.0 openclawbrain init /path/to/workspace
 ```
 
 That creates the initial graph, writes `state.db`, snapshots pack `v000001`, and promotes it.
@@ -224,17 +236,17 @@ Why:
 ## Operator commands
 
 ```bash
-openclawbrain install --openclaw-home ~/.openclaw
-openclawbrain status --openclaw-home ~/.openclaw --detailed
-openclawbrain status --openclaw-home ~/.openclaw --json
-openclawbrain init [workspace]
-openclawbrain replay
-openclawbrain promote
-openclawbrain rollback [version]
-openclawbrain disable
-openclawbrain enable
-openclawbrain detach --openclaw-home ~/.openclaw
-openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data|--purge-data
+npx @openclawbrain/cli@0.4.0 openclawbrain install --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --json
+npx @openclawbrain/cli@0.4.0 openclawbrain init [workspace]
+npx @openclawbrain/cli@0.4.0 openclawbrain replay
+npx @openclawbrain/cli@0.4.0 openclawbrain promote
+npx @openclawbrain/cli@0.4.0 openclawbrain rollback [version]
+npx @openclawbrain/cli@0.4.0 openclawbrain disable
+npx @openclawbrain/cli@0.4.0 openclawbrain enable
+npx @openclawbrain/cli@0.4.0 openclawbrain detach --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.0 openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data|--purge-data
 ```
 
 ## Validation commands
@@ -274,7 +286,7 @@ So treat the host harness as active proof work, not a closed release gate.
 - if embeddings are not configured, learned retrieval and `brain_teach` stay disabled
 - local loopback embedding endpoints do not require a bearer token by default
 - if the worker is unavailable, serving still uses the last promoted pack
-- `openclawbrain status --openclaw-home ~/.openclaw --detailed` keeps embedding, worker, and hook truth visible for one installed target
+- `npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed` keeps embedding, worker, and hook truth visible for one installed target
 
 ## Session reset note
 

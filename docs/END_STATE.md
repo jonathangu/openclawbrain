@@ -20,6 +20,8 @@ This file is the maintainer execution map, not the public pitch.
 
 These files should anchor future work:
 - `README.md` — public front door and fast operator truth
+- `packages/openclaw/README.md` — plugin/runtime npm surface
+- `packages/cli/README.md` — operator CLI npm surface
 - `docs/RELEASE_CONTRACT.md` — true now vs implemented-but-not-frozen vs not done
 - `docs/EVIDENCE.md` — proof ladder and artifact contract
 - `docs/configuration.md` — practical operator setup
@@ -54,6 +56,8 @@ These are inherited LCM surfaces and should stay stable unless a failing test fo
 - paper-faithful routing core exists
 - live runtime decisioning exists
 - child-worker serving boundary is real
+- split packages `@openclawbrain/openclaw@0.4.0` and `@openclawbrain/cli@0.4.0` are published
+- the public-registry plugin install plus `npx` CLI flow has already passed on `redogfood`
 - deterministic session-bound `brain_teach` proof exists
 - deterministic runtime proof for teach retrieval and serve-from-last-promoted-pack exists
 - structured raw evidence plus worker-side trust resolution are real
@@ -61,9 +65,9 @@ These are inherited LCM surfaces and should stay stable unless a failing test fo
 ### Still open
 - Phase 4: mutation bundles — DONE (bundle evaluation, clustering, replay gates)
 - Phase 5: CI proof ladder — DONE (evidence bundles under docs/evidence/, CI runs tests)
-- Phase 6: package/type cleanup — DONE (tsc --noEmit green for src, SDK compat layer added)
+- Phase 6: split-package cleanup — ACTIVE (published split packages and docs are in place; manifest/package id alignment and other packaging seams remain)
 
-**Remaining honest gap:** Full end-to-end host-surface proof bundle capture (sterile harness passes 7/7 runtime assertions, but the full proof artifact bundle is pending host-seam adaptation)
+**Remaining honest gaps:** Full end-to-end host-surface proof bundle capture and final split-package seam cleanup (most visibly the current plugin-id warning).
 
 ## Current code map
 
@@ -229,16 +233,21 @@ Still open:
 Goal: make installation and operator recovery boring.
 
 Primary files:
-- compatibility wrapper surfaces if needed
-- `tsconfig.json`
-- `package.json`
-- `openclaw.plugin.json`
+- `packages/openclaw/package.json`
+- `packages/cli/package.json`
+- `packages/openclaw/openclaw.plugin.json`
 - `README.md`
+- `packages/openclaw/README.md`
+- `packages/cli/README.md`
 - `CHANGELOG.md`
 
+Current truth:
+- split packages `@openclawbrain/openclaw@0.4.0` and `@openclawbrain/cli@0.4.0` are published
+- the proven public lane is `openclaw plugins install @openclawbrain/openclaw@0.4.0` plus `npx @openclawbrain/cli@0.4.0 openclawbrain ...`
+- `@jonathangu/openclawbrain@0.3.5` is now a compatibility holdover, not the main operator story
+
 Still open:
-- isolate SDK drift behind a narrow compatibility boundary
-- make `npx tsc --noEmit` green
+- align the plugin manifest/package ids so hosts stop warning about `openclawbrain` vs `openclaw`
 - keep `brainWorkerMode=child` documented as the practical default
 - clarify tested embedding support as reality, not wishful compatibility
 - verify and possibly tighten npm package contents

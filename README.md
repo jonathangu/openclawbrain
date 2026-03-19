@@ -1,6 +1,6 @@
 # OpenClawBrain — Your Agent's Second Brain
 
-> If you landed here through `@jonathangu/openclawbrain`, treat that package as the compatibility lane. New installs and reinstalls should use `@openclawbrain/openclaw@0.3.5`.
+> New installs and reinstalls should use the split `0.4.0` lane: `@openclawbrain/openclaw@0.4.0` for the plugin/runtime payload and `@openclawbrain/cli@0.4.0` for the operator CLI. `@jonathangu/openclawbrain@0.3.5` remains compatibility-only for older installs.
 
 <p align="center">
   <strong>Your OpenClaw agent should not relearn the same lesson twice.</strong>
@@ -43,58 +43,55 @@ Your AI assistant keeps making the same mistakes. You correct it, it forgets. Yo
 
 ## Canonical Operator Path
 
-Use one operator lane across GitHub and the site.
+Use the split `0.4.0` lane across GitHub and the site.
 
-Current public packages for the `0.3.5` wave:
-- canonical front door: `@openclawbrain/openclaw@0.3.5`
-- compatibility package: `@jonathangu/openclawbrain@0.3.5`
+Current public packages:
+- plugin/runtime payload: `@openclawbrain/openclaw@0.4.0`
+- operator CLI: `@openclawbrain/cli@0.4.0`
+- compatibility holdover for older installs: `@jonathangu/openclawbrain@0.3.5`
 
-New installs, upgrades, detach/uninstall flows, and verification should use the canonical front door. Keep the compatibility package only for older plugin/wrapper installs that have not migrated yet.
+The now-proven public-registry flow on the real host `redogfood` is:
 
-The canonical package now supports two truthful hook layouts:
-- CLI-managed generated shadow extension via `openclawbrain install`
-- native package plugin via `openclaw plugins install @openclawbrain/openclaw@0.3.5`, followed by `openclawbrain install` to pin the activation root once the CLI is available
+```bash
+openclaw plugins install @openclawbrain/openclaw@0.4.0
+npx @openclawbrain/cli@0.4.0 openclawbrain install --openclaw-home ~/.openclaw
+openclaw gateway restart
+npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed
+```
+
+`openclawbrain install` is still the activation-root pinning step after the plugin payload is present. `openclaw gateway restart` makes the new hook live immediately. `status --detailed` is the first verification read.
+
+Current host/plugin caveat: some hosts still warn about a plugin id mismatch because the plugin manifest uses `openclawbrain` while the package/entry hint uses `openclaw`. The install still works; treat that warning as currently cosmetic rather than a failed attach.
 
 ### Install
 
 ```bash
-npm install -g @openclawbrain/openclaw@0.3.5
-openclawbrain install --openclaw-home ~/.openclaw
+openclaw plugins install @openclawbrain/openclaw@0.4.0
+npx @openclawbrain/cli@0.4.0 openclawbrain install --openclaw-home ~/.openclaw
 openclaw gateway restart
-openclawbrain status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed
 ```
 
-`openclawbrain install` attaches OpenClawBrain to one OpenClaw home. `openclaw gateway restart` makes the new hook live immediately. `status --detailed` is the first verification read.
-
-If you want OpenClaw itself to own the plugin package directory, the native package lane is also supported:
-
-```bash
-openclaw plugins install @openclawbrain/openclaw@0.3.5
-openclawbrain install --openclaw-home ~/.openclaw
-openclaw gateway restart
-openclawbrain status --openclaw-home ~/.openclaw --detailed
-```
-
-`openclawbrain install` remains the activation-root pinning step for either layout. `status --openclaw-home` now tells you whether the hook came from the generated shadow extension or the native package plugin.
+This is the primary operator story now. The plugin payload is installed through OpenClaw, and the CLI runs through the published `@openclawbrain/cli` package rather than an older combined global package.
 
 ### Upgrade
 
 ```bash
-npm install -g @openclawbrain/openclaw@0.3.5
-openclawbrain install --openclaw-home ~/.openclaw
+openclaw plugins install @openclawbrain/openclaw@0.4.0
+npx @openclawbrain/cli@0.4.0 openclawbrain install --openclaw-home ~/.openclaw
 openclaw gateway restart
-openclawbrain status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed
 ```
 
-Upgrade uses the same lane: refresh the global CLI, rerun `install` for the target OpenClaw home, restart the gateway, then verify.
+Upgrade uses the same lane: refresh the plugin package inside OpenClaw, rerun `install` for the target OpenClaw home, restart the gateway, then verify.
 
 ### Verify
 
 Use the detailed status view as the human check and JSON when you want the canonical machine-readable answer:
 
 ```bash
-openclawbrain status --openclaw-home ~/.openclaw --detailed
-openclawbrain status --openclaw-home ~/.openclaw --json
+npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --json
 ```
 
 ### Remove
@@ -102,21 +99,25 @@ openclawbrain status --openclaw-home ~/.openclaw --json
 Remove only the OpenClaw profile hook and keep OpenClawBrain data:
 
 ```bash
-openclawbrain detach --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.0 openclawbrain detach --openclaw-home ~/.openclaw
+openclaw gateway restart
+```
+
+Remove the hook and keep data explicitly:
+
+```bash
+npx @openclawbrain/cli@0.4.0 openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data
 openclaw gateway restart
 ```
 
 Remove the hook and purge OpenClawBrain data for that install:
 
 ```bash
-openclawbrain uninstall --openclaw-home ~/.openclaw --purge-data
+npx @openclawbrain/cli@0.4.0 openclawbrain uninstall --openclaw-home ~/.openclaw --purge-data
 openclaw gateway restart
-npm uninstall -g @openclawbrain/openclaw
 ```
 
-If you want to remove the hook but keep the data, use `detach` or `openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data`. `detach` is the simpler keep-data path.
-
-`detach` and `uninstall` remove whichever OpenClawBrain hook layout is present for that OpenClaw home. The data semantics stay explicit: `detach` always keeps data, `uninstall --keep-data` keeps it explicitly, and `uninstall --purge-data` removes it.
+`detach` and `uninstall` act on one OpenClaw home. The data semantics stay explicit: `detach` always keeps data, `uninstall --keep-data` keeps it explicitly, and `uninstall --purge-data` removes it. The plugin payload itself was installed through OpenClaw's plugin manager, so remove `@openclawbrain/openclaw` there separately only if you want the package files gone too.
 
 ### Compatibility Path
 
@@ -126,18 +127,18 @@ The older plugin/wrapper package still exists for compatibility with existing in
 openclaw plugins install @jonathangu/openclawbrain@0.3.5
 ```
 
-Treat that as a secondary path, not the main operator story.
+Treat that as a holdover lane, not the main operator story.
 
 Decision and migration note: see [`docs/lifecycle.md`](docs/lifecycle.md).
 
-> **Source checkout?** Clone the [GitHub repo](https://github.com/jonathangu/openclawbrain) only if you want to develop or contribute. Normal usage should use the published front-door package above.
+> **Source checkout?** Clone the [GitHub repo](https://github.com/jonathangu/openclawbrain) only if you want to develop or contribute. Normal usage should use the published split packages above.
 
 ### Optional Workspace Bootstrap
 
 If you want to prebuild a workspace snapshot after the lifecycle attach above, run:
 
 ```bash
-openclawbrain init /path/to/your/workspace
+npx @openclawbrain/cli@0.4.0 openclawbrain init /path/to/your/workspace
 ```
 
 ### Correct (in any conversation)
@@ -170,8 +171,8 @@ brain_teach instruction="Keep answers concise, use bullets, and end with the nex
 ### Inspect
 
 ```bash
-openclawbrain status --openclaw-home ~/.openclaw --detailed
-openclawbrain status --openclaw-home ~/.openclaw --json
+npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --json
 brain_trace        # See recent routing decisions in conversation
 ```
 
@@ -185,7 +186,7 @@ Chooses best context → Surfaces as priority context → Learns from outcome
 Deep dives:
 - [`docs/lifecycle.md`](docs/lifecycle.md) — canonical install, upgrade, verify, detach, uninstall, and migration decision
 - [`docs/configuration.md`](docs/configuration.md) — practical operator install, upgrade, remove, and config guide
-- [`docs/release-notes-0.3.5.md`](docs/release-notes-0.3.5.md) — what actually shipped in 0.3.5
+- [`docs/release-notes-0.4.0.md`](docs/release-notes-0.4.0.md) — split packages and the proven public-registry dogfood flow
 - [`docs/routing-prior.md`](docs/routing-prior.md) — why summaries are a routing/search prior rather than the truth layer
 - [`docs/corrections.md`](docs/corrections.md) — how explicit user corrections become durable current truth
 - [`docs/architecture.md`](docs/architecture.md) — full system architecture
@@ -311,15 +312,17 @@ Set `OPENCLAWBRAIN_EMBEDDING_API_KEY` if needed.
 
 ## Operator Commands
 
+Use the published CLI package directly for clean-host operator commands:
+
 | Command | What it does |
 |---------|-------------|
-| `openclawbrain install --openclaw-home ~/.openclaw` | Attach OpenClawBrain to one OpenClaw home |
+| `npx @openclawbrain/cli@0.4.0 openclawbrain install --openclaw-home ~/.openclaw` | Attach OpenClawBrain to one OpenClaw home after the plugin payload is installed |
 | `openclaw gateway restart` | Reload the gateway after install, detach, or uninstall |
-| `openclawbrain status --openclaw-home ~/.openclaw --detailed` | Human verification for lifecycle, worker, and pack truth |
-| `openclawbrain status --openclaw-home ~/.openclaw --json` | Canonical machine-readable verification for one installed target |
-| `openclawbrain init [workspace]` | Optional workspace bootstrap after attach |
-| `openclawbrain detach --openclaw-home ~/.openclaw` | Remove only the profile hook and keep data |
-| `openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data|--purge-data` | Remove the hook and choose the data outcome explicitly |
+| `npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed` | Human verification for lifecycle, worker, and pack truth |
+| `npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --json` | Canonical machine-readable verification for one installed target |
+| `npx @openclawbrain/cli@0.4.0 openclawbrain init [workspace]` | Optional workspace bootstrap after attach |
+| `npx @openclawbrain/cli@0.4.0 openclawbrain detach --openclaw-home ~/.openclaw` | Remove only the profile hook and keep data |
+| `npx @openclawbrain/cli@0.4.0 openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data|--purge-data` | Remove the hook and choose the data outcome explicitly |
 | `brain_trace` | Inspect routing decisions inside the agent/tool lane |
 | `brain_teach` | Explicitly teach corrections or instructions in conversation |
 
@@ -360,33 +363,32 @@ Key insight: REINFORCE assigns credit to **every routing decision** in the episo
 
 ```bash
 # Install
-npm install -g @openclawbrain/openclaw@0.3.5
-openclawbrain install --openclaw-home ~/.openclaw
+openclaw plugins install @openclawbrain/openclaw@0.4.0
+npx @openclawbrain/cli@0.4.0 openclawbrain install --openclaw-home ~/.openclaw
 openclaw gateway restart
-openclawbrain status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed
 
-# Upgrade
-npm install -g @openclawbrain/openclaw@0.3.5
-openclawbrain install --openclaw-home ~/.openclaw
+# Upgrade or repair
+openclaw plugins install @openclawbrain/openclaw@0.4.0
+npx @openclawbrain/cli@0.4.0 openclawbrain install --openclaw-home ~/.openclaw
 openclaw gateway restart
-openclawbrain status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed
 
 # Verify
-openclawbrain status --openclaw-home ~/.openclaw --detailed
-openclawbrain status --openclaw-home ~/.openclaw --json
+npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --json
 
 # Remove but keep data
-openclawbrain detach --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.0 openclawbrain detach --openclaw-home ~/.openclaw
 openclaw gateway restart
 
 # Uninstall but keep data
-openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data
+npx @openclawbrain/cli@0.4.0 openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data
 openclaw gateway restart
 
 # Remove and purge data
-openclawbrain uninstall --openclaw-home ~/.openclaw --purge-data
+npx @openclawbrain/cli@0.4.0 openclawbrain uninstall --openclaw-home ~/.openclaw --purge-data
 openclaw gateway restart
-npm uninstall -g @openclawbrain/openclaw
 ```
 
 Compatibility path for older installs:

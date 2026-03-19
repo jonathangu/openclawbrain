@@ -6,11 +6,41 @@ It should help an operator understand two different truths:
 - what was actually published to npm
 - what has landed on `main` since that publish
 
-## Unreleased (current trunk after 0.3.5)
+## Unreleased (current trunk after 0.4.0)
 
-The current repo may move ahead of the published `0.3.5` package again. If it does, this section should describe that drift plainly instead of pretending the last npm release says everything.
+The current repo may move ahead of the published `0.4.0` split packages again. If it does, this section should describe that drift plainly instead of pretending the last npm release says everything.
 
-At the moment, trunk is intended to align with the published `0.3.5` package for the prompt-fallback/runtime-guard hardening and teacher-status truth update.
+At the moment, trunk is intended to align with the published `0.4.0` split-package release and the now-proven public-registry operator flow.
+
+## 0.4.0
+
+Published packages:
+- `@openclawbrain/openclaw@0.4.0`
+- `@openclawbrain/cli@0.4.0`
+
+Split landing commit on `main`: `b3ada81`
+
+Deep release note:
+- [`docs/release-notes-0.4.0.md`](docs/release-notes-0.4.0.md)
+
+### Published notes
+
+- publishes the package split as real public surface rather than staged repo work:
+  - `@openclawbrain/openclaw@0.4.0` is the plugin/runtime payload
+  - `@openclawbrain/cli@0.4.0` is the operator CLI
+- makes the native plugin install plus CLI attach flow the canonical public lane:
+  - `openclaw plugins install @openclawbrain/openclaw@0.4.0`
+  - `npx @openclawbrain/cli@0.4.0 openclawbrain install --openclaw-home ~/.openclaw`
+  - `openclaw gateway restart`
+  - `npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed`
+- records that the exact public-registry flow already passed on the real host `redogfood`
+- keeps the remaining host/plugin warning visible: some hosts still report a plugin id mismatch because the manifest uses `openclawbrain` while the package/entry hint uses `openclaw`; the warning is currently cosmetic, not evidence that install failed
+- leaves `@jonathangu/openclawbrain@0.3.5` in place as a compatibility holdover for older installs rather than the primary operator story
+
+### Why this release matters
+
+0.4.0 is the point where the split package story becomes the honest public story.
+Outside operators can now follow a single public-registry flow that has already passed on a real host, while the docs stay explicit about the one remaining host/plugin warning instead of pretending the seam is cleaner than it is.
 
 ## 0.3.5
 

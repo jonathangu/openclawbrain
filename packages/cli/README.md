@@ -1,18 +1,29 @@
 # @openclawbrain/cli
 
-Staged operator split for OpenClawBrain.
+`@openclawbrain/cli@0.4.0` is the published operator CLI package for OpenClawBrain.
 
-- This package carries the `openclawbrain` CLI, daemon controls, import/export helpers, and install/status/operator management code.
-- `@openclawbrain/openclaw` is the plugin/runtime payload.
-- Public install docs are not switched yet; this package exists in-repo so the split can be verified before release.
+Primary public flow:
+
+```bash
+openclaw plugins install @openclawbrain/openclaw@0.4.0
+npx @openclawbrain/cli@0.4.0 openclawbrain install --openclaw-home ~/.openclaw
+openclaw gateway restart
+npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed
+```
+
+Current caveat: some hosts still warn about a plugin id mismatch because the plugin manifest uses `openclawbrain` while the package/entry hint uses `openclaw`. The install still works; treat that warning as currently cosmetic.
+
+This package carries the `openclawbrain` CLI, daemon controls, import/export helpers, and install/status/operator management code. `@openclawbrain/openclaw` is the plugin/runtime payload.
 
 ## Commands
 
 ```bash
-openclawbrain install --openclaw-home ~/.openclaw
-openclawbrain status --openclaw-home ~/.openclaw --detailed
-openclawbrain rollback --activation-root /var/openclawbrain/activation --dry-run
-openclawbrain daemon status --activation-root /var/openclawbrain/activation
+npx @openclawbrain/cli@0.4.0 openclawbrain install --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.0 openclawbrain rollback --activation-root /var/openclawbrain/activation --dry-run
+npx @openclawbrain/cli@0.4.0 openclawbrain daemon status --activation-root /var/openclawbrain/activation
 ```
 
-The old `openclawbrain-ops` alias stays wired to the same entrypoint for staged compatibility.
+If the CLI is already on your `PATH`, `openclawbrain ...` is the same command surface. The docs lead with `npx` because that is the clean-host public-registry lane that already passed on `redogfood`.
+
+The old `openclawbrain-ops` alias stays wired to the same entrypoint for compatibility.

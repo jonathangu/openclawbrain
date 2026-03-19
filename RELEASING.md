@@ -1,6 +1,6 @@
 # Releasing
 
-This repo uses Changesets to make npm releases reviewable.
+This repo uses Changesets to make npm releases reviewable across the split OpenClawBrain packages.
 
 ## Normal development
 
@@ -39,7 +39,16 @@ make sure a maintainer gets a `.changeset/*.md` file onto `main`.
 
 1. Merge releasable PRs to `main`
 2. Let the `Version Packages` workflow open or update the release PR
-3. Review the generated version bump and `CHANGELOG.md`
+3. Review the generated version bumps and `CHANGELOG.md`
+   - for the current public lane, confirm the split surfaces stay aligned:
+     - `packages/openclaw`
+     - `packages/cli`
+     - `README.md`
+     - `docs/lifecycle.md`
+     - `docs/configuration.md`
+     - `packages/openclaw/README.md`
+     - `packages/cli/README.md`
+   - if hosts still emit the known plugin id mismatch warning (`openclawbrain` manifest id vs `openclaw` package/entry hint), document it rather than implying it is fixed
 4. Merge the release PR to `main`
 5. Manually trigger the `Publish Package` workflow on the merged release commit
 6. Approve the workflow if a protected GitHub Environment is configured
