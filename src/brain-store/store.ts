@@ -525,13 +525,18 @@ export class BrainStore {
     const row = this.db.prepare(`
       SELECT * FROM brain_packs WHERE promoted_at IS NOT NULL AND rolled_back = 0 ORDER BY version DESC LIMIT 1
     `).get() as Record<string, unknown> | undefined;
-    if (!row) return null;
-    return {
-      version: row.version as number, nodeCount: row.node_count as number,
-      edgeCount: row.edge_count as number, healthJson: row.health_json as string,
-      promotedAt: (row.promoted_at as number) ?? null, rolledBack: !!(row.rolled_back as number),
-      createdAt: row.created_at as number,
-    };
+    return row ? this.toPack(row) : null;
+  }
+
+  getRecentPromotedPacks(limit = 5): Pack[] {
+    const rows = this.db.prepare(`
+      SELECT *
+      FROM brain_packs
+      WHERE promoted_at IS NOT NULL
+      ORDER BY promoted_at DESC, version DESC
+      LIMIT ?
+    `).all(limit) as Record<string, unknown>[];
+    return rows.map((row) => this.toPack(row));
   }
 
   promotePack(version: number): void {
@@ -672,6 +677,26 @@ export class BrainStore {
     }));
   }
 
+  getRecentMutationsByStatus(status: MutationStatus, limit = 10): MutationProposal[] {
+    const rows = this.db.prepare(`
+      SELECT *
+      FROM brain_mutations
+      WHERE status = ?
+      ORDER BY COALESCE(resolved_at, created_at) DESC, created_at DESC
+      LIMIT ?
+    `).all(status, limit) as Record<string, unknown>[];
+    return rows.map((row) => ({
+      id: row.id as string,
+      kind: row.kind as MutationProposal["kind"],
+      proposal: JSON.parse((row.proposal as string) || "{}"),
+      evidence: row.evidence ? JSON.parse(row.evidence as string) : null,
+      expectedGain: (row.expected_gain as number) ?? null,
+      status: row.status as MutationStatus,
+      createdAt: row.created_at as number,
+      resolvedAt: (row.resolved_at as number) ?? null,
+    }));
+  }
+
   countMutationsByStatus(): Record<MutationStatus, number> {
     const rows = this.db.prepare(`
       SELECT status, COUNT(*) as count
@@ -761,6 +786,18 @@ export class BrainStore {
       vetoedNodes: JSON.parse((row.vetoed_nodes as string) || "[]"),
       contextChars: (row.context_chars as number) || 0,
       footer: (row.footer as string) || "",
+      createdAt: row.created_at as number,
+    };
+  }
+
+  private toPack(row: Record<string, unknown>): Pack {
+    return {
+      version: row.version as number,
+      nodeCount: row.node_count as number,
+      edgeCount: row.edge_count as number,
+      healthJson: row.health_json as string,
+      promotedAt: (row.promoted_at as number) ?? null,
+      rolledBack: !!(row.rolled_back as number),
       createdAt: row.created_at as number,
     };
   }

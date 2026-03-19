@@ -32,6 +32,7 @@ import { BrainWorker } from "../brain-worker/worker.js";
 import type { LcmDependencies } from "../types.js";
 import type { WorkerTeacherCompleteRequestMessage } from "../brain-worker/protocol.js";
 import { flattenEdges, populateGraph, promoteGraphSnapshot, reloadGraphFromStore } from "./graph-io.js";
+import { buildPromotionStory, buildWorkerPromotionSnapshotMetadata } from "./promotion-story.js";
 import { readWorkerRuntimeState } from "./worker-state.js";
 import { WorkerSupervisor } from "./worker-supervisor.js";
 import {
@@ -203,7 +204,10 @@ export class BrainService {
         {
           isEnabled: () => this.isEnabled(),
           onPromotionReady: async ({ healthJson, promotionVerdict }) => {
-            await this.promoteMutableGraph("worker", { healthJson, promotionVerdict });
+            await this.promoteMutableGraph(
+              "worker",
+              buildWorkerPromotionSnapshotMetadata(this.store, { healthJson, promotionVerdict }),
+            );
           },
         },
       );
@@ -688,6 +692,7 @@ export class BrainService {
     );
     const recentTraces = this.store.getRecentTraces(5);
     const workerState = readWorkerRuntimeState(this.store, this.config);
+    const promotionStory = buildPromotionStory(this.store);
 
     const embeddingConfig = describeEmbeddingConfig(this.config);
 
@@ -702,6 +707,7 @@ export class BrainService {
       embeddingConfigError: embeddingConfig.error,
       currentPackVersion: this.store.getCurrentPackVersion(),
       currentPackPromotedAt: currentPack?.promotedAt ?? null,
+      currentPackMetadata: promotionStory.currentPack?.metadata ?? null,
       shadowMode: this.config.shadowMode,
       teacherEnabled: this.config.teacherEnabled,
       teacherConfigured: Boolean(this.resolvedTeacherModel),
@@ -731,7 +737,11 @@ export class BrainService {
       lastPromotionReason: this.store.getTrainingState("last_promotion_reason"),
       lastPromotionVerdict: this.store.getTrainingStateJson("last_promotion_verdict_json"),
       lastReplayFailureReason: this.store.getTrainingState("last_replay_failure_reason"),
+<<<<<<< HEAD
       lastReplayGateVerdict: this.store.getTrainingStateJson("last_replay_gate_verdict_json"),
+=======
+      promotionStory,
+>>>>>>> 6f316e8 (feat: add promotion story surfaces)
       brainRoot: this.config.root,
       ...health,
     };

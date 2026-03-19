@@ -11,6 +11,7 @@ import type { LcmDependencies } from "../types.js";
 import { runBrainMigrations } from "../brain-store/migrations.js";
 import { BrainStore } from "../brain-store/store.js";
 import { promoteGraphSnapshot, reloadGraphFromStore } from "../brain-runtime/graph-io.js";
+import { buildWorkerPromotionSnapshotMetadata } from "../brain-runtime/promotion-story.js";
 import type { ChildToParentMessage, ParentToChildMessage } from "./protocol.js";
 import { BrainWorker } from "./worker.js";
 
@@ -228,11 +229,11 @@ async function main(): Promise<void> {
           packManager,
           config,
           reason: "worker",
-          metadata: {
+          metadata: buildWorkerPromotionSnapshotMetadata(store, {
             healthJson,
             promotionVerdict,
             workerPid: process.pid,
-          },
+          }),
         });
         lease.refresh("running");
         send({ type: "pack-promoted", pid: process.pid, version });

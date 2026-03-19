@@ -319,6 +319,16 @@ describe("BrainService", () => {
     const status = await service.status();
     expect(status.pendingLabels).toBe(1);
     expect(status.currentPackVersion).toBe(taught.packVersion);
+    expect((status.currentPackMetadata as { reason?: string; taughtNodeId?: string } | null)?.reason).toBe("teach");
+    expect((status.currentPackMetadata as { reason?: string; taughtNodeId?: string } | null)?.taughtNodeId).toBe(taught.nodeId);
+    expect((status.promotionStory as {
+      currentPack?: { reason?: string; metadata?: { taughtNodeId?: string } };
+      recentPromotions?: Array<{ reason?: string }>;
+    }).currentPack?.reason).toBe("teach");
+    expect((status.promotionStory as {
+      currentPack?: { reason?: string; metadata?: { taughtNodeId?: string } };
+      recentPromotions?: Array<{ reason?: string }>;
+    }).currentPack?.metadata?.taughtNodeId).toBe(taught.nodeId);
 
     const pendingEvidence = (service as unknown as {
       store: { getPendingEvidence: (limit?: number) => Array<{ metadata?: Record<string, unknown> }> };

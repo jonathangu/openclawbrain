@@ -14,6 +14,7 @@ import {
 } from "./brain-store/embedding.js";
 import { resolveLcmConfig } from "./db/config.js";
 import { flattenSeedWeights } from "./brain-runtime/graph-io.js";
+import { buildPromotionStory } from "./brain-runtime/promotion-story.js";
 import { readWorkerRuntimeState } from "./brain-runtime/worker-state.js";
 
 function printJson(payload: unknown): void {
@@ -122,9 +123,9 @@ function commandStatus(): void {
   const recentEpisodes = store.getRecentEpisodes(100);
   const currentPack = store.getCurrentPackVersion();
   const health = computeHealth(graph, recentEpisodes, currentPack ?? 0);
-  const currentSnapshot = currentPack !== null ? store.readPackSnapshot(currentPack) : null;
   const embeddingConfig = describeEmbeddingConfig(brainConfig);
   const workerState = readWorkerRuntimeState(store, brainConfig);
+  const promotionStory = buildPromotionStory(store);
 
   printJson({
     command: "status",
@@ -138,7 +139,7 @@ function commandStatus(): void {
     embeddingConfigError: embeddingConfig.error,
     ...workerState,
     currentPackVersion: currentPack,
-    currentPackMetadata: currentSnapshot?.metadata ?? null,
+    currentPackMetadata: promotionStory.currentPack?.metadata ?? null,
     pendingEvidence: store.getPendingEvidence(100).length,
     pendingEvidenceBySource: store.countPendingEvidenceBySource(),
     pendingLabels: store.getPendingLabels().length,
@@ -149,6 +150,7 @@ function commandStatus(): void {
     lastPromotionVerdict: store.getTrainingStateJson("last_promotion_verdict_json"),
     lastReplayFailureReason: store.getTrainingState("last_replay_failure_reason"),
     lastReplayGateVerdict: store.getTrainingStateJson("last_replay_gate_verdict_json"),
+    promotionStory,
     lastAssemblyDecision: {
       mode: store.getTrainingState("last_assembly_mode"),
       footer: store.getTrainingState("last_assembly_footer"),
