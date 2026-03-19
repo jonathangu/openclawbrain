@@ -65,7 +65,7 @@ export function createBeforePromptBuildHandler(input) {
             await input.reportDiagnostic({
                 key: "activation-root-placeholder",
                 once: true,
-                message: "[openclawbrain] BRAIN NOT YET LOADED: ACTIVATION_ROOT is still a placeholder. Run: openclawbrain install --openclaw-home <path>"
+                message: "[openclawbrain] BRAIN NOT YET LOADED: ACTIVATION_ROOT is still a placeholder. Install @openclawbrain/cli, then run: openclawbrain install --openclaw-home <path>"
             });
             return {};
         }

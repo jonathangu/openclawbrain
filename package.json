@@ -28,7 +28,8 @@
   ],
   "scripts": {
     "changeset": "changeset",
-    "release:verify": "npm test && npm pack --dry-run && npm run release:verify:openclaw",
+    "release:verify": "npm test && npm pack --dry-run && npm run release:verify:openclaw && npm run release:verify:cli",
+    "release:verify:cli": "npm --prefix packages/cli run release:verify",
     "release:verify:openclaw": "npm --prefix packages/openclaw run release:verify",
     "test": "vitest run --dir test",
     "version-packages": "changeset version"

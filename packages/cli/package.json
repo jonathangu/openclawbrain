@@ -1,27 +1,25 @@
 {
-  "name": "@openclawbrain/openclaw",
+  "name": "@openclawbrain/cli",
   "version": "0.4.0",
-  "description": "OpenClawBrain plugin/runtime payload for OpenClaw. Operator CLI and install helpers move to @openclawbrain/cli.",
+  "description": "Staged OpenClawBrain operator package with the openclawbrain CLI, daemon, install/status helpers, and import/export tooling.",
   "type": "module",
   "main": "./dist/src/index.js",
   "types": "./dist/src/index.d.ts",
-  "sideEffects": false,
   "license": "Apache-2.0",
   "author": "Jonathan Gu <jonathangu@gmail.com>",
   "keywords": [
     "openclawbrain",
     "openclaw",
-    "plugin",
-    "runtime",
-    "route-fn",
-    "integration"
+    "cli",
+    "operator",
+    "daemon"
   ],
   "repository": {
     "type": "git",
     "url": "git+https://github.com/jonathangu/openclawbrain.git",
-    "directory": "packages/openclaw"
+    "directory": "packages/cli"
   },
-  "homepage": "https://github.com/jonathangu/openclawbrain/tree/main/packages/openclaw#readme",
+  "homepage": "https://github.com/jonathangu/openclawbrain/tree/main/packages/cli#readme",
   "bugs": {
     "url": "https://github.com/jonathangu/openclawbrain/issues"
   },
@@ -37,15 +35,9 @@
     "./package.json": "./package.json"
   },
   "files": [
-    "dist/src/index.js",
-    "dist/src/index.d.ts",
-    "dist/src/runtime-core.js",
-    "dist/src/attachment-truth.js",
-    "dist/src/attachment-truth.d.ts",
-    "dist/src/learning-spine.js",
+    "dist/src",
     "dist/extension",
     "extension",
-    "openclaw.plugin.json",
     "README.md",
     "LICENSE"
   ],
@@ -55,19 +47,18 @@
   "dependencies": {
     "@openclawbrain/compiler": "^0.3.4",
     "@openclawbrain/contracts": "^0.3.4",
+    "@openclawbrain/events": "^0.3.4",
     "@openclawbrain/learner": "^0.3.4",
-    "@openclawbrain/pack-format": "^0.3.4"
+    "@openclawbrain/pack-format": "^0.3.4",
+    "@openclawbrain/event-export": "^0.3.4"
   },
-  "openclaw": {
-    "extensions": [
-      "./dist/extension/index.js"
-    ]
+  "bin": {
+    "openclawbrain": "dist/src/cli.js",
+    "openclawbrain-ops": "dist/src/cli.js"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.extension.json",
-    "clean": "rm -rf dist/extension",
     "prepublishOnly": "npm run release:verify",
-    "release:verify": "npm test && node ../../scripts/verify-openclaw-package-tarball.mjs",
+    "release:verify": "npm test && node ../../scripts/verify-openclaw-cli-package-tarball.mjs",
     "test": "node --test dist/test/*.test.js"
   }
 }

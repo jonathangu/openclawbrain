@@ -86,7 +86,7 @@ function resolvePackageRoot(startDir) {
         if (existsSync(packageJsonPath)) {
             try {
                 const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
-                if (packageJson.name === "@openclawbrain/openclaw") {
+                if (packageJson.name === "@openclawbrain/openclaw" || packageJson.name === "@openclawbrain/cli") {
                     return currentDir;
                 }
             }

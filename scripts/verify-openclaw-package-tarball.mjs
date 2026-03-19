@@ -50,6 +50,7 @@ try {
   const pluginManifest = extractJsonFromTarball("package/openclaw.plugin.json");
 
   assert.equal(packageJson.name, "@openclawbrain/openclaw");
+  assert.equal(packageJson.bin, undefined, "plugin package must not publish CLI bins");
 
   const extensionEntries = packageJson.openclaw?.extensions;
   assert(Array.isArray(extensionEntries), "package.json missing openclaw.extensions array");
@@ -62,11 +63,30 @@ try {
   for (const requiredFile of [
     "dist/extension/index.js",
     "dist/extension/runtime-guard.js",
-    "dist/src/cli.js",
+    "dist/src/index.js",
+    "dist/src/runtime-core.js",
+    "dist/src/attachment-truth.js",
     "openclaw.plugin.json",
     "package.json",
   ]) {
     assert(tarballFiles.has(requiredFile), `packed tarball is missing ${requiredFile}`);
+  }
+
+  for (const forbiddenFile of [
+    "dist/src/cli.js",
+    "dist/src/daemon.js",
+    "dist/src/import-export.js",
+    "dist/src/openclaw-home-layout.js",
+    "dist/src/openclaw-hook-truth.js",
+    "dist/src/openclaw-plugin-install.js",
+    "dist/src/provider-config.js",
+    "dist/src/resolve-activation-root.js",
+    "dist/src/session-store.js",
+    "dist/src/session-tail.js",
+    "dist/src/local-session-passive-learning.js",
+    "dist/src/shadow-extension-proof.js",
+  ]) {
+    assert(!tarballFiles.has(forbiddenFile), `plugin tarball must not include ${forbiddenFile}`);
   }
 
   assert.equal(pluginManifest.id, "openclawbrain");
@@ -87,7 +107,9 @@ try {
           .filter((file) => [
             "dist/extension/index.js",
             "dist/extension/runtime-guard.js",
-            "dist/src/cli.js",
+            "dist/src/index.js",
+            "dist/src/runtime-core.js",
+            "dist/src/attachment-truth.js",
             "openclaw.plugin.json",
             "package.json",
           ].includes(file))
