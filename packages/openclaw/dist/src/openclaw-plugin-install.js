@@ -258,11 +258,16 @@ export function resolveOpenClawBrainInstallTarget(openclawHome) {
 }
 export function pinInstalledOpenClawBrainPluginActivationRoot(loaderEntryPath, activationRoot) {
     const loaderSource = readFileSync(loaderEntryPath, "utf8");
+    const activationRootPattern = /const\s+ACTIVATION_ROOT\s*=\s*["'`][^"'`]*["'`];/;
     const pinnedActivationRoot = `const ACTIVATION_ROOT = ${JSON.stringify(activationRoot)};`;
-    const nextLoaderSource = loaderSource.replace(/const\s+ACTIVATION_ROOT\s*=\s*["'`][^"'`]*["'`];/, pinnedActivationRoot);
-    if (nextLoaderSource === loaderSource) {
+    const matchedActivationRoot = loaderSource.match(activationRootPattern)?.[0] ?? null;
+    if (matchedActivationRoot === null) {
         throw new Error(`Installed loader entry ${loaderEntryPath} does not expose a patchable ACTIVATION_ROOT constant`);
     }
+    if (matchedActivationRoot === pinnedActivationRoot) {
+        return;
+    }
+    const nextLoaderSource = loaderSource.replace(activationRootPattern, pinnedActivationRoot);
     writeFileSync(loaderEntryPath, nextLoaderSource, "utf8");
 }
 export function resolveOpenClawHomeFromExtensionEntryPath(extensionEntryPath) {

@@ -187,13 +187,11 @@ test("install target selection and activation-root pinning keep native package p
             allow: ["openclaw"]
         }
     });
-    const nativeActivationRoot = path.join(root, "native-activation");
     const shadowActivationRoot = path.join(root, "shadow-activation");
     const pinnedActivationRoot = path.join(root, "pinned-activation");
-    mkdirSync(nativeActivationRoot, { recursive: true });
     mkdirSync(shadowActivationRoot, { recursive: true });
     mkdirSync(pinnedActivationRoot, { recursive: true });
-    const nativeInstall = createNativeInstall(openclawHome, nativeActivationRoot);
+    const nativeInstall = createNativeInstall(openclawHome, "__ACTIVATION_ROOT__");
     const shadowExtensionDir = createShadowInstall(openclawHome, shadowActivationRoot);
     const installTarget = resolveOpenClawBrainInstallTarget(openclawHome);
     assert.equal(installTarget.writeMode, "pin_native_package");
@@ -208,6 +206,25 @@ test("install target selection and activation-root pinning keep native package p
     assert.equal(inspection.installLayout, "native_package_plugin");
     assert.equal(inspection.additionalInstallCount, 1);
     assert.equal(inspection.loadability, "loadable");
+});
+test("activation-root pinning treats an already-pinned native package loader as a successful no-op", (t) => {
+    const root = createTempRoot(t);
+    const openclawHome = createOpenClawHome(root);
+    const activationRoot = path.join(root, ".openclawbrain", "activation");
+    mkdirSync(activationRoot, { recursive: true });
+    const nativeInstall = createNativeInstall(openclawHome, activationRoot);
+    const originalLoaderSource = readFileSync(nativeInstall.loaderEntryPath, "utf8");
+    pinInstalledOpenClawBrainPluginActivationRoot(nativeInstall.loaderEntryPath, activationRoot);
+    assert.equal(readFileSync(nativeInstall.loaderEntryPath, "utf8"), originalLoaderSource);
+});
+test("activation-root pinning still throws when the native package loader no longer exposes ACTIVATION_ROOT", (t) => {
+    const root = createTempRoot(t);
+    const openclawHome = createOpenClawHome(root);
+    const activationRoot = path.join(root, ".openclawbrain", "activation");
+    mkdirSync(activationRoot, { recursive: true });
+    const nativeInstall = createNativeInstall(openclawHome, activationRoot);
+    writeFileSync(nativeInstall.loaderEntryPath, readFileSync(nativeInstall.loaderEntryPath, "utf8").replace("const ACTIVATION_ROOT", "const INSTALLED_ACTIVATION_ROOT"), "utf8");
+    assert.throws(() => pinInstalledOpenClawBrainPluginActivationRoot(nativeInstall.loaderEntryPath, activationRoot), /does not expose a patchable ACTIVATION_ROOT constant/);
 });
 test("installed extension inspection keeps native package layout truth even when a shadow copy also exists", (t) => {
     const root = createTempRoot(t);
