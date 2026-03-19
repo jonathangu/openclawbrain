@@ -1566,7 +1566,11 @@ interface OperatorHookSummary {
     runtimeGuardPath: string | null;
     manifestPath: string | null;
     packageJsonPath: string | null;
+    manifestId: string | null;
+    installId: string | null;
+    packageName: string | null;
     installLayout: import("./openclaw-plugin-install.js").OpenClawBrainInstallLayout | null;
+    additionalInstallCount: number;
     installState: CurrentProfileHookInstallStateV1;
     loadability: CurrentProfileHookLoadabilityV1;
     loadProof: CurrentProfileHookLoadProofV1;

@@ -75,12 +75,6 @@ function readActivationRootFromOpenClawHome(openclawHome) {
         installedPlugin.selectedInstall.runtimeGuardPath === null) {
         return null;
     }
-    if (installedPlugin.additionalInstalls.length > 0) {
-        return {
-            activationRoot: null,
-            diagnostic: `multiple OpenClawBrain plugin installs are present under ${installedPlugin.extensionsDir}`
-        };
-    }
     return extractActivationRootFromExtension(installedPlugin.selectedInstall.loaderEntryPath);
 }
 /**
@@ -95,16 +89,6 @@ function scanInstalledProfileActivationRoots() {
         if (installedPlugin.selectedInstall === null ||
             installedPlugin.selectedInstall.loaderEntryPath === null ||
             installedPlugin.selectedInstall.runtimeGuardPath === null) {
-            continue;
-        }
-        if (installedPlugin.additionalInstalls.length > 0) {
-            probes.push({
-                openclawHome,
-                extensionEntryPath: installedPlugin.selectedInstall.loaderEntryPath,
-                activationRoot: null,
-                diagnostic: `multiple OpenClawBrain plugin installs are present under ${installedPlugin.extensionsDir}`,
-                inspection
-            });
             continue;
         }
         const found = extractActivationRootFromExtension(installedPlugin.selectedInstall.loaderEntryPath);

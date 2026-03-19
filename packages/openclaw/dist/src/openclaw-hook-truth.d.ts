@@ -11,7 +11,11 @@ export interface OpenClawBrainHookInspection {
     runtimeGuardPath: string | null;
     manifestPath: string | null;
     packageJsonPath: string | null;
+    manifestId: string | null;
+    installId: string | null;
+    packageName: string | null;
     installLayout: OpenClawBrainInstallLayout | null;
+    additionalInstallCount: number;
     installState: OpenClawBrainHookInstallState;
     loadability: OpenClawBrainHookLoadability;
     pluginAllowlistState: OpenClawBrainPluginAllowlistState;

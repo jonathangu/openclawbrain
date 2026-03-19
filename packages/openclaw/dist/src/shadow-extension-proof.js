@@ -19,12 +19,6 @@ export function inspectInstalledOpenClawBrainExtension(openclawHome, extensionId
     if (installedPlugin.selectedInstall === null) {
         throw new Error(`[shadow-extension-load-proof] Installed extension dir is missing for plugin ${JSON.stringify(extensionId)} under ${extensionsDir}`);
     }
-    if (installedPlugin.additionalInstalls.length > 0) {
-        throw new Error(`[shadow-extension-load-proof] Multiple installed plugin dirs matched ${JSON.stringify(extensionId)} under ${extensionsDir} ` +
-            `(matched=${[installedPlugin.selectedInstall, ...installedPlugin.additionalInstalls]
-                .map((install) => install.extensionDir)
-                .join(", ")})`);
-    }
     const selectedInstall = installedPlugin.selectedInstall;
     const extensionDir = selectedInstall.extensionDir;
     const manifestPath = selectedInstall.manifestPath;
@@ -70,7 +64,8 @@ export function inspectInstalledOpenClawBrainExtension(openclawHome, extensionId
         runtimeGuardPath: resolvedRuntimeGuardPath,
         manifest,
         packageJson,
-        configuredEntries
+        configuredEntries,
+        additionalInstalls: installedPlugin.additionalInstalls
     };
 }
 export async function proveInstalledOpenClawBrainExtensionLoad(openclawHome, extensionId = "openclawbrain") {

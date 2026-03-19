@@ -28,6 +28,7 @@ export interface ShadowProfileExtensionInstall {
     manifest: InstalledPluginManifest;
     packageJson: InstalledExtensionPackageJson;
     configuredEntries: string[];
+    additionalInstalls: import("./openclaw-plugin-install.js").OpenClawBrainInstalledPlugin[];
 }
 export interface ShadowProfileExtensionLoadProof extends ShadowProfileExtensionInstall {
     runtimeGuardExportNames: string[];

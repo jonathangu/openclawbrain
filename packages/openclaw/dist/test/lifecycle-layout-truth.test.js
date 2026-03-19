@@ -1,12 +1,13 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { inspectOpenClawBrainHookStatus } from "../src/openclaw-hook-truth.js";
 import { listOpenClawProfileRuntimeLoadProofs, recordOpenClawProfileRuntimeLoadProof } from "../src/attachment-truth.js";
 import { resolveActivationRoot } from "../src/resolve-activation-root.js";
 import { inspectInstalledOpenClawBrainExtension, proveInstalledOpenClawBrainExtensionLoad } from "../src/shadow-extension-proof.js";
+import { pinInstalledOpenClawBrainPluginActivationRoot, resolveOpenClawBrainInstallTarget } from "../src/openclaw-plugin-install.js";
 function canonicalizePath(filePath) {
     try {
         return realpathSync(filePath);
@@ -22,15 +23,15 @@ function createTempRoot(t) {
     });
     return root;
 }
-function createOpenClawHome(rootDir, name = ".openclaw") {
+function createOpenClawHome(rootDir, name = ".openclaw", config = {
+    profile: "Tern",
+    plugins: {
+        allow: ["openclawbrain"]
+    }
+}) {
     const openclawHome = path.join(rootDir, name);
     mkdirSync(openclawHome, { recursive: true });
-    writeFileSync(path.join(openclawHome, "openclaw.json"), JSON.stringify({
-        profile: "Tern",
-        plugins: {
-            allow: ["openclawbrain"]
-        }
-    }, null, 2));
+    writeFileSync(path.join(openclawHome, "openclaw.json"), JSON.stringify(config, null, 2));
     return openclawHome;
 }
 function createShadowInstall(openclawHome, activationRoot) {
@@ -52,8 +53,8 @@ function createShadowInstall(openclawHome, activationRoot) {
     }, null, 2));
     return extensionDir;
 }
-function createNativeInstall(openclawHome, activationRoot) {
-    const extensionDir = path.join(openclawHome, "extensions", "@openclawbrain", "openclaw");
+function createNativeInstall(openclawHome, activationRoot, installId = "openclaw") {
+    const extensionDir = path.join(openclawHome, "extensions", installId);
     const loaderDir = path.join(extensionDir, "dist", "extension");
     mkdirSync(loaderDir, { recursive: true });
     writeFileSync(path.join(extensionDir, "package.json"), JSON.stringify({
@@ -61,7 +62,7 @@ function createNativeInstall(openclawHome, activationRoot) {
         version: "0.3.5",
         type: "module",
         openclaw: {
-            extensions: ["dist/extension/index.js"]
+            extensions: ["./dist/extension/index.js"]
         }
     }, null, 2));
     writeFileSync(path.join(extensionDir, "openclaw.plugin.json"), JSON.stringify({
@@ -148,7 +149,12 @@ test("hook truth recognizes generated shadow installs", (t) => {
 });
 test("hook truth, runtime proofs, and activation-root discovery recognize native package installs", (t) => {
     const root = createTempRoot(t);
-    const openclawHome = createOpenClawHome(root, ".openclaw-Tern");
+    const openclawHome = createOpenClawHome(root, ".openclaw-Tern", {
+        profile: "Tern",
+        plugins: {
+            allow: ["openclaw"]
+        }
+    });
     const activationRoot = path.join(root, ".openclawbrain", "activation");
     mkdirSync(activationRoot, { recursive: true });
     const nativeInstall = createNativeInstall(openclawHome, activationRoot);
@@ -156,7 +162,11 @@ test("hook truth, runtime proofs, and activation-root discovery recognize native
     assert.equal(inspection.installState, "installed");
     assert.equal(inspection.loadability, "loadable");
     assert.equal(inspection.installLayout, "native_package_plugin");
+    assert.equal(inspection.installId, "openclaw");
+    assert.equal(inspection.packageName, "@openclawbrain/openclaw");
     assert.equal(inspection.hookPath, nativeInstall.loaderEntryPath);
+    assert.match(inspection.detail, /manifest=openclawbrain/);
+    assert.match(inspection.detail, /install=openclaw/);
     const record = recordOpenClawProfileRuntimeLoadProof({
         activationRoot,
         extensionEntryPath: nativeInstall.loaderEntryPath,
@@ -169,16 +179,48 @@ test("hook truth, runtime proofs, and activation-root discovery recognize native
     assert.equal(proofs.proofs?.profiles[0]?.openclawHome, canonicalizePath(openclawHome));
     assert.equal(resolveActivationRoot({ openclawHome }), activationRoot);
 });
-test("installed extension inspection recognizes native package plugin layout", (t) => {
+test("install target selection and activation-root pinning keep native package plugins authoritative", (t) => {
+    const root = createTempRoot(t);
+    const openclawHome = createOpenClawHome(root, ".openclaw", {
+        profile: "Tern",
+        plugins: {
+            allow: ["openclaw"]
+        }
+    });
+    const nativeActivationRoot = path.join(root, "native-activation");
+    const shadowActivationRoot = path.join(root, "shadow-activation");
+    const pinnedActivationRoot = path.join(root, "pinned-activation");
+    mkdirSync(nativeActivationRoot, { recursive: true });
+    mkdirSync(shadowActivationRoot, { recursive: true });
+    mkdirSync(pinnedActivationRoot, { recursive: true });
+    const nativeInstall = createNativeInstall(openclawHome, nativeActivationRoot);
+    const shadowExtensionDir = createShadowInstall(openclawHome, shadowActivationRoot);
+    const installTarget = resolveOpenClawBrainInstallTarget(openclawHome);
+    assert.equal(installTarget.writeMode, "pin_native_package");
+    assert.equal(installTarget.hookPath, nativeInstall.loaderEntryPath);
+    assert.equal(installTarget.selectedInstall?.installLayout, "native_package_plugin");
+    assert.equal(installTarget.additionalInstalls.length, 1);
+    pinInstalledOpenClawBrainPluginActivationRoot(installTarget.hookPath, pinnedActivationRoot);
+    assert.match(readFileSync(nativeInstall.loaderEntryPath, "utf8"), new RegExp(pinnedActivationRoot.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.match(readFileSync(path.join(shadowExtensionDir, "index.ts"), "utf8"), new RegExp(shadowActivationRoot.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.equal(resolveActivationRoot({ openclawHome }), pinnedActivationRoot);
+    const inspection = inspectOpenClawBrainHookStatus(openclawHome);
+    assert.equal(inspection.installLayout, "native_package_plugin");
+    assert.equal(inspection.additionalInstallCount, 1);
+    assert.equal(inspection.loadability, "loadable");
+});
+test("installed extension inspection keeps native package layout truth even when a shadow copy also exists", (t) => {
     const root = createTempRoot(t);
     const openclawHome = createOpenClawHome(root);
     const activationRoot = path.join(root, ".openclawbrain", "activation");
     mkdirSync(activationRoot, { recursive: true });
     const nativeInstall = createNativeInstall(openclawHome, activationRoot);
+    createShadowInstall(openclawHome, path.join(root, "shadow-activation"));
     const inspection = inspectInstalledOpenClawBrainExtension(openclawHome);
     assert.equal(inspection.installLayout, "native_package_plugin");
     assert.equal(inspection.loaderEntryPath, nativeInstall.loaderEntryPath);
     assert.equal(inspection.runtimeGuardPath, path.join(nativeInstall.extensionDir, "dist", "extension", "runtime-guard.js"));
+    assert.equal(inspection.additionalInstalls.length, 1);
 });
 test("native package plugin load proof succeeds and writes the expected diagnostic log", async (t) => {
     const root = createTempRoot(t);

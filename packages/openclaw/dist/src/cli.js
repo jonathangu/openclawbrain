@@ -14,7 +14,7 @@ import { inspectActivationState, loadPackFromActivation, promoteCandidatePack, r
 import { resolveActivationRoot } from "./resolve-activation-root.js";
 import { describeOpenClawHomeInspection, discoverOpenClawHomes, formatOpenClawHomeLayout, formatOpenClawHomeProfileSource, inspectOpenClawHome } from "./openclaw-home-layout.js";
 import { inspectOpenClawBrainHookStatus, inspectOpenClawBrainPluginAllowlist } from "./openclaw-hook-truth.js";
-import { describeOpenClawBrainInstallLayout, findInstalledOpenClawBrainPlugin } from "./openclaw-plugin-install.js";
+import { describeOpenClawBrainInstallIdentity, describeOpenClawBrainInstallLayout, findInstalledOpenClawBrainPlugin, getOpenClawBrainKnownPluginIds, pinInstalledOpenClawBrainPluginActivationRoot, resolveOpenClawBrainInstallTarget } from "./openclaw-plugin-install.js";
 import { DEFAULT_WATCH_POLL_INTERVAL_SECONDS, buildNormalizedEventExportFromScannedEvents, bootstrapRuntimeAttach, buildOperatorSurfaceReport, clearOpenClawProfileRuntimeLoadProof, compileRuntimeContext, createAsyncTeacherLiveLoop, createOpenClawLocalSessionTail, createRuntimeEventExportScanner, describeCurrentProfileBrainStatus, formatOperatorRollbackReport, listOpenClawProfileRuntimeLoadProofs, loadRuntimeEventExportBundle, loadWatchTeacherSnapshotState, persistWatchTeacherSnapshot, rollbackRuntimeAttach, resolveAttachmentRuntimeLoadProofsPath, resolveOperatorTeacherSnapshotPath, resolveAsyncTeacherLiveLoopSnapshotPath, resolveWatchSessionTailCursorPath, resolveWatchStateRoot, resolveWatchTeacherSnapshotPath, scanLiveEventExport, scanRecordedSession, summarizeLearningPathFromMaterialization, summarizeNormalizedEventExportLabelFlow, writeScannedEventExportBundle } from "./index.js";
 import { appendLearningUpdateLogs } from "./learning-spine.js";
 import { buildPassiveLearningSessionExportFromOpenClawSessionStore } from "./local-session-passive-learning.js";
@@ -1274,7 +1274,7 @@ function buildCompactStatusHeader(status, report, options) {
     });
     return [
         `lifecycle   attach=${status.attachment.state} learner=${yesNo(status.passiveLearning.learnerRunning)} watch=${summarizeStatusWatchState(status)} export=${status.passiveLearning.exportState} promote=${summarizeStatusPromotionState(status)} serve=${summarizeStatusServeReality(status)}`,
-        `hook        install=${hookLoad.installState} loadability=${hookLoad.loadability} loadProof=${hookLoad.loadProof} layout=${status.hook.installLayout ?? "unverified"} detail=${hookLoad.detail}`,
+        `hook        install=${hookLoad.installState} loadability=${hookLoad.loadability} loadProof=${hookLoad.loadProof} layout=${status.hook.installLayout ?? "unverified"} additional=${status.hook.additionalInstallCount ?? 0} detail=${hookLoad.detail}`,
         `attachTruth current=${attachmentTruth.currentProfileLabel} hook=${attachmentTruth.hookFiles} config=${attachmentTruth.configLoad} runtime=${attachmentTruth.runtimeLoad} watcher=${attachmentTruth.watcher} attachedSet=${formatAttachedProfileTruthCompactList(attachmentTruth.attachedProfiles)} why=${attachmentTruth.detail}`,
         `passive     firstExport=${yesNo(status.passiveLearning.firstExportOccurred)} backlog=${status.passiveLearning.backlogState} pending=${formatStatusNullableNumber(status.passiveLearning.pendingLive)}/${formatStatusNullableNumber(status.passiveLearning.pendingBackfill)}`,
         `serving     pack=${status.passiveLearning.currentServingPackId ?? "none"} lastExport=${status.passiveLearning.lastExportAt ?? "none"} lastPromotion=${status.passiveLearning.lastPromotionAt ?? "none"}`,
@@ -2861,43 +2861,6 @@ function buildExtensionPluginManifest() {
         }
     }, null, 2) + "\n";
 }
-function pinInstalledHookActivationRoot(loaderEntryPath, activationRoot) {
-    const loaderSource = readFileSync(loaderEntryPath, "utf8");
-    const pinnedActivationRoot = `const ACTIVATION_ROOT = ${JSON.stringify(activationRoot)};`;
-    const nextLoaderSource = loaderSource.replace(/const\s+ACTIVATION_ROOT\s*=\s*["'`][^"'`]*["'`];/, pinnedActivationRoot);
-    if (nextLoaderSource === loaderSource) {
-        throw new Error(`Installed loader entry ${loaderEntryPath} does not expose a patchable ACTIVATION_ROOT constant`);
-    }
-    writeFileSync(loaderEntryPath, nextLoaderSource, "utf8");
-}
-function resolveProfileHookInstallTarget(openclawHome) {
-    const installedPlugin = findInstalledOpenClawBrainPlugin(openclawHome);
-    if (installedPlugin.additionalInstalls.length > 0) {
-        throw new Error(`Refusing to modify ${openclawHome} because multiple OpenClawBrain plugin installs are present under ${installedPlugin.extensionsDir}: ` +
-            [installedPlugin.selectedInstall, ...installedPlugin.additionalInstalls]
-                .filter((install) => install !== null)
-                .map((install) => install.extensionDir)
-                .join(", "));
-    }
-    if (installedPlugin.selectedInstall !== null &&
-        installedPlugin.selectedInstall.installLayout === "native_package_plugin" &&
-        installedPlugin.selectedInstall.loaderEntryPath !== null &&
-        installedPlugin.selectedInstall.runtimeGuardPath !== null) {
-        return {
-            installLayout: installedPlugin.selectedInstall.installLayout,
-            extensionDir: installedPlugin.selectedInstall.extensionDir,
-            hookPath: installedPlugin.selectedInstall.loaderEntryPath,
-            writeMode: "pin_native_package"
-        };
-    }
-    const extensionDir = path.join(openclawHome, "extensions", "openclawbrain");
-    return {
-        installLayout: "generated_shadow_extension",
-        extensionDir,
-        hookPath: path.join(extensionDir, "index.ts"),
-        writeMode: "write_shadow_extension"
-    };
-}
 function formatContextForHuman(result) {
     if (!result.ok) {
         if (result.fallbackToStaticContext) {
@@ -3201,7 +3164,7 @@ function runProfileHookAttachCommand(parsed) {
     const commandLabel = parsed.command.toUpperCase();
     const isInstall = parsed.command === "install";
     const targetInspection = inspectOpenClawHome(parsed.openclawHome);
-    const installTarget = resolveProfileHookInstallTarget(parsed.openclawHome);
+    const installTarget = resolveOpenClawBrainInstallTarget(parsed.openclawHome);
     const extensionDir = installTarget.extensionDir;
     steps.push(`Target OpenClaw home: ${parsed.openclawHome} (${formatInstallOpenClawHomeSource(parsed.openclawHomeSource)})`);
     steps.push(isInstall
@@ -3209,6 +3172,9 @@ function runProfileHookAttachCommand(parsed) {
         : "Lifecycle mode: attach is the explicit reattach/manual profile-hook path; use install for first-time setup.");
     steps.push(`Detected layout: ${formatOpenClawTargetExplanation(targetInspection)}`);
     steps.push(`Target hook path: ${installTarget.hookPath} (${describeOpenClawBrainInstallLayout(installTarget.installLayout)})`);
+    if (installTarget.selectedInstall !== null && installTarget.additionalInstalls.length > 0) {
+        steps.push(`Kept ${describeOpenClawBrainInstallLayout(installTarget.selectedInstall.installLayout)} authoritative at ${shortenPath(installTarget.selectedInstall.extensionDir)} (${describeOpenClawBrainInstallIdentity(installTarget.selectedInstall)}); additional installs remain at ${installTarget.additionalInstalls.map((install) => `${shortenPath(install.extensionDir)} (${describeOpenClawBrainInstallLayout(install.installLayout)})`).join(", ")}`);
+    }
     // 1. Validate --openclaw-home exists and has openclaw.json
     validateOpenClawHome(parsed.openclawHome);
     // 2. Inspect the activation root before writing profile hook artifacts.
@@ -3272,7 +3238,7 @@ function runProfileHookAttachCommand(parsed) {
     }
     // 7-10. Prepare the hook layout that OpenClaw will actually load.
     if (installTarget.writeMode === "pin_native_package") {
-        pinInstalledHookActivationRoot(installTarget.hookPath, parsed.activationRoot);
+        pinInstalledOpenClawBrainPluginActivationRoot(installTarget.hookPath, parsed.activationRoot);
         steps.push(`Pinned native package plugin loader: ${installTarget.hookPath}`);
     }
     else {
@@ -3543,6 +3509,10 @@ function readOpenClawJsonConfig(openclawHome) {
 }
 function ensureOpenClawBrainPluginConfig(openclawHome) {
     const { path: openclawJsonPath, config } = readOpenClawJsonConfig(openclawHome);
+    const selectedInstall = findInstalledOpenClawBrainPlugin(openclawHome).selectedInstall;
+    const knownPluginIds = selectedInstall === null
+        ? ["openclawbrain", "openclaw"]
+        : getOpenClawBrainKnownPluginIds(selectedInstall);
     const plugins = readJsonObjectRecord(config.plugins);
     if (plugins === null) {
         return {
@@ -3565,24 +3535,29 @@ function ensureOpenClawBrainPluginConfig(openclawHome) {
             detail: `Left ${shortenPath(openclawJsonPath)} unchanged because plugins.allow is not an array`
         };
     }
-    if (plugins.allow.includes("openclawbrain")) {
+    const missingPluginIds = knownPluginIds.filter((pluginId) => !plugins.allow.includes(pluginId));
+    if (missingPluginIds.length === 0) {
         return {
             path: openclawJsonPath,
             changed: false,
-            detail: `Verified ${shortenPath(openclawJsonPath)} plugins.allow already includes openclawbrain`
+            detail: `Verified ${shortenPath(openclawJsonPath)} plugins.allow already includes ${knownPluginIds.join(", ")}`
         };
     }
-    plugins.allow = [...plugins.allow, "openclawbrain"];
+    plugins.allow = [...plugins.allow, ...missingPluginIds];
     config.plugins = plugins;
     writeFileSync(openclawJsonPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
     return {
         path: openclawJsonPath,
         changed: true,
-        detail: `Repaired ${shortenPath(openclawJsonPath)} plugins.allow by adding openclawbrain`
+        detail: `Repaired ${shortenPath(openclawJsonPath)} plugins.allow by adding ${missingPluginIds.join(", ")}`
     };
 }
 function scrubOpenClawBrainPluginConfig(openclawHome) {
     const { path: openclawJsonPath, config } = readOpenClawJsonConfig(openclawHome);
+    const selectedInstall = findInstalledOpenClawBrainPlugin(openclawHome).selectedInstall;
+    const knownPluginIds = new Set(selectedInstall === null
+        ? ["openclawbrain", "openclaw"]
+        : getOpenClawBrainKnownPluginIds(selectedInstall));
     const plugins = readJsonObjectRecord(config.plugins);
     if (plugins === null) {
         return {
@@ -3594,10 +3569,10 @@ function scrubOpenClawBrainPluginConfig(openclawHome) {
     const changes = [];
     let changed = false;
     if (Array.isArray(plugins.allow)) {
-        const filteredAllow = plugins.allow.filter((entry) => entry !== "openclawbrain");
+        const filteredAllow = plugins.allow.filter((entry) => !knownPluginIds.has(entry));
         if (filteredAllow.length !== plugins.allow.length) {
             changed = true;
-            changes.push("removed plugins.allow entry");
+            changes.push("removed plugins.allow entries");
             if (filteredAllow.length > 0) {
                 plugins.allow = filteredAllow;
             }
@@ -3607,10 +3582,15 @@ function scrubOpenClawBrainPluginConfig(openclawHome) {
         }
     }
     const entries = readJsonObjectRecord(plugins.entries);
-    if (entries !== null && Object.prototype.hasOwnProperty.call(entries, "openclawbrain")) {
-        delete entries.openclawbrain;
-        changed = true;
-        changes.push("removed plugins.entries.openclawbrain");
+    if (entries !== null) {
+        for (const pluginId of knownPluginIds) {
+            if (!Object.prototype.hasOwnProperty.call(entries, pluginId)) {
+                continue;
+            }
+            delete entries[pluginId];
+            changed = true;
+            changes.push(`removed plugins.entries.${pluginId}`);
+        }
     }
     if (entries !== null && Object.keys(entries).length === 0 && Object.prototype.hasOwnProperty.call(plugins, "entries")) {
         delete plugins.entries;

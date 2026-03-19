@@ -1,6 +1,6 @@
 {
   "name": "@openclawbrain/openclaw",
-  "version": "0.3.5",
+  "version": "0.3.6",
   "description": "Canonical OpenClawBrain front door for OpenClaw attach, compile, event export, status, and rollback.",
   "type": "module",
   "main": "./dist/src/index.js",
@@ -55,8 +55,8 @@
     "@openclawbrain/event-export": "^0.3.4"
   },
   "bin": {
-    "openclawbrain": "./dist/src/cli.js",
-    "openclawbrain-ops": "./dist/src/cli.js"
+    "openclawbrain": "dist/src/cli.js",
+    "openclawbrain-ops": "dist/src/cli.js"
   },
   "openclaw": {
     "extensions": [
@@ -66,6 +66,8 @@
   "scripts": {
     "build": "rm -rf dist && tsc -b",
     "clean": "rm -rf dist && tsc -b --clean",
+    "prepublishOnly": "npm run release:verify",
+    "release:verify": "npm test && node ../../scripts/verify-openclaw-package-tarball.mjs",
     "test": "node --test dist/test/*.test.js"
   }
 }

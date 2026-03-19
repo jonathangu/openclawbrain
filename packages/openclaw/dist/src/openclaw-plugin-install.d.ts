@@ -8,8 +8,18 @@ export interface OpenClawBrainInstalledPlugin {
     loaderEntryPath: string | null;
     runtimeGuardPath: string | null;
     configuredEntries: string[];
+    manifestId: string | null;
+    installId: string | null;
     packageName: string | null;
     installLayout: OpenClawBrainInstallLayout;
+}
+export interface OpenClawBrainInstallTarget {
+    installLayout: OpenClawBrainInstallLayout;
+    extensionDir: string;
+    hookPath: string;
+    writeMode: "pin_native_package" | "write_shadow_extension";
+    selectedInstall: OpenClawBrainInstalledPlugin | null;
+    additionalInstalls: OpenClawBrainInstalledPlugin[];
 }
 export interface OpenClawBrainInstalledPluginLookup {
     openclawHome: string;
@@ -20,6 +30,11 @@ export interface OpenClawBrainInstalledPluginLookup {
 export declare const OPENCLAWBRAIN_PLUGIN_ID = "openclawbrain";
 export declare const OPENCLAWBRAIN_SHADOW_PACKAGE_NAME = "openclawbrain";
 export declare const OPENCLAWBRAIN_NATIVE_PACKAGE_NAME = "@openclawbrain/openclaw";
+export declare const OPENCLAWBRAIN_NATIVE_INSTALL_ID = "openclaw";
 export declare function describeOpenClawBrainInstallLayout(installLayout: OpenClawBrainInstallLayout): string;
+export declare function getOpenClawBrainKnownPluginIds(install: OpenClawBrainInstalledPlugin | null | undefined): string[];
+export declare function describeOpenClawBrainInstallIdentity(install: OpenClawBrainInstalledPlugin): string;
 export declare function findInstalledOpenClawBrainPlugin(openclawHome: string, pluginId?: string): OpenClawBrainInstalledPluginLookup;
+export declare function resolveOpenClawBrainInstallTarget(openclawHome: string): OpenClawBrainInstallTarget;
+export declare function pinInstalledOpenClawBrainPluginActivationRoot(loaderEntryPath: string, activationRoot: string): void;
 export declare function resolveOpenClawHomeFromExtensionEntryPath(extensionEntryPath: string): string | null;
