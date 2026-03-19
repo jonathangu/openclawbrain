@@ -186,6 +186,7 @@ Chooses best context → Surfaces as priority context → Learns from outcome
 Deep dives:
 - [`docs/lifecycle.md`](docs/lifecycle.md) — canonical install, upgrade, verify, detach, uninstall, and migration decision
 - [`docs/configuration.md`](docs/configuration.md) — practical operator install, upgrade, remove, and config guide
+- [`docs/release-notes-0.4.1.md`](docs/release-notes-0.4.1.md) — CLI-only shared-home idempotence patch for the split package lane
 - [`docs/release-notes-0.4.0.md`](docs/release-notes-0.4.0.md) — split packages and the proven public-registry dogfood flow
 - [`docs/routing-prior.md`](docs/routing-prior.md) — why summaries are a routing/search prior rather than the truth layer
 - [`docs/corrections.md`](docs/corrections.md) — how explicit user corrections become durable current truth

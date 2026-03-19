@@ -6,11 +6,40 @@ It should help an operator understand two different truths:
 - what was actually published to npm
 - what has landed on `main` since that publish
 
-## Unreleased (current trunk after 0.4.0)
+## Unreleased (current trunk after 0.4.1)
 
-The current repo may move ahead of the published `0.4.0` split packages again. If it does, this section should describe that drift plainly instead of pretending the last npm release says everything.
+The current repo may move ahead of the published split packages again. If it does, this section should describe that drift plainly instead of pretending the last npm release says everything.
 
-At the moment, trunk is intended to align with the published `0.4.0` split-package release and the now-proven public-registry operator flow.
+At the moment, trunk is intended to align with the published `0.4.1` CLI patch plus the `0.4.0` plugin/runtime payload.
+
+## 0.4.1
+
+Published packages:
+- `@openclawbrain/openclaw@0.4.0`
+- `@openclawbrain/cli@0.4.1`
+
+Shared-home patch landing commit on `main`: `20d0c4c`
+
+Deep release note:
+- [`docs/release-notes-0.4.1.md`](docs/release-notes-0.4.1.md)
+
+### Published notes
+
+- keeps the plugin/runtime payload at `@openclawbrain/openclaw@0.4.0`
+- publishes a CLI-only patch so the operator lane becomes:
+  - `openclaw plugins install @openclawbrain/openclaw@0.4.0`
+  - `npx @openclawbrain/cli@0.4.1 openclawbrain install --openclaw-home ~/.openclaw`
+  - `openclaw gateway restart`
+  - `npx @openclawbrain/cli@0.4.1 openclawbrain status --openclaw-home ~/.openclaw --detailed`
+- fixes the false failure where rerunning `openclawbrain install --shared` against a native package plugin that is already pinned to the requested activation root used to throw instead of succeeding as a no-op
+- preserves truthful failure behavior when the installed loader entry really is missing a patchable `ACTIVATION_ROOT` constant
+- records the real-host shared-home rerun proof on the shared Mac mini instead of treating the fix as repo-only
+
+### Why this release matters
+
+0.4.1 closes a real operator seam in the split-package lane.
+The earlier public flow already worked for the basic attach path, but the shared-home declaration rerun could still fail on a healthy native install because the installer treated “already pinned” as an error.
+This patch makes the shared attach intent idempotent, which is the honest operator behavior for a machine serving multiple profiles from one OpenClaw home.
 
 ## 0.4.0
 
