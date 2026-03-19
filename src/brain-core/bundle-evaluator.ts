@@ -7,7 +7,13 @@
 
 import { randomUUID } from "node:crypto";
 import type { BrainGraph } from "./graph.js";
-import type { Episode, MutationProposal } from "./types.js";
+import type {
+  BundleEvaluationReason,
+  BundleEvaluationVerdict,
+  Episode,
+  MutationBundleStatus,
+  MutationProposal,
+} from "./types.js";
 
 /** Bundle of clustered mutations to evaluate together */
 export interface MutationBundle {
@@ -15,7 +21,7 @@ export interface MutationBundle {
   mutationIds: string[];
   proposals: MutationProposal[];
   bundleSize: number;
-  status: "pending" | "evaluating" | "promoted" | "rejected";
+  status: MutationBundleStatus;
   baseScore: number | null;
   candidateScore: number | null;
   expectedGain: number;
@@ -277,18 +283,45 @@ export async function evaluateBundle(
   candidateScore: number;
   shouldPromote: boolean;
   rejectionReason: string | null;
+  verdict: BundleEvaluationVerdict;
 }> {
   // Filter episodes by reward threshold
   const validEpisodes = recentEpisodes.filter(
     ep => ep.reward !== null && ep.reward >= config.minRewardThreshold
   );
+  const resolvedAt = Date.now();
 
   if (validEpisodes.length === 0) {
+    const reason: BundleEvaluationReason = {
+      code: "no_qualifying_episodes",
+      summary: "no qualifying episodes for evaluation",
+      details: {
+        episodeCount: recentEpisodes.length,
+        qualifyingEpisodeCount: 0,
+        minRewardThreshold: config.minRewardThreshold,
+      },
+    };
+    const verdict: BundleEvaluationVerdict = {
+      bundleId: bundle.id,
+      mutationIds: [...bundle.mutationIds],
+      bundleSize: bundle.bundleSize,
+      status: "rejected",
+      baseScore: 0,
+      candidateScore: 0,
+      expectedGain: bundle.expectedGain,
+      evaluatedEpisodeCount: recentEpisodes.length,
+      qualifyingEpisodeCount: 0,
+      improvementRatio: null,
+      reason,
+      createdAt: bundle.createdAt,
+      resolvedAt,
+    };
     return {
       baseScore: 0,
       candidateScore: 0,
       shouldPromote: false,
-      rejectionReason: "No qualifying episodes for evaluation",
+      rejectionReason: reason.summary,
+      verdict,
     };
   }
 
@@ -305,22 +338,39 @@ export async function evaluateBundle(
   // Calculate candidate score
   const candidateScore = await calculateRetrievalScore(candidateGraph, validEpisodes);
 
+  const improvementRatio = calculateImprovementRatio(baseScore, candidateScore);
+
   // Check rejection criteria
-  const rejection = checkRejectionCriteria(
+  const outcome = checkBundleOutcome(
     baseScore,
     candidateScore,
+    improvementRatio,
     config,
     validEpisodes
   );
-
-  const shouldPromote = !rejection && 
-    candidateScore >= baseScore * config.minImprovementRatio;
+  const shouldPromote = outcome.status === "promoted";
+  const verdict: BundleEvaluationVerdict = {
+    bundleId: bundle.id,
+    mutationIds: [...bundle.mutationIds],
+    bundleSize: bundle.bundleSize,
+    status: outcome.status,
+    baseScore,
+    candidateScore,
+    expectedGain: bundle.expectedGain,
+    evaluatedEpisodeCount: recentEpisodes.length,
+    qualifyingEpisodeCount: validEpisodes.length,
+    improvementRatio,
+    reason: outcome.reason,
+    createdAt: bundle.createdAt,
+    resolvedAt,
+  };
 
   return {
     baseScore,
     candidateScore,
     shouldPromote,
-    rejectionReason: rejection,
+    rejectionReason: shouldPromote ? null : outcome.reason.summary,
+    verdict,
   };
 }
 
@@ -460,25 +510,94 @@ function applyMutationToGraph(graph: BrainGraph, proposal: MutationProposal): vo
 /**
  * Check rejection criteria
  */
-function checkRejectionCriteria(
+function calculateImprovementRatio(
   baseScore: number,
   candidateScore: number,
+): number | null {
+  if (baseScore <= 0) {
+    return null;
+  }
+  return candidateScore / baseScore;
+}
+
+function checkBundleOutcome(
+  baseScore: number,
+  candidateScore: number,
+  improvementRatio: number | null,
   config: BundleEvaluationConfig,
   episodes: Episode[]
-): string | null {
+): {
+  status: BundleEvaluationVerdict["status"];
+  reason: BundleEvaluationReason;
+} {
   // 1. Reject if candidate is worse than base
   if (candidateScore < baseScore) {
-    return `Candidate score ${candidateScore.toFixed(3)} worse than base ${baseScore.toFixed(3)}`;
+    return {
+      status: "rejected",
+      reason: {
+        code: "candidate_regressed",
+        summary: `candidate score ${candidateScore.toFixed(3)} worse than base ${baseScore.toFixed(3)}`,
+        details: {
+          baseScore,
+          candidateScore,
+          evaluatedEpisodeCount: episodes.length,
+        },
+      },
+    };
   }
 
   // 2. Reject if improvement is too small
-  const improvementRatio = baseScore > 0 ? candidateScore / baseScore : 1;
-  if (improvementRatio < config.minImprovementRatio) {
-    return `Improvement ratio ${improvementRatio.toFixed(2)} below threshold ${config.minImprovementRatio}`;
+  if (baseScore > 0 && improvementRatio !== null && improvementRatio < config.minImprovementRatio) {
+    return {
+      status: "rejected",
+      reason: {
+        code: "insufficient_improvement",
+        summary: `improvement ratio ${improvementRatio.toFixed(2)} below threshold ${config.minImprovementRatio}`,
+        details: {
+          baseScore,
+          candidateScore,
+          improvementRatio,
+          minImprovementRatio: config.minImprovementRatio,
+          evaluatedEpisodeCount: episodes.length,
+        },
+      },
+    };
+  }
+
+  if (baseScore <= 0 && candidateScore <= baseScore) {
+    return {
+      status: "rejected",
+      reason: {
+        code: "insufficient_improvement",
+        summary: "candidate did not improve over the zero baseline",
+        details: {
+          baseScore,
+          candidateScore,
+          improvementRatio,
+          minImprovementRatio: config.minImprovementRatio,
+          evaluatedEpisodeCount: episodes.length,
+        },
+      },
+    };
   }
 
   // 3. Reject if context inflation is too high (not implemented - would need context size tracking)
   // This would check that added nodes/edges don't bloat context too much
 
-  return null;
+  return {
+    status: "promoted",
+    reason: {
+      code: "promoted",
+      summary: baseScore > 0
+        ? `candidate improved replay score from ${baseScore.toFixed(3)} to ${candidateScore.toFixed(3)}`
+        : `candidate established positive replay score ${candidateScore.toFixed(3)} from a zero baseline`,
+      details: {
+        baseScore,
+        candidateScore,
+        improvementRatio,
+        minImprovementRatio: config.minImprovementRatio,
+        evaluatedEpisodeCount: episodes.length,
+      },
+    },
+  };
 }

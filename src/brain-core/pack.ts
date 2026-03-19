@@ -5,7 +5,13 @@
  * Promotion requires passing replay gate and health bounds.
  */
 
-import type { Pack, HealthMetrics, Episode } from "./types.js";
+import type {
+  Pack,
+  HealthMetrics,
+  Episode,
+  ReplayGateReason,
+  ReplayGateVerdict,
+} from "./types.js";
 import type { BrainGraph } from "./graph.js";
 import { computeHealth } from "./health.js";
 import { replayEpisode } from "./episode.js";
@@ -42,67 +48,113 @@ export class PackManager {
     recentEpisodes: Episode[],
     config: { minFiredPerQuery: number; maxDormantPercent: number; maxOrphanCount: number },
     candidateGraph: BrainGraph = this.graph,
-  ): { passed: boolean; reason: string; health: HealthMetrics } {
+  ): ReplayGateVerdict {
+    const buildVerdict = (
+      passed: boolean,
+      reason: ReplayGateReason,
+      health: HealthMetrics,
+      humanPositiveEpisodeCount: number,
+      selfNegativeEpisodeCount: number,
+    ): ReplayGateVerdict => ({
+      passed,
+      reason,
+      health,
+      evaluatedEpisodeCount: recentEpisodes.length,
+      humanPositiveEpisodeCount,
+      selfNegativeEpisodeCount,
+    });
+
     if (recentEpisodes.length === 0) {
       return {
         passed: true,
-        reason: "no episodes to replay",
+        reason: {
+          code: "no_episodes_to_replay",
+          summary: "no episodes to replay",
+          details: {},
+        },
         health: computeHealth(candidateGraph, recentEpisodes, 0),
+        evaluatedEpisodeCount: 0,
+        humanPositiveEpisodeCount: 0,
+        selfNegativeEpisodeCount: 0,
       };
     }
 
     const health = computeHealth(candidateGraph, recentEpisodes, 0);
-
-    if (health.firedPerQuery < config.minFiredPerQuery) {
-      return {
-        passed: false,
-        reason: `firedPerQuery ${health.firedPerQuery.toFixed(2)} < ${config.minFiredPerQuery}`,
-        health,
-      };
-    }
-    if (health.dormantPercent > config.maxDormantPercent) {
-      return {
-        passed: false,
-        reason: `dormantPercent ${(health.dormantPercent * 100).toFixed(1)}% > ${(config.maxDormantPercent * 100).toFixed(1)}%`,
-        health,
-      };
-    }
-    if (health.orphanCount > config.maxOrphanCount) {
-      return {
-        passed: false,
-        reason: `orphanCount ${health.orphanCount} > ${config.maxOrphanCount}`,
-        health,
-      };
-    }
-
-    // Check no human-labeled episodes regressed
     const humanEpisodes = recentEpisodes.filter((ep) => ep.rewardSource === "human" && ep.reward !== null);
-    for (const ep of humanEpisodes) {
-      const replay = replayEpisode(ep, candidateGraph);
-      if (replay.wouldChange && ep.reward! > 0) {
-        return {
-          passed: false,
-          reason: `human-positive episode ${ep.id} would change routing`,
-          health,
-        };
-      }
-    }
-
     const selfNegativeEpisodes = recentEpisodes.filter(
       (ep) => ep.rewardSource === "self" && ep.reward !== null && ep.reward < 0,
     );
-    for (const ep of selfNegativeEpisodes) {
+
+    if (health.firedPerQuery < config.minFiredPerQuery) {
+      return buildVerdict(false, {
+        code: "fired_per_query_below_min",
+        summary: `firedPerQuery ${health.firedPerQuery.toFixed(2)} < ${config.minFiredPerQuery}`,
+        details: {
+          metric: "firedPerQuery",
+          actual: health.firedPerQuery,
+          minimum: config.minFiredPerQuery,
+        },
+      }, health, humanEpisodes.length, selfNegativeEpisodes.length);
+    }
+    if (health.dormantPercent > config.maxDormantPercent) {
+      return buildVerdict(false, {
+        code: "dormant_percent_above_max",
+        summary: `dormantPercent ${(health.dormantPercent * 100).toFixed(1)}% > ${(config.maxDormantPercent * 100).toFixed(1)}%`,
+        details: {
+          metric: "dormantPercent",
+          actual: health.dormantPercent,
+          maximum: config.maxDormantPercent,
+        },
+      }, health, humanEpisodes.length, selfNegativeEpisodes.length);
+    }
+    if (health.orphanCount > config.maxOrphanCount) {
+      return buildVerdict(false, {
+        code: "orphan_count_above_max",
+        summary: `orphanCount ${health.orphanCount} > ${config.maxOrphanCount}`,
+        details: {
+          metric: "orphanCount",
+          actual: health.orphanCount,
+          maximum: config.maxOrphanCount,
+        },
+      }, health, humanEpisodes.length, selfNegativeEpisodes.length);
+    }
+
+    // Check no human-labeled episodes regressed
+    for (const ep of humanEpisodes) {
       const replay = replayEpisode(ep, candidateGraph);
-      if (!replay.wouldChange) {
-        return {
-          passed: false,
-          reason: `self-negative episode ${ep.id} did not change routing`,
-          health,
-        };
+      if (replay.wouldChange && ep.reward! > 0) {
+        return buildVerdict(false, {
+          code: "human_positive_route_regression",
+          summary: `human-positive episode ${ep.id} would change routing`,
+          details: {
+            episodeId: ep.id,
+            reward: ep.reward,
+            rewardSource: ep.rewardSource,
+          },
+        }, health, humanEpisodes.length, selfNegativeEpisodes.length);
       }
     }
 
-    return { passed: true, reason: "all gates passed", health };
+    for (const ep of selfNegativeEpisodes) {
+      const replay = replayEpisode(ep, candidateGraph);
+      if (!replay.wouldChange) {
+        return buildVerdict(false, {
+          code: "self_negative_route_unchanged",
+          summary: `self-negative episode ${ep.id} did not change routing`,
+          details: {
+            episodeId: ep.id,
+            reward: ep.reward,
+            rewardSource: ep.rewardSource,
+          },
+        }, health, humanEpisodes.length, selfNegativeEpisodes.length);
+      }
+    }
+
+    return buildVerdict(true, {
+      code: "all_gates_passed",
+      summary: "all gates passed",
+      details: {},
+    }, health, humanEpisodes.length, selfNegativeEpisodes.length);
   }
 
   promote(version: number): void {

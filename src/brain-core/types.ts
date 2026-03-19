@@ -235,6 +235,7 @@ export interface Pack {
 
 export type MutationKind = "split" | "merge" | "prune" | "connect" | "inject";
 export type MutationStatus = "pending" | "validated" | "promoted" | "rejected";
+export type MutationBundleStatus = "pending" | "evaluating" | "promoted" | "rejected";
 
 export interface MutationProposal {
   id: string;
@@ -245,6 +246,89 @@ export interface MutationProposal {
   status: MutationStatus;
   createdAt: number;
   resolvedAt: number | null;
+}
+
+export type ReplayGateReasonCode =
+  | "no_episodes_to_replay"
+  | "fired_per_query_below_min"
+  | "dormant_percent_above_max"
+  | "orphan_count_above_max"
+  | "human_positive_route_regression"
+  | "self_negative_route_unchanged"
+  | "all_gates_passed";
+
+export interface ReplayGateReason {
+  code: ReplayGateReasonCode;
+  summary: string;
+  details: Record<string, unknown>;
+}
+
+export interface ReplayGateVerdict {
+  passed: boolean;
+  reason: ReplayGateReason;
+  health: HealthMetrics;
+  evaluatedEpisodeCount: number;
+  humanPositiveEpisodeCount: number;
+  selfNegativeEpisodeCount: number;
+}
+
+export type BundleEvaluationReasonCode =
+  | "promoted"
+  | "no_qualifying_episodes"
+  | "candidate_regressed"
+  | "insufficient_improvement";
+
+export interface BundleEvaluationReason {
+  code: BundleEvaluationReasonCode;
+  summary: string;
+  details: Record<string, unknown>;
+}
+
+export interface BundleEvaluationVerdict {
+  bundleId: string;
+  mutationIds: string[];
+  bundleSize: number;
+  status: Extract<MutationBundleStatus, "promoted" | "rejected">;
+  baseScore: number;
+  candidateScore: number;
+  expectedGain: number;
+  evaluatedEpisodeCount: number;
+  qualifyingEpisodeCount: number;
+  improvementRatio: number | null;
+  reason: BundleEvaluationReason;
+  createdAt: number;
+  resolvedAt: number;
+}
+
+export interface MutationBundleRecord {
+  id: string;
+  mutationIds: string[];
+  bundleSize: number;
+  status: MutationBundleStatus;
+  baseScore: number | null;
+  candidateScore: number | null;
+  expectedGain: number;
+  rejectionReason: string | null;
+  verdict: BundleEvaluationVerdict | null;
+  createdAt: number;
+  resolvedAt: number | null;
+}
+
+export interface PromotionRunVerdict {
+  mode: "bundle" | "legacy";
+  status: "promoted" | "rejected";
+  summary: string;
+  mutationCount: number;
+  promotedMutationCount: number;
+  rejectedMutationCount: number;
+  bundleCount: number;
+  promotedBundleCount: number;
+  rejectedBundleCount: number;
+  packPromotionTriggered: boolean;
+  health: HealthMetrics | null;
+  replayGate: ReplayGateVerdict | null;
+  bundleVerdicts: BundleEvaluationVerdict[];
+  createdAt: number;
 }
 
 // ═══════════════════════════════════════════

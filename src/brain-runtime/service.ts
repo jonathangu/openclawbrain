@@ -202,8 +202,8 @@ export class BrainService {
         params.deps.log,
         {
           isEnabled: () => this.isEnabled(),
-          onPromotionReady: async ({ healthJson }) => {
-            await this.promoteMutableGraph("worker", { healthJson });
+          onPromotionReady: async ({ healthJson, promotionVerdict }) => {
+            await this.promoteMutableGraph("worker", { healthJson, promotionVerdict });
           },
         },
       );
@@ -723,12 +723,15 @@ export class BrainService {
       pendingLabels: this.store.getPendingLabels().length,
       pendingLabelsBySource: this.store.countPendingLabelsBySource(),
       mutationBacklog: this.store.countMutationsByStatus(),
+      recentMutationBundles: this.store.getRecentMutationBundles(5),
       seedLearningEnabled: this.mutableGraph.hasSeedWeights(),
       recentTraceCount: recentTraces.length,
       lastTraceFooter: recentTraces[0]?.footer ?? null,
       lastAssemblyDecision: this.lastAssemblyDecision,
       lastPromotionReason: this.store.getTrainingState("last_promotion_reason"),
+      lastPromotionVerdict: this.store.getTrainingStateJson("last_promotion_verdict_json"),
       lastReplayFailureReason: this.store.getTrainingState("last_replay_failure_reason"),
+      lastReplayGateVerdict: this.store.getTrainingStateJson("last_replay_gate_verdict_json"),
       brainRoot: this.config.root,
       ...health,
     };

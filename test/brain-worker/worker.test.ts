@@ -5,7 +5,7 @@ import { DatabaseSync } from "node:sqlite";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BrainGraph } from "../../src/brain-core/graph.js";
 import { DEFAULT_BRAIN_CONFIG } from "../../src/brain-core/types.js";
-import type { Episode } from "../../src/brain-core/types.js";
+import type { Episode, HealthMetrics, MutationProposal, ReplayGateVerdict } from "../../src/brain-core/types.js";
 import { runBrainMigrations } from "../../src/brain-store/migrations.js";
 import { BrainStore } from "../../src/brain-store/store.js";
 import { BrainWorker } from "../../src/brain-worker/worker.js";
@@ -15,16 +15,18 @@ const tempDirs: string[] = [];
 function makeEpisode(params: {
   id: string;
   conversationId: number;
+  queryText?: string;
+  firedNodes?: string[];
   reward?: number | null;
   rewardSource?: Episode["rewardSource"];
 }): Episode {
   return {
     id: params.id,
     conversationId: params.conversationId,
-    queryText: "test query",
+    queryText: params.queryText ?? "test query",
     queryEmbedding: null,
     trajectory: [],
-    firedNodes: [],
+    firedNodes: params.firedNodes ?? [],
     vetoedNodes: [],
     contextChars: 0,
     reward: params.reward ?? null,
@@ -34,7 +36,90 @@ function makeEpisode(params: {
   };
 }
 
-function setup() {
+function makeHealthMetrics(overrides: Partial<HealthMetrics> = {}): HealthMetrics {
+  return {
+    nodeCount: 0,
+    edgeCount: 0,
+    nodesByKind: {
+      chunk: 0,
+      workflow: 0,
+      correction: 0,
+      toolcard: 0,
+      episode_anchor: 0,
+      summary_bridge: 0,
+    },
+    edgesByKind: {
+      sibling: 0,
+      semantic: 0,
+      learned: 0,
+      seed: 0,
+      inhibitory: 0,
+      bridge: 0,
+    },
+    firedPerQuery: 0,
+    dormantPercent: 0,
+    inhibitoryPercent: 0,
+    orphanCount: 0,
+    avgPathLength: 0,
+    avgReward: 0,
+    crossFileEdgePercent: 0,
+    churn: 0,
+    packVersion: 0,
+    lastUpdateAt: Date.now(),
+    totalEpisodes: 0,
+    ...overrides,
+  };
+}
+
+function makeReplayGateVerdict(params: {
+  passed: boolean;
+  code: ReplayGateVerdict["reason"]["code"];
+  summary: string;
+  details?: Record<string, unknown>;
+  health?: HealthMetrics;
+}): ReplayGateVerdict {
+  return {
+    passed: params.passed,
+    reason: {
+      code: params.code,
+      summary: params.summary,
+      details: params.details ?? {},
+    },
+    health: params.health ?? makeHealthMetrics(),
+    evaluatedEpisodeCount: 1,
+    humanPositiveEpisodeCount: 0,
+    selfNegativeEpisodeCount: 0,
+  };
+}
+
+function hashQuery(queryText: string): string {
+  let hash = 0;
+  for (let i = 0; i < queryText.length; i++) {
+    const char = queryText.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return `__query_${Math.abs(hash).toString(36).slice(0, 8)}`;
+}
+
+function makeMutation(id: string, nodeA: string, nodeB: string): MutationProposal {
+  return {
+    id,
+    kind: "connect",
+    proposal: { nodeA, nodeB },
+    evidence: null,
+    expectedGain: 0.2,
+    status: "pending",
+    createdAt: Date.now(),
+    resolvedAt: null,
+  };
+}
+
+function setup(overrides: {
+  replayGate?: () => ReplayGateVerdict;
+  applyToCandidateGraph?: (graph: BrainGraph, proposal: MutationProposal) => void;
+  applyMutation?: (proposal: MutationProposal) => void;
+} = {}) {
   const dir = mkdtempSync(join(tmpdir(), "brain-worker-test-"));
   tempDirs.push(dir);
   const db = new DatabaseSync(join(dir, "test.db"));
@@ -44,17 +129,29 @@ function setup() {
 
   const store = new BrainStore(db);
   const graph = new BrainGraph();
+  const applyMutation = vi.fn((proposal: MutationProposal) => {
+    overrides.applyMutation?.(proposal);
+  });
+  const applyToCandidateGraph = vi.fn((candidateGraph: BrainGraph, proposal: MutationProposal) => {
+    overrides.applyToCandidateGraph?.(candidateGraph, proposal);
+  });
+  const replayGate = vi.fn(() => overrides.replayGate?.() ?? makeReplayGateVerdict({
+    passed: true,
+    code: "all_gates_passed",
+    summary: "all gates passed",
+  }));
+  const onPromotionReady = vi.fn(async () => undefined);
   const worker = new BrainWorker(
     store,
     graph,
     null,
     {
       proposeMutations: vi.fn(() => []),
-      applyToCandidateGraph: vi.fn(),
-      applyMutation: vi.fn(),
+      applyToCandidateGraph,
+      applyMutation,
     } as never,
     {
-      replayGate: vi.fn(() => ({ passed: true, reason: null })),
+      replayGate,
     } as never,
     {
       ...DEFAULT_BRAIN_CONFIG,
@@ -66,11 +163,11 @@ function setup() {
       error: vi.fn(),
     },
     {
-      onPromotionReady: vi.fn(async () => undefined),
+      onPromotionReady,
     },
   );
 
-  return { store, worker };
+  return { store, worker, replayGate, applyMutation, onPromotionReady };
 }
 
 afterEach(() => {
@@ -291,5 +388,93 @@ describe("BrainWorker evidence resolution", () => {
     expect(resolved).toHaveLength(1);
     expect(resolved[0]?.resolution).toBe("promoted_to_label");
     expect(resolved[0]?.source).toBe("human");
+  });
+});
+
+describe("BrainWorker promotion verdicts", () => {
+  it("persists a structured replay-gate rejection verdict for legacy promotion", async () => {
+    const gate = makeReplayGateVerdict({
+      passed: false,
+      code: "fired_per_query_below_min",
+      summary: "firedPerQuery 0.25 < 1",
+      details: {
+        metric: "firedPerQuery",
+        actual: 0.25,
+        minimum: 1,
+      },
+      health: makeHealthMetrics({ firedPerQuery: 0.25 }),
+    });
+    const { store, worker, onPromotionReady } = setup({
+      replayGate: () => gate,
+    });
+    const mutation = makeMutation("mp_legacy", "node_a", "node_b");
+    store.insertMutation(mutation);
+
+    await (worker as any).checkPromotionLegacy(
+      [makeEpisode({ id: "ep_legacy", conversationId: 11, reward: 0.8 })],
+      store.getMutationsByStatus("pending", 10),
+    );
+
+    const lastPromotionVerdict = store.getTrainingStateJson<{
+      status: string;
+      replayGate: ReplayGateVerdict | null;
+    }>("last_promotion_verdict_json");
+    expect(lastPromotionVerdict?.status).toBe("rejected");
+    expect(lastPromotionVerdict?.replayGate?.reason.code).toBe("fired_per_query_below_min");
+    expect(store.getTrainingState("last_replay_failure_reason")).toBe("firedPerQuery 0.25 < 1");
+    expect(store.getTrainingStateJson<ReplayGateVerdict>("last_replay_gate_verdict_json")?.reason.details).toMatchObject({
+      actual: 0.25,
+      minimum: 1,
+    });
+    expect(store.getMutationsByStatus("rejected", 10)).toHaveLength(1);
+    expect(onPromotionReady).not.toHaveBeenCalled();
+  });
+
+  it("stores structured bundle verdicts and forwards them to the promotion hook", async () => {
+    const { store, worker, applyMutation, onPromotionReady } = setup({
+      applyMutation: (proposal) => {
+        store.resolveMutation(proposal.id, "promoted");
+      },
+    });
+    const queryText = "bundle verdict query";
+    const queryNodeId = hashQuery(queryText);
+    store.insertEpisode(makeEpisode({
+      id: "ep_bundle",
+      conversationId: 12,
+      queryText,
+      firedNodes: ["node_1", "node_2", "node_3"],
+      reward: 1,
+      rewardSource: "human",
+    }));
+    for (const mutation of [
+      makeMutation("mp_bundle_1", queryNodeId, "node_1"),
+      makeMutation("mp_bundle_2", queryNodeId, "node_2"),
+      makeMutation("mp_bundle_3", queryNodeId, "node_3"),
+    ]) {
+      store.insertMutation(mutation);
+    }
+
+    await (worker as any).checkPromotion();
+
+    const bundles = store.getRecentMutationBundles(5);
+    expect(bundles).toHaveLength(1);
+    expect(bundles[0]?.status).toBe("promoted");
+    expect(bundles[0]?.verdict?.reason.code).toBe("promoted");
+    expect(bundles[0]?.verdict?.candidateScore).toBeGreaterThan(0);
+
+    const lastPromotionVerdict = store.getTrainingStateJson<{
+      mode: string;
+      promotedBundleCount: number;
+      promotedMutationCount: number;
+      bundleVerdicts: Array<{ reason: { code: string } }>;
+    }>("last_promotion_verdict_json");
+    expect(lastPromotionVerdict?.mode).toBe("bundle");
+    expect(lastPromotionVerdict?.promotedBundleCount).toBe(1);
+    expect(lastPromotionVerdict?.promotedMutationCount).toBe(3);
+    expect(lastPromotionVerdict?.bundleVerdicts[0]?.reason.code).toBe("promoted");
+    expect(store.getTrainingStateJson("last_replay_gate_verdict_json")).toBeNull();
+    expect(applyMutation).toHaveBeenCalledTimes(3);
+    expect(onPromotionReady).toHaveBeenCalledTimes(1);
+    expect(onPromotionReady.mock.calls[0]?.[0]?.promotionVerdict?.bundleVerdicts?.[0]?.reason?.code).toBe("promoted");
   });
 });

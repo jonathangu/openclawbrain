@@ -144,8 +144,11 @@ function commandStatus(): void {
     pendingLabels: store.getPendingLabels().length,
     pendingLabelsBySource: store.countPendingLabelsBySource(),
     mutationBacklog: store.countMutationsByStatus(),
+    recentMutationBundles: store.getRecentMutationBundles(5),
     lastPromotionReason: store.getTrainingState("last_promotion_reason"),
+    lastPromotionVerdict: store.getTrainingStateJson("last_promotion_verdict_json"),
     lastReplayFailureReason: store.getTrainingState("last_replay_failure_reason"),
+    lastReplayGateVerdict: store.getTrainingStateJson("last_replay_gate_verdict_json"),
     lastAssemblyDecision: {
       mode: store.getTrainingState("last_assembly_mode"),
       footer: store.getTrainingState("last_assembly_footer"),
@@ -193,7 +196,9 @@ function commandReplay(): void {
   printJson({
     command: "replay",
     passed: gate.passed,
-    reason: gate.reason,
+    reason: gate.reason.summary,
+    reasonCode: gate.reason.code,
+    verdict: gate,
     health: gate.health,
   });
 }

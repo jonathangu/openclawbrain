@@ -186,6 +186,91 @@ describe("BrainService", () => {
     );
   });
 
+  it("surfaces structured promotion verdicts and recent bundle records in runtime status", async () => {
+    const brainRoot = makeTempDir("openclawbrain-state-");
+    const service = new BrainService({
+      deps: createDeps(brainRoot),
+    });
+    const store = (service as unknown as {
+      store: {
+        setTrainingStateJson: (key: string, value: unknown | null) => void;
+        setTrainingState: (key: string, value: string) => void;
+        insertMutationBundle: (params: {
+          id: string;
+          mutationIds: string[];
+          bundleSize: number;
+          status: "promoted";
+          expectedGain: number;
+          createdAt: number;
+          baseScore: number;
+          candidateScore: number;
+          rejectionReason?: string | null;
+          verdict: Record<string, unknown>;
+          resolvedAt: number;
+        }) => void;
+      };
+    }).store;
+
+    store.setTrainingState("last_promotion_reason", "candidate graph promoted after bundle evaluation");
+    store.setTrainingState("last_replay_failure_reason", "");
+    store.setTrainingStateJson("last_promotion_verdict_json", {
+      mode: "bundle",
+      status: "promoted",
+      promotedBundleCount: 1,
+    });
+    store.setTrainingStateJson("last_replay_gate_verdict_json", {
+      passed: true,
+      reason: { code: "all_gates_passed", summary: "all gates passed", details: {} },
+    });
+    store.insertMutationBundle({
+      id: "mb_status",
+      mutationIds: ["mp_1", "mp_2"],
+      bundleSize: 2,
+      status: "promoted",
+      expectedGain: 0.4,
+      createdAt: Date.now(),
+      baseScore: 0.2,
+      candidateScore: 0.5,
+      verdict: {
+        bundleId: "mb_status",
+        mutationIds: ["mp_1", "mp_2"],
+        bundleSize: 2,
+        status: "promoted",
+        baseScore: 0.2,
+        candidateScore: 0.5,
+        expectedGain: 0.4,
+        evaluatedEpisodeCount: 3,
+        qualifyingEpisodeCount: 2,
+        improvementRatio: 2.5,
+        reason: { code: "promoted", summary: "candidate improved replay score", details: {} },
+        createdAt: Date.now(),
+        resolvedAt: Date.now(),
+      },
+      resolvedAt: Date.now(),
+    });
+
+    const status = await service.status();
+
+    expect(status.lastPromotionVerdict).toMatchObject({
+      mode: "bundle",
+      status: "promoted",
+      promotedBundleCount: 1,
+    });
+    expect(status.lastReplayGateVerdict).toMatchObject({
+      passed: true,
+      reason: { code: "all_gates_passed" },
+    });
+    expect(status.recentMutationBundles).toMatchObject([
+      {
+        id: "mb_status",
+        status: "promoted",
+        verdict: {
+          reason: { code: "promoted" },
+        },
+      },
+    ]);
+  });
+
   it("teaches a correction against the active conversation, labels only matching episodes, and retrieves it immediately", async () => {
     const workspaceRoot = makeTempDir("openclawbrain-workspace-");
     const brainRoot = makeTempDir("openclawbrain-state-");

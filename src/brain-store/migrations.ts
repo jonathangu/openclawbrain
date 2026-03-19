@@ -202,4 +202,11 @@ export function runBrainMigrations(db: DatabaseSync): void {
       value         TEXT NOT NULL
     );
   `);
+
+  const mutationBundleColumns = db.prepare(`PRAGMA table_info(brain_mutation_bundles)`).all() as Array<{
+    name: string;
+  }>;
+  if (!mutationBundleColumns.some((column) => column.name === "verdict_json")) {
+    db.exec(`ALTER TABLE brain_mutation_bundles ADD COLUMN verdict_json TEXT`);
+  }
 }

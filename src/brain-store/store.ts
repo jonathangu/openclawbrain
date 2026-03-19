@@ -21,6 +21,9 @@ import type {
   Pack,
   MutationProposal,
   MutationStatus,
+  MutationBundleStatus,
+  MutationBundleRecord,
+  BundleEvaluationVerdict,
   DecisionTrace,
   BrainEvidence,
   BrainEvidenceKind,
@@ -578,6 +581,78 @@ export class BrainStore {
       .run(status, Date.now(), id);
   }
 
+  insertMutationBundle(params: {
+    id: string;
+    mutationIds: string[];
+    bundleSize: number;
+    status?: MutationBundleStatus;
+    baseScore?: number | null;
+    candidateScore?: number | null;
+    expectedGain: number;
+    rejectionReason?: string | null;
+    verdict?: BundleEvaluationVerdict | null;
+    createdAt: number;
+    resolvedAt?: number | null;
+  }): void {
+    this.db.prepare(`
+      INSERT INTO brain_mutation_bundles (
+        id,
+        mutation_ids,
+        bundle_size,
+        status,
+        base_score,
+        candidate_score,
+        expected_gain,
+        rejection_reason,
+        verdict_json,
+        created_at,
+        resolved_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      params.id,
+      JSON.stringify(params.mutationIds),
+      params.bundleSize,
+      params.status ?? "pending",
+      params.baseScore ?? null,
+      params.candidateScore ?? null,
+      params.expectedGain,
+      params.rejectionReason ?? null,
+      params.verdict ? JSON.stringify(params.verdict) : null,
+      params.createdAt,
+      params.resolvedAt ?? null,
+    );
+  }
+
+  resolveMutationBundle(params: {
+    id: string;
+    status: MutationBundleStatus;
+    baseScore: number | null;
+    candidateScore: number | null;
+    rejectionReason?: string | null;
+    verdict?: BundleEvaluationVerdict | null;
+    resolvedAt?: number | null;
+  }): void {
+    this.db.prepare(`
+      UPDATE brain_mutation_bundles
+      SET status = ?,
+          base_score = ?,
+          candidate_score = ?,
+          rejection_reason = ?,
+          verdict_json = ?,
+          resolved_at = ?
+      WHERE id = ?
+    `).run(
+      params.status,
+      params.baseScore,
+      params.candidateScore,
+      params.rejectionReason ?? null,
+      params.verdict ? JSON.stringify(params.verdict) : null,
+      params.resolvedAt ?? Date.now(),
+      params.id,
+    );
+  }
+
   getMutationsByStatus(status: MutationStatus, limit = 50): MutationProposal[] {
     const rows = this.db.prepare(`
       SELECT * FROM brain_mutations
@@ -614,6 +689,30 @@ export class BrainStore {
       counts[row.status] = row.count;
     }
     return counts;
+  }
+
+  getRecentMutationBundles(limit = 20): MutationBundleRecord[] {
+    const rows = this.db.prepare(`
+      SELECT *
+      FROM brain_mutation_bundles
+      ORDER BY created_at DESC
+      LIMIT ?
+    `).all(limit) as Record<string, unknown>[];
+    return rows.map((row) => ({
+      id: row.id as string,
+      mutationIds: JSON.parse((row.mutation_ids as string) || "[]"),
+      bundleSize: Number(row.bundle_size ?? 0),
+      status: row.status as MutationBundleStatus,
+      baseScore: row.base_score === null ? null : Number(row.base_score),
+      candidateScore: row.candidate_score === null ? null : Number(row.candidate_score),
+      expectedGain: Number(row.expected_gain ?? 0),
+      rejectionReason: (row.rejection_reason as string) ?? null,
+      verdict: row.verdict_json
+        ? JSON.parse(row.verdict_json as string) as BundleEvaluationVerdict
+        : null,
+      createdAt: Number(row.created_at ?? 0),
+      resolvedAt: row.resolved_at === null ? null : Number(row.resolved_at),
+    }));
   }
 
   countOrphanedTraceRows(): number {
@@ -673,9 +772,25 @@ export class BrainStore {
     return row?.value ?? null;
   }
 
+  getTrainingStateJson<T>(key: string): T | null {
+    const raw = this.getTrainingState(key)?.trim();
+    if (!raw) {
+      return null;
+    }
+    try {
+      return JSON.parse(raw) as T;
+    } catch {
+      return null;
+    }
+  }
+
   setTrainingState(key: string, value: string | number): void {
     this.db.prepare(`INSERT OR REPLACE INTO brain_training_state (key, value) VALUES (?, ?)`)
       .run(key, String(value));
+  }
+
+  setTrainingStateJson(key: string, value: unknown | null): void {
+    this.setTrainingState(key, value === null ? "" : JSON.stringify(value));
   }
 
   // ─── Bulk load into BrainGraph ───

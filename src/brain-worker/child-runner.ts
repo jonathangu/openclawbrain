@@ -221,7 +221,7 @@ async function main(): Promise<void> {
     log,
     {
       isEnabled: () => !existsSync(join(config.root, "DISABLED")),
-      onPromotionReady: async ({ healthJson }) => {
+      onPromotionReady: async ({ healthJson, promotionVerdict }) => {
         const version = promoteGraphSnapshot({
           store,
           graph,
@@ -230,6 +230,7 @@ async function main(): Promise<void> {
           reason: "worker",
           metadata: {
             healthJson,
+            promotionVerdict,
             workerPid: process.pid,
           },
         });

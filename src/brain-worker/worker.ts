@@ -1,4 +1,13 @@
-import type { BrainConfig, BrainEdge, BrainEvidence, Episode, MutationProposal } from "../brain-core/types.js";
+import type {
+  BrainConfig,
+  BrainEdge,
+  BrainEvidence,
+  BundleEvaluationVerdict,
+  Episode,
+  MutationProposal,
+  PromotionRunVerdict,
+  ReplayGateVerdict,
+} from "../brain-core/types.js";
 import { trustRank } from "../brain-core/types.js";
 import type { BrainStore } from "../brain-store/store.js";
 import type { BrainGraph } from "../brain-core/graph.js";
@@ -145,7 +154,7 @@ export class BrainWorker {
     private log: { info: (msg: string) => void; error: (msg: string) => void; warn: (msg: string) => void },
     private hooks: {
       isEnabled?: () => boolean;
-      onPromotionReady?: (params: { healthJson: string }) => Promise<void> | void;
+      onPromotionReady?: (params: { healthJson: string; promotionVerdict: PromotionRunVerdict }) => Promise<void> | void;
       onTickResult?: (params: { ok: boolean; at: number; error?: string }) => void;
     } = {},
   ) {}
@@ -422,6 +431,24 @@ export class BrainWorker {
     }
   }
 
+  private persistPromotionVerdict(verdict: PromotionRunVerdict): void {
+    this.store.setTrainingState("last_promotion_reason", verdict.summary);
+    this.store.setTrainingState("last_replay_failure_reason", verdict.replayGate && !verdict.replayGate.passed
+      ? verdict.replayGate.reason.summary
+      : "");
+    this.store.setTrainingStateJson("last_promotion_verdict_json", verdict);
+    this.store.setTrainingStateJson("last_replay_gate_verdict_json", verdict.replayGate);
+  }
+
+  private countBundleMutations(
+    bundleVerdicts: BundleEvaluationVerdict[],
+    status: BundleEvaluationVerdict["status"],
+  ): number {
+    return bundleVerdicts.reduce((sum, verdict) => (
+      verdict.status === status ? sum + verdict.mutationIds.length : sum
+    ), 0);
+  }
+
   private async checkPromotion(): Promise<void> {
     const recentEpisodes = this.store.getRecentEpisodes(this.config.replayEpisodeCount);
     const pendingMutations = this.store.getMutationsByStatus("pending", 20); // Get more for bundling
@@ -444,8 +471,32 @@ export class BrainWorker {
     }
 
     // Evaluate each bundle
+    const bundleVerdicts: BundleEvaluationVerdict[] = [];
     for (const bundle of bundles) {
+      this.store.insertMutationBundle({
+        id: bundle.id,
+        mutationIds: bundle.mutationIds,
+        bundleSize: bundle.bundleSize,
+        expectedGain: bundle.expectedGain,
+        createdAt: bundle.createdAt,
+      });
+
       const evalResult = await evaluateBundle(bundle, this.graph, recentEpisodes);
+      bundle.status = evalResult.verdict.status;
+      bundle.baseScore = evalResult.baseScore;
+      bundle.candidateScore = evalResult.candidateScore;
+      bundle.rejectionReason = evalResult.rejectionReason;
+      bundle.resolvedAt = evalResult.verdict.resolvedAt;
+      bundleVerdicts.push(evalResult.verdict);
+      this.store.resolveMutationBundle({
+        id: bundle.id,
+        status: evalResult.verdict.status,
+        baseScore: evalResult.baseScore,
+        candidateScore: evalResult.candidateScore,
+        rejectionReason: evalResult.rejectionReason,
+        verdict: evalResult.verdict,
+        resolvedAt: evalResult.verdict.resolvedAt,
+      });
 
       if (evalResult.shouldPromote) {
         // Apply mutations from the bundle
@@ -458,16 +509,36 @@ export class BrainWorker {
         for (const proposal of bundle.proposals) {
           this.store.resolveMutation(proposal.id, "rejected");
         }
-        this.log.info(`[brain] Bundle ${bundle.id} rejected: ${evalResult.rejectionReason}`);
+        this.log.info(`[brain] Bundle ${bundle.id} rejected (${evalResult.verdict.reason.code}): ${evalResult.verdict.reason.summary}`);
       }
     }
 
     // Report health after bundle evaluation
     const health = computeHealth(this.graph, recentEpisodes, this.store.getCurrentPackVersion() ?? 0);
-    this.store.setTrainingState("last_promotion_reason", `Bundle evaluation complete: ${bundles.filter(b => b.status === "promoted").length} promoted`);
-    this.store.setTrainingState("last_replay_failure_reason", "");
+    const promotedBundleCount = bundleVerdicts.filter((verdict) => verdict.status === "promoted").length;
+    const rejectedBundleCount = bundleVerdicts.length - promotedBundleCount;
+    const verdict: PromotionRunVerdict = {
+      mode: "bundle",
+      status: "promoted",
+      summary: promotedBundleCount > 0
+        ? `candidate graph promoted after evaluating ${bundleVerdicts.length} bundle(s); ${promotedBundleCount} promoted, ${rejectedBundleCount} rejected`
+        : `candidate graph promoted after bundle evaluation; no mutation bundles were accepted`,
+      mutationCount: candidateMutations.length,
+      promotedMutationCount: this.countBundleMutations(bundleVerdicts, "promoted"),
+      rejectedMutationCount: this.countBundleMutations(bundleVerdicts, "rejected"),
+      bundleCount: bundleVerdicts.length,
+      promotedBundleCount,
+      rejectedBundleCount,
+      packPromotionTriggered: true,
+      health,
+      replayGate: null,
+      bundleVerdicts,
+      createdAt: Date.now(),
+    };
+    this.persistPromotionVerdict(verdict);
     await this.hooks.onPromotionReady?.({
       healthJson: JSON.stringify(health),
+      promotionVerdict: verdict,
     });
   }
 
@@ -487,8 +558,24 @@ export class BrainWorker {
     }, candidateGraph);
 
     if (!gate.passed) {
-      this.store.setTrainingState("last_replay_failure_reason", gate.reason);
-      this.log.warn(`[brain] Replay gate blocked promotion: ${gate.reason}`);
+      const verdict: PromotionRunVerdict = {
+        mode: "legacy",
+        status: "rejected",
+        summary: `replay gate blocked promotion: ${gate.reason.summary}`,
+        mutationCount: pendingMutations.length,
+        promotedMutationCount: 0,
+        rejectedMutationCount: pendingMutations.length,
+        bundleCount: 0,
+        promotedBundleCount: 0,
+        rejectedBundleCount: 0,
+        packPromotionTriggered: false,
+        health: gate.health,
+        replayGate: gate,
+        bundleVerdicts: [],
+        createdAt: Date.now(),
+      };
+      this.persistPromotionVerdict(verdict);
+      this.log.warn(`[brain] Replay gate blocked promotion (${gate.reason.code}): ${gate.reason.summary}`);
       for (const proposal of pendingMutations) {
         this.store.resolveMutation(proposal.id, "rejected");
       }
@@ -499,12 +586,28 @@ export class BrainWorker {
       this.mutator.applyMutation(proposal);
     }
     const health = computeHealth(this.graph, recentEpisodes, this.store.getCurrentPackVersion() ?? 0);
-    this.store.setTrainingState("last_promotion_reason", pendingMutations.length > 0
-      ? `candidate graph promoted with ${pendingMutations.length} mutation(s)`
-      : "weights and decay passed replay gate");
-    this.store.setTrainingState("last_replay_failure_reason", "");
+    const verdict: PromotionRunVerdict = {
+      mode: "legacy",
+      status: "promoted",
+      summary: pendingMutations.length > 0
+        ? `candidate graph promoted with ${pendingMutations.length} mutation(s)`
+        : "weights and decay passed replay gate",
+      mutationCount: pendingMutations.length,
+      promotedMutationCount: pendingMutations.length,
+      rejectedMutationCount: 0,
+      bundleCount: 0,
+      promotedBundleCount: 0,
+      rejectedBundleCount: 0,
+      packPromotionTriggered: true,
+      health,
+      replayGate: gate,
+      bundleVerdicts: [],
+      createdAt: Date.now(),
+    };
+    this.persistPromotionVerdict(verdict);
     await this.hooks.onPromotionReady?.({
       healthJson: JSON.stringify(health),
+      promotionVerdict: verdict,
     });
   }
 }
