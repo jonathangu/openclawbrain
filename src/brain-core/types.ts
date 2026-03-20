@@ -219,6 +219,24 @@ export interface ResolvedLabel {
   createdAt: number;
 }
 
+export interface TraceSupervisionRecord {
+  id: string;
+  traceId: string;
+  episodeId: string;
+  conversationId: number | null;
+  source: RewardSource;
+  kind: BrainEvidenceKind;
+  value: number;
+  confidence: number;
+  reason: string | null;
+  contentSnippet: string | null;
+  resolution: BrainEvidenceResolution;
+  labelId: string | null;
+  evidenceId: string | null;
+  metadata: Record<string, unknown>;
+  createdAt: number;
+}
+
 // ═══════════════════════════════════════════
 // Packs & Mutations
 // ═══════════════════════════════════════════
@@ -488,6 +506,7 @@ export interface DecisionTrace {
   contextChars: number;
   footer: string;
   routeTrace?: DecisionRouteTrace | null;
+  supervision?: TraceSupervisionRecord[];
   createdAt: number;
 }
 

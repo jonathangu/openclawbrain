@@ -663,6 +663,7 @@ export class BrainService {
     for (const episode of targetEpisodes) {
       if (episode && episode.reward === null) {
         const reason = `correction taught: "${params.instruction.slice(0, 80)}"`;
+        const matchedTrace = this.store.getTraceForEpisode(episode.id);
         this.store.insertEvidence({
           episodeId: episode.id,
           conversationId: episode.conversationId,
@@ -678,6 +679,11 @@ export class BrainService {
             correctedEpisodeId: episode.id,
             extractor: teachVia ?? "brain_teach",
             via: teachVia ?? "brain_teach",
+            traceId: matchedTrace?.id ?? null,
+            tracePackVersion: matchedTrace?.packVersion ?? null,
+            traceRequestDigest: matchedTrace?.routeTrace?.requestDigest ?? null,
+            traceSelectedNodeIds: matchedTrace?.routeTrace?.selectedNodeIds ?? matchedTrace?.firedNodes ?? [],
+            traceSelectedPathNodeIds: matchedTrace?.routeTrace?.selectedPathNodeIds ?? [],
           },
         });
         this.store.insertLabel({
@@ -709,6 +715,8 @@ export class BrainService {
     const recentTraces = this.store.getRecentTraces(5);
     const workerState = readWorkerRuntimeState(this.store, this.config);
     const promotionStory = buildPromotionStory(this.store);
+    const routeTraceCount = this.store.countTraces();
+    const supervisionCount = this.store.countTraceSupervision();
 
     const embeddingConfig = describeEmbeddingConfig(this.config);
 
@@ -747,6 +755,8 @@ export class BrainService {
       mutationBacklog: this.store.countMutationsByStatus(),
       recentMutationBundles: this.store.getRecentMutationBundles(5),
       seedLearningEnabled: this.mutableGraph.hasSeedWeights(),
+      routeTraceCount,
+      supervisionCount,
       recentTraceCount: recentTraces.length,
       lastTraceFooter: recentTraces[0]?.footer ?? null,
       lastAssemblyDecision: this.lastAssemblyDecision,
@@ -761,10 +771,16 @@ export class BrainService {
   }
 
   async getTrace(traceId?: string): Promise<DecisionTrace | null> {
-    if (traceId) {
-      return this.store.getTrace(traceId);
+    const trace = traceId
+      ? this.store.getTrace(traceId)
+      : this.store.getRecentTraces(1)[0] ?? null;
+    if (!trace) {
+      return null;
     }
-    return this.store.getRecentTraces(1)[0] ?? null;
+    return {
+      ...trace,
+      supervision: this.store.getTraceSupervision(trace.id, 20),
+    };
   }
 
   async init(params: {

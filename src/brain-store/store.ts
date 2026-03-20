@@ -30,6 +30,7 @@ import type {
   BrainEvidenceResolution,
   ResolvedLabel,
   SeedWeight,
+  TraceSupervisionRecord,
   LearningJournalEventType,
   LearningJournalRecord,
   MutationProposedJournalPayload,
@@ -513,6 +514,95 @@ export class BrainStore {
     }));
   }
 
+  insertTraceSupervision(params: {
+    traceId: string;
+    episodeId: string;
+    conversationId?: number | null;
+    source: RewardSource;
+    kind: BrainEvidenceKind;
+    value: number;
+    confidence?: number;
+    reason?: string | null;
+    contentSnippet?: string | null;
+    resolution: BrainEvidenceResolution;
+    labelId?: string | null;
+    evidenceId?: string | null;
+    metadata?: Record<string, unknown>;
+    createdAt?: number;
+  }): TraceSupervisionRecord {
+    const id = `ts_${randomUUID().slice(0, 8)}`;
+    const createdAt = params.createdAt ?? Date.now();
+    this.db.prepare(`
+      INSERT INTO brain_trace_supervision (
+        id,
+        trace_id,
+        episode_id,
+        conversation_id,
+        source,
+        kind,
+        value,
+        confidence,
+        reason,
+        content_snippet,
+        resolution,
+        label_id,
+        evidence_id,
+        metadata,
+        created_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id,
+      params.traceId,
+      params.episodeId,
+      params.conversationId ?? null,
+      params.source,
+      params.kind,
+      params.value,
+      params.confidence ?? 1.0,
+      params.reason ?? null,
+      params.contentSnippet ?? null,
+      params.resolution,
+      params.labelId ?? null,
+      params.evidenceId ?? null,
+      JSON.stringify(params.metadata ?? {}),
+      createdAt,
+    );
+    return {
+      id,
+      traceId: params.traceId,
+      episodeId: params.episodeId,
+      conversationId: params.conversationId ?? null,
+      source: params.source,
+      kind: params.kind,
+      value: params.value,
+      confidence: params.confidence ?? 1.0,
+      reason: params.reason ?? null,
+      contentSnippet: params.contentSnippet ?? null,
+      resolution: params.resolution,
+      labelId: params.labelId ?? null,
+      evidenceId: params.evidenceId ?? null,
+      metadata: params.metadata ?? {},
+      createdAt,
+    };
+  }
+
+  getTraceSupervision(traceId: string, limit = 20): TraceSupervisionRecord[] {
+    const rows = this.db.prepare(`
+      SELECT *
+      FROM brain_trace_supervision
+      WHERE trace_id = ?
+      ORDER BY created_at DESC
+      LIMIT ?
+    `).all(traceId, limit) as Record<string, unknown>[];
+    return rows.map((row) => this.toTraceSupervision(row));
+  }
+
+  countTraceSupervision(): number {
+    const row = this.db.prepare(`SELECT COUNT(*) as count FROM brain_trace_supervision`).get() as { count: number };
+    return row.count ?? 0;
+  }
+
   private toEvidence(row: Record<string, unknown>): BrainEvidence {
     return {
       id: row.id as string,
@@ -883,8 +973,24 @@ export class BrainStore {
     return rows.map((r) => this.toTrace(r));
   }
 
+  countTraces(): number {
+    const row = this.db.prepare(`SELECT COUNT(*) as count FROM brain_traces`).get() as { count: number };
+    return row.count ?? 0;
+  }
+
   getTrace(id: string): DecisionTrace | null {
     const row = this.db.prepare(`SELECT * FROM brain_traces WHERE id = ?`).get(id) as Record<string, unknown> | undefined;
+    return row ? this.toTrace(row) : null;
+  }
+
+  getTraceForEpisode(episodeId: string): DecisionTrace | null {
+    const row = this.db.prepare(`
+      SELECT *
+      FROM brain_traces
+      WHERE episode_id = ?
+      ORDER BY created_at DESC
+      LIMIT 1
+    `).get(episodeId) as Record<string, unknown> | undefined;
     return row ? this.toTrace(row) : null;
   }
 
@@ -903,6 +1009,27 @@ export class BrainStore {
       routeTrace: row.route_trace_json === undefined
         ? null
         : JSON.parse((row.route_trace_json as string) || "null"),
+      supervision: [],
+      createdAt: row.created_at as number,
+    };
+  }
+
+  private toTraceSupervision(row: Record<string, unknown>): TraceSupervisionRecord {
+    return {
+      id: row.id as string,
+      traceId: row.trace_id as string,
+      episodeId: row.episode_id as string,
+      conversationId: (row.conversation_id as number) ?? null,
+      source: row.source as RewardSource,
+      kind: row.kind as BrainEvidenceKind,
+      value: row.value as number,
+      confidence: (row.confidence as number) ?? 1.0,
+      reason: (row.reason as string) ?? null,
+      contentSnippet: (row.content_snippet as string) ?? null,
+      resolution: row.resolution as BrainEvidenceResolution,
+      labelId: (row.label_id as string) ?? null,
+      evidenceId: (row.evidence_id as string) ?? null,
+      metadata: JSON.parse((row.metadata as string) || "{}"),
       createdAt: row.created_at as number,
     };
   }

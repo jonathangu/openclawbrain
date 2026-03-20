@@ -127,6 +127,27 @@ export function runBrainMigrations(db: DatabaseSync): void {
     CREATE INDEX IF NOT EXISTS brain_resolved_labels_episode_idx ON brain_resolved_labels(episode_id, created_at);
     CREATE INDEX IF NOT EXISTS brain_resolved_labels_evidence_idx ON brain_resolved_labels(evidence_id);
 
+    CREATE TABLE IF NOT EXISTS brain_trace_supervision (
+      id              TEXT PRIMARY KEY,
+      trace_id        TEXT NOT NULL,
+      episode_id      TEXT NOT NULL,
+      conversation_id INTEGER,
+      source          TEXT NOT NULL,
+      kind            TEXT NOT NULL,
+      value           REAL NOT NULL,
+      confidence      REAL NOT NULL DEFAULT 1.0,
+      reason          TEXT,
+      content_snippet TEXT,
+      resolution      TEXT NOT NULL,
+      label_id        TEXT,
+      evidence_id     TEXT,
+      metadata        TEXT NOT NULL DEFAULT '{}',
+      created_at      INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS brain_trace_supervision_trace_idx ON brain_trace_supervision(trace_id, created_at);
+    CREATE INDEX IF NOT EXISTS brain_trace_supervision_episode_idx ON brain_trace_supervision(episode_id, created_at);
+
     -- ═══════════════════════════════════════════
     -- Packs (immutable serving snapshots)
     -- ═══════════════════════════════════════════

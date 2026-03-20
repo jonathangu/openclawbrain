@@ -187,6 +187,67 @@ describe("BrainService", () => {
     expect(trace?.routeTrace?.sourceSummary.sourceUris[0]).toContain("PLAYBOOK.md");
     const status = await service.status();
     expect(status.currentPackVersion).toBe(1);
+    expect(status.routeTraceCount).toBe(1);
+    expect(status.supervisionCount).toBe(0);
+  });
+
+  it("maps harvested user approvals back onto the persisted trace and surfaces supervision in status", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-state-");
+    writeFileSync(
+      join(workspaceRoot, "PLAYBOOK.md"),
+      "# Pull Requests\n\nUse gh pr create for pull request workflows.\n",
+      "utf8",
+    );
+
+    const service = new BrainService({
+      deps: createDeps(brainRoot),
+    });
+    await service.init({
+      workspaceRoot,
+      embedFn: async (text) => embed(text),
+    });
+
+    const result = await service.query({
+      conversationId: 42,
+      queryText: "how do I open a pull request?",
+      budgetChars: 4000,
+      queryEmbedding: embed("gh pr create pull request"),
+    });
+    expect(result).not.toBeNull();
+
+    await service.harvester.harvestFromMessage({
+      conversationId: 42,
+      messageId: 99,
+      episodeId: result?.episode.id,
+      role: "user",
+      content: "Perfect, that's exactly right!",
+    });
+    await ((service as unknown as { worker: { tick: () => Promise<void> } | null }).worker?.tick() ?? Promise.resolve());
+
+    const trace = await service.getTrace(result?.trace.id);
+    expect(trace?.supervision).toMatchObject([
+      {
+        traceId: result?.trace.id,
+        episodeId: result?.episode.id,
+        source: "human",
+        kind: "human_feedback",
+        value: 0.8,
+        resolution: "promoted_to_label",
+        labelId: expect.stringMatching(/^bl_/),
+        evidenceId: expect.stringMatching(/^be_/),
+        metadata: expect.objectContaining({
+          messageId: 99,
+          resolvedTraceId: result?.trace.id,
+          traceRequestDigest: result?.trace.routeTrace?.requestDigest,
+          traceSelectedNodeIds: result?.trace.routeTrace?.selectedNodeIds,
+        }),
+      },
+    ]);
+
+    const status = await service.status();
+    expect(status.routeTraceCount).toBe(1);
+    expect(status.supervisionCount).toBe(1);
   });
 
   it("fails open when teacher resolution has no model and reports that truth in status", async () => {
@@ -357,9 +418,24 @@ describe("BrainService", () => {
 
     const pendingEvidence = (service as unknown as {
       store: { getPendingEvidence: (limit?: number) => Array<{ metadata?: Record<string, unknown> }> };
-    }).store.getPendingEvidence();
-    expect(pendingEvidence[0]?.metadata?.extractor).toBe("brain_teach");
-    expect(pendingEvidence[0]?.metadata?.correctedEpisodeId).toBeDefined();
+      worker: { tick: () => Promise<void> } | null;
+    });
+    expect(pendingEvidence.store.getPendingEvidence()[0]?.metadata?.extractor).toBe("brain_teach");
+    expect(pendingEvidence.store.getPendingEvidence()[0]?.metadata?.correctedEpisodeId).toBeDefined();
+    expect(pendingEvidence.store.getPendingEvidence()[0]?.metadata?.traceId).toBeDefined();
+
+    const correctedTraceId = pendingEvidence.store.getPendingEvidence()[0]?.metadata?.traceId as string;
+    await (pendingEvidence.worker?.tick() ?? Promise.resolve());
+    const correctedTrace = await service.getTrace(correctedTraceId);
+    expect(correctedTrace?.supervision).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "teach_correction",
+          source: "human",
+          resolution: "promoted_to_label",
+        }),
+      ]),
+    );
 
     const retrieved = await service.query({
       conversationId: 7,

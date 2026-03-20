@@ -5,7 +5,7 @@ import { DatabaseSync } from "node:sqlite";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BrainGraph } from "../../src/brain-core/graph.js";
 import { DEFAULT_BRAIN_CONFIG } from "../../src/brain-core/types.js";
-import type { Episode, HealthMetrics, MutationProposal, ReplayGateVerdict } from "../../src/brain-core/types.js";
+import type { DecisionTrace, Episode, HealthMetrics, MutationProposal, ReplayGateVerdict } from "../../src/brain-core/types.js";
 import { runBrainMigrations } from "../../src/brain-store/migrations.js";
 import { BrainStore } from "../../src/brain-store/store.js";
 import { BrainWorker } from "../../src/brain-worker/worker.js";
@@ -32,6 +32,60 @@ function makeEpisode(params: {
     reward: params.reward ?? null,
     rewardSource: params.rewardSource ?? null,
     packVersion: 1,
+    createdAt: Date.now(),
+  };
+}
+
+function makeTrace(params: {
+  id: string;
+  episodeId: string;
+  conversationId: number;
+  firedNodes?: string[];
+}): DecisionTrace {
+  const firedNodes = params.firedNodes ?? ["node_1"];
+  return {
+    id: params.id,
+    episodeId: params.episodeId,
+    packVersion: 1,
+    queryText: "test query",
+    seedScores: [],
+    trajectory: [],
+    firedNodes,
+    vetoedNodes: [],
+    contextChars: 0,
+    footer: "trace footer",
+    routeTrace: {
+      requestDigest: `req_${params.id}`,
+      conversationId: params.conversationId,
+      activePackId: "brain-pack-v1",
+      routerIdentity: "brain-graph-traverse.v1",
+      candidateNodeIds: [...firedNodes],
+      selectedNodeIds: [...firedNodes],
+      selectedPathNodeIds: [...firedNodes],
+      injectedNodeSummaries: [],
+      sourceSummary: {
+        injectedCount: firedNodes.length,
+        kinds: {},
+        trusts: {},
+        sourceUris: [],
+      },
+      selectionMetadata: {
+        traceSliceVersion: 1,
+        queryChars: 10,
+        budgetChars: 100,
+        maxHops: 8,
+        seedCount: 1,
+        candidateCount: firedNodes.length,
+        hopCount: firedNodes.length,
+        firedCount: firedNodes.length,
+        vetoedCount: 0,
+        chosenSeedNodeId: null,
+        routeSelectionMs: 1,
+        embeddingMs: 1,
+        totalQueryMs: 2,
+        queryEmbeddingSource: "provided",
+      },
+    },
     createdAt: Date.now(),
   };
 }
@@ -178,9 +232,10 @@ afterEach(() => {
 });
 
 describe("BrainWorker evidence resolution", () => {
-  it("keeps only the highest-trust pending evidence per episode in a worker cycle", async () => {
+  it("keeps only the highest-trust pending evidence per episode in a worker cycle and materializes trace supervision", async () => {
     const { store, worker } = setup();
     store.insertEpisode(makeEpisode({ id: "ep_1", conversationId: 7 }));
+    store.insertTrace(makeTrace({ id: "bt_ep_1", episodeId: "ep_1", conversationId: 7 }));
     store.insertEvidence({
       episodeId: "ep_1",
       conversationId: 7,
@@ -211,6 +266,16 @@ describe("BrainWorker evidence resolution", () => {
     expect(resolved).toHaveLength(2);
     expect(resolved.find((entry) => entry.source === "human")?.resolution).toBe("promoted_to_label");
     expect(resolved.find((entry) => entry.source === "scanner")?.resolution).toBe("discarded_lower_trust");
+
+    const supervision = store.getTraceSupervision("bt_ep_1", 10);
+    expect(supervision).toHaveLength(2);
+    expect(supervision.find((entry) => entry.source === "human")?.resolution).toBe("promoted_to_label");
+    expect(supervision.find((entry) => entry.source === "scanner")?.resolution).toBe("discarded_lower_trust");
+    expect(supervision.find((entry) => entry.source === "human")?.metadata).toMatchObject({
+      resolvedTraceId: "bt_ep_1",
+      traceRequestDigest: "req_bt_ep_1",
+      traceSelectedNodeIds: ["node_1"],
+    });
 
     await (worker as any).processLabels();
     const episode = store.getEpisode("ep_1");

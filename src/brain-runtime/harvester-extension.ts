@@ -59,6 +59,24 @@ export class LabelHarvester {
         ? "explicit"
         : "resolver"
       : "recent_conversation_fallback";
+    const matchedTrace = this.store.getTraceForEpisode(matchingEpisode.id);
+    const traceMetadata = matchedTrace
+      ? {
+          traceId: matchedTrace.id,
+          tracePackVersion: matchedTrace.packVersion,
+          traceRequestDigest: matchedTrace.routeTrace?.requestDigest ?? null,
+          traceSelectedNodeIds: matchedTrace.routeTrace?.selectedNodeIds ?? matchedTrace.firedNodes,
+          traceSelectedPathNodeIds: matchedTrace.routeTrace?.selectedPathNodeIds ?? [],
+          traceCandidateCount: matchedTrace.routeTrace?.candidateNodeIds.length ?? 0,
+        }
+      : {
+          traceId: null,
+          tracePackVersion: null,
+          traceRequestDigest: null,
+          traceSelectedNodeIds: [],
+          traceSelectedPathNodeIds: [],
+          traceCandidateCount: 0,
+        };
 
     for (const [index, result] of results.entries()) {
       this.store.insertEvidence({
@@ -81,6 +99,7 @@ export class LabelHarvester {
           evidenceIndex: index,
           evidenceCount: results.length,
           messagePartCount: params.messageParts?.length ?? 0,
+          ...traceMetadata,
           ...(result.metadata ?? {}),
         },
       });

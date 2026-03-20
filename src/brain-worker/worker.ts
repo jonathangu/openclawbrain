@@ -2,6 +2,7 @@ import type {
   BrainConfig,
   BrainEdge,
   BrainEvidence,
+  BrainEvidenceResolution,
   BundleEvaluationVerdict,
   Episode,
   MutationProposal,
@@ -211,6 +212,65 @@ export class BrainWorker {
     }
   }
 
+  private resolveEvidenceWithTrace(params: {
+    episode: Episode | null;
+    evidence: BrainEvidence;
+    resolution: BrainEvidenceResolution;
+    labelId?: string | null;
+    note?: string | null;
+  }): void {
+    this.store.resolveEvidence({
+      evidenceId: params.evidence.id,
+      episodeId: params.episode?.id ?? params.evidence.episodeId,
+      source: params.evidence.source,
+      value: params.evidence.value,
+      confidence: params.evidence.confidence,
+      resolution: params.resolution,
+      labelId: params.labelId ?? null,
+      note: params.note ?? null,
+    });
+
+    if (!params.episode) {
+      return;
+    }
+
+    const metadataTraceId = typeof params.evidence.metadata?.traceId === "string" && params.evidence.metadata.traceId.length > 0
+      ? params.evidence.metadata.traceId
+      : null;
+    const matchedTrace = metadataTraceId
+      ? this.store.getTrace(metadataTraceId) ?? this.store.getTraceForEpisode(params.episode.id)
+      : this.store.getTraceForEpisode(params.episode.id);
+    if (!matchedTrace) {
+      return;
+    }
+
+    this.store.insertTraceSupervision({
+      traceId: matchedTrace.id,
+      episodeId: params.episode.id,
+      conversationId: params.episode.conversationId,
+      source: params.evidence.source,
+      kind: params.evidence.kind,
+      value: params.evidence.value,
+      confidence: params.evidence.confidence,
+      reason: params.evidence.reason,
+      contentSnippet: params.evidence.contentSnippet,
+      resolution: params.resolution,
+      labelId: params.labelId ?? null,
+      evidenceId: params.evidence.id,
+      metadata: {
+        ...params.evidence.metadata,
+        resolvedEpisodeId: params.episode.id,
+        resolvedTraceId: matchedTrace.id,
+        traceRequestDigest: matchedTrace.routeTrace?.requestDigest ?? params.evidence.metadata?.traceRequestDigest ?? null,
+        tracePackVersion: matchedTrace.packVersion ?? params.evidence.metadata?.tracePackVersion ?? null,
+        traceSelectedNodeIds: matchedTrace.routeTrace?.selectedNodeIds ?? matchedTrace.firedNodes,
+        traceSelectedPathNodeIds: matchedTrace.routeTrace?.selectedPathNodeIds ?? params.evidence.metadata?.traceSelectedPathNodeIds ?? [],
+        traceCandidateCount: matchedTrace.routeTrace?.candidateNodeIds.length ?? params.evidence.metadata?.traceCandidateCount ?? 0,
+        note: params.note ?? null,
+      },
+    });
+  }
+
   private async processEvidence(): Promise<void> {
     const pending = this.store.getPendingEvidence(100);
     const candidatesByEpisode = new Map<string, { episode: Episode; evidence: BrainEvidence[] }>();
@@ -218,12 +278,9 @@ export class BrainWorker {
     for (const evidence of pending) {
       const episode = this.store.getEpisode(evidence.episodeId);
       if (!episode) {
-        this.store.resolveEvidence({
-          evidenceId: evidence.id,
-          episodeId: evidence.episodeId,
-          source: evidence.source,
-          value: evidence.value,
-          confidence: evidence.confidence,
+        this.resolveEvidenceWithTrace({
+          episode: null,
+          evidence,
           resolution: "discarded_missing_episode",
           note: evidence.reason ?? "episode missing",
         });
@@ -232,12 +289,9 @@ export class BrainWorker {
 
       const episodeClassification = classifyEvidenceAgainstEpisode(episode, evidence);
       if (episodeClassification) {
-        this.store.resolveEvidence({
-          evidenceId: evidence.id,
-          episodeId: episode.id,
-          source: evidence.source,
-          value: evidence.value,
-          confidence: evidence.confidence,
+        this.resolveEvidenceWithTrace({
+          episode,
+          evidence,
           resolution: episodeClassification.resolution,
           note: episodeClassification.note,
         });
@@ -278,12 +332,9 @@ export class BrainWorker {
       }
 
       for (const loser of losers) {
-        this.store.resolveEvidence({
-          evidenceId: loser.evidence.id,
-          episodeId: episode.id,
-          source: loser.evidence.source,
-          value: loser.evidence.value,
-          confidence: loser.evidence.confidence,
+        this.resolveEvidenceWithTrace({
+          episode,
+          evidence: loser.evidence,
           resolution: loser.resolution,
           note: loser.note,
         });
@@ -300,12 +351,9 @@ export class BrainWorker {
         confidence: winner.confidence,
         reason: winner.reason ?? undefined,
       });
-      this.store.resolveEvidence({
-        evidenceId: winner.id,
-        episodeId: episode.id,
-        source: winner.source,
-        value: winner.value,
-        confidence: winner.confidence,
+      this.resolveEvidenceWithTrace({
+        episode,
+        evidence: winner,
         resolution: "promoted_to_label",
         labelId: label.id,
         note: winner.kind,
