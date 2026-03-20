@@ -4,6 +4,10 @@ import path from "node:path";
 
 const TRACED_LEARNING_BRIDGE_CONTRACT = "openclawbrain.traced-learning-bridge.v1";
 const TRACED_LEARNING_BRIDGE_FILENAME = "traced-learning-state.json";
+// Canonical split-package learn/status summary persisted under brain_training_state.
+const TRACED_LEARNING_STATUS_SURFACE_STATE_KEY = "traced_learning_status_surface_json";
+const TRACED_LEARNING_STATUS_SURFACE_CONTRACT = "openclawbrain.traced-learning-status-surface.v1";
+const TRACED_LEARNING_STATUS_SURFACE_BRIDGE = "brain_store_traced_learning_status_surface";
 
 function normalizeCount(value) {
     return Number.isFinite(value) && value >= 0 ? Math.trunc(value) : 0;
@@ -34,6 +38,32 @@ function normalizeBridgePayload(payload) {
         promoted: payload.promoted === true,
         baselinePersisted: payload.baselinePersisted === true,
         source: normalizeSource(payload.source)
+    };
+}
+function normalizePersistedStatusSurface(payload) {
+    if (payload === null || typeof payload !== "object" || Array.isArray(payload)) {
+        throw new Error("expected traced-learning status surface payload object");
+    }
+    const source = normalizeSource(payload.source);
+    if (source === null) {
+        throw new Error("expected traced-learning status surface source");
+    }
+    return {
+        contract: TRACED_LEARNING_STATUS_SURFACE_CONTRACT,
+        updatedAt: normalizeOptionalString(payload.updatedAt) ?? new Date().toISOString(),
+        routeTraceCount: normalizeCount(payload.routeTraceCount),
+        supervisionCount: normalizeCount(payload.supervisionCount),
+        routerUpdateCount: normalizeCount(payload.routerUpdateCount),
+        teacherArtifactCount: normalizeCount(payload.teacherArtifactCount),
+        pgVersionRequested: normalizeOptionalString(payload.pgVersionRequested),
+        pgVersionUsed: normalizeOptionalString(payload.pgVersionUsed),
+        decisionLogCount: normalizeCount(payload.decisionLogCount),
+        fallbackReason: normalizeOptionalString(payload.fallbackReason),
+        routerNoOpReason: normalizeOptionalString(payload.routerNoOpReason),
+        materializedPackId: normalizeOptionalString(payload.materializedPackId),
+        promoted: payload.promoted === true,
+        baselinePersisted: payload.baselinePersisted === true,
+        source
     };
 }
 function defaultSurface(pathname, detail, error = null) {
@@ -71,12 +101,141 @@ function loadTrainingStateValue(db, key) {
     const row = db.prepare(`SELECT value FROM brain_training_state WHERE key = ?`).get(key);
     return row !== undefined && typeof row.value === "string" ? row.value : null;
 }
+function loadTrainingStateJson(db, key) {
+    const raw = loadTrainingStateValue(db, key);
+    if (typeof raw !== "string") {
+        return {
+            value: null,
+            error: null
+        };
+    }
+    const trimmed = raw.trim();
+    if (trimmed.length === 0) {
+        return {
+            value: null,
+            error: null
+        };
+    }
+    try {
+        return {
+            value: JSON.parse(trimmed),
+            error: null
+        };
+    }
+    catch (error) {
+        return {
+            value: null,
+            error: error instanceof Error ? error.message : String(error)
+        };
+    }
+}
+function writeTrainingStateJson(db, key, value) {
+    db.prepare(`INSERT OR REPLACE INTO brain_training_state (key, value) VALUES (?, ?)`).run(key, JSON.stringify(value));
+}
 function countRows(db, tableName) {
     const row = db.prepare(`SELECT COUNT(*) as count FROM ${tableName}`).get();
     return normalizeCount(row?.count);
 }
 function toIsoTimestamp(value) {
     return Number.isFinite(value) && value > 0 ? new Date(value).toISOString() : null;
+}
+function buildPersistedStatusSurfaceBridge(summary, context) {
+    return normalizeBridgePayload({
+        updatedAt: summary.updatedAt,
+        routeTraceCount: summary.routeTraceCount,
+        supervisionCount: summary.supervisionCount,
+        routerUpdateCount: summary.routerUpdateCount,
+        teacherArtifactCount: summary.teacherArtifactCount,
+        pgVersionRequested: summary.pgVersionRequested,
+        pgVersionUsed: summary.pgVersionUsed,
+        decisionLogCount: summary.decisionLogCount,
+        fallbackReason: summary.fallbackReason,
+        routerNoOpReason: summary.routerNoOpReason,
+        materializedPackId: summary.materializedPackId,
+        promoted: summary.promoted,
+        baselinePersisted: summary.baselinePersisted,
+        source: {
+            command: "brain-store",
+            bridge: TRACED_LEARNING_STATUS_SURFACE_BRIDGE,
+            brainRoot: context.brainRoot,
+            stateDbPath: context.dbPath,
+            persistedKey: TRACED_LEARNING_STATUS_SURFACE_STATE_KEY,
+            surfacedFrom: summary.source
+        }
+    });
+}
+function loadPersistedStatusSurface(db, context) {
+    const loaded = loadTrainingStateJson(db, TRACED_LEARNING_STATUS_SURFACE_STATE_KEY);
+    if (loaded.value === null) {
+        return {
+            bridge: null,
+            error: loaded.error
+        };
+    }
+    try {
+        if (normalizeOptionalString(loaded.value.contract) !== TRACED_LEARNING_STATUS_SURFACE_CONTRACT) {
+            throw new Error("unexpected traced-learning status surface contract");
+        }
+        return {
+            bridge: buildPersistedStatusSurfaceBridge(normalizePersistedStatusSurface(loaded.value), context),
+            error: null
+        };
+    }
+    catch (error) {
+        return {
+            bridge: null,
+            error: error instanceof Error ? error.message : String(error)
+        };
+    }
+}
+function buildDerivedBrainStoreBridge(db, context) {
+    const routeTraceCount = countRows(db, "brain_traces");
+    const supervisionCount = countRows(db, "brain_trace_supervision");
+    const candidateUpdateRaw = loadTrainingStateValue(db, "last_pg_candidate_update_json");
+    const candidatePackVersionRaw = loadTrainingStateValue(db, "last_pg_candidate_pack_version");
+    const candidateUpdate = candidateUpdateRaw === null || candidateUpdateRaw.trim().length === 0
+        ? null
+        : JSON.parse(candidateUpdateRaw);
+    const candidatePackVersion = Number.parseInt(candidatePackVersionRaw ?? "", 10);
+    return normalizeBridgePayload({
+        updatedAt: toIsoTimestamp(candidateUpdate?.generatedAt),
+        routeTraceCount,
+        supervisionCount,
+        routerUpdateCount: candidateUpdate?.routeUpdateCount,
+        teacherArtifactCount: candidateUpdate?.teacherLabelCount,
+        pgVersionRequested: null,
+        pgVersionUsed: null,
+        decisionLogCount: 0,
+        fallbackReason: null,
+        routerNoOpReason: null,
+        materializedPackId: null,
+        promoted: false,
+        baselinePersisted: false,
+        source: {
+            command: "brain-store",
+            bridge: "brain_store_state",
+            brainRoot: context.brainRoot,
+            stateDbPath: context.dbPath,
+            candidatePackVersion: Number.isFinite(candidatePackVersion) ? candidatePackVersion : null,
+            candidateUpdateCount: normalizeCount(candidateUpdate?.updateCount)
+        }
+    });
+}
+function hasMeaningfulTracedLearningSignal(bridge) {
+    return bridge.routeTraceCount > 0 ||
+        bridge.supervisionCount > 0 ||
+        bridge.routerUpdateCount > 0 ||
+        bridge.teacherArtifactCount > 0 ||
+        bridge.decisionLogCount > 0 ||
+        bridge.materializedPackId !== null ||
+        bridge.promoted ||
+        bridge.baselinePersisted ||
+        bridge.pgVersionRequested !== null ||
+        bridge.pgVersionUsed !== null ||
+        bridge.fallbackReason !== null ||
+        bridge.routerNoOpReason !== null ||
+        Number.isFinite(bridge.source?.candidatePackVersion) ||
+        normalizeCount(bridge.source?.candidateUpdateCount) > 0;
 }
 export function resolveTracedLearningBridgePath(activationRoot) {
     return path.join(path.resolve(activationRoot), "watch", TRACED_LEARNING_BRIDGE_FILENAME);
@@ -113,6 +272,57 @@ export function loadTracedLearningBridge(activationRoot) {
         };
     }
 }
+export function persistBrainStoreTracedLearningBridge(payload, options = {}) {
+    const brainRoot = resolveBrainRoot(options.env ?? process.env);
+    const dbPath = path.join(brainRoot, "state.db");
+    if (!existsSync(dbPath)) {
+        return {
+            path: dbPath,
+            bridge: null,
+            persisted: false,
+            error: null
+        };
+    }
+    const sqlite = typeof process.getBuiltinModule === "function"
+        ? process.getBuiltinModule("node:sqlite")
+        : null;
+    if (sqlite === null || typeof sqlite.DatabaseSync !== "function") {
+        return {
+            path: dbPath,
+            bridge: null,
+            persisted: false,
+            error: null
+        };
+    }
+    let db;
+    try {
+        db = new sqlite.DatabaseSync(dbPath);
+        const summary = normalizePersistedStatusSurface(payload);
+        writeTrainingStateJson(db, TRACED_LEARNING_STATUS_SURFACE_STATE_KEY, summary);
+        return {
+            path: dbPath,
+            bridge: buildPersistedStatusSurfaceBridge(summary, {
+                brainRoot,
+                dbPath
+            }),
+            persisted: true,
+            error: null
+        };
+    }
+    catch (error) {
+        return {
+            path: dbPath,
+            bridge: null,
+            persisted: false,
+            error: error instanceof Error ? error.message : String(error)
+        };
+    }
+    finally {
+        if (db && typeof db.close === "function") {
+            db.close();
+        }
+    }
+}
 export function loadBrainStoreTracedLearningBridge(options = {}) {
     const brainRoot = resolveBrainRoot(options.env ?? process.env);
     const dbPath = path.join(brainRoot, "state.db");
@@ -136,37 +346,28 @@ export function loadBrainStoreTracedLearningBridge(options = {}) {
     let db;
     try {
         db = new sqlite.DatabaseSync(dbPath, { readOnly: true });
-        const routeTraceCount = countRows(db, "brain_traces");
-        const supervisionCount = countRows(db, "brain_trace_supervision");
-        const candidateUpdateRaw = loadTrainingStateValue(db, "last_pg_candidate_update_json");
-        const candidatePackVersionRaw = loadTrainingStateValue(db, "last_pg_candidate_pack_version");
-        const candidateUpdate = candidateUpdateRaw === null || candidateUpdateRaw.trim().length === 0
-            ? null
-            : JSON.parse(candidateUpdateRaw);
-        const candidatePackVersion = Number.parseInt(candidatePackVersionRaw ?? "", 10);
-        const bridge = normalizeBridgePayload({
-            updatedAt: toIsoTimestamp(candidateUpdate?.generatedAt),
-            routeTraceCount,
-            supervisionCount,
-            routerUpdateCount: candidateUpdate?.routeUpdateCount,
-            teacherArtifactCount: candidateUpdate?.teacherLabelCount,
-            pgVersionRequested: null,
-            pgVersionUsed: null,
-            decisionLogCount: 0,
-            fallbackReason: null,
-            routerNoOpReason: null,
-            materializedPackId: null,
-            promoted: false,
-            baselinePersisted: false,
-            source: {
-                command: "brain-store",
-                bridge: "brain_store_state",
-                brainRoot,
-                stateDbPath: dbPath,
-                candidatePackVersion: Number.isFinite(candidatePackVersion) ? candidatePackVersion : null,
-                candidateUpdateCount: normalizeCount(candidateUpdate?.updateCount)
-            }
+        const persisted = loadPersistedStatusSurface(db, {
+            brainRoot,
+            dbPath
         });
+        if (persisted.bridge !== null) {
+            return {
+                path: dbPath,
+                bridge: persisted.bridge,
+                error: null
+            };
+        }
+        const bridge = buildDerivedBrainStoreBridge(db, {
+            brainRoot,
+            dbPath
+        });
+        if (!hasMeaningfulTracedLearningSignal(bridge)) {
+            return {
+                path: dbPath,
+                bridge: null,
+                error: persisted.error
+            };
+        }
         return {
             path: dbPath,
             bridge,
@@ -194,8 +395,8 @@ function buildStatusSurface(pathname, bridge, options = {}) {
         `source=${bridge.source?.command === undefined ? "learn" : String(bridge.source.command)}`,
         `promoted=${bridge.promoted ? "yes" : "no"}`
     ];
-    if (bridge.source?.bridge === "brain_store_state") {
-        detailParts.push("bridge=brain_store_state");
+    if (typeof bridge.source?.bridge === "string") {
+        detailParts.push(`bridge=${bridge.source.bridge}`);
     }
     if (options.runtimeState !== undefined) {
         detailParts.push(`runtime=${options.runtimeState}`);
@@ -250,20 +451,44 @@ function buildRuntimeMaterializationMetadata(loaded) {
 function mergeCanonicalStatusBridge(canonicalBridge, runtimeLoaded) {
     const runtimeBridge = runtimeLoaded.bridge;
     const runtimeMaterialized = buildRuntimeMaterializationMetadata(runtimeLoaded);
+    const hasPersistedSurface = canonicalBridge.source?.bridge === TRACED_LEARNING_STATUS_SURFACE_BRIDGE;
+    if (hasPersistedSurface) {
+        return {
+            updatedAt: canonicalBridge.updatedAt,
+            routeTraceCount: canonicalBridge.routeTraceCount,
+            supervisionCount: canonicalBridge.supervisionCount,
+            routerUpdateCount: canonicalBridge.routerUpdateCount,
+            teacherArtifactCount: canonicalBridge.teacherArtifactCount,
+            pgVersionRequested: canonicalBridge.pgVersionRequested,
+            pgVersionUsed: canonicalBridge.pgVersionUsed,
+            decisionLogCount: canonicalBridge.decisionLogCount,
+            materializedPackId: canonicalBridge.materializedPackId,
+            promoted: canonicalBridge.promoted,
+            baselinePersisted: canonicalBridge.baselinePersisted,
+            fallbackReason: canonicalBridge.fallbackReason,
+            routerNoOpReason: canonicalBridge.routerNoOpReason,
+            source: runtimeMaterialized === null
+                ? canonicalBridge.source
+                : {
+                    ...(canonicalBridge.source ?? {}),
+                    runtimeMaterialized
+                }
+        };
+    }
     return {
         updatedAt: canonicalBridge.updatedAt ?? runtimeBridge?.updatedAt ?? null,
         routeTraceCount: canonicalBridge.routeTraceCount,
         supervisionCount: canonicalBridge.supervisionCount,
         routerUpdateCount: canonicalBridge.routerUpdateCount,
         teacherArtifactCount: canonicalBridge.teacherArtifactCount,
-        pgVersionRequested: runtimeBridge?.pgVersionRequested ?? null,
-        pgVersionUsed: runtimeBridge?.pgVersionUsed ?? null,
-        decisionLogCount: runtimeBridge?.decisionLogCount ?? 0,
-        materializedPackId: runtimeBridge?.materializedPackId ?? null,
-        promoted: runtimeBridge?.promoted ?? false,
-        baselinePersisted: runtimeBridge?.baselinePersisted ?? false,
-        fallbackReason: runtimeBridge?.fallbackReason ?? null,
-        routerNoOpReason: runtimeBridge?.routerNoOpReason ?? null,
+        pgVersionRequested: runtimeBridge?.pgVersionRequested ?? canonicalBridge.pgVersionRequested ?? null,
+        pgVersionUsed: runtimeBridge?.pgVersionUsed ?? canonicalBridge.pgVersionUsed ?? null,
+        decisionLogCount: runtimeBridge?.decisionLogCount ?? canonicalBridge.decisionLogCount ?? 0,
+        materializedPackId: runtimeBridge?.materializedPackId ?? canonicalBridge.materializedPackId ?? null,
+        promoted: runtimeBridge?.promoted ?? canonicalBridge.promoted,
+        baselinePersisted: runtimeBridge?.baselinePersisted ?? canonicalBridge.baselinePersisted,
+        fallbackReason: runtimeBridge?.fallbackReason ?? canonicalBridge.fallbackReason ?? null,
+        routerNoOpReason: runtimeBridge?.routerNoOpReason ?? canonicalBridge.routerNoOpReason ?? null,
         source: runtimeMaterialized === null
             ? canonicalBridge.source
             : {
@@ -298,7 +523,7 @@ export function mergeTracedLearningBridgePayload(payload, persisted) {
         routerNoOpReason: supervisionCount > 0 || routerUpdateCount > 0 ? null : current.routerNoOpReason,
         source: {
             ...(current.source ?? {}),
-            bridge: "brain_store_state",
+            bridge: normalizeOptionalString(persistedBridge.source?.bridge) ?? "brain_store_state",
             bridgedRuntime: {
                 path: persisted?.path ?? null,
                 updatedAt: persistedBridge.updatedAt,

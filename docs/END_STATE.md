@@ -102,6 +102,10 @@ These are inherited LCM surfaces and should stay stable unless a failing test fo
 - `src/brain-cli.ts`
 - `openclaw.plugin.json`
 
+### Canonical traced-learning status
+- `brain_training_state.traced_learning_status_surface_json` stores the split-package learn/status traced-learning surface in `OPENCLAWBRAIN_ROOT/state.db`.
+- `activation-root/watch/traced-learning-state.json` remains runtime materialization metadata and fallback proof, not the canonical store of surfaced counters.
+
 ### Validation and release proof
 - `scripts/validate-openclaw-install.mjs`
 - `scripts/validate-brain-runtime-behavior.ts`

@@ -18,7 +18,7 @@ import { describeOpenClawBrainInstallIdentity, describeOpenClawBrainInstallLayou
 import { DEFAULT_WATCH_POLL_INTERVAL_SECONDS, buildNormalizedEventExportFromScannedEvents, bootstrapRuntimeAttach, buildOperatorSurfaceReport, clearOpenClawProfileRuntimeLoadProof, compileRuntimeContext, createAsyncTeacherLiveLoop, createOpenClawLocalSessionTail, createRuntimeEventExportScanner, describeCurrentProfileBrainStatus, formatOperatorRollbackReport, listOpenClawProfileRuntimeLoadProofs, loadRuntimeEventExportBundle, loadWatchTeacherSnapshotState, persistWatchTeacherSnapshot, rollbackRuntimeAttach, resolveAttachmentRuntimeLoadProofsPath, resolveOperatorTeacherSnapshotPath, resolveAsyncTeacherLiveLoopSnapshotPath, resolveWatchSessionTailCursorPath, resolveWatchStateRoot, resolveWatchTeacherSnapshotPath, scanLiveEventExport, scanRecordedSession, summarizeLearningPathFromMaterialization, summarizeNormalizedEventExportLabelFlow, writeScannedEventExportBundle } from "./index.js";
 import { appendLearningUpdateLogs } from "./learning-spine.js";
 import { buildPassiveLearningSessionExportFromOpenClawSessionStore } from "./local-session-passive-learning.js";
-import { buildTracedLearningStatusSurface, loadBrainStoreTracedLearningBridge, mergeTracedLearningBridgePayload, writeTracedLearningBridge } from "./traced-learning-bridge.js";
+import { buildTracedLearningStatusSurface, loadBrainStoreTracedLearningBridge, mergeTracedLearningBridgePayload, persistBrainStoreTracedLearningBridge, writeTracedLearningBridge } from "./traced-learning-bridge.js";
 import { discoverOpenClawSessionStores, loadOpenClawSessionIndex, readOpenClawSessionFile } from "./session-store.js";
 import { readOpenClawBrainProviderDefaults, readOpenClawBrainProviderConfig, readOpenClawBrainProviderConfigFromSources, resolveOpenClawBrainProviderDefaultsPath } from "./provider-config.js";
 const OPENCLAWBRAIN_EMBEDDER_BASE_URL_ENV = "OPENCLAWBRAIN_EMBEDDER_BASE_URL";
@@ -4276,6 +4276,7 @@ function runLearnCommand(parsed) {
     const surfacedSupervisionCount = tracedLearningBridge.supervisionCount;
     const surfacedRouterUpdateCount = tracedLearningBridge.routerUpdateCount;
     const surfacedRouterNoOpReason = tracedLearningBridge.routerNoOpReason;
+    persistBrainStoreTracedLearningBridge(tracedLearningBridge);
     writeTracedLearningBridge(activationRoot, tracedLearningBridge);
     const summaryMessage = materializedPackId === null
         ? `Scanned ${totalSessions} sessions, ${totalEvents} new events, no candidate materialized, no promotion.`
