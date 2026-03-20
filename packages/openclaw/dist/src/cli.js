@@ -18,7 +18,7 @@ import { describeOpenClawBrainInstallIdentity, describeOpenClawBrainInstallLayou
 import { DEFAULT_WATCH_POLL_INTERVAL_SECONDS, buildNormalizedEventExportFromScannedEvents, bootstrapRuntimeAttach, buildOperatorSurfaceReport, clearOpenClawProfileRuntimeLoadProof, compileRuntimeContext, createAsyncTeacherLiveLoop, createOpenClawLocalSessionTail, createRuntimeEventExportScanner, describeCurrentProfileBrainStatus, formatOperatorRollbackReport, listOpenClawProfileRuntimeLoadProofs, loadRuntimeEventExportBundle, loadWatchTeacherSnapshotState, persistWatchTeacherSnapshot, rollbackRuntimeAttach, resolveAttachmentRuntimeLoadProofsPath, resolveOperatorTeacherSnapshotPath, resolveAsyncTeacherLiveLoopSnapshotPath, resolveWatchSessionTailCursorPath, resolveWatchStateRoot, resolveWatchTeacherSnapshotPath, scanLiveEventExport, scanRecordedSession, summarizeLearningPathFromMaterialization, summarizeNormalizedEventExportLabelFlow, writeScannedEventExportBundle } from "./index.js";
 import { appendLearningUpdateLogs } from "./learning-spine.js";
 import { buildPassiveLearningSessionExportFromOpenClawSessionStore } from "./local-session-passive-learning.js";
-import { buildTracedLearningStatusSurface, writeTracedLearningBridge } from "./traced-learning-bridge.js";
+import { buildTracedLearningStatusSurface, loadBrainStoreTracedLearningBridge, mergeTracedLearningBridgePayload, writeTracedLearningBridge } from "./traced-learning-bridge.js";
 import { discoverOpenClawSessionStores, loadOpenClawSessionIndex, readOpenClawSessionFile } from "./session-store.js";
 import { readOpenClawBrainProviderDefaults, readOpenClawBrainProviderConfig, readOpenClawBrainProviderConfigFromSources, resolveOpenClawBrainProviderDefaultsPath } from "./provider-config.js";
 const OPENCLAWBRAIN_EMBEDDER_BASE_URL_ENV = "OPENCLAWBRAIN_EMBEDDER_BASE_URL";
@@ -4253,7 +4253,7 @@ function runLearnCommand(parsed) {
             lastAppliedMaterializationJobId: lastMaterialization?.jobId ?? null
         }
     });
-    writeTracedLearningBridge(activationRoot, {
+    const tracedLearningBridge = mergeTracedLearningBridgePayload({
         updatedAt: now,
         routeTraceCount: lastMaterialization?.candidate.summary.learnedRouter.routeTraceCount ?? serveTimeLearning.decisionLogCount,
         supervisionCount,
@@ -4272,7 +4272,11 @@ function runLearnCommand(parsed) {
             exportDigest: learningExport.provenance.exportDigest,
             teacherSnapshotPath
         }
-    });
+    }, loadBrainStoreTracedLearningBridge());
+    const surfacedSupervisionCount = tracedLearningBridge.supervisionCount;
+    const surfacedRouterUpdateCount = tracedLearningBridge.routerUpdateCount;
+    const surfacedRouterNoOpReason = tracedLearningBridge.routerNoOpReason;
+    writeTracedLearningBridge(activationRoot, tracedLearningBridge);
     const summaryMessage = materializedPackId === null
         ? `Scanned ${totalSessions} sessions, ${totalEvents} new events, no candidate materialized, no promotion.`
         : `Scanned ${totalSessions} sessions, ${totalEvents} new events, materialized ${materializedPackId}, promoted.${connectSummary}`;
@@ -4295,9 +4299,9 @@ function runLearnCommand(parsed) {
                 teacherBudget: learnerResult.state.sparseFeedback.teacherBudget,
                 eligibleFeedbackCount: learnerResult.state.sparseFeedback.eligibleFeedbackCount,
                 budgetedOutFeedbackCount: learnerResult.state.sparseFeedback.budgetedOutFeedbackCount,
-                supervisionCount,
-                routerUpdateCount,
-                routerNoOpReason,
+                supervisionCount: surfacedSupervisionCount,
+                routerUpdateCount: surfacedRouterUpdateCount,
+                routerNoOpReason: surfacedRouterNoOpReason,
                 pending: plan.pending,
                 learnedRange: plan.learnedRange
             },
@@ -4317,8 +4321,8 @@ function runLearnCommand(parsed) {
     }
     else {
         const text = materializedPackId === null
-            ? `Scanned ${totalSessions} sessions, ${totalEvents} new events, no promotion. cycles=${learnerResult.cycles.length} stop=${learnerResult.stopReason} supervision=${supervisionCount}.`
-            : `Scanned ${totalSessions} sessions, ${totalEvents} new events, materialized ${materializedPackId}, promoted.${connectSummary} cycles=${learnerResult.cycles.length} supervision=${supervisionCount}.`;
+            ? `Scanned ${totalSessions} sessions, ${totalEvents} new events, no promotion. cycles=${learnerResult.cycles.length} stop=${learnerResult.stopReason} supervision=${surfacedSupervisionCount}.`
+            : `Scanned ${totalSessions} sessions, ${totalEvents} new events, materialized ${materializedPackId}, promoted.${connectSummary} cycles=${learnerResult.cycles.length} supervision=${surfacedSupervisionCount}.`;
         console.log(text);
         console.log(`labels: source=${labelFlow.source} human=${labelFlow.humanLabelCount ?? "none"} self=${labelFlow.selfLabelCount ?? "none"} implicitPositive=${labelFlow.implicitPositiveCount ?? "none"} teacherArtifacts=${labelFlow.asyncTeacherArtifactCount ?? "none"}`);
         console.log(`path: source=${learningPath.source} pg=${learningPath.policyGradientVersion} method=${learningPath.policyGradientMethod ?? "none"} target=${learningPath.targetConstruction ?? "none"} connect=${learningPath.connectOpsFired ?? "none"} trajectories=${learningPath.reconstructedTrajectoryCount ?? "none"}`);
