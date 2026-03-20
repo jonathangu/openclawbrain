@@ -199,17 +199,18 @@ export function runBrainMigrations(db: DatabaseSync): void {
     -- ═══════════════════════════════════════════
 
     CREATE TABLE IF NOT EXISTS brain_traces (
-      id            TEXT PRIMARY KEY,
-      episode_id    TEXT,
-      pack_version  INTEGER,
-      query_text    TEXT,
-      seed_scores   TEXT NOT NULL,
-      trajectory    TEXT NOT NULL,
-      fired_nodes   TEXT NOT NULL,
-      vetoed_nodes  TEXT NOT NULL DEFAULT '[]',
-      context_chars INTEGER NOT NULL,
-      footer        TEXT NOT NULL,
-      created_at    INTEGER NOT NULL
+      id              TEXT PRIMARY KEY,
+      episode_id      TEXT,
+      pack_version    INTEGER,
+      query_text      TEXT,
+      seed_scores     TEXT NOT NULL,
+      trajectory      TEXT NOT NULL,
+      fired_nodes     TEXT NOT NULL,
+      vetoed_nodes    TEXT NOT NULL DEFAULT '[]',
+      context_chars   INTEGER NOT NULL,
+      footer          TEXT NOT NULL,
+      route_trace_json TEXT NOT NULL DEFAULT 'null',
+      created_at      INTEGER NOT NULL
     );
 
     CREATE INDEX IF NOT EXISTS brain_traces_created_idx ON brain_traces(created_at DESC);
@@ -229,5 +230,12 @@ export function runBrainMigrations(db: DatabaseSync): void {
   }>;
   if (!mutationBundleColumns.some((column) => column.name === "verdict_json")) {
     db.exec(`ALTER TABLE brain_mutation_bundles ADD COLUMN verdict_json TEXT`);
+  }
+
+  const traceColumns = db.prepare(`PRAGMA table_info(brain_traces)`).all() as Array<{
+    name: string;
+  }>;
+  if (!traceColumns.some((column) => column.name === "route_trace_json")) {
+    db.exec(`ALTER TABLE brain_traces ADD COLUMN route_trace_json TEXT NOT NULL DEFAULT 'null'`);
   }
 }

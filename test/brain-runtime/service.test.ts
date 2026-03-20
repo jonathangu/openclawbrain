@@ -160,6 +160,31 @@ describe("BrainService", () => {
 
     const trace = await service.getTrace();
     expect(trace?.episodeId).toBe(result?.episode.id ?? null);
+    expect(trace?.routeTrace).toMatchObject({
+      conversationId: 42,
+      activePackId: "brain-pack-v1",
+      routerIdentity: "brain-graph-traverse.v1",
+      selectedNodeIds: [result?.fired[0]?.nodeId],
+      injectedNodeSummaries: [
+        expect.objectContaining({
+          nodeId: result?.fired[0]?.nodeId,
+          kind: "chunk",
+          sourceUri: "PLAYBOOK.md",
+          contentPreview: expect.stringContaining("Use gh pr create"),
+        }),
+      ],
+      selectionMetadata: expect.objectContaining({
+        traceSliceVersion: 1,
+        budgetChars: 4000,
+        maxHops: 8,
+        firedCount: result?.fired.length,
+        queryEmbeddingSource: "provided",
+      }),
+    });
+    expect(trace?.routeTrace?.requestDigest).toMatch(/^[a-f0-9]{16}$/);
+    expect(trace?.routeTrace?.candidateNodeIds).toContain(result?.fired[0]?.nodeId ?? "");
+    expect(trace?.routeTrace?.sourceSummary.kinds).toMatchObject({ chunk: 1 });
+    expect(trace?.routeTrace?.sourceSummary.sourceUris[0]).toContain("PLAYBOOK.md");
     const status = await service.status();
     expect(status.currentPackVersion).toBe(1);
   });

@@ -342,13 +342,17 @@ export class BrainService {
       return null;
     }
 
+    const queryStartedAt = Date.now();
+    const embeddingStartedAt = Date.now();
     const embedding =
       params.queryEmbedding
       ?? (this.embeddingClient ? await this.embeddingClient(params.queryText) : null);
+    const embeddingMs = Date.now() - embeddingStartedAt;
     if (!embedding || embedding.length === 0) {
       return null;
     }
 
+    const routeSelectionStartedAt = Date.now();
     const traversalResult = traverse({
       graph: this.servingGraph,
       queryEmbedding: embedding,
@@ -359,6 +363,7 @@ export class BrainService {
       maxSeeds: this.config.maxSeeds,
       semanticThreshold: this.config.semanticThreshold,
     });
+    const routeSelectionMs = Date.now() - routeSelectionStartedAt;
     if (traversalResult.firedNodes.length === 0) {
       return null;
     }
@@ -373,11 +378,22 @@ export class BrainService {
     this.store.insertEpisode(episode);
     this.latestEpisodeByConversation.set(params.conversationId, episode.id);
 
+    const selectedNodes = traversalResult.firedNodes
+      .map((node) => this.servingGraph.getNode(node.nodeId))
+      .filter((node): node is BrainNode => !!node);
     const trace = recordTrace({
       traversalResult,
       queryText: params.queryText,
       episodeId: episode.id,
+      conversationId: params.conversationId,
       packVersion: episode.packVersion,
+      budgetChars: params.budgetChars,
+      maxHops: this.config.maxHops,
+      embeddingMs,
+      routeSelectionMs,
+      totalQueryMs: Date.now() - queryStartedAt,
+      queryEmbeddingSource: params.queryEmbedding ? "provided" : "runtime",
+      selectedNodes,
     });
     this.store.insertTrace(trace);
 

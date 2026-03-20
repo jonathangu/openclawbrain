@@ -433,6 +433,49 @@ export interface HealthMetrics {
 // Decision Traces
 // ═══════════════════════════════════════════
 
+export interface DecisionTraceInjectedNodeSummary {
+  nodeId: string;
+  kind: NodeKind;
+  trust: TrustLevel;
+  sourceUri: string | null;
+  tags: string[];
+  tokenCount: number;
+  contentPreview: string;
+}
+
+export interface DecisionRouteTrace {
+  requestDigest: string;
+  conversationId: number | null;
+  activePackId: string | null;
+  routerIdentity: string;
+  candidateNodeIds: string[];
+  selectedNodeIds: string[];
+  selectedPathNodeIds: string[];
+  injectedNodeSummaries: DecisionTraceInjectedNodeSummary[];
+  sourceSummary: {
+    injectedCount: number;
+    kinds: Partial<Record<NodeKind, number>>;
+    trusts: Partial<Record<TrustLevel, number>>;
+    sourceUris: string[];
+  };
+  selectionMetadata: {
+    traceSliceVersion: number;
+    queryChars: number;
+    budgetChars: number;
+    maxHops: number;
+    seedCount: number;
+    candidateCount: number;
+    hopCount: number;
+    firedCount: number;
+    vetoedCount: number;
+    chosenSeedNodeId: string | null;
+    routeSelectionMs: number | null;
+    embeddingMs: number | null;
+    totalQueryMs: number | null;
+    queryEmbeddingSource: "provided" | "runtime";
+  };
+}
+
 export interface DecisionTrace {
   id: string;
   episodeId: string | null;
@@ -444,6 +487,7 @@ export interface DecisionTrace {
   vetoedNodes: string[];
   contextChars: number;
   footer: string;
+  routeTrace?: DecisionRouteTrace | null;
   createdAt: number;
 }
 

@@ -868,13 +868,13 @@ export class BrainStore {
 
   insertTrace(trace: DecisionTrace): void {
     this.db.prepare(`
-      INSERT INTO brain_traces (id, episode_id, pack_version, query_text, seed_scores, trajectory, fired_nodes, vetoed_nodes, context_chars, footer, created_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      INSERT INTO brain_traces (id, episode_id, pack_version, query_text, seed_scores, trajectory, fired_nodes, vetoed_nodes, context_chars, footer, route_trace_json, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       trace.id, trace.episodeId, trace.packVersion, trace.queryText,
       JSON.stringify(trace.seedScores), JSON.stringify(trace.trajectory),
       JSON.stringify(trace.firedNodes), JSON.stringify(trace.vetoedNodes),
-      trace.contextChars, trace.footer, trace.createdAt,
+      trace.contextChars, trace.footer, JSON.stringify(trace.routeTrace ?? null), trace.createdAt,
     );
   }
 
@@ -900,6 +900,9 @@ export class BrainStore {
       vetoedNodes: JSON.parse((row.vetoed_nodes as string) || "[]"),
       contextChars: (row.context_chars as number) || 0,
       footer: (row.footer as string) || "",
+      routeTrace: row.route_trace_json === undefined
+        ? null
+        : JSON.parse((row.route_trace_json as string) || "null"),
       createdAt: row.created_at as number,
     };
   }
