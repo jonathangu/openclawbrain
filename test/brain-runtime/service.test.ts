@@ -250,6 +250,51 @@ describe("BrainService", () => {
     expect(status.supervisionCount).toBe(1);
   });
 
+  it("surfaces the latest candidate-pack PG update artifact in runtime status", async () => {
+    const brainRoot = makeTempDir("openclawbrain-state-");
+    const service = new BrainService({
+      deps: createDeps(brainRoot),
+    });
+    const store = (service as unknown as {
+      store: {
+        setTrainingStateJson: (key: string, value: unknown | null) => void;
+        setTrainingState: (key: string, value: string | number) => void;
+      };
+    }).store;
+
+    store.setTrainingStateJson("last_pg_candidate_update_json", {
+      version: 1,
+      updateCount: 2,
+      candidatePackVersion: 9,
+      currentPackVersion: 3,
+      generatedAt: 123456789,
+      episodeIds: ["ep_1", "ep_2"],
+      traceIds: ["bt_1", "bt_2"],
+      supervisionIds: ["ts_1", "ts_2"],
+      teacherTraceIds: ["bt_2"],
+      rewardSources: { human: 1, scanner: 0, teacher: 1, self: 0 },
+      episodeCount: 2,
+      traceCount: 2,
+      supervisionCount: 2,
+      teacherLabelCount: 1,
+      routeUpdateCount: 3,
+      seedUpdateCount: 2,
+      edgeUpdateCount: 1,
+      baselineBefore: 0,
+      baselineAfter: 0.12,
+    });
+    store.setTrainingState("last_pg_candidate_pack_version", 9);
+
+    const status = await service.status();
+    expect(status.lastPgCandidatePackVersion).toBe(9);
+    expect(status.lastPgCandidateUpdate).toMatchObject({
+      updateCount: 2,
+      candidatePackVersion: 9,
+      teacherLabelCount: 1,
+      traceIds: ["bt_1", "bt_2"],
+    });
+  });
+
   it("fails open when teacher resolution has no model and reports that truth in status", async () => {
     const brainRoot = makeTempDir("openclawbrain-state-");
     const deps = createDeps(brainRoot, {

@@ -598,6 +598,17 @@ export class BrainStore {
     return rows.map((row) => this.toTraceSupervision(row));
   }
 
+  getTraceSupervisionForEpisode(episodeId: string, limit = 50): TraceSupervisionRecord[] {
+    const rows = this.db.prepare(`
+      SELECT *
+      FROM brain_trace_supervision
+      WHERE episode_id = ?
+      ORDER BY created_at ASC
+      LIMIT ?
+    `).all(episodeId, limit) as Record<string, unknown>[];
+    return rows.map((row) => this.toTraceSupervision(row));
+  }
+
   countTraceSupervision(): number {
     const row = this.db.prepare(`SELECT COUNT(*) as count FROM brain_trace_supervision`).get() as { count: number };
     return row.count ?? 0;

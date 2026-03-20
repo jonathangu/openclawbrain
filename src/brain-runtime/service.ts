@@ -717,6 +717,11 @@ export class BrainService {
     const promotionStory = buildPromotionStory(this.store);
     const routeTraceCount = this.store.countTraces();
     const supervisionCount = this.store.countTraceSupervision();
+    const lastPgCandidateUpdate = this.store.getTrainingStateJson("last_pg_candidate_update_json");
+    const lastPgCandidatePackVersionRaw = this.store.getTrainingState("last_pg_candidate_pack_version");
+    const lastPgCandidatePackVersion = lastPgCandidatePackVersionRaw
+      ? Number.parseInt(lastPgCandidatePackVersionRaw, 10)
+      : null;
 
     const embeddingConfig = describeEmbeddingConfig(this.config);
 
@@ -757,6 +762,10 @@ export class BrainService {
       seedLearningEnabled: this.mutableGraph.hasSeedWeights(),
       routeTraceCount,
       supervisionCount,
+      lastPgCandidatePackVersion: Number.isFinite(lastPgCandidatePackVersion ?? NaN)
+        ? lastPgCandidatePackVersion
+        : null,
+      lastPgCandidateUpdate,
       recentTraceCount: recentTraces.length,
       lastTraceFooter: recentTraces[0]?.footer ?? null,
       lastAssemblyDecision: this.lastAssemblyDecision,

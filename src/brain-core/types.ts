@@ -237,6 +237,28 @@ export interface TraceSupervisionRecord {
   createdAt: number;
 }
 
+export interface PolicyGradientCandidateUpdateArtifact {
+  version: 1;
+  updateCount: number;
+  candidatePackVersion: number;
+  currentPackVersion: number | null;
+  generatedAt: number;
+  episodeIds: string[];
+  traceIds: string[];
+  supervisionIds: string[];
+  teacherTraceIds: string[];
+  rewardSources: Record<RewardSource, number>;
+  episodeCount: number;
+  traceCount: number;
+  supervisionCount: number;
+  teacherLabelCount: number;
+  routeUpdateCount: number;
+  seedUpdateCount: number;
+  edgeUpdateCount: number;
+  baselineBefore: number;
+  baselineAfter: number;
+}
+
 // ═══════════════════════════════════════════
 // Packs & Mutations
 // ═══════════════════════════════════════════

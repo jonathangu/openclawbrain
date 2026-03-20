@@ -6,8 +6,10 @@ import type {
   BundleEvaluationVerdict,
   Episode,
   MutationProposal,
+  PolicyGradientCandidateUpdateArtifact,
   PromotionRunVerdict,
   ReplayGateVerdict,
+  RewardSource,
 } from "../brain-core/types.js";
 import { trustRank } from "../brain-core/types.js";
 import type { BrainStore } from "../brain-store/store.js";
@@ -141,6 +143,25 @@ function classifyEvidenceAgainstEpisode(
   }
 
   return null;
+}
+
+function readTeacherTraceId(metadata: Record<string, unknown> | null | undefined): string | null {
+  const teacherLabel = metadata?.teacherLabel;
+  if (!teacherLabel || typeof teacherLabel !== "object") {
+    return null;
+  }
+  const traceId = (teacherLabel as { traceId?: unknown }).traceId;
+  return typeof traceId === "string" && traceId.length > 0 ? traceId : null;
+}
+
+function incrementRewardSourceCount(
+  counts: Record<RewardSource, number>,
+  source: RewardSource | null,
+): void {
+  if (!source) {
+    return;
+  }
+  counts[source] = (counts[source] ?? 0) + 1;
 }
 
 export class BrainWorker {
@@ -423,6 +444,148 @@ export class BrainWorker {
     }
   }
 
+  private collectPolicyGradientSupervision(episode: Episode): {
+    traceIds: string[];
+    supervisionIds: string[];
+    teacherTraceIds: string[];
+  } | null {
+    const supervision = this.store
+      .getTraceSupervisionForEpisode(episode.id, 50)
+      .filter((record) => record.resolution === "promoted_to_label");
+    if (supervision.length === 0) {
+      return null;
+    }
+
+    const traceIds = new Set<string>();
+    const supervisionIds = new Set<string>();
+    const teacherTraceIds = new Set<string>();
+
+    for (const record of supervision) {
+      traceIds.add(record.traceId);
+      supervisionIds.add(record.id);
+      const teacherTraceId = readTeacherTraceId(record.metadata);
+      if (teacherTraceId) {
+        teacherTraceIds.add(teacherTraceId);
+      } else if (record.source === "teacher") {
+        teacherTraceIds.add(record.traceId);
+      }
+    }
+
+    return {
+      traceIds: [...traceIds].sort(),
+      supervisionIds: [...supervisionIds].sort(),
+      teacherTraceIds: [...teacherTraceIds].sort(),
+    };
+  }
+
+  private materializePolicyGradientCandidateUpdate(params: {
+    baselineBefore: number;
+    baselineAfter: number;
+    updatedEpisodes: Array<{
+      episode: Episode;
+      routeUpdateCount: number;
+      seedUpdateCount: number;
+      edgeUpdateCount: number;
+    }>;
+  }): void {
+    const episodeIds = new Set<string>();
+    const traceIds = new Set<string>();
+    const supervisionIds = new Set<string>();
+    const teacherTraceIds = new Set<string>();
+    const rewardSources: Record<RewardSource, number> = {
+      human: 0,
+      scanner: 0,
+      teacher: 0,
+      self: 0,
+    };
+
+    let routeUpdateCount = 0;
+    let seedUpdateCount = 0;
+    let edgeUpdateCount = 0;
+
+    for (const entry of params.updatedEpisodes) {
+      const consumed = this.collectPolicyGradientSupervision(entry.episode);
+      if (!consumed) {
+        continue;
+      }
+
+      episodeIds.add(entry.episode.id);
+      incrementRewardSourceCount(rewardSources, entry.episode.rewardSource);
+      routeUpdateCount += entry.routeUpdateCount;
+      seedUpdateCount += entry.seedUpdateCount;
+      edgeUpdateCount += entry.edgeUpdateCount;
+
+      for (const traceId of consumed.traceIds) {
+        traceIds.add(traceId);
+      }
+      for (const supervisionId of consumed.supervisionIds) {
+        supervisionIds.add(supervisionId);
+      }
+      for (const teacherTraceId of consumed.teacherTraceIds) {
+        teacherTraceIds.add(teacherTraceId);
+      }
+    }
+
+    if (episodeIds.size === 0 || supervisionIds.size === 0 || routeUpdateCount === 0) {
+      return;
+    }
+
+    const currentPackVersion = this.store.getCurrentPackVersion();
+    const health = computeHealth(
+      this.graph,
+      this.store.getRecentEpisodes(this.config.replayEpisodeCount),
+      currentPackVersion ?? 0,
+    );
+    const candidatePack = this.packManager.buildCandidate(health);
+    const priorArtifact = this.store.getTrainingStateJson<PolicyGradientCandidateUpdateArtifact>(
+      "last_pg_candidate_update_json",
+    );
+    const artifact: PolicyGradientCandidateUpdateArtifact = {
+      version: 1,
+      updateCount: (priorArtifact?.updateCount ?? 0) + 1,
+      candidatePackVersion: candidatePack.version,
+      currentPackVersion,
+      generatedAt: Date.now(),
+      episodeIds: [...episodeIds].sort(),
+      traceIds: [...traceIds].sort(),
+      supervisionIds: [...supervisionIds].sort(),
+      teacherTraceIds: [...teacherTraceIds].sort(),
+      rewardSources,
+      episodeCount: episodeIds.size,
+      traceCount: traceIds.size,
+      supervisionCount: supervisionIds.size,
+      teacherLabelCount: teacherTraceIds.size,
+      routeUpdateCount,
+      seedUpdateCount,
+      edgeUpdateCount,
+      baselineBefore: params.baselineBefore,
+      baselineAfter: params.baselineAfter,
+    };
+
+    this.store.setTrainingStateJson("last_pg_candidate_update_json", artifact);
+    this.store.setTrainingState("last_pg_candidate_pack_version", candidatePack.version);
+    this.store.setTrainingState("last_pg_candidate_update_at", artifact.generatedAt);
+
+    try {
+      this.store.writePackSnapshot({
+        version: candidatePack.version,
+        nodes: this.graph.getAllNodes(),
+        edges: this.graph.getAllEdges(),
+        seedWeights: this.graph.getAllSeedWeights().map((seedWeight) => ({
+          nodeId: seedWeight.nodeId,
+          weight: seedWeight.weight,
+          updatedAt: artifact.generatedAt,
+        })),
+        metadata: {
+          reason: "pg_update_candidate",
+          pgCandidateUpdate: artifact,
+        },
+      });
+    } catch (error) {
+      this.log.warn(`[brain] Failed to write PG candidate snapshot for pack v${candidatePack.version}: ${String(error)}`);
+    }
+  }
+
   private async applyUpdates(): Promise<void> {
     const episodes = this.store.getEpisodesForUpdate(20);
     if (episodes.length === 0) {
@@ -430,7 +593,14 @@ export class BrainWorker {
     }
 
     const baselineStr = this.store.getTrainingState("baseline_reward");
-    let baseline = baselineStr ? Number.parseFloat(baselineStr) : 0;
+    const baselineBefore = baselineStr ? Number.parseFloat(baselineStr) : 0;
+    let baseline = baselineBefore;
+    const updatedEpisodes: Array<{
+      episode: Episode;
+      routeUpdateCount: number;
+      seedUpdateCount: number;
+      edgeUpdateCount: number;
+    }> = [];
 
     for (const episode of episodes) {
       if (episode.reward === null) {
@@ -440,12 +610,16 @@ export class BrainWorker {
       const updates = computeReinforceUpdates(episode, this.config.learningRate, baseline);
       applyWeightUpdates(this.graph, updates);
 
+      let seedUpdateCount = 0;
+      let edgeUpdateCount = 0;
       for (const update of updates) {
         if (update.kind === "seed") {
+          seedUpdateCount += 1;
           this.store.setSeedWeight(update.nodeId, this.graph.getSeedWeight(update.nodeId));
           continue;
         }
 
+        edgeUpdateCount += 1;
         const edge = this.graph.getEdge(update.source, update.target);
         if (edge) {
           this.store.updateEdgeWeight(edge.source, edge.target, edge.kind, edge.weight);
@@ -467,12 +641,23 @@ export class BrainWorker {
         this.store.insertEdge(createdEdge);
       }
 
+      updatedEpisodes.push({
+        episode,
+        routeUpdateCount: updates.length,
+        seedUpdateCount,
+        edgeUpdateCount,
+      });
       this.store.markEpisodeUpdated(episode.id);
       baseline = updateBaseline(baseline, episode.reward, this.config.baselineAlpha);
     }
 
     this.store.setTrainingState("baseline_reward", baseline);
     this.store.setTrainingState("last_update_at", Date.now());
+    this.materializePolicyGradientCandidateUpdate({
+      baselineBefore,
+      baselineAfter: baseline,
+      updatedEpisodes,
+    });
   }
 
   private runDecay(): void {

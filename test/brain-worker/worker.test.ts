@@ -5,7 +5,16 @@ import { DatabaseSync } from "node:sqlite";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { BrainGraph } from "../../src/brain-core/graph.js";
 import { DEFAULT_BRAIN_CONFIG } from "../../src/brain-core/types.js";
-import type { DecisionTrace, Episode, HealthMetrics, MutationProposal, ReplayGateVerdict } from "../../src/brain-core/types.js";
+import type {
+  BrainNode,
+  DecisionTrace,
+  Episode,
+  HealthMetrics,
+  MutationProposal,
+  PolicyGradientCandidateUpdateArtifact,
+  ReplayGateVerdict,
+  TrajectoryStep,
+} from "../../src/brain-core/types.js";
 import { runBrainMigrations } from "../../src/brain-store/migrations.js";
 import { BrainStore } from "../../src/brain-store/store.js";
 import { BrainWorker } from "../../src/brain-worker/worker.js";
@@ -16,6 +25,7 @@ function makeEpisode(params: {
   id: string;
   conversationId: number;
   queryText?: string;
+  trajectory?: TrajectoryStep[];
   firedNodes?: string[];
   reward?: number | null;
   rewardSource?: Episode["rewardSource"];
@@ -25,7 +35,7 @@ function makeEpisode(params: {
     conversationId: params.conversationId,
     queryText: params.queryText ?? "test query",
     queryEmbedding: null,
-    trajectory: [],
+    trajectory: params.trajectory ?? [],
     firedNodes: params.firedNodes ?? [],
     vetoedNodes: [],
     contextChars: 0,
@@ -33,6 +43,41 @@ function makeEpisode(params: {
     rewardSource: params.rewardSource ?? null,
     packVersion: 1,
     createdAt: Date.now(),
+  };
+}
+
+function makeNode(id: string): BrainNode {
+  return {
+    id,
+    kind: "chunk",
+    content: `content for ${id}`,
+    embedding: new Float32Array([1, 0, 0]),
+    sourceUri: `docs/${id}.md`,
+    trust: "human",
+    tags: ["worker"],
+    tokenCount: 32,
+    metadata: {},
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+}
+
+function makeStep(targetId: string, probability = 0.6): TrajectoryStep {
+  return {
+    stateSnapshot: {
+      currentNodeId: null,
+      hopCount: 0,
+      budgetRemaining: 1000,
+      visitedCount: 0,
+      firedCount: 0,
+    },
+    candidates: [
+      { action: { type: "traverse", targetNodeId: targetId }, score: 1, probability },
+      { action: { type: "stop" }, score: -1, probability: 1 - probability },
+    ],
+    chosenAction: { type: "traverse", targetNodeId: targetId },
+    chosenActionProbability: probability,
+    stopProbability: 1 - probability,
   };
 }
 
@@ -191,12 +236,13 @@ function setup(overrides: {
 } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "brain-worker-test-"));
   tempDirs.push(dir);
+  const brainRoot = join(dir, "brain-root");
   const db = new DatabaseSync(join(dir, "test.db"));
   db.exec("PRAGMA journal_mode = WAL");
   db.exec("PRAGMA foreign_keys = ON");
   runBrainMigrations(db);
 
-  const store = new BrainStore(db);
+  const store = new BrainStore(db, { brainRoot });
   const graph = new BrainGraph();
   const applyMutation = vi.fn((proposal: MutationProposal) => {
     overrides.applyMutation?.(proposal);
@@ -221,6 +267,11 @@ function setup(overrides: {
     } as never,
     {
       replayGate,
+      buildCandidate: vi.fn((health: HealthMetrics) => store.insertPack({
+        nodeCount: health.nodeCount,
+        edgeCount: health.edgeCount,
+        healthJson: JSON.stringify(health),
+      })),
     } as never,
     {
       ...DEFAULT_BRAIN_CONFIG,
@@ -237,7 +288,7 @@ function setup(overrides: {
     },
   );
 
-  return { store, worker, replayGate, applyMutation, onPromotionReady };
+  return { store, worker, graph, brainRoot, replayGate, applyMutation, onPromotionReady };
 }
 
 afterEach(() => {
@@ -574,6 +625,117 @@ describe("BrainWorker evidence resolution", () => {
 
     expect(evaluateTrace).not.toHaveBeenCalled();
     expect(store.getPendingEvidence()).toHaveLength(0);
+  });
+
+  it("materializes a candidate-pack PG update artifact from persisted trace supervision and traced teacher labels", async () => {
+    const { store, worker, graph } = setup();
+
+    graph.addNode(makeNode("node_human"));
+    graph.addNode(makeNode("node_teacher"));
+    graph.setSeedWeight("node_human", 0.2);
+    graph.setSeedWeight("node_teacher", 0.1);
+
+    store.insertEpisode(makeEpisode({
+      id: "ep_human_pg",
+      conversationId: 31,
+      queryText: "human routed query",
+      trajectory: [makeStep("node_human", 0.6)],
+      firedNodes: ["node_human"],
+    }));
+    store.insertTrace(makeTrace({
+      id: "bt_human_pg",
+      episodeId: "ep_human_pg",
+      conversationId: 31,
+      queryText: "human routed query",
+      selectedNodeId: "node_human",
+    }));
+    store.insertEvidence({
+      episodeId: "ep_human_pg",
+      conversationId: 31,
+      source: "human",
+      kind: "human_feedback",
+      value: 0.8,
+      confidence: 0.95,
+      reason: "user confirmed the route",
+    });
+
+    store.insertEpisode(makeEpisode({
+      id: "ep_teacher_pg",
+      conversationId: 32,
+      queryText: "teacher routed query",
+      trajectory: [makeStep("node_teacher", 0.7)],
+      firedNodes: ["node_teacher"],
+    }));
+    store.insertTrace(makeTrace({
+      id: "bt_teacher_pg",
+      episodeId: "ep_teacher_pg",
+      conversationId: 32,
+      queryText: "teacher routed query",
+      selectedNodeId: "node_teacher",
+    }));
+    store.insertEvidence({
+      episodeId: "ep_teacher_pg",
+      conversationId: 32,
+      source: "teacher",
+      kind: "teacher_review",
+      value: 0.6,
+      confidence: 0.6,
+      reason: "teacher verified the selected route",
+      metadata: {
+        teacherLabel: {
+          version: 1,
+          traceId: "bt_teacher_pg",
+          episodeId: "ep_teacher_pg",
+          requestDigest: hashQuery("teacher routed query"),
+          input: {
+            routeDecision: {
+              selectedNodeIds: ["node_teacher"],
+            },
+          },
+        },
+      },
+    });
+
+    await (worker as any).processEvidence();
+    await (worker as any).processLabels();
+    await (worker as any).applyUpdates();
+
+    const artifact = store.getTrainingStateJson<PolicyGradientCandidateUpdateArtifact>("last_pg_candidate_update_json");
+    expect(artifact).not.toBeNull();
+    expect(artifact).toMatchObject({
+      version: 1,
+      updateCount: 1,
+      episodeCount: 2,
+      traceCount: 2,
+      supervisionCount: 2,
+      teacherLabelCount: 1,
+      rewardSources: {
+        human: 1,
+        teacher: 1,
+      },
+    });
+    expect(artifact?.routeUpdateCount).toBeGreaterThan(0);
+    expect(artifact?.seedUpdateCount).toBe(artifact?.routeUpdateCount);
+    expect(artifact?.edgeUpdateCount).toBe(0);
+    expect(artifact?.traceIds).toEqual(["bt_human_pg", "bt_teacher_pg"]);
+    expect(artifact?.teacherTraceIds).toEqual(["bt_teacher_pg"]);
+    expect(store.getCurrentPackVersion()).toBeNull();
+
+    const candidatePackVersion = Number.parseInt(store.getTrainingState("last_pg_candidate_pack_version") ?? "", 10);
+    expect(candidatePackVersion).toBe(artifact?.candidatePackVersion);
+
+    const snapshot = store.readPackSnapshot(candidatePackVersion);
+    expect(snapshot?.metadata).toMatchObject({
+      reason: "pg_update_candidate",
+      pgCandidateUpdate: {
+        updateCount: 1,
+        candidatePackVersion,
+        supervisionCount: 2,
+        teacherLabelCount: 1,
+      },
+    });
+
+    expect(store.getEpisodesForUpdate(10)).toHaveLength(0);
   });
 });
 
