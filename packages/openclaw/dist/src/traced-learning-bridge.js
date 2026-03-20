@@ -186,6 +186,92 @@ export function loadBrainStoreTracedLearningBridge(options = {}) {
         }
     }
 }
+function describeBridgeRuntimeState(loaded) {
+    return loaded.bridge === null ? (loaded.error === null ? "missing" : "unreadable") : "present";
+}
+function buildStatusSurface(pathname, bridge, options = {}) {
+    const detailParts = [
+        `source=${bridge.source?.command === undefined ? "learn" : String(bridge.source.command)}`,
+        `promoted=${bridge.promoted ? "yes" : "no"}`
+    ];
+    if (bridge.source?.bridge === "brain_store_state") {
+        detailParts.push("bridge=brain_store_state");
+    }
+    if (options.runtimeState !== undefined) {
+        detailParts.push(`runtime=${options.runtimeState}`);
+    }
+    if (bridge.fallbackReason !== null) {
+        detailParts.push(`fallback=${bridge.fallbackReason}`);
+    }
+    if (bridge.routerNoOpReason !== null) {
+        detailParts.push(`noOp=${bridge.routerNoOpReason}`);
+    }
+    return {
+        path: pathname,
+        present: true,
+        updatedAt: bridge.updatedAt,
+        routeTraceCount: bridge.routeTraceCount,
+        supervisionCount: bridge.supervisionCount,
+        routerUpdateCount: bridge.routerUpdateCount,
+        teacherArtifactCount: bridge.teacherArtifactCount,
+        pgVersionRequested: bridge.pgVersionRequested,
+        pgVersionUsed: bridge.pgVersionUsed,
+        decisionLogCount: bridge.decisionLogCount,
+        materializedPackId: bridge.materializedPackId,
+        promoted: bridge.promoted,
+        baselinePersisted: bridge.baselinePersisted,
+        source: bridge.source,
+        detail: detailParts.join(" "),
+        error: options.error ?? null
+    };
+}
+function buildRuntimeMaterializationMetadata(loaded) {
+    if (loaded.bridge === null) {
+        return null;
+    }
+    return {
+        path: loaded.path,
+        updatedAt: loaded.bridge.updatedAt,
+        routeTraceCount: loaded.bridge.routeTraceCount,
+        supervisionCount: loaded.bridge.supervisionCount,
+        routerUpdateCount: loaded.bridge.routerUpdateCount,
+        teacherArtifactCount: loaded.bridge.teacherArtifactCount,
+        pgVersionRequested: loaded.bridge.pgVersionRequested,
+        pgVersionUsed: loaded.bridge.pgVersionUsed,
+        decisionLogCount: loaded.bridge.decisionLogCount,
+        materializedPackId: loaded.bridge.materializedPackId,
+        promoted: loaded.bridge.promoted,
+        baselinePersisted: loaded.bridge.baselinePersisted,
+        fallbackReason: loaded.bridge.fallbackReason,
+        routerNoOpReason: loaded.bridge.routerNoOpReason,
+        source: loaded.bridge.source
+    };
+}
+function mergeCanonicalStatusBridge(canonicalBridge, runtimeLoaded) {
+    const runtimeBridge = runtimeLoaded.bridge;
+    const runtimeMaterialized = buildRuntimeMaterializationMetadata(runtimeLoaded);
+    return {
+        updatedAt: canonicalBridge.updatedAt ?? runtimeBridge?.updatedAt ?? null,
+        routeTraceCount: canonicalBridge.routeTraceCount,
+        supervisionCount: canonicalBridge.supervisionCount,
+        routerUpdateCount: canonicalBridge.routerUpdateCount,
+        teacherArtifactCount: canonicalBridge.teacherArtifactCount,
+        pgVersionRequested: runtimeBridge?.pgVersionRequested ?? null,
+        pgVersionUsed: runtimeBridge?.pgVersionUsed ?? null,
+        decisionLogCount: runtimeBridge?.decisionLogCount ?? 0,
+        materializedPackId: runtimeBridge?.materializedPackId ?? null,
+        promoted: runtimeBridge?.promoted ?? false,
+        baselinePersisted: runtimeBridge?.baselinePersisted ?? false,
+        fallbackReason: runtimeBridge?.fallbackReason ?? null,
+        routerNoOpReason: runtimeBridge?.routerNoOpReason ?? null,
+        source: runtimeMaterialized === null
+            ? canonicalBridge.source
+            : {
+                ...(canonicalBridge.source ?? {}),
+                runtimeMaterialized
+            }
+    };
+}
 export function mergeTracedLearningBridgePayload(payload, persisted) {
     const current = normalizeBridgePayload(payload);
     const persistedBridge = persisted?.bridge ?? null;
@@ -225,40 +311,19 @@ export function mergeTracedLearningBridgePayload(payload, persisted) {
         }
     });
 }
-export function buildTracedLearningStatusSurface(activationRoot) {
-    const loaded = loadTracedLearningBridge(activationRoot);
-    if (loaded.bridge === null) {
-        return defaultSurface(loaded.path, loaded.error === null ? "bridge_missing" : `bridge_unreadable`, loaded.error);
+export function buildTracedLearningStatusSurface(activationRoot, options = {}) {
+    const persisted = loadBrainStoreTracedLearningBridge(options);
+    const runtime = loadTracedLearningBridge(activationRoot);
+    if (persisted.bridge !== null) {
+        return buildStatusSurface(persisted.path, mergeCanonicalStatusBridge(persisted.bridge, runtime), {
+            runtimeState: describeBridgeRuntimeState(runtime)
+        });
     }
-    const detailParts = [
-        `source=${loaded.bridge.source?.command === undefined ? "learn" : String(loaded.bridge.source.command)}`,
-        `promoted=${loaded.bridge.promoted ? "yes" : "no"}`
-    ];
-    if (loaded.bridge.source?.bridge === "brain_store_state") {
-        detailParts.push("bridge=brain_store_state");
+    if (runtime.bridge !== null) {
+        return buildStatusSurface(runtime.path, runtime.bridge);
     }
-    if (loaded.bridge.fallbackReason !== null) {
-        detailParts.push(`fallback=${loaded.bridge.fallbackReason}`);
+    if (persisted.error !== null) {
+        return defaultSurface(persisted.path, "brain_store_unreadable", persisted.error);
     }
-    if (loaded.bridge.routerNoOpReason !== null) {
-        detailParts.push(`noOp=${loaded.bridge.routerNoOpReason}`);
-    }
-    return {
-        path: loaded.path,
-        present: true,
-        updatedAt: loaded.bridge.updatedAt,
-        routeTraceCount: loaded.bridge.routeTraceCount,
-        supervisionCount: loaded.bridge.supervisionCount,
-        routerUpdateCount: loaded.bridge.routerUpdateCount,
-        teacherArtifactCount: loaded.bridge.teacherArtifactCount,
-        pgVersionRequested: loaded.bridge.pgVersionRequested,
-        pgVersionUsed: loaded.bridge.pgVersionUsed,
-        decisionLogCount: loaded.bridge.decisionLogCount,
-        materializedPackId: loaded.bridge.materializedPackId,
-        promoted: loaded.bridge.promoted,
-        baselinePersisted: loaded.bridge.baselinePersisted,
-        source: loaded.bridge.source,
-        detail: detailParts.join(" "),
-        error: null
-    };
+    return defaultSurface(runtime.path, runtime.error === null ? "bridge_missing" : "bridge_unreadable", runtime.error);
 }

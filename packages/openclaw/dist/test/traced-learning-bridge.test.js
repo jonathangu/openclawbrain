@@ -18,7 +18,13 @@ function createTempActivationRoot(t) {
     mkdirSync(activationRoot, { recursive: true });
     return activationRoot;
 }
-function createBrainStore(root) {
+function createMissingBrainStoreEnv(t) {
+    return {
+        OPENCLAWBRAIN_ROOT: path.join(createTempRoot(t), "brain-root")
+    };
+}
+function createBrainStore(t) {
+    const root = createTempRoot(t);
     const brainRoot = path.join(root, "brain-root");
     mkdirSync(brainRoot, { recursive: true });
     const dbPath = path.join(brainRoot, "state.db");
@@ -61,7 +67,9 @@ test("traced-learning bridge round-trips learn counters under activation-root/wa
     assert.equal(loaded.bridge?.supervisionCount, 5);
     assert.equal(loaded.bridge?.routerUpdateCount, 3);
     assert.equal(loaded.bridge?.materializedPackId, "pack-123");
-    const surface = buildTracedLearningStatusSurface(activationRoot);
+    const surface = buildTracedLearningStatusSurface(activationRoot, {
+        env: createMissingBrainStoreEnv(t)
+    });
     assert.equal(surface.present, true);
     assert.equal(surface.updatedAt, "2026-03-20T04:20:00.000Z");
     assert.equal(surface.routeTraceCount, 12);
@@ -74,8 +82,8 @@ test("traced-learning bridge round-trips learn counters under activation-root/wa
     assert.match(surface.detail, /promoted=yes/);
 });
 
-test("brain-store traced-learning bridge truthfully lifts supervision and update counters", () => {
-    const { brainRoot, db, dbPath } = createBrainStore(mkdtempSync(path.join(os.tmpdir(), "openclawbrain-traced-learning-store-")));
+test("brain-store traced-learning bridge truthfully lifts supervision and update counters", (t) => {
+    const { brainRoot, db, dbPath } = createBrainStore(t);
     try {
         db.exec(`
           INSERT INTO brain_traces (id) VALUES ('bt_1'), ('bt_2');
@@ -136,7 +144,124 @@ test("brain-store traced-learning bridge truthfully lifts supervision and update
     }
     finally {
         db.close();
-        rmSync(path.dirname(brainRoot), { recursive: true, force: true });
+    }
+});
+
+test("status surface prefers canonical brain-store truth when the runtime bridge is missing", (t) => {
+    const activationRoot = createTempActivationRoot(t);
+    const { brainRoot, db, dbPath } = createBrainStore(t);
+    try {
+        db.exec(`
+          INSERT INTO brain_traces (id) VALUES ('bt_1'), ('bt_2'), ('bt_3');
+          INSERT INTO brain_trace_supervision (id) VALUES ('ts_1');
+        `);
+        db.prepare(`INSERT INTO brain_training_state (key, value) VALUES (?, ?), (?, ?)`).run(
+            "last_pg_candidate_update_json",
+            JSON.stringify({
+                generatedAt: Date.parse("2026-03-20T04:23:00.000Z"),
+                updateCount: 5,
+                routeUpdateCount: 4,
+                teacherLabelCount: 2
+            }),
+            "last_pg_candidate_pack_version",
+            "11"
+        );
+        const surface = buildTracedLearningStatusSurface(activationRoot, {
+            env: {
+                OPENCLAWBRAIN_ROOT: brainRoot
+            }
+        });
+        assert.equal(surface.path, dbPath);
+        assert.equal(surface.present, true);
+        assert.equal(surface.updatedAt, "2026-03-20T04:23:00.000Z");
+        assert.equal(surface.routeTraceCount, 3);
+        assert.equal(surface.supervisionCount, 1);
+        assert.equal(surface.routerUpdateCount, 4);
+        assert.equal(surface.teacherArtifactCount, 2);
+        assert.equal(surface.materializedPackId, null);
+        assert.equal(surface.promoted, false);
+        assert.equal(surface.source?.command, "brain-store");
+        assert.equal(surface.source?.bridge, "brain_store_state");
+        assert.equal(surface.source?.runtimeMaterialized, undefined);
+        assert.match(surface.detail, /source=brain-store/);
+        assert.match(surface.detail, /bridge=brain_store_state/);
+        assert.match(surface.detail, /runtime=missing/);
+    }
+    finally {
+        db.close();
+    }
+});
+
+test("status surface keeps runtime materialization metadata but canonical counts win on disagreement", (t) => {
+    const activationRoot = createTempActivationRoot(t);
+    const { brainRoot, db, dbPath } = createBrainStore(t);
+    try {
+        db.exec(`
+          INSERT INTO brain_traces (id) VALUES ('bt_1'), ('bt_2');
+          INSERT INTO brain_trace_supervision (id) VALUES ('ts_1');
+        `);
+        db.prepare(`INSERT INTO brain_training_state (key, value) VALUES (?, ?), (?, ?)`).run(
+            "last_pg_candidate_update_json",
+            JSON.stringify({
+                generatedAt: Date.parse("2026-03-20T04:24:00.000Z"),
+                updateCount: 4,
+                routeUpdateCount: 3,
+                teacherLabelCount: 1
+            }),
+            "last_pg_candidate_pack_version",
+            "12"
+        );
+        const runtimePath = writeTracedLearningBridge(activationRoot, {
+            updatedAt: "2026-03-20T04:30:00.000Z",
+            routeTraceCount: 99,
+            supervisionCount: 77,
+            routerUpdateCount: 55,
+            teacherArtifactCount: 44,
+            pgVersionRequested: "v7",
+            pgVersionUsed: "v7",
+            decisionLogCount: 6,
+            fallbackReason: "runtime-bridge-used",
+            routerNoOpReason: "runtime-no-op",
+            materializedPackId: "pack-999",
+            promoted: true,
+            baselinePersisted: true,
+            source: {
+                command: "learn",
+                exportDigest: "digest-999"
+            }
+        });
+        const surface = buildTracedLearningStatusSurface(activationRoot, {
+            env: {
+                OPENCLAWBRAIN_ROOT: brainRoot
+            }
+        });
+        assert.equal(surface.path, dbPath);
+        assert.equal(surface.present, true);
+        assert.equal(surface.updatedAt, "2026-03-20T04:24:00.000Z");
+        assert.equal(surface.routeTraceCount, 2);
+        assert.equal(surface.supervisionCount, 1);
+        assert.equal(surface.routerUpdateCount, 3);
+        assert.equal(surface.teacherArtifactCount, 1);
+        assert.equal(surface.pgVersionRequested, "v7");
+        assert.equal(surface.pgVersionUsed, "v7");
+        assert.equal(surface.decisionLogCount, 6);
+        assert.equal(surface.materializedPackId, "pack-999");
+        assert.equal(surface.promoted, true);
+        assert.equal(surface.baselinePersisted, true);
+        assert.equal(surface.source?.command, "brain-store");
+        assert.equal(surface.source?.bridge, "brain_store_state");
+        assert.equal(surface.source?.runtimeMaterialized?.path, runtimePath);
+        assert.equal(surface.source?.runtimeMaterialized?.routeTraceCount, 99);
+        assert.equal(surface.source?.runtimeMaterialized?.supervisionCount, 77);
+        assert.equal(surface.source?.runtimeMaterialized?.routerUpdateCount, 55);
+        assert.equal(surface.source?.runtimeMaterialized?.teacherArtifactCount, 44);
+        assert.equal(surface.source?.runtimeMaterialized?.materializedPackId, "pack-999");
+        assert.match(surface.detail, /runtime=present/);
+        assert.match(surface.detail, /fallback=runtime-bridge-used/);
+        assert.match(surface.detail, /noOp=runtime-no-op/);
+    }
+    finally {
+        db.close();
     }
 });
 
@@ -148,7 +273,9 @@ test("traced-learning bridge fails open when the persisted file is malformed", (
     const loaded = loadTracedLearningBridge(activationRoot);
     assert.equal(loaded.bridge, null);
     assert.match(loaded.error ?? "", /Unexpected token|Expected property name|JSON/);
-    const surface = buildTracedLearningStatusSurface(activationRoot);
+    const surface = buildTracedLearningStatusSurface(activationRoot, {
+        env: createMissingBrainStoreEnv(t)
+    });
     assert.equal(surface.present, false);
     assert.equal(surface.routeTraceCount, 0);
     assert.equal(surface.supervisionCount, 0);
