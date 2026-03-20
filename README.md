@@ -147,7 +147,7 @@ Chooses best context → Surfaces as priority context → Learns from outcome
 Deep dives:
 - [`docs/lifecycle.md`](docs/lifecycle.md) — canonical install, upgrade, verify, detach, uninstall, and migration
 - [`docs/configuration.md`](docs/configuration.md) — practical operator setup and config guide
-- [`docs/release-notes-0.4.2.md`](docs/release-notes-0.4.2.md) — pending CLI patch for shared-policy status truth and canonical traced-learning ship surface
+- [`docs/release-notes-0.4.2.md`](docs/release-notes-0.4.2.md) — published CLI patch for shared-policy status truth and canonical traced-learning ship surface
 - [`docs/release-notes-0.4.1.md`](docs/release-notes-0.4.1.md) — CLI-only shared-home idempotence patch
 - [`docs/release-notes-0.4.0.md`](docs/release-notes-0.4.0.md) — split packages and the proven public-registry dogfood flow
 - [`docs/routing-prior.md`](docs/routing-prior.md) — why summaries are a routing/search prior rather than the truth layer

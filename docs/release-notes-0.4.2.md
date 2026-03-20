@@ -1,6 +1,6 @@
 # OpenClawBrain 0.4.2 release notes
 
-Planned packages for this patch wave:
+Published packages for this patch wave:
 
 - plugin/runtime payload stays at `@openclawbrain/openclaw@0.4.0`
 - operator CLI advances to `@openclawbrain/cli@0.4.2`

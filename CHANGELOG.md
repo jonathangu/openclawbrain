@@ -6,11 +6,9 @@ It should help an operator understand two different truths:
 - what was actually published to npm
 - what has landed on `main` since that publish
 
-## 0.4.2 (pending publish)
+## 0.4.2
 
-This repo state is ready for the next CLI patch release. Until that publish happens, npm still exposes `@openclawbrain/cli@0.4.1`.
-
-Planned package versions for this repo state:
+Published package versions for this release:
 - `@openclawbrain/openclaw@0.4.0`
 - `@openclawbrain/cli@0.4.2`
 
@@ -20,7 +18,7 @@ Notable CLI patch work since `0.4.1`:
 - the CLI and split learn flow prefer the canonical brain-store traced-learning status when available, falling back to the activation-root file as runtime metadata
 - the CLI tarball now includes the full operator module surface imported by `dist/src/cli.js`, and tarball verification explicitly covers the traced-learning bridge plus attachment-policy truth helper
 
-Currently published package versions remain `@openclawbrain/openclaw@0.4.0` (plugin/runtime) and `@openclawbrain/cli@0.4.1` (operator CLI).
+Published package versions are `@openclawbrain/openclaw@0.4.0` (plugin/runtime) and `@openclawbrain/cli@0.4.2` (operator CLI).
 
 ## 0.4.1
 

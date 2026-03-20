@@ -1,6 +1,6 @@
 # @openclawbrain/cli
 
-`@openclawbrain/cli@0.4.2` is the repo's next operator CLI package surface for OpenClawBrain. The latest published CLI remains `0.4.1` until this repo state is shipped.
+`@openclawbrain/cli@0.4.2` is the published operator CLI package for OpenClawBrain.
 
 Primary public flow:
 
