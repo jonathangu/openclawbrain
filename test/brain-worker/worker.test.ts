@@ -289,7 +289,7 @@ describe("BrainWorker evidence resolution", () => {
     expect(supervision.find((entry) => entry.source === "scanner")?.resolution).toBe("discarded_lower_trust");
     expect(supervision.find((entry) => entry.source === "human")?.metadata).toMatchObject({
       resolvedTraceId: "bt_ep_1",
-      traceRequestDigest: "req_bt_ep_1",
+      traceRequestDigest: hashQuery("test query"),
       traceSelectedNodeIds: ["node_1"],
     });
 
