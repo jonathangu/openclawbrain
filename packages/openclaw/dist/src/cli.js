@@ -18,6 +18,7 @@ import { describeOpenClawBrainInstallIdentity, describeOpenClawBrainInstallLayou
 import { DEFAULT_WATCH_POLL_INTERVAL_SECONDS, buildNormalizedEventExportFromScannedEvents, bootstrapRuntimeAttach, buildOperatorSurfaceReport, clearOpenClawProfileRuntimeLoadProof, compileRuntimeContext, createAsyncTeacherLiveLoop, createOpenClawLocalSessionTail, createRuntimeEventExportScanner, describeCurrentProfileBrainStatus, formatOperatorRollbackReport, listOpenClawProfileRuntimeLoadProofs, loadRuntimeEventExportBundle, loadWatchTeacherSnapshotState, persistWatchTeacherSnapshot, rollbackRuntimeAttach, resolveAttachmentRuntimeLoadProofsPath, resolveOperatorTeacherSnapshotPath, resolveAsyncTeacherLiveLoopSnapshotPath, resolveWatchSessionTailCursorPath, resolveWatchStateRoot, resolveWatchTeacherSnapshotPath, scanLiveEventExport, scanRecordedSession, summarizeLearningPathFromMaterialization, summarizeNormalizedEventExportLabelFlow, writeScannedEventExportBundle } from "./index.js";
 import { appendLearningUpdateLogs } from "./learning-spine.js";
 import { buildPassiveLearningSessionExportFromOpenClawSessionStore } from "./local-session-passive-learning.js";
+import { buildTracedLearningStatusSurface, writeTracedLearningBridge } from "./traced-learning-bridge.js";
 import { discoverOpenClawSessionStores, loadOpenClawSessionIndex, readOpenClawSessionFile } from "./session-store.js";
 import { readOpenClawBrainProviderDefaults, readOpenClawBrainProviderConfig, readOpenClawBrainProviderConfigFromSources, resolveOpenClawBrainProviderDefaultsPath } from "./provider-config.js";
 const OPENCLAWBRAIN_EMBEDDER_BASE_URL_ENV = "OPENCLAWBRAIN_EMBEDDER_BASE_URL";
@@ -1257,6 +1258,10 @@ function summarizeDisplayedStatus(status, installHook) {
         ? "fail"
         : status.brainStatus.status;
 }
+function formatTracedLearningSurface(surface) {
+    const detail = surface.error === null ? surface.detail : `${surface.detail}: ${surface.error}`;
+    return `present=${yesNo(surface.present)} updated=${surface.updatedAt ?? "none"} routes=${surface.routeTraceCount} supervision=${surface.supervisionCount} updates=${surface.routerUpdateCount} teacher=${surface.teacherArtifactCount} pg=${surface.pgVersionUsed ?? "none"} pack=${surface.materializedPackId ?? "none"} detail=${detail}`;
+}
 function buildCompactStatusHeader(status, report, options) {
     const installHook = summarizeStatusInstallHook(options.openclawHome);
     const hookLoad = summarizeStatusHookLoad(installHook, status);
@@ -1272,6 +1277,7 @@ function buildCompactStatusHeader(status, report, options) {
         openclawHome: options.openclawHome,
         status
     });
+    const tracedLearning = options.tracedLearning ?? buildTracedLearningStatusSurface(status.host.activationRoot);
     return [
         `lifecycle   attach=${status.attachment.state} learner=${yesNo(status.passiveLearning.learnerRunning)} watch=${summarizeStatusWatchState(status)} export=${status.passiveLearning.exportState} promote=${summarizeStatusPromotionState(status)} serve=${summarizeStatusServeReality(status)}`,
         `hook        install=${hookLoad.installState} loadability=${hookLoad.loadability} loadProof=${hookLoad.loadProof} layout=${status.hook.installLayout ?? "unverified"} additional=${status.hook.additionalInstallCount ?? 0} detail=${hookLoad.detail}`,
@@ -1286,6 +1292,7 @@ function buildCompactStatusHeader(status, report, options) {
         `teacher     model=${teacher.model} enabled=${yesNo(teacher.enabled)} healthy=${yesNo(teacher.healthy)} stale=${yesNo(teacher.stale)} idle=${yesNo(teacher.idle)} cycle=${teacher.latestCycle} why=${teacher.detail}`,
         `embedder    model=${embedder.model} provisioned=${yesNo(embedder.provisioned)} live=${yesNo(embedder.live)} why=${embedder.detail}`,
         `routeFn     available=${yesNo(routeFn.available)} freshness=${routeFn.freshness} trained=${routeFn.trainedAt ?? "none"} updated=${routeFn.updatedAt ?? "none"} used=${routeFn.usedAt ?? "none"} why=${routeFn.detail}`,
+        `traced      ${formatTracedLearningSurface(tracedLearning)}`,
         `embeddings  provider=${embeddings.provider} provisioned=${embeddings.provisionedState} live=${embeddings.liveState} stored=${embeddings.embeddedEntryCount ?? "none"}/${embeddings.totalEntryCount ?? "none"} models=${liveModels}`,
         `localLLM    detected=${yesNo(localLlm.detected)} enabled=${yesNo(localLlm.enabled)} provider=${localLlm.provider} model=${localLlm.model}`,
         `alerts      service_risk=${formatStatusAlertLine(alerts.serviceRisk)} degraded_brain=${formatStatusAlertLine(alerts.degradedBrain)} cosmetic_noise=${formatStatusAlertLine(alerts.cosmeticNoise)}`
@@ -1302,6 +1309,7 @@ function formatCurrentProfileStatusSummary(status, report, targetInspection, opt
         openclawHome: options.openclawHome,
         status
     });
+    const tracedLearning = options.tracedLearning ?? buildTracedLearningStatusSurface(status.host.activationRoot);
     const profileIdSuffix = status.profile.profileId === null ? "" : ` id=${status.profile.profileId}`;
     const targetLine = targetInspection === null
         ? `target      activation=${status.host.activationRoot} source=activation_root_only`
@@ -1335,6 +1343,7 @@ function formatCurrentProfileStatusSummary(status, report, targetInspection, opt
         `graph       source=${report.graph.runtimePlasticitySource ?? "none"} blocks=${report.graph.blockCount ?? "none"} strongest=${report.graph.strongestBlockId ?? "none"} ops=${formatStructuralOps(report)} latest=${report.graph.latestMaterialization.packId ?? "none"} latestChanged=${yesNo(report.graph.latestMaterialization.changed)} connect=${formatGraphConnectDiagnostics(report.graph.latestMaterialization.connectDiagnostics ?? report.graph.connectDiagnostics)} summary=${formatGraphSummary(report)}`,
         `path        ${formatLearningPathSummary(report.learningPath)}`,
         `learning    state=${report.learning.backlogState} bootstrapped=${yesNo(report.learning.bootstrapped)} mode=${report.learning.mode} next=${report.learning.nextPriorityLane} priority=${report.learning.nextPriorityBucket} pending=${report.learning.pendingLive ?? "none"}/${report.learning.pendingBackfill ?? "none"} buckets=${formatLearningBuckets(report)} warn=${formatLearningWarnings(report)} lastPack=${report.learning.lastMaterializedPackId ?? "none"} detail=${report.learning.detail}`,
+        `traced      ${formatTracedLearningSurface(tracedLearning)}`,
         `teacherProof ${formatTeacherLoopSummary(report)}`,
         `watch       cadence=${report.teacherLoop.learningCadence} scan=${report.teacherLoop.scanPolicy} heartbeat=${report.teacherLoop.lastHeartbeatAt ?? "none"} interval=${report.teacherLoop.pollIntervalSeconds ?? "none"} replayed=${report.teacherLoop.replayedBundleCount ?? "none"}/${report.teacherLoop.replayedEventCount ?? "none"} exported=${report.teacherLoop.exportedBundleCount ?? "none"}/${report.teacherLoop.exportedEventCount ?? "none"} tail=${report.teacherLoop.sessionTailSessionsTracked ?? "none"}/${report.teacherLoop.sessionTailBridgedEventCount ?? "none"} tailState=${report.teacherLoop.localSessionTailNoopReason ?? "none"} lastJob=${report.teacherLoop.lastAppliedMaterializationJobId ?? "none"} lastPack=${report.teacherLoop.lastMaterializedPackId ?? "none"}`,
         `embeddings  provider=${embeddings.provider} provisioned=${embeddings.provisionedState} live=${embeddings.liveState} stored=${embeddings.embeddedEntryCount ?? "none"}/${embeddings.totalEntryCount ?? "none"} models=${liveModels}`,
@@ -4244,6 +4253,26 @@ function runLearnCommand(parsed) {
             lastAppliedMaterializationJobId: lastMaterialization?.jobId ?? null
         }
     });
+    writeTracedLearningBridge(activationRoot, {
+        updatedAt: now,
+        routeTraceCount: lastMaterialization?.candidate.summary.learnedRouter.routeTraceCount ?? serveTimeLearning.decisionLogCount,
+        supervisionCount,
+        routerUpdateCount,
+        teacherArtifactCount: teacherArtifacts.length,
+        pgVersionRequested: learnPathReport.pgVersionRequested,
+        pgVersionUsed: learnPathReport.pgVersionUsed,
+        decisionLogCount: learnPathReport.decisionLogCount,
+        fallbackReason: learnPathReport.fallbackReason,
+        routerNoOpReason,
+        materializedPackId,
+        promoted,
+        baselinePersisted,
+        source: {
+            command: "learn",
+            exportDigest: learningExport.provenance.exportDigest,
+            teacherSnapshotPath
+        }
+    });
     const summaryMessage = materializedPackId === null
         ? `Scanned ${totalSessions} sessions, ${totalEvents} new events, no candidate materialized, no promotion.`
         : `Scanned ${totalSessions} sessions, ${totalEvents} new events, materialized ${materializedPackId}, promoted.${connectSummary}`;
@@ -5546,8 +5575,12 @@ export function runOperatorCli(argv = process.argv.slice(2)) {
         teacherSnapshotPath: resolveOperatorTeacherSnapshotPath(activationRoot, statusOrRollback.input.teacherSnapshotPath)
     };
     const status = describeCurrentProfileBrainStatus(operatorInput);
+    const tracedLearning = buildTracedLearningStatusSurface(activationRoot);
     if (statusOrRollback.json) {
-        console.log(JSON.stringify(status, null, 2));
+        console.log(JSON.stringify({
+            ...status,
+            tracedLearning
+        }, null, 2));
     }
     else {
         const report = buildOperatorSurfaceReport(operatorInput);
@@ -5558,13 +5591,15 @@ export function runOperatorCli(argv = process.argv.slice(2)) {
         if (statusOrRollback.detailed) {
             console.log(formatCurrentProfileStatusSummary(status, report, targetInspection, {
                 openclawHome: statusOrRollback.openclawHome,
-                providerConfig
+                providerConfig,
+                tracedLearning
             }));
         }
         else {
             console.log(formatHumanFriendlyStatus(status, report, targetInspection, {
                 openclawHome: statusOrRollback.openclawHome,
-                providerConfig
+                providerConfig,
+                tracedLearning
             }));
         }
     }
