@@ -41,48 +41,61 @@ function makeTrace(params: {
   episodeId: string;
   conversationId: number;
   firedNodes?: string[];
+  queryText?: string;
+  selectedNodeId?: string;
 }): DecisionTrace {
-  const firedNodes = params.firedNodes ?? ["node_1"];
+  const queryText = params.queryText ?? "test query";
+  const firedNodes = params.firedNodes ?? [params.selectedNodeId ?? "node_1"];
+  const selectedNodeId = params.selectedNodeId ?? firedNodes[0] ?? "node_1";
+  const injectedNodeSummaries = firedNodes.map((nodeId, index) => ({
+    nodeId,
+    kind: "workflow" as const,
+    trust: "human" as const,
+    sourceUri: index === 0 ? "PLAYBOOK.md" : null,
+    tags: ["worker"],
+    tokenCount: 12,
+    contentPreview: `Use ${nodeId} for worker route guidance.`,
+  }));
   return {
     id: params.id,
     episodeId: params.episodeId,
     packVersion: 1,
-    queryText: "test query",
+    queryText,
     seedScores: [],
     trajectory: [],
     firedNodes,
     vetoedNodes: [],
-    contextChars: 0,
+    contextChars: 64,
     footer: "trace footer",
     routeTrace: {
-      requestDigest: `req_${params.id}`,
+      requestDigest: hashQuery(queryText),
       conversationId: params.conversationId,
       activePackId: "brain-pack-v1",
       routerIdentity: "brain-graph-traverse.v1",
       candidateNodeIds: [...firedNodes],
       selectedNodeIds: [...firedNodes],
       selectedPathNodeIds: [...firedNodes],
-      injectedNodeSummaries: [],
+      injectedNodeSummaries,
       sourceSummary: {
-        injectedCount: firedNodes.length,
-        kinds: {},
-        trusts: {},
-        sourceUris: [],
+        injectedCount: injectedNodeSummaries.length,
+        kinds: { workflow: injectedNodeSummaries.length },
+        trusts: { human: injectedNodeSummaries.length },
+        sourceUris: injectedNodeSummaries.flatMap((summary) => summary.sourceUri ? [summary.sourceUri] : []),
       },
       selectionMetadata: {
         traceSliceVersion: 1,
-        queryChars: 10,
-        budgetChars: 100,
+        queryChars: queryText.length,
+        budgetChars: 4000,
         maxHops: 8,
         seedCount: 1,
         candidateCount: firedNodes.length,
         hopCount: firedNodes.length,
         firedCount: firedNodes.length,
         vetoedCount: 0,
-        chosenSeedNodeId: null,
-        routeSelectionMs: 1,
-        embeddingMs: 1,
-        totalQueryMs: 2,
+        chosenSeedNodeId: selectedNodeId,
+        routeSelectionMs: 8,
+        embeddingMs: 3,
+        totalQueryMs: 15,
         queryEmbeddingSource: "provided",
       },
     },
@@ -173,6 +186,8 @@ function setup(overrides: {
   replayGate?: () => ReplayGateVerdict;
   applyToCandidateGraph?: (graph: BrainGraph, proposal: MutationProposal) => void;
   applyMutation?: (proposal: MutationProposal) => void;
+  teacher?: unknown;
+  config?: Partial<typeof DEFAULT_BRAIN_CONFIG>;
 } = {}) {
   const dir = mkdtempSync(join(tmpdir(), "brain-worker-test-"));
   tempDirs.push(dir);
@@ -198,7 +213,7 @@ function setup(overrides: {
   const worker = new BrainWorker(
     store,
     graph,
-    null,
+    (overrides.teacher ?? null) as never,
     {
       proposeMutations: vi.fn(() => []),
       applyToCandidateGraph,
@@ -210,6 +225,7 @@ function setup(overrides: {
     {
       ...DEFAULT_BRAIN_CONFIG,
       mutationsEnabled: false,
+      ...(overrides.config ?? {}),
     },
     {
       info: vi.fn(),
@@ -454,6 +470,111 @@ describe("BrainWorker evidence resolution", () => {
     expect(resolved[0]?.resolution).toBe("promoted_to_label");
     expect(resolved[0]?.source).toBe("human");
   });
+
+  it("stages teacher evidence from the latest teacher-eligible trace", async () => {
+    const evaluateTrace = vi.fn(async (trace: DecisionTrace) => ({
+      version: 1 as const,
+      traceId: trace.id,
+      episodeId: trace.episodeId,
+      requestDigest: trace.routeTrace?.requestDigest ?? "",
+      score: 0.7,
+      reason: "selected route slice is directly relevant",
+      input: {
+        version: 1 as const,
+        traceId: trace.id,
+        episodeId: trace.episodeId,
+        queryText: trace.queryText,
+        routeDecision: {
+          requestDigest: trace.routeTrace?.requestDigest ?? "",
+          conversationId: trace.routeTrace?.conversationId ?? null,
+          activePackId: trace.routeTrace?.activePackId ?? null,
+          routerIdentity: trace.routeTrace?.routerIdentity ?? "brain-graph-traverse.v1",
+          candidateNodeIds: [...(trace.routeTrace?.candidateNodeIds ?? [])],
+          selectedNodeIds: [...(trace.routeTrace?.selectedNodeIds ?? [])],
+          selectedPathNodeIds: [...(trace.routeTrace?.selectedPathNodeIds ?? [])],
+          sourceSummary: {
+            injectedCount: trace.routeTrace?.sourceSummary.injectedCount ?? 0,
+            kinds: { ...(trace.routeTrace?.sourceSummary.kinds ?? {}) },
+            trusts: { ...(trace.routeTrace?.sourceSummary.trusts ?? {}) },
+            sourceUris: [...(trace.routeTrace?.sourceSummary.sourceUris ?? [])],
+          },
+          selectionMetadata: {
+            ...(trace.routeTrace?.selectionMetadata ?? {
+              traceSliceVersion: 1,
+              queryChars: trace.queryText.length,
+              budgetChars: 4000,
+              maxHops: 8,
+              seedCount: 1,
+              candidateCount: 1,
+              hopCount: 1,
+              firedCount: 1,
+              vetoedCount: 0,
+              chosenSeedNodeId: null,
+              routeSelectionMs: null,
+              embeddingMs: null,
+              totalQueryMs: null,
+              queryEmbeddingSource: "provided" as const,
+            }),
+          },
+        },
+        selectedContext: trace.routeTrace?.injectedNodeSummaries ?? [],
+      },
+    }));
+    const { store, worker } = setup({
+      teacher: { evaluateTrace },
+      config: { teacherEnabled: true },
+    });
+
+    store.insertEpisode(makeEpisode({ id: "ep_teacher", conversationId: 21, queryText: "how do I open a pull request?" }));
+    store.insertTrace(makeTrace({
+      id: "bt_teacher",
+      episodeId: "ep_teacher",
+      conversationId: 21,
+      queryText: "how do I open a pull request?",
+      selectedNodeId: "node_pr",
+    }));
+
+    await (worker as any).runTeacher();
+
+    expect(evaluateTrace).toHaveBeenCalledTimes(1);
+    const evidence = store.getPendingEvidence(10);
+    expect(evidence).toHaveLength(1);
+    expect(evidence[0]).toMatchObject({
+      episodeId: "ep_teacher",
+      conversationId: 21,
+      source: "teacher",
+      kind: "teacher_review",
+      value: 0.7,
+      reason: "selected route slice is directly relevant",
+      metadata: {
+        teacherLabel: {
+          version: 1,
+          traceId: "bt_teacher",
+          requestDigest: hashQuery("how do I open a pull request?"),
+          input: {
+            routeDecision: {
+              selectedNodeIds: ["node_pr"],
+            },
+          },
+        },
+      },
+    });
+  });
+
+  it("skips teacher evaluation when no teacher-eligible trace exists", async () => {
+    const evaluateTrace = vi.fn();
+    const { store, worker } = setup({
+      teacher: { evaluateTrace },
+      config: { teacherEnabled: true },
+    });
+
+    store.insertEpisode(makeEpisode({ id: "ep_no_trace", conversationId: 22 }));
+
+    await (worker as any).runTeacher();
+
+    expect(evaluateTrace).not.toHaveBeenCalled();
+    expect(store.getPendingEvidence()).toHaveLength(0);
+  });
 });
 
 describe("BrainWorker promotion verdicts", () => {
@@ -540,6 +661,9 @@ describe("BrainWorker promotion verdicts", () => {
     expect(store.getTrainingStateJson("last_replay_gate_verdict_json")).toBeNull();
     expect(applyMutation).toHaveBeenCalledTimes(3);
     expect(onPromotionReady).toHaveBeenCalledTimes(1);
-    expect(onPromotionReady.mock.calls[0]?.[0]?.promotionVerdict?.bundleVerdicts?.[0]?.reason?.code).toBe("promoted");
+    const promotionReadyCall = ((onPromotionReady.mock.calls as unknown) as Array<[{
+      promotionVerdict?: { bundleVerdicts?: Array<{ reason?: { code?: string } }> };
+    }]>) [0]?.[0];
+    expect(promotionReadyCall?.promotionVerdict?.bundleVerdicts?.[0]?.reason?.code).toBe("promoted");
   });
 });

@@ -18,6 +18,7 @@ import type { PackManager } from "../brain-core/pack.js";
 import { computeReinforceUpdates, updateBaseline, applyWeightUpdates } from "../brain-core/update.js";
 import { decayAllWeights } from "../brain-core/decay.js";
 import { computeHealth } from "../brain-core/health.js";
+import { isTeacherEligibleTrace } from "../brain-core/teacher.js";
 import { clusterMutationsIntoBundles, evaluateBundle, DEFAULT_BUNDLE_CONFIG } from "../brain-core/bundle-evaluator.js";
 import type { BundleEvaluationConfig, MutationBundle } from "../brain-core/bundle-evaluator.js";
 
@@ -389,20 +390,36 @@ export class BrainWorker {
 
     const unlabeled = this.store.getUnlabeledEpisodes(3);
     for (const episode of unlabeled) {
-      const { score, reason } = await this.teacher.evaluate(episode);
-      if (Math.abs(score) > 0.05) {
-        this.store.insertEvidence({
-          episodeId: episode.id,
-          conversationId: episode.conversationId,
-          source: "teacher",
-          kind: "teacher_review",
-          value: score,
-          confidence: 0.6,
-          reason,
-          contentSnippet: episode.queryText.slice(0, 240),
-          metadata: { queryText: episode.queryText },
-        });
+      const trace = this.store.getLatestTraceForEpisode(episode.id);
+      if (!trace || !isTeacherEligibleTrace(trace)) {
+        continue;
       }
+
+      const review = await this.teacher.evaluateTrace(trace);
+      if (!review || Math.abs(review.score) <= 0.05) {
+        continue;
+      }
+
+      this.store.insertEvidence({
+        episodeId: episode.id,
+        conversationId: episode.conversationId,
+        source: "teacher",
+        kind: "teacher_review",
+        value: review.score,
+        confidence: 0.6,
+        reason: review.reason,
+        contentSnippet: episode.queryText.slice(0, 240),
+        metadata: {
+          queryText: episode.queryText,
+          teacherLabel: {
+            version: review.version,
+            traceId: review.traceId,
+            episodeId: review.episodeId,
+            requestDigest: review.requestDigest,
+            input: review.input,
+          },
+        },
+      });
     }
   }
 
@@ -653,7 +670,7 @@ export class BrainWorker {
         this.store.resolveMutation(proposal.id, "rejected");
       }
       if (pendingMutations.length > 0) {
-        this.recordLegacyPromotionDecision("promotion_rejected", pendingMutations, gate.reason, gate.health);
+        this.recordLegacyPromotionDecision("promotion_rejected", pendingMutations, gate.reason.summary, gate.health);
       }
       return;
     }

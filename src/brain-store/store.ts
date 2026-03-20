@@ -983,7 +983,7 @@ export class BrainStore {
     return row ? this.toTrace(row) : null;
   }
 
-  getTraceForEpisode(episodeId: string): DecisionTrace | null {
+  getLatestTraceForEpisode(episodeId: string): DecisionTrace | null {
     const row = this.db.prepare(`
       SELECT *
       FROM brain_traces
@@ -992,6 +992,10 @@ export class BrainStore {
       LIMIT 1
     `).get(episodeId) as Record<string, unknown> | undefined;
     return row ? this.toTrace(row) : null;
+  }
+
+  getTraceForEpisode(episodeId: string): DecisionTrace | null {
+    return this.getLatestTraceForEpisode(episodeId);
   }
 
   private toTrace(row: Record<string, unknown>): DecisionTrace {

@@ -37,6 +37,7 @@ describe("BrainStore learning journal", () => {
       candidateScore: null,
       expectedGain: 0.45,
       rejectionReason: null,
+      verdict: null,
       createdAt: 100,
       resolvedAt: null,
     };
