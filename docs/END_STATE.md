@@ -56,7 +56,7 @@ These are inherited LCM surfaces and should stay stable unless a failing test fo
 - paper-faithful routing core exists
 - live runtime decisioning exists
 - child-worker serving boundary is real
-- split packages `@openclawbrain/openclaw@0.4.0` and `@openclawbrain/cli@0.4.0` are published
+- split packages `@openclawbrain/openclaw@0.4.0` and `@openclawbrain/cli@0.4.1` are published
 - the public-registry plugin install plus `npx` CLI flow has already passed on `redogfood`
 - deterministic session-bound `brain_teach` proof exists
 - deterministic runtime proof for teach retrieval and serve-from-last-promoted-pack exists
@@ -175,7 +175,7 @@ Already true:
 - restart accounting, heartbeat truth, reload acknowledgements, stale-lease takeover, and second-writer refusal are covered
 - `in_process` is a dev/debug fallback, not the production story
 
-**(DONE - 335 tests pass including all child worker tests)
+**(DONE)**
 
 ## Phase 3 — Finish the evidence pipeline
 
@@ -195,7 +195,7 @@ Already true:
 - trust-ordered one-winner-per-episode resolution is real
 - structured self/scanner evidence now covers more real cases
 
-**(DONE - 28 evidence/worker tests pass)
+**(DONE)**
 
 ## Phase 4 — Replay-gated mutation bundles
 
@@ -246,8 +246,8 @@ Primary files:
 - `CHANGELOG.md`
 
 Current truth:
-- split packages `@openclawbrain/openclaw@0.4.0` and `@openclawbrain/cli@0.4.0` are published
-- the proven public lane is `openclaw plugins install @openclawbrain/openclaw@0.4.0` plus `npx @openclawbrain/cli@0.4.0 openclawbrain ...`
+- split packages `@openclawbrain/openclaw@0.4.0` and `@openclawbrain/cli@0.4.1` are published
+- the proven public lane is `openclaw plugins install @openclawbrain/openclaw@0.4.0` plus `npx @openclawbrain/cli@0.4.1 openclawbrain ...`
 - `@jonathangu/openclawbrain@0.3.5` is now a compatibility holdover, not the main operator story
 
 Still open:

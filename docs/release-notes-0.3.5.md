@@ -1,11 +1,8 @@
 # OpenClawBrain 0.3.5 release notes
 
-Published packages for the `0.3.5` wave:
+Published package: `@jonathangu/openclawbrain@0.3.5`
 
-- canonical front door: `@openclawbrain/openclaw@0.3.5`
-- compatibility package: `@jonathangu/openclawbrain@0.3.5`
-
-New installs and reinstalls should use the canonical front door. The compatibility package remains for older plugin/wrapper installs that have not migrated yet.
+This was the last release on the combined `@jonathangu/openclawbrain` package before the 0.4.0 split into `@openclawbrain/openclaw` (plugin/runtime) and `@openclawbrain/cli` (operator CLI). The `packages/openclaw` tree was recovered into the repo at this release, but the `@openclawbrain/openclaw` scope was not published until 0.4.0.
 
 ## What changed
 

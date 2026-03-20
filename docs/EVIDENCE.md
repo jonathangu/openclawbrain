@@ -150,9 +150,9 @@ For an operator-grade release, the proof ladder should also be enforced by CI or
 
 ## Current proof truth
 
-As of the current trunk (commit `f0df9e8`):
+As of the current trunk:
 
-- **Level 1:** ✅ real — mechanism tests pass (335 tests)
+- **Level 1:** ✅ real — mechanism tests pass
 - **Level 2:** ✅ real — replay gate exists, mutation bundles implemented
 - **Level 3:** ✅ real — shadow mode recorded with episode/trace ids
 - **Level 4:** ✅ frozen — sterile host harness passes all 7 assertions

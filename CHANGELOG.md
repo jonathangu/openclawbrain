@@ -10,7 +10,11 @@ It should help an operator understand two different truths:
 
 The current repo may move ahead of the published split packages again. If it does, this section should describe that drift plainly instead of pretending the last npm release says everything.
 
-At the moment, trunk is intended to align with the published `0.4.1` CLI patch plus the `0.4.0` plugin/runtime payload.
+Notable trunk-only work since the `0.4.1` CLI patch:
+- traced-learning status now persists into the canonical brain store (`brain_training_state.traced_learning_status_surface_json` in `state.db`) rather than relying solely on the activation-root watched file
+- the CLI and split learn flow prefer the canonical brain-store traced-learning status when available, falling back to the activation-root file as runtime metadata
+
+Published package versions remain `@openclawbrain/openclaw@0.4.0` (plugin/runtime) and `@openclawbrain/cli@0.4.1` (operator CLI).
 
 ## 0.4.1
 

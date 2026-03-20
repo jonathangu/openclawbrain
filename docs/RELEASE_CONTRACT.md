@@ -61,7 +61,7 @@ These are real enough to build on, but not frozen enough to oversell.
   - the sterile harness no longer writes the dead `plugins.slots.contextEngine` slot
 - Boundary:
   - raw prompt-driven `openclaw agent --local` is **not** the release proof boundary for `brain_teach`
-  - the full sterile host harness is still **not frozen end to end** because it currently stalls during `openclawbrain init` before the host-turn proof bundle completes
+  - the full sterile host harness is still **not frozen end to end** because the host-turn proof bundle still stalls before completion on the sterile boundary
   - until that host lane is frozen, short-static host semantics and the final narrow worker-down host claim are still not closed at the host boundary
 
 ### Child-worker serving boundary
@@ -82,9 +82,9 @@ These are real enough to build on, but not frozen enough to oversell.
 - Current files: `package.json`, `packages/openclaw/package.json`, `packages/cli/package.json`, `README.md`, `docs/lifecycle.md`, `docs/configuration.md`, `docs/EVIDENCE.md`, future CI/release workflow surfaces
 - Truth: the split packages are published and the public-registry operator lane is real:
   - `openclaw plugins install @openclawbrain/openclaw@0.4.0`
-  - `npx @openclawbrain/cli@0.4.0 openclawbrain install --openclaw-home ~/.openclaw`
+  - `npx @openclawbrain/cli@0.4.1 openclawbrain install --openclaw-home ~/.openclaw`
   - `openclaw gateway restart`
-  - `npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed`
+  - `npx @openclawbrain/cli@0.4.1 openclawbrain status --openclaw-home ~/.openclaw --detailed`
 - Boundary: some hosts still warn about a plugin id mismatch because the manifest uses `openclawbrain` while the package/entry hint uses `openclaw`; release verification and docs alignment still need to keep that caveat visible rather than implying the seam is fixed.
 
 ## 3. Not done yet
