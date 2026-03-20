@@ -1,6 +1,10 @@
 import type { AssembleContextResult } from "../assembler.js";
 import type { ContextEngine, AgentMessage } from "../openclaw-sdk-compat.js";
-import type { TraversalResult } from "../brain-core/types.js";
+import type {
+  DecisionRouteTrace,
+  DecisionTraceInjectedNodeSummary,
+  TraversalResult,
+} from "../brain-core/types.js";
 import type { BrainService } from "./service.js";
 import { decideSummaryRouting } from "./summary-routing-policy.js";
 
@@ -26,6 +30,8 @@ export type BrainAssembledContextResult = AssembleContextResult & {
     footer?: string | null;
   };
 };
+
+const COMPACT_INJECTED_PREVIEW_CHARS = 96;
 
 function decisionFooter(mode: BrainAssemblyDecisionMode): string {
   switch (mode) {
@@ -64,7 +70,7 @@ function extractText(content: unknown): string {
     .trim();
 }
 
-function buildBrainContextBlock(result: TraversalResult): string {
+function buildLegacyBrainContextBlock(result: TraversalResult): string {
   const corrections = result.fired.filter((node) => node.kind === "correction");
   const playbooks = result.fired.filter((node) => node.kind === "workflow" || node.kind === "toolcard");
   const evidence = result.fired.filter((node) => node.kind !== "correction" && node.kind !== "workflow" && node.kind !== "toolcard");
@@ -87,6 +93,86 @@ function buildBrainContextBlock(result: TraversalResult): string {
     `Trace: ${result.trace.footer}`,
   ];
   return sections.join("\n");
+}
+
+function compactPreview(content: string): string {
+  const normalized = content.replace(/\s+/g, " ").trim();
+  if (!normalized) {
+    return "(preview unavailable)";
+  }
+  if (normalized.length <= COMPACT_INJECTED_PREVIEW_CHARS) {
+    return normalized;
+  }
+  return `${normalized.slice(0, COMPACT_INJECTED_PREVIEW_CHARS - 1)}…`;
+}
+
+function formatCountMap(counts: Record<string, number | undefined>): string {
+  const entries = Object.entries(counts)
+    .filter((entry): entry is [string, number] => typeof entry[1] === "number" && entry[1] > 0);
+  if (entries.length === 0) {
+    return "none";
+  }
+  return entries.map(([label, count]) => `${label} ${count}`).join(", ");
+}
+
+function formatSourceUri(sourceUri: string | null): string {
+  return sourceUri?.trim() || "unknown source";
+}
+
+function buildCorrectionSummaryLine(summary: DecisionTraceInjectedNodeSummary): string {
+  return `- [${summary.trust}] ${compactPreview(summary.contentPreview)}`;
+}
+
+function buildTypedSummaryLine(summary: DecisionTraceInjectedNodeSummary): string {
+  return `- [${summary.kind}] ${compactPreview(summary.contentPreview)}`;
+}
+
+function buildAuditOverview(routeTrace: DecisionRouteTrace): string {
+  const sourceCount = routeTrace.sourceSummary.sourceUris.length;
+  const sourceLabel = sourceCount === 1 ? "1 source" : `${sourceCount} sources`;
+  return `- Pack ${routeTrace.activePackId ?? "unknown"} · ${routeTrace.sourceSummary.injectedCount} injected nodes · ${sourceLabel}`;
+}
+
+function buildStructuredBrainContextBlock(result: TraversalResult, routeTrace: DecisionRouteTrace): string {
+  const corrections = routeTrace.injectedNodeSummaries.filter((node) => node.kind === "correction");
+  const playbooks = routeTrace.injectedNodeSummaries
+    .filter((node) => node.kind === "workflow" || node.kind === "toolcard");
+  const evidence = routeTrace.injectedNodeSummaries
+    .filter((node) => node.kind !== "correction" && node.kind !== "workflow" && node.kind !== "toolcard");
+
+  const sections = [
+    "OpenClawBrain retrieved context. Prefer correction cards over conflicting heuristics when directly relevant.",
+    "",
+    "## Correction Cards",
+    corrections.length > 0 ? corrections.map(buildCorrectionSummaryLine).join("\n") : "- none",
+    "",
+    "## Route-Selected Summaries",
+    evidence.length > 0 ? evidence.map(buildTypedSummaryLine).join("\n") : "- none",
+    "",
+    "## Toolcards And Playbooks",
+    playbooks.length > 0 ? playbooks.map(buildTypedSummaryLine).join("\n") : "- none",
+    "",
+    "## Provenance And Audit",
+    `- ${result.trace.footer}`,
+    buildAuditOverview(routeTrace),
+    `- Kinds: ${formatCountMap(routeTrace.sourceSummary.kinds)}`,
+    `- Trusts: ${formatCountMap(routeTrace.sourceSummary.trusts)}`,
+    routeTrace.injectedNodeSummaries
+      .map((node) => `- \`${node.nodeId}\` [${node.kind}/${node.trust}] from ${formatSourceUri(node.sourceUri)}`)
+      .join("\n"),
+    "",
+    "## Transcript Support",
+    "- Use the LCM transcript and summary context below for chronology and grounding.",
+  ];
+  return sections.join("\n");
+}
+
+function buildBrainContextBlock(result: TraversalResult): string {
+  const routeTrace = result.trace.routeTrace;
+  if (!routeTrace || routeTrace.injectedNodeSummaries.length === 0) {
+    return buildLegacyBrainContextBlock(result);
+  }
+  return buildStructuredBrainContextBlock(result, routeTrace);
 }
 
 function buildSummaryRoutingPrompt(mode: ReturnType<typeof decideSummaryRouting>["mode"]): string | undefined {
