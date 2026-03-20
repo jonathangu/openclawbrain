@@ -74,6 +74,7 @@ try {
 
   for (const forbiddenFile of [
     "dist/src/cli.js",
+    "dist/src/attachment-policy-truth.js",
     "dist/src/daemon.js",
     "dist/src/import-export.js",
     "dist/src/openclaw-home-layout.js",
@@ -85,6 +86,7 @@ try {
     "dist/src/session-tail.js",
     "dist/src/local-session-passive-learning.js",
     "dist/src/shadow-extension-proof.js",
+    "dist/src/traced-learning-bridge.js",
   ]) {
     assert(!tarballFiles.has(forbiddenFile), `plugin tarball must not include ${forbiddenFile}`);
   }

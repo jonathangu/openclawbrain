@@ -18,9 +18,9 @@ The public split-package architecture from `0.4.0` stays the same; the patch fix
 
 ```bash
 openclaw plugins install @openclawbrain/openclaw@0.4.0
-npx @openclawbrain/cli@0.4.1 openclawbrain install --openclaw-home ~/.openclaw --shared
+npx @openclawbrain/cli@0.4.1 install --openclaw-home ~/.openclaw --shared
 openclaw gateway restart
-npx @openclawbrain/cli@0.4.1 openclawbrain status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.1 status --openclaw-home ~/.openclaw --detailed
 ```
 
 ## Why this matters

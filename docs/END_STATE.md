@@ -56,7 +56,7 @@ These are inherited LCM surfaces and should stay stable unless a failing test fo
 - paper-faithful routing core exists
 - live runtime decisioning exists
 - child-worker serving boundary is real
-- split packages `@openclawbrain/openclaw@0.4.0` and `@openclawbrain/cli@0.4.1` are published
+- split packages `@openclawbrain/openclaw@0.4.0` and `@openclawbrain/cli@0.4.2` are published
 - the public-registry plugin install plus `npx` CLI flow has already passed on `redogfood`
 - deterministic session-bound `brain_teach` proof exists
 - deterministic runtime proof for teach retrieval and serve-from-last-promoted-pack exists
@@ -246,8 +246,8 @@ Primary files:
 - `CHANGELOG.md`
 
 Current truth:
-- split packages `@openclawbrain/openclaw@0.4.0` and `@openclawbrain/cli@0.4.1` are published
-- the proven public lane is `openclaw plugins install @openclawbrain/openclaw@0.4.0` plus `npx @openclawbrain/cli@0.4.1 openclawbrain ...`
+- split packages `@openclawbrain/openclaw@0.4.0` and `@openclawbrain/cli@0.4.2` are published
+- the proven public lane is `openclaw plugins install @openclawbrain/openclaw@0.4.0` plus `npx @openclawbrain/cli@0.4.2 ...`
 - `@jonathangu/openclawbrain@0.3.5` is now a compatibility holdover, not the main operator story
 
 Still open:

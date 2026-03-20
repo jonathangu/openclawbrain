@@ -15,6 +15,7 @@ import { resolveActivationRoot } from "./resolve-activation-root.js";
 import { describeOpenClawHomeInspection, discoverOpenClawHomes, formatOpenClawHomeLayout, formatOpenClawHomeProfileSource, inspectOpenClawHome } from "./openclaw-home-layout.js";
 import { inspectOpenClawBrainHookStatus, inspectOpenClawBrainPluginAllowlist } from "./openclaw-hook-truth.js";
 import { describeOpenClawBrainInstallIdentity, describeOpenClawBrainInstallLayout, findInstalledOpenClawBrainPlugin, getOpenClawBrainKnownPluginIds, pinInstalledOpenClawBrainPluginActivationRoot, resolveOpenClawBrainInstallTarget } from "./openclaw-plugin-install.js";
+import { loadAttachmentPolicyDeclaration, resolveEffectiveAttachmentPolicyTruth, writeAttachmentPolicyDeclaration } from "./attachment-policy-truth.js";
 import { DEFAULT_WATCH_POLL_INTERVAL_SECONDS, buildNormalizedEventExportFromScannedEvents, bootstrapRuntimeAttach, buildOperatorSurfaceReport, clearOpenClawProfileRuntimeLoadProof, compileRuntimeContext, createAsyncTeacherLiveLoop, createOpenClawLocalSessionTail, createRuntimeEventExportScanner, describeCurrentProfileBrainStatus, formatOperatorRollbackReport, listOpenClawProfileRuntimeLoadProofs, loadRuntimeEventExportBundle, loadWatchTeacherSnapshotState, persistWatchTeacherSnapshot, rollbackRuntimeAttach, resolveAttachmentRuntimeLoadProofsPath, resolveOperatorTeacherSnapshotPath, resolveAsyncTeacherLiveLoopSnapshotPath, resolveWatchSessionTailCursorPath, resolveWatchStateRoot, resolveWatchTeacherSnapshotPath, scanLiveEventExport, scanRecordedSession, summarizeLearningPathFromMaterialization, summarizeNormalizedEventExportLabelFlow, writeScannedEventExportBundle } from "./index.js";
 import { appendLearningUpdateLogs } from "./learning-spine.js";
 import { buildPassiveLearningSessionExportFromOpenClawSessionStore } from "./local-session-passive-learning.js";
@@ -860,6 +861,56 @@ function summarizeStatusAttachmentTruth(input) {
             runtimeProofPath: runtimeProofs.path,
             runtimeProofError: runtimeProofs.error
         })
+    };
+}
+function normalizeAttachmentPolicyMode(value) {
+    return value === "undeclared" || value === "dedicated" || value === "shared"
+        ? value
+        : null;
+}
+function applyAttachmentPolicyTruth(status, report) {
+    const referenceCount = findInstalledHookReferencesForActivationRoot({
+        activationRoot: status.host.activationRoot
+    }).length;
+    const declaration = loadAttachmentPolicyDeclaration(status.host.activationRoot);
+    const resolvedPolicy = resolveEffectiveAttachmentPolicyTruth({
+        statusPolicy: normalizeAttachmentPolicyMode(status.attachment.policyMode),
+        reportPolicy: report === null
+            ? null
+            : normalizeAttachmentPolicyMode(report.manyProfile.declaredAttachmentPolicy),
+        declaredPolicy: declaration.declaration?.policy ?? null,
+        referenceCount
+    });
+    const effectivePolicy = resolvedPolicy.effectivePolicy;
+    if (effectivePolicy === null) {
+        return {
+            status,
+            report
+        };
+    }
+    const nextStatusPolicy = resolvedPolicy.statusPolicy;
+    const nextReportPolicy = report === null
+        ? null
+        : resolvedPolicy.reportPolicy;
+    return {
+        status: nextStatusPolicy === status.attachment.policyMode
+            ? status
+            : {
+                ...status,
+                attachment: {
+                    ...status.attachment,
+                    policyMode: nextStatusPolicy
+                }
+            },
+        report: report === null || nextReportPolicy === report.manyProfile.declaredAttachmentPolicy
+            ? report
+            : {
+                ...report,
+                manyProfile: {
+                    ...report.manyProfile,
+                    declaredAttachmentPolicy: nextReportPolicy
+                }
+            }
     };
 }
 function runOllamaProbe(args, baseUrl) {
@@ -3303,6 +3354,13 @@ function runProfileHookAttachCommand(parsed) {
     steps.push(pluginConfigRepair.detail);
     const learnerService = ensureLifecycleLearnerService(parsed.activationRoot);
     steps.push(learnerService.detail);
+    const attachmentPolicyDeclaration = writeAttachmentPolicyDeclaration({
+        activationRoot: parsed.activationRoot,
+        policy: parsed.shared ? "shared" : "dedicated",
+        source: parsed.command,
+        openclawHome: parsed.openclawHome
+    });
+    steps.push(`Recorded attachment policy declaration: ${attachmentPolicyDeclaration.declaration.policy} at ${shortenPath(attachmentPolicyDeclaration.path)}`);
     const brainFeedback = buildInstallBrainFeedbackSummary({
         parsed,
         targetInspection,
@@ -5581,27 +5639,28 @@ export function runOperatorCli(argv = process.argv.slice(2)) {
     };
     const status = describeCurrentProfileBrainStatus(operatorInput);
     const tracedLearning = buildTracedLearningStatusSurface(activationRoot);
+    const normalizedStatusAndReport = applyAttachmentPolicyTruth(status, statusOrRollback.json ? null : buildOperatorSurfaceReport(operatorInput));
     if (statusOrRollback.json) {
         console.log(JSON.stringify({
-            ...status,
+            ...normalizedStatusAndReport.status,
             tracedLearning
         }, null, 2));
     }
     else {
-        const report = buildOperatorSurfaceReport(operatorInput);
+        const report = normalizedStatusAndReport.report;
         const providerConfig = readOpenClawBrainProviderConfigFromSources({
             env: process.env,
             activationRoot
         });
         if (statusOrRollback.detailed) {
-            console.log(formatCurrentProfileStatusSummary(status, report, targetInspection, {
+            console.log(formatCurrentProfileStatusSummary(normalizedStatusAndReport.status, report, targetInspection, {
                 openclawHome: statusOrRollback.openclawHome,
                 providerConfig,
                 tracedLearning
             }));
         }
         else {
-            console.log(formatHumanFriendlyStatus(status, report, targetInspection, {
+            console.log(formatHumanFriendlyStatus(normalizedStatusAndReport.status, report, targetInspection, {
                 openclawHome: statusOrRollback.openclawHome,
                 providerConfig,
                 tracedLearning

@@ -6,15 +6,21 @@ It should help an operator understand two different truths:
 - what was actually published to npm
 - what has landed on `main` since that publish
 
-## Unreleased (current trunk after 0.4.1)
+## 0.4.2 (pending publish)
 
-The current repo may move ahead of the published split packages again. If it does, this section should describe that drift plainly instead of pretending the last npm release says everything.
+This repo state is ready for the next CLI patch release. Until that publish happens, npm still exposes `@openclawbrain/cli@0.4.1`.
 
-Notable trunk-only work since the `0.4.1` CLI patch:
+Planned package versions for this repo state:
+- `@openclawbrain/openclaw@0.4.0`
+- `@openclawbrain/cli@0.4.2`
+
+Notable CLI patch work since `0.4.1`:
+- install/attach now persist declared attachment policy under `activation-root/attachment-truth/policy-declaration.json`, and later `status` reads use that truth instead of drifting back to `policy=null` / `undeclared`
 - traced-learning status now persists into the canonical brain store (`brain_training_state.traced_learning_status_surface_json` in `state.db`) rather than relying solely on the activation-root watched file
 - the CLI and split learn flow prefer the canonical brain-store traced-learning status when available, falling back to the activation-root file as runtime metadata
+- the CLI tarball now includes the full operator module surface imported by `dist/src/cli.js`, and tarball verification explicitly covers the traced-learning bridge plus attachment-policy truth helper
 
-Published package versions remain `@openclawbrain/openclaw@0.4.0` (plugin/runtime) and `@openclawbrain/cli@0.4.1` (operator CLI).
+Currently published package versions remain `@openclawbrain/openclaw@0.4.0` (plugin/runtime) and `@openclawbrain/cli@0.4.1` (operator CLI).
 
 ## 0.4.1
 
@@ -32,9 +38,9 @@ Deep release note:
 - keeps the plugin/runtime payload at `@openclawbrain/openclaw@0.4.0`
 - publishes a CLI-only patch so the operator lane becomes:
   - `openclaw plugins install @openclawbrain/openclaw@0.4.0`
-  - `npx @openclawbrain/cli@0.4.1 openclawbrain install --openclaw-home ~/.openclaw`
+  - `npx @openclawbrain/cli@0.4.1 install --openclaw-home ~/.openclaw`
   - `openclaw gateway restart`
-  - `npx @openclawbrain/cli@0.4.1 openclawbrain status --openclaw-home ~/.openclaw --detailed`
+  - `npx @openclawbrain/cli@0.4.1 status --openclaw-home ~/.openclaw --detailed`
 - fixes the false failure where rerunning `openclawbrain install --shared` against a native package plugin that is already pinned to the requested activation root used to throw instead of succeeding as a no-op
 - preserves truthful failure behavior when the installed loader entry really is missing a patchable `ACTIVATION_ROOT` constant
 - records the real-host shared-home rerun proof on the shared Mac mini instead of treating the fix as repo-only
@@ -63,9 +69,9 @@ Deep release note:
   - `@openclawbrain/cli@0.4.0` is the operator CLI
 - makes the native plugin install plus CLI attach flow the canonical public lane:
   - `openclaw plugins install @openclawbrain/openclaw@0.4.0`
-  - `npx @openclawbrain/cli@0.4.0 openclawbrain install --openclaw-home ~/.openclaw`
+  - `npx @openclawbrain/cli@0.4.0 install --openclaw-home ~/.openclaw`
   - `openclaw gateway restart`
-  - `npx @openclawbrain/cli@0.4.0 openclawbrain status --openclaw-home ~/.openclaw --detailed`
+  - `npx @openclawbrain/cli@0.4.0 status --openclaw-home ~/.openclaw --detailed`
 - records that the exact public-registry flow already passed on the real host `redogfood`
 - keeps the remaining host/plugin warning visible: some hosts still report a plugin id mismatch because the manifest uses `openclawbrain` while the package/entry hint uses `openclaw`; the warning is currently cosmetic, not evidence that install failed
 - leaves `@jonathangu/openclawbrain@0.3.5` in place as a compatibility holdover for older installs rather than the primary operator story
