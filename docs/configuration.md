@@ -13,9 +13,9 @@ If you want the repo's exact truth contract first, read:
 These examples intentionally use the exact public-registry flow that already passed on `redogfood`.
 
 1. install the published plugin/runtime payload into OpenClaw: `openclaw plugins install @openclawbrain/openclaw@0.4.0`
-2. attach it to one OpenClaw home with `npx @openclawbrain/cli@0.4.3 install --openclaw-home ~/.openclaw`
+2. attach it to one OpenClaw home with `npx @openclawbrain/cli@0.4.4 install --openclaw-home ~/.openclaw`
 3. run `openclaw gateway restart`
-4. verify with `npx @openclawbrain/cli@0.4.3 status --openclaw-home ~/.openclaw --detailed`
+4. verify with `npx @openclawbrain/cli@0.4.4 status --openclaw-home ~/.openclaw --detailed`
 5. configure embeddings and choose a `brainRoot` if you need to tune defaults
 6. run the validation harnesses appropriate to the claim you want to make
 
@@ -30,49 +30,49 @@ openclaw plugins install @openclawbrain/openclaw@0.4.0
 Install or attach:
 
 ```bash
-npx @openclawbrain/cli@0.4.3 install --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.4 install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli@0.4.3 status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.4 status --openclaw-home ~/.openclaw --detailed
 ```
 
 Upgrade uses the same lane:
 
 ```bash
 openclaw plugins install @openclawbrain/openclaw@0.4.0
-npx @openclawbrain/cli@0.4.3 install --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.4 install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli@0.4.3 status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.4 status --openclaw-home ~/.openclaw --detailed
 ```
 
 Verify the target install at any time:
 
 ```bash
-npx @openclawbrain/cli@0.4.3 status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli@0.4.3 status --openclaw-home ~/.openclaw --json
+npx @openclawbrain/cli@0.4.4 status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.4 status --openclaw-home ~/.openclaw --json
 ```
 
 Remove only the profile hook and keep OpenClawBrain data:
 
 ```bash
-npx @openclawbrain/cli@0.4.3 detach --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.4 detach --openclaw-home ~/.openclaw
 openclaw gateway restart
 ```
 
 Remove the profile hook and keep data explicitly:
 
 ```bash
-npx @openclawbrain/cli@0.4.3 uninstall --openclaw-home ~/.openclaw --keep-data
+npx @openclawbrain/cli@0.4.4 uninstall --openclaw-home ~/.openclaw --keep-data
 openclaw gateway restart
 ```
 
 Remove the profile hook and purge OpenClawBrain data for that install:
 
 ```bash
-npx @openclawbrain/cli@0.4.3 uninstall --openclaw-home ~/.openclaw --purge-data
+npx @openclawbrain/cli@0.4.4 uninstall --openclaw-home ~/.openclaw --purge-data
 openclaw gateway restart
 ```
 
-If you want to remove the hook but keep the data, use `detach` or `npx @openclawbrain/cli@0.4.3 uninstall --openclaw-home ~/.openclaw --keep-data`. `detach` is the simpler keep-data path. The plugin payload itself lives under OpenClaw's plugin manager, so remove `@openclawbrain/openclaw` there separately only if you want the package files gone too.
+If you want to remove the hook but keep the data, use `detach` or `npx @openclawbrain/cli@0.4.4 uninstall --openclaw-home ~/.openclaw --keep-data`. `detach` is the simpler keep-data path. The plugin payload itself lives under OpenClaw's plugin manager, so remove `@openclawbrain/openclaw` there separately only if you want the package files gone too.
 
 ## Compatibility path
 
@@ -93,7 +93,7 @@ On current OpenClaw hosts, **do not manually write** `plugins.slots.contextEngin
 That older seam is not the stable install story anymore. OpenClawBrain now uses a hook-based compatibility bridge on hosts where `api.registerContextEngine` is gone.
 
 Current install caveat:
-- some hosts still warn about a plugin id mismatch because the plugin manifest uses `openclawbrain` while the package/entry hint uses `openclaw`
+- patched OpenClaw host builds suppress the old `openclaw` vs `openclawbrain` mismatch warning; older host builds may still show it until that host fix is released there
 - the install still works; treat that warning as currently cosmetic rather than a failed attach
 
 If you are debugging an older host build, treat any manual slot override as version-specific surgery rather than normal operator setup.
@@ -132,7 +132,7 @@ Why these defaults:
 The lifecycle path above is the canonical install lane. If you want to force one explicit local learning pass after attach, run:
 
 ```bash
-npx @openclawbrain/cli@0.4.3 learn --openclaw-home ~/.openclaw --json
+npx @openclawbrain/cli@0.4.4 learn --openclaw-home ~/.openclaw --json
 ```
 
 That gives you a machine-readable snapshot of what the learner scanned, whether anything materialized, and whether a promotion occurred.
@@ -236,16 +236,16 @@ Why:
 ## Operator commands
 
 ```bash
-npx @openclawbrain/cli@0.4.3 install --openclaw-home ~/.openclaw
-npx @openclawbrain/cli@0.4.3 attach --openclaw-home ~/.openclaw --activation-root /path/to/activation
-npx @openclawbrain/cli@0.4.3 status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli@0.4.3 status --openclaw-home ~/.openclaw --json
-npx @openclawbrain/cli@0.4.3 learn --openclaw-home ~/.openclaw --json
-npx @openclawbrain/cli@0.4.3 history --openclaw-home ~/.openclaw --limit 20 --json
-npx @openclawbrain/cli@0.4.3 context "How should I answer this?" --openclaw-home ~/.openclaw
-npx @openclawbrain/cli@0.4.3 rollback --openclaw-home ~/.openclaw --dry-run
-npx @openclawbrain/cli@0.4.3 detach --openclaw-home ~/.openclaw
-npx @openclawbrain/cli@0.4.3 uninstall --openclaw-home ~/.openclaw --keep-data|--purge-data
+npx @openclawbrain/cli@0.4.4 install --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.4 attach --openclaw-home ~/.openclaw --activation-root /path/to/activation
+npx @openclawbrain/cli@0.4.4 status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.4 status --openclaw-home ~/.openclaw --json
+npx @openclawbrain/cli@0.4.4 learn --openclaw-home ~/.openclaw --json
+npx @openclawbrain/cli@0.4.4 history --openclaw-home ~/.openclaw --limit 20 --json
+npx @openclawbrain/cli@0.4.4 context "How should I answer this?" --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.4 rollback --openclaw-home ~/.openclaw --dry-run
+npx @openclawbrain/cli@0.4.4 detach --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.4 uninstall --openclaw-home ~/.openclaw --keep-data|--purge-data
 ```
 
 ## Validation commands
@@ -285,7 +285,7 @@ So treat the host harness as active proof work, not a closed release gate.
 - if embeddings are not configured, learned retrieval and `brain_teach` stay disabled
 - local loopback embedding endpoints do not require a bearer token by default
 - if the worker is unavailable, serving still uses the last promoted pack
-- `npx @openclawbrain/cli@0.4.3 status --openclaw-home ~/.openclaw --detailed` keeps embedding, worker, and hook truth visible for one installed target
+- `npx @openclawbrain/cli@0.4.4 status --openclaw-home ~/.openclaw --detailed` keeps embedding, worker, and hook truth visible for one installed target
 
 ## Session reset note
 

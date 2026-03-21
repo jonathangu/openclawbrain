@@ -82,10 +82,10 @@ These are real enough to build on, but not frozen enough to oversell.
 - Current files: `package.json`, `packages/openclaw/package.json`, `packages/cli/package.json`, `README.md`, `docs/lifecycle.md`, `docs/configuration.md`, `docs/EVIDENCE.md`, future CI/release workflow surfaces
 - Truth: the split packages are published and the public-registry operator lane is real:
   - `openclaw plugins install @openclawbrain/openclaw@0.4.0`
-  - `npx @openclawbrain/cli@0.4.3 install --openclaw-home ~/.openclaw`
+  - `npx @openclawbrain/cli@0.4.4 install --openclaw-home ~/.openclaw`
   - `openclaw gateway restart`
-  - `npx @openclawbrain/cli@0.4.3 status --openclaw-home ~/.openclaw --detailed`
-- Boundary: some hosts still warn about a plugin id mismatch because the manifest uses `openclawbrain` while the package/entry hint uses `openclaw`; release verification and docs alignment still need to keep that caveat visible rather than implying the seam is fixed.
+  - `npx @openclawbrain/cli@0.4.4 status --openclaw-home ~/.openclaw --detailed`
+- Boundary: CLI `0.4.4` fixes the reinstall/config seam directly. The host-side mismatch warning is fixed on patched OpenClaw hosts, but release verification and docs alignment should still keep that host-release caveat visible until the host patch is broadly shipped.
 
 ## 3. Not done yet
 
