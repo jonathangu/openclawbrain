@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import { describeOpenClawBrainInstallIdentity, describeOpenClawBrainInstallLayout, findInstalledOpenClawBrainPlugin, getOpenClawBrainKnownPluginIds } from "./openclaw-plugin-install.js";
+import { describeOpenClawBrainInstallIdentity, describeOpenClawBrainInstallLayout, findInstalledOpenClawBrainPlugin, getOpenClawBrainAllowedPluginIds } from "./openclaw-plugin-install.js";
 function toErrorMessage(error) {
     return error instanceof Error ? error.message : String(error);
 }
@@ -77,7 +77,7 @@ function describeAdditionalInstallDetail(additionalInstalls) {
 export function inspectOpenClawBrainPluginAllowlist(openclawHome) {
     const { path: openclawJsonPath, config } = readOpenClawJsonConfig(openclawHome);
     const installedPlugin = findInstalledOpenClawBrainPlugin(openclawHome);
-    const knownPluginIds = getOpenClawBrainKnownPluginIds(installedPlugin.selectedInstall);
+    const allowedPluginIds = getOpenClawBrainAllowedPluginIds(installedPlugin.selectedInstall);
     const plugins = readJsonObjectRecord(config.plugins);
     if (plugins === null) {
         return {
@@ -97,15 +97,15 @@ export function inspectOpenClawBrainPluginAllowlist(openclawHome) {
             detail: `${shortenPath(openclawJsonPath)} has a non-array plugins.allow value, so OpenClawBrain load cannot be proven from config`
         };
     }
-    const matchedPluginId = knownPluginIds.find((pluginId) => plugins.allow.includes(pluginId)) ?? null;
+    const matchedPluginId = allowedPluginIds.find((pluginId) => plugins.allow.includes(pluginId)) ?? null;
     return matchedPluginId !== null
         ? {
             state: "allowed",
-            detail: `${shortenPath(openclawJsonPath)} plugins.allow explicitly includes ${matchedPluginId}; recognized OpenClawBrain ids are ${knownPluginIds.join(", ")}`
+            detail: `${shortenPath(openclawJsonPath)} plugins.allow explicitly includes ${matchedPluginId}; recognized OpenClawBrain ids are ${allowedPluginIds.join(", ")}`
         }
         : {
             state: "blocked",
-            detail: `${shortenPath(openclawJsonPath)} plugins.allow excludes recognized OpenClawBrain ids ${knownPluginIds.join(", ")}`
+            detail: `${shortenPath(openclawJsonPath)} plugins.allow excludes recognized OpenClawBrain ids ${allowedPluginIds.join(", ")}`
         };
 }
 export function inspectOpenClawBrainHookStatus(openclawHome) {

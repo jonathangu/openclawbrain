@@ -46,6 +46,19 @@ function normalizeOptionalString(value) {
     const trimmed = value.trim();
     return trimmed.length > 0 ? trimmed : null;
 }
+function readJsonObjectRecord(value) {
+    if (value === null || typeof value !== "object" || Array.isArray(value)) {
+        return null;
+    }
+    return value;
+}
+function pushUniqueNormalizedId(ids, value) {
+    const normalized = normalizeOptionalString(value);
+    if (normalized === null || ids.includes(normalized)) {
+        return;
+    }
+    ids.push(normalized);
+}
 function normalizeInstallId(value) {
     const normalized = normalizeOptionalString(value);
     if (normalized === null) {
@@ -179,22 +192,108 @@ export function describeOpenClawBrainInstallLayout(installLayout) {
         ? "native package plugin"
         : "generated shadow extension";
 }
-export function getOpenClawBrainKnownPluginIds(install) {
+export function getOpenClawBrainAllowedPluginIds(install) {
     const ids = [];
-    const push = (value) => {
-        const normalized = normalizeOptionalString(value);
-        if (normalized === null || ids.includes(normalized)) {
-            return;
-        }
-        ids.push(normalized);
-    };
-    push(OPENCLAWBRAIN_PLUGIN_ID);
-    push(install?.manifestId ?? null);
-    push(install?.installId ?? null);
-    if (install?.packageName === OPENCLAWBRAIN_NATIVE_PACKAGE_NAME) {
-        push(OPENCLAWBRAIN_NATIVE_INSTALL_ID);
-    }
+    pushUniqueNormalizedId(ids, OPENCLAWBRAIN_PLUGIN_ID);
+    pushUniqueNormalizedId(ids, install?.manifestId ?? null);
     return ids;
+}
+function getOpenClawBrainLegacyInstallHintIds(install) {
+    const ids = [];
+    pushUniqueNormalizedId(ids, install?.installId ?? null);
+    if (install?.packageName === OPENCLAWBRAIN_NATIVE_PACKAGE_NAME) {
+        pushUniqueNormalizedId(ids, OPENCLAWBRAIN_NATIVE_INSTALL_ID);
+    }
+    return ids.filter((id) => !getOpenClawBrainAllowedPluginIds(install).includes(id));
+}
+export function getOpenClawBrainKnownPluginIds(install) {
+    return [
+        ...getOpenClawBrainAllowedPluginIds(install),
+        ...getOpenClawBrainLegacyInstallHintIds(install)
+    ];
+}
+function mergePluginEntryValues(preferredValue, fallbackValue) {
+    if (preferredValue === undefined) {
+        return fallbackValue;
+    }
+    if (fallbackValue === undefined) {
+        return preferredValue;
+    }
+    const preferredRecord = readJsonObjectRecord(preferredValue);
+    const fallbackRecord = readJsonObjectRecord(fallbackValue);
+    if (preferredRecord === null || fallbackRecord === null) {
+        return preferredValue;
+    }
+    const mergedValue = {
+        ...fallbackRecord,
+        ...preferredRecord
+    };
+    const preferredConfig = readJsonObjectRecord(preferredRecord.config);
+    const fallbackConfig = readJsonObjectRecord(fallbackRecord.config);
+    if (preferredConfig !== null || fallbackConfig !== null) {
+        mergedValue.config = {
+            ...(fallbackConfig ?? {}),
+            ...(preferredConfig ?? {})
+        };
+    }
+    return mergedValue;
+}
+export function normalizeOpenClawBrainPluginsConfig(pluginsConfig, install) {
+    const nextPluginsConfig = {
+        ...pluginsConfig
+    };
+    const changes = [];
+    let changed = false;
+    const allowedPluginIds = getOpenClawBrainAllowedPluginIds(install);
+    const legacyInstallHintIds = getOpenClawBrainLegacyInstallHintIds(install);
+    if (Array.isArray(nextPluginsConfig.allow)) {
+        const removedAllowEntries = nextPluginsConfig.allow.filter((entry) => legacyInstallHintIds.includes(entry));
+        const filteredAllow = nextPluginsConfig.allow.filter((entry) => !legacyInstallHintIds.includes(entry));
+        const addedAllowEntries = allowedPluginIds.filter((pluginId) => !filteredAllow.includes(pluginId));
+        if (removedAllowEntries.length > 0 || addedAllowEntries.length > 0) {
+            nextPluginsConfig.allow = [...filteredAllow, ...addedAllowEntries];
+            changed = true;
+            if (removedAllowEntries.length > 0) {
+                changes.push(`removed plugins.allow entries ${removedAllowEntries.join(", ")}`);
+            }
+            if (addedAllowEntries.length > 0) {
+                changes.push(`added plugins.allow entries ${addedAllowEntries.join(", ")}`);
+            }
+        }
+    }
+    const canonicalEntryId = allowedPluginIds[0] ?? OPENCLAWBRAIN_PLUGIN_ID;
+    const entries = readJsonObjectRecord(nextPluginsConfig.entries);
+    if (entries !== null) {
+        const legacyEntryIds = legacyInstallHintIds.filter((entryId) => Object.prototype.hasOwnProperty.call(entries, entryId));
+        if (legacyEntryIds.length > 0) {
+            const nextEntries = {
+                ...entries
+            };
+            let mergedEntryValue = Object.prototype.hasOwnProperty.call(nextEntries, canonicalEntryId)
+                ? nextEntries[canonicalEntryId]
+                : undefined;
+            for (const entryId of legacyEntryIds) {
+                mergedEntryValue = mergePluginEntryValues(mergedEntryValue, nextEntries[entryId]);
+            }
+            nextEntries[canonicalEntryId] = mergedEntryValue;
+            for (const entryId of legacyEntryIds) {
+                if (entryId === canonicalEntryId) {
+                    continue;
+                }
+                delete nextEntries[entryId];
+            }
+            nextPluginsConfig.entries = nextEntries;
+            changed = true;
+            changes.push(`${Object.prototype.hasOwnProperty.call(entries, canonicalEntryId) ? "merged" : "moved"} plugins.entries.${legacyEntryIds.join(", plugins.entries.")} to plugins.entries.${canonicalEntryId}`);
+        }
+    }
+    return {
+        changed,
+        pluginsConfig: nextPluginsConfig,
+        changes,
+        allowedPluginIds,
+        canonicalEntryId
+    };
 }
 export function describeOpenClawBrainInstallIdentity(install) {
     return [

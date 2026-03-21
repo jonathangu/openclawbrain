@@ -7,7 +7,7 @@ import { inspectOpenClawBrainHookStatus } from "../src/openclaw-hook-truth.js";
 import { listOpenClawProfileRuntimeLoadProofs, recordOpenClawProfileRuntimeLoadProof } from "../src/attachment-truth.js";
 import { resolveActivationRoot } from "../src/resolve-activation-root.js";
 import { inspectInstalledOpenClawBrainExtension, proveInstalledOpenClawBrainExtensionLoad } from "../src/shadow-extension-proof.js";
-import { pinInstalledOpenClawBrainPluginActivationRoot, resolveOpenClawBrainInstallTarget } from "../src/openclaw-plugin-install.js";
+import { findInstalledOpenClawBrainPlugin, normalizeOpenClawBrainPluginsConfig, pinInstalledOpenClawBrainPluginActivationRoot, resolveOpenClawBrainInstallTarget } from "../src/openclaw-plugin-install.js";
 function canonicalizePath(filePath) {
     try {
         return realpathSync(filePath);
@@ -152,7 +152,7 @@ test("hook truth, runtime proofs, and activation-root discovery recognize native
     const openclawHome = createOpenClawHome(root, ".openclaw-Tern", {
         profile: "Tern",
         plugins: {
-            allow: ["openclaw"]
+            allow: ["openclawbrain"]
         }
     });
     const activationRoot = path.join(root, ".openclawbrain", "activation");
@@ -179,12 +179,77 @@ test("hook truth, runtime proofs, and activation-root discovery recognize native
     assert.equal(proofs.proofs?.profiles[0]?.openclawHome, canonicalizePath(openclawHome));
     assert.equal(resolveActivationRoot({ openclawHome }), activationRoot);
 });
+test("allowlist truth rejects the native package install hint as a loadable plugin id", (t) => {
+    const root = createTempRoot(t);
+    const openclawHome = createOpenClawHome(root, ".openclaw-Tern", {
+        profile: "Tern",
+        plugins: {
+            allow: ["openclaw"]
+        }
+    });
+    const activationRoot = path.join(root, ".openclawbrain", "activation");
+    mkdirSync(activationRoot, { recursive: true });
+    createNativeInstall(openclawHome, activationRoot);
+    const inspection = inspectOpenClawBrainHookStatus(openclawHome);
+    assert.equal(inspection.installState, "blocked_by_allowlist");
+    assert.equal(inspection.loadability, "blocked");
+    assert.equal(inspection.pluginAllowlistState, "blocked");
+    assert.match(inspection.detail, /plugins\.allow excludes recognized OpenClawBrain ids openclawbrain/);
+});
+test("plugin config normalization repairs split-package allowlist and entry-hint drift", (t) => {
+    const root = createTempRoot(t);
+    const openclawHome = createOpenClawHome(root, ".openclaw-Tern", {
+        profile: "Tern",
+        plugins: {
+            allow: ["openclaw"],
+            entries: {
+                openclaw: {
+                    enabled: true,
+                    config: {
+                        enabled: true
+                    }
+                }
+            }
+        }
+    });
+    const activationRoot = path.join(root, ".openclawbrain", "activation");
+    mkdirSync(activationRoot, { recursive: true });
+    createNativeInstall(openclawHome, activationRoot);
+    const selectedInstall = findInstalledOpenClawBrainPlugin(openclawHome).selectedInstall;
+    assert.ok(selectedInstall);
+    const normalized = normalizeOpenClawBrainPluginsConfig({
+        allow: ["openclaw"],
+        entries: {
+            openclaw: {
+                enabled: true,
+                config: {
+                    enabled: true
+                }
+            }
+        }
+    }, selectedInstall);
+    assert.equal(normalized.changed, true);
+    assert.deepEqual(normalized.pluginsConfig.allow, ["openclawbrain"]);
+    assert.deepEqual(normalized.pluginsConfig.entries, {
+        openclawbrain: {
+            enabled: true,
+            config: {
+                enabled: true
+            }
+        }
+    });
+    assert.deepEqual(normalized.changes, [
+        "removed plugins.allow entries openclaw",
+        "added plugins.allow entries openclawbrain",
+        "moved plugins.entries.openclaw to plugins.entries.openclawbrain"
+    ]);
+});
 test("install target selection and activation-root pinning keep native package plugins authoritative", (t) => {
     const root = createTempRoot(t);
     const openclawHome = createOpenClawHome(root, ".openclaw", {
         profile: "Tern",
         plugins: {
-            allow: ["openclaw"]
+            allow: ["openclawbrain"]
         }
     });
     const shadowActivationRoot = path.join(root, "shadow-activation");

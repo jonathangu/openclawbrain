@@ -14,7 +14,7 @@ import { inspectActivationState, loadPackFromActivation, promoteCandidatePack, r
 import { resolveActivationRoot } from "./resolve-activation-root.js";
 import { describeOpenClawHomeInspection, discoverOpenClawHomes, formatOpenClawHomeLayout, formatOpenClawHomeProfileSource, inspectOpenClawHome } from "./openclaw-home-layout.js";
 import { inspectOpenClawBrainHookStatus, inspectOpenClawBrainPluginAllowlist } from "./openclaw-hook-truth.js";
-import { describeOpenClawBrainInstallIdentity, describeOpenClawBrainInstallLayout, findInstalledOpenClawBrainPlugin, getOpenClawBrainKnownPluginIds, pinInstalledOpenClawBrainPluginActivationRoot, resolveOpenClawBrainInstallTarget } from "./openclaw-plugin-install.js";
+import { describeOpenClawBrainInstallIdentity, describeOpenClawBrainInstallLayout, findInstalledOpenClawBrainPlugin, getOpenClawBrainKnownPluginIds, normalizeOpenClawBrainPluginsConfig, pinInstalledOpenClawBrainPluginActivationRoot, resolveOpenClawBrainInstallTarget } from "./openclaw-plugin-install.js";
 import { loadAttachmentPolicyDeclaration, resolveEffectiveAttachmentPolicyTruth, writeAttachmentPolicyDeclaration } from "./attachment-policy-truth.js";
 import { DEFAULT_WATCH_POLL_INTERVAL_SECONDS, buildNormalizedEventExportFromScannedEvents, bootstrapRuntimeAttach, buildOperatorSurfaceReport, clearOpenClawProfileRuntimeLoadProof, compileRuntimeContext, createAsyncTeacherLiveLoop, createOpenClawLocalSessionTail, createRuntimeEventExportScanner, describeCurrentProfileBrainStatus, formatOperatorRollbackReport, listOpenClawProfileRuntimeLoadProofs, loadRuntimeEventExportBundle, loadWatchTeacherSnapshotState, persistWatchTeacherSnapshot, rollbackRuntimeAttach, resolveAttachmentRuntimeLoadProofsPath, resolveOperatorTeacherSnapshotPath, resolveAsyncTeacherLiveLoopSnapshotPath, resolveWatchSessionTailCursorPath, resolveWatchStateRoot, resolveWatchTeacherSnapshotPath, scanLiveEventExport, scanRecordedSession, summarizeLearningPathFromMaterialization, summarizeNormalizedEventExportLabelFlow, writeScannedEventExportBundle } from "./index.js";
 import { appendLearningUpdateLogs } from "./learning-spine.js";
@@ -3581,46 +3581,42 @@ function readOpenClawJsonConfig(openclawHome) {
 function ensureOpenClawBrainPluginConfig(openclawHome) {
     const { path: openclawJsonPath, config } = readOpenClawJsonConfig(openclawHome);
     const selectedInstall = findInstalledOpenClawBrainPlugin(openclawHome).selectedInstall;
-    const knownPluginIds = selectedInstall === null
-        ? ["openclawbrain", "openclaw"]
-        : getOpenClawBrainKnownPluginIds(selectedInstall);
     const plugins = readJsonObjectRecord(config.plugins);
     if (plugins === null) {
         return {
             path: openclawJsonPath,
             changed: false,
-            detail: `Left ${shortenPath(openclawJsonPath)} unchanged because plugins.allow is not configured`
+            detail: `Left ${shortenPath(openclawJsonPath)} unchanged because plugins config is not configured`
         };
     }
-    if (!Object.prototype.hasOwnProperty.call(plugins, "allow")) {
+    const normalizedPlugins = normalizeOpenClawBrainPluginsConfig(plugins, selectedInstall);
+    if (!normalizedPlugins.changed) {
+        const details = [];
+        if (!Object.prototype.hasOwnProperty.call(plugins, "allow")) {
+            details.push("plugins.allow is not configured");
+        }
+        else if (!Array.isArray(plugins.allow)) {
+            details.push("plugins.allow is not an array");
+        }
+        else {
+            details.push(`plugins.allow already includes ${normalizedPlugins.allowedPluginIds.join(", ")}`);
+        }
+        const entries = readJsonObjectRecord(plugins.entries);
+        if (entries !== null && Object.prototype.hasOwnProperty.call(entries, normalizedPlugins.canonicalEntryId)) {
+            details.push(`plugins.entries already uses ${normalizedPlugins.canonicalEntryId}`);
+        }
         return {
             path: openclawJsonPath,
             changed: false,
-            detail: `Left ${shortenPath(openclawJsonPath)} unchanged because plugins.allow is not configured`
+            detail: `Verified ${shortenPath(openclawJsonPath)} ${details.join("; ")}`
         };
     }
-    if (!Array.isArray(plugins.allow)) {
-        return {
-            path: openclawJsonPath,
-            changed: false,
-            detail: `Left ${shortenPath(openclawJsonPath)} unchanged because plugins.allow is not an array`
-        };
-    }
-    const missingPluginIds = knownPluginIds.filter((pluginId) => !plugins.allow.includes(pluginId));
-    if (missingPluginIds.length === 0) {
-        return {
-            path: openclawJsonPath,
-            changed: false,
-            detail: `Verified ${shortenPath(openclawJsonPath)} plugins.allow already includes ${knownPluginIds.join(", ")}`
-        };
-    }
-    plugins.allow = [...plugins.allow, ...missingPluginIds];
-    config.plugins = plugins;
+    config.plugins = normalizedPlugins.pluginsConfig;
     writeFileSync(openclawJsonPath, `${JSON.stringify(config, null, 2)}\n`, "utf8");
     return {
         path: openclawJsonPath,
         changed: true,
-        detail: `Repaired ${shortenPath(openclawJsonPath)} plugins.allow by adding ${missingPluginIds.join(", ")}`
+        detail: `Repaired ${shortenPath(openclawJsonPath)} by ${normalizedPlugins.changes.join("; ")}`
     };
 }
 function scrubOpenClawBrainPluginConfig(openclawHome) {
