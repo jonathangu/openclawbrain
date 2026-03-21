@@ -1,4 +1,12 @@
-const DEFAULT_MATCH_WINDOW_MS = 30_000;
+const DEFAULT_MATCH_WINDOW_MS = 60_000;
+const OPERATIONAL_DECISION_PATTERNS = [
+    /^NO_REPLY$/i,
+    /^HEARTBEAT_OK$/i,
+    /^read heartbeat\.md if it exists\b/i,
+    /^a new session was started via \/new or \/reset\./i,
+    /\[cron:[a-f0-9-]+\s/i,
+    /\[system message\]\s*\[sessionid:/i,
+];
 
 function normalizeOptionalString(value) {
     if (typeof value !== "string") {
@@ -48,6 +56,45 @@ function buildDecisionTimestamps(decision) {
     return timestamps;
 }
 
+function isOperationalDecision(decision) {
+    const userMessage = normalizeOptionalString(decision.userMessage);
+    if (userMessage === undefined) {
+        return true;
+    }
+    return OPERATIONAL_DECISION_PATTERNS.some((pattern) => pattern.test(userMessage));
+}
+
+function selectNearestDecision(entries, interactionAt, maxTimeDeltaMs) {
+    const candidates = entries
+        .map((entry) => {
+        const deltas = entry.timestamps.map((timestamp) => Math.abs(timestamp - interactionAt));
+        const bestDelta = deltas.length === 0 ? null : Math.min(...deltas);
+        return bestDelta === null || bestDelta > maxTimeDeltaMs
+            ? null
+            : {
+                decision: entry.decision,
+                deltaMs: bestDelta,
+                recordedAt: toTimestamp(entry.decision.recordedAt) ?? 0,
+            };
+    })
+        .filter((entry) => entry !== null)
+        .sort((left, right) => {
+        if (left.deltaMs !== right.deltaMs) {
+            return left.deltaMs - right.deltaMs;
+        }
+        return right.recordedAt - left.recordedAt;
+    });
+    const best = candidates[0] ?? null;
+    const runnerUp = candidates[1] ?? null;
+    if (best === null) {
+        return null;
+    }
+    if (runnerUp !== null && runnerUp.deltaMs === best.deltaMs && runnerUp.decision !== best.decision) {
+        return null;
+    }
+    return best.decision;
+}
+
 export function createServeTimeDecisionMatcher(decisions, options = {}) {
     const maxTimeDeltaMs = Number.isInteger(options.maxTimeDeltaMs) && options.maxTimeDeltaMs >= 0
         ? options.maxTimeDeltaMs
@@ -55,6 +102,7 @@ export function createServeTimeDecisionMatcher(decisions, options = {}) {
     const exactDecisions = new Map();
     const fallbackDecisions = new Map();
     const decisionsBySessionChannel = new Map();
+    const globalFallbackDecisions = [];
 
     for (const decision of [...decisions].sort((left, right) => Date.parse(right.recordedAt) - Date.parse(left.recordedAt))) {
         const userMessage = normalizeOptionalString(decision.userMessage);
@@ -75,14 +123,25 @@ export function createServeTimeDecisionMatcher(decisions, options = {}) {
         }
         const sessionChannelKey = buildSessionChannelKey(decision.sessionId, decision.channel);
         if (sessionChannelKey === null) {
+            if (!isOperationalDecision(decision)) {
+                globalFallbackDecisions.push({
+                    decision,
+                    timestamps: buildDecisionTimestamps(decision),
+                });
+            }
             continue;
         }
-        const indexed = decisionsBySessionChannel.get(sessionChannelKey) ?? [];
-        indexed.push({
+        const indexedEntry = {
             decision,
             timestamps: buildDecisionTimestamps(decision),
-        });
+            operational: isOperationalDecision(decision),
+        };
+        const indexed = decisionsBySessionChannel.get(sessionChannelKey) ?? [];
+        indexed.push(indexedEntry);
         decisionsBySessionChannel.set(sessionChannelKey, indexed);
+        if (!indexedEntry.operational) {
+            globalFallbackDecisions.push(indexedEntry);
+        }
     }
 
     return (interaction) => {
@@ -99,36 +158,15 @@ export function createServeTimeDecisionMatcher(decisions, options = {}) {
         }
         const interactionAt = toTimestamp(interaction.createdAt);
         const sessionChannelKey = buildSessionChannelKey(interaction.sessionId, interaction.channel);
-        if (interactionAt === null || sessionChannelKey === null) {
+        if (interactionAt === null) {
             return null;
         }
-        const candidates = (decisionsBySessionChannel.get(sessionChannelKey) ?? [])
-            .map((entry) => {
-            const deltas = entry.timestamps.map((timestamp) => Math.abs(timestamp - interactionAt));
-            const bestDelta = deltas.length === 0 ? null : Math.min(...deltas);
-            return bestDelta === null || bestDelta > maxTimeDeltaMs
-                ? null
-                : {
-                    decision: entry.decision,
-                    deltaMs: bestDelta,
-                    recordedAt: toTimestamp(entry.decision.recordedAt) ?? 0,
-                };
-        })
-            .filter((entry) => entry !== null)
-            .sort((left, right) => {
-            if (left.deltaMs !== right.deltaMs) {
-                return left.deltaMs - right.deltaMs;
+        if (sessionChannelKey !== null) {
+            const sessionMatch = selectNearestDecision((decisionsBySessionChannel.get(sessionChannelKey) ?? []).filter((entry) => entry.operational !== true), interactionAt, maxTimeDeltaMs);
+            if (sessionMatch !== null) {
+                return sessionMatch;
             }
-            return right.recordedAt - left.recordedAt;
-        });
-        const best = candidates[0] ?? null;
-        const runnerUp = candidates[1] ?? null;
-        if (best === null) {
-            return null;
         }
-        if (runnerUp !== null && runnerUp.deltaMs === best.deltaMs && runnerUp.decision !== best.decision) {
-            return null;
-        }
-        return best.decision;
+        return selectNearestDecision(globalFallbackDecisions, interactionAt, maxTimeDeltaMs);
     };
 }

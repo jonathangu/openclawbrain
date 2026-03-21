@@ -78,3 +78,44 @@ test("serve-time decision matcher refuses ambiguous nearest-time matches", () =>
     })), null);
 });
 
+test("serve-time decision matcher falls back across export and serve surfaces when session ids drift", () => {
+    const decision = makeDecision({
+        sessionId: "ext-compile-1",
+        channel: "extension",
+        turnCompileEventId: null,
+        turnCreatedAt: "2026-03-20T18:00:10.000Z",
+        recordedAt: "2026-03-20T18:00:10.000Z",
+        userMessage: "[[reply_to_current]] Here is the direct answer.",
+    });
+    const matcher = createServeTimeDecisionMatcher([decision]);
+    assert.equal(matcher(makeInteraction({
+        sessionId: "direct-session-1",
+        channel: "direct",
+        createdAt: "2026-03-20T18:00:48.000Z",
+    })), decision);
+});
+
+test("serve-time decision matcher skips operational noise during cross-surface fallback", () => {
+    const operational = makeDecision({
+        sessionId: "ext-compile-noise",
+        channel: "extension",
+        turnCompileEventId: null,
+        turnCreatedAt: "2026-03-20T18:00:18.000Z",
+        recordedAt: "2026-03-20T18:00:18.000Z",
+        userMessage: "NO_REPLY",
+    });
+    const actual = makeDecision({
+        sessionId: "ext-compile-human",
+        channel: "extension",
+        turnCompileEventId: null,
+        turnCreatedAt: "2026-03-20T18:00:14.000Z",
+        recordedAt: "2026-03-20T18:00:14.000Z",
+        userMessage: "[[reply_to_current]] Use the updated answer.",
+    });
+    const matcher = createServeTimeDecisionMatcher([operational, actual], { maxTimeDeltaMs: 60_000 });
+    assert.equal(matcher(makeInteraction({
+        sessionId: "direct-session-1",
+        channel: "direct",
+        createdAt: "2026-03-20T18:00:16.000Z",
+    })), actual);
+});
