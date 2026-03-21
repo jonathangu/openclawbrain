@@ -19,6 +19,7 @@ import { loadAttachmentPolicyDeclaration, resolveEffectiveAttachmentPolicyTruth,
 import { DEFAULT_WATCH_POLL_INTERVAL_SECONDS, buildNormalizedEventExportFromScannedEvents, bootstrapRuntimeAttach, buildOperatorSurfaceReport, clearOpenClawProfileRuntimeLoadProof, compileRuntimeContext, createAsyncTeacherLiveLoop, createOpenClawLocalSessionTail, createRuntimeEventExportScanner, describeCurrentProfileBrainStatus, formatOperatorRollbackReport, listOpenClawProfileRuntimeLoadProofs, loadRuntimeEventExportBundle, loadWatchTeacherSnapshotState, persistWatchTeacherSnapshot, rollbackRuntimeAttach, resolveAttachmentRuntimeLoadProofsPath, resolveOperatorTeacherSnapshotPath, resolveAsyncTeacherLiveLoopSnapshotPath, resolveWatchSessionTailCursorPath, resolveWatchStateRoot, resolveWatchTeacherSnapshotPath, scanLiveEventExport, scanRecordedSession, summarizeLearningPathFromMaterialization, summarizeNormalizedEventExportLabelFlow, writeScannedEventExportBundle } from "./index.js";
 import { appendLearningUpdateLogs } from "./learning-spine.js";
 import { buildPassiveLearningSessionExportFromOpenClawSessionStore } from "./local-session-passive-learning.js";
+import { summarizePackVectorEmbeddingState } from "./embedding-status.js";
 import { buildTracedLearningStatusSurface, loadBrainStoreTracedLearningBridge, mergeTracedLearningBridgePayload, persistBrainStoreTracedLearningBridge, writeTracedLearningBridge } from "./traced-learning-bridge.js";
 import { discoverOpenClawSessionStores, loadOpenClawSessionIndex, readOpenClawSessionFile } from "./session-store.js";
 import { readOpenClawBrainProviderDefaults, readOpenClawBrainProviderConfig, readOpenClawBrainProviderConfigFromSources, resolveOpenClawBrainProviderDefaultsPath } from "./provider-config.js";
@@ -953,11 +954,14 @@ function summarizeStatusEmbeddings(report, providerConfig) {
                 requireActivationReady: true
             });
             if (activePack !== null) {
-                totalEntryCount = activePack.vectors.entries.length;
-                embeddedEntryCount = activePack.vectors.entries.filter((entry) => entry.embedding !== undefined).length;
-                models = [...new Set(activePack.vectors.entries.flatMap((entry) => (entry.embedding === undefined ? [] : [entry.embedding.model])))].sort((left, right) => left.localeCompare(right));
-                liveState = embeddedEntryCount > 0 ? "yes" : "no";
-                liveDetail = `active pack stores ${embeddedEntryCount}/${totalEntryCount} numeric embeddings`;
+                const summary = summarizePackVectorEmbeddingState(activePack.vectors);
+                totalEntryCount = summary.vectorEntryCount;
+                embeddedEntryCount = summary.numericEmbeddingEntryCount;
+                models = summary.embeddingModels;
+                liveState = embeddedEntryCount === null ? "unknown" : embeddedEntryCount > 0 ? "yes" : "no";
+                liveDetail = embeddedEntryCount === null || totalEntryCount === null
+                    ? "active pack vector entries were unreadable during embedding inspection"
+                    : `active pack stores ${embeddedEntryCount}/${totalEntryCount} numeric embeddings`;
             }
         }
         catch (error) {
@@ -4544,19 +4548,7 @@ function exportLocalSessionTailChangesToScanRoot(input) {
     };
 }
 function summarizeVectorEmbeddingState(vectors) {
-    if (vectors === null || vectors === undefined) {
-        return {
-            vectorEntryCount: null,
-            numericEmbeddingEntryCount: null,
-            embeddingModels: []
-        };
-    }
-    const embeddingModels = [...new Set(vectors.entries.flatMap((entry) => (entry.embedding === undefined ? [] : [entry.embedding.model])))].sort((left, right) => left.localeCompare(right));
-    return {
-        vectorEntryCount: vectors.entries.length,
-        numericEmbeddingEntryCount: vectors.entries.filter((entry) => entry.embedding !== undefined).length,
-        embeddingModels
-    };
+    return summarizePackVectorEmbeddingState(vectors);
 }
 function buildWatchEmbedTracePoint(input) {
     const summary = summarizeVectorEmbeddingState(input.vectors);

@@ -1,5 +1,6 @@
 import { CONTRACT_IDS, checksumJsonPayload, validateTeacherSupervisionArtifact } from "@openclawbrain/contracts";
 import { buildNormalizedEventDedupId } from "@openclawbrain/event-export";
+import { createServeTimeDecisionMatcher } from "./teacher-decision-match.js";
 const FEEDBACK_KINDS = new Set(["correction", "teaching", "approval", "suppression"]);
 const OLLAMA_ROUTE_DECISION_STREAM = "openclaw/learning-spine/serve-time-route-decisions";
 const DEFAULT_OLLAMA_BASE_URL = "http://127.0.0.1:11434";
@@ -140,41 +141,14 @@ function buildPrompt(candidates, config) {
         payload
     ].join("\n");
 }
-function buildCandidateKey(interaction) {
-    return `${interaction.sessionId}|${interaction.channel}|${interaction.createdAt}`;
-}
-function matchServeTimeDecision(interaction, exactDecisions, fallbackDecisions) {
-    const exact = exactDecisions.get(interaction.eventId);
-    if (exact !== undefined) {
-        return exact;
-    }
-    return fallbackDecisions.get(buildCandidateKey(interaction)) ?? null;
-}
 function collectCandidates(input, config) {
     const decisions = [...(input.serveTimeDecisions ?? [])].sort((left, right) => Date.parse(right.recordedAt) - Date.parse(left.recordedAt));
-    const exactDecisions = new Map();
-    const fallbackDecisions = new Map();
-    for (const decision of decisions) {
-        const userMessage = normalizeOptionalString(decision.userMessage);
-        if (userMessage === undefined) {
-            continue;
-        }
-        if (decision.turnCompileEventId !== null && !exactDecisions.has(decision.turnCompileEventId)) {
-            exactDecisions.set(decision.turnCompileEventId, decision);
-        }
-        const turnCreatedAt = normalizeOptionalString(decision.turnCreatedAt);
-        if (turnCreatedAt !== undefined && decision.sessionId !== null && decision.channel !== null) {
-            const key = `${decision.sessionId}|${decision.channel}|${turnCreatedAt}`;
-            if (!fallbackDecisions.has(key)) {
-                fallbackDecisions.set(key, decision);
-            }
-        }
-    }
+    const matchServeTimeDecision = createServeTimeDecisionMatcher(decisions);
     return input.normalizedEventExport.interactionEvents
         .filter((interaction) => interaction.kind === "memory_compiled")
         .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt))
         .map((interaction) => {
-        const decision = matchServeTimeDecision(interaction, exactDecisions, fallbackDecisions);
+        const decision = matchServeTimeDecision(interaction);
         const userMessage = normalizeOptionalString(decision?.userMessage);
         if (decision === null || userMessage === undefined) {
             return null;
