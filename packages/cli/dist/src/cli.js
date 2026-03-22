@@ -23,6 +23,7 @@ import { summarizePackVectorEmbeddingState } from "./embedding-status.js";
 import { buildTracedLearningBridgePayloadFromRuntime, buildTracedLearningStatusSurface, persistTracedLearningBridgeState } from "./traced-learning-bridge.js";
 import { discoverOpenClawSessionStores, loadOpenClawSessionIndex, readOpenClawSessionFile } from "./session-store.js";
 import { readOpenClawBrainProviderDefaults, readOpenClawBrainProviderConfig, readOpenClawBrainProviderConfigFromSources, resolveOpenClawBrainProviderDefaultsPath } from "./provider-config.js";
+import { formatOperatorLearningPathSummary } from "./status-learning-path.js";
 const OPENCLAWBRAIN_EMBEDDER_BASE_URL_ENV = "OPENCLAWBRAIN_EMBEDDER_BASE_URL";
 const OPENCLAWBRAIN_EMBEDDER_PROVIDER_ENV = "OPENCLAWBRAIN_EMBEDDER_PROVIDER";
 const OPENCLAWBRAIN_EMBEDDER_MODEL_ENV = "OPENCLAWBRAIN_EMBEDDER_MODEL";
@@ -1396,7 +1397,11 @@ function formatCurrentProfileStatusSummary(status, report, targetInspection, opt
         `scanner     flowing=${yesNo(report.supervision.flowing)} scan=${report.supervision.scanPolicy ?? "none"} surfaces=${formatScannerSurfaces(report)} labels=${report.supervision.humanLabelCount ?? "none"}/${report.supervision.selfLabelCount ?? "none"} attributable=${report.supervision.attributedEventCount ?? "none"}/${report.supervision.totalEventCount ?? "none"} digests=${report.supervision.selectionDigestCount ?? "none"}`,
         `labels      ${formatLabelFlowSummary(report.labelFlow)}`,
         `graph       source=${report.graph.runtimePlasticitySource ?? "none"} blocks=${report.graph.blockCount ?? "none"} strongest=${report.graph.strongestBlockId ?? "none"} ops=${formatStructuralOps(report)} latest=${report.graph.latestMaterialization.packId ?? "none"} latestChanged=${yesNo(report.graph.latestMaterialization.changed)} connect=${formatGraphConnectDiagnostics(report.graph.latestMaterialization.connectDiagnostics ?? report.graph.connectDiagnostics)} summary=${formatGraphSummary(report)}`,
-        `path        ${formatLearningPathSummary(report.learningPath)}`,
+        `path        ${formatOperatorLearningPathSummary({
+            status,
+            learningPath: report.learningPath,
+            tracedLearning
+        })}`,
         `learning    state=${report.learning.backlogState} bootstrapped=${yesNo(report.learning.bootstrapped)} mode=${report.learning.mode} next=${report.learning.nextPriorityLane} priority=${report.learning.nextPriorityBucket} pending=${report.learning.pendingLive ?? "none"}/${report.learning.pendingBackfill ?? "none"} buckets=${formatLearningBuckets(report)} warn=${formatLearningWarnings(report)} lastPack=${report.learning.lastMaterializedPackId ?? "none"} detail=${report.learning.detail}`,
         `traced      ${formatTracedLearningSurface(tracedLearning)}`,
         `teacherProof ${formatTeacherLoopSummary(report)}`,
