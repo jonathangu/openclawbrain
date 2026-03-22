@@ -214,3 +214,37 @@ test("native V2 route updates survive serve-pack to candidate-pack block-id rema
     assert.ok(router.policyUpdates.some((update) => update.delta !== 0), "expected at least one nonzero native V2 delta");
     assert.ok(router.policyUpdates.every((update) => update.blockId.startsWith(`${result.summary.packId}:`)), "expected updates against candidate-pack block ids");
 });
+
+
+test("native V2 remap tolerates missing optional block-id arrays during full replay", (t) => {
+    const { workspace, normalizedEventExport, structuralOps, serveTimeDecision } = buildCrossSurfaceFixture(t);
+    const replayDecision = {
+        ...serveTimeDecision,
+        candidateSetIds: undefined,
+        selectedKernelContextIds: undefined,
+        selectedBrainContextIds: undefined,
+        candidateScores: serveTimeDecision.candidateScores.map((score, index) => index === 0
+            ? { ...score, compactedFrom: undefined }
+            : score)
+    };
+    const result = buildCandidatePackFromNormalizedEventExport({
+        packLabel: "native-pg-v2-replay",
+        workspace,
+        normalizedEventExport,
+        learnedRouting: true,
+        builtAt: "2026-03-22T10:07:00.000Z",
+        structuralOps,
+        pgVersion: "v2",
+        serveTimeDecisions: [replayDecision],
+        baselineState: {
+            movingAverage: 0,
+            count: 0,
+            alpha: 0.1,
+            lastUpdatedAt: "2026-03-22T10:00:00.000Z"
+        }
+    });
+    const router = result.payloads.router;
+    assert.ok(router, "expected learned router artifact");
+    assert.equal(router.training.noOpReason, null);
+    assert.ok(router.policyUpdates.some((update) => update.delta !== 0), "expected nonzero native V2 delta even when optional arrays are absent");
+});

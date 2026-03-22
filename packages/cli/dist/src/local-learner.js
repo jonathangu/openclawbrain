@@ -3538,6 +3538,9 @@ function buildGraphBlockIdResolver(graph) {
 }
 function remapServeTimeDecisionToGraph(decision, resolveBlockId) {
     const remapIds = (blockIds) => {
+        if (!Array.isArray(blockIds)) {
+            return [];
+        }
         const remapped = [];
         const seen = new Set();
         for (const blockId of blockIds) {
