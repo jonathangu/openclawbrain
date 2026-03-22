@@ -4499,10 +4499,15 @@ function createRouterArtifactV2(packId, builtAt, graph, vectors, eventExport, se
     // V2 learns from reconstructed serve-time trajectories rather than RouterTraceV1 records.
     // Keep trace payloads empty, but surface truthful trajectory-derived counts.
     const traces = [];
-    const routeTraceCount = traces.length;
-    const supervisionCount = traces.filter((trace) => trace.reward !== 0).length;
+    const routeTraceCount = trajectories.length;
+    const supervisionCount = supervisedTrajectoryCount;
     const queryChecksum = computeRouterQueryChecksum(traces);
-    const collectedLabels = computeRouterCollectedLabelCounts(traces);
+    const collectedLabels = {
+        total: supervisedTrajectoryCount,
+        humanFeedback: supervisedTrajectoryCount,
+        operatorOverride: 0,
+        selfMemory: 0
+    };
     const status = policyUpdates.length > 0 ? "updated" : "no_supervision";
     const noOpReason = policyUpdates.length > 0
         ? null
@@ -4517,7 +4522,7 @@ function createRouterArtifactV2(packId, builtAt, graph, vectors, eventExport, se
         trainedAt: builtAt,
         requiresLearnedRouting: true,
         training: {
-            method: "policy_gradient_v1",
+            method: "policy_gradient_v2",
             status,
             eventExportDigest: eventExport?.provenance.exportDigest ?? null,
             routeTraceCount,
@@ -4526,13 +4531,13 @@ function createRouterArtifactV2(packId, builtAt, graph, vectors, eventExport, se
             collectedLabels,
             objective: {
                 updateMechanism: "policy_gradient",
-                updateVersion: "route_pg_update_v1",
-                objective: "supervised_route_pg_v1",
+                updateVersion: "route_pg_update_v2",
+                objective: "supervised_route_pg_v2",
                 profile: ROUTER_PG_PROFILE_V2,
                 objectiveChecksum: computeRouterObjectiveChecksum({
                     updateMechanism: "policy_gradient",
-                    updateVersion: "route_pg_update_v1",
-                    objective: "supervised_route_pg_v1",
+                    updateVersion: "route_pg_update_v2",
+                    objective: "supervised_route_pg_v2",
                     profile: ROUTER_PG_PROFILE_V2,
                     eventExportDigest: eventExport?.provenance.exportDigest ?? null,
                     routeTraceCount,
@@ -4544,7 +4549,7 @@ function createRouterArtifactV2(packId, builtAt, graph, vectors, eventExport, se
             queryChecksum,
             weightsChecksum: computeRouterWeightsChecksum(policyUpdates),
             freshnessChecksum: computeRouterFreshnessChecksum({
-                method: "policy_gradient_v1",
+                method: "policy_gradient_v2",
                 trainedAt: builtAt,
                 status,
                 eventExportDigest: eventExport?.provenance.exportDigest ?? null,
