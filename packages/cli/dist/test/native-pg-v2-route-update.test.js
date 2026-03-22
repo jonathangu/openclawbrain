@@ -206,9 +206,12 @@ test("native V2 route updates survive serve-pack to candidate-pack block-id rema
     assert.equal(result.routingBuild.learnedRoutingPath, "policy_gradient_v2");
     assert.equal(result.routingBuild.pgVersionUsed, "v2");
     assert.deepEqual(router.training.objective.profile, ROUTER_PG_PROFILE_V2);
+    assert.equal(router.training.method, "policy_gradient_v2");
+    assert.equal(router.training.objective.updateVersion, "route_pg_update_v2");
+    assert.equal(router.training.objective.objective, "supervised_route_pg_v2");
     assert.equal(router.training.noOpReason, null);
-    assert.equal(router.training.routeTraceCount, 0);
-    assert.equal(router.training.supervisionCount, 0);
+    assert.ok(router.training.routeTraceCount > 0, "expected truthful reconstructed-trajectory count");
+    assert.ok(router.training.supervisionCount > 0, "expected truthful supervised-trajectory count");
     assert.equal(router.traces.length, 0, "native V2 should not fall back to trace-based V1 updates");
     assert.ok(router.policyUpdates.length > 0, "expected native V2 to emit policy updates");
     assert.ok(router.policyUpdates.some((update) => update.delta !== 0), "expected at least one nonzero native V2 delta");
@@ -245,6 +248,10 @@ test("native V2 remap tolerates missing optional block-id arrays during full rep
     });
     const router = result.payloads.router;
     assert.ok(router, "expected learned router artifact");
+    assert.equal(router.training.method, "policy_gradient_v2");
+    assert.equal(router.training.objective.objective, "supervised_route_pg_v2");
+    assert.ok(router.training.routeTraceCount > 0);
+    assert.ok(router.training.supervisionCount > 0);
     assert.equal(router.training.noOpReason, null);
     assert.ok(router.policyUpdates.some((update) => update.delta !== 0), "expected nonzero native V2 delta even when optional arrays are absent");
 });
