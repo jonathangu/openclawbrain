@@ -43,21 +43,24 @@ Your AI assistant keeps making the same mistakes. You correct it, it forgets. Yo
 
 Current public packages:
 - plugin/runtime payload: `@openclawbrain/openclaw@0.4.0`
-- operator CLI: `@openclawbrain/cli@0.4.4`
+- contracts: `@openclawbrain/contracts@0.3.5`
+- operator CLI: `@openclawbrain/cli@0.4.10`
 - compatibility holdover for older installs: `@jonathangu/openclawbrain@0.3.5`
 
 ### Install
 
 ```bash
 openclaw plugins install @openclawbrain/openclaw@0.4.0
-npx @openclawbrain/cli@0.4.4 install --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli@0.4.4 status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed
 ```
 
 The plugin payload is installed through OpenClaw's plugin manager. The CLI runs through the published `@openclawbrain/cli` package. Upgrade uses the same lane: refresh the plugin package, rerun `install`, restart the gateway, then verify.
 
 Host release note: the CLI-side reinstall/config fix is shipped in `0.4.4`, and the host-side `openclaw` alias fix removes the old `openclaw` vs `openclawbrain` warning on patched hosts. Until that OpenClaw host fix is in your installed host build, some installs may still show the older cosmetic warning during plugin install.
+
+Native V2 note: as of `@openclawbrain/cli@0.4.10` and `@openclawbrain/contracts@0.3.5`, the native V2 policy-gradient router metadata is truthful. The operator CLI and validator path both report accurate V2 metadata from real promoted packs.
 
 For the full lifecycle reference — including verify, detach, uninstall, and migration — see [`docs/lifecycle.md`](docs/lifecycle.md).
 
@@ -78,7 +81,7 @@ Treat that as a holdover lane, not the main operator story.
 After the lifecycle attach above, you can run one explicit local learning pass:
 
 ```bash
-npx @openclawbrain/cli@0.4.4 learn --openclaw-home ~/.openclaw --json
+npx @openclawbrain/cli@0.4.10 learn --openclaw-home ~/.openclaw --json
 ```
 
 ### Correct (in any conversation)
@@ -111,8 +114,8 @@ brain_teach instruction="Keep answers concise, use bullets, and end with the nex
 ### Inspect
 
 ```bash
-npx @openclawbrain/cli@0.4.4 status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli@0.4.4 status --openclaw-home ~/.openclaw --json
+npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --json
 brain_trace        # See recent routing decisions in conversation
 ```
 
@@ -147,6 +150,7 @@ Chooses best context → Surfaces as priority context → Learns from outcome
 Deep dives:
 - [`docs/lifecycle.md`](docs/lifecycle.md) — canonical install, upgrade, verify, detach, uninstall, and migration
 - [`docs/configuration.md`](docs/configuration.md) — practical operator setup and config guide
+- [`docs/release-notes-0.4.10.md`](docs/release-notes-0.4.10.md) — native V2 truthful metadata milestone: proven published packages with accurate validator and router metadata
 - [`docs/release-notes-0.4.4.md`](docs/release-notes-0.4.4.md) — published CLI patch for canonical reinstall config truth and install identity display
 - [`docs/release-notes-0.4.3.md`](docs/release-notes-0.4.3.md) — published CLI patch for truthful embedding status and more tolerant supervision matching
 - [`docs/release-notes-0.4.2.md`](docs/release-notes-0.4.2.md) — earlier CLI patch for shared-policy status truth and canonical traced-learning ship surface
@@ -225,13 +229,13 @@ Use the published CLI package for operator commands:
 
 | Command | What it does |
 |---------|-------------|
-| `npx @openclawbrain/cli@0.4.4 install --openclaw-home ~/.openclaw` | Attach OpenClawBrain to one OpenClaw home after the plugin payload is installed |
+| `npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw` | Attach OpenClawBrain to one OpenClaw home after the plugin payload is installed |
 | `openclaw gateway restart` | Reload the gateway after install, detach, or uninstall |
-| `npx @openclawbrain/cli@0.4.4 status --openclaw-home ~/.openclaw --detailed` | Human verification for lifecycle, worker, and pack truth |
-| `npx @openclawbrain/cli@0.4.4 status --openclaw-home ~/.openclaw --json` | Canonical machine-readable verification |
-| `npx @openclawbrain/cli@0.4.4 learn --openclaw-home ~/.openclaw --json` | Run one explicit local learning pass and inspect the result |
-| `npx @openclawbrain/cli@0.4.4 detach --openclaw-home ~/.openclaw` | Remove only the profile hook and keep data |
-| `npx @openclawbrain/cli@0.4.4 uninstall --openclaw-home ~/.openclaw --keep-data\|--purge-data` | Remove the hook and choose the data outcome explicitly |
+| `npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed` | Human verification for lifecycle, worker, and pack truth |
+| `npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --json` | Canonical machine-readable verification |
+| `npx @openclawbrain/cli@0.4.10 learn --openclaw-home ~/.openclaw --json` | Run one explicit local learning pass and inspect the result |
+| `npx @openclawbrain/cli@0.4.10 detach --openclaw-home ~/.openclaw` | Remove only the profile hook and keep data |
+| `npx @openclawbrain/cli@0.4.10 uninstall --openclaw-home ~/.openclaw --keep-data\|--purge-data` | Remove the hook and choose the data outcome explicitly |
 | `brain_trace` | Inspect routing decisions inside the agent/tool lane |
 | `brain_teach` | Explicitly teach corrections or instructions in conversation |
 

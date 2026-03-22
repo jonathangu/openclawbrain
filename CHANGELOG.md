@@ -6,6 +6,47 @@ It should help an operator understand two different truths:
 - what was actually published to npm
 - what has landed on `main` since that publish
 
+## 0.4.10
+
+Published package versions for this release:
+- `@openclawbrain/contracts@0.3.5`
+- `@openclawbrain/cli@0.4.10`
+
+This release completes the native V2 router metadata truthfulness milestone.
+
+### What changed
+
+- native V2 router metadata is now truthful end to end: the published CLI and contracts packages emit accurate active-pack metadata (`path.pg=v2`, `path.method=policy_gradient_v2`, `path.target=trajectory_reconstruction`) with real traced route and supervision counts
+- the validator path now reads truthful metadata from promoted packs rather than placeholder or stale V1 fields
+- repo-side patches landed on `main` in commits `63ea1e6` (make native PG V2 metadata truthful) and `fe3c247` (publish native PG V2 validator upgrade)
+
+### Operator lane
+
+```bash
+npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw
+npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.10 learn --activation-root ~/.openclawbrain/activation --json
+```
+
+### Verification proof
+
+Live status on a real host shows `STATUS ok` with truthful active-pack metadata:
+- `path.pg=v2`
+- `path.method=policy_gradient_v2`
+- `path.target=trajectory_reconstruction`
+- `path.trajectories=344`
+- `traced.routes=344`
+- `traced.supervision=32`
+- `traced.updates=68`
+
+Deep release note:
+- [`docs/release-notes-0.4.10.md`](docs/release-notes-0.4.10.md)
+
+### Why this release matters
+
+0.4.10 is the point where the native V2 policy-gradient router metadata becomes honest.
+Earlier CLI releases fixed the V2 learning path itself (0.4.5), replay tolerance (0.4.6), observability fields (0.4.7), and validator compatibility (0.4.8). This release lands the final repo-side metadata patches and publishes them as proven packages, so the operator CLI and validator path both report truthful V2 metadata from real promoted packs.
+
 ## 0.4.2
 
 Published package versions for this release:
