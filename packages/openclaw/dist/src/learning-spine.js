@@ -10,6 +10,7 @@ function noteValue(notes, prefix) {
 function roundNumber(value) {
     return Math.round(value * 10_000) / 10_000;
 }
+const MAX_PERSISTED_ROUTE_DECISION_CANDIDATE_SET_IDS = 256;
 function softmax(values) {
     if (values.length === 0) {
         return [];
@@ -255,28 +256,15 @@ export function appendServeTimeRouteDecisionLog(input) {
             selectedCharCount: input.compileResult.ok ? input.compileResult.compileResponse.diagnostics.selectedCharCount : 0,
             selectedTokenCount: input.compileResult.ok ? input.compileResult.compileResponse.diagnostics.selectedTokenCount : 0
         },
-        candidateSetIds: ranked.map((entry) => entry.blockId),
+        candidateSetIds: ranked.slice(0, MAX_PERSISTED_ROUTE_DECISION_CANDIDATE_SET_IDS).map((entry) => entry.blockId),
         chosenContextIds: input.compileResult.ok ? input.compileResult.compileResponse.selectedContext.map((block) => block.id) : [],
         candidateScores: ranked.map((entry, index) => ({
             blockId: entry.blockId,
-            source: entry.source,
             selected: selectedIds.has(entry.blockId),
-            compactedFrom: entry.compactedFrom ?? [],
-            matchedTokens: [...entry.matchedTokens],
-            routingChannels: [...entry.routingChannels],
-            channelScores: {
-                graph: roundNumber(entry.channelScores.graph),
-                shortTerm: roundNumber(entry.channelScores.shortTerm),
-                vector: roundNumber(entry.channelScores.vector)
-            },
-            routeFnScore: roundNumber(entry.score),
             actionScore: roundNumber(entry.score),
-            actionProbability: probabilities[index] ?? 0,
-            actionLogProbability: probabilities[index] === undefined || probabilities[index] <= 0 ? null : roundNumber(Math.log(probabilities[index])),
-            traversalScore: roundNumber(entry.traversalScore ?? 0),
-            priority: entry.priority
+            actionProbability: probabilities[index] ?? 0
         })),
-        structuralSignals: input.compileResult.ok ? input.compileResult.compileResponse.diagnostics.structuralSignals : null,
+        structuralSignals: null,
         fallbackReason: serveFallbackReason(input.compileResult),
         hotPathTiming: input.compileResult.timing,
         kernelContextCount: selectedKernelContextIds.length,

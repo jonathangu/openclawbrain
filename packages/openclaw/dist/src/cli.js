@@ -10,7 +10,7 @@ import { ensureManagedLearnerServiceForActivationRoot, inspectManagedLearnerServ
 import { exportBrain, importBrain } from "./import-export.js";
 import { buildNormalizedEventExport } from "@openclawbrain/contracts";
 import { buildTeacherSupervisionArtifactsFromNormalizedEventExport, createAlwaysOnLearningRuntimeState, describeAlwaysOnLearningRuntimeState, drainAlwaysOnLearningRuntime, loadOrInitBaseline, reindexCandidatePackBuildResultWithEmbedder, materializeAlwaysOnLearningCandidatePack, persistBaseline } from "@openclawbrain/learner";
-import { inspectActivationState, loadPackFromActivation, promoteCandidatePack, readLearningSpineLogEntries, stageCandidatePack } from "@openclawbrain/pack-format";
+import { inspectActivationState, loadPackFromActivation, promoteCandidatePack, resolveLearningSpineLogPath, stageCandidatePack } from "@openclawbrain/pack-format";
 import { resolveActivationRoot } from "./resolve-activation-root.js";
 import { describeOpenClawHomeInspection, discoverOpenClawHomes, formatOpenClawHomeLayout, formatOpenClawHomeProfileSource, inspectOpenClawHome } from "./openclaw-home-layout.js";
 import { inspectOpenClawBrainHookStatus, inspectOpenClawBrainPluginAllowlist } from "./openclaw-hook-truth.js";
@@ -18,6 +18,7 @@ import { describeOpenClawBrainInstallIdentity, describeOpenClawBrainInstallLayou
 import { loadAttachmentPolicyDeclaration, resolveEffectiveAttachmentPolicyTruth, writeAttachmentPolicyDeclaration } from "./attachment-policy-truth.js";
 import { DEFAULT_WATCH_POLL_INTERVAL_SECONDS, buildNormalizedEventExportFromScannedEvents, bootstrapRuntimeAttach, buildOperatorSurfaceReport, clearOpenClawProfileRuntimeLoadProof, compileRuntimeContext, createAsyncTeacherLiveLoop, createOpenClawLocalSessionTail, createRuntimeEventExportScanner, describeCurrentProfileBrainStatus, formatOperatorRollbackReport, listOpenClawProfileRuntimeLoadProofs, loadRuntimeEventExportBundle, loadWatchTeacherSnapshotState, persistWatchTeacherSnapshot, rollbackRuntimeAttach, resolveAttachmentRuntimeLoadProofsPath, resolveOperatorTeacherSnapshotPath, resolveAsyncTeacherLiveLoopSnapshotPath, resolveWatchSessionTailCursorPath, resolveWatchStateRoot, resolveWatchTeacherSnapshotPath, scanLiveEventExport, scanRecordedSession, summarizeLearningPathFromMaterialization, summarizeNormalizedEventExportLabelFlow, writeScannedEventExportBundle } from "./index.js";
 import { appendLearningUpdateLogs } from "./learning-spine.js";
+import { readBoundedJsonlTail } from "./bounded-jsonl-reader.js";
 import { buildPassiveLearningSessionExportFromOpenClawSessionStore } from "./local-session-passive-learning.js";
 import { summarizePackVectorEmbeddingState } from "./embedding-status.js";
 import { buildTracedLearningStatusSurface, loadBrainStoreTracedLearningBridge, mergeTracedLearningBridgePayload, persistBrainStoreTracedLearningBridge, writeTracedLearningBridge } from "./traced-learning-bridge.js";
@@ -3957,14 +3958,8 @@ function runUninstallCommand(parsed) {
     return 0;
 }
 function resolveServeTimeLearningRuntimeInput(activationRoot) {
-    let serveTimeDecisions = [];
-    let fallbackReason = null;
-    try {
-        serveTimeDecisions = readLearningSpineLogEntries(activationRoot, "serveTimeRouteDecisions");
-    }
-    catch {
-        fallbackReason = "serve_time_decision_log_read_failed";
-    }
+    const logPath = resolveLearningSpineLogPath(activationRoot, "serveTimeRouteDecisions");
+    const { entries: serveTimeDecisions, fallbackReason } = readBoundedJsonlTail(logPath);
     const decisionLogCount = serveTimeDecisions.length;
     const pgVersion = decisionLogCount > 0 ? "v2" : "v1";
     return {
@@ -3972,7 +3967,7 @@ function resolveServeTimeLearningRuntimeInput(activationRoot) {
         serveTimeDecisions,
         decisionLogCount,
         baselineState: pgVersion === "v2" ? loadOrInitBaseline(activationRoot) : undefined,
-        fallbackReason
+        fallbackReason: fallbackReason === null ? null : `serve_time_decision_log_${fallbackReason}`
     };
 }
 function runLearnCommand(parsed) {
