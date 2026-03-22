@@ -9,7 +9,7 @@ import { DEFAULT_OLLAMA_EMBEDDING_MODEL, createOllamaEmbedder } from "@openclawb
 import { ensureManagedLearnerServiceForActivationRoot, inspectManagedLearnerService, removeManagedLearnerServiceForActivationRoot, parseDaemonArgs, runDaemonCommand } from "./daemon.js";
 import { exportBrain, importBrain } from "./import-export.js";
 import { buildNormalizedEventExport } from "@openclawbrain/contracts";
-import { buildTeacherSupervisionArtifactsFromNormalizedEventExport, createAlwaysOnLearningRuntimeState, describeAlwaysOnLearningRuntimeState, drainAlwaysOnLearningRuntime, loadOrInitBaseline, reindexCandidatePackBuildResultWithEmbedder, materializeAlwaysOnLearningCandidatePack, persistBaseline } from "@openclawbrain/learner";
+import { buildTeacherSupervisionArtifactsFromNormalizedEventExport, createAlwaysOnLearningRuntimeState, describeAlwaysOnLearningRuntimeState, drainAlwaysOnLearningRuntime, loadOrInitBaseline, reindexCandidatePackBuildResultWithEmbedder, materializeAlwaysOnLearningCandidatePack, persistBaseline } from "./local-learner.js";
 import { inspectActivationState, loadPackFromActivation, promoteCandidatePack, readLearningSpineLogEntries, stageCandidatePack } from "@openclawbrain/pack-format";
 import { resolveActivationRoot } from "./resolve-activation-root.js";
 import { describeOpenClawHomeInspection, discoverOpenClawHomes, formatOpenClawHomeLayout, formatOpenClawHomeProfileSource, inspectOpenClawHome } from "./openclaw-home-layout.js";
@@ -20,7 +20,7 @@ import { DEFAULT_WATCH_POLL_INTERVAL_SECONDS, buildNormalizedEventExportFromScan
 import { appendLearningUpdateLogs } from "./learning-spine.js";
 import { buildPassiveLearningSessionExportFromOpenClawSessionStore } from "./local-session-passive-learning.js";
 import { summarizePackVectorEmbeddingState } from "./embedding-status.js";
-import { buildTracedLearningStatusSurface, loadBrainStoreTracedLearningBridge, mergeTracedLearningBridgePayload, persistBrainStoreTracedLearningBridge, writeTracedLearningBridge } from "./traced-learning-bridge.js";
+import { buildTracedLearningBridgePayloadFromRuntime, buildTracedLearningStatusSurface, persistTracedLearningBridgeState } from "./traced-learning-bridge.js";
 import { discoverOpenClawSessionStores, loadOpenClawSessionIndex, readOpenClawSessionFile } from "./session-store.js";
 import { readOpenClawBrainProviderDefaults, readOpenClawBrainProviderConfig, readOpenClawBrainProviderConfigFromSources, resolveOpenClawBrainProviderDefaultsPath } from "./provider-config.js";
 const OPENCLAWBRAIN_EMBEDDER_BASE_URL_ENV = "OPENCLAWBRAIN_EMBEDDER_BASE_URL";
@@ -3975,6 +3975,37 @@ function resolveServeTimeLearningRuntimeInput(activationRoot) {
         fallbackReason
     };
 }
+function resolveActivationInspectionPackId(inspection, slot) {
+    return inspection?.[slot]?.packId ?? inspection?.pointers?.[slot]?.packId ?? null;
+}
+function resolveWatchTeacherArtifactCount(snapshot) {
+    if (typeof snapshot?.teacher?.artifactCount === "number") {
+        return snapshot.teacher.artifactCount;
+    }
+    if (typeof snapshot?.diagnostics?.emittedArtifactCount === "number") {
+        return snapshot.diagnostics.emittedArtifactCount;
+    }
+    return 0;
+}
+function persistWatchTracedLearningBridgeSurface(input) {
+    const lastMaterialization = input.snapshot?.learner?.lastMaterialization ?? null;
+    const materializedPackId = lastMaterialization?.candidate?.summary?.packId ?? null;
+    return persistTracedLearningBridgeState(input.activationRoot, buildTracedLearningBridgePayloadFromRuntime({
+        updatedAt: input.updatedAt,
+        lastMaterialization,
+        teacherArtifactCount: resolveWatchTeacherArtifactCount(input.snapshot),
+        serveTimeLearning: resolveServeTimeLearningRuntimeInput(input.activationRoot),
+        materializedPackId,
+        promoted: materializedPackId !== null &&
+            resolveActivationInspectionPackId(input.inspection, "active") === materializedPackId,
+        baselinePersisted: input.baselinePersisted,
+        source: {
+            command: "watch",
+            scanRoot: input.scanRoot,
+            teacherSnapshotPath: input.teacherSnapshotPath
+        }
+    }));
+}
 function runLearnCommand(parsed) {
     const learnStatePath = path.join(parsed.activationRoot, "learn-cli-state.json");
     const teacherSnapshotPath = resolveAsyncTeacherLiveLoopSnapshotPath(parsed.activationRoot);
@@ -4212,9 +4243,6 @@ function runLearnCommand(parsed) {
     const lastMaterialization = learnerResult.materializations.at(-1) ?? null;
     const plan = describeAlwaysOnLearningRuntimeState(learnerResult.state, lastMaterialization);
     const learningPath = summarizeLearningPathFromMaterialization(lastMaterialization);
-    const supervisionCount = lastMaterialization?.candidate.summary.learnedRouter.supervisionCount ?? 0;
-    const routerUpdateCount = lastMaterialization?.candidate.summary.learnedRouter.updateCount ?? 0;
-    const routerNoOpReason = lastMaterialization?.candidate.summary.learnedRouter.noOpReason ?? null;
     const graphEvolution = lastMaterialization?.candidate.payloads.graph.evolution;
     const graphSummary = graphEvolution === undefined
         ? null
@@ -4225,18 +4253,28 @@ function runLearnCommand(parsed) {
     const connectSummary = graphSummary?.connectDiagnostics === null || graphSummary?.connectDiagnostics === undefined
         ? ""
         : ` connect candidates=${graphSummary.connectDiagnostics.candidatePairCount} applied=${graphSummary.connectDiagnostics.appliedPairCount} edges=${graphSummary.connectDiagnostics.createdEdgeCount}.`;
-    const routingBuild = lastMaterialization?.candidate.routingBuild ?? {
-        learnedRoutingPath: serveTimeLearning.pgVersion === "v2" ? "policy_gradient_v2" : "policy_gradient_v1",
-        pgVersionRequested: serveTimeLearning.pgVersion,
-        pgVersionUsed: serveTimeLearning.pgVersion,
-        decisionLogCount: serveTimeLearning.decisionLogCount,
-        fallbackReason: serveTimeLearning.pgVersion === "v1" ? serveTimeLearning.fallbackReason ?? "no_serve_time_decisions" : null,
-        updatedBaseline: null
-    };
+    const tracedLearningPreview = buildTracedLearningBridgePayloadFromRuntime({
+        updatedAt: now,
+        lastMaterialization,
+        teacherArtifactCount: teacherArtifacts.length,
+        serveTimeLearning,
+        source: {
+            command: "learn",
+            exportDigest: learningExport.provenance.exportDigest,
+            teacherSnapshotPath
+        }
+    });
+    const supervisionCount = tracedLearningPreview.supervisionCount;
+    const routerUpdateCount = tracedLearningPreview.routerUpdateCount;
+    const routerNoOpReason = tracedLearningPreview.routerNoOpReason;
     const learnPathReport = {
-        ...routingBuild,
-        fallbackReason: routingBuild.fallbackReason ??
-            (routingBuild.pgVersionUsed === "v1" ? serveTimeLearning.fallbackReason ?? "no_serve_time_decisions" : null)
+        learnedRoutingPath: lastMaterialization?.candidate.routingBuild?.learnedRoutingPath ??
+            (serveTimeLearning.pgVersion === "v2" ? "policy_gradient_v2" : "policy_gradient_v1"),
+        pgVersionRequested: tracedLearningPreview.pgVersionRequested,
+        pgVersionUsed: tracedLearningPreview.pgVersionUsed,
+        decisionLogCount: tracedLearningPreview.decisionLogCount,
+        fallbackReason: tracedLearningPreview.fallbackReason,
+        updatedBaseline: lastMaterialization?.candidate.routingBuild?.updatedBaseline ?? null
     };
     let promoted = false;
     let materializedPackId = null;
@@ -4265,6 +4303,20 @@ function runLearnCommand(parsed) {
         materializedPackId = candidateDescriptor.manifest.packId;
         promoted = true;
     }
+    const tracedLearningPayload = buildTracedLearningBridgePayloadFromRuntime({
+        updatedAt: now,
+        lastMaterialization,
+        teacherArtifactCount: teacherArtifacts.length,
+        serveTimeLearning,
+        materializedPackId,
+        promoted,
+        baselinePersisted,
+        source: {
+            command: "learn",
+            exportDigest: learningExport.provenance.exportDigest,
+            teacherSnapshotPath
+        }
+    });
     persistLearnCliState(learnerResult.state, now);
     writeJsonFile(teacherSnapshotPath, {
         runtimeOwner: "openclaw",
@@ -4311,31 +4363,10 @@ function runLearnCommand(parsed) {
             lastAppliedMaterializationJobId: lastMaterialization?.jobId ?? null
         }
     });
-    const tracedLearningBridge = mergeTracedLearningBridgePayload({
-        updatedAt: now,
-        routeTraceCount: lastMaterialization?.candidate.summary.learnedRouter.routeTraceCount ?? serveTimeLearning.decisionLogCount,
-        supervisionCount,
-        routerUpdateCount,
-        teacherArtifactCount: teacherArtifacts.length,
-        pgVersionRequested: learnPathReport.pgVersionRequested,
-        pgVersionUsed: learnPathReport.pgVersionUsed,
-        decisionLogCount: learnPathReport.decisionLogCount,
-        fallbackReason: learnPathReport.fallbackReason,
-        routerNoOpReason,
-        materializedPackId,
-        promoted,
-        baselinePersisted,
-        source: {
-            command: "learn",
-            exportDigest: learningExport.provenance.exportDigest,
-            teacherSnapshotPath
-        }
-    }, loadBrainStoreTracedLearningBridge());
+    const tracedLearningBridge = persistTracedLearningBridgeState(activationRoot, tracedLearningPayload);
     const surfacedSupervisionCount = tracedLearningBridge.supervisionCount;
     const surfacedRouterUpdateCount = tracedLearningBridge.routerUpdateCount;
     const surfacedRouterNoOpReason = tracedLearningBridge.routerNoOpReason;
-    persistBrainStoreTracedLearningBridge(tracedLearningBridge);
-    writeTracedLearningBridge(activationRoot, tracedLearningBridge);
     const summaryMessage = materializedPackId === null
         ? `Scanned ${totalSessions} sessions, ${totalEvents} new events, no candidate materialized, no promotion.`
         : `Scanned ${totalSessions} sessions, ${totalEvents} new events, materialized ${materializedPackId}, promoted.${connectSummary}`;
@@ -4967,6 +4998,7 @@ export async function createWatchCommandRuntime(input) {
     const restoredTeacherState = loadWatchTeacherSnapshotState(teacherSnapshotPath);
     const log = input.log ?? watchLog;
     const startupWarnings = [];
+    let baselinePersisted = false;
     mkdirSync(scanRoot, { recursive: true });
     mkdirSync(resolveWatchStateRoot(activationRoot), { recursive: true });
     log(`Watch starting — activation: ${shortenPath(activationRoot)}`);
@@ -5020,6 +5052,7 @@ export async function createWatchCommandRuntime(input) {
         persistUpdatedBaseline: (state) => {
             try {
                 persistBaseline(activationRoot, state);
+                baselinePersisted = true;
             }
             catch (error) {
                 log(`Baseline persist failed: ${formatWatchError(error)}`);
@@ -5139,6 +5172,17 @@ export async function createWatchCommandRuntime(input) {
         log(replayPromotion.logLine);
         bootstrapSnapshot = teacherLoop.snapshot();
     }
+    const bootstrapInspection = inspectActivationState(activationRoot, bootstrapObservedAt);
+    persistWatchTracedLearningBridgeSurface({
+        activationRoot,
+        updatedAt: bootstrapObservedAt,
+        snapshot: bootstrapSnapshot,
+        inspection: bootstrapInspection,
+        scanRoot,
+        teacherSnapshotPath,
+        baselinePersisted
+    });
+    baselinePersisted = false;
     const bootstrapCursor = localSessionTail.snapshot();
     persistWatchTeacherSnapshot(teacherSnapshotPath, {
         lastRunAt: bootstrapObservedAt,
@@ -5188,7 +5232,12 @@ export async function createWatchCommandRuntime(input) {
         scanner,
         teacherLoop,
         localSessionTail,
-        embedder: resolvedEmbedder.embedder
+        embedder: resolvedEmbedder.embedder,
+        consumeBaselinePersisted: () => {
+            const persisted = baselinePersisted;
+            baselinePersisted = false;
+            return persisted;
+        }
     };
 }
 export async function runWatchCommandPass(runtime, options = {}) {
@@ -5267,6 +5316,17 @@ export async function runWatchCommandPass(runtime, options = {}) {
         }
     }
     const afterInspection = inspectActivationState(runtime.activationRoot, observedAt);
+    persistWatchTracedLearningBridgeSurface({
+        activationRoot: runtime.activationRoot,
+        updatedAt: observedAt,
+        snapshot,
+        inspection: afterInspection,
+        scanRoot: runtime.scanRoot,
+        teacherSnapshotPath: runtime.teacherSnapshotPath,
+        baselinePersisted: typeof runtime.consumeBaselinePersisted === "function"
+            ? runtime.consumeBaselinePersisted()
+            : false
+    });
     const lastObservedDelta = buildWatchLastObservedDelta({
         observedAt,
         localPoll,

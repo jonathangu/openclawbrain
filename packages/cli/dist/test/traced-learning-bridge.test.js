@@ -4,7 +4,7 @@ import { mkdtempSync, mkdirSync, readFileSync, rmSync, writeFileSync } from "nod
 import os from "node:os";
 import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
-import { buildTracedLearningStatusSurface, loadBrainStoreTracedLearningBridge, loadTracedLearningBridge, mergeTracedLearningBridgePayload, persistBrainStoreTracedLearningBridge, resolveTracedLearningBridgePath, writeTracedLearningBridge } from "../src/traced-learning-bridge.js";
+import { buildTracedLearningBridgePayloadFromRuntime, buildTracedLearningStatusSurface, loadBrainStoreTracedLearningBridge, loadTracedLearningBridge, mergeTracedLearningBridgePayload, persistBrainStoreTracedLearningBridge, persistTracedLearningBridgeState, resolveTracedLearningBridgePath, writeTracedLearningBridge } from "../src/traced-learning-bridge.js";
 
 function createTempRoot(t) {
     const root = mkdtempSync(path.join(os.tmpdir(), "openclawbrain-traced-learning-bridge-"));
@@ -152,6 +152,97 @@ test("brain-store traced-learning surface persists surfaced learn truth", (t) =>
         assert.match(surface.detail, /source=brain-store/);
         assert.match(surface.detail, /bridge=brain_store_traced_learning_status_surface/);
         assert.match(surface.detail, /runtime=missing/);
+    }
+    finally {
+        db.close();
+    }
+});
+
+test("watch bridge helper persists traced-learning status surface for daemon readers", (t) => {
+    const activationRoot = createTempActivationRoot(t);
+    const { brainRoot, db, dbPath } = createBrainStore(t);
+    try {
+        const watchBridge = buildTracedLearningBridgePayloadFromRuntime({
+            updatedAt: "2026-03-22T09:14:00.000Z",
+            lastMaterialization: {
+                candidate: {
+                    summary: {
+                        packId: "pack-watch-123",
+                        learnedRouter: {
+                            routeTraceCount: 12,
+                            supervisionCount: 5,
+                            updateCount: 3,
+                            noOpReason: null
+                        }
+                    },
+                    routingBuild: {
+                        learnedRoutingPath: "policy_gradient_v2",
+                        pgVersionRequested: "v2",
+                        pgVersionUsed: "v2",
+                        decisionLogCount: 12,
+                        fallbackReason: null,
+                        updatedBaseline: null
+                    }
+                }
+            },
+            teacherArtifactCount: 4,
+            serveTimeLearning: {
+                pgVersion: "v2",
+                decisionLogCount: 12,
+                fallbackReason: null
+            },
+            materializedPackId: "pack-watch-123",
+            promoted: false,
+            baselinePersisted: false,
+            source: {
+                command: "watch",
+                scanRoot: path.join(activationRoot, "event-exports"),
+                teacherSnapshotPath: path.join(activationRoot, "watch", "teacher-snapshot.json")
+            }
+        });
+        const surfaced = persistTracedLearningBridgeState(activationRoot, watchBridge, {
+            env: {
+                OPENCLAWBRAIN_ROOT: brainRoot
+            }
+        });
+        assert.equal(surfaced.routeTraceCount, 12);
+        assert.equal(surfaced.supervisionCount, 5);
+        assert.equal(surfaced.routerUpdateCount, 3);
+        assert.equal(surfaced.materializedPackId, "pack-watch-123");
+        assert.equal(surfaced.source?.command, "watch");
+        const runtime = loadTracedLearningBridge(activationRoot);
+        assert.equal(runtime.bridge?.source?.command, "watch");
+        assert.equal(runtime.bridge?.routeTraceCount, 12);
+        const canonical = loadBrainStoreTracedLearningBridge({
+            env: {
+                OPENCLAWBRAIN_ROOT: brainRoot
+            }
+        });
+        assert.equal(canonical.path, dbPath);
+        assert.equal(canonical.bridge?.routeTraceCount, 12);
+        assert.equal(canonical.bridge?.supervisionCount, 5);
+        assert.equal(canonical.bridge?.routerUpdateCount, 3);
+        assert.equal(canonical.bridge?.materializedPackId, "pack-watch-123");
+        assert.equal(canonical.bridge?.source?.bridge, "brain_store_traced_learning_status_surface");
+        assert.equal(canonical.bridge?.source?.surfacedFrom?.command, "watch");
+        const surface = buildTracedLearningStatusSurface(activationRoot, {
+            env: {
+                OPENCLAWBRAIN_ROOT: brainRoot
+            }
+        });
+        assert.equal(surface.path, dbPath);
+        assert.equal(surface.present, true);
+        assert.equal(surface.routeTraceCount, 12);
+        assert.equal(surface.supervisionCount, 5);
+        assert.equal(surface.routerUpdateCount, 3);
+        assert.equal(surface.teacherArtifactCount, 4);
+        assert.equal(surface.pgVersionUsed, "v2");
+        assert.equal(surface.materializedPackId, "pack-watch-123");
+        assert.equal(surface.promoted, false);
+        assert.equal(surface.source?.command, "brain-store");
+        assert.equal(surface.source?.surfacedFrom?.command, "watch");
+        assert.match(surface.detail, /bridge=brain_store_traced_learning_status_surface/);
+        assert.match(surface.detail, /runtime=present/);
     }
     finally {
         db.close();

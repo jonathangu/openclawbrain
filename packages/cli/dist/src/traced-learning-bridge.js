@@ -132,6 +132,48 @@ function loadTrainingStateJson(db, key) {
 function writeTrainingStateJson(db, key, value) {
     db.prepare(`INSERT OR REPLACE INTO brain_training_state (key, value) VALUES (?, ?)`).run(key, JSON.stringify(value));
 }
+function buildTracedLearningRoutingBuildFromServeTime(serveTimeLearning) {
+    return {
+        learnedRoutingPath: serveTimeLearning.pgVersion === "v2" ? "policy_gradient_v2" : "policy_gradient_v1",
+        pgVersionRequested: serveTimeLearning.pgVersion,
+        pgVersionUsed: serveTimeLearning.pgVersion,
+        decisionLogCount: normalizeCount(serveTimeLearning.decisionLogCount),
+        fallbackReason: serveTimeLearning.pgVersion === "v1"
+            ? normalizeOptionalString(serveTimeLearning.fallbackReason) ?? "no_serve_time_decisions"
+            : null,
+        updatedBaseline: null
+    };
+}
+export function buildTracedLearningBridgePayloadFromRuntime(input) {
+    const lastMaterialization = input?.lastMaterialization ?? null;
+    const serveTimeLearning = input?.serveTimeLearning ?? {
+        pgVersion: "v1",
+        decisionLogCount: 0,
+        fallbackReason: null
+    };
+    const learnedRouter = lastMaterialization?.candidate?.summary?.learnedRouter ?? null;
+    const routingBuild = lastMaterialization?.candidate?.routingBuild ?? buildTracedLearningRoutingBuildFromServeTime(serveTimeLearning);
+    const fallbackReason = routingBuild.fallbackReason ??
+        (routingBuild.pgVersionUsed === "v1"
+            ? normalizeOptionalString(serveTimeLearning.fallbackReason) ?? "no_serve_time_decisions"
+            : null);
+    return normalizeBridgePayload({
+        updatedAt: input?.updatedAt,
+        routeTraceCount: learnedRouter?.routeTraceCount ?? serveTimeLearning.decisionLogCount,
+        supervisionCount: learnedRouter?.supervisionCount ?? 0,
+        routerUpdateCount: learnedRouter?.updateCount ?? 0,
+        teacherArtifactCount: input?.teacherArtifactCount ?? 0,
+        pgVersionRequested: routingBuild.pgVersionRequested,
+        pgVersionUsed: routingBuild.pgVersionUsed,
+        decisionLogCount: routingBuild.decisionLogCount,
+        fallbackReason,
+        routerNoOpReason: learnedRouter?.noOpReason ?? null,
+        materializedPackId: input?.materializedPackId ?? lastMaterialization?.candidate?.summary?.packId ?? null,
+        promoted: input?.promoted === true,
+        baselinePersisted: input?.baselinePersisted === true,
+        source: input?.source
+    });
+}
 function countRows(db, tableName) {
     const row = db.prepare(`SELECT COUNT(*) as count FROM ${tableName}`).get();
     return normalizeCount(row?.count);
@@ -322,6 +364,12 @@ export function persistBrainStoreTracedLearningBridge(payload, options = {}) {
             db.close();
         }
     }
+}
+export function persistTracedLearningBridgeState(activationRoot, payload, options = {}) {
+    const bridge = mergeTracedLearningBridgePayload(payload, loadBrainStoreTracedLearningBridge(options));
+    persistBrainStoreTracedLearningBridge(bridge, options);
+    writeTracedLearningBridge(activationRoot, bridge);
+    return bridge;
 }
 export function loadBrainStoreTracedLearningBridge(options = {}) {
     const brainRoot = resolveBrainRoot(options.env ?? process.env);
