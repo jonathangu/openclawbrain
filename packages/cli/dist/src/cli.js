@@ -4243,7 +4243,8 @@ function runLearnCommand(parsed) {
         maxCycles: 16,
         pgVersion: serveTimeLearning.pgVersion,
         ...(serveTimeLearning.decisionLogCount > 0 ? { serveTimeDecisions: serveTimeLearning.serveTimeDecisions } : {}),
-        ...(serveTimeLearning.baselineState !== undefined ? { baselineState: serveTimeLearning.baselineState } : {})
+        ...(serveTimeLearning.baselineState !== undefined ? { baselineState: serveTimeLearning.baselineState } : {}),
+        activationRoot
     });
     const lastMaterialization = learnerResult.materializations.at(-1) ?? null;
     const plan = describeAlwaysOnLearningRuntimeState(learnerResult.state, lastMaterialization);

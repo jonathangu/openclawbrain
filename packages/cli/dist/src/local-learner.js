@@ -1,5 +1,6 @@
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { buildRouteArtifactReference, CONTRACT_IDS, PACK_GRAPH_SCHEMAS, ROUTER_PG_PROFILE_V1, ROUTER_PG_PROFILE_V2, checksumJsonPayload, computeRouterCollectedLabelCounts, computeRouterFreshnessChecksum, computeRouterObjectiveChecksum, computeRouterQueryChecksum, computeRouterWeightsChecksum, sortNormalizedEvents, validateTeacherSupervisionArtifact } from "@openclawbrain/contracts";
 import { buildNormalizedEventDedupId, buildNormalizedEventExport, buildNormalizedEventExportBridge, createDefaultLearningSurface, createEventExportCursor, createExplicitEventRange, validateNormalizedEventExport, validateNormalizedEventExportBridge, validateNormalizedEventExportSlice } from "@openclawbrain/event-export";
 import { computePayloadChecksum, loadPack, PACK_LAYOUT, summarizeStructuralGraphEvolution, writePackFile } from "@openclawbrain/pack-format";
@@ -891,7 +892,8 @@ function buildAlwaysOnLearningMaterializationJob(input, current, selectedSlices,
         principalBacklog,
         ...(input.pgVersion !== undefined ? { pgVersion: input.pgVersion } : {}),
         ...(input.serveTimeDecisions !== undefined ? { serveTimeDecisions: [...input.serveTimeDecisions] } : {}),
-        ...(input.baselineState !== undefined ? { baselineState: { ...input.baselineState } } : {})
+        ...(input.baselineState !== undefined ? { baselineState: { ...input.baselineState } } : {}),
+        ...(input.activationRoot !== undefined ? { activationRoot: input.activationRoot } : {})
     };
     const candidate = buildCandidatePackFromNormalizedEventExport(candidateInput);
     const selectedSliceIds = selectedSlices.map((slice) => slice.sliceId);
@@ -4040,6 +4042,201 @@ function createRouterArtifact(packId, builtAt, graph, vectors, eventExport, spar
  * Join serve-time decisions with feedback events to assign outcome rewards.
  * Returns decisionRecordId → outcome (z_T).
  */
+function clampTeacherObservationOutcome(value) {
+    if (!Number.isFinite(value)) {
+        return 0;
+    }
+    return Math.max(-1, Math.min(1, value));
+}
+function normalizeOutcomeMatchText(value) {
+    return typeof value === "string" && value.trim().length > 0
+        ? value.replace(/\s+/g, " ").trim().toLowerCase()
+        : null;
+}
+function parseObservationRouteMetadata(value) {
+    if (typeof value !== "string" || value.trim().length === 0) {
+        return {
+            selectedNodeIds: [],
+            selectedPathNodeIds: []
+        };
+    }
+    try {
+        const parsed = JSON.parse(value);
+        const selectedNodeIds = Array.isArray(parsed?.selectedNodeIds)
+            ? parsed.selectedNodeIds.filter((entry) => typeof entry === "string")
+            : [];
+        const selectedPathNodeIds = Array.isArray(parsed?.selectedPathNodeIds)
+            ? parsed.selectedPathNodeIds.filter((entry) => typeof entry === "string")
+            : [];
+        return {
+            selectedNodeIds,
+            selectedPathNodeIds
+        };
+    }
+    catch {
+        return {
+            selectedNodeIds: [],
+            selectedPathNodeIds: []
+        };
+    }
+}
+function loadTeacherObservationOutcomesFromActivation(activationRoot) {
+    const resolvedActivationRoot = typeof activationRoot === "string" && activationRoot.trim().length > 0
+        ? path.resolve(activationRoot)
+        : null;
+    if (resolvedActivationRoot === null) {
+        return [];
+    }
+    const dbPath = path.join(resolvedActivationRoot, "state.db");
+    if (!existsSync(dbPath)) {
+        return [];
+    }
+    let db = null;
+    try {
+        db = new DatabaseSync(dbPath);
+        const table = db.prepare("SELECT name FROM sqlite_master WHERE type = 'table' AND name = 'brain_observations' LIMIT 1").get();
+        if (table === undefined) {
+            return [];
+        }
+        const rows = db.prepare(`
+      SELECT id, query_text, route_metadata_json, final_score, confidence, created_at, updated_at, evaluated_at
+      FROM brain_observations
+      WHERE final_score IS NOT NULL
+      ORDER BY created_at DESC
+    `).all();
+        return rows
+            .map((row) => {
+            const routeMetadata = parseObservationRouteMetadata(row.route_metadata_json);
+            return {
+                observationId: typeof row.id === "string" ? row.id : null,
+                queryText: typeof row.query_text === "string" ? row.query_text : "",
+                finalScore: clampTeacherObservationOutcome(Number(row.final_score)),
+                confidence: Number.isFinite(Number(row.confidence)) ? Number(row.confidence) : null,
+                createdAt: Number.isFinite(Number(row.created_at)) ? Number(row.created_at) : null,
+                updatedAt: Number.isFinite(Number(row.updated_at)) ? Number(row.updated_at) : null,
+                evaluatedAt: Number.isFinite(Number(row.evaluated_at)) ? Number(row.evaluated_at) : null,
+                selectedNodeIds: routeMetadata.selectedNodeIds,
+                selectedPathNodeIds: routeMetadata.selectedPathNodeIds
+            };
+        })
+            .filter((row) => row.createdAt !== null && row.finalScore !== 0);
+    }
+    catch {
+        return [];
+    }
+    finally {
+        try {
+            db?.close();
+        }
+        catch {
+        }
+    }
+}
+function decisionTimestampsForObservationMatch(decision) {
+    const timestamps = [];
+    for (const value of [decision.turnCreatedAt, decision.recordedAt]) {
+        if (typeof value !== "string" || value.trim().length === 0) {
+            continue;
+        }
+        const parsed = Date.parse(value);
+        if (Number.isFinite(parsed) && !timestamps.includes(parsed)) {
+            timestamps.push(parsed);
+        }
+    }
+    return timestamps;
+}
+function decisionObservationMatchKey(decision, observation) {
+    const normalizedDecisionText = normalizeOutcomeMatchText(decision.userMessage);
+    const normalizedObservationText = normalizeOutcomeMatchText(observation.queryText);
+    const decisionSelected = new Set([
+        ...(Array.isArray(decision.selectedBrainContextIds) ? decision.selectedBrainContextIds : []),
+        ...(Array.isArray(decision.chosenContextIds) ? decision.chosenContextIds : [])
+    ].filter((entry) => typeof entry === "string"));
+    const observationSelected = new Set([
+        ...observation.selectedNodeIds,
+        ...observation.selectedPathNodeIds
+    ]);
+    let overlapCount = 0;
+    for (const blockId of observationSelected) {
+        if (decisionSelected.has(blockId)) {
+            overlapCount += 1;
+        }
+    }
+    const timestamps = decisionTimestampsForObservationMatch(decision);
+    const observationCreatedAt = observation.createdAt;
+    const bestDelta = observationCreatedAt === null || timestamps.length === 0
+        ? Number.POSITIVE_INFINITY
+        : Math.min(...timestamps.map((timestamp) => Math.abs(timestamp - observationCreatedAt)));
+    const sameQuery = normalizedDecisionText !== null && normalizedDecisionText === normalizedObservationText;
+    if (!sameQuery && overlapCount === 0) {
+        return null;
+    }
+    if (!Number.isFinite(bestDelta) || bestDelta > 300_000) {
+        return null;
+    }
+    return {
+        sameQuery,
+        overlapCount,
+        deltaMs: bestDelta,
+        confidence: observation.confidence ?? 0
+    };
+}
+function compareDecisionObservationMatch(left, right) {
+    if (left.sameQuery !== right.sameQuery) {
+        return left.sameQuery ? -1 : 1;
+    }
+    if (left.overlapCount !== right.overlapCount) {
+        return right.overlapCount - left.overlapCount;
+    }
+    if (left.deltaMs !== right.deltaMs) {
+        return left.deltaMs - right.deltaMs;
+    }
+    if (left.confidence !== right.confidence) {
+        return right.confidence - left.confidence;
+    }
+    return 0;
+}
+function joinDecisionsWithTeacherObservationOutcomes(decisions, observationOutcomes) {
+    const outcomes = new Map();
+    for (const decision of decisions) {
+        outcomes.set(decision.recordId, 0);
+    }
+    if (!Array.isArray(observationOutcomes) || observationOutcomes.length === 0) {
+        return outcomes;
+    }
+    for (const observation of observationOutcomes) {
+        const matches = decisions
+            .map((decision) => {
+            const key = decisionObservationMatchKey(decision, observation);
+            return key === null
+                ? null
+                : {
+                    decision,
+                    key
+                };
+        })
+            .filter((entry) => entry !== null)
+            .sort((left, right) => compareDecisionObservationMatch(left.key, right.key));
+        const best = matches[0] ?? null;
+        const runnerUp = matches[1] ?? null;
+        if (best === null) {
+            continue;
+        }
+        if (runnerUp !== null && compareDecisionObservationMatch(best.key, runnerUp.key) === 0) {
+            continue;
+        }
+        const reward = clampTeacherObservationOutcome(observation.finalScore);
+        if (reward === 0) {
+            continue;
+        }
+        const current = outcomes.get(best.decision.recordId) ?? 0;
+        if (current === 0 || Math.abs(reward) > Math.abs(current)) {
+            outcomes.set(best.decision.recordId, reward);
+        }
+    }
+    return outcomes;
+}
+
 export function joinDecisionsWithFeedback(decisions, eventExport, maxDelayMs = 300_000) {
     const outcomes = new Map();
     for (const decision of decisions) {
@@ -4421,15 +4618,21 @@ function computeTrajectoryPolicyGradientV2(trajectory, adjacency, graph, vectors
  * 6. Aggregates into RouterPolicyUpdateV1[] format
  * 7. Builds the router artifact with ROUTER_PG_PROFILE_V2
  */
-function createRouterArtifactV2(packId, builtAt, graph, vectors, eventExport, serveTimeDecisions, baselineState, sparseFeedback, principalBacklog) {
+function createRouterArtifactV2(packId, builtAt, graph, vectors, eventExport, serveTimeDecisions, baselineState, sparseFeedback, principalBacklog, teacherObservationOutcomes = []) {
     const tau = DEFAULT_TAU;
     const pgScale = 8;
     // 1. Build adjacency map from graph
     const adjacency = buildAdjacencyMap(graph);
     const resolveBlockId = buildGraphBlockIdResolver(graph);
     const remappedServeTimeDecisions = serveTimeDecisions.map((decision) => remapServeTimeDecisionToGraph(decision, resolveBlockId));
-    // 2. Join serve-time decisions with feedback events to get outcomes
+    // 2. Join serve-time decisions with explicit feedback first, then let teacher-v2 observations override when available.
     const outcomeMap = joinDecisionsWithFeedback(remappedServeTimeDecisions, eventExport);
+    const teacherObservationOutcomeMap = joinDecisionsWithTeacherObservationOutcomes(remappedServeTimeDecisions, teacherObservationOutcomes);
+    for (const [decisionId, reward] of teacherObservationOutcomeMap.entries()) {
+        if (reward !== 0) {
+            outcomeMap.set(decisionId, reward);
+        }
+    }
     // 3 & 4. Reconstruct trajectories and update baseline
     let currentBaseline = { ...baselineState };
     const trajectories = [];
@@ -4719,9 +4922,12 @@ export function buildCandidatePack(input) {
     const vectors = createVectorsPayload(graph);
     let router = null;
     let updatedBaseline = null;
+    const teacherObservationOutcomes = input.activationRoot === undefined
+        ? []
+        : loadTeacherObservationOutcomesFromActivation(input.activationRoot);
     if (input.learnedRouting) {
         if (useV2) {
-            const v2Result = createRouterArtifactV2(packId, builtAt, graph, vectors, eventExport, input.serveTimeDecisions, input.baselineState ?? initBaseline(), input.sparseFeedback, input.principalBacklog);
+            const v2Result = createRouterArtifactV2(packId, builtAt, graph, vectors, eventExport, input.serveTimeDecisions, input.baselineState ?? initBaseline(), input.sparseFeedback, input.principalBacklog, teacherObservationOutcomes);
             router = v2Result.artifact;
             updatedBaseline = v2Result.updatedBaseline;
         }
@@ -4883,7 +5089,8 @@ export function buildCandidatePackFromNormalizedEventExport(input) {
         ...(input.principalBacklog !== undefined ? { principalBacklog: input.principalBacklog } : {}),
         ...(input.pgVersion !== undefined ? { pgVersion: input.pgVersion } : {}),
         ...(input.serveTimeDecisions !== undefined ? { serveTimeDecisions: [...input.serveTimeDecisions] } : {}),
-        ...(input.baselineState !== undefined ? { baselineState: { ...input.baselineState } } : {})
+        ...(input.baselineState !== undefined ? { baselineState: { ...input.baselineState } } : {}),
+        ...(input.activationRoot !== undefined ? { activationRoot: input.activationRoot } : {})
     };
     return buildCandidatePack(candidateInput);
 }

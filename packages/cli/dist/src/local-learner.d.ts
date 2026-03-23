@@ -29,6 +29,7 @@ export interface CandidatePackBuildInput {
     serveTimeDecisions?: LearningSpineServeRouteDecisionLogEntryV1[];
     /** Baseline state for V2 variance reduction. */
     baselineState?: BaselineStateV1;
+    activationRoot?: string;
 }
 export interface CandidatePackFromNormalizedEventExportInput {
     packLabel: string;
@@ -45,6 +46,7 @@ export interface CandidatePackFromNormalizedEventExportInput {
     pgVersion?: "v1" | "v2";
     serveTimeDecisions?: LearningSpineServeRouteDecisionLogEntryV1[];
     baselineState?: BaselineStateV1;
+    activationRoot?: string;
 }
 export interface BuildTeacherSupervisionArtifactsInput {
     normalizedEventExport: NormalizedEventExportV1;
@@ -66,6 +68,7 @@ interface CandidatePackBridgeInputBase {
     pgVersion?: "v1" | "v2";
     serveTimeDecisions?: LearningSpineServeRouteDecisionLogEntryV1[];
     baselineState?: BaselineStateV1;
+    activationRoot?: string;
 }
 export interface CandidatePackFromNormalizedEventExportSliceInput extends CandidatePackBridgeInputBase {
     normalizedEventExportSlice: NormalizedEventExportSliceV1;
@@ -325,6 +328,7 @@ export interface AdvanceAlwaysOnLearningRuntimeInput {
     pgVersion?: "v1" | "v2";
     serveTimeDecisions?: LearningSpineServeRouteDecisionLogEntryV1[];
     baselineState?: BaselineStateV1;
+    activationRoot?: string;
 }
 export interface AlwaysOnLearningMaterializationJobV1 {
     jobId: string;
