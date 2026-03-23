@@ -1,8 +1,8 @@
 # @openclawbrain/cli
 
-`@openclawbrain/cli@0.4.10` is the published operator CLI package for OpenClawBrain.
+Operator CLI for OpenClawBrain. Use it with `@openclawbrain/openclaw`.
 
-Primary public flow:
+The public install story is three commands to install or update, then one command to verify.
 
 ```bash
 openclaw plugins install @openclawbrain/openclaw
@@ -11,21 +11,21 @@ openclaw gateway restart
 npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 ```
 
-Patch note for `0.4.4`: the CLI now normalizes `plugins.allow` / `plugins.entries.openclawbrain` correctly on reinstall and reports the canonical `openclawbrain` install identity in status output.
+The first three commands install or update OpenClawBrain. The last command verifies the selected OpenClaw home.
 
-Host release note: patched OpenClaw host builds no longer emit the old `openclaw` vs `openclawbrain` mismatch warning. Older host builds may still show that warning until the host-side alias fix is released there.
-
-This package carries the `openclawbrain` CLI, daemon controls, import/export helpers, and install/status/operator management code. `@openclawbrain/openclaw` is the plugin/runtime payload.
-
-## Commands
+## Common commands
 
 ```bash
-npx @openclawbrain/cli install --openclaw-home ~/.openclaw
-npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli rollback --activation-root /var/openclawbrain/activation --dry-run
-npx @openclawbrain/cli@0.4.10 daemon status --activation-root /var/openclawbrain/activation
+npx @openclawbrain/cli rollback --openclaw-home ~/.openclaw --dry-run
+npx @openclawbrain/cli detach --openclaw-home ~/.openclaw
+npx @openclawbrain/cli uninstall --openclaw-home ~/.openclaw --keep-data
+npx @openclawbrain/cli learn --openclaw-home ~/.openclaw --json
+npx @openclawbrain/cli daemon status --activation-root ~/.openclawbrain/activation
 ```
 
-If the CLI is already on your `PATH`, `openclawbrain ...` is the same command surface. The docs lead with `npx` because that is the clean-host public-registry lane that already passed on `redogfood`.
+## Docs
 
-The old `openclawbrain-ops` alias stays wired to the same entrypoint for compatibility.
+- [Repo README](../../README.md)
+- [Quick start](../../docs/getting-started/quick-start.md)
+- [Lifecycle](../../docs/lifecycle.md)
+- [Troubleshooting](../../docs/operating/troubleshooting.md)

@@ -1,81 +1,68 @@
-# Canonical lifecycle and compatibility migration
+# Lifecycle
 
-This file is the repo's convergence decision for the current public package surfaces.
+This guide covers the supported install, verify, rollback, detach, and uninstall flow for OpenClawBrain.
 
-## Decision
+## Install or update
 
-- Canonical operator lane for the `0.4.1` wave: three commands install or update the split-package lane, then one status command verifies it: `openclaw plugins install @openclawbrain/openclaw`, `npx @openclawbrain/cli install --openclaw-home ~/.openclaw`, `openclaw gateway restart`, then `npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed`.
-- This exact public-registry flow already passed on the real host `redogfood`.
-- Compatibility lane for older installs: `@jonathangu/openclawbrain@0.3.5` through `openclaw plugins install`.
-- New docs, reinstall guides, upgrade guides, and support replies should lead with the split `0.4.1` lane.
-- Host release note: the CLI-side reinstall fix is shipped in `0.4.4`. The host-side `openclaw` alias fix removes the old mismatch warning on patched hosts; older host builds may still show the cosmetic warning until that host release lands.
-- The compatibility lane stays published so older plugin/wrapper installs do not break, but it is not the main operator story.
-
-## Copy-paste lifecycle
-
-The public split-package flow is the same for a fresh install, an upgrade, or a
-repair: three commands install or update, then one human-readable status
-command verifies the result. Keep the JSON status as the machine-readable
-follow-up when you need automation.
+The public install story is three commands to install or update, then one command to verify.
 
 ```bash
-# Install, upgrade, or repair
 openclaw plugins install @openclawbrain/openclaw
 npx @openclawbrain/cli install --openclaw-home ~/.openclaw
 openclaw gateway restart
-
-# Verify
 npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
+```
 
-# Verify (machine-readable)
-npx @openclawbrain/cli status --openclaw-home ~/.openclaw --json
+The first three commands install or update OpenClawBrain. The last command verifies the selected OpenClaw home.
 
-# Detach and keep data
+## Roll back
+
+Preview the rollback first:
+
+```bash
+npx @openclawbrain/cli rollback --openclaw-home ~/.openclaw --dry-run
+```
+
+Apply the rollback only after the preview looks correct:
+
+```bash
+npx @openclawbrain/cli rollback --openclaw-home ~/.openclaw
+```
+
+Rollback moves the serve path back to the previous promoted pack when one is available.
+
+## Detach and keep data
+
+`detach` removes the OpenClaw profile hook and keeps OpenClawBrain data in place.
+
+```bash
 npx @openclawbrain/cli detach --openclaw-home ~/.openclaw
 openclaw gateway restart
+```
 
-# Uninstall and keep data
+## Uninstall and keep data
+
+```bash
 npx @openclawbrain/cli uninstall --openclaw-home ~/.openclaw --keep-data
 openclaw gateway restart
+```
 
-# Uninstall and purge data
+## Uninstall and purge data
+
+```bash
 npx @openclawbrain/cli uninstall --openclaw-home ~/.openclaw --purge-data
 openclaw gateway restart
 ```
 
-Semantics:
+## Notes
 
-- `npx @openclawbrain/cli install` pins or repairs the activation root for one OpenClaw home after the plugin payload is installed.
-- `detach` removes only the OpenClaw profile hook and always keeps OpenClawBrain data.
-- `uninstall --keep-data` removes the hook and leaves activation data behind.
-- `uninstall --purge-data` removes the hook and deletes activation data for that install.
-- `openclaw gateway restart` is the truthful post-change step after install, detach, or uninstall when you want the running profile to pick up the new hook state immediately.
-- The plugin payload itself is managed through OpenClaw's plugin manager. Remove it there separately only if you want the installed package files gone too.
+- Restart the gateway after install, detach, or uninstall so the running profile picks up the new hook state.
+- `rollback`, `status`, and `learn` do not need a gateway restart.
+- The plugin package itself is managed by OpenClaw's plugin manager. Removing the hook does not remove the installed package files.
+- If the running gateway still behaves like nothing changed, restart it first before assuming the hook edit failed.
 
-## Compatibility path
+Next docs:
 
-Older plugin/wrapper installs can stay on the compatibility package:
-
-```bash
-openclaw plugins install @jonathangu/openclawbrain@0.3.5
-```
-
-Treat that as a holdover lane, not the primary install story.
-
-## Migration path
-
-For operators:
-
-1. Keep the existing compatibility install until you have a maintenance window.
-2. Install the canonical plugin/runtime payload: `openclaw plugins install @openclawbrain/openclaw`.
-3. Pin or repair the target OpenClaw home with `npx @openclawbrain/cli install --openclaw-home ~/.openclaw`.
-4. Restart the gateway: `openclaw gateway restart`.
-5. Verify with `npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed`.
-6. Only after the split lane is verified should you remove any older compatibility-package wiring and any obsolete globally installed combined-package leftovers.
-
-For maintainers:
-
-1. Lead README/package/release surfaces with the split `0.4.1` flow as three install/update commands plus one verification command.
-2. Label `@jonathangu/openclawbrain@0.3.5` as compatibility-only in package metadata and docs.
-3. Keep the host-release caveat documented until the patched OpenClaw host build is broadly available.
-4. Keep the `install` step as the activation-root pinning step until the host can infer that boundary without the CLI.
+- [Quick start](getting-started/quick-start.md)
+- [Troubleshooting](operating/troubleshooting.md)
+- [Configuration guide](configuration.md)

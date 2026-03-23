@@ -32,7 +32,7 @@ The correction path is meant for **explicit durable updates**, such as:
 Examples:
 - “wrong, the codeword is giraffe”
 - “use `gh pr create`, not `hub`”
-- “for this repo, prefer pnpm over npm”
+- “for this repo, use `npm run release:verify` before publishing”
 
 It is **not** meant for generic dissatisfaction, retries, or vague disagreement like:
 - “no”

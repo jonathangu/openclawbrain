@@ -60,8 +60,8 @@ That makes the release path itself more trustworthy instead of depending on timi
 ## Docs added in this release
 
 To make the GitHub/docs story match the code more clearly, 0.3.2 adds:
-- `docs/routing-prior.md`
-- `docs/corrections.md`
+- `docs/architecture/routing-prior.md`
+- `docs/architecture/corrections.md`
 
 These are meant to explain the real architecture more plainly than a changelog bullet list can.
 

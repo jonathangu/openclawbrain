@@ -1,244 +1,286 @@
 # Changelog
 
-This changelog is intentionally conservative.
-
-It should help an operator understand two different truths:
-- what was actually published to npm
-- what has landed on `main` since that publish
+Release history for the published OpenClawBrain packages. The README and operator docs keep the install lane unpinned; release notes carry version-specific detail.
 
 ## 0.4.10
 
-Published package versions for this release:
+Native V2 router metadata is now accurate end to end, so status and validator surfaces report real promoted-pack fields.
+
+**Packages**
+
 - `@openclawbrain/contracts@0.3.5`
 - `@openclawbrain/cli@0.4.10`
 
-This release completes the native V2 router metadata truthfulness milestone.
+**Changes**
 
-### What changed
+- emitted active-pack metadata now reports the real V2 route path, method, and target
+- validator reads promoted-pack metadata instead of stale placeholder fields
+- repo-side landing commits for this release were `63ea1e6` and `fe3c247`
 
-- native V2 router metadata is now truthful end to end: the published CLI and contracts packages emit accurate active-pack metadata (`path.pg=v2`, `path.method=policy_gradient_v2`, `path.target=trajectory_reconstruction`) with real traced route and supervision counts
-- the validator path now reads truthful metadata from promoted packs rather than placeholder or stale V1 fields
-- repo-side patches landed on `main` in commits `63ea1e6` (make native PG V2 metadata truthful) and `fe3c247` (publish native PG V2 validator upgrade)
-
-### Operator lane
+**Operator commands**
 
 ```bash
-npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw
-npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli@0.4.10 learn --activation-root ~/.openclawbrain/activation --json
+openclaw plugins install @openclawbrain/openclaw
+npx @openclawbrain/cli install --openclaw-home ~/.openclaw
+openclaw gateway restart
+npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 ```
 
-### Verification proof
+**Verification**
 
-Live status on a real host shows `STATUS ok` with truthful active-pack metadata:
-- `path.pg=v2`
-- `path.method=policy_gradient_v2`
-- `path.target=trajectory_reconstruction`
-- `path.trajectories=344`
-- `traced.routes=344`
-- `traced.supervision=32`
-- `traced.updates=68`
+- live host verification reports `STATUS ok`
+- detailed status shows V2 fields such as `path.pg=v2`, `path.method=policy_gradient_v2`, and `path.target=trajectory_reconstruction`
 
-Deep release note:
-- [`docs/release-notes-0.4.10.md`](docs/release-notes-0.4.10.md)
+**Full release note**
 
-### Why this release matters
+- [docs/release-notes-0.4.10.md](docs/release-notes-0.4.10.md)
 
-0.4.10 is the point where the native V2 policy-gradient router metadata becomes honest.
-Earlier CLI releases fixed the V2 learning path itself (0.4.5), replay tolerance (0.4.6), observability fields (0.4.7), and validator compatibility (0.4.8). This release lands the final repo-side metadata patches and publishes them as proven packages, so the operator CLI and validator path both report truthful V2 metadata from real promoted packs.
+## 0.4.8
+
+`0.4.8` restores validator-compatible router artifact metadata after the broken `0.4.7` publish.
+
+**Packages**
+
+- `@openclawbrain/cli@0.4.8`
+
+**Changes**
+
+- restored validator-compatible metadata for native V2 artifacts
+- kept the replay hardening from `0.4.6`
+- preserved the native V2 proof path with zero V1 traces and nonzero learned updates
+
+**Full release note**
+
+- [docs/release-notes-0.4.8.md](docs/release-notes-0.4.8.md)
+
+## 0.4.7
+
+`0.4.7` exposes native V2 policy-gradient observability directly in the router artifact.
+
+**Packages**
+
+- `@openclawbrain/cli@0.4.7`
+
+**Changes**
+
+- surfaced `method=policy_gradient_v2`, `updateVersion=route_pg_update_v2`, and `objective=supervised_route_pg_v2`
+- reported reconstructed-trajectory and supervised-trajectory counts in V2 artifacts
+
+**Full release note**
+
+- [docs/release-notes-0.4.7.md](docs/release-notes-0.4.7.md)
+
+## 0.4.6
+
+`0.4.6` fixes a strict native V2 full-replay bug in the published CLI bundle.
+
+**Packages**
+
+- `@openclawbrain/cli@0.4.6`
+
+**Changes**
+
+- replay remapper now tolerates missing optional block-id arrays
+- regression coverage proves V2 updates still materialize when replay metadata is incomplete
+
+**Full release note**
+
+- [docs/release-notes-0.4.6.md](docs/release-notes-0.4.6.md)
+
+## 0.4.5
+
+`0.4.5` ships the native V2 route-update fix in the published CLI bundle.
+
+**Packages**
+
+- `@openclawbrain/cli@0.4.5`
+
+**Changes**
+
+- vendored the learner bundle into `@openclawbrain/cli`
+- fixed serve-time versus candidate-pack block-id reconstruction for native V2 updates
+- added focused regression coverage for nonzero native V2 updates
+
+**Full release note**
+
+- [docs/release-notes-0.4.5.md](docs/release-notes-0.4.5.md)
+
+## 0.4.4
+
+`0.4.4` fixes reinstall and status reporting for the split-package operator flow.
+
+**Packages**
+
+- `@openclawbrain/cli@0.4.4`
+
+**Changes**
+
+- reinstall now normalizes `plugins.allow` and `plugins.entries.openclawbrain`
+- status reports the canonical `openclawbrain` install identity
+
+**Full release note**
+
+- [docs/release-notes-0.4.4.md](docs/release-notes-0.4.4.md)
+
+## 0.4.3
+
+`0.4.3` improves operator status output and supervision matching.
+
+**Packages**
+
+- `@openclawbrain/cli@0.4.3`
+
+**Changes**
+
+- embedding status handles alternate numeric vector shapes more accurately
+- serve-time decision matching is more tolerant of event-id and timestamp drift
+
+**Full release note**
+
+- [docs/release-notes-0.4.3.md](docs/release-notes-0.4.3.md)
 
 ## 0.4.2
 
-Published package versions for this release:
+`0.4.2` closes the remaining high-signal status and tarball seams left after `0.4.1`.
+
+**Packages**
+
 - `@openclawbrain/openclaw@0.4.0`
 - `@openclawbrain/cli@0.4.2`
 
-Notable CLI patch work since `0.4.1`:
-- install/attach now persist declared attachment policy under `activation-root/attachment-truth/policy-declaration.json`, and later `status` reads use that truth instead of drifting back to `policy=null` / `undeclared`
-- traced-learning status now persists into the canonical brain store (`brain_training_state.traced_learning_status_surface_json` in `state.db`) rather than relying solely on the activation-root watched file
-- the CLI and split learn flow prefer the canonical brain-store traced-learning status when available, falling back to the activation-root file as runtime metadata
-- the CLI tarball now includes the full operator module surface imported by `dist/src/cli.js`, and tarball verification explicitly covers the traced-learning bridge plus attachment-policy truth helper
+**Changes**
 
-Published package versions are `@openclawbrain/openclaw@0.4.0` (plugin/runtime) and `@openclawbrain/cli@0.4.2` (operator CLI).
+- shared attachment policy now persists under `activation-root/attachment-truth/policy-declaration.json`
+- `status` reads the declared policy instead of drifting back to `policy=null` or `undeclared`
+- traced-learning bridge and operator modules are frozen into the published CLI tarball
+
+**Full release note**
+
+- [docs/release-notes-0.4.2.md](docs/release-notes-0.4.2.md)
 
 ## 0.4.1
 
-Published packages:
+`0.4.1` makes the shared-home attach declaration idempotent.
+
+**Packages**
+
 - `@openclawbrain/openclaw@0.4.0`
 - `@openclawbrain/cli@0.4.1`
 
-Shared-home patch landing commit on `main`: `20d0c4c`
+**Changes**
 
-Deep release note:
-- [`docs/release-notes-0.4.1.md`](docs/release-notes-0.4.1.md)
+- rerunning `install --shared` against an already pinned native package plugin now succeeds as a no-op
+- the installer still fails when the installed loader entry does not expose a patchable `ACTIVATION_ROOT` constant
 
-### Published notes
+**Full release note**
 
-- keeps the plugin/runtime payload at `@openclawbrain/openclaw@0.4.0`
-- publishes a CLI-only patch so the operator lane becomes:
-  - `openclaw plugins install @openclawbrain/openclaw@0.4.0`
-  - `npx @openclawbrain/cli@0.4.1 install --openclaw-home ~/.openclaw`
-  - `openclaw gateway restart`
-  - `npx @openclawbrain/cli@0.4.1 status --openclaw-home ~/.openclaw --detailed`
-- fixes the false failure where rerunning `openclawbrain install --shared` against a native package plugin that is already pinned to the requested activation root used to throw instead of succeeding as a no-op
-- preserves truthful failure behavior when the installed loader entry really is missing a patchable `ACTIVATION_ROOT` constant
-- records the real-host shared-home rerun proof on the shared Mac mini instead of treating the fix as repo-only
-
-### Why this release matters
-
-0.4.1 closes a real operator seam in the split-package lane.
-The earlier public flow already worked for the basic attach path, but the shared-home declaration rerun could still fail on a healthy native install because the installer treated “already pinned” as an error.
-This patch makes the shared attach intent idempotent, which is the honest operator behavior for a machine serving multiple profiles from one OpenClaw home.
+- [docs/release-notes-0.4.1.md](docs/release-notes-0.4.1.md)
 
 ## 0.4.0
 
-Published packages:
+`0.4.0` is the split-package public release.
+
+**Packages**
+
 - `@openclawbrain/openclaw@0.4.0`
 - `@openclawbrain/cli@0.4.0`
+- `@jonathangu/openclawbrain@0.3.5` remains available as a compatibility holdover for older installs
 
-Split landing commit on `main`: `b3ada81`
+**Changes**
 
-Deep release note:
-- [`docs/release-notes-0.4.0.md`](docs/release-notes-0.4.0.md)
+- published the plugin/runtime payload and operator CLI as separate packages
+- proved the public-registry install flow on a real host
+- updated repo and package docs to lead with the split-package story
 
-### Published notes
+**Full release note**
 
-- publishes the package split as real public surface rather than staged repo work:
-  - `@openclawbrain/openclaw@0.4.0` is the plugin/runtime payload
-  - `@openclawbrain/cli@0.4.0` is the operator CLI
-- makes the native plugin install plus CLI attach flow the canonical public lane:
-  - `openclaw plugins install @openclawbrain/openclaw@0.4.0`
-  - `npx @openclawbrain/cli@0.4.0 install --openclaw-home ~/.openclaw`
-  - `openclaw gateway restart`
-  - `npx @openclawbrain/cli@0.4.0 status --openclaw-home ~/.openclaw --detailed`
-- records that the exact public-registry flow already passed on the real host `redogfood`
-- keeps the remaining host/plugin warning visible: some hosts still report a plugin id mismatch because the manifest uses `openclawbrain` while the package/entry hint uses `openclaw`; the warning is currently cosmetic, not evidence that install failed
-- leaves `@jonathangu/openclawbrain@0.3.5` in place as a compatibility holdover for older installs rather than the primary operator story
-
-### Why this release matters
-
-0.4.0 is the point where the split package story becomes the honest public story.
-Outside operators can now follow a single public-registry flow that has already passed on a real host, while the docs stay explicit about the one remaining host/plugin warning instead of pretending the seam is cleaner than it is.
+- [docs/release-notes-0.4.0.md](docs/release-notes-0.4.0.md)
 
 ## 0.3.5
 
-Published package: `@jonathangu/openclawbrain@0.3.5`
+`0.3.5` was the last combined-package release before the split.
 
-Git tag: `v0.3.5`
+**Packages**
 
-Deep release note:
-- [`docs/release-notes-0.3.5.md`](docs/release-notes-0.3.5.md)
+- `@jonathangu/openclawbrain@0.3.5`
 
-### Published notes
+**Changes**
 
-- hardens the prompt-assembly compatibility bridge so usable `event.prompt` text still flows when `before_prompt_build` arrives with an empty or non-text message envelope
-- adds focused teacher-status truth coverage so a fresh watch heartbeat with `no_teacher_artifacts` does not get mislabeled as stale/unhealthy
-- recovers the `packages/openclaw` front-door package tree into the public repo so the shipped install surface matches the package that owns the installed runtime guard
-- preserves the single extra-LLM design: local Ollama teacher remains `qwen3.5:9b`; no extra model roles were added
-- passes:
-  - focused regression coverage for prompt fallback and teacher-status truth
-  - live host verification after reinstall/relink, including clean runtime-guard prompt probes and `teacher healthy=yes stale=no`
+- hardened prompt assembly when `before_prompt_build` carries empty or partial text envelopes
+- improved teacher-status reporting for fresh no-op cycles
+- restored the `packages/openclaw` front-door tree in the public repo
 
-### Why this release matters
+**Full release note**
 
-0.3.5 turns a local runtime repair into a truthful public ship.
-The install surface that actually owns the generated runtime hook is now present in the public repo, the hook handles prompt-envelope edge cases more gracefully, and teacher health reporting is more honest when the latest cycle is a genuine no-op.
+- [docs/release-notes-0.3.5.md](docs/release-notes-0.3.5.md)
 
 ## 0.3.4
 
-Published package: `@jonathangu/openclawbrain@0.3.4`
+`0.3.4` removes fake supervision caused by runtime scaffolding.
 
-Git tag: `v0.3.4`
+**Packages**
 
-Deep release note:
-- [`docs/release-notes-0.3.4.md`](docs/release-notes-0.3.4.md)
+- `@jonathangu/openclawbrain@0.3.4`
 
-### Published notes
+**Changes**
 
-- stops heartbeat prompts, startup/reset scaffolding, and metadata wrapper text from being misclassified as human supervision evidence
-- adds a dedicated system-message filter at the evidence-detection boundary
-- preserves genuine human correction and teaching signals while excluding operational scaffolding
-- adds focused unit and integration tests for both exclusion and inclusion behavior
-- passes:
-  - full test suite
-  - `npm pack --dry-run`
-  - explicit exclusion/inclusion regression coverage for teacher-pollution cases
+- filters heartbeat prompts, startup/reset scaffolding, and metadata wrappers out of human supervision evidence
+- adds focused exclusion and inclusion tests around teacher-pollution cases
 
-### Why this release matters
+**Full release note**
 
-0.3.4 closes a real learning-integrity bug.
-The system should learn from actual human supervision, not from runtime scaffolding that happens to contain imperative language.
-This release makes the passive-learning boundary more honest and reduces fake supervision entering the route-learning substrate.
+- [docs/release-notes-0.3.4.md](docs/release-notes-0.3.4.md)
 
 ## 0.3.3
 
-Published package: `@jonathangu/openclawbrain@0.3.3`
+`0.3.3` fixes the child-worker boot path for launchd-style installs.
 
-Git tag: `v0.3.3`
+**Packages**
 
-Deep release note:
-- [`docs/release-notes-0.3.3.md`](docs/release-notes-0.3.3.md)
+- `@jonathangu/openclawbrain@0.3.3`
 
-### Published notes
+**Changes**
 
-- fixes the launchd-served child-worker boot regression where Node resolved `tsx/esm` from `/` and crash-looped operator installs
-- resolves the child worker loader to an absolute `file://` import and launches the child from the plugin root so module resolution no longer depends on service cwd
-- restores truthful `brainWorkerMode=child` operation on Eagle and other launchd-style operator installs using linked local plugin paths
-- adds a focused runtime test that reproduces the exact `cwd=/` worker-launch seam and proves the child boots without `Cannot find package 'tsx'` failures
-- passes:
-  - Eagle live child-worker validation (`workerHealthy=true` after restart on the real Eagle profile)
-  - full test suite
-  - `npm pack --dry-run`
-  - repo-wide release verification via `npm run release:verify`
+- resolves the child worker loader to an absolute `file://` import
+- launches the child from the plugin root instead of relying on cwd-sensitive module resolution
+- adds a focused regression test for `cwd=/` worker launch
 
-### Why this release matters
+**Full release note**
 
-0.3.3 closes a real operator-facing reliability bug in the supervised child-worker boundary.
-The plugin already worked in local/dev contexts, but launchd-served installs could silently fall back to a crash loop because the worker loader depended on cwd-sensitive `tsx` resolution.
-This release makes the child-worker launch path deterministic again, which is the honest production boundary for OpenClawBrain.
+- [docs/release-notes-0.3.3.md](docs/release-notes-0.3.3.md)
 
 ## 0.3.2
 
-Published package: `@jonathangu/openclawbrain@0.3.2`
+`0.3.2` introduced the summary-aware routing prior and explicit correction commit path.
 
-Git tag: `v0.3.2`
+**Packages**
 
-Deep release note:
-- [`docs/release-notes-0.3.2.md`](docs/release-notes-0.3.2.md)
+- `@jonathangu/openclawbrain@0.3.2`
 
-### Published notes
+**Changes**
 
-- ships the new **summary-aware routing prior** so LCM summaries act as a search/routing abstraction rather than the durable truth layer
-- ships the new **explicit user-correction commit path**, including a real `BrainService.teachUserCorrection()` API
-- adds both a **fast deterministic correction lane** and an **off-path async proposal lane**
-- exposes assembled `summaryMetadata` so runtime policy can distinguish between summary-suffices, expand-to-source, and prefer-typed-memory situations
-- adds polished architecture notes for both:
-  - `docs/routing-prior.md`
-  - `docs/corrections.md`
-- restores repo-wide `tsc --noEmit` cleanliness by reconciling the stale type/test surface drift
-- hardens the release path by adding a Brain DB `busy_timeout`, fixing the flaky `database is locked` failure exposed during release verification
-- passes:
-  - full test suite
-  - `npm pack --dry-run`
-  - repo-wide `tsc --noEmit`
+- summaries now act as a routing prior over history instead of the durable correction layer
+- explicit user corrections can commit through a dedicated runtime path
+- architecture notes were added for [docs/architecture/routing-prior.md](docs/architecture/routing-prior.md) and [docs/architecture/corrections.md](docs/architecture/corrections.md)
 
-### Why this release matters
+**Full release note**
 
-0.3.2 is the point where the public npm package catches up to the repo’s new correction/routing architecture:
-- summaries help the system decide where to look
-- explicit typed correction memory helps the system decide what currently wins
-- release/docs/package truth now reflects that split clearly
+- [docs/release-notes-0.3.2.md](docs/release-notes-0.3.2.md)
 
 ## 0.3.0
 
-Published package: `@jonathangu/openclawbrain@0.3.0`
+`0.3.0` captured the combined-package release state before the later architecture and packaging work.
 
-### Published notes
+**Packages**
 
-- `f1dfa5c`: catch up the release notes for work merged after `0.2.8`
-- adds Anthropic OAuth setup-token support in the TUI
-- resolves SecretRef-backed auth-profile credentials and provider-level custom provider configuration during summarization
-- formats LCM tool timestamps in the local timezone instead of UTC
+- `@jonathangu/openclawbrain@0.3.0`
 
-### Important historical note
-These published notes are accurate for the package that went out, but they are now incomplete relative to the later `0.3.2` package and current repo state.
+**Changes**
+
+- added Anthropic OAuth setup-token support in the TUI
+- resolved SecretRef-backed auth-profile credentials during summarization
+- switched LCM tool timestamps to the local timezone
+
+**Full release note**
+
+- `0.3.0` predates the later release-note archive; see the historical notes in this repo if you need more detail

@@ -1,6 +1,6 @@
-# Architecture
+# Architecture deep dive
 
-This document explains the architecture that OpenClawBrain is built on.
+Start with [Overview](overview.md) if you want the short version before reading the deeper implementation notes here.
 
 Important framing:
 - the **transcript-memory substrate** is inherited from lossless-claw / LCM
@@ -36,8 +36,8 @@ A useful mental model is:
 That means summary nodes help the runtime decide *where to look* and *when to expand*, while explicit user-grounded correction memories decide *what should currently win* when older transcript abstractions conflict.
 
 Related deep dives:
-- `docs/routing-prior.md`
-- `docs/corrections.md`
+- [Routing prior](routing-prior.md)
+- [Corrections](corrections.md)
 
 ## Data model
 
