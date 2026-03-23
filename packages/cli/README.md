@@ -5,7 +5,7 @@
 Primary public flow:
 
 ```bash
-openclaw plugins install @openclawbrain/openclaw@0.4.0
+openclaw plugins install @openclawbrain/openclaw@0.4.1
 npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw
 openclaw gateway restart
 npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed

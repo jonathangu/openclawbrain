@@ -81,7 +81,7 @@ These are real enough to build on, but not frozen enough to oversell.
 ### Packaging and release boundary
 - Current files: `package.json`, `packages/openclaw/package.json`, `packages/cli/package.json`, `README.md`, `docs/lifecycle.md`, `docs/configuration.md`, `docs/EVIDENCE.md`, future CI/release workflow surfaces
 - Truth: the split packages are published and the public-registry operator lane is real:
-  - `openclaw plugins install @openclawbrain/openclaw@0.4.0`
+  - `openclaw plugins install @openclawbrain/openclaw@0.4.1`
   - `npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw`
   - `openclaw gateway restart`
   - `npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed`

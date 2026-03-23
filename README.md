@@ -42,21 +42,24 @@ Your AI assistant keeps making the same mistakes. You correct it, it forgets. Yo
 ## Quick Start
 
 Current public packages:
-- plugin/runtime payload: `@openclawbrain/openclaw@0.4.0`
+- plugin/runtime payload: `@openclawbrain/openclaw@0.4.1`
 - contracts: `@openclawbrain/contracts@0.3.5`
 - operator CLI: `@openclawbrain/cli@0.4.10`
 - compatibility holdover for older installs: `@jonathangu/openclawbrain@0.3.5`
 
-### Install
+### Install and verify
+
+The public split-package flow is three commands to install or update, then one
+command to verify.
 
 ```bash
-openclaw plugins install @openclawbrain/openclaw@0.4.0
+openclaw plugins install @openclawbrain/openclaw@0.4.1
 npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw
 openclaw gateway restart
 npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed
 ```
 
-The plugin payload is installed through OpenClaw's plugin manager. The CLI runs through the published `@openclawbrain/cli` package. Upgrade uses the same lane: refresh the plugin package, rerun `install`, restart the gateway, then verify.
+The plugin payload is installed through OpenClaw's plugin manager. The CLI runs through the published `@openclawbrain/cli` package. The first three commands install or update the split-package flow; the last command verifies it. Upgrade or repair uses the same three-command flow before the same verification command.
 
 Host release note: the CLI-side reinstall/config fix is shipped in `0.4.4`, and the host-side `openclaw` alias fix removes the old `openclaw` vs `openclawbrain` warning on patched hosts. Until that OpenClaw host fix is in your installed host build, some installs may still show the older cosmetic warning during plugin install.
 

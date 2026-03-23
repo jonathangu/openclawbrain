@@ -10,9 +10,11 @@ If you want the repo's exact truth contract first, read:
 
 ## Happy-path operator flow
 
-These examples intentionally use the exact public-registry flow that already passed on `redogfood`.
+These examples intentionally use the exact public-registry flow that already
+passed on `redogfood`: three commands install or update, then one command
+verifies.
 
-1. install the published plugin/runtime payload into OpenClaw: `openclaw plugins install @openclawbrain/openclaw@0.4.0`
+1. install the published plugin/runtime payload into OpenClaw: `openclaw plugins install @openclawbrain/openclaw@0.4.1`
 2. attach it to one OpenClaw home with `npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw`
 3. run `openclaw gateway restart`
 4. verify with `npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed`
@@ -21,30 +23,17 @@ These examples intentionally use the exact public-registry flow that already pas
 
 ## Canonical install, upgrade, remove, and verify path
 
-Front door packages:
+Fresh install, upgrade, and repair all use the same three install/update
+commands:
 
 ```bash
-openclaw plugins install @openclawbrain/openclaw@0.4.0
-```
-
-Install or attach:
-
-```bash
+openclaw plugins install @openclawbrain/openclaw@0.4.1
 npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed
 ```
 
-Upgrade uses the same lane:
-
-```bash
-openclaw plugins install @openclawbrain/openclaw@0.4.0
-npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw
-openclaw gateway restart
-npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed
-```
-
-Verify the target install at any time:
+Verify the target install at any time. The public human check is `--detailed`;
+the JSON form is the machine-readable companion when you need automation:
 
 ```bash
 npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed

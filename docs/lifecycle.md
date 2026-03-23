@@ -4,30 +4,30 @@ This file is the repo's convergence decision for the current public package surf
 
 ## Decision
 
-- Canonical operator lane for the `0.4.0` wave: install the plugin/runtime payload with `openclaw plugins install @openclawbrain/openclaw@0.4.0`, then run the operator CLI through `npx @openclawbrain/cli@0.4.10 ...`.
+- Canonical operator lane for the `0.4.1` wave: three commands install or update the split-package lane, then one status command verifies it: `openclaw plugins install @openclawbrain/openclaw@0.4.1`, `npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw`, `openclaw gateway restart`, then `npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed`.
 - This exact public-registry flow already passed on the real host `redogfood`.
 - Compatibility lane for older installs: `@jonathangu/openclawbrain@0.3.5` through `openclaw plugins install`.
-- New docs, reinstall guides, upgrade guides, and support replies should lead with the split `0.4.0` lane.
+- New docs, reinstall guides, upgrade guides, and support replies should lead with the split `0.4.1` lane.
 - Host release note: the CLI-side reinstall fix is shipped in `0.4.4`. The host-side `openclaw` alias fix removes the old mismatch warning on patched hosts; older host builds may still show the cosmetic warning until that host release lands.
 - The compatibility lane stays published so older plugin/wrapper installs do not break, but it is not the main operator story.
 
 ## Copy-paste lifecycle
 
-```bash
-# Install
-openclaw plugins install @openclawbrain/openclaw@0.4.0
-npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw
-openclaw gateway restart
-npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed
+The public split-package flow is the same for a fresh install, an upgrade, or a
+repair: three commands install or update, then one human-readable status
+command verifies the result. Keep the JSON status as the machine-readable
+follow-up when you need automation.
 
-# Upgrade or repair
-openclaw plugins install @openclawbrain/openclaw@0.4.0
+```bash
+# Install, upgrade, or repair
+openclaw plugins install @openclawbrain/openclaw@0.4.1
 npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed
 
 # Verify
 npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed
+
+# Verify (machine-readable)
 npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --json
 
 # Detach and keep data
@@ -67,7 +67,7 @@ Treat that as a holdover lane, not the primary install story.
 For operators:
 
 1. Keep the existing compatibility install until you have a maintenance window.
-2. Install the canonical plugin/runtime payload: `openclaw plugins install @openclawbrain/openclaw@0.4.0`.
+2. Install the canonical plugin/runtime payload: `openclaw plugins install @openclawbrain/openclaw@0.4.1`.
 3. Pin or repair the target OpenClaw home with `npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw`.
 4. Restart the gateway: `openclaw gateway restart`.
 5. Verify with `npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed`.
@@ -75,7 +75,7 @@ For operators:
 
 For maintainers:
 
-1. Lead README/package/release surfaces with the split `0.4.0` flow.
+1. Lead README/package/release surfaces with the split `0.4.1` flow as three install/update commands plus one verification command.
 2. Label `@jonathangu/openclawbrain@0.3.5` as compatibility-only in package metadata and docs.
 3. Keep the host-release caveat documented until the patched OpenClaw host build is broadly available.
 4. Keep the `install` step as the activation-root pinning step until the host can infer that boundary without the CLI.
