@@ -5,10 +5,10 @@
 Primary public flow:
 
 ```bash
-openclaw plugins install @openclawbrain/openclaw@0.4.1
-npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw
+openclaw plugins install @openclawbrain/openclaw
+npx @openclawbrain/cli install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 ```
 
 Patch note for `0.4.4`: the CLI now normalizes `plugins.allow` / `plugins.entries.openclawbrain` correctly on reinstall and reports the canonical `openclawbrain` install identity in status output.
@@ -20,9 +20,9 @@ This package carries the `openclawbrain` CLI, daemon controls, import/export hel
 ## Commands
 
 ```bash
-npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw
-npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli@0.4.10 rollback --activation-root /var/openclawbrain/activation --dry-run
+npx @openclawbrain/cli install --openclaw-home ~/.openclaw
+npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli rollback --activation-root /var/openclawbrain/activation --dry-run
 npx @openclawbrain/cli@0.4.10 daemon status --activation-root /var/openclawbrain/activation
 ```
 

@@ -42,7 +42,7 @@ Your AI assistant keeps making the same mistakes. You correct it, it forgets. Yo
 ## Quick Start
 
 Current public packages:
-- plugin/runtime payload: `@openclawbrain/openclaw@0.4.1`
+- plugin/runtime payload: `@openclawbrain/openclaw`
 - contracts: `@openclawbrain/contracts@0.3.5`
 - operator CLI: `@openclawbrain/cli@0.4.10`
 - compatibility holdover for older installs: `@jonathangu/openclawbrain@0.3.5`
@@ -53,10 +53,10 @@ The public split-package flow is three commands to install or update, then one
 command to verify.
 
 ```bash
-openclaw plugins install @openclawbrain/openclaw@0.4.1
-npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw
+openclaw plugins install @openclawbrain/openclaw
+npx @openclawbrain/cli install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 ```
 
 The plugin payload is installed through OpenClaw's plugin manager. The CLI runs through the published `@openclawbrain/cli` package. The first three commands install or update the split-package flow; the last command verifies it. Upgrade or repair uses the same three-command flow before the same verification command.
@@ -84,7 +84,7 @@ Treat that as a holdover lane, not the main operator story.
 After the lifecycle attach above, you can run one explicit local learning pass:
 
 ```bash
-npx @openclawbrain/cli@0.4.10 learn --openclaw-home ~/.openclaw --json
+npx @openclawbrain/cli learn --openclaw-home ~/.openclaw --json
 ```
 
 ### Correct (in any conversation)
@@ -117,8 +117,8 @@ brain_teach instruction="Keep answers concise, use bullets, and end with the nex
 ### Inspect
 
 ```bash
-npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --json
+npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli status --openclaw-home ~/.openclaw --json
 brain_trace        # See recent routing decisions in conversation
 ```
 
@@ -232,13 +232,13 @@ Use the published CLI package for operator commands:
 
 | Command | What it does |
 |---------|-------------|
-| `npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw` | Attach OpenClawBrain to one OpenClaw home after the plugin payload is installed |
+| `npx @openclawbrain/cli install --openclaw-home ~/.openclaw` | Attach OpenClawBrain to one OpenClaw home after the plugin payload is installed |
 | `openclaw gateway restart` | Reload the gateway after install, detach, or uninstall |
-| `npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed` | Human verification for lifecycle, worker, and pack truth |
-| `npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --json` | Canonical machine-readable verification |
-| `npx @openclawbrain/cli@0.4.10 learn --openclaw-home ~/.openclaw --json` | Run one explicit local learning pass and inspect the result |
-| `npx @openclawbrain/cli@0.4.10 detach --openclaw-home ~/.openclaw` | Remove only the profile hook and keep data |
-| `npx @openclawbrain/cli@0.4.10 uninstall --openclaw-home ~/.openclaw --keep-data\|--purge-data` | Remove the hook and choose the data outcome explicitly |
+| `npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed` | Human verification for lifecycle, worker, and pack truth |
+| `npx @openclawbrain/cli status --openclaw-home ~/.openclaw --json` | Canonical machine-readable verification |
+| `npx @openclawbrain/cli learn --openclaw-home ~/.openclaw --json` | Run one explicit local learning pass and inspect the result |
+| `npx @openclawbrain/cli detach --openclaw-home ~/.openclaw` | Remove only the profile hook and keep data |
+| `npx @openclawbrain/cli uninstall --openclaw-home ~/.openclaw --keep-data\|--purge-data` | Remove the hook and choose the data outcome explicitly |
 | `brain_trace` | Inspect routing decisions inside the agent/tool lane |
 | `brain_teach` | Explicitly teach corrections or instructions in conversation |
 

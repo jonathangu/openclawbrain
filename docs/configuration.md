@@ -14,10 +14,10 @@ These examples intentionally use the exact public-registry flow that already
 passed on `redogfood`: three commands install or update, then one command
 verifies.
 
-1. install the published plugin/runtime payload into OpenClaw: `openclaw plugins install @openclawbrain/openclaw@0.4.1`
-2. attach it to one OpenClaw home with `npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw`
+1. install the published plugin/runtime payload into OpenClaw: `openclaw plugins install @openclawbrain/openclaw`
+2. attach it to one OpenClaw home with `npx @openclawbrain/cli install --openclaw-home ~/.openclaw`
 3. run `openclaw gateway restart`
-4. verify with `npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed`
+4. verify with `npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed`
 5. configure embeddings and choose a `brainRoot` if you need to tune defaults
 6. run the validation harnesses appropriate to the claim you want to make
 
@@ -27,8 +27,8 @@ Fresh install, upgrade, and repair all use the same three install/update
 commands:
 
 ```bash
-openclaw plugins install @openclawbrain/openclaw@0.4.1
-npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw
+openclaw plugins install @openclawbrain/openclaw
+npx @openclawbrain/cli install --openclaw-home ~/.openclaw
 openclaw gateway restart
 ```
 
@@ -36,32 +36,32 @@ Verify the target install at any time. The public human check is `--detailed`;
 the JSON form is the machine-readable companion when you need automation:
 
 ```bash
-npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --json
+npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli status --openclaw-home ~/.openclaw --json
 ```
 
 Remove only the profile hook and keep OpenClawBrain data:
 
 ```bash
-npx @openclawbrain/cli@0.4.10 detach --openclaw-home ~/.openclaw
+npx @openclawbrain/cli detach --openclaw-home ~/.openclaw
 openclaw gateway restart
 ```
 
 Remove the profile hook and keep data explicitly:
 
 ```bash
-npx @openclawbrain/cli@0.4.10 uninstall --openclaw-home ~/.openclaw --keep-data
+npx @openclawbrain/cli uninstall --openclaw-home ~/.openclaw --keep-data
 openclaw gateway restart
 ```
 
 Remove the profile hook and purge OpenClawBrain data for that install:
 
 ```bash
-npx @openclawbrain/cli@0.4.10 uninstall --openclaw-home ~/.openclaw --purge-data
+npx @openclawbrain/cli uninstall --openclaw-home ~/.openclaw --purge-data
 openclaw gateway restart
 ```
 
-If you want to remove the hook but keep the data, use `detach` or `npx @openclawbrain/cli@0.4.10 uninstall --openclaw-home ~/.openclaw --keep-data`. `detach` is the simpler keep-data path. The plugin payload itself lives under OpenClaw's plugin manager, so remove `@openclawbrain/openclaw` there separately only if you want the package files gone too.
+If you want to remove the hook but keep the data, use `detach` or `npx @openclawbrain/cli uninstall --openclaw-home ~/.openclaw --keep-data`. `detach` is the simpler keep-data path. The plugin payload itself lives under OpenClaw's plugin manager, so remove `@openclawbrain/openclaw` there separately only if you want the package files gone too.
 
 ## Compatibility path
 
@@ -121,7 +121,7 @@ Why these defaults:
 The lifecycle path above is the canonical install lane. If you want to force one explicit local learning pass after attach, run:
 
 ```bash
-npx @openclawbrain/cli@0.4.10 learn --openclaw-home ~/.openclaw --json
+npx @openclawbrain/cli learn --openclaw-home ~/.openclaw --json
 ```
 
 That gives you a machine-readable snapshot of what the learner scanned, whether anything materialized, and whether a promotion occurred.
@@ -225,16 +225,16 @@ Why:
 ## Operator commands
 
 ```bash
-npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw
-npx @openclawbrain/cli@0.4.10 attach --openclaw-home ~/.openclaw --activation-root /path/to/activation
-npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --json
-npx @openclawbrain/cli@0.4.10 learn --openclaw-home ~/.openclaw --json
-npx @openclawbrain/cli@0.4.10 history --openclaw-home ~/.openclaw --limit 20 --json
-npx @openclawbrain/cli@0.4.10 context "How should I answer this?" --openclaw-home ~/.openclaw
-npx @openclawbrain/cli@0.4.10 rollback --openclaw-home ~/.openclaw --dry-run
-npx @openclawbrain/cli@0.4.10 detach --openclaw-home ~/.openclaw
-npx @openclawbrain/cli@0.4.10 uninstall --openclaw-home ~/.openclaw --keep-data|--purge-data
+npx @openclawbrain/cli install --openclaw-home ~/.openclaw
+npx @openclawbrain/cli attach --openclaw-home ~/.openclaw --activation-root /path/to/activation
+npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli status --openclaw-home ~/.openclaw --json
+npx @openclawbrain/cli learn --openclaw-home ~/.openclaw --json
+npx @openclawbrain/cli history --openclaw-home ~/.openclaw --limit 20 --json
+npx @openclawbrain/cli context "How should I answer this?" --openclaw-home ~/.openclaw
+npx @openclawbrain/cli rollback --openclaw-home ~/.openclaw --dry-run
+npx @openclawbrain/cli detach --openclaw-home ~/.openclaw
+npx @openclawbrain/cli uninstall --openclaw-home ~/.openclaw --keep-data|--purge-data
 ```
 
 ## Validation commands
@@ -274,7 +274,7 @@ So treat the host harness as active proof work, not a closed release gate.
 - if embeddings are not configured, learned retrieval and `brain_teach` stay disabled
 - local loopback embedding endpoints do not require a bearer token by default
 - if the worker is unavailable, serving still uses the last promoted pack
-- `npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed` keeps embedding, worker, and hook truth visible for one installed target
+- `npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed` keeps embedding, worker, and hook truth visible for one installed target
 
 ## Session reset note
 

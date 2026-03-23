@@ -4,7 +4,7 @@ This file is the repo's convergence decision for the current public package surf
 
 ## Decision
 
-- Canonical operator lane for the `0.4.1` wave: three commands install or update the split-package lane, then one status command verifies it: `openclaw plugins install @openclawbrain/openclaw@0.4.1`, `npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw`, `openclaw gateway restart`, then `npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed`.
+- Canonical operator lane for the `0.4.1` wave: three commands install or update the split-package lane, then one status command verifies it: `openclaw plugins install @openclawbrain/openclaw`, `npx @openclawbrain/cli install --openclaw-home ~/.openclaw`, `openclaw gateway restart`, then `npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed`.
 - This exact public-registry flow already passed on the real host `redogfood`.
 - Compatibility lane for older installs: `@jonathangu/openclawbrain@0.3.5` through `openclaw plugins install`.
 - New docs, reinstall guides, upgrade guides, and support replies should lead with the split `0.4.1` lane.
@@ -20,32 +20,32 @@ follow-up when you need automation.
 
 ```bash
 # Install, upgrade, or repair
-openclaw plugins install @openclawbrain/openclaw@0.4.1
-npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw
+openclaw plugins install @openclawbrain/openclaw
+npx @openclawbrain/cli install --openclaw-home ~/.openclaw
 openclaw gateway restart
 
 # Verify
-npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 
 # Verify (machine-readable)
-npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --json
+npx @openclawbrain/cli status --openclaw-home ~/.openclaw --json
 
 # Detach and keep data
-npx @openclawbrain/cli@0.4.10 detach --openclaw-home ~/.openclaw
+npx @openclawbrain/cli detach --openclaw-home ~/.openclaw
 openclaw gateway restart
 
 # Uninstall and keep data
-npx @openclawbrain/cli@0.4.10 uninstall --openclaw-home ~/.openclaw --keep-data
+npx @openclawbrain/cli uninstall --openclaw-home ~/.openclaw --keep-data
 openclaw gateway restart
 
 # Uninstall and purge data
-npx @openclawbrain/cli@0.4.10 uninstall --openclaw-home ~/.openclaw --purge-data
+npx @openclawbrain/cli uninstall --openclaw-home ~/.openclaw --purge-data
 openclaw gateway restart
 ```
 
 Semantics:
 
-- `npx @openclawbrain/cli@0.4.10 install` pins or repairs the activation root for one OpenClaw home after the plugin payload is installed.
+- `npx @openclawbrain/cli install` pins or repairs the activation root for one OpenClaw home after the plugin payload is installed.
 - `detach` removes only the OpenClaw profile hook and always keeps OpenClawBrain data.
 - `uninstall --keep-data` removes the hook and leaves activation data behind.
 - `uninstall --purge-data` removes the hook and deletes activation data for that install.
@@ -67,10 +67,10 @@ Treat that as a holdover lane, not the primary install story.
 For operators:
 
 1. Keep the existing compatibility install until you have a maintenance window.
-2. Install the canonical plugin/runtime payload: `openclaw plugins install @openclawbrain/openclaw@0.4.1`.
-3. Pin or repair the target OpenClaw home with `npx @openclawbrain/cli@0.4.10 install --openclaw-home ~/.openclaw`.
+2. Install the canonical plugin/runtime payload: `openclaw plugins install @openclawbrain/openclaw`.
+3. Pin or repair the target OpenClaw home with `npx @openclawbrain/cli install --openclaw-home ~/.openclaw`.
 4. Restart the gateway: `openclaw gateway restart`.
-5. Verify with `npx @openclawbrain/cli@0.4.10 status --openclaw-home ~/.openclaw --detailed`.
+5. Verify with `npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed`.
 6. Only after the split lane is verified should you remove any older compatibility-package wiring and any obsolete globally installed combined-package leftovers.
 
 For maintainers:
