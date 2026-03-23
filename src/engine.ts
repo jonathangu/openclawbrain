@@ -38,6 +38,7 @@ import {
   BrainAssemblerExtension,
   type BrainAssembledContextResult,
 } from "./brain-runtime/assembler-extension.js";
+import type { BrainObservationToolResult } from "./brain-core/types.js";
 import type { UserMemoryObservation } from "./brain-runtime/user-memory-proposals.js";
 import { BrainService } from "./brain-runtime/service.js";
 
@@ -451,6 +452,108 @@ function buildMessageParts(params: {
   }
 
   return parts;
+}
+
+function parsePartMetadata(metadata: string | null | undefined): Record<string, unknown> {
+  if (!metadata) {
+    return {};
+  }
+  try {
+    const parsed = JSON.parse(metadata) as unknown;
+    return parsed && typeof parsed === "object" && !Array.isArray(parsed)
+      ? parsed as Record<string, unknown>
+      : {};
+  } catch {
+    return {};
+  }
+}
+
+function summarizeTurnObservation(params: {
+  sessionId: string;
+  messages: AgentMessage[];
+}): { assistantResponse: string; toolResults: BrainObservationToolResult[] } {
+  const assistantChunks: string[] = [];
+  const toolResults = new Map<string, BrainObservationToolResult>();
+
+  for (const message of params.messages) {
+    const stored = toStoredMessage(message);
+    const parts = buildMessageParts({
+      sessionId: params.sessionId,
+      message,
+      fallbackContent: stored.content,
+    });
+
+    if (stored.role === "assistant") {
+      const textParts = parts
+        .filter((part) => part.partType === "text" && typeof part.textContent === "string")
+        .map((part) => part.textContent?.trim() ?? "")
+        .filter((text) => text.length > 0);
+      if (textParts.length > 0) {
+        assistantChunks.push(textParts.join("\n"));
+      } else if (stored.content.trim()) {
+        assistantChunks.push(stored.content.trim());
+      }
+    }
+
+    let recordedToolPart = false;
+    for (const part of parts) {
+      if (part.partType !== "tool") {
+        continue;
+      }
+
+      const metadata = parsePartMetadata(part.metadata ?? null);
+      const output = part.toolOutput ?? (stored.role === "tool" ? stored.content || null : null);
+      if (!output && stored.role !== "tool") {
+        continue;
+      }
+
+      recordedToolPart = true;
+      const entry: BrainObservationToolResult = {
+        sourceRole: stored.role === "tool" ? "tool" : "assistant",
+        toolCallId: part.toolCallId ?? null,
+        toolName: part.toolName ?? null,
+        input: part.toolInput ?? null,
+        output,
+        isError: safeBoolean(metadata.isError) ?? false,
+        excerpt: part.textContent?.trim() || (output ? output.slice(0, 240) : null),
+      };
+      const key = [
+        entry.sourceRole,
+        entry.toolCallId ?? "",
+        entry.toolName ?? "",
+        entry.input ?? "",
+        entry.output ?? "",
+      ].join("::");
+      toolResults.set(key, entry);
+    }
+
+    if (stored.role === "tool" && !recordedToolPart && stored.content.trim()) {
+      const fallbackPart = parts[0];
+      const metadata = parsePartMetadata(fallbackPart?.metadata ?? null);
+      const entry: BrainObservationToolResult = {
+        sourceRole: "tool",
+        toolCallId: fallbackPart?.toolCallId ?? safeString(metadata.toolCallId) ?? null,
+        toolName: fallbackPart?.toolName ?? safeString(metadata.toolName) ?? null,
+        input: fallbackPart?.toolInput ?? null,
+        output: stored.content,
+        isError: safeBoolean(metadata.isError) ?? false,
+        excerpt: fallbackPart?.textContent?.trim() || stored.content.slice(0, 240),
+      };
+      const key = [
+        entry.sourceRole,
+        entry.toolCallId ?? "",
+        entry.toolName ?? "",
+        entry.input ?? "",
+        entry.output ?? "",
+      ].join("::");
+      toolResults.set(key, entry);
+    }
+  }
+
+  return {
+    assistantResponse: assistantChunks.join("\n\n").trim(),
+    toolResults: [...toolResults.values()],
+  };
 }
 
 /**
@@ -1268,15 +1371,6 @@ export class LcmContextEngine implements ContextEngine {
     await this.summaryStore.appendContextMessage(conversationId, msgRecord.messageId);
 
     if (this.brainService) {
-      await this.brainService.harvestFromMessage({
-        conversationId,
-        messageId: msgRecord.messageId,
-        episodeId: params.brainEpisodeId ?? this.pendingBrainEpisodeBySession.get(sessionId),
-        role: stored.role,
-        content: stored.content,
-        messageParts,
-      });
-
       if (stored.role === "user") {
         try {
           const observation = await this.buildUserMemoryObservation({
@@ -1366,6 +1460,17 @@ export class LcmContextEngine implements ContextEngine {
         isHeartbeat: params.isHeartbeat === true,
         brainEpisodeId: completedTurnBrainEpisodeId,
       });
+      if (this.brainService && completedTurnBrainEpisodeId) {
+        const observation = summarizeTurnObservation({
+          sessionId: params.sessionId,
+          messages: newMessages,
+        });
+        await this.brainService.recordTurnObservation({
+          episodeId: completedTurnBrainEpisodeId,
+          assistantResponse: observation.assistantResponse,
+          toolResults: observation.toolResults,
+        });
+      }
     } catch {
       // Continue with proactive compaction even if ingest fails.
     } finally {

@@ -6,6 +6,8 @@ import type { OpenClawBrainRuntimeConfig } from "../db/config.js";
 import type {
   BrainConfig,
   BrainNode,
+  BrainObservationRouteMetadata,
+  BrainObservationToolResult,
   DecisionTrace,
   NodeKind,
   TraversalResult,
@@ -27,7 +29,6 @@ import {
   describeEmbeddingConfig,
   type BrainEmbeddingFn,
 } from "../brain-store/embedding.js";
-import { LabelHarvester } from "./harvester-extension.js";
 import { BrainWorker } from "../brain-worker/worker.js";
 import type { LcmDependencies } from "../types.js";
 import type { WorkerTeacherCompleteRequestMessage } from "../brain-worker/protocol.js";
@@ -35,6 +36,7 @@ import { flattenEdges, populateGraph, promoteGraphSnapshot, reloadGraphFromStore
 import { buildPromotionStory, buildWorkerPromotionSnapshotMetadata } from "./promotion-story.js";
 import { readWorkerRuntimeState } from "./worker-state.js";
 import { WorkerSupervisor } from "./worker-supervisor.js";
+import { isSystemMessage } from "../brain-harvest/system-filter.js";
 import {
   proposeUserCorrectionFast,
   proposeUserCorrectionWithModel,
@@ -60,7 +62,6 @@ export class BrainService {
   private servingGraph = new BrainGraph();
   private worker: BrainWorker | null;
   private childSupervisor: WorkerSupervisor | null = null;
-  private harvesterImpl: LabelHarvester;
   private packManager: PackManager;
   private embeddingClient: BrainEmbeddingFn | null;
   private config: BrainConfig;
@@ -137,11 +138,6 @@ export class BrainService {
     runBrainMigrations(db);
 
     this.store = new BrainStore(db, { brainRoot: this.config.root });
-    this.harvesterImpl = new LabelHarvester(
-      this.store,
-      params.deps.log,
-      (conversationId) => this.latestEpisodeByConversation.get(conversationId) ?? null,
-    );
     this.embeddingClient = createEmbeddingClient({
       config: runtimeConfig,
       getApiKey: (provider, model) => params.deps.getApiKey(provider, model),
@@ -304,8 +300,29 @@ export class BrainService {
     reloadGraphFromStore(this.store, this.mutableGraph);
   }
 
-  get harvester(): LabelHarvester {
-    return this.harvesterImpl;
+  private buildObservationRouteMetadata(trace: DecisionTrace): BrainObservationRouteMetadata {
+    const routeTrace = trace.routeTrace ?? null;
+    return {
+      requestDigest: routeTrace?.requestDigest ?? null,
+      activePackId: routeTrace?.activePackId ?? null,
+      routerIdentity: routeTrace?.routerIdentity ?? null,
+      candidateNodeIds: [...(routeTrace?.candidateNodeIds ?? [])],
+      selectedNodeIds: [...(routeTrace?.selectedNodeIds ?? trace.firedNodes)],
+      selectedPathNodeIds: [...(routeTrace?.selectedPathNodeIds ?? [])],
+      sourceSummary: routeTrace?.sourceSummary
+        ? {
+            injectedCount: routeTrace.sourceSummary.injectedCount,
+            kinds: { ...routeTrace.sourceSummary.kinds },
+            trusts: { ...routeTrace.sourceSummary.trusts },
+            sourceUris: [...routeTrace.sourceSummary.sourceUris],
+          }
+        : null,
+      selectionMetadata: routeTrace?.selectionMetadata
+        ? {
+            ...routeTrace.selectionMetadata,
+          }
+        : null,
+    };
   }
 
   isEnabled(): boolean {
@@ -403,6 +420,34 @@ export class BrainService {
       episode,
       trace,
     };
+  }
+
+  async recordTurnObservation(params: {
+    episodeId?: string | null;
+    assistantResponse: string;
+    toolResults?: BrainObservationToolResult[];
+  }): Promise<void> {
+    const episodeId = typeof params.episodeId === "string" ? params.episodeId.trim() : "";
+    if (!episodeId) {
+      return;
+    }
+
+    const episode = this.store.getEpisode(episodeId);
+    const trace = this.store.getTraceForEpisode(episodeId);
+    if (!episode || !trace) {
+      return;
+    }
+
+    this.store.insertObservation({
+      episodeId: episode.id,
+      conversationId: episode.conversationId,
+      traceId: trace.id,
+      queryText: episode.queryText,
+      retrievedContext: trace.routeTrace?.injectedNodeSummaries ?? [],
+      routeMetadata: this.buildObservationRouteMetadata(trace),
+      assistantResponse: params.assistantResponse,
+      toolResults: params.toolResults ?? [],
+    });
   }
 
   async teachUserCorrection(params: {
@@ -509,6 +554,9 @@ export class BrainService {
   }
 
   async observeUserTurn(observation: UserMemoryObservation): Promise<void> {
+    if (!isSystemMessage(observation.userText)) {
+      this.store.attachObservationFollowUp(observation.conversationId, observation.userText);
+    }
     if (!this.embeddingClient) {
       return;
     }
@@ -664,34 +712,39 @@ export class BrainService {
       if (episode && episode.reward === null) {
         const reason = `correction taught: "${params.instruction.slice(0, 80)}"`;
         const matchedTrace = this.store.getTraceForEpisode(episode.id);
-        this.store.insertEvidence({
-          episodeId: episode.id,
-          conversationId: episode.conversationId,
-          source: "human",
-          kind: "teach_correction",
-          value: -0.5,
-          confidence: 1.0,
-          reason,
-          contentSnippet: params.instruction.slice(0, 240),
-          metadata: {
-            ...provenanceMetadata,
-            taughtNodeId: node.id,
-            correctedEpisodeId: episode.id,
-            extractor: teachVia ?? "brain_teach",
-            via: teachVia ?? "brain_teach",
-            traceId: matchedTrace?.id ?? null,
-            tracePackVersion: matchedTrace?.packVersion ?? null,
-            traceRequestDigest: matchedTrace?.routeTrace?.requestDigest ?? null,
-            traceSelectedNodeIds: matchedTrace?.routeTrace?.selectedNodeIds ?? matchedTrace?.firedNodes ?? [],
-            traceSelectedPathNodeIds: matchedTrace?.routeTrace?.selectedPathNodeIds ?? [],
-          },
-        });
-        this.store.insertLabel({
+        const label = this.store.insertLabel({
           episodeId: episode.id,
           source: "human",
           value: -0.5,
           reason,
         });
+        if (matchedTrace) {
+          this.store.insertTraceSupervision({
+            traceId: matchedTrace.id,
+            episodeId: episode.id,
+            conversationId: episode.conversationId,
+            source: "human",
+            kind: "teach_correction",
+            value: -0.5,
+            confidence: 1.0,
+            reason,
+            contentSnippet: params.instruction.slice(0, 240),
+            resolution: "promoted_to_label",
+            labelId: label.id,
+            metadata: {
+              ...provenanceMetadata,
+              taughtNodeId: node.id,
+              correctedEpisodeId: episode.id,
+              extractor: teachVia ?? "brain_teach",
+              via: teachVia ?? "brain_teach",
+              traceId: matchedTrace.id,
+              tracePackVersion: matchedTrace.packVersion ?? null,
+              traceRequestDigest: matchedTrace.routeTrace?.requestDigest ?? null,
+              traceSelectedNodeIds: matchedTrace.routeTrace?.selectedNodeIds ?? matchedTrace.firedNodes,
+              traceSelectedPathNodeIds: matchedTrace.routeTrace?.selectedPathNodeIds ?? [],
+            },
+          });
+        }
       }
     }
 
@@ -752,9 +805,9 @@ export class BrainService {
       autoUserCorrectionsMinConfidence: this.config.autoUserCorrectionsMinConfidence,
       autoUserCorrectionsConfigError: this.autoUserCorrectionsConfigError,
       pendingUserObservationCount: this.pendingUserObservationCount,
+      pendingObservations: this.store.countPendingObservations(),
+      pendingObservationsByStatus: this.store.countObservationsByStatus(),
       ...workerState,
-      pendingEvidence: this.store.getPendingEvidence(100).length,
-      pendingEvidenceBySource: this.store.countPendingEvidenceBySource(),
       pendingLabels: this.store.getPendingLabels().length,
       pendingLabelsBySource: this.store.countPendingLabelsBySource(),
       mutationBacklog: this.store.countMutationsByStatus(),
@@ -825,26 +878,6 @@ export class BrainService {
     });
     this.notifyWorkerGraphReload();
     return result.summary;
-  }
-
-  async harvestFromMessage(params: {
-    conversationId: number;
-    messageId?: number;
-    episodeId?: string;
-    role: string;
-    content: string;
-    messageParts?: Array<{
-      partType: string;
-      ordinal?: number;
-      textContent?: string | null;
-      toolCallId?: string | null;
-      toolName?: string | null;
-      toolInput?: string | null;
-      toolOutput?: string | null;
-      metadata?: string | null;
-    }>;
-  }): Promise<void> {
-    await this.harvesterImpl.harvestFromMessage(params);
   }
 
   async promoteLatestCandidate(): Promise<number | null> {

@@ -206,26 +206,24 @@ describe("explicit user correction demo", () => {
       ),
     ).toBe(true);
 
-    const pendingEvidence = (
+    const matchingNode = (
       service as unknown as {
         store: {
-          getPendingEvidence: (limit?: number) => Array<{
+          getAllNodes: () => Array<{
             metadata?: Record<string, unknown>;
+            id: string;
           }>;
         };
       }
-    ).store.getPendingEvidence(20);
-
-    const matchingEvidence = pendingEvidence.find(
-      (row) => row.metadata?.taughtNodeId === corrected.nodeId,
+    ).store.getAllNodes().find(
+      (row) => row.id === corrected.nodeId,
     );
 
-    expect(matchingEvidence?.metadata).toMatchObject({
+    expect(matchingNode?.metadata).toMatchObject({
       sourceAuthority: "user_explicit",
       sourceQuote: "wrong, it changed to giraffe",
       sourceMessageId: 3,
       via: "brain_teach_user_correction",
-      extractor: "brain_teach_user_correction",
     });
   });
 });

@@ -20,137 +20,22 @@ import type { PackManager } from "../brain-core/pack.js";
 import { computeReinforceUpdates, updateBaseline, applyWeightUpdates } from "../brain-core/update.js";
 import { decayAllWeights } from "../brain-core/decay.js";
 import { computeHealth } from "../brain-core/health.js";
-import { isTeacherEligibleTrace } from "../brain-core/teacher.js";
 import { clusterMutationsIntoBundles, evaluateBundle, DEFAULT_BUNDLE_CONFIG } from "../brain-core/bundle-evaluator.js";
 import type { BundleEvaluationConfig, MutationBundle } from "../brain-core/bundle-evaluator.js";
 
-function readExtractor(evidence: BrainEvidence): string | null {
-  const extractor = evidence.metadata?.extractor;
-  return typeof extractor === "string" && extractor.length > 0 ? extractor : null;
-}
-
-function evidenceSpecificityRank(evidence: BrainEvidence): number {
-  const extractor = readExtractor(evidence);
-  if (evidence.source === "scanner") {
-    switch (extractor) {
-      case "structured_guidance_parts":
-        return 3;
-      case "structured_tool_chain":
-        return 2;
-      case "scanner_marker":
-        return 1;
-      case "scanner_heuristic":
-      default:
-        return 0;
-    }
-  }
-
-  return 0;
-}
-
-function compareEvidencePriority(left: BrainEvidence, right: BrainEvidence): number {
-  const trustDelta = trustRank(left.source) - trustRank(right.source);
-  if (trustDelta !== 0) {
-    return trustDelta;
-  }
-
-  if (left.value !== right.value) {
-    const specificityDelta = evidenceSpecificityRank(left) - evidenceSpecificityRank(right);
-    if (specificityDelta !== 0) {
-      return specificityDelta;
-    }
-  }
-
-  const confidenceDelta = left.confidence - right.confidence;
-  if (confidenceDelta !== 0) {
-    return confidenceDelta;
-  }
-
-  return left.createdAt - right.createdAt;
-}
-
-function losingEvidenceResolution(
-  winner: BrainEvidence,
-  loser: BrainEvidence,
-): { resolution: "discarded_lower_trust" | "discarded_duplicate"; note: string } {
-  const winnerTrust = trustRank(winner.source);
-  const loserTrust = trustRank(loser.source);
-  if (winnerTrust > loserTrust) {
-    return {
-      resolution: "discarded_lower_trust",
-      note: `pending evidence from ${winner.source} outranks ${loser.source}`,
-    };
-  }
-
-  if (winner.value === loser.value) {
-    return {
-      resolution: "discarded_duplicate",
-      note: `matching ${loser.source} evidence already queued`,
-    };
-  }
-
-  const winnerSpecificity = evidenceSpecificityRank(winner);
-  const loserSpecificity = evidenceSpecificityRank(loser);
-  if (winnerSpecificity !== loserSpecificity) {
-    return {
-      resolution: "discarded_duplicate",
-      note: `same-trust evidence superseded by more-structured ${winner.source} evidence`,
-    };
-  }
-
-  if (winner.confidence !== loser.confidence) {
-    return {
-      resolution: "discarded_duplicate",
-      note: `same-trust evidence superseded by higher-confidence ${winner.source} evidence`,
-    };
-  }
-
-  return {
-    resolution: "discarded_duplicate",
-    note: `same-trust evidence superseded by newer ${winner.source} evidence`,
-  };
-}
-
-function classifyEvidenceAgainstEpisode(
-  episode: Episode,
-  evidence: BrainEvidence,
-): { resolution: "discarded_lower_trust" | "discarded_duplicate"; note: string } | null {
-  if (episode.reward === null || episode.rewardSource === null) {
-    return null;
-  }
-
-  const existingTrust = trustRank(episode.rewardSource);
-  const newTrust = trustRank(evidence.source);
-  if (existingTrust > newTrust) {
-    return {
-      resolution: "discarded_lower_trust",
-      note: `existing reward from ${episode.rewardSource} outranks ${evidence.source}`,
-    };
-  }
-
-  if (existingTrust === newTrust) {
-    if (episode.reward === evidence.value) {
-      return {
-        resolution: "discarded_duplicate",
-        note: "matching reward already present",
-      };
-    }
-
-    return {
-      resolution: "discarded_duplicate",
-      note: `existing ${episode.rewardSource} reward already present; equal-trust override is not applied automatically`,
-    };
-  }
-
-  return null;
-}
-
 function readTeacherTraceId(metadata: Record<string, unknown> | null | undefined): string | null {
-  const teacherLabel = metadata?.teacherLabel;
-  if (!teacherLabel || typeof teacherLabel !== "object") {
-    return null;
+  const teacherEvaluation = metadata?.teacherEvaluation;
+  if (teacherEvaluation && typeof teacherEvaluation === "object") {
+    const traceId = (teacherEvaluation as { traceId?: unknown }).traceId;
+    if (typeof traceId === "string" && traceId.length > 0) {
+      return traceId;
+    }
   }
-  const traceId = (teacherLabel as { traceId?: unknown }).traceId;
+
+  const teacherLabel = metadata?.teacherLabel;
+  const traceId = teacherLabel && typeof teacherLabel === "object"
+    ? (teacherLabel as { traceId?: unknown }).traceId
+    : metadata?.traceId;
   return typeof traceId === "string" && traceId.length > 0 ? traceId : null;
 }
 
@@ -222,9 +107,8 @@ export class BrainWorker {
     this.running = true;
     try {
       this.store.setTrainingState("worker_last_tick_at", Date.now());
-      await this.processEvidence();
+      await this.evaluatePendingObservations();
       await this.processLabels();
-      await this.runTeacher();
       await this.applyUpdates();
       this.runDecay();
       this.proposeMutations();
@@ -293,92 +177,106 @@ export class BrainWorker {
     });
   }
 
-  private async processEvidence(): Promise<void> {
-    const pending = this.store.getPendingEvidence(100);
-    const candidatesByEpisode = new Map<string, { episode: Episode; evidence: BrainEvidence[] }>();
+  private observationReadyBefore(): number {
+    return Date.now() - Math.max(1_000, this.config.trainerIntervalMs);
+  }
 
-    for (const evidence of pending) {
-      const episode = this.store.getEpisode(evidence.episodeId);
-      if (!episode) {
-        this.resolveEvidenceWithTrace({
-          episode: null,
-          evidence,
-          resolution: "discarded_missing_episode",
-          note: evidence.reason ?? "episode missing",
-        });
-        continue;
-      }
-
-      const episodeClassification = classifyEvidenceAgainstEpisode(episode, evidence);
-      if (episodeClassification) {
-        this.resolveEvidenceWithTrace({
-          episode,
-          evidence,
-          resolution: episodeClassification.resolution,
-          note: episodeClassification.note,
-        });
-        continue;
-      }
-
-      const staged = candidatesByEpisode.get(episode.id);
-      if (staged) {
-        staged.evidence.push(evidence);
-      } else {
-        candidatesByEpisode.set(episode.id, { episode, evidence: [evidence] });
-      }
+  private async evaluatePendingObservations(): Promise<void> {
+    if (!this.teacher || !this.config.teacherEnabled) {
+      return;
     }
 
-    for (const { episode, evidence } of candidatesByEpisode.values()) {
-      let winner: BrainEvidence | null = null;
-      const losers: Array<{ evidence: BrainEvidence; resolution: "discarded_lower_trust" | "discarded_duplicate"; note: string }> = [];
-
-      for (const candidate of evidence) {
-        if (!winner) {
-          winner = candidate;
-          continue;
-        }
-
-        if (compareEvidencePriority(candidate, winner) > 0) {
-          losers.push({
-            evidence: winner,
-            ...losingEvidenceResolution(candidate, winner),
-          });
-          winner = candidate;
-          continue;
-        }
-
-        losers.push({
-          evidence: candidate,
-          ...losingEvidenceResolution(winner, candidate),
+    const pending = this.store.getPendingObservations(20, this.observationReadyBefore());
+    for (const observation of pending) {
+      const episode = this.store.getEpisode(observation.episodeId);
+      if (!episode) {
+        this.store.completeObservationEvaluation({
+          observationId: observation.id,
+          phase1Score: 0,
+          phase2Score: 0,
+          finalScore: 0,
+          confidence: 0,
+          reason: "episode missing",
         });
-      }
-
-      for (const loser of losers) {
-        this.resolveEvidenceWithTrace({
-          episode,
-          evidence: loser.evidence,
-          resolution: loser.resolution,
-          note: loser.note,
-        });
-      }
-
-      if (!winner) {
         continue;
       }
 
+      const review = await this.teacher.evaluateObservation(observation);
+      if (!review) {
+        this.store.completeObservationEvaluation({
+          observationId: observation.id,
+          phase1Score: 0,
+          phase2Score: 0,
+          finalScore: 0,
+          confidence: 0,
+          reason: "teacher input unavailable",
+        });
+        continue;
+      }
+
+      const evidence = this.store.insertEvidence({
+        episodeId: episode.id,
+        conversationId: episode.conversationId,
+        source: "teacher",
+        kind: "teacher_review",
+        value: review.finalScore,
+        confidence: review.confidence,
+        reason: review.reason,
+        contentSnippet: (observation.assistantResponse || episode.queryText).slice(0, 240),
+        metadata: {
+          observationId: observation.id,
+          traceId: review.traceId,
+          phase1Score: review.retrievalRelevance,
+          phase2Score: review.outcomeSupport,
+          agentUsage: review.agentUsage,
+          teacherEvaluation: {
+            version: review.version,
+            observationId: review.observationId,
+            episodeId: review.episodeId,
+            traceId: review.traceId,
+            retrievalRelevance: review.retrievalRelevance,
+            agentUsage: review.agentUsage,
+            outcomeSupport: review.outcomeSupport,
+            finalScore: review.finalScore,
+            confidence: review.confidence,
+            reason: review.reason,
+          },
+          teacherInput: review.input,
+        },
+      });
       const label = this.store.insertLabel({
         episodeId: episode.id,
-        source: winner.source,
-        value: winner.value,
-        confidence: winner.confidence,
-        reason: winner.reason ?? undefined,
+        source: "teacher",
+        value: review.finalScore,
+        confidence: review.confidence,
+        reason: review.reason,
       });
       this.resolveEvidenceWithTrace({
         episode,
-        evidence: winner,
+        evidence,
         resolution: "promoted_to_label",
         labelId: label.id,
-        note: winner.kind,
+        note: "teacher_observation_v2",
+      });
+      this.store.completeObservationEvaluation({
+        observationId: observation.id,
+        phase1Score: review.retrievalRelevance,
+        phase2Score: review.outcomeSupport,
+        finalScore: review.finalScore,
+        confidence: review.confidence,
+        reason: review.reason,
+        teacherEvaluation: {
+          version: review.version,
+          observationId: review.observationId,
+          episodeId: review.episodeId,
+          traceId: review.traceId,
+          retrievalRelevance: review.retrievalRelevance,
+          agentUsage: review.agentUsage,
+          outcomeSupport: review.outcomeSupport,
+          finalScore: review.finalScore,
+          confidence: review.confidence,
+          reason: review.reason,
+        },
       });
     }
   }
@@ -404,46 +302,6 @@ export class BrainWorker {
     }
   }
 
-  private async runTeacher(): Promise<void> {
-    if (!this.teacher || !this.config.teacherEnabled) {
-      return;
-    }
-
-    const unlabeled = this.store.getUnlabeledEpisodes(3);
-    for (const episode of unlabeled) {
-      const trace = this.store.getLatestTraceForEpisode(episode.id);
-      if (!trace || !isTeacherEligibleTrace(trace)) {
-        continue;
-      }
-
-      const review = await this.teacher.evaluateTrace(trace);
-      if (!review || Math.abs(review.score) <= 0.05) {
-        continue;
-      }
-
-      this.store.insertEvidence({
-        episodeId: episode.id,
-        conversationId: episode.conversationId,
-        source: "teacher",
-        kind: "teacher_review",
-        value: review.score,
-        confidence: 0.6,
-        reason: review.reason,
-        contentSnippet: episode.queryText.slice(0, 240),
-        metadata: {
-          queryText: episode.queryText,
-          teacherLabel: {
-            version: review.version,
-            traceId: review.traceId,
-            episodeId: review.episodeId,
-            requestDigest: review.requestDigest,
-            input: review.input,
-          },
-        },
-      });
-    }
-  }
-
   private collectPolicyGradientSupervision(episode: Episode): {
     traceIds: string[];
     supervisionIds: string[];
@@ -463,11 +321,9 @@ export class BrainWorker {
     for (const record of supervision) {
       traceIds.add(record.traceId);
       supervisionIds.add(record.id);
-      const teacherTraceId = readTeacherTraceId(record.metadata);
-      if (teacherTraceId) {
-        teacherTraceIds.add(teacherTraceId);
-      } else if (record.source === "teacher") {
-        teacherTraceIds.add(record.traceId);
+      if (record.source === "teacher") {
+        const teacherTraceId = readTeacherTraceId(record.metadata);
+        teacherTraceIds.add(teacherTraceId ?? record.traceId);
       }
     }
 

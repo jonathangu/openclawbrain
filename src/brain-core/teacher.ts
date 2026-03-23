@@ -1,15 +1,20 @@
 /**
- * Off-path async teacher for traced route-decision evaluation.
+ * Off-path async teacher for full-turn reward evaluation.
  *
- * CRITICAL RULE: Teacher sees ONLY the persisted trace slice.
- * It evaluates the routing decision, not the overall task outcome.
- * No cheating with extra context.
+ * The teacher sees the persisted observation only:
+ * - user query
+ * - selected brain context
+ * - route metadata
+ * - actual assistant response
+ * - tool outcomes
+ * - next user turn when present
  */
 
 import type { BrainGraph } from "./graph.js";
 import type {
-  DecisionRouteTrace,
-  DecisionTrace,
+  BrainObservation,
+  BrainObservationRouteMetadata,
+  BrainObservationToolResult,
   DecisionTraceInjectedNodeSummary,
 } from "./types.js";
 
@@ -26,39 +31,52 @@ export type BrainTeacherCompletion = (params: {
 export type BrainTeacherResolveModel = () => { provider: string; model: string };
 export type BrainTeacherGetApiKey = (provider: string, model: string) => Promise<string | undefined>;
 
-export interface TeacherLabelInputV1 {
-  version: 1;
-  traceId: string;
-  episodeId: string | null;
+export interface TeacherLabelInputV2 {
+  version: 2;
+  observationId: string;
+  episodeId: string;
+  traceId: string | null;
+  conversationId: number | null;
   queryText: string;
-  routeDecision: {
-    requestDigest: string;
-    conversationId: number | null;
-    activePackId: string | null;
-    routerIdentity: string;
-    candidateNodeIds: string[];
-    selectedNodeIds: string[];
-    selectedPathNodeIds: string[];
-    sourceSummary: DecisionRouteTrace["sourceSummary"];
-    selectionMetadata: DecisionRouteTrace["selectionMetadata"];
-  };
   selectedContext: DecisionTraceInjectedNodeSummary[];
+  routeMetadata: BrainObservationRouteMetadata;
+  assistantResponse: string;
+  toolResults: BrainObservationToolResult[];
+  nextUserTurn: string | null;
 }
 
-export interface TeacherLabelResultV1 {
-  version: 1;
-  traceId: string;
-  episodeId: string | null;
-  requestDigest: string;
-  score: number;
+export interface TeacherLabelResultV2 {
+  version: 2;
+  observationId: string;
+  episodeId: string;
+  traceId: string | null;
+  retrievalRelevance: number;
+  agentUsage: number;
+  outcomeSupport: number;
+  finalScore: number;
+  confidence: number;
   reason: string;
-  input: TeacherLabelInputV1;
+  input: TeacherLabelInputV2;
 }
 
 const TEACHER_SYSTEM_PROMPT =
-  "You are evaluating a traced context routing decision. Score the selected context shown in the trace slice for relevance, completeness, and conciseness. Do not assume access to hidden router state or unseen candidate content. Return ONLY a JSON object: {\"score\": <number from -1.0 to 1.0>, \"reason\": \"<brief explanation>\"}";
+  "You are evaluating a persisted OpenClawBrain turn observation. Score only from the provided observation. " +
+  "Judge (1) retrieval relevance of the selected context to the user query, " +
+  "(2) agent usage of that context and any tools, and " +
+  "(3) whether the observed outcome supports rewarding the route. " +
+  "If the next user turn is missing or ambiguous, lower confidence rather than inventing certainty. " +
+  "Return ONLY JSON: " +
+  "{\"retrieval_relevance\": <number -1.0..1.0>, \"agent_usage\": <number -1.0..1.0>, \"outcome_support\": <number -1.0..1.0>, \"final_score\": <number -1.0..1.0>, \"confidence\": <number 0.0..1.0>, \"reason\": \"<brief explanation>\"}";
 
-function cloneInjectedSummary(summary: DecisionTraceInjectedNodeSummary): DecisionTraceInjectedNodeSummary {
+function clampSigned(value: unknown): number {
+  return Math.max(-1, Math.min(1, Number(value) || 0));
+}
+
+function clampUnit(value: unknown): number {
+  return Math.max(0, Math.min(1, Number(value) || 0));
+}
+
+function cloneContext(summary: DecisionTraceInjectedNodeSummary): DecisionTraceInjectedNodeSummary {
   return {
     nodeId: summary.nodeId,
     kind: summary.kind,
@@ -70,49 +88,60 @@ function cloneInjectedSummary(summary: DecisionTraceInjectedNodeSummary): Decisi
   };
 }
 
-export function materializeTeacherLabelInput(trace: DecisionTrace): TeacherLabelInputV1 | null {
-  const routeTrace = trace.routeTrace ?? null;
-  if (!routeTrace) {
-    return null;
-  }
+function cloneToolResult(result: BrainObservationToolResult): BrainObservationToolResult {
+  return {
+    sourceRole: result.sourceRole,
+    toolCallId: result.toolCallId,
+    toolName: result.toolName,
+    input: result.input,
+    output: result.output,
+    isError: result.isError,
+    excerpt: result.excerpt,
+  };
+}
 
-  if (typeof trace.queryText !== "string" || trace.queryText.trim().length === 0) {
-    return null;
-  }
-
-  if (routeTrace.selectedNodeIds.length === 0 || routeTrace.injectedNodeSummaries.length === 0) {
+export function materializeTeacherLabelInput(observation: BrainObservation): TeacherLabelInputV2 | null {
+  if (typeof observation.queryText !== "string" || observation.queryText.trim().length === 0) {
     return null;
   }
 
   return {
-    version: 1,
-    traceId: trace.id,
-    episodeId: trace.episodeId,
-    queryText: trace.queryText,
-    routeDecision: {
-      requestDigest: routeTrace.requestDigest,
-      conversationId: routeTrace.conversationId,
-      activePackId: routeTrace.activePackId,
-      routerIdentity: routeTrace.routerIdentity,
-      candidateNodeIds: [...routeTrace.candidateNodeIds],
-      selectedNodeIds: [...routeTrace.selectedNodeIds],
-      selectedPathNodeIds: [...routeTrace.selectedPathNodeIds],
-      sourceSummary: {
-        injectedCount: routeTrace.sourceSummary.injectedCount,
-        kinds: { ...routeTrace.sourceSummary.kinds },
-        trusts: { ...routeTrace.sourceSummary.trusts },
-        sourceUris: [...routeTrace.sourceSummary.sourceUris],
-      },
-      selectionMetadata: {
-        ...routeTrace.selectionMetadata,
-      },
+    version: 2,
+    observationId: observation.id,
+    episodeId: observation.episodeId,
+    traceId: observation.traceId,
+    conversationId: observation.conversationId,
+    queryText: observation.queryText,
+    selectedContext: observation.retrievedContext.map(cloneContext),
+    routeMetadata: {
+      requestDigest: observation.routeMetadata.requestDigest,
+      activePackId: observation.routeMetadata.activePackId,
+      routerIdentity: observation.routeMetadata.routerIdentity,
+      candidateNodeIds: [...observation.routeMetadata.candidateNodeIds],
+      selectedNodeIds: [...observation.routeMetadata.selectedNodeIds],
+      selectedPathNodeIds: [...observation.routeMetadata.selectedPathNodeIds],
+      sourceSummary: observation.routeMetadata.sourceSummary
+        ? {
+            injectedCount: observation.routeMetadata.sourceSummary.injectedCount,
+            kinds: { ...observation.routeMetadata.sourceSummary.kinds },
+            trusts: { ...observation.routeMetadata.sourceSummary.trusts },
+            sourceUris: [...observation.routeMetadata.sourceSummary.sourceUris],
+          }
+        : null,
+      selectionMetadata: observation.routeMetadata.selectionMetadata
+        ? {
+            ...observation.routeMetadata.selectionMetadata,
+          }
+        : null,
     },
-    selectedContext: routeTrace.injectedNodeSummaries.map(cloneInjectedSummary),
+    assistantResponse: observation.assistantResponse,
+    toolResults: observation.toolResults.map(cloneToolResult),
+    nextUserTurn: observation.followUpText,
   };
 }
 
-export function isTeacherEligibleTrace(trace: DecisionTrace): boolean {
-  return materializeTeacherLabelInput(trace) !== null;
+export function isTeacherEligibleObservation(observation: BrainObservation): boolean {
+  return materializeTeacherLabelInput(observation) !== null;
 }
 
 export class BrainTeacher {
@@ -126,68 +155,89 @@ export class BrainTeacher {
     void this.graph;
   }
 
-  async evaluateTrace(trace: DecisionTrace): Promise<TeacherLabelResultV1 | null> {
-    const input = materializeTeacherLabelInput(trace);
+  async evaluateObservation(observation: BrainObservation): Promise<TeacherLabelResultV2 | null> {
+    const input = materializeTeacherLabelInput(observation);
     if (!input) {
       return null;
     }
 
-    const prompt = `Evaluate this traced route decision. The JSON below is the entire teacher-visible surface.\n\n${JSON.stringify(input, null, 2)}`;
+    const prompt = `Evaluate this persisted OpenClawBrain turn observation.\n\n${JSON.stringify(input, null, 2)}`;
 
     try {
       const { provider, model } = this.resolveModel();
       const apiKey = await this.getApiKey(provider, model);
-
       const result = await this.complete({
         provider,
         model,
         apiKey,
         system: TEACHER_SYSTEM_PROMPT,
         messages: [{ role: "user", content: prompt }],
-        maxTokens: 200,
+        maxTokens: 300,
         temperature: 0.1,
       });
 
       const text = result.content
-        ?.map((b: { text?: string }) => b.text ?? "")
+        ?.map((block: { text?: string }) => block.text ?? "")
         .join("") ?? "";
-
-      const jsonMatch = text.match(/\{[\s\S]*"score"[\s\S]*\}/);
+      const jsonMatch = text.match(/\{[\s\S]*"reason"[\s\S]*\}/);
       if (!jsonMatch) {
-        this.log.error(`[brain] Teacher returned non-JSON for trace ${trace.id}: ${text.slice(0, 100)}`);
+        this.log.error(`[brain] Teacher returned non-JSON for observation ${observation.id}: ${text.slice(0, 100)}`);
         return {
-          version: 1,
-          traceId: trace.id,
-          episodeId: trace.episodeId,
-          requestDigest: input.routeDecision.requestDigest,
-          score: 0,
+          version: 2,
+          observationId: observation.id,
+          episodeId: observation.episodeId,
+          traceId: observation.traceId,
+          retrievalRelevance: 0,
+          agentUsage: 0,
+          outcomeSupport: 0,
+          finalScore: 0,
+          confidence: 0,
           reason: "failed to parse teacher response",
           input,
         };
       }
 
-      const parsed = JSON.parse(jsonMatch[0]);
-      const score = Math.max(-1, Math.min(1, Number(parsed.score) || 0));
+      const parsed = JSON.parse(jsonMatch[0]) as Record<string, unknown>;
+      const retrievalRelevance = clampSigned(parsed.retrieval_relevance);
+      const agentUsage = clampSigned(parsed.agent_usage);
+      const outcomeSupport = clampSigned(parsed.outcome_support);
+      const finalScore = clampSigned(
+        parsed.final_score
+          ?? ((retrievalRelevance + agentUsage + outcomeSupport) / 3),
+      );
+      const confidence = clampUnit(parsed.confidence ?? 0.5);
       const reason = String(parsed.reason || "teacher evaluation");
 
-      this.log.info(`[brain] Teacher scored trace ${trace.id}: ${score.toFixed(2)} (${reason})`);
+      this.log.info(
+        `[brain] Teacher scored observation ${observation.id}: ${finalScore.toFixed(2)} (${reason})`,
+      );
       return {
-        version: 1,
-        traceId: trace.id,
-        episodeId: trace.episodeId,
-        requestDigest: input.routeDecision.requestDigest,
-        score,
+        version: 2,
+        observationId: observation.id,
+        episodeId: observation.episodeId,
+        traceId: observation.traceId,
+        retrievalRelevance,
+        agentUsage,
+        outcomeSupport,
+        finalScore,
+        confidence,
         reason,
         input,
       };
-    } catch (err) {
-      this.log.error(`[brain] Teacher evaluation failed for trace ${trace.id}: ${(err as Error).message}`);
+    } catch (error) {
+      this.log.error(
+        `[brain] Teacher evaluation failed for observation ${observation.id}: ${(error as Error).message}`,
+      );
       return {
-        version: 1,
-        traceId: trace.id,
-        episodeId: trace.episodeId,
-        requestDigest: input.routeDecision.requestDigest,
-        score: 0,
+        version: 2,
+        observationId: observation.id,
+        episodeId: observation.episodeId,
+        traceId: observation.traceId,
+        retrievalRelevance: 0,
+        agentUsage: 0,
+        outcomeSupport: 0,
+        finalScore: 0,
+        confidence: 0,
         reason: "teacher evaluation failed",
         input,
       };

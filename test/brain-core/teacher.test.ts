@@ -1,39 +1,33 @@
 import { describe, expect, it, vi } from "vitest";
 import { BrainGraph } from "../../src/brain-core/graph.js";
-import type { DecisionTrace } from "../../src/brain-core/types.js";
-import { BrainTeacher, isTeacherEligibleTrace, materializeTeacherLabelInput } from "../../src/brain-core/teacher.js";
+import type { BrainObservation } from "../../src/brain-core/types.js";
+import { BrainTeacher, isTeacherEligibleObservation, materializeTeacherLabelInput } from "../../src/brain-core/teacher.js";
 
-function makeTrace(overrides: Partial<DecisionTrace> = {}): DecisionTrace {
+function makeObservation(overrides: Partial<BrainObservation> = {}): BrainObservation {
   return {
-    id: "bt_trace_1",
+    id: "bo_1",
     episodeId: "ep_1",
-    packVersion: 3,
+    conversationId: 42,
+    traceId: "bt_1",
     queryText: "how do I open a pull request?",
-    seedScores: [],
-    trajectory: [],
-    firedNodes: ["node_pr"],
-    vetoedNodes: [],
-    contextChars: 128,
-    footer: "trace footer",
-    routeTrace: {
+    retrievedContext: [
+      {
+        nodeId: "node_pr",
+        kind: "workflow",
+        trust: "human",
+        sourceUri: "PLAYBOOK.md",
+        tags: ["git", "pr"],
+        tokenCount: 24,
+        contentPreview: "Use gh pr create for pull request workflows.",
+      },
+    ],
+    routeMetadata: {
       requestDigest: "deadbeefcafebabe",
-      conversationId: 42,
       activePackId: "brain-pack-v3",
       routerIdentity: "brain-graph-traverse.v1",
       candidateNodeIds: ["node_pr", "node_review"],
       selectedNodeIds: ["node_pr"],
       selectedPathNodeIds: ["node_pr"],
-      injectedNodeSummaries: [
-        {
-          nodeId: "node_pr",
-          kind: "workflow",
-          trust: "human",
-          sourceUri: "PLAYBOOK.md",
-          tags: ["git", "pr"],
-          tokenCount: 24,
-          contentPreview: "Use gh pr create for pull request workflows.",
-        },
-      ],
       sourceSummary: {
         injectedCount: 1,
         kinds: { workflow: 1 },
@@ -57,48 +51,69 @@ function makeTrace(overrides: Partial<DecisionTrace> = {}): DecisionTrace {
         queryEmbeddingSource: "provided",
       },
     },
+    assistantResponse: "Use `gh pr create` to open the pull request.",
+    toolResults: [
+      {
+        sourceRole: "tool",
+        toolCallId: "call_1",
+        toolName: "bash",
+        input: "{\"cmd\":\"gh pr create\"}",
+        output: "{\"ok\":true}",
+        isError: false,
+        excerpt: "{\"ok\":true}",
+      },
+    ],
+    followUpText: "That worked, thanks.",
+    phase1Score: null,
+    phase2Score: null,
+    finalScore: null,
+    confidence: null,
+    reason: null,
+    status: "pending_teacher",
+    teacherEvaluation: null,
     createdAt: 123,
+    updatedAt: 123,
+    evaluatedAt: null,
     ...overrides,
   };
 }
 
-describe("teacher traced label plumbing", () => {
-  it("materializes a structured teacher-label input from persisted route traces", () => {
-    const trace = makeTrace();
-
-    const input = materializeTeacherLabelInput(trace);
+describe("teacher observation plumbing", () => {
+  it("materializes the persisted observation surface for teacher-v2", () => {
+    const input = materializeTeacherLabelInput(makeObservation());
 
     expect(input).toMatchObject({
-      version: 1,
-      traceId: "bt_trace_1",
-      episodeId: "ep_1",
+      version: 2,
+      observationId: "bo_1",
+      traceId: "bt_1",
       queryText: "how do I open a pull request?",
-      routeDecision: {
-        requestDigest: "deadbeefcafebabe",
-        routerIdentity: "brain-graph-traverse.v1",
+      routeMetadata: {
         selectedNodeIds: ["node_pr"],
       },
       selectedContext: [
         expect.objectContaining({
           nodeId: "node_pr",
-          sourceUri: "PLAYBOOK.md",
           contentPreview: expect.stringContaining("gh pr create"),
         }),
       ],
+      assistantResponse: expect.stringContaining("gh pr create"),
+      nextUserTurn: "That worked, thanks.",
     });
-    expect(isTeacherEligibleTrace(trace)).toBe(true);
+    expect(isTeacherEligibleObservation(makeObservation())).toBe(true);
   });
 
-  it("rejects traces that do not carry a teacher-eligible route slice", () => {
-    const trace = makeTrace({ routeTrace: null });
+  it("rejects observations without a teacher-eligible query", () => {
+    const observation = makeObservation({ queryText: "   " });
 
-    expect(materializeTeacherLabelInput(trace)).toBeNull();
-    expect(isTeacherEligibleTrace(trace)).toBe(false);
+    expect(materializeTeacherLabelInput(observation)).toBeNull();
+    expect(isTeacherEligibleObservation(observation)).toBe(false);
   });
 
-  it("evaluates traced route decisions using only the structured trace surface", async () => {
+  it("evaluates full-turn observations with retrieval, agent, and outcome scores", async () => {
     const complete = vi.fn(async () => ({
-      content: [{ text: '{"score":0.75,"reason":"selected context is directly relevant"}' }],
+      content: [{
+        text: "{\"retrieval_relevance\":0.9,\"agent_usage\":0.7,\"outcome_support\":0.8,\"final_score\":0.82,\"confidence\":0.64,\"reason\":\"retrieved context was relevant and the assistant used it well\"}",
+      }],
     }));
     const teacher = new BrainTeacher(
       complete,
@@ -108,19 +123,27 @@ describe("teacher traced label plumbing", () => {
       { info: vi.fn(), error: vi.fn() },
     );
 
-    const result = await teacher.evaluateTrace(makeTrace());
+    const result = await teacher.evaluateObservation(makeObservation());
 
     expect(result).toMatchObject({
-      version: 1,
-      traceId: "bt_trace_1",
-      requestDigest: "deadbeefcafebabe",
-      score: 0.75,
-      reason: "selected context is directly relevant",
+      version: 2,
+      observationId: "bo_1",
+      traceId: "bt_1",
+      retrievalRelevance: 0.9,
+      agentUsage: 0.7,
+      outcomeSupport: 0.8,
+      finalScore: 0.82,
+      confidence: 0.64,
+      reason: "retrieved context was relevant and the assistant used it well",
       input: {
-        version: 1,
-        routeDecision: {
+        routeMetadata: {
           selectedNodeIds: ["node_pr"],
         },
+        toolResults: [
+          expect.objectContaining({
+            toolName: "bash",
+          }),
+        ],
       },
     });
     expect(complete).toHaveBeenCalledTimes(1);
@@ -128,10 +151,10 @@ describe("teacher traced label plumbing", () => {
       system?: string;
       messages?: Array<{ content?: unknown }>;
     }]>) [0]?.[0];
-    expect(request?.system).toContain("traced context routing decision");
+    expect(request?.system).toContain("persisted OpenClawBrain turn observation");
     const prompt = String(request?.messages?.[0]?.content ?? "");
-    expect(prompt).toContain('"traceId": "bt_trace_1"');
-    expect(prompt).toContain('"selectedContext"');
-    expect(prompt).not.toContain("Candidate nodes the router could have chosen:");
+    expect(prompt).toContain("\"assistantResponse\"");
+    expect(prompt).toContain("\"toolResults\"");
+    expect(prompt).toContain("\"nextUserTurn\"");
   });
 });

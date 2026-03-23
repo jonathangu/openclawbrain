@@ -149,6 +149,37 @@ export function runBrainMigrations(db: DatabaseSync): void {
     CREATE INDEX IF NOT EXISTS brain_trace_supervision_episode_idx ON brain_trace_supervision(episode_id, created_at);
 
     -- ═══════════════════════════════════════════
+    -- Durable Turn Observations
+    -- ═══════════════════════════════════════════
+
+    CREATE TABLE IF NOT EXISTS brain_observations (
+      id                    TEXT PRIMARY KEY,
+      episode_id            TEXT NOT NULL UNIQUE,
+      conversation_id       INTEGER,
+      trace_id              TEXT,
+      query_text            TEXT NOT NULL,
+      retrieved_context_json TEXT NOT NULL DEFAULT '[]',
+      route_metadata_json   TEXT NOT NULL DEFAULT '{}',
+      assistant_response    TEXT NOT NULL DEFAULT '',
+      tool_results_json     TEXT NOT NULL DEFAULT '[]',
+      follow_up_text        TEXT,
+      phase1_score          REAL,
+      phase2_score          REAL,
+      final_score           REAL,
+      confidence            REAL,
+      reason                TEXT,
+      status                TEXT NOT NULL DEFAULT 'pending_followup',
+      teacher_evaluation_json TEXT,
+      created_at            INTEGER NOT NULL,
+      updated_at            INTEGER NOT NULL,
+      evaluated_at          INTEGER
+    );
+
+    CREATE INDEX IF NOT EXISTS brain_observations_status_idx ON brain_observations(status, created_at);
+    CREATE INDEX IF NOT EXISTS brain_observations_conversation_idx ON brain_observations(conversation_id, created_at);
+    CREATE INDEX IF NOT EXISTS brain_observations_trace_idx ON brain_observations(trace_id, created_at);
+
+    -- ═══════════════════════════════════════════
     -- Packs (immutable serving snapshots)
     -- ═══════════════════════════════════════════
 

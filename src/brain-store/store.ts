@@ -31,6 +31,12 @@ import type {
   ResolvedLabel,
   SeedWeight,
   TraceSupervisionRecord,
+  BrainObservation,
+  BrainObservationRouteMetadata,
+  BrainObservationStatus,
+  BrainObservationTeacherEvaluation,
+  BrainObservationToolResult,
+  DecisionTraceInjectedNodeSummary,
   LearningJournalEventType,
   LearningJournalRecord,
   MutationProposedJournalPayload,
@@ -614,6 +620,211 @@ export class BrainStore {
     return row.count ?? 0;
   }
 
+  // ─── Durable Turn Observations ───
+
+  insertObservation(params: {
+    episodeId: string;
+    conversationId?: number | null;
+    traceId?: string | null;
+    queryText: string;
+    retrievedContext: DecisionTraceInjectedNodeSummary[];
+    routeMetadata: BrainObservationRouteMetadata;
+    assistantResponse?: string | null;
+    toolResults?: BrainObservationToolResult[];
+    followUpText?: string | null;
+    status?: BrainObservationStatus;
+    createdAt?: number;
+    updatedAt?: number;
+  }): BrainObservation {
+    const existing = this.getObservationForEpisode(params.episodeId);
+    if (existing) {
+      return existing;
+    }
+
+    const id = `bo_${randomUUID().slice(0, 8)}`;
+    const createdAt = params.createdAt ?? Date.now();
+    const updatedAt = params.updatedAt ?? createdAt;
+    this.db.prepare(`
+      INSERT INTO brain_observations (
+        id,
+        episode_id,
+        conversation_id,
+        trace_id,
+        query_text,
+        retrieved_context_json,
+        route_metadata_json,
+        assistant_response,
+        tool_results_json,
+        follow_up_text,
+        status,
+        created_at,
+        updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id,
+      params.episodeId,
+      params.conversationId ?? null,
+      params.traceId ?? null,
+      params.queryText,
+      JSON.stringify(params.retrievedContext ?? []),
+      JSON.stringify(params.routeMetadata ?? {}),
+      params.assistantResponse ?? "",
+      JSON.stringify(params.toolResults ?? []),
+      params.followUpText ?? null,
+      params.status ?? "pending_followup",
+      createdAt,
+      updatedAt,
+    );
+
+    return {
+      id,
+      episodeId: params.episodeId,
+      conversationId: params.conversationId ?? null,
+      traceId: params.traceId ?? null,
+      queryText: params.queryText,
+      retrievedContext: params.retrievedContext ?? [],
+      routeMetadata: params.routeMetadata,
+      assistantResponse: params.assistantResponse ?? "",
+      toolResults: params.toolResults ?? [],
+      followUpText: params.followUpText ?? null,
+      phase1Score: null,
+      phase2Score: null,
+      finalScore: null,
+      confidence: null,
+      reason: null,
+      status: params.status ?? "pending_followup",
+      teacherEvaluation: null,
+      createdAt,
+      updatedAt,
+      evaluatedAt: null,
+    };
+  }
+
+  getObservation(id: string): BrainObservation | null {
+    const row = this.db.prepare(`SELECT * FROM brain_observations WHERE id = ?`).get(id) as Record<string, unknown> | undefined;
+    return row ? this.toObservation(row) : null;
+  }
+
+  getObservationForEpisode(episodeId: string): BrainObservation | null {
+    const row = this.db.prepare(`
+      SELECT *
+      FROM brain_observations
+      WHERE episode_id = ?
+      LIMIT 1
+    `).get(episodeId) as Record<string, unknown> | undefined;
+    return row ? this.toObservation(row) : null;
+  }
+
+  getPendingObservations(limit: number, readyBefore: number): BrainObservation[] {
+    const rows = this.db.prepare(`
+      SELECT *
+      FROM brain_observations
+      WHERE status IN ('pending_followup', 'pending_teacher')
+        AND (
+          status = 'pending_teacher'
+          OR follow_up_text IS NOT NULL
+          OR created_at <= ?
+        )
+      ORDER BY created_at ASC
+      LIMIT ?
+    `).all(readyBefore, limit) as Record<string, unknown>[];
+    return rows.map((row) => this.toObservation(row));
+  }
+
+  countPendingObservations(): number {
+    const row = this.db.prepare(`
+      SELECT COUNT(*) as count
+      FROM brain_observations
+      WHERE status IN ('pending_followup', 'pending_teacher')
+    `).get() as { count: number };
+    return row.count ?? 0;
+  }
+
+  countObservationsByStatus(): Record<BrainObservationStatus, number> {
+    const rows = this.db.prepare(`
+      SELECT status, COUNT(*) as count
+      FROM brain_observations
+      GROUP BY status
+    `).all() as Array<{ status: BrainObservationStatus; count: number }>;
+    const counts: Record<BrainObservationStatus, number> = {
+      pending_followup: 0,
+      pending_teacher: 0,
+      completed: 0,
+    };
+    for (const row of rows) {
+      counts[row.status] = row.count;
+    }
+    return counts;
+  }
+
+  attachObservationFollowUp(conversationId: number, followUpText: string): BrainObservation | null {
+    const normalized = followUpText.trim();
+    if (!normalized) {
+      return null;
+    }
+
+    const row = this.db.prepare(`
+      SELECT id
+      FROM brain_observations
+      WHERE conversation_id = ?
+        AND status IN ('pending_followup', 'pending_teacher')
+        AND follow_up_text IS NULL
+      ORDER BY created_at DESC
+      LIMIT 1
+    `).get(conversationId) as { id?: string } | undefined;
+    if (!row?.id) {
+      return null;
+    }
+
+    const now = Date.now();
+    this.db.prepare(`
+      UPDATE brain_observations
+      SET follow_up_text = ?, status = 'pending_teacher', updated_at = ?
+      WHERE id = ?
+    `).run(normalized, now, row.id);
+    return this.getObservation(row.id);
+  }
+
+  completeObservationEvaluation(params: {
+    observationId: string;
+    phase1Score?: number | null;
+    phase2Score?: number | null;
+    finalScore?: number | null;
+    confidence?: number | null;
+    reason?: string | null;
+    status?: BrainObservationStatus;
+    teacherEvaluation?: BrainObservationTeacherEvaluation | null;
+    evaluatedAt?: number | null;
+  }): BrainObservation | null {
+    const now = Date.now();
+    this.db.prepare(`
+      UPDATE brain_observations
+      SET phase1_score = ?,
+          phase2_score = ?,
+          final_score = ?,
+          confidence = ?,
+          reason = ?,
+          status = ?,
+          teacher_evaluation_json = ?,
+          updated_at = ?,
+          evaluated_at = ?
+      WHERE id = ?
+    `).run(
+      params.phase1Score ?? null,
+      params.phase2Score ?? null,
+      params.finalScore ?? null,
+      params.confidence ?? null,
+      params.reason ?? null,
+      params.status ?? "completed",
+      params.teacherEvaluation ? JSON.stringify(params.teacherEvaluation) : null,
+      now,
+      params.evaluatedAt ?? now,
+      params.observationId,
+    );
+    return this.getObservation(params.observationId);
+  }
+
   private toEvidence(row: Record<string, unknown>): BrainEvidence {
     return {
       id: row.id as string,
@@ -1046,6 +1257,33 @@ export class BrainStore {
       evidenceId: (row.evidence_id as string) ?? null,
       metadata: JSON.parse((row.metadata as string) || "{}"),
       createdAt: row.created_at as number,
+    };
+  }
+
+  private toObservation(row: Record<string, unknown>): BrainObservation {
+    return {
+      id: row.id as string,
+      episodeId: row.episode_id as string,
+      conversationId: (row.conversation_id as number) ?? null,
+      traceId: (row.trace_id as string) ?? null,
+      queryText: (row.query_text as string) ?? "",
+      retrievedContext: JSON.parse((row.retrieved_context_json as string) || "[]"),
+      routeMetadata: JSON.parse((row.route_metadata_json as string) || "{}"),
+      assistantResponse: (row.assistant_response as string) ?? "",
+      toolResults: JSON.parse((row.tool_results_json as string) || "[]"),
+      followUpText: (row.follow_up_text as string) ?? null,
+      phase1Score: row.phase1_score === null ? null : Number(row.phase1_score),
+      phase2Score: row.phase2_score === null ? null : Number(row.phase2_score),
+      finalScore: row.final_score === null ? null : Number(row.final_score),
+      confidence: row.confidence === null ? null : Number(row.confidence),
+      reason: (row.reason as string) ?? null,
+      status: row.status as BrainObservationStatus,
+      teacherEvaluation: row.teacher_evaluation_json
+        ? JSON.parse(row.teacher_evaluation_json as string) as BrainObservationTeacherEvaluation
+        : null,
+      createdAt: Number(row.created_at ?? 0),
+      updatedAt: Number(row.updated_at ?? 0),
+      evaluatedAt: row.evaluated_at === null ? null : Number(row.evaluated_at),
     };
   }
 

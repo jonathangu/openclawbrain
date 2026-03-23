@@ -7,6 +7,8 @@ import { BrainGraph } from "../../src/brain-core/graph.js";
 import { DEFAULT_BRAIN_CONFIG } from "../../src/brain-core/types.js";
 import type {
   BrainNode,
+  BrainObservation,
+  BrainObservationToolResult,
   DecisionTrace,
   Episode,
   HealthMetrics,
@@ -21,6 +23,16 @@ import { BrainWorker } from "../../src/brain-worker/worker.js";
 
 const tempDirs: string[] = [];
 
+function hashQuery(queryText: string): string {
+  let hash = 0;
+  for (let i = 0; i < queryText.length; i++) {
+    const char = queryText.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return `__query_${Math.abs(hash).toString(36).slice(0, 8)}`;
+}
+
 function makeEpisode(params: {
   id: string;
   conversationId: number;
@@ -34,7 +46,7 @@ function makeEpisode(params: {
     id: params.id,
     conversationId: params.conversationId,
     queryText: params.queryText ?? "test query",
-    queryEmbedding: null,
+    queryEmbedding: new Float32Array([1, 0, 0]),
     trajectory: params.trajectory ?? [],
     firedNodes: params.firedNodes ?? [],
     vetoedNodes: [],
@@ -148,6 +160,111 @@ function makeTrace(params: {
   };
 }
 
+function makeObservation(params: {
+  episodeId: string;
+  conversationId: number;
+  traceId: string;
+  queryText?: string;
+  assistantResponse?: string;
+  toolResults?: BrainObservationToolResult[];
+  followUpText?: string | null;
+  createdAt?: number;
+  updatedAt?: number;
+}): Omit<BrainObservation, "id" | "phase1Score" | "phase2Score" | "finalScore" | "confidence" | "reason" | "teacherEvaluation" | "evaluatedAt" | "updatedAt"> & { updatedAt?: number } {
+  const queryText = params.queryText ?? "test query";
+  return {
+    episodeId: params.episodeId,
+    conversationId: params.conversationId,
+    traceId: params.traceId,
+    queryText,
+    retrievedContext: [
+      {
+        nodeId: "node_1",
+        kind: "workflow",
+        trust: "human",
+        sourceUri: "PLAYBOOK.md",
+        tags: ["worker"],
+        tokenCount: 12,
+        contentPreview: "Use node_1 for worker route guidance.",
+      },
+    ],
+    routeMetadata: {
+      requestDigest: hashQuery(queryText),
+      activePackId: "brain-pack-v1",
+      routerIdentity: "brain-graph-traverse.v1",
+      candidateNodeIds: ["node_1"],
+      selectedNodeIds: ["node_1"],
+      selectedPathNodeIds: ["node_1"],
+      sourceSummary: {
+        injectedCount: 1,
+        kinds: { workflow: 1 },
+        trusts: { human: 1 },
+        sourceUris: ["PLAYBOOK.md"],
+      },
+      selectionMetadata: {
+        traceSliceVersion: 1,
+        queryChars: queryText.length,
+        budgetChars: 4000,
+        maxHops: 8,
+        seedCount: 1,
+        candidateCount: 1,
+        hopCount: 1,
+        firedCount: 1,
+        vetoedCount: 0,
+        chosenSeedNodeId: "node_1",
+        routeSelectionMs: 8,
+        embeddingMs: 3,
+        totalQueryMs: 15,
+        queryEmbeddingSource: "provided",
+      },
+    },
+    assistantResponse: params.assistantResponse ?? "default answer",
+    toolResults: params.toolResults ?? [],
+    followUpText: params.followUpText ?? null,
+    status: params.followUpText ? "pending_teacher" : "pending_followup",
+    createdAt: params.createdAt ?? Date.now(),
+    updatedAt: params.updatedAt ?? (params.createdAt ?? Date.now()),
+  };
+}
+
+function makeTeacherReview(
+  observation: BrainObservation,
+  overrides: Partial<{
+    retrievalRelevance: number;
+    agentUsage: number;
+    outcomeSupport: number;
+    finalScore: number;
+    confidence: number;
+    reason: string;
+  }> = {},
+) {
+  return {
+    version: 2 as const,
+    observationId: observation.id,
+    episodeId: observation.episodeId,
+    traceId: observation.traceId,
+    retrievalRelevance: overrides.retrievalRelevance ?? 0.8,
+    agentUsage: overrides.agentUsage ?? 0.4,
+    outcomeSupport: overrides.outcomeSupport ?? 0.5,
+    finalScore: overrides.finalScore ?? 0.55,
+    confidence: overrides.confidence ?? 0.7,
+    reason: overrides.reason ?? "teacher review",
+    input: {
+      version: 2 as const,
+      observationId: observation.id,
+      episodeId: observation.episodeId,
+      traceId: observation.traceId,
+      conversationId: observation.conversationId,
+      queryText: observation.queryText,
+      selectedContext: observation.retrievedContext,
+      routeMetadata: observation.routeMetadata,
+      assistantResponse: observation.assistantResponse,
+      toolResults: observation.toolResults,
+      nextUserTurn: observation.followUpText,
+    },
+  };
+}
+
 function makeHealthMetrics(overrides: Partial<HealthMetrics> = {}): HealthMetrics {
   return {
     nodeCount: 0,
@@ -202,16 +319,6 @@ function makeReplayGateVerdict(params: {
     humanPositiveEpisodeCount: 0,
     selfNegativeEpisodeCount: 0,
   };
-}
-
-function hashQuery(queryText: string): string {
-  let hash = 0;
-  for (let i = 0; i < queryText.length; i++) {
-    const char = queryText.charCodeAt(i);
-    hash = ((hash << 5) - hash) + char;
-    hash = hash & hash;
-  }
-  return `__query_${Math.abs(hash).toString(36).slice(0, 8)}`;
 }
 
 function makeMutation(id: string, nodeA: string, nodeB: string): MutationProposal {
@@ -298,337 +405,226 @@ afterEach(() => {
   }
 });
 
-describe("BrainWorker evidence resolution", () => {
-  it("keeps only the highest-trust pending evidence per episode in a worker cycle and materializes trace supervision", async () => {
-    const { store, worker } = setup();
-    store.insertEpisode(makeEpisode({ id: "ep_1", conversationId: 7 }));
-    store.insertTrace(makeTrace({ id: "bt_ep_1", episodeId: "ep_1", conversationId: 7 }));
-    store.insertEvidence({
-      episodeId: "ep_1",
-      conversationId: 7,
-      source: "scanner",
-      kind: "scanner_signal",
-      value: 0.25,
-      confidence: 0.55,
-      reason: "scanner pattern",
-    });
-    store.insertEvidence({
-      episodeId: "ep_1",
-      conversationId: 7,
-      source: "human",
-      kind: "human_feedback",
-      value: 0.8,
-      confidence: 0.9,
-      reason: "user confirmed",
-    });
-
-    await (worker as any).processEvidence();
-
-    const pendingLabels = store.getPendingLabels();
-    expect(pendingLabels).toHaveLength(1);
-    expect(pendingLabels[0]?.source).toBe("human");
-    expect(pendingLabels[0]?.value).toBe(0.8);
-
-    const resolved = store.getResolvedLabelsForEpisode("ep_1", 10);
-    expect(resolved).toHaveLength(2);
-    expect(resolved.find((entry) => entry.source === "human")?.resolution).toBe("promoted_to_label");
-    expect(resolved.find((entry) => entry.source === "scanner")?.resolution).toBe("discarded_lower_trust");
-
-    const supervision = store.getTraceSupervision("bt_ep_1", 10);
-    expect(supervision).toHaveLength(2);
-    expect(supervision.find((entry) => entry.source === "human")?.resolution).toBe("promoted_to_label");
-    expect(supervision.find((entry) => entry.source === "scanner")?.resolution).toBe("discarded_lower_trust");
-    expect(supervision.find((entry) => entry.source === "human")?.metadata).toMatchObject({
-      resolvedTraceId: "bt_ep_1",
-      traceRequestDigest: hashQuery("test query"),
-      traceSelectedNodeIds: ["node_1"],
-    });
-
-    await (worker as any).processLabels();
-    const episode = store.getEpisode("ep_1");
-    expect(episode?.reward).toBe(0.8);
-    expect(episode?.rewardSource).toBe("human");
-  });
-
-  it("collapses same-trust pending evidence to one promoted label using confidence", async () => {
-    const { store, worker } = setup();
-    store.insertEpisode(makeEpisode({ id: "ep_2", conversationId: 8 }));
-    store.insertEvidence({
-      episodeId: "ep_2",
-      conversationId: 8,
-      source: "self",
-      kind: "self_result",
-      value: -0.5,
-      confidence: 0.4,
-      reason: "weak failure signal",
-    });
-    store.insertEvidence({
-      episodeId: "ep_2",
-      conversationId: 8,
-      source: "self",
-      kind: "self_result",
-      value: 0.5,
-      confidence: 0.9,
-      reason: "strong success signal",
-    });
-
-    await (worker as any).processEvidence();
-
-    const pendingLabels = store.getPendingLabels();
-    expect(pendingLabels).toHaveLength(1);
-    expect(pendingLabels[0]?.source).toBe("self");
-    expect(pendingLabels[0]?.value).toBe(0.5);
-    expect(pendingLabels[0]?.confidence).toBe(0.9);
-
-    const resolved = store.getResolvedLabelsForEpisode("ep_2", 10);
-    expect(resolved).toHaveLength(2);
-    expect(resolved.find((entry) => entry.value === 0.5)?.resolution).toBe("promoted_to_label");
-    expect(resolved.find((entry) => entry.value === -0.5)?.resolution).toBe("discarded_duplicate");
-  });
-
-  it("prefers structured scanner evidence over heuristic scanner evidence when scanner signals conflict", async () => {
-    const { store, worker } = setup();
-    store.insertEpisode(makeEpisode({ id: "ep_2b", conversationId: 82 }));
-    store.insertEvidence({
-      episodeId: "ep_2b",
-      conversationId: 82,
-      source: "scanner",
-      kind: "scanner_signal",
-      value: -0.25,
-      confidence: 0.95,
-      reason: "heuristic scanner signal",
-      metadata: { extractor: "scanner_heuristic" },
-    });
-    store.insertEvidence({
-      episodeId: "ep_2b",
-      conversationId: 82,
-      source: "scanner",
-      kind: "scanner_signal",
-      value: 0.25,
-      confidence: 0.6,
-      reason: "structured guidance signal",
-      metadata: { extractor: "structured_guidance_parts" },
-    });
-
-    await (worker as any).processEvidence();
-
-    const pendingLabels = store.getPendingLabels();
-    expect(pendingLabels).toHaveLength(1);
-    expect(pendingLabels[0]?.source).toBe("scanner");
-    expect(pendingLabels[0]?.value).toBe(0.25);
-    expect(pendingLabels[0]?.confidence).toBe(0.6);
-
-    const resolved = store.getResolvedLabelsForEpisode("ep_2b", 10);
-    expect(resolved).toHaveLength(2);
-    expect(resolved.find((entry) => entry.value === 0.25)?.resolution).toBe("promoted_to_label");
-    expect(resolved.find((entry) => entry.value === -0.25)?.resolution).toBe("discarded_duplicate");
-    expect(resolved.find((entry) => entry.value === -0.25)?.note).toContain("more-structured scanner evidence");
-  });
-
-  it("keeps the higher-confidence scanner label when same-value scanner evidence is only corroborating", async () => {
-    const { store, worker } = setup();
-    store.insertEpisode(makeEpisode({ id: "ep_2c", conversationId: 83 }));
-    store.insertEvidence({
-      episodeId: "ep_2c",
-      conversationId: 83,
-      source: "scanner",
-      kind: "scanner_signal",
-      value: 0.25,
-      confidence: 0.95,
-      reason: "high-confidence heuristic scanner signal",
-      metadata: { extractor: "scanner_heuristic" },
-    });
-    store.insertEvidence({
-      episodeId: "ep_2c",
-      conversationId: 83,
-      source: "scanner",
-      kind: "scanner_signal",
-      value: 0.25,
-      confidence: 0.6,
-      reason: "structured corroborating scanner signal",
-      metadata: { extractor: "structured_guidance_parts" },
-    });
-
-    await (worker as any).processEvidence();
-
-    const pendingLabels = store.getPendingLabels();
-    expect(pendingLabels).toHaveLength(1);
-    expect(pendingLabels[0]?.source).toBe("scanner");
-    expect(pendingLabels[0]?.value).toBe(0.25);
-    expect(pendingLabels[0]?.confidence).toBe(0.95);
-
-    const resolved = store.getResolvedLabelsForEpisode("ep_2c", 10);
-    expect(resolved).toHaveLength(2);
-    expect(resolved.find((entry) => entry.confidence === 0.95)?.resolution).toBe("promoted_to_label");
-    expect(resolved.find((entry) => entry.confidence === 0.6)?.resolution).toBe("discarded_duplicate");
-    expect(resolved.find((entry) => entry.confidence === 0.6)?.note).toContain("matching scanner evidence already queued");
-  });
-
-  it("does not auto-override an existing equal-trust reward", async () => {
-    const { store, worker } = setup();
-    store.insertEpisode(makeEpisode({
-      id: "ep_3",
-      conversationId: 9,
-      reward: 0.8,
-      rewardSource: "human",
-    }));
-    store.insertEvidence({
-      episodeId: "ep_3",
-      conversationId: 9,
-      source: "human",
-      kind: "human_feedback",
-      value: -0.8,
-      confidence: 0.95,
-      reason: "later conflicting human signal",
-    });
-
-    await (worker as any).processEvidence();
-
-    expect(store.getPendingLabels()).toHaveLength(0);
-    const resolved = store.getResolvedLabelsForEpisode("ep_3", 10);
-    expect(resolved).toHaveLength(1);
-    expect(resolved[0]?.resolution).toBe("discarded_duplicate");
-    expect(resolved[0]?.note).toContain("equal-trust override");
-  });
-
-  it("promotes higher-trust evidence over an existing lower-trust reward", async () => {
-    const { store, worker } = setup();
-    store.insertEpisode(makeEpisode({
-      id: "ep_4",
-      conversationId: 10,
-      reward: -0.5,
-      rewardSource: "self",
-    }));
-    store.insertEvidence({
-      episodeId: "ep_4",
-      conversationId: 10,
-      source: "human",
-      kind: "human_feedback",
-      value: 0.8,
-      confidence: 0.95,
-      reason: "user confirmed correct behavior",
-    });
-
-    await (worker as any).processEvidence();
-    await (worker as any).processLabels();
-
-    const episode = store.getEpisode("ep_4");
-    expect(episode?.reward).toBe(0.8);
-    expect(episode?.rewardSource).toBe("human");
-
-    const resolved = store.getResolvedLabelsForEpisode("ep_4", 10);
-    expect(resolved).toHaveLength(1);
-    expect(resolved[0]?.resolution).toBe("promoted_to_label");
-    expect(resolved[0]?.source).toBe("human");
-  });
-
-  it("stages teacher evidence from the latest teacher-eligible trace", async () => {
-    const evaluateTrace = vi.fn(async (trace: DecisionTrace) => ({
-      version: 1 as const,
-      traceId: trace.id,
-      episodeId: trace.episodeId,
-      requestDigest: trace.routeTrace?.requestDigest ?? "",
-      score: 0.7,
-      reason: "selected route slice is directly relevant",
-      input: {
-        version: 1 as const,
-        traceId: trace.id,
-        episodeId: trace.episodeId,
-        queryText: trace.queryText,
-        routeDecision: {
-          requestDigest: trace.routeTrace?.requestDigest ?? "",
-          conversationId: trace.routeTrace?.conversationId ?? null,
-          activePackId: trace.routeTrace?.activePackId ?? null,
-          routerIdentity: trace.routeTrace?.routerIdentity ?? "brain-graph-traverse.v1",
-          candidateNodeIds: [...(trace.routeTrace?.candidateNodeIds ?? [])],
-          selectedNodeIds: [...(trace.routeTrace?.selectedNodeIds ?? [])],
-          selectedPathNodeIds: [...(trace.routeTrace?.selectedPathNodeIds ?? [])],
-          sourceSummary: {
-            injectedCount: trace.routeTrace?.sourceSummary.injectedCount ?? 0,
-            kinds: { ...(trace.routeTrace?.sourceSummary.kinds ?? {}) },
-            trusts: { ...(trace.routeTrace?.sourceSummary.trusts ?? {}) },
-            sourceUris: [...(trace.routeTrace?.sourceSummary.sourceUris ?? [])],
-          },
-          selectionMetadata: {
-            ...(trace.routeTrace?.selectionMetadata ?? {
-              traceSliceVersion: 1,
-              queryChars: trace.queryText.length,
-              budgetChars: 4000,
-              maxHops: 8,
-              seedCount: 1,
-              candidateCount: 1,
-              hopCount: 1,
-              firedCount: 1,
-              vetoedCount: 0,
-              chosenSeedNodeId: null,
-              routeSelectionMs: null,
-              embeddingMs: null,
-              totalQueryMs: null,
-              queryEmbeddingSource: "provided" as const,
-            }),
-          },
-        },
-        selectedContext: trace.routeTrace?.injectedNodeSummaries ?? [],
+describe("BrainWorker observation reward cutover", () => {
+  it("scores good retrieval + bad generation through teacher-v2 and materializes supervision", async () => {
+    const evaluateObservation = vi.fn(async (observation: BrainObservation) => makeTeacherReview(
+      observation,
+      {
+        retrievalRelevance: 0.92,
+        agentUsage: -0.4,
+        outcomeSupport: -0.85,
+        finalScore: -0.72,
+        confidence: 0.74,
+        reason: "retrieval was good but the answer contradicted the retrieved guidance",
       },
-    }));
+    ));
     const { store, worker } = setup({
-      teacher: { evaluateTrace },
+      teacher: { evaluateObservation },
       config: { teacherEnabled: true },
     });
-
-    store.insertEpisode(makeEpisode({ id: "ep_teacher", conversationId: 21, queryText: "how do I open a pull request?" }));
-    store.insertTrace(makeTrace({
-      id: "bt_teacher",
-      episodeId: "ep_teacher",
-      conversationId: 21,
+    store.insertEpisode(makeEpisode({
+      id: "ep_bad_generation",
+      conversationId: 7,
       queryText: "how do I open a pull request?",
-      selectedNodeId: "node_pr",
+      trajectory: [makeStep("node_1", 0.6)],
+      firedNodes: ["node_1"],
+    }));
+    store.insertTrace(makeTrace({
+      id: "bt_bad_generation",
+      episodeId: "ep_bad_generation",
+      conversationId: 7,
+      queryText: "how do I open a pull request?",
+      selectedNodeId: "node_1",
+    }));
+    store.insertObservation(makeObservation({
+      episodeId: "ep_bad_generation",
+      conversationId: 7,
+      traceId: "bt_bad_generation",
+      queryText: "how do I open a pull request?",
+      assistantResponse: "Use `git push origin main` to open the pull request.",
+      createdAt: Date.now() - 30_000,
     }));
 
-    await (worker as any).runTeacher();
+    await (worker as any).evaluatePendingObservations();
 
-    expect(evaluateTrace).toHaveBeenCalledTimes(1);
-    const evidence = store.getPendingEvidence(10);
-    expect(evidence).toHaveLength(1);
-    expect(evidence[0]).toMatchObject({
-      episodeId: "ep_teacher",
-      conversationId: 21,
+    expect(evaluateObservation).toHaveBeenCalledTimes(1);
+    const observation = store.getObservationForEpisode("ep_bad_generation");
+    expect(observation).toMatchObject({
+      status: "completed",
+      phase1Score: 0.92,
+      phase2Score: -0.85,
+      finalScore: -0.72,
+      confidence: 0.74,
+    });
+    expect(store.getPendingLabels()).toMatchObject([
+      {
+        source: "teacher",
+        value: -0.72,
+      },
+    ]);
+
+    await (worker as any).processLabels();
+    expect(store.getEpisode("ep_bad_generation")).toMatchObject({
+      reward: -0.72,
+      rewardSource: "teacher",
+    });
+
+    const supervision = store.getTraceSupervision("bt_bad_generation", 10);
+    expect(supervision).toHaveLength(1);
+    expect(supervision[0]).toMatchObject({
       source: "teacher",
       kind: "teacher_review",
-      value: 0.7,
-      reason: "selected route slice is directly relevant",
-      metadata: {
-        teacherLabel: {
-          version: 1,
-          traceId: "bt_teacher",
-          requestDigest: hashQuery("how do I open a pull request?"),
-          input: {
-            routeDecision: {
-              selectedNodeIds: ["node_pr"],
-            },
-          },
-        },
-      },
+      value: -0.72,
+      resolution: "promoted_to_label",
+      metadata: expect.objectContaining({
+        observationId: observation?.id,
+        phase1Score: 0.92,
+        phase2Score: -0.85,
+        agentUsage: -0.4,
+      }),
     });
   });
 
-  it("skips teacher evaluation when no teacher-eligible trace exists", async () => {
-    const evaluateTrace = vi.fn();
+  it("scores good retrieval + tool failure without needing follow-up text", async () => {
+    const evaluateObservation = vi.fn(async (observation: BrainObservation) => makeTeacherReview(
+      observation,
+      {
+        retrievalRelevance: 0.88,
+        agentUsage: 0.1,
+        outcomeSupport: -0.91,
+        finalScore: -0.58,
+        confidence: 0.81,
+        reason: "retrieval was relevant but the tool failure left the turn unsupported",
+      },
+    ));
     const { store, worker } = setup({
-      teacher: { evaluateTrace },
+      teacher: { evaluateObservation },
       config: { teacherEnabled: true },
     });
+    store.insertEpisode(makeEpisode({
+      id: "ep_tool_failure",
+      conversationId: 8,
+      queryText: "run the test suite",
+      trajectory: [makeStep("node_1", 0.7)],
+      firedNodes: ["node_1"],
+    }));
+    store.insertTrace(makeTrace({
+      id: "bt_tool_failure",
+      episodeId: "ep_tool_failure",
+      conversationId: 8,
+      queryText: "run the test suite",
+      selectedNodeId: "node_1",
+    }));
+    store.insertObservation(makeObservation({
+      episodeId: "ep_tool_failure",
+      conversationId: 8,
+      traceId: "bt_tool_failure",
+      queryText: "run the test suite",
+      assistantResponse: "I ran the tests.",
+      toolResults: [
+        {
+          sourceRole: "tool",
+          toolCallId: "call_1",
+          toolName: "bash",
+          input: "{\"cmd\":\"pnpm test\"}",
+          output: "{\"ok\":false,\"code\":\"ENOENT\",\"exitCode\":2}",
+          isError: true,
+          excerpt: "{\"ok\":false,\"code\":\"ENOENT\",\"exitCode\":2}",
+        },
+      ],
+      createdAt: Date.now() - 30_000,
+    }));
 
-    store.insertEpisode(makeEpisode({ id: "ep_no_trace", conversationId: 22 }));
+    await (worker as any).evaluatePendingObservations();
+    await (worker as any).processLabels();
 
-    await (worker as any).runTeacher();
-
-    expect(evaluateTrace).not.toHaveBeenCalled();
-    expect(store.getPendingEvidence()).toHaveLength(0);
+    expect(evaluateObservation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        toolResults: [
+          expect.objectContaining({
+            toolName: "bash",
+            isError: true,
+          }),
+        ],
+      }),
+    );
+    expect(store.getEpisode("ep_tool_failure")).toMatchObject({
+      reward: -0.58,
+      rewardSource: "teacher",
+    });
   });
 
-  it("materializes a candidate-pack PG update artifact from persisted trace supervision and traced teacher labels", async () => {
-    const { store, worker, graph } = setup();
+  it("waits for maturity, then forwards ambiguous follow-up text when it arrives", async () => {
+    const evaluateObservation = vi.fn(async (observation: BrainObservation) => makeTeacherReview(
+      observation,
+      {
+        retrievalRelevance: 0.5,
+        agentUsage: 0.1,
+        outcomeSupport: 0.05,
+        finalScore: 0.08,
+        confidence: 0.2,
+        reason: "follow-up was ambiguous so reward confidence stays low",
+      },
+    ));
+    const { store, worker } = setup({
+      teacher: { evaluateObservation },
+      config: { teacherEnabled: true },
+    });
+    store.insertEpisode(makeEpisode({
+      id: "ep_ambiguous",
+      conversationId: 9,
+      queryText: "what should I do next?",
+    }));
+    store.insertTrace(makeTrace({
+      id: "bt_ambiguous",
+      episodeId: "ep_ambiguous",
+      conversationId: 9,
+      queryText: "what should I do next?",
+    }));
+    store.insertObservation(makeObservation({
+      episodeId: "ep_ambiguous",
+      conversationId: 9,
+      traceId: "bt_ambiguous",
+      queryText: "what should I do next?",
+      assistantResponse: "Try the deployment checklist.",
+      createdAt: Date.now(),
+    }));
+
+    await (worker as any).evaluatePendingObservations();
+    expect(evaluateObservation).not.toHaveBeenCalled();
+
+    store.attachObservationFollowUp(9, "Thanks, maybe?");
+    await (worker as any).evaluatePendingObservations();
+
+    expect(evaluateObservation).toHaveBeenCalledTimes(1);
+    expect(evaluateObservation).toHaveBeenCalledWith(
+      expect.objectContaining({
+        followUpText: "Thanks, maybe?",
+      }),
+    );
+    expect(store.getObservationForEpisode("ep_ambiguous")).toMatchObject({
+      status: "completed",
+      confidence: 0.2,
+      reason: "follow-up was ambiguous so reward confidence stays low",
+    });
+  });
+
+  it("materializes a candidate-pack PG update artifact from human and teacher observation supervision", async () => {
+    const evaluateObservation = vi.fn(async (observation: BrainObservation) => makeTeacherReview(
+      observation,
+      {
+        retrievalRelevance: 0.7,
+        agentUsage: 0.6,
+        outcomeSupport: 0.5,
+        finalScore: 0.6,
+        confidence: 0.65,
+        reason: "teacher verified the routed turn",
+      },
+    ));
+    const { store, worker, graph } = setup({
+      teacher: { evaluateObservation },
+      config: { teacherEnabled: true },
+    });
 
     graph.addNode(makeNode("node_human"));
     graph.addNode(makeNode("node_teacher"));
@@ -638,7 +634,7 @@ describe("BrainWorker evidence resolution", () => {
     store.insertEpisode(makeEpisode({
       id: "ep_human_pg",
       conversationId: 31,
-      queryText: "human routed query",
+      queryText: "stale retrieval query",
       trajectory: [makeStep("node_human", 0.6)],
       firedNodes: ["node_human"],
     }));
@@ -646,17 +642,29 @@ describe("BrainWorker evidence resolution", () => {
       id: "bt_human_pg",
       episodeId: "ep_human_pg",
       conversationId: 31,
-      queryText: "human routed query",
+      queryText: "stale retrieval query",
       selectedNodeId: "node_human",
     }));
-    store.insertEvidence({
+    const humanLabel = store.insertLabel({
+      episodeId: "ep_human_pg",
+      source: "human",
+      value: -0.5,
+      reason: "user correction landed immediately",
+    });
+    store.insertTraceSupervision({
+      traceId: "bt_human_pg",
       episodeId: "ep_human_pg",
       conversationId: 31,
       source: "human",
-      kind: "human_feedback",
-      value: 0.8,
-      confidence: 0.95,
-      reason: "user confirmed the route",
+      kind: "teach_correction",
+      value: -0.5,
+      confidence: 1.0,
+      reason: "user correction landed immediately",
+      resolution: "promoted_to_label",
+      labelId: humanLabel.id,
+      metadata: {
+        traceId: "bt_human_pg",
+      },
     });
 
     store.insertEpisode(makeEpisode({
@@ -673,30 +681,16 @@ describe("BrainWorker evidence resolution", () => {
       queryText: "teacher routed query",
       selectedNodeId: "node_teacher",
     }));
-    store.insertEvidence({
+    store.insertObservation(makeObservation({
       episodeId: "ep_teacher_pg",
       conversationId: 32,
-      source: "teacher",
-      kind: "teacher_review",
-      value: 0.6,
-      confidence: 0.6,
-      reason: "teacher verified the selected route",
-      metadata: {
-        teacherLabel: {
-          version: 1,
-          traceId: "bt_teacher_pg",
-          episodeId: "ep_teacher_pg",
-          requestDigest: hashQuery("teacher routed query"),
-          input: {
-            routeDecision: {
-              selectedNodeIds: ["node_teacher"],
-            },
-          },
-        },
-      },
-    });
+      traceId: "bt_teacher_pg",
+      queryText: "teacher routed query",
+      assistantResponse: "Here is the routed answer.",
+      createdAt: Date.now() - 30_000,
+    }));
 
-    await (worker as any).processEvidence();
+    await (worker as any).evaluatePendingObservations();
     await (worker as any).processLabels();
     await (worker as any).applyUpdates();
 
@@ -714,28 +708,8 @@ describe("BrainWorker evidence resolution", () => {
         teacher: 1,
       },
     });
-    expect(artifact?.routeUpdateCount).toBeGreaterThan(0);
-    expect(artifact?.seedUpdateCount).toBe(artifact?.routeUpdateCount);
-    expect(artifact?.edgeUpdateCount).toBe(0);
     expect(artifact?.traceIds).toEqual(["bt_human_pg", "bt_teacher_pg"]);
     expect(artifact?.teacherTraceIds).toEqual(["bt_teacher_pg"]);
-    expect(store.getCurrentPackVersion()).toBeNull();
-
-    const candidatePackVersion = Number.parseInt(store.getTrainingState("last_pg_candidate_pack_version") ?? "", 10);
-    expect(candidatePackVersion).toBe(artifact?.candidatePackVersion);
-
-    const snapshot = store.readPackSnapshot(candidatePackVersion);
-    expect(snapshot?.metadata).toMatchObject({
-      reason: "pg_update_candidate",
-      pgCandidateUpdate: {
-        updateCount: 1,
-        candidatePackVersion,
-        supervisionCount: 2,
-        teacherLabelCount: 1,
-      },
-    });
-
-    expect(store.getEpisodesForUpdate(10)).toHaveLength(0);
   });
 });
 

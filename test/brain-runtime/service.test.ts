@@ -191,7 +191,7 @@ describe("BrainService", () => {
     expect(status.supervisionCount).toBe(0);
   });
 
-  it("maps harvested user approvals back onto the persisted trace and surfaces supervision in status", async () => {
+  it("records turn observations, attaches next-user follow-up, and surfaces teacher supervision in status", async () => {
     const workspaceRoot = makeTempDir("openclawbrain-workspace-");
     const brainRoot = makeTempDir("openclawbrain-state-");
     writeFileSync(
@@ -200,8 +200,20 @@ describe("BrainService", () => {
       "utf8",
     );
 
+    const deps = createDeps(brainRoot, {
+      teacherEnabled: true,
+      teacherProvider: "openai",
+      teacherModel: "gpt-5.4-mini",
+    });
+    deps.complete = vi.fn(async () => ({
+      content: [{
+        type: "text",
+        text: "{\"retrieval_relevance\":0.9,\"agent_usage\":0.8,\"outcome_support\":0.85,\"final_score\":0.82,\"confidence\":0.67,\"reason\":\"selected context matched the query and the follow-up confirmed the outcome\"}",
+      }],
+    }));
+
     const service = new BrainService({
-      deps: createDeps(brainRoot),
+      deps,
     });
     await service.init({
       workspaceRoot,
@@ -216,12 +228,21 @@ describe("BrainService", () => {
     });
     expect(result).not.toBeNull();
 
-    await service.harvester.harvestFromMessage({
+    await service.recordTurnObservation({
+      episodeId: result?.episode.id,
+      assistantResponse: "Use `gh pr create` to open the pull request.",
+      toolResults: [],
+    });
+    await service.observeUserTurn({
       conversationId: 42,
       messageId: 99,
       episodeId: result?.episode.id,
-      role: "user",
-      content: "Perfect, that's exactly right!",
+      userText: "Perfect, that's exactly right!",
+      recentMessages: [
+        { role: "assistant", content: "Use `gh pr create` to open the pull request." },
+        { role: "user", content: "how do I open a pull request?" },
+      ],
+      recentSummaries: [],
     });
     await ((service as unknown as { worker: { tick: () => Promise<void> } | null }).worker?.tick() ?? Promise.resolve());
 
@@ -230,17 +251,18 @@ describe("BrainService", () => {
       {
         traceId: result?.trace.id,
         episodeId: result?.episode.id,
-        source: "human",
-        kind: "human_feedback",
-        value: 0.8,
+        source: "teacher",
+        kind: "teacher_review",
+        value: 0.82,
         resolution: "promoted_to_label",
         labelId: expect.stringMatching(/^bl_/),
         evidenceId: expect.stringMatching(/^be_/),
         metadata: expect.objectContaining({
-          messageId: 99,
+          observationId: expect.stringMatching(/^bo_/),
           resolvedTraceId: result?.trace.id,
-          traceRequestDigest: result?.trace.routeTrace?.requestDigest,
-          traceSelectedNodeIds: result?.trace.routeTrace?.selectedNodeIds,
+          phase1Score: 0.9,
+          phase2Score: 0.85,
+          agentUsage: 0.8,
         }),
       },
     ]);
@@ -248,6 +270,81 @@ describe("BrainService", () => {
     const status = await service.status();
     expect(status.routeTraceCount).toBe(1);
     expect(status.supervisionCount).toBe(1);
+    expect(status.pendingObservations).toBe(0);
+  });
+
+  it("replays pending observations after a process restart", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-restart-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-restart-state-");
+    writeFileSync(
+      join(workspaceRoot, "PLAYBOOK.md"),
+      "# Pull Requests\n\nUse gh pr create for pull request workflows.\n",
+      "utf8",
+    );
+
+    const deps = createDeps(brainRoot, {
+      teacherEnabled: true,
+      teacherProvider: "openai",
+      teacherModel: "gpt-5.4-mini",
+    });
+    deps.complete = vi.fn(async () => ({
+      content: [{
+        type: "text",
+        text: "{\"retrieval_relevance\":0.88,\"agent_usage\":0.72,\"outcome_support\":0.8,\"final_score\":0.79,\"confidence\":0.61,\"reason\":\"persisted observation survived restart and still looked good\"}",
+      }],
+    }));
+
+    const first = new BrainService({ deps });
+    await first.init({
+      workspaceRoot,
+      embedFn: async (text) => embed(text),
+    });
+
+    const result = await first.query({
+      conversationId: 77,
+      queryText: "how do I open a pull request?",
+      budgetChars: 4000,
+      queryEmbedding: embed("gh pr create pull request"),
+    });
+    expect(result).not.toBeNull();
+
+    await first.recordTurnObservation({
+      episodeId: result?.episode.id,
+      assistantResponse: "Use `gh pr create` to open the pull request.",
+      toolResults: [],
+    });
+    await first.observeUserTurn({
+      conversationId: 77,
+      messageId: 200,
+      episodeId: result?.episode.id,
+      userText: "That worked.",
+      recentMessages: [
+        { role: "assistant", content: "Use `gh pr create` to open the pull request." },
+        { role: "user", content: "how do I open a pull request?" },
+      ],
+      recentSummaries: [],
+    });
+
+    const restartDeps = createDeps(brainRoot, {
+      teacherEnabled: true,
+      teacherProvider: "openai",
+      teacherModel: "gpt-5.4-mini",
+    });
+    restartDeps.complete = deps.complete;
+    const second = new BrainService({ deps: restartDeps });
+
+    await ((second as unknown as { worker: { tick: () => Promise<void> } | null }).worker?.tick() ?? Promise.resolve());
+
+    const trace = await second.getTrace(result?.trace.id);
+    expect(trace?.supervision).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: "teacher",
+          value: 0.79,
+        }),
+      ]),
+    );
+    expect((await second.status()).pendingObservations).toBe(0);
   });
 
   it("surfaces the latest candidate-pack PG update artifact in runtime status", async () => {
@@ -425,7 +522,7 @@ describe("BrainService", () => {
       embedFn: async (text) => embed(text),
     });
 
-    await service.query({
+    const targetResult = await service.query({
       conversationId: 7,
       queryText: "deployment failed",
       budgetChars: 4000,
@@ -461,17 +558,20 @@ describe("BrainService", () => {
       recentPromotions?: Array<{ reason?: string }>;
     }).currentPack?.metadata?.taughtNodeId).toBe(taught.nodeId);
 
-    const pendingEvidence = (service as unknown as {
-      store: { getPendingEvidence: (limit?: number) => Array<{ metadata?: Record<string, unknown> }> };
+    const privateService = (service as unknown as {
+      store: { getPendingLabels: () => Array<{ source: string; value: number }> };
       worker: { tick: () => Promise<void> } | null;
     });
-    expect(pendingEvidence.store.getPendingEvidence()[0]?.metadata?.extractor).toBe("brain_teach");
-    expect(pendingEvidence.store.getPendingEvidence()[0]?.metadata?.correctedEpisodeId).toBeDefined();
-    expect(pendingEvidence.store.getPendingEvidence()[0]?.metadata?.traceId).toBeDefined();
+    expect(privateService.store.getPendingLabels()).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          source: "human",
+          value: -0.5,
+        }),
+      ]),
+    );
 
-    const correctedTraceId = pendingEvidence.store.getPendingEvidence()[0]?.metadata?.traceId as string;
-    await (pendingEvidence.worker?.tick() ?? Promise.resolve());
-    const correctedTrace = await service.getTrace(correctedTraceId);
+    const correctedTrace = await service.getTrace(targetResult?.trace.id);
     expect(correctedTrace?.supervision).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -481,6 +581,7 @@ describe("BrainService", () => {
         }),
       ]),
     );
+    await (privateService.worker?.tick() ?? Promise.resolve());
 
     const retrieved = await service.query({
       conversationId: 7,

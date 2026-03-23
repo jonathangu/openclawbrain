@@ -532,6 +532,68 @@ export interface DecisionTrace {
   createdAt: number;
 }
 
+export interface BrainObservationToolResult {
+  sourceRole: "assistant" | "tool";
+  toolCallId: string | null;
+  toolName: string | null;
+  input: string | null;
+  output: string | null;
+  isError: boolean;
+  excerpt: string | null;
+}
+
+export interface BrainObservationRouteMetadata {
+  requestDigest: string | null;
+  activePackId: string | null;
+  routerIdentity: string | null;
+  candidateNodeIds: string[];
+  selectedNodeIds: string[];
+  selectedPathNodeIds: string[];
+  sourceSummary: DecisionRouteTrace["sourceSummary"] | null;
+  selectionMetadata: DecisionRouteTrace["selectionMetadata"] | null;
+}
+
+export type BrainObservationStatus =
+  | "pending_followup"
+  | "pending_teacher"
+  | "completed";
+
+export interface BrainObservationTeacherEvaluation {
+  version: 2;
+  observationId: string;
+  episodeId: string;
+  traceId: string | null;
+  retrievalRelevance: number;
+  agentUsage: number;
+  outcomeSupport: number;
+  finalScore: number;
+  confidence: number;
+  reason: string;
+}
+
+export interface BrainObservation {
+  id: string;
+  episodeId: string;
+  conversationId: number | null;
+  traceId: string | null;
+  queryText: string;
+  retrievedContext: DecisionTraceInjectedNodeSummary[];
+  routeMetadata: BrainObservationRouteMetadata;
+  assistantResponse: string;
+  toolResults: BrainObservationToolResult[];
+  followUpText: string | null;
+  phase1Score: number | null;
+  phase2Score: number | null;
+  finalScore: number | null;
+  confidence: number | null;
+  reason: string | null;
+  status: BrainObservationStatus;
+  teacherEvaluation: BrainObservationTeacherEvaluation | null;
+  createdAt: number;
+  updatedAt: number;
+  evaluatedAt: number | null;
+}
+
 // ═══════════════════════════════════════════
 // Configuration
 // ═══════════════════════════════════════════

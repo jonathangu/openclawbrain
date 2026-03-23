@@ -1,0 +1,59 @@
+{
+  "taskId": "T-20260322-013",
+  "status": "completed_with_sandbox_limits",
+  "summary": "Reward attribution now flows through durable observations plus teacher-v2 full-turn evaluation, while explicit user corrections stay immediate and separate.",
+  "tests": [
+    {
+      "command": "node --experimental-transform-types --input-type=module <<'EOF' ... teacher observation script ... EOF",
+      "result": "passed",
+      "output": "teacher-observation ok"
+    },
+    {
+      "command": "node --experimental-transform-types --input-type=module <<'EOF' ... worker observation script ... EOF",
+      "result": "passed",
+      "output": "worker-observation-flow ok"
+    },
+    {
+      "command": "node --experimental-transform-types --input-type=module <<'EOF' ... service observation/restart/explicit-correction script ... EOF",
+      "result": "passed",
+      "output": "service-observation-restart-explicit ok"
+    },
+    {
+      "command": "node --experimental-transform-types --input-type=module <<'EOF' ... engine afterTurn script ... EOF",
+      "result": "passed",
+      "output": "engine-turn-observation ok"
+    },
+    {
+      "command": "node --experimental-transform-types --input-type=module <<'EOF' ... fail-open status script ... EOF",
+      "result": "passed",
+      "output": "fail-open-status ok"
+    }
+  ],
+  "environmentNotes": [
+    {
+      "command": "npm ci --offline",
+      "result": "failed",
+      "reason": "EPERM on /Users/guclaw/.npm/_cacache due root-owned cache entries"
+    },
+    {
+      "command": "git commit -m \"Cut over brain rewards to observations and teacher-v2\"",
+      "result": "failed",
+      "reason": "Unable to create /Users/guclaw/.openclaw/workspace/openclawbrain/.git/worktrees/T-20260322-013-reward-cutover-clean/index.lock because the shared git metadata directory is outside the writable sandbox"
+    }
+  ],
+  "artifactFallback": {
+    "requestedReportPath": "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260322-013/codex-reward-cutover-clean.md",
+    "requestedStatusPath": "/Users/guclaw/.openclaw/workspace/task-status/T-20260322-013/codex-reward-cutover-clean.json",
+    "fallbackReportPath": "/Users/guclaw/.openclaw/workspace/worktrees/T-20260322-013-reward-cutover-clean/task-artifacts/T-20260322-013/codex-reward-cutover-clean.md",
+    "fallbackStatusPath": "/Users/guclaw/.openclaw/workspace/worktrees/T-20260322-013-reward-cutover-clean/task-status/T-20260322-013/codex-reward-cutover-clean.json"
+  },
+  "commit": {
+    "status": "blocked_by_sandbox",
+    "hash": null
+  },
+  "residualRisks": [
+    "The repo's local vitest environment could not be installed in this sandbox, so verification used direct Node TS-transform scripts instead of the project test runner.",
+    "Observation maturity uses trainerIntervalMs as the default grace window before evaluating turns without a follow-up.",
+    "Evidence tables remain for teacher evidence/tracing compatibility even though the old harvested reward path was removed."
+  ]
+}

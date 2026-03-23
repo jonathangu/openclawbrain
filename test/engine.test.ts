@@ -1603,13 +1603,13 @@ describe("LcmContextEngine fidelity and token budget", () => {
   it("passes the completed-turn brain episode explicitly through afterTurn ingestion and clears the pending slot", async () => {
     const engine = createEngine();
     const sessionId = "after-turn-brain-episode";
-    const harvestFromMessage = vi.fn(async () => undefined);
+    const recordTurnObservation = vi.fn(async () => undefined);
     const privateEngine = engine as unknown as {
-      brainService: { harvestFromMessage: typeof harvestFromMessage } | null;
+      brainService: { recordTurnObservation: typeof recordTurnObservation } | null;
       pendingBrainEpisodeBySession: Map<string, string>;
     };
 
-    privateEngine.brainService = { harvestFromMessage };
+    privateEngine.brainService = { recordTurnObservation };
     privateEngine.pendingBrainEpisodeBySession.set(sessionId, "ep_turn_1");
 
     await engine.afterTurn({
@@ -1619,48 +1619,48 @@ describe("LcmContextEngine fidelity and token budget", () => {
       prePromptMessageCount: 0,
     });
 
-    expect(harvestFromMessage).toHaveBeenCalledWith(
+    expect(recordTurnObservation).toHaveBeenCalledWith(
       expect.objectContaining({
         episodeId: "ep_turn_1",
-        role: "assistant",
-        messageParts: expect.arrayContaining([
-          expect.objectContaining({
-            partType: "text",
-          }),
-        ]),
+        assistantResponse: "Runbook:\n1. Inspect CI logs\n2. Retry deployment",
+        toolResults: [],
       }),
     );
     expect(privateEngine.pendingBrainEpisodeBySession.has(sessionId)).toBe(false);
   });
 
-  it("passes structured tool-result parts into harvesting even when stored text is empty", async () => {
+  it("captures structured tool-result outcomes in the recorded observation even when stored text is empty", async () => {
     const engine = createEngine();
-    const sessionId = "structured-tool-result-harvest";
-    const harvestFromMessage = vi.fn(async () => undefined);
+    const sessionId = "structured-tool-result-observation";
+    const recordTurnObservation = vi.fn(async () => undefined);
     const privateEngine = engine as unknown as {
-      brainService: { harvestFromMessage: typeof harvestFromMessage } | null;
+      brainService: { recordTurnObservation: typeof recordTurnObservation } | null;
+      pendingBrainEpisodeBySession: Map<string, string>;
     };
 
-    privateEngine.brainService = { harvestFromMessage };
+    privateEngine.brainService = { recordTurnObservation };
+    privateEngine.pendingBrainEpisodeBySession.set(sessionId, "ep_turn_2");
 
-    await engine.ingest({
+    await engine.afterTurn({
       sessionId,
-      message: {
+      sessionFile: createSessionFilePath("structured-tool-result-observation"),
+      messages: [{
         role: "toolResult",
         toolCallId: "call_1",
         content: [{ type: "tool_result", tool_use_id: "call_1", output: { ok: false, code: "ENOENT" } }],
-      } as unknown as unknown as AgentMessage,
+      } as unknown as AgentMessage],
+      prePromptMessageCount: 0,
     });
 
-    expect(harvestFromMessage).toHaveBeenCalledWith(
+    expect(recordTurnObservation).toHaveBeenCalledWith(
       expect.objectContaining({
-        role: "tool",
-        content: "",
-        messageParts: expect.arrayContaining([
+        episodeId: "ep_turn_2",
+        assistantResponse: "",
+        toolResults: expect.arrayContaining([
           expect.objectContaining({
-            partType: "tool",
             toolCallId: "call_1",
-            toolOutput: JSON.stringify({ ok: false, code: "ENOENT" }),
+            toolName: null,
+            output: JSON.stringify({ ok: false, code: "ENOENT" }),
           }),
         ]),
       }),
