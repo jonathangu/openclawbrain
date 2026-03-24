@@ -1,19 +1,30 @@
 # Lifecycle
 
-This guide covers the supported install, verify, rollback, detach, and uninstall flow for OpenClawBrain.
+This guide covers the supported install, verify, proof, rollback, detach, and uninstall flow for OpenClawBrain.
 
 ## Install or update
 
-The public install story is three commands to install or update, then one command to verify.
+Keep the same `--openclaw-home` value through the whole lifecycle. The public lane stays pinned to one OpenClaw home.
 
 ```bash
 openclaw plugins install @openclawbrain/openclaw
 npx @openclawbrain/cli install --openclaw-home ~/.openclaw
 openclaw gateway restart
 npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
 ```
 
-The first three commands install or update OpenClawBrain. The last command verifies the selected OpenClaw home.
+The first three commands install or update OpenClawBrain. `status --detailed` verifies the selected OpenClaw home. `proof` captures the durable operator bundle when you need explicit install/restart/status evidence.
+
+## Verify and prove
+
+Look for these checkpoints in `status --detailed`:
+
+- `STATUS ok`
+- `loadProof=status_probe_ready`
+- `attachTruth ... runtime=proven`
+
+When you need a durable bundle, run the `proof` command above after install/restart or rerun it later with `--skip-install --skip-restart` to capture the current operator state without replaying lifecycle steps.
 
 ## Roll back
 

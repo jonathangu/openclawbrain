@@ -38,16 +38,17 @@ Prerequisites:
 - Node.js 20+
 - npm
 
-The public install story is three commands to install or update, then one command to verify.
+The public install story is three commands to install or update, one command to verify, and one official proof command when you need a durable operator bundle.
 
 ```bash
 openclaw plugins install @openclawbrain/openclaw
 npx @openclawbrain/cli install --openclaw-home ~/.openclaw
 openclaw gateway restart
 npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
 ```
 
-The first three commands install or update OpenClawBrain. The last command verifies the selected OpenClaw home.
+The first three commands install or update OpenClawBrain. `status --detailed` is the quick verify surface. `proof` writes `summary.md`, `steps.json`, `verdict.json`, raw step logs, and proof pointers under one bundle directory.
 
 A healthy install should report the profile as attached. After the first promoted pack is available, detailed status should also report `serveState=serving_active_pack`.
 

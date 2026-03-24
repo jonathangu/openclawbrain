@@ -4,8 +4,8 @@ Use this index to find the shortest path for your role.
 
 ## Getting started
 
-- [Quick start](getting-started/quick-start.md) for the minimal install and verify flow
-- [Lifecycle](lifecycle.md) for install, rollback, detach, and uninstall
+- [Quick start](getting-started/quick-start.md) for the minimal install, verify, and proof flow
+- [Lifecycle](lifecycle.md) for install, proof, rollback, detach, and uninstall
 - [Configuration guide](configuration.md) for embeddings, worker mode, and operator controls
 
 ## Operating
@@ -25,6 +25,7 @@ Use this index to find the shortest path for your role.
 
 ## Release history
 
+- [Release notes 0.4.12](release-notes-0.4.12.md)
 - [CHANGELOG.md](../CHANGELOG.md)
 - [Release notes 0.4.10](release-notes-0.4.10.md)
 - [Release notes 0.4.8](release-notes-0.4.8.md)

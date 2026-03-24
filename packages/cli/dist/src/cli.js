@@ -24,6 +24,7 @@ import { buildTracedLearningBridgePayloadFromRuntime, buildTracedLearningStatusS
 import { discoverOpenClawSessionStores, loadOpenClawSessionIndex, readOpenClawSessionFile } from "./session-store.js";
 import { readOpenClawBrainProviderDefaults, readOpenClawBrainProviderConfig, readOpenClawBrainProviderConfigFromSources, resolveOpenClawBrainProviderDefaultsPath } from "./provider-config.js";
 import { formatOperatorLearningPathSummary } from "./status-learning-path.js";
+import { buildProofCommandForOpenClawHome, buildProofCommandHelpSection, captureOperatorProofBundle, formatOperatorProofResult, parseProofCliArgs } from "./proof-command.js";
 const OPENCLAWBRAIN_EMBEDDER_BASE_URL_ENV = "OPENCLAWBRAIN_EMBEDDER_BASE_URL";
 const OPENCLAWBRAIN_EMBEDDER_PROVIDER_ENV = "OPENCLAWBRAIN_EMBEDDER_PROVIDER";
 const OPENCLAWBRAIN_EMBEDDER_MODEL_ENV = "OPENCLAWBRAIN_EMBEDDER_MODEL";
@@ -466,6 +467,7 @@ function buildSetupDeletedMessage() {
     ].join(" ");
 }
 function operatorCliHelp() {
+    const proofHelp = buildProofCommandHelpSection();
     return [
         "Usage:",
         "  openclawbrain install [--openclaw-home <path>] [options]",
@@ -480,6 +482,7 @@ function operatorCliHelp() {
         "  openclawbrain scan --session <trace.json> --root <path> [options]",
         "  openclawbrain scan --live <event-export-path> --workspace <workspace.json> [options]",
         "  openclawbrain learn [--activation-root <path>|--openclaw-home <path>] [--json]",
+        proofHelp.usage,
         "  openclawbrain-ops <status|rollback> [--activation-root <path>|--openclaw-home <path>] [options]  # compatibility alias",
         "  openclawbrain-ops scan --session <trace.json> --root <path> [options]    # compatibility alias",
         "",
@@ -508,6 +511,7 @@ function operatorCliHelp() {
         "  --limit <N>                 Maximum number of history entries to show (default: 20, history only).",
         "  --scan-root <path>          Event-export scan root for watch mode (defaults to <activation-root>/event-exports).",
         "  --interval <seconds>        Polling interval for watch mode (default: 30).",
+        ...proofHelp.optionLines,
         "  --json                      Emit machine-readable JSON instead of text.",
         "  --help                      Show this help.",
         "",
@@ -516,17 +520,19 @@ function operatorCliHelp() {
         "  2. attach             openclawbrain attach --openclaw-home <path> [--activation-root <path>] — explicit reattach/manual hook path for known brain data; use install first",
         "  3. status             openclawbrain status --activation-root <path> — answer \"How's the brain?\" for that boundary",
         "  4. status --detailed  openclawbrain status --activation-root <path> --detailed — explain serve path, freshness, backlog, and failure mode",
-        "  5. watch              openclawbrain watch --activation-root <path> — run the foreground learning/watch loop",
-        "  6. daemon start       openclawbrain daemon start --activation-root <path> — keep watch running in the background on macOS",
-        "  7. daemon status      openclawbrain daemon status --activation-root <path> — inspect the background watch state",
-        "  8. detach             openclawbrain detach --openclaw-home <path> — remove the profile hookup only and keep brain data",
-        "  9. uninstall          openclawbrain uninstall --openclaw-home <path> --keep-data|--purge-data — remove the hookup and choose the data outcome explicitly",
+        proofHelp.lifecycle,
+        "  6. watch              openclawbrain watch --activation-root <path> — run the foreground learning/watch loop",
+        "  7. daemon start       openclawbrain daemon start --activation-root <path> — keep watch running in the background on macOS",
+        "  8. daemon status      openclawbrain daemon status --activation-root <path> — inspect the background watch state",
+        "  9. detach             openclawbrain detach --openclaw-home <path> — remove the profile hookup only and keep brain data",
+        "  10. uninstall         openclawbrain uninstall --openclaw-home <path> --keep-data|--purge-data — remove the hookup and choose the data outcome explicitly",
         "",
         "Advanced/operator surfaces:",
         "  context      preview the brain context that would be injected for a message",
         "  rollback     preview or apply active <- previous, active -> candidate pointer movement",
         "  scan         inspect one recorded session or live event export without claiming a daemon is running",
         "  learn        one-shot local-session learning pass against the resolved activation root",
+        proofHelp.advanced,
         "  status --teacher-snapshot keeps the current live-first / principal-priority / passive-backfill learner order visible when that snapshot exists",
         "  native package installs still need the openclawbrain CLI available because install/attach pin the activation root for that package copy",
         "  watch/daemon persist their operator snapshot at <activation-root>/watch/teacher-snapshot.json; --teacher-snapshot overrides the default path",
@@ -539,7 +545,8 @@ function operatorCliHelp() {
         "  attach: 0 on successful profile hookup/bootstrap, 1 on input/read failure.",
         "  detach: 0 on successful unhook, 1 on input/read failure.",
         "  uninstall: 0 on successful unhook/cleanup, 1 on input/read failure.",
-        "  scan: 0 on successful replay/scan, 1 on input/read failure."
+        "  scan: 0 on successful replay/scan, 1 on input/read failure.",
+        "  proof: 0 on successful bundle capture, 1 on input/read failure."
     ].join("\n");
 }
 function yesNo(value) {
@@ -1880,7 +1887,7 @@ function buildStatusNextStep(status, report, options) {
         return "Repair the runtime-load proof file before trusting attach truth again; status now knows the exact file that broke.";
     }
     if (options.installHook.state === "installed" && status.brainStatus.serveState === "serving_active_pack") {
-        return "Check the OpenClaw startup log for the `[openclawbrain] BRAIN LOADED` breadcrumb when you need live hook-load proof.";
+        return `Capture a durable proof bundle: \`${buildProofCommandForOpenClawHome(options.openclawHome)}\`.`;
     }
     if (report.learning.warningStates.includes("principal_live_backlog") ||
         report.learning.warningStates.includes("active_pack_behind_latest_principal")) {
@@ -2007,8 +2014,11 @@ export function parseOperatorCliArgs(argv) {
         args.shift();
         return parseDaemonArgs(args);
     }
-    if (args[0] === "status" || args[0] === "rollback" || args[0] === "scan" || args[0] === "attach" || args[0] === "install" || args[0] === "detach" || args[0] === "uninstall" || args[0] === "context" || args[0] === "history" || args[0] === "learn" || args[0] === "watch" || args[0] === "export" || args[0] === "import" || args[0] === "reset") {
+    if (args[0] === "status" || args[0] === "rollback" || args[0] === "scan" || args[0] === "attach" || args[0] === "install" || args[0] === "detach" || args[0] === "uninstall" || args[0] === "context" || args[0] === "history" || args[0] === "learn" || args[0] === "watch" || args[0] === "export" || args[0] === "import" || args[0] === "reset" || args[0] === "proof") {
         command = args.shift();
+    }
+    if (command === "proof") {
+        return parseProofCliArgs(args);
     }
     if (command === "learn") {
         for (let index = 0; index < args.length; index += 1) {
@@ -3389,6 +3399,7 @@ function runProfileHookAttachCommand(parsed) {
             ? null
             : `Confirm gateway after restart: ${brainFeedback.restart.gatewayStatusCommand}`,
         `Check status: ${buildInstallStatusCommand(parsed.activationRoot)}`,
+        `Capture proof: ${buildProofCommandForOpenClawHome(parsed.openclawHome)}`,
         `Check learner service: ${buildLearnerServiceStatusCommand(parsed.activationRoot)}`,
         embedderProvision !== null && embedderProvision.state === "skipped"
             ? `Provision default embedder later: ${buildInstallEmbedderProvisionCommand(embedderProvision.baseUrl, embedderProvision.model)}`
@@ -3537,6 +3548,7 @@ function runProfileHookAttachCommand(parsed) {
             console.log(`Gateway:    Confirm OpenClaw after restart: ${brainFeedback.restart.gatewayStatusCommand}`);
         }
         console.log(`Check:      ${buildInstallStatusCommand(parsed.activationRoot)}`);
+        console.log(`Proof:      ${buildProofCommandForOpenClawHome(parsed.openclawHome)}`);
         console.log(`Learner:    ${buildLearnerServiceStatusCommand(parsed.activationRoot)}`);
         if (embedderProvision !== null && embedderProvision.state === "skipped") {
             console.log(`Embedder:   ${buildInstallEmbedderProvisionCommand(embedderProvision.baseUrl, embedderProvision.model)}`);
@@ -5548,6 +5560,28 @@ function runResetCommand(parsed) {
     }
     return 0;
 }
+function runProofCommand(parsed) {
+    if (parsed.help) {
+        console.log(operatorCliHelp());
+        return 0;
+    }
+    const result = captureOperatorProofBundle({
+        openclawHome: parsed.openclawHome,
+        activationRoot: parsed.activationRoot,
+        outputDir: parsed.outputDir,
+        skipInstall: parsed.skipInstall,
+        skipRestart: parsed.skipRestart,
+        pluginId: parsed.pluginId,
+        timeoutMs: parsed.timeoutMs,
+    });
+    if (parsed.json) {
+        console.log(JSON.stringify(result, null, 2));
+    }
+    else {
+        console.log(formatOperatorProofResult(result));
+    }
+    return 0;
+}
 export function runOperatorCli(argv = process.argv.slice(2)) {
     const parsed = parseOperatorCliArgs(argv);
     if (parsed.command === "context") {
@@ -5555,6 +5589,9 @@ export function runOperatorCli(argv = process.argv.slice(2)) {
     }
     if (parsed.command === "reset") {
         return runResetCommand(parsed);
+    }
+    if (parsed.command === "proof") {
+        return runProofCommand(parsed);
     }
     if (parsed.help) {
         console.log(operatorCliHelp());

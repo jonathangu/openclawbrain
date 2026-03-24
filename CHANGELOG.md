@@ -2,6 +2,36 @@
 
 Release history for the published OpenClawBrain packages. The README and operator docs keep the install lane unpinned; release notes carry version-specific detail.
 
+## 0.4.12
+
+`0.4.12` adds a first-class operator proof bundle and hardens daemon launch paths away from ephemeral `_npx` cache state.
+
+**Packages**
+
+- `@openclawbrain/cli@0.4.12`
+
+**Changes**
+
+- added `openclawbrain proof --openclaw-home <path>` to capture one durable operator proof bundle
+- proof bundles now write `summary.md`, `steps.json`, `verdict.json`, raw step logs, startup breadcrumbs, and runtime-load-proof snapshots
+- install/status guidance now points operators at the proof capture flow when durable evidence is needed
+- daemon launch/status now avoid `_npx` cache paths and surface the configured runtime command and arguments explicitly
+- README, quick-start, lifecycle, configuration, and troubleshooting docs now align around one canonical install / verify / proof lane
+
+**Operator commands**
+
+```bash
+openclaw plugins install @openclawbrain/openclaw
+npx @openclawbrain/cli install --openclaw-home ~/.openclaw
+openclaw gateway restart
+npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
+```
+
+**Full release note**
+
+- [docs/release-notes-0.4.12.md](docs/release-notes-0.4.12.md)
+
 ## 0.4.10
 
 Native V2 router metadata is now accurate end to end, so status and validator surfaces report real promoted-pack fields.

@@ -6,6 +6,12 @@ Start every operator investigation with the canonical verify command:
 npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 ```
 
+When you need a durable install/restart/status bundle instead of an ad hoc terminal check, run:
+
+```bash
+npx @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
+```
+
 ## `BRAIN NOT YET LOADED` appears after plugin install
 
 Cause:
