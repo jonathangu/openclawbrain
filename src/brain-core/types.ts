@@ -36,6 +36,12 @@ export interface SeedWeightUpdate {
   delta: number;
 }
 
+export interface StopLocalWeightUpdate {
+  kind: "stop_local";
+  sourceNodeId: string;
+  delta: number;
+}
+
 export interface EdgeWeightUpdate {
   kind: "edge";
   source: string;
@@ -43,7 +49,7 @@ export interface EdgeWeightUpdate {
   delta: number;
 }
 
-export type PolicyWeightUpdate = SeedWeightUpdate | EdgeWeightUpdate;
+export type PolicyWeightUpdate = SeedWeightUpdate | StopLocalWeightUpdate | EdgeWeightUpdate;
 
 export type TrustLevel = "human" | "scanner" | "teacher" | "self";
 
@@ -118,6 +124,12 @@ export interface SeedScore {
 
 export interface SeedWeight {
   nodeId: string;
+  weight: number;
+  updatedAt: number;
+}
+
+export interface StopLocalWeight {
+  sourceNodeId: string;
   weight: number;
   updatedAt: number;
 }
@@ -297,6 +309,7 @@ export interface PolicyGradientCandidateUpdateArtifact {
   teacherLabelCount: number;
   routeUpdateCount: number;
   seedUpdateCount: number;
+  stopLocalUpdateCount?: number;
   edgeUpdateCount: number;
   baselineBefore: number;
   baselineAfter: number;

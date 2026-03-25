@@ -341,6 +341,7 @@ export class BrainWorker {
       episode: Episode;
       routeUpdateCount: number;
       seedUpdateCount: number;
+      stopLocalUpdateCount: number;
       edgeUpdateCount: number;
     }>;
   }): void {
@@ -357,6 +358,7 @@ export class BrainWorker {
 
     let routeUpdateCount = 0;
     let seedUpdateCount = 0;
+    let stopLocalUpdateCount = 0;
     let edgeUpdateCount = 0;
 
     for (const entry of params.updatedEpisodes) {
@@ -369,6 +371,7 @@ export class BrainWorker {
       incrementRewardSourceCount(rewardSources, entry.episode.rewardSource);
       routeUpdateCount += entry.routeUpdateCount;
       seedUpdateCount += entry.seedUpdateCount;
+      stopLocalUpdateCount += entry.stopLocalUpdateCount;
       edgeUpdateCount += entry.edgeUpdateCount;
 
       for (const traceId of consumed.traceIds) {
@@ -413,6 +416,7 @@ export class BrainWorker {
       teacherLabelCount: teacherTraceIds.size,
       routeUpdateCount,
       seedUpdateCount,
+      stopLocalUpdateCount,
       edgeUpdateCount,
       baselineBefore: params.baselineBefore,
       baselineAfter: params.baselineAfter,
@@ -430,6 +434,11 @@ export class BrainWorker {
         seedWeights: this.graph.getAllSeedWeights().map((seedWeight) => ({
           nodeId: seedWeight.nodeId,
           weight: seedWeight.weight,
+          updatedAt: artifact.generatedAt,
+        })),
+        stopLocalWeights: this.graph.getAllStopLocalWeights().map((stopLocalWeight) => ({
+          sourceNodeId: stopLocalWeight.sourceNodeId,
+          weight: stopLocalWeight.weight,
           updatedAt: artifact.generatedAt,
         })),
         metadata: {
@@ -455,6 +464,7 @@ export class BrainWorker {
       episode: Episode;
       routeUpdateCount: number;
       seedUpdateCount: number;
+      stopLocalUpdateCount: number;
       edgeUpdateCount: number;
     }> = [];
 
@@ -467,11 +477,18 @@ export class BrainWorker {
       applyWeightUpdates(this.graph, updates);
 
       let seedUpdateCount = 0;
+      let stopLocalUpdateCount = 0;
       let edgeUpdateCount = 0;
       for (const update of updates) {
         if (update.kind === "seed") {
           seedUpdateCount += 1;
           this.store.setSeedWeight(update.nodeId, this.graph.getSeedWeight(update.nodeId));
+          continue;
+        }
+
+        if (update.kind === "stop_local") {
+          stopLocalUpdateCount += 1;
+          this.store.setStopLocalWeight(update.sourceNodeId, this.graph.getStopLocalWeight(update.sourceNodeId));
           continue;
         }
 
@@ -501,6 +518,7 @@ export class BrainWorker {
         episode,
         routeUpdateCount: updates.length,
         seedUpdateCount,
+        stopLocalUpdateCount,
         edgeUpdateCount,
       });
       this.store.markEpisodeUpdated(episode.id);

@@ -144,7 +144,13 @@ export class BrainService {
       log: params.deps.log,
     });
 
-    populateGraph(this.mutableGraph, this.store.getAllNodes(), this.store.loadAllEdges(), this.store.loadAllSeedWeights());
+    populateGraph(
+      this.mutableGraph,
+      this.store.getAllNodes(),
+      this.store.loadAllEdges(),
+      this.store.loadAllSeedWeights(),
+      this.store.loadAllStopLocalWeights(),
+    );
     this.reloadServingGraph();
 
     const persistence = {
@@ -935,7 +941,13 @@ export class BrainService {
       return;
     }
 
-    populateGraph(this.servingGraph, snapshot.nodes, snapshot.edges, snapshot.seedWeights);
+    populateGraph(
+      this.servingGraph,
+      snapshot.nodes,
+      snapshot.edges,
+      snapshot.seedWeights,
+      snapshot.stopLocalWeights,
+    );
     this.initialized = true;
   }
 

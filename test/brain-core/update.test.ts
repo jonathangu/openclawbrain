@@ -1,6 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { computeReinforceUpdates, updateBaseline, applyWeightUpdates } from "../../src/brain-core/update.js";
 import { BrainGraph } from "../../src/brain-core/graph.js";
+import { START_NODE_ID } from "../../src/brain-core/types.js";
 import type { Episode, TrajectoryExpansion, TrajectoryStep, BrainNode, BrainEdge } from "../../src/brain-core/types.js";
 
 function makeNode(id: string): BrainNode {
@@ -150,7 +151,7 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
     expect(updates.length).toBe(0);
   });
 
-  it("does not emit fake updates for stop_local substeps", () => {
+  it("emits learned updates for chosen stop_local substeps", () => {
     const stopExpansion: TrajectoryExpansion = {
       sourceNodeId: "a",
       expansionIndex: 0,
@@ -188,6 +189,97 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
     };
 
     const updates = computeReinforceUpdates(makeEpisode([stopExpansion], 1.0), 0.1, 0.0);
+    expect(updates).toEqual([
+      expect.objectContaining({
+        kind: "stop_local",
+        sourceNodeId: "a",
+      }),
+    ]);
+    expect(updates[0]?.delta).toBeGreaterThan(0);
+  });
+
+  it("negative reward weakens chosen stop_local weights", () => {
+    const stopExpansion: TrajectoryExpansion = {
+      sourceNodeId: null,
+      expansionIndex: 0,
+      frontierBefore: [],
+      frontierAfter: [],
+      budgetBefore: 1000,
+      budgetAfter: 1000,
+      substeps: [
+        {
+          stateSnapshot: {
+            sourceNodeId: null,
+            expansionIndex: 0,
+            selectionIndex: 0,
+            budgetRemaining: 1000,
+            initialBudget: 1000,
+            reservedTokenCost: 0,
+            maxHops: 8,
+            frontierSize: 0,
+            frontierNodeIds: [],
+            visitedCount: 0,
+            firedCount: 0,
+          },
+          candidates: [
+            { action: { type: "traverse", targetNodeId: "b", seedScore: 0.2 }, score: 0.2, probability: 0.2 },
+            { action: { type: "stop_local" }, score: 0.8, probability: 0.8 },
+          ],
+          chosenAction: { type: "stop_local" },
+          chosenActionProbability: 0.8,
+          stopProbability: 0.8,
+        },
+      ],
+      selectedTargets: [],
+      acceptedTargets: [],
+      vetoedTargets: [],
+    };
+
+    const updates = computeReinforceUpdates(makeEpisode([stopExpansion], -1.0), 0.1, 0.0);
+    expect(updates).toEqual([
+      expect.objectContaining({
+        kind: "stop_local",
+        sourceNodeId: START_NODE_ID,
+      }),
+    ]);
+    expect(updates[0]?.delta).toBeLessThan(0);
+  });
+
+  it("does not emit fake stop_local updates when STOP_LOCAL is forced", () => {
+    const updates = computeReinforceUpdates(makeEpisode([{
+      sourceNodeId: "a",
+      expansionIndex: 0,
+      frontierBefore: ["a"],
+      frontierAfter: [],
+      budgetBefore: 1000,
+      budgetAfter: 1000,
+      substeps: [
+        {
+          stateSnapshot: {
+            sourceNodeId: "a",
+            expansionIndex: 0,
+            selectionIndex: 0,
+            budgetRemaining: 1000,
+            initialBudget: 1000,
+            reservedTokenCost: 1000,
+            maxHops: 8,
+            frontierSize: 0,
+            frontierNodeIds: [],
+            visitedCount: 0,
+            firedCount: 0,
+          },
+          candidates: [
+            { action: { type: "stop_local" }, score: 0.8, probability: 1 },
+          ],
+          chosenAction: { type: "stop_local" },
+          chosenActionProbability: 1,
+          stopProbability: 1,
+        },
+      ],
+      selectedTargets: [],
+      acceptedTargets: [],
+      vetoedTargets: [],
+    }], 1.0), 0.1, 0.0);
     expect(updates).toEqual([]);
   });
 
@@ -227,6 +319,16 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
       applyWeightUpdates(graph, [{ kind: "seed", nodeId: "b", delta: 0.2 }]);
 
       expect(graph.getSeedWeight("b")).toBeCloseTo(0.7);
+    });
+
+    it("creates valid updates for stop_local weights too", () => {
+      const graph = new BrainGraph();
+      graph.addNode(makeNode("a"));
+      graph.setStopLocalWeight("a", 0.5);
+
+      applyWeightUpdates(graph, [{ kind: "stop_local", sourceNodeId: "a", delta: 0.2 }]);
+
+      expect(graph.getStopLocalWeight("a")).toBeCloseTo(0.7);
     });
 
     it("clamps weights to [-10, 10]", () => {

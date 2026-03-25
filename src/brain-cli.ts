@@ -13,7 +13,11 @@ import {
   describeEmbeddingConfig,
 } from "./brain-store/embedding.js";
 import { resolveLcmConfig } from "./db/config.js";
-import { flattenSeedWeights } from "./brain-runtime/graph-io.js";
+import {
+  flattenSeedWeights,
+  flattenStopLocalWeights,
+  populateGraph,
+} from "./brain-runtime/graph-io.js";
 import { buildPromotionStory } from "./brain-runtime/promotion-story.js";
 import { readWorkerRuntimeState } from "./brain-runtime/worker-state.js";
 
@@ -55,12 +59,13 @@ function loadStore() {
   runBrainMigrations(db);
   const store = new BrainStore(db, { brainRoot: brainConfig.root });
   const graph = new BrainGraph();
-  for (const node of store.getAllNodes()) {
-    graph.addNode(node);
-  }
-  for (const edge of store.loadAllEdges()) {
-    graph.addEdge(edge);
-  }
+  populateGraph(
+    graph,
+    store.getAllNodes(),
+    store.loadAllEdges(),
+    store.loadAllSeedWeights(),
+    store.loadAllStopLocalWeights(),
+  );
 
   return { config, brainConfig, store, graph };
 }
@@ -106,6 +111,7 @@ async function commandInit(workspaceArg?: string): Promise<void> {
     nodes: graph.getAllNodes(),
     edges: flattenEdges(graph),
     seedWeights: flattenSeedWeights(graph),
+    stopLocalWeights: flattenStopLocalWeights(graph),
     metadata: { reason: "cli-init", workspaceRoot, summary: result.summary },
   });
   store.promotePack(pack.version);
@@ -219,6 +225,7 @@ function commandPromote(): void {
     nodes: graph.getAllNodes(),
     edges: flattenEdges(graph),
     seedWeights: flattenSeedWeights(graph),
+    stopLocalWeights: flattenStopLocalWeights(graph),
     metadata: { reason: "cli-promote" },
   });
   store.promotePack(pack.version);

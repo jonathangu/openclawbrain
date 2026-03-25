@@ -21,7 +21,7 @@ import { BrainGraph, cosineSimilarity } from "./graph.js";
 /**
  * Score a single action given current state and graph.
  *
- * For stop_local: score increases with effective budget depletion and expansion count.
+ * For stop_local: score combines learned source-local preference with budget/hop pressure.
  * For traverse: score = edge.weight * edge.prior + cos(query, target) + bias
  */
 export function scoreAction(
@@ -35,7 +35,8 @@ export function scoreAction(
     const effectiveBudgetRemaining = Math.max(0, state.budgetRemaining - state.reservedTokenCost);
     const budgetUsedFraction = totalBudget > 0 ? 1 - effectiveBudgetRemaining / totalBudget : 0;
     const expansionFraction = state.maxHops > 0 ? state.expansionCount / state.maxHops : 0;
-    return params.stopBias
+    return graph.getStopLocalWeight(state.sourceNodeId)
+      + params.stopBias
       + params.budgetPressure * budgetUsedFraction
       + params.hopPressure * expansionFraction;
   }

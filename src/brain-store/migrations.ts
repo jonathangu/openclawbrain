@@ -49,6 +49,12 @@ export function runBrainMigrations(db: DatabaseSync): void {
       updated_at    INTEGER NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS brain_stop_local_weights (
+      source_node_id TEXT PRIMARY KEY,
+      weight         REAL NOT NULL DEFAULT 0.0,
+      updated_at     INTEGER NOT NULL
+    );
+
     -- ═══════════════════════════════════════════
     -- Episodes (full traversal records)
     -- ═══════════════════════════════════════════

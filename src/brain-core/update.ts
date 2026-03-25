@@ -12,7 +12,7 @@
  *   ∂logP(a_j|s)/∂w_j = 1 - P(a_j|s)     (for the chosen action's weight)
  *   ∂logP(a_j|s)/∂w_k = -P(a_k|s)         (for other actions' weights)
  *
- * We update only the chosen edge's weight at each step, using:
+ * We update only the chosen action's parameter at each step, using:
  *   Δw_j = learningRate × (z - baseline) × (1 - P(a_j|s))
  *
  * The full-trajectory sum is achieved by accumulating updates across all steps.
@@ -43,20 +43,29 @@ export function computeReinforceUpdates(
   // Sum over all selection substeps l = 0 to T (full-trajectory, not one-step)
   for (const expansion of episode.trajectory) {
     for (const substep of expansion.substeps) {
-      if (substep.chosenAction.type !== "traverse") {
-        // stop_local remains truthful in the trace, but has no dedicated learned
-        // parameter surface in this first cut.
-        continue;
-      }
-
-      const sourceId = expansion.sourceNodeId ?? START_NODE_ID;
-      const targetId = substep.chosenAction.targetNodeId;
+      const sourceId = substep.stateSnapshot.sourceNodeId ?? START_NODE_ID;
 
       // ∂logP(a_l|s_l)/∂ρ for the softmax = (1 - P(a_l|s_l))
       const gradLogP = 1 - substep.chosenActionProbability;
 
       // Δρ ∝ (z - baseline) × ∂logP/∂ρ
       const delta = learningRate * advantage * gradLogP;
+      if (Math.abs(delta) < 1e-12) {
+        continue;
+      }
+
+      if (substep.chosenAction.type === "stop_local") {
+        const key = `stop→${sourceId}`;
+        const existing = updates.get(key);
+        if (existing && existing.kind === "stop_local") {
+          existing.delta += delta;
+        } else {
+          updates.set(key, { kind: "stop_local", sourceNodeId: sourceId, delta });
+        }
+        continue;
+      }
+
+      const targetId = substep.chosenAction.targetNodeId;
 
       if (sourceId === START_NODE_ID) {
         const key = `seed→${targetId}`;
@@ -113,6 +122,15 @@ export function applyWeightUpdates(
     if (update.kind === "seed") {
       const nextWeight = Math.max(-10, Math.min(10, graph.getSeedWeight(update.nodeId) + update.delta));
       graph.setSeedWeight(update.nodeId, nextWeight);
+      continue;
+    }
+
+    if (update.kind === "stop_local") {
+      const nextWeight = Math.max(
+        -10,
+        Math.min(10, graph.getStopLocalWeight(update.sourceNodeId) + update.delta),
+      );
+      graph.setStopLocalWeight(update.sourceNodeId, nextWeight);
       continue;
     }
 

@@ -12,6 +12,7 @@ import type {
   NodeKind,
   TraversalAction,
 } from "./types.js";
+import { START_NODE_ID } from "./types.js";
 
 /**
  * Cosine similarity between two Float32Arrays.
@@ -35,6 +36,7 @@ export class BrainGraph {
   private outEdges: Map<string, BrainEdge[]> = new Map();
   private inEdges: Map<string, BrainEdge[]> = new Map();
   private seedWeights: Map<string, number> = new Map();
+  private stopLocalWeights: Map<string, number> = new Map();
 
   addNode(node: BrainNode): void {
     this.nodes.set(node.id, node);
@@ -45,6 +47,7 @@ export class BrainGraph {
   removeNode(nodeId: string): void {
     this.nodes.delete(nodeId);
     this.seedWeights.delete(nodeId);
+    this.stopLocalWeights.delete(nodeId);
     // Remove all edges involving this node
     const out = this.outEdges.get(nodeId) ?? [];
     for (const edge of out) {
@@ -159,8 +162,27 @@ export class BrainGraph {
     this.seedWeights.set(nodeId, weight);
   }
 
+  getStopLocalWeight(sourceNodeId: string | null): number {
+    return this.stopLocalWeights.get(sourceNodeId ?? START_NODE_ID) ?? 0;
+  }
+
+  setStopLocalWeight(sourceNodeId: string | null, weight: number): void {
+    const key = sourceNodeId ?? START_NODE_ID;
+    if (key !== START_NODE_ID && !this.nodes.has(key)) {
+      return;
+    }
+    this.stopLocalWeights.set(key, weight);
+  }
+
   getAllSeedWeights(): Array<{ nodeId: string; weight: number }> {
     return [...this.seedWeights.entries()].map(([nodeId, weight]) => ({ nodeId, weight }));
+  }
+
+  getAllStopLocalWeights(): Array<{ sourceNodeId: string; weight: number }> {
+    return [...this.stopLocalWeights.entries()].map(([sourceNodeId, weight]) => ({
+      sourceNodeId,
+      weight,
+    }));
   }
 
   hasSeedWeights(): boolean {
@@ -185,6 +207,9 @@ export class BrainGraph {
     }
     for (const { nodeId, weight } of this.getAllSeedWeights()) {
       clone.setSeedWeight(nodeId, weight);
+    }
+    for (const { sourceNodeId, weight } of this.getAllStopLocalWeights()) {
+      clone.setStopLocalWeight(sourceNodeId, weight);
     }
     return clone;
   }
@@ -321,5 +346,6 @@ export class BrainGraph {
     this.outEdges.clear();
     this.inEdges.clear();
     this.seedWeights.clear();
+    this.stopLocalWeights.clear();
   }
 }

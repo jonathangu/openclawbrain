@@ -61,6 +61,18 @@ describe("policy", () => {
       expect(scoreLow).toBeGreaterThan(scoreHigh);
     });
 
+    it("stop_local score incorporates learned source-local stop weights", () => {
+      const graph = new BrainGraph();
+      graph.addNode(makeNode("a"));
+      graph.setStopLocalWeight(null, 0.4);
+      graph.setStopLocalWeight("a", 1.2);
+
+      const seedScore = scoreAction({ type: "stop_local" }, makeState(null), graph);
+      const localScore = scoreAction({ type: "stop_local" }, makeState("a"), graph);
+
+      expect(localScore).toBeGreaterThan(seedScore);
+    });
+
     it("traverse score incorporates edge weight and embedding similarity", () => {
       const graph = new BrainGraph();
       graph.addNode(makeNode("a"));
