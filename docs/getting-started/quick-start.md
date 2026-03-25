@@ -10,17 +10,29 @@ This is the shortest supported path from a working OpenClaw install to a verifie
 
 ## Install and verify
 
-The public install story is three commands to install or update, one command to verify, and one official proof command when you need a durable operator bundle.
+The public operator story has two explicit entry points: **fresh install** for a host that does not have OpenClawBrain yet, and **update** for a host that already has it installed.
+
+### Fresh install
 
 ```bash
 openclaw plugins install @openclawbrain/openclaw
-npx @openclawbrain/cli install --openclaw-home ~/.openclaw
+npx -y @openclawbrain/cli install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
+npx -y @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
+npx -y @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
 ```
 
-The first three commands install or update OpenClawBrain. `status --detailed` is the quick verify surface. `proof` writes `summary.md`, `steps.json`, `verdict.json`, raw step logs, and proof pointers under one bundle directory.
+### Update an existing host
+
+```bash
+openclaw plugins update openclawbrain
+npx -y @openclawbrain/cli install --openclaw-home ~/.openclaw
+openclaw gateway restart
+npx -y @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
+npx -y @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
+```
+
+For an already-installed host, the plugin update is only step 1. You still need to rerun the CLI `install` command so the activation root and native package plugin wiring stay correct for that OpenClaw home. `status --detailed` is the quick verify surface. `proof` writes `summary.md`, `steps.json`, `verdict.json`, raw step logs, and proof pointers under one bundle directory.
 
 ## What success looks like
 

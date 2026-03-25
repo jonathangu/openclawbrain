@@ -6,15 +6,27 @@ This guide covers the supported install, verify, proof, rollback, detach, and un
 
 Keep the same `--openclaw-home` value through the whole lifecycle. The public lane stays pinned to one OpenClaw home.
 
+### Fresh install
+
 ```bash
 openclaw plugins install @openclawbrain/openclaw
-npx @openclawbrain/cli install --openclaw-home ~/.openclaw
+npx -y @openclawbrain/cli install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
+npx -y @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
+npx -y @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
 ```
 
-The first three commands install or update OpenClawBrain. `status --detailed` verifies the selected OpenClaw home. `proof` captures the durable operator bundle when you need explicit install/restart/status evidence.
+### Update an existing host
+
+```bash
+openclaw plugins update openclawbrain
+npx -y @openclawbrain/cli install --openclaw-home ~/.openclaw
+openclaw gateway restart
+npx -y @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
+npx -y @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
+```
+
+For an already-installed host, the plugin update is only step 1. You still need to rerun the CLI `install` command so the activation root and native package plugin wiring stay correct for that OpenClaw home. `status --detailed` verifies the selected OpenClaw home. `proof` captures the durable operator bundle when you need explicit install/restart/status evidence.
 
 ## Verify and prove
 
