@@ -308,7 +308,9 @@ export class BrainService {
       routerIdentity: routeTrace?.routerIdentity ?? null,
       candidateNodeIds: [...(routeTrace?.candidateNodeIds ?? [])],
       selectedNodeIds: [...(routeTrace?.selectedNodeIds ?? trace.firedNodes)],
+      selectedTraversalNodeIds: [...(routeTrace?.selectedTraversalNodeIds ?? [])],
       selectedPathNodeIds: [...(routeTrace?.selectedPathNodeIds ?? [])],
+      selectedSeedNodeIds: [...(routeTrace?.selectedSeedNodeIds ?? [])],
       sourceSummary: routeTrace?.sourceSummary
         ? {
             injectedCount: routeTrace.sourceSummary.injectedCount,
@@ -375,6 +377,8 @@ export class BrainService {
       queryEmbedding: embedding,
       queryText: params.queryText,
       maxHops: this.config.maxHops,
+      maxFanoutPerNode: this.config.maxFanoutPerNode,
+      maxFrontierSize: this.config.maxFrontierSize,
       budgetChars: params.budgetChars,
       temperature: this.config.servingTemperature,
       maxSeeds: this.config.maxSeeds,
@@ -406,6 +410,8 @@ export class BrainService {
       packVersion: episode.packVersion,
       budgetChars: params.budgetChars,
       maxHops: this.config.maxHops,
+      maxFanoutPerNode: this.config.maxFanoutPerNode,
+      maxFrontierSize: this.config.maxFrontierSize,
       embeddingMs,
       routeSelectionMs,
       totalQueryMs: Date.now() - queryStartedAt,
@@ -661,13 +667,9 @@ export class BrainService {
             ? "recent_conversation_fallback"
             : "no_episode";
     const connectedNodes = new Set<string>();
-    const firstTraversalStep = recentEpisode?.trajectory.find(
-      (step) => step.chosenAction.type === "traverse",
-    );
-    const chosenSeedNodeId =
-      firstTraversalStep?.chosenAction.type === "traverse"
-        ? firstTraversalStep.chosenAction.targetNodeId
-        : null;
+    const selectedSeedNodeIds = recentEpisode?.trajectory.find(
+      (expansion) => expansion.sourceNodeId === null,
+    )?.acceptedTargets ?? [];
     for (const firedNodeId of recentEpisode?.firedNodes ?? []) {
       if (connectedNodes.has(firedNodeId)) {
         continue;
@@ -693,10 +695,13 @@ export class BrainService {
       this.store.insertEdge(edge);
       this.store.insertEdge(reverse);
     }
-    if (chosenSeedNodeId && !connectedNodes.has(chosenSeedNodeId)) {
+    for (const selectedSeedNodeId of selectedSeedNodeIds) {
+      if (connectedNodes.has(selectedSeedNodeId)) {
+        continue;
+      }
       const now = Date.now();
       const seedEdge = {
-        source: chosenSeedNodeId,
+        source: selectedSeedNodeId,
         target: node.id,
         kind: "learned" as const,
         weight: 1.0,
@@ -708,7 +713,7 @@ export class BrainService {
       const reverseSeedEdge = {
         ...seedEdge,
         source: node.id,
-        target: chosenSeedNodeId,
+        target: selectedSeedNodeId,
       };
       this.mutableGraph.addEdge(seedEdge);
       this.mutableGraph.addEdge(reverseSeedEdge);
@@ -717,19 +722,21 @@ export class BrainService {
     }
 
     const misroutedTargetId = recentEpisode?.firedNodes.at(-1) ?? null;
-    if (chosenSeedNodeId && misroutedTargetId && misroutedTargetId !== node.id) {
-      const inhibitoryEdge = {
-        source: chosenSeedNodeId,
-        target: misroutedTargetId,
-        kind: "inhibitory" as const,
-        weight: -1.0,
-        prior: -1.0,
-        metadata: { taught: true, reason: "human correction", conversationId: params.conversationId ?? null },
-        decayedAt: Date.now(),
-        createdAt: Date.now(),
-      };
-      this.mutableGraph.addEdge(inhibitoryEdge);
-      this.store.insertEdge(inhibitoryEdge);
+    if (misroutedTargetId && misroutedTargetId !== node.id) {
+      for (const selectedSeedNodeId of selectedSeedNodeIds) {
+        const inhibitoryEdge = {
+          source: selectedSeedNodeId,
+          target: misroutedTargetId,
+          kind: "inhibitory" as const,
+          weight: -1.0,
+          prior: -1.0,
+          metadata: { taught: true, reason: "human correction", conversationId: params.conversationId ?? null },
+          decayedAt: Date.now(),
+          createdAt: Date.now(),
+        };
+        this.mutableGraph.addEdge(inhibitoryEdge);
+        this.store.insertEdge(inhibitoryEdge);
+      }
     }
 
     const targetEpisodes = exactEpisode ? [exactEpisode] : recentEpisodes.slice(0, 1);

@@ -12,7 +12,7 @@ import type {
 } from "./types.js";
 import type { TraverseResult } from "./traverse.js";
 
-const ROUTER_IDENTITY = "brain-graph-traverse.v1";
+const ROUTER_IDENTITY = "brain-graph-traverse.v2";
 const TRACE_PREVIEW_CHARS = 160;
 
 function hashQuery(queryText: string): string {
@@ -40,20 +40,20 @@ function candidateNodeIds(traversalResult: TraverseResult): string[] {
   for (const seed of traversalResult.seedScores) {
     ids.add(seed.nodeId);
   }
-  for (const step of traversalResult.trajectory) {
-    for (const candidate of step.candidates) {
-      if (candidate.action.type === "traverse") {
-        ids.add(candidate.action.targetNodeId);
+  for (const expansion of traversalResult.trajectory) {
+    for (const substep of expansion.substeps) {
+      for (const candidate of substep.candidates) {
+        if (candidate.action.type === "traverse") {
+          ids.add(candidate.action.targetNodeId);
+        }
       }
     }
   }
   return [...ids];
 }
 
-function selectedPathNodeIds(traversalResult: TraverseResult): string[] {
-  return traversalResult.trajectory
-    .flatMap((step) => step.chosenAction.type === "traverse" ? [step.chosenAction.targetNodeId] : [])
-    .filter((nodeId, index, values) => values.indexOf(nodeId) === index);
+function selectedTraversalNodeIds(traversalResult: TraverseResult): string[] {
+  return traversalResult.trajectory.flatMap((expansion) => expansion.acceptedTargets);
 }
 
 function buildRouteTrace(params: {
@@ -63,6 +63,8 @@ function buildRouteTrace(params: {
   packVersion: number | null;
   budgetChars: number;
   maxHops: number;
+  maxFanoutPerNode: number;
+  maxFrontierSize: number;
   embeddingMs: number | null;
   routeSelectionMs: number | null;
   totalQueryMs: number | null;
@@ -71,8 +73,15 @@ function buildRouteTrace(params: {
 }): DecisionRouteTrace {
   const candidateIds = candidateNodeIds(params.traversalResult);
   const selectedIds = params.traversalResult.firedNodes.map((node) => node.nodeId);
-  const selectedPathIds = selectedPathNodeIds(params.traversalResult);
-  const chosenSeedNodeId = params.traversalResult.seedScores.find((seed) => seed.chosen)?.nodeId ?? null;
+  const selectedTraversalIds = selectedTraversalNodeIds(params.traversalResult);
+  const selectedSeedNodeIds = params.traversalResult.seedScores
+    .filter((seed) => seed.selected)
+    .map((seed) => seed.nodeId);
+  const chosenSeedNodeId = selectedSeedNodeIds.length === 1 ? selectedSeedNodeIds[0] : null;
+  const selectionSubstepCount = params.traversalResult.trajectory.reduce(
+    (count, expansion) => count + expansion.substeps.length,
+    0,
+  );
   const injectedNodeSummaries = params.selectedNodes.map((node) => ({
     nodeId: node.id,
     kind: node.kind,
@@ -90,7 +99,9 @@ function buildRouteTrace(params: {
     routerIdentity: ROUTER_IDENTITY,
     candidateNodeIds: candidateIds,
     selectedNodeIds: selectedIds,
-    selectedPathNodeIds: selectedPathIds,
+    selectedTraversalNodeIds: selectedTraversalIds,
+    selectedPathNodeIds: selectedTraversalIds,
+    selectedSeedNodeIds,
     injectedNodeSummaries,
     sourceSummary: {
       injectedCount: injectedNodeSummaries.length,
@@ -99,16 +110,22 @@ function buildRouteTrace(params: {
       sourceUris: [...new Set(injectedNodeSummaries.flatMap((node) => node.sourceUri ? [node.sourceUri] : []))],
     },
     selectionMetadata: {
-      traceSliceVersion: 1,
+      traceSliceVersion: 2,
       queryChars: params.queryText.length,
       budgetChars: params.budgetChars,
       maxHops: params.maxHops,
+      maxFanoutPerNode: params.maxFanoutPerNode,
+      maxFrontierSize: params.maxFrontierSize,
       seedCount: params.traversalResult.seedScores.length,
+      seedSelectionCount: selectedSeedNodeIds.length,
       candidateCount: candidateIds.length,
-      hopCount: params.traversalResult.trajectory.length,
+      hopCount: selectedTraversalIds.length,
+      expansionCount: params.traversalResult.trajectory.length,
+      selectionSubstepCount,
       firedCount: params.traversalResult.firedNodes.length,
       vetoedCount: params.traversalResult.vetoedNodes.length,
       chosenSeedNodeId,
+      selectedSeedNodeIds,
       routeSelectionMs: params.routeSelectionMs,
       embeddingMs: params.embeddingMs,
       totalQueryMs: params.totalQueryMs,
@@ -125,6 +142,8 @@ export function recordTrace(params: {
   packVersion: number | null;
   budgetChars: number;
   maxHops: number;
+  maxFanoutPerNode: number;
+  maxFrontierSize: number;
   embeddingMs: number | null;
   routeSelectionMs: number | null;
   totalQueryMs: number | null;
@@ -150,11 +169,12 @@ export function recordTrace(params: {
 export function generateFooter(params: {
   packVersion: number;
   seedCount: number;
-  hopCount: number;
+  seedSelectionCount: number;
+  expansionCount: number;
   firedCount: number;
   vetoCount: number;
   contextChars: number;
   traceId: string;
 }): string {
-  return `Brain v${params.packVersion} · ${params.seedCount} seeds · ${params.hopCount} hops · ${params.firedCount} fired · ${params.vetoCount} veto · ${params.contextChars} chars · trace ${params.traceId}`;
+  return `Brain v${params.packVersion} · ${params.seedCount} seed candidates · ${params.seedSelectionCount} seed picks · ${params.expansionCount} expansions · ${params.firedCount} fired · ${params.vetoCount} veto · ${params.contextChars} chars · trace ${params.traceId}`;
 }

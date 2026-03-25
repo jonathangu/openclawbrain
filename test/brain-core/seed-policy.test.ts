@@ -3,7 +3,14 @@ import { BrainGraph } from "../../src/brain-core/graph.js";
 import { softmaxPolicy } from "../../src/brain-core/policy.js";
 import { applyWeightUpdates, computeReinforceUpdates } from "../../src/brain-core/update.js";
 import { DEFAULT_POLICY_PARAMS } from "../../src/brain-core/types.js";
-import type { BrainNode, Episode, TrajectoryStep, TraversalAction, TraversalState } from "../../src/brain-core/types.js";
+import type {
+  BrainNode,
+  Episode,
+  TrajectoryExpansion,
+  TrajectoryStep,
+  TraversalAction,
+  TraversalState,
+} from "../../src/brain-core/types.js";
 
 function makeNode(id: string, embedding = new Float32Array([1, 0, 0])): BrainNode {
   return {
@@ -23,12 +30,15 @@ function makeNode(id: string, embedding = new Float32Array([1, 0, 0])): BrainNod
 
 function makeSeedState(queryEmbedding = new Float32Array([1, 0, 0])): TraversalState {
   return {
-    currentNodeId: null,
+    sourceNodeId: null,
     queryEmbedding,
+    frontier: [],
     visited: new Set(),
     fired: [],
     budgetRemaining: 1000,
-    hopCount: 0,
+    initialBudget: 1000,
+    reservedTokenCost: 0,
+    expansionCount: 0,
     maxHops: 8,
   };
 }
@@ -36,9 +46,15 @@ function makeSeedState(queryEmbedding = new Float32Array([1, 0, 0])): TraversalS
 function makeSeedEpisode(nodeId: string, probability: number, reward: number): Episode {
   const step: TrajectoryStep = {
     stateSnapshot: {
-      currentNodeId: null,
-      hopCount: 0,
+      sourceNodeId: null,
+      expansionIndex: 0,
+      selectionIndex: 0,
       budgetRemaining: 1000,
+      initialBudget: 1000,
+      reservedTokenCost: 0,
+      maxHops: 8,
+      frontierSize: 0,
+      frontierNodeIds: [],
       visitedCount: 0,
       firedCount: 0,
     },
@@ -51,7 +67,7 @@ function makeSeedEpisode(nodeId: string, probability: number, reward: number): E
         learnedSeedWeight: 0,
       },
       {
-        action: { type: "stop" },
+        action: { type: "stop_local" },
         score: 0.1,
         probability: 1 - probability,
       },
@@ -60,13 +76,25 @@ function makeSeedEpisode(nodeId: string, probability: number, reward: number): E
     chosenActionProbability: probability,
     stopProbability: 1 - probability,
   };
+  const expansion: TrajectoryExpansion = {
+    sourceNodeId: null,
+    expansionIndex: 0,
+    frontierBefore: [],
+    frontierAfter: [nodeId],
+    budgetBefore: 1000,
+    budgetAfter: 900,
+    substeps: [step],
+    selectedTargets: [nodeId],
+    acceptedTargets: [nodeId],
+    vetoedTargets: [],
+  };
 
   return {
     id: "be_seed_test",
     conversationId: null,
     queryText: "seed query",
     queryEmbedding: new Float32Array([1, 0, 0]),
-    trajectory: [step],
+    trajectory: [expansion],
     firedNodes: [nodeId],
     vetoedNodes: [],
     contextChars: 0,
@@ -105,7 +133,7 @@ describe("seed policy", () => {
 
     const actions: TraversalAction[] = [
       { type: "traverse", targetNodeId: "a", seedScore: 0.05 },
-      { type: "stop" },
+      { type: "stop_local" },
     ];
     const dist = softmaxPolicy(actions, makeSeedState(new Float32Array([1, 0, 0])), graph, {
       ...DEFAULT_POLICY_PARAMS,
@@ -113,7 +141,7 @@ describe("seed policy", () => {
       temperature: 0.2,
     });
 
-    const stop = dist.find((entry) => entry.action.type === "stop");
+    const stop = dist.find((entry) => entry.action.type === "stop_local");
     const seed = dist.find((entry) => entry.action.type === "traverse");
     expect(stop?.probability ?? 0).toBeGreaterThan(seed?.probability ?? 0);
   });

@@ -15,7 +15,7 @@ import type {
   MutationProposal,
   PolicyGradientCandidateUpdateArtifact,
   ReplayGateVerdict,
-  TrajectoryStep,
+  TrajectoryExpansion,
 } from "../../src/brain-core/types.js";
 import { runBrainMigrations } from "../../src/brain-store/migrations.js";
 import { BrainStore } from "../../src/brain-store/store.js";
@@ -37,7 +37,7 @@ function makeEpisode(params: {
   id: string;
   conversationId: number;
   queryText?: string;
-  trajectory?: TrajectoryStep[];
+  trajectory?: TrajectoryExpansion[];
   firedNodes?: string[];
   reward?: number | null;
   rewardSource?: Episode["rewardSource"];
@@ -74,22 +74,41 @@ function makeNode(id: string): BrainNode {
   };
 }
 
-function makeStep(targetId: string, probability = 0.6): TrajectoryStep {
+function makeStep(targetId: string, probability = 0.6): TrajectoryExpansion {
   return {
-    stateSnapshot: {
-      currentNodeId: null,
-      hopCount: 0,
-      budgetRemaining: 1000,
-      visitedCount: 0,
-      firedCount: 0,
-    },
-    candidates: [
-      { action: { type: "traverse", targetNodeId: targetId }, score: 1, probability },
-      { action: { type: "stop" }, score: -1, probability: 1 - probability },
+    sourceNodeId: null,
+    expansionIndex: 0,
+    frontierBefore: [],
+    frontierAfter: [targetId],
+    budgetBefore: 1000,
+    budgetAfter: 968,
+    substeps: [
+      {
+        stateSnapshot: {
+          sourceNodeId: null,
+          expansionIndex: 0,
+          selectionIndex: 0,
+          budgetRemaining: 1000,
+          initialBudget: 1000,
+          reservedTokenCost: 0,
+          maxHops: 8,
+          frontierSize: 0,
+          frontierNodeIds: [],
+          visitedCount: 0,
+          firedCount: 0,
+        },
+        candidates: [
+          { action: { type: "traverse", targetNodeId: targetId }, score: 1, probability },
+          { action: { type: "stop_local" }, score: -1, probability: 1 - probability },
+        ],
+        chosenAction: { type: "traverse", targetNodeId: targetId },
+        chosenActionProbability: probability,
+        stopProbability: 1 - probability,
+      },
     ],
-    chosenAction: { type: "traverse", targetNodeId: targetId },
-    chosenActionProbability: probability,
-    stopProbability: 1 - probability,
+    selectedTargets: [targetId],
+    acceptedTargets: [targetId],
+    vetoedTargets: [],
   };
 }
 
@@ -128,10 +147,12 @@ function makeTrace(params: {
       requestDigest: hashQuery(queryText),
       conversationId: params.conversationId,
       activePackId: "brain-pack-v1",
-      routerIdentity: "brain-graph-traverse.v1",
+      routerIdentity: "brain-graph-traverse.v2",
       candidateNodeIds: [...firedNodes],
       selectedNodeIds: [...firedNodes],
+      selectedTraversalNodeIds: [...firedNodes],
       selectedPathNodeIds: [...firedNodes],
+      selectedSeedNodeIds: [selectedNodeId],
       injectedNodeSummaries,
       sourceSummary: {
         injectedCount: injectedNodeSummaries.length,
@@ -140,16 +161,22 @@ function makeTrace(params: {
         sourceUris: injectedNodeSummaries.flatMap((summary) => summary.sourceUri ? [summary.sourceUri] : []),
       },
       selectionMetadata: {
-        traceSliceVersion: 1,
+        traceSliceVersion: 2,
         queryChars: queryText.length,
         budgetChars: 4000,
         maxHops: 8,
+        maxFanoutPerNode: 4,
+        maxFrontierSize: 32,
         seedCount: 1,
+        seedSelectionCount: 1,
         candidateCount: firedNodes.length,
         hopCount: firedNodes.length,
+        expansionCount: firedNodes.length,
+        selectionSubstepCount: firedNodes.length + 1,
         firedCount: firedNodes.length,
         vetoedCount: 0,
         chosenSeedNodeId: selectedNodeId,
+        selectedSeedNodeIds: [selectedNodeId],
         routeSelectionMs: 8,
         embeddingMs: 3,
         totalQueryMs: 15,
@@ -191,10 +218,12 @@ function makeObservation(params: {
     routeMetadata: {
       requestDigest: hashQuery(queryText),
       activePackId: "brain-pack-v1",
-      routerIdentity: "brain-graph-traverse.v1",
+      routerIdentity: "brain-graph-traverse.v2",
       candidateNodeIds: ["node_1"],
       selectedNodeIds: ["node_1"],
+      selectedTraversalNodeIds: ["node_1"],
       selectedPathNodeIds: ["node_1"],
+      selectedSeedNodeIds: ["node_1"],
       sourceSummary: {
         injectedCount: 1,
         kinds: { workflow: 1 },
@@ -202,16 +231,22 @@ function makeObservation(params: {
         sourceUris: ["PLAYBOOK.md"],
       },
       selectionMetadata: {
-        traceSliceVersion: 1,
+        traceSliceVersion: 2,
         queryChars: queryText.length,
         budgetChars: 4000,
         maxHops: 8,
+        maxFanoutPerNode: 4,
+        maxFrontierSize: 32,
         seedCount: 1,
+        seedSelectionCount: 1,
         candidateCount: 1,
         hopCount: 1,
+        expansionCount: 1,
+        selectionSubstepCount: 2,
         firedCount: 1,
         vetoedCount: 0,
         chosenSeedNodeId: "node_1",
+        selectedSeedNodeIds: ["node_1"],
         routeSelectionMs: 8,
         embeddingMs: 3,
         totalQueryMs: 15,

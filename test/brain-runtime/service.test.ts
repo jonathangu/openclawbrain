@@ -163,7 +163,7 @@ describe("BrainService", () => {
     expect(trace?.routeTrace).toMatchObject({
       conversationId: 42,
       activePackId: "brain-pack-v1",
-      routerIdentity: "brain-graph-traverse.v1",
+      routerIdentity: "brain-graph-traverse.v2",
       selectedNodeIds: [result?.fired[0]?.nodeId],
       injectedNodeSummaries: [
         expect.objectContaining({
@@ -174,7 +174,7 @@ describe("BrainService", () => {
         }),
       ],
       selectionMetadata: expect.objectContaining({
-        traceSliceVersion: 1,
+        traceSliceVersion: 2,
         budgetChars: 4000,
         maxHops: 8,
         firedCount: result?.fired.length,

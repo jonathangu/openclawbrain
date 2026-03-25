@@ -119,7 +119,9 @@ export function materializeTeacherLabelInput(observation: BrainObservation): Tea
       routerIdentity: observation.routeMetadata.routerIdentity,
       candidateNodeIds: [...observation.routeMetadata.candidateNodeIds],
       selectedNodeIds: [...observation.routeMetadata.selectedNodeIds],
+      selectedTraversalNodeIds: [...observation.routeMetadata.selectedTraversalNodeIds],
       selectedPathNodeIds: [...observation.routeMetadata.selectedPathNodeIds],
+      selectedSeedNodeIds: [...observation.routeMetadata.selectedSeedNodeIds],
       sourceSummary: observation.routeMetadata.sourceSummary
         ? {
             injectedCount: observation.routeMetadata.sourceSummary.injectedCount,

@@ -40,38 +40,43 @@ export function computeReinforceUpdates(
 
   const updates: Map<string, PolicyWeightUpdate> = new Map();
 
-  // Sum over all trajectory steps l = 0 to T (full-trajectory, not one-step)
-  for (const step of episode.trajectory) {
-    if (step.chosenAction.type !== "traverse") continue;
+  // Sum over all selection substeps l = 0 to T (full-trajectory, not one-step)
+  for (const expansion of episode.trajectory) {
+    for (const substep of expansion.substeps) {
+      if (substep.chosenAction.type !== "traverse") {
+        // stop_local remains truthful in the trace, but has no dedicated learned
+        // parameter surface in this first cut.
+        continue;
+      }
 
-    const sourceId = step.stateSnapshot.currentNodeId ?? START_NODE_ID;
-    const targetId = step.chosenAction.targetNodeId;
+      const sourceId = expansion.sourceNodeId ?? START_NODE_ID;
+      const targetId = substep.chosenAction.targetNodeId;
 
-    // ∂logP(a_l|s_l)/∂ρ for the softmax = (1 - P(a_l|s_l))
-    const gradLogP = 1 - step.chosenActionProbability;
+      // ∂logP(a_l|s_l)/∂ρ for the softmax = (1 - P(a_l|s_l))
+      const gradLogP = 1 - substep.chosenActionProbability;
 
-    // Δρ ∝ (z - baseline) × ∂logP/∂ρ
-    const delta = learningRate * advantage * gradLogP;
+      // Δρ ∝ (z - baseline) × ∂logP/∂ρ
+      const delta = learningRate * advantage * gradLogP;
 
-    if (sourceId === START_NODE_ID) {
-      const key = `seed→${targetId}`;
+      if (sourceId === START_NODE_ID) {
+        const key = `seed→${targetId}`;
+        const existing = updates.get(key);
+        if (existing && existing.kind === "seed") {
+          existing.delta += delta;
+        } else {
+          updates.set(key, { kind: "seed", nodeId: targetId, delta });
+        }
+        continue;
+      }
+
+      // Accumulate: the full-trajectory sum means each substep adds to the gradient.
+      const key = `${sourceId}→${targetId}`;
       const existing = updates.get(key);
-      if (existing && existing.kind === "seed") {
+      if (existing && existing.kind === "edge") {
         existing.delta += delta;
       } else {
-        updates.set(key, { kind: "seed", nodeId: targetId, delta });
+        updates.set(key, { kind: "edge", source: sourceId, target: targetId, delta });
       }
-      continue;
-    }
-
-    // Accumulate: the full-trajectory sum means each step adds to the gradient
-    const key = `${sourceId}→${targetId}`;
-
-    const existing = updates.get(key);
-    if (existing && existing.kind === "edge") {
-      existing.delta += delta;
-    } else {
-      updates.set(key, { kind: "edge", source: sourceId, target: targetId, delta });
     }
   }
 

@@ -21,7 +21,7 @@ import { BrainGraph, cosineSimilarity } from "./graph.js";
 /**
  * Score a single action given current state and graph.
  *
- * For STOP: score increases with budget depletion and hop count.
+ * For stop_local: score increases with effective budget depletion and expansion count.
  * For traverse: score = edge.weight * edge.prior + cos(query, target) + bias
  */
 export function scoreAction(
@@ -30,30 +30,28 @@ export function scoreAction(
   graph: BrainGraph,
   params: PolicyParams = DEFAULT_POLICY_PARAMS,
 ): number {
-  if (action.type === "stop") {
-    const totalBudget = state.budgetRemaining + state.fired.reduce((sum, id) => {
-      const node = graph.getNode(id);
-      return sum + (node?.tokenCount ?? 0);
-    }, 0);
-    const budgetUsedFraction = totalBudget > 0 ? 1 - state.budgetRemaining / totalBudget : 0;
-    const hopFraction = state.maxHops > 0 ? state.hopCount / state.maxHops : 0;
+  if (action.type === "stop_local") {
+    const totalBudget = Math.max(0, state.initialBudget);
+    const effectiveBudgetRemaining = Math.max(0, state.budgetRemaining - state.reservedTokenCost);
+    const budgetUsedFraction = totalBudget > 0 ? 1 - effectiveBudgetRemaining / totalBudget : 0;
+    const expansionFraction = state.maxHops > 0 ? state.expansionCount / state.maxHops : 0;
     return params.stopBias
       + params.budgetPressure * budgetUsedFraction
-      + params.hopPressure * hopFraction;
+      + params.hopPressure * expansionFraction;
   }
 
   // Traverse action
   const targetNode = graph.getNode(action.targetNodeId);
   if (!targetNode) return -Infinity;
 
-  if (state.currentNodeId === null) {
+  if (state.sourceNodeId === null) {
     const seedPrior = action.seedScore ?? 0;
     const learnedSeedWeight = graph.getSeedWeight(action.targetNodeId);
     return seedPrior + learnedSeedWeight;
   }
 
   // Find edge from current position to target
-  const edge = graph.getEdge(state.currentNodeId, action.targetNodeId);
+  const edge = graph.getEdge(state.sourceNodeId, action.targetNodeId);
 
   // Base score from edge weight and prior
   const edgeScore = edge ? edge.weight * edge.prior : 0;
@@ -118,7 +116,7 @@ export function sampleAction(
   distribution: Array<{ action: TraversalAction; probability: number }>,
 ): { action: TraversalAction; probability: number; index: number } {
   if (distribution.length === 0) {
-    return { action: { type: "stop" }, probability: 1.0, index: 0 };
+    return { action: { type: "stop_local" }, probability: 1.0, index: 0 };
   }
 
   const r = Math.random();

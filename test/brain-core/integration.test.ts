@@ -108,7 +108,7 @@ describe("integration: full learning pipeline", () => {
     const initialEdgeAC = graph.getEdge("a", "c");
     const initialWeightAB = initialEdgeAB?.weight ?? 0.5;
     const initialWeightAC = initialEdgeAC?.weight ?? 0.5;
-    const chosenSeed = result.seedScores.find((seed) => seed.chosen)?.nodeId ?? null;
+    const chosenSeed = result.seedScores.find((seed) => seed.selected)?.nodeId ?? null;
     const initialSeedWeight = chosenSeed ? graph.getSeedWeight(chosenSeed) : 0;
 
     const updates = computeReinforceUpdates(episode, 0.1, 0.0);

@@ -1,7 +1,7 @@
 import { describe, it, expect } from "vitest";
 import { computeReinforceUpdates, updateBaseline, applyWeightUpdates } from "../../src/brain-core/update.js";
 import { BrainGraph } from "../../src/brain-core/graph.js";
-import type { Episode, TrajectoryStep, BrainNode, BrainEdge } from "../../src/brain-core/types.js";
+import type { Episode, TrajectoryExpansion, TrajectoryStep, BrainNode, BrainEdge } from "../../src/brain-core/types.js";
 
 function makeNode(id: string): BrainNode {
   return {
@@ -19,15 +19,24 @@ function makeEdge(source: string, target: string, weight = 0.5): BrainEdge {
   };
 }
 
-function makeStep(sourceId: string | null, targetId: string, prob: number): TrajectoryStep {
+function makeStep(sourceId: string | null, targetId: string, prob: number, expansionIndex = 0): TrajectoryStep {
   return {
     stateSnapshot: {
-      currentNodeId: sourceId, hopCount: 0,
-      budgetRemaining: 1000, visitedCount: 0, firedCount: 0,
+      sourceNodeId: sourceId,
+      expansionIndex,
+      selectionIndex: 0,
+      budgetRemaining: 1000,
+      initialBudget: 1000,
+      reservedTokenCost: 0,
+      maxHops: 8,
+      frontierSize: 0,
+      frontierNodeIds: [],
+      visitedCount: 0,
+      firedCount: 0,
     },
     candidates: [
       { action: { type: "traverse", targetNodeId: targetId }, score: 1, probability: prob },
-      { action: { type: "stop" }, score: -1, probability: 1 - prob },
+      { action: { type: "stop_local" }, score: -1, probability: 1 - prob },
     ],
     chosenAction: { type: "traverse", targetNodeId: targetId },
     chosenActionProbability: prob,
@@ -35,7 +44,23 @@ function makeStep(sourceId: string | null, targetId: string, prob: number): Traj
   };
 }
 
-function makeEpisode(trajectory: TrajectoryStep[], reward: number | null): Episode {
+function makeExpansion(sourceId: string | null, targetId: string, prob: number, expansionIndex = 0): TrajectoryExpansion {
+  const substep = makeStep(sourceId, targetId, prob, expansionIndex);
+  return {
+    sourceNodeId: sourceId,
+    expansionIndex,
+    frontierBefore: sourceId === null ? [] : [sourceId],
+    frontierAfter: [],
+    budgetBefore: 1000,
+    budgetAfter: 900,
+    substeps: [substep],
+    selectedTargets: [targetId],
+    acceptedTargets: [targetId],
+    vetoedTargets: [],
+  };
+}
+
+function makeEpisode(trajectory: TrajectoryExpansion[], reward: number | null): Episode {
   return {
     id: "test-ep", conversationId: null, queryText: "test",
     queryEmbedding: null, trajectory, firedNodes: [], vetoedNodes: [],
@@ -46,7 +71,7 @@ function makeEpisode(trajectory: TrajectoryStep[], reward: number | null): Episo
 
 describe("update (REINFORCE, Lemma 6.1)", () => {
   it("positive reward strengthens chosen edges", () => {
-    const episode = makeEpisode([makeStep("a", "b", 0.6)], 1.0);
+    const episode = makeEpisode([makeExpansion("a", "b", 0.6)], 1.0);
     const updates = computeReinforceUpdates(episode, 0.1, 0.0);
 
     expect(updates.length).toBe(1);
@@ -55,7 +80,7 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
   });
 
   it("negative reward weakens chosen edges", () => {
-    const episode = makeEpisode([makeStep("a", "b", 0.6)], -1.0);
+    const episode = makeEpisode([makeExpansion("a", "b", 0.6)], -1.0);
     const updates = computeReinforceUpdates(episode, 0.1, 0.0);
 
     expect(updates.length).toBe(1);
@@ -63,7 +88,7 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
   });
 
   it("baseline reduces update magnitude", () => {
-    const episode = makeEpisode([makeStep("a", "b", 0.6)], 0.5);
+    const episode = makeEpisode([makeExpansion("a", "b", 0.6)], 0.5);
 
     const updatesNoBaseline = computeReinforceUpdates(episode, 0.1, 0.0);
     const updatesWithBaseline = computeReinforceUpdates(episode, 0.1, 0.4);
@@ -77,9 +102,9 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
   it("full-trajectory credit: ALL steps get credit, not just last", () => {
     // Episode with 3 steps: a→b, b→c, c→d
     const trajectory = [
-      makeStep("a", "b", 0.5),
-      makeStep("b", "c", 0.5),
-      makeStep("c", "d", 0.5),
+      makeExpansion("a", "b", 0.5, 0),
+      makeExpansion("b", "c", 0.5, 1),
+      makeExpansion("c", "d", 0.5, 2),
     ];
     const episode = makeEpisode(trajectory, 1.0);
     const updates = computeReinforceUpdates(episode, 0.1, 0.0);
@@ -101,7 +126,7 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
   });
 
   it("updates seed-phase transitions through explicit seed weights", () => {
-    const episode = makeEpisode([makeStep(null, "b", 0.6)], 1.0);
+    const episode = makeEpisode([makeExpansion(null, "b", 0.6)], 1.0);
     const updates = computeReinforceUpdates(episode, 0.1, 0.0);
 
     expect(updates).toEqual([
@@ -114,15 +139,56 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
   });
 
   it("zero advantage produces no updates", () => {
-    const episode = makeEpisode([makeStep("a", "b", 0.5)], 0.5);
+    const episode = makeEpisode([makeExpansion("a", "b", 0.5)], 0.5);
     const updates = computeReinforceUpdates(episode, 0.1, 0.5); // baseline = reward
     expect(updates.length).toBe(0);
   });
 
   it("null reward produces no updates", () => {
-    const episode = makeEpisode([makeStep("a", "b", 0.5)], null);
+    const episode = makeEpisode([makeExpansion("a", "b", 0.5)], null);
     const updates = computeReinforceUpdates(episode, 0.1, 0.0);
     expect(updates.length).toBe(0);
+  });
+
+  it("does not emit fake updates for stop_local substeps", () => {
+    const stopExpansion: TrajectoryExpansion = {
+      sourceNodeId: "a",
+      expansionIndex: 0,
+      frontierBefore: ["a"],
+      frontierAfter: [],
+      budgetBefore: 1000,
+      budgetAfter: 1000,
+      substeps: [
+        {
+          stateSnapshot: {
+            sourceNodeId: "a",
+            expansionIndex: 0,
+            selectionIndex: 0,
+            budgetRemaining: 1000,
+            initialBudget: 1000,
+            reservedTokenCost: 0,
+            maxHops: 8,
+            frontierSize: 0,
+            frontierNodeIds: [],
+            visitedCount: 0,
+            firedCount: 0,
+          },
+          candidates: [
+            { action: { type: "traverse", targetNodeId: "b" }, score: 0.2, probability: 0.2 },
+            { action: { type: "stop_local" }, score: 0.8, probability: 0.8 },
+          ],
+          chosenAction: { type: "stop_local" },
+          chosenActionProbability: 0.8,
+          stopProbability: 0.8,
+        },
+      ],
+      selectedTargets: [],
+      acceptedTargets: [],
+      vetoedTargets: [],
+    };
+
+    const updates = computeReinforceUpdates(makeEpisode([stopExpansion], 1.0), 0.1, 0.0);
+    expect(updates).toEqual([]);
   });
 
   describe("updateBaseline", () => {

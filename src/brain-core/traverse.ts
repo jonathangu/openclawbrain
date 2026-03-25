@@ -1,21 +1,23 @@
 /**
- * Full traversal loop implementing the paper's finite-time game.
+ * Frontier traversal with sequential local subset selection.
  *
  * Algorithm:
- * 1. Seed phase: select start nodes by embedding similarity
- * 2. Loop: expand candidates → compute softmax policy → sample → fire/veto
- * 3. Terminal: STOP chosen, budget exhausted, max hops, or dead end
+ * 1. Seed phase: expand the implicit __START__ source into zero, one, or many seeds.
+ * 2. Frontier loop: expand pending source nodes in FIFO order.
+ * 3. Local loop: each source repeatedly samples { traverse(target), stop_local }.
+ * 4. Commit accepted targets to the outer frontier, subject to budget and hard caps.
  *
  * Paper assumptions honored:
- * - Assumption 1: game ends in finite time (maxHops bound)
- * - Assumption 2: reward only at terminal state (not intermediate)
+ * - Finite game via maxHops, maxFanoutPerNode, maxFrontierSize, and budget caps
+ * - Terminal reward only at episode end
  * - Stochastic policy P_ρ(a|s) via softmax sampling
  */
 
 import type {
   TraversalState,
   TraversalAction,
-  TrajectoryStep,
+  TrajectoryExpansion,
+  TrajectorySubstep,
   PolicyParams,
   NodeKind,
   SeedScore,
@@ -23,6 +25,9 @@ import type {
 import { DEFAULT_POLICY_PARAMS } from "./types.js";
 import type { BrainGraph } from "./graph.js";
 import { softmaxPolicy, sampleAction } from "./policy.js";
+
+const DEFAULT_MAX_FANOUT_PER_NODE = 4;
+const DEFAULT_MAX_FRONTIER_SIZE = 32;
 
 export interface TraverseOptions {
   graph: BrainGraph;
@@ -33,16 +38,72 @@ export interface TraverseOptions {
   temperature: number;
   maxSeeds: number;
   semanticThreshold: number;
+  maxFanoutPerNode?: number;
+  maxFrontierSize?: number;
   policyParams?: Partial<PolicyParams>;
 }
 
 export interface TraverseResult {
   firedNodes: Array<{ nodeId: string; kind: NodeKind; content: string; tokenCount: number }>;
   vetoedNodes: Array<{ nodeId: string; reason: string }>;
-  trajectory: TrajectoryStep[];
+  trajectory: TrajectoryExpansion[];
   seedScores: SeedScore[];
   contextChars: number;
   footer: string;
+}
+
+function initializeSeedScores(
+  graph: BrainGraph,
+  seedCandidates: Array<{ nodeId: string; score: number }>,
+): SeedScore[] {
+  return seedCandidates.map((seed) => {
+    const learnedSeedWeight = graph.getSeedWeight(seed.nodeId);
+    const seedPolicyScore = seed.score + learnedSeedWeight;
+    return {
+      nodeId: seed.nodeId,
+      priorScore: seed.score,
+      learnedSeedWeight,
+      initialPolicyScore: seedPolicyScore,
+      initialProbability: 0,
+      latestPolicyScore: seedPolicyScore,
+      latestProbability: 0,
+      selected: false,
+      selectionSubstepIndex: null,
+    };
+  });
+}
+
+function updateSeedScoresForSubstep(
+  seedScores: SeedScore[],
+  distribution: Array<{ action: TraversalAction; score: number; probability: number }>,
+  sampledAction: TraversalAction,
+  selectionIndex: number,
+): void {
+  for (const score of seedScores) {
+    const traverseEntry = distribution.find(
+      (entry) => entry.action.type === "traverse" && entry.action.targetNodeId === score.nodeId,
+    );
+    if (!traverseEntry) {
+      continue;
+    }
+
+    if (selectionIndex === 0) {
+      score.initialPolicyScore = traverseEntry.score;
+      score.initialProbability = traverseEntry.probability;
+    }
+
+    score.latestPolicyScore = traverseEntry.score;
+    score.latestProbability = traverseEntry.probability;
+
+    if (
+      sampledAction.type === "traverse"
+      && sampledAction.targetNodeId === score.nodeId
+      && !score.selected
+    ) {
+      score.selected = true;
+      score.selectionSubstepIndex = selectionIndex;
+    }
+  }
 }
 
 /**
@@ -67,6 +128,8 @@ export function traverse(options: TraverseOptions): TraverseResult {
     temperature,
     ...options.policyParams,
   };
+  const maxFanoutPerNode = Math.max(0, options.maxFanoutPerNode ?? DEFAULT_MAX_FANOUT_PER_NODE);
+  const maxFrontierSize = Math.max(0, options.maxFrontierSize ?? DEFAULT_MAX_FRONTIER_SIZE);
 
   // Step 1: Seed selection
   const seedCandidates = graph.seedByEmbedding(queryEmbedding, maxSeeds, semanticThreshold);
@@ -78,128 +141,139 @@ export function traverse(options: TraverseOptions): TraverseResult {
       trajectory: [],
       seedScores: [],
       contextChars: 0,
-      footer: "Brain · 0 seeds · no traversal",
+      footer: "Brain · 0 seed candidates · no traversal",
     };
   }
 
-  // Initialize traversal state
   const state: TraversalState = {
-    currentNodeId: null,
+    sourceNodeId: null,
     queryEmbedding,
+    frontier: [],
     visited: new Set(),
     fired: [],
     budgetRemaining: budgetChars,
-    hopCount: 0,
+    initialBudget: budgetChars,
+    reservedTokenCost: 0,
+    expansionCount: 0,
     maxHops,
   };
 
-  const trajectory: TrajectoryStep[] = [];
+  const trajectory: TrajectoryExpansion[] = [];
   const firedNodes: Array<{ nodeId: string; kind: NodeKind; content: string; tokenCount: number }> = [];
   const vetoedNodes: Array<{ nodeId: string; reason: string }> = [];
-  let seedScores: SeedScore[] = [];
+  const seedScores = initializeSeedScores(graph, seedCandidates);
 
-  // Step 2: Traversal loop
-  for (let hop = 0; hop < maxHops; hop++) {
-    // Compute action set
-    const actions = graph.getActionSet(
-      state.currentNodeId,
-      state.visited,
-      state.currentNodeId === null ? seedCandidates : undefined,
-    );
+  const expandSource = (
+    sourceNodeId: string | null,
+    frontierBefore: string[],
+  ): TrajectoryExpansion => {
+    const expansionIndex = state.expansionCount;
+    const budgetBefore = state.budgetRemaining;
+    const substeps: TrajectorySubstep[] = [];
+    const selectedTargets: string[] = [];
+    const acceptedTargets: string[] = [];
+    const vetoedTargets: Array<{ targetNodeId: string; reason: string }> = [];
 
-    if (actions.length === 0) break; // Dead end
-    if (actions.length === 1 && actions[0].type === "stop") {
-      // Only STOP available — record step and terminate
-      const step: TrajectoryStep = {
+    state.sourceNodeId = sourceNodeId;
+    state.reservedTokenCost = 0;
+
+    for (let selectionIndex = 0; ; selectionIndex++) {
+      const fanoutCapReached = selectedTargets.length >= maxFanoutPerNode;
+      const frontierCapReached = state.frontier.length + selectedTargets.length >= maxFrontierSize;
+      const budgetCapReached = state.reservedTokenCost >= state.budgetRemaining;
+
+      let actions: TraversalAction[];
+      if (fanoutCapReached || frontierCapReached || budgetCapReached) {
+        actions = [{ type: "stop_local" }];
+      } else {
+        const affordableBudget = Math.max(0, state.budgetRemaining - state.reservedTokenCost);
+        actions = graph.getActionSet(sourceNodeId, state.visited, {
+          seeds: sourceNodeId === null ? seedCandidates : undefined,
+          excludedTargets: new Set(selectedTargets),
+        }).filter((action) => {
+          if (action.type !== "traverse") {
+            return true;
+          }
+          const targetNode = graph.getNode(action.targetNodeId);
+          return !!targetNode && targetNode.tokenCount <= affordableBudget;
+        });
+
+        if (!actions.some((action) => action.type === "traverse")) {
+          actions = [{ type: "stop_local" }];
+        }
+      }
+
+      const distribution = softmaxPolicy(actions, state, graph, params);
+      const sampled = sampleAction(distribution);
+
+      if (sourceNodeId === null) {
+        updateSeedScoresForSubstep(seedScores, distribution, sampled.action, selectionIndex);
+      }
+
+      const stopProbability = distribution.find((entry) => entry.action.type === "stop_local")?.probability ?? 0;
+      substeps.push({
         stateSnapshot: {
-          currentNodeId: state.currentNodeId,
-          hopCount: state.hopCount,
+          sourceNodeId,
+          expansionIndex,
+          selectionIndex,
           budgetRemaining: state.budgetRemaining,
+          initialBudget: state.initialBudget,
+          reservedTokenCost: state.reservedTokenCost,
+          maxHops: state.maxHops,
+          frontierSize: state.frontier.length,
+          frontierNodeIds: [...state.frontier],
           visitedCount: state.visited.size,
           firedCount: state.fired.length,
         },
-        candidates: [{ action: { type: "stop" }, score: 0, probability: 1.0 }],
-        chosenAction: { type: "stop" },
-        chosenActionProbability: 1.0,
-        stopProbability: 1.0,
-      };
-      trajectory.push(step);
-      break;
-    }
-
-    // Compute softmax distribution
-    const distribution = softmaxPolicy(actions, state, graph, params);
-
-    // Sample action (stochastic)
-    const sampled = sampleAction(distribution);
-
-    if (state.currentNodeId === null) {
-      seedScores = seedCandidates.map((seed) => {
-        const traverseEntry = distribution.find(
-          (entry) => entry.action.type === "traverse" && entry.action.targetNodeId === seed.nodeId,
-        );
-        return {
-          nodeId: seed.nodeId,
-          priorScore: seed.score,
-          learnedSeedWeight: graph.getSeedWeight(seed.nodeId),
-          policyScore: traverseEntry?.score ?? seed.score,
-          probability: traverseEntry?.probability ?? 0,
-          chosen: sampled.action.type === "traverse" && sampled.action.targetNodeId === seed.nodeId,
-        };
+        candidates: distribution.map((entry) => ({
+          action: entry.action,
+          score: entry.score,
+          probability: entry.probability,
+          priorScore: entry.action.type === "traverse" && sourceNodeId === null ? entry.action.seedScore : undefined,
+          learnedSeedWeight: entry.action.type === "traverse" && sourceNodeId === null
+            ? graph.getSeedWeight(entry.action.targetNodeId)
+            : undefined,
+        })),
+        chosenAction: sampled.action,
+        chosenActionProbability: sampled.probability,
+        stopProbability,
       });
+
+      if (sampled.action.type === "stop_local") {
+        break;
+      }
+
+      const targetNode = graph.getNode(sampled.action.targetNodeId);
+      if (!targetNode) {
+        break;
+      }
+
+      selectedTargets.push(targetNode.id);
+      state.reservedTokenCost += targetNode.tokenCount;
     }
 
-    // Find STOP probability for trace
-    const stopEntry = distribution.find((d) => d.action.type === "stop");
-    const stopProb = stopEntry?.probability ?? 0;
+    for (const targetNodeId of selectedTargets) {
+      const targetNode = graph.getNode(targetNodeId);
+      if (!targetNode || state.visited.has(targetNodeId)) {
+        continue;
+      }
 
-    // Record trajectory step
-    const step: TrajectoryStep = {
-      stateSnapshot: {
-        currentNodeId: state.currentNodeId,
-        hopCount: state.hopCount,
-        budgetRemaining: state.budgetRemaining,
-        visitedCount: state.visited.size,
-        firedCount: state.fired.length,
-      },
-      candidates: distribution.map((d) => ({
-        action: d.action,
-        score: d.score,
-        probability: d.probability,
-        priorScore: d.action.type === "traverse" && state.currentNodeId === null ? d.action.seedScore : undefined,
-        learnedSeedWeight: d.action.type === "traverse" && state.currentNodeId === null
-          ? graph.getSeedWeight(d.action.targetNodeId)
-          : undefined,
-      })),
-      chosenAction: sampled.action,
-      chosenActionProbability: sampled.probability,
-      stopProbability: stopProb,
-    };
-    trajectory.push(step);
+      if (sourceNodeId !== null && graph.isVetoed(sourceNodeId, targetNodeId)) {
+        const reason = graph.getVetoReason(sourceNodeId, targetNodeId) ?? "inhibitory";
+        vetoedTargets.push({ targetNodeId, reason });
+        vetoedNodes.push({ nodeId: targetNodeId, reason });
+        continue;
+      }
 
-    // Execute action
-    if (sampled.action.type === "stop") {
-      break; // Terminal: STOP chosen
-    }
+      if (state.frontier.length >= maxFrontierSize || targetNode.tokenCount > state.budgetRemaining) {
+        break;
+      }
 
-    const targetNodeId = sampled.action.targetNodeId;
-    state.visited.add(targetNodeId);
-    state.hopCount++;
-
-    // Inhibitory veto check
-    if (state.currentNodeId && graph.isVetoed(state.currentNodeId, targetNodeId)) {
-      const reason = graph.getVetoReason(state.currentNodeId, targetNodeId) ?? "inhibitory";
-      vetoedNodes.push({ nodeId: targetNodeId, reason });
-      state.currentNodeId = targetNodeId; // Still move to the node, but don't fire it
-      continue;
-    }
-
-    // Fire node: add to context
-    const targetNode = graph.getNode(targetNodeId);
-    if (targetNode) {
+      state.visited.add(targetNodeId);
+      state.frontier.push(targetNodeId);
       state.fired.push(targetNodeId);
       state.budgetRemaining -= targetNode.tokenCount;
-
+      acceptedTargets.push(targetNodeId);
       firedNodes.push({
         nodeId: targetNode.id,
         kind: targetNode.kind,
@@ -208,16 +282,53 @@ export function traverse(options: TraverseOptions): TraverseResult {
       });
     }
 
-    state.currentNodeId = targetNodeId;
+    const expansion: TrajectoryExpansion = {
+      sourceNodeId,
+      expansionIndex,
+      frontierBefore,
+      frontierAfter: [...state.frontier],
+      budgetBefore,
+      budgetAfter: state.budgetRemaining,
+      substeps,
+      selectedTargets,
+      acceptedTargets,
+      vetoedTargets,
+    };
 
-    // Terminal: budget exhausted
-    if (state.budgetRemaining <= 0) break;
+    state.sourceNodeId = null;
+    state.reservedTokenCost = 0;
+    state.expansionCount++;
+    return expansion;
+  };
+
+  if (maxHops > 0) {
+    trajectory.push(expandSource(null, []));
   }
 
-  const contextChars = firedNodes.reduce((sum, n) => sum + n.content.length, 0);
+  while (
+    state.frontier.length > 0
+    && state.expansionCount < maxHops
+    && state.budgetRemaining > 0
+  ) {
+    const frontierBefore = [...state.frontier];
+    const nextSourceNodeId = state.frontier.shift();
+    if (!nextSourceNodeId) {
+      break;
+    }
+    trajectory.push(expandSource(nextSourceNodeId, frontierBefore));
+  }
 
-  const chosenSeed = seedScores.find((seed) => seed.chosen)?.nodeId ?? "none";
-  const footer = `Brain · ${seedScores.length} seeds · start ${chosenSeed} · ${state.hopCount} hops · ${firedNodes.length} fired · ${vetoedNodes.length} veto · ${contextChars} chars`;
+  const contextChars = firedNodes.reduce((sum, node) => sum + node.content.length, 0);
+  const selectedSeedIds = seedScores.filter((seed) => seed.selected).map((seed) => seed.nodeId);
+  const footer = [
+    "Brain",
+    `${seedScores.length} seed candidates`,
+    `${selectedSeedIds.length} seed picks`,
+    `${trajectory.length} expansions`,
+    `${firedNodes.length} fired`,
+    `${vetoedNodes.length} veto`,
+    `${contextChars} chars`,
+  ].join(" · ");
 
   return {
     firedNodes,

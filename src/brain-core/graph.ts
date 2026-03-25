@@ -219,33 +219,37 @@ export class BrainGraph {
    * At seed phase (currentNodeId === null), uses provided seeds.
    */
   getActionSet(
-    currentNodeId: string | null,
+    sourceNodeId: string | null,
     visited: Set<string>,
-    seeds?: Array<{ nodeId: string; score?: number }>,
+    options: {
+      seeds?: Array<{ nodeId: string; score?: number }>;
+      excludedTargets?: Set<string>;
+    } = {},
   ): TraversalAction[] {
     const actions: TraversalAction[] = [];
+    const excludedTargets = options.excludedTargets ?? new Set<string>();
 
-    if (currentNodeId === null) {
+    if (sourceNodeId === null) {
       // Seed phase: actions are the seed candidates
-      if (seeds) {
-        for (const seed of seeds) {
-          if (!visited.has(seed.nodeId)) {
+      if (options.seeds) {
+        for (const seed of options.seeds) {
+          if (!visited.has(seed.nodeId) && !excludedTargets.has(seed.nodeId)) {
             actions.push({ type: "traverse", targetNodeId: seed.nodeId, seedScore: seed.score });
           }
         }
       }
     } else {
       // Normal phase: neighbors via outgoing edges
-      const neighbors = this.getNeighbors(currentNodeId);
+      const neighbors = this.getNeighbors(sourceNodeId).sort();
       for (const neighborId of neighbors) {
-        if (!visited.has(neighborId)) {
+        if (!visited.has(neighborId) && !excludedTargets.has(neighborId)) {
           actions.push({ type: "traverse", targetNodeId: neighborId });
         }
       }
     }
 
-    // STOP is always available
-    actions.push({ type: "stop" });
+    // Local STOP is always available within an expansion.
+    actions.push({ type: "stop_local" });
     return actions;
   }
 

@@ -3,7 +3,7 @@
  */
 
 import { randomUUID } from "node:crypto";
-import type { Episode, TrajectoryStep, PolicyParams } from "./types.js";
+import type { Episode, PolicyParams } from "./types.js";
 import { DEFAULT_POLICY_PARAMS } from "./types.js";
 import type { BrainGraph } from "./graph.js";
 import type { TraverseResult } from "./traverse.js";
@@ -49,32 +49,43 @@ export function replayEpisode(
   const fired: string[] = [];
   let changed = false;
 
-  for (const step of episode.trajectory) {
-    if (step.chosenAction.type !== "traverse") continue;
+  for (const expansion of episode.trajectory) {
+    for (const substep of expansion.substeps) {
+      const actions = substep.candidates.map((candidate) => candidate.action);
+      const state = {
+        sourceNodeId: expansion.sourceNodeId,
+        queryEmbedding: episode.queryEmbedding,
+        frontier: [...substep.stateSnapshot.frontierNodeIds],
+        visited: new Set<string>(),
+        fired,
+        budgetRemaining: substep.stateSnapshot.budgetRemaining,
+        initialBudget: substep.stateSnapshot.initialBudget,
+        reservedTokenCost: substep.stateSnapshot.reservedTokenCost,
+        expansionCount: substep.stateSnapshot.expansionIndex,
+        maxHops: substep.stateSnapshot.maxHops,
+      };
 
-    const actions = step.candidates.map((c) => c.action);
-    const state = {
-      currentNodeId: step.stateSnapshot.currentNodeId,
-      queryEmbedding: episode.queryEmbedding,
-      visited: new Set<string>(),
-      fired,
-      budgetRemaining: step.stateSnapshot.budgetRemaining,
-      hopCount: step.stateSnapshot.hopCount,
-      maxHops: 8,
-    };
+      const newDist = softmaxPolicy(actions, state, graph, policyParams);
+      const originalChoice = substep.chosenAction;
+      const newTopAction = newDist.reduce(
+        (best, candidate) => candidate.probability > best.probability ? candidate : best,
+        newDist[0],
+      );
 
-    const newDist = softmaxPolicy(actions, state, graph, policyParams);
-    const originalChoice = step.chosenAction;
-    const newTopAction = newDist.reduce((best, d) => d.probability > best.probability ? d : best, newDist[0]);
+      if (
+        newTopAction.action.type !== originalChoice.type
+        || (
+          newTopAction.action.type === "traverse"
+          && originalChoice.type === "traverse"
+          && newTopAction.action.targetNodeId !== originalChoice.targetNodeId
+        )
+      ) {
+        changed = true;
+      }
 
-    if (newTopAction.action.type !== originalChoice.type ||
-        (newTopAction.action.type === "traverse" && originalChoice.type === "traverse" &&
-         newTopAction.action.targetNodeId !== originalChoice.targetNodeId)) {
-      changed = true;
-    }
-
-    if (step.chosenAction.type === "traverse") {
-      fired.push(step.chosenAction.targetNodeId);
+      if (substep.chosenAction.type === "traverse") {
+        fired.push(substep.chosenAction.targetNodeId);
+      }
     }
   }
 

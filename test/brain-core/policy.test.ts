@@ -33,30 +33,30 @@ function makeEdge(source: string, target: string, weight = 0.5): BrainEdge {
   };
 }
 
-function makeState(currentNodeId: string | null): TraversalState {
+function makeState(sourceNodeId: string | null): TraversalState {
   return {
-    currentNodeId,
+    sourceNodeId,
     queryEmbedding: new Float32Array([1, 0, 0]),
+    frontier: [],
     visited: new Set(),
     fired: [],
     budgetRemaining: 1000,
-    hopCount: 0,
+    initialBudget: 1000,
+    reservedTokenCost: 0,
+    expansionCount: 0,
     maxHops: 8,
   };
 }
 
 describe("policy", () => {
   describe("scoreAction", () => {
-    it("STOP score increases with budget depletion", () => {
+    it("stop_local score increases with budget depletion", () => {
       const graph = new BrainGraph();
-      const lowBudget = { ...makeState(null), budgetRemaining: 100, fired: ["a"], hopCount: 5 };
-      const highBudget = { ...makeState(null), budgetRemaining: 900, fired: ["a"], hopCount: 1 };
+      const lowBudget = { ...makeState(null), budgetRemaining: 100, expansionCount: 5 };
+      const highBudget = { ...makeState(null), budgetRemaining: 900, expansionCount: 1 };
 
-      // Add a node so fired list can resolve token count
-      graph.addNode({ ...makeNode("a"), tokenCount: 100 });
-
-      const scoreLow = scoreAction({ type: "stop" }, lowBudget, graph);
-      const scoreHigh = scoreAction({ type: "stop" }, highBudget, graph);
+      const scoreLow = scoreAction({ type: "stop_local" }, lowBudget, graph);
+      const scoreHigh = scoreAction({ type: "stop_local" }, highBudget, graph);
 
       expect(scoreLow).toBeGreaterThan(scoreHigh);
     });
@@ -134,29 +134,29 @@ describe("policy", () => {
     it("returns a valid action from the distribution", () => {
       const dist = [
         { action: { type: "traverse" as const, targetNodeId: "b" }, probability: 0.7 },
-        { action: { type: "stop" as const }, probability: 0.3 },
+        { action: { type: "stop_local" as const }, probability: 0.3 },
       ];
 
       const result = sampleAction(dist);
-      expect(result.action.type === "traverse" || result.action.type === "stop").toBe(true);
+      expect(result.action.type === "traverse" || result.action.type === "stop_local").toBe(true);
       expect(result.probability).toBeGreaterThan(0);
     });
 
     it("samples stochastically (not always argmax)", () => {
       const dist = [
         { action: { type: "traverse" as const, targetNodeId: "b" }, probability: 0.6 },
-        { action: { type: "stop" as const }, probability: 0.4 },
+        { action: { type: "stop_local" as const }, probability: 0.4 },
       ];
 
       // Run many samples — both actions should appear
-      const counts = { traverse: 0, stop: 0 };
+      const counts = { traverse: 0, stop_local: 0 };
       for (let i = 0; i < 200; i++) {
         const result = sampleAction(dist);
         counts[result.action.type]++;
       }
 
       expect(counts.traverse).toBeGreaterThan(0);
-      expect(counts.stop).toBeGreaterThan(0);
+      expect(counts.stop_local).toBeGreaterThan(0);
     });
   });
 

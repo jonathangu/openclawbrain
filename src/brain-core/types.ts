@@ -83,31 +83,37 @@ export interface BrainEdge {
  * Paper: S = {s_0, s_1, s_2, ...}
  */
 export interface TraversalState {
-  currentNodeId: string | null;   // null at seed phase (t=0)
+  sourceNodeId: string | null;    // null at seed phase (t=0 / __START__)
   queryEmbedding: Float32Array;
+  frontier: string[];
   visited: Set<string>;
   fired: string[];
   budgetRemaining: number;
-  hopCount: number;
+  initialBudget: number;
+  reservedTokenCost: number;
+  expansionCount: number;
   maxHops: number;
 }
 
 /**
  * Action a_t in the MDP.
  * Paper: A(s) ⊂ {a_0, a_1, a_2, ...}
- * Our action set: A(s) = { traverse(neighbor) } ∪ { STOP }
+ * Our action set: A(s) = { traverse(neighbor) } ∪ { stop_local }
  */
 export type TraversalAction =
   | { type: "traverse"; targetNodeId: string; seedScore?: number }
-  | { type: "stop" };
+  | { type: "stop_local" };
 
 export interface SeedScore {
   nodeId: string;
   priorScore: number;
   learnedSeedWeight: number;
-  policyScore: number;
-  probability: number;
-  chosen: boolean;
+  initialPolicyScore: number;
+  initialProbability: number;
+  latestPolicyScore: number;
+  latestProbability: number;
+  selected: boolean;
+  selectionSubstepIndex: number | null;
 }
 
 export interface SeedWeight {
@@ -117,27 +123,64 @@ export interface SeedWeight {
 }
 
 /**
- * One step of a recorded trajectory.
+ * One local selection substep inside a source-node expansion.
  * Captures the full candidate distribution for REINFORCE gradient computation.
  */
-export interface TrajectoryStep {
+export interface TrajectoryCandidate {
+  action: TraversalAction;
+  score: number;
+  probability: number;
+  priorScore?: number;
+  learnedSeedWeight?: number;
+}
+
+export interface TrajectoryStateSnapshot {
+  sourceNodeId: string | null;
+  expansionIndex: number;
+  selectionIndex: number;
+  budgetRemaining: number;
+  initialBudget: number;
+  reservedTokenCost: number;
+  maxHops: number;
+  frontierSize: number;
+  frontierNodeIds: string[];
+  visitedCount: number;
+  firedCount: number;
+}
+
+export interface TrajectorySubstep {
   stateSnapshot: {
-    currentNodeId: string | null;
-    hopCount: number;
+    sourceNodeId: string | null;
+    expansionIndex: number;
+    selectionIndex: number;
     budgetRemaining: number;
+    initialBudget: number;
+    reservedTokenCost: number;
+    maxHops: number;
+    frontierSize: number;
+    frontierNodeIds: string[];
     visitedCount: number;
     firedCount: number;
   };
-  candidates: Array<{
-    action: TraversalAction;
-    score: number;
-    probability: number;
-    priorScore?: number;
-    learnedSeedWeight?: number;
-  }>;
+  candidates: TrajectoryCandidate[];
   chosenAction: TraversalAction;
   chosenActionProbability: number;
   stopProbability: number;
+}
+
+export type TrajectoryStep = TrajectorySubstep;
+
+export interface TrajectoryExpansion {
+  sourceNodeId: string | null;
+  expansionIndex: number;
+  frontierBefore: string[];
+  frontierAfter: string[];
+  budgetBefore: number;
+  budgetAfter: number;
+  substeps: TrajectorySubstep[];
+  selectedTargets: string[];
+  acceptedTargets: string[];
+  vetoedTargets: Array<{ targetNodeId: string; reason: string }>;
 }
 
 // ═══════════════════════════════════════════
@@ -153,7 +196,7 @@ export interface Episode {
   conversationId: number | null;
   queryText: string;
   queryEmbedding: Float32Array | null;
-  trajectory: TrajectoryStep[];
+  trajectory: TrajectoryExpansion[];
   firedNodes: string[];
   vetoedNodes: string[];
   contextChars: number;
@@ -490,7 +533,9 @@ export interface DecisionRouteTrace {
   routerIdentity: string;
   candidateNodeIds: string[];
   selectedNodeIds: string[];
+  selectedTraversalNodeIds: string[];
   selectedPathNodeIds: string[];
+  selectedSeedNodeIds: string[];
   injectedNodeSummaries: DecisionTraceInjectedNodeSummary[];
   sourceSummary: {
     injectedCount: number;
@@ -503,12 +548,18 @@ export interface DecisionRouteTrace {
     queryChars: number;
     budgetChars: number;
     maxHops: number;
+    maxFanoutPerNode: number;
+    maxFrontierSize: number;
     seedCount: number;
+    seedSelectionCount: number;
     candidateCount: number;
     hopCount: number;
+    expansionCount: number;
+    selectionSubstepCount: number;
     firedCount: number;
     vetoedCount: number;
     chosenSeedNodeId: string | null;
+    selectedSeedNodeIds: string[];
     routeSelectionMs: number | null;
     embeddingMs: number | null;
     totalQueryMs: number | null;
@@ -522,7 +573,7 @@ export interface DecisionTrace {
   packVersion: number | null;
   queryText: string;
   seedScores: SeedScore[];
-  trajectory: TrajectoryStep[];
+  trajectory: TrajectoryExpansion[];
   firedNodes: string[];
   vetoedNodes: string[];
   contextChars: number;
@@ -548,7 +599,9 @@ export interface BrainObservationRouteMetadata {
   routerIdentity: string | null;
   candidateNodeIds: string[];
   selectedNodeIds: string[];
+  selectedTraversalNodeIds: string[];
   selectedPathNodeIds: string[];
+  selectedSeedNodeIds: string[];
   sourceSummary: DecisionRouteTrace["sourceSummary"] | null;
   selectionMetadata: DecisionRouteTrace["selectionMetadata"] | null;
 }
@@ -602,6 +655,8 @@ export interface BrainConfig {
   enabled: boolean;
   root: string;
   maxHops: number;
+  maxFanoutPerNode: number;
+  maxFrontierSize: number;
   servingTemperature: number;
   learningTemperature: number;
   budgetFraction: number;
@@ -636,6 +691,8 @@ export const DEFAULT_BRAIN_CONFIG: BrainConfig = {
   enabled: true,
   root: "",
   maxHops: 8,
+  maxFanoutPerNode: 4,
+  maxFrontierSize: 32,
   servingTemperature: 0.1,
   learningTemperature: 1.0,
   budgetFraction: 0.3,

@@ -166,11 +166,12 @@ function commandStatus(): void {
 function commandTrace(traceId?: string): void {
   const { store } = loadStore();
   const trace = traceId ? store.getTrace(traceId) : store.getRecentTraces(1)[0] ?? null;
-  const chosenSeed = trace?.seedScores.find((seed) => seed.chosen) ?? null;
+  const chosenSeeds = trace?.seedScores.filter((seed) => seed.selected) ?? [];
   printJson({
     command: "trace",
     trace,
-    chosenSeed,
+    chosenSeeds,
+    chosenSeed: chosenSeeds.length === 1 ? chosenSeeds[0] : null,
     finalSectionOrder: [
       "correction_cards",
       "route_selected_evidence",
