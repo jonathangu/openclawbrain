@@ -2,16 +2,17 @@
 
 Plugin and runtime payload for OpenClawBrain.
 
-Install it together with `@openclawbrain/cli`. The public install story is three commands to install or update, then one command to verify.
+Install it together with `@openclawbrain/cli`. The public install story is three commands to install or update, one command to verify quickly, and one proof command when you need a durable operator bundle.
 
 ```bash
 openclaw plugins install @openclawbrain/openclaw
 npx @openclawbrain/cli install --openclaw-home ~/.openclaw
 openclaw gateway restart
 npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
 ```
 
-The first three commands install or update OpenClawBrain. The last command verifies the selected OpenClaw home.
+The first three commands install or update OpenClawBrain. `status --detailed` is the quick verify surface. `proof` writes one durable operator bundle for the selected OpenClaw home.
 
 ## What this package contains
 

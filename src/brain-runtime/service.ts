@@ -454,6 +454,7 @@ export class BrainService {
     canonicalInstruction: string;
     sourceQuote: string;
     conversationId?: number;
+    episodeId?: string;
     sourceMessageId?: number;
     tags?: string[];
     metadata?: Record<string, unknown>;
@@ -462,6 +463,7 @@ export class BrainService {
     return this.teach({
       instruction: params.canonicalInstruction,
       conversationId: params.conversationId,
+      episodeId: params.episodeId,
       kind: "correction",
       tags: params.tags,
       metadata: {
@@ -499,6 +501,7 @@ export class BrainService {
       canonicalInstruction: params.proposal.canonicalInstruction,
       sourceQuote: params.observation.userText,
       conversationId: params.observation.conversationId,
+      episodeId: params.observation.episodeId,
       sourceMessageId: params.observation.messageId,
       tags: ["user-correction", "auto"],
       metadata: {
@@ -555,7 +558,11 @@ export class BrainService {
 
   async observeUserTurn(observation: UserMemoryObservation): Promise<void> {
     if (!isSystemMessage(observation.userText)) {
-      this.store.attachObservationFollowUp(observation.conversationId, observation.userText);
+      this.store.attachObservationFollowUp(
+        observation.conversationId,
+        observation.userText,
+        observation.episodeId,
+      );
     }
     if (!this.embeddingClient) {
       return;
@@ -586,6 +593,7 @@ export class BrainService {
   async teach(params: {
     instruction: string;
     conversationId?: number;
+    episodeId?: string;
     kind?: string;
     tags?: string[];
     metadata?: Record<string, unknown>;
@@ -630,11 +638,28 @@ export class BrainService {
           ? true
           : episode.conversationId === params.conversationId
       ));
+    const requestedEpisodeId = typeof params.episodeId === "string" ? params.episodeId.trim() : "";
+    const explicitEpisode = requestedEpisodeId.length > 0
+      ? this.store.getEpisode(requestedEpisodeId)
+      : null;
     const exactEpisode =
-      typeof params.conversationId === "number"
-        ? this.store.getEpisode(this.latestEpisodeByConversation.get(params.conversationId) ?? "")
-        : null;
+      explicitEpisode && (
+        params.conversationId === undefined
+          || explicitEpisode.conversationId === params.conversationId
+      )
+        ? explicitEpisode
+        : typeof params.conversationId === "number"
+          ? this.store.getEpisode(this.latestEpisodeByConversation.get(params.conversationId) ?? "")
+          : null;
     const recentEpisode = exactEpisode ?? recentEpisodes[0] ?? null;
+    const episodeAttributionMode =
+      explicitEpisode && exactEpisode?.id === explicitEpisode.id
+        ? "explicit_episode"
+        : exactEpisode
+          ? "latest_conversation_episode"
+          : recentEpisode
+            ? "recent_conversation_fallback"
+            : "no_episode";
     const connectedNodes = new Set<string>();
     const firstTraversalStep = recentEpisode?.trajectory.find(
       (step) => step.chosenAction.type === "traverse",
@@ -735,6 +760,8 @@ export class BrainService {
               ...provenanceMetadata,
               taughtNodeId: node.id,
               correctedEpisodeId: episode.id,
+              episodeAttributionMode,
+              episodeAttributionRequestedId: requestedEpisodeId || null,
               extractor: teachVia ?? "brain_teach",
               via: teachVia ?? "brain_teach",
               traceId: matchedTrace.id,

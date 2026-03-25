@@ -155,7 +155,7 @@ As of the current trunk:
 - **Level 1:** ✅ real — mechanism tests pass
 - **Level 2:** ✅ real — replay gate exists, mutation bundles implemented
 - **Level 3:** ✅ real — shadow mode recorded with episode/trace ids
-- **Level 4:** ✅ frozen — sterile host harness passes all 7 assertions
+- **Level 4:** ✅ frozen — the current public install / attach / `status --detailed` / `proof` lane is frozen on the exercised host surface
 
 **Evidence bundles available:**
 - `docs/evidence/2026-03-16/4ccd71a22418b9170128b8d948f5a95801a10380/` — sterile lane run with all 7 assertions passing:
@@ -166,12 +166,16 @@ As of the current trunk:
   - `shadowMode`: PASS (no injected context visible)
   - `noEmbedding`: PASS
   - `uninitialized`: PASS
+- Current operator proof lane: `npx @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart`
+  - captures `summary.md`, `steps.json`, `verdict.json`, raw step logs, startup breadcrumbs, and runtime-load-proof snapshots
+  - freezes install/runtime/reporting truth for the exercised host surface
 
 **Remaining boundaries (honestly scoped):**
 - Raw prompt-driven `openclaw agent --local` is **not** the release proof boundary for `brain_teach` — the deterministic session-bound harness is the proof surface
-- Full end-to-end host-surface proof bundle capture is pending host-seam adaptation in the sterile lane
+- Frozen operator proof does **not** yet imply universal dated citations, exact attribution on every learning/supervision path, same-gateway multi-profile support, or broad live answer-quality gains
+- Exact promoted-pack ids and traced counts are environment-specific proof details, not stable public constants
 
-The repo is now past theory-only and has frozen evidence for core runtime claims.
+The repo is now past theory-only and has frozen evidence for the operator install/runtime lane. The next proof rungs are about attribution clarity and live gain, not basic host proof capture.
 
 ## What CI should eventually enforce
 

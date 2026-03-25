@@ -1,6 +1,7 @@
 export interface ExtensionCompileInput {
     activationRoot: string;
     message: string;
+    maxContextChars?: number;
     sessionId?: string;
     channel?: string;
     _serveRouteBreadcrumbs?: {
@@ -33,6 +34,7 @@ export interface ExtensionRegistrationApi {
 }
 export interface NormalizedPromptBuildEvent {
     message: string;
+    maxContextChars?: number;
     sessionId?: string;
     channel?: string;
     warnings: ExtensionDiagnostic[];

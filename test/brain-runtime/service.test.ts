@@ -665,6 +665,100 @@ describe("BrainService", () => {
     });
   });
 
+  it("prefers the observed episode id when attaching follow-up text and auto-correction supervision", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-episode-attribution-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-episode-attribution-state-");
+    writeFileSync(
+      join(workspaceRoot, "CODEWORD.md"),
+      "# Demo\n\nThe codeword is hippo.\n",
+      "utf8",
+    );
+
+    const fetchMock = vi.fn(async (_input: unknown, init?: { body?: unknown }) => {
+      const rawBody = typeof init?.body === "string" ? init.body : "{}";
+      const parsed = JSON.parse(rawBody) as { input?: string | string[] };
+      const input = Array.isArray(parsed.input) ? parsed.input[0] : parsed.input ?? "";
+      return {
+        ok: true,
+        json: async () => ({ data: [{ embedding: Array.from(embed(String(input))) }] }),
+      };
+    });
+    vi.stubGlobal("fetch", fetchMock as unknown as typeof fetch);
+
+    const service = new BrainService({ deps: createDeps(brainRoot) });
+    await service.init({
+      workspaceRoot,
+      embedFn: async (text) => embed(text),
+    });
+
+    const first = await service.query({
+      conversationId: 23,
+      queryText: "what's the codeword?",
+      budgetChars: 4000,
+      queryEmbedding: embed("what's the codeword?"),
+    });
+    await service.recordTurnObservation({
+      episodeId: first?.episode.id,
+      assistantResponse: "The codeword is hippo.",
+      toolResults: [],
+    });
+
+    const second = await service.query({
+      conversationId: 23,
+      queryText: "what's the codeword again?",
+      budgetChars: 4000,
+      queryEmbedding: embed("what's the codeword again?"),
+    });
+    await service.recordTurnObservation({
+      episodeId: second?.episode.id,
+      assistantResponse: "The codeword is hippo.",
+      toolResults: [],
+    });
+
+    await service.observeUserTurn({
+      conversationId: 23,
+      messageId: 5,
+      episodeId: first?.episode.id,
+      userText: "wrong, the codeword is giraffe",
+      recentMessages: [
+        { role: "assistant", content: "The codeword is hippo." },
+        { role: "user", content: "what's the codeword?" },
+      ],
+      recentSummaries: [],
+    });
+
+    const privateService = service as unknown as {
+      store: {
+        getObservationForEpisode: (episodeId: string) => { followUpText: string | null; status: string } | null;
+      };
+    };
+    expect(privateService.store.getObservationForEpisode(first?.episode.id ?? "")).toMatchObject({
+      followUpText: "wrong, the codeword is giraffe",
+      status: "pending_teacher",
+    });
+    expect(privateService.store.getObservationForEpisode(second?.episode.id ?? "")).toMatchObject({
+      followUpText: null,
+      status: "pending_followup",
+    });
+
+    const firstTrace = await service.getTrace(first?.trace.id);
+    const secondTrace = await service.getTrace(second?.trace.id);
+    expect(firstTrace?.supervision).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          kind: "teach_correction",
+          episodeId: first?.episode.id,
+          metadata: expect.objectContaining({
+            correctedEpisodeId: first?.episode.id,
+            episodeAttributionMode: "explicit_episode",
+            episodeAttributionRequestedId: first?.episode.id,
+          }),
+        }),
+      ]),
+    );
+    expect(secondTrace?.supervision ?? []).toHaveLength(0);
+  });
+
   it("queues async user-correction proposals off-path and commits high-confidence results", async () => {
     const workspaceRoot = makeTempDir("openclawbrain-async-codeword-workspace-");
     const brainRoot = makeTempDir("openclawbrain-async-codeword-state-");

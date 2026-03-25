@@ -35,6 +35,7 @@ export function normalizePromptBuildEvent(event) {
     const warnings = [];
     const sessionId = normalizeOptionalScalarField(event.sessionId, "sessionId", warnings);
     const channel = normalizeOptionalScalarField(event.channel, "channel", warnings);
+    const maxContextChars = normalizeOptionalNonNegativeIntegerField(event.maxContextChars, "maxContextChars", warnings);
     const promptFallback = extractTextContent(event.prompt);
     let extractedMessage = promptFallback ?? "";
     if (messages.length === 0) {
@@ -53,6 +54,7 @@ export function normalizePromptBuildEvent(event) {
         ok: true,
         event: {
             message: extractedMessage,
+            ...(maxContextChars !== undefined ? { maxContextChars } : {}),
             ...(sessionId !== undefined ? { sessionId } : {}),
             ...(channel !== undefined ? { channel } : {}),
             warnings
@@ -86,6 +88,7 @@ export function createBeforePromptBuildHandler(input) {
             const result = input.compileRuntimeContext({
                 activationRoot: input.activationRoot,
                 message: normalized.event.message,
+                ...(normalized.event.maxContextChars !== undefined ? { maxContextChars: normalized.event.maxContextChars } : {}),
                 ...(normalized.event.sessionId !== undefined ? { sessionId: normalized.event.sessionId } : {}),
                 ...(normalized.event.channel !== undefined ? { channel: normalized.event.channel } : {}),
                 ...(input.extensionEntryPath === undefined
@@ -141,6 +144,35 @@ function normalizeOptionalScalarField(value, fieldName, warnings) {
     }
     if (typeof value === "number" || typeof value === "bigint" || typeof value === "boolean") {
         return String(value);
+    }
+    warnings.push({
+        key: `runtime-${fieldName}-ignored`,
+        message: `[openclawbrain] fail-open: ignored unsupported before_prompt_build ${fieldName} ` +
+            `(${fieldName}=${describeValue(value)})`
+    });
+    return undefined;
+}
+function normalizeOptionalNonNegativeIntegerField(value, fieldName, warnings) {
+    if (value === undefined || value === null) {
+        return undefined;
+    }
+    if (typeof value === "number" && Number.isSafeInteger(value) && value >= 0) {
+        return value;
+    }
+    if (typeof value === "bigint" && value >= 0n && value <= BigInt(Number.MAX_SAFE_INTEGER)) {
+        return Number(value);
+    }
+    if (typeof value === "string") {
+        const trimmed = value.trim();
+        if (trimmed.length === 0) {
+            return undefined;
+        }
+        if (/^\d+$/.test(trimmed)) {
+            const parsed = Number(trimmed);
+            if (Number.isSafeInteger(parsed)) {
+                return parsed;
+            }
+        }
     }
     warnings.push({
         key: `runtime-${fieldName}-ignored`,

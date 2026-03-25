@@ -265,6 +265,10 @@ function appendCompileServeRouteDecisionLog(input) {
     syntheticTurn.maxContextBlocks = input.compileInput.maxContextBlocks;
   }
 
+  if (input.compileInput.maxContextChars !== undefined) {
+    syntheticTurn.maxContextChars = input.compileInput.maxContextChars;
+  }
+
   if (input.compileInput.budgetStrategy === "fixed_v1" || input.compileInput.budgetStrategy === "empirical_v1") {
     syntheticTurn.budgetStrategy = input.compileInput.budgetStrategy;
   }

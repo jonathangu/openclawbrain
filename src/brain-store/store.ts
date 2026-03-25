@@ -758,13 +758,30 @@ export class BrainStore {
     return counts;
   }
 
-  attachObservationFollowUp(conversationId: number, followUpText: string): BrainObservation | null {
+  attachObservationFollowUp(
+    conversationId: number,
+    followUpText: string,
+    episodeId?: string | null,
+  ): BrainObservation | null {
     const normalized = followUpText.trim();
     if (!normalized) {
       return null;
     }
 
-    const row = this.db.prepare(`
+    const normalizedEpisodeId = typeof episodeId === "string" ? episodeId.trim() : "";
+    const row =
+      normalizedEpisodeId.length > 0
+        ? this.db.prepare(`
+      SELECT id
+      FROM brain_observations
+      WHERE episode_id = ?
+        AND conversation_id = ?
+        AND status IN ('pending_followup', 'pending_teacher')
+        AND follow_up_text IS NULL
+      LIMIT 1
+    `).get(normalizedEpisodeId, conversationId) as { id?: string } | undefined
+        : undefined;
+    const fallbackRow = this.db.prepare(`
       SELECT id
       FROM brain_observations
       WHERE conversation_id = ?
@@ -773,7 +790,8 @@ export class BrainStore {
       ORDER BY created_at DESC
       LIMIT 1
     `).get(conversationId) as { id?: string } | undefined;
-    if (!row?.id) {
+    const targetRow = row?.id ? row : fallbackRow;
+    if (!targetRow?.id) {
       return null;
     }
 
@@ -782,8 +800,8 @@ export class BrainStore {
       UPDATE brain_observations
       SET follow_up_text = ?, status = 'pending_teacher', updated_at = ?
       WHERE id = ?
-    `).run(normalized, now, row.id);
-    return this.getObservation(row.id);
+    `).run(normalized, now, targetRow.id);
+    return this.getObservation(targetRow.id);
   }
 
   completeObservationEvaluation(params: {

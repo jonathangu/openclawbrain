@@ -10,9 +10,9 @@ Use these public labels consistently:
 Current truthful state:
 - **paper-faithful core:** yes
 - **live-path implemented:** yes
-- **operationally validated:** sterile harness passes 7/7; full host-surface proof bundle pending host-seam adaptation
+- **operationally validated:** yes — the current public install / attach / `status --detailed` / `proof` lane is proven on the exercised host surface, and detailed status reports real learned-pack metadata.
 
-That is the contract. The repo is beyond "foundation only," with a paper-faithful core and real live runtime. The sterile host harness passes all 7 runtime assertions. The remaining gap is the full end-to-end host-surface proof bundle capture.
+That is the contract. The repo is beyond "foundation only," with a paper-faithful core, a real live runtime path, and an operator-proof lane that now lands durable bundles. The remaining gaps are not basic host proof capture anymore; they are narrower truth gaps around attribution, universal citation surfaces, multi-profile boundaries, bundle-level replay evaluation, and live answer-quality proof.
 
 ## 1. True in code now
 
@@ -57,12 +57,13 @@ These are real enough to build on, but not frozen enough to oversell.
 - Truth:
   - deterministic session-bound `brain_teach` proof exists
   - deterministic runtime proof for teach retrieval and worker-down fail-open exists
-  - OpenClawBrain now includes a hook-based compatibility bridge for hosts where `api.registerContextEngine` is gone
+  - the public operator lane now captures durable proof bundles with startup breadcrumbs and runtime-load-proof snapshots
+  - OpenClawBrain includes a hook-based compatibility bridge for hosts where `api.registerContextEngine` is gone
   - the sterile harness no longer writes the dead `plugins.slots.contextEngine` slot
 - Boundary:
   - raw prompt-driven `openclaw agent --local` is **not** the release proof boundary for `brain_teach`
-  - the full sterile host harness is still **not frozen end to end** because the host-turn proof bundle still stalls before completion on the sterile boundary
-  - until that host lane is frozen, short-static host semantics and the final narrow worker-down host claim are still not closed at the host boundary
+  - frozen operator proof on the exercised host surface does **not** imply same-gateway multi-profile support, shared-write safety, or broad cross-platform validation
+  - the operator proof lane proves install/runtime/reporting truth; it does **not** by itself prove live answer-quality gains or universal dated memory citations
 
 ### Child-worker serving boundary
 - Current files: `src/brain-runtime/service.ts`, `src/brain-runtime/worker-supervisor.ts`, `src/brain-worker/child-runner.ts`, `src/brain-worker/protocol.ts`, `src/brain-cli.ts`
@@ -85,23 +86,26 @@ These are real enough to build on, but not frozen enough to oversell.
   - `npx @openclawbrain/cli install --openclaw-home ~/.openclaw`
   - `openclaw gateway restart`
   - `npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed`
-- Boundary: CLI `0.4.4` fixes the reinstall/config seam directly. The host-side mismatch warning is fixed on patched OpenClaw hosts, but release verification and docs alignment should still keep that host-release caveat visible until the host patch is broadly shipped.
+  - `npx @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart`
+- Boundary: older OpenClaw hosts may still emit the historical plugin-id mismatch warning during install. Treat that warning as cosmetic only when the canonical status/proof surfaces are healthy. CI-enforced release proof and broader host coverage are still open work.
 
 ## 3. Not done yet
 
 These are still active work and must not be described as complete.
 
-- **Frozen end-to-end host-surface proof on the current host seam**
-  - Required truth before done: the sterile host harness must complete again, and the resulting artifacts must freeze the actual current host claims rather than older seam failures.
+- **Universal attribution and citation surface**
+  - Required truth before done: every important recalled memory or learning update should expose a clean human-readable provenance surface for where it came from, when it came from, why it was selected, and why it affected learning.
 - **Bundle-based mutation evaluation with clear pass/fail explanations**
   - Primary files: `src/brain-core/mutator.ts`, `src/brain-worker/worker.ts`, `src/brain-store/store.ts`, `src/brain-store/migrations.ts`
 - **CI-enforced proof ladder / release gates**
   - Primary files: future workflow surfaces, `package.json`, `docs/EVIDENCE.md`
-- **Host/plugin id alignment for the split packages**
-  - Primary files: `packages/openclaw/openclaw.plugin.json`, `packages/openclaw/package.json`, `README.md`, docs packaging boundary
+- **Same-gateway multi-profile and shared-write proof**
+  - Primary files: attachment truth surfaces, install docs, future validation harnesses
+- **Frozen live-gain proof beyond operator install/runtime reporting**
+  - Primary files: future benchmark/live-proof artifacts, repo/site proof surfaces
 - **Boring install / validation / recovery path for another operator**
   - Primary files: `README.md`, `docs/configuration.md`, `openclaw.plugin.json`, validation scripts
 
 ## Safe public summary
 
-> OpenClawBrain v2 already has a paper-faithful routing core, a real live runtime path, and a published split-package operator lane. The remaining work is mainly host-surface proof, release engineering, bundle-level mutation evaluation, plugin-id seam cleanup, and cleaner operator truth.
+> OpenClawBrain v2 already has a paper-faithful routing core, a real live runtime path, and a frozen operator install/runtime/proof lane. The remaining work is mainly attribution and citation truth, bundle-level mutation evaluation, broader host/profile validation, CI-enforced proof gates, and a narrower live-gain proof rung.

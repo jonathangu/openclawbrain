@@ -248,7 +248,7 @@ export function appendServeTimeRouteDecisionLog(input) {
         requestedBudget: {
             modeRequested: input.turn.mode ?? "heuristic",
             maxContextBlocks: effectiveMaxContextBlocks,
-            maxContextChars: null
+            maxContextChars: input.turn.maxContextChars ?? null
         },
         actualBudget: {
             modeEffective: input.compileResult.ok ? input.compileResult.compileResponse.diagnostics.modeEffective : null,

@@ -22,6 +22,7 @@ interface RuntimeTurnLike {
     createdAt?: string | null;
     sequenceStart?: number | null;
     maxContextBlocks?: number;
+    maxContextChars?: number;
     budgetStrategy?: "fixed_v1" | "empirical_v1";
     mode?: RouteMode;
     runtimeHints?: readonly string[];
