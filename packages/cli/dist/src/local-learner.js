@@ -3670,7 +3670,11 @@ export function buildGraphLocalActionSet(nodeBlockId, neighborBlockIds, graph, v
 // TrajectoryStepV1, TrajectoryV1 defined below in PG5 section
 export const STOP_ACTION_ID = "__STOP__";
 const STOP_ACTION = STOP_ACTION_ID;
+const STOP_ACTION_UPDATE_SEPARATOR = "::";
 const DEFAULT_STOP_BIAS = 0.0;
+export function buildStopActionUpdateBlockId(nodeBlockId) {
+    return `${nodeBlockId}${STOP_ACTION_UPDATE_SEPARATOR}${STOP_ACTION_ID}`;
+}
 const DEFAULT_TAU = 1.0;
 const DEFAULT_BASELINE_ALPHA = 0.05;
 const MAX_TRAJECTORY_LENGTH = 20;
@@ -3741,15 +3745,12 @@ export function computeTrajectoryPolicyGradient(trajectory, adjacency, graph, ve
                         grad = (1 / tau) * (-prob);
                     }
                 }
-                tailGradient.set(j, (tailGradient.get(j) ?? 0) + grad);
+                const gradientKey = j === STOP_ACTION_ID ? buildStopActionUpdateBlockId(step.nodeBlockId) : j;
+                tailGradient.set(gradientKey, (tailGradient.get(gradientKey) ?? 0) + grad);
             }
         }
         // Weight by advantage and pgScale, accumulate into updates
         for (const [blockId, grad] of tailGradient) {
-            // Skip STOP action — it has no learnable weight
-            if (blockId === STOP_ACTION_ID) {
-                continue;
-            }
             const scaledDelta = advantage * grad * pgScale;
             const current = updates.get(blockId);
             if (current === undefined) {
@@ -4587,13 +4588,12 @@ function computeTrajectoryPolicyGradientV2(trajectory, adjacency, graph, vectors
                 const grad = neighborId === actionKey
                     ? (1 / tau) * (1 - prob)
                     : (1 / tau) * (-prob);
-                tailGradient.set(neighborId, (tailGradient.get(neighborId) ?? 0) + grad);
+                const gradientKey = neighborId === STOP_ACTION ? buildStopActionUpdateBlockId(step.nodeBlockId) : neighborId;
+                tailGradient.set(gradientKey, (tailGradient.get(gradientKey) ?? 0) + grad);
             }
         }
         // Weight by advantage and pgScale
         for (const [blockId, grad] of tailGradient) {
-            if (blockId === STOP_ACTION)
-                continue; // don't update virtual STOP
             const delta = roundPolicyGradientValue(advantage * grad * pgScale);
             if (delta === 0)
                 continue;

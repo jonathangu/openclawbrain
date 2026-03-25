@@ -403,6 +403,7 @@ export declare function buildGraphLocalActionSet(nodeBlockId: string, neighborBl
     queryVector: Record<string, number>;
 }, tau: number, stopBias?: number): GraphLocalActionSet;
 export declare const STOP_ACTION_ID = "__STOP__";
+export declare function buildStopActionUpdateBlockId(nodeBlockId: string): string;
 export declare function createDefaultBaselineState(alpha?: number): BaselineStateV1;
 /**
  * EMA update: on first observation use the raw outcome; thereafter blend.

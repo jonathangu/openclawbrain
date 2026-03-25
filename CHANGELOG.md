@@ -2,6 +2,27 @@
 
 Release history for the published OpenClawBrain packages. The README and operator docs keep the install lane unpinned; release notes carry version-specific detail.
 
+## 0.4.13
+
+`0.4.13` completes the split-package STOP_LOCAL release lane: the split public install path now carries learned source-specific STOP_LOCAL updates through the CLI learner and the runtime graph-walk compiler.
+
+**Packages**
+
+- `@openclawbrain/compiler@0.3.5`
+- `@openclawbrain/openclaw@0.4.2`
+- `@openclawbrain/cli@0.4.13`
+
+**Changes**
+
+- split-package learner now emits source-specific learned STOP_LOCAL policy updates instead of treating STOP as a virtual no-op action
+- graph-walk compilation now respects learned STOP_LOCAL updates when deciding whether to keep expanding from a source block
+- canonical split package dependencies now pin the STOP-aware compiler patch so install/upgrade behavior is truthful
+- adds focused proof coverage for source-specific STOP updates and graph-walk halt behavior
+
+**Full release note**
+
+- [docs/release-notes-0.4.13.md](docs/release-notes-0.4.13.md)
+
 ## 0.3.6
 
 `0.3.6` is a compatibility-package patch release that carries the unified learned local branching update for older combined-package installs.
