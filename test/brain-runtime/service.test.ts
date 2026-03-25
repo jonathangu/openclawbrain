@@ -2,6 +2,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { BrainAssemblerExtension } from "../../src/brain-runtime/assembler-extension.js";
 import { BrainService } from "../../src/brain-runtime/service.js";
 import type { LcmDependencies } from "../../src/types.js";
 
@@ -227,6 +228,99 @@ describe("BrainService", () => {
       droppedChars: 72,
       contextClipped: true,
     });
+  });
+
+  it("persists post-injection clip attribution through trace and observation metadata", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-attribution-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-attribution-state-");
+    writeFileSync(
+      join(workspaceRoot, "PLAYBOOK.md"),
+      "# Pull Requests\n\nUse gh pr create for pull request workflows and include the exact flags required by the repo automation so the compact route summary stays long enough to exercise clipping.\n",
+      "utf8",
+    );
+
+    const service = new BrainService({
+      deps: createDeps(brainRoot),
+    });
+    await service.init({
+      workspaceRoot,
+      embedFn: async (text) => embed(text),
+    });
+    (service as unknown as { embeddingClient: (text: string) => Promise<Float32Array> }).embeddingClient = async (text: string) => embed(text);
+
+    const extension = new BrainAssemblerExtension(service);
+    const assembled = {
+      messages: [{ role: "user", content: "live tail" }],
+      estimatedTokens: 2,
+      stats: {
+        rawMessageCount: 1,
+        summaryCount: 0,
+        totalContextItems: 1,
+      },
+    };
+
+    const result = await extension.augmentAssembly({
+      conversationId: 42,
+      tokenBudget: 4096,
+      maxContextChars: 120,
+      assembled,
+      liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
+    });
+
+    expect(result.brainDecision).toEqual(expect.objectContaining({
+      mode: "use_brain",
+      episodeId: expect.any(String),
+      traceId: expect.any(String),
+      maxContextChars: 120,
+      injectedChars: expect.any(Number),
+      droppedChars: expect.any(Number),
+      contextClipped: true,
+    }));
+
+    const trace = await service.getTrace(String(result.brainDecision?.traceId ?? ""));
+    expect(trace?.routeTrace?.selectionMetadata).toMatchObject({
+      budgetChars: 120,
+      maxContextChars: 120,
+      injectedChars: expect.any(Number),
+      droppedChars: expect.any(Number),
+      contextClipped: true,
+    });
+    expect((trace?.routeTrace?.selectionMetadata.injectedChars ?? 0)).toBeLessThanOrEqual(120);
+    expect(trace?.routeTrace?.selectionMetadata.droppedChars).toBeGreaterThan(0);
+
+    await service.recordTurnObservation({
+      episodeId: String(result.brainDecision?.episodeId ?? ""),
+      assistantResponse: "Use `gh pr create` to open the pull request.",
+      toolResults: [],
+    });
+
+    const observation = (
+      service as unknown as {
+        store: { getObservationForEpisode: (episodeId: string) => Record<string, unknown> | null };
+      }
+    ).store.getObservationForEpisode(String(result.brainDecision?.episodeId ?? ""));
+
+    expect(observation).toMatchObject({
+      traceId: result.brainDecision?.traceId,
+      routeMetadata: {
+        selectionMetadata: {
+          budgetChars: 120,
+          maxContextChars: 120,
+          injectedChars: expect.any(Number),
+          droppedChars: expect.any(Number),
+          contextClipped: true,
+        },
+      },
+    });
+
+    const status = await service.status();
+    expect(status.lastTraceSelectionMetadata).toEqual(expect.objectContaining({
+      budgetChars: 120,
+      maxContextChars: 120,
+      injectedChars: expect.any(Number),
+      droppedChars: expect.any(Number),
+      contextClipped: true,
+    }));
   });
 
   it("records turn observations, attaches next-user follow-up, and surfaces teacher supervision in status", async () => {

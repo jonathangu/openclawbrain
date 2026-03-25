@@ -107,7 +107,34 @@ describe("teacher observation plumbing", () => {
       assistantResponse: expect.stringContaining("gh pr create"),
       nextUserTurn: "That worked, thanks.",
     });
+    expect(input?.routeMetadata.selectionMetadata).not.toHaveProperty("maxContextChars");
+    expect(input?.routeMetadata.selectionMetadata).not.toHaveProperty("contextClipped");
     expect(isTeacherEligibleObservation(makeObservation())).toBe(true);
+  });
+
+  it("preserves persisted post-injection clip attribution in teacher input", () => {
+    const observation = makeObservation({
+      routeMetadata: {
+        ...makeObservation().routeMetadata,
+        selectionMetadata: {
+          ...makeObservation().routeMetadata.selectionMetadata!,
+          maxContextChars: 240,
+          injectedChars: 180,
+          droppedChars: 72,
+          contextClipped: true,
+        },
+      },
+    });
+
+    const input = materializeTeacherLabelInput(observation);
+
+    expect(input?.routeMetadata.selectionMetadata).toMatchObject({
+      budgetChars: 4000,
+      maxContextChars: 240,
+      injectedChars: 180,
+      droppedChars: 72,
+      contextClipped: true,
+    });
   });
 
   it("rejects observations without a teacher-eligible query", () => {

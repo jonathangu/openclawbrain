@@ -25,6 +25,7 @@ import type {
   MutationStatus,
   BundleEvaluationVerdict,
   DecisionTrace,
+  DecisionRouteTrace,
   BrainEvidence,
   BrainEvidenceKind,
   BrainEvidenceResolution,
@@ -1239,6 +1240,40 @@ export class BrainStore {
       JSON.stringify(trace.seedScores), JSON.stringify(trace.trajectory),
       JSON.stringify(trace.firedNodes), JSON.stringify(trace.vetoedNodes),
       trace.contextChars, trace.footer, JSON.stringify(trace.routeTrace ?? null), trace.createdAt,
+    );
+  }
+
+  updateTraceSelectionMetadata(
+    traceId: string,
+    selectionMetadata: Partial<DecisionRouteTrace["selectionMetadata"]>,
+  ): void {
+    const row = this.db.prepare(`
+      SELECT route_trace_json
+      FROM brain_traces
+      WHERE id = ?
+    `).get(traceId) as { route_trace_json?: string } | undefined;
+    if (!row || row.route_trace_json === undefined) {
+      return;
+    }
+
+    const routeTrace = JSON.parse(row.route_trace_json || "null") as DecisionRouteTrace | null;
+    if (!routeTrace?.selectionMetadata) {
+      return;
+    }
+
+    this.db.prepare(`
+      UPDATE brain_traces
+      SET route_trace_json = ?
+      WHERE id = ?
+    `).run(
+      JSON.stringify({
+        ...routeTrace,
+        selectionMetadata: {
+          ...routeTrace.selectionMetadata,
+          ...selectionMetadata,
+        },
+      }),
+      traceId,
     );
   }
 

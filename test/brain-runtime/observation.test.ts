@@ -2,6 +2,9 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { materializeTeacherLabelInput } from "../../src/brain-core/teacher.js";
+import type { BrainObservation } from "../../src/brain-core/types.js";
+import { BrainAssemblerExtension } from "../../src/brain-runtime/assembler-extension.js";
 import { BrainService } from "../../src/brain-runtime/service.js";
 import type { LcmDependencies } from "../../src/types.js";
 
@@ -159,6 +162,88 @@ describe("BrainService observations", () => {
         }),
       ],
       status: "pending_followup",
+    });
+  });
+
+  it("persists clipped assembly attribution through trace, observation, and teacher input", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-clipped-observation-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-clipped-observation-state-");
+    writeFileSync(
+      join(workspaceRoot, "PLAYBOOK.md"),
+      [
+        "# Pull Requests",
+        "",
+        "Use gh pr create for pull request workflows.",
+        "Include the exact base branch, reviewer expectations, rollout notes, and verification steps.",
+        "Keep the explanation operator-auditable with enough detail to exceed compact clip thresholds.",
+        "Repeat the operator-proof guidance so the formatted brain block is long enough to clip in tests.",
+        "Use gh pr create for pull request workflows and include the exact validation evidence.",
+      ].join("\n"),
+      "utf8",
+    );
+
+    const service = new BrainService({ deps: createDeps(brainRoot) });
+    await service.init({
+      workspaceRoot,
+      embedFn: async (text) => embed(text),
+    });
+    (service as unknown as { embeddingClient: (text: string) => Promise<Float32Array> }).embeddingClient = async (text: string) => embed(text);
+
+    const extension = new BrainAssemblerExtension(service);
+    const assembly = await extension.augmentAssembly({
+      conversationId: 51,
+      tokenBudget: 4096,
+      maxContextChars: 240,
+      assembled: {
+        messages: [{ role: "user", content: "live tail" }],
+        estimatedTokens: 2,
+        stats: {
+          rawMessageCount: 1,
+          summaryCount: 0,
+          totalContextItems: 1,
+        },
+      },
+      liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
+    });
+
+    const traceId = assembly.brainDecision?.traceId ?? "";
+    const episodeId = assembly.brainDecision?.episodeId ?? "";
+    const trace = await service.getTrace(traceId);
+    expect(trace?.routeTrace?.selectionMetadata).toMatchObject({
+      maxContextChars: 240,
+      queryBudgetChars: 240,
+      injectedChars: expect.any(Number),
+      droppedChars: expect.any(Number),
+      contextClipped: true,
+    });
+
+    await service.recordTurnObservation({
+      episodeId,
+      assistantResponse: "Use `gh pr create` to open the pull request.",
+      toolResults: [],
+    });
+
+    const observation = (
+      service as unknown as {
+        store: { getObservationForEpisode: (episodeId: string) => BrainObservation | null };
+      }
+    ).store.getObservationForEpisode(episodeId);
+
+    expect(observation).not.toBeNull();
+    expect(observation?.routeMetadata.selectionMetadata).toMatchObject({
+      maxContextChars: 240,
+      queryBudgetChars: 240,
+      injectedChars: expect.any(Number),
+      droppedChars: expect.any(Number),
+      contextClipped: true,
+    });
+    const teacherInput = materializeTeacherLabelInput(observation!);
+    expect(teacherInput?.routeMetadata.selectionMetadata).toMatchObject({
+      maxContextChars: 240,
+      queryBudgetChars: 240,
+      injectedChars: expect.any(Number),
+      droppedChars: expect.any(Number),
+      contextClipped: true,
     });
   });
 

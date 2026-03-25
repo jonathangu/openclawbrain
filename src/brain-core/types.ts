@@ -577,6 +577,12 @@ export interface DecisionRouteTrace {
     embeddingMs: number | null;
     totalQueryMs: number | null;
     queryEmbeddingSource: "provided" | "runtime";
+    // Post-formatting clip attribution is optional so legacy traces remain readable as unknown.
+    maxContextChars?: number | null;
+    queryBudgetChars?: number | null;
+    injectedChars?: number | null;
+    droppedChars?: number | null;
+    contextClipped?: boolean | null;
   };
 }
 

@@ -8,6 +8,7 @@ import type {
   BrainNode,
   BrainObservationRouteMetadata,
   BrainObservationToolResult,
+  DecisionRouteTrace,
   DecisionTrace,
   NodeKind,
   TraversalResult,
@@ -360,6 +361,24 @@ export class BrainService {
     this.store.setTrainingState("last_assembly_footer", decision.footer ?? "");
     this.store.setTrainingState("last_assembly_episode_id", decision.episodeId ?? "");
     this.store.setTrainingState("last_assembly_trace_id", decision.traceId ?? "");
+  }
+
+  recordTraceSelectionMetadata(
+    trace: DecisionTrace | null | undefined,
+    selectionMetadata: Partial<DecisionRouteTrace["selectionMetadata"]>,
+  ): void {
+    if (!trace?.routeTrace?.selectionMetadata) {
+      return;
+    }
+
+    trace.routeTrace = {
+      ...trace.routeTrace,
+      selectionMetadata: {
+        ...trace.routeTrace.selectionMetadata,
+        ...selectionMetadata,
+      },
+    };
+    this.store.updateTraceSelectionMetadata(trace.id, selectionMetadata);
   }
 
   async query(params: {

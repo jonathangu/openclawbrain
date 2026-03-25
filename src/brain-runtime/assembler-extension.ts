@@ -382,6 +382,12 @@ export class BrainAssemblerExtension {
       buildBrainContextBlock(result),
       params.maxContextChars,
     );
+    const traceSelectionMetadata = budgetDecisionDetails({
+      maxContextChars: params.maxContextChars,
+      queryBudgetChars,
+      budgetedBrainContext,
+    });
+    this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
     const brainMessage: AgentMessage | null = budgetedBrainContext.brainContext.length > 0
       ? ({
           role: "user",
@@ -395,10 +401,7 @@ export class BrainAssemblerExtension {
         episodeId: result.episode.id,
         traceId: result.trace.id,
         footer: decisionFooter("shadow"),
-        ...budgetDecisionDetails({
-          maxContextChars: params.maxContextChars,
-          queryBudgetChars,
-        }),
+        ...traceSelectionMetadata,
       });
 
       return {
@@ -409,10 +412,7 @@ export class BrainAssemblerExtension {
           episodeId: result.episode.id,
           traceId: result.trace.id,
           footer: decisionFooter("shadow"),
-          ...budgetDecisionDetails({
-            maxContextChars: params.maxContextChars,
-            queryBudgetChars,
-          }),
+          ...traceSelectionMetadata,
         },
       };
     }
@@ -422,11 +422,7 @@ export class BrainAssemblerExtension {
       episodeId: result.episode.id,
       traceId: result.trace.id,
       footer: result.trace.footer,
-      ...budgetDecisionDetails({
-        maxContextChars: params.maxContextChars,
-        queryBudgetChars,
-        budgetedBrainContext,
-      }),
+      ...traceSelectionMetadata,
     });
 
     return {
@@ -449,11 +445,7 @@ export class BrainAssemblerExtension {
         episodeId: result.episode.id,
         traceId: result.trace.id,
         footer: result.trace.footer,
-        ...budgetDecisionDetails({
-          maxContextChars: params.maxContextChars,
-          queryBudgetChars,
-          budgetedBrainContext,
-        }),
+        ...traceSelectionMetadata,
       },
     };
   }

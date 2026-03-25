@@ -177,6 +177,7 @@ function createBrainStub(overrides?: {
     isEmbeddingConfigured: () => overrides?.embeddingConfigured ?? true,
     isShadowMode: () => overrides?.shadowMode ?? false,
     noteAssemblyDecision: vi.fn(),
+    recordTraceSelectionMetadata: vi.fn(),
     query: overrides?.query ?? vi.fn(async () => null),
   };
 }
@@ -424,6 +425,58 @@ describe("BrainAssemblerExtension", () => {
     });
   });
 
+  it("surfaces would-be clip metrics in shadow mode when maxContextChars trims the block", async () => {
+    const brain = createBrainStub({
+      shadowMode: true,
+      query: async () => makeStructuredTraversalResult(),
+    });
+    const extension = new BrainAssemblerExtension(brain as never);
+
+    const result = await extension.augmentAssembly({
+      conversationId: 42,
+      tokenBudget: 4096,
+      maxContextChars: 240,
+      assembled: {
+        messages: [{ role: "user", content: "live tail" }],
+        estimatedTokens: 2,
+        stats: {
+          rawMessageCount: 1,
+          summaryCount: 0,
+          totalContextItems: 1,
+        },
+      },
+      liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
+    });
+
+    expect(result.messages).toEqual([{ role: "user", content: "live tail" }]);
+    expect(result.brainDecision).toEqual(expect.objectContaining({
+      mode: "shadow",
+      maxContextChars: 240,
+      queryBudgetChars: 240,
+      injectedChars: expect.any(Number),
+      droppedChars: expect.any(Number),
+      contextClipped: true,
+    }));
+    expect(brain.recordTraceSelectionMetadata).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "tr_structured_1" }),
+      expect.objectContaining({
+        maxContextChars: 240,
+        queryBudgetChars: 240,
+        injectedChars: expect.any(Number),
+        droppedChars: expect.any(Number),
+        contextClipped: true,
+      }),
+    );
+    expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
+      mode: "shadow",
+      maxContextChars: 240,
+      queryBudgetChars: 240,
+      injectedChars: expect.any(Number),
+      droppedChars: expect.any(Number),
+      contextClipped: true,
+    }));
+  });
+
   it("caps injected context to explicit maxContextChars and records clip metrics", async () => {
     const brain = createBrainStub({
       query: vi.fn(async () => makeStructuredTraversalResult()),
@@ -460,6 +513,16 @@ describe("BrainAssemblerExtension", () => {
       droppedChars: expect.any(Number),
       contextClipped: true,
     }));
+    expect(brain.recordTraceSelectionMetadata).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "tr_structured_1" }),
+      expect.objectContaining({
+        maxContextChars: 240,
+        queryBudgetChars: 240,
+        injectedChars: expect.any(Number),
+        droppedChars: expect.any(Number),
+        contextClipped: true,
+      }),
+    );
     expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
       mode: "use_brain",
       conversationId: 42,
@@ -469,6 +532,51 @@ describe("BrainAssemblerExtension", () => {
       droppedChars: expect.any(Number),
       contextClipped: true,
     }));
+  });
+
+  it("records zero-cap clipping as durable trace metadata without injecting a message", async () => {
+    const brain = createBrainStub({
+      query: vi.fn(async () => makeStructuredTraversalResult()),
+    });
+    const extension = new BrainAssemblerExtension(brain as never);
+
+    const assembled = {
+      messages: [{ role: "user", content: "live tail" }],
+      estimatedTokens: 2,
+      stats: {
+        rawMessageCount: 1,
+        summaryCount: 0,
+        totalContextItems: 1,
+      },
+    };
+
+    const result = await extension.augmentAssembly({
+      conversationId: 42,
+      tokenBudget: 4096,
+      maxContextChars: 0,
+      assembled,
+      liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
+    });
+
+    expect(result.messages).toEqual(assembled.messages);
+    expect(result.brainDecision).toEqual(expect.objectContaining({
+      mode: "use_brain",
+      maxContextChars: 0,
+      queryBudgetChars: 0,
+      injectedChars: 0,
+      droppedChars: expect.any(Number),
+      contextClipped: true,
+    }));
+    expect(brain.recordTraceSelectionMetadata).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "tr_structured_1" }),
+      expect.objectContaining({
+        maxContextChars: 0,
+        queryBudgetChars: 0,
+        injectedChars: 0,
+        droppedChars: expect.any(Number),
+        contextClipped: true,
+      }),
+    );
   });
 
   it("adds summary-routing guidance for precision-sensitive questions over summaries", async () => {
