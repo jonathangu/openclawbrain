@@ -2,6 +2,33 @@
 
 Release history for the published OpenClawBrain packages. The README and operator docs keep the install lane unpinned; release notes carry version-specific detail.
 
+## 0.3.6
+
+`0.3.6` is a compatibility-package patch release that carries the unified learned local branching update for older combined-package installs.
+
+**Packages**
+
+- `@jonathangu/openclawbrain@0.3.6`
+
+**Changes**
+
+- makes `STOP_LOCAL` a real learned action in the same local policy surface as `traverse(edge_i)`
+- persists learned stop-local weights through SQLite state, pack snapshots, runtime reloads, and CLI load/promote hydration
+- preserves truthful no-op behavior for forced `STOP_LOCAL` actions with probability `1.0`
+- adds focused proof coverage for policy scoring, REINFORCE stop updates, snapshot/runtime round-trip, and worker/promotion surfaces
+
+**Verification**
+
+- `npm run release:verify`
+  - passed
+  - root Vitest: `43` files / `384` tests
+  - `@openclawbrain/openclaw@0.4.1` tarball verification passed
+  - `@openclawbrain/cli@0.4.12` tarball verification passed
+
+**Full release note**
+
+- [docs/release-notes-0.3.6.md](docs/release-notes-0.3.6.md)
+
 ## 0.4.12
 
 `0.4.12` adds a first-class operator proof bundle and hardens daemon launch paths away from ephemeral `_npx` cache state.
