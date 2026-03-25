@@ -118,6 +118,9 @@ describe("teacher observation plumbing", () => {
         ...makeObservation().routeMetadata,
         selectionMetadata: {
           ...makeObservation().routeMetadata.selectionMetadata!,
+          compileElapsedMs: 12,
+          brainDropReason: "injection_cap_clipped",
+          brainDropStage: "injection",
           maxContextChars: 240,
           injectedChars: 180,
           droppedChars: 72,
@@ -130,6 +133,9 @@ describe("teacher observation plumbing", () => {
 
     expect(input?.routeMetadata.selectionMetadata).toMatchObject({
       budgetChars: 4000,
+      compileElapsedMs: 12,
+      brainDropReason: "injection_cap_clipped",
+      brainDropStage: "injection",
       maxContextChars: 240,
       injectedChars: 180,
       droppedChars: 72,

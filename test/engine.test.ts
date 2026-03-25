@@ -859,6 +859,82 @@ describe("LcmContextEngine.assemble canonical path", () => {
     }
   });
 
+  it("fails open before brain query when the soft compile deadline is already exhausted", async () => {
+    const brainRoot = mkdtempSync(join(tmpdir(), "openclawbrain-engine-deadline-state-"));
+    const workspaceRoot = mkdtempSync(join(tmpdir(), "openclawbrain-engine-deadline-workspace-"));
+    tempDirs.push(brainRoot, workspaceRoot);
+
+    writeFileSync(
+      join(workspaceRoot, "PLAYBOOK.md"),
+      "# Pull Requests\n\nUse gh pr create for pull request workflows.\n",
+      "utf8",
+    );
+
+    const engine = createEngineWithConfig({
+      brain: {
+        enabled: true,
+        root: brainRoot,
+        maxCompileMs: 0,
+        budgetFraction: 0.3,
+        maxHops: 8,
+        maxSeeds: 10,
+        semanticThreshold: 0.1,
+        servingTemperature: 0.1,
+        learningTemperature: 1,
+        learningRate: 0.01,
+        baselineAlpha: 0.1,
+        decayRate: 0.995,
+        trainerIntervalMs: 10_000,
+        teacherEnabled: false,
+        teacherProvider: "",
+        teacherModel: "",
+        autoUserCorrectionsEnabled: false,
+        autoUserCorrectionsProvider: "",
+        autoUserCorrectionsModel: "",
+        autoUserCorrectionsMinConfidence: 0.8,
+        mutationsEnabled: true,
+        replayEpisodeCount: 100,
+        minFiredPerQuery: 1,
+        maxDormantPercent: 0.3,
+        maxOrphanCount: 10,
+        shadowMode: false,
+        embeddingProvider: "openai",
+        embeddingModel: "text-embedding-3-small",
+        embeddingBaseUrl: "https://example.invalid/v1",
+      },
+    });
+    const brainService = engine.getBrainService();
+    expect(brainService).not.toBeNull();
+    await brainService!.init({
+      workspaceRoot,
+      embedFn: async (text) => embedForBrain(text),
+    });
+
+    const result = await engine.assemble({
+      sessionId: "session-brain-soft-deadline-before-query",
+      messages: [
+        { role: "user", content: "How do I open a pull request?" },
+      ] as AgentMessage[],
+      tokenBudget: 10_000,
+      maxContextChars: 240,
+    });
+
+    const assembledText = result.messages
+      .map((message: { content?: unknown }) => (typeof message.content === "string" ? message.content : ""))
+      .join("\n");
+    expect(assembledText).not.toContain("OpenClawBrain retrieved context");
+
+    const status = await brainService!.status();
+    expect(status.lastAssemblyDecision).toMatchObject({
+      mode: "skip_deadline_before_query",
+      compileDeadlineMs: 0,
+      compileDeadlineHit: true,
+      brainDropReason: "deadline_before_query",
+      brainDropStage: "decision",
+      queryBudgetChars: Math.max(256, Math.floor(10_000 * 4 * 0.3)),
+    });
+  });
+
   it("drops orphan tool results during assembled transcript repair", async () => {
     const engine = createEngine();
     const sessionId = "session-orphan-tool-result";

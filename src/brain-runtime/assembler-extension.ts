@@ -1,6 +1,8 @@
 import type { AssembleContextResult } from "../assembler.js";
 import type { ContextEngine, AgentMessage } from "../openclaw-sdk-compat.js";
 import type {
+  BrainDropReason,
+  BrainDropStage,
   DecisionRouteTrace,
   DecisionTraceInjectedNodeSummary,
   TraversalResult,
@@ -8,7 +10,7 @@ import type {
 import type { BrainService } from "./service.js";
 import { decideSummaryRouting } from "./summary-routing-policy.js";
 
-export type BrainAssemblyDecisionMode =
+export type BrainAssemblyRouteMode =
   | "use_brain"
   | "shadow"
   | "skip_no_query"
@@ -17,8 +19,15 @@ export type BrainAssemblyDecisionMode =
   | "skip_uninitialized"
   | "skip_budget_too_small";
 
+export type BrainAssemblyOutcomeMode =
+  | BrainAssemblyRouteMode
+  | "skip_query_returned_no_nodes"
+  | "skip_deadline_before_query"
+  | "skip_deadline_after_query"
+  | "skip_deadline_before_injection";
+
 export type BrainAssemblyDecision = {
-  mode: BrainAssemblyDecisionMode;
+  mode: BrainAssemblyRouteMode;
   queryText: string;
 };
 
@@ -41,7 +50,23 @@ type BudgetDecisionDetails = {
   contextClipped?: boolean;
 };
 
-function decisionFooter(mode: BrainAssemblyDecisionMode): string {
+type CompileDecisionDetails = {
+  compileElapsedMs?: number | null;
+  compileDeadlineMs?: number | null;
+  compileDeadlineHit?: boolean | null;
+  brainDropReason?: BrainDropReason | null;
+  brainDropStage?: BrainDropStage | null;
+};
+
+type CompileCheckpoint = {
+  compileElapsedMs: number;
+  compileDeadlineMs?: number | null;
+  compileDeadlineHit?: boolean | null;
+};
+
+type AssemblyDecisionDetails = BudgetDecisionDetails & CompileDecisionDetails;
+
+function decisionFooter(mode: BrainAssemblyOutcomeMode): string {
   switch (mode) {
     case "use_brain":
       return "[brain] used graph retrieval for this turn.";
@@ -57,6 +82,14 @@ function decisionFooter(mode: BrainAssemblyDecisionMode): string {
       return "[brain] bypassed: brain uninitialized or disabled.";
     case "skip_budget_too_small":
       return "[brain] bypassed: token budget too small.";
+    case "skip_query_returned_no_nodes":
+      return "[brain] bypassed: query returned no nodes.";
+    case "skip_deadline_before_query":
+      return "[brain] bypassed: soft compile deadline hit before query.";
+    case "skip_deadline_after_query":
+      return "[brain] bypassed: soft compile deadline hit after query.";
+    case "skip_deadline_before_injection":
+      return "[brain] bypassed: soft compile deadline hit before injection.";
   }
 }
 
@@ -196,12 +229,10 @@ function buildSummaryRoutingPrompt(mode: ReturnType<typeof decideSummaryRouting>
   }
 }
 
-function resolveBrainQueryBudgetChars(tokenBudget: number, maxContextChars?: number): number {
-  const derivedBudgetChars = Math.max(256, Math.floor(tokenBudget * 4 * 0.3));
-  if (typeof maxContextChars !== "number" || !Number.isFinite(maxContextChars)) {
-    return derivedBudgetChars;
-  }
-  return Math.max(0, Math.min(derivedBudgetChars, Math.floor(maxContextChars)));
+function resolveBrainQueryBudgetChars(tokenBudget: number): number {
+  // Retrieval budget stays separate from the final injected-block cap so
+  // zero/tight caps remain attributable without collapsing the query itself.
+  return Math.max(256, Math.floor(tokenBudget * 4 * 0.3));
 }
 
 function applyMaxContextChars(text: string, maxContextChars?: number): BudgetedBrainContext {
@@ -252,20 +283,66 @@ function applyMaxContextChars(text: string, maxContextChars?: number): BudgetedB
 
 function budgetDecisionDetails(params: {
   maxContextChars?: number;
-  queryBudgetChars: number;
+  queryBudgetChars?: number | null;
   budgetedBrainContext?: BudgetedBrainContext;
 }): BudgetDecisionDetails {
-  if (params.maxContextChars === undefined) {
-    return {};
+  const details: BudgetDecisionDetails = {};
+  if (params.maxContextChars !== undefined) {
+    details.maxContextChars = params.maxContextChars;
   }
+  if (typeof params.queryBudgetChars === "number") {
+    details.queryBudgetChars = params.queryBudgetChars;
+  }
+  if (params.budgetedBrainContext) {
+    details.injectedChars = params.budgetedBrainContext.injectedChars;
+    details.droppedChars = params.budgetedBrainContext.droppedChars;
+    details.contextClipped = params.budgetedBrainContext.contextClipped;
+  }
+  return details;
+}
 
+function resolveCompileDeadlineMs(value: number | null | undefined): number | undefined {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return undefined;
+  }
+  return Math.max(0, Math.floor(value));
+}
+
+function captureCompileCheckpoint(startedAt: number, compileDeadlineMs?: number): CompileCheckpoint {
+  const compileElapsedMs = Math.max(0, Date.now() - startedAt);
+  if (compileDeadlineMs === undefined) {
+    return { compileElapsedMs };
+  }
   return {
-    maxContextChars: params.maxContextChars,
-    queryBudgetChars: params.queryBudgetChars,
-    injectedChars: params.budgetedBrainContext?.injectedChars ?? 0,
-    droppedChars: params.budgetedBrainContext?.droppedChars ?? 0,
-    contextClipped: params.budgetedBrainContext?.contextClipped ?? false,
+    compileElapsedMs,
+    compileDeadlineMs,
+    compileDeadlineHit: compileElapsedMs >= compileDeadlineMs,
   };
+}
+
+function assemblyDecisionDetails(params: {
+  checkpoint: CompileCheckpoint;
+  brainDropReason: BrainDropReason;
+  brainDropStage?: BrainDropStage;
+  maxContextChars?: number;
+  queryBudgetChars?: number | null;
+  budgetedBrainContext?: BudgetedBrainContext;
+}): AssemblyDecisionDetails {
+  return {
+    ...params.checkpoint,
+    brainDropReason: params.brainDropReason,
+    ...(params.brainDropStage ? { brainDropStage: params.brainDropStage } : {}),
+    ...budgetDecisionDetails({
+      maxContextChars: params.maxContextChars,
+      queryBudgetChars: params.queryBudgetChars,
+      budgetedBrainContext: params.budgetedBrainContext,
+    }),
+  };
+}
+
+function mergeSystemPromptAddition(...parts: Array<string | undefined>): string | undefined {
+  const merged = parts.filter(Boolean).join("\n\n");
+  return merged || undefined;
 }
 
 export class BrainAssemblerExtension {
@@ -319,6 +396,8 @@ export class BrainAssemblerExtension {
     assembled: AssembleContextResult;
     liveMessages: AgentMessage[];
   }): Promise<BrainAssembledContextResult> {
+    const compileStartedAt = Date.now();
+    const compileDeadlineMs = resolveCompileDeadlineMs(this.brain.getCompileDeadlineMs());
     const decision = this.decide({
       tokenBudget: params.tokenBudget,
       liveMessages: params.liveMessages,
@@ -329,51 +408,128 @@ export class BrainAssemblerExtension {
     });
     const summaryRoutingPrompt = buildSummaryRoutingPrompt(summaryRouting.mode);
     if (decision.mode !== "use_brain" && decision.mode !== "shadow") {
+      const metadata = assemblyDecisionDetails({
+        checkpoint: captureCompileCheckpoint(compileStartedAt, compileDeadlineMs),
+        brainDropReason: decision.mode,
+        brainDropStage: "decision",
+        maxContextChars: params.maxContextChars,
+        queryBudgetChars: 0,
+      });
       this.brain.noteAssemblyDecision({
         mode: decision.mode,
         conversationId: params.conversationId,
         footer: decisionFooter(decision.mode),
-        ...budgetDecisionDetails({
-          maxContextChars: params.maxContextChars,
-          queryBudgetChars: 0,
-        }),
+        ...metadata,
       });
       return {
         ...params.assembled,
-        systemPromptAddition: [params.assembled.systemPromptAddition, summaryRoutingPrompt].filter(Boolean).join("\n\n") || undefined,
+        systemPromptAddition: mergeSystemPromptAddition(
+          params.assembled.systemPromptAddition,
+          summaryRoutingPrompt,
+        ),
         brainDecision: {
           mode: decision.mode,
           footer: decisionFooter(decision.mode),
+          ...metadata,
         },
       };
     }
 
-    const queryBudgetChars = resolveBrainQueryBudgetChars(params.tokenBudget, params.maxContextChars);
+    const queryBudgetChars = resolveBrainQueryBudgetChars(params.tokenBudget);
+    const beforeQueryCheckpoint = captureCompileCheckpoint(compileStartedAt, compileDeadlineMs);
+    if (beforeQueryCheckpoint.compileDeadlineHit) {
+      const mode: BrainAssemblyOutcomeMode = "skip_deadline_before_query";
+      const metadata = assemblyDecisionDetails({
+        checkpoint: beforeQueryCheckpoint,
+        brainDropReason: "deadline_before_query",
+        brainDropStage: "decision",
+        maxContextChars: params.maxContextChars,
+        queryBudgetChars,
+      });
+      this.brain.noteAssemblyDecision({
+        mode,
+        conversationId: params.conversationId,
+        footer: decisionFooter(mode),
+        ...metadata,
+      });
+      return {
+        ...params.assembled,
+        systemPromptAddition: mergeSystemPromptAddition(
+          params.assembled.systemPromptAddition,
+          summaryRoutingPrompt,
+        ),
+        brainDecision: {
+          mode,
+          footer: decisionFooter(mode),
+          ...metadata,
+        },
+      };
+    }
+
     const result = await this.brain.query({
       conversationId: params.conversationId,
       queryText: decision.queryText,
       budgetChars: queryBudgetChars,
     });
+    const afterQueryCheckpoint = captureCompileCheckpoint(compileStartedAt, compileDeadlineMs);
     if (!result) {
+      const mode: BrainAssemblyOutcomeMode = "skip_query_returned_no_nodes";
+      const metadata = assemblyDecisionDetails({
+        checkpoint: afterQueryCheckpoint,
+        brainDropReason: "query_returned_no_nodes",
+        brainDropStage: "query",
+        maxContextChars: params.maxContextChars,
+        queryBudgetChars,
+      });
       this.brain.noteAssemblyDecision({
-        mode: decision.mode,
+        mode,
         conversationId: params.conversationId,
-        footer: decisionFooter(decision.mode),
-        ...budgetDecisionDetails({
-          maxContextChars: params.maxContextChars,
-          queryBudgetChars,
-        }),
+        footer: decisionFooter(mode),
+        ...metadata,
       });
       return {
         ...params.assembled,
-        systemPromptAddition: [params.assembled.systemPromptAddition, summaryRoutingPrompt].filter(Boolean).join("\n\n") || undefined,
+        systemPromptAddition: mergeSystemPromptAddition(
+          params.assembled.systemPromptAddition,
+          summaryRoutingPrompt,
+        ),
         brainDecision: {
-          mode: decision.mode,
-          footer: decisionFooter(decision.mode),
-          ...budgetDecisionDetails({
-            maxContextChars: params.maxContextChars,
-            queryBudgetChars,
-          }),
+          mode,
+          footer: decisionFooter(mode),
+          ...metadata,
+        },
+      };
+    }
+    if (afterQueryCheckpoint.compileDeadlineHit) {
+      const mode: BrainAssemblyOutcomeMode = "skip_deadline_after_query";
+      const traceSelectionMetadata = assemblyDecisionDetails({
+        checkpoint: afterQueryCheckpoint,
+        brainDropReason: "deadline_after_query",
+        brainDropStage: "query",
+        maxContextChars: params.maxContextChars,
+        queryBudgetChars,
+      });
+      this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
+      this.brain.noteAssemblyDecision({
+        mode,
+        conversationId: params.conversationId,
+        episodeId: result.episode.id,
+        traceId: result.trace.id,
+        footer: decisionFooter(mode),
+        ...traceSelectionMetadata,
+      });
+      return {
+        ...params.assembled,
+        systemPromptAddition: mergeSystemPromptAddition(
+          params.assembled.systemPromptAddition,
+          summaryRoutingPrompt,
+        ),
+        brainDecision: {
+          mode,
+          episodeId: result.episode.id,
+          traceId: result.trace.id,
+          footer: decisionFooter(mode),
+          ...traceSelectionMetadata,
         },
       };
     }
@@ -382,7 +538,50 @@ export class BrainAssemblerExtension {
       buildBrainContextBlock(result),
       params.maxContextChars,
     );
-    const traceSelectionMetadata = budgetDecisionDetails({
+    const beforeInjectionCheckpoint = captureCompileCheckpoint(compileStartedAt, compileDeadlineMs);
+    if (beforeInjectionCheckpoint.compileDeadlineHit) {
+      const mode: BrainAssemblyOutcomeMode = "skip_deadline_before_injection";
+      const traceSelectionMetadata = assemblyDecisionDetails({
+        checkpoint: beforeInjectionCheckpoint,
+        brainDropReason: "deadline_before_injection",
+        brainDropStage: "injection",
+        maxContextChars: params.maxContextChars,
+        queryBudgetChars,
+        budgetedBrainContext,
+      });
+      this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
+      this.brain.noteAssemblyDecision({
+        mode,
+        conversationId: params.conversationId,
+        episodeId: result.episode.id,
+        traceId: result.trace.id,
+        footer: decisionFooter(mode),
+        ...traceSelectionMetadata,
+      });
+      return {
+        ...params.assembled,
+        systemPromptAddition: mergeSystemPromptAddition(
+          params.assembled.systemPromptAddition,
+          summaryRoutingPrompt,
+        ),
+        brainDecision: {
+          mode,
+          episodeId: result.episode.id,
+          traceId: result.trace.id,
+          footer: decisionFooter(mode),
+          ...traceSelectionMetadata,
+        },
+      };
+    }
+
+    const traceSelectionMetadata = assemblyDecisionDetails({
+      checkpoint: beforeInjectionCheckpoint,
+      brainDropReason: decision.mode === "shadow"
+        ? "shadow_mode"
+        : budgetedBrainContext.contextClipped
+          ? "injection_cap_clipped"
+          : "none",
+      brainDropStage: decision.mode === "shadow" || budgetedBrainContext.contextClipped ? "injection" : undefined,
       maxContextChars: params.maxContextChars,
       queryBudgetChars,
       budgetedBrainContext,
@@ -406,7 +605,10 @@ export class BrainAssemblerExtension {
 
       return {
         ...params.assembled,
-        systemPromptAddition: [params.assembled.systemPromptAddition, summaryRoutingPrompt].filter(Boolean).join("\n\n") || undefined,
+        systemPromptAddition: mergeSystemPromptAddition(
+          params.assembled.systemPromptAddition,
+          summaryRoutingPrompt,
+        ),
         brainDecision: {
           mode: "shadow",
           episodeId: result.episode.id,
@@ -431,15 +633,13 @@ export class BrainAssemblerExtension {
       estimatedTokens: brainMessage
         ? params.assembled.estimatedTokens + estimateTokens(extractText(brainMessage.content))
         : params.assembled.estimatedTokens,
-      systemPromptAddition: [
+      systemPromptAddition: mergeSystemPromptAddition(
         params.assembled.systemPromptAddition,
         brainMessage
           ? "OpenClawBrain sections are ranked by trust: correction cards, evidence, playbooks, then transcript support."
           : undefined,
         summaryRoutingPrompt,
-      ]
-        .filter(Boolean)
-        .join("\n\n"),
+      ),
       brainDecision: {
         mode: "use_brain",
         episodeId: result.episode.id,

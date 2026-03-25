@@ -21,6 +21,7 @@ describe("resolveLcmConfig", () => {
       contextThreshold: 0.5,
       freshTailCount: 16,
       incrementalMaxDepth: -1,
+      brainMaxCompileMs: 75,
       leafMinFanout: 4,
       condensedMinFanout: 2,
       autocompactDisabled: true,
@@ -31,6 +32,7 @@ describe("resolveLcmConfig", () => {
     expect(config.contextThreshold).toBe(0.5);
     expect(config.freshTailCount).toBe(16);
     expect(config.incrementalMaxDepth).toBe(-1);
+    expect(config.brain?.maxCompileMs).toBe(75);
     expect(config.leafMinFanout).toBe(4);
     expect(config.condensedMinFanout).toBe(2);
     expect(config.autocompactDisabled).toBe(true);

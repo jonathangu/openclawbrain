@@ -4,6 +4,7 @@ import { dirname, join } from "path";
 export type OpenClawBrainRuntimeConfig = {
   enabled: boolean;
   root: string;
+  maxCompileMs?: number | null;
   budgetFraction: number;
   maxHops: number;
   maxSeeds: number;
@@ -170,6 +171,10 @@ export function resolveLcmConfig(
           ? env.OPENCLAWBRAIN_ENABLED !== "false"
           : toBool(pc.brainEnabled) ?? true,
       root: brainRoot,
+      maxCompileMs:
+        (env.OPENCLAWBRAIN_MAX_COMPILE_MS !== undefined
+          ? parseInt(env.OPENCLAWBRAIN_MAX_COMPILE_MS, 10)
+          : undefined) ?? toNumber(pc.brainMaxCompileMs) ?? null,
       budgetFraction:
         (env.OPENCLAWBRAIN_BUDGET_FRACTION !== undefined
           ? parseFloat(env.OPENCLAWBRAIN_BUDGET_FRACTION)

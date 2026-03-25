@@ -8,6 +8,10 @@ import type { LcmDependencies } from "../../src/types.js";
 
 const tempDirs: string[] = [];
 
+function deriveExpectedQueryBudgetChars(tokenBudget: number): number {
+  return Math.max(256, Math.floor(tokenBudget * 4 * 0.3));
+}
+
 function makeTempDir(prefix: string): string {
   const dir = mkdtempSync(join(tmpdir(), prefix));
   tempDirs.push(dir);
@@ -199,6 +203,7 @@ describe("BrainService", () => {
   });
 
   it("surfaces bounded assembly metrics in status", async () => {
+    const queryBudgetChars = deriveExpectedQueryBudgetChars(4096);
     const brainRoot = makeTempDir("openclawbrain-status-");
     const service = new BrainService({
       deps: createDeps(brainRoot),
@@ -210,8 +215,13 @@ describe("BrainService", () => {
       episodeId: "ep_1",
       traceId: "tr_1",
       footer: "[brain] used graph retrieval for this turn.",
+      compileElapsedMs: 12,
+      compileDeadlineMs: 20,
+      compileDeadlineHit: false,
+      brainDropReason: "injection_cap_clipped",
+      brainDropStage: "injection",
       maxContextChars: 240,
-      queryBudgetChars: 240,
+      queryBudgetChars,
       injectedChars: 180,
       droppedChars: 72,
       contextClipped: true,
@@ -222,8 +232,13 @@ describe("BrainService", () => {
       mode: "use_brain",
       conversationId: 42,
       traceId: "tr_1",
+      compileElapsedMs: 12,
+      compileDeadlineMs: 20,
+      compileDeadlineHit: false,
+      brainDropReason: "injection_cap_clipped",
+      brainDropStage: "injection",
       maxContextChars: 240,
-      queryBudgetChars: 240,
+      queryBudgetChars,
       injectedChars: 180,
       droppedChars: 72,
       contextClipped: true,
@@ -231,6 +246,7 @@ describe("BrainService", () => {
   });
 
   it("persists post-injection clip attribution through trace and observation metadata", async () => {
+    const queryBudgetChars = deriveExpectedQueryBudgetChars(4096);
     const workspaceRoot = makeTempDir("openclawbrain-attribution-workspace-");
     const brainRoot = makeTempDir("openclawbrain-attribution-state-");
     writeFileSync(
@@ -271,7 +287,11 @@ describe("BrainService", () => {
       mode: "use_brain",
       episodeId: expect.any(String),
       traceId: expect.any(String),
+      compileElapsedMs: expect.any(Number),
+      brainDropReason: "injection_cap_clipped",
+      brainDropStage: "injection",
       maxContextChars: 120,
+      queryBudgetChars,
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
@@ -279,8 +299,12 @@ describe("BrainService", () => {
 
     const trace = await service.getTrace(String(result.brainDecision?.traceId ?? ""));
     expect(trace?.routeTrace?.selectionMetadata).toMatchObject({
-      budgetChars: 120,
+      budgetChars: queryBudgetChars,
+      compileElapsedMs: expect.any(Number),
+      brainDropReason: "injection_cap_clipped",
+      brainDropStage: "injection",
       maxContextChars: 120,
+      queryBudgetChars,
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
@@ -304,7 +328,10 @@ describe("BrainService", () => {
       traceId: result.brainDecision?.traceId,
       routeMetadata: {
         selectionMetadata: {
-          budgetChars: 120,
+          budgetChars: queryBudgetChars,
+          compileElapsedMs: expect.any(Number),
+          brainDropReason: "injection_cap_clipped",
+          brainDropStage: "injection",
           maxContextChars: 120,
           injectedChars: expect.any(Number),
           droppedChars: expect.any(Number),
@@ -315,8 +342,12 @@ describe("BrainService", () => {
 
     const status = await service.status();
     expect(status.lastTraceSelectionMetadata).toEqual(expect.objectContaining({
-      budgetChars: 120,
+      budgetChars: queryBudgetChars,
+      compileElapsedMs: expect.any(Number),
+      brainDropReason: "injection_cap_clipped",
+      brainDropStage: "injection",
       maxContextChars: 120,
+      queryBudgetChars,
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,

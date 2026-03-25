@@ -1,6 +1,8 @@
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { BrainAssemblerExtension } from "../../src/brain-runtime/assembler-extension.js";
 import type { TraversalResult } from "../../src/brain-core/types.js";
+
+const QUERY_BUDGET_CHARS_FOR_4096_TOKENS = Math.max(256, Math.floor(4096 * 4 * 0.3));
 
 function makeTraversalResult(): TraversalResult {
   return {
@@ -169,6 +171,7 @@ function createBrainStub(overrides?: {
   initialized?: boolean;
   embeddingConfigured?: boolean;
   shadowMode?: boolean;
+  compileDeadlineMs?: number | null;
   query?: (params: { conversationId: number; queryText: string; budgetChars: number }) => Promise<TraversalResult | null>;
 }) {
   return {
@@ -176,11 +179,16 @@ function createBrainStub(overrides?: {
     isInitialized: () => overrides?.initialized ?? true,
     isEmbeddingConfigured: () => overrides?.embeddingConfigured ?? true,
     isShadowMode: () => overrides?.shadowMode ?? false,
+    getCompileDeadlineMs: () => overrides?.compileDeadlineMs ?? null,
     noteAssemblyDecision: vi.fn(),
     recordTraceSelectionMetadata: vi.fn(),
     query: overrides?.query ?? vi.fn(async () => null),
   };
 }
+
+afterEach(() => {
+  vi.restoreAllMocks();
+});
 
 describe("BrainAssemblerExtension", () => {
   it("skips missing query text with an explicit reason", async () => {
@@ -203,11 +211,15 @@ describe("BrainAssemblerExtension", () => {
     });
 
     expect(result.brainDecision?.mode).toBe("skip_no_query");
-    expect(brain.noteAssemblyDecision).toHaveBeenCalledWith({
+    expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
       mode: "skip_no_query",
       conversationId: 7,
       footer: "[brain] bypassed: no user query text.",
-    });
+      queryBudgetChars: 0,
+      brainDropReason: "skip_no_query",
+      brainDropStage: "decision",
+      compileElapsedMs: expect.any(Number),
+    }));
   });
 
   it("skips short static lookups with an explicit reason", async () => {
@@ -231,11 +243,15 @@ describe("BrainAssemblerExtension", () => {
 
     expect(result.brainDecision?.mode).toBe("skip_short_static_lookup");
     expect(result.brainDecision?.footer).toContain("bypassed");
-    expect(brain.noteAssemblyDecision).toHaveBeenCalledWith({
+    expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
       mode: "skip_short_static_lookup",
       conversationId: 7,
       footer: "[brain] bypassed: short static lookup.",
-    });
+      queryBudgetChars: 0,
+      brainDropReason: "skip_short_static_lookup",
+      brainDropStage: "decision",
+      compileElapsedMs: expect.any(Number),
+    }));
   });
 
   it("prefers explicit file-open commands over procedural keyword matches", async () => {
@@ -258,11 +274,15 @@ describe("BrainAssemblerExtension", () => {
     });
 
     expect(result.brainDecision?.mode).toBe("skip_short_static_lookup");
-    expect(brain.noteAssemblyDecision).toHaveBeenCalledWith({
+    expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
       mode: "skip_short_static_lookup",
       conversationId: 8,
       footer: "[brain] bypassed: short static lookup.",
-    });
+      queryBudgetChars: 0,
+      brainDropReason: "skip_short_static_lookup",
+      brainDropStage: "decision",
+      compileElapsedMs: expect.any(Number),
+    }));
   });
 
   it("returns unchanged assembly when disabled or uninitialized", async () => {
@@ -374,12 +394,15 @@ describe("BrainAssemblerExtension", () => {
       liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
     });
 
-    expect(result.brainDecision).toEqual({
+    expect(result.brainDecision).toEqual(expect.objectContaining({
       mode: "use_brain",
       episodeId: "ep_1",
       traceId: "tr_1",
       footer: "[brain] used graph retrieval for this turn.",
-    });
+      queryBudgetChars: expect.any(Number),
+      compileElapsedMs: expect.any(Number),
+      brainDropReason: "none",
+    }));
     expect(result.messages).toHaveLength(2);
     expect(result.messages[0]?.content).toContain("Correction Cards");
   });
@@ -410,19 +433,27 @@ describe("BrainAssemblerExtension", () => {
 
     expect(result.messages).toEqual(assembled.messages);
     expect(result.estimatedTokens).toBe(assembled.estimatedTokens);
-    expect(result.brainDecision).toEqual({
+    expect(result.brainDecision).toEqual(expect.objectContaining({
       mode: "shadow",
       episodeId: "ep_1",
       traceId: "tr_1",
       footer: "[brain shadow] recorded routing without injecting learned context.",
-    });
-    expect(brain.noteAssemblyDecision).toHaveBeenCalledWith({
+      queryBudgetChars: expect.any(Number),
+      compileElapsedMs: expect.any(Number),
+      brainDropReason: "shadow_mode",
+      brainDropStage: "injection",
+    }));
+    expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
       mode: "shadow",
       conversationId: 42,
       episodeId: "ep_1",
       traceId: "tr_1",
       footer: "[brain shadow] recorded routing without injecting learned context.",
-    });
+      queryBudgetChars: expect.any(Number),
+      compileElapsedMs: expect.any(Number),
+      brainDropReason: "shadow_mode",
+      brainDropStage: "injection",
+    }));
   });
 
   it("surfaces would-be clip metrics in shadow mode when maxContextChars trims the block", async () => {
@@ -452,28 +483,37 @@ describe("BrainAssemblerExtension", () => {
     expect(result.brainDecision).toEqual(expect.objectContaining({
       mode: "shadow",
       maxContextChars: 240,
-      queryBudgetChars: 240,
+      queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
+      compileElapsedMs: expect.any(Number),
+      brainDropReason: "shadow_mode",
+      brainDropStage: "injection",
     }));
     expect(brain.recordTraceSelectionMetadata).toHaveBeenCalledWith(
       expect.objectContaining({ id: "tr_structured_1" }),
       expect.objectContaining({
         maxContextChars: 240,
-        queryBudgetChars: 240,
+        queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
         injectedChars: expect.any(Number),
         droppedChars: expect.any(Number),
         contextClipped: true,
+        compileElapsedMs: expect.any(Number),
+        brainDropReason: "shadow_mode",
+        brainDropStage: "injection",
       }),
     );
     expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
       mode: "shadow",
       maxContextChars: 240,
-      queryBudgetChars: 240,
+      queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
+      compileElapsedMs: expect.any(Number),
+      brainDropReason: "shadow_mode",
+      brainDropStage: "injection",
     }));
   });
 
@@ -502,35 +542,44 @@ describe("BrainAssemblerExtension", () => {
     expect(brain.query).toHaveBeenCalledWith({
       conversationId: 42,
       queryText: "How do I open a pull request?",
-      budgetChars: 240,
+      budgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
     });
     expect(String(result.messages[0]?.content ?? "").length).toBeLessThanOrEqual(240);
     expect(result.brainDecision).toEqual(expect.objectContaining({
       mode: "use_brain",
       maxContextChars: 240,
-      queryBudgetChars: 240,
+      queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
+      compileElapsedMs: expect.any(Number),
+      brainDropReason: "injection_cap_clipped",
+      brainDropStage: "injection",
     }));
     expect(brain.recordTraceSelectionMetadata).toHaveBeenCalledWith(
       expect.objectContaining({ id: "tr_structured_1" }),
       expect.objectContaining({
         maxContextChars: 240,
-        queryBudgetChars: 240,
+        queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
         injectedChars: expect.any(Number),
         droppedChars: expect.any(Number),
         contextClipped: true,
+        compileElapsedMs: expect.any(Number),
+        brainDropReason: "injection_cap_clipped",
+        brainDropStage: "injection",
       }),
     );
     expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
       mode: "use_brain",
       conversationId: 42,
       maxContextChars: 240,
-      queryBudgetChars: 240,
+      queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
+      compileElapsedMs: expect.any(Number),
+      brainDropReason: "injection_cap_clipped",
+      brainDropStage: "injection",
     }));
   });
 
@@ -562,17 +611,185 @@ describe("BrainAssemblerExtension", () => {
     expect(result.brainDecision).toEqual(expect.objectContaining({
       mode: "use_brain",
       maxContextChars: 0,
-      queryBudgetChars: 0,
+      queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
       injectedChars: 0,
+      droppedChars: expect.any(Number),
+      contextClipped: true,
+      compileElapsedMs: expect.any(Number),
+      brainDropReason: "injection_cap_clipped",
+      brainDropStage: "injection",
+    }));
+    expect(brain.recordTraceSelectionMetadata).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "tr_structured_1" }),
+      expect.objectContaining({
+        maxContextChars: 0,
+        queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
+        injectedChars: 0,
+        droppedChars: expect.any(Number),
+        contextClipped: true,
+        compileElapsedMs: expect.any(Number),
+        brainDropReason: "injection_cap_clipped",
+        brainDropStage: "injection",
+      }),
+    );
+  });
+
+  it("skips brain query before retrieval when the soft compile deadline is already exhausted", async () => {
+    const query = vi.fn(async () => makeTraversalResult());
+    const brain = createBrainStub({
+      compileDeadlineMs: 0,
+      query,
+    });
+    const extension = new BrainAssemblerExtension(brain as never);
+    vi.spyOn(Date, "now")
+      .mockReturnValueOnce(100)
+      .mockReturnValueOnce(100);
+
+    const result = await extension.augmentAssembly({
+      conversationId: 42,
+      tokenBudget: 4096,
+      maxContextChars: 240,
+      assembled: {
+        messages: [{ role: "user", content: "live tail" }],
+        estimatedTokens: 2,
+        stats: {
+          rawMessageCount: 1,
+          summaryCount: 0,
+          totalContextItems: 1,
+        },
+      },
+      liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
+    });
+
+    expect(query).not.toHaveBeenCalled();
+    expect(result.messages).toEqual([{ role: "user", content: "live tail" }]);
+    expect(result.brainDecision).toEqual(expect.objectContaining({
+      mode: "skip_deadline_before_query",
+      footer: "[brain] bypassed: soft compile deadline hit before query.",
+      compileElapsedMs: 0,
+      compileDeadlineMs: 0,
+      compileDeadlineHit: true,
+      brainDropReason: "deadline_before_query",
+      brainDropStage: "decision",
+      queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
+    }));
+  });
+
+  it("preserves completed query trace truth when the deadline hits after query", async () => {
+    const traversalResult = makeTraversalResult();
+    const brain = createBrainStub({
+      compileDeadlineMs: 5,
+      query: vi.fn(async () => traversalResult),
+    });
+    const extension = new BrainAssemblerExtension(brain as never);
+    vi.spyOn(Date, "now")
+      .mockReturnValueOnce(100)
+      .mockReturnValueOnce(104)
+      .mockReturnValueOnce(110);
+
+    const assembled = {
+      messages: [{ role: "user", content: "live tail" }],
+      estimatedTokens: 2,
+      stats: {
+        rawMessageCount: 1,
+        summaryCount: 0,
+        totalContextItems: 1,
+      },
+    };
+
+    const result = await extension.augmentAssembly({
+      conversationId: 42,
+      tokenBudget: 4096,
+      maxContextChars: 240,
+      assembled,
+      liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
+    });
+
+    expect(result.messages).toEqual(assembled.messages);
+    expect(result.brainDecision).toEqual(expect.objectContaining({
+      mode: "skip_deadline_after_query",
+      episodeId: "ep_1",
+      traceId: "tr_1",
+      footer: "[brain] bypassed: soft compile deadline hit after query.",
+      compileElapsedMs: 10,
+      compileDeadlineMs: 5,
+      compileDeadlineHit: true,
+      brainDropReason: "deadline_after_query",
+      brainDropStage: "query",
+      queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
+    }));
+    expect(brain.recordTraceSelectionMetadata).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "tr_1" }),
+      expect.objectContaining({
+        compileElapsedMs: 10,
+        compileDeadlineMs: 5,
+        compileDeadlineHit: true,
+        brainDropReason: "deadline_after_query",
+        brainDropStage: "query",
+        queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
+      }),
+    );
+  });
+
+  it("measures formatted clip metadata but skips injection when the deadline hits before injection", async () => {
+    const traversalResult = makeStructuredTraversalResult();
+    const brain = createBrainStub({
+      compileDeadlineMs: 5,
+      query: vi.fn(async () => traversalResult),
+    });
+    const extension = new BrainAssemblerExtension(brain as never);
+    vi.spyOn(Date, "now")
+      .mockReturnValueOnce(100)
+      .mockReturnValueOnce(101)
+      .mockReturnValueOnce(102)
+      .mockReturnValueOnce(110);
+
+    const assembled = {
+      messages: [{ role: "user", content: "live tail" }],
+      estimatedTokens: 2,
+      stats: {
+        rawMessageCount: 1,
+        summaryCount: 0,
+        totalContextItems: 1,
+      },
+    };
+
+    const result = await extension.augmentAssembly({
+      conversationId: 42,
+      tokenBudget: 4096,
+      maxContextChars: 240,
+      assembled,
+      liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
+    });
+
+    expect(result.messages).toEqual(assembled.messages);
+    expect(result.brainDecision).toEqual(expect.objectContaining({
+      mode: "skip_deadline_before_injection",
+      episodeId: "ep_structured_1",
+      traceId: "tr_structured_1",
+      footer: "[brain] bypassed: soft compile deadline hit before injection.",
+      compileElapsedMs: 10,
+      compileDeadlineMs: 5,
+      compileDeadlineHit: true,
+      brainDropReason: "deadline_before_injection",
+      brainDropStage: "injection",
+      maxContextChars: 240,
+      queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
+      injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
     }));
     expect(brain.recordTraceSelectionMetadata).toHaveBeenCalledWith(
       expect.objectContaining({ id: "tr_structured_1" }),
       expect.objectContaining({
-        maxContextChars: 0,
-        queryBudgetChars: 0,
-        injectedChars: 0,
+        compileElapsedMs: 10,
+        compileDeadlineMs: 5,
+        compileDeadlineHit: true,
+        brainDropReason: "deadline_before_injection",
+        brainDropStage: "injection",
+        maxContextChars: 240,
+        queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
+        injectedChars: expect.any(Number),
         droppedChars: expect.any(Number),
         contextClipped: true,
       }),

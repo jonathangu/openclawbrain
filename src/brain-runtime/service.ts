@@ -5,6 +5,8 @@ import { DatabaseSync } from "node:sqlite";
 import type { OpenClawBrainRuntimeConfig } from "../db/config.js";
 import type {
   BrainConfig,
+  BrainDropReason,
+  BrainDropStage,
   BrainNode,
   BrainObservationRouteMetadata,
   BrainObservationToolResult,
@@ -77,11 +79,27 @@ export class BrainService {
   private latestEpisodeByConversation = new Map<number, string>();
   private lastAssemblyDecision:
     | {
-        mode: "use_brain" | "shadow" | "skip_no_query" | "skip_short_static_lookup" | "skip_no_embedding" | "skip_uninitialized" | "skip_budget_too_small";
+        mode:
+          | "use_brain"
+          | "shadow"
+          | "skip_no_query"
+          | "skip_short_static_lookup"
+          | "skip_no_embedding"
+          | "skip_uninitialized"
+          | "skip_budget_too_small"
+          | "skip_query_returned_no_nodes"
+          | "skip_deadline_before_query"
+          | "skip_deadline_after_query"
+          | "skip_deadline_before_injection";
         conversationId?: number;
         episodeId?: string | null;
         traceId?: string | null;
         footer?: string | null;
+        compileElapsedMs?: number | null;
+        compileDeadlineMs?: number | null;
+        compileDeadlineHit?: boolean | null;
+        brainDropReason?: BrainDropReason | null;
+        brainDropStage?: BrainDropStage | null;
         maxContextChars?: number | null;
         queryBudgetChars?: number | null;
         injectedChars?: number | null;
@@ -353,6 +371,10 @@ export class BrainService {
 
   isShadowMode(): boolean {
     return this.config.shadowMode;
+  }
+
+  getCompileDeadlineMs(): number | null {
+    return this.config.maxCompileMs;
   }
 
   noteAssemblyDecision(decision: NonNullable<BrainService["lastAssemblyDecision"]>): void {
@@ -851,6 +873,7 @@ export class BrainService {
       embeddingBaseUrl: this.config.embeddingModel ? embeddingConfig.baseUrl : "",
       embeddingAuthMode: embeddingConfig.authMode,
       embeddingConfigError: embeddingConfig.error,
+      maxCompileMs: this.config.maxCompileMs,
       currentPackVersion: this.store.getCurrentPackVersion(),
       currentPackPromotedAt: currentPack?.promotedAt ?? null,
       currentPackMetadata: promotionStory.currentPack?.metadata ?? null,

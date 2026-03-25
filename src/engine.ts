@@ -1558,9 +1558,18 @@ export class LcmContextEngine implements ContextEngine {
       }
       if (!conversation) {
         if (brainDecision && this.brainService && !shouldRouteThroughBrain) {
+          const brainDropReason = brainDecision.mode as
+            | "skip_no_query"
+            | "skip_short_static_lookup"
+            | "skip_no_embedding"
+            | "skip_uninitialized"
+            | "skip_budget_too_small";
           this.brainService.noteAssemblyDecision({
             mode: brainDecision.mode,
             footer: `[brain] bypassed: ${brainDecision.mode}.`,
+            compileElapsedMs: 0,
+            brainDropReason,
+            brainDropStage: "decision",
           });
         }
         appendValidationAssemblyRecord({
@@ -1569,6 +1578,11 @@ export class LcmContextEngine implements ContextEngine {
           queryText: extractLatestUserText(params.messages),
           mode: brainDecision?.mode ?? null,
           footer: brainDecision ? `[brain] bypassed: ${brainDecision.mode}.` : null,
+          compileElapsedMs: null,
+          compileDeadlineMs: null,
+          compileDeadlineHit: null,
+          brainDropReason: brainDecision?.mode ?? null,
+          brainDropStage: brainDecision ? "decision" : null,
           traceId: null,
           episodeId: null,
           tokenBudget,
@@ -1650,6 +1664,11 @@ export class LcmContextEngine implements ContextEngine {
         queryText: extractLatestUserText(params.messages),
         mode: hybrid.brainDecision?.mode ?? null,
         footer: hybrid.brainDecision?.footer ?? null,
+        compileElapsedMs: hybrid.brainDecision?.compileElapsedMs ?? null,
+        compileDeadlineMs: hybrid.brainDecision?.compileDeadlineMs ?? null,
+        compileDeadlineHit: hybrid.brainDecision?.compileDeadlineHit ?? null,
+        brainDropReason: hybrid.brainDecision?.brainDropReason ?? null,
+        brainDropStage: hybrid.brainDecision?.brainDropStage ?? null,
         traceId: hybrid.brainDecision?.traceId ?? null,
         episodeId: hybrid.brainDecision?.episodeId ?? null,
         tokenBudget,

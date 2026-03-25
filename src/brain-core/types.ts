@@ -577,7 +577,14 @@ export interface DecisionRouteTrace {
     embeddingMs: number | null;
     totalQueryMs: number | null;
     queryEmbeddingSource: "provided" | "runtime";
-    // Post-formatting clip attribution is optional so legacy traces remain readable as unknown.
+    compileElapsedMs?: number | null;
+    compileDeadlineMs?: number | null;
+    compileDeadlineHit?: boolean | null;
+    brainDropReason?: BrainDropReason | null;
+    brainDropStage?: BrainDropStage | null;
+    // Post-formatting bounded-runtime metadata is optional so legacy traces
+    // remain readable as unknown. `queryBudgetChars` is retrieval-side budget;
+    // `maxContextChars` is the final injected-block cap.
     maxContextChars?: number | null;
     queryBudgetChars?: number | null;
     injectedChars?: number | null;
@@ -624,6 +631,26 @@ export interface BrainObservationRouteMetadata {
   sourceSummary: DecisionRouteTrace["sourceSummary"] | null;
   selectionMetadata: DecisionRouteTrace["selectionMetadata"] | null;
 }
+
+export type BrainDropReason =
+  | "none"
+  | "skip_uninitialized"
+  | "skip_no_embedding"
+  | "skip_budget_too_small"
+  | "skip_no_query"
+  | "skip_short_static_lookup"
+  | "query_returned_no_nodes"
+  | "shadow_mode"
+  | "injection_cap_clipped"
+  | "deadline_before_query"
+  | "deadline_after_query"
+  | "deadline_before_injection"
+  | "assembly_fail_open";
+
+export type BrainDropStage =
+  | "decision"
+  | "query"
+  | "injection";
 
 export type BrainObservationStatus =
   | "pending_followup"
@@ -673,6 +700,7 @@ export interface BrainObservation {
 export interface BrainConfig {
   enabled: boolean;
   root: string;
+  maxCompileMs: number | null;
   maxHops: number;
   maxFanoutPerNode: number;
   maxFrontierSize: number;
@@ -709,6 +737,7 @@ export interface BrainConfig {
 export const DEFAULT_BRAIN_CONFIG: BrainConfig = {
   enabled: true,
   root: "",
+  maxCompileMs: null,
   maxHops: 8,
   maxFanoutPerNode: 4,
   maxFrontierSize: 32,

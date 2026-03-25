@@ -37,6 +37,10 @@
       "label": "Embedding Model",
       "help": "Embedding model used for init, retrieval, and brain_teach"
     },
+    "brainMaxCompileMs": {
+      "label": "Brain Compile Deadline",
+      "help": "Soft wall-clock deadline in milliseconds for brain assembly phase-boundary checks"
+    },
     "brainWorkerMode": {
       "label": "Worker Mode",
       "help": "Run the learner in a supervised child process (default) or fall back to in-process mode"
@@ -101,6 +105,10 @@
       },
       "brainEmbeddingBaseUrl": {
         "type": "string"
+      },
+      "brainMaxCompileMs": {
+        "type": "integer",
+        "minimum": 0
       },
       "brainMaxHops": {
         "type": "integer",

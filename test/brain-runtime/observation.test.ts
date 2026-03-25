@@ -10,6 +10,10 @@ import type { LcmDependencies } from "../../src/types.js";
 
 const tempDirs: string[] = [];
 
+function deriveExpectedQueryBudgetChars(tokenBudget: number): number {
+  return Math.max(256, Math.floor(tokenBudget * 4 * 0.3));
+}
+
 function makeTempDir(prefix: string): string {
   const dir = mkdtempSync(join(tmpdir(), prefix));
   tempDirs.push(dir);
@@ -166,6 +170,7 @@ describe("BrainService observations", () => {
   });
 
   it("persists clipped assembly attribution through trace, observation, and teacher input", async () => {
+    const queryBudgetChars = deriveExpectedQueryBudgetChars(4096);
     const workspaceRoot = makeTempDir("openclawbrain-clipped-observation-workspace-");
     const brainRoot = makeTempDir("openclawbrain-clipped-observation-state-");
     writeFileSync(
@@ -210,8 +215,11 @@ describe("BrainService observations", () => {
     const episodeId = assembly.brainDecision?.episodeId ?? "";
     const trace = await service.getTrace(traceId);
     expect(trace?.routeTrace?.selectionMetadata).toMatchObject({
+      compileElapsedMs: expect.any(Number),
+      brainDropReason: "injection_cap_clipped",
+      brainDropStage: "injection",
       maxContextChars: 240,
-      queryBudgetChars: 240,
+      queryBudgetChars,
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
@@ -231,16 +239,22 @@ describe("BrainService observations", () => {
 
     expect(observation).not.toBeNull();
     expect(observation?.routeMetadata.selectionMetadata).toMatchObject({
+      compileElapsedMs: expect.any(Number),
+      brainDropReason: "injection_cap_clipped",
+      brainDropStage: "injection",
       maxContextChars: 240,
-      queryBudgetChars: 240,
+      queryBudgetChars,
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
     });
     const teacherInput = materializeTeacherLabelInput(observation!);
     expect(teacherInput?.routeMetadata.selectionMetadata).toMatchObject({
+      compileElapsedMs: expect.any(Number),
+      brainDropReason: "injection_cap_clipped",
+      brainDropStage: "injection",
       maxContextChars: 240,
-      queryBudgetChars: 240,
+      queryBudgetChars,
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
