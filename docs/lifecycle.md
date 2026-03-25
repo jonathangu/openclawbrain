@@ -6,7 +6,7 @@ This guide covers the supported install, verify, proof, rollback, detach, and un
 
 Keep the same `--openclaw-home` value through the whole lifecycle. The public lane stays pinned to one OpenClaw home.
 
-### Fresh install
+### Install OpenClawBrain
 
 ```bash
 openclaw plugins install @openclawbrain/openclaw
@@ -16,7 +16,7 @@ npx -y @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 npx -y @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
 ```
 
-### Update an existing host
+### Update OpenClawBrain
 
 ```bash
 openclaw plugins update openclawbrain
@@ -26,7 +26,7 @@ npx -y @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 npx -y @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
 ```
 
-For an already-installed host, the plugin update is only step 1. You still need to rerun the CLI `install` command so the activation root and native package plugin wiring stay correct for that OpenClaw home. `status --detailed` verifies the selected OpenClaw home. `proof` captures the durable operator bundle when you need explicit install/restart/status evidence.
+The real install command is `openclaw plugins install @openclawbrain/openclaw`. The real update command is `openclaw plugins update openclawbrain`. For an already-installed host, the plugin update is only step 1. You still need to rerun the CLI `install` command so the activation root and native package plugin wiring stay correct for that OpenClaw home. `status --detailed` verifies the selected OpenClaw home. `proof` captures the durable operator bundle when you need explicit install/restart/status evidence.
 
 ## Verify and prove
 
@@ -86,6 +86,14 @@ openclaw gateway restart
 
 Next docs:
 
+- [Quick start](getting-started/quick-start.md)
+- [Troubleshooting](operating/troubleshooting.md)
+- [Configuration guide](configuration.md)
+ docs:
+
+- [Quick start](getting-started/quick-start.md)
+- [Troubleshooting](operating/troubleshooting.md)
+- [Configuration guide](configuration.md)
 - [Quick start](getting-started/quick-start.md)
 - [Troubleshooting](operating/troubleshooting.md)
 - [Configuration guide](configuration.md)

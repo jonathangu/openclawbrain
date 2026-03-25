@@ -38,9 +38,9 @@ Prerequisites:
 - Node.js 20+
 - npm
 
-The public operator story now has two explicit entry points: **fresh install** for a host that does not have OpenClawBrain yet, and **update** for a host that already has it installed.
+The public operator story has two literal OpenClawBrain actions: **Install OpenClawBrain** on a host that does not have it yet, and **Update OpenClawBrain** on a host that already has it installed.
 
-### Fresh install
+### Install OpenClawBrain
 
 ```bash
 openclaw plugins install @openclawbrain/openclaw
@@ -50,7 +50,7 @@ npx -y @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 npx -y @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
 ```
 
-### Update an existing host
+### Update OpenClawBrain
 
 ```bash
 openclaw plugins update openclawbrain
@@ -60,7 +60,7 @@ npx -y @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 npx -y @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
 ```
 
-For an already-installed host, the plugin update is only step 1. You still need to rerun the CLI `install` command so the activation root and native package plugin wiring stay truthful for that OpenClaw home. `status --detailed` is the quick verify surface. `proof` writes `summary.md`, `steps.json`, `verdict.json`, raw step logs, and proof pointers under one bundle directory.
+The real install command is `openclaw plugins install @openclawbrain/openclaw`. The real update command is `openclaw plugins update openclawbrain`. For an already-installed host, the plugin update is only step 1. You still need to rerun the CLI `install` command so the activation root and native package plugin wiring stay truthful for that OpenClaw home. `status --detailed` is the quick verify surface. `proof` writes `summary.md`, `steps.json`, `verdict.json`, raw step logs, and proof pointers under one bundle directory.
 
 A healthy install or update should report the profile as attached. After the first promoted pack is available, detailed status should also report `serveState=serving_active_pack`.
 
@@ -115,6 +115,12 @@ Repo setup and validation:
 
 ```bash
 npm install
+npm test
+npm run release:verify
+```
+
+If you change the public story, update the README, docs index, changelog, and claims boundary in the same pass.
+l
 npm test
 npm run release:verify
 ```
