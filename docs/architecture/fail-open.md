@@ -23,7 +23,7 @@ The agent keeps running with its normal OpenClaw context. OpenClawBrain does not
 Start with the standard verify command:
 
 ```bash
-npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
+openclawbrain status --openclaw-home ~/.openclaw --detailed
 ```
 
 When the extension itself emits warnings, it also appends them to `~/.openclawbrain/extension-errors.log`.
@@ -37,10 +37,9 @@ Most recoveries are straightforward:
 3. verify the selected OpenClaw home again
 
 ```bash
-openclaw plugins install @openclawbrain/openclaw
-npx @openclawbrain/cli install --openclaw-home ~/.openclaw
+openclawbrain install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
+openclawbrain status --openclaw-home ~/.openclaw --detailed
 ```
 
 If status still shows a fallback serve path, continue with [Troubleshooting](../operating/troubleshooting.md).

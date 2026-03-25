@@ -189,6 +189,44 @@ describe("BrainService", () => {
     expect(status.currentPackVersion).toBe(1);
     expect(status.routeTraceCount).toBe(1);
     expect(status.supervisionCount).toBe(0);
+    expect(status.lastTraceContextChars).toBe(result?.trace.contextChars ?? null);
+    expect(status.lastTraceSelectionMetadata).toEqual(expect.objectContaining({
+      budgetChars: 4000,
+      totalQueryMs: expect.any(Number),
+      queryEmbeddingSource: "provided",
+    }));
+  });
+
+  it("surfaces bounded assembly metrics in status", async () => {
+    const brainRoot = makeTempDir("openclawbrain-status-");
+    const service = new BrainService({
+      deps: createDeps(brainRoot),
+    });
+
+    service.noteAssemblyDecision({
+      mode: "use_brain",
+      conversationId: 42,
+      episodeId: "ep_1",
+      traceId: "tr_1",
+      footer: "[brain] used graph retrieval for this turn.",
+      maxContextChars: 240,
+      queryBudgetChars: 240,
+      injectedChars: 180,
+      droppedChars: 72,
+      contextClipped: true,
+    });
+
+    const status = await service.status();
+    expect(status.lastAssemblyDecision).toMatchObject({
+      mode: "use_brain",
+      conversationId: 42,
+      traceId: "tr_1",
+      maxContextChars: 240,
+      queryBudgetChars: 240,
+      injectedChars: 180,
+      droppedChars: 72,
+      contextClipped: true,
+    });
   });
 
   it("records turn observations, attaches next-user follow-up, and surfaces teacher supervision in status", async () => {

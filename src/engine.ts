@@ -735,6 +735,13 @@ function messageIdentity(role: string, content: string): string {
   return `${role}\u0000${content}`;
 }
 
+function normalizeOptionalMaxContextChars(value: unknown): number | undefined {
+  if (typeof value !== "number" || !Number.isFinite(value) || value < 0) {
+    return undefined;
+  }
+  return Math.floor(value);
+}
+
 // ── LcmContextEngine ────────────────────────────────────────────────────────
 
 export class LcmContextEngine implements ContextEngine {
@@ -1524,6 +1531,7 @@ export class LcmContextEngine implements ContextEngine {
     sessionId: string;
     messages: AgentMessage[];
     tokenBudget?: number;
+    maxContextChars?: number;
   }): Promise<AssembleResult> {
     try {
       this.ensureMigrated();
@@ -1534,6 +1542,7 @@ export class LcmContextEngine implements ContextEngine {
         params.tokenBudget > 0
           ? Math.floor(params.tokenBudget)
           : 128_000;
+      const maxContextChars = normalizeOptionalMaxContextChars(params.maxContextChars);
 
       const brainDecision = this.brainAssembler?.decide({
         tokenBudget,
@@ -1563,6 +1572,7 @@ export class LcmContextEngine implements ContextEngine {
           traceId: null,
           episodeId: null,
           tokenBudget,
+          maxContextChars: maxContextChars ?? null,
         });
         this.pendingBrainEpisodeBySession.delete(params.sessionId);
         return {
@@ -1611,6 +1621,7 @@ export class LcmContextEngine implements ContextEngine {
           traceId: null,
           episodeId: null,
           tokenBudget,
+          maxContextChars: maxContextChars ?? null,
         });
         this.pendingBrainEpisodeBySession.delete(params.sessionId);
         return {
@@ -1623,6 +1634,7 @@ export class LcmContextEngine implements ContextEngine {
         ? await this.brainAssembler.augmentAssembly({
             conversationId: conversation.conversationId,
             tokenBudget,
+            ...(maxContextChars === undefined ? {} : { maxContextChars }),
             assembled,
             liveMessages: params.messages,
           })
@@ -1641,6 +1653,11 @@ export class LcmContextEngine implements ContextEngine {
         traceId: hybrid.brainDecision?.traceId ?? null,
         episodeId: hybrid.brainDecision?.episodeId ?? null,
         tokenBudget,
+        maxContextChars: hybrid.brainDecision?.maxContextChars ?? maxContextChars ?? null,
+        queryBudgetChars: hybrid.brainDecision?.queryBudgetChars ?? null,
+        injectedChars: hybrid.brainDecision?.injectedChars ?? null,
+        droppedChars: hybrid.brainDecision?.droppedChars ?? null,
+        contextClipped: hybrid.brainDecision?.contextClipped ?? null,
       });
 
       // If assembly produced no messages for a non-empty live session,

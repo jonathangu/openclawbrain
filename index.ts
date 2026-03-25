@@ -1393,6 +1393,13 @@ function resolveBeforePromptBuildMessages(event: { prompt?: unknown; messages?: 
   return [{ role: "user", content: promptText }];
 }
 
+function resolveBeforePromptBuildMaxContextChars(event: { maxContextChars?: unknown }): number | undefined {
+  if (typeof event.maxContextChars !== "number" || !Number.isFinite(event.maxContextChars) || event.maxContextChars < 0) {
+    return undefined;
+  }
+  return Math.floor(event.maxContextChars);
+}
+
 function registerHookCompatibilityBridge(
   api: OpenClawPluginApi,
   lcm: LcmContextEngine,
@@ -1435,11 +1442,13 @@ function registerHookCompatibilityBridge(
     }
     const liveMessages = Array.isArray(event.messages) ? event.messages : [];
     const assembleMessages = resolveBeforePromptBuildMessages(event as { prompt?: unknown; messages?: unknown });
+    const maxContextChars = resolveBeforePromptBuildMaxContextChars(event as { maxContextChars?: unknown });
     prePromptMessageCounts.set(sessionId, liveMessages.length);
 
     const assembled = await lcm.assemble({
       sessionId,
       messages: assembleMessages as Parameters<LcmContextEngine["assemble"]>[0]["messages"],
+      ...(maxContextChars === undefined ? {} : { maxContextChars }),
     }) as AssembleResultWithSystemPrompt;
     const prependedMessages = extractPrependedMessages(assembled.messages as unknown[], assembleMessages);
     const prependContext = formatPrependedContext(prependedMessages, assembled.systemPromptAddition);

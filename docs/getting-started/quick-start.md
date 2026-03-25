@@ -10,33 +10,39 @@ This is the shortest supported path from a working OpenClaw install to a verifie
 
 ## Install and verify
 
-The public operator story has two literal OpenClawBrain actions: **Install OpenClawBrain** on a host that does not have it yet, and **Update OpenClawBrain** on a host that already has it installed.
+Keep the same `--openclaw-home` value through install, restart, status, and proof. The public operator story is one command front door for one OpenClaw home.
 
-### Install OpenClawBrain
+```bash
+openclawbrain install --openclaw-home ~/.openclaw
+openclaw gateway restart
+openclawbrain status --openclaw-home ~/.openclaw --detailed
+```
+
+`install` is the public front door. It writes or repairs the hook for the selected home and pins the activation root the runtime serves from. `status --detailed` is the quick verify surface.
+
+When you need durable operator evidence today, run:
+
+```bash
+openclawbrain proof --openclaw-home ~/.openclaw
+```
+
+The intended canonical lane is `openclawbrain install --openclaw-home ~/.openclaw --proof`. Until that flag lands cleanly across the operator surfaces, proof stays a separate follow-up command. `proof` writes `summary.md`, `steps.json`, `verdict.json`, raw step logs, and proof pointers under one bundle directory.
+
+## Advanced or legacy package management
+
+If you are explicitly managing the native plugin package yourself, the manual lane is still available:
 
 ```bash
 openclaw plugins install @openclawbrain/openclaw
-npx -y @openclawbrain/cli install --openclaw-home ~/.openclaw
-openclaw gateway restart
-npx -y @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
-npx -y @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
+openclawbrain install --openclaw-home ~/.openclaw
 ```
 
-### Update OpenClawBrain
-
-```bash
-openclaw plugins update openclawbrain
-npx -y @openclawbrain/cli install --openclaw-home ~/.openclaw
-openclaw gateway restart
-npx -y @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
-npx -y @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
-```
-
-The real install command is `openclaw plugins install @openclawbrain/openclaw`. The real update command is `openclaw plugins update openclawbrain`. For an already-installed host, the plugin update is only step 1. You still need to rerun the CLI `install` command so the activation root and native package plugin wiring stay correct for that OpenClaw home. `status --detailed` is the quick verify surface. `proof` writes `summary.md`, `steps.json`, `verdict.json`, raw step logs, and proof pointers under one bundle directory.
+For an already-installed host, use `openclaw plugins update openclawbrain`, then rerun `openclawbrain install --openclaw-home ~/.openclaw`.
 
 ## What success looks like
 
 - `status --detailed` reports the selected OpenClaw home as attached
+- `loadProof=status_probe_ready`
 - after the first promoted pack exists, detailed status also reports `serveState=serving_active_pack`
 
 If the install does not look healthy yet, go straight to [Troubleshooting](../operating/troubleshooting.md).

@@ -81,6 +81,11 @@ export class BrainService {
         episodeId?: string | null;
         traceId?: string | null;
         footer?: string | null;
+        maxContextChars?: number | null;
+        queryBudgetChars?: number | null;
+        injectedChars?: number | null;
+        droppedChars?: number | null;
+        contextClipped?: boolean;
       }
     | null = null;
 
@@ -861,6 +866,8 @@ export class BrainService {
       lastPgCandidateUpdate,
       recentTraceCount: recentTraces.length,
       lastTraceFooter: recentTraces[0]?.footer ?? null,
+      lastTraceContextChars: recentTraces[0]?.contextChars ?? null,
+      lastTraceSelectionMetadata: recentTraces[0]?.routeTrace?.selectionMetadata ?? null,
       lastAssemblyDecision: this.lastAssemblyDecision,
       lastPromotionReason: this.store.getTrainingState("last_promotion_reason"),
       lastPromotionVerdict: this.store.getTrainingStateJson("last_promotion_verdict_json"),

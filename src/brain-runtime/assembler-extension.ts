@@ -22,16 +22,24 @@ export type BrainAssemblyDecision = {
   queryText: string;
 };
 
-export type BrainAssembledContextResult = AssembleContextResult & {
-  brainDecision?: {
-    mode: BrainAssemblyDecisionMode;
-    episodeId?: string | null;
-    traceId?: string | null;
-    footer?: string | null;
-  };
-};
+export type BrainAssembledContextResult = AssembleContextResult;
 
 const COMPACT_INJECTED_PREVIEW_CHARS = 96;
+
+type BudgetedBrainContext = {
+  brainContext: string;
+  injectedChars: number;
+  droppedChars: number;
+  contextClipped: boolean;
+};
+
+type BudgetDecisionDetails = {
+  maxContextChars?: number | null;
+  queryBudgetChars?: number | null;
+  injectedChars?: number | null;
+  droppedChars?: number | null;
+  contextClipped?: boolean;
+};
 
 function decisionFooter(mode: BrainAssemblyDecisionMode): string {
   switch (mode) {
@@ -188,6 +196,78 @@ function buildSummaryRoutingPrompt(mode: ReturnType<typeof decideSummaryRouting>
   }
 }
 
+function resolveBrainQueryBudgetChars(tokenBudget: number, maxContextChars?: number): number {
+  const derivedBudgetChars = Math.max(256, Math.floor(tokenBudget * 4 * 0.3));
+  if (typeof maxContextChars !== "number" || !Number.isFinite(maxContextChars)) {
+    return derivedBudgetChars;
+  }
+  return Math.max(0, Math.min(derivedBudgetChars, Math.floor(maxContextChars)));
+}
+
+function applyMaxContextChars(text: string, maxContextChars?: number): BudgetedBrainContext {
+  if (typeof maxContextChars !== "number" || !Number.isFinite(maxContextChars)) {
+    return {
+      brainContext: text,
+      injectedChars: text.length,
+      droppedChars: 0,
+      contextClipped: false,
+    };
+  }
+
+  const limit = Math.max(0, Math.floor(maxContextChars));
+  if (text.length <= limit) {
+    return {
+      brainContext: text,
+      injectedChars: text.length,
+      droppedChars: 0,
+      contextClipped: false,
+    };
+  }
+
+  if (limit === 0) {
+    return {
+      brainContext: "",
+      injectedChars: 0,
+      droppedChars: text.length,
+      contextClipped: true,
+    };
+  }
+
+  const hardSlice = text.slice(0, limit);
+  const lineBoundary = hardSlice.lastIndexOf("\n");
+  const clipped = (
+    lineBoundary >= Math.floor(limit * 0.6)
+      ? hardSlice.slice(0, lineBoundary)
+      : hardSlice
+  ).trimEnd();
+  const brainContext = clipped.length > 0 ? clipped : hardSlice.trimEnd();
+
+  return {
+    brainContext,
+    injectedChars: brainContext.length,
+    droppedChars: Math.max(0, text.length - brainContext.length),
+    contextClipped: true,
+  };
+}
+
+function budgetDecisionDetails(params: {
+  maxContextChars?: number;
+  queryBudgetChars: number;
+  budgetedBrainContext?: BudgetedBrainContext;
+}): BudgetDecisionDetails {
+  if (params.maxContextChars === undefined) {
+    return {};
+  }
+
+  return {
+    maxContextChars: params.maxContextChars,
+    queryBudgetChars: params.queryBudgetChars,
+    injectedChars: params.budgetedBrainContext?.injectedChars ?? 0,
+    droppedChars: params.budgetedBrainContext?.droppedChars ?? 0,
+    contextClipped: params.budgetedBrainContext?.contextClipped ?? false,
+  };
+}
+
 export class BrainAssemblerExtension {
   constructor(private brain: BrainService) {}
 
@@ -235,6 +315,7 @@ export class BrainAssemblerExtension {
   async augmentAssembly(params: {
     conversationId: number;
     tokenBudget: number;
+    maxContextChars?: number;
     assembled: AssembleContextResult;
     liveMessages: AgentMessage[];
   }): Promise<BrainAssembledContextResult> {
@@ -252,6 +333,10 @@ export class BrainAssemblerExtension {
         mode: decision.mode,
         conversationId: params.conversationId,
         footer: decisionFooter(decision.mode),
+        ...budgetDecisionDetails({
+          maxContextChars: params.maxContextChars,
+          queryBudgetChars: 0,
+        }),
       });
       return {
         ...params.assembled,
@@ -263,16 +348,21 @@ export class BrainAssemblerExtension {
       };
     }
 
+    const queryBudgetChars = resolveBrainQueryBudgetChars(params.tokenBudget, params.maxContextChars);
     const result = await this.brain.query({
       conversationId: params.conversationId,
       queryText: decision.queryText,
-      budgetChars: Math.max(256, Math.floor(params.tokenBudget * 4 * 0.3)),
+      budgetChars: queryBudgetChars,
     });
     if (!result) {
       this.brain.noteAssemblyDecision({
         mode: decision.mode,
         conversationId: params.conversationId,
         footer: decisionFooter(decision.mode),
+        ...budgetDecisionDetails({
+          maxContextChars: params.maxContextChars,
+          queryBudgetChars,
+        }),
       });
       return {
         ...params.assembled,
@@ -280,14 +370,24 @@ export class BrainAssemblerExtension {
         brainDecision: {
           mode: decision.mode,
           footer: decisionFooter(decision.mode),
+          ...budgetDecisionDetails({
+            maxContextChars: params.maxContextChars,
+            queryBudgetChars,
+          }),
         },
       };
     }
 
-    const brainMessage: AgentMessage = {
-      role: "user",
-      content: buildBrainContextBlock(result),
-    } as AgentMessage;
+    const budgetedBrainContext = applyMaxContextChars(
+      buildBrainContextBlock(result),
+      params.maxContextChars,
+    );
+    const brainMessage: AgentMessage | null = budgetedBrainContext.brainContext.length > 0
+      ? ({
+          role: "user",
+          content: budgetedBrainContext.brainContext,
+        } as AgentMessage)
+      : null;
     if (decision.mode === "shadow") {
       this.brain.noteAssemblyDecision({
         mode: "shadow",
@@ -295,6 +395,10 @@ export class BrainAssemblerExtension {
         episodeId: result.episode.id,
         traceId: result.trace.id,
         footer: decisionFooter("shadow"),
+        ...budgetDecisionDetails({
+          maxContextChars: params.maxContextChars,
+          queryBudgetChars,
+        }),
       });
 
       return {
@@ -305,6 +409,10 @@ export class BrainAssemblerExtension {
           episodeId: result.episode.id,
           traceId: result.trace.id,
           footer: decisionFooter("shadow"),
+          ...budgetDecisionDetails({
+            maxContextChars: params.maxContextChars,
+            queryBudgetChars,
+          }),
         },
       };
     }
@@ -314,15 +422,24 @@ export class BrainAssemblerExtension {
       episodeId: result.episode.id,
       traceId: result.trace.id,
       footer: result.trace.footer,
+      ...budgetDecisionDetails({
+        maxContextChars: params.maxContextChars,
+        queryBudgetChars,
+        budgetedBrainContext,
+      }),
     });
 
     return {
       ...params.assembled,
-      messages: [brainMessage, ...params.assembled.messages],
-      estimatedTokens: params.assembled.estimatedTokens + estimateTokens(extractText(brainMessage.content)),
+      messages: brainMessage ? [brainMessage, ...params.assembled.messages] : params.assembled.messages,
+      estimatedTokens: brainMessage
+        ? params.assembled.estimatedTokens + estimateTokens(extractText(brainMessage.content))
+        : params.assembled.estimatedTokens,
       systemPromptAddition: [
         params.assembled.systemPromptAddition,
-        "OpenClawBrain sections are ranked by trust: correction cards, evidence, playbooks, then transcript support.",
+        brainMessage
+          ? "OpenClawBrain sections are ranked by trust: correction cards, evidence, playbooks, then transcript support."
+          : undefined,
         summaryRoutingPrompt,
       ]
         .filter(Boolean)
@@ -332,6 +449,11 @@ export class BrainAssemblerExtension {
         episodeId: result.episode.id,
         traceId: result.trace.id,
         footer: result.trace.footer,
+        ...budgetDecisionDetails({
+          maxContextChars: params.maxContextChars,
+          queryBudgetChars,
+          budgetedBrainContext,
+        }),
       },
     };
   }

@@ -19,6 +19,22 @@ function normalizeOptionalCliString(value) {
     return trimmed.length > 0 ? trimmed : null;
 }
 
+function normalizeReportedProofPath(filePath) {
+    const normalizedPath = normalizeOptionalCliString(filePath);
+    if (normalizedPath === null) {
+        return null;
+    }
+    if (normalizedPath === "~") {
+        return homedir();
+    }
+    if (normalizedPath.startsWith("~/")) {
+        return path.join(homedir(), normalizedPath.slice(2));
+    }
+    return path.isAbsolute(normalizedPath)
+        ? normalizedPath
+        : path.resolve(normalizedPath);
+}
+
 function canonicalizeExistingProofPath(filePath) {
     const resolvedPath = path.resolve(filePath);
     try {
@@ -191,6 +207,12 @@ function readJsonSnapshot(filePath) {
     }
 }
 
+function describeStepWarning(step) {
+    return step.captureState === "partial"
+        ? `${step.stepId} ended as ${step.resultClass} with partial capture`
+        : `${step.stepId} ended as ${step.resultClass}`;
+}
+
 function extractStartupBreadcrumbs(logText, bundleStartedAtIso) {
     if (!logText) {
         return { all: [], afterBundleStart: [] };
@@ -230,6 +252,7 @@ function extractStatusSignals(statusText) {
         serveActivePack: /serve\s+state=serving_active_pack/.test(statusText),
         routeFnAvailable: /routeFn\s+available=yes/.test(statusText),
         proofPath: statusText.match(/proofPath=([^\s]+)/)?.[1] ?? null,
+        proofError: statusText.match(/proofError=([^\s]+)/)?.[1] ?? null,
     };
 }
 
@@ -238,69 +261,106 @@ function hasPackagedHookSource(pluginInspectText) {
 }
 
 function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, breadcrumbs, runtimeLoadProofSnapshot, openclawHome }) {
-    const failedStep = steps.find((step) => step.resultClass !== "success" && step.skipped !== true);
-    if (failedStep) {
-        return {
-            verdict: "command_failed",
-            severity: "blocking",
-            why: `${failedStep.stepId} exited as ${failedStep.resultClass}`,
-        };
-    }
+    const failedSteps = steps.filter((step) => step.resultClass !== "success" && step.skipped !== true);
+    const failedDetailedStatusStep = failedSteps.find((step) => step.stepId === "05-detailed-status");
     const gatewayHealthy = /Runtime:\s+running/m.test(gatewayStatus) && /RPC probe:\s+ok/m.test(gatewayStatus);
     const pluginLoaded = /Status:\s+loaded/m.test(pluginInspect);
     const packagedHookPath = hasPackagedHookSource(pluginInspect);
     const breadcrumbLoaded = breadcrumbs.afterBundleStart.some((entry) => entry.kind === "loaded");
     const runtimeProofMatched = Array.isArray(runtimeLoadProofSnapshot?.value?.profiles)
         && runtimeLoadProofSnapshot.value.profiles.some((profile) => canonicalizeExistingProofPath(profile?.openclawHome ?? "") === canonicalizeExistingProofPath(openclawHome));
-    const missingProofs = [];
-    if (!gatewayHealthy)
-        missingProofs.push("gateway_health");
-    if (!pluginLoaded)
-        missingProofs.push("plugin_loaded");
-    if (!packagedHookPath)
-        missingProofs.push("packaged_hook_path");
+    const runtimeTruthGaps = [];
     if (!statusSignals.statusOk)
-        missingProofs.push("status_ok");
+        runtimeTruthGaps.push("status_ok");
     if (!statusSignals.loadProofReady)
-        missingProofs.push("load_proof");
+        runtimeTruthGaps.push("load_proof");
     if (!statusSignals.runtimeProven)
-        missingProofs.push("runtime_proven");
+        runtimeTruthGaps.push("runtime_proven");
     if (!statusSignals.serveActivePack)
-        missingProofs.push("serve_active_pack");
+        runtimeTruthGaps.push("serve_active_pack");
     if (!statusSignals.routeFnAvailable)
-        missingProofs.push("route_fn");
-    if (!breadcrumbLoaded)
-        missingProofs.push("startup_breadcrumb");
-    if (!runtimeProofMatched)
-        missingProofs.push("runtime_load_proof_record");
-    if (missingProofs.length === 0) {
+        runtimeTruthGaps.push("route_fn");
+    const warningCodes = [];
+    const warnings = [];
+    if (!gatewayHealthy) {
+        warningCodes.push("gateway_health");
+        warnings.push("gateway status did not confirm runtime running and RPC probe ok");
+    }
+    if (!pluginLoaded) {
+        warningCodes.push("plugin_loaded");
+        warnings.push("plugin inspect did not report Status: loaded");
+    }
+    if (!packagedHookPath) {
+        warningCodes.push("packaged_hook_path");
+        warnings.push("plugin inspect did not confirm the packaged hook source");
+    }
+    if (!breadcrumbLoaded) {
+        warningCodes.push("startup_breadcrumb");
+        warnings.push("startup log did not contain a post-bundle [openclawbrain] BRAIN LOADED breadcrumb");
+    }
+    if (!runtimeProofMatched) {
+        warningCodes.push("runtime_load_proof_record");
+        warnings.push(runtimeLoadProofSnapshot.error !== null
+            ? `runtime-load-proof snapshot was unreadable: ${runtimeLoadProofSnapshot.error}`
+            : runtimeLoadProofSnapshot.exists
+                ? "runtime-load-proof snapshot did not include the current openclaw home"
+                : "runtime-load-proof snapshot was missing");
+    }
+    if (statusSignals.proofError !== null && statusSignals.proofError !== "none") {
+        warningCodes.push(`proof_error:${statusSignals.proofError}`);
+        warnings.push(`detailed status reported proofError=${statusSignals.proofError}`);
+    }
+    for (const step of failedSteps) {
+        warningCodes.push(`step:${step.stepId}:${step.resultClass}:${step.captureState}`);
+        warnings.push(describeStepWarning(step));
+    }
+    const uniqueWarningCodes = [...new Set(warningCodes)];
+    const uniqueWarnings = [...new Set(warnings)];
+    if (runtimeTruthGaps.length === 0 && uniqueWarningCodes.length === 0) {
         return {
             verdict: "success_and_proven",
             severity: "none",
             why: "install, restart, gateway health, plugin load, startup breadcrumb, runtime-load-proof record, and detailed status all aligned",
+            missingProofs: [],
+            warnings: [],
         };
     }
-    const blocking = missingProofs.some((item) => [
-        "gateway_health",
-        "plugin_loaded",
-        "packaged_hook_path",
-        "status_ok",
-        "load_proof",
-        "runtime_proven",
-        "serve_active_pack",
-        "route_fn",
-    ].includes(item));
+    if (runtimeTruthGaps.length === 0) {
+        return {
+            verdict: "success_but_proof_incomplete",
+            severity: "degraded",
+            why: `status/runtime evidence stayed healthy, but proof warnings remained: ${uniqueWarningCodes.join(", ")}`,
+            missingProofs: uniqueWarningCodes,
+            warnings: uniqueWarnings,
+        };
+    }
+    const hasUsableStatusTruth = statusSignals.statusOk
+        || statusSignals.loadProofReady
+        || statusSignals.runtimeProven
+        || statusSignals.serveActivePack
+        || statusSignals.routeFnAvailable;
+    if (failedDetailedStatusStep && !hasUsableStatusTruth) {
+        return {
+            verdict: "command_failed",
+            severity: "blocking",
+            why: `${failedDetailedStatusStep.stepId} ended as ${failedDetailedStatusStep.resultClass} before runtime truth could be established`,
+            missingProofs: runtimeTruthGaps,
+            warnings: uniqueWarnings,
+        };
+    }
     return {
-        verdict: blocking ? "degraded_or_failed_proof" : "success_but_proof_incomplete",
-        severity: blocking ? "blocking" : "degraded",
-        why: `missing or conflicting proofs: ${missingProofs.join(", ")}`,
-        missingProofs,
+        verdict: "degraded_or_failed_proof",
+        severity: "blocking",
+        why: `missing or conflicting runtime truths: ${runtimeTruthGaps.join(", ")}`,
+        missingProofs: [...new Set([...runtimeTruthGaps, ...uniqueWarningCodes])],
+        warnings: uniqueWarnings,
     };
 }
 
 function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspectText, statusSignals, breadcrumbs, runtimeLoadProofSnapshot }) {
     const passed = [];
     const missing = [];
+    const warnings = Array.isArray(verdict.warnings) ? verdict.warnings : [];
     if (steps.find((step) => step.stepId === "01-install")?.resultClass === "success") {
         passed.push("install command succeeded");
     }
@@ -349,6 +409,9 @@ function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspec
         "",
         "## Missing / incomplete",
         ...(missing.length === 0 ? ["- none"] : missing.map((item) => `- ${item}`)),
+        "",
+        "## Warnings",
+        ...(warnings.length === 0 ? ["- none"] : warnings.map((item) => `- ${item}`)),
         "",
         "## Step ledger",
         ...steps.map((step) => `- ${step.stepId}: ${step.skipped ? "skipped" : `${step.resultClass} (${step.captureState})`} - ${step.summary}`),
@@ -570,11 +633,12 @@ export function captureOperatorProofBundle(options) {
     const statusCapture = addStep("05-detailed-status", "detailed status", cliInvocation.command, [...cliInvocation.args, "status", "--openclaw-home", options.openclawHome, "--detailed"]);
     const gatewayLogPath = extractGatewayLogPath(gatewayStatusCapture.stdout);
     const activationRoot = extractActivationRoot(statusCapture.stdout, options.activationRoot ?? null);
-    const runtimeLoadProofPath = path.join(activationRoot, "attachment-truth", "runtime-load-proofs.json");
+    const statusSignals = extractStatusSignals(statusCapture.stdout);
+    const runtimeLoadProofPath = normalizeReportedProofPath(statusSignals.proofPath)
+        ?? path.join(activationRoot, "attachment-truth", "runtime-load-proofs.json");
     const runtimeLoadProofSnapshot = readJsonSnapshot(runtimeLoadProofPath);
     const gatewayLogText = readTextIfExists(gatewayLogPath);
     const breadcrumbs = extractStartupBreadcrumbs(gatewayLogText, bundleStartedAt);
-    const statusSignals = extractStatusSignals(statusCapture.stdout);
     writeText(path.join(bundleDir, "extracted-startup-breadcrumbs.log"), breadcrumbs.all.length === 0
         ? "<no matching breadcrumbs found>\n"
         : `${breadcrumbs.all.map((entry) => entry.line).join("\n")}\n`);

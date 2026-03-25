@@ -1,20 +1,26 @@
 # Configuration guide
 
-OpenClawBrain works with its default install path. Most operators only need to install it, restart the gateway, verify the selected OpenClaw home, and capture a proof bundle when they need durable operator evidence.
+OpenClawBrain works with its default install path. Most operators only need `openclawbrain install --openclaw-home <path>`, a gateway restart, a status check for that same home, and proof only when they need durable operator evidence. The live path serves promoted packs so useful context stays bounded while learning stays off the response path.
 
 ## Default operator flow
 
 Keep the same `--openclaw-home` value through the whole operator flow. The public lane stays pinned to one OpenClaw home.
 
 ```bash
-openclaw plugins install @openclawbrain/openclaw
-npx @openclawbrain/cli install --openclaw-home ~/.openclaw
+openclawbrain install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
+openclawbrain status --openclaw-home ~/.openclaw --detailed
 ```
 
-`status --detailed` is the quick verify surface. `proof` writes `summary.md`, `steps.json`, `verdict.json`, raw step logs, and proof pointers under one bundle directory.
+`status --detailed` is the quick verify surface.
+
+When you need durable operator evidence today, run:
+
+```bash
+openclawbrain proof --openclaw-home ~/.openclaw
+```
+
+The intended canonical lane is the same install command with optional `--proof`. Until that flag lands cleanly across the operator surfaces, proof stays a separate follow-up command. `proof` writes `summary.md`, `steps.json`, `verdict.json`, raw step logs, and proof pointers under one bundle directory.
 
 If you only need the minimal happy path, stop there and use [Quick start](getting-started/quick-start.md).
 
@@ -91,9 +97,9 @@ If the remote endpoint requires authentication, set `OPENCLAWBRAIN_EMBEDDING_API
 Use the pinned `status --detailed` command above as the canonical public check. When you need to explain why proof has not advanced yet, these commands are also available:
 
 ```bash
-npx @openclawbrain/cli status --openclaw-home ~/.openclaw --json
-npx @openclawbrain/cli learn --openclaw-home ~/.openclaw --json
-npx @openclawbrain/cli rollback --openclaw-home ~/.openclaw --dry-run
+openclawbrain status --openclaw-home ~/.openclaw --json
+openclawbrain learn --openclaw-home ~/.openclaw --json
+openclawbrain rollback --openclaw-home ~/.openclaw --dry-run
 ```
 
 Use `learn --json` when you want a one-shot snapshot of what the learner scanned, whether it materialized a candidate pack, and whether a promotion occurred.
@@ -103,9 +109,9 @@ Use `learn --json` when you want a one-shot snapshot of what the learner scanned
 The CLI also exposes foreground and daemonized learner controls. These are optional operator tools, not part of the default public install and proof lane:
 
 ```bash
-npx @openclawbrain/cli daemon status --activation-root ~/.openclawbrain/activation
-npx @openclawbrain/cli history --openclaw-home ~/.openclaw --limit 20 --json
-npx @openclawbrain/cli context "How should I answer this?" --openclaw-home ~/.openclaw
+openclawbrain daemon status --activation-root ~/.openclawbrain/activation
+openclawbrain history --openclaw-home ~/.openclaw --limit 20 --json
+openclawbrain context "How should I answer this?" --openclaw-home ~/.openclaw
 ```
 
 If you hit an operator seam, start with [Troubleshooting](operating/troubleshooting.md).

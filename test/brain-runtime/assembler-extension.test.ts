@@ -424,6 +424,53 @@ describe("BrainAssemblerExtension", () => {
     });
   });
 
+  it("caps injected context to explicit maxContextChars and records clip metrics", async () => {
+    const brain = createBrainStub({
+      query: vi.fn(async () => makeStructuredTraversalResult()),
+    });
+    const extension = new BrainAssemblerExtension(brain as never);
+
+    const result = await extension.augmentAssembly({
+      conversationId: 42,
+      tokenBudget: 4096,
+      maxContextChars: 240,
+      assembled: {
+        messages: [{ role: "user", content: "live tail" }],
+        estimatedTokens: 2,
+        stats: {
+          rawMessageCount: 1,
+          summaryCount: 0,
+          totalContextItems: 1,
+        },
+      },
+      liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
+    });
+
+    expect(brain.query).toHaveBeenCalledWith({
+      conversationId: 42,
+      queryText: "How do I open a pull request?",
+      budgetChars: 240,
+    });
+    expect(String(result.messages[0]?.content ?? "").length).toBeLessThanOrEqual(240);
+    expect(result.brainDecision).toEqual(expect.objectContaining({
+      mode: "use_brain",
+      maxContextChars: 240,
+      queryBudgetChars: 240,
+      injectedChars: expect.any(Number),
+      droppedChars: expect.any(Number),
+      contextClipped: true,
+    }));
+    expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
+      mode: "use_brain",
+      conversationId: 42,
+      maxContextChars: 240,
+      queryBudgetChars: 240,
+      injectedChars: expect.any(Number),
+      droppedChars: expect.any(Number),
+      contextClipped: true,
+    }));
+  });
+
   it("adds summary-routing guidance for precision-sensitive questions over summaries", async () => {
     const brain = createBrainStub({
       query: async () => makeTraversalResult(),

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-import { execFileSync, execSync } from "node:child_process";
+import { execFileSync, execSync, spawnSync } from "node:child_process";
 import { existsSync, mkdirSync, readFileSync, readdirSync, readSync, openSync, closeSync, realpathSync, rmSync, statSync, writeFileSync, symlinkSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath, pathToFileURL } from "node:url";
@@ -15,6 +15,7 @@ import { resolveActivationRoot } from "./resolve-activation-root.js";
 import { describeOpenClawHomeInspection, discoverOpenClawHomes, formatOpenClawHomeLayout, formatOpenClawHomeProfileSource, inspectOpenClawHome } from "./openclaw-home-layout.js";
 import { inspectOpenClawBrainHookStatus, inspectOpenClawBrainPluginAllowlist } from "./openclaw-hook-truth.js";
 import { describeOpenClawBrainInstallIdentity, describeOpenClawBrainInstallLayout, findInstalledOpenClawBrainPlugin, getOpenClawBrainKnownPluginIds, normalizeOpenClawBrainPluginsConfig, pinInstalledOpenClawBrainPluginActivationRoot, resolveOpenClawBrainInstallTarget } from "./openclaw-plugin-install.js";
+import { buildOpenClawBrainConvergeRestartPlan, classifyOpenClawBrainConvergeVerification, describeOpenClawBrainConvergeChangeReasons, diffOpenClawBrainConvergeRuntimeFingerprint, finalizeOpenClawBrainConvergeResult, planOpenClawBrainConvergePluginAction } from "./install-converge.js";
 import { loadAttachmentPolicyDeclaration, resolveEffectiveAttachmentPolicyTruth, writeAttachmentPolicyDeclaration } from "./attachment-policy-truth.js";
 import { DEFAULT_WATCH_POLL_INTERVAL_SECONDS, buildNormalizedEventExportFromScannedEvents, bootstrapRuntimeAttach, buildOperatorSurfaceReport, clearOpenClawProfileRuntimeLoadProof, compileRuntimeContext, createAsyncTeacherLiveLoop, createOpenClawLocalSessionTail, createRuntimeEventExportScanner, describeCurrentProfileBrainStatus, formatOperatorRollbackReport, listOpenClawProfileRuntimeLoadProofs, loadRuntimeEventExportBundle, loadWatchTeacherSnapshotState, persistWatchTeacherSnapshot, rollbackRuntimeAttach, resolveAttachmentRuntimeLoadProofsPath, resolveOperatorTeacherSnapshotPath, resolveAsyncTeacherLiveLoopSnapshotPath, resolveWatchSessionTailCursorPath, resolveWatchStateRoot, resolveWatchTeacherSnapshotPath, scanLiveEventExport, scanRecordedSession, summarizeLearningPathFromMaterialization, summarizeNormalizedEventExportLabelFlow, writeScannedEventExportBundle } from "./index.js";
 import { appendLearningUpdateLogs } from "./learning-spine.js";
@@ -516,7 +517,7 @@ function operatorCliHelp() {
         "  --help                      Show this help.",
         "",
         "Lifecycle flow:",
-        "  1. install            openclawbrain install — safe first-time default; writes the generated shadow hook or pins an already-installed native package plugin for one OpenClaw home",
+        "  1. install            openclawbrain install — converge one OpenClaw home: plugin-manager install/update/repair, hook repair, conditional restart, then status verification",
         "  2. attach             openclawbrain attach --openclaw-home <path> [--activation-root <path>] — explicit reattach/manual hook path for known brain data; use install first",
         "  3. status             openclawbrain status --activation-root <path> — answer \"How's the brain?\" for that boundary",
         "  4. status --detailed  openclawbrain status --activation-root <path> --detailed — explain serve path, freshness, backlog, and failure mode",
@@ -1451,6 +1452,182 @@ function buildGatewayRestartCommand(profileId) {
 }
 function buildGatewayStatusCommand(profileId) {
     return `env -i HOME="$HOME" PATH="$PATH" openclaw --profile ${quoteShellArg(profileId)} gateway status`;
+}
+function buildGatewayRestartArgs(profileId) {
+    return profileId === null ? ["gateway", "restart"] : ["gateway", "restart", "--profile", profileId];
+}
+function shellJoin(parts) {
+    return parts
+        .map((part) => {
+        if (/^[A-Za-z0-9_./:@=-]+$/.test(part)) {
+            return part;
+        }
+        return JSON.stringify(part);
+    })
+        .join(" ");
+}
+function runCapturedExternalCommand(command, args, options = {}) {
+    const result = spawnSync(command, args, {
+        cwd: options.cwd ?? process.cwd(),
+        env: options.env ?? process.env,
+        encoding: "utf8",
+        stdio: "pipe"
+    });
+    return {
+        command,
+        args,
+        shellCommand: shellJoin([command, ...args]),
+        stdout: result.stdout ?? "",
+        stderr: result.stderr ?? "",
+        exitCode: typeof result.status === "number" ? result.status : null,
+        signal: result.signal ?? null,
+        error: result.error ? toErrorMessage(result.error) : null
+    };
+}
+function summarizeCapturedCommandFailure(capture) {
+    const parts = [];
+    if (capture.error !== null) {
+        parts.push(capture.error);
+    }
+    if (capture.stderr.trim().length > 0) {
+        parts.push(capture.stderr.trim());
+    }
+    if (capture.stdout.trim().length > 0) {
+        parts.push(capture.stdout.trim());
+    }
+    if (capture.exitCode !== null) {
+        parts.push(`exitCode=${capture.exitCode}`);
+    }
+    return parts.length === 0 ? "no command output was captured" : parts.join(" | ");
+}
+function readTextFileIfExists(filePath) {
+    if (filePath === null || !existsSync(filePath)) {
+        return null;
+    }
+    try {
+        return readFileSync(filePath, "utf8");
+    }
+    catch {
+        return null;
+    }
+}
+function readInstallRuntimeFingerprint(openclawHome) {
+    const installedPlugin = findInstalledOpenClawBrainPlugin(openclawHome);
+    const selectedInstall = installedPlugin.selectedInstall;
+    const hook = inspectOpenClawBrainHookStatus(openclawHome);
+    const resolvedActivationRoot = resolveActivationRoot({
+        openclawHome,
+        quiet: true
+    });
+    const { config } = readOpenClawJsonConfig(openclawHome);
+    return {
+        selectedInstall: selectedInstall === null
+            ? null
+            : {
+                extensionDir: selectedInstall.extensionDir,
+                manifestId: selectedInstall.manifestId,
+                installId: selectedInstall.installId,
+                packageName: selectedInstall.packageName,
+                installLayout: selectedInstall.installLayout
+            },
+        installLayout: hook.installLayout,
+        hookPath: hook.hookPath,
+        hookState: hook.installState,
+        loadability: hook.loadability,
+        activationRoot: resolvedActivationRoot.trim().length === 0 ? null : path.resolve(resolvedActivationRoot),
+        loaderSource: readTextFileIfExists(selectedInstall?.loaderEntryPath ?? null),
+        runtimeGuardSource: readTextFileIfExists(selectedInstall?.runtimeGuardPath ?? null),
+        pluginsConfig: JSON.stringify(config.plugins ?? null)
+    };
+}
+function runOpenClawBrainConvergePluginStep(openclawHome) {
+    const before = readInstallRuntimeFingerprint(openclawHome);
+    const plan = planOpenClawBrainConvergePluginAction(before);
+    const commandArgs = plan.action === "install"
+        ? ["plugins", "install", plan.packageSpec]
+        : ["plugins", "update", plan.pluginId];
+    const capture = runCapturedExternalCommand("openclaw", commandArgs);
+    if (capture.error !== null || capture.exitCode !== 0) {
+        const hasAuthoritativeNativePlugin = before.selectedInstall !== null && before.installLayout === "native_package_plugin";
+        if (plan.action === "update" && hasAuthoritativeNativePlugin) {
+            return {
+                plan,
+                command: capture.shellCommand,
+                changed: false,
+                changeReasons: [],
+                detail: `Skipped plugin-manager refresh because the existing split-package plugin is already authoritative and \
+\`${capture.shellCommand}\` failed: ${summarizeCapturedCommandFailure(capture)}`,
+                warning: `plugin-manager refresh skipped after \`${capture.shellCommand}\` failed; keeping the existing authoritative split-package plugin for this converge run`,
+                capture,
+                before,
+                after: before
+            };
+        }
+        throw new Error(`OpenClaw plugin-manager ${plan.action} failed for ${path.resolve(openclawHome)}. Tried \`${capture.shellCommand}\`. Detail: ${summarizeCapturedCommandFailure(capture)}`);
+    }
+    const after = readInstallRuntimeFingerprint(openclawHome);
+    const diff = diffOpenClawBrainConvergeRuntimeFingerprint(before, after);
+    return {
+        plan,
+        command: capture.shellCommand,
+        changed: diff.changed,
+        changeReasons: diff.reasons,
+        detail: diff.changed
+            ? `${plan.action === "install" ? "Installed" : "Refreshed"} plugin-manager state: ${describeOpenClawBrainConvergeChangeReasons(diff.reasons)}`
+            : `${plan.action === "install" ? "Ran install" : "Ran update"} through the OpenClaw plugin manager, but no runtime-affecting plugin delta was detected`,
+        warning: null,
+        capture,
+        before,
+        after
+    };
+}
+function inspectInstallConvergeVerification(parsed) {
+    const targetInspection = inspectOpenClawHome(parsed.openclawHome);
+    const operatorInput = {
+        activationRoot: parsed.activationRoot,
+        eventExportPath: null,
+        teacherSnapshotPath: resolveOperatorTeacherSnapshotPath(parsed.activationRoot, null),
+        updatedAt: null,
+        brainAttachmentPolicy: null,
+        openclawHome: parsed.openclawHome,
+        ...(targetInspection.profileId === null ? {} : { profileId: targetInspection.profileId })
+    };
+    const status = describeCurrentProfileBrainStatus(operatorInput);
+    const report = buildOperatorSurfaceReport(operatorInput);
+    const normalizedStatusAndReport = applyAttachmentPolicyTruth(status, report);
+    const installHook = summarizeStatusInstallHook(parsed.openclawHome);
+    const attachmentTruth = summarizeStatusAttachmentTruth({
+        activationRoot: parsed.activationRoot,
+        openclawHome: parsed.openclawHome,
+        status: normalizedStatusAndReport.status
+    });
+    const displayedStatus = summarizeDisplayedStatus(normalizedStatusAndReport.status, installHook);
+    const routeFn = summarizeStatusRouteFn(normalizedStatusAndReport.status, normalizedStatusAndReport.report);
+    return {
+        targetInspection,
+        status: normalizedStatusAndReport.status,
+        report: normalizedStatusAndReport.report,
+        installHook,
+        attachmentTruth,
+        displayedStatus,
+        routeFn,
+        nextStep: buildStatusNextStep(normalizedStatusAndReport.status, normalizedStatusAndReport.report, {
+            openclawHome: parsed.openclawHome,
+            installHook
+        }),
+        summaryLine: `STATUS ${displayedStatus}; hook=${installHook.state}/${installHook.loadability}; runtime=${attachmentTruth.runtimeLoad}; loadProof=${normalizedStatusAndReport.status.hook.loadProof}; serve=${normalizedStatusAndReport.status.brainStatus.serveState}`,
+        facts: {
+            installLayout: normalizedStatusAndReport.status.hook.installLayout ?? installHook.installLayout ?? null,
+            installState: installHook.state,
+            loadability: installHook.loadability,
+            displayedStatus,
+            runtimeLoad: attachmentTruth.runtimeLoad,
+            loadProof: normalizedStatusAndReport.status.hook.loadProof,
+            serveState: normalizedStatusAndReport.status.brainStatus.serveState,
+            routeFnAvailable: routeFn.available,
+            awaitingFirstExport: normalizedStatusAndReport.status.brainStatus.awaitingFirstExport
+        }
+    };
 }
 function buildInstallCommand(openclawHome) {
     return `openclawbrain install --openclaw-home ${quoteShellArg(openclawHome)}`;
@@ -3238,7 +3415,7 @@ function runHistoryCommand(parsed) {
     }
     return 0;
 }
-function runProfileHookAttachCommand(parsed) {
+function executeProfileHookAttachCommand(parsed) {
     const steps = [];
     const commandLabel = parsed.command.toUpperCase();
     const isInstall = parsed.command === "install";
@@ -3458,106 +3635,273 @@ function runProfileHookAttachCommand(parsed) {
                 ? `Install: kept healthy active pack ${activationPlan.activePackId} in place`
                 : `Attach: rewired the profile hook to healthy active pack ${activationPlan.activePackId}`
     ];
-    // 9. Print summary
+    return {
+        command: parsed.command,
+        commandLabel,
+        openclawHome: parsed.openclawHome,
+        openclawHomeSource: parsed.openclawHomeSource,
+        openclawTarget: {
+            layout: targetInspection.layout,
+            detail: describeOpenClawHomeInspection(targetInspection),
+            profileId: targetInspection.profileId,
+            profileSource: targetInspection.profileSource,
+            configuredProfileIds: targetInspection.configuredProfileIds
+        },
+        activationRoot: parsed.activationRoot,
+        resolvedInputs: {
+            activationRoot: {
+                value: parsed.activationRoot,
+                source: parsed.activationRootSource
+            },
+            workspaceId: {
+                value: parsed.workspaceId,
+                source: parsed.workspaceIdSource
+            }
+        },
+        workspaceId: parsed.workspaceId,
+        shared: parsed.shared,
+        embedderProvision: embedderProvision === null
+            ? null
+            : {
+                skipped: parsed.skipEmbedderProvision,
+                source: parsed.skipEmbedderProvisionSource,
+                model: embedderProvision.model,
+                baseUrl: embedderProvision.baseUrl
+            },
+        providerDefaults: providerDefaults === null
+            ? null
+            : {
+                path: providerDefaults.path,
+                teacher: providerDefaults.defaults.teacher === undefined
+                    ? null
+                    : {
+                        provider: providerDefaults.defaults.teacher.provider ?? null,
+                        model: providerDefaults.defaults.teacher.model ?? null,
+                        detectedLocally: providerDefaults.defaults.teacher.detectedLocally ?? false
+                    },
+                embedder: providerDefaults.defaults.embedder === undefined
+                    ? null
+                    : {
+                        provider: providerDefaults.defaults.embedder.provider ?? null,
+                        model: providerDefaults.defaults.embedder.model ?? null
+                    },
+                teacherBaseUrl: providerDefaults.defaults.teacherBaseUrl ?? null,
+                embedderBaseUrl: providerDefaults.defaults.embedderBaseUrl ?? null
+            },
+        pluginConfigRepair,
+        learnerService,
+        brainFeedback: {
+            hookPath: brainFeedback.hookPath,
+            hookLayout: brainFeedback.hookLayout,
+            providerDefaultsPath: brainFeedback.providerDefaultsPath,
+            profile: brainFeedback.profile,
+            attachment: brainFeedback.attachment,
+            restart: brainFeedback.restart,
+            embedder: brainFeedback.embedder,
+            teacher: brainFeedback.teacher,
+            learnerService: brainFeedback.learnerService,
+            startup: brainFeedback.startup,
+            provedNow: brainFeedback.provedNow,
+            notYetProved: brainFeedback.notYetProved,
+            lines: brainFeedback.lines
+        },
+        extensionDir,
+        lifecycleSummary,
+        preflightSummary,
+        restartGuidance,
+        nextSteps,
+        steps
+    };
+}
+function emitProfileHookAttachCommandResult(result, parsed) {
     if (parsed.json) {
-        console.log(JSON.stringify({
-            command: parsed.command,
-            openclawHome: parsed.openclawHome,
-            openclawHomeSource: parsed.openclawHomeSource,
-            openclawTarget: {
-                layout: targetInspection.layout,
-                detail: describeOpenClawHomeInspection(targetInspection),
-                profileId: targetInspection.profileId,
-                profileSource: targetInspection.profileSource,
-                configuredProfileIds: targetInspection.configuredProfileIds
-            },
-            activationRoot: parsed.activationRoot,
-            resolvedInputs: {
-                activationRoot: {
-                    value: parsed.activationRoot,
-                    source: parsed.activationRootSource
-                },
-                workspaceId: {
-                    value: parsed.workspaceId,
-                    source: parsed.workspaceIdSource
-                }
-            },
-            workspaceId: parsed.workspaceId,
-            shared: parsed.shared,
-            embedderProvision: embedderProvision === null
-                ? null
-                : {
-                    skipped: parsed.skipEmbedderProvision,
-                    source: parsed.skipEmbedderProvisionSource,
-                    model: embedderProvision.model,
-                    baseUrl: embedderProvision.baseUrl
-                },
-            providerDefaults: providerDefaults === null
-                ? null
-                : {
-                    path: providerDefaults.path,
-                    teacher: providerDefaults.defaults.teacher === undefined
-                        ? null
-                        : {
-                            provider: providerDefaults.defaults.teacher.provider ?? null,
-                            model: providerDefaults.defaults.teacher.model ?? null,
-                            detectedLocally: providerDefaults.defaults.teacher.detectedLocally ?? false
-                        },
-                    embedder: providerDefaults.defaults.embedder === undefined
-                        ? null
-                        : {
-                            provider: providerDefaults.defaults.embedder.provider ?? null,
-                            model: providerDefaults.defaults.embedder.model ?? null
-                        },
-                    teacherBaseUrl: providerDefaults.defaults.teacherBaseUrl ?? null,
-                    embedderBaseUrl: providerDefaults.defaults.embedderBaseUrl ?? null
-                },
-            pluginConfigRepair,
-            learnerService,
-            brainFeedback: {
-                hookPath: brainFeedback.hookPath,
-                hookLayout: brainFeedback.hookLayout,
-                providerDefaultsPath: brainFeedback.providerDefaultsPath,
-                profile: brainFeedback.profile,
-                attachment: brainFeedback.attachment,
-                restart: brainFeedback.restart,
-                embedder: brainFeedback.embedder,
-                teacher: brainFeedback.teacher,
-                learnerService: brainFeedback.learnerService,
-                startup: brainFeedback.startup,
-                provedNow: brainFeedback.provedNow,
-                notYetProved: brainFeedback.notYetProved,
-                lines: brainFeedback.lines
-            },
-            extensionDir,
-            lifecycleSummary,
-            preflightSummary,
-            restartGuidance,
-            nextSteps,
-            steps
-        }, null, 2));
+        console.log(JSON.stringify(result, null, 2));
+        return;
     }
-    else {
-        console.log(`${commandLabel} complete\n`);
-        console.log("Brain feedback:");
-        for (const line of brainFeedback.lines) {
-            console.log(`  ${line}`);
-        }
-        console.log(`Restart:    ${restartGuidance}`);
-        if (brainFeedback.restart.gatewayStatusCommand !== null) {
-            console.log(`Gateway:    Confirm OpenClaw after restart: ${brainFeedback.restart.gatewayStatusCommand}`);
-        }
-        console.log(`Check:      ${buildInstallStatusCommand(parsed.activationRoot)}`);
-        console.log(`Proof:      ${buildProofCommandForOpenClawHome(parsed.openclawHome)}`);
-        console.log(`Learner:    ${buildLearnerServiceStatusCommand(parsed.activationRoot)}`);
-        if (embedderProvision !== null && embedderProvision.state === "skipped") {
-            console.log(`Embedder:   ${buildInstallEmbedderProvisionCommand(embedderProvision.baseUrl, embedderProvision.model)}`);
-        }
+    console.log(`${result.commandLabel} complete\n`);
+    console.log("Brain feedback:");
+    for (const line of result.brainFeedback.lines) {
+        console.log(`  ${line}`);
     }
+    console.log(`Restart:    ${result.restartGuidance}`);
+    if (result.brainFeedback.restart.gatewayStatusCommand !== null) {
+        console.log(`Gateway:    Confirm OpenClaw after restart: ${result.brainFeedback.restart.gatewayStatusCommand}`);
+    }
+    console.log(`Check:      ${buildInstallStatusCommand(result.activationRoot)}`);
+    console.log(`Proof:      ${buildProofCommandForOpenClawHome(result.openclawHome)}`);
+    console.log(`Learner:    ${buildLearnerServiceStatusCommand(result.activationRoot)}`);
+    if (result.embedderProvision !== null && result.embedderProvision.skipped) {
+        console.log(`Embedder:   ${buildInstallEmbedderProvisionCommand(result.embedderProvision.baseUrl, result.embedderProvision.model)}`);
+    }
+}
+function runProfileHookAttachCommand(parsed) {
+    const result = executeProfileHookAttachCommand(parsed);
+    emitProfileHookAttachCommandResult(result, parsed);
     return 0;
 }
+function emitInstallConvergeResult(result, parsed) {
+    if (parsed.json) {
+        console.log(JSON.stringify(result, null, 2));
+        return;
+    }
+    const heading = result.verdict.verdict === "failed"
+        ? "INSTALL converge failed"
+        : "INSTALL converge complete";
+    console.log(`${heading}\n`);
+    console.log(`Plugin:     ${result.plugin.detail}`);
+    console.log(`Attach:     ${result.attach.detail}`);
+    console.log(`Restart:    ${result.restart.detail}`);
+    console.log(`Verify:     ${result.verification.summaryLine}`);
+    console.log(`Verdict:    ${result.verdict.verdict}`);
+    console.log(`Why:        ${result.verdict.why}`);
+    if (result.verdict.warnings.length > 0) {
+        console.log(`Warnings:   ${result.verdict.warnings.join("; ")}`);
+    }
+    console.log(`Next:       ${result.verification.nextStep}`);
+    console.log(`Proof:      ${buildProofCommandForOpenClawHome(result.openclawHome)}`);
+    console.log(`Learner:    ${buildLearnerServiceStatusCommand(result.activationRoot)}`);
+}
 function runInstallCommand(parsed) {
-    return runProfileHookAttachCommand(parsed);
+    let pluginResult = null;
+    let attachResult = null;
+    try {
+        validateOpenClawHome(parsed.openclawHome);
+        pluginResult = runOpenClawBrainConvergePluginStep(parsed.openclawHome);
+        attachResult = executeProfileHookAttachCommand(parsed);
+    }
+    catch (error) {
+        const verdict = finalizeOpenClawBrainConvergeResult({
+            stepFailure: toErrorMessage(error),
+            verification: null,
+            warnings: []
+        });
+        const failureResult = {
+            command: "install",
+            openclawHome: parsed.openclawHome,
+            activationRoot: parsed.activationRoot,
+            plugin: pluginResult ?? {
+                action: null,
+                command: null,
+                changed: false,
+                changeReasons: [],
+                detail: "plugin-manager converge did not complete"
+            },
+            attach: attachResult ?? {
+                changed: false,
+                changeReasons: [],
+                detail: "under-the-hood install/attach repair did not complete",
+                hookLayout: null,
+                hookPath: null
+            },
+            restart: {
+                required: false,
+                automatic: false,
+                performed: false,
+                command: null,
+                detail: "restart did not run because install failed earlier",
+                error: null
+            },
+            verification: {
+                summaryLine: "verification did not run because install failed earlier",
+                nextStep: "Fix the install failure and rerun openclawbrain install.",
+                displayedStatus: "unknown",
+                installState: "unknown",
+                loadability: "unknown",
+                runtimeLoad: "unknown",
+                loadProof: "unknown",
+                serveState: "unknown",
+                routeFnAvailable: false,
+                awaitingFirstExport: false
+            },
+            verdict
+        };
+        emitInstallConvergeResult(failureResult, parsed);
+        return 1;
+    }
+    const attachDiff = diffOpenClawBrainConvergeRuntimeFingerprint(pluginResult.after, readInstallRuntimeFingerprint(parsed.openclawHome));
+    const changeReasons = [...new Set([...pluginResult.changeReasons, ...attachDiff.reasons])];
+    const restartPlan = buildOpenClawBrainConvergeRestartPlan({
+        profileName: attachResult.brainFeedback.profile.exactProfileName,
+        changeReasons
+    });
+    let restartCapture = null;
+    let restartError = null;
+    if (restartPlan.required && restartPlan.automatic) {
+        restartCapture = runCapturedExternalCommand("openclaw", buildGatewayRestartArgs(attachResult.brainFeedback.profile.exactProfileName));
+        if (restartCapture.error !== null || restartCapture.exitCode !== 0) {
+            restartError = `Automatic restart failed after converge. Tried \`${restartCapture.shellCommand}\`. Detail: ${summarizeCapturedCommandFailure(restartCapture)}`;
+        }
+    }
+    const verificationSnapshot = inspectInstallConvergeVerification(parsed);
+    const verification = classifyOpenClawBrainConvergeVerification({
+        ...verificationSnapshot.facts,
+        restartRequired: restartPlan.required,
+        restartPerformed: restartPlan.required && restartPlan.automatic && restartError === null
+    });
+    const convergeWarnings = [];
+    if (pluginResult.warning) {
+        convergeWarnings.push(pluginResult.warning);
+    }
+    if (restartError !== null) {
+        convergeWarnings.push(restartError);
+    }
+    const verdict = finalizeOpenClawBrainConvergeResult({
+        stepFailure: null,
+        verification,
+        warnings: convergeWarnings
+    });
+    const result = {
+        command: "install",
+        openclawHome: parsed.openclawHome,
+        activationRoot: parsed.activationRoot,
+        plugin: {
+            action: pluginResult.plan.action,
+            command: pluginResult.command,
+            changed: pluginResult.changed,
+            changeReasons: pluginResult.changeReasons,
+            detail: pluginResult.detail
+        },
+        attach: {
+            changed: attachDiff.changed,
+            changeReasons: attachDiff.reasons,
+            detail: attachDiff.changed
+                ? `Converged hook/install repair: ${describeOpenClawBrainConvergeChangeReasons(attachDiff.reasons)}`
+                : "Converged hook/install repair confirmed the selected activation root and hook wiring without additional runtime-affecting changes",
+            hookLayout: attachResult.brainFeedback.hookLayout,
+            hookPath: attachResult.brainFeedback.hookPath
+        },
+        restart: {
+            required: restartPlan.required,
+            automatic: restartPlan.automatic,
+            performed: restartPlan.required && restartPlan.automatic && restartError === null,
+            command: restartCapture?.shellCommand ?? null,
+            detail: restartPlan.required
+                ? restartPlan.automatic
+                    ? restartError === null
+                        ? `Ran automatic gateway restart: ${restartCapture.shellCommand}`
+                        : restartError
+                    : `${restartPlan.detail} Restart it manually, then rerun status.`
+                : restartPlan.detail,
+            error: restartError
+        },
+        verification: {
+            summaryLine: verificationSnapshot.summaryLine,
+            nextStep: verificationSnapshot.nextStep,
+            displayedStatus: verificationSnapshot.displayedStatus,
+            installState: verificationSnapshot.facts.installState,
+            installLayout: verificationSnapshot.facts.installLayout,
+            loadability: verificationSnapshot.facts.loadability,
+            runtimeLoad: verificationSnapshot.facts.runtimeLoad,
+            loadProof: verificationSnapshot.facts.loadProof,
+            serveState: verificationSnapshot.facts.serveState,
+            routeFnAvailable: verificationSnapshot.facts.routeFnAvailable,
+            awaitingFirstExport: verificationSnapshot.facts.awaitingFirstExport
+        },
+        verdict,
+        underlyingInstall: attachResult
+    };
+    emitInstallConvergeResult(result, parsed);
+    return verdict.verdict === "failed" || verdict.verdict === "manual_action_required" ? 1 : 0;
 }
 function runAttachCommand(parsed) {
     return runProfileHookAttachCommand(parsed);

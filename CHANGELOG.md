@@ -1,6 +1,12 @@
 # Changelog
 
-Release history for the published OpenClawBrain packages. The README and operator docs keep the install lane unpinned; release notes carry version-specific detail.
+Release history for the published OpenClawBrain packages. The README and operator docs lead with the current public front door; release notes carry version-specific detail.
+
+## Unreleased
+
+- repo docs now lead with `openclawbrain install --openclaw-home <path>` as the public front door for one OpenClaw home
+- proof is now framed as optional operator evidence, with `--proof` described as the intended canonical add-on and the separate proof step kept as current guidance
+- public positioning now emphasizes bounded useful context on promoted packs and predictable live-path latency
 
 ## 0.4.13
 

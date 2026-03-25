@@ -2,10 +2,12 @@
 
 Use this index to find the shortest path for your role.
 
+Public operator front door: `openclawbrain install --openclaw-home <path>` for one OpenClaw home. `status --detailed` is the quick check. Durable proof is still a separate follow-up surface today.
+
 ## Getting started
 
-- [Quick start](getting-started/quick-start.md) for the minimal install, update, verify, and proof flow
-- [Lifecycle](lifecycle.md) for install, update, proof, rollback, detach, and uninstall
+- [Quick start](getting-started/quick-start.md) for the one-command install, verify, and optional proof flow
+- [Lifecycle](lifecycle.md) for install, proof, rollback, detach, and uninstall
 - [Configuration guide](configuration.md) for embeddings, worker mode, and operator controls
 
 ## Operating

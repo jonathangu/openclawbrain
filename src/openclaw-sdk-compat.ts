@@ -22,6 +22,11 @@ export interface BrainDecisionMetadata {
   episodeId?: string | null;
   traceId?: string | null;
   footer?: string | null;
+  maxContextChars?: number | null;
+  queryBudgetChars?: number | null;
+  injectedChars?: number | null;
+  droppedChars?: number | null;
+  contextClipped?: boolean;
 }
 
 /** Result from assemble - matches what the code expects */
@@ -71,7 +76,7 @@ export interface IngestBatchResult {
 export interface ContextEngine {
 	readonly info: ContextEngineInfo;
 	bootstrap(params: { sessionId: string; sessionFile: string }): Promise<BootstrapResult>;
-	assemble(params: { sessionId: string; messages: unknown[]; tokenBudget?: number }): Promise<AssembleResult>;
+	assemble(params: { sessionId: string; messages: unknown[]; tokenBudget?: number; maxContextChars?: number }): Promise<AssembleResult>;
 	ingest(params: { sessionId: string; message: unknown; isHeartbeat?: boolean; brainEpisodeId?: string }): Promise<IngestResult>;
 	compact(params: { sessionId: string; sessionFile: string; tokenBudget?: number; currentTokenCount?: number; compactionTarget?: string; customInstructions?: string; legacyParams?: Record<string, unknown>; force?: boolean }): Promise<CompactResult>;
 }
@@ -102,6 +107,7 @@ export interface ContextEngineAssembleContext {
 	sessionKey: string;
 	messages: ContextEngineMessage[];
 	tokenBudget?: number;
+	maxContextChars?: number;
 }
 
 /** Message shape for context engine */

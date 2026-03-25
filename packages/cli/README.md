@@ -2,26 +2,32 @@
 
 Operator CLI for OpenClawBrain. Use it with `@openclawbrain/openclaw`.
 
-The public install story is three commands to install or update, one command to verify, and one official proof command when you need a durable operator bundle.
+The public front door is one command pinned to one OpenClaw home:
 
 ```bash
-openclaw plugins install @openclawbrain/openclaw
-npx @openclawbrain/cli install --openclaw-home ~/.openclaw
+openclawbrain install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
+openclawbrain status --openclaw-home ~/.openclaw --detailed
 ```
 
-The first three commands install or update OpenClawBrain. `status --detailed` is the quick verify surface. `proof` writes `summary.md`, `steps.json`, `verdict.json`, raw step logs, and proof pointers under one bundle directory.
+`install` is the public front door for the selected home. It writes or repairs the hook for that home and pins the activation root the runtime serves from. `status --detailed` is the quick verify surface.
+
+When you need durable operator evidence today, run:
+
+```bash
+openclawbrain proof --openclaw-home ~/.openclaw
+```
+
+The intended canonical lane is the same install command with optional `--proof`. Until that lands cleanly across the operator surfaces, proof stays a separate follow-up command. `proof` writes `summary.md`, `steps.json`, `verdict.json`, raw step logs, and proof pointers under one bundle directory.
 
 ## Common commands
 
 ```bash
-npx @openclawbrain/cli rollback --openclaw-home ~/.openclaw --dry-run
-npx @openclawbrain/cli detach --openclaw-home ~/.openclaw
-npx @openclawbrain/cli uninstall --openclaw-home ~/.openclaw --keep-data
-npx @openclawbrain/cli learn --openclaw-home ~/.openclaw --json
-npx @openclawbrain/cli daemon status --activation-root ~/.openclawbrain/activation
+openclawbrain rollback --openclaw-home ~/.openclaw --dry-run
+openclawbrain detach --openclaw-home ~/.openclaw
+openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data
+openclawbrain learn --openclaw-home ~/.openclaw --json
+openclawbrain daemon status --activation-root ~/.openclawbrain/activation
 ```
 
 ## Docs

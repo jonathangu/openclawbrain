@@ -184,6 +184,7 @@ describe("lcm plugin registration", () => {
     const beforePromptResult = await beforePromptBuild(
       {
         prompt: "latest prompt",
+        maxContextChars: 384,
         messages: [{ role: "user", content: "latest prompt" }],
       },
       {
@@ -194,6 +195,7 @@ describe("lcm plugin registration", () => {
     expect(assembleSpy).toHaveBeenCalledWith({
       sessionId: "sess_1",
       messages: [{ role: "user", content: "latest prompt" }],
+      maxContextChars: 384,
     });
     expect(beforePromptResult).toEqual({
       prependContext: expect.stringContaining("Earlier context"),

@@ -2,17 +2,23 @@
 
 Plugin and runtime payload for OpenClawBrain.
 
-Install it together with `@openclawbrain/cli`. The public install story is three commands to install or update, one command to verify quickly, and one proof command when you need a durable operator bundle.
+Most operators should start with the `openclawbrain` front door, not with manual package management:
 
 ```bash
-openclaw plugins install @openclawbrain/openclaw
-npx @openclawbrain/cli install --openclaw-home ~/.openclaw
+openclawbrain install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
-npx @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
+openclawbrain status --openclaw-home ~/.openclaw --detailed
 ```
 
-The first three commands install or update OpenClawBrain. `status --detailed` is the quick verify surface. `proof` writes one durable operator bundle for the selected OpenClaw home.
+`install` is the public front door for the selected home. It writes or repairs the hook for that home and pins the activation root the runtime serves from. `status --detailed` is the quick verify surface.
+
+When you need durable operator evidence today, run:
+
+```bash
+openclawbrain proof --openclaw-home ~/.openclaw
+```
+
+This package is still the runtime payload under the hood. If you are explicitly managing the native package layer yourself, use OpenClaw's plugin manager for `@openclawbrain/openclaw`, then rerun `openclawbrain install --openclaw-home ~/.openclaw`.
 
 ## What this package contains
 

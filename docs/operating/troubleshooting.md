@@ -3,29 +3,30 @@
 Start every operator investigation with the canonical verify command:
 
 ```bash
-npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
+openclawbrain status --openclaw-home ~/.openclaw --detailed
 ```
 
 When you need a durable install/restart/status bundle instead of an ad hoc terminal check, run:
 
 ```bash
-npx @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
+openclawbrain proof --openclaw-home ~/.openclaw
 ```
 
-## `BRAIN NOT YET LOADED` appears after plugin install
+## `BRAIN NOT YET LOADED` appears after install
 
 Cause:
 
-The plugin package is installed, but the activation root has not been pinned for the selected OpenClaw home yet.
+The hook for the selected OpenClaw home is not pinned yet, or the gateway has not reloaded it yet.
 
 Fix:
 
 ```bash
-openclaw plugins install @openclawbrain/openclaw
-npx @openclawbrain/cli install --openclaw-home ~/.openclaw
+openclawbrain install --openclaw-home ~/.openclaw
 openclaw gateway restart
-npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
+openclawbrain status --openclaw-home ~/.openclaw --detailed
 ```
+
+If you just managed `@openclawbrain/openclaw` through OpenClaw's plugin manager, rerun `openclawbrain install --openclaw-home ~/.openclaw` for the same home afterward.
 
 ## `status --detailed` does not show the selected home as attached
 
@@ -49,7 +50,7 @@ Fix:
 
 - confirm the install is attached
 - run a few real turns so the export and learning path have material to process
-- inspect `npx @openclawbrain/cli learn --openclaw-home ~/.openclaw --json`
+- inspect `openclawbrain learn --openclaw-home ~/.openclaw --json`
 - review `~/.openclawbrain/extension-errors.log` if the extension reported compile errors
 
 ## Plugin install warns about `openclaw` versus `openclawbrain`
