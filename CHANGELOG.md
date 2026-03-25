@@ -8,6 +8,34 @@ Release history for the published OpenClawBrain packages. The README and operato
 - proof is now framed as optional operator evidence, with `--proof` described as the intended canonical add-on and the separate proof step kept as current guidance
 - public positioning now emphasizes bounded useful context on promoted packs and predictable live-path latency
 
+## 0.3.7
+
+`0.3.7` is a compatibility-package patch release that carries the bounded-runtime hardening lane for older combined-package installs.
+
+**Packages**
+
+- `@jonathangu/openclawbrain@0.3.7`
+
+**Changes**
+
+- adds soft compile-deadline support through `brainMaxCompileMs`
+- adds structured compile/deadline/drop metadata on the compatibility live path
+- decouples retrieval/query budget from the final `maxContextChars` injection cap
+- preserves truthful deadline/clip attribution across trace, observation, teacher materialization, and status surfaces
+- adds focused proof coverage for bounded-runtime fail-open outcomes
+
+**Verification**
+
+- `npm run release:verify`
+  - passed
+  - root Vitest: `43` files / `395` tests
+  - `@openclawbrain/openclaw@0.4.2` tarball verification passed
+  - `@openclawbrain/cli@0.4.13` tarball verification passed
+
+**Full release note**
+
+- [docs/release-notes-0.3.7.md](docs/release-notes-0.3.7.md)
+
 ## 0.4.13
 
 `0.4.13` completes the split-package STOP_LOCAL release lane: the split public install path now carries learned source-specific STOP_LOCAL updates through the CLI learner and the runtime graph-walk compiler.

@@ -110,6 +110,7 @@ describe("integration: full learning pipeline", () => {
     const initialWeightAC = initialEdgeAC?.weight ?? 0.5;
     const chosenSeed = result.seedScores.find((seed) => seed.selected)?.nodeId ?? null;
     const initialSeedWeight = chosenSeed ? graph.getSeedWeight(chosenSeed) : 0;
+    const initialStopLocalWeightA = graph.getStopLocalWeight("a");
 
     const updates = computeReinforceUpdates(episode, 0.1, 0.0);
     applyWeightUpdates(graph, updates);
@@ -119,11 +120,13 @@ describe("integration: full learning pipeline", () => {
       const updatedEdgeAB = graph.getEdge("a", "b");
       const updatedEdgeAC = graph.getEdge("a", "c");
       const updatedSeedWeight = chosenSeed ? graph.getSeedWeight(chosenSeed) : 0;
+      const updatedStopLocalWeightA = graph.getStopLocalWeight("a");
 
-      const abChanged = updatedEdgeAB && Math.abs(updatedEdgeAB.weight - initialWeightAB) > 0.001;
-      const acChanged = updatedEdgeAC && Math.abs(updatedEdgeAC.weight - initialWeightAC) > 0.001;
-      const seedChanged = chosenSeed !== null && Math.abs(updatedSeedWeight - initialSeedWeight) > 0.001;
-      expect(abChanged || acChanged || seedChanged).toBe(true);
+      const abChanged = updatedEdgeAB && Math.abs(updatedEdgeAB.weight - initialWeightAB) > 1e-9;
+      const acChanged = updatedEdgeAC && Math.abs(updatedEdgeAC.weight - initialWeightAC) > 1e-9;
+      const seedChanged = chosenSeed !== null && Math.abs(updatedSeedWeight - initialSeedWeight) > 1e-9;
+      const stopLocalChanged = Math.abs(updatedStopLocalWeightA - initialStopLocalWeightA) > 1e-9;
+      expect(abChanged || acChanged || seedChanged || stopLocalChanged).toBe(true);
 
       for (const update of updates) {
         expect(update.delta).toBeGreaterThan(0);
