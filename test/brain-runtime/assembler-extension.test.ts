@@ -731,8 +731,8 @@ describe("BrainAssemblerExtension", () => {
     }));
   });
 
-  it("preserves completed query trace truth when the deadline hits after query", async () => {
-    const traversalResult = makeTraversalResult();
+  it("partially serves a committed prefix when the deadline hits after query", async () => {
+    const traversalResult = makeStructuredTraversalResult();
     const brain = createBrainStub({
       compileDeadlineMs: 5,
       query: vi.fn(async () => traversalResult),
@@ -761,53 +761,69 @@ describe("BrainAssemblerExtension", () => {
       liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
     });
 
-    expect(result.messages).toEqual(assembled.messages);
+    expect(result.messages).toHaveLength(2);
+    expect(result.messages[0]).toMatchObject({
+      role: "user",
+      content: expect.stringContaining("[brain partial]"),
+    });
+    expect(String(result.messages[0]?.content ?? "")).toContain("Use gh pr create");
+    expect(String(result.messages[0]?.content ?? "")).not.toContain("Transcript Support");
+    expect(result.messages.slice(1)).toEqual(assembled.messages);
+    expect(result.estimatedTokens).toBeGreaterThan(assembled.estimatedTokens);
     expect(result.brainDecision).toEqual(expect.objectContaining({
-      mode: "skip_deadline_after_query",
-      episodeId: "ep_1",
-      traceId: "tr_1",
-      footer: "[brain] bypassed: soft compile deadline hit after query.",
+      mode: "partial_deadline_after_query",
+      episodeId: "ep_structured_1",
+      traceId: "tr_structured_1",
+      footer: "[brain] partial serve: soft compile deadline hit after query; injected committed prefix.",
       interruption: {
         interrupted: true,
         stage: "query",
         reason: "deadline_after_query",
-        servedPartial: false,
+        servedPartial: true,
       },
       queryInterrupted: true,
       interruptionStage: "query",
       interruptionReason: "deadline_after_query",
-      servedPartial: false,
+      servedPartial: true,
       compileElapsedMs: 10,
       compileDeadlineMs: 5,
       compileDeadlineHit: true,
       brainDropReason: "deadline_after_query",
       brainDropStage: "query",
+      maxContextChars: 240,
       queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
+      injectedChars: expect.any(Number),
+      droppedChars: expect.any(Number),
+      contextClipped: true,
     }));
     expect(brain.recordTraceSelectionMetadata).toHaveBeenCalledWith(
-      expect.objectContaining({ id: "tr_1" }),
+      expect.objectContaining({ id: "tr_structured_1" }),
       expect.objectContaining({
         interruption: {
           interrupted: true,
           stage: "query",
           reason: "deadline_after_query",
-          servedPartial: false,
+          servedPartial: true,
         },
         queryInterrupted: true,
         interruptionStage: "query",
         interruptionReason: "deadline_after_query",
-        servedPartial: false,
+        servedPartial: true,
         compileElapsedMs: 10,
         compileDeadlineMs: 5,
         compileDeadlineHit: true,
         brainDropReason: "deadline_after_query",
         brainDropStage: "query",
+        maxContextChars: 240,
         queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
+        injectedChars: expect.any(Number),
+        droppedChars: expect.any(Number),
+        contextClipped: true,
       }),
     );
   });
 
-  it("measures formatted clip metadata but skips injection when the deadline hits before injection", async () => {
+  it("partially serves a committed prefix when the deadline hits before injection", async () => {
     const traversalResult = makeStructuredTraversalResult();
     const brain = createBrainStub({
       compileDeadlineMs: 5,
@@ -838,22 +854,30 @@ describe("BrainAssemblerExtension", () => {
       liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
     });
 
-    expect(result.messages).toEqual(assembled.messages);
+    expect(result.messages).toHaveLength(2);
+    expect(result.messages[0]).toMatchObject({
+      role: "user",
+      content: expect.stringContaining("[brain partial]"),
+    });
+    expect(String(result.messages[0]?.content ?? "")).toContain("Use gh pr create");
+    expect(String(result.messages[0]?.content ?? "")).not.toContain("Transcript Support");
+    expect(result.messages.slice(1)).toEqual(assembled.messages);
+    expect(result.estimatedTokens).toBeGreaterThan(assembled.estimatedTokens);
     expect(result.brainDecision).toEqual(expect.objectContaining({
-      mode: "skip_deadline_before_injection",
+      mode: "partial_deadline_before_injection",
       episodeId: "ep_structured_1",
       traceId: "tr_structured_1",
-      footer: "[brain] bypassed: soft compile deadline hit before injection.",
+      footer: "[brain] partial serve: soft compile deadline hit before injection; injected committed prefix.",
       interruption: {
         interrupted: true,
         stage: "injection",
         reason: "deadline_before_injection",
-        servedPartial: false,
+        servedPartial: true,
       },
       queryInterrupted: true,
       interruptionStage: "injection",
       interruptionReason: "deadline_before_injection",
-      servedPartial: false,
+      servedPartial: true,
       compileElapsedMs: 10,
       compileDeadlineMs: 5,
       compileDeadlineHit: true,
@@ -872,12 +896,12 @@ describe("BrainAssemblerExtension", () => {
           interrupted: true,
           stage: "injection",
           reason: "deadline_before_injection",
-          servedPartial: false,
+          servedPartial: true,
         },
         queryInterrupted: true,
         interruptionStage: "injection",
         interruptionReason: "deadline_before_injection",
-        servedPartial: false,
+        servedPartial: true,
         compileElapsedMs: 10,
         compileDeadlineMs: 5,
         compileDeadlineHit: true,

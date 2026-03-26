@@ -99,7 +99,9 @@ export class BrainService {
           | "skip_query_returned_no_nodes"
           | "skip_deadline_before_query"
           | "skip_deadline_after_query"
-          | "skip_deadline_before_injection";
+          | "skip_deadline_before_injection"
+          | "partial_deadline_after_query"
+          | "partial_deadline_before_injection";
         conversationId?: number;
         episodeId?: string | null;
         traceId?: string | null;
@@ -114,6 +116,10 @@ export class BrainService {
         compileDeadlineHit?: boolean | null;
         brainDropReason?: BrainDropReason | null;
         brainDropStage?: BrainDropStage | null;
+        queryInterrupted?: boolean | null;
+        interruptionStage?: DecisionRouteTrace["selectionMetadata"]["interruptionStage"] | null;
+        interruptionReason?: string | null;
+        servedPartial?: boolean | null;
         maxContextChars?: number | null;
         queryBudgetChars?: number | null;
         injectedChars?: number | null;

@@ -508,6 +508,155 @@ describe("BrainService", () => {
     }));
   });
 
+  it("persists partial-serve interruption truth through trace, observation, and status", async () => {
+    const queryBudgetChars = deriveExpectedQueryBudgetChars(4096);
+    const workspaceRoot = makeTempDir("openclawbrain-partial-serve-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-partial-serve-state-");
+    writeFileSync(
+      join(workspaceRoot, "PLAYBOOK.md"),
+      "# Pull Requests\n\nUse gh pr create for pull request workflows and keep the response auditable when the compile path needs to fall back to a committed prefix.\n",
+      "utf8",
+    );
+
+    const service = new BrainService({
+      deps: createDeps(brainRoot, {
+        maxCompileMs: 5,
+      }),
+    });
+    await service.init({
+      workspaceRoot,
+      embedFn: async (text) => embed(text),
+    });
+    (service as unknown as { embeddingClient: (text: string) => Promise<Float32Array> }).embeddingClient = async (text: string) => embed(text);
+
+    const extension = new BrainAssemblerExtension(service);
+    const assembled = {
+      messages: [{ role: "user", content: "live tail" }],
+      estimatedTokens: 2,
+      stats: {
+        rawMessageCount: 1,
+        summaryCount: 0,
+        totalContextItems: 1,
+      },
+    };
+
+    let mockedNow = 100;
+    vi.spyOn(Date, "now").mockImplementation(() => mockedNow++);
+
+    const result = await extension.augmentAssembly({
+      conversationId: 42,
+      tokenBudget: 4096,
+      maxContextChars: 240,
+      assembled,
+      liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
+    });
+
+    expect(result.messages[0]).toMatchObject({
+      role: "user",
+      content: expect.stringContaining("[brain partial]"),
+    });
+    expect(result.messages.slice(1)).toEqual(assembled.messages);
+    expect(result.brainDecision).toEqual(expect.objectContaining({
+      mode: "partial_deadline_after_query",
+      episodeId: expect.any(String),
+      traceId: expect.any(String),
+      compileElapsedMs: expect.any(Number),
+      compileDeadlineMs: 5,
+      compileDeadlineHit: true,
+      brainDropReason: "deadline_after_query",
+      brainDropStage: "query",
+      queryInterrupted: true,
+      interruptionStage: "query",
+      interruptionReason: "soft_compile_deadline",
+      servedPartial: true,
+      maxContextChars: 240,
+      queryBudgetChars,
+      injectedChars: expect.any(Number),
+    }));
+
+    const trace = await service.getTrace(String(result.brainDecision?.traceId ?? ""));
+    expect(trace?.routeTrace?.selectionMetadata).toMatchObject({
+      budgetChars: queryBudgetChars,
+      compileElapsedMs: expect.any(Number),
+      compileDeadlineMs: 5,
+      compileDeadlineHit: true,
+      brainDropReason: "deadline_after_query",
+      brainDropStage: "query",
+      queryInterrupted: true,
+      interruptionStage: "query",
+      interruptionReason: "soft_compile_deadline",
+      servedPartial: true,
+      maxContextChars: 240,
+      queryBudgetChars,
+      injectedChars: expect.any(Number),
+      chosenStopCount: expect.any(Number),
+      forcedStopCount: expect.any(Number),
+    });
+    expect((trace?.routeTrace?.selectionMetadata.injectedChars ?? 0)).toBeGreaterThan(0);
+    expect((trace?.routeTrace?.selectionMetadata?.forcedStopCount ?? 0)).toBeGreaterThan(0);
+
+    await service.recordTurnObservation({
+      episodeId: String(result.brainDecision?.episodeId ?? ""),
+      assistantResponse: "Use `gh pr create` to open the pull request.",
+      toolResults: [],
+    });
+
+    const observation = (
+      service as unknown as {
+        store: { getObservationForEpisode: (episodeId: string) => Record<string, unknown> | null };
+      }
+    ).store.getObservationForEpisode(String(result.brainDecision?.episodeId ?? ""));
+
+    expect(observation).toMatchObject({
+      traceId: result.brainDecision?.traceId,
+      routeMetadata: {
+        selectionMetadata: {
+          budgetChars: queryBudgetChars,
+          brainDropReason: "deadline_after_query",
+          brainDropStage: "query",
+          queryInterrupted: true,
+          interruptionStage: "query",
+          interruptionReason: "soft_compile_deadline",
+          servedPartial: true,
+          maxContextChars: 240,
+          queryBudgetChars,
+          injectedChars: expect.any(Number),
+          chosenStopCount: expect.any(Number),
+          forcedStopCount: expect.any(Number),
+        },
+      },
+    });
+
+    const status = await service.status();
+    expect(status.lastAssemblyDecision).toEqual(expect.objectContaining({
+      mode: "partial_deadline_after_query",
+      traceId: result.brainDecision?.traceId,
+      brainDropReason: "deadline_after_query",
+      brainDropStage: "query",
+      queryInterrupted: true,
+      interruptionStage: "query",
+      interruptionReason: "soft_compile_deadline",
+      servedPartial: true,
+      maxContextChars: 240,
+      queryBudgetChars,
+      injectedChars: expect.any(Number),
+    }));
+    expect(status.lastTraceSelectionMetadata).toEqual(expect.objectContaining({
+      budgetChars: queryBudgetChars,
+      brainDropReason: "deadline_after_query",
+      brainDropStage: "query",
+      queryInterrupted: true,
+      interruptionStage: "query",
+      interruptionReason: "soft_compile_deadline",
+      servedPartial: true,
+      maxContextChars: 240,
+      queryBudgetChars,
+      injectedChars: expect.any(Number),
+      chosenStopCount: expect.any(Number),
+      forcedStopCount: expect.any(Number),
+    }));
+  });
+
   it("records turn observations, attaches next-user follow-up, and surfaces teacher supervision in status", async () => {
     const workspaceRoot = makeTempDir("openclawbrain-workspace-");
     const brainRoot = makeTempDir("openclawbrain-state-");
