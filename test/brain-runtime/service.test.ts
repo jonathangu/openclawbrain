@@ -649,8 +649,6 @@ describe("BrainService", () => {
       assembled,
       liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
     });
-    console.log("PARTIAL_RESULT", JSON.stringify(result, null, 2));
-
     expect(result.messages[0]).toMatchObject({
       role: "user",
       content: expect.stringContaining("[brain partial]"),
@@ -661,7 +659,7 @@ describe("BrainService", () => {
       episodeId: expect.any(String),
       traceId: expect.any(String),
       compileElapsedMs: expect.any(Number),
-      compileDeadlineMs: 5,
+      compileDeadlineMs: 15,
       compileDeadlineHit: true,
       brainDropReason: "deadline_after_query",
       brainDropStage: "query",
@@ -678,7 +676,7 @@ describe("BrainService", () => {
     expect(trace?.routeTrace?.selectionMetadata).toMatchObject({
       budgetChars: queryBudgetChars,
       compileElapsedMs: expect.any(Number),
-      compileDeadlineMs: 5,
+      compileDeadlineMs: 15,
       compileDeadlineHit: true,
       brainDropReason: "deadline_after_query",
       brainDropStage: "query",
