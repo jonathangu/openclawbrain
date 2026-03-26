@@ -152,6 +152,7 @@ describe("resolveLcmConfig", () => {
 
   it("keeps root and published manifests aligned for tranche-1 serving controls", () => {
     const keys = [
+      "brainMaxCompileMs",
       "brainBudgetFraction",
       "brainMaxFanoutPerNode",
       "brainMaxFrontierSize",

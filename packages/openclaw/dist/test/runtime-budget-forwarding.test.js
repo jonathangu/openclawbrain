@@ -83,3 +83,25 @@ test("serve-time operator audit code keeps compact structural stop-truth signals
     graphWalkPathNodeIds: ["node-a", "node-b"],
   });
 });
+
+test("CLI and OpenClaw keep Wave 1 serve-time provenance forwarding aligned", () => {
+  const cliLearningSpineSource = readFileSync(
+    path.join(__dirname, "..", "..", "..", "cli", "dist", "src", "learning-spine.js"),
+    "utf8",
+  );
+  const openclawLearningSpineSource = readFileSync(path.join(__dirname, "..", "src", "learning-spine.js"), "utf8");
+
+  const parityPatterns = [
+    /maxContextChars: input\.turn\.maxContextChars \?\? null/,
+    /activePackGraphChecksum: activePack\?\.manifest\.payloadChecksums\.graph \?\? null/,
+    /selectionDigest: input\.compileResult\.ok \? input\.compileResult\.compileResponse\.diagnostics\.selectionDigest : null/,
+    /structuralSignals: compactStructuralSignals\(input\.compileResult\.ok \? input\.compileResult\.compileResponse\.structuralSignals : null\)/,
+  ];
+
+  for (const pattern of parityPatterns) {
+    assert.match(cliLearningSpineSource, pattern);
+    assert.match(openclawLearningSpineSource, pattern);
+  }
+
+  assert.doesNotMatch(cliLearningSpineSource, /structuralSignals:\s*null/);
+});

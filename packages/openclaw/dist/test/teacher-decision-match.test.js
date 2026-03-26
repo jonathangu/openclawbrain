@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { createServeTimeDecisionMatcher } from "../src/teacher-decision-match.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 function makeDecision(overrides = {}) {
     return {
@@ -41,6 +46,25 @@ test("serve-time decision matcher prefers exact decision record ids when present
     assert.equal(matcher(makeInteraction({
         serveDecisionRecordId: "decision-exact",
         createdAt: "2026-03-20T18:10:00.100Z",
+    })), exact);
+});
+
+test("serve-time decision matcher reads exact decision ids from nested legacy route metadata", () => {
+    const exact = makeDecision({
+        recordId: "decision-nested",
+        turnCompileEventId: null,
+        recordedAt: "2026-03-20T18:11:00.000Z",
+    });
+    const nearby = makeDecision({
+        recordId: "decision-nearby",
+        recordedAt: "2026-03-20T18:11:00.250Z",
+    });
+    const matcher = createServeTimeDecisionMatcher([nearby, exact]);
+    assert.equal(matcher(makeInteraction({
+        routeMetadata: {
+            serveDecisionRecordId: "decision-nested",
+        },
+        createdAt: "2026-03-20T18:11:00.100Z",
     })), exact);
 });
 
@@ -227,4 +251,14 @@ test("serve-time decision matcher skips operational noise during cross-surface f
         channel: "direct",
         createdAt: "2026-03-20T18:00:16.000Z",
     })), actual);
+});
+
+test("CLI and OpenClaw decision matcher sources stay aligned for exact provenance fallback", () => {
+    const cliSource = readFileSync(
+        path.join(__dirname, "..", "..", "..", "cli", "dist", "src", "teacher-decision-match.js"),
+        "utf8",
+    );
+    const openclawSource = readFileSync(path.join(__dirname, "..", "src", "teacher-decision-match.js"), "utf8");
+
+    assert.equal(cliSource, openclawSource);
 });

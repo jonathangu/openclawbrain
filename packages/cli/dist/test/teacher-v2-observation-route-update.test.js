@@ -38,6 +38,10 @@ function createActivationRoot(t) {
 function seedObservationDb(activationRoot, observation, options = {}) {
   const db = new DatabaseSync(path.join(activationRoot, "state.db"));
   try {
+    const columnValues = options.columnValues ?? {};
+    const readColumnValue = (key, fallback) => Object.prototype.hasOwnProperty.call(columnValues, key)
+      ? columnValues[key]
+      : fallback;
     const routeMetadata = {
       ...(observation.serveDecisionRecordId !== undefined ? { serveDecisionRecordId: observation.serveDecisionRecordId } : {}),
       ...(observation.selectionDigest !== undefined ? { selectionDigest: observation.selectionDigest } : {}),
@@ -183,11 +187,11 @@ function seedObservationDb(activationRoot, observation, options = {}) {
       observation.episodeId,
       null,
       null,
-      observation.serveDecisionRecordId ?? null,
-      observation.selectionDigest ?? null,
-      observation.turnCompileEventId ?? null,
-      observation.activePackId ?? null,
-      observation.activePackGraphChecksum ?? null,
+      readColumnValue("serveDecisionRecordId", observation.serveDecisionRecordId ?? null),
+      readColumnValue("selectionDigest", observation.selectionDigest ?? null),
+      readColumnValue("turnCompileEventId", observation.turnCompileEventId ?? null),
+      readColumnValue("activePackId", observation.activePackId ?? null),
+      readColumnValue("activePackGraphChecksum", observation.activePackGraphChecksum ?? null),
       observation.queryText,
       "[]",
       JSON.stringify(routeMetadata),
@@ -557,6 +561,137 @@ test("native V2 falls back to exact selection digest when decision ids are absen
   assert.equal(result.payloads.router?.training.noOpReason, null);
 });
 
+test("native V2 falls back to turn compile event ids when stronger exact provenance is absent", (t) => {
+  const workspace = createWorkspace(t);
+  const activationRoot = createActivationRoot(t);
+  const interactionEvents = [
+    {
+      contract: CONTRACT_IDS.interactionEvents,
+      eventId: "evt-i1",
+      agentId: "agent",
+      sessionId: "sess-turn-compile",
+      channel: "cli",
+      sequence: 1,
+      kind: "memory_compiled",
+      createdAt: "2026-03-23T17:00:00.000Z",
+      source: { runtimeOwner: "openclaw", stream: "session.tail" },
+      messageId: "msg-1"
+    }
+  ];
+  const normalizedEventExport = buildNormalizedEventExport({
+    interactionEvents,
+    feedbackEvents: []
+  });
+  const structuralOps = { connect: 3, split: 1, merge: 1, prune: 1 };
+  const servedPack = buildCandidatePackFromNormalizedEventExport({
+    packLabel: "teacher-v2-observation-turn-compile-served",
+    workspace,
+    normalizedEventExport,
+    learnedRouting: false,
+    builtAt: "2026-03-23T17:01:00.000Z",
+    structuralOps
+  });
+  const packId = servedPack.summary.packId;
+  const chosenContextIds = [`${packId}:event:evt-i1`];
+  seedObservationDb(activationRoot, {
+    id: "bo_test_turn_compile",
+    episodeId: "ep_test_turn_compile",
+    queryText: "show me the learned routing context",
+    turnCompileEventId: "evt-i1",
+    selectedNodeIds: chosenContextIds,
+    selectedPathNodeIds: chosenContextIds,
+    finalScore: 0.72,
+    createdAt: Date.parse("2026-03-23T17:00:05.000Z")
+  });
+  const serveTimeDecision = {
+    recordType: "serve_time_route_decision",
+    recordId: "decision-turn-compile",
+    recordedAt: "2026-03-23T17:00:06.000Z",
+    activationRoot,
+    breadcrumbs: {
+      entrypoint: "compileRuntimeContext",
+      invocationSurface: "direct_compile_call",
+      hostEvent: null,
+      installedEntryPath: null,
+      syntheticTurn: false
+    },
+    sessionId: "sess-turn-compile",
+    channel: "cli",
+    userMessage: "show me the learned routing context",
+    turnSequenceStart: 1,
+    turnCompileEventId: "evt-i1",
+    turnCreatedAt: "2026-03-23T17:00:00.000Z",
+    activePackId: packId,
+    activePackBuiltAt: "2026-03-23T17:01:00.000Z",
+    activePackEventExportDigest: servedPack.summary.eventExportDigest,
+    activePackRouterChecksum: null,
+    activePackGraphChecksum: servedPack.manifest.payloadChecksums.graph,
+    routerIdentity: null,
+    usedLearnedRouteFn: true,
+    servedArtifact: null,
+    selectionDigest: "selection-turn-compile",
+    requestedBudget: {
+      modeRequested: "learned_required",
+      maxContextBlocks: 1,
+      maxContextChars: null
+    },
+    actualBudget: {
+      modeEffective: "learned_required",
+      selectedCount: 1,
+      selectedCharCount: 80,
+      selectedTokenCount: 16
+    },
+    candidateSetIds: chosenContextIds,
+    chosenContextIds,
+    candidateScores: [
+      {
+        blockId: `${packId}:event:evt-i1`,
+        source: "event:i1",
+        selected: true,
+        compactedFrom: [],
+        matchedTokens: ["learned"],
+        routingChannels: ["graph"],
+        channelScores: { graph: 0.9 },
+        routeFnScore: 0.9,
+        actionScore: 0.9,
+        actionProbability: 1,
+        actionLogProbability: 0,
+        traversalScore: 0.9,
+        priority: 1
+      }
+    ],
+    structuralSignals: null,
+    fallbackReason: null,
+    hotPathTiming: { totalMs: 1 },
+    kernelContextCount: 1,
+    brainContextCount: 0,
+    selectedKernelContextIds: chosenContextIds,
+    selectedBrainContextIds: [],
+    promotionLink: null
+  };
+  const result = buildCandidatePackFromNormalizedEventExport({
+    packLabel: "teacher-v2-observation-turn-compile-candidate",
+    workspace,
+    normalizedEventExport,
+    learnedRouting: true,
+    builtAt: "2026-03-23T17:02:00.000Z",
+    structuralOps,
+    pgVersion: "v2",
+    serveTimeDecisions: [serveTimeDecision],
+    baselineState: {
+      movingAverage: 0,
+      count: 0,
+      alpha: 0.1,
+      lastUpdatedAt: "2026-03-23T17:00:00.000Z"
+    },
+    activationRoot
+  });
+  assert.equal(result.routingBuild.observationBindingStats?.matched.turnCompileEventId, 1);
+  assert.equal(result.routingBuild.observationBindingStats?.matched.exactDecisionId, 0);
+  assert.equal(result.routingBuild.observationBindingStats?.matched.exactSelectionDigest, 0);
+  assert.equal(result.payloads.router?.training.noOpReason, null);
+});
+
 test("native V2 uses heuristic fallback only for legacy observation rows", (t) => {
   const workspace = createWorkspace(t);
   const activationRoot = createActivationRoot(t);
@@ -686,6 +821,144 @@ test("native V2 uses heuristic fallback only for legacy observation rows", (t) =
   assert.equal(result.routingBuild.observationBindingStats?.matched.legacyHeuristic, 1);
   assert.equal(result.routingBuild.observationBindingStats?.matched.exactDecisionId, 0);
   assert.ok((result.payloads.router?.policyUpdates.length ?? 0) > 0);
+});
+
+test("native V2 keeps heuristic fallback for migrated rows with null exact provenance columns", (t) => {
+  const workspace = createWorkspace(t);
+  const activationRoot = createActivationRoot(t);
+  const interactionEvents = [
+    {
+      contract: CONTRACT_IDS.interactionEvents,
+      eventId: "evt-i1",
+      agentId: "agent",
+      sessionId: "sess-migrated-null-columns",
+      channel: "cli",
+      sequence: 1,
+      kind: "memory_compiled",
+      createdAt: "2026-03-23T17:00:00.000Z",
+      source: { runtimeOwner: "openclaw", stream: "session.tail" },
+      messageId: "msg-1"
+    }
+  ];
+  const normalizedEventExport = buildNormalizedEventExport({
+    interactionEvents,
+    feedbackEvents: []
+  });
+  const structuralOps = { connect: 3, split: 1, merge: 1, prune: 1 };
+  const servedPack = buildCandidatePackFromNormalizedEventExport({
+    packLabel: "teacher-v2-observation-migrated-null-columns-served",
+    workspace,
+    normalizedEventExport,
+    learnedRouting: false,
+    builtAt: "2026-03-23T17:01:00.000Z",
+    structuralOps
+  });
+  const packId = servedPack.summary.packId;
+  const chosenContextIds = [`${packId}:event:evt-i1`];
+  seedObservationDb(activationRoot, {
+    id: "bo_test_migrated_null_columns",
+    episodeId: "ep_test_migrated_null_columns",
+    queryText: "show me the learned routing context",
+    selectedNodeIds: chosenContextIds,
+    selectedPathNodeIds: chosenContextIds,
+    finalScore: 0.67,
+    createdAt: Date.parse("2026-03-23T17:00:05.000Z")
+  }, {
+    columnValues: {
+      serveDecisionRecordId: null,
+      selectionDigest: null,
+      turnCompileEventId: null,
+      activePackId: null,
+      activePackGraphChecksum: null
+    }
+  });
+  const serveTimeDecision = {
+    recordType: "serve_time_route_decision",
+    recordId: "decision-migrated-null-columns",
+    recordedAt: "2026-03-23T17:00:06.000Z",
+    activationRoot,
+    breadcrumbs: {
+      entrypoint: "compileRuntimeContext",
+      invocationSurface: "direct_compile_call",
+      hostEvent: null,
+      installedEntryPath: null,
+      syntheticTurn: false
+    },
+    sessionId: "sess-migrated-null-columns",
+    channel: "cli",
+    userMessage: "show me the learned routing context",
+    turnSequenceStart: 1,
+    turnCompileEventId: "evt-i1",
+    turnCreatedAt: "2026-03-23T17:00:00.000Z",
+    activePackId: packId,
+    activePackBuiltAt: "2026-03-23T17:01:00.000Z",
+    activePackEventExportDigest: servedPack.summary.eventExportDigest,
+    activePackRouterChecksum: null,
+    activePackGraphChecksum: servedPack.manifest.payloadChecksums.graph,
+    routerIdentity: null,
+    usedLearnedRouteFn: true,
+    servedArtifact: null,
+    selectionDigest: "selection-migrated-null-columns",
+    requestedBudget: {
+      modeRequested: "learned_required",
+      maxContextBlocks: 1,
+      maxContextChars: null
+    },
+    actualBudget: {
+      modeEffective: "learned_required",
+      selectedCount: 1,
+      selectedCharCount: 80,
+      selectedTokenCount: 16
+    },
+    candidateSetIds: chosenContextIds,
+    chosenContextIds,
+    candidateScores: [
+      {
+        blockId: `${packId}:event:evt-i1`,
+        source: "event:i1",
+        selected: true,
+        compactedFrom: [],
+        matchedTokens: ["learned"],
+        routingChannels: ["graph"],
+        channelScores: { graph: 0.9 },
+        routeFnScore: 0.9,
+        actionScore: 0.9,
+        actionProbability: 1,
+        actionLogProbability: 0,
+        traversalScore: 0.9,
+        priority: 1
+      }
+    ],
+    structuralSignals: null,
+    fallbackReason: null,
+    hotPathTiming: { totalMs: 1 },
+    kernelContextCount: 1,
+    brainContextCount: 0,
+    selectedKernelContextIds: chosenContextIds,
+    selectedBrainContextIds: [],
+    promotionLink: null
+  };
+  const result = buildCandidatePackFromNormalizedEventExport({
+    packLabel: "teacher-v2-observation-migrated-null-columns-candidate",
+    workspace,
+    normalizedEventExport,
+    learnedRouting: true,
+    builtAt: "2026-03-23T17:02:00.000Z",
+    structuralOps,
+    pgVersion: "v2",
+    serveTimeDecisions: [serveTimeDecision],
+    baselineState: {
+      movingAverage: 0,
+      count: 0,
+      alpha: 0.1,
+      lastUpdatedAt: "2026-03-23T17:00:00.000Z"
+    },
+    activationRoot
+  });
+  assert.equal(result.routingBuild.observationBindingStats?.matched.legacyHeuristic, 1);
+  assert.equal(result.routingBuild.observationBindingStats?.matched.exactDecisionId, 0);
+  assert.equal(result.routingBuild.observationBindingStats?.matched.exactSelectionDigest, 0);
+  assert.equal(result.routingBuild.observationBindingStats?.matched.turnCompileEventId, 0);
 });
 
 test("native V2 records unmatched exact provenance instead of silently falling back", (t) => {
