@@ -958,6 +958,7 @@ describe("LcmContextEngine.assemble canonical path", () => {
       compileDeadlineHit: true,
       brainDropReason: "deadline_before_query",
       brainDropStage: "decision",
+      budgetFraction: 0.3,
       queryBudgetChars: Math.max(256, Math.floor(10_000 * 4 * 0.3)),
     });
   });

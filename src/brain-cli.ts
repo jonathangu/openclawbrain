@@ -133,6 +133,14 @@ function commandStatus(): void {
   const workerState = readWorkerRuntimeState(store, brainConfig);
   const promotionStory = buildPromotionStory(store);
   const observationAttribution = store.getObservationAttributionSummary();
+  const recentTrace = store.getRecentTraces(1)[0] ?? null;
+  const lastAssemblyDecision = store.getTrainingStateJson<Record<string, unknown>>("last_assembly_decision_json")
+    ?? {
+      mode: store.getTrainingState("last_assembly_mode"),
+      footer: store.getTrainingState("last_assembly_footer"),
+      episodeId: store.getTrainingState("last_assembly_episode_id"),
+      traceId: store.getTrainingState("last_assembly_trace_id"),
+    };
 
   printJson({
     command: "status",
@@ -164,12 +172,8 @@ function commandStatus(): void {
     lastReplayFailureReason: store.getTrainingState("last_replay_failure_reason"),
     lastReplayGateVerdict: store.getTrainingStateJson("last_replay_gate_verdict_json"),
     promotionStory,
-    lastAssemblyDecision: {
-      mode: store.getTrainingState("last_assembly_mode"),
-      footer: store.getTrainingState("last_assembly_footer"),
-      episodeId: store.getTrainingState("last_assembly_episode_id"),
-      traceId: store.getTrainingState("last_assembly_trace_id"),
-    },
+    lastTraceSelectionMetadata: recentTrace?.routeTrace?.selectionMetadata ?? null,
+    lastAssemblyDecision,
     seedLearningEnabled: graph.hasSeedWeights(),
     recentTraceCount: store.getRecentTraces(5).length,
     ...health,

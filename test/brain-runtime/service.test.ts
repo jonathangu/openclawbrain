@@ -374,11 +374,19 @@ describe("BrainService", () => {
       compileDeadlineHit: false,
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
+      budgetFraction: 0.3,
       maxContextChars: 240,
       queryBudgetChars,
       injectedChars: 180,
       droppedChars: 72,
       contextClipped: true,
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: 3,
+      fittedNodeCount: 2,
+      droppedNodeCount: 1,
+      fittingDropReasons: {
+        omitted_for_max_context_chars: 1,
+      },
     });
 
     const status = await service.status();
@@ -391,11 +399,70 @@ describe("BrainService", () => {
       compileDeadlineHit: false,
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
+      budgetFraction: 0.3,
       maxContextChars: 240,
       queryBudgetChars,
       injectedChars: 180,
       droppedChars: 72,
       contextClipped: true,
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: 3,
+      fittedNodeCount: 2,
+      droppedNodeCount: 1,
+      fittingDropReasons: {
+        omitted_for_max_context_chars: 1,
+      },
+    });
+  });
+
+  it("hydrates the persisted bounded assembly decision across service restart", async () => {
+    const brainRoot = makeTempDir("openclawbrain-status-restart-");
+    const first = new BrainService({
+      deps: createDeps(brainRoot),
+    });
+
+    first.noteAssemblyDecision({
+      mode: "use_brain",
+      conversationId: 42,
+      episodeId: "ep_1",
+      traceId: "tr_1",
+      footer: "[brain] used graph retrieval for this turn.",
+      compileElapsedMs: 12,
+      compileDeadlineMs: 20,
+      compileDeadlineHit: false,
+      brainDropReason: "injection_cap_clipped",
+      brainDropStage: "injection",
+      budgetFraction: 0.3,
+      maxContextChars: 240,
+      queryBudgetChars: deriveExpectedQueryBudgetChars(4096),
+      injectedChars: 180,
+      droppedChars: 72,
+      contextClipped: true,
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: 3,
+      fittedNodeCount: 2,
+      droppedNodeCount: 1,
+      fittingDropReasons: {
+        omitted_for_max_context_chars: 1,
+      },
+    });
+
+    const second = new BrainService({
+      deps: createDeps(brainRoot),
+    });
+    const status = await second.status();
+    expect(status.lastAssemblyDecision).toMatchObject({
+      mode: "use_brain",
+      conversationId: 42,
+      traceId: "tr_1",
+      budgetFraction: 0.3,
+      queryBudgetChars: deriveExpectedQueryBudgetChars(4096),
+      fitStrategy: "structured_node_budget",
+      fittedNodeCount: 2,
+      droppedNodeCount: 1,
+      fittingDropReasons: {
+        omitted_for_max_context_chars: 1,
+      },
     });
   });
 
@@ -444,11 +511,19 @@ describe("BrainService", () => {
       compileElapsedMs: expect.any(Number),
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
+      budgetFraction: 0.3,
       maxContextChars: 120,
       queryBudgetChars,
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: expect.any(Number),
+      fittedNodeCount: expect.any(Number),
+      droppedNodeCount: expect.any(Number),
+      fittingDropReasons: expect.objectContaining({
+        omitted_for_max_context_chars: expect.any(Number),
+      }),
     }));
 
     const trace = await service.getTrace(String(result.brainDecision?.traceId ?? ""));
@@ -457,11 +532,19 @@ describe("BrainService", () => {
       compileElapsedMs: expect.any(Number),
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
+      budgetFraction: 0.3,
       maxContextChars: 120,
       queryBudgetChars,
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: expect.any(Number),
+      fittedNodeCount: expect.any(Number),
+      droppedNodeCount: expect.any(Number),
+      fittingDropReasons: expect.objectContaining({
+        omitted_for_max_context_chars: expect.any(Number),
+      }),
     });
     expect((trace?.routeTrace?.selectionMetadata.injectedChars ?? 0)).toBeLessThanOrEqual(120);
     expect(trace?.routeTrace?.selectionMetadata.droppedChars).toBeGreaterThan(0);
@@ -486,10 +569,18 @@ describe("BrainService", () => {
           compileElapsedMs: expect.any(Number),
           brainDropReason: "injection_cap_clipped",
           brainDropStage: "injection",
+          budgetFraction: 0.3,
           maxContextChars: 120,
           injectedChars: expect.any(Number),
           droppedChars: expect.any(Number),
           contextClipped: true,
+          fitStrategy: "structured_node_budget",
+          retrievedNodeCount: expect.any(Number),
+          fittedNodeCount: expect.any(Number),
+          droppedNodeCount: expect.any(Number),
+          fittingDropReasons: expect.objectContaining({
+            omitted_for_max_context_chars: expect.any(Number),
+          }),
         },
       },
     });
@@ -500,11 +591,19 @@ describe("BrainService", () => {
       compileElapsedMs: expect.any(Number),
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
+      budgetFraction: 0.3,
       maxContextChars: 120,
       queryBudgetChars,
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: expect.any(Number),
+      fittedNodeCount: expect.any(Number),
+      droppedNodeCount: expect.any(Number),
+      fittingDropReasons: expect.objectContaining({
+        omitted_for_max_context_chars: expect.any(Number),
+      }),
     }));
   });
 

@@ -152,10 +152,18 @@ describe("teacher observation plumbing", () => {
           compileElapsedMs: 12,
           brainDropReason: "injection_cap_clipped",
           brainDropStage: "injection",
+          budgetFraction: 0.3,
           maxContextChars: 240,
           injectedChars: 180,
           droppedChars: 72,
           contextClipped: true,
+          fitStrategy: "structured_node_budget",
+          retrievedNodeCount: 3,
+          fittedNodeCount: 2,
+          droppedNodeCount: 1,
+          fittingDropReasons: {
+            omitted_for_max_context_chars: 1,
+          },
         },
       },
     });
@@ -167,10 +175,18 @@ describe("teacher observation plumbing", () => {
       compileElapsedMs: 12,
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
+      budgetFraction: 0.3,
       maxContextChars: 240,
       injectedChars: 180,
       droppedChars: 72,
       contextClipped: true,
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: 3,
+      fittedNodeCount: 2,
+      droppedNodeCount: 1,
+      fittingDropReasons: {
+        omitted_for_max_context_chars: 1,
+      },
     });
   });
 

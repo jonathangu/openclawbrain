@@ -3,6 +3,8 @@ import type { ContextEngine, AgentMessage } from "../openclaw-sdk-compat.js";
 import type {
   BrainDropReason,
   BrainDropStage,
+  BrainFitStrategy,
+  BrainFittingDropReason,
   BrainInterruptionMetadata,
   BrainInterruptionStage,
   DecisionRouteTrace,
@@ -45,14 +47,25 @@ type BudgetedBrainContext = {
   injectedChars: number;
   droppedChars: number;
   contextClipped: boolean;
+  fitStrategy?: BrainFitStrategy | null;
+  retrievedNodeCount?: number | null;
+  fittedNodeCount?: number | null;
+  droppedNodeCount?: number | null;
+  fittingDropReasons?: Partial<Record<BrainFittingDropReason, number>> | null;
 };
 
 type BudgetDecisionDetails = {
+  budgetFraction?: number | null;
   maxContextChars?: number | null;
   queryBudgetChars?: number | null;
   injectedChars?: number | null;
   droppedChars?: number | null;
   contextClipped?: boolean;
+  fitStrategy?: BrainFitStrategy | null;
+  retrievedNodeCount?: number | null;
+  fittedNodeCount?: number | null;
+  droppedNodeCount?: number | null;
+  fittingDropReasons?: Partial<Record<BrainFittingDropReason, number>> | null;
 };
 
 type CompileDecisionDetails = {
@@ -231,6 +244,31 @@ function buildStructuredBrainContextBlock(result: TraversalResult, routeTrace: D
   return sections.join("\n");
 }
 
+function orderedInjectedNodeSummaries(routeTrace: DecisionRouteTrace): DecisionTraceInjectedNodeSummary[] {
+  const corrections = routeTrace.injectedNodeSummaries.filter((node) => node.kind === "correction");
+  const evidence = routeTrace.injectedNodeSummaries
+    .filter((node) => node.kind !== "correction" && node.kind !== "workflow" && node.kind !== "toolcard");
+  const playbooks = routeTrace.injectedNodeSummaries
+    .filter((node) => node.kind === "workflow" || node.kind === "toolcard");
+  return [...corrections, ...evidence, ...playbooks];
+}
+
+function buildCompactFittedNodeLine(summary: DecisionTraceInjectedNodeSummary): string {
+  return `- [${summary.kind}/${summary.trust}] ${compactPreview(summary.contentPreview)}`;
+}
+
+function buildCompactStructuredBrainContext(
+  injectedNodeSummaries: DecisionTraceInjectedNodeSummary[],
+): string {
+  if (injectedNodeSummaries.length === 0) {
+    return "";
+  }
+  return [
+    "[brain]",
+    ...injectedNodeSummaries.map(buildCompactFittedNodeLine),
+  ].join("\n");
+}
+
 function buildBrainContextBlock(result: TraversalResult): string {
   const routeTrace = result.trace.routeTrace;
   if (!routeTrace || routeTrace.injectedNodeSummaries.length === 0) {
@@ -357,7 +395,24 @@ export function resolveBrainQueryBudgetChars(tokenBudget: number, budgetFraction
   return Math.max(256, Math.floor(tokenBudget * 4 * normalizeBudgetFraction(budgetFraction)));
 }
 
-function applyMaxContextChars(text: string, maxContextChars?: number): BudgetedBrainContext {
+function clipTextToLimit(text: string, limit: number): string {
+  if (text.length <= limit) {
+    return text;
+  }
+  if (limit === 0) {
+    return "";
+  }
+  const hardSlice = text.slice(0, limit);
+  const lineBoundary = hardSlice.lastIndexOf("\n");
+  const clipped = (
+    lineBoundary >= Math.floor(limit * 0.6)
+      ? hardSlice.slice(0, lineBoundary)
+      : hardSlice
+  ).trimEnd();
+  return clipped.length > 0 ? clipped : hardSlice.trimEnd();
+}
+
+function applyLegacyMaxContextChars(text: string, maxContextChars?: number): BudgetedBrainContext {
   if (typeof maxContextChars !== "number" || !Number.isFinite(maxContextChars)) {
     return {
       brainContext: text,
@@ -368,47 +423,26 @@ function applyMaxContextChars(text: string, maxContextChars?: number): BudgetedB
   }
 
   const limit = Math.max(0, Math.floor(maxContextChars));
-  if (text.length <= limit) {
-    return {
-      brainContext: text,
-      injectedChars: text.length,
-      droppedChars: 0,
-      contextClipped: false,
-    };
-  }
-
-  if (limit === 0) {
-    return {
-      brainContext: "",
-      injectedChars: 0,
-      droppedChars: text.length,
-      contextClipped: true,
-    };
-  }
-
-  const hardSlice = text.slice(0, limit);
-  const lineBoundary = hardSlice.lastIndexOf("\n");
-  const clipped = (
-    lineBoundary >= Math.floor(limit * 0.6)
-      ? hardSlice.slice(0, lineBoundary)
-      : hardSlice
-  ).trimEnd();
-  const brainContext = clipped.length > 0 ? clipped : hardSlice.trimEnd();
-
+  const brainContext = clipTextToLimit(text, limit);
   return {
     brainContext,
     injectedChars: brainContext.length,
     droppedChars: Math.max(0, text.length - brainContext.length),
-    contextClipped: true,
+    contextClipped: brainContext.length < text.length,
+    fitStrategy: "legacy_raw_clip",
   };
 }
 
 function budgetDecisionDetails(params: {
+  budgetFraction?: number | null;
   maxContextChars?: number;
   queryBudgetChars?: number | null;
   budgetedBrainContext?: BudgetedBrainContext;
 }): BudgetDecisionDetails {
   const details: BudgetDecisionDetails = {};
+  if (typeof params.budgetFraction === "number") {
+    details.budgetFraction = params.budgetFraction;
+  }
   if (params.maxContextChars !== undefined) {
     details.maxContextChars = params.maxContextChars;
   }
@@ -419,6 +453,11 @@ function budgetDecisionDetails(params: {
     details.injectedChars = params.budgetedBrainContext.injectedChars;
     details.droppedChars = params.budgetedBrainContext.droppedChars;
     details.contextClipped = params.budgetedBrainContext.contextClipped;
+    details.fitStrategy = params.budgetedBrainContext.fitStrategy;
+    details.retrievedNodeCount = params.budgetedBrainContext.retrievedNodeCount;
+    details.fittedNodeCount = params.budgetedBrainContext.fittedNodeCount;
+    details.droppedNodeCount = params.budgetedBrainContext.droppedNodeCount;
+    details.fittingDropReasons = params.budgetedBrainContext.fittingDropReasons;
   }
   return details;
 }
@@ -478,6 +517,7 @@ function assemblyDecisionDetails(params: {
   brainDropReason: BrainDropReason;
   brainDropStage?: BrainDropStage;
   interruption?: BrainInterruptionMetadata | null;
+  budgetFraction?: number | null;
   maxContextChars?: number;
   queryBudgetChars?: number | null;
   budgetedBrainContext?: BudgetedBrainContext;
@@ -496,11 +536,99 @@ function assemblyDecisionDetails(params: {
     ...(params.interruptionReason !== undefined ? { interruptionReason: params.interruptionReason } : {}),
     ...(params.servedPartial !== undefined ? { servedPartial: params.servedPartial } : {}),
     ...budgetDecisionDetails({
+      budgetFraction: params.budgetFraction,
       maxContextChars: params.maxContextChars,
       queryBudgetChars: params.queryBudgetChars,
       budgetedBrainContext: params.budgetedBrainContext,
     }),
   };
+}
+
+function applyStructuredMaxContextChars(
+  result: TraversalResult,
+  routeTrace: DecisionRouteTrace,
+  maxContextChars?: number,
+): BudgetedBrainContext {
+  const fullText = buildStructuredBrainContextBlock(result, routeTrace);
+  if (typeof maxContextChars !== "number" || !Number.isFinite(maxContextChars)) {
+    return {
+      brainContext: fullText,
+      injectedChars: fullText.length,
+      droppedChars: 0,
+      contextClipped: false,
+    };
+  }
+
+  const limit = Math.max(0, Math.floor(maxContextChars));
+  const retrievedNodeCount = routeTrace.injectedNodeSummaries.length;
+  const baseDetails = {
+    fitStrategy: "structured_node_budget" as const,
+    retrievedNodeCount,
+  };
+  if (fullText.length <= limit) {
+    return {
+      brainContext: fullText,
+      injectedChars: fullText.length,
+      droppedChars: 0,
+      contextClipped: false,
+      ...baseDetails,
+      fittedNodeCount: retrievedNodeCount,
+      droppedNodeCount: 0,
+      fittingDropReasons: null,
+    };
+  }
+
+  if (limit === 0 || retrievedNodeCount === 0) {
+    return {
+      brainContext: "",
+      injectedChars: 0,
+      droppedChars: fullText.length,
+      contextClipped: true,
+      ...baseDetails,
+      fittedNodeCount: 0,
+      droppedNodeCount: retrievedNodeCount,
+      fittingDropReasons: retrievedNodeCount > 0
+        ? { omitted_for_max_context_chars: retrievedNodeCount }
+        : null,
+    };
+  }
+
+  const orderedNodes = orderedInjectedNodeSummaries(routeTrace);
+  const fittedNodeSummaries: DecisionTraceInjectedNodeSummary[] = [];
+  for (const summary of orderedNodes) {
+    const candidateContext = buildCompactStructuredBrainContext([...fittedNodeSummaries, summary]);
+    if (candidateContext.length > limit) {
+      break;
+    }
+    fittedNodeSummaries.push(summary);
+  }
+
+  const brainContext = buildCompactStructuredBrainContext(fittedNodeSummaries);
+  const fittedNodeCount = fittedNodeSummaries.length;
+  const droppedNodeCount = Math.max(0, retrievedNodeCount - fittedNodeCount);
+  return {
+    brainContext,
+    injectedChars: brainContext.length,
+    droppedChars: Math.max(0, fullText.length - brainContext.length),
+    contextClipped: brainContext.length < fullText.length,
+    ...baseDetails,
+    fittedNodeCount,
+    droppedNodeCount,
+    fittingDropReasons: droppedNodeCount > 0
+      ? { omitted_for_max_context_chars: droppedNodeCount }
+      : null,
+  };
+}
+
+function buildBudgetedBrainContext(
+  result: TraversalResult,
+  maxContextChars?: number,
+): BudgetedBrainContext {
+  const routeTrace = result.trace.routeTrace;
+  if (routeTrace && routeTrace.injectedNodeSummaries.length > 0) {
+    return applyStructuredMaxContextChars(result, routeTrace, maxContextChars);
+  }
+  return applyLegacyMaxContextChars(buildBrainContextBlock(result), maxContextChars);
 }
 
 function mergeSystemPromptAddition(...parts: Array<string | undefined>): string | undefined {
@@ -598,9 +726,10 @@ export class BrainAssemblerExtension {
       };
     }
 
+    const budgetFraction = this.brain.getBudgetFraction();
     const queryBudgetChars = resolveBrainQueryBudgetChars(
       params.tokenBudget,
-      this.brain.getBudgetFraction(),
+      budgetFraction,
     );
     const beforeQueryCheckpoint = captureCompileCheckpoint(compileStartedAt, compileDeadlineMs);
     if (beforeQueryCheckpoint.compileDeadlineHit) {
@@ -613,6 +742,7 @@ export class BrainAssemblerExtension {
           stage: "query",
           reason: "deadline_before_query",
         }),
+        budgetFraction,
         maxContextChars: params.maxContextChars,
         queryBudgetChars,
       });
@@ -722,6 +852,7 @@ export class BrainAssemblerExtension {
         checkpoint: afterQueryCheckpoint,
         brainDropReason: "query_returned_no_nodes",
         brainDropStage: "query",
+        budgetFraction,
         maxContextChars: params.maxContextChars,
         queryBudgetChars,
       });
@@ -809,6 +940,7 @@ export class BrainAssemblerExtension {
         brainDropReason: "deadline_after_query",
         brainDropStage: "query",
         interruption: afterQueryInterruption,
+        budgetFraction,
         maxContextChars: params.maxContextChars,
         queryBudgetChars,
       });
@@ -839,8 +971,8 @@ export class BrainAssemblerExtension {
       };
     }
 
-    const budgetedBrainContext = applyMaxContextChars(
-      buildBrainContextBlock(result),
+    const budgetedBrainContext = buildBudgetedBrainContext(
+      result,
       params.maxContextChars,
     );
     const beforeInjectionCheckpoint = captureCompileCheckpoint(compileStartedAt, compileDeadlineMs);
@@ -912,6 +1044,7 @@ export class BrainAssemblerExtension {
           stage: "injection",
           reason: "deadline_before_injection",
         }),
+        budgetFraction,
         maxContextChars: params.maxContextChars,
         queryBudgetChars,
         budgetedBrainContext,
@@ -949,6 +1082,7 @@ export class BrainAssemblerExtension {
           ? "injection_cap_clipped"
           : "none",
       brainDropStage: decision.mode === "shadow" || budgetedBrainContext.contextClipped ? "injection" : undefined,
+      budgetFraction,
       maxContextChars: params.maxContextChars,
       queryBudgetChars,
       budgetedBrainContext,

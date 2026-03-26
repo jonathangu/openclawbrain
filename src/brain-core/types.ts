@@ -573,6 +573,13 @@ export interface BrainInterruptionMetadata {
   servedPartial: boolean;
 }
 
+export type BrainFitStrategy =
+  | "structured_node_budget"
+  | "legacy_raw_clip";
+
+export type BrainFittingDropReason =
+  | "omitted_for_max_context_chars";
+
 export interface DecisionRouteTrace {
   requestDigest: string;
   conversationId: number | null;
@@ -626,13 +633,20 @@ export interface DecisionRouteTrace {
     brainDropReason?: BrainDropReason | null;
     brainDropStage?: BrainDropStage | null;
     // Post-formatting bounded-runtime metadata is optional so legacy traces
-    // remain readable as unknown. `queryBudgetChars` is retrieval-side budget;
-    // `maxContextChars` is the final injected-block cap.
+    // remain readable as unknown. `budgetFraction` is the runtime fraction
+    // used to derive `queryBudgetChars`; `maxContextChars` is the final
+    // injected-block cap.
+    budgetFraction?: number | null;
     maxContextChars?: number | null;
     queryBudgetChars?: number | null;
     injectedChars?: number | null;
     droppedChars?: number | null;
     contextClipped?: boolean | null;
+    fitStrategy?: BrainFitStrategy | null;
+    retrievedNodeCount?: number | null;
+    fittedNodeCount?: number | null;
+    droppedNodeCount?: number | null;
+    fittingDropReasons?: Partial<Record<BrainFittingDropReason, number>> | null;
   };
 }
 

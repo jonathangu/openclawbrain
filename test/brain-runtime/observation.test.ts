@@ -543,12 +543,24 @@ describe("BrainService observations", () => {
       compileElapsedMs: expect.any(Number),
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
+      budgetFraction: 0.3,
       maxContextChars: 240,
       queryBudgetChars,
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: expect.any(Number),
+      fittedNodeCount: expect.any(Number),
+      droppedNodeCount: expect.any(Number),
     });
+    if ((trace?.routeTrace?.selectionMetadata.droppedNodeCount ?? 0) > 0) {
+      expect(trace?.routeTrace?.selectionMetadata.fittingDropReasons).toEqual(expect.objectContaining({
+        omitted_for_max_context_chars: expect.any(Number),
+      }));
+    } else {
+      expect(trace?.routeTrace?.selectionMetadata.fittingDropReasons ?? null).toBeNull();
+    }
 
     await service.recordTurnObservation({
       episodeId,
@@ -567,23 +579,47 @@ describe("BrainService observations", () => {
       compileElapsedMs: expect.any(Number),
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
+      budgetFraction: 0.3,
       maxContextChars: 240,
       queryBudgetChars,
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: expect.any(Number),
+      fittedNodeCount: expect.any(Number),
+      droppedNodeCount: expect.any(Number),
     });
+    if ((observation?.routeMetadata.selectionMetadata?.droppedNodeCount ?? 0) > 0) {
+      expect(observation?.routeMetadata.selectionMetadata?.fittingDropReasons).toEqual(expect.objectContaining({
+        omitted_for_max_context_chars: expect.any(Number),
+      }));
+    } else {
+      expect(observation?.routeMetadata.selectionMetadata?.fittingDropReasons ?? null).toBeNull();
+    }
     const teacherInput = materializeTeacherLabelInput(observation!);
     expect(teacherInput?.routeMetadata.selectionMetadata).toMatchObject({
       compileElapsedMs: expect.any(Number),
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
+      budgetFraction: 0.3,
       maxContextChars: 240,
       queryBudgetChars,
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: expect.any(Number),
+      fittedNodeCount: expect.any(Number),
+      droppedNodeCount: expect.any(Number),
     });
+    if ((teacherInput?.routeMetadata.selectionMetadata?.droppedNodeCount ?? 0) > 0) {
+      expect(teacherInput?.routeMetadata.selectionMetadata?.fittingDropReasons).toEqual(expect.objectContaining({
+        omitted_for_max_context_chars: expect.any(Number),
+      }));
+    } else {
+      expect(teacherInput?.routeMetadata.selectionMetadata?.fittingDropReasons ?? null).toBeNull();
+    }
   });
 
   it("keeps system scaffolding out of follow-up attachment", async () => {

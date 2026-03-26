@@ -143,29 +143,26 @@ export class WorkerSupervisor {
     });
   }
 
-  private send(message: ParentToChildMessage): void {
-    const child = this.child;
-    if (!child || !child.connected || child.killed || child.exitCode !== null) {
+  private sendToChild(
+    child: ChildProcess | null,
+    message: ParentToChildMessage | ParentTeacherCompleteResultMessage,
+  ): void {
+    if (!child?.connected) {
       return;
     }
     try {
-      child.send(message, (error) => {
-        if (!error) {
-          return;
-        }
-        const code = (error as NodeJS.ErrnoException).code;
-        if (code === "EPIPE" || code === "ERR_IPC_CHANNEL_CLOSED") {
-          return;
-        }
-        this.params.log.warn(`[brain] failed to send child-worker message: ${error.message}`);
-      });
+      child.send(message);
     } catch (error) {
       const code = (error as NodeJS.ErrnoException).code;
       if (code === "EPIPE" || code === "ERR_IPC_CHANNEL_CLOSED") {
         return;
       }
-      throw error;
+      this.params.log.warn(`[brain] child worker send failed: ${(error as Error).message}`);
     }
+  }
+
+  private send(message: ParentToChildMessage): void {
+    this.sendToChild(this.child, message);
   }
 
   private async handleMessage(message: ChildToParentMessage, child: ChildProcess): Promise<void> {
@@ -190,7 +187,7 @@ export class WorkerSupervisor {
       }
       case "teacher-complete": {
         const result = await this.params.onTeacherComplete(message, this.params.teacherModel);
-        child.send?.(result);
+        this.sendToChild(child, result);
         return;
       }
       case "fatal-error": {

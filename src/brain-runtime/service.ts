@@ -7,6 +7,8 @@ import type {
   BrainConfig,
   BrainDropReason,
   BrainDropStage,
+  BrainFitStrategy,
+  BrainFittingDropReason,
   BrainInterruptionMetadata,
   BrainNode,
   BrainObservationBindingMode,
@@ -66,6 +68,86 @@ function cloneObservationServedArtifact(
   return artifact ? JSON.parse(JSON.stringify(artifact)) as BrainObservationRouteMetadata["servedArtifact"] : null;
 }
 
+type BrainAssemblyDecisionMode =
+  | "use_brain"
+  | "shadow"
+  | "skip_no_query"
+  | "skip_short_static_lookup"
+  | "skip_no_embedding"
+  | "skip_uninitialized"
+  | "skip_budget_too_small"
+  | "skip_query_returned_no_nodes"
+  | "skip_deadline_before_query"
+  | "skip_deadline_after_query"
+  | "skip_deadline_before_injection"
+  | "partial_deadline_after_query"
+  | "partial_deadline_before_injection";
+
+type BrainAssemblyDecisionSelectionSurface = Pick<
+  DecisionRouteTrace["selectionMetadata"],
+  | "interruption"
+  | "queryInterrupted"
+  | "interruptionStage"
+  | "interruptionReason"
+  | "servedPartial"
+  | "compileElapsedMs"
+  | "compileDeadlineMs"
+  | "compileDeadlineHit"
+  | "brainDropReason"
+  | "brainDropStage"
+  | "budgetFraction"
+  | "maxContextChars"
+  | "queryBudgetChars"
+  | "injectedChars"
+  | "droppedChars"
+  | "contextClipped"
+  | "fitStrategy"
+  | "retrievedNodeCount"
+  | "fittedNodeCount"
+  | "droppedNodeCount"
+  | "fittingDropReasons"
+>;
+
+type BrainAssemblyDecisionSnapshot = {
+  mode: BrainAssemblyDecisionMode;
+  conversationId?: number;
+  episodeId?: string | null;
+  traceId?: string | null;
+  footer?: string | null;
+  bindingMode?: BrainObservationBindingMode | null;
+  serveDecisionRecordId?: string | null;
+  selectionDigest?: string | null;
+  turnCompileEventId?: string | null;
+  decisionRecordedAt?: string | null;
+  activePackId?: string | null;
+  activePackEventExportDigest?: string | null;
+  activePackGraphChecksum?: string | null;
+  activePackRouterChecksum?: string | null;
+  activePackBuiltAt?: string | null;
+  servedArtifact?: BrainObservationRouteMetadata["servedArtifact"];
+} & BrainAssemblyDecisionSelectionSurface;
+
+function normalizeAssemblyDecision(
+  decision: BrainAssemblyDecisionSnapshot,
+): BrainAssemblyDecisionSnapshot {
+  return {
+    ...decision,
+    bindingMode: resolveObservationBindingMode({
+      bindingMode: decision.bindingMode,
+      serveDecisionRecordId: decision.serveDecisionRecordId,
+      selectionDigest: decision.selectionDigest,
+      activePackGraphChecksum: decision.activePackGraphChecksum,
+      turnCompileEventId: decision.turnCompileEventId,
+      traceId: decision.traceId ?? null,
+    }),
+    servedArtifact: cloneObservationServedArtifact(decision.servedArtifact),
+    fittingDropReasons: decision.fittingDropReasons
+      ? { ...decision.fittingDropReasons } as Partial<Record<BrainFittingDropReason, number>>
+      : decision.fittingDropReasons ?? null,
+    fitStrategy: decision.fitStrategy ?? null as BrainFitStrategy | null,
+  };
+}
+
 export class BrainService {
   private deps: LcmDependencies;
   private store: BrainStore;
@@ -86,58 +168,7 @@ export class BrainService {
   private committedUserCorrectionMessageIds = new Set<number>();
   private latestEpisodeByConversation = new Map<number, string>();
   private lastQueryInterruption: BrainInterruptionMetadata | null = null;
-  private lastAssemblyDecision:
-    | {
-        mode:
-          | "use_brain"
-          | "shadow"
-          | "skip_no_query"
-          | "skip_short_static_lookup"
-          | "skip_no_embedding"
-          | "skip_uninitialized"
-          | "skip_budget_too_small"
-          | "skip_query_returned_no_nodes"
-          | "skip_deadline_before_query"
-          | "skip_deadline_after_query"
-          | "skip_deadline_before_injection"
-          | "partial_deadline_after_query"
-          | "partial_deadline_before_injection";
-        conversationId?: number;
-        episodeId?: string | null;
-        traceId?: string | null;
-        footer?: string | null;
-        interruption?: BrainInterruptionMetadata | null;
-        queryInterrupted?: boolean | null;
-        interruptionStage?: BrainInterruptionMetadata["stage"] | null;
-        interruptionReason?: string | null;
-        servedPartial?: boolean | null;
-        compileElapsedMs?: number | null;
-        compileDeadlineMs?: number | null;
-        compileDeadlineHit?: boolean | null;
-        brainDropReason?: BrainDropReason | null;
-        brainDropStage?: BrainDropStage | null;
-        queryInterrupted?: boolean | null;
-        interruptionStage?: DecisionRouteTrace["selectionMetadata"]["interruptionStage"] | null;
-        interruptionReason?: string | null;
-        servedPartial?: boolean | null;
-        maxContextChars?: number | null;
-        queryBudgetChars?: number | null;
-        injectedChars?: number | null;
-        droppedChars?: number | null;
-        contextClipped?: boolean;
-        bindingMode?: BrainObservationBindingMode | null;
-        serveDecisionRecordId?: string | null;
-        selectionDigest?: string | null;
-        turnCompileEventId?: string | null;
-        decisionRecordedAt?: string | null;
-        activePackId?: string | null;
-        activePackEventExportDigest?: string | null;
-        activePackGraphChecksum?: string | null;
-        activePackRouterChecksum?: string | null;
-        activePackBuiltAt?: string | null;
-        servedArtifact?: BrainObservationRouteMetadata["servedArtifact"];
-      }
-    | null = null;
+  private lastAssemblyDecision: BrainAssemblyDecisionSnapshot | null = null;
 
   constructor(params: {
     deps: LcmDependencies;
@@ -193,6 +224,7 @@ export class BrainService {
     runBrainMigrations(db);
 
     this.store = new BrainStore(db, { brainRoot: this.config.root });
+    this.lastAssemblyDecision = this.getStoredLastAssemblyDecision();
     this.embeddingClient = createEmbeddingClient({
       config: runtimeConfig,
       getApiKey: (provider, model) => params.deps.getApiKey(provider, model),
@@ -437,23 +469,19 @@ export class BrainService {
     return this.lastQueryInterruption ? { ...this.lastQueryInterruption } : null;
   }
 
-  noteAssemblyDecision(decision: NonNullable<BrainService["lastAssemblyDecision"]>): void {
-    const normalizedDecision = {
-      ...decision,
-      bindingMode: resolveObservationBindingMode({
-        bindingMode: decision.bindingMode,
-        serveDecisionRecordId: decision.serveDecisionRecordId,
-        selectionDigest: decision.selectionDigest,
-        activePackGraphChecksum: decision.activePackGraphChecksum,
-        turnCompileEventId: decision.turnCompileEventId,
-        traceId: decision.traceId ?? null,
-      }),
-    };
+  private getStoredLastAssemblyDecision(): BrainAssemblyDecisionSnapshot | null {
+    const stored = this.store.getTrainingStateJson<BrainAssemblyDecisionSnapshot>("last_assembly_decision_json");
+    return stored ? normalizeAssemblyDecision(stored) : null;
+  }
+
+  noteAssemblyDecision(decision: BrainAssemblyDecisionSnapshot): void {
+    const normalizedDecision = normalizeAssemblyDecision(decision);
     this.lastAssemblyDecision = normalizedDecision;
     this.store.setTrainingState("last_assembly_mode", normalizedDecision.mode);
     this.store.setTrainingState("last_assembly_footer", normalizedDecision.footer ?? "");
     this.store.setTrainingState("last_assembly_episode_id", normalizedDecision.episodeId ?? "");
     this.store.setTrainingState("last_assembly_trace_id", normalizedDecision.traceId ?? "");
+    this.store.setTrainingStateJson("last_assembly_decision_json", normalizedDecision);
   }
 
   recordTraceSelectionMetadata(
@@ -973,6 +1001,7 @@ export class BrainService {
     const lastPgCandidatePackVersion = lastPgCandidatePackVersionRaw
       ? Number.parseInt(lastPgCandidatePackVersionRaw, 10)
       : null;
+    const lastAssemblyDecision = this.lastAssemblyDecision ?? this.getStoredLastAssemblyDecision();
 
     const embeddingConfig = describeEmbeddingConfig(this.config);
 
@@ -1027,7 +1056,7 @@ export class BrainService {
       lastTraceFooter: recentTraces[0]?.footer ?? null,
       lastTraceContextChars: recentTraces[0]?.contextChars ?? null,
       lastTraceSelectionMetadata: recentTraces[0]?.routeTrace?.selectionMetadata ?? null,
-      lastAssemblyDecision: this.lastAssemblyDecision,
+      lastAssemblyDecision,
       lastPromotionReason: this.store.getTrainingState("last_promotion_reason"),
       lastPromotionVerdict: this.store.getTrainingStateJson("last_promotion_verdict_json"),
       lastReplayFailureReason: this.store.getTrainingState("last_replay_failure_reason"),

@@ -494,23 +494,42 @@ describe("BrainAssemblerExtension", () => {
     expect(result.messages).toEqual([{ role: "user", content: "live tail" }]);
     expect(result.brainDecision).toEqual(expect.objectContaining({
       mode: "shadow",
+      budgetFraction: 0.3,
       maxContextChars: 240,
       queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: 3,
+      fittedNodeCount: expect.any(Number),
+      droppedNodeCount: expect.any(Number),
+      fittingDropReasons: expect.objectContaining({
+        omitted_for_max_context_chars: expect.any(Number),
+      }),
       compileElapsedMs: expect.any(Number),
       brainDropReason: "shadow_mode",
       brainDropStage: "injection",
     }));
+    expect((result.brainDecision?.fittedNodeCount ?? 0)).toBeGreaterThan(0);
+    expect((result.brainDecision?.fittedNodeCount ?? 0)).toBeLessThan(3);
+    expect(result.brainDecision?.droppedNodeCount).toBe(3 - (result.brainDecision?.fittedNodeCount ?? 0));
     expect(brain.recordTraceSelectionMetadata).toHaveBeenCalledWith(
       expect.objectContaining({ id: "tr_structured_1" }),
       expect.objectContaining({
+        budgetFraction: 0.3,
         maxContextChars: 240,
         queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
         injectedChars: expect.any(Number),
         droppedChars: expect.any(Number),
         contextClipped: true,
+        fitStrategy: "structured_node_budget",
+        retrievedNodeCount: 3,
+        fittedNodeCount: expect.any(Number),
+        droppedNodeCount: expect.any(Number),
+        fittingDropReasons: expect.objectContaining({
+          omitted_for_max_context_chars: expect.any(Number),
+        }),
         compileElapsedMs: expect.any(Number),
         brainDropReason: "shadow_mode",
         brainDropStage: "injection",
@@ -518,11 +537,19 @@ describe("BrainAssemblerExtension", () => {
     );
     expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
       mode: "shadow",
+      budgetFraction: 0.3,
       maxContextChars: 240,
       queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: 3,
+      fittedNodeCount: expect.any(Number),
+      droppedNodeCount: expect.any(Number),
+      fittingDropReasons: expect.objectContaining({
+        omitted_for_max_context_chars: expect.any(Number),
+      }),
       compileElapsedMs: expect.any(Number),
       brainDropReason: "shadow_mode",
       brainDropStage: "injection",
@@ -557,25 +584,46 @@ describe("BrainAssemblerExtension", () => {
       budgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
     });
     expect(String(result.messages[0]?.content ?? "").length).toBeLessThanOrEqual(240);
+    expect(String(result.messages[0]?.content ?? "")).toContain("[brain]");
+    expect(String(result.messages[0]?.content ?? "")).not.toContain("## Provenance And Audit");
     expect(result.brainDecision).toEqual(expect.objectContaining({
       mode: "use_brain",
+      budgetFraction: 0.3,
       maxContextChars: 240,
       queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: 3,
+      fittedNodeCount: expect.any(Number),
+      droppedNodeCount: expect.any(Number),
+      fittingDropReasons: expect.objectContaining({
+        omitted_for_max_context_chars: expect.any(Number),
+      }),
       compileElapsedMs: expect.any(Number),
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
     }));
+    expect((result.brainDecision?.fittedNodeCount ?? 0)).toBeGreaterThan(0);
+    expect((result.brainDecision?.fittedNodeCount ?? 0)).toBeLessThan(3);
+    expect(result.brainDecision?.droppedNodeCount).toBe(3 - (result.brainDecision?.fittedNodeCount ?? 0));
     expect(brain.recordTraceSelectionMetadata).toHaveBeenCalledWith(
       expect.objectContaining({ id: "tr_structured_1" }),
       expect.objectContaining({
+        budgetFraction: 0.3,
         maxContextChars: 240,
         queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
         injectedChars: expect.any(Number),
         droppedChars: expect.any(Number),
         contextClipped: true,
+        fitStrategy: "structured_node_budget",
+        retrievedNodeCount: 3,
+        fittedNodeCount: expect.any(Number),
+        droppedNodeCount: expect.any(Number),
+        fittingDropReasons: expect.objectContaining({
+          omitted_for_max_context_chars: expect.any(Number),
+        }),
         compileElapsedMs: expect.any(Number),
         brainDropReason: "injection_cap_clipped",
         brainDropStage: "injection",
@@ -584,11 +632,19 @@ describe("BrainAssemblerExtension", () => {
     expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
       mode: "use_brain",
       conversationId: 42,
+      budgetFraction: 0.3,
       maxContextChars: 240,
       queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: 3,
+      fittedNodeCount: expect.any(Number),
+      droppedNodeCount: expect.any(Number),
+      fittingDropReasons: expect.objectContaining({
+        omitted_for_max_context_chars: expect.any(Number),
+      }),
       compileElapsedMs: expect.any(Number),
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
@@ -625,6 +681,7 @@ describe("BrainAssemblerExtension", () => {
       budgetChars: expectedQueryBudgetChars,
     });
     expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
+      budgetFraction: 0.5,
       queryBudgetChars: expectedQueryBudgetChars,
     }));
   });
@@ -656,11 +713,19 @@ describe("BrainAssemblerExtension", () => {
     expect(result.messages).toEqual(assembled.messages);
     expect(result.brainDecision).toEqual(expect.objectContaining({
       mode: "use_brain",
+      budgetFraction: 0.3,
       maxContextChars: 0,
       queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
       injectedChars: 0,
       droppedChars: expect.any(Number),
       contextClipped: true,
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: 3,
+      fittedNodeCount: 0,
+      droppedNodeCount: 3,
+      fittingDropReasons: {
+        omitted_for_max_context_chars: 3,
+      },
       compileElapsedMs: expect.any(Number),
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
@@ -668,11 +733,19 @@ describe("BrainAssemblerExtension", () => {
     expect(brain.recordTraceSelectionMetadata).toHaveBeenCalledWith(
       expect.objectContaining({ id: "tr_structured_1" }),
       expect.objectContaining({
+        budgetFraction: 0.3,
         maxContextChars: 0,
         queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
         injectedChars: 0,
         droppedChars: expect.any(Number),
         contextClipped: true,
+        fitStrategy: "structured_node_budget",
+        retrievedNodeCount: 3,
+        fittedNodeCount: 0,
+        droppedNodeCount: 3,
+        fittingDropReasons: {
+          omitted_for_max_context_chars: 3,
+        },
         compileElapsedMs: expect.any(Number),
         brainDropReason: "injection_cap_clipped",
         brainDropStage: "injection",
@@ -727,6 +800,7 @@ describe("BrainAssemblerExtension", () => {
       compileDeadlineHit: true,
       brainDropReason: "deadline_before_query",
       brainDropStage: "decision",
+      budgetFraction: 0.3,
       queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
     }));
   });
@@ -790,6 +864,7 @@ describe("BrainAssemblerExtension", () => {
       compileDeadlineHit: true,
       brainDropReason: "deadline_after_query",
       brainDropStage: "query",
+      budgetFraction: 0.3,
       maxContextChars: 240,
       queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
       injectedChars: expect.any(Number),
@@ -814,6 +889,7 @@ describe("BrainAssemblerExtension", () => {
         compileDeadlineHit: true,
         brainDropReason: "deadline_after_query",
         brainDropStage: "query",
+        budgetFraction: 0.3,
         maxContextChars: 240,
         queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
         injectedChars: expect.any(Number),
@@ -883,11 +959,19 @@ describe("BrainAssemblerExtension", () => {
       compileDeadlineHit: true,
       brainDropReason: "deadline_before_injection",
       brainDropStage: "injection",
+      budgetFraction: 0.3,
       maxContextChars: 240,
       queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: 3,
+      fittedNodeCount: expect.any(Number),
+      droppedNodeCount: expect.any(Number),
+      fittingDropReasons: expect.objectContaining({
+        omitted_for_max_context_chars: expect.any(Number),
+      }),
     }));
     expect(brain.recordTraceSelectionMetadata).toHaveBeenCalledWith(
       expect.objectContaining({ id: "tr_structured_1" }),
@@ -907,11 +991,19 @@ describe("BrainAssemblerExtension", () => {
         compileDeadlineHit: true,
         brainDropReason: "deadline_before_injection",
         brainDropStage: "injection",
+        budgetFraction: 0.3,
         maxContextChars: 240,
         queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
         injectedChars: expect.any(Number),
         droppedChars: expect.any(Number),
         contextClipped: true,
+        fitStrategy: "structured_node_budget",
+        retrievedNodeCount: 3,
+        fittedNodeCount: expect.any(Number),
+        droppedNodeCount: expect.any(Number),
+        fittingDropReasons: expect.objectContaining({
+          omitted_for_max_context_chars: expect.any(Number),
+        }),
       }),
     );
   });

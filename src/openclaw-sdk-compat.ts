@@ -13,6 +13,8 @@ import type { PluginRuntime, RuntimeLogger } from "openclaw/plugin-sdk";
 import type {
   BrainDropReason,
   BrainDropStage,
+  BrainFitStrategy,
+  BrainFittingDropReason,
   BrainInterruptionMetadata,
   BrainInterruptionStage,
 } from "./brain-core/types.js";
@@ -38,11 +40,17 @@ export interface BrainDecisionMetadata {
   compileDeadlineHit?: boolean | null;
   brainDropReason?: BrainDropReason | null;
   brainDropStage?: BrainDropStage | null;
+  budgetFraction?: number | null;
   maxContextChars?: number | null;
   queryBudgetChars?: number | null;
   injectedChars?: number | null;
   droppedChars?: number | null;
   contextClipped?: boolean;
+  fitStrategy?: BrainFitStrategy | null;
+  retrievedNodeCount?: number | null;
+  fittedNodeCount?: number | null;
+  droppedNodeCount?: number | null;
+  fittingDropReasons?: Partial<Record<BrainFittingDropReason, number>> | null;
 }
 
 /** Result from assemble - matches what the code expects */
