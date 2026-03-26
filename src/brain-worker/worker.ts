@@ -213,6 +213,28 @@ export class BrainWorker {
         });
         continue;
       }
+      const teacherEvaluation = {
+        version: review.version,
+        observationId: review.observationId,
+        episodeId: review.episodeId,
+        traceId: review.traceId,
+        serveDecisionRecordId: review.serveDecisionRecordId,
+        selectionDigest: review.selectionDigest,
+        turnCompileEventId: review.turnCompileEventId,
+        decisionRecordedAt: review.decisionRecordedAt,
+        activePackId: review.activePackId,
+        activePackEventExportDigest: review.activePackEventExportDigest,
+        activePackGraphChecksum: review.activePackGraphChecksum,
+        activePackRouterChecksum: review.activePackRouterChecksum,
+        activePackBuiltAt: review.activePackBuiltAt,
+        bindingMode: review.bindingMode,
+        retrievalRelevance: review.retrievalRelevance,
+        agentUsage: review.agentUsage,
+        outcomeSupport: review.outcomeSupport,
+        finalScore: review.finalScore,
+        confidence: review.confidence,
+        reason: review.reason,
+      };
 
       const evidence = this.store.insertEvidence({
         episodeId: episode.id,
@@ -226,21 +248,15 @@ export class BrainWorker {
         metadata: {
           observationId: observation.id,
           traceId: review.traceId,
+          serveDecisionRecordId: review.serveDecisionRecordId,
+          selectionDigest: review.selectionDigest,
+          turnCompileEventId: review.turnCompileEventId,
+          activePackGraphChecksum: review.activePackGraphChecksum,
+          bindingMode: review.bindingMode,
           phase1Score: review.retrievalRelevance,
           phase2Score: review.outcomeSupport,
           agentUsage: review.agentUsage,
-          teacherEvaluation: {
-            version: review.version,
-            observationId: review.observationId,
-            episodeId: review.episodeId,
-            traceId: review.traceId,
-            retrievalRelevance: review.retrievalRelevance,
-            agentUsage: review.agentUsage,
-            outcomeSupport: review.outcomeSupport,
-            finalScore: review.finalScore,
-            confidence: review.confidence,
-            reason: review.reason,
-          },
+          teacherEvaluation,
           teacherInput: review.input,
         },
       });
@@ -265,18 +281,7 @@ export class BrainWorker {
         finalScore: review.finalScore,
         confidence: review.confidence,
         reason: review.reason,
-        teacherEvaluation: {
-          version: review.version,
-          observationId: review.observationId,
-          episodeId: review.episodeId,
-          traceId: review.traceId,
-          retrievalRelevance: review.retrievalRelevance,
-          agentUsage: review.agentUsage,
-          outcomeSupport: review.outcomeSupport,
-          finalScore: review.finalScore,
-          confidence: review.confidence,
-          reason: review.reason,
-        },
+        teacherEvaluation,
       });
     }
   }

@@ -619,10 +619,31 @@ export interface BrainObservationToolResult {
   excerpt: string | null;
 }
 
+export type BrainObservationBindingMode =
+  | "exact_decision_id"
+  | "exact_selection_digest"
+  | "turn_compile_event_id"
+  | "trace_id"
+  | "legacy_heuristic"
+  | "unbound";
+
+export interface BrainObservationServedArtifact {
+  [key: string]: unknown;
+}
+
 export interface BrainObservationRouteMetadata {
   requestDigest: string | null;
   activePackId: string | null;
   routerIdentity: string | null;
+  serveDecisionRecordId: string | null;
+  selectionDigest: string | null;
+  turnCompileEventId: string | null;
+  decisionRecordedAt: string | null;
+  activePackEventExportDigest: string | null;
+  activePackGraphChecksum: string | null;
+  activePackRouterChecksum: string | null;
+  activePackBuiltAt: string | null;
+  servedArtifact: BrainObservationServedArtifact | null;
   candidateNodeIds: string[];
   selectedNodeIds: string[];
   selectedTraversalNodeIds: string[];
@@ -662,6 +683,16 @@ export interface BrainObservationTeacherEvaluation {
   observationId: string;
   episodeId: string;
   traceId: string | null;
+  serveDecisionRecordId: string | null;
+  selectionDigest: string | null;
+  turnCompileEventId: string | null;
+  decisionRecordedAt: string | null;
+  activePackId: string | null;
+  activePackEventExportDigest: string | null;
+  activePackGraphChecksum: string | null;
+  activePackRouterChecksum: string | null;
+  activePackBuiltAt: string | null;
+  bindingMode: BrainObservationBindingMode;
   retrievalRelevance: number;
   agentUsage: number;
   outcomeSupport: number;

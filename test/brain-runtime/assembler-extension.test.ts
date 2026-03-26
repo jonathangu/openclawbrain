@@ -1,8 +1,11 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { BrainAssemblerExtension } from "../../src/brain-runtime/assembler-extension.js";
+import {
+  BrainAssemblerExtension,
+  resolveBrainQueryBudgetChars,
+} from "../../src/brain-runtime/assembler-extension.js";
 import type { TraversalResult } from "../../src/brain-core/types.js";
 
-const QUERY_BUDGET_CHARS_FOR_4096_TOKENS = Math.max(256, Math.floor(4096 * 4 * 0.3));
+const QUERY_BUDGET_CHARS_FOR_4096_TOKENS = resolveBrainQueryBudgetChars(4096, 0.3);
 
 function makeTraversalResult(): TraversalResult {
   return {
@@ -172,6 +175,7 @@ function createBrainStub(overrides?: {
   embeddingConfigured?: boolean;
   shadowMode?: boolean;
   compileDeadlineMs?: number | null;
+  budgetFraction?: number;
   query?: (params: { conversationId: number; queryText: string; budgetChars: number }) => Promise<TraversalResult | null>;
 }) {
   return {
@@ -180,6 +184,7 @@ function createBrainStub(overrides?: {
     isEmbeddingConfigured: () => overrides?.embeddingConfigured ?? true,
     isShadowMode: () => overrides?.shadowMode ?? false,
     getCompileDeadlineMs: () => overrides?.compileDeadlineMs ?? null,
+    getBudgetFraction: () => overrides?.budgetFraction ?? 0.3,
     noteAssemblyDecision: vi.fn(),
     recordTraceSelectionMetadata: vi.fn(),
     query: overrides?.query ?? vi.fn(async () => null),
@@ -580,6 +585,40 @@ describe("BrainAssemblerExtension", () => {
       compileElapsedMs: expect.any(Number),
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
+    }));
+  });
+
+  it("derives retrieval budget from the live brain budget fraction", async () => {
+    const query = vi.fn(async () => makeTraversalResult());
+    const brain = createBrainStub({
+      budgetFraction: 0.5,
+      query,
+    });
+    const extension = new BrainAssemblerExtension(brain as never);
+    const expectedQueryBudgetChars = resolveBrainQueryBudgetChars(4096, 0.5);
+
+    await extension.augmentAssembly({
+      conversationId: 42,
+      tokenBudget: 4096,
+      assembled: {
+        messages: [{ role: "user", content: "live tail" }],
+        estimatedTokens: 2,
+        stats: {
+          rawMessageCount: 1,
+          summaryCount: 0,
+          totalContextItems: 1,
+        },
+      },
+      liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
+    });
+
+    expect(query).toHaveBeenCalledWith({
+      conversationId: 42,
+      queryText: "How do I open a pull request?",
+      budgetChars: expectedQueryBudgetChars,
+    });
+    expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
+      queryBudgetChars: expectedQueryBudgetChars,
     }));
   });
 

@@ -81,6 +81,29 @@ export interface CandidatePackPayloads {
     vectors: PackVectorsPayloadV1;
     router: RouterArtifactV1 | null;
 }
+export interface TeacherObservationBindingStatsV1 {
+    totalObservationCount: number;
+    nonZeroObservationCount: number;
+    skippedZeroRewardCount: number;
+    matched: {
+        exactDecisionId: number;
+        exactSelectionDigest: number;
+        turnCompileEventId: number;
+        legacyHeuristic: number;
+    };
+    unmatched: {
+        exactDecisionId: number;
+        exactSelectionDigest: number;
+        turnCompileEventId: number;
+        legacyHeuristic: number;
+    };
+    ambiguous: {
+        exactDecisionId: number;
+        exactSelectionDigest: number;
+        turnCompileEventId: number;
+        legacyHeuristic: number;
+    };
+}
 export interface CandidatePackBuildResult {
     manifest: ArtifactManifestV1;
     payloads: CandidatePackPayloads;
@@ -91,6 +114,7 @@ export interface CandidatePackBuildResult {
         decisionLogCount: number;
         fallbackReason: string | null;
         updatedBaseline: BaselineStateV1 | null;
+        observationBindingStats: TeacherObservationBindingStatsV1 | null;
     };
     summary: {
         packId: string;

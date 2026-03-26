@@ -62,6 +62,109 @@ function deserializeEmbedding(blob: Buffer | Uint8Array | null): Float32Array | 
   return new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4);
 }
 
+function parseJsonValue<T>(value: unknown, fallback: T): T {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return fallback;
+  }
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return fallback;
+  }
+}
+
+function toOptionalString(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function toStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === "string")
+    : [];
+}
+
+function toRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function cloneJsonRecord(value: unknown): Record<string, unknown> | null {
+  const record = toRecord(value);
+  return record ? JSON.parse(JSON.stringify(record)) as Record<string, unknown> : null;
+}
+
+function normalizeObservationSourceSummary(
+  value: unknown,
+): BrainObservationRouteMetadata["sourceSummary"] {
+  const record = toRecord(value);
+  if (!record) {
+    return null;
+  }
+
+  return {
+    injectedCount: Number.isFinite(Number(record.injectedCount)) ? Number(record.injectedCount) : 0,
+    kinds: (toRecord(record.kinds) ?? {}) as NonNullable<BrainObservationRouteMetadata["sourceSummary"]>["kinds"],
+    trusts: (toRecord(record.trusts) ?? {}) as NonNullable<BrainObservationRouteMetadata["sourceSummary"]>["trusts"],
+    sourceUris: toStringArray(record.sourceUris),
+  };
+}
+
+function normalizeObservationSelectionMetadata(
+  value: unknown,
+): BrainObservationRouteMetadata["selectionMetadata"] {
+  const record = toRecord(value);
+  return record ? { ...record } as BrainObservationRouteMetadata["selectionMetadata"] : null;
+}
+
+function normalizeObservationRouteMetadata(value: unknown): BrainObservationRouteMetadata {
+  const record = toRecord(value) ?? {};
+  return {
+    requestDigest: toOptionalString(record.requestDigest),
+    activePackId: toOptionalString(record.activePackId),
+    routerIdentity: toOptionalString(record.routerIdentity),
+    serveDecisionRecordId: toOptionalString(record.serveDecisionRecordId),
+    selectionDigest: toOptionalString(record.selectionDigest),
+    turnCompileEventId: toOptionalString(record.turnCompileEventId),
+    decisionRecordedAt: toOptionalString(record.decisionRecordedAt),
+    activePackEventExportDigest: toOptionalString(record.activePackEventExportDigest),
+    activePackGraphChecksum: toOptionalString(record.activePackGraphChecksum),
+    activePackRouterChecksum: toOptionalString(record.activePackRouterChecksum),
+    activePackBuiltAt: toOptionalString(record.activePackBuiltAt),
+    servedArtifact: cloneJsonRecord(record.servedArtifact),
+    candidateNodeIds: toStringArray(record.candidateNodeIds),
+    selectedNodeIds: toStringArray(record.selectedNodeIds),
+    selectedTraversalNodeIds: toStringArray(record.selectedTraversalNodeIds),
+    selectedPathNodeIds: toStringArray(record.selectedPathNodeIds),
+    selectedSeedNodeIds: toStringArray(record.selectedSeedNodeIds),
+    sourceSummary: normalizeObservationSourceSummary(record.sourceSummary),
+    selectionMetadata: normalizeObservationSelectionMetadata(record.selectionMetadata),
+  };
+}
+
+function observationRouteMetadataFromRow(row: Record<string, unknown>): BrainObservationRouteMetadata {
+  const routeMetadata = normalizeObservationRouteMetadata(parseJsonValue(row.route_metadata_json, {}));
+  return normalizeObservationRouteMetadata({
+    ...routeMetadata,
+    serveDecisionRecordId: toOptionalString(row.serve_decision_record_id) ?? routeMetadata.serveDecisionRecordId,
+    selectionDigest: toOptionalString(row.selection_digest) ?? routeMetadata.selectionDigest,
+    turnCompileEventId: toOptionalString(row.turn_compile_event_id) ?? routeMetadata.turnCompileEventId,
+    decisionRecordedAt: toOptionalString(row.decision_recorded_at) ?? routeMetadata.decisionRecordedAt,
+    activePackId: toOptionalString(row.active_pack_id) ?? routeMetadata.activePackId,
+    activePackEventExportDigest:
+      toOptionalString(row.active_pack_event_export_digest) ?? routeMetadata.activePackEventExportDigest,
+    activePackGraphChecksum:
+      toOptionalString(row.active_pack_graph_checksum) ?? routeMetadata.activePackGraphChecksum,
+    activePackRouterChecksum:
+      toOptionalString(row.active_pack_router_checksum) ?? routeMetadata.activePackRouterChecksum,
+    activePackBuiltAt: toOptionalString(row.active_pack_built_at) ?? routeMetadata.activePackBuiltAt,
+  });
+}
+
 export interface LearningJournalInsert {
   eventType: LearningJournalEventType;
   mutationId?: string | null;
@@ -679,12 +782,22 @@ export class BrainStore {
     const id = `bo_${randomUUID().slice(0, 8)}`;
     const createdAt = params.createdAt ?? Date.now();
     const updatedAt = params.updatedAt ?? createdAt;
+    const routeMetadata = normalizeObservationRouteMetadata(params.routeMetadata);
     this.db.prepare(`
       INSERT INTO brain_observations (
         id,
         episode_id,
         conversation_id,
         trace_id,
+        serve_decision_record_id,
+        selection_digest,
+        turn_compile_event_id,
+        decision_recorded_at,
+        active_pack_id,
+        active_pack_event_export_digest,
+        active_pack_graph_checksum,
+        active_pack_router_checksum,
+        active_pack_built_at,
         query_text,
         retrieved_context_json,
         route_metadata_json,
@@ -695,15 +808,24 @@ export class BrainStore {
         created_at,
         updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       id,
       params.episodeId,
       params.conversationId ?? null,
       params.traceId ?? null,
+      routeMetadata.serveDecisionRecordId,
+      routeMetadata.selectionDigest,
+      routeMetadata.turnCompileEventId,
+      routeMetadata.decisionRecordedAt,
+      routeMetadata.activePackId,
+      routeMetadata.activePackEventExportDigest,
+      routeMetadata.activePackGraphChecksum,
+      routeMetadata.activePackRouterChecksum,
+      routeMetadata.activePackBuiltAt,
       params.queryText,
       JSON.stringify(params.retrievedContext ?? []),
-      JSON.stringify(params.routeMetadata ?? {}),
+      JSON.stringify(routeMetadata),
       params.assistantResponse ?? "",
       JSON.stringify(params.toolResults ?? []),
       params.followUpText ?? null,
@@ -719,7 +841,7 @@ export class BrainStore {
       traceId: params.traceId ?? null,
       queryText: params.queryText,
       retrievedContext: params.retrievedContext ?? [],
-      routeMetadata: params.routeMetadata,
+      routeMetadata,
       assistantResponse: params.assistantResponse ?? "",
       toolResults: params.toolResults ?? [],
       followUpText: params.followUpText ?? null,
@@ -889,7 +1011,7 @@ export class BrainStore {
       confidence: (row.confidence as number) ?? 1.0,
       reason: (row.reason as string) ?? null,
       contentSnippet: (row.content_snippet as string) ?? null,
-      metadata: JSON.parse((row.metadata as string) || "{}"),
+      metadata: parseJsonValue(row.metadata, {}),
       resolved: !!(row.resolved as number),
       createdAt: row.created_at as number,
     };
@@ -1313,15 +1435,15 @@ export class BrainStore {
       episodeId: (row.episode_id as string) ?? null,
       packVersion: (row.pack_version as number) ?? null,
       queryText: (row.query_text as string) || "",
-      seedScores: JSON.parse((row.seed_scores as string) || "[]"),
-      trajectory: JSON.parse((row.trajectory as string) || "[]"),
-      firedNodes: JSON.parse((row.fired_nodes as string) || "[]"),
-      vetoedNodes: JSON.parse((row.vetoed_nodes as string) || "[]"),
+      seedScores: parseJsonValue(row.seed_scores, []),
+      trajectory: parseJsonValue(row.trajectory, []),
+      firedNodes: parseJsonValue(row.fired_nodes, []),
+      vetoedNodes: parseJsonValue(row.vetoed_nodes, []),
       contextChars: (row.context_chars as number) || 0,
       footer: (row.footer as string) || "",
       routeTrace: row.route_trace_json === undefined
         ? null
-        : JSON.parse((row.route_trace_json as string) || "null"),
+        : parseJsonValue(row.route_trace_json, null),
       supervision: [],
       createdAt: row.created_at as number,
     };
@@ -1342,7 +1464,7 @@ export class BrainStore {
       resolution: row.resolution as BrainEvidenceResolution,
       labelId: (row.label_id as string) ?? null,
       evidenceId: (row.evidence_id as string) ?? null,
-      metadata: JSON.parse((row.metadata as string) || "{}"),
+      metadata: parseJsonValue(row.metadata, {}),
       createdAt: row.created_at as number,
     };
   }
@@ -1354,10 +1476,10 @@ export class BrainStore {
       conversationId: (row.conversation_id as number) ?? null,
       traceId: (row.trace_id as string) ?? null,
       queryText: (row.query_text as string) ?? "",
-      retrievedContext: JSON.parse((row.retrieved_context_json as string) || "[]"),
-      routeMetadata: JSON.parse((row.route_metadata_json as string) || "{}"),
+      retrievedContext: parseJsonValue(row.retrieved_context_json, []),
+      routeMetadata: observationRouteMetadataFromRow(row),
       assistantResponse: (row.assistant_response as string) ?? "",
-      toolResults: JSON.parse((row.tool_results_json as string) || "[]"),
+      toolResults: parseJsonValue(row.tool_results_json, []),
       followUpText: (row.follow_up_text as string) ?? null,
       phase1Score: row.phase1_score === null ? null : Number(row.phase1_score),
       phase2Score: row.phase2_score === null ? null : Number(row.phase2_score),
@@ -1366,7 +1488,7 @@ export class BrainStore {
       reason: (row.reason as string) ?? null,
       status: row.status as BrainObservationStatus,
       teacherEvaluation: row.teacher_evaluation_json
-        ? JSON.parse(row.teacher_evaluation_json as string) as BrainObservationTeacherEvaluation
+        ? parseJsonValue(row.teacher_evaluation_json, null) as BrainObservationTeacherEvaluation
         : null,
       createdAt: Number(row.created_at ?? 0),
       updatedAt: Number(row.updated_at ?? 0),

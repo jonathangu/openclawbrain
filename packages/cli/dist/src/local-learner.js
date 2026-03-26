@@ -4054,15 +4054,36 @@ function normalizeOutcomeMatchText(value) {
         ? value.replace(/\s+/g, " ").trim().toLowerCase()
         : null;
 }
+function normalizeObservationOptionalString(value) {
+    return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
+}
+function buildObservationSelectionDigestKey(selectionDigest, activePackGraphChecksum) {
+    const normalizedSelectionDigest = normalizeObservationOptionalString(selectionDigest);
+    const normalizedGraphChecksum = normalizeObservationOptionalString(activePackGraphChecksum);
+    if (normalizedSelectionDigest === null || normalizedGraphChecksum === null) {
+        return null;
+    }
+    return `${normalizedGraphChecksum}|${normalizedSelectionDigest}`;
+}
 function parseObservationRouteMetadata(value) {
     if (typeof value !== "string" || value.trim().length === 0) {
         return {
+            serveDecisionRecordId: null,
+            selectionDigest: null,
+            turnCompileEventId: null,
+            activePackId: null,
+            activePackGraphChecksum: null,
             selectedNodeIds: [],
             selectedPathNodeIds: []
         };
     }
     try {
         const parsed = JSON.parse(value);
+        const serveDecisionRecordId = normalizeObservationOptionalString(parsed?.serveDecisionRecordId);
+        const selectionDigest = normalizeObservationOptionalString(parsed?.selectionDigest);
+        const turnCompileEventId = normalizeObservationOptionalString(parsed?.turnCompileEventId);
+        const activePackId = normalizeObservationOptionalString(parsed?.activePackId);
+        const activePackGraphChecksum = normalizeObservationOptionalString(parsed?.activePackGraphChecksum);
         const selectedNodeIds = Array.isArray(parsed?.selectedNodeIds)
             ? parsed.selectedNodeIds.filter((entry) => typeof entry === "string")
             : [];
@@ -4070,12 +4091,22 @@ function parseObservationRouteMetadata(value) {
             ? parsed.selectedPathNodeIds.filter((entry) => typeof entry === "string")
             : [];
         return {
+            serveDecisionRecordId,
+            selectionDigest,
+            turnCompileEventId,
+            activePackId,
+            activePackGraphChecksum,
             selectedNodeIds,
             selectedPathNodeIds
         };
     }
     catch {
         return {
+            serveDecisionRecordId: null,
+            selectionDigest: null,
+            turnCompileEventId: null,
+            activePackId: null,
+            activePackGraphChecksum: null,
             selectedNodeIds: [],
             selectedPathNodeIds: []
         };
@@ -4099,8 +4130,24 @@ function loadTeacherObservationOutcomesFromActivation(activationRoot) {
         if (table === undefined) {
             return [];
         }
+        const columns = new Set(db.prepare("PRAGMA table_info(brain_observations)").all().map((column) => String(column.name ?? "")));
+        const selectableColumns = [
+            "id",
+            "query_text",
+            "route_metadata_json",
+            "final_score",
+            "confidence",
+            "created_at",
+            "updated_at",
+            "evaluated_at",
+            columns.has("serve_decision_record_id") ? "serve_decision_record_id" : "NULL AS serve_decision_record_id",
+            columns.has("selection_digest") ? "selection_digest" : "NULL AS selection_digest",
+            columns.has("turn_compile_event_id") ? "turn_compile_event_id" : "NULL AS turn_compile_event_id",
+            columns.has("active_pack_id") ? "active_pack_id" : "NULL AS active_pack_id",
+            columns.has("active_pack_graph_checksum") ? "active_pack_graph_checksum" : "NULL AS active_pack_graph_checksum"
+        ];
         const rows = db.prepare(`
-      SELECT id, query_text, route_metadata_json, final_score, confidence, created_at, updated_at, evaluated_at
+      SELECT ${selectableColumns.join(", ")}
       FROM brain_observations
       WHERE final_score IS NOT NULL
       ORDER BY created_at DESC
@@ -4116,6 +4163,11 @@ function loadTeacherObservationOutcomesFromActivation(activationRoot) {
                 createdAt: Number.isFinite(Number(row.created_at)) ? Number(row.created_at) : null,
                 updatedAt: Number.isFinite(Number(row.updated_at)) ? Number(row.updated_at) : null,
                 evaluatedAt: Number.isFinite(Number(row.evaluated_at)) ? Number(row.evaluated_at) : null,
+                serveDecisionRecordId: normalizeObservationOptionalString(row.serve_decision_record_id) ?? routeMetadata.serveDecisionRecordId,
+                selectionDigest: normalizeObservationOptionalString(row.selection_digest) ?? routeMetadata.selectionDigest,
+                turnCompileEventId: normalizeObservationOptionalString(row.turn_compile_event_id) ?? routeMetadata.turnCompileEventId,
+                activePackId: normalizeObservationOptionalString(row.active_pack_id) ?? routeMetadata.activePackId,
+                activePackGraphChecksum: normalizeObservationOptionalString(row.active_pack_graph_checksum) ?? routeMetadata.activePackGraphChecksum,
                 selectedNodeIds: routeMetadata.selectedNodeIds,
                 selectedPathNodeIds: routeMetadata.selectedPathNodeIds
             };
@@ -4197,45 +4249,172 @@ function compareDecisionObservationMatch(left, right) {
     }
     return 0;
 }
+function emptyTeacherObservationBindingStats() {
+    return {
+        totalObservationCount: 0,
+        nonZeroObservationCount: 0,
+        skippedZeroRewardCount: 0,
+        matched: {
+            exactDecisionId: 0,
+            exactSelectionDigest: 0,
+            turnCompileEventId: 0,
+            legacyHeuristic: 0
+        },
+        unmatched: {
+            exactDecisionId: 0,
+            exactSelectionDigest: 0,
+            turnCompileEventId: 0,
+            legacyHeuristic: 0
+        },
+        ambiguous: {
+            exactDecisionId: 0,
+            exactSelectionDigest: 0,
+            turnCompileEventId: 0,
+            legacyHeuristic: 0
+        }
+    };
+}
+function summarizeTeacherObservationBindingStats(stats) {
+    return [
+        `matched(exact_decision_id=${stats.matched.exactDecisionId},exact_selection_digest=${stats.matched.exactSelectionDigest},turn_compile_event_id=${stats.matched.turnCompileEventId},legacy_heuristic=${stats.matched.legacyHeuristic})`,
+        `unmatched(exact_decision_id=${stats.unmatched.exactDecisionId},exact_selection_digest=${stats.unmatched.exactSelectionDigest},turn_compile_event_id=${stats.unmatched.turnCompileEventId},legacy_heuristic=${stats.unmatched.legacyHeuristic})`,
+        `ambiguous(exact_decision_id=${stats.ambiguous.exactDecisionId},exact_selection_digest=${stats.ambiguous.exactSelectionDigest},turn_compile_event_id=${stats.ambiguous.turnCompileEventId},legacy_heuristic=${stats.ambiguous.legacyHeuristic})`,
+        `non_zero=${stats.nonZeroObservationCount}`,
+        `skipped_zero=${stats.skippedZeroRewardCount}`
+    ].join(" ");
+}
+function buildTeacherObservationDecisionIndexes(decisions) {
+    const byRecordId = new Map();
+    const bySelectionDigest = new Map();
+    const ambiguousSelectionDigests = new Set();
+    const byTurnCompileEventId = new Map();
+    const ambiguousTurnCompileEventIds = new Set();
+    for (const decision of decisions) {
+        byRecordId.set(decision.recordId, decision);
+        const selectionDigestKey = buildObservationSelectionDigestKey(decision.selectionDigest, decision.activePackGraphChecksum);
+        if (selectionDigestKey !== null) {
+            if (bySelectionDigest.has(selectionDigestKey)) {
+                bySelectionDigest.delete(selectionDigestKey);
+                ambiguousSelectionDigests.add(selectionDigestKey);
+            }
+            else if (!ambiguousSelectionDigests.has(selectionDigestKey)) {
+                bySelectionDigest.set(selectionDigestKey, decision);
+            }
+        }
+        const turnCompileEventId = normalizeObservationOptionalString(decision.turnCompileEventId);
+        if (turnCompileEventId !== null) {
+            if (byTurnCompileEventId.has(turnCompileEventId)) {
+                byTurnCompileEventId.delete(turnCompileEventId);
+                ambiguousTurnCompileEventIds.add(turnCompileEventId);
+            }
+            else if (!ambiguousTurnCompileEventIds.has(turnCompileEventId)) {
+                byTurnCompileEventId.set(turnCompileEventId, decision);
+            }
+        }
+    }
+    return {
+        byRecordId,
+        bySelectionDigest,
+        ambiguousSelectionDigests,
+        byTurnCompileEventId,
+        ambiguousTurnCompileEventIds
+    };
+}
+function resolveLegacyTeacherObservationMatch(decisions, observation) {
+    const matches = decisions
+        .map((decision) => {
+        const key = decisionObservationMatchKey(decision, observation);
+        return key === null
+            ? null
+            : {
+                decision,
+                key
+            };
+    })
+        .filter((entry) => entry !== null)
+        .sort((left, right) => compareDecisionObservationMatch(left.key, right.key));
+    const best = matches[0] ?? null;
+    const runnerUp = matches[1] ?? null;
+    if (best === null) {
+        return { kind: "unmatched", mode: "legacyHeuristic" };
+    }
+    if (runnerUp !== null && compareDecisionObservationMatch(best.key, runnerUp.key) === 0) {
+        return { kind: "ambiguous", mode: "legacyHeuristic" };
+    }
+    return {
+        kind: "matched",
+        mode: "legacyHeuristic",
+        decision: best.decision
+    };
+}
+function resolveTeacherObservationDecisionMatch(decisions, observation, indexes) {
+    const serveDecisionRecordId = normalizeObservationOptionalString(observation.serveDecisionRecordId);
+    if (serveDecisionRecordId !== null) {
+        const decision = indexes.byRecordId.get(serveDecisionRecordId) ?? null;
+        return decision === null
+            ? { kind: "unmatched", mode: "exactDecisionId" }
+            : { kind: "matched", mode: "exactDecisionId", decision };
+    }
+    const selectionDigestKey = buildObservationSelectionDigestKey(observation.selectionDigest, observation.activePackGraphChecksum);
+    if (selectionDigestKey !== null) {
+        if (indexes.ambiguousSelectionDigests.has(selectionDigestKey)) {
+            return { kind: "ambiguous", mode: "exactSelectionDigest" };
+        }
+        const decision = indexes.bySelectionDigest.get(selectionDigestKey) ?? null;
+        return decision === null
+            ? { kind: "unmatched", mode: "exactSelectionDigest" }
+            : { kind: "matched", mode: "exactSelectionDigest", decision };
+    }
+    if (normalizeObservationOptionalString(observation.selectionDigest) !== null
+        || normalizeObservationOptionalString(observation.activePackGraphChecksum) !== null) {
+        return { kind: "unmatched", mode: "exactSelectionDigest" };
+    }
+    const turnCompileEventId = normalizeObservationOptionalString(observation.turnCompileEventId);
+    if (turnCompileEventId !== null) {
+        if (indexes.ambiguousTurnCompileEventIds.has(turnCompileEventId)) {
+            return { kind: "ambiguous", mode: "turnCompileEventId" };
+        }
+        const decision = indexes.byTurnCompileEventId.get(turnCompileEventId) ?? null;
+        return decision === null
+            ? { kind: "unmatched", mode: "turnCompileEventId" }
+            : { kind: "matched", mode: "turnCompileEventId", decision };
+    }
+    return resolveLegacyTeacherObservationMatch(decisions, observation);
+}
 function joinDecisionsWithTeacherObservationOutcomes(decisions, observationOutcomes) {
     const outcomes = new Map();
+    const stats = emptyTeacherObservationBindingStats();
     for (const decision of decisions) {
         outcomes.set(decision.recordId, 0);
     }
     if (!Array.isArray(observationOutcomes) || observationOutcomes.length === 0) {
-        return outcomes;
+        return { outcomes, stats };
     }
+    const indexes = buildTeacherObservationDecisionIndexes(decisions);
+    stats.totalObservationCount = observationOutcomes.length;
     for (const observation of observationOutcomes) {
-        const matches = decisions
-            .map((decision) => {
-            const key = decisionObservationMatchKey(decision, observation);
-            return key === null
-                ? null
-                : {
-                    decision,
-                    key
-                };
-        })
-            .filter((entry) => entry !== null)
-            .sort((left, right) => compareDecisionObservationMatch(left.key, right.key));
-        const best = matches[0] ?? null;
-        const runnerUp = matches[1] ?? null;
-        if (best === null) {
-            continue;
-        }
-        if (runnerUp !== null && compareDecisionObservationMatch(best.key, runnerUp.key) === 0) {
-            continue;
-        }
         const reward = clampTeacherObservationOutcome(observation.finalScore);
         if (reward === 0) {
+            stats.skippedZeroRewardCount += 1;
             continue;
         }
-        const current = outcomes.get(best.decision.recordId) ?? 0;
+        stats.nonZeroObservationCount += 1;
+        const match = resolveTeacherObservationDecisionMatch(decisions, observation, indexes);
+        if (match.kind === "unmatched") {
+            stats.unmatched[match.mode] += 1;
+            continue;
+        }
+        if (match.kind === "ambiguous") {
+            stats.ambiguous[match.mode] += 1;
+            continue;
+        }
+        stats.matched[match.mode] += 1;
+        const current = outcomes.get(match.decision.recordId) ?? 0;
         if (current === 0 || Math.abs(reward) > Math.abs(current)) {
-            outcomes.set(best.decision.recordId, reward);
+            outcomes.set(match.decision.recordId, reward);
         }
     }
-    return outcomes;
+    return { outcomes, stats };
 }
 
 export function joinDecisionsWithFeedback(decisions, eventExport, maxDelayMs = 300_000) {
@@ -4627,8 +4806,8 @@ function createRouterArtifactV2(packId, builtAt, graph, vectors, eventExport, se
     const remappedServeTimeDecisions = serveTimeDecisions.map((decision) => remapServeTimeDecisionToGraph(decision, resolveBlockId));
     // 2. Join serve-time decisions with explicit feedback first, then let teacher-v2 observations override when available.
     const outcomeMap = joinDecisionsWithFeedback(remappedServeTimeDecisions, eventExport);
-    const teacherObservationOutcomeMap = joinDecisionsWithTeacherObservationOutcomes(remappedServeTimeDecisions, teacherObservationOutcomes);
-    for (const [decisionId, reward] of teacherObservationOutcomeMap.entries()) {
+    const teacherObservationBindings = joinDecisionsWithTeacherObservationOutcomes(remappedServeTimeDecisions, teacherObservationOutcomes);
+    for (const [decisionId, reward] of teacherObservationBindings.outcomes.entries()) {
         if (reward !== 0) {
             outcomeMap.set(decisionId, reward);
         }
@@ -4695,7 +4874,8 @@ function createRouterArtifactV2(packId, builtAt, graph, vectors, eventExport, se
         if (fallback.policyUpdates.length > 0) {
             return {
                 artifact: fallback,
-                updatedBaseline: currentBaseline
+                updatedBaseline: currentBaseline,
+                observationBindingStats: teacherObservationBindings.stats
             };
         }
     }
@@ -4717,7 +4897,7 @@ function createRouterArtifactV2(packId, builtAt, graph, vectors, eventExport, se
         : remappedServeTimeDecisions.length === 0
             ? "no serve-time decisions supplied for V2 learned routing refresh"
             : supervisedTrajectoryCount === 0
-                ? "no outcomes found for serve-time decisions"
+                ? `no outcomes found for serve-time decisions (${summarizeTeacherObservationBindingStats(teacherObservationBindings.stats)})`
                 : "trajectory updates produced no learned routing delta";
     const artifact = {
         routerIdentity: `${packId}:route_fn`,
@@ -4765,7 +4945,11 @@ function createRouterArtifactV2(packId, builtAt, graph, vectors, eventExport, se
         traces,
         policyUpdates
     };
-    return { artifact, updatedBaseline: currentBaseline };
+    return {
+        artifact,
+        updatedBaseline: currentBaseline,
+        observationBindingStats: teacherObservationBindings.stats
+    };
 }
 function resolveEventExport(input) {
     if (input.eventExports === undefined) {
@@ -4922,6 +5106,7 @@ export function buildCandidatePack(input) {
     const vectors = createVectorsPayload(graph);
     let router = null;
     let updatedBaseline = null;
+    let observationBindingStats = null;
     const teacherObservationOutcomes = input.activationRoot === undefined
         ? []
         : loadTeacherObservationOutcomesFromActivation(input.activationRoot);
@@ -4930,6 +5115,7 @@ export function buildCandidatePack(input) {
             const v2Result = createRouterArtifactV2(packId, builtAt, graph, vectors, eventExport, input.serveTimeDecisions, input.baselineState ?? initBaseline(), input.sparseFeedback, input.principalBacklog, teacherObservationOutcomes);
             router = v2Result.artifact;
             updatedBaseline = v2Result.updatedBaseline;
+            observationBindingStats = v2Result.observationBindingStats;
         }
         else {
             router = createRouterArtifact(packId, builtAt, graph, vectors, eventExport, input.sparseFeedback, input.principalBacklog);
@@ -5045,7 +5231,8 @@ export function buildCandidatePack(input) {
             pgVersionUsed: input.learnedRouting ? (useV2 ? "v2" : "v1") : null,
             decisionLogCount,
             fallbackReason,
-            updatedBaseline
+            updatedBaseline,
+            observationBindingStats
         },
         summary: {
             packId,

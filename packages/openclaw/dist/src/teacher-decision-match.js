@@ -43,6 +43,43 @@ function buildCandidateKey(sessionId, channel, createdAt) {
     return `${sessionChannelKey}|${normalizedCreatedAt}`;
 }
 
+function buildSelectionDigestKey(selectionDigest, activePackGraphChecksum) {
+    const normalizedSelectionDigest = normalizeOptionalString(selectionDigest);
+    const normalizedGraphChecksum = normalizeOptionalString(activePackGraphChecksum);
+    if (normalizedSelectionDigest === undefined || normalizedGraphChecksum === undefined) {
+        return null;
+    }
+    return `${normalizedGraphChecksum}|${normalizedSelectionDigest}`;
+}
+
+function toRecord(value) {
+    return value && typeof value === "object" && !Array.isArray(value) ? value : null;
+}
+
+function readInteractionExactDecisionRecordId(interaction) {
+    return normalizeOptionalString(interaction?.serveDecisionRecordId)
+        ?? normalizeOptionalString(toRecord(interaction?.routeMetadata)?.serveDecisionRecordId)
+        ?? normalizeOptionalString(toRecord(interaction?.decisionProvenance)?.serveDecisionRecordId)
+        ?? normalizeOptionalString(toRecord(interaction?.metadata)?.serveDecisionRecordId)
+        ?? undefined;
+}
+
+function readInteractionSelectionDigest(interaction) {
+    return normalizeOptionalString(interaction?.selectionDigest)
+        ?? normalizeOptionalString(toRecord(interaction?.routeMetadata)?.selectionDigest)
+        ?? normalizeOptionalString(toRecord(interaction?.decisionProvenance)?.selectionDigest)
+        ?? normalizeOptionalString(toRecord(interaction?.metadata)?.selectionDigest)
+        ?? undefined;
+}
+
+function readInteractionActivePackGraphChecksum(interaction) {
+    return normalizeOptionalString(interaction?.activePackGraphChecksum)
+        ?? normalizeOptionalString(toRecord(interaction?.routeMetadata)?.activePackGraphChecksum)
+        ?? normalizeOptionalString(toRecord(interaction?.decisionProvenance)?.activePackGraphChecksum)
+        ?? normalizeOptionalString(toRecord(interaction?.metadata)?.activePackGraphChecksum)
+        ?? undefined;
+}
+
 function buildDecisionTimestamps(decision) {
     const timestamps = [];
     const turnCreatedAt = toTimestamp(decision.turnCreatedAt);
@@ -99,6 +136,9 @@ export function createServeTimeDecisionMatcher(decisions, options = {}) {
     const maxTimeDeltaMs = Number.isInteger(options.maxTimeDeltaMs) && options.maxTimeDeltaMs >= 0
         ? options.maxTimeDeltaMs
         : DEFAULT_MATCH_WINDOW_MS;
+    const decisionsByRecordId = new Map();
+    const decisionsBySelectionDigest = new Map();
+    const ambiguousSelectionDigests = new Set();
     const exactDecisions = new Map();
     const fallbackDecisions = new Map();
     const decisionsBySessionChannel = new Map();
@@ -108,6 +148,20 @@ export function createServeTimeDecisionMatcher(decisions, options = {}) {
         const userMessage = normalizeOptionalString(decision.userMessage);
         if (userMessage === undefined) {
             continue;
+        }
+        const decisionRecordId = normalizeOptionalString(decision.recordId);
+        if (decisionRecordId !== undefined && !decisionsByRecordId.has(decisionRecordId)) {
+            decisionsByRecordId.set(decisionRecordId, decision);
+        }
+        const selectionDigestKey = buildSelectionDigestKey(decision.selectionDigest, decision.activePackGraphChecksum);
+        if (selectionDigestKey !== null) {
+            if (decisionsBySelectionDigest.has(selectionDigestKey)) {
+                decisionsBySelectionDigest.delete(selectionDigestKey);
+                ambiguousSelectionDigests.add(selectionDigestKey);
+            }
+            else if (!ambiguousSelectionDigests.has(selectionDigestKey)) {
+                decisionsBySelectionDigest.set(selectionDigestKey, decision);
+            }
         }
         const turnCompileEventId = normalizeOptionalString(decision.turnCompileEventId);
         if (turnCompileEventId !== undefined && !exactDecisions.has(turnCompileEventId)) {
@@ -145,6 +199,20 @@ export function createServeTimeDecisionMatcher(decisions, options = {}) {
     }
 
     return (interaction) => {
+        const decisionRecordId = readInteractionExactDecisionRecordId(interaction);
+        if (decisionRecordId !== undefined) {
+            return decisionsByRecordId.get(decisionRecordId) ?? null;
+        }
+        const selectionDigestKey = buildSelectionDigestKey(
+            readInteractionSelectionDigest(interaction),
+            readInteractionActivePackGraphChecksum(interaction),
+        );
+        if (selectionDigestKey !== null) {
+            if (ambiguousSelectionDigests.has(selectionDigestKey)) {
+                return null;
+            }
+            return decisionsBySelectionDigest.get(selectionDigestKey) ?? null;
+        }
         const exact = exactDecisions.get(interaction.eventId);
         if (exact !== undefined) {
             return exact;

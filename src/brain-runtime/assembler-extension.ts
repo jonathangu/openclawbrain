@@ -229,10 +229,17 @@ function buildSummaryRoutingPrompt(mode: ReturnType<typeof decideSummaryRouting>
   }
 }
 
-function resolveBrainQueryBudgetChars(tokenBudget: number): number {
+function normalizeBudgetFraction(value: number): number {
+  if (!Number.isFinite(value)) {
+    return 0.3;
+  }
+  return Math.min(1, Math.max(0, value));
+}
+
+export function resolveBrainQueryBudgetChars(tokenBudget: number, budgetFraction: number): number {
   // Retrieval budget stays separate from the final injected-block cap so
   // zero/tight caps remain attributable without collapsing the query itself.
-  return Math.max(256, Math.floor(tokenBudget * 4 * 0.3));
+  return Math.max(256, Math.floor(tokenBudget * 4 * normalizeBudgetFraction(budgetFraction)));
 }
 
 function applyMaxContextChars(text: string, maxContextChars?: number): BudgetedBrainContext {
@@ -435,7 +442,10 @@ export class BrainAssemblerExtension {
       };
     }
 
-    const queryBudgetChars = resolveBrainQueryBudgetChars(params.tokenBudget);
+    const queryBudgetChars = resolveBrainQueryBudgetChars(
+      params.tokenBudget,
+      this.brain.getBudgetFraction(),
+    );
     const beforeQueryCheckpoint = captureCompileCheckpoint(compileStartedAt, compileDeadlineMs);
     if (beforeQueryCheckpoint.compileDeadlineHit) {
       const mode: BrainAssemblyOutcomeMode = "skip_deadline_before_query";

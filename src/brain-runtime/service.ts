@@ -58,6 +58,12 @@ function buildBrainConfig(
   };
 }
 
+function cloneObservationServedArtifact(
+  artifact: BrainObservationRouteMetadata["servedArtifact"] | undefined,
+): BrainObservationRouteMetadata["servedArtifact"] {
+  return artifact ? JSON.parse(JSON.stringify(artifact)) as BrainObservationRouteMetadata["servedArtifact"] : null;
+}
+
 export class BrainService {
   private deps: LcmDependencies;
   private store: BrainStore;
@@ -105,6 +111,16 @@ export class BrainService {
         injectedChars?: number | null;
         droppedChars?: number | null;
         contextClipped?: boolean;
+        serveDecisionRecordId?: string | null;
+        selectionDigest?: string | null;
+        turnCompileEventId?: string | null;
+        decisionRecordedAt?: string | null;
+        activePackId?: string | null;
+        activePackEventExportDigest?: string | null;
+        activePackGraphChecksum?: string | null;
+        activePackRouterChecksum?: string | null;
+        activePackBuiltAt?: string | null;
+        servedArtifact?: BrainObservationRouteMetadata["servedArtifact"];
       }
     | null = null;
 
@@ -330,12 +346,24 @@ export class BrainService {
     reloadGraphFromStore(this.store, this.mutableGraph);
   }
 
-  private buildObservationRouteMetadata(trace: DecisionTrace): BrainObservationRouteMetadata {
+  private buildObservationRouteMetadata(
+    trace: DecisionTrace,
+    assemblyDecision: NonNullable<BrainService["lastAssemblyDecision"]> | null = null,
+  ): BrainObservationRouteMetadata {
     const routeTrace = trace.routeTrace ?? null;
     return {
       requestDigest: routeTrace?.requestDigest ?? null,
-      activePackId: routeTrace?.activePackId ?? null,
+      activePackId: assemblyDecision?.activePackId ?? routeTrace?.activePackId ?? null,
       routerIdentity: routeTrace?.routerIdentity ?? null,
+      serveDecisionRecordId: assemblyDecision?.serveDecisionRecordId ?? null,
+      selectionDigest: assemblyDecision?.selectionDigest ?? null,
+      turnCompileEventId: assemblyDecision?.turnCompileEventId ?? null,
+      decisionRecordedAt: assemblyDecision?.decisionRecordedAt ?? null,
+      activePackEventExportDigest: assemblyDecision?.activePackEventExportDigest ?? null,
+      activePackGraphChecksum: assemblyDecision?.activePackGraphChecksum ?? null,
+      activePackRouterChecksum: assemblyDecision?.activePackRouterChecksum ?? null,
+      activePackBuiltAt: assemblyDecision?.activePackBuiltAt ?? null,
+      servedArtifact: cloneObservationServedArtifact(assemblyDecision?.servedArtifact),
       candidateNodeIds: [...(routeTrace?.candidateNodeIds ?? [])],
       selectedNodeIds: [...(routeTrace?.selectedNodeIds ?? trace.firedNodes)],
       selectedTraversalNodeIds: [...(routeTrace?.selectedTraversalNodeIds ?? [])],
@@ -375,6 +403,10 @@ export class BrainService {
 
   getCompileDeadlineMs(): number | null {
     return this.config.maxCompileMs;
+  }
+
+  getBudgetFraction(): number {
+    return this.config.budgetFraction;
   }
 
   noteAssemblyDecision(decision: NonNullable<BrainService["lastAssemblyDecision"]>): void {
@@ -495,6 +527,12 @@ export class BrainService {
     if (!episode || !trace) {
       return;
     }
+    const assemblyDecision =
+      this.lastAssemblyDecision
+      && this.lastAssemblyDecision.traceId === trace.id
+      && this.lastAssemblyDecision.episodeId === episode.id
+        ? this.lastAssemblyDecision
+        : null;
 
     this.store.insertObservation({
       episodeId: episode.id,
@@ -502,7 +540,7 @@ export class BrainService {
       traceId: trace.id,
       queryText: episode.queryText,
       retrievedContext: trace.routeTrace?.injectedNodeSummaries ?? [],
-      routeMetadata: this.buildObservationRouteMetadata(trace),
+      routeMetadata: this.buildObservationRouteMetadata(trace, assemblyDecision),
       assistantResponse: params.assistantResponse,
       toolResults: params.toolResults ?? [],
     });
@@ -874,6 +912,10 @@ export class BrainService {
       embeddingAuthMode: embeddingConfig.authMode,
       embeddingConfigError: embeddingConfig.error,
       maxCompileMs: this.config.maxCompileMs,
+      budgetFraction: this.config.budgetFraction,
+      maxHops: this.config.maxHops,
+      maxFanoutPerNode: this.config.maxFanoutPerNode,
+      maxFrontierSize: this.config.maxFrontierSize,
       currentPackVersion: this.store.getCurrentPackVersion(),
       currentPackPromotedAt: currentPack?.promotedAt ?? null,
       currentPackMetadata: promotionStory.currentPack?.metadata ?? null,

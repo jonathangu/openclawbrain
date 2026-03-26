@@ -4,6 +4,9 @@ import { createServeTimeDecisionMatcher } from "../src/teacher-decision-match.js
 
 function makeDecision(overrides = {}) {
     return {
+        recordId: "decision-1",
+        selectionDigest: null,
+        activePackGraphChecksum: null,
         turnCompileEventId: null,
         sessionId: "sess-1",
         channel: "cli",
@@ -23,6 +26,46 @@ function makeInteraction(overrides = {}) {
         ...overrides,
     };
 }
+
+test("serve-time decision matcher prefers exact decision record ids when present", () => {
+    const exact = makeDecision({
+        recordId: "decision-exact",
+        turnCompileEventId: null,
+        recordedAt: "2026-03-20T18:10:00.000Z",
+    });
+    const nearby = makeDecision({
+        recordId: "decision-nearby",
+        recordedAt: "2026-03-20T18:10:00.250Z",
+    });
+    const matcher = createServeTimeDecisionMatcher([nearby, exact]);
+    assert.equal(matcher(makeInteraction({
+        serveDecisionRecordId: "decision-exact",
+        createdAt: "2026-03-20T18:10:00.100Z",
+    })), exact);
+});
+
+test("serve-time decision matcher prefers exact selection digest plus graph checksum", () => {
+    const exact = makeDecision({
+        recordId: "decision-digest",
+        selectionDigest: "selection-1",
+        activePackGraphChecksum: "graph-1",
+        turnCompileEventId: null,
+        recordedAt: "2026-03-20T18:12:00.000Z",
+    });
+    const nearby = makeDecision({
+        recordId: "decision-nearby-digest",
+        selectionDigest: "selection-nearby",
+        activePackGraphChecksum: "graph-1",
+        turnCompileEventId: null,
+        recordedAt: "2026-03-20T18:12:00.250Z",
+    });
+    const matcher = createServeTimeDecisionMatcher([nearby, exact]);
+    assert.equal(matcher(makeInteraction({
+        selectionDigest: "selection-1",
+        activePackGraphChecksum: "graph-1",
+        createdAt: "2026-03-20T18:12:00.125Z",
+    })), exact);
+});
 
 test("serve-time decision matcher prefers exact compile event ids", () => {
     const exact = makeDecision({

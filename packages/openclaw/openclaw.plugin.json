@@ -3,9 +3,88 @@
   "name": "OpenClawBrain",
   "description": "Learned memory and context from OpenClawBrain",
   "version": "0.4.2",
+  "uiHints": {
+    "brainRoot": {
+      "label": "Brain Root",
+      "help": "Directory containing OpenClawBrain state.db and immutable packs"
+    },
+    "brainEmbeddingProvider": {
+      "label": "Embedding Provider",
+      "help": "Provider used for learned retrieval embeddings"
+    },
+    "brainEmbeddingModel": {
+      "label": "Embedding Model",
+      "help": "Embedding model used for init, retrieval, and brain_teach"
+    },
+    "brainMaxCompileMs": {
+      "label": "Brain Compile Deadline",
+      "help": "Soft wall-clock deadline in milliseconds for brain assembly phase-boundary checks"
+    },
+    "brainBudgetFraction": {
+      "label": "Brain Budget Fraction",
+      "help": "Fraction of the available token budget reserved for retrieval before final prompt clipping"
+    },
+    "brainMaxFanoutPerNode": {
+      "label": "Brain Max Fanout Per Node",
+      "help": "Maximum accepted traversals from a single source node expansion"
+    },
+    "brainMaxFrontierSize": {
+      "label": "Brain Max Frontier Size",
+      "help": "Maximum traversal frontier size during learned retrieval"
+    }
+  },
   "configSchema": {
     "type": "object",
     "additionalProperties": false,
-    "properties": {}
+    "properties": {
+      "brainEnabled": {
+        "type": "boolean"
+      },
+      "brainRoot": {
+        "type": "string"
+      },
+      "brainEmbeddingProvider": {
+        "type": "string"
+      },
+      "brainEmbeddingModel": {
+        "type": "string"
+      },
+      "brainEmbeddingBaseUrl": {
+        "type": "string"
+      },
+      "brainMaxCompileMs": {
+        "type": "integer",
+        "minimum": 0
+      },
+      "brainBudgetFraction": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "brainMaxHops": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "brainMaxFanoutPerNode": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "brainMaxFrontierSize": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "brainMaxSeeds": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "brainSemanticThreshold": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
+      "brainShadowMode": {
+        "type": "boolean"
+      }
+    }
   }
 }

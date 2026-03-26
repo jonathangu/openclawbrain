@@ -13,6 +13,7 @@
 import type { BrainGraph } from "./graph.js";
 import type {
   BrainObservation,
+  BrainObservationBindingMode,
   BrainObservationRouteMetadata,
   BrainObservationToolResult,
   DecisionTraceInjectedNodeSummary,
@@ -50,6 +51,16 @@ export interface TeacherLabelResultV2 {
   observationId: string;
   episodeId: string;
   traceId: string | null;
+  serveDecisionRecordId: string | null;
+  selectionDigest: string | null;
+  turnCompileEventId: string | null;
+  decisionRecordedAt: string | null;
+  activePackId: string | null;
+  activePackEventExportDigest: string | null;
+  activePackGraphChecksum: string | null;
+  activePackRouterChecksum: string | null;
+  activePackBuiltAt: string | null;
+  bindingMode: BrainObservationBindingMode;
   retrievalRelevance: number;
   agentUsage: number;
   outcomeSupport: number;
@@ -100,6 +111,28 @@ function cloneToolResult(result: BrainObservationToolResult): BrainObservationTo
   };
 }
 
+function cloneServedArtifact(
+  artifact: BrainObservationRouteMetadata["servedArtifact"],
+): BrainObservationRouteMetadata["servedArtifact"] {
+  return artifact ? JSON.parse(JSON.stringify(artifact)) as BrainObservationRouteMetadata["servedArtifact"] : null;
+}
+
+function resolveObservationBindingMode(observation: BrainObservation): BrainObservationBindingMode {
+  if (observation.routeMetadata.serveDecisionRecordId) {
+    return "exact_decision_id";
+  }
+  if (observation.routeMetadata.selectionDigest && observation.routeMetadata.activePackGraphChecksum) {
+    return "exact_selection_digest";
+  }
+  if (observation.routeMetadata.turnCompileEventId) {
+    return "turn_compile_event_id";
+  }
+  if (observation.traceId) {
+    return "trace_id";
+  }
+  return "unbound";
+}
+
 export function materializeTeacherLabelInput(observation: BrainObservation): TeacherLabelInputV2 | null {
   if (typeof observation.queryText !== "string" || observation.queryText.trim().length === 0) {
     return null;
@@ -117,6 +150,15 @@ export function materializeTeacherLabelInput(observation: BrainObservation): Tea
       requestDigest: observation.routeMetadata.requestDigest,
       activePackId: observation.routeMetadata.activePackId,
       routerIdentity: observation.routeMetadata.routerIdentity,
+      serveDecisionRecordId: observation.routeMetadata.serveDecisionRecordId,
+      selectionDigest: observation.routeMetadata.selectionDigest,
+      turnCompileEventId: observation.routeMetadata.turnCompileEventId,
+      decisionRecordedAt: observation.routeMetadata.decisionRecordedAt,
+      activePackEventExportDigest: observation.routeMetadata.activePackEventExportDigest,
+      activePackGraphChecksum: observation.routeMetadata.activePackGraphChecksum,
+      activePackRouterChecksum: observation.routeMetadata.activePackRouterChecksum,
+      activePackBuiltAt: observation.routeMetadata.activePackBuiltAt,
+      servedArtifact: cloneServedArtifact(observation.routeMetadata.servedArtifact),
       candidateNodeIds: [...observation.routeMetadata.candidateNodeIds],
       selectedNodeIds: [...observation.routeMetadata.selectedNodeIds],
       selectedTraversalNodeIds: [...observation.routeMetadata.selectedTraversalNodeIds],
@@ -162,6 +204,19 @@ export class BrainTeacher {
     if (!input) {
       return null;
     }
+    const bindingMode = resolveObservationBindingMode(observation);
+    const provenance = {
+      serveDecisionRecordId: observation.routeMetadata.serveDecisionRecordId,
+      selectionDigest: observation.routeMetadata.selectionDigest,
+      turnCompileEventId: observation.routeMetadata.turnCompileEventId,
+      decisionRecordedAt: observation.routeMetadata.decisionRecordedAt,
+      activePackId: observation.routeMetadata.activePackId,
+      activePackEventExportDigest: observation.routeMetadata.activePackEventExportDigest,
+      activePackGraphChecksum: observation.routeMetadata.activePackGraphChecksum,
+      activePackRouterChecksum: observation.routeMetadata.activePackRouterChecksum,
+      activePackBuiltAt: observation.routeMetadata.activePackBuiltAt,
+      bindingMode,
+    };
 
     const prompt = `Evaluate this persisted OpenClawBrain turn observation.\n\n${JSON.stringify(input, null, 2)}`;
 
@@ -189,6 +244,7 @@ export class BrainTeacher {
           observationId: observation.id,
           episodeId: observation.episodeId,
           traceId: observation.traceId,
+          ...provenance,
           retrievalRelevance: 0,
           agentUsage: 0,
           outcomeSupport: 0,
@@ -218,6 +274,7 @@ export class BrainTeacher {
         observationId: observation.id,
         episodeId: observation.episodeId,
         traceId: observation.traceId,
+        ...provenance,
         retrievalRelevance,
         agentUsage,
         outcomeSupport,
@@ -235,6 +292,7 @@ export class BrainTeacher {
         observationId: observation.id,
         episodeId: observation.episodeId,
         traceId: observation.traceId,
+        ...provenance,
         retrievalRelevance: 0,
         agentUsage: 0,
         outcomeSupport: 0,

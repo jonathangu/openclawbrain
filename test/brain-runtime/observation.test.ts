@@ -54,6 +54,8 @@ function createDeps(brainRoot: string): LcmDependencies {
         root: brainRoot,
         budgetFraction: 0.3,
         maxHops: 8,
+        maxFanoutPerNode: 4,
+        maxFrontierSize: 32,
         maxSeeds: 10,
         semanticThreshold: 0.1,
         servingTemperature: 0.1,
@@ -166,6 +168,91 @@ describe("BrainService observations", () => {
         }),
       ],
       status: "pending_followup",
+    });
+  });
+
+  it("persists exact provenance columns from the runtime truth path into observations and teacher input", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-provenance-observation-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-provenance-observation-state-");
+    writeFileSync(
+      join(workspaceRoot, "PLAYBOOK.md"),
+      "# Pull Requests\n\nUse gh pr create for pull request workflows.\n",
+      "utf8",
+    );
+
+    const service = new BrainService({ deps: createDeps(brainRoot) });
+    await service.init({
+      workspaceRoot,
+      embedFn: async (text) => embed(text),
+    });
+
+    const result = await service.query({
+      conversationId: 71,
+      queryText: "how do I open a pull request?",
+      budgetChars: 4000,
+      queryEmbedding: embed("gh pr create pull request"),
+    });
+    expect(result).not.toBeNull();
+
+    service.noteAssemblyDecision({
+      mode: "use_brain",
+      conversationId: 71,
+      episodeId: result?.episode.id ?? null,
+      traceId: result?.trace.id ?? null,
+      footer: result?.trace.footer ?? null,
+      serveDecisionRecordId: "decision-observation-1",
+      selectionDigest: "selection-observation-1",
+      turnCompileEventId: "evt-compile-observation-1",
+      decisionRecordedAt: "2026-03-25T01:02:03.000Z",
+      activePackId: "brain-pack-v1",
+      activePackEventExportDigest: "export-digest-1",
+      activePackGraphChecksum: "graph-checksum-1",
+      activePackRouterChecksum: "router-checksum-1",
+      activePackBuiltAt: "2026-03-25T01:00:00.000Z",
+      servedArtifact: {
+        kind: "runtime_compile_v1",
+        traceId: result?.trace.id ?? null,
+      },
+    });
+
+    await service.recordTurnObservation({
+      episodeId: result?.episode.id,
+      assistantResponse: "Use `gh pr create` to open the pull request.",
+      toolResults: [],
+    });
+
+    const observation = (
+      service as unknown as {
+        store: { getObservationForEpisode: (episodeId: string) => BrainObservation | null };
+      }
+    ).store.getObservationForEpisode(result?.episode.id ?? "");
+    expect(observation).not.toBeNull();
+    expect(observation?.routeMetadata).toMatchObject({
+      serveDecisionRecordId: "decision-observation-1",
+      selectionDigest: "selection-observation-1",
+      turnCompileEventId: "evt-compile-observation-1",
+      decisionRecordedAt: "2026-03-25T01:02:03.000Z",
+      activePackId: "brain-pack-v1",
+      activePackEventExportDigest: "export-digest-1",
+      activePackGraphChecksum: "graph-checksum-1",
+      activePackRouterChecksum: "router-checksum-1",
+      activePackBuiltAt: "2026-03-25T01:00:00.000Z",
+      servedArtifact: {
+        kind: "runtime_compile_v1",
+        traceId: result?.trace.id,
+      },
+    });
+
+    const teacherInput = materializeTeacherLabelInput(observation!);
+    expect(teacherInput?.routeMetadata).toMatchObject({
+      serveDecisionRecordId: "decision-observation-1",
+      selectionDigest: "selection-observation-1",
+      turnCompileEventId: "evt-compile-observation-1",
+      activePackGraphChecksum: "graph-checksum-1",
+      servedArtifact: {
+        kind: "runtime_compile_v1",
+        traceId: result?.trace.id,
+      },
     });
   });
 

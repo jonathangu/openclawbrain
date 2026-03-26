@@ -7,6 +7,8 @@ export type OpenClawBrainRuntimeConfig = {
   maxCompileMs?: number | null;
   budgetFraction: number;
   maxHops: number;
+  maxFanoutPerNode: number;
+  maxFrontierSize: number;
   maxSeeds: number;
   semanticThreshold: number;
   servingTemperature: number;
@@ -71,6 +73,19 @@ function toNumber(value: unknown): number | undefined {
     if (Number.isFinite(n)) return n;
   }
   return undefined;
+}
+
+function toPositiveInt(value: unknown, minimum = 1): number | undefined {
+  const n = toNumber(value);
+  if (n === undefined) return undefined;
+  const normalized = Math.floor(n);
+  return normalized >= minimum ? normalized : undefined;
+}
+
+function toUnitFraction(value: unknown): number | undefined {
+  const n = toNumber(value);
+  if (n === undefined) return undefined;
+  return Math.min(1, Math.max(0, n));
 }
 
 /** Safely coerce an unknown value to a boolean, or return undefined. */
@@ -176,13 +191,21 @@ export function resolveLcmConfig(
           ? parseInt(env.OPENCLAWBRAIN_MAX_COMPILE_MS, 10)
           : undefined) ?? toNumber(pc.brainMaxCompileMs) ?? null,
       budgetFraction:
-        (env.OPENCLAWBRAIN_BUDGET_FRACTION !== undefined
-          ? parseFloat(env.OPENCLAWBRAIN_BUDGET_FRACTION)
-          : undefined) ?? toNumber(pc.brainBudgetFraction) ?? 0.3,
+        toUnitFraction(env.OPENCLAWBRAIN_BUDGET_FRACTION)
+        ?? toUnitFraction(pc.brainBudgetFraction)
+        ?? 0.3,
       maxHops:
         (env.OPENCLAWBRAIN_MAX_HOPS !== undefined
           ? parseInt(env.OPENCLAWBRAIN_MAX_HOPS, 10)
           : undefined) ?? toNumber(pc.brainMaxHops) ?? 8,
+      maxFanoutPerNode:
+        toPositiveInt(env.OPENCLAWBRAIN_MAX_FANOUT_PER_NODE)
+        ?? toPositiveInt(pc.brainMaxFanoutPerNode)
+        ?? 4,
+      maxFrontierSize:
+        toPositiveInt(env.OPENCLAWBRAIN_MAX_FRONTIER_SIZE)
+        ?? toPositiveInt(pc.brainMaxFrontierSize)
+        ?? 32,
       maxSeeds:
         (env.OPENCLAWBRAIN_MAX_SEEDS !== undefined
           ? parseInt(env.OPENCLAWBRAIN_MAX_SEEDS, 10)

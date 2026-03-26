@@ -7,6 +7,18 @@
 
 import type { DatabaseSync } from "node:sqlite";
 
+function hasColumn(db: DatabaseSync, table: string, column: string): boolean {
+  const rows = db.prepare(`PRAGMA table_info(${table})`).all() as Array<{ name?: unknown }>;
+  return rows.some((row) => row.name === column);
+}
+
+function ensureColumn(db: DatabaseSync, table: string, column: string, definition: string): void {
+  if (hasColumn(db, table, column)) {
+    return;
+  }
+  db.exec(`ALTER TABLE ${table} ADD COLUMN ${column} ${definition}`);
+}
+
 export function runBrainMigrations(db: DatabaseSync): void {
   db.exec(`
     -- ═══════════════════════════════════════════
@@ -163,6 +175,15 @@ export function runBrainMigrations(db: DatabaseSync): void {
       episode_id            TEXT NOT NULL UNIQUE,
       conversation_id       INTEGER,
       trace_id              TEXT,
+      serve_decision_record_id TEXT,
+      selection_digest      TEXT,
+      turn_compile_event_id TEXT,
+      decision_recorded_at  TEXT,
+      active_pack_id        TEXT,
+      active_pack_event_export_digest TEXT,
+      active_pack_graph_checksum TEXT,
+      active_pack_router_checksum TEXT,
+      active_pack_built_at  TEXT,
       query_text            TEXT NOT NULL,
       retrieved_context_json TEXT NOT NULL DEFAULT '[]',
       route_metadata_json   TEXT NOT NULL DEFAULT '{}',
@@ -184,6 +205,10 @@ export function runBrainMigrations(db: DatabaseSync): void {
     CREATE INDEX IF NOT EXISTS brain_observations_status_idx ON brain_observations(status, created_at);
     CREATE INDEX IF NOT EXISTS brain_observations_conversation_idx ON brain_observations(conversation_id, created_at);
     CREATE INDEX IF NOT EXISTS brain_observations_trace_idx ON brain_observations(trace_id, created_at);
+    CREATE INDEX IF NOT EXISTS brain_observations_decision_record_idx ON brain_observations(serve_decision_record_id);
+    CREATE INDEX IF NOT EXISTS brain_observations_selection_digest_idx ON brain_observations(selection_digest);
+    CREATE INDEX IF NOT EXISTS brain_observations_turn_compile_event_idx ON brain_observations(turn_compile_event_id);
+    CREATE INDEX IF NOT EXISTS brain_observations_pack_digest_idx ON brain_observations(active_pack_graph_checksum, selection_digest);
 
     -- ═══════════════════════════════════════════
     -- Packs (immutable serving snapshots)
@@ -296,4 +321,21 @@ export function runBrainMigrations(db: DatabaseSync): void {
   if (!traceColumns.some((column) => column.name === "route_trace_json")) {
     db.exec(`ALTER TABLE brain_traces ADD COLUMN route_trace_json TEXT NOT NULL DEFAULT 'null'`);
   }
+
+  ensureColumn(db, "brain_observations", "serve_decision_record_id", "TEXT");
+  ensureColumn(db, "brain_observations", "selection_digest", "TEXT");
+  ensureColumn(db, "brain_observations", "turn_compile_event_id", "TEXT");
+  ensureColumn(db, "brain_observations", "decision_recorded_at", "TEXT");
+  ensureColumn(db, "brain_observations", "active_pack_id", "TEXT");
+  ensureColumn(db, "brain_observations", "active_pack_event_export_digest", "TEXT");
+  ensureColumn(db, "brain_observations", "active_pack_graph_checksum", "TEXT");
+  ensureColumn(db, "brain_observations", "active_pack_router_checksum", "TEXT");
+  ensureColumn(db, "brain_observations", "active_pack_built_at", "TEXT");
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS brain_observations_decision_record_idx ON brain_observations(serve_decision_record_id);
+    CREATE INDEX IF NOT EXISTS brain_observations_selection_digest_idx ON brain_observations(selection_digest);
+    CREATE INDEX IF NOT EXISTS brain_observations_turn_compile_event_idx ON brain_observations(turn_compile_event_id);
+    CREATE INDEX IF NOT EXISTS brain_observations_pack_digest_idx ON brain_observations(active_pack_graph_checksum, selection_digest);
+  `);
 }

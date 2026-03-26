@@ -41,6 +41,18 @@
       "label": "Brain Compile Deadline",
       "help": "Soft wall-clock deadline in milliseconds for brain assembly phase-boundary checks"
     },
+    "brainBudgetFraction": {
+      "label": "Brain Budget Fraction",
+      "help": "Fraction of the available token budget reserved for retrieval before final prompt clipping"
+    },
+    "brainMaxFanoutPerNode": {
+      "label": "Brain Max Fanout Per Node",
+      "help": "Maximum accepted traversals from a single source node expansion"
+    },
+    "brainMaxFrontierSize": {
+      "label": "Brain Max Frontier Size",
+      "help": "Maximum traversal frontier size during learned retrieval"
+    },
     "brainWorkerMode": {
       "label": "Worker Mode",
       "help": "Run the learner in a supervised child process (default) or fall back to in-process mode"
@@ -110,7 +122,20 @@
         "type": "integer",
         "minimum": 0
       },
+      "brainBudgetFraction": {
+        "type": "number",
+        "minimum": 0,
+        "maximum": 1
+      },
       "brainMaxHops": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "brainMaxFanoutPerNode": {
+        "type": "integer",
+        "minimum": 1
+      },
+      "brainMaxFrontierSize": {
         "type": "integer",
         "minimum": 1
       },

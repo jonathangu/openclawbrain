@@ -62,6 +62,8 @@ function createDeps(
         root: brainRoot,
         budgetFraction: 0.3,
         maxHops: 8,
+        maxFanoutPerNode: 4,
+        maxFrontierSize: 32,
         maxSeeds: 10,
         semanticThreshold: 0.1,
         servingTemperature: 0.1,

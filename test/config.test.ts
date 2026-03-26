@@ -1,5 +1,6 @@
 import { describe, it, expect } from "vitest";
 import manifest from "../openclaw.plugin.json" with { type: "json" };
+import packageManifest from "../packages/openclaw/openclaw.plugin.json" with { type: "json" };
 import { resolveLcmConfig } from "../src/db/config.js";
 
 describe("resolveLcmConfig", () => {
@@ -22,6 +23,9 @@ describe("resolveLcmConfig", () => {
       freshTailCount: 16,
       incrementalMaxDepth: -1,
       brainMaxCompileMs: 75,
+      brainBudgetFraction: 0.45,
+      brainMaxFanoutPerNode: 7,
+      brainMaxFrontierSize: 19,
       leafMinFanout: 4,
       condensedMinFanout: 2,
       autocompactDisabled: true,
@@ -33,6 +37,9 @@ describe("resolveLcmConfig", () => {
     expect(config.freshTailCount).toBe(16);
     expect(config.incrementalMaxDepth).toBe(-1);
     expect(config.brain?.maxCompileMs).toBe(75);
+    expect(config.brain?.budgetFraction).toBe(0.45);
+    expect(config.brain?.maxFanoutPerNode).toBe(7);
+    expect(config.brain?.maxFrontierSize).toBe(19);
     expect(config.leafMinFanout).toBe(4);
     expect(config.condensedMinFanout).toBe(2);
     expect(config.autocompactDisabled).toBe(true);
@@ -129,5 +136,30 @@ describe("resolveLcmConfig", () => {
 
   it("ships a manifest that accepts unlimited incremental depth", () => {
     expect(manifest.configSchema.properties.incrementalMaxDepth.minimum).toBe(-1);
+  });
+
+  it("clamps budgetFraction and falls back for invalid traversal caps", () => {
+    const config = resolveLcmConfig({}, {
+      brainBudgetFraction: 4,
+      brainMaxFanoutPerNode: 0,
+      brainMaxFrontierSize: -3,
+    });
+
+    expect(config.brain?.budgetFraction).toBe(1);
+    expect(config.brain?.maxFanoutPerNode).toBe(4);
+    expect(config.brain?.maxFrontierSize).toBe(32);
+  });
+
+  it("keeps root and published manifests aligned for tranche-1 serving controls", () => {
+    const keys = [
+      "brainBudgetFraction",
+      "brainMaxFanoutPerNode",
+      "brainMaxFrontierSize",
+    ] as const;
+
+    for (const key of keys) {
+      expect(packageManifest.configSchema.properties[key]).toEqual(manifest.configSchema.properties[key]);
+      expect(packageManifest.uiHints[key]).toEqual(manifest.uiHints[key]);
+    }
   });
 });
