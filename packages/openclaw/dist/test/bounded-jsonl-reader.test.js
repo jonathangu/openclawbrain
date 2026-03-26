@@ -114,7 +114,14 @@ test("persisted candidateScores are compact but keep actionScore", () => {
             { blockId: "ctx-intro", selected: true, actionScore: 0.85, actionProbability: 0.6 },
             { blockId: "ctx-faq", selected: false, actionScore: 0.15, actionProbability: 0.4 }
         ],
-        structuralSignals: null
+        structuralSignals: {
+            chosenStopCount: 0,
+            forcedStopCount: 1,
+            droppedProposalCount: 1,
+            droppedProposalReasons: {
+                missing_target_node: 1
+            }
+        }
     };
     const dir = makeTmpDir();
     const fp = path.join(dir, "compact.jsonl");
@@ -130,8 +137,15 @@ test("persisted candidateScores are compact but keep actionScore", () => {
         assert.equal(scores[0].selected, true);
         assert.equal(scores[1].blockId, "ctx-faq");
         assert.equal(scores[1].actionScore, 0.15);
-        // structuralSignals should be null (compact)
-        assert.equal(entries[0].structuralSignals, null);
+        // Compact structural signals should keep stop-truth counts/reasons.
+        assert.deepEqual(entries[0].structuralSignals, {
+            chosenStopCount: 0,
+            forcedStopCount: 1,
+            droppedProposalCount: 1,
+            droppedProposalReasons: {
+                missing_target_node: 1
+            }
+        });
         // Verbose fields should NOT be present
         assert.equal(scores[0].matchedTokens, undefined);
         assert.equal(scores[0].channelScores, undefined);

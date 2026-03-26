@@ -55,17 +55,26 @@ make sure a maintainer gets a `.changeset/*.md` file onto `main`.
 7. Let the workflow:
    - install dependencies
    - run tests
-   - publish to npm
-   - create tag `vX.Y.Z`
+   - verify both canonical package tarballs
+   - publish `packages/openclaw` to npm
+   - publish `packages/cli` to npm
+   - create tag `split-openclaw-vA.B.C-cli-vX.Y.Z`
    - create the GitHub release
+
+The split publish order should stay deliberate:
+
+1. publish `@openclawbrain/openclaw` first
+2. publish `@openclawbrain/cli` second
+
+That keeps the public CLI front door from converging against an older plugin payload during the release window.
 
 ## External setup required
 
-The repo-side files are not enough by themselves. A maintainer still needs to configure npm trusted publishing for this GitHub repository/workflow pair.
+The repo-side files are not enough by themselves. A maintainer still needs npm publish credentials for this GitHub repository/workflow pair.
 
 Recommended external setup:
 
-1. Configure npm trusted publishing for this repo and the `publish.yml` workflow
+1. Add an npm automation token as `NPM_TOKEN`, or migrate the workflow to trusted publishing before removing that secret
 2. Optionally create a GitHub Environment named `npm-publish` and add required reviewers
 3. Confirm the repository label taxonomy used by `.github/release.yml`
 

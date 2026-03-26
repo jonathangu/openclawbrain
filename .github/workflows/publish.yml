@@ -37,32 +37,48 @@ jobs:
         run: npm test
 
       - name: Run canonical package tests
-        run: npm --prefix packages/openclaw test
-
-      - name: Verify canonical package tarball
-        run: npm run release:verify:openclaw
-
-      - name: Read package version
-        id: package
         run: |
-          printf 'version=%s\n' "$(node -p "require('./packages/openclaw/package.json').version")" >> "$GITHUB_OUTPUT"
+          npm --prefix packages/openclaw test
+          npm --prefix packages/cli test
+
+      - name: Verify canonical package tarballs
+        run: |
+          npm run release:verify:openclaw
+          npm run release:verify:cli
+
+      - name: Read split package versions
+        id: packages
+        run: |
+          openclaw_version="$(node -p "require('./packages/openclaw/package.json').version")"
+          cli_version="$(node -p "require('./packages/cli/package.json').version")"
+          tag="split-openclaw-v${openclaw_version}-cli-v${cli_version}"
+          title="OpenClawBrain split release: openclaw ${openclaw_version} / cli ${cli_version}"
+          printf 'openclaw_version=%s\n' "$openclaw_version" >> "$GITHUB_OUTPUT"
+          printf 'cli_version=%s\n' "$cli_version" >> "$GITHUB_OUTPUT"
+          printf 'tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"
+          printf 'title=%s\n' "$title" >> "$GITHUB_OUTPUT"
 
       - name: Ensure release tag does not already exist
         run: |
-          tag="v${{ steps.package.outputs.version }}"
+          tag="${{ steps.packages.outputs.tag }}"
           if git rev-parse "$tag" >/dev/null 2>&1; then
             echo "Tag $tag already exists"
             exit 1
           fi
 
-      - name: Publish to npm
+      - name: Publish openclaw package to npm
         run: npm publish ./packages/openclaw
+        env:
+          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
+
+      - name: Publish CLI package to npm
+        run: npm publish ./packages/cli
         env:
           NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
 
       - name: Create and push release tag
         run: |
-          tag="v${{ steps.package.outputs.version }}"
+          tag="${{ steps.packages.outputs.tag }}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a "$tag" -m "$tag"
@@ -72,5 +88,6 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="v${{ steps.package.outputs.version }}"
-          gh release create "$tag" --generate-notes --verify-tag
+          tag="${{ steps.packages.outputs.tag }}"
+          title="${{ steps.packages.outputs.title }}"
+          gh release create "$tag" --title "$title" --generate-notes --verify-tag
