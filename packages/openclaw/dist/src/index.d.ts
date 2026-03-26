@@ -25,6 +25,8 @@ export interface CompileServeRouteBreadcrumbInput {
   installedEntryPath?: string | null;
 }
 
+export type RuntimeComparativeReplayMode = "vector_only" | "graph_prior_only" | "learned_route";
+
 export interface CompileRuntimeContextInput {
   activationRoot: string;
   message: string;
@@ -32,7 +34,7 @@ export interface CompileRuntimeContextInput {
   maxContextBlocks?: number;
   budgetStrategy?: "fixed_v1" | "empirical_v1";
   maxContextChars?: number;
-  mode?: RouteMode;
+  mode?: RouteMode | RuntimeComparativeReplayMode;
   selectionMode?: CompileSelectionMode;
   compactionMode?: ContextCompactionMode;
   runtimeHints?: readonly string[];

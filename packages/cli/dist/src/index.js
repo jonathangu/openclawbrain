@@ -2340,8 +2340,61 @@ function normalizeIsoTimestamp(value, fieldName, fallbackValue) {
     }
     return new Date(candidate).toISOString();
 }
-function normalizeMode(value) {
-    return value ?? "heuristic";
+const RUNTIME_COMPARATIVE_REPLAY_MODE_CONFIG = {
+    vector_only: {
+        routeMode: "heuristic",
+        selectionMode: "flat_rank_v1"
+    },
+    graph_prior_only: {
+        routeMode: "heuristic",
+        selectionMode: "graph_walk_v1"
+    },
+    learned_route: {
+        routeMode: "learned",
+        selectionMode: "graph_walk_v1"
+    }
+};
+function resolveRuntimeComparativeReplayMode(value) {
+    return Object.prototype.hasOwnProperty.call(RUNTIME_COMPARATIVE_REPLAY_MODE_CONFIG, value)
+        ? value
+        : null;
+}
+function resolveCompileModePlan(modeValue, selectionModeValue) {
+    const requestedSelectionMode = normalizeCompileSelectionMode(selectionModeValue);
+    const comparativeMode = resolveRuntimeComparativeReplayMode(modeValue);
+    if (comparativeMode === null) {
+        if (modeValue === undefined) {
+            return {
+                comparativeMode: null,
+                routeMode: "heuristic",
+                selectionMode: requestedSelectionMode
+            };
+        }
+        if (modeValue === "heuristic" || modeValue === "learned") {
+            return {
+                comparativeMode: null,
+                routeMode: modeValue,
+                selectionMode: requestedSelectionMode
+            };
+        }
+        throw new Error("mode must be heuristic, learned, vector_only, graph_prior_only, or learned_route");
+    }
+    const plan = RUNTIME_COMPARATIVE_REPLAY_MODE_CONFIG[comparativeMode];
+    if (requestedSelectionMode !== undefined && requestedSelectionMode !== plan.selectionMode) {
+        throw new Error(`selectionMode ${requestedSelectionMode} conflicts with comparative mode ${comparativeMode}, expected ${plan.selectionMode}`);
+    }
+    return {
+        comparativeMode,
+        routeMode: plan.routeMode,
+        selectionMode: plan.selectionMode
+    };
+}
+function resolveSyntheticTurnMode(value) {
+    const comparativeMode = resolveRuntimeComparativeReplayMode(value);
+    if (comparativeMode !== null) {
+        return RUNTIME_COMPARATIVE_REPLAY_MODE_CONFIG[comparativeMode].routeMode;
+    }
+    return value === "heuristic" || value === "learned" ? value : undefined;
 }
 function normalizeCompileSelectionMode(value) {
     if (value === undefined) {
@@ -2681,8 +2734,9 @@ function appendCompileServeRouteDecisionLog(input) {
     if (input.compileInput.budgetStrategy === "fixed_v1" || input.compileInput.budgetStrategy === "empirical_v1") {
         syntheticTurn.budgetStrategy = input.compileInput.budgetStrategy;
     }
-    if (input.compileInput.mode === "heuristic" || input.compileInput.mode === "learned") {
-        syntheticTurn.mode = input.compileInput.mode;
+    const syntheticTurnMode = resolveSyntheticTurnMode(input.compileInput.mode);
+    if (syntheticTurnMode !== undefined) {
+        syntheticTurn.mode = syntheticTurnMode;
     }
     if (input.compileInput.runtimeHints !== undefined) {
         syntheticTurn.runtimeHints = input.compileInput.runtimeHints;
@@ -2942,6 +2996,7 @@ export function compileRuntimeContext(input) {
     let activationRoot = fallbackActivationRoot;
     let agentId = process.env.OPENCLAWBRAIN_AGENT_ID ?? DEFAULT_AGENT_ID;
     let runtimeHints = [];
+    let comparativeMode = null;
     let selectionMode;
     let userMessage = "";
     let maxContextChars;
@@ -2955,13 +3010,15 @@ export function compileRuntimeContext(input) {
         activationRoot = path.resolve(normalizeNonEmptyString(input.activationRoot, "activationRoot"));
         agentId = normalizeOptionalString(input.agentId) ?? process.env.OPENCLAWBRAIN_AGENT_ID ?? DEFAULT_AGENT_ID;
         runtimeHints = normalizeRuntimeHints(input.runtimeHints);
-        selectionMode = normalizeCompileSelectionMode(input.selectionMode);
         userMessage = normalizeNonEmptyString(input.message, "message");
         maxContextChars =
             input.maxContextChars !== undefined
                 ? normalizeNonNegativeInteger(input.maxContextChars, "maxContextChars", input.maxContextChars)
                 : undefined;
-        mode = normalizeMode(input.mode);
+        const compileModePlan = resolveCompileModePlan(input.mode, input.selectionMode);
+        comparativeMode = compileModePlan.comparativeMode;
+        mode = compileModePlan.routeMode;
+        selectionMode = compileModePlan.selectionMode;
     }
     catch (error) {
         result = failOpenCompileResult(error, fallbackActivationRoot, buildBrainServeHotPathTiming({
@@ -2995,11 +3052,23 @@ export function compileRuntimeContext(input) {
             ...(selectionMode !== undefined ? { selectionMode } : {})
         });
         routeSelectionMs = elapsedMsFrom(routeSelectionStartedAtNs);
+        const selectionEngine = selectionMode ?? "flat_rank_v1";
         const compileResponse = {
             ...compile.response,
             diagnostics: {
                 ...compile.response.diagnostics,
-                notes: uniqueNotes([...compile.response.diagnostics.notes, ...resolvedBudget.notes, "OpenClaw remains the runtime owner"])
+                notes: uniqueNotes([
+                    ...compile.response.diagnostics.notes,
+                    ...resolvedBudget.notes,
+                    `selection_engine=${selectionEngine}`,
+                    ...(comparativeMode === null
+                        ? []
+                        : [
+                            `comparative_mode=${comparativeMode}`,
+                            `comparative_mode_plan=${mode}+${selectionEngine}`
+                        ]),
+                    "OpenClaw remains the runtime owner"
+                ])
             }
         };
         promptAssemblyStartedAtNs = monotonicClockNs();
@@ -4377,7 +4446,49 @@ function buildRecordedSessionTurnObservability(result) {
         freshestCreatedAt: observability.teacherFreshness.freshestCreatedAt ?? freshestSource?.freshestCreatedAt ?? null
     };
 }
-function buildRecordedSessionTurnReport(turnFixture, result, options) {
+const RECORDED_SESSION_REPLAY_MODE_PLAN = {
+    no_brain: {
+        activationStrategy: "no_brain",
+        runtimeMode: null,
+        routeModeRequested: null,
+        selectionEngine: null,
+        learnedRouting: false
+    },
+    vector_only: {
+        activationStrategy: "seed_pack",
+        runtimeMode: "vector_only",
+        routeModeRequested: "heuristic",
+        selectionEngine: "flat_rank_v1",
+        learnedRouting: false
+    },
+    graph_prior_only: {
+        activationStrategy: "seed_pack",
+        runtimeMode: "graph_prior_only",
+        routeModeRequested: "heuristic",
+        selectionEngine: "graph_walk_v1",
+        learnedRouting: false
+    },
+    learned_route: {
+        activationStrategy: "continuous_learned_loop",
+        runtimeMode: "learned_route",
+        routeModeRequested: "learned",
+        selectionEngine: "graph_walk_v1",
+        learnedRouting: true
+    }
+};
+function recordedSessionReplayModePlan(mode) {
+    return RECORDED_SESSION_REPLAY_MODE_PLAN[mode];
+}
+function buildRecordedSessionReplayTurnInput(turnFixture, modeRoot, replayMode) {
+    const plan = recordedSessionReplayModePlan(replayMode);
+    return {
+        ...turnFixture.turn,
+        ...(plan.runtimeMode === null ? {} : { mode: plan.runtimeMode }),
+        export: buildRecordedSessionTurnExportRoot(modeRoot, turnFixture.turnId)
+    };
+}
+function buildRecordedSessionTurnReport(replayMode, turnFixture, result, options) {
+    const plan = recordedSessionReplayModePlan(replayMode);
     const compileOk = result.ok;
     const selectedContextTexts = compileOk ? result.compileResponse.selectedContext.map((block) => block.text) : [];
     const selectedContextIds = compileOk ? result.compileResponse.selectedContext.map((block) => block.id) : [];
@@ -4390,10 +4501,16 @@ function buildRecordedSessionTurnReport(turnFixture, result, options) {
     const eventExportDigest = result.eventExport.ok === true ? result.eventExport.normalizedEventExport.provenance.exportDigest : null;
     return {
         turnId: turnFixture.turnId,
+        replayMode,
         compileOk,
         fallbackToStaticContext: result.fallbackToStaticContext,
         hardRequirementViolated: result.hardRequirementViolated,
         activePackId: result.ok ? result.activePackId : null,
+        modeRequested: result.ok ? result.compileResponse.diagnostics.modeRequested : plan.routeModeRequested,
+        modeEffective: result.ok ? result.compileResponse.diagnostics.modeEffective : null,
+        selectionEngine: result.ok
+            ? readDiagnosticNoteValue(result.compileResponse.diagnostics.notes, "selection_engine=") ?? plan.selectionEngine
+            : plan.selectionEngine,
         usedLearnedRouteFn: result.ok ? result.compileResponse.diagnostics.usedLearnedRouteFn : false,
         routerIdentity: result.ok ? result.compileResponse.diagnostics.routerIdentity : null,
         selectionDigest: result.ok ? result.compileResponse.diagnostics.selectionDigest : null,
@@ -4447,7 +4564,7 @@ function buildRecordedSessionReplayScannerWarnings(mode, turns, activePackChange
     if (turns.some((turn) => turn.compileOk) && selectionDigestTurnCount === 0) {
         warnings.push("selection_digest_missing");
     }
-    if (mode === "learned_replay" && activePackChangeCount === 0) {
+    if (mode === "learned_route" && activePackChangeCount === 0) {
         warnings.push("active_pack_never_moved");
     }
     return warnings;
@@ -4480,6 +4597,7 @@ function buildRecordedSessionReplayScannerEvidence(mode, turns) {
     };
 }
 function buildRecordedSessionReplayModeSummary(mode, turns) {
+    const plan = recordedSessionReplayModePlan(mode);
     const compileOkCount = turns.filter((turn) => turn.compileOk).length;
     const phraseHitCount = turns.reduce((sum, turn) => sum + turn.phraseHits.length, 0);
     const phraseCount = turns.reduce((sum, turn) => sum + turn.expectedContextPhrases.length, 0);
@@ -4490,6 +4608,9 @@ function buildRecordedSessionReplayModeSummary(mode, turns) {
     const scannerEvidence = buildRecordedSessionReplayScannerEvidence(mode, turns);
     const base = {
         mode,
+        activationStrategy: plan.activationStrategy,
+        modeRequested: plan.routeModeRequested,
+        selectionEngine: plan.selectionEngine,
         qualityScore,
         compileOkCount,
         phraseHitCount,
@@ -4509,6 +4630,10 @@ function buildRecordedSessionReplayModeSummary(mode, turns) {
                 phraseHits: turn.phraseHits,
                 missedPhrases: turn.missedPhrases,
                 compileOk: turn.compileOk,
+                replayMode: turn.replayMode,
+                modeRequested: turn.modeRequested,
+                modeEffective: turn.modeEffective,
+                selectionEngine: turn.selectionEngine,
                 usedLearnedRouteFn: turn.usedLearnedRouteFn,
                 activePackId: turn.activePackId,
                 selectionDigest: turn.selectionDigest,
@@ -4528,6 +4653,9 @@ function buildRecordedSessionReplayModeReport(mode, turns) {
 function buildRecordedSessionReplayScoreHash(modes) {
     return checksumJsonPayload(modes.map((mode) => ({
         mode: mode.mode,
+        activationStrategy: mode.summary.activationStrategy,
+        modeRequested: mode.summary.modeRequested,
+        selectionEngine: mode.summary.selectionEngine,
         qualityScore: mode.summary.qualityScore,
         compileOkCount: mode.summary.compileOkCount,
         phraseHitCount: mode.summary.phraseHitCount,
@@ -4625,40 +4753,34 @@ function runRecordedSessionNoBrainMode(rootDir, fixture) {
     const modeRoot = prepareReplayModeRoot(rootDir, "no_brain");
     const activationRoot = path.join(modeRoot, "activation");
     const turns = fixture.turns.map((turnFixture) => {
-        const result = runRuntimeTurn({
-            ...turnFixture.turn,
-            export: buildRecordedSessionTurnExportRoot(modeRoot, turnFixture.turnId)
-        }, {
+        const result = runRuntimeTurn(buildRecordedSessionReplayTurnInput(turnFixture, modeRoot, "no_brain"), {
             activationRoot,
             failOpen: true
         });
-        return buildRecordedSessionTurnReport(turnFixture, result, {
+        return buildRecordedSessionTurnReport("no_brain", turnFixture, result, {
             compileActiveVersion: null,
             promoted: false
         });
     });
     return buildRecordedSessionReplayModeReport("no_brain", turns);
 }
-function runRecordedSessionSeedPackMode(rootDir, fixture) {
-    const modeRoot = prepareReplayModeRoot(rootDir, "seed_pack");
+function runRecordedSessionSeededComparativeMode(rootDir, fixture, replayMode) {
+    const modeRoot = prepareReplayModeRoot(rootDir, replayMode);
     const { activationRoot } = prepareSeedActivation(modeRoot, fixture);
     const turns = fixture.turns.map((turnFixture) => {
-        const result = runRuntimeTurn({
-            ...turnFixture.turn,
-            export: buildRecordedSessionTurnExportRoot(modeRoot, turnFixture.turnId)
-        }, {
+        const result = runRuntimeTurn(buildRecordedSessionReplayTurnInput(turnFixture, modeRoot, replayMode), {
             activationRoot,
             failOpen: false
         });
-        return buildRecordedSessionTurnReport(turnFixture, result, {
+        return buildRecordedSessionTurnReport(replayMode, turnFixture, result, {
             compileActiveVersion: 1,
             promoted: false
         });
     });
-    return buildRecordedSessionReplayModeReport("seed_pack", turns);
+    return buildRecordedSessionReplayModeReport(replayMode, turns);
 }
-function runRecordedSessionLearnedReplayMode(rootDir, fixture) {
-    const modeRoot = prepareReplayModeRoot(rootDir, "learned_replay");
+function runRecordedSessionLearnedRouteMode(rootDir, fixture) {
+    const modeRoot = prepareReplayModeRoot(rootDir, "learned_route");
     const { activationRoot } = prepareSeedActivation(modeRoot, fixture);
     const loopRoot = path.join(modeRoot, "loop");
     let state;
@@ -4673,21 +4795,18 @@ function runRecordedSessionLearnedReplayMode(rootDir, fixture) {
             ...(state !== undefined ? { state } : {}),
             learnedRouting: true,
             failOpen: false,
-            turn: {
-                ...turnFixture.turn,
-                export: buildRecordedSessionTurnExportRoot(modeRoot, turnFixture.turnId)
-            },
+            turn: buildRecordedSessionReplayTurnInput(turnFixture, modeRoot, "learned_route"),
             candidateBuiltAt: addMinutes(compileCreatedAt, 2),
             stageUpdatedAt: addMinutes(compileCreatedAt, 3),
             promoteUpdatedAt: addMinutes(compileCreatedAt, 4)
         });
         state = result.state;
-        turns.push(buildRecordedSessionTurnReport(turnFixture, result.turn, {
+        turns.push(buildRecordedSessionTurnReport("learned_route", turnFixture, result.turn, {
             compileActiveVersion: result.compileActiveVersion,
             promoted: result.learning.promoted
         }));
     }
-    return buildRecordedSessionReplayModeReport("learned_replay", turns);
+    return buildRecordedSessionReplayModeReport("learned_route", turns);
 }
 export function runRecordedSessionReplay(rootDir, fixture) {
     const resolvedRoot = path.resolve(normalizeNonEmptyString(rootDir, "rootDir"));
@@ -4701,8 +4820,9 @@ export function runRecordedSessionReplay(rootDir, fixture) {
     }
     const modes = [
         runRecordedSessionNoBrainMode(resolvedRoot, fixture),
-        runRecordedSessionSeedPackMode(resolvedRoot, fixture),
-        runRecordedSessionLearnedReplayMode(resolvedRoot, fixture)
+        runRecordedSessionSeededComparativeMode(resolvedRoot, fixture, "vector_only"),
+        runRecordedSessionSeededComparativeMode(resolvedRoot, fixture, "graph_prior_only"),
+        runRecordedSessionLearnedRouteMode(resolvedRoot, fixture)
     ];
     const ranking = modes
         .map((mode) => ({

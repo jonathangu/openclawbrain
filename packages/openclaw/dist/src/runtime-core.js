@@ -39,8 +39,75 @@ function normalizeNonNegativeInteger(value, fieldName, fallbackValue) {
   return value;
 }
 
-function normalizeMode(value) {
-  return value ?? "heuristic";
+const RUNTIME_COMPARATIVE_REPLAY_MODE_CONFIG = {
+  vector_only: {
+    routeMode: "heuristic",
+    selectionMode: "flat_rank_v1",
+  },
+  graph_prior_only: {
+    routeMode: "heuristic",
+    selectionMode: "graph_walk_v1",
+  },
+  learned_route: {
+    routeMode: "learned",
+    selectionMode: "graph_walk_v1",
+  },
+};
+
+function resolveRuntimeComparativeReplayMode(value) {
+  return Object.prototype.hasOwnProperty.call(RUNTIME_COMPARATIVE_REPLAY_MODE_CONFIG, value)
+    ? value
+    : null;
+}
+
+function resolveCompileModePlan(modeValue, selectionModeValue) {
+  const requestedSelectionMode = normalizeCompileSelectionMode(selectionModeValue);
+  const comparativeMode = resolveRuntimeComparativeReplayMode(modeValue);
+
+  if (comparativeMode === null) {
+    if (modeValue === undefined) {
+      return {
+        comparativeMode: null,
+        routeMode: "heuristic",
+        selectionMode: requestedSelectionMode,
+      };
+    }
+
+    if (modeValue === "heuristic" || modeValue === "learned") {
+      return {
+        comparativeMode: null,
+        routeMode: modeValue,
+        selectionMode: requestedSelectionMode,
+      };
+    }
+
+    throw new Error(
+      "mode must be heuristic, learned, vector_only, graph_prior_only, or learned_route",
+    );
+  }
+
+  const plan = RUNTIME_COMPARATIVE_REPLAY_MODE_CONFIG[comparativeMode];
+
+  if (requestedSelectionMode !== undefined && requestedSelectionMode !== plan.selectionMode) {
+    throw new Error(
+      `selectionMode ${requestedSelectionMode} conflicts with comparative mode ${comparativeMode}, expected ${plan.selectionMode}`,
+    );
+  }
+
+  return {
+    comparativeMode,
+    routeMode: plan.routeMode,
+    selectionMode: plan.selectionMode,
+  };
+}
+
+function resolveSyntheticTurnMode(value) {
+  const comparativeMode = resolveRuntimeComparativeReplayMode(value);
+  if (comparativeMode !== null) {
+    return RUNTIME_COMPARATIVE_REPLAY_MODE_CONFIG[comparativeMode].routeMode;
+  }
+
+  return value === "heuristic" || value === "learned" ? value : undefined;
 }
 
 function normalizeCompileSelectionMode(value) {
@@ -273,8 +340,10 @@ function appendCompileServeRouteDecisionLog(input) {
     syntheticTurn.budgetStrategy = input.compileInput.budgetStrategy;
   }
 
-  if (input.compileInput.mode === "heuristic" || input.compileInput.mode === "learned") {
-    syntheticTurn.mode = input.compileInput.mode;
+  const syntheticTurnMode = resolveSyntheticTurnMode(input.compileInput.mode);
+
+  if (syntheticTurnMode !== undefined) {
+    syntheticTurn.mode = syntheticTurnMode;
   }
 
   if (input.compileInput.runtimeHints !== undefined) {
@@ -456,6 +525,7 @@ export function compileRuntimeContext(input) {
   let activationRoot = fallbackActivationRoot;
   let agentId = process.env.OPENCLAWBRAIN_AGENT_ID ?? DEFAULT_AGENT_ID;
   let runtimeHints = [];
+  let comparativeMode = null;
   let selectionMode;
   let userMessage = "";
   let maxContextChars;
@@ -470,13 +540,15 @@ export function compileRuntimeContext(input) {
     activationRoot = path.resolve(normalizeNonEmptyString(input.activationRoot, "activationRoot"));
     agentId = normalizeOptionalString(input.agentId) ?? process.env.OPENCLAWBRAIN_AGENT_ID ?? DEFAULT_AGENT_ID;
     runtimeHints = normalizeRuntimeHints(input.runtimeHints);
-    selectionMode = normalizeCompileSelectionMode(input.selectionMode);
     userMessage = normalizeNonEmptyString(input.message, "message");
     maxContextChars =
       input.maxContextChars !== undefined
         ? normalizeNonNegativeInteger(input.maxContextChars, "maxContextChars", input.maxContextChars)
         : undefined;
-    mode = normalizeMode(input.mode);
+    const compileModePlan = resolveCompileModePlan(input.mode, input.selectionMode);
+    comparativeMode = compileModePlan.comparativeMode;
+    mode = compileModePlan.routeMode;
+    selectionMode = compileModePlan.selectionMode;
   } catch (error) {
     result = failOpenCompileResult(
       error,
@@ -518,6 +590,7 @@ export function compileRuntimeContext(input) {
       },
     );
     routeSelectionMs = elapsedMsFrom(routeSelectionStartedAtNs);
+    const selectionEngine = selectionMode ?? "flat_rank_v1";
     const compileResponse = {
       ...compile.response,
       diagnostics: {
@@ -525,6 +598,13 @@ export function compileRuntimeContext(input) {
         notes: uniqueNotes([
           ...compile.response.diagnostics.notes,
           ...resolvedBudget.notes,
+          `selection_engine=${selectionEngine}`,
+          ...(comparativeMode === null
+            ? []
+            : [
+                `comparative_mode=${comparativeMode}`,
+                `comparative_mode_plan=${mode}+${selectionEngine}`,
+              ]),
           "OpenClaw remains the runtime owner",
         ]),
       },

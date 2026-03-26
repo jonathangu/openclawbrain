@@ -80,6 +80,7 @@ export interface RuntimeEventExportBundleDescriptor {
     normalizedEventExport: NormalizedEventExportV1;
 }
 export type CompileRuntimeBudgetStrategy = "fixed_v1" | "empirical_v1";
+export type RuntimeComparativeReplayMode = "vector_only" | "graph_prior_only" | "learned_route";
 export interface CompileRuntimeContextInput {
     activationRoot: string;
     message: string;
@@ -87,7 +88,7 @@ export interface CompileRuntimeContextInput {
     maxContextBlocks?: number;
     budgetStrategy?: CompileRuntimeBudgetStrategy;
     maxContextChars?: number;
-    mode?: RouteMode;
+    mode?: RouteMode | RuntimeComparativeReplayMode;
     selectionMode?: CompileSelectionMode;
     compactionMode?: ContextCompactionMode;
     runtimeHints?: readonly string[];
@@ -328,7 +329,7 @@ export interface OpenClawRuntimeTurnInput {
     sequenceStart?: number | null;
     maxContextBlocks?: number;
     budgetStrategy?: CompileRuntimeBudgetStrategy;
-    mode?: RouteMode;
+    mode?: RouteMode | RuntimeComparativeReplayMode;
     selectionMode?: CompileSelectionMode;
     runtimeHints?: readonly string[];
     brainAttachmentPolicy?: RuntimeTurnBrainAttachmentPolicyV1 | null;
@@ -1013,7 +1014,7 @@ export declare function writeRuntimeEventExportBundle(turn: OpenClawRuntimeTurnI
 export declare function writeScannedEventExportBundle(input: WriteScannedEventExportBundleInputV1): WriteScannedEventExportBundleResultV1;
 export declare function runRuntimeTurn(turn: OpenClawRuntimeTurnInput, options?: RunRuntimeTurnOptions): RuntimeTurnResult;
 export declare function runContinuousProductLoopTurn(input: RunContinuousProductLoopTurnInput): ContinuousProductLoopTurnResultV1;
-export type RecordedSessionReplayMode = "no_brain" | "seed_pack" | "learned_replay";
+export type RecordedSessionReplayMode = "no_brain" | RuntimeComparativeReplayMode;
 export interface RecordedSessionReplayWorkspaceV1 {
     workspaceId: string;
     snapshotId: string;
@@ -1087,10 +1088,14 @@ export interface RecordedSessionReplayFixtureV1 {
 }
 export interface RecordedSessionReplayTurnReportV1 {
     turnId: string;
+    replayMode: RecordedSessionReplayMode;
     compileOk: boolean;
     fallbackToStaticContext: boolean;
     hardRequirementViolated: boolean;
     activePackId: string | null;
+    modeRequested: RouteMode | null;
+    modeEffective: RouteMode | null;
+    selectionEngine: CompileSelectionMode | null;
     usedLearnedRouteFn: boolean;
     routerIdentity: string | null;
     selectionDigest: string | null;
@@ -1136,6 +1141,9 @@ export interface RecordedSessionReplayScannerEvidenceV1 {
 }
 export interface RecordedSessionReplayModeSummaryV1 {
     mode: RecordedSessionReplayMode;
+    activationStrategy: "no_brain" | "seed_pack" | "continuous_learned_loop";
+    modeRequested: RouteMode | null;
+    selectionEngine: CompileSelectionMode | null;
     qualityScore: number;
     compileOkCount: number;
     phraseHitCount: number;
