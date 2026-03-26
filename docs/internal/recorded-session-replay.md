@@ -28,8 +28,9 @@ summary-tables.json
 hashes.json
 modes/
   no_brain.json
-  seed_pack.json
-  learned_replay.json
+  vector_only.json
+  graph_prior_only.json
+  learned_route.json
 ```
 
 The layout is intentionally fixed. `manifest.json` must keep these exact relative paths so the validator can detect drift instead of silently accepting widened output.
@@ -38,7 +39,7 @@ The layout is intentionally fixed. `manifest.json` must keep these exact relativ
 
 - `trace.json`: the sanitized recorded-session source trace.
 - `fixture.json`: the deterministic replay fixture derived from the trace.
-- `bundle.json`: the replay result across `no_brain`, `seed_pack`, and `learned_replay`.
+- `bundle.json`: the replay result across `no_brain`, `vector_only`, `graph_prior_only`, and `learned_route`.
 - `environment.json`: narrow writer/runtime facts for the proof run. This is observational metadata, not part of the semantic replay hash contract.
 - `summary.md`: short human-readable proof summary.
 - `summary-tables.json`: ranking plus per-mode and per-turn table rows.

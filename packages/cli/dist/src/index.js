@@ -33,7 +33,7 @@ const RECORDED_SESSION_REPLAY_PROOF_ENVIRONMENT_CONTRACT = "recorded_session_rep
 const RECORDED_SESSION_REPLAY_PROOF_SUMMARY_TABLES_CONTRACT = "recorded_session_replay_summary_tables.v1";
 const RECORDED_SESSION_REPLAY_PROOF_HASHES_CONTRACT = "recorded_session_replay_hashes.v1";
 const RECORDED_SESSION_REPLAY_PROOF_VALIDATION_CONTRACT = "recorded_session_replay_proof_validation.v1";
-const RECORDED_SESSION_REPLAY_MODE_ORDER = ["no_brain", "seed_pack", "learned_replay"];
+const RECORDED_SESSION_REPLAY_MODE_ORDER = ["no_brain", "vector_only", "graph_prior_only", "learned_route"];
 export const RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT = {
     manifest: "manifest.json",
     trace: "trace.json",
@@ -4630,11 +4630,9 @@ function buildRecordedSessionTurnReport(replayMode, turnFixture, result, options
         fallbackToStaticContext: result.fallbackToStaticContext,
         hardRequirementViolated: result.hardRequirementViolated,
         activePackId: result.ok ? result.activePackId : null,
-        modeRequested: result.ok ? result.compileResponse.diagnostics.modeRequested : plan.routeModeRequested,
+        modeRequested: plan.routeModeRequested,
         modeEffective: result.ok ? result.compileResponse.diagnostics.modeEffective : null,
-        selectionEngine: result.ok
-            ? readDiagnosticNoteValue(result.compileResponse.diagnostics.notes, "selection_engine=") ?? plan.selectionEngine
-            : plan.selectionEngine,
+        selectionEngine: plan.selectionEngine,
         usedLearnedRouteFn: result.ok ? result.compileResponse.diagnostics.usedLearnedRouteFn : false,
         routerIdentity: result.ok ? result.compileResponse.diagnostics.routerIdentity : null,
         selectionDigest: result.ok ? result.compileResponse.diagnostics.selectionDigest : null,
@@ -4933,7 +4931,10 @@ function runRecordedSessionLearnedRouteMode(rootDir, fixture) {
             ...(state !== undefined ? { state } : {}),
             learnedRouting: true,
             failOpen: false,
-            turn: buildRecordedSessionReplayTurnInput(turnFixture, modeRoot, "learned_route"),
+            turn: {
+                ...turnFixture.turn,
+                export: buildRecordedSessionTurnExportRoot(modeRoot, turnFixture.turnId)
+            },
             candidateBuiltAt: addMinutes(compileCreatedAt, 2),
             stageUpdatedAt: addMinutes(compileCreatedAt, 3),
             promoteUpdatedAt: addMinutes(compileCreatedAt, 4)
@@ -4956,7 +4957,10 @@ function runRecordedSessionLearnedRouteMode(rootDir, fixture) {
         currentState.loopRoot = loopRoot;
         const activeBeforeTurn = syncContinuousActivePack(currentState);
         state = cloneContinuousProductLoopState(currentState);
-        const result = runRuntimeTurn(buildRecordedSessionReplayTurnInput(turnFixture, modeRoot, "learned_route"), {
+        const result = runRuntimeTurn({
+            ...turnFixture.turn,
+            export: buildRecordedSessionTurnExportRoot(modeRoot, turnFixture.turnId)
+        }, {
             activationRoot,
             failOpen: false,
             ...(frozenEvalIdentity === null ? {} : { _frozenReplayEvalIdentity: frozenEvalIdentity })
@@ -5198,7 +5202,7 @@ function validateRecordedSessionReplayProofManifest(manifest) {
         errors.push("manifest contract is invalid");
     }
     if (canonicalJson(manifest.modeOrder ?? []) !== canonicalJson(RECORDED_SESSION_REPLAY_MODE_ORDER)) {
-        errors.push("manifest modeOrder must stay fixed at no_brain, seed_pack, learned_replay");
+        errors.push("manifest modeOrder must stay fixed at no_brain, vector_only, graph_prior_only, learned_route");
     }
     if (manifest.hashAlgorithm !== "sha256") {
         errors.push("manifest hashAlgorithm must be sha256");

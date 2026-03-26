@@ -99,8 +99,9 @@ function curatedRelativePaths() {
         RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.summaryTables,
         RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.hashes,
         `${RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.modeDir}/no_brain.json`,
-        `${RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.modeDir}/seed_pack.json`,
-        `${RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.modeDir}/learned_replay.json`
+        `${RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.modeDir}/vector_only.json`,
+        `${RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.modeDir}/graph_prior_only.json`,
+        `${RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.modeDir}/learned_route.json`
     ];
 }
 
@@ -119,13 +120,13 @@ test("recorded session replay proof bundle writes the curated deterministic arti
         trace,
         scratchRootDir: tempRoot
     });
-    assert.deepEqual(first.manifest.modeOrder, ["no_brain", "seed_pack", "learned_replay"]);
-    assert.equal(first.modeOutputs.length, 3);
+    assert.deepEqual(first.manifest.modeOrder, ["no_brain", "vector_only", "graph_prior_only", "learned_route"]);
+    assert.equal(first.modeOutputs.length, 4);
     assert.equal(first.hashes.semantic.traceHash, first.fixture.traceHash);
     assert.equal(first.hashes.semantic.fixtureHash, first.fixture.fixtureHash);
     assert.equal(first.hashes.semantic.scoreHash, first.bundle.scoreHash);
     assert.equal(first.hashes.semantic.bundleHash, first.bundle.bundleHash);
-    assert.equal(first.hashes.files.length, 10);
+    assert.equal(first.hashes.files.length, 11);
     for (const relativePath of curatedRelativePaths()) {
         assert.equal(existsSync(path.join(firstRoot, relativePath)), true, `${relativePath} should exist`);
         assert.equal(readFileSync(path.join(firstRoot, relativePath), "utf8"), readFileSync(path.join(secondRoot, relativePath), "utf8"), `${relativePath} should be reproducible across output roots`);
@@ -146,13 +147,13 @@ test("recorded session replay proof validator catches per-mode drift and file-ha
         trace: createRecordedTrace(),
         scratchRootDir: tempRoot
     });
-    const learnedReplayPath = path.join(rootDir, RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.modeDir, "learned_replay.json");
+    const learnedReplayPath = path.join(rootDir, RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.modeDir, "learned_route.json");
     const learnedReplay = JSON.parse(readFileSync(learnedReplayPath, "utf8"));
     learnedReplay.summary.qualityScore = -1;
     writeFileSync(learnedReplayPath, JSON.stringify(learnedReplay), "utf8");
     const validation = validateRecordedSessionReplayProofBundle(rootDir);
     assert.equal(validation.ok, false);
     assert.equal(validation.fileHashesMatch, false);
-    assert.match(validation.errors.join("\n"), /mode output drift detected for learned_replay/);
+    assert.match(validation.errors.join("\n"), /mode output drift detected for learned_route/);
     assert.match(validation.errors.join("\n"), /hashes\.json file digests do not match the written artifacts/);
 });

@@ -47,7 +47,7 @@ Then inspect:
 
 - `bundle.json` for the full replay result
 - `summary-tables.json` for compact ranking and per-turn tables
-- `modes/learned_replay.json` when the learned lane is the interesting delta
+- `modes/learned_route.json` when the learned lane is the interesting delta
 
 ## Expected success conditions
 

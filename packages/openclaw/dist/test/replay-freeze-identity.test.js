@@ -75,13 +75,13 @@ test("compileRuntimeContext enforces frozen replay eval identity", () => {
   try {
     const fixture = buildRecordedSessionReplayFixture(buildRecordedSessionTrace());
     const bundle = runRecordedSessionReplay(rootDir, fixture);
-    const learned = bundle.modes.find((mode) => mode.mode === "learned_replay");
+    const learned = bundle.modes.find((mode) => mode.mode === "learned_route");
 
     assert.ok(learned);
     assert.notEqual(learned.summary.frozenEvalPackId, null);
     assert.notEqual(learned.summary.frozenEvalRouterIdentity, null);
 
-    const activationRoot = path.join(rootDir, "learned_replay", "activation");
+    const activationRoot = path.join(rootDir, "learned_route", "activation");
     const frozenIdentity = {
       packId: learned.summary.frozenEvalPackId,
       routerIdentity: learned.summary.frozenEvalRouterIdentity,

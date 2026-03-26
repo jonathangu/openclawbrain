@@ -76,20 +76,20 @@ function createReplayRoot(t) {
   return root;
 }
 
-function findLearnedReplayMode(bundle) {
-  const learned = bundle.modes.find((mode) => mode.mode === "learned_replay");
+function findLearnedRouteMode(bundle) {
+  const learned = bundle.modes.find((mode) => mode.mode === "learned_route");
   assert.ok(learned);
   return learned;
 }
 
-test("learned replay freezes the trained pack and router before eval scoring", (t) => {
+test("learned route freezes the trained pack and router before eval scoring", (t) => {
   const rootDir = createReplayRoot(t);
   const fixture = buildRecordedSessionReplayFixture(
     buildRecordedSessionTrace({
       evalTurnCount: 2,
     }),
   );
-  const learned = findLearnedReplayMode(runRecordedSessionReplay(rootDir, fixture));
+  const learned = findLearnedRouteMode(runRecordedSessionReplay(rootDir, fixture));
   const evalTurns = learned.turns.filter((turn) => turn.phase === "eval");
 
   assert.deepEqual(
@@ -113,10 +113,10 @@ test("learned replay freezes the trained pack and router before eval scoring", (
   assert.equal(new Set(evalTurns.map((turn) => turn.compileActiveVersion)).size, 1);
 });
 
-test("learned replay defaults to holding out the final turn for eval", (t) => {
+test("learned route defaults to holding out the final turn for eval", (t) => {
   const rootDir = createReplayRoot(t);
   const fixture = buildRecordedSessionReplayFixture(buildRecordedSessionTrace());
-  const learned = findLearnedReplayMode(runRecordedSessionReplay(rootDir, fixture));
+  const learned = findLearnedRouteMode(runRecordedSessionReplay(rootDir, fixture));
   const finalTurn = learned.turns.at(-1);
 
   assert.equal(learned.summary.trainTurnCount, 2);
