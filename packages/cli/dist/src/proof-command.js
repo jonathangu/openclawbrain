@@ -259,6 +259,130 @@ function extractDetailedStatusLine(statusText, prefix) {
     const normalizedPrefix = `${prefix} `;
     return statusText.split(/\r?\n/).find((line) => line.startsWith(normalizedPrefix)) ?? null;
 }
+function extractKeyValuePairs(line) {
+    if (typeof line !== "string") {
+        return {};
+    }
+    const pairs = {};
+    for (const match of line.matchAll(/([A-Za-z][A-Za-z0-9]*)=([^\s]+)/g)) {
+        pairs[match[1]] = match[2];
+    }
+    return pairs;
+}
+function extractAttachedProfileCoverageEntries(line) {
+    if (typeof line !== "string") {
+        return [];
+    }
+    const normalized = line.replace(/^attachedSet\s+/, "");
+    const proofPathIndex = normalized.indexOf(" proofPath=");
+    const entriesText = (proofPathIndex === -1 ? normalized : normalized.slice(0, proofPathIndex)).trim();
+    if (entriesText.length === 0 || entriesText === "none") {
+        return [];
+    }
+    const entries = [];
+    let index = 0;
+    while (index < entriesText.length) {
+        while (index < entriesText.length && entriesText[index] === " ") {
+            index += 1;
+        }
+        if (index >= entriesText.length) {
+            break;
+        }
+        const bracketStart = entriesText.indexOf("[", index);
+        if (bracketStart === -1) {
+            break;
+        }
+        const bracketEnd = entriesText.indexOf("]", bracketStart + 1);
+        if (bracketEnd === -1) {
+            break;
+        }
+        const rawLabel = entriesText.slice(index, bracketStart).trim();
+        const fields = extractKeyValuePairs(entriesText.slice(bracketStart + 1, bracketEnd));
+        entries.push({
+            label: rawLabel.replace(/^\*/, "").trim(),
+            current: rawLabel.startsWith("*"),
+            hookFiles: fields.hook ?? "unknown",
+            configLoad: fields.config ?? "unknown",
+            runtimeLoad: fields.runtime ?? "unknown",
+            loadedAt: fields.loadedAt ?? null,
+            coverageState: fields.hook === "present" && fields.config === "allows_load" && fields.runtime === "proven"
+                ? "covered"
+                : "attention"
+        });
+        index = bracketEnd + 1;
+    }
+    return entries;
+}
+function buildCoverageSnapshot({ attachedSetLine, runtimeLoadProofSnapshot, openclawHome }) {
+    const parsedEntries = extractAttachedProfileCoverageEntries(attachedSetLine);
+    const proofProfiles = Array.isArray(runtimeLoadProofSnapshot?.value?.profiles)
+        ? runtimeLoadProofSnapshot.value.profiles
+        : [];
+    const profiles = parsedEntries.length > 0
+        ? parsedEntries
+        : proofProfiles.map((profile) => ({
+            label: `${profile?.profileId ?? "current_profile"}@${canonicalizeExistingProofPath(profile?.openclawHome ?? "")}`,
+            current: canonicalizeExistingProofPath(profile?.openclawHome ?? "") === canonicalizeExistingProofPath(openclawHome),
+            hookFiles: "unknown",
+            configLoad: "unknown",
+            runtimeLoad: "proven",
+            loadedAt: profile?.loadedAt ?? null,
+            coverageState: "covered"
+        }));
+    const runtimeProvenCount = profiles.filter((entry) => entry.runtimeLoad === "proven").length;
+    return {
+        contract: "openclaw_operator_profile_coverage_snapshot.v1",
+        generatedAt: new Date().toISOString(),
+        openclawHome: canonicalizeExistingProofPath(openclawHome),
+        attachedProfileCount: profiles.length,
+        runtimeProofProfileCount: proofProfiles.length,
+        hookReadyCount: profiles.filter((entry) => entry.hookFiles === "present").length,
+        configReadyCount: profiles.filter((entry) => entry.configLoad === "allows_load").length,
+        runtimeProvenCount,
+        coverageRate: profiles.length === 0 ? null : runtimeProvenCount / profiles.length,
+        profiles
+    };
+}
+function buildHardeningSnapshot({ attachTruthLine, serveLine, routeFnLine, verdict, statusSignals }) {
+    const attachTruth = extractKeyValuePairs(attachTruthLine);
+    const serve = extractKeyValuePairs(serveLine);
+    const routeFn = extractKeyValuePairs(routeFnLine);
+    return {
+        contract: "openclaw_operator_hardening_snapshot.v1",
+        generatedAt: new Date().toISOString(),
+        statusSignals: {
+            statusOk: statusSignals.statusOk,
+            loadProofReady: statusSignals.loadProofReady,
+            runtimeProven: statusSignals.runtimeProven,
+            serveActivePack: statusSignals.serveActivePack,
+            routeFnAvailable: statusSignals.routeFnAvailable,
+        },
+        attachTruth: {
+            current: attachTruth.current ?? null,
+            hook: attachTruth.hook ?? null,
+            config: attachTruth.config ?? null,
+            runtime: attachTruth.runtime ?? null,
+            watcher: attachTruth.watcher ?? null,
+        },
+        serve: {
+            state: serve.state ?? null,
+            failOpen: serve.failOpen ?? null,
+            hardFail: serve.hardFail ?? null,
+            usedRouteFn: serve.usedRouteFn ?? null,
+            awaitingFirstExport: serve.awaitingFirstExport ?? null,
+        },
+        routeFn: {
+            available: routeFn.available ?? null,
+            freshness: routeFn.freshness ?? null,
+        },
+        verdict: {
+            verdict: verdict.verdict,
+            severity: verdict.severity,
+            missingProofCount: Array.isArray(verdict.missingProofs) ? verdict.missingProofs.length : 0,
+            warningCount: Array.isArray(verdict.warnings) ? verdict.warnings.length : 0,
+        }
+    };
+}
 
 function hasPackagedHookSource(pluginInspectText) {
     return /Source:\s+.*(?:@openclawbrain[\\/]+openclaw|openclawbrain)[\\/]+dist[\\/]+extension[\\/]+index\.js/m.test(pluginInspectText);
@@ -361,7 +485,7 @@ function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, brea
     };
 }
 
-function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspectText, statusSignals, breadcrumbs, runtimeLoadProofSnapshot, attributionLine, learningPathLine }) {
+function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspectText, statusSignals, breadcrumbs, runtimeLoadProofSnapshot, attributionLine, learningPathLine, coverageSnapshot, hardeningSnapshot }) {
     const passed = [];
     const missing = [];
     const warnings = Array.isArray(verdict.warnings) ? verdict.warnings : [];
@@ -424,6 +548,20 @@ function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspec
         ...(learningPathLine === null
             ? []
             : [`- ${learningPathLine}`]),
+        "",
+        "## Coverage snapshot",
+        `- attached profiles: ${coverageSnapshot.attachedProfileCount}`,
+        `- runtime-proven profiles: ${coverageSnapshot.runtimeProvenCount}/${coverageSnapshot.attachedProfileCount}`,
+        `- coverage rate: ${coverageSnapshot.coverageRate === null ? "none" : coverageSnapshot.coverageRate.toFixed(3)}`,
+        ...(coverageSnapshot.profiles.length === 0
+            ? ["- per-profile: none"]
+            : coverageSnapshot.profiles.map((entry) => `- ${entry.current ? "*" : ""}${entry.label} coverage=${entry.coverageState} hook=${entry.hookFiles} config=${entry.configLoad} runtime=${entry.runtimeLoad} loadedAt=${entry.loadedAt ?? "none"}`)),
+        "",
+        "## Hardening snapshot",
+        `- status signals: statusOk=${hardeningSnapshot.statusSignals.statusOk} loadProofReady=${hardeningSnapshot.statusSignals.loadProofReady} runtimeProven=${hardeningSnapshot.statusSignals.runtimeProven} serveActivePack=${hardeningSnapshot.statusSignals.serveActivePack} routeFnAvailable=${hardeningSnapshot.statusSignals.routeFnAvailable}`,
+        `- serve: state=${hardeningSnapshot.serve.state ?? "none"} failOpen=${hardeningSnapshot.serve.failOpen ?? "none"} hardFail=${hardeningSnapshot.serve.hardFail ?? "none"} usedRouteFn=${hardeningSnapshot.serve.usedRouteFn ?? "none"}`,
+        `- attachTruth: current=${hardeningSnapshot.attachTruth.current ?? "none"} hook=${hardeningSnapshot.attachTruth.hook ?? "none"} config=${hardeningSnapshot.attachTruth.config ?? "none"} runtime=${hardeningSnapshot.attachTruth.runtime ?? "none"}`,
+        `- proof verdict: ${hardeningSnapshot.verdict.verdict} severity=${hardeningSnapshot.verdict.severity} warnings=${hardeningSnapshot.verdict.warningCount}`,
         "",
         "## Step ledger",
         ...steps.map((step) => `- ${step.stepId}: ${step.skipped ? "skipped" : `${step.resultClass} (${step.captureState})`} - ${step.summary}`),
@@ -646,6 +784,10 @@ export function captureOperatorProofBundle(options) {
     const gatewayLogPath = extractGatewayLogPath(gatewayStatusCapture.stdout);
     const activationRoot = extractActivationRoot(statusCapture.stdout, options.activationRoot ?? null);
     const statusSignals = extractStatusSignals(statusCapture.stdout);
+    const attachTruthLine = extractDetailedStatusLine(statusCapture.stdout, "attachTruth");
+    const attachedSetLine = extractDetailedStatusLine(statusCapture.stdout, "attachedSet");
+    const serveLine = extractDetailedStatusLine(statusCapture.stdout, "serve");
+    const routeFnLine = extractDetailedStatusLine(statusCapture.stdout, "routeFn");
     const attributionLine = extractDetailedStatusLine(statusCapture.stdout, "attribution");
     const learningPathLine = extractDetailedStatusLine(statusCapture.stdout, "path");
     const runtimeLoadProofPath = normalizeReportedProofPath(statusSignals.proofPath)
@@ -653,10 +795,16 @@ export function captureOperatorProofBundle(options) {
     const runtimeLoadProofSnapshot = readJsonSnapshot(runtimeLoadProofPath);
     const gatewayLogText = readTextIfExists(gatewayLogPath);
     const breadcrumbs = extractStartupBreadcrumbs(gatewayLogText, bundleStartedAt);
+    const coverageSnapshot = buildCoverageSnapshot({
+        attachedSetLine,
+        runtimeLoadProofSnapshot,
+        openclawHome: options.openclawHome,
+    });
     writeText(path.join(bundleDir, "extracted-startup-breadcrumbs.log"), breadcrumbs.all.length === 0
         ? "<no matching breadcrumbs found>\n"
         : `${breadcrumbs.all.map((entry) => entry.line).join("\n")}\n`);
     writeJson(path.join(bundleDir, "runtime-load-proof.json"), runtimeLoadProofSnapshot);
+    writeJson(path.join(bundleDir, "coverage-snapshot.json"), coverageSnapshot);
     const verdict = buildVerdict({
         steps,
         gatewayStatus: gatewayStatusCapture.stdout,
@@ -665,6 +813,13 @@ export function captureOperatorProofBundle(options) {
         breadcrumbs,
         runtimeLoadProofSnapshot,
         openclawHome: options.openclawHome,
+    });
+    const hardeningSnapshot = buildHardeningSnapshot({
+        attachTruthLine,
+        serveLine,
+        routeFnLine,
+        verdict,
+        statusSignals,
     });
     writeJson(path.join(bundleDir, "steps.json"), {
         bundleStartedAt,
@@ -678,6 +833,8 @@ export function captureOperatorProofBundle(options) {
         bundleStartedAt,
         verdict,
         statusSignals,
+        coverageSnapshot,
+        hardeningSnapshot,
         breadcrumbs: {
             allCount: breadcrumbs.all.length,
             postBundleCount: breadcrumbs.afterBundleStart.length,
@@ -688,6 +845,7 @@ export function captureOperatorProofBundle(options) {
         attributionLine,
         learningPathLine,
     });
+    writeJson(path.join(bundleDir, "hardening-snapshot.json"), hardeningSnapshot);
     writeText(path.join(bundleDir, "summary.md"), buildSummary({
         options,
         steps,
@@ -699,6 +857,8 @@ export function captureOperatorProofBundle(options) {
         runtimeLoadProofSnapshot,
         attributionLine,
         learningPathLine,
+        coverageSnapshot,
+        hardeningSnapshot,
     }));
     return {
         ok: true,
@@ -709,6 +869,8 @@ export function captureOperatorProofBundle(options) {
         gatewayLogPath,
         runtimeLoadProofPath,
         runtimeLoadProofSnapshot,
+        coverageSnapshot,
+        hardeningSnapshot,
         verdict,
         statusSignals,
         attributionLine,
@@ -719,6 +881,8 @@ export function captureOperatorProofBundle(options) {
         verdictPath: path.join(bundleDir, "verdict.json"),
         breadcrumbPath: path.join(bundleDir, "extracted-startup-breadcrumbs.log"),
         runtimeLoadProofSnapshotPath: path.join(bundleDir, "runtime-load-proof.json"),
+        coverageSnapshotPath: path.join(bundleDir, "coverage-snapshot.json"),
+        hardeningSnapshotPath: path.join(bundleDir, "hardening-snapshot.json"),
     };
 }
 
@@ -733,6 +897,8 @@ export function formatOperatorProofResult(result) {
         `  Verdict: ${result.verdictPath}`,
         `  Breadcrumbs: ${result.breadcrumbPath}`,
         `  Runtime proof: ${result.runtimeLoadProofSnapshotPath}`,
+        `  Coverage snapshot: ${result.coverageSnapshotPath}`,
+        `  Hardening snapshot: ${result.hardeningSnapshotPath}`,
     ];
     return lines.join("\n");
 }

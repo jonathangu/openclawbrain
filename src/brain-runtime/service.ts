@@ -1007,6 +1007,7 @@ export class BrainService {
       currentPack?.version ?? this.store.getCurrentPackVersion() ?? 0,
     );
     const recentTraces = this.store.getRecentTraces(5);
+    const recentDecisionSummary = this.store.getRecentDecisionSummary(25);
     const workerState = readWorkerRuntimeState(this.store, this.config);
     const promotionStory = buildPromotionStory(this.store);
     const routeTraceCount = this.store.countTraces();
@@ -1077,6 +1078,7 @@ export class BrainService {
         : null,
       lastPgCandidateUpdate,
       recentTraceCount: recentTraces.length,
+      recentDecisionSummary,
       lastTraceFooter: recentTraces[0]?.footer ?? null,
       lastTraceContextChars: recentTraces[0]?.contextChars ?? null,
       lastTraceSelectionMetadata: recentTraces[0]?.routeTrace?.selectionMetadata ?? null,

@@ -219,6 +219,140 @@ function summarizeInjectedNode(node: BrainNode): DecisionTraceInjectedNodeSummar
   };
 }
 
+export type RecentDecisionOutcome =
+  | "served_full"
+  | "served_clipped"
+  | "partial_fail_open"
+  | "partial_fail_open_clipped"
+  | "interrupted_without_partial";
+
+export interface RecentDecisionRateSummary {
+  count: number;
+  rate: number | null;
+}
+
+export interface RecentDecisionTraceSummary {
+  windowSize: number;
+  sampleSize: number;
+  histograms: {
+    decisionOutcome: Record<RecentDecisionOutcome, number>;
+    brainDropReason: Record<string, number>;
+    interruptionStage: Record<string, number>;
+    fitStrategy: Record<string, number>;
+    queryEmbeddingSource: Record<string, number>;
+  };
+  clipRate: RecentDecisionRateSummary;
+  failOpenRate: RecentDecisionRateSummary;
+  detail: string;
+}
+
+function incrementHistogram(histogram: Record<string, number>, key: string): void {
+  histogram[key] = (histogram[key] ?? 0) + 1;
+}
+
+function isClippedDecision(
+  selectionMetadata: DecisionRouteTrace["selectionMetadata"] | null | undefined,
+): boolean {
+  return selectionMetadata?.contextClipped === true
+    || selectionMetadata?.brainDropReason === "injection_cap_clipped";
+}
+
+function isFailOpenDecision(
+  selectionMetadata: DecisionRouteTrace["selectionMetadata"] | null | undefined,
+): boolean {
+  if (!selectionMetadata) {
+    return false;
+  }
+  if (selectionMetadata.servedPartial === true || selectionMetadata.queryInterrupted === true) {
+    return true;
+  }
+  switch (selectionMetadata.brainDropReason) {
+    case "assembly_fail_open":
+    case "deadline_before_query":
+    case "deadline_after_query":
+    case "deadline_before_injection":
+      return true;
+    default:
+      return false;
+  }
+}
+
+function classifyRecentDecisionOutcome(
+  selectionMetadata: DecisionRouteTrace["selectionMetadata"] | null | undefined,
+): RecentDecisionOutcome {
+  const clipped = isClippedDecision(selectionMetadata);
+  if (selectionMetadata?.servedPartial === true) {
+    return clipped ? "partial_fail_open_clipped" : "partial_fail_open";
+  }
+  if (selectionMetadata?.queryInterrupted === true || isFailOpenDecision(selectionMetadata)) {
+    return "interrupted_without_partial";
+  }
+  return clipped ? "served_clipped" : "served_full";
+}
+
+function buildRateSummary(count: number, sampleSize: number): RecentDecisionRateSummary {
+  return {
+    count,
+    rate: sampleSize > 0 ? count / sampleSize : null,
+  };
+}
+
+export function summarizeRecentDecisionTraces(
+  traces: DecisionTrace[],
+  windowSize = traces.length,
+): RecentDecisionTraceSummary {
+  const histograms: RecentDecisionTraceSummary["histograms"] = {
+    decisionOutcome: {
+      served_full: 0,
+      served_clipped: 0,
+      partial_fail_open: 0,
+      partial_fail_open_clipped: 0,
+      interrupted_without_partial: 0,
+    },
+    brainDropReason: {},
+    interruptionStage: {},
+    fitStrategy: {},
+    queryEmbeddingSource: {},
+  };
+
+  let sampleSize = 0;
+  let clippedCount = 0;
+  let failOpenCount = 0;
+
+  for (const trace of traces) {
+    const selectionMetadata = trace.routeTrace?.selectionMetadata ?? null;
+    if (!selectionMetadata) {
+      continue;
+    }
+    sampleSize += 1;
+    histograms.decisionOutcome[classifyRecentDecisionOutcome(selectionMetadata)] += 1;
+    incrementHistogram(histograms.brainDropReason, selectionMetadata.brainDropReason ?? "none");
+    incrementHistogram(histograms.interruptionStage, selectionMetadata.interruptionStage ?? "none");
+    incrementHistogram(histograms.fitStrategy, selectionMetadata.fitStrategy ?? "none");
+    incrementHistogram(histograms.queryEmbeddingSource, selectionMetadata.queryEmbeddingSource ?? "unknown");
+    if (isClippedDecision(selectionMetadata)) {
+      clippedCount += 1;
+    }
+    if (isFailOpenDecision(selectionMetadata)) {
+      failOpenCount += 1;
+    }
+  }
+
+  const clippedRate = buildRateSummary(clippedCount, sampleSize);
+  const failOpenRate = buildRateSummary(failOpenCount, sampleSize);
+
+  return {
+    windowSize,
+    sampleSize,
+    histograms,
+    clipRate: clippedRate,
+    failOpenRate,
+    detail: sampleSize === 0
+      ? "no recent traced decisions"
+      : `${clippedCount}/${sampleSize} clipped and ${failOpenCount}/${sampleSize} fail-open or interrupted across the recent decision window`,
+  };
+}
+
 function buildRouteTrace(params: {
   traversalResult: TraverseResult;
   queryText: string;

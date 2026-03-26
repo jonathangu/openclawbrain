@@ -97,6 +97,8 @@ function curatedRelativePaths() {
         RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.environment,
         RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.summary,
         RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.summaryTables,
+        RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.coverageSnapshot,
+        RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.hardeningSnapshot,
         RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.hashes,
         `${RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.modeDir}/no_brain.json`,
         `${RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.modeDir}/vector_only.json`,
@@ -126,11 +128,18 @@ test("recorded session replay proof bundle writes the curated deterministic arti
     assert.equal(first.hashes.semantic.fixtureHash, first.fixture.fixtureHash);
     assert.equal(first.hashes.semantic.scoreHash, first.bundle.scoreHash);
     assert.equal(first.hashes.semantic.bundleHash, first.bundle.bundleHash);
-    assert.equal(first.hashes.files.length, 11);
+    assert.equal(first.hashes.files.length, 13);
     for (const relativePath of curatedRelativePaths()) {
         assert.equal(existsSync(path.join(firstRoot, relativePath)), true, `${relativePath} should exist`);
         assert.equal(readFileSync(path.join(firstRoot, relativePath), "utf8"), readFileSync(path.join(secondRoot, relativePath), "utf8"), `${relativePath} should be reproducible across output roots`);
     }
+    const summaryText = readFileSync(path.join(firstRoot, RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.summary), "utf8");
+    const coverageSnapshot = JSON.parse(readFileSync(path.join(firstRoot, RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.coverageSnapshot), "utf8"));
+    const hardeningSnapshot = JSON.parse(readFileSync(path.join(firstRoot, RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.hardeningSnapshot), "utf8"));
+    assert.match(summaryText, /## Coverage Snapshot/);
+    assert.match(summaryText, /## Hardening Snapshot/);
+    assert.equal(coverageSnapshot.contract, "recorded_session_replay_coverage_snapshot.v1");
+    assert.equal(hardeningSnapshot.contract, "recorded_session_replay_hardening_snapshot.v1");
     const validation = validateRecordedSessionReplayProofBundle(firstRoot);
     assert.equal(validation.ok, true);
     assert.equal(validation.fileHashesMatch, true);

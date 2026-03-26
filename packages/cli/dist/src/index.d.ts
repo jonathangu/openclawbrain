@@ -23,6 +23,8 @@ export declare const RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT: {
     readonly environment: "environment.json";
     readonly summary: "summary.md";
     readonly summaryTables: "summary-tables.json";
+    readonly coverageSnapshot: "coverage-snapshot.json";
+    readonly hardeningSnapshot: "hardening-snapshot.json";
     readonly hashes: "hashes.json";
     readonly modeDir: "modes";
 };
@@ -1232,6 +1234,8 @@ export interface RecordedSessionReplayProofManifestV1 {
         bundle: typeof RECORDED_SESSION_BUNDLE_CONTRACT;
         environment: "recorded_session_replay_environment.v1";
         summaryTables: "recorded_session_replay_summary_tables.v1";
+        coverageSnapshot: "recorded_session_replay_coverage_snapshot.v1";
+        hardeningSnapshot: "recorded_session_replay_hardening_snapshot.v1";
         hashes: "recorded_session_replay_hashes.v1";
     };
     hashes: {
@@ -1247,6 +1251,8 @@ export interface RecordedSessionReplayProofManifestV1 {
         environment: string;
         summary: string;
         summaryTables: string;
+        coverageSnapshot: string;
+        hardeningSnapshot: string;
         hashes: string;
         modes: Array<{
             mode: RecordedSessionReplayMode;
@@ -1309,6 +1315,46 @@ export interface RecordedSessionReplayProofSummaryTablesV1 {
     modes: RecordedSessionReplayProofModeTableRowV1[];
     turns: RecordedSessionReplayProofTurnTableRowV1[];
 }
+export interface RecordedSessionReplayProofCoverageSnapshotModeRowV1 {
+    mode: RecordedSessionReplayMode;
+    turnCount: number;
+    compileOkRate: number | null;
+    phraseHitRate: number | null;
+    learnedRouteTurnRate: number | null;
+    attributedTurnRate: number | null;
+}
+export interface RecordedSessionReplayProofCoverageSnapshotV1 {
+    contract: "recorded_session_replay_coverage_snapshot.v1";
+    traceId: string;
+    winnerMode: RecordedSessionReplayMode | null;
+    totalTurns: number;
+    compileOkTurnCount: number;
+    compileOkRate: number | null;
+    phraseHitCount: number;
+    phraseCount: number;
+    phraseHitRate: number | null;
+    modes: RecordedSessionReplayProofCoverageSnapshotModeRowV1[];
+}
+export interface RecordedSessionReplayProofHardeningSnapshotModeRowV1 {
+    mode: RecordedSessionReplayMode;
+    warningCount: number;
+    compileFailureCount: number;
+    promotionCount: number;
+    exportTurnCount: number;
+    attributedTurnCount: number;
+}
+export interface RecordedSessionReplayProofHardeningSnapshotV1 {
+    contract: "recorded_session_replay_hardening_snapshot.v1";
+    traceId: string;
+    totalTurns: number;
+    compileFailureCount: number;
+    compileFailureRate: number | null;
+    warningCount: number;
+    promotionCount: number;
+    exportTurnCount: number;
+    attributedTurnCount: number;
+    modes: RecordedSessionReplayProofHardeningSnapshotModeRowV1[];
+}
 export interface RecordedSessionReplayProofFileHashEntryV1 {
     path: string;
     digest: string;
@@ -1338,6 +1384,8 @@ export interface RecordedSessionReplayProofBundleDescriptorV1 {
     environmentPath: string;
     summaryPath: string;
     summaryTablesPath: string;
+    coverageSnapshotPath: string;
+    hardeningSnapshotPath: string;
     hashesPath: string;
     manifest: RecordedSessionReplayProofManifestV1;
     trace: RecordedSessionTraceV1;
@@ -1346,6 +1394,8 @@ export interface RecordedSessionReplayProofBundleDescriptorV1 {
     environment: RecordedSessionReplayProofEnvironmentV1;
     summaryText: string;
     summaryTables: RecordedSessionReplayProofSummaryTablesV1;
+    coverageSnapshot: RecordedSessionReplayProofCoverageSnapshotV1;
+    hardeningSnapshot: RecordedSessionReplayProofHardeningSnapshotV1;
     hashes: RecordedSessionReplayProofHashesV1;
     modeOutputs: RecordedSessionReplayProofModeOutputV1[];
 }

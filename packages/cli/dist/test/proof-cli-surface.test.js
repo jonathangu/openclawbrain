@@ -187,6 +187,8 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     assert.ok(existsSync(path.join(fixture.bundleDir, "steps.json")));
     assert.ok(existsSync(path.join(fixture.bundleDir, "verdict.json")));
     assert.ok(existsSync(path.join(fixture.bundleDir, "runtime-load-proof.json")));
+    assert.ok(existsSync(path.join(fixture.bundleDir, "coverage-snapshot.json")));
+    assert.ok(existsSync(path.join(fixture.bundleDir, "hardening-snapshot.json")));
     assert.ok(existsSync(path.join(fixture.bundleDir, "extracted-startup-breadcrumbs.log")));
     assert.ok(existsSync(path.join(fixture.bundleDir, "01-install.stdout.log")));
     assert.ok(existsSync(path.join(fixture.bundleDir, "05-detailed-status.stdout.log")));
@@ -195,6 +197,8 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     const summary = readFileSync(path.join(fixture.bundleDir, "summary.md"), "utf8");
     const breadcrumbsLog = readFileSync(path.join(fixture.bundleDir, "extracted-startup-breadcrumbs.log"), "utf8");
     const runtimeProofSnapshot = JSON.parse(readFileSync(path.join(fixture.bundleDir, "runtime-load-proof.json"), "utf8"));
+    const coverageSnapshot = JSON.parse(readFileSync(path.join(fixture.bundleDir, "coverage-snapshot.json"), "utf8"));
+    const hardeningSnapshot = JSON.parse(readFileSync(path.join(fixture.bundleDir, "hardening-snapshot.json"), "utf8"));
     assert.equal(stepsPayload.gatewayProfile, "Tern");
     assert.equal(stepsPayload.steps.length, 5);
     assert.equal(verdictPayload.verdict.verdict, "success_and_proven");
@@ -205,9 +209,17 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     assert.match(summary, /## Warnings/);
     assert.match(summary, /- none/);
     assert.match(summary, /startup log contained a post-bundle \[openclawbrain\] BRAIN LOADED breadcrumb/);
+    assert.match(summary, /## Coverage snapshot/);
+    assert.match(summary, /runtime-proven profiles: 1\/1/);
+    assert.match(summary, /## Hardening snapshot/);
     assert.match(breadcrumbsLog, /BRAIN LOADED/);
     assert.equal(runtimeProofSnapshot.exists, true);
     assert.equal(runtimeProofSnapshot.path, fixture.runtimeLoadProofPath);
+    assert.equal(coverageSnapshot.runtimeProvenCount, 1);
+    assert.equal(coverageSnapshot.coverageRate, 1);
+    assert.equal(coverageSnapshot.profiles[0].coverageState, "covered");
+    assert.equal(hardeningSnapshot.statusSignals.runtimeProven, true);
+    assert.equal(hardeningSnapshot.verdict.verdict, "success_and_proven");
     assert.equal(verdictPayload.attributionLine, "attribution quality=exact_only source=latest_materialization/watch_snapshot nonZero=1 exact=1 heuristic=0 unmatched=0 ambiguous=0 modes=decision:1|digest:0|compile:0|heuristic:0");
     assert.equal(verdictPayload.learningPathLine, "path        source=materialized_candidate pg=v2 method=policy_gradient_v2 target=trajectory_reconstruction connect=4 trajectories=12 bindingQuality=exact_only");
     assert.deepEqual(captures[1]?.args, ["gateway", "restart", "--profile", "Tern"]);

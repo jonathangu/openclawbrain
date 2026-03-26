@@ -48,6 +48,7 @@ import type {
   PromotionJournalPayload,
 } from "../brain-core/types.js";
 import { resolveObservationBindingMode } from "../brain-core/types.js";
+import { summarizeRecentDecisionTraces, type RecentDecisionTraceSummary } from "../brain-core/trace.js";
 
 // ═══════════════════════════════════════════
 // Embedding serialization
@@ -1616,6 +1617,10 @@ export class BrainStore {
   getRecentTraces(limit: number): DecisionTrace[] {
     const rows = this.db.prepare(`SELECT * FROM brain_traces ORDER BY created_at DESC LIMIT ?`).all(limit) as Record<string, unknown>[];
     return rows.map((r) => this.toTrace(r));
+  }
+
+  getRecentDecisionSummary(limit: number): RecentDecisionTraceSummary {
+    return summarizeRecentDecisionTraces(this.getRecentTraces(limit), limit);
   }
 
   countTraces(): number {

@@ -133,6 +133,7 @@ function commandStatus(): void {
   const workerState = readWorkerRuntimeState(store, brainConfig);
   const promotionStory = buildPromotionStory(store);
   const observationAttribution = store.getObservationAttributionSummary();
+  const recentDecisionSummary = store.getRecentDecisionSummary(25);
   const recentTrace = store.getRecentTraces(1)[0] ?? null;
   const lastAssemblyDecision = store.getTrainingStateJson<Record<string, unknown>>("last_assembly_decision_json")
     ?? {
@@ -177,6 +178,7 @@ function commandStatus(): void {
     lastReplayFailureReason: store.getTrainingState("last_replay_failure_reason"),
     lastReplayGateVerdict: store.getTrainingStateJson("last_replay_gate_verdict_json"),
     promotionStory,
+    recentDecisionSummary,
     lastTraceSelectionMetadata: recentTrace?.routeTrace?.selectionMetadata ?? null,
     lastAssemblyDecision,
     seedLearningEnabled: graph.hasSeedWeights(),

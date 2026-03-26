@@ -257,6 +257,92 @@ describe("BrainService", () => {
     }));
   });
 
+  it("reports recent decision histograms plus clip and fail-open rates", async () => {
+    const brainRoot = makeTempDir("openclawbrain-decision-summary-state-");
+    const service = new BrainService({
+      deps: createDeps(brainRoot),
+    });
+    const graph = new BrainGraph();
+    graph.addNode(makeRuntimeNode("a", new Float32Array([1, 0, 0])));
+    (service as unknown as { servingGraph: BrainGraph }).servingGraph = graph;
+
+    const servedFull = await service.query({
+      conversationId: 1,
+      queryText: "first question",
+      budgetChars: 4000,
+      queryEmbedding: embed("pull request"),
+    });
+    const servedClipped = await service.query({
+      conversationId: 2,
+      queryText: "second question",
+      budgetChars: 4000,
+      queryEmbedding: embed("pull request"),
+    });
+    const failOpen = await service.query({
+      conversationId: 3,
+      queryText: "third question",
+      budgetChars: 4000,
+      queryEmbedding: embed("pull request"),
+    });
+
+    expect(servedFull?.trace).toBeTruthy();
+    expect(servedClipped?.trace).toBeTruthy();
+    expect(failOpen?.trace).toBeTruthy();
+
+    service.recordTraceSelectionMetadata(servedClipped?.trace ?? null, {
+      contextClipped: true,
+      brainDropReason: "injection_cap_clipped",
+      fitStrategy: "structured_node_budget",
+    });
+    service.recordTraceSelectionMetadata(failOpen?.trace ?? null, {
+      queryInterrupted: true,
+      servedPartial: true,
+      interruptionStage: "injection",
+      interruptionReason: "deadline_before_injection",
+      brainDropReason: "deadline_before_injection",
+    });
+
+    const status = await service.status();
+    expect(status.recentDecisionSummary).toEqual(expect.objectContaining({
+      windowSize: 25,
+      sampleSize: 3,
+      histograms: expect.objectContaining({
+        decisionOutcome: expect.objectContaining({
+          served_full: 1,
+          served_clipped: 1,
+          partial_fail_open: 1,
+          partial_fail_open_clipped: 0,
+          interrupted_without_partial: 0,
+        }),
+        brainDropReason: expect.objectContaining({
+          none: 1,
+          injection_cap_clipped: 1,
+          deadline_before_injection: 1,
+        }),
+        interruptionStage: expect.objectContaining({
+          none: 2,
+          injection: 1,
+        }),
+        fitStrategy: expect.objectContaining({
+          none: 2,
+          structured_node_budget: 1,
+        }),
+        queryEmbeddingSource: expect.objectContaining({
+          provided: 3,
+        }),
+      }),
+      clipRate: {
+        count: 1,
+        rate: 1 / 3,
+      },
+      failOpenRate: {
+        count: 1,
+        rate: 1 / 3,
+      },
+      detail: "1/3 clipped and 1/3 fail-open or interrupted across the recent decision window",
+    }));
+  });
+
   it("persists trace-v3 dropped proposal reasons from traversal into stored traces", async () => {
     const brainRoot = makeTempDir("openclawbrain-trace-v3-state-");
     const service = new BrainService({
