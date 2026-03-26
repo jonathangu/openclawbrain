@@ -230,7 +230,7 @@ Still open:
 - keep proof levels explicit
 - require date/SHA artifact directories for serious runs
 - capture release-grade host-install evidence bundles, not just ad hoc output
-- wire the proof ladder into CI/release gates truthfully
+- upgrade the new proof-freshness smoke gate into a full host-proof rerun in CI/release gates
 
 ## Phase 6 — Clean packaging and type surface
 

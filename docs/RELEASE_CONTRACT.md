@@ -87,7 +87,9 @@ These are real enough to build on, but not frozen enough to oversell.
   - `openclaw gateway restart`
   - `npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed`
   - `npx @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart`
+  - release verification now includes a checked-in proof smoke gate that fails when the frozen proof bundle is missing, incomplete, or stale
 - Boundary: older OpenClaw hosts may still emit the historical plugin-id mismatch warning during install. Treat that warning as cosmetic only when the canonical status/proof surfaces are healthy. CI-enforced release proof and broader host coverage are still open work.
+  - checked-in proof freshness is now enforced in release smoke, but CI still does not rerun the full host-install proof lane on every publish job
 
 ## 3. Not done yet
 
@@ -97,7 +99,7 @@ These are still active work and must not be described as complete.
   - Required truth before done: every important recalled memory or learning update should expose a clean human-readable provenance surface for where it came from, when it came from, why it was selected, and why it affected learning.
 - **Bundle-based mutation evaluation with clear pass/fail explanations**
   - Primary files: `src/brain-core/mutator.ts`, `src/brain-worker/worker.ts`, `src/brain-store/store.ts`, `src/brain-store/migrations.ts`
-- **CI-enforced proof ladder / release gates**
+- **Full CI-enforced proof ladder / release reruns**
   - Primary files: future workflow surfaces, `package.json`, `docs/EVIDENCE.md`
 - **Same-gateway multi-profile and shared-write proof**
   - Primary files: attachment truth surfaces, install docs, future validation harnesses

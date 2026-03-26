@@ -41,6 +41,9 @@ jobs:
           npm --prefix packages/openclaw test
           npm --prefix packages/cli test
 
+      - name: Run proof smoke gate
+        run: npm run release:verify:proof
+
       - name: Verify canonical package tarballs
         run: |
           npm run release:verify:openclaw

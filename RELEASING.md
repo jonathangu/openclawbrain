@@ -55,6 +55,7 @@ make sure a maintainer gets a `.changeset/*.md` file onto `main`.
 7. Let the workflow:
    - install dependencies
    - run tests
+   - run the checked-in proof smoke gate so release claims fail closed when the frozen proof bundle is missing, incomplete, or stale
    - verify both canonical package tarballs
    - publish `packages/openclaw` to npm
    - publish `packages/cli` to npm

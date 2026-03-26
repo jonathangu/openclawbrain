@@ -177,12 +177,20 @@ As of the current trunk:
 
 The repo is now past theory-only and has frozen evidence for the operator install/runtime lane. The next proof rungs are about attribution clarity and live gain, not basic host proof capture.
 
-## What CI should eventually enforce
+## What CI now enforces
 
-The intended release gate should eventually require at least:
+The current release smoke gate requires:
 - tests
+- a fresh checked-in proof bundle for the frozen host/operator lane
+- the expected proof files (`summary.md`, `validation-report.json`, `status.json`, `doctor.json`, `config-snapshot.json`, `logs.txt`, `trace.json`, and the pre-run ladder snapshots)
+- the current replay/eval assertion set for the frozen host/operator lane
 - package verification (`npm pack --dry-run` or stronger equivalent)
-- evidence-ladder checks appropriate to the release claim
-- host/runtime validation checks that match the repo's public contract
 
-Until that exists, docs must stay honest that the evidence ladder is partly documented discipline rather than a fully enforced release boundary.
+## What CI still does not enforce
+
+The intended release gate should still grow into:
+- tests
+- broader evidence-ladder checks appropriate to every release claim
+- host/runtime validation reruns that match the repo's public contract, rather than only checking in a fresh frozen bundle
+
+Docs should stay honest that the current gate is a proof-freshness smoke boundary, not a full host rerun on every CI execution.
