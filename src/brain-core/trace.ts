@@ -117,6 +117,7 @@ function buildRouteTrace(params: {
   queryEmbeddingSource: "provided" | "runtime";
   selectedNodes: BrainNode[];
 }): DecisionRouteTrace {
+  const interruption = params.traversalResult.interruption ?? null;
   const candidateIds = candidateNodeIds(params.traversalResult);
   const selectedIds = params.traversalResult.firedNodes.map((node) => node.nodeId);
   const selectedTraversalIds = selectedTraversalNodeIds(params.traversalResult);
@@ -182,6 +183,11 @@ function buildRouteTrace(params: {
       forcedStopCount,
       droppedProposalCount,
       droppedProposalReasons,
+      interruption,
+      queryInterrupted: interruption?.interrupted ?? null,
+      interruptionStage: interruption?.stage ?? null,
+      interruptionReason: interruption?.reason ?? null,
+      servedPartial: interruption?.servedPartial ?? null,
     },
   };
 }

@@ -144,7 +144,28 @@ export class WorkerSupervisor {
   }
 
   private send(message: ParentToChildMessage): void {
-    this.child?.send(message);
+    const child = this.child;
+    if (!child || !child.connected || child.killed || child.exitCode !== null) {
+      return;
+    }
+    try {
+      child.send(message, (error) => {
+        if (!error) {
+          return;
+        }
+        const code = (error as NodeJS.ErrnoException).code;
+        if (code === "EPIPE" || code === "ERR_IPC_CHANNEL_CLOSED") {
+          return;
+        }
+        this.params.log.warn(`[brain] failed to send child-worker message: ${error.message}`);
+      });
+    } catch (error) {
+      const code = (error as NodeJS.ErrnoException).code;
+      if (code === "EPIPE" || code === "ERR_IPC_CHANNEL_CLOSED") {
+        return;
+      }
+      throw error;
+    }
   }
 
   private async handleMessage(message: ChildToParentMessage, child: ChildProcess): Promise<void> {

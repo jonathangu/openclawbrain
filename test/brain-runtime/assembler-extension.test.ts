@@ -3,7 +3,7 @@ import {
   BrainAssemblerExtension,
   resolveBrainQueryBudgetChars,
 } from "../../src/brain-runtime/assembler-extension.js";
-import type { TraversalResult } from "../../src/brain-core/types.js";
+import type { BrainInterruptionMetadata, TraversalResult } from "../../src/brain-core/types.js";
 
 const QUERY_BUDGET_CHARS_FOR_4096_TOKENS = resolveBrainQueryBudgetChars(4096, 0.3);
 
@@ -176,7 +176,13 @@ function createBrainStub(overrides?: {
   shadowMode?: boolean;
   compileDeadlineMs?: number | null;
   budgetFraction?: number;
-  query?: (params: { conversationId: number; queryText: string; budgetChars: number }) => Promise<TraversalResult | null>;
+  lastQueryInterruption?: BrainInterruptionMetadata | null;
+  query?: (params: {
+    conversationId: number;
+    queryText: string;
+    budgetChars: number;
+    deadlineAtMs?: number | null;
+  }) => Promise<TraversalResult | null>;
 }) {
   return {
     isEnabled: () => overrides?.enabled ?? true,
@@ -185,6 +191,7 @@ function createBrainStub(overrides?: {
     isShadowMode: () => overrides?.shadowMode ?? false,
     getCompileDeadlineMs: () => overrides?.compileDeadlineMs ?? null,
     getBudgetFraction: () => overrides?.budgetFraction ?? 0.3,
+    getLastQueryInterruption: () => overrides?.lastQueryInterruption ?? null,
     noteAssemblyDecision: vi.fn(),
     recordTraceSelectionMetadata: vi.fn(),
     query: overrides?.query ?? vi.fn(async () => null),
@@ -705,6 +712,16 @@ describe("BrainAssemblerExtension", () => {
     expect(result.brainDecision).toEqual(expect.objectContaining({
       mode: "skip_deadline_before_query",
       footer: "[brain] bypassed: soft compile deadline hit before query.",
+      interruption: {
+        interrupted: true,
+        stage: "query",
+        reason: "deadline_before_query",
+        servedPartial: false,
+      },
+      queryInterrupted: true,
+      interruptionStage: "query",
+      interruptionReason: "deadline_before_query",
+      servedPartial: false,
       compileElapsedMs: 0,
       compileDeadlineMs: 0,
       compileDeadlineHit: true,
@@ -750,6 +767,16 @@ describe("BrainAssemblerExtension", () => {
       episodeId: "ep_1",
       traceId: "tr_1",
       footer: "[brain] bypassed: soft compile deadline hit after query.",
+      interruption: {
+        interrupted: true,
+        stage: "query",
+        reason: "deadline_after_query",
+        servedPartial: false,
+      },
+      queryInterrupted: true,
+      interruptionStage: "query",
+      interruptionReason: "deadline_after_query",
+      servedPartial: false,
       compileElapsedMs: 10,
       compileDeadlineMs: 5,
       compileDeadlineHit: true,
@@ -760,6 +787,16 @@ describe("BrainAssemblerExtension", () => {
     expect(brain.recordTraceSelectionMetadata).toHaveBeenCalledWith(
       expect.objectContaining({ id: "tr_1" }),
       expect.objectContaining({
+        interruption: {
+          interrupted: true,
+          stage: "query",
+          reason: "deadline_after_query",
+          servedPartial: false,
+        },
+        queryInterrupted: true,
+        interruptionStage: "query",
+        interruptionReason: "deadline_after_query",
+        servedPartial: false,
         compileElapsedMs: 10,
         compileDeadlineMs: 5,
         compileDeadlineHit: true,
@@ -807,6 +844,16 @@ describe("BrainAssemblerExtension", () => {
       episodeId: "ep_structured_1",
       traceId: "tr_structured_1",
       footer: "[brain] bypassed: soft compile deadline hit before injection.",
+      interruption: {
+        interrupted: true,
+        stage: "injection",
+        reason: "deadline_before_injection",
+        servedPartial: false,
+      },
+      queryInterrupted: true,
+      interruptionStage: "injection",
+      interruptionReason: "deadline_before_injection",
+      servedPartial: false,
       compileElapsedMs: 10,
       compileDeadlineMs: 5,
       compileDeadlineHit: true,
@@ -821,6 +868,16 @@ describe("BrainAssemblerExtension", () => {
     expect(brain.recordTraceSelectionMetadata).toHaveBeenCalledWith(
       expect.objectContaining({ id: "tr_structured_1" }),
       expect.objectContaining({
+        interruption: {
+          interrupted: true,
+          stage: "injection",
+          reason: "deadline_before_injection",
+          servedPartial: false,
+        },
+        queryInterrupted: true,
+        interruptionStage: "injection",
+        interruptionReason: "deadline_before_injection",
+        servedPartial: false,
         compileElapsedMs: 10,
         compileDeadlineMs: 5,
         compileDeadlineHit: true,
@@ -833,6 +890,65 @@ describe("BrainAssemblerExtension", () => {
         contextClipped: true,
       }),
     );
+  });
+
+  it("surfaces structured service-side interruption truth when query work aborts before any trace exists", async () => {
+    const brain = createBrainStub({
+      query: vi.fn(async () => null),
+      lastQueryInterruption: {
+        interrupted: true,
+        stage: "embedding",
+        reason: "deadline_during_embedding",
+        servedPartial: false,
+      },
+    });
+    const extension = new BrainAssemblerExtension(brain as never);
+
+    const result = await extension.augmentAssembly({
+      conversationId: 42,
+      tokenBudget: 4096,
+      maxContextChars: 240,
+      assembled: {
+        messages: [{ role: "user", content: "live tail" }],
+        estimatedTokens: 2,
+        stats: {
+          rawMessageCount: 1,
+          summaryCount: 0,
+          totalContextItems: 1,
+        },
+      },
+      liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
+    });
+
+    expect(result.brainDecision).toEqual(expect.objectContaining({
+      mode: "skip_deadline_after_query",
+      footer: "[brain] bypassed: soft compile deadline hit after query.",
+      interruption: {
+        interrupted: true,
+        stage: "embedding",
+        reason: "deadline_during_embedding",
+        servedPartial: false,
+      },
+      queryInterrupted: true,
+      interruptionStage: "embedding",
+      interruptionReason: "deadline_during_embedding",
+      servedPartial: false,
+      traceId: null,
+      episodeId: null,
+      brainDropReason: "deadline_after_query",
+      brainDropStage: "query",
+    }));
+    expect(brain.recordTraceSelectionMetadata).not.toHaveBeenCalled();
+    expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
+      interruption: {
+        interrupted: true,
+        stage: "embedding",
+        reason: "deadline_during_embedding",
+        servedPartial: false,
+      },
+      traceId: null,
+      episodeId: null,
+    }));
   });
 
   it("adds summary-routing guidance for precision-sensitive questions over summaries", async () => {

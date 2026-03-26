@@ -1557,19 +1557,23 @@ export class LcmContextEngine implements ContextEngine {
         conversation = await this.conversationStore.getOrCreateConversation(params.sessionId);
       }
       if (!conversation) {
+        const fallbackBrainDecision = brainDecision
+          ? {
+              mode: brainDecision.mode,
+              footer: `[brain] bypassed: ${brainDecision.mode}.`,
+              compileElapsedMs: 0,
+              brainDropReason: brainDecision.mode as
+                | "skip_no_query"
+                | "skip_short_static_lookup"
+                | "skip_no_embedding"
+                | "skip_uninitialized"
+                | "skip_budget_too_small",
+              brainDropStage: "decision" as const,
+            }
+          : undefined;
         if (brainDecision && this.brainService && !shouldRouteThroughBrain) {
-          const brainDropReason = brainDecision.mode as
-            | "skip_no_query"
-            | "skip_short_static_lookup"
-            | "skip_no_embedding"
-            | "skip_uninitialized"
-            | "skip_budget_too_small";
           this.brainService.noteAssemblyDecision({
-            mode: brainDecision.mode,
-            footer: `[brain] bypassed: ${brainDecision.mode}.`,
-            compileElapsedMs: 0,
-            brainDropReason,
-            brainDropStage: "decision",
+            ...fallbackBrainDecision!,
           });
         }
         appendValidationAssemblyRecord({
@@ -1578,6 +1582,11 @@ export class LcmContextEngine implements ContextEngine {
           queryText: extractLatestUserText(params.messages),
           mode: brainDecision?.mode ?? null,
           footer: brainDecision ? `[brain] bypassed: ${brainDecision.mode}.` : null,
+          interruption: null,
+          queryInterrupted: null,
+          interruptionStage: null,
+          interruptionReason: null,
+          servedPartial: null,
           compileElapsedMs: null,
           compileDeadlineMs: null,
           compileDeadlineHit: null,
@@ -1592,6 +1601,7 @@ export class LcmContextEngine implements ContextEngine {
         return {
           messages: params.messages,
           estimatedTokens: 0,
+          ...(fallbackBrainDecision ? { brainDecision: fallbackBrainDecision } : {}),
         };
       }
 
@@ -1619,11 +1629,16 @@ export class LcmContextEngine implements ContextEngine {
           },
         };
       } else {
+        const fallbackBrainDecision = brainDecision
+          ? {
+              mode: brainDecision.mode,
+              conversationId: conversation.conversationId,
+              footer: `[brain] bypassed: ${brainDecision.mode}.`,
+            }
+          : undefined;
         if (brainDecision && this.brainService) {
           this.brainService.noteAssemblyDecision({
-            mode: brainDecision.mode,
-            conversationId: conversation.conversationId,
-            footer: `[brain] bypassed: ${brainDecision.mode}.`,
+            ...fallbackBrainDecision!,
           });
         }
         appendValidationAssemblyRecord({
@@ -1632,6 +1647,11 @@ export class LcmContextEngine implements ContextEngine {
           queryText: extractLatestUserText(params.messages),
           mode: brainDecision?.mode ?? null,
           footer: brainDecision ? `[brain] bypassed: ${brainDecision.mode}.` : null,
+          interruption: null,
+          queryInterrupted: null,
+          interruptionStage: null,
+          interruptionReason: null,
+          servedPartial: null,
           traceId: null,
           episodeId: null,
           tokenBudget,
@@ -1641,6 +1661,7 @@ export class LcmContextEngine implements ContextEngine {
         return {
           messages: params.messages,
           estimatedTokens: 0,
+          ...(fallbackBrainDecision ? { brainDecision: fallbackBrainDecision } : {}),
         };
       }
 
@@ -1664,6 +1685,11 @@ export class LcmContextEngine implements ContextEngine {
         queryText: extractLatestUserText(params.messages),
         mode: hybrid.brainDecision?.mode ?? null,
         footer: hybrid.brainDecision?.footer ?? null,
+        interruption: hybrid.brainDecision?.interruption ?? null,
+        queryInterrupted: hybrid.brainDecision?.queryInterrupted ?? null,
+        interruptionStage: hybrid.brainDecision?.interruptionStage ?? null,
+        interruptionReason: hybrid.brainDecision?.interruptionReason ?? null,
+        servedPartial: hybrid.brainDecision?.servedPartial ?? null,
         compileElapsedMs: hybrid.brainDecision?.compileElapsedMs ?? null,
         compileDeadlineMs: hybrid.brainDecision?.compileDeadlineMs ?? null,
         compileDeadlineHit: hybrid.brainDecision?.compileDeadlineHit ?? null,
@@ -1686,12 +1712,14 @@ export class LcmContextEngine implements ContextEngine {
         return {
           messages: params.messages,
           estimatedTokens: 0,
+          ...(hybrid.brainDecision ? { brainDecision: hybrid.brainDecision } : {}),
         };
       }
 
       const result: AssembleResultWithSystemPrompt = {
         messages: hybrid.messages,
         estimatedTokens: hybrid.estimatedTokens,
+        ...(hybrid.brainDecision ? { brainDecision: hybrid.brainDecision } : {}),
         ...(hybrid.systemPromptAddition
           ? { systemPromptAddition: hybrid.systemPromptAddition }
           : {}),

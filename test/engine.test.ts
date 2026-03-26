@@ -927,10 +927,33 @@ describe("LcmContextEngine.assemble canonical path", () => {
       .map((message: { content?: unknown }) => (typeof message.content === "string" ? message.content : ""))
       .join("\n");
     expect(assembledText).not.toContain("OpenClawBrain retrieved context");
+    expect(result.brainDecision).toEqual(expect.objectContaining({
+      mode: "skip_deadline_before_query",
+      interruption: {
+        interrupted: true,
+        stage: "query",
+        reason: "deadline_before_query",
+        servedPartial: false,
+      },
+      queryInterrupted: true,
+      interruptionStage: "query",
+      interruptionReason: "deadline_before_query",
+      servedPartial: false,
+    }));
 
     const status = await brainService!.status();
     expect(status.lastAssemblyDecision).toMatchObject({
       mode: "skip_deadline_before_query",
+      interruption: {
+        interrupted: true,
+        stage: "query",
+        reason: "deadline_before_query",
+        servedPartial: false,
+      },
+      queryInterrupted: true,
+      interruptionStage: "query",
+      interruptionReason: "deadline_before_query",
+      servedPartial: false,
       compileDeadlineMs: 0,
       compileDeadlineHit: true,
       brainDropReason: "deadline_before_query",

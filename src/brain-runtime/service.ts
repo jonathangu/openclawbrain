@@ -7,6 +7,7 @@ import type {
   BrainConfig,
   BrainDropReason,
   BrainDropStage,
+  BrainInterruptionMetadata,
   BrainNode,
   BrainObservationBindingMode,
   BrainObservationRouteMetadata,
@@ -84,6 +85,7 @@ export class BrainService {
   private pendingUserObservationCount = 0;
   private committedUserCorrectionMessageIds = new Set<number>();
   private latestEpisodeByConversation = new Map<number, string>();
+  private lastQueryInterruption: BrainInterruptionMetadata | null = null;
   private lastAssemblyDecision:
     | {
         mode:
@@ -102,6 +104,11 @@ export class BrainService {
         episodeId?: string | null;
         traceId?: string | null;
         footer?: string | null;
+        interruption?: BrainInterruptionMetadata | null;
+        queryInterrupted?: boolean | null;
+        interruptionStage?: BrainInterruptionMetadata["stage"] | null;
+        interruptionReason?: string | null;
+        servedPartial?: boolean | null;
         compileElapsedMs?: number | null;
         compileDeadlineMs?: number | null;
         compileDeadlineHit?: boolean | null;
@@ -420,6 +427,10 @@ export class BrainService {
     return this.config.budgetFraction;
   }
 
+  getLastQueryInterruption(): BrainInterruptionMetadata | null {
+    return this.lastQueryInterruption ? { ...this.lastQueryInterruption } : null;
+  }
+
   noteAssemblyDecision(decision: NonNullable<BrainService["lastAssemblyDecision"]>): void {
     const normalizedDecision = {
       ...decision,
@@ -462,17 +473,46 @@ export class BrainService {
     queryText: string;
     budgetChars: number;
     queryEmbedding?: Float32Array;
+    deadlineAtMs?: number | null;
   }): Promise<TraversalResult | null> {
+    this.lastQueryInterruption = null;
     if (!this.isEnabled() || this.servingGraph.nodeCount() === 0) {
       return null;
     }
 
+    const deadlineAtMs =
+      typeof params.deadlineAtMs === "number" && Number.isFinite(params.deadlineAtMs)
+        ? params.deadlineAtMs
+        : null;
+    const deadlineExceeded = () => deadlineAtMs !== null && Date.now() >= deadlineAtMs;
+    const setQueryInterruption = (interruption: BrainInterruptionMetadata) => {
+      this.lastQueryInterruption = { ...interruption };
+    };
     const queryStartedAt = Date.now();
     const embeddingStartedAt = Date.now();
+    const usingProvidedEmbedding = !!params.queryEmbedding;
+    if (deadlineExceeded()) {
+      setQueryInterruption({
+        interrupted: true,
+        stage: usingProvidedEmbedding ? "query" : "embedding",
+        reason: usingProvidedEmbedding ? "deadline_before_traversal" : "deadline_before_embedding",
+        servedPartial: false,
+      });
+      return null;
+    }
     const embedding =
       params.queryEmbedding
       ?? (this.embeddingClient ? await this.embeddingClient(params.queryText) : null);
     const embeddingMs = Date.now() - embeddingStartedAt;
+    if (deadlineExceeded()) {
+      setQueryInterruption({
+        interrupted: true,
+        stage: usingProvidedEmbedding ? "query" : "embedding",
+        reason: usingProvidedEmbedding ? "deadline_before_traversal" : "deadline_during_embedding",
+        servedPartial: false,
+      });
+      return null;
+    }
     if (!embedding || embedding.length === 0) {
       return null;
     }
@@ -489,8 +529,12 @@ export class BrainService {
       temperature: this.config.servingTemperature,
       maxSeeds: this.config.maxSeeds,
       semanticThreshold: this.config.semanticThreshold,
+      deadlineAtMs,
     });
     const routeSelectionMs = Date.now() - routeSelectionStartedAt;
+    if (traversalResult.interruption) {
+      setQueryInterruption(traversalResult.interruption);
+    }
     if (traversalResult.firedNodes.length === 0) {
       return null;
     }
@@ -531,6 +575,7 @@ export class BrainService {
       vetoed: traversalResult.vetoedNodes,
       episode,
       trace,
+      interruption: traversalResult.interruption ?? null,
     };
   }
 

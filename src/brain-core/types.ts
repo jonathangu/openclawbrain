@@ -560,6 +560,19 @@ export interface DecisionTraceInjectedNodeSummary {
   contentPreview: string;
 }
 
+export type BrainInterruptionStage =
+  | "embedding"
+  | "query"
+  | "traversal"
+  | "injection";
+
+export interface BrainInterruptionMetadata {
+  interrupted: true;
+  stage: BrainInterruptionStage;
+  reason: string;
+  servedPartial: boolean;
+}
+
 export interface DecisionRouteTrace {
   requestDigest: string;
   conversationId: number | null;
@@ -602,8 +615,9 @@ export interface DecisionRouteTrace {
     forcedStopCount?: number | null;
     droppedProposalCount?: number | null;
     droppedProposalReasons?: Record<string, number> | null;
+    interruption?: BrainInterruptionMetadata | null;
     queryInterrupted?: boolean | null;
-    interruptionStage?: "embedding" | "query" | "injection" | null;
+    interruptionStage?: BrainInterruptionStage | null;
     interruptionReason?: string | null;
     servedPartial?: boolean | null;
     compileElapsedMs?: number | null;
@@ -867,6 +881,7 @@ export interface TraversalResult {
   vetoed: Array<{ nodeId: string; reason: string }>;
   episode: Episode;
   trace: DecisionTrace;
+  interruption?: BrainInterruptionMetadata | null;
 }
 
 /**

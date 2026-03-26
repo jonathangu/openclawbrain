@@ -10,7 +10,12 @@
  */
 
 import type { PluginRuntime, RuntimeLogger } from "openclaw/plugin-sdk";
-import type { BrainDropReason, BrainDropStage } from "./brain-core/types.js";
+import type {
+  BrainDropReason,
+  BrainDropStage,
+  BrainInterruptionMetadata,
+  BrainInterruptionStage,
+} from "./brain-core/types.js";
 
 // Re-export what's actually available from the SDK
 export { PluginRuntime, type RuntimeLogger } from "openclaw/plugin-sdk";
@@ -23,6 +28,11 @@ export interface BrainDecisionMetadata {
   episodeId?: string | null;
   traceId?: string | null;
   footer?: string | null;
+  interruption?: BrainInterruptionMetadata | null;
+  queryInterrupted?: boolean | null;
+  interruptionStage?: BrainInterruptionStage | null;
+  interruptionReason?: string | null;
+  servedPartial?: boolean | null;
   compileElapsedMs?: number | null;
   compileDeadlineMs?: number | null;
   compileDeadlineHit?: boolean | null;

@@ -14,6 +14,7 @@
  */
 
 import type {
+  BrainInterruptionMetadata,
   TraversalState,
   TraversalAction,
   TrajectoryExpansion,
@@ -42,6 +43,7 @@ export interface TraverseOptions {
   semanticThreshold: number;
   maxFanoutPerNode?: number;
   maxFrontierSize?: number;
+  deadlineAtMs?: number | null;
   policyParams?: Partial<PolicyParams>;
 }
 
@@ -52,6 +54,20 @@ export interface TraverseResult {
   seedScores: SeedScore[];
   contextChars: number;
   footer: string;
+  interruption?: BrainInterruptionMetadata | null;
+}
+
+function isDeadlineExceeded(deadlineAtMs?: number | null): boolean {
+  return typeof deadlineAtMs === "number" && Number.isFinite(deadlineAtMs) && Date.now() >= deadlineAtMs;
+}
+
+function createTraversalInterruption(servedPartial: boolean): BrainInterruptionMetadata {
+  return {
+    interrupted: true,
+    stage: "traversal",
+    reason: "deadline_during_traversal",
+    servedPartial,
+  };
 }
 
 function initializeSeedScores(
@@ -123,6 +139,7 @@ export function traverse(options: TraverseOptions): TraverseResult {
     temperature,
     maxSeeds,
     semanticThreshold,
+    deadlineAtMs,
   } = options;
 
   const params: PolicyParams = {
@@ -144,6 +161,7 @@ export function traverse(options: TraverseOptions): TraverseResult {
       seedScores: [],
       contextChars: 0,
       footer: "Brain · 0 seed candidates · no traversal",
+      interruption: null,
     };
   }
 
@@ -164,6 +182,7 @@ export function traverse(options: TraverseOptions): TraverseResult {
   const firedNodes: Array<{ nodeId: string; kind: NodeKind; content: string; tokenCount: number }> = [];
   const vetoedNodes: Array<{ nodeId: string; reason: string }> = [];
   const seedScores = initializeSeedScores(graph, seedCandidates);
+  let interruption: BrainInterruptionMetadata | null = null;
 
   const expandSource = (
     sourceNodeId: string | null,
@@ -225,6 +244,12 @@ export function traverse(options: TraverseOptions): TraverseResult {
     };
 
     for (let selectionIndex = 0; ; selectionIndex++) {
+      if (isDeadlineExceeded(deadlineAtMs)) {
+        appendForcedStopSubstep(selectionIndex, "interrupt");
+        interruption ??= createTraversalInterruption(firedNodes.length > 0);
+        break;
+      }
+
       const fanoutCapReached = selectedTargets.length >= maxFanoutPerNode;
       const frontierCapReached = state.frontier.length + selectedTargets.length >= maxFrontierSize;
       const budgetCapReached = state.reservedTokenCost >= state.budgetRemaining;
@@ -301,6 +326,19 @@ export function traverse(options: TraverseOptions): TraverseResult {
     }
 
     for (let index = 0; index < selectedTargets.length; index++) {
+      if (isDeadlineExceeded(deadlineAtMs)) {
+        for (const droppedTargetNodeId of selectedTargets.slice(index)) {
+          proposalOutcomes.push({
+            targetNodeId: droppedTargetNodeId,
+            outcome: "dropped",
+            reason: "interrupt",
+          });
+        }
+        terminationReason ??= "interrupt";
+        interruption ??= createTraversalInterruption(firedNodes.length > 0);
+        break;
+      }
+
       const targetNodeId = selectedTargets[index];
       const targetNode = graph.getNode(targetNodeId);
       if (!targetNode) {
@@ -405,6 +443,10 @@ export function traverse(options: TraverseOptions): TraverseResult {
     && state.expansionCount < maxHops
     && state.budgetRemaining > 0
   ) {
+    if (isDeadlineExceeded(deadlineAtMs)) {
+      interruption ??= createTraversalInterruption(firedNodes.length > 0);
+      break;
+    }
     const frontierBefore = [...state.frontier];
     const nextSourceNodeId = state.frontier.shift();
     if (!nextSourceNodeId) {
@@ -432,5 +474,6 @@ export function traverse(options: TraverseOptions): TraverseResult {
     seedScores,
     contextChars,
     footer,
+    interruption,
   };
 }

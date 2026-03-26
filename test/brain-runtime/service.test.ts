@@ -311,6 +311,31 @@ describe("BrainService", () => {
     });
   });
 
+  it("records structured interruption truth when the deadline expires before embedding starts", async () => {
+    const brainRoot = makeTempDir("openclawbrain-interrupt-state-");
+    const service = new BrainService({
+      deps: createDeps(brainRoot),
+    });
+    const graph = new BrainGraph();
+    graph.addNode(makeRuntimeNode("a", new Float32Array([1, 0, 0])));
+    (service as unknown as { servingGraph: BrainGraph }).servingGraph = graph;
+
+    const result = await service.query({
+      conversationId: 77,
+      queryText: "interrupt before embedding",
+      budgetChars: 4000,
+      deadlineAtMs: Date.now() - 1,
+    });
+
+    expect(result).toBeNull();
+    expect(service.getLastQueryInterruption()).toEqual({
+      interrupted: true,
+      stage: "embedding",
+      reason: "deadline_before_embedding",
+      servedPartial: false,
+    });
+  });
+
   it("surfaces the active retrieval controls in status", async () => {
     const brainRoot = makeTempDir("openclawbrain-controls-");
     const service = new BrainService({

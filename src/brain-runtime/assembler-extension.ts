@@ -3,6 +3,8 @@ import type { ContextEngine, AgentMessage } from "../openclaw-sdk-compat.js";
 import type {
   BrainDropReason,
   BrainDropStage,
+  BrainInterruptionMetadata,
+  BrainInterruptionStage,
   DecisionRouteTrace,
   DecisionTraceInjectedNodeSummary,
   TraversalResult,
@@ -51,6 +53,11 @@ type BudgetDecisionDetails = {
 };
 
 type CompileDecisionDetails = {
+  interruption?: BrainInterruptionMetadata | null;
+  queryInterrupted?: boolean | null;
+  interruptionStage?: BrainInterruptionStage | null;
+  interruptionReason?: string | null;
+  servedPartial?: boolean | null;
   compileElapsedMs?: number | null;
   compileDeadlineMs?: number | null;
   compileDeadlineHit?: boolean | null;
@@ -327,16 +334,49 @@ function captureCompileCheckpoint(startedAt: number, compileDeadlineMs?: number)
   };
 }
 
+function interruptionDecisionDetails(
+  interruption?: BrainInterruptionMetadata | null,
+): Pick<
+  CompileDecisionDetails,
+  "interruption" | "queryInterrupted" | "interruptionStage" | "interruptionReason" | "servedPartial"
+> {
+  if (!interruption) {
+    return {};
+  }
+  return {
+    interruption,
+    queryInterrupted: true,
+    interruptionStage: interruption.stage,
+    interruptionReason: interruption.reason,
+    servedPartial: interruption.servedPartial,
+  };
+}
+
+function createInterruption(params: {
+  stage: BrainInterruptionStage;
+  reason: string;
+  servedPartial?: boolean;
+}): BrainInterruptionMetadata {
+  return {
+    interrupted: true,
+    stage: params.stage,
+    reason: params.reason,
+    servedPartial: params.servedPartial ?? false,
+  };
+}
+
 function assemblyDecisionDetails(params: {
   checkpoint: CompileCheckpoint;
   brainDropReason: BrainDropReason;
   brainDropStage?: BrainDropStage;
+  interruption?: BrainInterruptionMetadata | null;
   maxContextChars?: number;
   queryBudgetChars?: number | null;
   budgetedBrainContext?: BudgetedBrainContext;
 }): AssemblyDecisionDetails {
   return {
     ...params.checkpoint,
+    ...interruptionDecisionDetails(params.interruption),
     brainDropReason: params.brainDropReason,
     ...(params.brainDropStage ? { brainDropStage: params.brainDropStage } : {}),
     ...budgetDecisionDetails({
@@ -453,6 +493,10 @@ export class BrainAssemblerExtension {
         checkpoint: beforeQueryCheckpoint,
         brainDropReason: "deadline_before_query",
         brainDropStage: "decision",
+        interruption: createInterruption({
+          stage: "query",
+          reason: "deadline_before_query",
+        }),
         maxContextChars: params.maxContextChars,
         queryBudgetChars,
       });
@@ -480,8 +524,82 @@ export class BrainAssemblerExtension {
       conversationId: params.conversationId,
       queryText: decision.queryText,
       budgetChars: queryBudgetChars,
+      ...(compileDeadlineMs === undefined ? {} : { deadlineAtMs: compileStartedAt + compileDeadlineMs }),
     });
+    const queryInterruption = this.brain.getLastQueryInterruption();
     const afterQueryCheckpoint = captureCompileCheckpoint(compileStartedAt, compileDeadlineMs);
+    if (!result && !queryInterruption) {
+      const mode: BrainAssemblyOutcomeMode = "skip_query_returned_no_nodes";
+      const metadata = assemblyDecisionDetails({
+        checkpoint: afterQueryCheckpoint,
+        brainDropReason: "query_returned_no_nodes",
+        brainDropStage: "query",
+        maxContextChars: params.maxContextChars,
+        queryBudgetChars,
+      });
+      this.brain.noteAssemblyDecision({
+        mode,
+        conversationId: params.conversationId,
+        footer: decisionFooter(mode),
+        ...metadata,
+      });
+      return {
+        ...params.assembled,
+        systemPromptAddition: mergeSystemPromptAddition(
+          params.assembled.systemPromptAddition,
+          summaryRoutingPrompt,
+        ),
+        brainDecision: {
+          mode,
+          footer: decisionFooter(mode),
+          ...metadata,
+        },
+      };
+    }
+    const afterQueryInterruption = queryInterruption ?? (
+      afterQueryCheckpoint.compileDeadlineHit
+        ? createInterruption({
+            stage: "query",
+            reason: "deadline_after_query",
+          })
+        : null
+    );
+    if (afterQueryInterruption) {
+      const mode: BrainAssemblyOutcomeMode = "skip_deadline_after_query";
+      const traceSelectionMetadata = assemblyDecisionDetails({
+        checkpoint: afterQueryCheckpoint,
+        brainDropReason: "deadline_after_query",
+        brainDropStage: "query",
+        interruption: afterQueryInterruption,
+        maxContextChars: params.maxContextChars,
+        queryBudgetChars,
+      });
+      if (result?.trace) {
+        this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
+      }
+      this.brain.noteAssemblyDecision({
+        mode,
+        conversationId: params.conversationId,
+        episodeId: result?.episode.id ?? null,
+        traceId: result?.trace.id ?? null,
+        footer: decisionFooter(mode),
+        ...traceSelectionMetadata,
+      });
+      return {
+        ...params.assembled,
+        systemPromptAddition: mergeSystemPromptAddition(
+          params.assembled.systemPromptAddition,
+          summaryRoutingPrompt,
+        ),
+        brainDecision: {
+          mode,
+          episodeId: result?.episode.id ?? null,
+          traceId: result?.trace.id ?? null,
+          footer: decisionFooter(mode),
+          ...traceSelectionMetadata,
+        },
+      };
+    }
     if (!result) {
       const mode: BrainAssemblyOutcomeMode = "skip_query_returned_no_nodes";
       const metadata = assemblyDecisionDetails({
@@ -510,39 +628,6 @@ export class BrainAssemblerExtension {
         },
       };
     }
-    if (afterQueryCheckpoint.compileDeadlineHit) {
-      const mode: BrainAssemblyOutcomeMode = "skip_deadline_after_query";
-      const traceSelectionMetadata = assemblyDecisionDetails({
-        checkpoint: afterQueryCheckpoint,
-        brainDropReason: "deadline_after_query",
-        brainDropStage: "query",
-        maxContextChars: params.maxContextChars,
-        queryBudgetChars,
-      });
-      this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
-      this.brain.noteAssemblyDecision({
-        mode,
-        conversationId: params.conversationId,
-        episodeId: result.episode.id,
-        traceId: result.trace.id,
-        footer: decisionFooter(mode),
-        ...traceSelectionMetadata,
-      });
-      return {
-        ...params.assembled,
-        systemPromptAddition: mergeSystemPromptAddition(
-          params.assembled.systemPromptAddition,
-          summaryRoutingPrompt,
-        ),
-        brainDecision: {
-          mode,
-          episodeId: result.episode.id,
-          traceId: result.trace.id,
-          footer: decisionFooter(mode),
-          ...traceSelectionMetadata,
-        },
-      };
-    }
 
     const budgetedBrainContext = applyMaxContextChars(
       buildBrainContextBlock(result),
@@ -555,6 +640,10 @@ export class BrainAssemblerExtension {
         checkpoint: beforeInjectionCheckpoint,
         brainDropReason: "deadline_before_injection",
         brainDropStage: "injection",
+        interruption: createInterruption({
+          stage: "injection",
+          reason: "deadline_before_injection",
+        }),
         maxContextChars: params.maxContextChars,
         queryBudgetChars,
         budgetedBrainContext,
