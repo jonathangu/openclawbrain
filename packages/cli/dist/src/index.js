@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
-import { existsSync, mkdirSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, mkdtempSync, readFileSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { tmpdir } from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { compileRuntimeFromActivation } from "@openclawbrain/compiler";
@@ -26,6 +27,23 @@ const BRAIN_SERVE_HOT_PATH_TIMING_DETAIL = "Measured inside compileRuntimeContex
 export const RUNTIME_EVENT_EXPORT_BUNDLE_LAYOUT = {
     manifest: "manifest.json",
     payload: "normalized-event-export.json"
+};
+const RECORDED_SESSION_REPLAY_PROOF_MANIFEST_CONTRACT = "recorded_session_replay_proof_manifest.v1";
+const RECORDED_SESSION_REPLAY_PROOF_ENVIRONMENT_CONTRACT = "recorded_session_replay_environment.v1";
+const RECORDED_SESSION_REPLAY_PROOF_SUMMARY_TABLES_CONTRACT = "recorded_session_replay_summary_tables.v1";
+const RECORDED_SESSION_REPLAY_PROOF_HASHES_CONTRACT = "recorded_session_replay_hashes.v1";
+const RECORDED_SESSION_REPLAY_PROOF_VALIDATION_CONTRACT = "recorded_session_replay_proof_validation.v1";
+const RECORDED_SESSION_REPLAY_MODE_ORDER = ["no_brain", "seed_pack", "learned_replay"];
+export const RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT = {
+    manifest: "manifest.json",
+    trace: "trace.json",
+    fixture: "fixture.json",
+    bundle: "bundle.json",
+    environment: "environment.json",
+    summary: "summary.md",
+    summaryTables: "summary-tables.json",
+    hashes: "hashes.json",
+    modeDir: "modes"
 };
 function normalizeRuntimeProfileSelector(value, fieldName, fallback = "current_profile") {
     if (value === undefined || value === null) {
@@ -1057,6 +1075,24 @@ export function scanLiveEventExport(input) {
 }
 function readJsonFile(filePath) {
     return JSON.parse(readFileSync(filePath, "utf8"));
+}
+function checksumTextPayload(value) {
+    return `sha256-${createHash("sha256").update(value).digest("hex")}`;
+}
+function orderedRecordedSessionReplayModes(modes) {
+    const byMode = new Map(modes.map((mode) => [mode.mode, mode]));
+    return RECORDED_SESSION_REPLAY_MODE_ORDER
+        .map((mode) => byMode.get(mode))
+        .filter(isPresent);
+}
+function recordedSessionReplayModeOutputPath(mode) {
+    return path.posix.join(RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.modeDir, `${mode}.json`);
+}
+function resolveRecordedSessionReplayProofPath(rootDir, relativePath, fieldName) {
+    return resolveBundlePayloadPath(rootDir, normalizeNonEmptyString(relativePath, fieldName));
+}
+function readRecordedSessionReplayProofText(rootDir, relativePath, fieldName) {
+    return readFileSync(resolveRecordedSessionReplayProofPath(rootDir, relativePath, fieldName), "utf8");
 }
 export function resolveAsyncTeacherLiveLoopSnapshotPath(activationRoot) {
     return path.join(path.resolve(normalizeNonEmptyString(activationRoot, "activationRoot")), "async-teacher-live-loop.snapshot.json");
@@ -5028,6 +5064,439 @@ export function verifyRecordedSessionReplayBundleHashes(bundle) {
         bundleHashMatches: rebuiltBundleHash === bundle.bundleHash,
         scoreHashMatches: rescored.scoreHash === bundle.scoreHash
     };
+}
+function buildRecordedSessionReplayProofEnvironment() {
+    return {
+        contract: RECORDED_SESSION_REPLAY_PROOF_ENVIRONMENT_CONTRACT,
+        runtimeOwner: "openclaw",
+        generator: {
+            packageName: "@openclawbrain/cli",
+            entrypoint: "writeRecordedSessionReplayProofBundle",
+            nodeVersion: process.version,
+            platform: process.platform,
+            arch: process.arch
+        },
+        determinism: {
+            hashAlgorithm: "sha256",
+            canonicalJson: true,
+            modeOrder: [...RECORDED_SESSION_REPLAY_MODE_ORDER],
+            scratchReplayRoot: "temporary_directory"
+        }
+    };
+}
+function buildRecordedSessionReplayProofSummaryTables(bundle) {
+    const orderedModes = orderedRecordedSessionReplayModes(bundle.modes);
+    return {
+        contract: RECORDED_SESSION_REPLAY_PROOF_SUMMARY_TABLES_CONTRACT,
+        traceId: bundle.traceId,
+        winnerMode: bundle.summary.winnerMode,
+        ranking: bundle.summary.ranking.map((entry) => ({ ...entry })),
+        modes: orderedModes.map((mode) => ({
+            mode: mode.mode,
+            turnCount: mode.turns.length,
+            qualityScore: mode.summary.qualityScore,
+            compileOkCount: mode.summary.compileOkCount,
+            phraseHitCount: mode.summary.phraseHitCount,
+            phraseCount: mode.summary.phraseCount,
+            usedLearnedRouteTurnCount: mode.summary.usedLearnedRouteTurnCount,
+            promotionCount: mode.summary.promotionCount,
+            exportTurnCount: mode.summary.scannerEvidence.exportTurnCount,
+            humanLabelCount: mode.summary.scannerEvidence.humanLabelCount,
+            attributedTurnCount: mode.summary.scannerEvidence.attributedTurnCount,
+            activePackChangeCount: mode.summary.scannerEvidence.activePackChangeCount,
+            warningCount: mode.summary.scannerEvidence.warnings.length,
+            scoreHash: mode.summary.scoreHash
+        })),
+        turns: orderedModes.flatMap((mode) => mode.turns.map((turn) => ({
+            mode: mode.mode,
+            turnId: turn.turnId,
+            qualityScore: turn.qualityScore,
+            compileOk: turn.compileOk,
+            phraseHitCount: turn.phraseHits.length,
+            phraseCount: turn.expectedContextPhrases.length,
+            usedLearnedRouteFn: turn.usedLearnedRouteFn,
+            promoted: turn.promoted,
+            activePackId: turn.activePackId,
+            selectionDigest: turn.selectionDigest,
+            eventExportDigest: turn.eventExportDigest,
+            warningCount: turn.warnings.length
+        })))
+    };
+}
+function buildRecordedSessionReplayProofSummary(input) {
+    const rankingRows = input.summaryTables.ranking.map((entry, index) => `| ${index + 1} | ${entry.mode} | ${entry.qualityScore} |`);
+    const modeRows = input.summaryTables.modes.map((mode) => `| ${mode.mode} | ${mode.turnCount} | ${mode.compileOkCount} | ${mode.phraseHitCount}/${mode.phraseCount} | ${mode.usedLearnedRouteTurnCount} | ${mode.promotionCount} | ${mode.exportTurnCount} | ${mode.humanLabelCount} | ${mode.warningCount} | ${mode.scoreHash} |`);
+    const turnRows = input.summaryTables.turns.map((turn) => `| ${turn.mode} | ${turn.turnId} | ${turn.qualityScore} | ${turn.compileOk ? "yes" : "no"} | ${turn.phraseHitCount}/${turn.phraseCount} | ${turn.usedLearnedRouteFn ? "yes" : "no"} | ${turn.promoted ? "yes" : "no"} | ${turn.activePackId ?? "none"} | ${turn.selectionDigest ?? "none"} |`);
+    return [
+        "# Recorded Session Replay Proof Bundle",
+        "",
+        `- trace id: \`${input.bundle.traceId}\``,
+        `- winner mode: \`${input.bundle.summary.winnerMode ?? "none"}\``,
+        `- trace hash: \`${input.semanticHashes.traceHash}\``,
+        `- fixture hash: \`${input.semanticHashes.fixtureHash}\``,
+        `- score hash: \`${input.semanticHashes.scoreHash}\``,
+        `- bundle hash: \`${input.semanticHashes.bundleHash}\``,
+        "",
+        "## Ranking",
+        "| rank | mode | quality score |",
+        "| --- | --- | ---: |",
+        ...(rankingRows.length === 0 ? ["| - | none | 0 |"] : rankingRows),
+        "",
+        "## Mode Table",
+        "| mode | turns | compile ok | phrase hits | learned route turns | promotions | export turns | human labels | warnings | score hash |",
+        "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | --- |",
+        ...(modeRows.length === 0 ? ["| - | 0 | 0 | 0/0 | 0 | 0 | 0 | 0 | 0 | none |"] : modeRows),
+        "",
+        "## Turn Table",
+        "| mode | turn | quality | compile ok | phrase hits | learned route | promoted | active pack | selection digest |",
+        "| --- | --- | ---: | --- | ---: | --- | --- | --- | --- |",
+        ...(turnRows.length === 0 ? ["| - | none | 0 | no | 0/0 | no | no | none | none |"] : turnRows),
+        ""
+    ].join("\n");
+}
+function buildRecordedSessionReplayProofManifest(bundle) {
+    return {
+        contract: RECORDED_SESSION_REPLAY_PROOF_MANIFEST_CONTRACT,
+        traceId: bundle.traceId,
+        source: bundle.source,
+        recordedAt: bundle.recordedAt,
+        generatedAt: bundle.generatedAt,
+        hashAlgorithm: "sha256",
+        modeOrder: [...RECORDED_SESSION_REPLAY_MODE_ORDER],
+        contracts: {
+            trace: RECORDED_SESSION_TRACE_CONTRACT,
+            fixture: RECORDED_SESSION_FIXTURE_CONTRACT,
+            bundle: RECORDED_SESSION_BUNDLE_CONTRACT,
+            environment: RECORDED_SESSION_REPLAY_PROOF_ENVIRONMENT_CONTRACT,
+            summaryTables: RECORDED_SESSION_REPLAY_PROOF_SUMMARY_TABLES_CONTRACT,
+            hashes: RECORDED_SESSION_REPLAY_PROOF_HASHES_CONTRACT
+        },
+        hashes: {
+            traceHash: bundle.traceHash,
+            fixtureHash: bundle.fixtureHash,
+            scoreHash: bundle.scoreHash,
+            bundleHash: bundle.bundleHash
+        },
+        files: {
+            trace: RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.trace,
+            fixture: RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.fixture,
+            bundle: RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.bundle,
+            environment: RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.environment,
+            summary: RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.summary,
+            summaryTables: RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.summaryTables,
+            hashes: RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.hashes,
+            modes: RECORDED_SESSION_REPLAY_MODE_ORDER.map((mode) => ({
+                mode,
+                path: recordedSessionReplayModeOutputPath(mode)
+            }))
+        }
+    };
+}
+function validateRecordedSessionReplayProofManifest(manifest) {
+    const errors = [];
+    if (manifest.contract !== RECORDED_SESSION_REPLAY_PROOF_MANIFEST_CONTRACT) {
+        errors.push("manifest contract is invalid");
+    }
+    if (canonicalJson(manifest.modeOrder ?? []) !== canonicalJson(RECORDED_SESSION_REPLAY_MODE_ORDER)) {
+        errors.push("manifest modeOrder must stay fixed at no_brain, seed_pack, learned_replay");
+    }
+    if (manifest.hashAlgorithm !== "sha256") {
+        errors.push("manifest hashAlgorithm must be sha256");
+    }
+    if (manifest.contracts?.trace !== RECORDED_SESSION_TRACE_CONTRACT ||
+        manifest.contracts?.fixture !== RECORDED_SESSION_FIXTURE_CONTRACT ||
+        manifest.contracts?.bundle !== RECORDED_SESSION_BUNDLE_CONTRACT ||
+        manifest.contracts?.environment !== RECORDED_SESSION_REPLAY_PROOF_ENVIRONMENT_CONTRACT ||
+        manifest.contracts?.summaryTables !== RECORDED_SESSION_REPLAY_PROOF_SUMMARY_TABLES_CONTRACT ||
+        manifest.contracts?.hashes !== RECORDED_SESSION_REPLAY_PROOF_HASHES_CONTRACT) {
+        errors.push("manifest contracts block is invalid");
+    }
+    if (manifest.files?.trace !== RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.trace ||
+        manifest.files?.fixture !== RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.fixture ||
+        manifest.files?.bundle !== RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.bundle ||
+        manifest.files?.environment !== RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.environment ||
+        manifest.files?.summary !== RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.summary ||
+        manifest.files?.summaryTables !== RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.summaryTables ||
+        manifest.files?.hashes !== RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.hashes) {
+        errors.push("manifest top-level file layout is invalid");
+    }
+    const expectedModeFiles = RECORDED_SESSION_REPLAY_MODE_ORDER.map((mode) => ({
+        mode,
+        path: recordedSessionReplayModeOutputPath(mode)
+    }));
+    if (canonicalJson(manifest.files?.modes ?? []) !== canonicalJson(expectedModeFiles)) {
+        errors.push("manifest mode outputs must stay under modes/<mode>.json in canonical order");
+    }
+    return errors;
+}
+function validateRecordedSessionReplayProofEnvironment(environment) {
+    const errors = [];
+    if (environment.contract !== RECORDED_SESSION_REPLAY_PROOF_ENVIRONMENT_CONTRACT) {
+        errors.push("environment contract is invalid");
+    }
+    if (environment.runtimeOwner !== "openclaw") {
+        errors.push("environment runtimeOwner must be openclaw");
+    }
+    if (environment.generator?.packageName !== "@openclawbrain/cli" ||
+        environment.generator?.entrypoint !== "writeRecordedSessionReplayProofBundle") {
+        errors.push("environment generator metadata is invalid");
+    }
+    if (normalizeOptionalString(environment.generator?.nodeVersion) === undefined ||
+        normalizeOptionalString(environment.generator?.platform) === undefined ||
+        normalizeOptionalString(environment.generator?.arch) === undefined) {
+        errors.push("environment generator runtime fields are required");
+    }
+    if (environment.determinism?.hashAlgorithm !== "sha256" ||
+        environment.determinism?.canonicalJson !== true ||
+        canonicalJson(environment.determinism?.modeOrder ?? []) !== canonicalJson(RECORDED_SESSION_REPLAY_MODE_ORDER) ||
+        environment.determinism?.scratchReplayRoot !== "temporary_directory") {
+        errors.push("environment determinism block is invalid");
+    }
+    return errors;
+}
+function buildRecordedSessionReplayProofFileDigestEntries(rootDir, manifest) {
+    const relativePaths = [
+        manifest.files.trace,
+        manifest.files.fixture,
+        manifest.files.bundle,
+        manifest.files.environment,
+        manifest.files.summary,
+        manifest.files.summaryTables,
+        manifest.files.modes.map((entry) => entry.path),
+        RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.manifest
+    ].flat();
+    return relativePaths.map((relativePath, index) => ({
+        path: relativePath,
+        digest: checksumTextPayload(readRecordedSessionReplayProofText(rootDir, relativePath, `files[${index}]`))
+    }));
+}
+function buildRecordedSessionReplayProofHashes(rootDir, manifest) {
+    return {
+        contract: RECORDED_SESSION_REPLAY_PROOF_HASHES_CONTRACT,
+        algorithm: "sha256",
+        semantic: {
+            traceHash: manifest.hashes.traceHash,
+            fixtureHash: manifest.hashes.fixtureHash,
+            scoreHash: manifest.hashes.scoreHash,
+            bundleHash: manifest.hashes.bundleHash
+        },
+        files: buildRecordedSessionReplayProofFileDigestEntries(rootDir, manifest)
+    };
+}
+export function loadRecordedSessionReplayProofBundle(rootDir) {
+    const resolvedRoot = path.resolve(rootDir);
+    const manifestPath = path.join(resolvedRoot, RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.manifest);
+    const manifest = readJsonFile(manifestPath);
+    const tracePath = resolveRecordedSessionReplayProofPath(resolvedRoot, manifest.files.trace, "manifest.files.trace");
+    const fixturePath = resolveRecordedSessionReplayProofPath(resolvedRoot, manifest.files.fixture, "manifest.files.fixture");
+    const bundlePath = resolveRecordedSessionReplayProofPath(resolvedRoot, manifest.files.bundle, "manifest.files.bundle");
+    const environmentPath = resolveRecordedSessionReplayProofPath(resolvedRoot, manifest.files.environment, "manifest.files.environment");
+    const summaryPath = resolveRecordedSessionReplayProofPath(resolvedRoot, manifest.files.summary, "manifest.files.summary");
+    const summaryTablesPath = resolveRecordedSessionReplayProofPath(resolvedRoot, manifest.files.summaryTables, "manifest.files.summaryTables");
+    const hashesPath = resolveRecordedSessionReplayProofPath(resolvedRoot, manifest.files.hashes, "manifest.files.hashes");
+    const modeOutputs = (manifest.files.modes ?? []).map((entry, index) => {
+        const outputPath = resolveRecordedSessionReplayProofPath(resolvedRoot, entry.path, `manifest.files.modes[${index}].path`);
+        return {
+            mode: entry.mode,
+            path: outputPath,
+            report: readJsonFile(outputPath)
+        };
+    });
+    return {
+        rootDir: resolvedRoot,
+        manifestPath,
+        tracePath,
+        fixturePath,
+        bundlePath,
+        environmentPath,
+        summaryPath,
+        summaryTablesPath,
+        hashesPath,
+        manifest,
+        trace: readJsonFile(tracePath),
+        fixture: readJsonFile(fixturePath),
+        bundle: readJsonFile(bundlePath),
+        environment: readJsonFile(environmentPath),
+        summaryText: readFileSync(summaryPath, "utf8"),
+        summaryTables: readJsonFile(summaryTablesPath),
+        hashes: readJsonFile(hashesPath),
+        modeOutputs
+    };
+}
+export function validateRecordedSessionReplayProofBundle(rootDir) {
+    const resolvedRoot = path.resolve(rootDir);
+    try {
+        const descriptor = loadRecordedSessionReplayProofBundle(resolvedRoot);
+        const errors = [];
+        errors.push(...validateRecordedSessionReplayProofManifest(descriptor.manifest));
+        errors.push(...validateRecordedSessionReplayProofEnvironment(descriptor.environment));
+        if (descriptor.trace.contract !== RECORDED_SESSION_TRACE_CONTRACT) {
+            errors.push("trace.json contract is invalid");
+        }
+        if (descriptor.fixture.contract !== RECORDED_SESSION_FIXTURE_CONTRACT) {
+            errors.push("fixture.json contract is invalid");
+        }
+        if (descriptor.bundle.contract !== RECORDED_SESSION_BUNDLE_CONTRACT) {
+            errors.push("bundle.json contract is invalid");
+        }
+        if (descriptor.summaryTables.contract !== RECORDED_SESSION_REPLAY_PROOF_SUMMARY_TABLES_CONTRACT) {
+            errors.push("summary-tables.json contract is invalid");
+        }
+        if (descriptor.hashes.contract !== RECORDED_SESSION_REPLAY_PROOF_HASHES_CONTRACT) {
+            errors.push("hashes.json contract is invalid");
+        }
+        if (descriptor.hashes.algorithm !== "sha256") {
+            errors.push("hashes.json algorithm must be sha256");
+        }
+        const rebuiltFixture = buildRecordedSessionReplayFixture(structuredClone(descriptor.trace));
+        if (canonicalJson(rebuiltFixture) !== canonicalJson(descriptor.fixture)) {
+            errors.push("fixture.json does not match the canonical fixture rebuilt from trace.json");
+        }
+        if (descriptor.bundle.traceHash !== descriptor.fixture.traceHash) {
+            errors.push("bundle traceHash does not match fixture traceHash");
+        }
+        if (descriptor.bundle.fixtureHash !== descriptor.fixture.fixtureHash) {
+            errors.push("bundle fixtureHash does not match fixture fixtureHash");
+        }
+        if (descriptor.manifest.hashes.traceHash !== descriptor.fixture.traceHash ||
+            descriptor.manifest.hashes.fixtureHash !== descriptor.fixture.fixtureHash ||
+            descriptor.manifest.hashes.scoreHash !== descriptor.bundle.scoreHash ||
+            descriptor.manifest.hashes.bundleHash !== descriptor.bundle.bundleHash) {
+            errors.push("manifest hashes do not match the replay artifacts");
+        }
+        const summaryTables = buildRecordedSessionReplayProofSummaryTables(descriptor.bundle);
+        if (canonicalJson(summaryTables) !== canonicalJson(descriptor.summaryTables)) {
+            errors.push("summary-tables.json does not match bundle.json");
+        }
+        const expectedSummaryText = buildRecordedSessionReplayProofSummary({
+            bundle: descriptor.bundle,
+            summaryTables: descriptor.summaryTables,
+            semanticHashes: descriptor.hashes.semantic
+        });
+        if (descriptor.summaryText !== expectedSummaryText) {
+            errors.push("summary.md does not match the canonical replay proof summary");
+        }
+        const expectedModeCount = descriptor.bundle.modes.length;
+        if (descriptor.modeOutputs.length !== expectedModeCount) {
+            errors.push("mode output count does not match bundle modes");
+        }
+        const bundleModes = new Map(descriptor.bundle.modes.map((mode) => [mode.mode, mode]));
+        for (const modeOutput of descriptor.modeOutputs) {
+            const expectedMode = bundleModes.get(modeOutput.mode);
+            if (expectedMode === undefined) {
+                errors.push(`unexpected mode output: ${modeOutput.mode}`);
+                continue;
+            }
+            if (canonicalJson(expectedMode) !== canonicalJson(modeOutput.report)) {
+                errors.push(`mode output drift detected for ${modeOutput.mode}`);
+            }
+        }
+        const semanticHashVerification = verifyRecordedSessionReplayBundleHashes(descriptor.bundle);
+        if (!semanticHashVerification.bundleHashMatches) {
+            errors.push("bundleHash verification failed");
+        }
+        if (!semanticHashVerification.scoreHashMatches) {
+            errors.push("scoreHash verification failed");
+        }
+        const expectedHashes = buildRecordedSessionReplayProofHashes(resolvedRoot, descriptor.manifest);
+        const expectedFileDigests = new Map(expectedHashes.files.map((entry) => [entry.path, entry.digest]));
+        let verifiedFileCount = 0;
+        for (const fileEntry of descriptor.hashes.files ?? []) {
+            if (expectedFileDigests.get(fileEntry.path) === fileEntry.digest) {
+                verifiedFileCount += 1;
+            }
+        }
+        const fileHashesMatch = canonicalJson(expectedHashes.files) === canonicalJson(descriptor.hashes.files ?? []);
+        if (!fileHashesMatch) {
+            errors.push("hashes.json file digests do not match the written artifacts");
+        }
+        if (canonicalJson(expectedHashes.semantic) !== canonicalJson(descriptor.hashes.semantic ?? {})) {
+            errors.push("hashes.json semantic hashes do not match the manifest");
+        }
+        return {
+            contract: RECORDED_SESSION_REPLAY_PROOF_VALIDATION_CONTRACT,
+            ok: errors.length === 0,
+            rootDir: resolvedRoot,
+            expectedFileCount: expectedHashes.files.length,
+            verifiedFileCount,
+            fileHashesMatch,
+            bundleHashMatches: semanticHashVerification.bundleHashMatches,
+            scoreHashMatches: semanticHashVerification.scoreHashMatches,
+            errors
+        };
+    }
+    catch (error) {
+        return {
+            contract: RECORDED_SESSION_REPLAY_PROOF_VALIDATION_CONTRACT,
+            ok: false,
+            rootDir: resolvedRoot,
+            expectedFileCount: 0,
+            verifiedFileCount: 0,
+            fileHashesMatch: false,
+            bundleHashMatches: false,
+            scoreHashMatches: false,
+            errors: [toErrorMessage(error)]
+        };
+    }
+}
+export function writeRecordedSessionReplayProofBundle(input) {
+    const resolvedRoot = path.resolve(normalizeNonEmptyString(input.rootDir, "rootDir"));
+    const scratchRootParent = path.resolve(normalizeOptionalString(input.scratchRootDir) ?? tmpdir());
+    mkdirSync(resolvedRoot, { recursive: true });
+    mkdirSync(scratchRootParent, { recursive: true });
+    rmSync(path.join(resolvedRoot, RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.modeDir), {
+        recursive: true,
+        force: true
+    });
+    for (const relativePath of [
+        RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.trace,
+        RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.fixture,
+        RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.bundle,
+        RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.environment,
+        RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.summary,
+        RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.summaryTables,
+        RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.manifest,
+        RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.hashes
+    ]) {
+        rmSync(path.join(resolvedRoot, relativePath), { force: true });
+    }
+    const trace = structuredClone(input.trace);
+    const fixture = buildRecordedSessionReplayFixture(trace);
+    const scratchRoot = mkdtempSync(path.join(scratchRootParent, "openclawbrain-recorded-session-replay-"));
+    let bundle;
+    try {
+        bundle = runRecordedSessionReplay(scratchRoot, fixture);
+    }
+    finally {
+        rmSync(scratchRoot, { recursive: true, force: true });
+    }
+    const environment = buildRecordedSessionReplayProofEnvironment();
+    const summaryTables = buildRecordedSessionReplayProofSummaryTables(bundle);
+    const manifest = buildRecordedSessionReplayProofManifest(bundle);
+    const summaryText = buildRecordedSessionReplayProofSummary({
+        bundle,
+        summaryTables,
+        semanticHashes: manifest.hashes
+    });
+    const modeRoot = path.join(resolvedRoot, RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.modeDir);
+    mkdirSync(modeRoot, { recursive: true });
+    writeFileSync(path.join(resolvedRoot, manifest.files.trace), canonicalJson(trace), "utf8");
+    writeFileSync(path.join(resolvedRoot, manifest.files.fixture), canonicalJson(fixture), "utf8");
+    writeFileSync(path.join(resolvedRoot, manifest.files.bundle), canonicalJson(bundle), "utf8");
+    writeFileSync(path.join(resolvedRoot, manifest.files.environment), canonicalJson(environment), "utf8");
+    writeFileSync(path.join(resolvedRoot, manifest.files.summaryTables), canonicalJson(summaryTables), "utf8");
+    for (const mode of orderedRecordedSessionReplayModes(bundle.modes)) {
+        writeFileSync(path.join(resolvedRoot, recordedSessionReplayModeOutputPath(mode.mode)), canonicalJson(mode), "utf8");
+    }
+    writeFileSync(path.join(resolvedRoot, manifest.files.summary), summaryText, "utf8");
+    writeFileSync(path.join(resolvedRoot, RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT.manifest), canonicalJson(manifest), "utf8");
+    const hashes = buildRecordedSessionReplayProofHashes(resolvedRoot, manifest);
+    writeFileSync(path.join(resolvedRoot, manifest.files.hashes), canonicalJson(hashes), "utf8");
+    const validation = validateRecordedSessionReplayProofBundle(resolvedRoot);
+    if (!validation.ok) {
+        throw new Error(`recorded session replay proof bundle is invalid: ${validation.errors.join("; ")}`);
+    }
+    return loadRecordedSessionReplayProofBundle(resolvedRoot);
 }
 export const OPERATOR_API_CONTRACT_ID = "openclaw_operator_api.v1";
 export const SUPPORTED_OPERATOR_API_FAMILIES = [

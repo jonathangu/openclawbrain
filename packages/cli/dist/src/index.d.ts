@@ -15,6 +15,17 @@ export declare const RUNTIME_EVENT_EXPORT_BUNDLE_LAYOUT: {
     readonly manifest: "manifest.json";
     readonly payload: "normalized-event-export.json";
 };
+export declare const RECORDED_SESSION_REPLAY_PROOF_BUNDLE_LAYOUT: {
+    readonly manifest: "manifest.json";
+    readonly trace: "trace.json";
+    readonly fixture: "fixture.json";
+    readonly bundle: "bundle.json";
+    readonly environment: "environment.json";
+    readonly summary: "summary.md";
+    readonly summaryTables: "summary-tables.json";
+    readonly hashes: "hashes.json";
+    readonly modeDir: "modes";
+};
 export interface CompileServeRouteBreadcrumbInput {
     invocationSurface: LearningSpineServeRouteBreadcrumbsV1["invocationSurface"];
     hostEvent: LearningSpineServeRouteBreadcrumbsV1["hostEvent"];
@@ -1207,10 +1218,160 @@ export interface RecordedSessionReplayBundleHashVerificationV1 {
     bundleHashMatches: boolean;
     scoreHashMatches: boolean;
 }
+export interface RecordedSessionReplayProofManifestV1 {
+    contract: "recorded_session_replay_proof_manifest.v1";
+    traceId: string;
+    source: RecordedSessionReplayBundleV1["source"];
+    recordedAt: string;
+    generatedAt: string;
+    hashAlgorithm: "sha256";
+    modeOrder: RecordedSessionReplayMode[];
+    contracts: {
+        trace: typeof RECORDED_SESSION_TRACE_CONTRACT;
+        fixture: typeof RECORDED_SESSION_FIXTURE_CONTRACT;
+        bundle: typeof RECORDED_SESSION_BUNDLE_CONTRACT;
+        environment: "recorded_session_replay_environment.v1";
+        summaryTables: "recorded_session_replay_summary_tables.v1";
+        hashes: "recorded_session_replay_hashes.v1";
+    };
+    hashes: {
+        traceHash: string;
+        fixtureHash: string;
+        scoreHash: string;
+        bundleHash: string;
+    };
+    files: {
+        trace: string;
+        fixture: string;
+        bundle: string;
+        environment: string;
+        summary: string;
+        summaryTables: string;
+        hashes: string;
+        modes: Array<{
+            mode: RecordedSessionReplayMode;
+            path: string;
+        }>;
+    };
+}
+export interface RecordedSessionReplayProofEnvironmentV1 {
+    contract: "recorded_session_replay_environment.v1";
+    runtimeOwner: "openclaw";
+    generator: {
+        packageName: "@openclawbrain/cli";
+        entrypoint: "writeRecordedSessionReplayProofBundle";
+        nodeVersion: string;
+        platform: string;
+        arch: string;
+    };
+    determinism: {
+        hashAlgorithm: "sha256";
+        canonicalJson: true;
+        modeOrder: RecordedSessionReplayMode[];
+        scratchReplayRoot: "temporary_directory";
+    };
+}
+export interface RecordedSessionReplayProofModeTableRowV1 {
+    mode: RecordedSessionReplayMode;
+    turnCount: number;
+    qualityScore: number;
+    compileOkCount: number;
+    phraseHitCount: number;
+    phraseCount: number;
+    usedLearnedRouteTurnCount: number;
+    promotionCount: number;
+    exportTurnCount: number;
+    humanLabelCount: number;
+    attributedTurnCount: number;
+    activePackChangeCount: number;
+    warningCount: number;
+    scoreHash: string;
+}
+export interface RecordedSessionReplayProofTurnTableRowV1 {
+    mode: RecordedSessionReplayMode;
+    turnId: string;
+    qualityScore: number;
+    compileOk: boolean;
+    phraseHitCount: number;
+    phraseCount: number;
+    usedLearnedRouteFn: boolean;
+    promoted: boolean;
+    activePackId: string | null;
+    selectionDigest: string | null;
+    eventExportDigest: string | null;
+    warningCount: number;
+}
+export interface RecordedSessionReplayProofSummaryTablesV1 {
+    contract: "recorded_session_replay_summary_tables.v1";
+    traceId: string;
+    winnerMode: RecordedSessionReplayMode | null;
+    ranking: RecordedSessionReplayBundleV1["summary"]["ranking"];
+    modes: RecordedSessionReplayProofModeTableRowV1[];
+    turns: RecordedSessionReplayProofTurnTableRowV1[];
+}
+export interface RecordedSessionReplayProofFileHashEntryV1 {
+    path: string;
+    digest: string;
+}
+export interface RecordedSessionReplayProofHashesV1 {
+    contract: "recorded_session_replay_hashes.v1";
+    algorithm: "sha256";
+    semantic: {
+        traceHash: string;
+        fixtureHash: string;
+        scoreHash: string;
+        bundleHash: string;
+    };
+    files: RecordedSessionReplayProofFileHashEntryV1[];
+}
+export interface RecordedSessionReplayProofModeOutputV1 {
+    mode: RecordedSessionReplayMode;
+    path: string;
+    report: RecordedSessionReplayModeReportV1;
+}
+export interface RecordedSessionReplayProofBundleDescriptorV1 {
+    rootDir: string;
+    manifestPath: string;
+    tracePath: string;
+    fixturePath: string;
+    bundlePath: string;
+    environmentPath: string;
+    summaryPath: string;
+    summaryTablesPath: string;
+    hashesPath: string;
+    manifest: RecordedSessionReplayProofManifestV1;
+    trace: RecordedSessionTraceV1;
+    fixture: RecordedSessionReplayFixtureV1;
+    bundle: RecordedSessionReplayBundleV1;
+    environment: RecordedSessionReplayProofEnvironmentV1;
+    summaryText: string;
+    summaryTables: RecordedSessionReplayProofSummaryTablesV1;
+    hashes: RecordedSessionReplayProofHashesV1;
+    modeOutputs: RecordedSessionReplayProofModeOutputV1[];
+}
+export interface RecordedSessionReplayProofBundleValidationV1 {
+    contract: "recorded_session_replay_proof_validation.v1";
+    ok: boolean;
+    rootDir: string;
+    expectedFileCount: number;
+    verifiedFileCount: number;
+    fileHashesMatch: boolean;
+    bundleHashMatches: boolean;
+    scoreHashMatches: boolean;
+    errors: string[];
+}
+export interface WriteRecordedSessionReplayProofBundleInputV1 {
+    rootDir: string;
+    trace: RecordedSessionTraceV1;
+    scratchRootDir?: string | null;
+}
 export declare function buildRecordedSessionReplayFixture(trace: RecordedSessionTraceV1): RecordedSessionReplayFixtureV1;
 export declare function runRecordedSessionReplay(rootDir: string, fixture: RecordedSessionReplayFixtureV1): RecordedSessionReplayBundleV1;
 export declare function rescoreRecordedSessionReplayBundle(bundle: RecordedSessionReplayBundleV1): RecordedSessionReplayRescoreReportV1;
 export declare function verifyRecordedSessionReplayBundleHashes(bundle: RecordedSessionReplayBundleV1): RecordedSessionReplayBundleHashVerificationV1;
+export declare function loadRecordedSessionReplayProofBundle(rootDir: string): RecordedSessionReplayProofBundleDescriptorV1;
+export declare function validateRecordedSessionReplayProofBundle(rootDir: string): RecordedSessionReplayProofBundleValidationV1;
+export declare function writeRecordedSessionReplayProofBundle(input: WriteRecordedSessionReplayProofBundleInputV1): RecordedSessionReplayProofBundleDescriptorV1;
 export type OperatorSurfaceStatus = "ok" | "warn" | "fail";
 export type OperatorFindingSeverity = "pass" | "warn" | "fail";
 export type OperatorLastPromotionConfidence = "proven_from_previous_pointer" | "unknown_from_local_pointers" | "no_active_pack";
