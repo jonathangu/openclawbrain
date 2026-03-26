@@ -5,12 +5,12 @@ export function validateExtensionRegistrationApi(api) {
     if (!isRecord(api) || typeof api.on !== "function") {
         return {
             ok: false,
-            diagnostic: {
+            diagnostic: shapeDiagnostic({
                 key: "registration-api-invalid",
                 once: true,
                 message: `[openclawbrain] extension inactive: host registration API is missing api.on(event, handler, options) ` +
                     `(received=${describeValue(api)})`
-            }
+            })
         };
     }
     return {
@@ -64,11 +64,11 @@ export function normalizePromptBuildEvent(event) {
 export function createBeforePromptBuildHandler(input) {
     return async (event, _ctx) => {
         if (isActivationRootPlaceholder(input.activationRoot)) {
-            await input.reportDiagnostic({
+            await input.reportDiagnostic(shapeDiagnostic({
                 key: "activation-root-placeholder",
                 once: true,
                 message: "[openclawbrain] BRAIN NOT YET LOADED: ACTIVATION_ROOT is still a placeholder. Install @openclawbrain/cli, then run: openclawbrain install --openclaw-home <path>"
-            });
+            }));
             return {};
         }
         const normalized = normalizePromptBuildEvent(event);
@@ -103,11 +103,11 @@ export function createBeforePromptBuildHandler(input) {
             });
             if (!result.ok) {
                 const mode = result.hardRequirementViolated ? "hard-fail" : "fail-open";
-                await input.reportDiagnostic({
+                await input.reportDiagnostic(shapeDiagnostic({
                     key: `compile-${mode}`,
                     message: `[openclawbrain] ${mode}: ${result.error} ` +
                         `(activationRoot=${input.activationRoot}, sessionId=${normalized.event.sessionId ?? "unknown"}, channel=${normalized.event.channel ?? "unknown"})`
-                });
+                }));
                 return {};
             }
             if (result.brainContext.length > 0) {
@@ -119,20 +119,20 @@ export function createBeforePromptBuildHandler(input) {
         }
         catch (error) {
             const detail = error instanceof Error ? error.stack ?? error.message : String(error);
-            await input.reportDiagnostic({
+            await input.reportDiagnostic(shapeDiagnostic({
                 key: "compile-threw",
                 message: `[openclawbrain] compile threw: ${detail} ` +
                     `(activationRoot=${input.activationRoot}, sessionId=${normalized.event.sessionId ?? "unknown"}, channel=${normalized.event.channel ?? "unknown"})`
-            });
+            }));
         }
         return {};
     };
 }
 function failOpenDiagnostic(key, reason, detail) {
-    return {
+    return shapeDiagnostic({
         key,
         message: `[openclawbrain] fail-open: ${reason} (${detail})`
-    };
+    });
 }
 function normalizeOptionalScalarField(value, fieldName, warnings) {
     if (value === undefined || value === null) {
@@ -145,11 +145,11 @@ function normalizeOptionalScalarField(value, fieldName, warnings) {
     if (typeof value === "number" || typeof value === "bigint" || typeof value === "boolean") {
         return String(value);
     }
-    warnings.push({
+    warnings.push(shapeDiagnostic({
         key: `runtime-${fieldName}-ignored`,
         message: `[openclawbrain] fail-open: ignored unsupported before_prompt_build ${fieldName} ` +
             `(${fieldName}=${describeValue(value)})`
-    });
+    }));
     return undefined;
 }
 function normalizeOptionalNonNegativeIntegerField(value, fieldName, warnings) {
@@ -174,11 +174,11 @@ function normalizeOptionalNonNegativeIntegerField(value, fieldName, warnings) {
             }
         }
     }
-    warnings.push({
+    warnings.push(shapeDiagnostic({
         key: `runtime-${fieldName}-ignored`,
         message: `[openclawbrain] fail-open: ignored unsupported before_prompt_build ${fieldName} ` +
             `(${fieldName}=${describeValue(value)})`
-    });
+    }));
     return undefined;
 }
 function extractPromptMessage(message) {
@@ -263,6 +263,62 @@ function describeValue(value) {
         return `symbol(${String(value.description ?? "")})`;
     }
     return `${typeof value}(${String(value)})`;
+}
+function shapeDiagnostic(diagnostic) {
+    if (diagnostic.severity !== undefined &&
+        diagnostic.actionability !== undefined &&
+        diagnostic.summary !== undefined &&
+        diagnostic.action !== undefined) {
+        return diagnostic;
+    }
+    if (diagnostic.key === "activation-root-placeholder") {
+        return {
+            ...diagnostic,
+            severity: "blocking",
+            actionability: "rerun_install",
+            summary: "extension hook is installed but ACTIVATION_ROOT is still unpinned",
+            action: "Run openclawbrain install --openclaw-home <path> to pin the runtime hook."
+        };
+    }
+    if (diagnostic.key === "registration-api-invalid") {
+        return {
+            ...diagnostic,
+            severity: "blocking",
+            actionability: "inspect_host_registration_api",
+            summary: "extension host registration API is missing or incompatible",
+            action: "Repair or upgrade the host extension API so api.on(event, handler, options) is available."
+        };
+    }
+    if (diagnostic.key === "compile-hard-fail") {
+        return {
+            ...diagnostic,
+            severity: "blocking",
+            actionability: "inspect_runtime_compile",
+            summary: "brain context compile hit a hard requirement",
+            action: "Inspect the activation root and compile error; rerun install if the pinned hook may be stale."
+        };
+    }
+    if (diagnostic.key === "compile-fail-open" || diagnostic.key === "compile-threw") {
+        return {
+            ...diagnostic,
+            severity: "degraded",
+            actionability: "inspect_runtime_compile",
+            summary: diagnostic.key === "compile-threw"
+                ? "brain context compile threw during before_prompt_build"
+                : "brain context compile failed open during before_prompt_build",
+            action: "Inspect the activation root and compile error if brain context is unexpectedly empty."
+        };
+    }
+    if (diagnostic.key.startsWith("runtime-")) {
+        return {
+            ...diagnostic,
+            severity: "degraded",
+            actionability: "inspect_host_event_shape",
+            summary: "before_prompt_build payload was partial or malformed",
+            action: "Inspect the host before_prompt_build event shape; OpenClawBrain fail-opened safely."
+        };
+    }
+    return diagnostic;
 }
 function isRecord(value) {
     return typeof value === "object" && value !== null;

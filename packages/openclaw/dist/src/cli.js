@@ -700,6 +700,10 @@ function summarizeStatusHookLoad(installHook, status) {
         installState: installHook.state === "unknown" ? "unverified" : installHook.state,
         loadability: installHook.loadability,
         loadProof: status.hook.loadProof,
+        guardSeverity: status.hook.guardSeverity,
+        guardActionability: status.hook.guardActionability,
+        guardSummary: status.hook.guardSummary,
+        guardAction: status.hook.guardAction,
         detail: status.hook.detail
     };
 }
@@ -1337,7 +1341,7 @@ function buildCompactStatusHeader(status, report, options) {
     const tracedLearning = options.tracedLearning ?? buildTracedLearningStatusSurface(status.host.activationRoot);
     return [
         `lifecycle   attach=${status.attachment.state} learner=${yesNo(status.passiveLearning.learnerRunning)} watch=${summarizeStatusWatchState(status)} export=${status.passiveLearning.exportState} promote=${summarizeStatusPromotionState(status)} serve=${summarizeStatusServeReality(status)}`,
-        `hook        install=${hookLoad.installState} loadability=${hookLoad.loadability} loadProof=${hookLoad.loadProof} layout=${status.hook.installLayout ?? "unverified"} additional=${status.hook.additionalInstallCount ?? 0} detail=${hookLoad.detail}`,
+        `hook        install=${hookLoad.installState} loadability=${hookLoad.loadability} loadProof=${hookLoad.loadProof} layout=${status.hook.installLayout ?? "unverified"} additional=${status.hook.additionalInstallCount ?? 0} severity=${hookLoad.guardSeverity} actionability=${hookLoad.guardActionability} summary=${hookLoad.guardSummary}`,
         `attachTruth current=${attachmentTruth.currentProfileLabel} hook=${attachmentTruth.hookFiles} config=${attachmentTruth.configLoad} runtime=${attachmentTruth.runtimeLoad} watcher=${attachmentTruth.watcher} attachedSet=${formatAttachedProfileTruthCompactList(attachmentTruth.attachedProfiles)} why=${attachmentTruth.detail}`,
         `passive     firstExport=${yesNo(status.passiveLearning.firstExportOccurred)} backlog=${status.passiveLearning.backlogState} pending=${formatStatusNullableNumber(status.passiveLearning.pendingLive)}/${formatStatusNullableNumber(status.passiveLearning.pendingBackfill)}`,
         `serving     pack=${status.passiveLearning.currentServingPackId ?? "none"} lastExport=${status.passiveLearning.lastExportAt ?? "none"} lastPromotion=${status.passiveLearning.lastPromotionAt ?? "none"}`,
@@ -1383,6 +1387,7 @@ function formatCurrentProfileStatusSummary(status, report, targetInspection, opt
         })}`,
         `host        runtime=${status.host.runtimeOwner} activation=${status.host.activationRoot}`,
         `profile     selector=${status.profile.selector}${profileIdSuffix} attachment=${status.attachment.state} policy=${status.attachment.policyMode}`,
+        `guard       severity=${status.hook.guardSeverity} actionability=${status.hook.guardActionability} action=${status.hook.guardAction} summary=${status.hook.guardSummary}`,
         `attachTruth current=${attachmentTruth.currentProfileLabel} hook=${attachmentTruth.hookFiles} config=${attachmentTruth.configLoad} runtime=${attachmentTruth.runtimeLoad} watcher=${attachmentTruth.watcher} detail=${attachmentTruth.detail}`,
         `attachedSet ${formatAttachedProfileTruthDetailedList(attachmentTruth.attachedProfiles)} proofPath=${shortenPath(attachmentTruth.runtimeProofPath)} proofError=${attachmentTruth.runtimeProofError ?? "none"}`,
         `manyProfile surface=${report.manyProfile.operatorSurface} policy=${report.manyProfile.declaredAttachmentPolicy} intent=${report.manyProfile.sameGatewayIntent} checkedProof=${report.manyProfile.checkedInProofTopology} sameGatewayProof=${yesNo(report.manyProfile.sameGatewayProof)} sharedWriteProof=${yesNo(report.manyProfile.sharedWriteSafetyProof)}`,

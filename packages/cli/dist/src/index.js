@@ -7593,6 +7593,10 @@ function buildCurrentProfileBrainStatusFromReport(report, policyMode, profileId)
             installState: report.hook.installState,
             loadability: report.hook.loadability,
             loadProof: report.hook.loadProof,
+            guardSeverity: report.hook.guardSeverity,
+            guardActionability: report.hook.guardActionability,
+            guardSummary: report.hook.guardSummary,
+            guardAction: report.hook.guardAction,
             desynced: report.hook.desynced,
             detail: report.hook.detail
         },

@@ -1809,6 +1809,10 @@ interface OperatorHookSummary {
     installState: CurrentProfileHookInstallStateV1;
     loadability: CurrentProfileHookLoadabilityV1;
     loadProof: CurrentProfileHookLoadProofV1;
+    guardSeverity: import("./openclaw-hook-truth.js").OpenClawBrainHookGuardSeverity;
+    guardActionability: import("./openclaw-hook-truth.js").OpenClawBrainHookGuardActionability;
+    guardSummary: string;
+    guardAction: string;
     desynced: boolean;
     detail: string;
 }

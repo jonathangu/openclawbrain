@@ -78,6 +78,7 @@ function createDetailedStatusText(fixture, overrides = {}) {
         `target activation=${overrides.activationRoot ?? fixture.activationRoot} boundary=current_profile`,
         `attachTruth current=current_profile runtime=${overrides.runtimeTruth ?? "proven"} hook=present config=allows_load`,
         overrides.hookLine ?? "hook        install=installed loadable=loadable",
+        overrides.guardLine ?? "guard       severity=none actionability=none action=none summary=profile hook is installed and loadable",
         `serve       state=${overrides.serveState ?? "serving_active_pack"}`,
         `routeFn     available=${overrides.routeFnAvailable ?? "yes"}`,
         overrides.pathLine ?? "path        source=materialized_candidate pg=v2 method=policy_gradient_v2 target=trajectory_reconstruction connect=4 trajectories=12 bindingQuality=exact_only",
@@ -204,6 +205,8 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     assert.equal(verdictPayload.verdict.verdict, "success_and_proven");
     assert.match(summary, /bundle verdict: \*\*success_and_proven\*\*/);
     assert.match(summary, /## Learning Attribution/);
+    assert.match(summary, /## Runtime Guard/);
+    assert.match(summary, /guard       severity=none actionability=none action=none summary=profile hook is installed and loadable/);
     assert.match(summary, /attribution quality=exact_only/);
     assert.match(summary, /path        source=materialized_candidate/);
     assert.match(summary, /## Warnings/);

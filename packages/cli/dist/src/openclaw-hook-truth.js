@@ -74,6 +74,32 @@ function describeAdditionalInstallDetail(additionalInstalls) {
         .map((install) => `${shortenPath(install.extensionDir)} (${describeOpenClawBrainInstallLayout(install.installLayout)}, ${describeOpenClawBrainInstallIdentity(install)})`)
         .join(", ")}`;
 }
+function summarizeOpenClawBrainHookGuard(inspection) {
+    if (inspection.scope === "activation_root_only") {
+        return {
+            guardSeverity: "degraded",
+            guardActionability: "pin_openclaw_home",
+            guardSummary: "current-profile hook state is not self-proven from this status scope",
+            guardAction: "Rerun status with --openclaw-home <path> to prove the current profile hook."
+        };
+    }
+    if (inspection.installState === "installed" && inspection.loadability === "loadable") {
+        return {
+            guardSeverity: "none",
+            guardActionability: "none",
+            guardSummary: "profile hook is installed and loadable",
+            guardAction: "none"
+        };
+    }
+    return {
+        guardSeverity: "blocking",
+        guardActionability: "repair_install",
+        guardSummary: inspection.installState === "not_installed"
+            ? "profile hook is missing or incomplete"
+            : "profile hook is present but OpenClaw will not load it",
+        guardAction: "Run openclawbrain install --openclaw-home <path> to repair the installed hook."
+    };
+}
 export function inspectOpenClawBrainPluginAllowlist(openclawHome) {
     const { path: openclawJsonPath, config } = readOpenClawJsonConfig(openclawHome);
     const installedPlugin = findInstalledOpenClawBrainPlugin(openclawHome);
@@ -252,6 +278,7 @@ export function inspectOpenClawBrainHookStatus(openclawHome) {
 export function summarizeOpenClawBrainHookLoad(inspection, statusProbeReady) {
     return {
         ...inspection,
+        ...summarizeOpenClawBrainHookGuard(inspection),
         loadProof: inspection.loadability === "loadable" && statusProbeReady
             ? "status_probe_ready"
             : "not_ready"

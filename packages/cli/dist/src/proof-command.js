@@ -485,7 +485,7 @@ function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, brea
     };
 }
 
-function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspectText, statusSignals, breadcrumbs, runtimeLoadProofSnapshot, attributionLine, learningPathLine, coverageSnapshot, hardeningSnapshot }) {
+function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspectText, statusSignals, breadcrumbs, runtimeLoadProofSnapshot, guardLine, attributionLine, learningPathLine, coverageSnapshot, hardeningSnapshot }) {
     const passed = [];
     const missing = [];
     const warnings = Array.isArray(verdict.warnings) ? verdict.warnings : [];
@@ -540,6 +540,11 @@ function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspec
         "",
         "## Warnings",
         ...(warnings.length === 0 ? ["- none"] : warnings.map((item) => `- ${item}`)),
+        "",
+        "## Runtime Guard",
+        ...(guardLine === null
+            ? ["- runtime guard line not reported by detailed status"]
+            : [`- ${guardLine}`]),
         "",
         "## Learning Attribution",
         ...(attributionLine === null
@@ -788,6 +793,7 @@ export function captureOperatorProofBundle(options) {
     const attachedSetLine = extractDetailedStatusLine(statusCapture.stdout, "attachedSet");
     const serveLine = extractDetailedStatusLine(statusCapture.stdout, "serve");
     const routeFnLine = extractDetailedStatusLine(statusCapture.stdout, "routeFn");
+    const guardLine = extractDetailedStatusLine(statusCapture.stdout, "guard");
     const attributionLine = extractDetailedStatusLine(statusCapture.stdout, "attribution");
     const learningPathLine = extractDetailedStatusLine(statusCapture.stdout, "path");
     const runtimeLoadProofPath = normalizeReportedProofPath(statusSignals.proofPath)
@@ -842,6 +848,7 @@ export function captureOperatorProofBundle(options) {
         },
         runtimeLoadProofPath,
         runtimeLoadProofError: runtimeLoadProofSnapshot.error,
+        guardLine,
         attributionLine,
         learningPathLine,
     });
@@ -855,6 +862,7 @@ export function captureOperatorProofBundle(options) {
         statusSignals,
         breadcrumbs,
         runtimeLoadProofSnapshot,
+        guardLine,
         attributionLine,
         learningPathLine,
         coverageSnapshot,
@@ -873,6 +881,7 @@ export function captureOperatorProofBundle(options) {
         hardeningSnapshot,
         verdict,
         statusSignals,
+        guardLine,
         attributionLine,
         learningPathLine,
         steps,

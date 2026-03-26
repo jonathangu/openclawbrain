@@ -44,8 +44,26 @@ async function reportDiagnostic(input) {
         }
         warnedDiagnostics.add(input.key);
     }
-    console.warn(input.message);
-    await appendLocalDiagnosticLog(input.message);
+    const formatted = formatDiagnosticMessage(input);
+    console.warn(formatted);
+    await appendLocalDiagnosticLog(formatted);
+}
+function formatDiagnosticMessage(input) {
+    if (input.severity === undefined ||
+        input.actionability === undefined ||
+        input.summary === undefined ||
+        input.action === undefined) {
+        return input.message;
+    }
+    const detail = input.message.replace(/^\[openclawbrain\]\s*/, "");
+    return [
+        "[openclawbrain]",
+        `severity=${input.severity}`,
+        `actionability=${input.actionability}`,
+        `summary=${JSON.stringify(input.summary)}`,
+        `action=${JSON.stringify(input.action)}`,
+        `detail=${JSON.stringify(detail)}`
+    ].join(" ");
 }
 function announceStartupBreadcrumb() {
     if (isActivationRootPlaceholder(ACTIVATION_ROOT)) {
@@ -78,8 +96,12 @@ export default function register(api) {
             catch (error) {
                 const detail = error instanceof Error ? error.message : String(error);
                 void reportDiagnostic({
-                    key: `runtime-load-proof:${detail}`,
+                    key: "runtime-load-proof-failed",
                     once: true,
+                    severity: "degraded",
+                    actionability: "inspect_local_proof_write",
+                    summary: "runtime-load proof write failed after hook registration",
+                    action: "Inspect local filesystem permissions and the activation-root proof path if proof capture is expected.",
                     message: `[openclawbrain] runtime load proof failed: ${detail}`
                 });
             }
@@ -91,6 +113,10 @@ export default function register(api) {
         void reportDiagnostic({
             key: "registration-failed",
             once: true,
+            severity: "blocking",
+            actionability: "rerun_install",
+            summary: "extension registration threw before the runtime hook was fully attached",
+            action: "Rerun openclawbrain install --openclaw-home <path>; if it still fails, inspect the extension loader/runtime.",
             message: `[openclawbrain] extension registration failed: ${detail}`
         });
     }

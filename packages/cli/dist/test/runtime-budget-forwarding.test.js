@@ -33,6 +33,34 @@ test("before_prompt_build forwards explicit maxContextChars to compileRuntimeCon
   assert.equal(compileInput?.maxContextChars, 4096);
 });
 
+test("before_prompt_build reports shaped diagnostics for malformed runtime envelopes", async () => {
+  const diagnostics = [];
+  const handler = createBeforePromptBuildHandler({
+    activationRoot: "/tmp/openclawbrain-activation",
+    compileRuntimeContext: () => ({ ok: true, brainContext: "" }),
+    reportDiagnostic: async (diagnostic) => {
+      diagnostics.push(diagnostic);
+    },
+  });
+
+  const result = await handler(
+    {
+      messages: {
+        content: "not-an-array",
+      },
+    },
+    {},
+  );
+
+  assert.deepEqual(result, {});
+  assert.equal(diagnostics.length, 1);
+  assert.equal(diagnostics[0]?.key, "runtime-messages-not-array");
+  assert.equal(diagnostics[0]?.severity, "degraded");
+  assert.equal(diagnostics[0]?.actionability, "inspect_host_event_shape");
+  assert.match(diagnostics[0]?.summary ?? "", /partial or malformed/);
+  assert.match(diagnostics[0]?.action ?? "", /fail-opened safely/);
+});
+
 test("serve-time operator audit code records explicit maxContextChars", () => {
   const runtimeCoreSource = readFileSync(path.join(__dirname, "..", "src", "runtime-core.js"), "utf8");
   const learningSpineSource = readFileSync(path.join(__dirname, "..", "src", "learning-spine.js"), "utf8");

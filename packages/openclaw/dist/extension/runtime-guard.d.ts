@@ -22,10 +22,16 @@ export interface ExtensionCompileFailure {
 }
 export type ExtensionCompileResult = ExtensionCompileSuccess | ExtensionCompileFailure;
 export type ExtensionCompileRuntimeContext = (input: ExtensionCompileInput) => ExtensionCompileResult;
+export type ExtensionDiagnosticSeverity = "degraded" | "blocking";
+export type ExtensionDiagnosticActionability = "inspect_host_event_shape" | "inspect_host_registration_api" | "inspect_local_proof_write" | "inspect_runtime_compile" | "rerun_install";
 export interface ExtensionDiagnostic {
     key: string;
     message: string;
     once?: boolean;
+    severity?: ExtensionDiagnosticSeverity;
+    actionability?: ExtensionDiagnosticActionability;
+    summary?: string;
+    action?: string;
 }
 export interface ExtensionRegistrationApi {
     on(eventName: string, handler: (event: unknown, ctx: unknown) => Promise<Record<string, unknown>>, options?: {
