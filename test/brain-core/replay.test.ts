@@ -101,4 +101,70 @@ describe("replay", () => {
     const replay = replayEpisode(episode, graph);
     expect(replay.wouldChange).toBe(true);
   });
+
+  it("ignores explicitly forced stop_local substeps when deciding whether replay would change", () => {
+    const graph = new BrainGraph();
+    graph.addNode(makeNode("a"));
+    graph.addNode(makeNode("b"));
+    graph.addNode(makeNode("c"));
+    graph.addEdge(makeEdge("a", "b", 0.1));
+    graph.addEdge(makeEdge("a", "c", 2));
+
+    const forcedStopEpisode: Episode = {
+      id: "ep-forced-stop",
+      conversationId: 1,
+      queryText: "test",
+      queryEmbedding: new Float32Array([1, 0, 0]),
+      trajectory: [{
+        sourceNodeId: "a",
+        expansionIndex: 0,
+        frontierBefore: ["a"],
+        frontierAfter: [],
+        budgetBefore: 100,
+        budgetAfter: 100,
+        substeps: [
+          {
+            stateSnapshot: {
+              sourceNodeId: "a",
+              expansionIndex: 0,
+              selectionIndex: 0,
+              budgetRemaining: 100,
+              initialBudget: 100,
+              reservedTokenCost: 0,
+              maxHops: 4,
+              frontierSize: 0,
+              frontierNodeIds: [],
+              visitedCount: 0,
+              firedCount: 0,
+            },
+            candidates: [
+              { action: { type: "traverse", targetNodeId: "b" }, score: 0.2, probability: 0.2 },
+              { action: { type: "traverse", targetNodeId: "c" }, score: 0.8, probability: 0.7 },
+              { action: { type: "stop_local" }, score: 0, probability: 0.1 },
+            ],
+            chosenAction: { type: "stop_local" },
+            chosenActionProbability: 0.1,
+            stopProbability: 0.1,
+            stopTruth: "forced",
+            stopReason: "frontier_cap",
+          },
+        ],
+        selectedTargets: [],
+        acceptedTargets: [],
+        vetoedTargets: [],
+        terminationReason: "frontier_cap",
+      }],
+      firedNodes: [],
+      vetoedNodes: [],
+      contextChars: 0,
+      reward: 1,
+      rewardSource: "human",
+      packVersion: 1,
+      createdAt: Date.now(),
+    };
+
+    const replay = replayEpisode(forcedStopEpisode, graph);
+    expect(replay.wouldChange).toBe(false);
+    expect(replay.firedNodes).toEqual([]);
+  });
 });

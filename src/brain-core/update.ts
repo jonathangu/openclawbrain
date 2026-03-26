@@ -55,6 +55,9 @@ export function computeReinforceUpdates(
       }
 
       if (substep.chosenAction.type === "stop_local") {
+        if (substep.stopTruth === "forced") {
+          continue;
+        }
         const key = `stop→${sourceId}`;
         const existing = updates.get(key);
         if (existing && existing.kind === "stop_local") {

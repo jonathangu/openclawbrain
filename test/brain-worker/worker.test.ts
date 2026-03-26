@@ -161,7 +161,7 @@ function makeTrace(params: {
         sourceUris: injectedNodeSummaries.flatMap((summary) => summary.sourceUri ? [summary.sourceUri] : []),
       },
       selectionMetadata: {
-        traceSliceVersion: 2,
+        traceSliceVersion: 3,
         queryChars: queryText.length,
         budgetChars: 4000,
         maxHops: 8,
@@ -243,7 +243,7 @@ function makeObservation(params: {
         sourceUris: ["PLAYBOOK.md"],
       },
       selectionMetadata: {
-        traceSliceVersion: 2,
+        traceSliceVersion: 3,
         queryChars: queryText.length,
         budgetChars: 4000,
         maxHops: 8,

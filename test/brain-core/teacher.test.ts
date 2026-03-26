@@ -49,7 +49,7 @@ function makeObservation(overrides: Partial<BrainObservation> = {}): BrainObserv
         sourceUris: ["PLAYBOOK.md"],
       },
       selectionMetadata: {
-        traceSliceVersion: 2,
+        traceSliceVersion: 3,
         queryChars: 29,
         budgetChars: 4000,
         maxHops: 8,
@@ -69,6 +69,12 @@ function makeObservation(overrides: Partial<BrainObservation> = {}): BrainObserv
         embeddingMs: 3,
         totalQueryMs: 14,
         queryEmbeddingSource: "provided",
+        chosenStopCount: 0,
+        forcedStopCount: 1,
+        droppedProposalCount: 1,
+        droppedProposalReasons: {
+          missing_target_node: 1,
+        },
       },
     },
     assistantResponse: "Use `gh pr create` to open the pull request.",
@@ -111,6 +117,15 @@ describe("teacher observation plumbing", () => {
         serveDecisionRecordId: "decision-1",
         selectionDigest: "selection-digest-1",
         selectedNodeIds: ["node_pr"],
+        selectionMetadata: {
+          traceSliceVersion: 3,
+          chosenStopCount: 0,
+          forcedStopCount: 1,
+          droppedProposalCount: 1,
+          droppedProposalReasons: {
+            missing_target_node: 1,
+          },
+        },
       },
       selectedContext: [
         expect.objectContaining({

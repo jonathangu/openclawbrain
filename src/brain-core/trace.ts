@@ -56,6 +56,52 @@ function selectedTraversalNodeIds(traversalResult: TraverseResult): string[] {
   return traversalResult.trajectory.flatMap((expansion) => expansion.acceptedTargets);
 }
 
+function countStopTruths(traversalResult: TraverseResult): {
+  chosenStopCount: number;
+  forcedStopCount: number;
+} {
+  let chosenStopCount = 0;
+  let forcedStopCount = 0;
+
+  for (const expansion of traversalResult.trajectory) {
+    for (const substep of expansion.substeps) {
+      if (substep.chosenAction.type !== "stop_local") {
+        continue;
+      }
+      if (substep.stopTruth === "forced") {
+        forcedStopCount += 1;
+        continue;
+      }
+      chosenStopCount += 1;
+    }
+  }
+
+  return { chosenStopCount, forcedStopCount };
+}
+
+function countDroppedProposalReasons(traversalResult: TraverseResult): {
+  droppedProposalCount: number;
+  droppedProposalReasons: Record<string, number> | null;
+} {
+  const droppedProposalReasons: Record<string, number> = {};
+  let droppedProposalCount = 0;
+
+  for (const expansion of traversalResult.trajectory) {
+    for (const outcome of expansion.proposalOutcomes ?? []) {
+      if (outcome.outcome !== "dropped") {
+        continue;
+      }
+      droppedProposalCount += 1;
+      droppedProposalReasons[outcome.reason] = (droppedProposalReasons[outcome.reason] ?? 0) + 1;
+    }
+  }
+
+  return {
+    droppedProposalCount,
+    droppedProposalReasons: Object.keys(droppedProposalReasons).length > 0 ? droppedProposalReasons : null,
+  };
+}
+
 function buildRouteTrace(params: {
   traversalResult: TraverseResult;
   queryText: string;
@@ -78,6 +124,8 @@ function buildRouteTrace(params: {
     .filter((seed) => seed.selected)
     .map((seed) => seed.nodeId);
   const chosenSeedNodeId = selectedSeedNodeIds.length === 1 ? selectedSeedNodeIds[0] : null;
+  const { chosenStopCount, forcedStopCount } = countStopTruths(params.traversalResult);
+  const { droppedProposalCount, droppedProposalReasons } = countDroppedProposalReasons(params.traversalResult);
   const selectionSubstepCount = params.traversalResult.trajectory.reduce(
     (count, expansion) => count + expansion.substeps.length,
     0,
@@ -110,7 +158,7 @@ function buildRouteTrace(params: {
       sourceUris: [...new Set(injectedNodeSummaries.flatMap((node) => node.sourceUri ? [node.sourceUri] : []))],
     },
     selectionMetadata: {
-      traceSliceVersion: 2,
+      traceSliceVersion: 3,
       queryChars: params.queryText.length,
       budgetChars: params.budgetChars,
       maxHops: params.maxHops,
@@ -130,6 +178,10 @@ function buildRouteTrace(params: {
       embeddingMs: params.embeddingMs,
       totalQueryMs: params.totalQueryMs,
       queryEmbeddingSource: params.queryEmbeddingSource,
+      chosenStopCount,
+      forcedStopCount,
+      droppedProposalCount,
+      droppedProposalReasons,
     },
   };
 }

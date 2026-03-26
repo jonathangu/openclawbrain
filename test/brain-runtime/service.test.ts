@@ -2,6 +2,8 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
+import { BrainGraph } from "../../src/brain-core/graph.js";
+import type { BrainEdge, BrainNode } from "../../src/brain-core/types.js";
 import { BrainAssemblerExtension } from "../../src/brain-runtime/assembler-extension.js";
 import { BrainService } from "../../src/brain-runtime/service.js";
 import type { LcmDependencies } from "../../src/types.js";
@@ -30,6 +32,40 @@ function embed(text: string): Float32Array {
     return new Float32Array([1, 0, 1]);
   }
   return new Float32Array([0.5, 0.5, 0]);
+}
+
+function makeRuntimeNode(id: string, embedding: Float32Array, tokenCount = 100): BrainNode {
+  return {
+    id,
+    kind: "chunk",
+    content: `node ${id}`,
+    embedding,
+    sourceUri: "test.md",
+    trust: "scanner",
+    tags: [],
+    tokenCount,
+    metadata: {},
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+}
+
+function makeRuntimeEdge(
+  source: string,
+  target: string,
+  kind: BrainEdge["kind"] = "learned",
+  weight = 1,
+): BrainEdge {
+  return {
+    source,
+    target,
+    kind,
+    weight,
+    prior: 1,
+    metadata: {},
+    decayedAt: Date.now(),
+    createdAt: Date.now(),
+  };
 }
 
 function createDeps(
@@ -181,17 +217,23 @@ describe("BrainService", () => {
         }),
       ],
       selectionMetadata: expect.objectContaining({
-        traceSliceVersion: 2,
+        traceSliceVersion: 3,
         budgetChars: 4000,
         maxHops: 8,
         firedCount: result?.fired.length,
         queryEmbeddingSource: "provided",
+        chosenStopCount: expect.any(Number),
+        forcedStopCount: expect.any(Number),
+        droppedProposalCount: 0,
+        droppedProposalReasons: null,
       }),
     });
     expect(trace?.routeTrace?.requestDigest).toMatch(/^[a-f0-9]{16}$/);
     expect(trace?.routeTrace?.candidateNodeIds).toContain(result?.fired[0]?.nodeId ?? "");
     expect(trace?.routeTrace?.sourceSummary.kinds).toMatchObject({ chunk: 1 });
     expect(trace?.routeTrace?.sourceSummary.sourceUris[0]).toContain("PLAYBOOK.md");
+    expect(trace?.routeTrace?.selectionMetadata.chosenStopCount).toBe(0);
+    expect(trace?.routeTrace?.selectionMetadata.forcedStopCount ?? 0).toBeGreaterThan(0);
     const status = await service.status();
     expect(status.currentPackVersion).toBe(1);
     expect(status.routeTraceCount).toBe(1);
@@ -201,7 +243,72 @@ describe("BrainService", () => {
       budgetChars: 4000,
       totalQueryMs: expect.any(Number),
       queryEmbeddingSource: "provided",
+      chosenStopCount: expect.any(Number),
+      forcedStopCount: expect.any(Number),
+      droppedProposalCount: 0,
+      droppedProposalReasons: null,
     }));
+  });
+
+  it("persists trace-v3 dropped proposal reasons from traversal into stored traces", async () => {
+    const brainRoot = makeTempDir("openclawbrain-trace-v3-state-");
+    const service = new BrainService({
+      deps: createDeps(brainRoot),
+    });
+    const graph = new BrainGraph();
+    graph.addNode(makeRuntimeNode("a", new Float32Array([1, 0, 0])));
+    graph.addNode(makeRuntimeNode("b", new Float32Array([0, 1, 0]), 80));
+    graph.addEdge(makeRuntimeEdge("a", "b"));
+    (service as unknown as { servingGraph: BrainGraph }).servingGraph = graph;
+    vi.spyOn(Math, "random").mockReturnValue(0);
+
+    const originalGetNode = graph.getNode.bind(graph);
+    let bCalls = 0;
+    vi.spyOn(graph, "getNode").mockImplementation((nodeId: string) => {
+      const node = originalGetNode(nodeId);
+      if (nodeId !== "b") {
+        return node;
+      }
+      bCalls += 1;
+      return bCalls === 3 ? undefined : node;
+    });
+
+    const result = await service.query({
+      conversationId: 99,
+      queryText: "trace-v3 missing target",
+      budgetChars: 4000,
+      queryEmbedding: new Float32Array([1, 0, 0]),
+    });
+
+    expect(result).not.toBeNull();
+    expect(result?.trace.routeTrace?.selectionMetadata).toMatchObject({
+      traceSliceVersion: 3,
+      chosenStopCount: 0,
+      forcedStopCount: 2,
+      droppedProposalCount: 1,
+      droppedProposalReasons: {
+        missing_target_node: 1,
+      },
+    });
+    const branchExpansion = result?.trace.trajectory.find((expansion) => expansion.sourceNodeId === "a");
+    expect(branchExpansion).toMatchObject({
+      terminationReason: "missing_target_node",
+      proposalOutcomes: [
+        expect.objectContaining({
+          targetNodeId: "b",
+          outcome: "dropped",
+          reason: "missing_target_node",
+        }),
+      ],
+    });
+
+    const storedTrace = await service.getTrace(result?.trace.id);
+    expect(storedTrace?.routeTrace?.selectionMetadata).toMatchObject({
+      droppedProposalCount: 1,
+      droppedProposalReasons: {
+        missing_target_node: 1,
+      },
+    });
   });
 
   it("surfaces the active retrieval controls in status", async () => {

@@ -153,7 +153,7 @@ describe("BrainService observations", () => {
 
     const observation = (
       service as unknown as {
-        store: { getObservationForEpisode: (episodeId: string) => Record<string, unknown> | null };
+        store: { getObservationForEpisode: (episodeId: string) => BrainObservation | null };
       }
     ).store.getObservationForEpisode(result?.episode.id ?? "");
 
@@ -168,7 +168,25 @@ describe("BrainService observations", () => {
         }),
       ],
       status: "pending_followup",
+      routeMetadata: {
+        selectionMetadata: {
+          traceSliceVersion: 3,
+          chosenStopCount: 0,
+          forcedStopCount: expect.any(Number),
+          droppedProposalCount: 0,
+          droppedProposalReasons: null,
+        },
+      },
     });
+    const teacherInput = materializeTeacherLabelInput(observation);
+    expect(teacherInput?.routeMetadata.selectionMetadata).toMatchObject({
+      traceSliceVersion: 3,
+      chosenStopCount: 0,
+      forcedStopCount: expect.any(Number),
+      droppedProposalCount: 0,
+      droppedProposalReasons: null,
+    });
+    expect((teacherInput?.routeMetadata.selectionMetadata?.forcedStopCount ?? 0)).toBeGreaterThan(0);
   });
 
   it("persists exact provenance columns from the runtime truth path into observations and teacher input", async () => {

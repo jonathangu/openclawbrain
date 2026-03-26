@@ -245,6 +245,50 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
     expect(updates[0]?.delta).toBeLessThan(0);
   });
 
+  it("does not emit learned stop_local updates for explicitly forced stops", () => {
+    const stopExpansion: TrajectoryExpansion = {
+      sourceNodeId: "a",
+      expansionIndex: 0,
+      frontierBefore: ["a"],
+      frontierAfter: [],
+      budgetBefore: 1000,
+      budgetAfter: 1000,
+      substeps: [
+        {
+          stateSnapshot: {
+            sourceNodeId: "a",
+            expansionIndex: 0,
+            selectionIndex: 0,
+            budgetRemaining: 1000,
+            initialBudget: 1000,
+            reservedTokenCost: 0,
+            maxHops: 8,
+            frontierSize: 0,
+            frontierNodeIds: [],
+            visitedCount: 0,
+            firedCount: 0,
+          },
+          candidates: [
+            { action: { type: "traverse", targetNodeId: "b" }, score: 0.2, probability: 0.2 },
+            { action: { type: "stop_local" }, score: 0.8, probability: 0.8 },
+          ],
+          chosenAction: { type: "stop_local" },
+          chosenActionProbability: 0.8,
+          stopProbability: 0.8,
+          stopTruth: "forced",
+          stopReason: "frontier_cap",
+        },
+      ],
+      selectedTargets: [],
+      acceptedTargets: [],
+      vetoedTargets: [],
+      terminationReason: "frontier_cap",
+    };
+
+    const updates = computeReinforceUpdates(makeEpisode([stopExpansion], 1.0), 0.1, 0.0);
+    expect(updates).toEqual([]);
+  });
+
   it("does not emit fake stop_local updates when STOP_LOCAL is forced", () => {
     const updates = computeReinforceUpdates(makeEpisode([{
       sourceNodeId: "a",

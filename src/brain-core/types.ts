@@ -110,6 +110,23 @@ export type TraversalAction =
   | { type: "traverse"; targetNodeId: string; seedScore?: number }
   | { type: "stop_local" };
 
+export type TrajectoryStopTruth = "chosen" | "forced";
+
+export type TrajectoryStopReason =
+  | "policy_stop"
+  | "fanout_cap"
+  | "frontier_cap"
+  | "selection_budget_exhausted"
+  | "no_traversable_candidates"
+  | "missing_target_node"
+  | "interrupt";
+
+export interface TrajectoryProposalOutcome {
+  targetNodeId: string;
+  outcome: "accepted" | "vetoed" | "dropped";
+  reason: string;
+}
+
 export interface SeedScore {
   nodeId: string;
   priorScore: number;
@@ -178,6 +195,8 @@ export interface TrajectorySubstep {
   chosenAction: TraversalAction;
   chosenActionProbability: number;
   stopProbability: number;
+  stopTruth?: TrajectoryStopTruth;
+  stopReason?: TrajectoryStopReason;
 }
 
 export type TrajectoryStep = TrajectorySubstep;
@@ -193,6 +212,8 @@ export interface TrajectoryExpansion {
   selectedTargets: string[];
   acceptedTargets: string[];
   vetoedTargets: Array<{ targetNodeId: string; reason: string }>;
+  proposalOutcomes?: TrajectoryProposalOutcome[];
+  terminationReason?: TrajectoryStopReason | null;
 }
 
 // ═══════════════════════════════════════════
@@ -577,6 +598,14 @@ export interface DecisionRouteTrace {
     embeddingMs: number | null;
     totalQueryMs: number | null;
     queryEmbeddingSource: "provided" | "runtime";
+    chosenStopCount?: number | null;
+    forcedStopCount?: number | null;
+    droppedProposalCount?: number | null;
+    droppedProposalReasons?: Record<string, number> | null;
+    queryInterrupted?: boolean | null;
+    interruptionStage?: "embedding" | "query" | "injection" | null;
+    interruptionReason?: string | null;
+    servedPartial?: boolean | null;
     compileElapsedMs?: number | null;
     compileDeadlineMs?: number | null;
     compileDeadlineHit?: boolean | null;

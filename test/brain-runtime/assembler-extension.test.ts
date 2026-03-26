@@ -142,7 +142,7 @@ function makeStructuredTraversalResult(): TraversalResult {
           sourceUris: ["PLAYBOOK.md", "docs/deploy.md"],
         },
         selectionMetadata: {
-          traceSliceVersion: 2,
+          traceSliceVersion: 3,
           queryChars: 29,
           budgetChars: 1024,
           maxHops: 8,

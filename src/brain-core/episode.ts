@@ -51,6 +51,10 @@ export function replayEpisode(
 
   for (const expansion of episode.trajectory) {
     for (const substep of expansion.substeps) {
+      if (substep.chosenAction.type === "stop_local" && substep.stopTruth === "forced") {
+        continue;
+      }
+
       const actions = substep.candidates.map((candidate) => candidate.action);
       const state = {
         sourceNodeId: expansion.sourceNodeId,

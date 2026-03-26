@@ -17,6 +17,8 @@ import type {
   TraversalState,
   TraversalAction,
   TrajectoryExpansion,
+  TrajectoryProposalOutcome,
+  TrajectoryStopReason,
   TrajectorySubstep,
   PolicyParams,
   NodeKind,
@@ -173,18 +175,70 @@ export function traverse(options: TraverseOptions): TraverseResult {
     const selectedTargets: string[] = [];
     const acceptedTargets: string[] = [];
     const vetoedTargets: Array<{ targetNodeId: string; reason: string }> = [];
+    const proposalOutcomes: TrajectoryProposalOutcome[] = [];
+    let terminationReason: TrajectoryStopReason | null = null;
 
     state.sourceNodeId = sourceNodeId;
     state.reservedTokenCost = 0;
+
+    const buildStateSnapshot = (selectionIndex: number): TrajectorySubstep["stateSnapshot"] => ({
+      sourceNodeId,
+      expansionIndex,
+      selectionIndex,
+      budgetRemaining: state.budgetRemaining,
+      initialBudget: state.initialBudget,
+      reservedTokenCost: state.reservedTokenCost,
+      maxHops: state.maxHops,
+      frontierSize: state.frontier.length,
+      frontierNodeIds: [...state.frontier],
+      visitedCount: state.visited.size,
+      firedCount: state.fired.length,
+    });
+
+    const buildTrajectoryCandidates = (
+      distribution: Array<{ action: TraversalAction; score: number; probability: number }>,
+    ): TrajectorySubstep["candidates"] => (
+      distribution.map((entry) => ({
+        action: entry.action,
+        score: entry.score,
+        probability: entry.probability,
+        priorScore: entry.action.type === "traverse" && sourceNodeId === null ? entry.action.seedScore : undefined,
+        learnedSeedWeight: entry.action.type === "traverse" && sourceNodeId === null
+          ? graph.getSeedWeight(entry.action.targetNodeId)
+          : undefined,
+      }))
+    );
+
+    const appendForcedStopSubstep = (selectionIndex: number, stopReason: TrajectoryStopReason): void => {
+      const stopDistribution = softmaxPolicy([{ type: "stop_local" }], state, graph, params);
+      const stopProbability = stopDistribution[0]?.probability ?? 1;
+      substeps.push({
+        stateSnapshot: buildStateSnapshot(selectionIndex),
+        candidates: buildTrajectoryCandidates(stopDistribution),
+        chosenAction: { type: "stop_local" },
+        chosenActionProbability: stopProbability,
+        stopProbability,
+        stopTruth: "forced",
+        stopReason,
+      });
+      terminationReason = stopReason;
+    };
 
     for (let selectionIndex = 0; ; selectionIndex++) {
       const fanoutCapReached = selectedTargets.length >= maxFanoutPerNode;
       const frontierCapReached = state.frontier.length + selectedTargets.length >= maxFrontierSize;
       const budgetCapReached = state.reservedTokenCost >= state.budgetRemaining;
-
+      let forcedStopReason: TrajectoryStopReason | null = null;
       let actions: TraversalAction[];
-      if (fanoutCapReached || frontierCapReached || budgetCapReached) {
+      if (fanoutCapReached) {
         actions = [{ type: "stop_local" }];
+        forcedStopReason = "fanout_cap";
+      } else if (frontierCapReached) {
+        actions = [{ type: "stop_local" }];
+        forcedStopReason = "frontier_cap";
+      } else if (budgetCapReached) {
+        actions = [{ type: "stop_local" }];
+        forcedStopReason = "selection_budget_exhausted";
       } else {
         const affordableBudget = Math.max(0, state.budgetRemaining - state.reservedTokenCost);
         actions = graph.getActionSet(sourceNodeId, state.visited, {
@@ -200,6 +254,7 @@ export function traverse(options: TraverseOptions): TraverseResult {
 
         if (!actions.some((action) => action.type === "traverse")) {
           actions = [{ type: "stop_local" }];
+          forcedStopReason = "no_traversable_candidates";
         }
       }
 
@@ -212,39 +267,32 @@ export function traverse(options: TraverseOptions): TraverseResult {
 
       const stopProbability = distribution.find((entry) => entry.action.type === "stop_local")?.probability ?? 0;
       substeps.push({
-        stateSnapshot: {
-          sourceNodeId,
-          expansionIndex,
-          selectionIndex,
-          budgetRemaining: state.budgetRemaining,
-          initialBudget: state.initialBudget,
-          reservedTokenCost: state.reservedTokenCost,
-          maxHops: state.maxHops,
-          frontierSize: state.frontier.length,
-          frontierNodeIds: [...state.frontier],
-          visitedCount: state.visited.size,
-          firedCount: state.fired.length,
-        },
-        candidates: distribution.map((entry) => ({
-          action: entry.action,
-          score: entry.score,
-          probability: entry.probability,
-          priorScore: entry.action.type === "traverse" && sourceNodeId === null ? entry.action.seedScore : undefined,
-          learnedSeedWeight: entry.action.type === "traverse" && sourceNodeId === null
-            ? graph.getSeedWeight(entry.action.targetNodeId)
-            : undefined,
-        })),
+        stateSnapshot: buildStateSnapshot(selectionIndex),
+        candidates: buildTrajectoryCandidates(distribution),
         chosenAction: sampled.action,
         chosenActionProbability: sampled.probability,
         stopProbability,
+        stopTruth: sampled.action.type === "stop_local"
+          ? (forcedStopReason ? "forced" : "chosen")
+          : undefined,
+        stopReason: sampled.action.type === "stop_local"
+          ? (forcedStopReason ?? "policy_stop")
+          : undefined,
       });
 
       if (sampled.action.type === "stop_local") {
+        terminationReason = forcedStopReason ?? "policy_stop";
         break;
       }
 
       const targetNode = graph.getNode(sampled.action.targetNodeId);
       if (!targetNode) {
+        proposalOutcomes.push({
+          targetNodeId: sampled.action.targetNodeId,
+          outcome: "dropped",
+          reason: "missing_target_node",
+        });
+        appendForcedStopSubstep(selectionIndex + 1, "missing_target_node");
         break;
       }
 
@@ -252,9 +300,24 @@ export function traverse(options: TraverseOptions): TraverseResult {
       state.reservedTokenCost += targetNode.tokenCount;
     }
 
-    for (const targetNodeId of selectedTargets) {
+    for (let index = 0; index < selectedTargets.length; index++) {
+      const targetNodeId = selectedTargets[index];
       const targetNode = graph.getNode(targetNodeId);
-      if (!targetNode || state.visited.has(targetNodeId)) {
+      if (!targetNode) {
+        proposalOutcomes.push({
+          targetNodeId,
+          outcome: "dropped",
+          reason: "missing_target_node",
+        });
+        continue;
+      }
+
+      if (state.visited.has(targetNodeId)) {
+        proposalOutcomes.push({
+          targetNodeId,
+          outcome: "dropped",
+          reason: "already_visited",
+        });
         continue;
       }
 
@@ -262,10 +325,35 @@ export function traverse(options: TraverseOptions): TraverseResult {
         const reason = graph.getVetoReason(sourceNodeId, targetNodeId) ?? "inhibitory";
         vetoedTargets.push({ targetNodeId, reason });
         vetoedNodes.push({ nodeId: targetNodeId, reason });
+        proposalOutcomes.push({
+          targetNodeId,
+          outcome: "vetoed",
+          reason,
+        });
         continue;
       }
 
-      if (state.frontier.length >= maxFrontierSize || targetNode.tokenCount > state.budgetRemaining) {
+      if (state.frontier.length >= maxFrontierSize) {
+        for (const droppedTargetNodeId of selectedTargets.slice(index)) {
+          proposalOutcomes.push({
+            targetNodeId: droppedTargetNodeId,
+            outcome: "dropped",
+            reason: "frontier_cap",
+          });
+        }
+        terminationReason ??= "frontier_cap";
+        break;
+      }
+
+      if (targetNode.tokenCount > state.budgetRemaining) {
+        for (const droppedTargetNodeId of selectedTargets.slice(index)) {
+          proposalOutcomes.push({
+            targetNodeId: droppedTargetNodeId,
+            outcome: "dropped",
+            reason: "selection_budget_exhausted",
+          });
+        }
+        terminationReason ??= "selection_budget_exhausted";
         break;
       }
 
@@ -274,6 +362,11 @@ export function traverse(options: TraverseOptions): TraverseResult {
       state.fired.push(targetNodeId);
       state.budgetRemaining -= targetNode.tokenCount;
       acceptedTargets.push(targetNodeId);
+      proposalOutcomes.push({
+        targetNodeId,
+        outcome: "accepted",
+        reason: "accepted",
+      });
       firedNodes.push({
         nodeId: targetNode.id,
         kind: targetNode.kind,
@@ -293,6 +386,8 @@ export function traverse(options: TraverseOptions): TraverseResult {
       selectedTargets,
       acceptedTargets,
       vetoedTargets,
+      proposalOutcomes,
+      terminationReason,
     };
 
     state.sourceNodeId = null;
