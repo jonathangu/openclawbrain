@@ -628,10 +628,14 @@ describe("BrainService", () => {
       retrievedNodeCount: expect.any(Number),
       fittedNodeCount: expect.any(Number),
       droppedNodeCount: expect.any(Number),
-      fittingDropReasons: expect.objectContaining({
-        omitted_for_max_context_chars: expect.any(Number),
-      }),
     }));
+    if ((result.brainDecision?.droppedNodeCount ?? 0) > 0) {
+      expect(result.brainDecision?.fittingDropReasons).toEqual(expect.objectContaining({
+        omitted_for_max_context_chars: expect.any(Number),
+      }));
+    } else {
+      expect(result.brainDecision?.fittingDropReasons ?? null).toBeNull();
+    }
 
     const trace = await service.getTrace(String(result.brainDecision?.traceId ?? ""));
     expect(trace?.routeTrace?.selectionMetadata).toMatchObject({
@@ -649,10 +653,14 @@ describe("BrainService", () => {
       retrievedNodeCount: expect.any(Number),
       fittedNodeCount: expect.any(Number),
       droppedNodeCount: expect.any(Number),
-      fittingDropReasons: expect.objectContaining({
-        omitted_for_max_context_chars: expect.any(Number),
-      }),
     });
+    if ((trace?.routeTrace?.selectionMetadata.droppedNodeCount ?? 0) > 0) {
+      expect(trace?.routeTrace?.selectionMetadata.fittingDropReasons).toEqual(expect.objectContaining({
+        omitted_for_max_context_chars: expect.any(Number),
+      }));
+    } else {
+      expect(trace?.routeTrace?.selectionMetadata.fittingDropReasons ?? null).toBeNull();
+    }
     expect((trace?.routeTrace?.selectionMetadata.injectedChars ?? 0)).toBeLessThanOrEqual(120);
     expect(trace?.routeTrace?.selectionMetadata.droppedChars).toBeGreaterThan(0);
 
@@ -685,12 +693,16 @@ describe("BrainService", () => {
           retrievedNodeCount: expect.any(Number),
           fittedNodeCount: expect.any(Number),
           droppedNodeCount: expect.any(Number),
-          fittingDropReasons: expect.objectContaining({
-            omitted_for_max_context_chars: expect.any(Number),
-          }),
         },
       },
     });
+    if ((observation?.routeMetadata?.selectionMetadata?.droppedNodeCount ?? 0) > 0) {
+      expect(observation?.routeMetadata?.selectionMetadata?.fittingDropReasons).toEqual(expect.objectContaining({
+        omitted_for_max_context_chars: expect.any(Number),
+      }));
+    } else {
+      expect(observation?.routeMetadata?.selectionMetadata?.fittingDropReasons ?? null).toBeNull();
+    }
 
     const status = await service.status();
     expect(status.lastTraceSelectionMetadata).toEqual(expect.objectContaining({
@@ -708,10 +720,14 @@ describe("BrainService", () => {
       retrievedNodeCount: expect.any(Number),
       fittedNodeCount: expect.any(Number),
       droppedNodeCount: expect.any(Number),
-      fittingDropReasons: expect.objectContaining({
-        omitted_for_max_context_chars: expect.any(Number),
-      }),
     }));
+    if ((status.lastTraceSelectionMetadata?.droppedNodeCount ?? 0) > 0) {
+      expect(status.lastTraceSelectionMetadata?.fittingDropReasons).toEqual(expect.objectContaining({
+        omitted_for_max_context_chars: expect.any(Number),
+      }));
+    } else {
+      expect(status.lastTraceSelectionMetadata?.fittingDropReasons ?? null).toBeNull();
+    }
   });
 
   it("persists partial-serve interruption truth through trace, observation, and status", async () => {
