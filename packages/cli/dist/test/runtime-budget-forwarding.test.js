@@ -39,4 +39,47 @@ test("serve-time operator audit code records explicit maxContextChars", () => {
 
   assert.match(runtimeCoreSource, /syntheticTurn\.maxContextChars = input\.compileInput\.maxContextChars;/);
   assert.match(learningSpineSource, /maxContextChars: input\.turn\.maxContextChars \?\? null/);
+  assert.match(learningSpineSource, /activePackGraphChecksum: activePack\?\.manifest\.payloadChecksums\.graph \?\? null/);
+  assert.match(learningSpineSource, /selectionDigest: input\.compileResult\.ok \? input\.compileResult\.compileResponse\.diagnostics\.selectionDigest : null/);
+  assert.match(
+    learningSpineSource,
+    /structuralSignals: compactStructuralSignals\(input\.compileResult\.ok \? input\.compileResult\.compileResponse\.structuralSignals : null\)/,
+  );
+  assert.doesNotMatch(learningSpineSource, /structuralSignals:\s*null/);
+});
+
+test("serve-time operator audit code keeps compact structural stop-truth signals", () => {
+  const learningSpineSource = readFileSync(path.join(__dirname, "..", "src", "learning-spine.js"), "utf8");
+  const helperStart = learningSpineSource.indexOf("function isPlainObject");
+  const helperEnd = learningSpineSource.indexOf("function isStableKernelContextBlock");
+
+  assert.notEqual(helperStart, -1);
+  assert.notEqual(helperEnd, -1);
+  assert.ok(helperEnd > helperStart);
+
+  const helperSource = learningSpineSource.slice(helperStart, helperEnd);
+  const compactStructuralSignals = new Function(
+    `const roundNumber = (value) => Math.round(value * 10_000) / 10_000; ${helperSource}; return compactStructuralSignals;`,
+  )();
+
+  const compacted = compactStructuralSignals({
+    chosenStopCount: 0,
+    forcedStopCount: 2,
+    droppedProposalCount: 1,
+    droppedProposalReasons: {
+      missing_target_node: 1,
+    },
+    graphWalkPathNodeIds: ["node-a", "node-b"],
+    ignored: new Map([["x", 1]]),
+  });
+
+  assert.deepEqual(compacted, {
+    chosenStopCount: 0,
+    forcedStopCount: 2,
+    droppedProposalCount: 1,
+    droppedProposalReasons: {
+      missing_target_node: 1,
+    },
+    graphWalkPathNodeIds: ["node-a", "node-b"],
+  });
 });

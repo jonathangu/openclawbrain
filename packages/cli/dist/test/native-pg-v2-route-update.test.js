@@ -268,3 +268,40 @@ test("native V2 remap tolerates missing optional block-id arrays during full rep
     assert.equal(router.training.noOpReason, null);
     assert.ok(router.policyUpdates.some((update) => update.delta !== 0), "expected nonzero native V2 delta even when optional arrays are absent");
 });
+
+test("native V2 route updates do not session-fallback after partial exact interaction provenance misses", (t) => {
+    const { workspace, normalizedEventExport, structuralOps, serveTimeDecision } = buildCrossSurfaceFixture(t);
+    const result = buildCandidatePackFromNormalizedEventExport({
+        packLabel: "native-pg-v2-partial-exact-miss",
+        workspace,
+        normalizedEventExport: buildNormalizedEventExport({
+            interactionEvents: normalizedEventExport.interactionEvents.map((interaction) => interaction.eventId === "evt-i2"
+                ? {
+                    ...interaction,
+                    routeMetadata: {
+                        selectionDigest: "selection-only"
+                    }
+                }
+                : interaction),
+            feedbackEvents: normalizedEventExport.feedbackEvents
+        }),
+        learnedRouting: true,
+        builtAt: "2026-03-22T10:08:00.000Z",
+        structuralOps,
+        pgVersion: "v2",
+        serveTimeDecisions: [serveTimeDecision],
+        baselineState: {
+            movingAverage: 0,
+            count: 0,
+            alpha: 0.1,
+            lastUpdatedAt: "2026-03-22T10:00:00.000Z"
+        }
+    });
+    const router = result.payloads.router;
+    assert.ok(router, "expected learned router artifact");
+    assert.equal(router.training.status, "no_supervision");
+    assert.equal(router.training.supervisionCount, 0);
+    assert.equal(router.training.updateCount, 0);
+    assert.equal(router.policyUpdates.length, 0);
+    assert.match(router.training.noOpReason ?? "", /no outcomes found for serve-time decisions/);
+});

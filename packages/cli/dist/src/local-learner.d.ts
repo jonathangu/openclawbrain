@@ -85,6 +85,12 @@ export interface TeacherObservationBindingStatsV1 {
     totalObservationCount: number;
     nonZeroObservationCount: number;
     skippedZeroRewardCount: number;
+    accounting: {
+        exact: number;
+        heuristic: number;
+        unmatched: number;
+        ambiguous: number;
+    };
     matched: {
         exactDecisionId: number;
         exactSelectionDigest: number;

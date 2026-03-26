@@ -67,6 +67,18 @@ test("serve-time decision matcher prefers exact selection digest plus graph chec
     })), exact);
 });
 
+test("serve-time decision matcher does not timestamp-fallback when selection provenance is partial", () => {
+    const decision = makeDecision({
+        recordId: "decision-partial-selection",
+        recordedAt: "2026-03-20T18:12:00.000Z",
+    });
+    const matcher = createServeTimeDecisionMatcher([decision]);
+    assert.equal(matcher(makeInteraction({
+        selectionDigest: "selection-only",
+        createdAt: "2026-03-20T18:00:00.000Z",
+    })), null);
+});
+
 test("serve-time decision matcher prefers exact compile event ids", () => {
     const exact = makeDecision({
         turnCompileEventId: "evt-exact",
@@ -82,6 +94,40 @@ test("serve-time decision matcher prefers exact compile event ids", () => {
     })), exact);
 });
 
+test("serve-time decision matcher requires explicit compile event ids to resolve uniquely", () => {
+    const first = makeDecision({
+        recordId: "decision-duplicate-a",
+        turnCompileEventId: "evt-duplicate",
+        recordedAt: "2026-03-20T18:00:00.100Z",
+    });
+    const second = makeDecision({
+        recordId: "decision-duplicate-b",
+        turnCompileEventId: "evt-duplicate",
+        recordedAt: "2026-03-20T18:00:00.200Z",
+    });
+    const matcher = createServeTimeDecisionMatcher([first, second]);
+    assert.equal(matcher(makeInteraction({
+        eventId: "evt-other",
+        turnCompileEventId: "evt-duplicate",
+        createdAt: "2026-03-20T18:00:00.150Z",
+    })), null);
+});
+
+test("serve-time decision matcher does not timestamp-fallback when explicit compile event ids miss", () => {
+    const decision = makeDecision({
+        recordId: "decision-explicit-miss",
+        turnCompileEventId: "evt-known",
+        turnCreatedAt: "2026-03-20T18:00:00.000Z",
+        recordedAt: "2026-03-20T18:00:00.000Z",
+    });
+    const matcher = createServeTimeDecisionMatcher([decision]);
+    assert.equal(matcher(makeInteraction({
+        eventId: "evt-other",
+        turnCompileEventId: "evt-missing",
+        createdAt: "2026-03-20T18:00:00.000Z",
+    })), null);
+});
+
 test("serve-time decision matcher falls back to exact timestamp keys when ids drift", () => {
     const decision = makeDecision();
     const matcher = createServeTimeDecisionMatcher([decision]);
@@ -89,6 +135,26 @@ test("serve-time decision matcher falls back to exact timestamp keys when ids dr
         eventId: "evt-other",
         createdAt: "2026-03-20T18:00:00.000Z",
     })), decision);
+});
+
+test("serve-time decision matcher refuses ambiguous exact timestamp-key fallback", () => {
+    const first = makeDecision({
+        recordId: "decision-time-a",
+        turnCompileEventId: null,
+        turnCreatedAt: "2026-03-20T18:00:00.000Z",
+        recordedAt: "2026-03-20T18:00:00.000Z",
+    });
+    const second = makeDecision({
+        recordId: "decision-time-b",
+        turnCompileEventId: null,
+        turnCreatedAt: "2026-03-20T18:00:00.000Z",
+        recordedAt: "2026-03-20T18:00:00.000Z",
+    });
+    const matcher = createServeTimeDecisionMatcher([first, second]);
+    assert.equal(matcher(makeInteraction({
+        eventId: "evt-other",
+        createdAt: "2026-03-20T18:00:00.000Z",
+    })), null);
 });
 
 test("serve-time decision matcher accepts the nearest same-session decision inside the grace window", () => {

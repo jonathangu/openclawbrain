@@ -80,6 +80,14 @@ function readInteractionActivePackGraphChecksum(interaction) {
         ?? undefined;
 }
 
+function readInteractionExplicitTurnCompileEventId(interaction) {
+    return normalizeOptionalString(interaction?.turnCompileEventId)
+        ?? normalizeOptionalString(toRecord(interaction?.routeMetadata)?.turnCompileEventId)
+        ?? normalizeOptionalString(toRecord(interaction?.decisionProvenance)?.turnCompileEventId)
+        ?? normalizeOptionalString(toRecord(interaction?.metadata)?.turnCompileEventId)
+        ?? undefined;
+}
+
 function buildDecisionTimestamps(decision) {
     const timestamps = [];
     const turnCreatedAt = toTimestamp(decision.turnCreatedAt);
@@ -139,8 +147,10 @@ export function createServeTimeDecisionMatcher(decisions, options = {}) {
     const decisionsByRecordId = new Map();
     const decisionsBySelectionDigest = new Map();
     const ambiguousSelectionDigests = new Set();
-    const exactDecisions = new Map();
+    const decisionsByTurnCompileEventId = new Map();
+    const ambiguousTurnCompileEventIds = new Set();
     const fallbackDecisions = new Map();
+    const ambiguousFallbackDecisionKeys = new Set();
     const decisionsBySessionChannel = new Map();
     const globalFallbackDecisions = [];
 
@@ -164,15 +174,27 @@ export function createServeTimeDecisionMatcher(decisions, options = {}) {
             }
         }
         const turnCompileEventId = normalizeOptionalString(decision.turnCompileEventId);
-        if (turnCompileEventId !== undefined && !exactDecisions.has(turnCompileEventId)) {
-            exactDecisions.set(turnCompileEventId, decision);
+        if (turnCompileEventId !== undefined) {
+            if (decisionsByTurnCompileEventId.has(turnCompileEventId)) {
+                decisionsByTurnCompileEventId.delete(turnCompileEventId);
+                ambiguousTurnCompileEventIds.add(turnCompileEventId);
+            }
+            else if (!ambiguousTurnCompileEventIds.has(turnCompileEventId)) {
+                decisionsByTurnCompileEventId.set(turnCompileEventId, decision);
+            }
         }
         for (const candidateKey of [
             buildCandidateKey(decision.sessionId, decision.channel, decision.turnCreatedAt),
             buildCandidateKey(decision.sessionId, decision.channel, decision.recordedAt),
         ]) {
-            if (candidateKey !== null && !fallbackDecisions.has(candidateKey)) {
-                fallbackDecisions.set(candidateKey, decision);
+            if (candidateKey !== null) {
+                if (fallbackDecisions.has(candidateKey)) {
+                    fallbackDecisions.delete(candidateKey);
+                    ambiguousFallbackDecisionKeys.add(candidateKey);
+                }
+                else if (!ambiguousFallbackDecisionKeys.has(candidateKey)) {
+                    fallbackDecisions.set(candidateKey, decision);
+                }
             }
         }
         const sessionChannelKey = buildSessionChannelKey(decision.sessionId, decision.channel);
@@ -203,22 +225,37 @@ export function createServeTimeDecisionMatcher(decisions, options = {}) {
         if (decisionRecordId !== undefined) {
             return decisionsByRecordId.get(decisionRecordId) ?? null;
         }
-        const selectionDigestKey = buildSelectionDigestKey(
-            readInteractionSelectionDigest(interaction),
-            readInteractionActivePackGraphChecksum(interaction),
-        );
+        const interactionSelectionDigest = readInteractionSelectionDigest(interaction);
+        const interactionGraphChecksum = readInteractionActivePackGraphChecksum(interaction);
+        const selectionDigestKey = buildSelectionDigestKey(interactionSelectionDigest, interactionGraphChecksum);
         if (selectionDigestKey !== null) {
             if (ambiguousSelectionDigests.has(selectionDigestKey)) {
                 return null;
             }
             return decisionsBySelectionDigest.get(selectionDigestKey) ?? null;
         }
-        const exact = exactDecisions.get(interaction.eventId);
+        if (interactionSelectionDigest !== undefined || interactionGraphChecksum !== undefined) {
+            return null;
+        }
+        const explicitTurnCompileEventId = readInteractionExplicitTurnCompileEventId(interaction);
+        if (explicitTurnCompileEventId !== undefined) {
+            if (ambiguousTurnCompileEventIds.has(explicitTurnCompileEventId)) {
+                return null;
+            }
+            return decisionsByTurnCompileEventId.get(explicitTurnCompileEventId) ?? null;
+        }
+        const softTurnCompileEventId = normalizeOptionalString(interaction.eventId);
+        const exact = softTurnCompileEventId === undefined || ambiguousTurnCompileEventIds.has(softTurnCompileEventId)
+            ? undefined
+            : decisionsByTurnCompileEventId.get(softTurnCompileEventId);
         if (exact !== undefined) {
             return exact;
         }
         const exactFallbackKey = buildCandidateKey(interaction.sessionId, interaction.channel, interaction.createdAt);
         if (exactFallbackKey !== null) {
+            if (ambiguousFallbackDecisionKeys.has(exactFallbackKey)) {
+                return null;
+            }
             const fallback = fallbackDecisions.get(exactFallbackKey);
             if (fallback !== undefined) {
                 return fallback;

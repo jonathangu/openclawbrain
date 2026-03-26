@@ -23,6 +23,48 @@ function softmax(values) {
     }
     return numerators.map((value) => roundNumber(value / denominator));
 }
+function isPlainObject(value) {
+    if (value === null || typeof value !== "object" || Array.isArray(value)) {
+        return false;
+    }
+    const prototype = Object.getPrototypeOf(value);
+    return prototype === Object.prototype || prototype === null;
+}
+function compactStructuralSignalValue(value, depth = 0) {
+    if (value === null || typeof value === "boolean") {
+        return value;
+    }
+    if (typeof value === "number") {
+        return Number.isFinite(value) ? roundNumber(value) : undefined;
+    }
+    if (typeof value === "string") {
+        return value.length <= 256 ? value : `${value.slice(0, 256)}...`;
+    }
+    if (depth >= 3) {
+        return undefined;
+    }
+    if (Array.isArray(value)) {
+        const compacted = value
+            .slice(0, 32)
+            .map((entry) => compactStructuralSignalValue(entry, depth + 1))
+            .filter((entry) => entry !== undefined);
+        return compacted;
+    }
+    if (!isPlainObject(value)) {
+        return undefined;
+    }
+    const compactedEntries = Object.entries(value)
+        .slice(0, 32)
+        .flatMap(([key, entry]) => {
+        const compacted = compactStructuralSignalValue(entry, depth + 1);
+        return compacted === undefined ? [] : [[key, compacted]];
+    });
+    return compactedEntries.length > 0 ? Object.fromEntries(compactedEntries) : undefined;
+}
+function compactStructuralSignals(value) {
+    const compacted = compactStructuralSignalValue(value);
+    return compacted !== undefined && isPlainObject(compacted) ? compacted : null;
+}
 function isStableKernelContextBlock(block) {
     if (block.id.includes(":event:") || block.id.includes(":teacher:")) {
         return false;
@@ -264,7 +306,7 @@ export function appendServeTimeRouteDecisionLog(input) {
             actionScore: roundNumber(entry.score),
             actionProbability: probabilities[index] ?? 0
         })),
-        structuralSignals: null,
+        structuralSignals: compactStructuralSignals(input.compileResult.ok ? input.compileResult.compileResponse.structuralSignals : null),
         fallbackReason: serveFallbackReason(input.compileResult),
         hotPathTiming: input.compileResult.timing,
         kernelContextCount: selectedKernelContextIds.length,

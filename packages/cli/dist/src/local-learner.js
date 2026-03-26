@@ -6,6 +6,7 @@ import { buildNormalizedEventDedupId, buildNormalizedEventExport, buildNormalize
 import { computePayloadChecksum, loadPack, PACK_LAYOUT, summarizeStructuralGraphEvolution, writePackFile } from "@openclawbrain/pack-format";
 import { buildArtifactProvenance } from "@openclawbrain/provenance";
 import { createWorkspaceMetadata } from "@openclawbrain/workspace-metadata";
+import { createServeTimeDecisionMatcher } from "./teacher-decision-match.js";
 export const DEFAULT_ALWAYS_ON_LEARNING_LIVE_SLICES_PER_CYCLE = 1;
 export const DEFAULT_ALWAYS_ON_LEARNING_BACKFILL_SLICES_PER_CYCLE = 1;
 export const DEFAULT_TEACHER_SUPERVISION_STALE_AFTER_MS = 5 * 60 * 1_000;
@@ -4254,6 +4255,12 @@ function emptyTeacherObservationBindingStats() {
         totalObservationCount: 0,
         nonZeroObservationCount: 0,
         skippedZeroRewardCount: 0,
+        accounting: {
+            exact: 0,
+            heuristic: 0,
+            unmatched: 0,
+            ambiguous: 0
+        },
         matched: {
             exactDecisionId: 0,
             exactSelectionDigest: 0,
@@ -4276,6 +4283,7 @@ function emptyTeacherObservationBindingStats() {
 }
 function summarizeTeacherObservationBindingStats(stats) {
     return [
+        `accounting(exact=${stats.accounting.exact},heuristic=${stats.accounting.heuristic},unmatched=${stats.accounting.unmatched},ambiguous=${stats.accounting.ambiguous})`,
         `matched(exact_decision_id=${stats.matched.exactDecisionId},exact_selection_digest=${stats.matched.exactSelectionDigest},turn_compile_event_id=${stats.matched.turnCompileEventId},legacy_heuristic=${stats.matched.legacyHeuristic})`,
         `unmatched(exact_decision_id=${stats.unmatched.exactDecisionId},exact_selection_digest=${stats.unmatched.exactSelectionDigest},turn_compile_event_id=${stats.unmatched.turnCompileEventId},legacy_heuristic=${stats.unmatched.legacyHeuristic})`,
         `ambiguous(exact_decision_id=${stats.ambiguous.exactDecisionId},exact_selection_digest=${stats.ambiguous.exactSelectionDigest},turn_compile_event_id=${stats.ambiguous.turnCompileEventId},legacy_heuristic=${stats.ambiguous.legacyHeuristic})`,
@@ -4365,8 +4373,7 @@ function resolveTeacherObservationDecisionMatch(decisions, observation, indexes)
             ? { kind: "unmatched", mode: "exactSelectionDigest" }
             : { kind: "matched", mode: "exactSelectionDigest", decision };
     }
-    if (normalizeObservationOptionalString(observation.selectionDigest) !== null
-        || normalizeObservationOptionalString(observation.activePackGraphChecksum) !== null) {
+    if (normalizeObservationOptionalString(observation.selectionDigest) !== null) {
         return { kind: "unmatched", mode: "exactSelectionDigest" };
     }
     const turnCompileEventId = normalizeObservationOptionalString(observation.turnCompileEventId);
@@ -4401,12 +4408,20 @@ function joinDecisionsWithTeacherObservationOutcomes(decisions, observationOutco
         stats.nonZeroObservationCount += 1;
         const match = resolveTeacherObservationDecisionMatch(decisions, observation, indexes);
         if (match.kind === "unmatched") {
+            stats.accounting.unmatched += 1;
             stats.unmatched[match.mode] += 1;
             continue;
         }
         if (match.kind === "ambiguous") {
+            stats.accounting.ambiguous += 1;
             stats.ambiguous[match.mode] += 1;
             continue;
+        }
+        if (match.mode === "legacyHeuristic") {
+            stats.accounting.heuristic += 1;
+        }
+        else {
+            stats.accounting.exact += 1;
         }
         stats.matched[match.mode] += 1;
         const current = outcomes.get(match.decision.recordId) ?? 0;
@@ -4426,149 +4441,7 @@ export function joinDecisionsWithFeedback(decisions, eventExport, maxDelayMs = 3
         return outcomes;
     }
     const normalizeOptionalString = (value) => typeof value === "string" && value.trim().length > 0 ? value.trim() : undefined;
-    const toTimestamp = (value) => {
-        const normalized = normalizeOptionalString(value);
-        if (normalized === undefined) {
-            return null;
-        }
-        const parsed = Date.parse(normalized);
-        return Number.isFinite(parsed) ? parsed : null;
-    };
-    const buildSessionChannelKey = (sessionId, channel) => {
-        const normalizedSessionId = normalizeOptionalString(sessionId);
-        const normalizedChannel = normalizeOptionalString(channel);
-        if (normalizedSessionId === undefined || normalizedChannel === undefined) {
-            return null;
-        }
-        return `${normalizedSessionId}|${normalizedChannel}`;
-    };
-    const buildCandidateKey = (sessionId, channel, createdAt) => {
-        const sessionChannelKey = buildSessionChannelKey(sessionId, channel);
-        const normalizedCreatedAt = normalizeOptionalString(createdAt);
-        if (sessionChannelKey === null || normalizedCreatedAt === undefined) {
-            return null;
-        }
-        return `${sessionChannelKey}|${normalizedCreatedAt}`;
-    };
-    const buildDecisionTimestamps = (decision) => {
-        const timestamps = [];
-        const turnCreatedAt = toTimestamp(decision.turnCreatedAt);
-        const recordedAt = toTimestamp(decision.recordedAt);
-        if (turnCreatedAt !== null) {
-            timestamps.push(turnCreatedAt);
-        }
-        if (recordedAt !== null && !timestamps.includes(recordedAt)) {
-            timestamps.push(recordedAt);
-        }
-        return timestamps;
-    };
-    const operationalPatterns = [
-        /^NO_REPLY$/i,
-        /^HEARTBEAT_OK$/i,
-        /^read heartbeat\.md if it exists/i,
-        /^a new session was started via \/new or \/reset\./i,
-        /\[cron:[a-f0-9-]+\s/i,
-        /\[system message\]\s*\[sessionid:/i,
-    ];
-    const isOperationalDecision = (decision) => {
-        const userMessage = normalizeOptionalString(decision.userMessage);
-        if (userMessage === undefined) {
-            return true;
-        }
-        return operationalPatterns.some((pattern) => pattern.test(userMessage));
-    };
-    const selectNearestDecision = (entries, interactionAt) => {
-        const candidates = entries
-            .map((entry) => {
-                const deltas = entry.timestamps.map((timestamp) => Math.abs(timestamp - interactionAt));
-                const bestDelta = deltas.length === 0 ? null : Math.min(...deltas);
-                return bestDelta === null || bestDelta > maxDelayMs
-                    ? null
-                    : {
-                        decision: entry.decision,
-                        deltaMs: bestDelta,
-                        recordedAt: toTimestamp(entry.decision.recordedAt) ?? 0,
-                    };
-            })
-            .filter((entry) => entry !== null)
-            .sort((left, right) => {
-                if (left.deltaMs !== right.deltaMs) {
-                    return left.deltaMs - right.deltaMs;
-                }
-                return right.recordedAt - left.recordedAt;
-            });
-        const best = candidates[0] ?? null;
-        const runnerUp = candidates[1] ?? null;
-        if (best === null) {
-            return null;
-        }
-        if (runnerUp !== null && runnerUp.deltaMs === best.deltaMs && runnerUp.decision !== best.decision) {
-            return null;
-        }
-        return best.decision;
-    };
-    const exactDecisions = new Map();
-    const fallbackDecisions = new Map();
-    const decisionsBySessionChannel = new Map();
-    const globalFallbackDecisions = [];
-    for (const decision of [...decisions].sort((left, right) => Date.parse(right.recordedAt) - Date.parse(left.recordedAt))) {
-        const userMessage = normalizeOptionalString(decision.userMessage);
-        if (userMessage === undefined) {
-            continue;
-        }
-        const turnCompileEventId = normalizeOptionalString(decision.turnCompileEventId);
-        if (turnCompileEventId !== undefined && !exactDecisions.has(turnCompileEventId)) {
-            exactDecisions.set(turnCompileEventId, decision);
-        }
-        for (const candidateKey of [
-            buildCandidateKey(decision.sessionId, decision.channel, decision.turnCreatedAt),
-            buildCandidateKey(decision.sessionId, decision.channel, decision.recordedAt),
-        ]) {
-            if (candidateKey !== null && !fallbackDecisions.has(candidateKey)) {
-                fallbackDecisions.set(candidateKey, decision);
-            }
-        }
-        const sessionChannelKey = buildSessionChannelKey(decision.sessionId, decision.channel);
-        const indexedEntry = {
-            decision,
-            timestamps: buildDecisionTimestamps(decision),
-            operational: isOperationalDecision(decision),
-        };
-        if (sessionChannelKey !== null) {
-            const indexed = decisionsBySessionChannel.get(sessionChannelKey) ?? [];
-            indexed.push(indexedEntry);
-            decisionsBySessionChannel.set(sessionChannelKey, indexed);
-        }
-        if (!indexedEntry.operational) {
-            globalFallbackDecisions.push(indexedEntry);
-        }
-    }
-    const matchInteractionToDecision = (interaction) => {
-        const exact = exactDecisions.get(interaction.eventId);
-        if (exact !== undefined) {
-            return exact;
-        }
-        const exactFallbackKey = buildCandidateKey(interaction.sessionId, interaction.channel, interaction.createdAt);
-        if (exactFallbackKey !== null) {
-            const fallback = fallbackDecisions.get(exactFallbackKey);
-            if (fallback !== undefined) {
-                return fallback;
-            }
-        }
-        const interactionAt = toTimestamp(interaction.createdAt);
-        const sessionChannelKey = buildSessionChannelKey(interaction.sessionId, interaction.channel);
-        if (interactionAt === null) {
-            return null;
-        }
-        if (sessionChannelKey !== null) {
-            const sessionEntries = (decisionsBySessionChannel.get(sessionChannelKey) ?? []).filter((entry) => entry.operational !== true);
-            const sessionMatch = selectNearestDecision(sessionEntries, interactionAt);
-            if (sessionMatch !== null) {
-                return sessionMatch;
-            }
-        }
-        return selectNearestDecision(globalFallbackDecisions, interactionAt);
-    };
+    const matchInteractionToDecision = createServeTimeDecisionMatcher(decisions, { maxTimeDeltaMs: maxDelayMs });
     const interactionById = new Map();
     for (const interaction of eventExport.interactionEvents ?? []) {
         const interactionId = normalizeOptionalString(interaction.eventId);
@@ -4576,7 +4449,7 @@ export function joinDecisionsWithFeedback(decisions, eventExport, maxDelayMs = 3
             interactionById.set(interactionId, interaction);
         }
     }
-    const matchedFeedbackIds = new Set();
+    const consumedFeedbackIds = new Set();
     for (const event of eventExport.feedbackEvents ?? []) {
         const relatedInteractionId = normalizeOptionalString(event.relatedInteractionId);
         if (relatedInteractionId === undefined) {
@@ -4586,6 +4459,8 @@ export function joinDecisionsWithFeedback(decisions, eventExport, maxDelayMs = 3
         if (interaction === undefined) {
             continue;
         }
+        const feedbackId = normalizeOptionalString(event.eventId) ?? `${relatedInteractionId}|${normalizeOptionalString(event.createdAt) ?? 'unknown'}`;
+        consumedFeedbackIds.add(feedbackId);
         const matchedDecision = matchInteractionToDecision(interaction);
         if (matchedDecision === null) {
             continue;
@@ -4597,13 +4472,11 @@ export function joinDecisionsWithFeedback(decisions, eventExport, maxDelayMs = 3
                 outcomes.set(matchedDecision.recordId, reward);
             }
         }
-        const feedbackId = normalizeOptionalString(event.eventId) ?? `${relatedInteractionId}|${normalizeOptionalString(event.createdAt) ?? 'unknown'}`;
-        matchedFeedbackIds.add(feedbackId);
     }
     const feedbackBySession = new Map();
     for (const event of eventExport.feedbackEvents ?? []) {
         const feedbackId = normalizeOptionalString(event.eventId) ?? `${normalizeOptionalString(event.relatedInteractionId) ?? '__none__'}|${normalizeOptionalString(event.createdAt) ?? 'unknown'}`;
-        if (matchedFeedbackIds.has(feedbackId)) {
+        if (consumedFeedbackIds.has(feedbackId)) {
             continue;
         }
         const sessionId = event.sessionId ?? "__none__";

@@ -389,6 +389,12 @@ test("native V2 can learn from teacher-v2 observation outcomes in activation sta
     totalObservationCount: 1,
     nonZeroObservationCount: 1,
     skippedZeroRewardCount: 0,
+    accounting: {
+      exact: 1,
+      heuristic: 0,
+      unmatched: 0,
+      ambiguous: 0
+    },
     matched: {
       exactDecisionId: 1,
       exactSelectionDigest: 0,
@@ -544,6 +550,8 @@ test("native V2 falls back to exact selection digest when decision ids are absen
     },
     activationRoot
   });
+  assert.equal(result.routingBuild.observationBindingStats?.accounting.exact, 1);
+  assert.equal(result.routingBuild.observationBindingStats?.accounting.heuristic, 0);
   assert.equal(result.routingBuild.observationBindingStats?.matched.exactSelectionDigest, 1);
   assert.equal(result.routingBuild.observationBindingStats?.matched.exactDecisionId, 0);
   assert.equal(result.payloads.router?.training.noOpReason, null);
@@ -673,6 +681,8 @@ test("native V2 uses heuristic fallback only for legacy observation rows", (t) =
     },
     activationRoot
   });
+  assert.equal(result.routingBuild.observationBindingStats?.accounting.heuristic, 1);
+  assert.equal(result.routingBuild.observationBindingStats?.accounting.exact, 0);
   assert.equal(result.routingBuild.observationBindingStats?.matched.legacyHeuristic, 1);
   assert.equal(result.routingBuild.observationBindingStats?.matched.exactDecisionId, 0);
   assert.ok((result.payloads.router?.policyUpdates.length ?? 0) > 0);
@@ -809,9 +819,156 @@ test("native V2 records unmatched exact provenance instead of silently falling b
   });
   const router = result.payloads.router;
   assert.ok(router, "expected learned router artifact");
+  assert.equal(result.routingBuild.observationBindingStats?.accounting.unmatched, 1);
+  assert.equal(result.routingBuild.observationBindingStats?.accounting.exact, 0);
   assert.equal(result.routingBuild.observationBindingStats?.unmatched.exactDecisionId, 1);
   assert.equal(result.routingBuild.observationBindingStats?.matched.legacyHeuristic, 0);
   assert.equal(router.training.status, "no_supervision");
   assert.match(router.training.noOpReason ?? "", /unmatched\(exact_decision_id=1/);
+  assert.equal(router.policyUpdates.length, 0);
+});
+
+test("native V2 records ambiguous turn compile ids instead of training on timestamp fallback", (t) => {
+  const workspace = createWorkspace(t);
+  const activationRoot = createActivationRoot(t);
+  const interactionEvents = [
+    {
+      contract: CONTRACT_IDS.interactionEvents,
+      eventId: "evt-dup",
+      agentId: "agent",
+      sessionId: "sess-ambiguous",
+      channel: "cli",
+      sequence: 1,
+      kind: "memory_compiled",
+      createdAt: "2026-03-23T17:00:00.000Z",
+      source: { runtimeOwner: "openclaw", stream: "session.tail" },
+      messageId: "msg-1"
+    }
+  ];
+  const normalizedEventExport = buildNormalizedEventExport({
+    interactionEvents,
+    feedbackEvents: []
+  });
+  const structuralOps = { connect: 3, split: 1, merge: 1, prune: 1 };
+  const servedPack = buildCandidatePackFromNormalizedEventExport({
+    packLabel: "teacher-v2-observation-ambiguous-served",
+    workspace,
+    normalizedEventExport,
+    learnedRouting: false,
+    builtAt: "2026-03-23T17:01:00.000Z",
+    structuralOps
+  });
+  const packId = servedPack.summary.packId;
+  const chosenContextIds = [`${packId}:event:evt-dup`];
+  seedObservationDb(activationRoot, {
+    id: "bo_test_ambiguous",
+    episodeId: "ep_test_ambiguous",
+    queryText: "show me the learned routing context",
+    turnCompileEventId: "evt-dup",
+    activePackId: packId,
+    selectedNodeIds: chosenContextIds,
+    selectedPathNodeIds: chosenContextIds,
+    finalScore: 0.7,
+    createdAt: Date.parse("2026-03-23T17:00:05.000Z")
+  });
+  const baseDecision = {
+    recordType: "serve_time_route_decision",
+    recordedAt: "2026-03-23T17:00:06.000Z",
+    activationRoot,
+    breadcrumbs: {
+      entrypoint: "compileRuntimeContext",
+      invocationSurface: "direct_compile_call",
+      hostEvent: null,
+      installedEntryPath: null,
+      syntheticTurn: false
+    },
+    sessionId: "sess-ambiguous",
+    channel: "cli",
+    userMessage: "show me the learned routing context",
+    turnSequenceStart: 1,
+    turnCompileEventId: "evt-dup",
+    turnCreatedAt: "2026-03-23T17:00:00.000Z",
+    activePackId: packId,
+    activePackBuiltAt: "2026-03-23T17:01:00.000Z",
+    activePackEventExportDigest: servedPack.summary.eventExportDigest,
+    activePackRouterChecksum: null,
+    activePackGraphChecksum: servedPack.manifest.payloadChecksums.graph,
+    routerIdentity: null,
+    usedLearnedRouteFn: true,
+    servedArtifact: null,
+    selectionDigest: null,
+    requestedBudget: {
+      modeRequested: "learned_required",
+      maxContextBlocks: 1,
+      maxContextChars: null
+    },
+    actualBudget: {
+      modeEffective: "learned_required",
+      selectedCount: 1,
+      selectedCharCount: 80,
+      selectedTokenCount: 16
+    },
+    candidateSetIds: chosenContextIds,
+    chosenContextIds,
+    candidateScores: [
+      {
+        blockId: `${packId}:event:evt-dup`,
+        source: "event:dup",
+        selected: true,
+        compactedFrom: [],
+        matchedTokens: ["learned"],
+        routingChannels: ["graph"],
+        channelScores: { graph: 0.9 },
+        routeFnScore: 0.9,
+        actionScore: 0.9,
+        actionProbability: 1,
+        actionLogProbability: 0,
+        traversalScore: 0.9,
+        priority: 1
+      }
+    ],
+    structuralSignals: null,
+    fallbackReason: null,
+    hotPathTiming: { totalMs: 1 },
+    kernelContextCount: 1,
+    brainContextCount: 0,
+    selectedKernelContextIds: chosenContextIds,
+    selectedBrainContextIds: [],
+    promotionLink: null
+  };
+  const result = buildCandidatePackFromNormalizedEventExport({
+    packLabel: "teacher-v2-observation-ambiguous-candidate",
+    workspace,
+    normalizedEventExport,
+    learnedRouting: true,
+    builtAt: "2026-03-23T17:02:00.000Z",
+    structuralOps,
+    pgVersion: "v2",
+    serveTimeDecisions: [
+      {
+        ...baseDecision,
+        recordId: "decision-ambiguous-a",
+      },
+      {
+        ...baseDecision,
+        recordId: "decision-ambiguous-b",
+        recordedAt: "2026-03-23T17:00:06.500Z",
+      }
+    ],
+    baselineState: {
+      movingAverage: 0,
+      count: 0,
+      alpha: 0.1,
+      lastUpdatedAt: "2026-03-23T17:00:00.000Z"
+    },
+    activationRoot
+  });
+  const router = result.payloads.router;
+  assert.ok(router, "expected learned router artifact");
+  assert.equal(result.routingBuild.observationBindingStats?.accounting.ambiguous, 1);
+  assert.equal(result.routingBuild.observationBindingStats?.ambiguous.turnCompileEventId, 1);
+  assert.equal(result.routingBuild.observationBindingStats?.matched.legacyHeuristic, 0);
+  assert.equal(router.training.status, "no_supervision");
+  assert.match(router.training.noOpReason ?? "", /ambiguous\(exact_decision_id=0,exact_selection_digest=0,turn_compile_event_id=1/);
   assert.equal(router.policyUpdates.length, 0);
 });
