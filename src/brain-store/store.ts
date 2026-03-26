@@ -132,6 +132,7 @@ function normalizeObservationSourceSummary(
     kinds: (toRecord(record.kinds) ?? {}) as NonNullable<BrainObservationRouteMetadata["sourceSummary"]>["kinds"],
     trusts: (toRecord(record.trusts) ?? {}) as NonNullable<BrainObservationRouteMetadata["sourceSummary"]>["trusts"],
     sourceUris: toStringArray(record.sourceUris),
+    sourceRefs: toStringArray(record.sourceRefs),
   };
 }
 
@@ -155,6 +156,10 @@ function normalizeObservationRouteMetadata(
     requestDigest: toOptionalString(record.requestDigest),
     activePackId: toOptionalString(record.activePackId),
     routerIdentity: toOptionalString(record.routerIdentity),
+    persistenceMode:
+      record.persistenceMode === "redacted_with_operator_audit"
+        ? "redacted_with_operator_audit"
+        : (record.persistenceMode === "redacted" ? "redacted" : null),
     bindingMode: resolveObservationBindingMode({
       bindingMode: toObservationBindingMode(record.bindingMode),
       serveDecisionRecordId,
@@ -178,6 +183,7 @@ function normalizeObservationRouteMetadata(
     selectedPathNodeIds: toStringArray(record.selectedPathNodeIds),
     selectedSeedNodeIds: toStringArray(record.selectedSeedNodeIds),
     sourceSummary: normalizeObservationSourceSummary(record.sourceSummary),
+    operatorAudit: cloneJsonRecord(record.operatorAudit) as BrainObservationRouteMetadata["operatorAudit"],
     selectionMetadata: normalizeObservationSelectionMetadata(record.selectionMetadata),
   };
 }

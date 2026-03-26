@@ -72,6 +72,7 @@ function createDeps(
         workerHeartbeatTimeoutMs: 5_000,
         workerRestartDelayMs: 100,
         teacherEnabled: false,
+        persistRawSurfaces: false,
         teacherProvider: "",
         teacherModel: "",
     autoUserCorrectionsEnabled: false,

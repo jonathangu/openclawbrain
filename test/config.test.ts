@@ -15,6 +15,7 @@ describe("resolveLcmConfig", () => {
     expect(config.condensedMinFanoutHard).toBe(2);
     expect(config.autocompactDisabled).toBe(false);
     expect(config.pruneHeartbeatOk).toBe(false);
+    expect(config.brain?.persistRawSurfaces).toBe(false);
   });
 
   it("reads values from plugin config", () => {
@@ -28,6 +29,7 @@ describe("resolveLcmConfig", () => {
       brainMaxHops: 9,
       brainMaxFanoutPerNode: 7,
       brainMaxFrontierSize: 19,
+      brainPersistRawSurfaces: true,
       brainMaxSeeds: 13,
       brainSemanticThreshold: 0.82,
       brainShadowMode: true,
@@ -50,6 +52,7 @@ describe("resolveLcmConfig", () => {
     expect(config.brain?.maxHops).toBe(9);
     expect(config.brain?.maxFanoutPerNode).toBe(7);
     expect(config.brain?.maxFrontierSize).toBe(19);
+    expect(config.brain?.persistRawSurfaces).toBe(true);
     expect(config.brain?.maxSeeds).toBe(13);
     expect(config.brain?.semanticThreshold).toBe(0.82);
     expect(config.brain?.shadowMode).toBe(true);
@@ -69,6 +72,7 @@ describe("resolveLcmConfig", () => {
       LCM_INCREMENTAL_MAX_DEPTH: "3",
       LCM_ENABLED: "false",
       LCM_AUTOCOMPACT_DISABLED: "true",
+      OPENCLAWBRAIN_PERSIST_RAW_SURFACES: "true",
     } as NodeJS.ProcessEnv;
     const pluginConfig = {
       contextThreshold: 0.5,
@@ -83,6 +87,7 @@ describe("resolveLcmConfig", () => {
     expect(config.freshTailCount).toBe(64); // env wins
     expect(config.incrementalMaxDepth).toBe(3); // env wins
     expect(config.autocompactDisabled).toBe(true); // env wins
+    expect(config.brain?.persistRawSurfaces).toBe(true); // env wins
   });
 
   it("plugin config fills gaps when env vars are absent", () => {
@@ -174,6 +179,7 @@ describe("resolveLcmConfig", () => {
       "brainMaxHops",
       "brainMaxFanoutPerNode",
       "brainMaxFrontierSize",
+      "brainPersistRawSurfaces",
       "brainMaxSeeds",
       "brainSemanticThreshold",
       "brainShadowMode",

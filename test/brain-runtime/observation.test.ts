@@ -31,7 +31,10 @@ function embed(text: string): Float32Array {
   return new Float32Array([0.5, 0.5, 0]);
 }
 
-function createDeps(brainRoot: string): LcmDependencies {
+function createDeps(
+  brainRoot: string,
+  overrides?: Partial<NonNullable<LcmDependencies["config"]["brain"]>>,
+): LcmDependencies {
   return {
     config: {
       enabled: true,
@@ -71,6 +74,7 @@ function createDeps(brainRoot: string): LcmDependencies {
         workerHeartbeatTimeoutMs: 5_000,
         workerRestartDelayMs: 100,
         teacherEnabled: false,
+        persistRawSurfaces: false,
         teacherProvider: "",
         teacherModel: "",
         autoUserCorrectionsEnabled: false,
@@ -86,6 +90,7 @@ function createDeps(brainRoot: string): LcmDependencies {
         embeddingProvider: "openai",
         embeddingModel: "text-embedding-3-small",
         embeddingBaseUrl: "https://example.invalid/v1",
+        ...overrides,
       },
     },
     complete: vi.fn(async () => ({ content: [{ type: "text", text: "{}" }] })),
@@ -162,12 +167,12 @@ describe("BrainService observations", () => {
 
     expect(observation).toMatchObject({
       traceId: result?.trace.id,
-      queryText: "how do I open a pull request?",
-      assistantResponse: "Use `gh pr create` to open the pull request.",
+      queryText: expect.stringContaining("[redacted query chars="),
+      assistantResponse: expect.stringContaining("[redacted assistant_response chars="),
       toolResults: [
         expect.objectContaining({
           toolName: "bash",
-          output: "{\"ok\":true}",
+          output: expect.stringContaining("[redacted tool_output chars="),
         }),
       ],
       status: "pending_followup",
@@ -190,6 +195,75 @@ describe("BrainService observations", () => {
       droppedProposalReasons: null,
     });
     expect((teacherInput?.routeMetadata.selectionMetadata?.forcedStopCount ?? 0)).toBeGreaterThan(0);
+  });
+
+  it("keeps raw audit detail only when explicitly opted in while model-facing traces stay redacted", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-observation-raw-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-observation-raw-state-");
+    writeFileSync(
+      join(workspaceRoot, "PLAYBOOK.md"),
+      "# Pull Requests\n\nUse gh pr create for pull request workflows.\n",
+      "utf8",
+    );
+
+    const service = new BrainService({ deps: createDeps(brainRoot, { persistRawSurfaces: true }) });
+    await service.init({
+      workspaceRoot,
+      embedFn: async (text) => embed(text),
+    });
+
+    const result = await service.query({
+      conversationId: 61,
+      queryText: "how do I open a pull request?",
+      budgetChars: 4000,
+      queryEmbedding: embed("gh pr create pull request"),
+    });
+
+    await service.recordTurnObservation({
+      episodeId: result?.episode.id,
+      assistantResponse: "Use `gh pr create` to open the pull request.",
+      toolResults: [{
+        sourceRole: "tool",
+        toolCallId: "call_raw_1",
+        toolName: "bash",
+        input: "{\"cmd\":\"gh pr create\"}",
+        output: "{\"ok\":true}",
+        isError: false,
+        excerpt: "{\"ok\":true}",
+      }],
+    });
+
+    const privateService = service as unknown as {
+      store: {
+        getTrace: (traceId: string) => { queryText: string; routeTrace?: { persistenceMode?: string | null; operatorAudit?: { queryText: string; injectedNodeSummaries: Array<{ sourceUri: string | null }> } | null; sourceSummary: { sourceUris: string[] } } | null } | null;
+        getObservationForEpisode: (episodeId: string) => BrainObservation | null;
+      };
+    };
+
+    const storedTrace = privateService.store.getTrace(result?.trace.id ?? "");
+    expect(storedTrace?.queryText).toBe("how do I open a pull request?");
+    expect(storedTrace?.routeTrace?.persistenceMode).toBe("redacted_with_operator_audit");
+    expect(storedTrace?.routeTrace?.operatorAudit?.queryText).toBe("how do I open a pull request?");
+    expect(storedTrace?.routeTrace?.operatorAudit?.injectedNodeSummaries[0]?.sourceUri).toBe("PLAYBOOK.md");
+    expect(storedTrace?.routeTrace?.sourceSummary.sourceUris).toContain("PLAYBOOK.md");
+
+    const modelTrace = await service.getTrace(result?.trace.id);
+    expect(modelTrace?.queryText).toContain("[redacted query chars=");
+    expect(modelTrace?.routeTrace?.persistenceMode).toBe("redacted");
+    expect(modelTrace?.routeTrace?.operatorAudit ?? null).toBeNull();
+    expect(modelTrace?.routeTrace?.injectedNodeSummaries[0]?.sourceUri ?? null).toBeNull();
+
+    const observation = privateService.store.getObservationForEpisode(result?.episode.id ?? "");
+    expect(observation?.queryText).toBe("how do I open a pull request?");
+    expect(observation?.assistantResponse).toBe("Use `gh pr create` to open the pull request.");
+    expect(observation?.toolResults[0]?.output).toBe("{\"ok\":true}");
+    expect(observation?.routeMetadata.persistenceMode).toBe("redacted_with_operator_audit");
+    expect(observation?.routeMetadata.operatorAudit?.queryText).toBe("how do I open a pull request?");
+
+    const teacherInput = materializeTeacherLabelInput(observation!);
+    expect(teacherInput?.queryText).toContain("[redacted query chars=");
+    expect(teacherInput?.assistantResponse).toContain("[redacted assistant_response chars=");
+    expect(teacherInput?.routeMetadata.persistenceMode).toBe("redacted");
   });
 
   it("persists exact provenance columns from the runtime truth path into observations and teacher input", async () => {

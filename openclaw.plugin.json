@@ -53,6 +53,10 @@
       "label": "Brain Max Frontier Size",
       "help": "Maximum traversal frontier size during learned retrieval"
     },
+    "brainPersistRawSurfaces": {
+      "label": "Persist Raw Brain Surfaces",
+      "help": "Store raw prompt, turn, and source audit detail locally in addition to redacted-safe summaries"
+    },
     "brainWorkerMode": {
       "label": "Worker Mode",
       "help": "Run the learner in a supervised child process (default) or fall back to in-process mode"
@@ -167,6 +171,9 @@
         "type": "integer",
         "minimum": 1
       },
+      "brainPersistRawSurfaces": {
+        "type": "boolean"
+      },
       "brainMaxSeeds": {
         "type": "integer",
         "minimum": 1
@@ -194,6 +201,9 @@
       "brainWorkerRestartDelayMs": {
         "type": "integer",
         "minimum": 0
+      },
+      "brainPersistRawSurfaces": {
+        "type": "boolean"
       },
       "brainShadowMode": {
         "type": "boolean"

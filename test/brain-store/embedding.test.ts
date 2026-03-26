@@ -26,6 +26,7 @@ function makeConfig(overrides?: Partial<OpenClawBrainRuntimeConfig>): OpenClawBr
     workerHeartbeatTimeoutMs: 90_000,
     workerRestartDelayMs: 5_000,
     teacherEnabled: false,
+        persistRawSurfaces: false,
     teacherProvider: "",
     teacherModel: "",
     autoUserCorrectionsEnabled: false,

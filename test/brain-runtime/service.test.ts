@@ -111,6 +111,7 @@ function createDeps(
         workerHeartbeatTimeoutMs: 5_000,
         workerRestartDelayMs: 100,
         teacherEnabled: false,
+        persistRawSurfaces: false,
         teacherProvider: "",
         teacherModel: "",
     autoUserCorrectionsEnabled: false,
@@ -204,6 +205,7 @@ describe("BrainService", () => {
     const trace = await service.getTrace();
     expect(trace?.episodeId).toBe(result?.episode.id ?? null);
     expect(trace?.routeTrace).toMatchObject({
+      persistenceMode: "redacted",
       conversationId: 42,
       activePackId: "brain-pack-v1",
       routerIdentity: "brain-graph-traverse.v2",
@@ -212,8 +214,9 @@ describe("BrainService", () => {
         expect.objectContaining({
           nodeId: result?.fired[0]?.nodeId,
           kind: "chunk",
-          sourceUri: "PLAYBOOK.md",
-          contentPreview: expect.stringContaining("Use gh pr create"),
+          provenanceRef: expect.stringMatching(/^prov_[a-f0-9]{16}$/),
+          sourceUri: null,
+          contentPreview: expect.stringContaining("[redacted source_content chars="),
         }),
       ],
       selectionMetadata: expect.objectContaining({
@@ -231,13 +234,17 @@ describe("BrainService", () => {
     expect(trace?.routeTrace?.requestDigest).toMatch(/^[a-f0-9]{16}$/);
     expect(trace?.routeTrace?.candidateNodeIds).toContain(result?.fired[0]?.nodeId ?? "");
     expect(trace?.routeTrace?.sourceSummary.kinds).toMatchObject({ chunk: 1 });
-    expect(trace?.routeTrace?.sourceSummary.sourceUris[0]).toContain("PLAYBOOK.md");
+    expect(trace?.routeTrace?.sourceSummary.sourceUris).toEqual([]);
+    expect(trace?.routeTrace?.sourceSummary.sourceRefs[0]).toMatch(/^prov_[a-f0-9]{16}$/);
     expect(trace?.routeTrace?.selectionMetadata.chosenStopCount).toBe(0);
     expect(trace?.routeTrace?.selectionMetadata.forcedStopCount ?? 0).toBeGreaterThan(0);
     const status = await service.status();
     expect(status.currentPackVersion).toBe(1);
     expect(status.routeTraceCount).toBe(1);
     expect(status.supervisionCount).toBe(0);
+    expect(status.rawPersistenceEnabled).toBe(false);
+    expect(status.modelTraceSurface).toBe("redacted");
+    expect(status.teacherInputSurface).toBe("redacted");
     expect(status.lastTraceContextChars).toBe(result?.trace.contextChars ?? null);
     expect(status.lastTraceSelectionMetadata).toEqual(expect.objectContaining({
       budgetChars: 4000,
@@ -780,6 +787,7 @@ describe("BrainService", () => {
 
     const deps = createDeps(brainRoot, {
       teacherEnabled: true,
+        persistRawSurfaces: false,
       teacherProvider: "openai",
       teacherModel: "gpt-5.4-mini",
     });
@@ -881,6 +889,7 @@ describe("BrainService", () => {
 
     const deps = createDeps(brainRoot, {
       teacherEnabled: true,
+        persistRawSurfaces: false,
       teacherProvider: "openai",
       teacherModel: "gpt-5.4-mini",
     });
@@ -924,6 +933,7 @@ describe("BrainService", () => {
 
     const restartDeps = createDeps(brainRoot, {
       teacherEnabled: true,
+        persistRawSurfaces: false,
       teacherProvider: "openai",
       teacherModel: "gpt-5.4-mini",
     });
@@ -993,6 +1003,7 @@ describe("BrainService", () => {
     const brainRoot = makeTempDir("openclawbrain-state-");
     const deps = createDeps(brainRoot, {
       teacherEnabled: true,
+        persistRawSurfaces: false,
       teacherProvider: "",
       teacherModel: "",
     });
@@ -1330,7 +1341,7 @@ describe("BrainService", () => {
       };
     };
     expect(privateService.store.getObservationForEpisode(first?.episode.id ?? "")).toMatchObject({
-      followUpText: "wrong, the codeword is giraffe",
+      followUpText: expect.stringContaining("[redacted follow_up chars="),
       status: "pending_teacher",
     });
     expect(privateService.store.getObservationForEpisode(second?.episode.id ?? "")).toMatchObject({

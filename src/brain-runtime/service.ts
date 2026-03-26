@@ -23,7 +23,7 @@ import { DEFAULT_BRAIN_CONFIG, resolveObservationBindingMode } from "../brain-co
 import { BrainGraph } from "../brain-core/graph.js";
 import { traverse } from "../brain-core/traverse.js";
 import { recordEpisode } from "../brain-core/episode.js";
-import { recordTrace } from "../brain-core/trace.js";
+import { recordTrace, redactDecisionTrace, redactInjectedNodeSummary, redactTextSurface, redactToolResult } from "../brain-core/trace.js";
 import { computeHealth } from "../brain-core/health.js";
 import { BrainTeacher } from "../brain-core/teacher.js";
 import { BrainMutator } from "../brain-core/mutator.js";
@@ -410,6 +410,7 @@ export class BrainService {
       requestDigest: routeTrace?.requestDigest ?? null,
       activePackId: assemblyDecision?.activePackId ?? routeTrace?.activePackId ?? null,
       routerIdentity: routeTrace?.routerIdentity ?? null,
+      persistenceMode: routeTrace?.persistenceMode ?? null,
       bindingMode,
       serveDecisionRecordId: assemblyDecision?.serveDecisionRecordId ?? null,
       selectionDigest: assemblyDecision?.selectionDigest ?? null,
@@ -431,7 +432,11 @@ export class BrainService {
             kinds: { ...routeTrace.sourceSummary.kinds },
             trusts: { ...routeTrace.sourceSummary.trusts },
             sourceUris: [...routeTrace.sourceSummary.sourceUris],
+            sourceRefs: [...routeTrace.sourceSummary.sourceRefs],
           }
+        : null,
+      operatorAudit: routeTrace?.operatorAudit
+        ? JSON.parse(JSON.stringify(routeTrace.operatorAudit)) as BrainObservationRouteMetadata["operatorAudit"]
         : null,
       selectionMetadata: routeTrace?.selectionMetadata
         ? {
@@ -601,6 +606,7 @@ export class BrainService {
       totalQueryMs: Date.now() - queryStartedAt,
       queryEmbeddingSource: params.queryEmbedding ? "provided" : "runtime",
       selectedNodes,
+      persistRawSurfaces: this.config.persistRawSurfaces,
     });
     this.store.insertTrace(trace);
 
@@ -639,11 +645,19 @@ export class BrainService {
       episodeId: episode.id,
       conversationId: episode.conversationId,
       traceId: trace.id,
-      queryText: episode.queryText,
-      retrievedContext: trace.routeTrace?.injectedNodeSummaries ?? [],
+      queryText: this.config.persistRawSurfaces
+        ? episode.queryText
+        : (redactTextSurface("query", episode.queryText) ?? ""),
+      retrievedContext: (trace.routeTrace?.injectedNodeSummaries ?? []).map((summary) =>
+        this.config.persistRawSurfaces ? summary : redactInjectedNodeSummary(summary)
+      ),
       routeMetadata: this.buildObservationRouteMetadata(trace, assemblyDecision),
-      assistantResponse: params.assistantResponse,
-      toolResults: params.toolResults ?? [],
+      assistantResponse: this.config.persistRawSurfaces
+        ? params.assistantResponse
+        : (redactTextSurface("assistant_response", params.assistantResponse) ?? ""),
+      toolResults: (params.toolResults ?? []).map((result) =>
+        this.config.persistRawSurfaces ? result : redactToolResult(result)
+      ),
     });
   }
 
@@ -757,7 +771,9 @@ export class BrainService {
     if (!isSystemMessage(observation.userText)) {
       this.store.attachObservationFollowUp(
         observation.conversationId,
-        observation.userText,
+        this.config.persistRawSurfaces
+          ? observation.userText
+          : (redactTextSurface("follow_up", observation.userText) ?? ""),
         observation.episodeId,
       );
     }
@@ -1029,6 +1045,9 @@ export class BrainService {
       currentPackMetadata: promotionStory.currentPack?.metadata ?? null,
       shadowMode: this.config.shadowMode,
       teacherEnabled: this.config.teacherEnabled,
+      rawPersistenceEnabled: this.config.persistRawSurfaces,
+      modelTraceSurface: "redacted",
+      teacherInputSurface: "redacted",
       teacherConfigured: Boolean(this.resolvedTeacherModel),
       teacherProvider: this.resolvedTeacherModel?.provider ?? this.config.teacherProvider,
       teacherModel: this.resolvedTeacherModel?.model ?? this.config.teacherModel,
@@ -1080,7 +1099,7 @@ export class BrainService {
       return null;
     }
     return {
-      ...trace,
+      ...redactDecisionTrace(trace),
       supervision: this.store.getTraceSupervision(trace.id, 20),
     };
   }

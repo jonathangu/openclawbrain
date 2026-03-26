@@ -15,6 +15,7 @@ function makeObservation(overrides: Partial<BrainObservation> = {}): BrainObserv
         nodeId: "node_pr",
         kind: "workflow",
         trust: "human",
+        provenanceRef: "prov_playbook",
         sourceUri: "PLAYBOOK.md",
         tags: ["git", "pr"],
         tokenCount: 24,
@@ -48,6 +49,7 @@ function makeObservation(overrides: Partial<BrainObservation> = {}): BrainObserv
         kinds: { workflow: 1 },
         trusts: { human: 1 },
         sourceUris: ["PLAYBOOK.md"],
+        sourceRefs: ["prov_playbook"],
       },
       selectionMetadata: {
         traceSliceVersion: 3,
@@ -113,7 +115,7 @@ describe("teacher observation plumbing", () => {
       version: 2,
       observationId: "bo_1",
       traceId: "bt_1",
-      queryText: "how do I open a pull request?",
+      queryText: expect.stringContaining("[redacted query chars="),
       routeMetadata: {
         bindingMode: "exact_decision_id",
         serveDecisionRecordId: "decision-1",
@@ -132,11 +134,13 @@ describe("teacher observation plumbing", () => {
       selectedContext: [
         expect.objectContaining({
           nodeId: "node_pr",
-          contentPreview: expect.stringContaining("gh pr create"),
+          provenanceRef: "prov_playbook",
+          sourceUri: null,
+          contentPreview: expect.stringContaining("[redacted source_content chars="),
         }),
       ],
-      assistantResponse: expect.stringContaining("gh pr create"),
-      nextUserTurn: "That worked, thanks.",
+      assistantResponse: expect.stringContaining("[redacted assistant_response chars="),
+      nextUserTurn: expect.stringContaining("[redacted follow_up chars="),
     });
     expect(input?.routeMetadata.selectionMetadata).not.toHaveProperty("maxContextChars");
     expect(input?.routeMetadata.selectionMetadata).not.toHaveProperty("contextClipped");
@@ -266,6 +270,7 @@ describe("teacher observation plumbing", () => {
       reason: "retrieved context was relevant and the assistant used it well",
       input: {
         routeMetadata: {
+          persistenceMode: "redacted",
           selectedNodeIds: ["node_pr"],
         },
         toolResults: [

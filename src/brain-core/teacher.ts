@@ -19,6 +19,7 @@ import type {
   DecisionTraceInjectedNodeSummary,
 } from "./types.js";
 import { resolveObservationBindingMode } from "./types.js";
+import { redactInjectedNodeSummary, redactTextSurface, redactToolResult } from "./trace.js";
 
 export type BrainTeacherCompletion = (params: {
   provider?: string;
@@ -91,19 +92,20 @@ function clampUnit(value: unknown): number {
 }
 
 function cloneContext(summary: DecisionTraceInjectedNodeSummary): DecisionTraceInjectedNodeSummary {
-  return {
+  return redactInjectedNodeSummary({
     nodeId: summary.nodeId,
     kind: summary.kind,
     trust: summary.trust,
+    provenanceRef: summary.provenanceRef,
     sourceUri: summary.sourceUri,
     tags: [...summary.tags],
     tokenCount: summary.tokenCount,
     contentPreview: summary.contentPreview,
-  };
+  });
 }
 
 function cloneToolResult(result: BrainObservationToolResult): BrainObservationToolResult {
-  return {
+  return redactToolResult({
     sourceRole: result.sourceRole,
     toolCallId: result.toolCallId,
     toolName: result.toolName,
@@ -111,7 +113,7 @@ function cloneToolResult(result: BrainObservationToolResult): BrainObservationTo
     output: result.output,
     isError: result.isError,
     excerpt: result.excerpt,
-  };
+  });
 }
 
 function cloneServedArtifact(
@@ -131,12 +133,13 @@ export function materializeTeacherLabelInput(observation: BrainObservation): Tea
     episodeId: observation.episodeId,
     traceId: observation.traceId,
     conversationId: observation.conversationId,
-    queryText: observation.queryText,
+    queryText: redactTextSurface("query", observation.queryText) ?? "",
     selectedContext: observation.retrievedContext.map(cloneContext),
     routeMetadata: {
       requestDigest: observation.routeMetadata.requestDigest,
       activePackId: observation.routeMetadata.activePackId,
       routerIdentity: observation.routeMetadata.routerIdentity,
+      persistenceMode: "redacted",
       bindingMode: observation.routeMetadata.bindingMode,
       serveDecisionRecordId: observation.routeMetadata.serveDecisionRecordId,
       selectionDigest: observation.routeMetadata.selectionDigest,
@@ -157,7 +160,8 @@ export function materializeTeacherLabelInput(observation: BrainObservation): Tea
             injectedCount: observation.routeMetadata.sourceSummary.injectedCount,
             kinds: { ...observation.routeMetadata.sourceSummary.kinds },
             trusts: { ...observation.routeMetadata.sourceSummary.trusts },
-            sourceUris: [...observation.routeMetadata.sourceSummary.sourceUris],
+            sourceUris: [],
+            sourceRefs: [...(observation.routeMetadata.sourceSummary.sourceRefs ?? [])],
           }
         : null,
       selectionMetadata: observation.routeMetadata.selectionMetadata
@@ -166,9 +170,9 @@ export function materializeTeacherLabelInput(observation: BrainObservation): Tea
           }
         : null,
     },
-    assistantResponse: observation.assistantResponse,
+    assistantResponse: redactTextSurface("assistant_response", observation.assistantResponse) ?? "",
     toolResults: observation.toolResults.map(cloneToolResult),
-    nextUserTurn: observation.followUpText,
+    nextUserTurn: redactTextSurface("follow_up", observation.followUpText),
   };
 }
 

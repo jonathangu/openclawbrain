@@ -150,7 +150,7 @@ function formatPromptContext(compileResponse) {
   }
 
   for (const block of compileResponse.selectedContext) {
-    lines.push(`SOURCE: ${block.source}`);
+    lines.push(`PROVENANCE_REF: ctx_${block.id}`);
     lines.push(`BLOCK_ID: ${block.id}`);
     lines.push(block.text.trim());
     lines.push("");

@@ -554,10 +554,20 @@ export interface DecisionTraceInjectedNodeSummary {
   nodeId: string;
   kind: NodeKind;
   trust: TrustLevel;
+  provenanceRef: string | null;
   sourceUri: string | null;
   tags: string[];
   tokenCount: number;
   contentPreview: string;
+}
+
+export type BrainPersistenceMode =
+  | "redacted"
+  | "redacted_with_operator_audit";
+
+export interface DecisionTraceOperatorAudit {
+  queryText: string;
+  injectedNodeSummaries: DecisionTraceInjectedNodeSummary[];
 }
 
 export type BrainInterruptionStage =
@@ -581,6 +591,7 @@ export type BrainFittingDropReason =
   | "omitted_for_max_context_chars";
 
 export interface DecisionRouteTrace {
+  persistenceMode?: BrainPersistenceMode | null;
   requestDigest: string;
   conversationId: number | null;
   activePackId: string | null;
@@ -596,7 +607,9 @@ export interface DecisionRouteTrace {
     kinds: Partial<Record<NodeKind, number>>;
     trusts: Partial<Record<TrustLevel, number>>;
     sourceUris: string[];
+    sourceRefs: string[];
   };
+  operatorAudit?: DecisionTraceOperatorAudit | null;
   selectionMetadata: {
     traceSliceVersion: number;
     queryChars: number;
@@ -688,10 +701,19 @@ export interface BrainObservationServedArtifact {
   [key: string]: unknown;
 }
 
+export interface BrainObservationOperatorAudit {
+  queryText: string;
+  retrievedContext: DecisionTraceInjectedNodeSummary[];
+  assistantResponse: string;
+  toolResults: BrainObservationToolResult[];
+  followUpText: string | null;
+}
+
 export interface BrainObservationRouteMetadata {
   requestDigest: string | null;
   activePackId: string | null;
   routerIdentity: string | null;
+  persistenceMode?: BrainPersistenceMode | null;
   bindingMode: BrainObservationBindingMode | null;
   serveDecisionRecordId: string | null;
   selectionDigest: string | null;
@@ -708,6 +730,7 @@ export interface BrainObservationRouteMetadata {
   selectedPathNodeIds: string[];
   selectedSeedNodeIds: string[];
   sourceSummary: DecisionRouteTrace["sourceSummary"] | null;
+  operatorAudit?: BrainObservationOperatorAudit | null;
   selectionMetadata: DecisionRouteTrace["selectionMetadata"] | null;
 }
 
@@ -832,6 +855,7 @@ export interface BrainConfig {
   workerHeartbeatTimeoutMs: number;
   workerRestartDelayMs: number;
   teacherEnabled: boolean;
+  persistRawSurfaces: boolean;
   autoUserCorrectionsEnabled: boolean;
   autoUserCorrectionsProvider: string;
   autoUserCorrectionsModel: string;
@@ -869,6 +893,7 @@ export const DEFAULT_BRAIN_CONFIG: BrainConfig = {
   workerHeartbeatTimeoutMs: 90_000,
   workerRestartDelayMs: 5_000,
   teacherEnabled: true,
+  persistRawSurfaces: false,
   autoUserCorrectionsEnabled: false,
   autoUserCorrectionsProvider: "",
   autoUserCorrectionsModel: "",

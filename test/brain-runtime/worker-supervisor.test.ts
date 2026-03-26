@@ -43,6 +43,7 @@ describe("resolveChildWorkerExecArgv", () => {
       trainerIntervalMs: 60_000,
       workerHeartbeatTimeoutMs: 5_000,
       teacherEnabled: false,
+        persistRawSurfaces: false,
       embeddingProvider: "ollama",
       embeddingModel: "bge-large:latest",
     };

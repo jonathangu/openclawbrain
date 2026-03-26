@@ -21,6 +21,7 @@ export type OpenClawBrainRuntimeConfig = {
   workerHeartbeatTimeoutMs?: number;
   workerRestartDelayMs?: number;
   teacherEnabled: boolean;
+  persistRawSurfaces: boolean;
   teacherProvider: string;
   teacherModel: string;
   autoUserCorrectionsEnabled: boolean;
@@ -254,6 +255,10 @@ export function resolveLcmConfig(
         env.OPENCLAWBRAIN_TEACHER_ENABLED !== undefined
           ? env.OPENCLAWBRAIN_TEACHER_ENABLED !== "false"
           : toBool(pc.brainTeacherEnabled) ?? true,
+      persistRawSurfaces:
+        env.OPENCLAWBRAIN_PERSIST_RAW_SURFACES !== undefined
+          ? env.OPENCLAWBRAIN_PERSIST_RAW_SURFACES === "true"
+          : toBool(pc.brainPersistRawSurfaces) ?? false,
       teacherProvider:
         env.OPENCLAWBRAIN_TEACHER_PROVIDER?.trim() ?? toStr(pc.brainTeacherProvider) ?? "",
       teacherModel:
