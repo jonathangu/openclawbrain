@@ -175,6 +175,7 @@ export function runBrainMigrations(db: DatabaseSync): void {
       episode_id            TEXT NOT NULL UNIQUE,
       conversation_id       INTEGER,
       trace_id              TEXT,
+      binding_mode          TEXT,
       serve_decision_record_id TEXT,
       selection_digest      TEXT,
       turn_compile_event_id TEXT,
@@ -205,6 +206,7 @@ export function runBrainMigrations(db: DatabaseSync): void {
     CREATE INDEX IF NOT EXISTS brain_observations_status_idx ON brain_observations(status, created_at);
     CREATE INDEX IF NOT EXISTS brain_observations_conversation_idx ON brain_observations(conversation_id, created_at);
     CREATE INDEX IF NOT EXISTS brain_observations_trace_idx ON brain_observations(trace_id, created_at);
+    CREATE INDEX IF NOT EXISTS brain_observations_binding_mode_idx ON brain_observations(binding_mode);
     CREATE INDEX IF NOT EXISTS brain_observations_decision_record_idx ON brain_observations(serve_decision_record_id);
     CREATE INDEX IF NOT EXISTS brain_observations_selection_digest_idx ON brain_observations(selection_digest);
     CREATE INDEX IF NOT EXISTS brain_observations_turn_compile_event_idx ON brain_observations(turn_compile_event_id);
@@ -322,6 +324,7 @@ export function runBrainMigrations(db: DatabaseSync): void {
     db.exec(`ALTER TABLE brain_traces ADD COLUMN route_trace_json TEXT NOT NULL DEFAULT 'null'`);
   }
 
+  ensureColumn(db, "brain_observations", "binding_mode", "TEXT");
   ensureColumn(db, "brain_observations", "serve_decision_record_id", "TEXT");
   ensureColumn(db, "brain_observations", "selection_digest", "TEXT");
   ensureColumn(db, "brain_observations", "turn_compile_event_id", "TEXT");
@@ -333,6 +336,7 @@ export function runBrainMigrations(db: DatabaseSync): void {
   ensureColumn(db, "brain_observations", "active_pack_built_at", "TEXT");
 
   db.exec(`
+    CREATE INDEX IF NOT EXISTS brain_observations_binding_mode_idx ON brain_observations(binding_mode);
     CREATE INDEX IF NOT EXISTS brain_observations_decision_record_idx ON brain_observations(serve_decision_record_id);
     CREATE INDEX IF NOT EXISTS brain_observations_selection_digest_idx ON brain_observations(selection_digest);
     CREATE INDEX IF NOT EXISTS brain_observations_turn_compile_event_idx ON brain_observations(turn_compile_event_id);

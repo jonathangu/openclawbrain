@@ -664,6 +664,7 @@ export interface BrainObservationRouteMetadata {
   requestDigest: string | null;
   activePackId: string | null;
   routerIdentity: string | null;
+  bindingMode: BrainObservationBindingMode | null;
   serveDecisionRecordId: string | null;
   selectionDigest: string | null;
   turnCompileEventId: string | null;
@@ -721,7 +722,7 @@ export interface BrainObservationTeacherEvaluation {
   activePackGraphChecksum: string | null;
   activePackRouterChecksum: string | null;
   activePackBuiltAt: string | null;
-  bindingMode: BrainObservationBindingMode;
+  bindingMode: BrainObservationBindingMode | null;
   retrievalRelevance: number;
   agentUsage: number;
   outcomeSupport: number;
@@ -751,6 +752,32 @@ export interface BrainObservation {
   createdAt: number;
   updatedAt: number;
   evaluatedAt: number | null;
+}
+
+export function resolveObservationBindingMode(params: {
+  bindingMode?: BrainObservationBindingMode | null;
+  serveDecisionRecordId?: string | null;
+  selectionDigest?: string | null;
+  activePackGraphChecksum?: string | null;
+  turnCompileEventId?: string | null;
+  traceId?: string | null;
+}): BrainObservationBindingMode {
+  if (params.bindingMode) {
+    return params.bindingMode;
+  }
+  if (params.serveDecisionRecordId) {
+    return "exact_decision_id";
+  }
+  if (params.selectionDigest && params.activePackGraphChecksum) {
+    return "exact_selection_digest";
+  }
+  if (params.turnCompileEventId) {
+    return "turn_compile_event_id";
+  }
+  if (params.traceId) {
+    return "trace_id";
+  }
+  return "unbound";
 }
 
 // ═══════════════════════════════════════════

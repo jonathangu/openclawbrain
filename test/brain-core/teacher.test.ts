@@ -25,6 +25,7 @@ function makeObservation(overrides: Partial<BrainObservation> = {}): BrainObserv
       requestDigest: "deadbeefcafebabe",
       activePackId: "brain-pack-v3",
       routerIdentity: "brain-graph-traverse.v2",
+      bindingMode: "exact_decision_id",
       serveDecisionRecordId: "decision-1",
       selectionDigest: "selection-digest-1",
       turnCompileEventId: "evt-compile-1",
@@ -114,6 +115,7 @@ describe("teacher observation plumbing", () => {
       traceId: "bt_1",
       queryText: "how do I open a pull request?",
       routeMetadata: {
+        bindingMode: "exact_decision_id",
         serveDecisionRecordId: "decision-1",
         selectionDigest: "selection-digest-1",
         selectedNodeIds: ["node_pr"],

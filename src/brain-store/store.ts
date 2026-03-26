@@ -34,6 +34,7 @@ import type {
   StopLocalWeight,
   TraceSupervisionRecord,
   BrainObservation,
+  BrainObservationBindingMode,
   BrainObservationRouteMetadata,
   BrainObservationStatus,
   BrainObservationTeacherEvaluation,
@@ -46,6 +47,7 @@ import type {
   BundleEvaluationCompletedJournalPayload,
   PromotionJournalPayload,
 } from "../brain-core/types.js";
+import { resolveObservationBindingMode } from "../brain-core/types.js";
 
 // ═══════════════════════════════════════════
 // Embedding serialization
@@ -79,6 +81,25 @@ function toOptionalString(value: unknown): string | null {
   }
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function toFiniteNumber(value: unknown, fallback = 0): number {
+  const numeric = Number(value);
+  return Number.isFinite(numeric) ? numeric : fallback;
+}
+
+function toObservationBindingMode(value: unknown): BrainObservationBindingMode | null {
+  switch (value) {
+    case "exact_decision_id":
+    case "exact_selection_digest":
+    case "turn_compile_event_id":
+    case "trace_id":
+    case "legacy_heuristic":
+    case "unbound":
+      return value;
+    default:
+      return null;
+  }
 }
 
 function toStringArray(value: unknown): string[] {
@@ -121,18 +142,33 @@ function normalizeObservationSelectionMetadata(
   return record ? { ...record } as BrainObservationRouteMetadata["selectionMetadata"] : null;
 }
 
-function normalizeObservationRouteMetadata(value: unknown): BrainObservationRouteMetadata {
+function normalizeObservationRouteMetadata(
+  value: unknown,
+  options: { traceId?: string | null } = {},
+): BrainObservationRouteMetadata {
   const record = toRecord(value) ?? {};
+  const serveDecisionRecordId = toOptionalString(record.serveDecisionRecordId);
+  const selectionDigest = toOptionalString(record.selectionDigest);
+  const turnCompileEventId = toOptionalString(record.turnCompileEventId);
+  const activePackGraphChecksum = toOptionalString(record.activePackGraphChecksum);
   return {
     requestDigest: toOptionalString(record.requestDigest),
     activePackId: toOptionalString(record.activePackId),
     routerIdentity: toOptionalString(record.routerIdentity),
-    serveDecisionRecordId: toOptionalString(record.serveDecisionRecordId),
-    selectionDigest: toOptionalString(record.selectionDigest),
-    turnCompileEventId: toOptionalString(record.turnCompileEventId),
+    bindingMode: resolveObservationBindingMode({
+      bindingMode: toObservationBindingMode(record.bindingMode),
+      serveDecisionRecordId,
+      selectionDigest,
+      activePackGraphChecksum,
+      turnCompileEventId,
+      traceId: options.traceId ?? null,
+    }),
+    serveDecisionRecordId,
+    selectionDigest,
+    turnCompileEventId,
     decisionRecordedAt: toOptionalString(record.decisionRecordedAt),
     activePackEventExportDigest: toOptionalString(record.activePackEventExportDigest),
-    activePackGraphChecksum: toOptionalString(record.activePackGraphChecksum),
+    activePackGraphChecksum,
     activePackRouterChecksum: toOptionalString(record.activePackRouterChecksum),
     activePackBuiltAt: toOptionalString(record.activePackBuiltAt),
     servedArtifact: cloneJsonRecord(record.servedArtifact),
@@ -147,9 +183,14 @@ function normalizeObservationRouteMetadata(value: unknown): BrainObservationRout
 }
 
 function observationRouteMetadataFromRow(row: Record<string, unknown>): BrainObservationRouteMetadata {
-  const routeMetadata = normalizeObservationRouteMetadata(parseJsonValue(row.route_metadata_json, {}));
+  const traceId = toOptionalString(row.trace_id);
+  const routeMetadata = normalizeObservationRouteMetadata(
+    parseJsonValue(row.route_metadata_json, {}),
+    { traceId },
+  );
   return normalizeObservationRouteMetadata({
     ...routeMetadata,
+    bindingMode: toObservationBindingMode(row.binding_mode) ?? routeMetadata.bindingMode,
     serveDecisionRecordId: toOptionalString(row.serve_decision_record_id) ?? routeMetadata.serveDecisionRecordId,
     selectionDigest: toOptionalString(row.selection_digest) ?? routeMetadata.selectionDigest,
     turnCompileEventId: toOptionalString(row.turn_compile_event_id) ?? routeMetadata.turnCompileEventId,
@@ -162,7 +203,73 @@ function observationRouteMetadataFromRow(row: Record<string, unknown>): BrainObs
     activePackRouterChecksum:
       toOptionalString(row.active_pack_router_checksum) ?? routeMetadata.activePackRouterChecksum,
     activePackBuiltAt: toOptionalString(row.active_pack_built_at) ?? routeMetadata.activePackBuiltAt,
-  });
+  }, { traceId });
+}
+
+function normalizeObservationTeacherEvaluation(
+  value: unknown,
+  params: {
+    observationId: string;
+    episodeId: string;
+    traceId: string | null;
+    routeMetadata: BrainObservationRouteMetadata;
+  },
+): BrainObservationTeacherEvaluation | null {
+  const record = toRecord(value);
+  if (!record) {
+    return null;
+  }
+
+  const serveDecisionRecordId =
+    params.routeMetadata.serveDecisionRecordId ?? toOptionalString(record.serveDecisionRecordId);
+  const selectionDigest =
+    params.routeMetadata.selectionDigest ?? toOptionalString(record.selectionDigest);
+  const turnCompileEventId =
+    params.routeMetadata.turnCompileEventId ?? toOptionalString(record.turnCompileEventId);
+  const decisionRecordedAt =
+    params.routeMetadata.decisionRecordedAt ?? toOptionalString(record.decisionRecordedAt);
+  const activePackId =
+    params.routeMetadata.activePackId ?? toOptionalString(record.activePackId);
+  const activePackEventExportDigest =
+    params.routeMetadata.activePackEventExportDigest ?? toOptionalString(record.activePackEventExportDigest);
+  const activePackGraphChecksum =
+    params.routeMetadata.activePackGraphChecksum ?? toOptionalString(record.activePackGraphChecksum);
+  const activePackRouterChecksum =
+    params.routeMetadata.activePackRouterChecksum ?? toOptionalString(record.activePackRouterChecksum);
+  const activePackBuiltAt =
+    params.routeMetadata.activePackBuiltAt ?? toOptionalString(record.activePackBuiltAt);
+  const recordBindingMode = toObservationBindingMode(record.bindingMode);
+  const routeBindingMode = params.routeMetadata.bindingMode;
+
+  return {
+    version: 2,
+    observationId: toOptionalString(record.observationId) ?? params.observationId,
+    episodeId: toOptionalString(record.episodeId) ?? params.episodeId,
+    traceId: params.traceId ?? toOptionalString(record.traceId),
+    serveDecisionRecordId,
+    selectionDigest,
+    turnCompileEventId,
+    decisionRecordedAt,
+    activePackId,
+    activePackEventExportDigest,
+    activePackGraphChecksum,
+    activePackRouterChecksum,
+    activePackBuiltAt,
+    bindingMode: resolveObservationBindingMode({
+      bindingMode: routeBindingMode === "unbound" ? (recordBindingMode ?? routeBindingMode) : routeBindingMode,
+      serveDecisionRecordId,
+      selectionDigest,
+      activePackGraphChecksum,
+      turnCompileEventId,
+      traceId: params.traceId ?? toOptionalString(record.traceId),
+    }),
+    retrievalRelevance: toFiniteNumber(record.retrievalRelevance),
+    agentUsage: toFiniteNumber(record.agentUsage),
+    outcomeSupport: toFiniteNumber(record.outcomeSupport),
+    finalScore: toFiniteNumber(record.finalScore),
+    confidence: toFiniteNumber(record.confidence),
+    reason: typeof record.reason === "string" ? record.reason : "",
+  };
 }
 
 export interface LearningJournalInsert {
@@ -782,13 +889,16 @@ export class BrainStore {
     const id = `bo_${randomUUID().slice(0, 8)}`;
     const createdAt = params.createdAt ?? Date.now();
     const updatedAt = params.updatedAt ?? createdAt;
-    const routeMetadata = normalizeObservationRouteMetadata(params.routeMetadata);
+    const routeMetadata = normalizeObservationRouteMetadata(params.routeMetadata, {
+      traceId: params.traceId ?? null,
+    });
     this.db.prepare(`
       INSERT INTO brain_observations (
         id,
         episode_id,
         conversation_id,
         trace_id,
+        binding_mode,
         serve_decision_record_id,
         selection_digest,
         turn_compile_event_id,
@@ -808,12 +918,13 @@ export class BrainStore {
         created_at,
         updated_at
       )
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       id,
       params.episodeId,
       params.conversationId ?? null,
       params.traceId ?? null,
+      routeMetadata.bindingMode,
       routeMetadata.serveDecisionRecordId,
       routeMetadata.selectionDigest,
       routeMetadata.turnCompileEventId,
@@ -1470,14 +1581,16 @@ export class BrainStore {
   }
 
   private toObservation(row: Record<string, unknown>): BrainObservation {
+    const traceId = toOptionalString(row.trace_id);
+    const routeMetadata = observationRouteMetadataFromRow(row);
     return {
       id: row.id as string,
       episodeId: row.episode_id as string,
       conversationId: (row.conversation_id as number) ?? null,
-      traceId: (row.trace_id as string) ?? null,
+      traceId,
       queryText: (row.query_text as string) ?? "",
       retrievedContext: parseJsonValue(row.retrieved_context_json, []),
-      routeMetadata: observationRouteMetadataFromRow(row),
+      routeMetadata,
       assistantResponse: (row.assistant_response as string) ?? "",
       toolResults: parseJsonValue(row.tool_results_json, []),
       followUpText: (row.follow_up_text as string) ?? null,
@@ -1488,7 +1601,12 @@ export class BrainStore {
       reason: (row.reason as string) ?? null,
       status: row.status as BrainObservationStatus,
       teacherEvaluation: row.teacher_evaluation_json
-        ? parseJsonValue(row.teacher_evaluation_json, null) as BrainObservationTeacherEvaluation
+        ? normalizeObservationTeacherEvaluation(parseJsonValue(row.teacher_evaluation_json, null), {
+            observationId: row.id as string,
+            episodeId: row.episode_id as string,
+            traceId,
+            routeMetadata,
+          })
         : null,
       createdAt: Number(row.created_at ?? 0),
       updatedAt: Number(row.updated_at ?? 0),

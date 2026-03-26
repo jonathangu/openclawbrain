@@ -18,6 +18,7 @@ import type {
   BrainObservationToolResult,
   DecisionTraceInjectedNodeSummary,
 } from "./types.js";
+import { resolveObservationBindingMode } from "./types.js";
 
 export type BrainTeacherCompletion = (params: {
   provider?: string;
@@ -117,22 +118,6 @@ function cloneServedArtifact(
   return artifact ? JSON.parse(JSON.stringify(artifact)) as BrainObservationRouteMetadata["servedArtifact"] : null;
 }
 
-function resolveObservationBindingMode(observation: BrainObservation): BrainObservationBindingMode {
-  if (observation.routeMetadata.serveDecisionRecordId) {
-    return "exact_decision_id";
-  }
-  if (observation.routeMetadata.selectionDigest && observation.routeMetadata.activePackGraphChecksum) {
-    return "exact_selection_digest";
-  }
-  if (observation.routeMetadata.turnCompileEventId) {
-    return "turn_compile_event_id";
-  }
-  if (observation.traceId) {
-    return "trace_id";
-  }
-  return "unbound";
-}
-
 export function materializeTeacherLabelInput(observation: BrainObservation): TeacherLabelInputV2 | null {
   if (typeof observation.queryText !== "string" || observation.queryText.trim().length === 0) {
     return null;
@@ -150,6 +135,7 @@ export function materializeTeacherLabelInput(observation: BrainObservation): Tea
       requestDigest: observation.routeMetadata.requestDigest,
       activePackId: observation.routeMetadata.activePackId,
       routerIdentity: observation.routeMetadata.routerIdentity,
+      bindingMode: observation.routeMetadata.bindingMode,
       serveDecisionRecordId: observation.routeMetadata.serveDecisionRecordId,
       selectionDigest: observation.routeMetadata.selectionDigest,
       turnCompileEventId: observation.routeMetadata.turnCompileEventId,
@@ -204,7 +190,14 @@ export class BrainTeacher {
     if (!input) {
       return null;
     }
-    const bindingMode = resolveObservationBindingMode(observation);
+    const bindingMode = resolveObservationBindingMode({
+      bindingMode: observation.routeMetadata.bindingMode,
+      serveDecisionRecordId: observation.routeMetadata.serveDecisionRecordId,
+      selectionDigest: observation.routeMetadata.selectionDigest,
+      activePackGraphChecksum: observation.routeMetadata.activePackGraphChecksum,
+      turnCompileEventId: observation.routeMetadata.turnCompileEventId,
+      traceId: observation.traceId,
+    });
     const provenance = {
       serveDecisionRecordId: observation.routeMetadata.serveDecisionRecordId,
       selectionDigest: observation.routeMetadata.selectionDigest,

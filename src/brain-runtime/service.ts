@@ -8,6 +8,7 @@ import type {
   BrainDropReason,
   BrainDropStage,
   BrainNode,
+  BrainObservationBindingMode,
   BrainObservationRouteMetadata,
   BrainObservationToolResult,
   DecisionRouteTrace,
@@ -15,7 +16,7 @@ import type {
   NodeKind,
   TraversalResult,
 } from "../brain-core/types.js";
-import { DEFAULT_BRAIN_CONFIG } from "../brain-core/types.js";
+import { DEFAULT_BRAIN_CONFIG, resolveObservationBindingMode } from "../brain-core/types.js";
 import { BrainGraph } from "../brain-core/graph.js";
 import { traverse } from "../brain-core/traverse.js";
 import { recordEpisode } from "../brain-core/episode.js";
@@ -111,6 +112,7 @@ export class BrainService {
         injectedChars?: number | null;
         droppedChars?: number | null;
         contextClipped?: boolean;
+        bindingMode?: BrainObservationBindingMode | null;
         serveDecisionRecordId?: string | null;
         selectionDigest?: string | null;
         turnCompileEventId?: string | null;
@@ -351,10 +353,19 @@ export class BrainService {
     assemblyDecision: NonNullable<BrainService["lastAssemblyDecision"]> | null = null,
   ): BrainObservationRouteMetadata {
     const routeTrace = trace.routeTrace ?? null;
+    const bindingMode = resolveObservationBindingMode({
+      bindingMode: assemblyDecision?.bindingMode,
+      serveDecisionRecordId: assemblyDecision?.serveDecisionRecordId,
+      selectionDigest: assemblyDecision?.selectionDigest,
+      activePackGraphChecksum: assemblyDecision?.activePackGraphChecksum,
+      turnCompileEventId: assemblyDecision?.turnCompileEventId,
+      traceId: trace.id,
+    });
     return {
       requestDigest: routeTrace?.requestDigest ?? null,
       activePackId: assemblyDecision?.activePackId ?? routeTrace?.activePackId ?? null,
       routerIdentity: routeTrace?.routerIdentity ?? null,
+      bindingMode,
       serveDecisionRecordId: assemblyDecision?.serveDecisionRecordId ?? null,
       selectionDigest: assemblyDecision?.selectionDigest ?? null,
       turnCompileEventId: assemblyDecision?.turnCompileEventId ?? null,
@@ -410,11 +421,22 @@ export class BrainService {
   }
 
   noteAssemblyDecision(decision: NonNullable<BrainService["lastAssemblyDecision"]>): void {
-    this.lastAssemblyDecision = decision;
-    this.store.setTrainingState("last_assembly_mode", decision.mode);
-    this.store.setTrainingState("last_assembly_footer", decision.footer ?? "");
-    this.store.setTrainingState("last_assembly_episode_id", decision.episodeId ?? "");
-    this.store.setTrainingState("last_assembly_trace_id", decision.traceId ?? "");
+    const normalizedDecision = {
+      ...decision,
+      bindingMode: resolveObservationBindingMode({
+        bindingMode: decision.bindingMode,
+        serveDecisionRecordId: decision.serveDecisionRecordId,
+        selectionDigest: decision.selectionDigest,
+        activePackGraphChecksum: decision.activePackGraphChecksum,
+        turnCompileEventId: decision.turnCompileEventId,
+        traceId: decision.traceId ?? null,
+      }),
+    };
+    this.lastAssemblyDecision = normalizedDecision;
+    this.store.setTrainingState("last_assembly_mode", normalizedDecision.mode);
+    this.store.setTrainingState("last_assembly_footer", normalizedDecision.footer ?? "");
+    this.store.setTrainingState("last_assembly_episode_id", normalizedDecision.episodeId ?? "");
+    this.store.setTrainingState("last_assembly_trace_id", normalizedDecision.traceId ?? "");
   }
 
   recordTraceSelectionMetadata(

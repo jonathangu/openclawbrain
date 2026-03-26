@@ -219,6 +219,7 @@ function makeObservation(params: {
       requestDigest: hashQuery(queryText),
       activePackId: "brain-pack-v1",
       routerIdentity: "brain-graph-traverse.v2",
+      bindingMode: "exact_decision_id",
       serveDecisionRecordId: `decision-${params.traceId}`,
       selectionDigest: `selection-${params.traceId}`,
       turnCompileEventId: `compile-${params.traceId}`,

@@ -1,11 +1,14 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { join } from "node:path";
+import { DatabaseSync } from "node:sqlite";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { materializeTeacherLabelInput } from "../../src/brain-core/teacher.js";
 import type { BrainObservation } from "../../src/brain-core/types.js";
 import { BrainAssemblerExtension } from "../../src/brain-runtime/assembler-extension.js";
 import { BrainService } from "../../src/brain-runtime/service.js";
+import { runBrainMigrations } from "../../src/brain-store/migrations.js";
+import { BrainStore } from "../../src/brain-store/store.js";
 import type { LcmDependencies } from "../../src/types.js";
 
 const tempDirs: string[] = [];
@@ -178,7 +181,7 @@ describe("BrainService observations", () => {
         },
       },
     });
-    const teacherInput = materializeTeacherLabelInput(observation);
+    const teacherInput = materializeTeacherLabelInput(observation!);
     expect(teacherInput?.routeMetadata.selectionMetadata).toMatchObject({
       traceSliceVersion: 3,
       chosenStopCount: 0,
@@ -246,6 +249,7 @@ describe("BrainService observations", () => {
     ).store.getObservationForEpisode(result?.episode.id ?? "");
     expect(observation).not.toBeNull();
     expect(observation?.routeMetadata).toMatchObject({
+      bindingMode: "exact_decision_id",
       serveDecisionRecordId: "decision-observation-1",
       selectionDigest: "selection-observation-1",
       turnCompileEventId: "evt-compile-observation-1",
@@ -263,6 +267,7 @@ describe("BrainService observations", () => {
 
     const teacherInput = materializeTeacherLabelInput(observation!);
     expect(teacherInput?.routeMetadata).toMatchObject({
+      bindingMode: "exact_decision_id",
       serveDecisionRecordId: "decision-observation-1",
       selectionDigest: "selection-observation-1",
       turnCompileEventId: "evt-compile-observation-1",
@@ -271,6 +276,221 @@ describe("BrainService observations", () => {
         kind: "runtime_compile_v1",
         traceId: result?.trace.id,
       },
+    });
+  });
+
+  it("treats explicit provenance columns as authoritative over stale JSON payloads", () => {
+    const brainRoot = makeTempDir("openclawbrain-observation-authority-");
+    const db = new DatabaseSync(join(brainRoot, "state.db"));
+    db.exec("PRAGMA journal_mode = WAL");
+    db.exec("PRAGMA foreign_keys = ON");
+    runBrainMigrations(db);
+
+    const store = new BrainStore(db, { brainRoot });
+    const createdAt = Date.now();
+    const inserted = store.insertObservation({
+      episodeId: "ep_authoritative",
+      conversationId: 81,
+      traceId: "trace_authoritative",
+      queryText: "how do I open a pull request?",
+      retrievedContext: [],
+      routeMetadata: {
+        requestDigest: "digest-authoritative",
+        activePackId: "brain-pack-column",
+        routerIdentity: "brain-graph-traverse.v2",
+        bindingMode: "exact_decision_id",
+        serveDecisionRecordId: "decision-column",
+        selectionDigest: "selection-column",
+        turnCompileEventId: "compile-column",
+        decisionRecordedAt: "2026-03-25T01:02:03.000Z",
+        activePackEventExportDigest: "export-column",
+        activePackGraphChecksum: "graph-column",
+        activePackRouterChecksum: "router-column",
+        activePackBuiltAt: "2026-03-25T01:00:00.000Z",
+        servedArtifact: {
+          kind: "runtime_compile_v1",
+          traceId: "trace_authoritative",
+        },
+        candidateNodeIds: [],
+        selectedNodeIds: [],
+        selectedTraversalNodeIds: [],
+        selectedPathNodeIds: [],
+        selectedSeedNodeIds: [],
+        sourceSummary: null,
+        selectionMetadata: null,
+      },
+      assistantResponse: "Use `gh pr create`.",
+      toolResults: [],
+      createdAt,
+      updatedAt: createdAt,
+    });
+
+    db.prepare(`
+      UPDATE brain_observations
+      SET route_metadata_json = ?,
+          teacher_evaluation_json = ?
+      WHERE id = ?
+    `).run(
+      JSON.stringify({
+        requestDigest: "digest-json",
+        activePackId: "brain-pack-json",
+        routerIdentity: "brain-graph-traverse.v2",
+        bindingMode: "legacy_heuristic",
+        serveDecisionRecordId: "decision-json",
+        selectionDigest: "selection-json",
+        turnCompileEventId: "compile-json",
+        decisionRecordedAt: "2026-03-24T01:02:03.000Z",
+        activePackEventExportDigest: "export-json",
+        activePackGraphChecksum: "graph-json",
+        activePackRouterChecksum: "router-json",
+        activePackBuiltAt: "2026-03-24T01:00:00.000Z",
+        servedArtifact: {
+          kind: "runtime_compile_v1",
+          traceId: "trace_json",
+        },
+        candidateNodeIds: [],
+        selectedNodeIds: [],
+        selectedTraversalNodeIds: [],
+        selectedPathNodeIds: [],
+        selectedSeedNodeIds: [],
+        sourceSummary: null,
+        selectionMetadata: null,
+      }),
+      JSON.stringify({
+        version: 2,
+        observationId: inserted.id,
+        episodeId: "ep_authoritative",
+        traceId: "trace_authoritative",
+        serveDecisionRecordId: "decision-json",
+        selectionDigest: "selection-json",
+        turnCompileEventId: "compile-json",
+        decisionRecordedAt: "2026-03-24T01:02:03.000Z",
+        activePackId: "brain-pack-json",
+        activePackEventExportDigest: "export-json",
+        activePackGraphChecksum: "graph-json",
+        activePackRouterChecksum: "router-json",
+        activePackBuiltAt: "2026-03-24T01:00:00.000Z",
+        bindingMode: "legacy_heuristic",
+        retrievalRelevance: 0.8,
+        agentUsage: 0.4,
+        outcomeSupport: 0.6,
+        finalScore: 0.6,
+        confidence: 0.7,
+        reason: "stale JSON teacher evaluation",
+      }),
+      inserted.id,
+    );
+
+    const observation = store.getObservationForEpisode("ep_authoritative");
+    expect(observation?.routeMetadata).toMatchObject({
+      bindingMode: "exact_decision_id",
+      serveDecisionRecordId: "decision-column",
+      selectionDigest: "selection-column",
+      turnCompileEventId: "compile-column",
+      activePackId: "brain-pack-column",
+      activePackEventExportDigest: "export-column",
+      activePackGraphChecksum: "graph-column",
+      activePackRouterChecksum: "router-column",
+      activePackBuiltAt: "2026-03-25T01:00:00.000Z",
+    });
+    expect(observation?.teacherEvaluation).toMatchObject({
+      serveDecisionRecordId: "decision-column",
+      selectionDigest: "selection-column",
+      turnCompileEventId: "compile-column",
+      activePackId: "brain-pack-column",
+      activePackEventExportDigest: "export-column",
+      activePackGraphChecksum: "graph-column",
+      activePackRouterChecksum: "router-column",
+      activePackBuiltAt: "2026-03-25T01:00:00.000Z",
+      bindingMode: "exact_decision_id",
+      reason: "stale JSON teacher evaluation",
+    });
+  });
+
+  it("reads legacy JSON-only observation provenance when exact columns are absent", () => {
+    const brainRoot = makeTempDir("openclawbrain-observation-legacy-");
+    const db = new DatabaseSync(join(brainRoot, "state.db"));
+    db.exec("PRAGMA journal_mode = WAL");
+    db.exec("PRAGMA foreign_keys = ON");
+    runBrainMigrations(db);
+
+    const store = new BrainStore(db, { brainRoot });
+    const createdAt = Date.now();
+    db.prepare(`
+      INSERT INTO brain_observations (
+        id,
+        episode_id,
+        conversation_id,
+        trace_id,
+        query_text,
+        retrieved_context_json,
+        route_metadata_json,
+        assistant_response,
+        tool_results_json,
+        status,
+        created_at,
+        updated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      "bo_legacy",
+      "ep_legacy",
+      82,
+      "trace_legacy",
+      "how do I open a pull request?",
+      "[]",
+      JSON.stringify({
+        requestDigest: "digest-legacy",
+        activePackId: "brain-pack-legacy",
+        routerIdentity: "brain-graph-traverse.v2",
+        serveDecisionRecordId: null,
+        selectionDigest: "selection-legacy",
+        turnCompileEventId: "compile-legacy",
+        decisionRecordedAt: "2026-03-24T01:02:03.000Z",
+        activePackEventExportDigest: "export-legacy",
+        activePackGraphChecksum: "graph-legacy",
+        activePackRouterChecksum: "router-legacy",
+        activePackBuiltAt: "2026-03-24T01:00:00.000Z",
+        servedArtifact: {
+          kind: "runtime_compile_v1",
+          traceId: "trace_legacy",
+        },
+        candidateNodeIds: [],
+        selectedNodeIds: [],
+        selectedTraversalNodeIds: [],
+        selectedPathNodeIds: [],
+        selectedSeedNodeIds: [],
+        sourceSummary: null,
+        selectionMetadata: null,
+      }),
+      "Use `gh pr create`.",
+      "[]",
+      "pending_followup",
+      createdAt,
+      createdAt,
+    );
+
+    const observation = store.getObservationForEpisode("ep_legacy");
+    expect(observation?.routeMetadata).toMatchObject({
+      bindingMode: "exact_selection_digest",
+      selectionDigest: "selection-legacy",
+      turnCompileEventId: "compile-legacy",
+      activePackId: "brain-pack-legacy",
+      activePackEventExportDigest: "export-legacy",
+      activePackGraphChecksum: "graph-legacy",
+      activePackRouterChecksum: "router-legacy",
+      activePackBuiltAt: "2026-03-24T01:00:00.000Z",
+      servedArtifact: {
+        kind: "runtime_compile_v1",
+        traceId: "trace_legacy",
+      },
+    });
+
+    const teacherInput = materializeTeacherLabelInput(observation!);
+    expect(teacherInput?.routeMetadata).toMatchObject({
+      bindingMode: "exact_selection_digest",
+      selectionDigest: "selection-legacy",
+      activePackGraphChecksum: "graph-legacy",
     });
   });
 
