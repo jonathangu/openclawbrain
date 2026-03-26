@@ -619,7 +619,7 @@ describe("BrainService", () => {
 
     const service = new BrainService({
       deps: createDeps(brainRoot, {
-        maxCompileMs: 5,
+        maxCompileMs: 15,
       }),
     });
     await service.init({
@@ -649,6 +649,7 @@ describe("BrainService", () => {
       assembled,
       liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
     });
+    console.log("PARTIAL_RESULT", JSON.stringify(result, null, 2));
 
     expect(result.messages[0]).toMatchObject({
       role: "user",

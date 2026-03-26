@@ -41,6 +41,7 @@ export type BrainAssembledContextResult = AssembleContextResult;
 
 const COMPACT_INJECTED_PREVIEW_CHARS = 96;
 const INTERRUPTED_SERVE_MAX_CONTEXT_CHARS = 1024;
+const INTERRUPTION_REASON_SOFT_COMPILE_DEADLINE = "soft_compile_deadline";
 
 type BudgetedBrainContext = {
   brainContext: string;
@@ -635,6 +636,10 @@ function buildBudgetedBrainContext(
   return applyLegacyMaxContextChars(buildBrainContextBlock(result), maxContextChars);
 }
 
+function applyMaxContextChars(text: string, maxContextChars?: number): BudgetedBrainContext {
+  return applyLegacyMaxContextChars(text, maxContextChars);
+}
+
 function mergeSystemPromptAddition(...parts: Array<string | undefined>): string | undefined {
   const merged = parts.filter(Boolean).join("\n\n");
   return merged || undefined;
@@ -810,55 +815,42 @@ export class BrainAssemblerExtension {
         },
       };
     }
-    const afterQueryInterruption = queryInterruption ?? (
-      afterQueryCheckpoint.compileDeadlineHit
-        ? createInterruption({
-            stage: "query",
-            reason: "deadline_after_query",
-          })
-        : null
-    );
-    if (afterQueryInterruption) {
-      const mode: BrainAssemblyOutcomeMode = "skip_deadline_after_query";
-      const traceSelectionMetadata = assemblyDecisionDetails({
-        checkpoint: afterQueryCheckpoint,
-        brainDropReason: "deadline_after_query",
-        brainDropStage: "query",
-        interruption: afterQueryInterruption,
-        maxContextChars: params.maxContextChars,
-        queryBudgetChars,
-        queryInterrupted: true,
-        interruptionStage: "query",
-        interruptionReason: "deadline_after_query",
-        servedPartial: false,
-      });
-      if (result?.trace) {
-        this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
-      }
-      this.brain.noteAssemblyDecision({
-        mode,
-        conversationId: params.conversationId,
-        episodeId: result?.episode.id ?? null,
-        traceId: result?.trace.id ?? null,
-        footer: decisionFooter(mode),
-        ...traceSelectionMetadata,
-      });
-      return {
-        ...params.assembled,
-        systemPromptAddition: mergeSystemPromptAddition(
-          params.assembled.systemPromptAddition,
-          summaryRoutingPrompt,
-        ),
-        brainDecision: {
+    const afterQueryInterruption = queryInterruption;
+    if (!result) {
+      if (afterQueryInterruption) {
+        const mode: BrainAssemblyOutcomeMode = "skip_deadline_after_query";
+        const traceSelectionMetadata = assemblyDecisionDetails({
+          checkpoint: afterQueryCheckpoint,
+          brainDropReason: "deadline_after_query",
+          brainDropStage: "query",
+          interruption: afterQueryInterruption,
+          budgetFraction,
+          maxContextChars: params.maxContextChars,
+          queryBudgetChars,
+        });
+        this.brain.noteAssemblyDecision({
           mode,
-          episodeId: result?.episode.id ?? null,
-          traceId: result?.trace.id ?? null,
+          conversationId: params.conversationId,
+          episodeId: null,
+          traceId: null,
           footer: decisionFooter(mode),
           ...traceSelectionMetadata,
-        },
-      };
-    }
-    if (!result) {
+        });
+        return {
+          ...params.assembled,
+          systemPromptAddition: mergeSystemPromptAddition(
+            params.assembled.systemPromptAddition,
+            summaryRoutingPrompt,
+          ),
+          brainDecision: {
+            mode,
+            episodeId: null,
+            traceId: null,
+            footer: decisionFooter(mode),
+            ...traceSelectionMetadata,
+          },
+        };
+      }
       const mode: BrainAssemblyOutcomeMode = "skip_query_returned_no_nodes";
       const metadata = assemblyDecisionDetails({
         checkpoint: afterQueryCheckpoint,
@@ -887,65 +879,65 @@ export class BrainAssemblerExtension {
         },
       };
     }
-    if (afterQueryInterruption) {
-      if (decision.mode === "use_brain" && result) {
-        const interruptedMaxContextChars = resolveInterruptedMaxContextChars(params.maxContextChars);
-        const interruptedBrainContext = applyMaxContextChars(
-          buildPartialBrainContextBlock(result, afterQueryInterruption.stage === "injection" ? "injection" : "query"),
-          interruptedMaxContextChars,
-        );
-        const interruption = {
-          ...afterQueryInterruption,
+    if (afterQueryCheckpoint.compileDeadlineHit && decision.mode === "use_brain") {
+      const interruptedMaxContextChars = resolveInterruptedMaxContextChars(params.maxContextChars);
+      const interruptedBrainContext = applyMaxContextChars(
+        buildPartialBrainContextBlock(result, "query"),
+        interruptedMaxContextChars,
+      );
+      const mode: BrainAssemblyOutcomeMode = "partial_deadline_after_query";
+      const traceSelectionMetadata = assemblyDecisionDetails({
+        checkpoint: afterQueryCheckpoint,
+        brainDropReason: "deadline_after_query",
+        brainDropStage: "query",
+        interruption: createInterruption({
+          stage: "query",
+          reason: INTERRUPTION_REASON_SOFT_COMPILE_DEADLINE,
           servedPartial: true,
-        };
-        const mode: BrainAssemblyOutcomeMode = "partial_deadline_after_query";
-        const traceSelectionMetadata = assemblyDecisionDetails({
-          checkpoint: afterQueryCheckpoint,
-          brainDropReason: "deadline_after_query",
-          brainDropStage: "query",
-          interruption,
-          maxContextChars: interruptedMaxContextChars,
-          queryBudgetChars,
-          budgetedBrainContext: interruptedBrainContext,
-        });
-        this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
-        const brainMessage: AgentMessage | null = interruptedBrainContext.brainContext.length > 0
-          ? ({
-              role: "user",
-              content: interruptedBrainContext.brainContext,
-            } as AgentMessage)
-          : null;
-        this.brain.noteAssemblyDecision({
+        }),
+        budgetFraction,
+        maxContextChars: interruptedMaxContextChars,
+        queryBudgetChars,
+        budgetedBrainContext: interruptedBrainContext,
+      });
+      this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
+      const brainMessage: AgentMessage | null = interruptedBrainContext.brainContext.length > 0
+        ? ({
+            role: "user",
+            content: interruptedBrainContext.brainContext,
+          } as AgentMessage)
+        : null;
+      this.brain.noteAssemblyDecision({
+        mode,
+        conversationId: params.conversationId,
+        episodeId: result.episode.id,
+        traceId: result.trace.id,
+        footer: decisionFooter(mode),
+        ...traceSelectionMetadata,
+      });
+      return {
+        ...params.assembled,
+        messages: brainMessage ? [brainMessage, ...params.assembled.messages] : params.assembled.messages,
+        estimatedTokens: brainMessage
+          ? params.assembled.estimatedTokens + estimateTokens(extractText(brainMessage.content))
+          : params.assembled.estimatedTokens,
+        systemPromptAddition: mergeSystemPromptAddition(
+          params.assembled.systemPromptAddition,
+          brainMessage
+            ? "OpenClawBrain partial serves are committed prefixes; omitted context was not compiled in time."
+            : undefined,
+          summaryRoutingPrompt,
+        ),
+        brainDecision: {
           mode,
-          conversationId: params.conversationId,
           episodeId: result.episode.id,
           traceId: result.trace.id,
           footer: decisionFooter(mode),
           ...traceSelectionMetadata,
-        });
-        return {
-          ...params.assembled,
-          messages: brainMessage ? [brainMessage, ...params.assembled.messages] : params.assembled.messages,
-          estimatedTokens: brainMessage
-            ? params.assembled.estimatedTokens + estimateTokens(extractText(brainMessage.content))
-            : params.assembled.estimatedTokens,
-          systemPromptAddition: mergeSystemPromptAddition(
-            params.assembled.systemPromptAddition,
-            brainMessage
-              ? "OpenClawBrain partial serves are committed prefixes; omitted context was not compiled in time."
-              : undefined,
-            summaryRoutingPrompt,
-          ),
-          brainDecision: {
-            mode,
-            episodeId: result.episode.id,
-            traceId: result.trace.id,
-            footer: decisionFooter(mode),
-            ...traceSelectionMetadata,
-          },
-        };
-      }
-
+        },
+      };
+    }
+    if (afterQueryInterruption) {
       const mode: BrainAssemblyOutcomeMode = "skip_deadline_after_query";
       const traceSelectionMetadata = assemblyDecisionDetails({
         checkpoint: afterQueryCheckpoint,
@@ -956,14 +948,12 @@ export class BrainAssemblerExtension {
         maxContextChars: params.maxContextChars,
         queryBudgetChars,
       });
-      if (result?.trace) {
-        this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
-      }
+      this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
       this.brain.noteAssemblyDecision({
         mode,
         conversationId: params.conversationId,
-        episodeId: result?.episode.id ?? null,
-        traceId: result?.trace.id ?? null,
+        episodeId: result.episode.id,
+        traceId: result.trace.id,
         footer: decisionFooter(mode),
         ...traceSelectionMetadata,
       });
@@ -975,8 +965,8 @@ export class BrainAssemblerExtension {
         ),
         brainDecision: {
           mode,
-          episodeId: result?.episode.id ?? null,
-          traceId: result?.trace.id ?? null,
+          episodeId: result.episode.id,
+          traceId: result.trace.id,
           footer: decisionFooter(mode),
           ...traceSelectionMetadata,
         },
@@ -1002,9 +992,10 @@ export class BrainAssemblerExtension {
           brainDropStage: "injection",
           interruption: createInterruption({
             stage: "injection",
-            reason: "deadline_before_injection",
+            reason: INTERRUPTION_REASON_SOFT_COMPILE_DEADLINE,
             servedPartial: true,
           }),
+          budgetFraction,
           maxContextChars: interruptedMaxContextChars,
           queryBudgetChars,
           budgetedBrainContext: interruptedBrainContext,
@@ -1054,16 +1045,12 @@ export class BrainAssemblerExtension {
         brainDropStage: "injection",
         interruption: createInterruption({
           stage: "injection",
-          reason: "deadline_before_injection",
+          reason: INTERRUPTION_REASON_SOFT_COMPILE_DEADLINE,
         }),
         budgetFraction,
         maxContextChars: params.maxContextChars,
         queryBudgetChars,
         budgetedBrainContext,
-        queryInterrupted: true,
-        interruptionStage: "injection",
-        interruptionReason: "deadline_before_injection",
-        servedPartial: false,
       });
       this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
       this.brain.noteAssemblyDecision({
