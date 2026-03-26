@@ -26,6 +26,10 @@ export interface CompileServeRouteBreadcrumbInput {
 }
 
 export type RuntimeComparativeReplayMode = "vector_only" | "graph_prior_only" | "learned_route";
+export interface FrozenReplayEvalIdentityV1 {
+  packId: string;
+  routerIdentity?: string | null;
+}
 
 export interface CompileRuntimeContextInput {
   activationRoot: string;
@@ -42,6 +46,7 @@ export interface CompileRuntimeContextInput {
   channel?: string;
   _suppressServeLog?: boolean;
   _serveRouteBreadcrumbs?: CompileServeRouteBreadcrumbInput;
+  _frozenReplayEvalIdentity?: FrozenReplayEvalIdentityV1;
 }
 
 export interface ActiveCompileTarget {

@@ -81,6 +81,10 @@ export interface RuntimeEventExportBundleDescriptor {
 }
 export type CompileRuntimeBudgetStrategy = "fixed_v1" | "empirical_v1";
 export type RuntimeComparativeReplayMode = "vector_only" | "graph_prior_only" | "learned_route";
+export interface FrozenReplayEvalIdentityV1 {
+    packId: string;
+    routerIdentity?: string | null;
+}
 export interface CompileRuntimeContextInput {
     activationRoot: string;
     message: string;
@@ -100,6 +104,8 @@ export interface CompileRuntimeContextInput {
     _suppressServeLog?: boolean;
     /** @internal Preserve explicit serve-route breadcrumbs for installed/runtime hook paths. */
     _serveRouteBreadcrumbs?: CompileServeRouteBreadcrumbInput;
+    /** @internal Freeze the expected active pack/router identity for replay eval scoring. */
+    _frozenReplayEvalIdentity?: FrozenReplayEvalIdentityV1;
 }
 export interface ActiveCompileTarget {
     activationRoot: string;
@@ -362,6 +368,8 @@ export type RuntimeEventExportResult = RuntimeEventExportNoWrite | RuntimeEventE
 export interface RunRuntimeTurnOptions {
     activationRoot?: string;
     failOpen?: boolean;
+    /** @internal Freeze the expected active pack/router identity for replay eval scoring. */
+    _frozenReplayEvalIdentity?: FrozenReplayEvalIdentityV1;
 }
 export type RuntimeTurnResult = RuntimeCompileResult & {
     eventExport: RuntimeEventExportResult;
@@ -1060,6 +1068,7 @@ export interface RecordedSessionTraceV1 {
         notes: string[];
     };
     workspace: RecordedSessionReplayWorkspaceV1;
+    evalTurnCount?: number;
     seedBuiltAt: string;
     seedActivatedAt: string;
     seedCues: readonly RecordedSessionSeedCueV1[];
@@ -1081,14 +1090,17 @@ export interface RecordedSessionReplayFixtureV1 {
     fixtureHash: string;
     privacy: RecordedSessionTraceV1["privacy"];
     workspace: RecordedSessionReplayWorkspaceV1;
+    evalTurnCount?: number;
     seedBuiltAt: string;
     seedActivatedAt: string;
     seedExport: NormalizedEventExportV1;
     turns: RecordedSessionReplayTurnFixtureV1[];
 }
+export type RecordedSessionReplayTurnPhase = "train" | "eval";
 export interface RecordedSessionReplayTurnReportV1 {
     turnId: string;
     replayMode: RecordedSessionReplayMode;
+    phase: RecordedSessionReplayTurnPhase;
     compileOk: boolean;
     fallbackToStaticContext: boolean;
     hardRequirementViolated: boolean;
@@ -1151,6 +1163,10 @@ export interface RecordedSessionReplayModeSummaryV1 {
     usedLearnedRouteTurnCount: number;
     promotionCount: number;
     packIds: string[];
+    trainTurnCount: number;
+    evalTurnCount: number;
+    frozenEvalPackId: string | null;
+    frozenEvalRouterIdentity: string | null;
     scannerEvidence: RecordedSessionReplayScannerEvidenceV1;
     scoreHash: string;
 }

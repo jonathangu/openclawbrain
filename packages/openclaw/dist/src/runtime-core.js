@@ -519,6 +519,44 @@ function resolveActivePackForCompile(activationRoot) {
   };
 }
 
+function normalizeFrozenReplayEvalIdentity(value) {
+  if (value === undefined || value === null) {
+    return null;
+  }
+
+  if (typeof value !== "object") {
+    throw new Error("_frozenReplayEvalIdentity must be an object");
+  }
+
+  const frozenIdentity = value;
+
+  return {
+    packId: normalizeNonEmptyString(frozenIdentity.packId, "_frozenReplayEvalIdentity.packId"),
+    routerIdentity: normalizeOptionalString(frozenIdentity.routerIdentity) ?? null,
+  };
+}
+
+function validateFrozenReplayEvalIdentity(target, frozenReplayEvalIdentity) {
+  if (frozenReplayEvalIdentity === null) {
+    return;
+  }
+
+  const actualRouterIdentity = target.inspection.routerIdentity ?? null;
+
+  if (
+    target.activePointer.packId === frozenReplayEvalIdentity.packId &&
+    actualRouterIdentity === frozenReplayEvalIdentity.routerIdentity
+  ) {
+    return;
+  }
+
+  throw new Error(
+    `Frozen replay eval identity mismatch: expected pack ${frozenReplayEvalIdentity.packId} ` +
+      `(routerIdentity=${frozenReplayEvalIdentity.routerIdentity ?? "null"}), received pack ${target.activePointer.packId} ` +
+      `(routerIdentity=${actualRouterIdentity ?? "null"})`,
+  );
+}
+
 export function compileRuntimeContext(input) {
   const totalStartedAtNs = monotonicClockNs();
   const fallbackActivationRoot = resolveActivationRootForFailure(input.activationRoot);
@@ -530,6 +568,7 @@ export function compileRuntimeContext(input) {
   let userMessage = "";
   let maxContextChars;
   let mode = "heuristic";
+  let frozenReplayEvalIdentity = null;
   let routeSelectionStartedAtNs = null;
   let routeSelectionMs = null;
   let promptAssemblyStartedAtNs = null;
@@ -549,6 +588,7 @@ export function compileRuntimeContext(input) {
     comparativeMode = compileModePlan.comparativeMode;
     mode = compileModePlan.routeMode;
     selectionMode = compileModePlan.selectionMode;
+    frozenReplayEvalIdentity = normalizeFrozenReplayEvalIdentity(input._frozenReplayEvalIdentity);
   } catch (error) {
     result = failOpenCompileResult(
       error,
@@ -570,6 +610,7 @@ export function compileRuntimeContext(input) {
 
   try {
     const target = resolveActivePackForCompile(activationRoot);
+    validateFrozenReplayEvalIdentity(target, frozenReplayEvalIdentity);
     const resolvedBudget = resolveCompileBudget(target, input);
     routeSelectionStartedAtNs = monotonicClockNs();
     const compile = compileRuntimeFromActivation(
@@ -604,6 +645,12 @@ export function compileRuntimeContext(input) {
             : [
                 `comparative_mode=${comparativeMode}`,
                 `comparative_mode_plan=${mode}+${selectionEngine}`,
+              ]),
+          ...(frozenReplayEvalIdentity === null
+            ? []
+            : [
+                `replay_eval_pack_id=${frozenReplayEvalIdentity.packId}`,
+                `replay_eval_router_identity=${frozenReplayEvalIdentity.routerIdentity ?? "null"}`,
               ]),
           "OpenClaw remains the runtime owner",
         ]),

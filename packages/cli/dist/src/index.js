@@ -2990,6 +2990,30 @@ export function resolveActivePackForCompile(activationRoot) {
         inspection: inspection.active
     };
 }
+function normalizeFrozenReplayEvalIdentity(value) {
+    if (value === undefined || value === null) {
+        return null;
+    }
+    if (typeof value !== "object") {
+        throw new Error("_frozenReplayEvalIdentity must be an object");
+    }
+    const frozenIdentity = value;
+    return {
+        packId: normalizeNonEmptyString(frozenIdentity.packId, "_frozenReplayEvalIdentity.packId"),
+        routerIdentity: normalizeOptionalString(frozenIdentity.routerIdentity) ?? null
+    };
+}
+function validateFrozenReplayEvalIdentity(target, frozenReplayEvalIdentity) {
+    if (frozenReplayEvalIdentity === null) {
+        return;
+    }
+    const actualRouterIdentity = target.inspection.routerIdentity ?? null;
+    if (target.activePointer.packId === frozenReplayEvalIdentity.packId &&
+        actualRouterIdentity === frozenReplayEvalIdentity.routerIdentity) {
+        return;
+    }
+    throw new Error(`Frozen replay eval identity mismatch: expected pack ${frozenReplayEvalIdentity.packId} (routerIdentity=${frozenReplayEvalIdentity.routerIdentity ?? "null"}), received pack ${target.activePointer.packId} (routerIdentity=${actualRouterIdentity ?? "null"})`);
+}
 export function compileRuntimeContext(input) {
     const totalStartedAtNs = monotonicClockNs();
     const fallbackActivationRoot = resolveActivationRootForFailure(input.activationRoot);
@@ -3001,6 +3025,7 @@ export function compileRuntimeContext(input) {
     let userMessage = "";
     let maxContextChars;
     let mode = "heuristic";
+    let frozenReplayEvalIdentity = null;
     let routeSelectionStartedAtNs = null;
     let routeSelectionMs = null;
     let promptAssemblyStartedAtNs = null;
@@ -3019,6 +3044,7 @@ export function compileRuntimeContext(input) {
         comparativeMode = compileModePlan.comparativeMode;
         mode = compileModePlan.routeMode;
         selectionMode = compileModePlan.selectionMode;
+        frozenReplayEvalIdentity = normalizeFrozenReplayEvalIdentity(input._frozenReplayEvalIdentity);
     }
     catch (error) {
         result = failOpenCompileResult(error, fallbackActivationRoot, buildBrainServeHotPathTiming({
@@ -3036,6 +3062,7 @@ export function compileRuntimeContext(input) {
     }
     try {
         const target = resolveActivePackForCompile(activationRoot);
+        validateFrozenReplayEvalIdentity(target, frozenReplayEvalIdentity);
         const resolvedBudget = resolveCompileBudget(target, input);
         routeSelectionStartedAtNs = monotonicClockNs();
         const compile = compileRuntimeFromActivation(activationRoot, {
@@ -3066,6 +3093,12 @@ export function compileRuntimeContext(input) {
                         : [
                             `comparative_mode=${comparativeMode}`,
                             `comparative_mode_plan=${mode}+${selectionEngine}`
+                        ]),
+                    ...(frozenReplayEvalIdentity === null
+                        ? []
+                        : [
+                            `replay_eval_pack_id=${frozenReplayEvalIdentity.packId}`,
+                            `replay_eval_router_identity=${frozenReplayEvalIdentity.routerIdentity ?? "null"}`
                         ]),
                     "OpenClaw remains the runtime owner"
                 ])
@@ -3951,6 +3984,7 @@ export function runRuntimeTurn(turn, options = {}) {
         ...(turn.mode !== undefined ? { mode: turn.mode } : {}),
         ...(turn.selectionMode !== undefined ? { selectionMode: turn.selectionMode } : {}),
         ...(turn.runtimeHints !== undefined ? { runtimeHints: turn.runtimeHints } : {}),
+        ...(options._frozenReplayEvalIdentity !== undefined ? { _frozenReplayEvalIdentity: options._frozenReplayEvalIdentity } : {}),
         _suppressServeLog: true
     };
     const compileResult = compileRuntimeContext(compileInput);
@@ -4199,6 +4233,7 @@ function ensureRecordedSessionTrace(trace) {
     if (trace.turns.length === 0) {
         throw new Error("recorded session trace requires at least one turn");
     }
+    resolveRecordedSessionReplayEvalTurnCount(trace.turns.length, trace.evalTurnCount, "evalTurnCount");
     for (const [index, cue] of trace.seedCues.entries()) {
         normalizeNonEmptyString(cue.cueId, `seedCues[${index}].cueId`);
         normalizeIsoTimestamp(cue.createdAt, `seedCues[${index}].createdAt`);
@@ -4249,6 +4284,52 @@ function uniqueStringsInOrder(values) {
         unique.push(value);
     }
     return unique;
+}
+function resolveRecordedSessionReplayEvalTurnCount(turnCount, value, fieldName) {
+    if (turnCount === 0) {
+        return 0;
+    }
+    if (value === undefined) {
+        return 1;
+    }
+    const normalized = normalizeNonNegativeInteger(value, fieldName, value);
+    if (normalized < 1) {
+        throw new Error(`${fieldName} must be at least 1 when turns are present`);
+    }
+    if (normalized > turnCount) {
+        throw new Error(`${fieldName} cannot exceed turns.length (${turnCount})`);
+    }
+    return normalized;
+}
+function buildRecordedSessionReplayTurnPlan(fixture) {
+    const evalTurnCount = resolveRecordedSessionReplayEvalTurnCount(fixture.turns.length, fixture.evalTurnCount, "evalTurnCount");
+    const trainTurnCount = Math.max(0, fixture.turns.length - evalTurnCount);
+    return {
+        trainTurns: fixture.turns.slice(0, trainTurnCount),
+        evalTurns: fixture.turns.slice(trainTurnCount),
+        trainTurnCount,
+        evalTurnCount
+    };
+}
+function cloneRecordedSessionReplayFrozenEvalIdentity(value) {
+    if (value === null) {
+        return null;
+    }
+    return {
+        packId: value.packId,
+        routerIdentity: value.routerIdentity
+    };
+}
+function readRecordedSessionReplayFrozenEvalIdentity(activationRoot) {
+    const inspection = inspectActivationState(activationRoot);
+    const activePointer = inspection.pointers.active;
+    if (inspection.active === null || activePointer === null) {
+        return null;
+    }
+    return {
+        packId: activePointer.packId,
+        routerIdentity: inspection.active.routerIdentity ?? null
+    };
 }
 function buildRecordedSessionSeedExport(trace) {
     const agentId = normalizeOptionalString(trace.agentId) ?? DEFAULT_AGENT_ID;
@@ -4361,6 +4442,9 @@ function recordedSessionFixtureBase(trace) {
             revision: trace.workspace.revision,
             ...(trace.workspace.labels !== undefined ? { labels: [...trace.workspace.labels] } : {})
         },
+        ...(trace.evalTurnCount !== undefined
+            ? { evalTurnCount: resolveRecordedSessionReplayEvalTurnCount(trace.turns.length, trace.evalTurnCount, "evalTurnCount") }
+            : {}),
         seedBuiltAt: trace.seedBuiltAt,
         seedActivatedAt: trace.seedActivatedAt,
         seedExport: buildRecordedSessionSeedExport(trace),
@@ -4396,6 +4480,9 @@ function recordedSessionReplayFixtureBase(fixture) {
             revision: fixture.workspace.revision,
             ...(fixture.workspace.labels !== undefined ? { labels: [...fixture.workspace.labels] } : {})
         },
+        ...(fixture.evalTurnCount !== undefined
+            ? { evalTurnCount: resolveRecordedSessionReplayEvalTurnCount(fixture.turns.length, fixture.evalTurnCount, "evalTurnCount") }
+            : {}),
         seedBuiltAt: fixture.seedBuiltAt,
         seedActivatedAt: fixture.seedActivatedAt,
         seedExport: fixture.seedExport,
@@ -4502,6 +4589,7 @@ function buildRecordedSessionTurnReport(replayMode, turnFixture, result, options
     return {
         turnId: turnFixture.turnId,
         replayMode,
+        phase: options.phase,
         compileOk,
         fallbackToStaticContext: result.fallbackToStaticContext,
         hardRequirementViolated: result.hardRequirementViolated,
@@ -4596,7 +4684,7 @@ function buildRecordedSessionReplayScannerEvidence(mode, turns) {
         warnings: buildRecordedSessionReplayScannerWarnings(mode, turns, activePackChangeCount)
     };
 }
-function buildRecordedSessionReplayModeSummary(mode, turns) {
+function buildRecordedSessionReplayModeSummary(mode, turns, options = {}) {
     const plan = recordedSessionReplayModePlan(mode);
     const compileOkCount = turns.filter((turn) => turn.compileOk).length;
     const phraseHitCount = turns.reduce((sum, turn) => sum + turn.phraseHits.length, 0);
@@ -4605,6 +4693,8 @@ function buildRecordedSessionReplayModeSummary(mode, turns) {
     const promotionCount = turns.filter((turn) => turn.promoted).length;
     const qualityScore = turns.length === 0 ? 0 : Math.round(turns.reduce((sum, turn) => sum + turn.qualityScore, 0) / turns.length);
     const packIds = uniqueStringsInOrder(turns.map((turn) => turn.activePackId).filter(isPresent));
+    const trainTurnCount = turns.filter((turn) => turn.phase === "train").length;
+    const evalTurnCount = turns.filter((turn) => turn.phase === "eval").length;
     const scannerEvidence = buildRecordedSessionReplayScannerEvidence(mode, turns);
     const base = {
         mode,
@@ -4618,6 +4708,10 @@ function buildRecordedSessionReplayModeSummary(mode, turns) {
         usedLearnedRouteTurnCount,
         promotionCount,
         packIds,
+        trainTurnCount,
+        evalTurnCount,
+        frozenEvalPackId: options.frozenEvalIdentity?.packId ?? null,
+        frozenEvalRouterIdentity: options.frozenEvalIdentity?.routerIdentity ?? null,
         scannerEvidence
     };
     return {
@@ -4626,6 +4720,7 @@ function buildRecordedSessionReplayModeSummary(mode, turns) {
             summary: base,
             turns: turns.map((turn) => ({
                 turnId: turn.turnId,
+                phase: turn.phase,
                 qualityScore: turn.qualityScore,
                 phraseHits: turn.phraseHits,
                 missedPhrases: turn.missedPhrases,
@@ -4643,10 +4738,10 @@ function buildRecordedSessionReplayModeSummary(mode, turns) {
         })
     };
 }
-function buildRecordedSessionReplayModeReport(mode, turns) {
+function buildRecordedSessionReplayModeReport(mode, turns, options = {}) {
     return {
         mode,
-        summary: buildRecordedSessionReplayModeSummary(mode, turns),
+        summary: buildRecordedSessionReplayModeSummary(mode, turns, options),
         turns: [...turns]
     };
 }
@@ -4663,6 +4758,10 @@ function buildRecordedSessionReplayScoreHash(modes) {
         usedLearnedRouteTurnCount: mode.summary.usedLearnedRouteTurnCount,
         promotionCount: mode.summary.promotionCount,
         packIds: mode.summary.packIds,
+        trainTurnCount: mode.summary.trainTurnCount,
+        evalTurnCount: mode.summary.evalTurnCount,
+        frozenEvalPackId: mode.summary.frozenEvalPackId,
+        frozenEvalRouterIdentity: mode.summary.frozenEvalRouterIdentity,
         scannerEvidence: mode.summary.scannerEvidence,
         scoreHash: mode.summary.scoreHash
     })));
@@ -4758,6 +4857,7 @@ function runRecordedSessionNoBrainMode(rootDir, fixture) {
             failOpen: true
         });
         return buildRecordedSessionTurnReport("no_brain", turnFixture, result, {
+            phase: "eval",
             compileActiveVersion: null,
             promoted: false
         });
@@ -4773,6 +4873,7 @@ function runRecordedSessionSeededComparativeMode(rootDir, fixture, replayMode) {
             failOpen: false
         });
         return buildRecordedSessionTurnReport(replayMode, turnFixture, result, {
+            phase: "eval",
             compileActiveVersion: 1,
             promoted: false
         });
@@ -4783,9 +4884,10 @@ function runRecordedSessionLearnedRouteMode(rootDir, fixture) {
     const modeRoot = prepareReplayModeRoot(rootDir, "learned_route");
     const { activationRoot } = prepareSeedActivation(modeRoot, fixture);
     const loopRoot = path.join(modeRoot, "loop");
+    const turnPlan = buildRecordedSessionReplayTurnPlan(fixture);
     let state;
     const turns = [];
-    for (const turnFixture of fixture.turns) {
+    for (const turnFixture of turnPlan.trainTurns) {
         const compileCreatedAt = normalizeIsoTimestamp(turnFixture.turn.compile?.createdAt, "turn.compile.createdAt", turnFixture.turn.createdAt);
         const result = runContinuousProductLoopTurn({
             activationRoot,
@@ -4802,11 +4904,36 @@ function runRecordedSessionLearnedRouteMode(rootDir, fixture) {
         });
         state = result.state;
         turns.push(buildRecordedSessionTurnReport("learned_route", turnFixture, result.turn, {
+            phase: "train",
             compileActiveVersion: result.compileActiveVersion,
             promoted: result.learning.promoted
         }));
     }
-    return buildRecordedSessionReplayModeReport("learned_route", turns);
+    const frozenEvalIdentity = readRecordedSessionReplayFrozenEvalIdentity(activationRoot);
+    for (const turnFixture of turnPlan.evalTurns) {
+        const currentState = cloneContinuousProductLoopState(state ??
+            createContinuousProductLoopState({
+                activationRoot,
+                loopRoot
+            }));
+        currentState.activationRoot = activationRoot;
+        currentState.loopRoot = loopRoot;
+        const activeBeforeTurn = syncContinuousActivePack(currentState);
+        state = cloneContinuousProductLoopState(currentState);
+        const result = runRuntimeTurn(buildRecordedSessionReplayTurnInput(turnFixture, modeRoot, "learned_route"), {
+            activationRoot,
+            failOpen: false,
+            ...(frozenEvalIdentity === null ? {} : { _frozenReplayEvalIdentity: frozenEvalIdentity })
+        });
+        turns.push(buildRecordedSessionTurnReport("learned_route", turnFixture, result, {
+            phase: "eval",
+            compileActiveVersion: activeBeforeTurn?.version ?? 0,
+            promoted: false
+        }));
+    }
+    return buildRecordedSessionReplayModeReport("learned_route", turns, {
+        frozenEvalIdentity: cloneRecordedSessionReplayFrozenEvalIdentity(frozenEvalIdentity)
+    });
 }
 export function runRecordedSessionReplay(rootDir, fixture) {
     const resolvedRoot = path.resolve(normalizeNonEmptyString(rootDir, "rootDir"));
@@ -4874,7 +5001,14 @@ function rescoreRecordedSessionReplayTurn(turn) {
 }
 function rescoreRecordedSessionReplayMode(mode) {
     const turns = mode.turns.map((turn) => rescoreRecordedSessionReplayTurn(turn));
-    return buildRecordedSessionReplayModeReport(mode.mode, turns);
+    return buildRecordedSessionReplayModeReport(mode.mode, turns, {
+        frozenEvalIdentity: mode.summary.frozenEvalPackId === null
+            ? null
+            : {
+                packId: mode.summary.frozenEvalPackId,
+                routerIdentity: mode.summary.frozenEvalRouterIdentity ?? null
+            }
+    });
 }
 export function rescoreRecordedSessionReplayBundle(bundle) {
     const modes = bundle.modes.map((mode) => rescoreRecordedSessionReplayMode(mode));
