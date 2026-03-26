@@ -8,6 +8,7 @@ import { DEFAULT_POLICY_PARAMS } from "./types.js";
 import type { BrainGraph } from "./graph.js";
 import type { TraverseResult } from "./traverse.js";
 import { softmaxPolicy } from "./policy.js";
+import { isForcedStopSubstep } from "./trajectory-stop.js";
 
 export function recordEpisode(params: {
   traversalResult: TraverseResult;
@@ -51,7 +52,7 @@ export function replayEpisode(
 
   for (const expansion of episode.trajectory) {
     for (const substep of expansion.substeps) {
-      if (substep.chosenAction.type === "stop_local" && substep.stopTruth === "forced") {
+      if (isForcedStopSubstep(substep)) {
         continue;
       }
 

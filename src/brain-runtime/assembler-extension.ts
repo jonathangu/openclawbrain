@@ -79,6 +79,10 @@ type CompileDecisionDetails = {
   compileDeadlineHit?: boolean | null;
   brainDropReason?: BrainDropReason | null;
   brainDropStage?: BrainDropStage | null;
+  queryInterrupted?: boolean | null;
+  interruptionStage?: "embedding" | "query" | "injection" | null;
+  interruptionReason?: string | null;
+  servedPartial?: boolean | null;
 };
 
 type InterruptionStage = NonNullable<DecisionRouteTrace["selectionMetadata"]["interruptionStage"]>;
@@ -745,6 +749,10 @@ export class BrainAssemblerExtension {
         budgetFraction,
         maxContextChars: params.maxContextChars,
         queryBudgetChars,
+        queryInterrupted: true,
+        interruptionStage: "query",
+        interruptionReason: "deadline_before_query",
+        servedPartial: false,
       });
       this.brain.noteAssemblyDecision({
         mode,
@@ -819,6 +827,10 @@ export class BrainAssemblerExtension {
         interruption: afterQueryInterruption,
         maxContextChars: params.maxContextChars,
         queryBudgetChars,
+        queryInterrupted: true,
+        interruptionStage: "query",
+        interruptionReason: "deadline_after_query",
+        servedPartial: false,
       });
       if (result?.trace) {
         this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
@@ -1048,6 +1060,10 @@ export class BrainAssemblerExtension {
         maxContextChars: params.maxContextChars,
         queryBudgetChars,
         budgetedBrainContext,
+        queryInterrupted: true,
+        interruptionStage: "injection",
+        interruptionReason: "deadline_before_injection",
+        servedPartial: false,
       });
       this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
       this.brain.noteAssemblyDecision({
@@ -1086,6 +1102,10 @@ export class BrainAssemblerExtension {
       maxContextChars: params.maxContextChars,
       queryBudgetChars,
       budgetedBrainContext,
+      servedPartial:
+        decision.mode !== "shadow"
+        && budgetedBrainContext.contextClipped
+        && budgetedBrainContext.injectedChars > 0,
     });
     this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
     const brainMessage: AgentMessage | null = budgetedBrainContext.brainContext.length > 0

@@ -544,6 +544,7 @@ describe("BrainService observations", () => {
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
       budgetFraction: 0.3,
+      servedPartial: true,
       maxContextChars: 240,
       queryBudgetChars,
       injectedChars: expect.any(Number),
@@ -580,6 +581,7 @@ describe("BrainService observations", () => {
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
       budgetFraction: 0.3,
+      servedPartial: true,
       maxContextChars: 240,
       queryBudgetChars,
       injectedChars: expect.any(Number),
@@ -603,6 +605,7 @@ describe("BrainService observations", () => {
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
       budgetFraction: 0.3,
+      servedPartial: true,
       maxContextChars: 240,
       queryBudgetChars,
       injectedChars: expect.any(Number),
@@ -620,6 +623,78 @@ describe("BrainService observations", () => {
     } else {
       expect(teacherInput?.routeMetadata.selectionMetadata?.fittingDropReasons ?? null).toBeNull();
     }
+  });
+
+  it("persists deadline interruption truth through observation and teacher metadata", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-interruption-observation-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-interruption-observation-state-");
+    writeFileSync(
+      join(workspaceRoot, "PLAYBOOK.md"),
+      "# Pull Requests\n\nUse gh pr create for pull request workflows.\n",
+      "utf8",
+    );
+
+    const service = new BrainService({ deps: createDeps(brainRoot) });
+    await service.init({
+      workspaceRoot,
+      embedFn: async (text) => embed(text),
+    });
+
+    const result = await service.query({
+      conversationId: 53,
+      queryText: "how do I open a pull request?",
+      budgetChars: 4000,
+      queryEmbedding: embed("gh pr create pull request"),
+    });
+    expect(result).not.toBeNull();
+
+    service.recordTraceSelectionMetadata(result?.trace, {
+      compileElapsedMs: 12,
+      compileDeadlineMs: 10,
+      compileDeadlineHit: true,
+      brainDropReason: "deadline_after_query",
+      brainDropStage: "query",
+      queryInterrupted: true,
+      interruptionStage: "query",
+      interruptionReason: "deadline_after_query",
+      servedPartial: false,
+    });
+
+    await service.recordTurnObservation({
+      episodeId: result?.episode.id,
+      assistantResponse: "Use `gh pr create` to open the pull request.",
+      toolResults: [],
+    });
+
+    const observation = (
+      service as unknown as {
+        store: { getObservationForEpisode: (episodeId: string) => BrainObservation | null };
+      }
+    ).store.getObservationForEpisode(result?.episode.id ?? "");
+
+    expect(observation?.routeMetadata.selectionMetadata).toMatchObject({
+      compileElapsedMs: 12,
+      compileDeadlineMs: 10,
+      compileDeadlineHit: true,
+      brainDropReason: "deadline_after_query",
+      brainDropStage: "query",
+      queryInterrupted: true,
+      interruptionStage: "query",
+      interruptionReason: "deadline_after_query",
+      servedPartial: false,
+    });
+    const teacherInput = materializeTeacherLabelInput(observation!);
+    expect(teacherInput?.routeMetadata.selectionMetadata).toMatchObject({
+      compileElapsedMs: 12,
+      compileDeadlineMs: 10,
+      compileDeadlineHit: true,
+      brainDropReason: "deadline_after_query",
+      brainDropStage: "query",
+      queryInterrupted: true,
+      interruptionStage: "query",
+      interruptionReason: "deadline_after_query",
+      servedPartial: false,
+    });
   });
 
   it("keeps system scaffolding out of follow-up attachment", async () => {

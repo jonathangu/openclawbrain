@@ -153,6 +153,7 @@ describe("teacher observation plumbing", () => {
           brainDropReason: "injection_cap_clipped",
           brainDropStage: "injection",
           budgetFraction: 0.3,
+          servedPartial: true,
           maxContextChars: 240,
           injectedChars: 180,
           droppedChars: 72,
@@ -176,6 +177,7 @@ describe("teacher observation plumbing", () => {
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
       budgetFraction: 0.3,
+      servedPartial: true,
       maxContextChars: 240,
       injectedChars: 180,
       droppedChars: 72,
@@ -187,6 +189,40 @@ describe("teacher observation plumbing", () => {
       fittingDropReasons: {
         omitted_for_max_context_chars: 1,
       },
+    });
+  });
+
+  it("preserves interruption truth in teacher input when routing is cut short", () => {
+    const observation = makeObservation({
+      routeMetadata: {
+        ...makeObservation().routeMetadata,
+        selectionMetadata: {
+          ...makeObservation().routeMetadata.selectionMetadata!,
+          compileElapsedMs: 12,
+          compileDeadlineMs: 10,
+          compileDeadlineHit: true,
+          brainDropReason: "deadline_after_query",
+          brainDropStage: "query",
+          queryInterrupted: true,
+          interruptionStage: "query",
+          interruptionReason: "deadline_after_query",
+          servedPartial: false,
+        },
+      },
+    });
+
+    const input = materializeTeacherLabelInput(observation);
+
+    expect(input?.routeMetadata.selectionMetadata).toMatchObject({
+      compileElapsedMs: 12,
+      compileDeadlineMs: 10,
+      compileDeadlineHit: true,
+      brainDropReason: "deadline_after_query",
+      brainDropStage: "query",
+      queryInterrupted: true,
+      interruptionStage: "query",
+      interruptionReason: "deadline_after_query",
+      servedPartial: false,
     });
   });
 

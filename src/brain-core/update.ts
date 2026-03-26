@@ -21,6 +21,7 @@
 import type { Episode, PolicyWeightUpdate } from "./types.js";
 import { START_NODE_ID } from "./types.js";
 import type { BrainGraph } from "./graph.js";
+import { isChosenPolicyStopSubstep } from "./trajectory-stop.js";
 
 /**
  * Compute REINFORCE weight updates from a completed episode.
@@ -55,7 +56,7 @@ export function computeReinforceUpdates(
       }
 
       if (substep.chosenAction.type === "stop_local") {
-        if (substep.stopTruth === "forced") {
+        if (!isChosenPolicyStopSubstep(substep)) {
           continue;
         }
         const key = `stop→${sourceId}`;

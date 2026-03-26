@@ -76,6 +76,8 @@ const TEACHER_SYSTEM_PROMPT =
   "Judge (1) retrieval relevance of the selected context to the user query, " +
   "(2) agent usage of that context and any tools, and " +
   "(3) whether the observed outcome supports rewarding the route. " +
+  "Use route metadata to distinguish deliberate routing from forced stops, dropped proposals, clipped delivery, " +
+  "or deadline interruptions; do not reward context that was never actually served to the assistant. " +
   "If the next user turn is missing or ambiguous, lower confidence rather than inventing certainty. " +
   "Return ONLY JSON: " +
   "{\"retrieval_relevance\": <number -1.0..1.0>, \"agent_usage\": <number -1.0..1.0>, \"outcome_support\": <number -1.0..1.0>, \"final_score\": <number -1.0..1.0>, \"confidence\": <number 0.0..1.0>, \"reason\": \"<brief explanation>\"}";

@@ -11,6 +11,7 @@ import type {
   TrustLevel,
 } from "./types.js";
 import type { TraverseResult } from "./traverse.js";
+import { resolveStopTruth } from "./trajectory-stop.js";
 
 const ROUTER_IDENTITY = "brain-graph-traverse.v2";
 const TRACE_PREVIEW_CHARS = 160;
@@ -65,14 +66,14 @@ function countStopTruths(traversalResult: TraverseResult): {
 
   for (const expansion of traversalResult.trajectory) {
     for (const substep of expansion.substeps) {
-      if (substep.chosenAction.type !== "stop_local") {
-        continue;
-      }
-      if (substep.stopTruth === "forced") {
+      const stopTruth = resolveStopTruth(substep);
+      if (stopTruth === "forced") {
         forcedStopCount += 1;
         continue;
       }
-      chosenStopCount += 1;
+      if (stopTruth === "chosen") {
+        chosenStopCount += 1;
+      }
     }
   }
 

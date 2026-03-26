@@ -604,6 +604,7 @@ describe("BrainAssemblerExtension", () => {
       compileElapsedMs: expect.any(Number),
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
+      servedPartial: true,
     }));
     expect((result.brainDecision?.fittedNodeCount ?? 0)).toBeGreaterThan(0);
     expect((result.brainDecision?.fittedNodeCount ?? 0)).toBeLessThan(3);
@@ -627,6 +628,7 @@ describe("BrainAssemblerExtension", () => {
         compileElapsedMs: expect.any(Number),
         brainDropReason: "injection_cap_clipped",
         brainDropStage: "injection",
+        servedPartial: true,
       }),
     );
     expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
@@ -648,6 +650,7 @@ describe("BrainAssemblerExtension", () => {
       compileElapsedMs: expect.any(Number),
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
+      servedPartial: true,
     }));
   });
 
