@@ -3112,10 +3112,133 @@ function buildExtensionPluginManifest() {
         name: "OpenClawBrain",
         description: "Learned memory and context from OpenClawBrain",
         version: packageMetadata.version,
+        uiHints: {
+            brainRoot: {
+                label: "Brain Root",
+                help: "Directory containing OpenClawBrain state.db and immutable packs"
+            },
+            brainEmbeddingProvider: {
+                label: "Embedding Provider",
+                help: "Provider used for learned retrieval embeddings"
+            },
+            brainEmbeddingModel: {
+                label: "Embedding Model",
+                help: "Embedding model used for init, retrieval, and brain_teach"
+            },
+            brainEmbeddingBaseUrl: {
+                label: "Embedding Base URL",
+                help: "Optional base URL override for the embedding provider endpoint"
+            },
+            brainMaxCompileMs: {
+                label: "Brain Compile Deadline",
+                help: "Soft wall-clock deadline in milliseconds for brain assembly phase-boundary checks"
+            },
+            brainBudgetFraction: {
+                label: "Brain Budget Fraction",
+                help: "Fraction of the available token budget reserved for retrieval before final prompt clipping"
+            },
+            brainMaxHops: {
+                label: "Brain Max Hops",
+                help: "Maximum learned-retrieval graph expansion depth per query"
+            },
+            brainMaxFanoutPerNode: {
+                label: "Brain Max Fanout Per Node",
+                help: "Maximum accepted traversals from a single source node expansion"
+            },
+            brainMaxFrontierSize: {
+                label: "Brain Max Frontier Size",
+                help: "Maximum traversal frontier size during learned retrieval"
+            },
+            brainMaxSeeds: {
+                label: "Brain Max Seeds",
+                help: "Maximum seed nodes admitted into learned retrieval before graph expansion"
+            },
+            brainSemanticThreshold: {
+                label: "Brain Semantic Threshold",
+                help: "Minimum semantic similarity required for seed admission during learned retrieval"
+            },
+            brainShadowMode: {
+                label: "Brain Shadow Mode",
+                help: "Run learned retrieval for telemetry only without injecting brain context into prompts"
+            },
+            brainWorkerMode: {
+                label: "Worker Mode",
+                help: "Run the learner in a supervised child process (default) or fall back to in-process mode"
+            },
+            brainWorkerHeartbeatTimeoutMs: {
+                label: "Worker Heartbeat Timeout",
+                help: "Milliseconds to wait before treating the supervised learner worker as stalled"
+            },
+            brainWorkerRestartDelayMs: {
+                label: "Worker Restart Delay",
+                help: "Milliseconds to wait before restarting the supervised learner worker after exit or crash"
+            }
+        },
         configSchema: {
             type: "object",
             additionalProperties: false,
-            properties: {}
+            properties: {
+                brainEnabled: {
+                    type: "boolean"
+                },
+                brainRoot: {
+                    type: "string"
+                },
+                brainEmbeddingProvider: {
+                    type: "string"
+                },
+                brainEmbeddingModel: {
+                    type: "string"
+                },
+                brainEmbeddingBaseUrl: {
+                    type: "string"
+                },
+                brainMaxCompileMs: {
+                    type: "integer",
+                    minimum: 0
+                },
+                brainBudgetFraction: {
+                    type: "number",
+                    minimum: 0,
+                    maximum: 1
+                },
+                brainMaxHops: {
+                    type: "integer",
+                    minimum: 1
+                },
+                brainMaxFanoutPerNode: {
+                    type: "integer",
+                    minimum: 1
+                },
+                brainMaxFrontierSize: {
+                    type: "integer",
+                    minimum: 1
+                },
+                brainMaxSeeds: {
+                    type: "integer",
+                    minimum: 1
+                },
+                brainSemanticThreshold: {
+                    type: "number",
+                    minimum: 0,
+                    maximum: 1
+                },
+                brainShadowMode: {
+                    type: "boolean"
+                },
+                brainWorkerMode: {
+                    type: "string",
+                    enum: ["child", "in_process"]
+                },
+                brainWorkerHeartbeatTimeoutMs: {
+                    type: "integer",
+                    minimum: 1000
+                },
+                brainWorkerRestartDelayMs: {
+                    type: "integer",
+                    minimum: 0
+                }
+            }
         }
     }, null, 2) + "\n";
 }

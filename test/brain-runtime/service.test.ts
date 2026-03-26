@@ -336,23 +336,37 @@ describe("BrainService", () => {
     });
   });
 
-  it("surfaces the active retrieval controls in status", async () => {
+  it("surfaces the active runtime controls in status", async () => {
     const brainRoot = makeTempDir("openclawbrain-controls-");
     const service = new BrainService({
       deps: createDeps(brainRoot, {
+        maxCompileMs: 85,
         budgetFraction: 0.55,
         maxHops: 11,
         maxFanoutPerNode: 6,
         maxFrontierSize: 21,
+        maxSeeds: 14,
+        semanticThreshold: 0.61,
+        shadowMode: true,
+        workerMode: "child",
+        workerHeartbeatTimeoutMs: 15_000,
+        workerRestartDelayMs: 750,
       }),
     });
 
     const status = await service.status();
     expect(status).toEqual(expect.objectContaining({
+      maxCompileMs: 85,
       budgetFraction: 0.55,
       maxHops: 11,
       maxFanoutPerNode: 6,
       maxFrontierSize: 21,
+      maxSeeds: 14,
+      semanticThreshold: 0.61,
+      shadowMode: true,
+      workerMode: "child",
+      workerHeartbeatTimeoutMs: 15_000,
+      workerRestartDelayMs: 750,
     }));
   });
 

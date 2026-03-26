@@ -22,10 +22,18 @@ describe("resolveLcmConfig", () => {
       contextThreshold: 0.5,
       freshTailCount: 16,
       incrementalMaxDepth: -1,
+      brainEmbeddingBaseUrl: "https://embeddings.example.invalid/v1",
       brainMaxCompileMs: 75,
       brainBudgetFraction: 0.45,
+      brainMaxHops: 9,
       brainMaxFanoutPerNode: 7,
       brainMaxFrontierSize: 19,
+      brainMaxSeeds: 13,
+      brainSemanticThreshold: 0.82,
+      brainShadowMode: true,
+      brainWorkerMode: "in_process",
+      brainWorkerHeartbeatTimeoutMs: 12_000,
+      brainWorkerRestartDelayMs: 600,
       leafMinFanout: 4,
       condensedMinFanout: 2,
       autocompactDisabled: true,
@@ -36,10 +44,18 @@ describe("resolveLcmConfig", () => {
     expect(config.contextThreshold).toBe(0.5);
     expect(config.freshTailCount).toBe(16);
     expect(config.incrementalMaxDepth).toBe(-1);
+    expect(config.brain?.embeddingBaseUrl).toBe("https://embeddings.example.invalid/v1");
     expect(config.brain?.maxCompileMs).toBe(75);
     expect(config.brain?.budgetFraction).toBe(0.45);
+    expect(config.brain?.maxHops).toBe(9);
     expect(config.brain?.maxFanoutPerNode).toBe(7);
     expect(config.brain?.maxFrontierSize).toBe(19);
+    expect(config.brain?.maxSeeds).toBe(13);
+    expect(config.brain?.semanticThreshold).toBe(0.82);
+    expect(config.brain?.shadowMode).toBe(true);
+    expect(config.brain?.workerMode).toBe("in_process");
+    expect(config.brain?.workerHeartbeatTimeoutMs).toBe(12_000);
+    expect(config.brain?.workerRestartDelayMs).toBe(600);
     expect(config.leafMinFanout).toBe(4);
     expect(config.condensedMinFanout).toBe(2);
     expect(config.autocompactDisabled).toBe(true);
@@ -150,12 +166,20 @@ describe("resolveLcmConfig", () => {
     expect(config.brain?.maxFrontierSize).toBe(32);
   });
 
-  it("keeps root and published manifests aligned for tranche-1 serving controls", () => {
+  it("keeps root and published manifests aligned for live runtime controls", () => {
     const keys = [
+      "brainEmbeddingBaseUrl",
       "brainMaxCompileMs",
       "brainBudgetFraction",
+      "brainMaxHops",
       "brainMaxFanoutPerNode",
       "brainMaxFrontierSize",
+      "brainMaxSeeds",
+      "brainSemanticThreshold",
+      "brainShadowMode",
+      "brainWorkerMode",
+      "brainWorkerHeartbeatTimeoutMs",
+      "brainWorkerRestartDelayMs",
     ] as const;
 
     for (const key of keys) {

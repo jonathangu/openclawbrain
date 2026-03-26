@@ -1,6 +1,11 @@
 import test from "node:test";
 import assert from "node:assert/strict";
+import { readFileSync } from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { buildOpenClawBrainConvergeRestartPlan, classifyOpenClawBrainConvergeVerification, describeOpenClawBrainConvergeChangeReasons, diffOpenClawBrainConvergeRuntimeFingerprint, finalizeOpenClawBrainConvergeResult, planOpenClawBrainConvergePluginAction } from "../src/install-converge.js";
+
+const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 test("converge plans plugin install when the authoritative split-package plugin is absent", () => {
     const plan = planOpenClawBrainConvergePluginAction({
@@ -106,4 +111,32 @@ test("converge classifies manual-action and warning outcomes truthfully from sta
     assert.equal(warningVerdict.verdict, "converged_with_warnings");
     assert.match(warningVerdict.why, /runtime load is not_proven/);
     assert.match(warningVerdict.why, /serve state is seed_state_authoritative/);
+});
+
+test("install writes a live runtime config manifest instead of an empty stub", () => {
+    const cliSource = readFileSync(path.join(__dirname, "..", "src", "cli.js"), "utf8");
+
+    const requiredLiterals = [
+        "brainEmbeddingBaseUrl",
+        "brainMaxCompileMs",
+        "brainBudgetFraction",
+        "brainMaxHops",
+        "brainMaxFanoutPerNode",
+        "brainMaxFrontierSize",
+        "brainMaxSeeds",
+        "brainSemanticThreshold",
+        "brainShadowMode",
+        "brainWorkerMode",
+        "brainWorkerHeartbeatTimeoutMs",
+        "brainWorkerRestartDelayMs",
+    ];
+
+    for (const literal of requiredLiterals) {
+        assert.match(cliSource, new RegExp(`\\b${literal}\\b`));
+    }
+
+    assert.doesNotMatch(
+        cliSource,
+        /function buildExtensionPluginManifest\(\) \{[\s\S]*properties:\s*\{\}[\s\S]*\}/,
+    );
 });
