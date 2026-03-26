@@ -7,14 +7,43 @@ function isSeedAwaitingFirstPromotion(status) {
 function normalizeOptionalString(value) {
     return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
+function formatOperatorLearningAttributionSummary({ status }) {
+    const attribution = status?.learningAttribution ?? null;
+    if (!attribution) {
+        return "quality=unavailable source=unavailable detail=no_learning_attribution_surface";
+    }
+    const source = [normalizeOptionalString(attribution.source), normalizeOptionalString(attribution.snapshotKind)]
+        .filter((value) => value !== null)
+        .join("/");
+    if (attribution.available !== true) {
+        return `quality=${normalizeOptionalString(attribution.quality) ?? "unavailable"} source=${source || "unavailable"} detail=${normalizeOptionalString(attribution.detail) ?? "unavailable"}`;
+    }
+    const matchedByMode = attribution.matchedByMode ?? {};
+    return [
+        `quality=${normalizeOptionalString(attribution.quality) ?? "unavailable"}`,
+        `source=${source || "latest_materialization"}`,
+        `nonZero=${attribution.nonZeroObservationCount ?? 0}`,
+        `exact=${attribution.exactMatchCount ?? 0}`,
+        `heuristic=${attribution.heuristicMatchCount ?? 0}`,
+        `unmatched=${attribution.unmatchedCount ?? 0}`,
+        `ambiguous=${attribution.ambiguousCount ?? 0}`,
+        `modes=decision:${matchedByMode.exactDecisionId ?? 0}|digest:${matchedByMode.exactSelectionDigest ?? 0}|compile:${matchedByMode.turnCompileEventId ?? 0}|heuristic:${matchedByMode.legacyHeuristic ?? 0}`
+    ].join(" ");
+}
 export function formatOperatorLearningPathSummary({ status, learningPath, tracedLearning }) {
+    const attribution = status?.learningAttribution ?? null;
     if (!isSeedAwaitingFirstPromotion(status)) {
-        return formatRawLearningPathSummary(learningPath);
+        const rawSummary = formatRawLearningPathSummary(learningPath);
+        const bindingQuality = normalizeOptionalString(attribution?.quality);
+        return bindingQuality === null || bindingQuality === "unavailable"
+            ? rawSummary
+            : `${rawSummary} bindingQuality=${bindingQuality}`;
     }
     const detailParts = [
         "detail=seed_state_awaiting_first_promotion",
         `tracedPg=${normalizeOptionalString(tracedLearning?.pgVersionUsed) ?? "none"}`,
-        `tracedPack=${normalizeOptionalString(tracedLearning?.materializedPackId) ?? "none"}`
+        `tracedPack=${normalizeOptionalString(tracedLearning?.materializedPackId) ?? "none"}`,
+        `bindingQuality=${normalizeOptionalString(attribution?.quality) ?? "unavailable"}`
     ];
     return [
         "source=seed_state",
@@ -26,3 +55,4 @@ export function formatOperatorLearningPathSummary({ status, learningPath, traced
         ...detailParts
     ].join(" ");
 }
+export { formatOperatorLearningAttributionSummary };

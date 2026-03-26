@@ -80,6 +80,8 @@ function createDetailedStatusText(fixture, overrides = {}) {
         overrides.hookLine ?? "hook        install=installed loadable=loadable",
         `serve       state=${overrides.serveState ?? "serving_active_pack"}`,
         `routeFn     available=${overrides.routeFnAvailable ?? "yes"}`,
+        overrides.pathLine ?? "path        source=materialized_candidate pg=v2 method=policy_gradient_v2 target=trajectory_reconstruction connect=4 trajectories=12 bindingQuality=exact_only",
+        overrides.attributionLine ?? "attribution quality=exact_only source=latest_materialization/watch_snapshot nonZero=1 exact=1 heuristic=0 unmatched=0 ambiguous=0 modes=decision:1|digest:0|compile:0|heuristic:0",
         `attachedSet current_profile@${path.resolve(fixture.openclawHome)} proofPath=${overrides.proofPath ?? fixture.runtimeLoadProofPath} proofError=${overrides.proofError ?? "none"}`,
         `loadProof=${overrides.loadProof ?? "status_probe_ready"}`
     ].join("\n");
@@ -197,12 +199,17 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     assert.equal(stepsPayload.steps.length, 5);
     assert.equal(verdictPayload.verdict.verdict, "success_and_proven");
     assert.match(summary, /bundle verdict: \*\*success_and_proven\*\*/);
+    assert.match(summary, /## Learning Attribution/);
+    assert.match(summary, /attribution quality=exact_only/);
+    assert.match(summary, /path        source=materialized_candidate/);
     assert.match(summary, /## Warnings/);
     assert.match(summary, /- none/);
     assert.match(summary, /startup log contained a post-bundle \[openclawbrain\] BRAIN LOADED breadcrumb/);
     assert.match(breadcrumbsLog, /BRAIN LOADED/);
     assert.equal(runtimeProofSnapshot.exists, true);
     assert.equal(runtimeProofSnapshot.path, fixture.runtimeLoadProofPath);
+    assert.equal(verdictPayload.attributionLine, "attribution quality=exact_only source=latest_materialization/watch_snapshot nonZero=1 exact=1 heuristic=0 unmatched=0 ambiguous=0 modes=decision:1|digest:0|compile:0|heuristic:0");
+    assert.equal(verdictPayload.learningPathLine, "path        source=materialized_candidate pg=v2 method=policy_gradient_v2 target=trajectory_reconstruction connect=4 trajectories=12 bindingQuality=exact_only");
     assert.deepEqual(captures[1]?.args, ["gateway", "restart", "--profile", "Tern"]);
     assert.deepEqual(captures[2]?.args, ["gateway", "status", "--profile", "Tern"]);
 });

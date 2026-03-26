@@ -5737,7 +5737,128 @@ function summarizeTeacherLoopWatchState(input) {
         snapshotUpdatedAt: input.watchSnapshot.updatedAt,
         lastWatchHeartbeatAt,
         pollIntervalSeconds,
-        watchState: Number.isFinite(lagMs) && lagMs >= 0 && lagMs <= staleAfterMs ? "watching" : "stale_snapshot"
+            watchState: Number.isFinite(lagMs) && lagMs >= 0 && lagMs <= staleAfterMs ? "watching" : "stale_snapshot"
+    };
+}
+function emptyOperatorLearningAttribution(source, snapshotKind, detail) {
+    return {
+        available: false,
+        source,
+        snapshotKind,
+        quality: "unavailable",
+        nonZeroObservationCount: 0,
+        skippedZeroRewardCount: 0,
+        exactMatchCount: 0,
+        heuristicMatchCount: 0,
+        unmatchedCount: 0,
+        ambiguousCount: 0,
+        matchedByMode: {
+            exactDecisionId: 0,
+            exactSelectionDigest: 0,
+            turnCompileEventId: 0,
+            legacyHeuristic: 0
+        },
+        unmatchedByMode: {
+            exactDecisionId: 0,
+            exactSelectionDigest: 0,
+            turnCompileEventId: 0,
+            legacyHeuristic: 0
+        },
+        ambiguousByMode: {
+            exactDecisionId: 0,
+            exactSelectionDigest: 0,
+            turnCompileEventId: 0,
+            legacyHeuristic: 0
+        },
+        detail
+    };
+}
+function sumObservationBindingModes(counts) {
+    return (counts.exactDecisionId ?? 0)
+        + (counts.exactSelectionDigest ?? 0)
+        + (counts.turnCompileEventId ?? 0)
+        + (counts.legacyHeuristic ?? 0);
+}
+function deriveObservationBindingQuality(summary) {
+    if (summary.nonZeroObservationCount === 0) {
+        return "no_nonzero_observations";
+    }
+    if (summary.ambiguousCount > 0) {
+        if (summary.exactMatchCount > 0) {
+            return "exact_with_ambiguous";
+        }
+        if (summary.heuristicMatchCount > 0) {
+            return "heuristic_with_ambiguous";
+        }
+        return "ambiguous_present";
+    }
+    if (summary.unmatchedCount > 0) {
+        if (summary.exactMatchCount > 0) {
+            return "exact_with_unmatched";
+        }
+        if (summary.heuristicMatchCount > 0) {
+            return "heuristic_with_unmatched";
+        }
+        return "unmatched_present";
+    }
+    if (summary.exactMatchCount > 0 && summary.heuristicMatchCount > 0) {
+        return "exact_plus_heuristic";
+    }
+    if (summary.exactMatchCount > 0) {
+        return "exact_only";
+    }
+    if (summary.heuristicMatchCount > 0) {
+        return "heuristic_only";
+    }
+    return "no_matches";
+}
+function summarizeTeacherLoopObservationBinding(snapshot, sourceKind) {
+    const stats = snapshot.learner.lastMaterialization?.candidate.routingBuild?.observationBindingStats ?? null;
+    if (stats === null) {
+        return emptyOperatorLearningAttribution("latest_materialization", sourceKind, snapshot.learner.lastMaterialization === null
+            ? "no materialized candidate pack is visible in the teacher snapshot"
+            : "latest materialization did not expose observation binding stats");
+    }
+    const exactMatchCount = (stats.matched.exactDecisionId ?? 0)
+        + (stats.matched.exactSelectionDigest ?? 0)
+        + (stats.matched.turnCompileEventId ?? 0);
+    const heuristicMatchCount = stats.matched.legacyHeuristic ?? 0;
+    const unmatchedCount = sumObservationBindingModes(stats.unmatched);
+    const ambiguousCount = sumObservationBindingModes(stats.ambiguous);
+    const summary = {
+        available: true,
+        source: "latest_materialization",
+        snapshotKind: sourceKind,
+        quality: "unavailable",
+        nonZeroObservationCount: stats.nonZeroObservationCount ?? 0,
+        skippedZeroRewardCount: stats.skippedZeroRewardCount ?? 0,
+        exactMatchCount,
+        heuristicMatchCount,
+        unmatchedCount,
+        ambiguousCount,
+        matchedByMode: {
+            exactDecisionId: stats.matched.exactDecisionId ?? 0,
+            exactSelectionDigest: stats.matched.exactSelectionDigest ?? 0,
+            turnCompileEventId: stats.matched.turnCompileEventId ?? 0,
+            legacyHeuristic: stats.matched.legacyHeuristic ?? 0
+        },
+        unmatchedByMode: {
+            exactDecisionId: stats.unmatched.exactDecisionId ?? 0,
+            exactSelectionDigest: stats.unmatched.exactSelectionDigest ?? 0,
+            turnCompileEventId: stats.unmatched.turnCompileEventId ?? 0,
+            legacyHeuristic: stats.unmatched.legacyHeuristic ?? 0
+        },
+        ambiguousByMode: {
+            exactDecisionId: stats.ambiguous.exactDecisionId ?? 0,
+            exactSelectionDigest: stats.ambiguous.exactSelectionDigest ?? 0,
+            turnCompileEventId: stats.ambiguous.turnCompileEventId ?? 0,
+            legacyHeuristic: stats.ambiguous.legacyHeuristic ?? 0
+        },
+        detail: "teacher observation binding stats came from the latest materialized candidate"
+    };
+    return {
+        ...summary,
+        quality: deriveObservationBindingQuality(summary)
     };
 }
 function summarizeTeacherLoop(input) {
@@ -5779,6 +5900,7 @@ function summarizeTeacherLoop(input) {
             failureDetail: null,
             lastAppliedMaterializationJobId: null,
             lastMaterializedPackId: null,
+            observationBinding: emptyOperatorLearningAttribution("unavailable", "missing", "no teacher snapshot path supplied"),
             lastObservedDelta: unavailableFromMissing,
             notes: [],
             detail: "no teacher snapshot path supplied"
@@ -5818,6 +5940,7 @@ function summarizeTeacherLoop(input) {
             failureDetail: null,
             lastAppliedMaterializationJobId: null,
             lastMaterializedPackId: null,
+            observationBinding: emptyOperatorLearningAttribution("unavailable", "missing", "teacher snapshot could not be loaded"),
             lastObservedDelta: unavailableFromMissing,
             notes: [],
             detail: "teacher snapshot could not be loaded"
@@ -5866,6 +5989,7 @@ function summarizeTeacherLoop(input) {
             snapshot.learner.lastMaterialization?.jobId ??
             null,
         lastMaterializedPackId: snapshot.learner.lastMaterialization?.candidate.summary.packId ?? null,
+        observationBinding: summarizeTeacherLoopObservationBinding(snapshot, loaded.sourceKind),
         lastObservedDelta: loaded.sourceKind === "watch_snapshot" && watchSnapshot !== null
             ? cloneLastObservedDelta(watchSnapshot.lastObservedDelta)
             : unavailableFromAsync,
@@ -6665,7 +6789,10 @@ function buildCurrentProfileBrainStatusFromReport(report, policyMode, profileId)
                                             ? "current profile would fail open to static context because no serving pack is available"
                                             : report.servePath.state === "hard_fail"
                                                 ? "current profile cannot serve because the learned-route or activation requirement hard-failed"
-                                                : "current profile serve state has not been compile-probed yet"
+                                            : "current profile serve state has not been compile-probed yet"
+        },
+        learningAttribution: {
+            ...report.teacherLoop.observationBinding
         },
         passiveLearning,
         currentTurnAttribution: buildCurrentProfileTurnAttributionFromReport(report, policyMode, profileId)

@@ -24,7 +24,7 @@ import { summarizePackVectorEmbeddingState } from "./embedding-status.js";
 import { buildTracedLearningBridgePayloadFromRuntime, buildTracedLearningStatusSurface, persistTracedLearningBridgeState } from "./traced-learning-bridge.js";
 import { discoverOpenClawSessionStores, loadOpenClawSessionIndex, readOpenClawSessionFile } from "./session-store.js";
 import { readOpenClawBrainProviderDefaults, readOpenClawBrainProviderConfig, readOpenClawBrainProviderConfigFromSources, resolveOpenClawBrainProviderDefaultsPath } from "./provider-config.js";
-import { formatOperatorLearningPathSummary } from "./status-learning-path.js";
+import { formatOperatorLearningAttributionSummary, formatOperatorLearningPathSummary } from "./status-learning-path.js";
 import { buildProofCommandForOpenClawHome, buildProofCommandHelpSection, captureOperatorProofBundle, formatOperatorProofResult, parseProofCliArgs } from "./proof-command.js";
 const OPENCLAWBRAIN_EMBEDDER_BASE_URL_ENV = "OPENCLAWBRAIN_EMBEDDER_BASE_URL";
 const OPENCLAWBRAIN_EMBEDDER_PROVIDER_ENV = "OPENCLAWBRAIN_EMBEDDER_PROVIDER";
@@ -1353,6 +1353,7 @@ function buildCompactStatusHeader(status, report, options) {
         `changed     ${status.passiveLearning.lastObservedDelta.explanation}`,
         `explain     ${status.brain.summary}`,
         `graph       blocks=${report.graph.blockCount ?? "none"} strongest=${report.graph.strongestBlockId ?? "none"} latest=${report.graph.latestMaterialization.packId ?? "none"} latestChanged=${yesNo(report.graph.latestMaterialization.changed)} connect=${formatCompactGraphConnectDiagnostics(report.graph.latestMaterialization.connectDiagnostics ?? report.graph.connectDiagnostics)}`,
+        `attribution ${formatOperatorLearningAttributionSummary({ status })}`,
         `teacher     model=${teacher.model} enabled=${yesNo(teacher.enabled)} healthy=${yesNo(teacher.healthy)} stale=${yesNo(teacher.stale)} idle=${yesNo(teacher.idle)} cycle=${teacher.latestCycle} why=${teacher.detail}`,
         `embedder    model=${embedder.model} provisioned=${yesNo(embedder.provisioned)} live=${yesNo(embedder.live)} why=${embedder.detail}`,
         `routeFn     available=${yesNo(routeFn.available)} freshness=${routeFn.freshness} trained=${routeFn.trainedAt ?? "none"} updated=${routeFn.updatedAt ?? "none"} used=${routeFn.usedAt ?? "none"} why=${routeFn.detail}`,
@@ -1410,6 +1411,7 @@ function formatCurrentProfileStatusSummary(status, report, targetInspection, opt
             learningPath: report.learningPath,
             tracedLearning
         })}`,
+        `attribution ${formatOperatorLearningAttributionSummary({ status })}`,
         `learning    state=${report.learning.backlogState} bootstrapped=${yesNo(report.learning.bootstrapped)} mode=${report.learning.mode} next=${report.learning.nextPriorityLane} priority=${report.learning.nextPriorityBucket} pending=${report.learning.pendingLive ?? "none"}/${report.learning.pendingBackfill ?? "none"} buckets=${formatLearningBuckets(report)} warn=${formatLearningWarnings(report)} lastPack=${report.learning.lastMaterializedPackId ?? "none"} detail=${report.learning.detail}`,
         `traced      ${formatTracedLearningSurface(tracedLearning)}`,
         `teacherProof ${formatTeacherLoopSummary(report)}`,

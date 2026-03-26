@@ -132,6 +132,7 @@ function commandStatus(): void {
   const embeddingConfig = describeEmbeddingConfig(brainConfig);
   const workerState = readWorkerRuntimeState(store, brainConfig);
   const promotionStory = buildPromotionStory(store);
+  const observationAttribution = store.getObservationAttributionSummary();
 
   printJson({
     command: "status",
@@ -153,6 +154,7 @@ function commandStatus(): void {
     currentPackMetadata: promotionStory.currentPack?.metadata ?? null,
     pendingObservations: store.countPendingObservations(),
     pendingObservationsByStatus: store.countObservationsByStatus(),
+    observationAttribution,
     pendingLabels: store.getPendingLabels().length,
     pendingLabelsBySource: store.countPendingLabelsBySource(),
     mutationBacklog: store.countMutationsByStatus(),

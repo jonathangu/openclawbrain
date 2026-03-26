@@ -563,6 +563,25 @@ describe("BrainService", () => {
     expect(status.routeTraceCount).toBe(1);
     expect(status.supervisionCount).toBe(1);
     expect(status.pendingObservations).toBe(0);
+    expect(status.observationAttribution).toMatchObject({
+      totalObservationCount: 1,
+      completedObservationCount: 1,
+      teacherEvaluationCount: 1,
+      bindingModes: {
+        exact_decision_id: 0,
+        exact_selection_digest: 0,
+        turn_compile_event_id: 0,
+        trace_id: 1,
+        legacy_heuristic: 0,
+        unbound: 0,
+      },
+      attributionQuality: {
+        exact: 0,
+        fallback: 1,
+        unbound: 0,
+      },
+      detail: "teacher evaluations include fallback attribution binding",
+    });
   });
 
   it("replays pending observations after a process restart", async () => {

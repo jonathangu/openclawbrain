@@ -272,6 +272,42 @@ function normalizeObservationTeacherEvaluation(
   };
 }
 
+const OBSERVATION_BINDING_MODES: BrainObservationBindingMode[] = [
+  "exact_decision_id",
+  "exact_selection_digest",
+  "turn_compile_event_id",
+  "trace_id",
+  "legacy_heuristic",
+  "unbound",
+];
+
+function emptyObservationBindingModeCounts(): Record<BrainObservationBindingMode, number> {
+  return {
+    exact_decision_id: 0,
+    exact_selection_digest: 0,
+    turn_compile_event_id: 0,
+    trace_id: 0,
+    legacy_heuristic: 0,
+    unbound: 0,
+  };
+}
+
+function classifyObservationBindingQuality(
+  mode: BrainObservationBindingMode,
+): "exact" | "fallback" | "unbound" {
+  if (
+    mode === "exact_decision_id"
+    || mode === "exact_selection_digest"
+    || mode === "turn_compile_event_id"
+  ) {
+    return "exact";
+  }
+  if (mode === "unbound") {
+    return "unbound";
+  }
+  return "fallback";
+}
+
 export interface LearningJournalInsert {
   eventType: LearningJournalEventType;
   mutationId?: string | null;
@@ -1024,6 +1060,67 @@ export class BrainStore {
       counts[row.status] = row.count;
     }
     return counts;
+  }
+
+  getObservationAttributionSummary(): {
+    totalObservationCount: number;
+    completedObservationCount: number;
+    teacherEvaluationCount: number;
+    bindingModes: Record<BrainObservationBindingMode, number>;
+    attributionQuality: {
+      exact: number;
+      fallback: number;
+      unbound: number;
+    };
+    detail: string;
+  } {
+    const rows = this.db.prepare(`
+      SELECT status, teacher_evaluation_json
+      FROM brain_observations
+    `).all() as Array<{ status?: BrainObservationStatus; teacher_evaluation_json?: string | null }>;
+    const bindingModes = emptyObservationBindingModeCounts();
+    const attributionQuality = {
+      exact: 0,
+      fallback: 0,
+      unbound: 0,
+    };
+    let completedObservationCount = 0;
+    let teacherEvaluationCount = 0;
+
+    for (const row of rows) {
+      if (row.status === "completed") {
+        completedObservationCount += 1;
+      }
+      const evaluation = row.teacher_evaluation_json
+        ? parseJsonValue<BrainObservationTeacherEvaluation | null>(row.teacher_evaluation_json, null)
+        : null;
+      const bindingMode = evaluation?.bindingMode;
+      if (!bindingMode || !OBSERVATION_BINDING_MODES.includes(bindingMode)) {
+        continue;
+      }
+      teacherEvaluationCount += 1;
+      bindingModes[bindingMode] += 1;
+      attributionQuality[classifyObservationBindingQuality(bindingMode)] += 1;
+    }
+
+    let detail = "no teacher evaluations recorded";
+    if (teacherEvaluationCount > 0) {
+      detail =
+        attributionQuality.unbound > 0
+          ? "teacher evaluations include unbound attribution"
+          : attributionQuality.fallback > 0
+            ? "teacher evaluations include fallback attribution binding"
+            : "teacher evaluations are exact-bound";
+    }
+
+    return {
+      totalObservationCount: rows.length,
+      completedObservationCount,
+      teacherEvaluationCount,
+      bindingModes,
+      attributionQuality,
+      detail,
+    };
   }
 
   attachObservationFollowUp(

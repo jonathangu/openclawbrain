@@ -125,7 +125,7 @@ export function createBrainStatusTool(deps: BrainToolDeps) {
     name: "brain_status",
     label: "Brain Status",
     description:
-      "Show brain health: node/edge counts, pack version, learning stats, recent traces.",
+      "Show brain health: node/edge counts, pack version, learning stats, recent traces, and observation attribution truth.",
     parameters: BrainStatusSchema,
     async execute() {
       const status = await deps.status();

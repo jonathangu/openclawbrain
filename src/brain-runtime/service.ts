@@ -916,6 +916,7 @@ export class BrainService {
     const promotionStory = buildPromotionStory(this.store);
     const routeTraceCount = this.store.countTraces();
     const supervisionCount = this.store.countTraceSupervision();
+    const observationAttribution = this.store.getObservationAttributionSummary();
     const lastPgCandidateUpdate = this.store.getTrainingStateJson("last_pg_candidate_update_json");
     const lastPgCandidatePackVersionRaw = this.store.getTrainingState("last_pg_candidate_pack_version");
     const lastPgCandidatePackVersion = lastPgCandidatePackVersionRaw
@@ -958,6 +959,7 @@ export class BrainService {
       pendingUserObservationCount: this.pendingUserObservationCount,
       pendingObservations: this.store.countPendingObservations(),
       pendingObservationsByStatus: this.store.countObservationsByStatus(),
+      observationAttribution,
       ...workerState,
       pendingLabels: this.store.getPendingLabels().length,
       pendingLabelsBySource: this.store.countPendingLabelsBySource(),

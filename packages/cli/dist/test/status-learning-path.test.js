@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { formatOperatorLearningPathSummary } from "../src/status-learning-path.js";
+import { formatOperatorLearningAttributionSummary, formatOperatorLearningPathSummary } from "../src/status-learning-path.js";
 
 const baseLearningPath = {
     source: "active_pack",
@@ -15,7 +15,10 @@ test("seed state awaiting first promotion hides mixed v1 metadata on the path li
     const summary = formatOperatorLearningPathSummary({
         status: {
             brain: { state: "seed_state_authoritative" },
-            brainStatus: { awaitingFirstExport: true }
+            brainStatus: { awaitingFirstExport: true },
+            learningAttribution: {
+                quality: "exact_only"
+            }
         },
         learningPath: baseLearningPath,
         tracedLearning: {
@@ -28,6 +31,7 @@ test("seed state awaiting first promotion hides mixed v1 metadata on the path li
     assert.match(summary, /method=not_yet_promoted/);
     assert.match(summary, /detail=seed_state_awaiting_first_promotion/);
     assert.match(summary, /tracedPg=v2/);
+    assert.match(summary, /bindingQuality=exact_only/);
     assert.doesNotMatch(summary, /pg=v1/);
     assert.doesNotMatch(summary, /method=policy_gradient_v1/);
 });
@@ -36,7 +40,10 @@ test("non-seed states preserve the raw learning-path summary", () => {
     const summary = formatOperatorLearningPathSummary({
         status: {
             brain: { state: "promoted_pack_active" },
-            brainStatus: { awaitingFirstExport: false }
+            brainStatus: { awaitingFirstExport: false },
+            learningAttribution: {
+                quality: "exact_with_unmatched"
+            }
         },
         learningPath: {
             ...baseLearningPath,
@@ -52,5 +59,30 @@ test("non-seed states preserve the raw learning-path summary", () => {
             materializedPackId: "pack-promoted"
         }
     });
-    assert.equal(summary, "source=materialized_candidate pg=v2 method=policy_gradient_v2 target=trajectory_reconstruction connect=4 trajectories=12");
+    assert.equal(summary, "source=materialized_candidate pg=v2 method=policy_gradient_v2 target=trajectory_reconstruction connect=4 trajectories=12 bindingQuality=exact_with_unmatched");
+});
+
+test("attribution summary reports exact-vs-heuristic and unresolved counters", () => {
+    const summary = formatOperatorLearningAttributionSummary({
+        status: {
+            learningAttribution: {
+                available: true,
+                source: "latest_materialization",
+                snapshotKind: "watch_snapshot",
+                quality: "exact_with_unmatched",
+                nonZeroObservationCount: 3,
+                exactMatchCount: 2,
+                heuristicMatchCount: 1,
+                unmatchedCount: 1,
+                ambiguousCount: 0,
+                matchedByMode: {
+                    exactDecisionId: 1,
+                    exactSelectionDigest: 1,
+                    turnCompileEventId: 0,
+                    legacyHeuristic: 1
+                }
+            }
+        }
+    });
+    assert.equal(summary, "quality=exact_with_unmatched source=latest_materialization/watch_snapshot nonZero=3 exact=2 heuristic=1 unmatched=1 ambiguous=0 modes=decision:1|digest:1|compile:0|heuristic:1");
 });

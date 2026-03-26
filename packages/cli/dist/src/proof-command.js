@@ -255,6 +255,10 @@ function extractStatusSignals(statusText) {
         proofError: statusText.match(/proofError=([^\s]+)/)?.[1] ?? null,
     };
 }
+function extractDetailedStatusLine(statusText, prefix) {
+    const normalizedPrefix = `${prefix} `;
+    return statusText.split(/\r?\n/).find((line) => line.startsWith(normalizedPrefix)) ?? null;
+}
 
 function hasPackagedHookSource(pluginInspectText) {
     return /Source:\s+.*(?:@openclawbrain[\\/]+openclaw|openclawbrain)[\\/]+dist[\\/]+extension[\\/]+index\.js/m.test(pluginInspectText);
@@ -357,7 +361,7 @@ function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, brea
     };
 }
 
-function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspectText, statusSignals, breadcrumbs, runtimeLoadProofSnapshot }) {
+function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspectText, statusSignals, breadcrumbs, runtimeLoadProofSnapshot, attributionLine, learningPathLine }) {
     const passed = [];
     const missing = [];
     const warnings = Array.isArray(verdict.warnings) ? verdict.warnings : [];
@@ -412,6 +416,14 @@ function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspec
         "",
         "## Warnings",
         ...(warnings.length === 0 ? ["- none"] : warnings.map((item) => `- ${item}`)),
+        "",
+        "## Learning Attribution",
+        ...(attributionLine === null
+            ? ["- attribution line not reported by detailed status"]
+            : [`- ${attributionLine}`]),
+        ...(learningPathLine === null
+            ? []
+            : [`- ${learningPathLine}`]),
         "",
         "## Step ledger",
         ...steps.map((step) => `- ${step.stepId}: ${step.skipped ? "skipped" : `${step.resultClass} (${step.captureState})`} - ${step.summary}`),
@@ -634,6 +646,8 @@ export function captureOperatorProofBundle(options) {
     const gatewayLogPath = extractGatewayLogPath(gatewayStatusCapture.stdout);
     const activationRoot = extractActivationRoot(statusCapture.stdout, options.activationRoot ?? null);
     const statusSignals = extractStatusSignals(statusCapture.stdout);
+    const attributionLine = extractDetailedStatusLine(statusCapture.stdout, "attribution");
+    const learningPathLine = extractDetailedStatusLine(statusCapture.stdout, "path");
     const runtimeLoadProofPath = normalizeReportedProofPath(statusSignals.proofPath)
         ?? path.join(activationRoot, "attachment-truth", "runtime-load-proofs.json");
     const runtimeLoadProofSnapshot = readJsonSnapshot(runtimeLoadProofPath);
@@ -671,6 +685,8 @@ export function captureOperatorProofBundle(options) {
         },
         runtimeLoadProofPath,
         runtimeLoadProofError: runtimeLoadProofSnapshot.error,
+        attributionLine,
+        learningPathLine,
     });
     writeText(path.join(bundleDir, "summary.md"), buildSummary({
         options,
@@ -681,6 +697,8 @@ export function captureOperatorProofBundle(options) {
         statusSignals,
         breadcrumbs,
         runtimeLoadProofSnapshot,
+        attributionLine,
+        learningPathLine,
     }));
     return {
         ok: true,
@@ -693,6 +711,8 @@ export function captureOperatorProofBundle(options) {
         runtimeLoadProofSnapshot,
         verdict,
         statusSignals,
+        attributionLine,
+        learningPathLine,
         steps,
         summaryPath: path.join(bundleDir, "summary.md"),
         stepsPath: path.join(bundleDir, "steps.json"),
