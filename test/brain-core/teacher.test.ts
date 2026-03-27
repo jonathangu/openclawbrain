@@ -265,7 +265,6 @@ describe("teacher observation plumbing", () => {
       retrievalRelevance: 0.9,
       agentUsage: 0.7,
       outcomeSupport: 0.8,
-      finalScore: 0.82,
       confidence: 0.64,
       reason: "retrieved context was relevant and the assistant used it well",
       input: {
@@ -280,6 +279,7 @@ describe("teacher observation plumbing", () => {
         ],
       },
     });
+    expect(result?.finalScore).toBeCloseTo(0.82346, 5);
     expect(complete).toHaveBeenCalledTimes(1);
     const request = ((complete.mock.calls as unknown) as Array<[{
       system?: string;
@@ -290,5 +290,86 @@ describe("teacher observation plumbing", () => {
     expect(prompt).toContain("\"assistantResponse\"");
     expect(prompt).toContain("\"toolResults\"");
     expect(prompt).toContain("\"nextUserTurn\"");
+  });
+
+  it("adds reward-shaping bonus for selective branching with a clean chosen stop", async () => {
+    const complete = vi.fn(async () => ({
+      content: [{
+        text: "{\"retrieval_relevance\":0.9,\"agent_usage\":0.8,\"outcome_support\":0.7,\"final_score\":0.45,\"confidence\":0.7,\"reason\":\"assistant used the selected route cleanly\"}",
+      }],
+    }));
+    const teacher = new BrainTeacher(
+      complete,
+      () => ({ provider: "openai", model: "gpt-4.1-mini" }),
+      async () => "api-key",
+      new BrainGraph(),
+      { info: vi.fn(), error: vi.fn() },
+    );
+
+    const observation = makeObservation({
+      routeMetadata: {
+        ...makeObservation().routeMetadata,
+        candidateNodeIds: ["node_pr", "node_review", "node_a", "node_b", "node_c"],
+        selectionMetadata: {
+          ...makeObservation().routeMetadata.selectionMetadata!,
+          candidateCount: 5,
+          firedCount: 1,
+          chosenStopCount: 1,
+          forcedStopCount: 0,
+          droppedProposalCount: 0,
+          droppedProposalReasons: null,
+          totalQueryMs: 12,
+        },
+      },
+    });
+
+    const result = await teacher.evaluateObservation(observation);
+
+    expect(result?.finalScore).toBeCloseTo(0.56712, 5);
+    expect(result?.finalScore ?? 0).toBeGreaterThan(0.45);
+  });
+
+  it("penalizes precision-sensitive routes that clip context to save time", async () => {
+    const complete = vi.fn(async () => ({
+      content: [{
+        text: "{\"retrieval_relevance\":0.8,\"agent_usage\":0.8,\"outcome_support\":0.8,\"final_score\":0.8,\"confidence\":0.7,\"reason\":\"assistant mostly used the route\"}",
+      }],
+    }));
+    const teacher = new BrainTeacher(
+      complete,
+      () => ({ provider: "openai", model: "gpt-4.1-mini" }),
+      async () => "api-key",
+      new BrainGraph(),
+      { info: vi.fn(), error: vi.fn() },
+    );
+
+    const observation = makeObservation({
+      queryText: "what exact command and file path should I use?",
+      routeMetadata: {
+        ...makeObservation().routeMetadata,
+        candidateNodeIds: ["node_pr", "node_review", "node_a", "node_b"],
+        selectedNodeIds: ["node_pr", "node_review", "node_a"],
+        selectedTraversalNodeIds: ["node_pr", "node_review", "node_a"],
+        selectedPathNodeIds: ["node_pr", "node_review", "node_a"],
+        selectionMetadata: {
+          ...makeObservation().routeMetadata.selectionMetadata!,
+          candidateCount: 4,
+          firedCount: 3,
+          chosenStopCount: 0,
+          forcedStopCount: 1,
+          droppedProposalCount: 0,
+          totalQueryMs: 18,
+          compileDeadlineHit: true,
+          servedPartial: true,
+          contextClipped: true,
+          droppedNodeCount: 1,
+        },
+      },
+    });
+
+    const result = await teacher.evaluateObservation(observation);
+
+    expect(result?.finalScore).toBeCloseTo(0.696, 5);
+    expect(result?.finalScore ?? 1).toBeLessThan(0.8);
   });
 });

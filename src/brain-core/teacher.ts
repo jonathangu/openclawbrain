@@ -91,6 +91,98 @@ function clampUnit(value: unknown): number {
   return Math.max(0, Math.min(1, Number(value) || 0));
 }
 
+function clampPositiveUnit(value: number): number {
+  return Math.max(0, Math.min(1, value));
+}
+
+function isPrecisionSensitiveQuery(queryText: string): boolean {
+  return [
+    /\bexact\b/i,
+    /\bquote\b/i,
+    /\bpath\b/i,
+    /\bfile\b/i,
+    /\bcommand\b/i,
+    /\bsha\b/i,
+    /\bcommit\b/i,
+    /\btimestamp\b/i,
+    /\bwhen\b/i,
+    /\bwhy\b/i,
+    /\brationale\b/i,
+    /\bconfig\b/i,
+    /\bvalue\b/i,
+    /\bproof\b/i,
+  ].some((pattern) => pattern.test(queryText));
+}
+
+// Apply a small bounded adjustment from persisted route truth so the label
+// better reflects selective branching, stop quality, and precision-vs-latency outcomes.
+function computeTeacherRewardShaping(params: {
+  observation: BrainObservation;
+  retrievalRelevance: number;
+  agentUsage: number;
+  outcomeSupport: number;
+  finalScore: number;
+}): number {
+  const metadata = params.observation.routeMetadata.selectionMetadata;
+  if (!metadata) {
+    return 0;
+  }
+
+  const aggregateSupport = (params.retrievalRelevance + params.agentUsage + params.outcomeSupport) / 3;
+  const positiveSupport = clampPositiveUnit(Math.max(params.finalScore, aggregateSupport));
+  const candidateCount = Math.max(metadata.candidateCount, params.observation.routeMetadata.candidateNodeIds.length);
+  const selectedTraversalCount = Math.max(
+    params.observation.routeMetadata.selectedTraversalNodeIds.length,
+    metadata.fittedNodeCount ?? 0,
+    metadata.firedCount,
+  );
+  const droppedProposalCount = Math.max(0, metadata.droppedProposalCount ?? 0);
+  const chosenStopCount = Math.max(0, metadata.chosenStopCount ?? 0);
+  const forcedStopCount = Math.max(0, metadata.forcedStopCount ?? 0);
+  const selectivity = candidateCount > 0
+    ? clampPositiveUnit((candidateCount - selectedTraversalCount) / candidateCount)
+    : 0;
+  const dropRate = candidateCount > 0
+    ? clampPositiveUnit(droppedProposalCount / candidateCount)
+    : 0;
+  const branchSelection = (0.08 * positiveSupport * selectivity) - (0.08 * dropRate);
+
+  const degradedRoute = metadata.contextClipped === true
+    || metadata.queryInterrupted === true
+    || metadata.compileDeadlineHit === true
+    || metadata.servedPartial === true
+    || (metadata.droppedNodeCount ?? 0) > 0;
+  const totalStopCount = chosenStopCount + forcedStopCount;
+  const chosenStopShare = totalStopCount > 0 ? chosenStopCount / totalStopCount : 0;
+  const stopQuality = degradedRoute ? 0 : 0.06 * positiveSupport * chosenStopShare;
+
+  const totalQueryMs = metadata.totalQueryMs ?? metadata.routeSelectionMs ?? 0;
+  const latencyPerNodeMs = totalQueryMs > 0
+    ? totalQueryMs / Math.max(1, selectedTraversalCount)
+    : 0;
+  const lowLatencyBonus = totalQueryMs > 0
+    ? clampPositiveUnit((40 - latencyPerNodeMs) / 40)
+    : 0;
+  const highLatencyPenalty = totalQueryMs > 0
+    ? clampPositiveUnit((latencyPerNodeMs - 120) / 120)
+    : 0;
+
+  let precisionLatency = 0;
+  if (isPrecisionSensitiveQuery(params.observation.queryText)) {
+    if (degradedRoute) {
+      precisionLatency -= 0.12;
+    } else if (selectedTraversalCount <= 2) {
+      precisionLatency += 0.04 * positiveSupport;
+    }
+    precisionLatency -= 0.04 * highLatencyPenalty;
+  } else {
+    precisionLatency += 0.04 * positiveSupport * selectivity * lowLatencyBonus;
+    precisionLatency -= 0.04 * highLatencyPenalty * (1 - selectivity);
+  }
+
+  return Math.max(-0.25, Math.min(0.2, branchSelection + stopQuality + precisionLatency));
+}
+
 function cloneContext(summary: DecisionTraceInjectedNodeSummary): DecisionTraceInjectedNodeSummary {
   return redactInjectedNodeSummary({
     nodeId: summary.nodeId,
@@ -258,15 +350,24 @@ export class BrainTeacher {
       const retrievalRelevance = clampSigned(parsed.retrieval_relevance);
       const agentUsage = clampSigned(parsed.agent_usage);
       const outcomeSupport = clampSigned(parsed.outcome_support);
-      const finalScore = clampSigned(
+      const rawFinalScore = clampSigned(
         parsed.final_score
           ?? ((retrievalRelevance + agentUsage + outcomeSupport) / 3),
       );
+      const rewardShapingAdjustment = computeTeacherRewardShaping({
+        observation,
+        retrievalRelevance,
+        agentUsage,
+        outcomeSupport,
+        finalScore: rawFinalScore,
+      });
+      const finalScore = clampSigned(rawFinalScore + rewardShapingAdjustment);
       const confidence = clampUnit(parsed.confidence ?? 0.5);
       const reason = String(parsed.reason || "teacher evaluation");
 
       this.log.info(
-        `[brain] Teacher scored observation ${observation.id}: ${finalScore.toFixed(2)} (${reason})`,
+        `[brain] Teacher scored observation ${observation.id}: ${finalScore.toFixed(2)} `
+        + `(raw ${rawFinalScore.toFixed(2)}, shaping ${rewardShapingAdjustment >= 0 ? "+" : ""}${rewardShapingAdjustment.toFixed(2)}; ${reason})`,
       );
       return {
         version: 2,
