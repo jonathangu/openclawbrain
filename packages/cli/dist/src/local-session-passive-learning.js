@@ -44,6 +44,32 @@ function sanitizeToken(value) {
 function slugifyIdentity(value) {
     return value.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-+|-+$/g, "");
 }
+function sortSessionRecordsDeterministically(records) {
+    return [...records].sort((left, right) => {
+        const leftTimestamp = Date.parse(left.timestamp);
+        const rightTimestamp = Date.parse(right.timestamp);
+        if (leftTimestamp !== rightTimestamp) {
+            return leftTimestamp - rightTimestamp;
+        }
+        const leftId = typeof left.id === "string" ? left.id : "";
+        const rightId = typeof right.id === "string" ? right.id : "";
+        const leftParentId = typeof left.parentId === "string" ? left.parentId : "";
+        const rightParentId = typeof right.parentId === "string" ? right.parentId : "";
+        if (rightParentId === leftId && leftParentId !== rightId) {
+            return -1;
+        }
+        if (leftParentId === rightId && rightParentId !== leftId) {
+            return 1;
+        }
+        if (leftId !== rightId) {
+            return leftId.localeCompare(rightId);
+        }
+        if (leftParentId !== rightParentId) {
+            return leftParentId.localeCompare(rightParentId);
+        }
+        return left.type.localeCompare(right.type);
+    });
+}
 function deriveChannel(sessionKey, entry) {
     const deliveryChannel = normalizeString(entry.deliveryContext?.channel);
     if (deliveryChannel !== null) {
@@ -256,7 +282,7 @@ export function buildPassiveLearningSessionExportFromOpenClawSessionStore(input)
     let droppedRuntimeNoiseCount = 0;
     let nextSequence = sequenceStart;
     let latestAssistantInteractionId = null;
-    for (const record of input.records) {
+    for (const record of sortSessionRecordsDeterministically(input.records)) {
         if (record.type !== "message") {
             continue;
         }
