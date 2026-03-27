@@ -73,6 +73,22 @@ describe("policy", () => {
       expect(localScore).toBeGreaterThan(seedScore);
     });
 
+    it("stop_local score increases under frontier backlog pressure", () => {
+      const graph = new BrainGraph();
+      const lowPressure = { ...makeState("a"), frontier: ["b"], expansionCount: 1, maxHops: 8 };
+      const highPressure = {
+        ...makeState("a"),
+        frontier: ["b", "c", "d"],
+        expansionCount: 6,
+        maxHops: 8,
+      };
+
+      const scoreLow = scoreAction({ type: "stop_local" }, lowPressure, graph);
+      const scoreHigh = scoreAction({ type: "stop_local" }, highPressure, graph);
+
+      expect(scoreHigh).toBeGreaterThan(scoreLow);
+    });
+
     it("traverse score incorporates edge weight and embedding similarity", () => {
       const graph = new BrainGraph();
       graph.addNode(makeNode("a"));
@@ -86,6 +102,77 @@ describe("policy", () => {
       const scoreC = scoreAction({ type: "traverse", targetNodeId: "c" }, state, graph);
 
       expect(scoreB).toBeGreaterThan(scoreC);
+    });
+
+    it("penalizes high-cost branch opportunities when budget and frontier are tight", () => {
+      const graph = new BrainGraph();
+      graph.addNode(makeNode("a"));
+      graph.addNode(makeNode("b", new Float32Array([1, 0, 0])));
+      graph.addNode(makeNode("c", new Float32Array([1, 0, 0])));
+      graph.addNode(makeNode("d", new Float32Array([1, 0, 0])));
+      graph.addNode(makeNode("e", new Float32Array([1, 0, 0])));
+      graph.addNode(makeNode("f", new Float32Array([1, 0, 0])));
+      graph.addNode({ ...makeNode("g", new Float32Array([1, 0, 0])), tokenCount: 360 });
+      graph.addNode({ ...makeNode("h", new Float32Array([1, 0, 0])), tokenCount: 90 });
+      graph.addEdge(makeEdge("a", "g", 1.2));
+      graph.addEdge(makeEdge("a", "h", 1.2));
+      graph.addEdge(makeEdge("g", "d", 1));
+      graph.addEdge(makeEdge("g", "e", 1));
+      graph.addEdge(makeEdge("g", "f", 1));
+
+      const pressuredState = {
+        ...makeState("a"),
+        budgetRemaining: 400,
+        initialBudget: 1000,
+        frontier: ["b", "c"],
+        expansionCount: 6,
+        maxHops: 8,
+      };
+
+      const scoreHighCost = scoreAction({ type: "traverse", targetNodeId: "g" }, pressuredState, graph);
+      const scoreLowCost = scoreAction({ type: "traverse", targetNodeId: "h" }, pressuredState, graph);
+
+      expect(scoreLowCost).toBeGreaterThan(scoreHighCost);
+    });
+
+    it("penalizes locally redundant targets against nearby selected evidence", () => {
+      const graph = new BrainGraph();
+      graph.addNode(makeNode("source", new Float32Array([1, 0, 0])));
+      graph.addNode(makeNode("frontier-1", new Float32Array([0, 1, 0])));
+      graph.addNode(makeNode("redundant", new Float32Array([0, 1, 0])));
+      graph.addNode(makeNode("novel", new Float32Array([0, 0, 1])));
+      graph.addEdge(makeEdge("source", "redundant", 1));
+      graph.addEdge(makeEdge("source", "novel", 1));
+
+      const state = {
+        ...makeState("source"),
+        frontier: ["frontier-1"],
+        fired: ["frontier-1"],
+      };
+
+      const redundantScore = scoreAction({ type: "traverse", targetNodeId: "redundant" }, state, graph);
+      const novelScore = scoreAction({ type: "traverse", targetNodeId: "novel" }, state, graph);
+
+      expect(novelScore).toBeGreaterThan(redundantScore);
+    });
+
+    it("rewards higher-quality nearby evidence when other signals are similar", () => {
+      const graph = new BrainGraph();
+      graph.addNode(makeNode("a"));
+      graph.addNode({ ...makeNode("human-backed"), trust: "human" });
+      graph.addNode({ ...makeNode("lower-trust"), trust: "teacher" });
+      graph.addNode(makeNode("support-1"));
+      graph.addNode(makeNode("support-2"));
+      graph.addEdge(makeEdge("a", "human-backed", 0.6));
+      graph.addEdge(makeEdge("a", "lower-trust", 0.6));
+      graph.addEdge(makeEdge("support-1", "human-backed", 0.2));
+      graph.addEdge(makeEdge("support-2", "human-backed", 0.2));
+
+      const state = makeState("a");
+      const humanBackedScore = scoreAction({ type: "traverse", targetNodeId: "human-backed" }, state, graph);
+      const lowerTrustScore = scoreAction({ type: "traverse", targetNodeId: "lower-trust" }, state, graph);
+
+      expect(humanBackedScore).toBeGreaterThan(lowerTrustScore);
     });
 
     it("learns seed-head preference from explicit seed weights", () => {

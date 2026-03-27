@@ -14,15 +14,114 @@ import type {
   TraversalAction,
   TraversalState,
   PolicyParams,
+  TrustLevel,
 } from "./types.js";
 import { DEFAULT_POLICY_PARAMS } from "./types.js";
 import { BrainGraph, cosineSimilarity } from "./graph.js";
 
+const TRUST_EVIDENCE_SCORE: Record<TrustLevel, number> = {
+  human: 1.0,
+  self: 0.6,
+  scanner: 0.3,
+  teacher: 0.15,
+};
+
+function computeEffectiveBudgetRemaining(state: TraversalState): number {
+  return Math.max(0, state.budgetRemaining - state.reservedTokenCost);
+}
+
+function computeBudgetUsedFraction(state: TraversalState): number {
+  const totalBudget = Math.max(0, state.initialBudget);
+  const effectiveBudgetRemaining = computeEffectiveBudgetRemaining(state);
+  return totalBudget > 0 ? 1 - effectiveBudgetRemaining / totalBudget : 0;
+}
+
+function computeFrontierPressure(state: TraversalState): number {
+  const remainingExpansionSlots = Math.max(1, state.maxHops - state.expansionCount);
+  return Math.min(1, state.frontier.length / remainingExpansionSlots);
+}
+
+function computeBranchOpportunityCostSignal(
+  targetNodeId: string,
+  state: TraversalState,
+  graph: BrainGraph,
+): number {
+  const targetNode = graph.getNode(targetNodeId);
+  if (!targetNode) {
+    return 1;
+  }
+
+  const effectiveBudgetRemaining = computeEffectiveBudgetRemaining(state);
+  const budgetUsedFraction = computeBudgetUsedFraction(state);
+  const frontierPressure = computeFrontierPressure(state);
+  const tokenCostFraction = effectiveBudgetRemaining > 0
+    ? Math.min(1, targetNode.tokenCount / effectiveBudgetRemaining)
+    : 1;
+  const downstreamOpportunityCount = graph.getNeighbors(targetNodeId).filter((neighborId) => (
+    neighborId !== state.sourceNodeId
+    && !state.visited.has(neighborId)
+    && !state.frontier.includes(neighborId)
+  )).length;
+  const downstreamBranchFactor = downstreamOpportunityCount / (downstreamOpportunityCount + 2);
+  const pressureLevel = (budgetUsedFraction + frontierPressure) / 2;
+  return pressureLevel * ((tokenCostFraction + downstreamBranchFactor) / 2);
+}
+
+function computeLocalRedundancySignal(
+  targetNodeId: string,
+  state: TraversalState,
+  graph: BrainGraph,
+): number {
+  const targetNode = graph.getNode(targetNodeId);
+  if (!targetNode?.embedding) {
+    return 0;
+  }
+
+  const comparisonNodeIds = new Set<string>([
+    ...state.frontier,
+    ...state.fired,
+    ...state.visited,
+  ]);
+  if (state.sourceNodeId) {
+    comparisonNodeIds.add(state.sourceNodeId);
+  }
+  comparisonNodeIds.delete(targetNodeId);
+
+  let maxSimilarity = 0;
+  for (const nodeId of comparisonNodeIds) {
+    const comparisonNode = graph.getNode(nodeId);
+    if (!comparisonNode?.embedding) {
+      continue;
+    }
+    maxSimilarity = Math.max(
+      maxSimilarity,
+      Math.max(0, cosineSimilarity(targetNode.embedding, comparisonNode.embedding)),
+    );
+  }
+
+  return maxSimilarity;
+}
+
+function computeNearbyEvidenceQualitySignal(targetNodeId: string, graph: BrainGraph): number {
+  const targetNode = graph.getNode(targetNodeId);
+  if (!targetNode) {
+    return 0;
+  }
+
+  const trustSignal = TRUST_EVIDENCE_SCORE[targetNode.trust];
+  const supportiveIncomingEdgeCount = graph.getIncomingEdges(targetNodeId).filter((edge) => (
+    edge.kind !== "inhibitory" && edge.weight >= 0
+  )).length;
+  const structuralSupportSignal = supportiveIncomingEdgeCount / (supportiveIncomingEdgeCount + 1);
+  return trustSignal * 0.6 + structuralSupportSignal * 0.4;
+}
+
 /**
  * Score a single action given current state and graph.
  *
- * For stop_local: score combines learned source-local preference with budget/hop pressure.
- * For traverse: score = edge.weight * edge.prior + cos(query, target) + bias
+ * For stop_local: score combines learned source-local preference with budget/hop/frontier pressure.
+ * For traverse: score combines learned edge signal, query relevance, evidence quality,
+ * and penalties for redundant or high-opportunity-cost local branches.
  */
 export function scoreAction(
   action: TraversalAction,
@@ -31,14 +130,14 @@ export function scoreAction(
   params: PolicyParams = DEFAULT_POLICY_PARAMS,
 ): number {
   if (action.type === "stop_local") {
-    const totalBudget = Math.max(0, state.initialBudget);
-    const effectiveBudgetRemaining = Math.max(0, state.budgetRemaining - state.reservedTokenCost);
-    const budgetUsedFraction = totalBudget > 0 ? 1 - effectiveBudgetRemaining / totalBudget : 0;
+    const budgetUsedFraction = computeBudgetUsedFraction(state);
     const expansionFraction = state.maxHops > 0 ? state.expansionCount / state.maxHops : 0;
+    const frontierPressure = computeFrontierPressure(state);
     return graph.getStopLocalWeight(state.sourceNodeId)
       + params.stopBias
       + params.budgetPressure * budgetUsedFraction
-      + params.hopPressure * expansionFraction;
+      + params.hopPressure * expansionFraction
+      + params.frontierPressure * frontierPressure;
   }
 
   // Traverse action
@@ -65,8 +164,15 @@ export function scoreAction(
 
   // Edge kind bias
   const kindBias = edge ? (params.edgeKindBias[edge.kind] ?? 0) : 0;
+  const opportunityCostPenalty =
+    params.branchOpportunityCost * computeBranchOpportunityCostSignal(action.targetNodeId, state, graph);
+  const redundancyPenalty =
+    params.localRedundancyPenalty * computeLocalRedundancySignal(action.targetNodeId, state, graph);
+  const evidenceQualityBonus =
+    params.evidenceQualityBias * computeNearbyEvidenceQualitySignal(action.targetNodeId, graph);
 
-  return edgeScore + relevance + kindBias;
+  return edgeScore + relevance + kindBias + evidenceQualityBonus
+    - opportunityCostPenalty - redundancyPenalty;
 }
 
 /**

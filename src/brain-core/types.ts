@@ -937,6 +937,10 @@ export interface PolicyParams {
   stopBias: number;
   budgetPressure: number;
   hopPressure: number;
+  frontierPressure: number;
+  branchOpportunityCost: number;
+  localRedundancyPenalty: number;
+  evidenceQualityBias: number;
   edgeKindBias: Record<EdgeKind, number>;
 }
 
@@ -945,6 +949,10 @@ export const DEFAULT_POLICY_PARAMS: PolicyParams = {
   stopBias: -2.0,
   budgetPressure: 3.0,
   hopPressure: 2.0,
+  frontierPressure: 1.5,
+  branchOpportunityCost: 1.1,
+  localRedundancyPenalty: 0.75,
+  evidenceQualityBias: 0.45,
   edgeKindBias: {
     sibling: 0.0,
     semantic: 0.1,
