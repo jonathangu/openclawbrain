@@ -5,8 +5,30 @@ Release history for the published OpenClawBrain packages. The README and operato
 ## Unreleased
 
 - repo docs now lead with `openclawbrain install --openclaw-home <path>` as the public front door for one OpenClaw home
-- proof is now framed as optional operator evidence, with `--proof` described as the intended canonical add-on and the separate proof step kept as current guidance
+- release docs keep `proof` framed as the current follow-up surface, with `--proof` still documented as planned rather than shipped
+- release truth now reflects that detailed status and proof expose runtime-guard/load-proof state for the selected home
+- release contract now treats bundle evaluation as a real replay gate and keeps the remaining public gaps narrowed to attribution, broader host/profile proof, and live-gain evidence
 - public positioning now emphasizes bounded useful context on promoted packs and predictable live-path latency
+
+## 0.4.14 / 0.4.3
+
+`0.4.14 / 0.4.3` carries the canonical split-package install lane forward after the payload-sync work landed in the publishable package payloads.
+
+**Packages**
+
+- `@openclawbrain/openclaw@0.4.3`
+- `@openclawbrain/cli@0.4.14`
+
+**Changes**
+
+- `openclawbrain install --openclaw-home <path>` is now the explicit public front door for one OpenClaw home, with converge logic that installs or refreshes `@openclawbrain/openclaw`, repairs hook wiring, and only restarts when runtime-affecting state changed
+- operator docs and CLI help now describe `proof` as the current follow-up surface, while keeping `--proof` framed as the intended future add-on to `install`
+- proof and status surfaces stay aligned with the selected `--openclaw-home`, so install, restart, verify, and durable evidence read as one operator lane
+- the published plugin manifest now stays version-locked to `packages/openclaw/package.json`, and the runtime payload carries the bounded-runtime config and status/proof truth the repo already exercises
+
+**Full release note**
+
+- [docs/release-notes-0.4.14.md](docs/release-notes-0.4.14.md)
 
 ## 0.3.7
 

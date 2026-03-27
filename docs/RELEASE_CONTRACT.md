@@ -10,9 +10,9 @@ Use these public labels consistently:
 Current truthful state:
 - **paper-faithful core:** yes
 - **live-path implemented:** yes
-- **operationally validated:** yes — the current public install / attach / `status --detailed` / `proof` lane is proven on the exercised host surface, and detailed status reports real learned-pack metadata.
+- **operationally validated:** yes — the current public install / attach / `status --detailed` / `proof` lane is proven on the exercised host surface, and detailed status reports real learned-pack metadata plus runtime-guard and load-proof truth.
 
-That is the contract. The repo is beyond "foundation only," with a paper-faithful core, a real live runtime path, and an operator-proof lane that now lands durable bundles. The remaining gaps are not basic host proof capture anymore; they are narrower truth gaps around attribution, universal citation surfaces, multi-profile boundaries, bundle-level replay evaluation, and live answer-quality proof.
+That is the contract. The repo is beyond "foundation only," with a paper-faithful core, a real live runtime path, and an operator-proof lane that now lands durable bundles. The remaining gaps are not basic host proof capture or replay gating anymore; they are narrower truth gaps around attribution, universal citation surfaces, multi-profile boundaries, broader host/profile coverage, and live answer-quality proof.
 
 ## 1. True in code now
 
@@ -41,6 +41,8 @@ These are safe public claims today.
   - Code: `src/brain-runtime/service.ts`, `src/brain-runtime/tools.ts`, `src/brain-runtime/user-memory-proposals.ts`, `test/brain-runtime/service.test.ts`
 - **Episode and trace recording on the live path**
   - Code: `src/brain-runtime/service.ts`, `src/brain-core/trace.ts`, `test/brain-runtime/service.test.ts`
+- **Detailed status/proof surfaces expose runtime-guard severity, actionability, and hook/runtime load-proof truth**
+  - Code: `packages/cli/dist/src/cli.js`, `packages/cli/dist/src/proof-command.js`, `packages/openclaw/dist/src/cli.js`, `packages/cli/dist/test/runtime-safety-seam.test.js`, `packages/cli/dist/test/proof-cli-surface.test.js`
 - **Serve from the last promoted pack even when the worker is unavailable**
   - Code: `src/brain-runtime/service.ts`, `test/brain-runtime/service.test.ts`, `scripts/validate-brain-runtime-behavior.ts`
 - **Child-worker mode is real**
@@ -75,18 +77,18 @@ These are real enough to build on, but not frozen enough to oversell.
 - Boundary: source extraction still leans too heavily on heuristics outside the structured cases already covered.
 
 ### Replay-gated promotion
-- Current files: `src/brain-core/replay.ts`, `src/brain-core/pack.ts`, `src/brain-worker/worker.ts`
-- Truth: promotion gates exist and matter.
-- Boundary: mutation evaluation is still closer to proposal-level checks than the intended bundle-level replay contract.
+- Current files: `src/brain-core/bundle-evaluator.ts`, `src/brain-core/replay.ts`, `src/brain-core/pack.ts`, `src/brain-worker/worker.ts`
+- Truth: bundle-level mutation evaluation now runs with clustering and comparative replay gates before promotion.
+- Boundary: replay-gated promotion is a real safety boundary, but it is not yet the public proof surface for broad live answer-quality gains.
 
 ### Packaging and release boundary
 - Current files: `package.json`, `packages/openclaw/package.json`, `packages/cli/package.json`, `README.md`, `docs/lifecycle.md`, `docs/configuration.md`, `docs/EVIDENCE.md`, future CI/release workflow surfaces
 - Truth: the split packages are published and the public-registry operator lane is real:
-  - `openclaw plugins install @openclawbrain/openclaw`
-  - `npx @openclawbrain/cli install --openclaw-home ~/.openclaw`
+  - `openclawbrain install --openclaw-home ~/.openclaw`
   - `openclaw gateway restart`
-  - `npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed`
-  - `npx @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart`
+  - `openclawbrain status --openclaw-home ~/.openclaw --detailed`
+  - `openclawbrain proof --openclaw-home ~/.openclaw`
+  - when manually managing the native package layer, the underlying package step is still `openclaw plugins install @openclawbrain/openclaw`, followed by the same `openclawbrain` lifecycle commands
   - release verification now includes a checked-in proof smoke gate that fails when the frozen proof bundle is missing, incomplete, or stale
 - Boundary: older OpenClaw hosts may still emit the historical plugin-id mismatch warning during install. Treat that warning as cosmetic only when the canonical status/proof surfaces are healthy. CI-enforced release proof and broader host coverage are still open work.
   - checked-in proof freshness is now enforced in release smoke, but CI still does not rerun the full host-install proof lane on every publish job
@@ -97,7 +99,7 @@ These are still active work and must not be described as complete.
 
 - **Universal attribution and citation surface**
   - Required truth before done: every important recalled memory or learning update should expose a clean human-readable provenance surface for where it came from, when it came from, why it was selected, and why it affected learning.
-- **Bundle-based mutation evaluation with clear pass/fail explanations**
+- **Richer public pass/fail explanations for bundle evaluation**
   - Primary files: `src/brain-core/mutator.ts`, `src/brain-worker/worker.ts`, `src/brain-store/store.ts`, `src/brain-store/migrations.ts`
 - **Full CI-enforced proof ladder / release reruns**
   - Primary files: future workflow surfaces, `package.json`, `docs/EVIDENCE.md`
@@ -110,4 +112,4 @@ These are still active work and must not be described as complete.
 
 ## Safe public summary
 
-> OpenClawBrain v2 already has a paper-faithful routing core, a real live runtime path, and a frozen operator install/runtime/proof lane. The remaining work is mainly attribution and citation truth, bundle-level mutation evaluation, broader host/profile validation, CI-enforced proof gates, and a narrower live-gain proof rung.
+> OpenClawBrain v2 already has a paper-faithful routing core, a real live runtime path, and a frozen operator install/runtime/proof lane. The remaining work is mainly attribution and citation truth, broader host/profile validation, CI-enforced proof reruns, clearer public bundle-evaluation explanations, and a narrower live-gain proof rung.

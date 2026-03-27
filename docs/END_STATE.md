@@ -56,8 +56,8 @@ These are inherited LCM surfaces and should stay stable unless a failing test fo
 - paper-faithful routing core exists
 - live runtime decisioning exists
 - child-worker serving boundary is real
-- split packages `@openclawbrain/openclaw` and `@openclawbrain/cli@0.4.10` are published
-- the public-registry plugin install plus `npx` CLI flow has already passed on `redogfood`
+- split packages `@openclawbrain/openclaw@0.4.3` and `@openclawbrain/cli@0.4.14` are published
+- the current front-door install / status / proof lane has already passed on `redogfood`
 - deterministic session-bound `brain_teach` proof exists
 - deterministic runtime proof for teach retrieval and serve-from-last-promoted-pack exists
 - structured raw evidence plus worker-side trust resolution are real
@@ -65,9 +65,9 @@ These are inherited LCM surfaces and should stay stable unless a failing test fo
 ### Still open
 - Phase 4: mutation bundles — DONE (bundle evaluation, clustering, replay gates)
 - Phase 5: CI proof ladder — DONE (evidence bundles under docs/evidence/, CI runs tests)
-- Phase 6: split-package cleanup — ACTIVE (published split packages and docs are in place; manifest/package id alignment and other packaging seams remain)
+- Phase 6: split-package cleanup — ACTIVE (published split packages and current front-door docs are in place; manifest/package id alignment and a few packaging seams remain)
 
-**Remaining honest gaps:** Full end-to-end host-surface proof bundle capture and final split-package seam cleanup (most visibly the current plugin-id warning).
+**Remaining honest gaps:** Final split-package seam cleanup remains, most visibly the cosmetic plugin-id warning plus package-content/release-narrative cleanup.
 
 ## Current code map
 
@@ -246,9 +246,9 @@ Primary files:
 - `CHANGELOG.md`
 
 Current truth:
-- split packages `@openclawbrain/openclaw` and `@openclawbrain/cli@0.4.10` are published
-- the proven public lane is `openclaw plugins install @openclawbrain/openclaw` plus `npx @openclawbrain/cli@0.4.10 ...`
-- `@jonathangu/openclawbrain@0.3.5` is now a compatibility holdover, not the main operator story
+- split packages `@openclawbrain/openclaw@0.4.3` and `@openclawbrain/cli@0.4.14` are published
+- the public front door is `openclawbrain install --openclaw-home <path>`; the underlying manual package lane is still `openclaw plugins install @openclawbrain/openclaw` plus the same CLI lifecycle commands
+- `@jonathangu/openclawbrain@0.3.7` is now a compatibility holdover, not the main operator story
 
 Still open:
 - align the plugin manifest/package ids so hosts stop warning about `openclawbrain` vs `openclaw`
