@@ -1,0 +1,228 @@
+{
+  "contract": "recorded_session_replay_fixture.v1",
+  "traceId": "trace-train-freeze-eval",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-03-25T10:00:00.000Z",
+  "bundleBuiltAt": "2026-03-25T10:30:00.000Z",
+  "traceHash": "sha256-f00d85d59f1b55fe414cc6de49912cc1d90d9b19237510d225d442cd31babf3c",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "test"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "workspace-train-freeze-eval",
+    "snapshotId": "snapshot-train-freeze-eval",
+    "capturedAt": "2026-03-25T09:55:00.000Z",
+    "rootDir": "/tmp/workspace-train-freeze-eval",
+    "revision": "rev-train-freeze-eval"
+  },
+  "evalTurnCount": 2,
+  "seedBuiltAt": "2026-03-25T09:56:00.000Z",
+  "seedActivatedAt": "2026-03-25T09:57:00.000Z",
+  "seedExport": {
+    "interactionEvents": [
+      {
+        "contract": "interaction_events.v1",
+        "eventId": "session-train-freeze-eval-seed:cue-1:interaction",
+        "agentId": "openclaw-runtime",
+        "sessionId": "session-train-freeze-eval-seed",
+        "channel": "chat",
+        "sequence": 1,
+        "kind": "operator_override",
+        "createdAt": "2026-03-25T09:50:00.000Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "recorded/session/seed"
+        },
+        "semantic": {
+          "semanticType": "control_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "messageId": "cue-1-seed-message"
+      }
+    ],
+    "feedbackEvents": [
+      {
+        "contract": "feedback_events.v1",
+        "eventId": "session-train-freeze-eval-seed:cue-1:feedback",
+        "agentId": "openclaw-runtime",
+        "sessionId": "session-train-freeze-eval-seed",
+        "channel": "chat",
+        "sequence": 2,
+        "kind": "teaching",
+        "createdAt": "2026-03-25T09:51:00.000Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "recorded/session/seed"
+        },
+        "content": "Always read README before editing code.",
+        "semantic": {
+          "semanticType": "teacher_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "relatedInteractionId": "session-train-freeze-eval-seed:cue-1:interaction"
+      }
+    ],
+    "range": {
+      "start": 1,
+      "end": 2,
+      "count": 2,
+      "firstEventId": "session-train-freeze-eval-seed:cue-1:interaction",
+      "lastEventId": "session-train-freeze-eval-seed:cue-1:feedback",
+      "firstCreatedAt": "2026-03-25T09:50:00.000Z",
+      "lastCreatedAt": "2026-03-25T09:51:00.000Z"
+    },
+    "provenance": {
+      "runtimeOwner": "openclaw",
+      "sessionId": "session-train-freeze-eval-seed",
+      "channel": "chat",
+      "interactionCount": 1,
+      "feedbackCount": 1,
+      "sourceStreams": [
+        "recorded/session/seed"
+      ],
+      "contracts": [
+        "interaction_events.v1",
+        "feedback_events.v1"
+      ],
+      "exportDigest": "sha256-e03fb1c22d1ef5ec4c60f3d8feb7b6033833989e952f2d7149abfc4d880299ca",
+      "semanticSurface": {
+        "semanticTypes": [
+          "control_signal",
+          "teacher_signal"
+        ],
+        "sourceKinds": [
+          "recorded_session_seed"
+        ],
+        "diagnosticIntents": []
+      },
+      "learningSurface": {
+        "bootProfile": "fast_boot_defaults",
+        "learningCadence": "passive_background",
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "recorded/session/seed:operator_override",
+          "recorded/session/seed:teaching"
+        ],
+        "labelSources": {
+          "human": [
+            "recorded/session/seed:operator_override",
+            "recorded/session/seed:teaching"
+          ],
+          "self": []
+        },
+        "labelHarvest": {
+          "humanLabels": 2,
+          "selfLabels": 0,
+          "corrections": 0,
+          "teachings": 1,
+          "approvals": 0,
+          "suppressions": 0,
+          "operatorOverrideLabels": 1,
+          "memoryCompileLabels": 0
+        },
+        "principalSummary": {
+          "teacherIdentities": [],
+          "teacherRoles": [],
+          "teacherAuthorities": [],
+          "priorityClasses": [],
+          "scopedEventCount": 0,
+          "supersedingEventCount": 0
+        }
+      }
+    }
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "turn": {
+        "sessionId": "session-train-freeze-eval",
+        "channel": "chat",
+        "sourceStream": "recorded/session",
+        "userMessage": "What should I read before editing?",
+        "createdAt": "2026-03-25T10:01:00.000Z",
+        "sequenceStart": 1000,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "compile": {
+          "createdAt": "2026-03-25T10:01:00.000Z",
+          "sequence": 1000
+        },
+        "delivery": {
+          "createdAt": "2026-03-25T10:01:30.000Z",
+          "sequence": 1001,
+          "messageId": "msg-turn-1"
+        },
+        "feedback": [
+          {
+            "createdAt": "2026-03-25T10:01:45.000Z",
+            "content": "Correct: read README before editing code.",
+            "sequence": 1002,
+            "kind": "approval"
+          }
+        ]
+      },
+      "expectedContextPhrases": [
+        "readme before editing"
+      ],
+      "minimumPhraseHits": 1
+    },
+    {
+      "turnId": "turn-2",
+      "turn": {
+        "sessionId": "session-train-freeze-eval",
+        "channel": "chat",
+        "sourceStream": "recorded/session",
+        "userMessage": "Before changing files, what is the rule?",
+        "createdAt": "2026-03-25T10:05:00.000Z",
+        "sequenceStart": 1010,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "compile": {
+          "createdAt": "2026-03-25T10:05:00.000Z",
+          "sequence": 1010
+        },
+        "delivery": {
+          "createdAt": "2026-03-25T10:05:30.000Z",
+          "sequence": 1011,
+          "messageId": "msg-turn-2"
+        },
+        "feedback": []
+      },
+      "expectedContextPhrases": [
+        "readme before editing"
+      ],
+      "minimumPhraseHits": 1
+    },
+    {
+      "turnId": "turn-3",
+      "turn": {
+        "sessionId": "session-train-freeze-eval",
+        "channel": "chat",
+        "sourceStream": "recorded/session",
+        "userMessage": "What must happen before editing code?",
+        "createdAt": "2026-03-25T10:10:00.000Z",
+        "sequenceStart": 1020,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "compile": {
+          "createdAt": "2026-03-25T10:10:00.000Z",
+          "sequence": 1020
+        },
+        "delivery": {
+          "createdAt": "2026-03-25T10:10:30.000Z",
+          "sequence": 1021,
+          "messageId": "msg-turn-3"
+        },
+        "feedback": []
+      },
+      "expectedContextPhrases": [
+        "readme before editing"
+      ],
+      "minimumPhraseHits": 1
+    }
+  ],
+  "fixtureHash": "sha256-fc23fc34b4bdcb1de856768a3fefe077edddd9b47478dcbbfc5468ed671b1b01"
+}

@@ -23,7 +23,8 @@ function usage() {
       "",
       "Artifacts written:",
       "  manifest.json, trace.json, fixture.json, bundle.json, environment.json,",
-      "  summary.md, summary-tables.json, hashes.json, modes/*.json, validation-report.json",
+      "  summary.md, summary-tables.json, coverage-snapshot.json,",
+      "  hardening-snapshot.json, hashes.json, modes/*.json, validation-report.json",
     ].join("\n") + "\n",
   );
 }

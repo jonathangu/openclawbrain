@@ -25,6 +25,8 @@ bundle.json
 environment.json
 summary.md
 summary-tables.json
+coverage-snapshot.json
+hardening-snapshot.json
 hashes.json
 modes/
   no_brain.json
@@ -43,6 +45,8 @@ The layout is intentionally fixed. `manifest.json` must keep these exact relativ
 - `environment.json`: narrow writer/runtime facts for the proof run. This is observational metadata, not part of the semantic replay hash contract.
 - `summary.md`: short human-readable proof summary.
 - `summary-tables.json`: ranking plus per-mode and per-turn table rows.
+- `coverage-snapshot.json`: aggregate compile/phrase-hit coverage across replay modes.
+- `hardening-snapshot.json`: aggregate warnings, compile failures, promotions, and export/attribution counts across replay modes.
 - `modes/*.json`: exact per-mode reports lifted from `bundle.json`.
 - `hashes.json`: semantic hashes plus file-content digests for the curated artifact set.
 
@@ -79,6 +83,7 @@ The script writes the proof bundle, writes `validation-report.json`, and exits n
 - fixture rebuild no longer matches the trace
 - bundle or score hashes fail verification
 - summary tables drift from `bundle.json`
+- coverage or hardening snapshots drift from `bundle.json`
 - per-mode files drift from `bundle.json`
 - file digests no longer match the written artifacts
 

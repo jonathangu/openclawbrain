@@ -42,6 +42,8 @@ Start with:
 - `summary.md`
 - `validation-report.json`
 - `hashes.json`
+- `coverage-snapshot.json`
+- `hardening-snapshot.json`
 
 Then inspect:
 
@@ -61,7 +63,7 @@ A healthy run should leave `validation-report.json` with:
 ## Regression workflow
 
 1. Re-run the same trace through the script.
-2. Compare `hashes.json` and `summary-tables.json` with the previous proof bundle.
+2. Compare `hashes.json`, `summary-tables.json`, `coverage-snapshot.json`, and `hardening-snapshot.json` with the previous proof bundle.
 3. If semantic hashes changed, inspect `bundle.json` and the per-mode files before claiming the replay contract moved.
 4. If only file digests changed, inspect `summary.md`, `manifest.json`, and `modes/*.json` for writer drift.
 
