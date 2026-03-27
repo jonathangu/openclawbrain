@@ -7,6 +7,7 @@ import type {
   BrainPersistenceMode,
   BrainNode,
   BrainObservationToolResult,
+  DecisionTraceBranchOutcome,
   DecisionRouteTrace,
   DecisionTrace,
   DecisionTraceInjectedNodeSummary,
@@ -82,6 +83,23 @@ function cloneInjectedNodeSummary(summary: DecisionTraceInjectedNodeSummary): De
   };
 }
 
+function cloneBranchOutcome(outcome: DecisionTraceBranchOutcome): DecisionTraceBranchOutcome {
+  return {
+    sourceNodeId: outcome.sourceNodeId,
+    expansionIndex: outcome.expansionIndex,
+    selectionSubstepCount: outcome.selectionSubstepCount,
+    continued: outcome.continued,
+    selectedTargetIds: [...outcome.selectedTargetIds],
+    acceptedTargetIds: [...outcome.acceptedTargetIds],
+    vetoedTargetIds: [...outcome.vetoedTargetIds],
+    droppedTargetIds: [...outcome.droppedTargetIds],
+    stopTruth: outcome.stopTruth,
+    stopReason: outcome.stopReason,
+    terminationReason: outcome.terminationReason,
+    proof: outcome.proof,
+  };
+}
+
 function buildPersistenceMode(persistRawSurfaces: boolean): BrainPersistenceMode {
   return persistRawSurfaces ? "redacted_with_operator_audit" : "redacted";
 }
@@ -108,6 +126,7 @@ export function redactRouteTrace(
   return {
     ...routeTrace,
     persistenceMode: buildPersistenceMode(persistRawSurfaces),
+    branchOutcomes: (routeTrace.branchOutcomes ?? []).map(cloneBranchOutcome),
     injectedNodeSummaries,
     sourceSummary: {
       ...routeTrace.sourceSummary,
@@ -206,6 +225,97 @@ function countDroppedProposalReasons(traversalResult: TraverseResult): {
   };
 }
 
+function formatBranchSource(sourceNodeId: string | null): string {
+  return sourceNodeId ?? "start";
+}
+
+function buildBranchProof(outcome: {
+  sourceNodeId: string | null;
+  acceptedTargetIds: string[];
+  vetoedTargetIds: string[];
+  droppedTargetIds: string[];
+  stopTruth: "chosen" | "forced" | null;
+  terminationReason: string | null;
+}): string {
+  const continuedSegment = outcome.acceptedTargetIds.length > 0
+    ? `continued via ${outcome.acceptedTargetIds.join(",")}`
+    : "stopped without continuation";
+  const stopSegment = outcome.stopTruth === null
+    ? "ended without explicit stop truth"
+    : `${outcome.stopTruth} stop (${outcome.terminationReason ?? "unknown"})`;
+  return `branch ${formatBranchSource(outcome.sourceNodeId)} ${continuedSegment} then ${stopSegment}; accepted=${outcome.acceptedTargetIds.length} vetoed=${outcome.vetoedTargetIds.length} dropped=${outcome.droppedTargetIds.length}`;
+}
+
+function summarizeBranchOutcomes(traversalResult: TraverseResult): {
+  branchOutcomes: DecisionTraceBranchOutcome[];
+  branchOutcomeSummary: NonNullable<DecisionRouteTrace["selectionMetadata"]["branchOutcomeSummary"]>;
+} {
+  const branchOutcomes = traversalResult.trajectory.map((expansion) => {
+    const stopSubstep = [...expansion.substeps]
+      .reverse()
+      .find((substep) => substep.chosenAction.type === "stop_local") ?? null;
+    const stopTruth = stopSubstep ? resolveStopTruth(stopSubstep) : null;
+    const stopReason = stopSubstep?.stopReason ?? null;
+    const terminationReason = expansion.terminationReason ?? stopReason;
+    const vetoedTargetIds = expansion.vetoedTargets.map((target) => target.targetNodeId);
+    const droppedTargetIds = (expansion.proposalOutcomes ?? [])
+      .filter((outcome) => outcome.outcome === "dropped")
+      .map((outcome) => outcome.targetNodeId);
+    return {
+      sourceNodeId: expansion.sourceNodeId,
+      expansionIndex: expansion.expansionIndex,
+      selectionSubstepCount: expansion.substeps.length,
+      continued: expansion.acceptedTargets.length > 0,
+      selectedTargetIds: [...expansion.selectedTargets],
+      acceptedTargetIds: [...expansion.acceptedTargets],
+      vetoedTargetIds,
+      droppedTargetIds,
+      stopTruth,
+      stopReason,
+      terminationReason,
+      proof: buildBranchProof({
+        sourceNodeId: expansion.sourceNodeId,
+        acceptedTargetIds: expansion.acceptedTargets,
+        vetoedTargetIds,
+        droppedTargetIds,
+        stopTruth,
+        terminationReason,
+      }),
+    };
+  });
+
+  const terminationReasons: Record<string, number> = {};
+  for (const outcome of branchOutcomes) {
+    if (typeof outcome.terminationReason !== "string" || outcome.terminationReason.length === 0) {
+      continue;
+    }
+    terminationReasons[outcome.terminationReason] = (terminationReasons[outcome.terminationReason] ?? 0) + 1;
+  }
+  const branchCount = branchOutcomes.length;
+  const continuingBranchCount = branchOutcomes.filter((outcome) => outcome.continued).length;
+  const stoppedWithoutProgressCount = branchCount - continuingBranchCount;
+  const chosenStopBranchCount = branchOutcomes.filter((outcome) => outcome.stopTruth === "chosen").length;
+  const forcedStopBranchCount = branchOutcomes.filter((outcome) => outcome.stopTruth === "forced").length;
+  const reasonSummary = Object.entries(terminationReasons)
+    .map(([reason, count]) => `${reason}=${count}`)
+    .join(", ");
+
+  return {
+    branchOutcomes,
+    branchOutcomeSummary: {
+      branchCount,
+      continuingBranchCount,
+      stoppedWithoutProgressCount,
+      chosenStopBranchCount,
+      forcedStopBranchCount,
+      terminationReasons: Object.keys(terminationReasons).length > 0 ? terminationReasons : null,
+      detail: branchCount === 0
+        ? "no traced branches"
+        : `${continuingBranchCount}/${branchCount} branches continued; ${stoppedWithoutProgressCount}/${branchCount} stopped without continuation; chosen=${chosenStopBranchCount}; forced=${forcedStopBranchCount}${reasonSummary.length > 0 ? `; reasons ${reasonSummary}` : ""}`,
+    },
+  };
+}
+
 function summarizeInjectedNode(node: BrainNode): DecisionTraceInjectedNodeSummary {
   return {
     nodeId: node.id,
@@ -240,6 +350,15 @@ export interface RecentDecisionTraceSummary {
     interruptionStage: Record<string, number>;
     fitStrategy: Record<string, number>;
     queryEmbeddingSource: Record<string, number>;
+  };
+  branchBehavior: {
+    branchCount: number;
+    continuingBranchCount: number;
+    histograms: {
+      stopTruth: Record<string, number>;
+      terminationReason: Record<string, number>;
+    };
+    detail: string;
   };
   clipRate: RecentDecisionRateSummary;
   failOpenRate: RecentDecisionRateSummary;
@@ -314,10 +433,14 @@ export function summarizeRecentDecisionTraces(
     fitStrategy: {},
     queryEmbeddingSource: {},
   };
+  const branchStopTruth: Record<string, number> = {};
+  const branchTerminationReason: Record<string, number> = {};
 
   let sampleSize = 0;
   let clippedCount = 0;
   let failOpenCount = 0;
+  let branchCount = 0;
+  let continuingBranchCount = 0;
 
   for (const trace of traces) {
     const selectionMetadata = trace.routeTrace?.selectionMetadata ?? null;
@@ -336,6 +459,14 @@ export function summarizeRecentDecisionTraces(
     if (isFailOpenDecision(selectionMetadata)) {
       failOpenCount += 1;
     }
+    for (const branchOutcome of trace.routeTrace?.branchOutcomes ?? []) {
+      branchCount += 1;
+      if (branchOutcome.continued) {
+        continuingBranchCount += 1;
+      }
+      incrementHistogram(branchStopTruth, branchOutcome.stopTruth ?? "unknown");
+      incrementHistogram(branchTerminationReason, branchOutcome.terminationReason ?? "unknown");
+    }
   }
 
   const clippedRate = buildRateSummary(clippedCount, sampleSize);
@@ -345,6 +476,17 @@ export function summarizeRecentDecisionTraces(
     windowSize,
     sampleSize,
     histograms,
+    branchBehavior: {
+      branchCount,
+      continuingBranchCount,
+      histograms: {
+        stopTruth: branchStopTruth,
+        terminationReason: branchTerminationReason,
+      },
+      detail: branchCount === 0
+        ? "no recent branch stop/continue traces"
+        : `${continuingBranchCount}/${branchCount} recent branches continued; stop truths ${Object.entries(branchStopTruth).map(([truth, count]) => `${truth}=${count}`).join(", ")}; reasons ${Object.entries(branchTerminationReason).map(([reason, count]) => `${reason}=${count}`).join(", ")}`,
+    },
     clipRate: clippedRate,
     failOpenRate,
     detail: sampleSize === 0
@@ -378,6 +520,7 @@ function buildRouteTrace(params: {
     .map((seed) => seed.nodeId);
   const chosenSeedNodeId = selectedSeedNodeIds.length === 1 ? selectedSeedNodeIds[0] : null;
   const { chosenStopCount, forcedStopCount } = countStopTruths(params.traversalResult);
+  const { branchOutcomes, branchOutcomeSummary } = summarizeBranchOutcomes(params.traversalResult);
   const { droppedProposalCount, droppedProposalReasons } = countDroppedProposalReasons(params.traversalResult);
   const selectionSubstepCount = params.traversalResult.trajectory.reduce(
     (count, expansion) => count + expansion.substeps.length,
@@ -396,6 +539,7 @@ function buildRouteTrace(params: {
     selectedTraversalNodeIds: selectedTraversalIds,
     selectedPathNodeIds: selectedTraversalIds,
     selectedSeedNodeIds,
+    branchOutcomes,
     injectedNodeSummaries,
     sourceSummary: {
       injectedCount: injectedNodeSummaries.length,
@@ -433,6 +577,7 @@ function buildRouteTrace(params: {
       queryEmbeddingSource: params.queryEmbeddingSource,
       chosenStopCount,
       forcedStopCount,
+      branchOutcomeSummary,
       droppedProposalCount,
       droppedProposalReasons,
       interruption,

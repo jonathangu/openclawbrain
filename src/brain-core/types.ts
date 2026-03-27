@@ -570,6 +570,31 @@ export interface DecisionTraceOperatorAudit {
   injectedNodeSummaries: DecisionTraceInjectedNodeSummary[];
 }
 
+export interface DecisionTraceBranchOutcome {
+  sourceNodeId: string | null;
+  expansionIndex: number;
+  selectionSubstepCount: number;
+  continued: boolean;
+  selectedTargetIds: string[];
+  acceptedTargetIds: string[];
+  vetoedTargetIds: string[];
+  droppedTargetIds: string[];
+  stopTruth: TrajectoryStopTruth | null;
+  stopReason: TrajectoryStopReason | null;
+  terminationReason: TrajectoryStopReason | null;
+  proof: string;
+}
+
+export interface DecisionTraceBranchOutcomeSummary {
+  branchCount: number;
+  continuingBranchCount: number;
+  stoppedWithoutProgressCount: number;
+  chosenStopBranchCount: number;
+  forcedStopBranchCount: number;
+  terminationReasons: Record<string, number> | null;
+  detail: string;
+}
+
 export type BrainInterruptionStage =
   | "embedding"
   | "query"
@@ -601,6 +626,7 @@ export interface DecisionRouteTrace {
   selectedTraversalNodeIds: string[];
   selectedPathNodeIds: string[];
   selectedSeedNodeIds: string[];
+  branchOutcomes: DecisionTraceBranchOutcome[];
   injectedNodeSummaries: DecisionTraceInjectedNodeSummary[];
   sourceSummary: {
     injectedCount: number;
@@ -633,6 +659,7 @@ export interface DecisionRouteTrace {
     queryEmbeddingSource: "provided" | "runtime";
     chosenStopCount?: number | null;
     forcedStopCount?: number | null;
+    branchOutcomeSummary?: DecisionTraceBranchOutcomeSummary | null;
     droppedProposalCount?: number | null;
     droppedProposalReasons?: Record<string, number> | null;
     interruption?: BrainInterruptionMetadata | null;

@@ -238,6 +238,19 @@ describe("BrainService", () => {
     expect(trace?.routeTrace?.sourceSummary.sourceRefs[0]).toMatch(/^prov_[a-f0-9]{16}$/);
     expect(trace?.routeTrace?.selectionMetadata.chosenStopCount).toBe(0);
     expect(trace?.routeTrace?.selectionMetadata.forcedStopCount ?? 0).toBeGreaterThan(0);
+    expect(trace?.routeTrace?.selectionMetadata.branchOutcomeSummary).toEqual(expect.objectContaining({
+      branchCount: expect.any(Number),
+      continuingBranchCount: expect.any(Number),
+      stoppedWithoutProgressCount: expect.any(Number),
+      chosenStopBranchCount: expect.any(Number),
+      forcedStopBranchCount: expect.any(Number),
+      detail: expect.stringContaining("branches continued"),
+    }));
+    expect(trace?.routeTrace?.branchOutcomes[0]).toEqual(expect.objectContaining({
+      sourceNodeId: null,
+      continued: true,
+      proof: expect.stringContaining("branch start continued"),
+    }));
     const status = await service.status();
     expect(status.currentPackVersion).toBe(1);
     expect(status.routeTraceCount).toBe(1);
@@ -252,6 +265,11 @@ describe("BrainService", () => {
       queryEmbeddingSource: "provided",
       chosenStopCount: expect.any(Number),
       forcedStopCount: expect.any(Number),
+      branchOutcomeSummary: expect.objectContaining({
+        branchCount: expect.any(Number),
+        continuingBranchCount: expect.any(Number),
+        detail: expect.stringContaining("branches continued"),
+      }),
       droppedProposalCount: 0,
       droppedProposalReasons: null,
     }));
@@ -340,6 +358,17 @@ describe("BrainService", () => {
         rate: 1 / 3,
       },
       detail: "1/3 clipped and 1/3 fail-open or interrupted across the recent decision window",
+      branchBehavior: expect.objectContaining({
+        branchCount: expect.any(Number),
+        continuingBranchCount: expect.any(Number),
+        histograms: expect.objectContaining({
+          stopTruth: expect.objectContaining({
+            forced: expect.any(Number),
+          }),
+          terminationReason: expect.any(Object),
+        }),
+        detail: expect.stringContaining("recent branches continued"),
+      }),
     }));
   });
 
