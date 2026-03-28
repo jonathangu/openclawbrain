@@ -166,7 +166,7 @@ As of the current trunk:
   - `shadowMode`: PASS (no injected context visible)
   - `noEmbedding`: PASS
   - `uninitialized`: PASS
-- Current operator proof lane: `npx @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart`
+- Current operator proof lane: `openclawbrain proof --openclaw-home ~/.openclaw --skip-install --skip-restart`
   - captures `summary.md`, `steps.json`, `verdict.json`, raw step logs, startup breadcrumbs, and runtime-load-proof snapshots
   - freezes install/runtime/reporting truth for the exercised host surface
 

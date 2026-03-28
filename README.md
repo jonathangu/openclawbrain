@@ -58,7 +58,7 @@ openclawbrain proof --openclaw-home ~/.openclaw
 
 The intended canonical lane is the same install command with optional `--proof`. Until that lands cleanly across every operator surface, proof stays a separate follow-up command. `proof` writes `summary.md`, `steps.json`, `verdict.json`, raw step logs, and proof pointers under one bundle directory.
 
-Advanced or legacy package-management lane:
+Manual native-package lane (not the public default):
 
 ```bash
 openclaw plugins install @openclawbrain/openclaw
@@ -68,7 +68,7 @@ openclaw plugins update openclawbrain
 openclawbrain install --openclaw-home ~/.openclaw
 ```
 
-Use that manual lane only when you are explicitly managing the native plugin package yourself. The public story stays on `openclawbrain install`.
+Use that manual lane only for explicit compatibility or maintainer work on the native package layer. The public operator story stays on `openclawbrain install`.
 
 A healthy install or repair should report the profile as attached. After the first promoted pack is available, detailed status should also report `serveState=serving_active_pack`. If you are using an optional teacher model, the same detailed status should also show `teacherConfigured=true`, the expected provider/model, and `teacherConfigError=null`.
 

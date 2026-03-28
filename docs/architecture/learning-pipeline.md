@@ -47,9 +47,9 @@ When promotion succeeds:
 Useful inspection commands:
 
 ```bash
-npx @openclawbrain/cli learn --openclaw-home ~/.openclaw --json
-npx @openclawbrain/cli rollback --openclaw-home ~/.openclaw --dry-run
-npx @openclawbrain/cli daemon status --activation-root ~/.openclawbrain/activation
+openclawbrain learn --openclaw-home ~/.openclaw --json
+openclawbrain rollback --openclaw-home ~/.openclaw --dry-run
+openclawbrain daemon status --activation-root ~/.openclawbrain/activation
 ```
 
 Use `learn --json` for a one-shot snapshot, `rollback --dry-run` before moving pointers, and `daemon status` when the background learner is running continuously.

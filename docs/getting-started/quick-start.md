@@ -30,9 +30,9 @@ openclawbrain proof --openclaw-home ~/.openclaw
 
 The intended canonical lane is `openclawbrain install --openclaw-home ~/.openclaw --proof`. Until that flag lands cleanly across the operator surfaces, proof stays a separate follow-up command. `proof` writes `summary.md`, `steps.json`, `verdict.json`, raw step logs, and proof pointers under one bundle directory.
 
-## Advanced or legacy package management
+## Manual native-package lane (not the public default)
 
-If you are explicitly managing the native plugin package yourself, the manual lane is still available:
+If you are explicitly managing the native plugin package yourself for compatibility or maintainer work, the manual lane is still available:
 
 ```bash
 openclaw plugins install @openclawbrain/openclaw
