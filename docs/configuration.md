@@ -51,6 +51,37 @@ Why these defaults:
 - `brainEmbeddingModel=bge-large:latest` matches the tested local default in this repo
 - `brainWorkerMode=child` keeps learning off the serving process
 
+## Optional teacher wiring
+
+Teacher wiring is separate from brain activation. Making a model available in Ollama is not the same thing as telling OpenClawBrain to use it as the teacher. `BRAIN LOADED` proves the runtime hook is attached; teacher configuration is a separate status-tracked surface.
+
+A conceptual teacher configuration looks like this:
+
+```json
+{
+  "plugins": {
+    "entries": {
+      "openclawbrain": {
+        "enabled": true,
+        "config": {
+          "brainTeacherEnabled": true,
+          "brainTeacherProvider": "ollama",
+          "brainTeacherModel": "unsloth/Qwen3.5-27B-GGUF"
+        }
+      }
+    }
+  }
+}
+```
+
+After setting a teacher, restart the gateway and verify the same home with:
+
+```bash
+openclawbrain status --openclaw-home ~/.openclaw --detailed
+```
+
+A correct teacher wiring should report `teacherConfigured=true`, the expected provider/model, and `teacherConfigError=null`.
+
 ## Embeddings
 
 ### Local Ollama
@@ -91,6 +122,9 @@ If the remote endpoint requires authentication, set `OPENCLAWBRAIN_EMBEDDING_API
 | `OPENCLAWBRAIN_EMBEDDING_API_KEY` | Optional auth for remote embedding endpoints |
 | `OPENCLAWBRAIN_WORKER_MODE` | Worker mode; `child` is the supported serving boundary |
 | `OPENCLAWBRAIN_SHADOW_MODE` | Record routing without injecting learned context |
+| `OPENCLAWBRAIN_TEACHER_ENABLED` | Enable or disable the optional teacher lane |
+| `OPENCLAWBRAIN_TEACHER_PROVIDER` | Teacher provider (`ollama`, `openai`, etc.) |
+| `OPENCLAWBRAIN_TEACHER_MODEL` | Teacher model name selected for supervision |
 
 ## Optional diagnostics
 

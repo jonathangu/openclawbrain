@@ -48,6 +48,8 @@ openclawbrain status --openclaw-home ~/.openclaw --detailed
 
 `install` is the public front door for the selected home. It writes or repairs the hook for that home and pins the activation root the runtime serves from. `status --detailed` is the quick verification surface.
 
+Activation and teacher wiring are separate checks. Seeing `BRAIN LOADED` or an attached home means the runtime hook is wired correctly for that OpenClaw home. It does **not** by itself prove that an optional teacher model is configured. Teacher wiring lives on its own config path (`brainTeacherEnabled`, `brainTeacherProvider`, `brainTeacherModel`) and should be verified through status fields such as `teacherConfigured`, `teacherProvider`, `teacherModel`, and `teacherConfigError`.
+
 When you need durable operator evidence today, run the proof surface for the same home:
 
 ```bash
@@ -68,7 +70,7 @@ openclawbrain install --openclaw-home ~/.openclaw
 
 Use that manual lane only when you are explicitly managing the native plugin package yourself. The public story stays on `openclawbrain install`.
 
-A healthy install or repair should report the profile as attached. After the first promoted pack is available, detailed status should also report `serveState=serving_active_pack`.
+A healthy install or repair should report the profile as attached. After the first promoted pack is available, detailed status should also report `serveState=serving_active_pack`. If you are using an optional teacher model, the same detailed status should also show `teacherConfigured=true`, the expected provider/model, and `teacherConfigError=null`.
 
 Next docs:
 

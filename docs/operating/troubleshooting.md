@@ -40,6 +40,20 @@ Fix:
 - restart the gateway
 - verify the same home path again
 
+## `status --detailed` shows the home as attached, but `teacherConfigured=false`
+
+Cause:
+
+Brain activation and teacher wiring are separate checks. The runtime hook may be loaded correctly for the selected OpenClaw home while the optional teacher is still unset, points at the wrong provider/model, or fails model resolution.
+
+Fix:
+
+- confirm the teacher config uses the dedicated fields `brainTeacherEnabled`, `brainTeacherProvider`, and `brainTeacherModel`
+- remember that adding a model to Ollama only makes it available; it does not automatically select it as the OpenClawBrain teacher
+- restart the gateway after changing teacher config
+- rerun `openclawbrain status --openclaw-home ~/.openclaw --detailed`
+- verify `teacherConfigured=true`, the expected `teacherProvider` and `teacherModel`, and `teacherConfigError=null`
+
 ## `serveState=fail_open_static_context`
 
 Cause:
