@@ -1,0 +1,208 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 80,
+    "compileOkCount": 3,
+    "phraseHitCount": 3,
+    "phraseCount": 4,
+    "usedLearnedRouteTurnCount": 2,
+    "promotionCount": 2,
+    "packIds": [
+      "pack-f9a5a38d",
+      "pack-30496916",
+      "pack-6ea7af5f"
+    ],
+    "trainTurnCount": 2,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-6ea7af5f",
+    "frozenEvalRouterIdentity": "pack-6ea7af5f:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 3,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 3,
+      "scanSurfaces": [
+        "telegram/group/crabpath-handoff:memory_compiled",
+        "telegram/group/crabpath-handoff:message_delivered",
+        "telegram/group/crabpath-handoff:teaching"
+      ],
+      "humanLabelCount": 2,
+      "selfLabelCount": 3,
+      "totalEventCount": 8,
+      "attributedEventCount": 8,
+      "attributedTurnCount": 3,
+      "selectionDigestCount": 8,
+      "selectionDigestTurnCount": 3,
+      "activePackChangeCount": 2,
+      "freshestSourceStream": "telegram/group/crabpath-handoff",
+      "freshestCreatedAt": "2026-02-27T01:32:52.659Z",
+      "warnings": []
+    },
+    "scoreHash": "sha256-39a7a67c094c14c8cd562bc23d0a1fb71f5a8f4f7497d54043d596fd1b7e64bc"
+  },
+  "turns": [
+    {
+      "turnId": "crab-turn-1",
+      "replayMode": "learned_route",
+      "phase": "train",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-f9a5a38d",
+      "modeRequested": "learned",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-f9b396963b9e059bdcc488bf2ec868d3467f263d0e0676ec3966bdcd0307873a",
+      "selectedContextIds": [
+        "pack-f9a5a38d:event:sanitized-session-crabpath-handoff-seed:cue-memory-graph-engine:feedback",
+        "pack-f9a5a38d:event:sanitized-session-crabpath-handoff-seed:cue-memory-graph-engine:interaction",
+        "pack-f9a5a38d:human-label-harvest"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on telegram session sanitized-session-crabpath-handoff-seed: CrabPath is a memory graph engine that gives agents persistent, learnable memory.. Related interaction: sanitized-session-crabpath-handoff-seed:cue-memory-graph-engine:interaction.",
+        "Interaction operator_override on telegram session sanitized-session-crabpath-handoff-seed. Message: cue-memory-graph-engine-seed-message.",
+        "Human label harvest is first-class with 2 labels sourced from telegram/group/crabpath-handoff/seed:operator_override, telegram/group/crabpath-handoff/seed:teaching."
+      ],
+      "eventExportDigest": "sha256-3b7ec27a500eefb1a043822d81eae5389d85161b3225851589d52651eb9fa9d8",
+      "expectedContextPhrases": [
+        "memory graph engine"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "memory graph engine"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": true,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "telegram/group/crabpath-handoff:memory_compiled",
+          "telegram/group/crabpath-handoff:message_delivered",
+          "telegram/group/crabpath-handoff:teaching"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "telegram/group/crabpath-handoff",
+        "freshestCreatedAt": "2026-02-27T01:27:05.210Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "crab-turn-2",
+      "replayMode": "learned_route",
+      "phase": "train",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-30496916",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "routerIdentity": "pack-30496916:route_fn",
+      "selectionDigest": "sha256-e392a416ca968465ff7ae52496a5f716952d37747725279409cf94ce1f7cbf95",
+      "selectedContextIds": [
+        "runtime-graph-b998e651:passive-background-learning",
+        "runtime-graph-b998e651:fast-boot-defaults",
+        "runtime-graph-b998e651:event:evt-91d8ca1a5e4a3898:split:1"
+      ],
+      "selectedContextTexts": [
+        "Learning cadence is passive_background with always_on scans across telegram/group/crabpath-handoff:memory_compiled, telegram/group/crabpath-handoff:message_delivered, telegram/group/crabpath-handoff:teaching; sparse teacher gating budget=32, delayMs=0, background_amplification=1, amplified_labels=0.",
+        "Fast boot defaults stay live at startup so OpenClaw can answer immediately while passive background learning hydrates richer graph state.",
+        "Focused memory on teaching, telegram, group, crabpath: Teaching feedback on telegram session sanitized-session-crabpath-handoff: CrabPath turns files into a graph and useful paths become reflexes over time."
+      ],
+      "eventExportDigest": "sha256-40273c2a6ce268ccd59177f6977791cee579a64f72b6f6087cb19f86230193e3",
+      "expectedContextPhrases": [
+        "memory graph engine"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "memory graph engine"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 2,
+      "promoted": true,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "telegram/group/crabpath-handoff:memory_compiled",
+          "telegram/group/crabpath-handoff:message_delivered",
+          "telegram/group/crabpath-handoff:teaching"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "telegram/group/crabpath-handoff",
+        "freshestCreatedAt": "2026-02-27T01:32:26.039Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "crab-turn-3",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-6ea7af5f",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "routerIdentity": "pack-6ea7af5f:route_fn",
+      "selectionDigest": "sha256-47ccc5229dc361edafb8c6f89e27e8299a53869166b1787c0674c13d0a864dc0",
+      "selectedContextIds": [
+        "runtime-graph-c8af4235:event:evt-415b9ca19b650bb8",
+        "runtime-graph-c8af4235:event:evt-91d8ca1a5e4a3898",
+        "runtime-graph-c8af4235:human-label-harvest"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on telegram session sanitized-session-crabpath-handoff: Install is pip install crabpath. Other agents only know what is in their own context.. Related interaction: evt-16cbe65883aeea7b.",
+        "Teaching feedback on telegram session sanitized-session-crabpath-handoff: CrabPath turns files into a graph and useful paths become reflexes over time.. Related interaction: evt-c522f4d5e8628913.",
+        "Human label harvest is first-class with 2 labels sourced from telegram/group/crabpath-handoff:teaching."
+      ],
+      "eventExportDigest": "sha256-8b74b2c159759cbc329c9dc70263f7da20879f43052baf5a1b65088b717421b9",
+      "expectedContextPhrases": [
+        "pip install crabpath",
+        "own context"
+      ],
+      "minimumPhraseHits": 2,
+      "phraseHits": [
+        "pip install crabpath",
+        "own context"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 3,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "telegram/group/crabpath-handoff:memory_compiled",
+          "telegram/group/crabpath-handoff:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "telegram/group/crabpath-handoff",
+        "freshestCreatedAt": "2026-02-27T01:32:52.659Z"
+      },
+      "warnings": []
+    }
+  ]
+}

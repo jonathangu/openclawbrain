@@ -1,0 +1,261 @@
+{
+  "contract": "recorded_session_replay_fixture.v1",
+  "traceId": "real-trace-crabpath-handoff",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-02-27T01:26:54.215Z",
+  "bundleBuiltAt": "2026-02-27T01:33:52.659Z",
+  "traceHash": "sha256-c9984f5c500fa074515651de0386d2fc31c37eebf193ce1bb84b4e3d0726d450",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "sanitized from a real Telegram group session",
+      "group labels and participant identifiers were normalized"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "crabpath-public",
+    "snapshotId": "snapshot-crabpath-handoff-2026-02-26",
+    "capturedAt": "2026-02-27T01:26:54.215Z",
+    "rootDir": "/workspace/crabpath",
+    "branch": "main",
+    "revision": "crabpath-handoff-sanitized",
+    "labels": [
+      "telegram",
+      "group",
+      "crabpath"
+    ]
+  },
+  "evalTurnCount": 1,
+  "seedBuiltAt": "2026-02-27T01:27:05.210Z",
+  "seedActivatedAt": "2026-02-27T01:28:05.210Z",
+  "seedExport": {
+    "interactionEvents": [
+      {
+        "contract": "interaction_events.v1",
+        "eventId": "sanitized-session-crabpath-handoff-seed:cue-memory-graph-engine:interaction",
+        "agentId": "main",
+        "sessionId": "sanitized-session-crabpath-handoff-seed",
+        "channel": "telegram",
+        "sequence": 1,
+        "kind": "operator_override",
+        "createdAt": "2026-02-27T01:27:05.210Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "telegram/group/crabpath-handoff/seed"
+        },
+        "semantic": {
+          "semanticType": "control_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "messageId": "cue-memory-graph-engine-seed-message"
+      }
+    ],
+    "feedbackEvents": [
+      {
+        "contract": "feedback_events.v1",
+        "eventId": "sanitized-session-crabpath-handoff-seed:cue-memory-graph-engine:feedback",
+        "agentId": "main",
+        "sessionId": "sanitized-session-crabpath-handoff-seed",
+        "channel": "telegram",
+        "sequence": 2,
+        "kind": "teaching",
+        "createdAt": "2026-02-27T01:28:05.210Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "telegram/group/crabpath-handoff/seed"
+        },
+        "content": "CrabPath is a memory graph engine that gives agents persistent, learnable memory.",
+        "semantic": {
+          "semanticType": "teacher_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "relatedInteractionId": "sanitized-session-crabpath-handoff-seed:cue-memory-graph-engine:interaction"
+      }
+    ],
+    "range": {
+      "start": 1,
+      "end": 2,
+      "count": 2,
+      "firstEventId": "sanitized-session-crabpath-handoff-seed:cue-memory-graph-engine:interaction",
+      "lastEventId": "sanitized-session-crabpath-handoff-seed:cue-memory-graph-engine:feedback",
+      "firstCreatedAt": "2026-02-27T01:27:05.210Z",
+      "lastCreatedAt": "2026-02-27T01:28:05.210Z"
+    },
+    "provenance": {
+      "runtimeOwner": "openclaw",
+      "sessionId": "sanitized-session-crabpath-handoff-seed",
+      "channel": "telegram",
+      "interactionCount": 1,
+      "feedbackCount": 1,
+      "sourceStreams": [
+        "telegram/group/crabpath-handoff/seed"
+      ],
+      "contracts": [
+        "interaction_events.v1",
+        "feedback_events.v1"
+      ],
+      "exportDigest": "sha256-cef5f18edf34183906336ddfacfc3a24f28390bd9278168766bbb71430870a04",
+      "semanticSurface": {
+        "semanticTypes": [
+          "control_signal",
+          "teacher_signal"
+        ],
+        "sourceKinds": [
+          "recorded_session_seed"
+        ],
+        "diagnosticIntents": []
+      },
+      "learningSurface": {
+        "bootProfile": "fast_boot_defaults",
+        "learningCadence": "passive_background",
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "telegram/group/crabpath-handoff/seed:operator_override",
+          "telegram/group/crabpath-handoff/seed:teaching"
+        ],
+        "labelSources": {
+          "human": [
+            "telegram/group/crabpath-handoff/seed:operator_override",
+            "telegram/group/crabpath-handoff/seed:teaching"
+          ],
+          "self": []
+        },
+        "labelHarvest": {
+          "humanLabels": 2,
+          "selfLabels": 0,
+          "corrections": 0,
+          "teachings": 1,
+          "approvals": 0,
+          "suppressions": 0,
+          "operatorOverrideLabels": 1,
+          "memoryCompileLabels": 0
+        },
+        "principalSummary": {
+          "teacherIdentities": [],
+          "teacherRoles": [],
+          "teacherAuthorities": [],
+          "priorityClasses": [],
+          "scopedEventCount": 0,
+          "supersedingEventCount": 0
+        }
+      }
+    }
+  },
+  "turns": [
+    {
+      "turnId": "crab-turn-1",
+      "turn": {
+        "agentId": "main",
+        "sessionId": "sanitized-session-crabpath-handoff",
+        "channel": "telegram",
+        "sourceStream": "telegram/group/crabpath-handoff",
+        "userMessage": "What is this CrabPath?",
+        "createdAt": "2026-02-27T01:26:54.215Z",
+        "sequenceStart": 1000,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "runtimeHints": [
+          "crabpath",
+          "overview",
+          "memory"
+        ],
+        "compile": {
+          "createdAt": "2026-02-27T01:26:54.215Z",
+          "sequence": 1000
+        },
+        "delivery": {
+          "createdAt": "2026-02-27T01:27:05.210Z",
+          "sequence": 1001,
+          "messageId": "msg-crab-turn-1"
+        },
+        "feedback": [
+          {
+            "createdAt": "2026-02-27T01:27:05.210Z",
+            "content": "CrabPath turns files into a graph and useful paths become reflexes over time.",
+            "sequence": 1002,
+            "kind": "teaching"
+          }
+        ]
+      },
+      "expectedContextPhrases": [
+        "memory graph engine"
+      ],
+      "minimumPhraseHits": 1
+    },
+    {
+      "turnId": "crab-turn-2",
+      "turn": {
+        "agentId": "main",
+        "sessionId": "sanitized-session-crabpath-handoff",
+        "channel": "telegram",
+        "sourceStream": "telegram/group/crabpath-handoff",
+        "userMessage": "Is it on PyPI? Why can't the other agent find it?",
+        "createdAt": "2026-02-27T01:32:22.197Z",
+        "sequenceStart": 1010,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "runtimeHints": [
+          "install",
+          "pypi",
+          "agent-context"
+        ],
+        "compile": {
+          "createdAt": "2026-02-27T01:32:22.197Z",
+          "sequence": 1010
+        },
+        "delivery": {
+          "createdAt": "2026-02-27T01:32:26.039Z",
+          "sequence": 1011,
+          "messageId": "msg-crab-turn-2"
+        },
+        "feedback": [
+          {
+            "createdAt": "2026-02-27T01:32:26.039Z",
+            "content": "Install is pip install crabpath. Other agents only know what is in their own context.",
+            "sequence": 1012,
+            "kind": "teaching"
+          }
+        ]
+      },
+      "expectedContextPhrases": [
+        "memory graph engine"
+      ],
+      "minimumPhraseHits": 1
+    },
+    {
+      "turnId": "crab-turn-3",
+      "turn": {
+        "agentId": "main",
+        "sessionId": "sanitized-session-crabpath-handoff",
+        "channel": "telegram",
+        "sourceStream": "telegram/group/crabpath-handoff",
+        "userMessage": "Tell the other agent directly.",
+        "createdAt": "2026-02-27T01:32:48.960Z",
+        "sequenceStart": 1020,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "runtimeHints": [
+          "handoff",
+          "install",
+          "agent-context"
+        ],
+        "compile": {
+          "createdAt": "2026-02-27T01:32:48.960Z",
+          "sequence": 1020
+        },
+        "delivery": {
+          "createdAt": "2026-02-27T01:32:52.659Z",
+          "sequence": 1021,
+          "messageId": "msg-crab-turn-3"
+        },
+        "feedback": []
+      },
+      "expectedContextPhrases": [
+        "pip install crabpath",
+        "own context"
+      ],
+      "minimumPhraseHits": 2
+    }
+  ],
+  "fixtureHash": "sha256-af19b6e825342ce2ba90aebb643f8d7dc5c6fe3ccbf79847e338294013ff839b"
+}

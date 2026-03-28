@@ -1,0 +1,101 @@
+{
+  "contract": "recorded_session_trace.v1",
+  "traceId": "real-trace-crabpath-handoff",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-02-27T01:26:54.215Z",
+  "bundleBuiltAt": "2026-02-27T01:33:52.659Z",
+  "agentId": "main",
+  "sessionId": "sanitized-session-crabpath-handoff",
+  "channel": "telegram",
+  "sourceStream": "telegram/group/crabpath-handoff",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "sanitized from a real Telegram group session",
+      "group labels and participant identifiers were normalized"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "crabpath-public",
+    "snapshotId": "snapshot-crabpath-handoff-2026-02-26",
+    "rootDir": "/workspace/crabpath",
+    "branch": "main",
+    "revision": "crabpath-handoff-sanitized",
+    "labels": [
+      "telegram",
+      "group",
+      "crabpath"
+    ],
+    "capturedAt": "2026-02-27T01:26:54.215Z"
+  },
+  "evalTurnCount": 1,
+  "seedBuiltAt": "2026-02-27T01:27:05.210Z",
+  "seedActivatedAt": "2026-02-27T01:28:05.210Z",
+  "seedCues": [
+    {
+      "cueId": "cue-memory-graph-engine",
+      "createdAt": "2026-02-27T01:27:05.210Z",
+      "content": "CrabPath is a memory graph engine that gives agents persistent, learnable memory.",
+      "kind": "teaching"
+    }
+  ],
+  "turns": [
+    {
+      "turnId": "crab-turn-1",
+      "createdAt": "2026-02-27T01:26:54.215Z",
+      "deliveredAt": "2026-02-27T01:27:05.210Z",
+      "userMessage": "What is this CrabPath?",
+      "runtimeHints": [
+        "crabpath",
+        "overview",
+        "memory"
+      ],
+      "feedback": [
+        {
+          "createdAt": "2026-02-27T01:27:05.210Z",
+          "content": "CrabPath turns files into a graph and useful paths become reflexes over time.",
+          "kind": "teaching"
+        }
+      ],
+      "expectedContextPhrases": [
+        "memory graph engine"
+      ]
+    },
+    {
+      "turnId": "crab-turn-2",
+      "createdAt": "2026-02-27T01:32:22.197Z",
+      "deliveredAt": "2026-02-27T01:32:26.039Z",
+      "userMessage": "Is it on PyPI? Why can't the other agent find it?",
+      "runtimeHints": [
+        "install",
+        "pypi",
+        "agent-context"
+      ],
+      "feedback": [
+        {
+          "createdAt": "2026-02-27T01:32:26.039Z",
+          "content": "Install is pip install crabpath. Other agents only know what is in their own context.",
+          "kind": "teaching"
+        }
+      ],
+      "expectedContextPhrases": [
+        "memory graph engine"
+      ]
+    },
+    {
+      "turnId": "crab-turn-3",
+      "createdAt": "2026-02-27T01:32:48.960Z",
+      "deliveredAt": "2026-02-27T01:32:52.659Z",
+      "userMessage": "Tell the other agent directly.",
+      "runtimeHints": [
+        "handoff",
+        "install",
+        "agent-context"
+      ],
+      "expectedContextPhrases": [
+        "pip install crabpath",
+        "own context"
+      ]
+    }
+  ]
+}

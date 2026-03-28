@@ -1,0 +1,347 @@
+{
+  "contract": "sanitized_recorded_session_trace_export_report.v1",
+  "generatedAt": "2026-03-28T20:12:10.812Z",
+  "specPath": "/Users/guclaw/worktrees/openclawbrain/t040-rollout-evaluator-harvest/artifacts/recorded-session-traces/2026-03-28/spec.json",
+  "outDir": "/Users/guclaw/worktrees/openclawbrain/t040-rollout-evaluator-harvest/artifacts/recorded-session-traces/2026-03-28/generated",
+  "traces": [
+    {
+      "traceId": "real-trace-plan-execution",
+      "sessionFile": "/Users/guclaw/.openclaw/agents/main/sessions/212e608e-d2b2-43c4-9403-a6ce6eb393f0.jsonl",
+      "outputPath": "/Users/guclaw/worktrees/openclawbrain/t040-rollout-evaluator-harvest/artifacts/recorded-session-traces/2026-03-28/generated/real-trace-plan-execution.trace.json",
+      "recordedAt": "2026-03-28T17:26:18.111Z",
+      "bundleBuiltAt": "2026-03-28T20:02:41.227Z",
+      "seedCues": [
+        {
+          "cueId": "cue-proof-run",
+          "content": "T-20260328-040 is the real-trace learned-route proof run for OpenClawBrain.",
+          "source": {
+            "role": "assistant",
+            "contains": "pick up the real-trace learned-route proof work",
+            "occurrence": 1,
+            "timestamp": "2026-03-28T17:26:18.111Z",
+            "excerpt": "[[reply_to_current]] Morning Jon — I’m here and ready. We can pick up the real-trace learned-route proof work, or switch to whatever matters most right now; what do you want to do?"
+          }
+        }
+      ],
+      "turns": [
+        {
+          "turnId": "plan-turn-1",
+          "userMessage": "So what's next for us to work on?",
+          "userSource": {
+            "role": "user",
+            "contains": "So what's next for us to work on?",
+            "occurrence": 1,
+            "timestamp": "2026-03-28T19:54:42.389Z",
+            "excerpt": "Conversation info (untrusted metadata):\n```json\n{\n  \"message_id\": \"19545\",\n  \"sender_id\": \"8518484672\",\n  \"sender\": \"Jonathan\",\n  \"timestamp\": \"Sat 2026-03-28 12:54 PDT\"\n}\n```\n\nSender (untrusted metadata):\n```json\n{\n  \"l"
+          },
+          "deliveredSource": {
+            "role": "assistant",
+            "contains": "The next real thing is **finish T-20260328-040 properly**",
+            "occurrence": 1,
+            "timestamp": "2026-03-28T19:54:57.546Z",
+            "excerpt": "[[reply_to_current]] The next real thing is **finish T-20260328-040 properly**:\n\n1. **Commit the rollout-evaluator scaffold**\n   - `scripts/evaluate-recorded-session-rollout.ts`\n   - `src/recorded-session-rollout-proof.t"
+          },
+          "feedback": [
+            {
+              "content": "Next steps: commit the rollout-evaluator scaffold, export a sanitized non-test real-trace replay corpus, and rerun the rollout evaluator.",
+              "kind": "teaching",
+              "source": {
+                "role": "assistant",
+                "contains": "Build/export a sanitized real-trace corpus",
+                "occurrence": 1,
+                "timestamp": "2026-03-28T19:54:57.546Z",
+                "excerpt": "[[reply_to_current]] The next real thing is **finish T-20260328-040 properly**:\n\n1. **Commit the rollout-evaluator scaffold**\n   - `scripts/evaluate-recorded-session-rollout.ts`\n   - `src/recorded-session-rollout-proof.t"
+              }
+            }
+          ],
+          "expectedContextPhrases": [
+            "learned-route proof run"
+          ]
+        },
+        {
+          "turnId": "plan-turn-2",
+          "userMessage": "Please make an end-to-end master plan for me.",
+          "userSource": {
+            "role": "user",
+            "contains": "Please make an end-to-end master plan for me.",
+            "occurrence": 1,
+            "timestamp": "2026-03-28T19:56:06.301Z",
+            "excerpt": "Conversation info (untrusted metadata):\n```json\n{\n  \"message_id\": \"19547\",\n  \"sender_id\": \"8518484672\",\n  \"sender\": \"Jonathan\",\n  \"timestamp\": \"Sat 2026-03-28 12:55 PDT\"\n}\n```\n\nSender (untrusted metadata):\n```json\n{\n  \"l"
+          },
+          "deliveredSource": {
+            "role": "assistant",
+            "contains": "Done. I wrote the end-to-end master plan here:",
+            "occurrence": 1,
+            "timestamp": "2026-03-28T19:58:48.383Z",
+            "excerpt": "[[reply_to_current]] Done. I wrote the end-to-end master plan here:\n\n- `task-artifacts/T-20260328-040/proof-plan.md`\n\nCommitted in workspace as:\n\n- `c8fba11` — `Add T-20260328-040 end-to-end proof plan`\n\nThe plan covers "
+          },
+          "feedback": [
+            {
+              "content": "The master plan ends with a rollout verdict: ready, limited, or blocked.",
+              "kind": "teaching",
+              "source": {
+                "role": "assistant",
+                "contains": "make the blunt rollout call: `ready`, `limited`, or `blocked`",
+                "occurrence": 1,
+                "timestamp": "2026-03-28T19:58:48.383Z",
+                "excerpt": "[[reply_to_current]] Done. I wrote the end-to-end master plan here:\n\n- `task-artifacts/T-20260328-040/proof-plan.md`\n\nCommitted in workspace as:\n\n- `c8fba11` — `Add T-20260328-040 end-to-end proof plan`\n\nThe plan covers "
+              }
+            }
+          ],
+          "expectedContextPhrases": [
+            "real-trace learned-route proof run"
+          ]
+        },
+        {
+          "turnId": "plan-turn-3",
+          "userMessage": "Please do this entire plan end to end.",
+          "userSource": {
+            "role": "user",
+            "contains": "Please do this entire plan end to end",
+            "occurrence": 1,
+            "timestamp": "2026-03-28T20:01:14.399Z",
+            "excerpt": "Conversation info (untrusted metadata):\n```json\n{\n  \"message_id\": \"19550\",\n  \"reply_to_id\": \"19549\",\n  \"sender_id\": \"8518484672\",\n  \"sender\": \"Jonathan\",\n  \"timestamp\": \"Sat 2026-03-28 13:01 PDT\",\n  \"has_reply_context\": "
+          },
+          "deliveredSource": {
+            "role": "assistant",
+            "contains": "Launching the full proof run now:",
+            "occurrence": 1,
+            "timestamp": "2026-03-28T20:01:41.227Z",
+            "excerpt": "Launching the full proof run now: I’m going to close the scaffold lane first, then audit real trace sources and build the exporter path. I’ll come back at the first hard proof checkpoint or if something genuinely blocks."
+          },
+          "feedback": [],
+          "expectedContextPhrases": [
+            "sanitized non-test real-trace replay corpus",
+            "ready, limited, or blocked"
+          ]
+        }
+      ]
+    },
+    {
+      "traceId": "real-trace-live-proof-story",
+      "sessionFile": "/Users/guclaw/.openclaw/agents/main/sessions/a8904661-4c21-43c4-b37b-5f26e78619b2.jsonl",
+      "outputPath": "/Users/guclaw/worktrees/openclawbrain/t040-rollout-evaluator-harvest/artifacts/recorded-session-traces/2026-03-28/generated/real-trace-live-proof-story.trace.json",
+      "recordedAt": "2026-03-27T06:47:54.417Z",
+      "bundleBuiltAt": "2026-03-27T06:50:19.657Z",
+      "seedCues": [
+        {
+          "cueId": "cue-empty-memory-scaffold",
+          "content": "OpenClawBrain starts as a correctly attached but mostly empty memory scaffold.",
+          "source": {
+            "role": "assistant",
+            "contains": "mostly empty memory scaffold",
+            "occurrence": 1,
+            "timestamp": "2026-03-27T06:47:54.417Z",
+            "excerpt": "[[reply_to_current]]Yes. Here’s the deep plan I’d use.\n\n# Goal\n\nCreate a **real, intuitive, visually strong explanation** of OpenClawBrain that answers:\n\n1. what exists right after install  \n2. what INIT actually creates"
+          }
+        }
+      ],
+      "turns": [
+        {
+          "turnId": "story-turn-1",
+          "userMessage": "Use our current brain install to make it concrete.",
+          "userSource": {
+            "role": "user",
+            "contains": "You can use our current brain install to make it",
+            "occurrence": 1,
+            "timestamp": "2026-03-27T06:47:54.420Z",
+            "excerpt": "Conversation info (untrusted metadata):\n```json\n{\n  \"message_id\": \"19385\",\n  \"sender_id\": \"8518484672\",\n  \"sender\": \"Jonathan\",\n  \"timestamp\": \"Thu 2026-03-26 23:37 PDT\"\n}\n```\n\nSender (untrusted metadata):\n```json\n{\n  \"l"
+          },
+          "deliveredSource": {
+            "role": "assistant",
+            "contains": "Use **our current shared `~/.openclaw` install** as the canonical example.",
+            "occurrence": 1,
+            "timestamp": "2026-03-27T06:49:01.554Z",
+            "excerpt": "[[reply_to_current]]Yes — here’s the real plan.\n\n## Goal\nTurn the current OpenClawBrain explanation into a **concrete story grounded in our actual live install**, not abstract architecture talk.\n\nThe page should let a sm"
+          },
+          "feedback": [
+            {
+              "content": "Use the current shared ~/.openclaw install as the canonical example.",
+              "kind": "teaching",
+              "source": {
+                "role": "assistant",
+                "contains": "canonical example",
+                "occurrence": 1,
+                "timestamp": "2026-03-27T06:49:01.554Z",
+                "excerpt": "[[reply_to_current]]Yes — here’s the real plan.\n\n## Goal\nTurn the current OpenClawBrain explanation into a **concrete story grounded in our actual live install**, not abstract architecture talk.\n\nThe page should let a sm"
+              }
+            }
+          ],
+          "expectedContextPhrases": [
+            "memory scaffold"
+          ]
+        },
+        {
+          "turnId": "story-turn-2",
+          "userMessage": "This is not good enough. Please make a deep detailed plan.",
+          "userSource": {
+            "role": "user",
+            "contains": "This is t good enough",
+            "occurrence": 1,
+            "timestamp": "2026-03-27T06:48:11.652Z",
+            "excerpt": "Conversation info (untrusted metadata):\n```json\n{\n  \"message_id\": \"19386\",\n  \"sender_id\": \"8518484672\",\n  \"sender\": \"Jonathan\",\n  \"timestamp\": \"Thu 2026-03-26 23:37 PDT\"\n}\n```\n\nSender (untrusted metadata):\n```json\n{\n  \"l"
+          },
+          "deliveredSource": {
+            "role": "assistant",
+            "contains": "BRAIN LOADED",
+            "occurrence": 2,
+            "timestamp": "2026-03-27T06:49:01.554Z",
+            "excerpt": "[[reply_to_current]]Yes — here’s the real plan.\n\n## Goal\nTurn the current OpenClawBrain explanation into a **concrete story grounded in our actual live install**, not abstract architecture talk.\n\nThe page should let a sm"
+          },
+          "feedback": [
+            {
+              "content": "Ground the story in real host proof signals: BRAIN LOADED, loadProof=status_probe_ready, serveState=serving_active_pack, routeFn available=yes.",
+              "kind": "teaching",
+              "source": {
+                "role": "assistant",
+                "contains": "routeFn available=yes",
+                "occurrence": 2,
+                "timestamp": "2026-03-27T06:49:01.554Z",
+                "excerpt": "[[reply_to_current]]Yes — here’s the real plan.\n\n## Goal\nTurn the current OpenClawBrain explanation into a **concrete story grounded in our actual live install**, not abstract architecture talk.\n\nThe page should let a sm"
+              }
+            }
+          ],
+          "expectedContextPhrases": [
+            "memory scaffold"
+          ]
+        },
+        {
+          "turnId": "story-turn-3",
+          "userMessage": "Make it good and push it live now!",
+          "userSource": {
+            "role": "user",
+            "contains": "Make it good and push it live now!",
+            "occurrence": 1,
+            "timestamp": "2026-03-27T06:49:01.558Z",
+            "excerpt": "Conversation info (untrusted metadata):\n```json\n{\n  \"message_id\": \"19388\",\n  \"sender_id\": \"8518484672\",\n  \"sender\": \"Jonathan\",\n  \"timestamp\": \"Thu 2026-03-26 23:39 PDT\"\n}\n```\n\nSender (untrusted metadata):\n```json\n{\n  \"l"
+          },
+          "deliveredSource": {
+            "role": "assistant",
+            "contains": "I’m grounding the rewrite in the real local install first",
+            "occurrence": 1,
+            "timestamp": "2026-03-27T06:49:19.657Z",
+            "excerpt": "I’m grounding the rewrite in the real local install first, then I’ll update the story/charts, push both repos, and give you the live URLs."
+          },
+          "feedback": [],
+          "expectedContextPhrases": [
+            "BRAIN LOADED",
+            "routeFn available=yes"
+          ]
+        }
+      ]
+    },
+    {
+      "traceId": "real-trace-crabpath-handoff",
+      "sessionFile": "/Users/guclaw/.openclaw/agents/main/sessions/fd0876a9-036f-40e6-8bde-5c8eaa42e82f.jsonl",
+      "outputPath": "/Users/guclaw/worktrees/openclawbrain/t040-rollout-evaluator-harvest/artifacts/recorded-session-traces/2026-03-28/generated/real-trace-crabpath-handoff.trace.json",
+      "recordedAt": "2026-02-27T01:26:54.215Z",
+      "bundleBuiltAt": "2026-02-27T01:33:52.659Z",
+      "seedCues": [
+        {
+          "cueId": "cue-memory-graph-engine",
+          "content": "CrabPath is a memory graph engine that gives agents persistent, learnable memory.",
+          "source": {
+            "role": "assistant",
+            "contains": "CrabPath is a memory graph engine Jon built",
+            "occurrence": 1,
+            "timestamp": "2026-02-27T01:27:05.210Z",
+            "excerpt": "CrabPath is a memory graph engine Jon built — it gives AI agents like me persistent, learnable memory.\n\n**The problem it solves:** Every time I wake up, I start fresh. My workspace files are my memory, but they're flat t"
+          }
+        }
+      ],
+      "turns": [
+        {
+          "turnId": "crab-turn-1",
+          "userMessage": "What is this CrabPath?",
+          "userSource": {
+            "role": "user",
+            "contains": "@gucrab_bot what is this crabpath",
+            "occurrence": 1,
+            "timestamp": "2026-02-27T01:26:54.215Z",
+            "excerpt": "Conversation info (untrusted metadata):\n```json\n{\n  \"message_id\": \"12222\",\n  \"sender_id\": \"8518484672\",\n  \"conversation_label\": \"AI Learning id:-4992109662\",\n  \"sender\": \"8518484672\",\n  \"group_subject\": \"AI Learning\",\n  "
+          },
+          "deliveredSource": {
+            "role": "assistant",
+            "contains": "When a question comes in, it routes through the graph",
+            "occurrence": 1,
+            "timestamp": "2026-02-27T01:27:05.210Z",
+            "excerpt": "CrabPath is a memory graph engine Jon built — it gives AI agents like me persistent, learnable memory.\n\n**The problem it solves:** Every time I wake up, I start fresh. My workspace files are my memory, but they're flat t"
+          },
+          "feedback": [
+            {
+              "content": "CrabPath turns files into a graph and useful paths become reflexes over time.",
+              "kind": "teaching",
+              "source": {
+                "role": "assistant",
+                "contains": "useful paths become reflexes",
+                "occurrence": 1,
+                "timestamp": "2026-02-27T01:27:05.210Z",
+                "excerpt": "CrabPath is a memory graph engine Jon built — it gives AI agents like me persistent, learnable memory.\n\n**The problem it solves:** Every time I wake up, I start fresh. My workspace files are my memory, but they're flat t"
+              }
+            }
+          ],
+          "expectedContextPhrases": [
+            "memory graph engine"
+          ]
+        },
+        {
+          "turnId": "crab-turn-2",
+          "userMessage": "Is it on PyPI? Why can't the other agent find it?",
+          "userSource": {
+            "role": "user",
+            "contains": "is it on PyPI? How come @cormorantai_bot can't figure out where this is",
+            "occurrence": 1,
+            "timestamp": "2026-02-27T01:32:22.197Z",
+            "excerpt": "Conversation info (untrusted metadata):\n```json\n{\n  \"message_id\": \"12225\",\n  \"sender_id\": \"8518484672\",\n  \"conversation_label\": \"AI Learning id:-4992109662\",\n  \"sender\": \"8518484672\",\n  \"group_subject\": \"AI Learning\",\n  "
+          },
+          "deliveredSource": {
+            "role": "assistant",
+            "contains": "pip install crabpath",
+            "occurrence": 2,
+            "timestamp": "2026-02-27T01:32:26.039Z",
+            "excerpt": "Yeah, it's on PyPI — `pip install crabpath`. Standard install, nothing weird.\n\nAs for @cormorantai_bot, that's a different agent — it doesn't have access to my workspace or memory files, so it doesn't know about CrabPath"
+          },
+          "feedback": [
+            {
+              "content": "Install is pip install crabpath. Other agents only know what is in their own context.",
+              "kind": "teaching",
+              "source": {
+                "role": "assistant",
+                "contains": "own context",
+                "occurrence": 1,
+                "timestamp": "2026-02-27T01:32:26.039Z",
+                "excerpt": "Yeah, it's on PyPI — `pip install crabpath`. Standard install, nothing weird.\n\nAs for @cormorantai_bot, that's a different agent — it doesn't have access to my workspace or memory files, so it doesn't know about CrabPath"
+              }
+            }
+          ],
+          "expectedContextPhrases": [
+            "memory graph engine"
+          ]
+        },
+        {
+          "turnId": "crab-turn-3",
+          "userMessage": "Tell the other agent directly.",
+          "userSource": {
+            "role": "user",
+            "contains": "I'm having you @gucrab_bot tell @cormorantai_bot",
+            "occurrence": 1,
+            "timestamp": "2026-02-27T01:32:48.960Z",
+            "excerpt": "Conversation info (untrusted metadata):\n```json\n{\n  \"message_id\": \"12227\",\n  \"sender_id\": \"8518484672\",\n  \"conversation_label\": \"AI Learning id:-4992109662\",\n  \"sender\": \"8518484672\",\n  \"group_subject\": \"AI Learning\",\n  "
+          },
+          "deliveredSource": {
+            "role": "assistant",
+            "contains": "if you're listening:",
+            "occurrence": 1,
+            "timestamp": "2026-02-27T01:32:52.659Z",
+            "excerpt": "Ha — fair enough. Well, @cormorantai_bot, if you're listening:\n\n`pip install crabpath`\n\nThat's it. PyPI package, zero dependencies. The GitHub repo is github.com/jonathangu/crabpath if you want the source, examples, and "
+          },
+          "feedback": [],
+          "expectedContextPhrases": [
+            "pip install crabpath",
+            "own context"
+          ]
+        }
+      ]
+    }
+  ]
+}

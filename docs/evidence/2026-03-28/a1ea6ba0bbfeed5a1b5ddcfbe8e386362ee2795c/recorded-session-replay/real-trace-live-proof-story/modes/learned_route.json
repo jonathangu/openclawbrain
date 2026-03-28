@@ -1,0 +1,208 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 80,
+    "compileOkCount": 3,
+    "phraseHitCount": 3,
+    "phraseCount": 4,
+    "usedLearnedRouteTurnCount": 2,
+    "promotionCount": 2,
+    "packIds": [
+      "pack-7ca8f7db",
+      "pack-3b71ce3a",
+      "pack-f6f18734"
+    ],
+    "trainTurnCount": 2,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-f6f18734",
+    "frozenEvalRouterIdentity": "pack-f6f18734:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 3,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 3,
+      "scanSurfaces": [
+        "telegram/direct/live-proof-story:memory_compiled",
+        "telegram/direct/live-proof-story:message_delivered",
+        "telegram/direct/live-proof-story:teaching"
+      ],
+      "humanLabelCount": 2,
+      "selfLabelCount": 3,
+      "totalEventCount": 8,
+      "attributedEventCount": 8,
+      "attributedTurnCount": 3,
+      "selectionDigestCount": 8,
+      "selectionDigestTurnCount": 3,
+      "activePackChangeCount": 2,
+      "freshestSourceStream": "telegram/direct/live-proof-story",
+      "freshestCreatedAt": "2026-03-27T06:49:19.657Z",
+      "warnings": []
+    },
+    "scoreHash": "sha256-c85452fa9d4ec079f740862ec35b9fe891e100d973ce4b2971257bab72923457"
+  },
+  "turns": [
+    {
+      "turnId": "story-turn-1",
+      "replayMode": "learned_route",
+      "phase": "train",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-7ca8f7db",
+      "modeRequested": "learned",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-6904e261061b7b07130678d137822eecda89b7edcc10696f373b7a384138bc28",
+      "selectedContextIds": [
+        "pack-7ca8f7db:event:sanitized-session-live-proof-story-seed:cue-empty-memory-scaffold:feedback",
+        "pack-7ca8f7db:event:sanitized-session-live-proof-story-seed:cue-empty-memory-scaffold:interaction",
+        "pack-7ca8f7db:workspace"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on telegram session sanitized-session-live-proof-story-seed: OpenClawBrain starts as a correctly attached but mostly empty memory scaffold.. Related interaction: sanitized-session-live-proof-story-seed:cue-empty-memory-scaffold:interaction.",
+        "Interaction operator_override on telegram session sanitized-session-live-proof-story-seed. Message: cue-empty-memory-scaffold-seed-message.",
+        "Workspace snapshot snapshot-live-proof-story-2026-03-26 for openclawbrain-site captured at 2026-03-27T06:47:54.417Z with revision live-proof-story-sanitized."
+      ],
+      "eventExportDigest": "sha256-10a6d2648c5b0579765fd66d7f180f7a7c5b441b254fa15a2b4fc823a7fc49c8",
+      "expectedContextPhrases": [
+        "memory scaffold"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "memory scaffold"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": true,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "telegram/direct/live-proof-story:memory_compiled",
+          "telegram/direct/live-proof-story:message_delivered",
+          "telegram/direct/live-proof-story:teaching"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "telegram/direct/live-proof-story",
+        "freshestCreatedAt": "2026-03-27T06:49:01.554Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "story-turn-2",
+      "replayMode": "learned_route",
+      "phase": "train",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-3b71ce3a",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "routerIdentity": "pack-3b71ce3a:route_fn",
+      "selectionDigest": "sha256-aafb019a09d3630ca18208df78ec7493de6a680cd5760397664f8c068337da93",
+      "selectedContextIds": [
+        "runtime-graph-b1e61047:passive-background-learning",
+        "runtime-graph-b1e61047:event:evt-ba8381ac540d4f2b:split:1",
+        "runtime-graph-b1e61047:workspace"
+      ],
+      "selectedContextTexts": [
+        "Learning cadence is passive_background with always_on scans across telegram/direct/live-proof-story:memory_compiled, telegram/direct/live-proof-story:message_delivered, telegram/direct/live-proof-story:teaching; sparse teacher gating budget=32, delayMs=0, background_amplification=1, amplified_labels=0.",
+        "Focused memory on teaching, telegram, direct, live: Teaching feedback on telegram session sanitized-session-live-proof-story: Use the current shared ~/.",
+        "Workspace snapshot snapshot-live-proof-story-2026-03-26 for openclawbrain-site captured at 2026-03-27T06:47:54.417Z with revision live-proof-story-sanitized."
+      ],
+      "eventExportDigest": "sha256-8fae141ec18faa92d9d9c2a12a243586df6eeceffa7bb554bb5c8034e06bbe6f",
+      "expectedContextPhrases": [
+        "memory scaffold"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "memory scaffold"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 2,
+      "promoted": true,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "telegram/direct/live-proof-story:memory_compiled",
+          "telegram/direct/live-proof-story:message_delivered",
+          "telegram/direct/live-proof-story:teaching"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "telegram/direct/live-proof-story",
+        "freshestCreatedAt": "2026-03-27T06:49:01.554Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "story-turn-3",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-f6f18734",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "routerIdentity": "pack-f6f18734:route_fn",
+      "selectionDigest": "sha256-a449a88a75117f858f3ef06b34040dfc7470d8ff57edb5fcd7bc4f9ede843d61",
+      "selectedContextIds": [
+        "runtime-graph-97d1ca78:event:evt-ba8381ac540d4f2b:split:1",
+        "runtime-graph-97d1ca78:event:evt-fc53325459f9c272",
+        "runtime-graph-97d1ca78:merge:1"
+      ],
+      "selectedContextTexts": [
+        "Focused memory on teaching, telegram, direct, live: Teaching feedback on telegram session sanitized-session-live-proof-story: Use the current shared ~/.",
+        "Teaching feedback on telegram session sanitized-session-live-proof-story: Ground the story in real host proof signals: BRAIN LOADED, loadProof=status_probe_ready, serveState=serving_active_pack, routeFn available=yes.. Related interaction: evt-e3c7db877d99bd4b.",
+        "Merged memory path: Interaction message_delivered on telegram session sanitized-session-live-proof-story. Pack: pack-7ca8f7db. Message: msg-story-turn-1. Interaction message_delivered on telegram session sanitized-session-live-proof-story. Pack: pack-3b71ce3a. Message: msg-story-turn-2."
+      ],
+      "eventExportDigest": "sha256-ed14bbb13bdc9fff7565d7117d69f1bf9e12e4455ef3b236d9a8eaa6991e2985",
+      "expectedContextPhrases": [
+        "BRAIN LOADED",
+        "routeFn available=yes"
+      ],
+      "minimumPhraseHits": 2,
+      "phraseHits": [
+        "BRAIN LOADED",
+        "routeFn available=yes"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 3,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "telegram/direct/live-proof-story:memory_compiled",
+          "telegram/direct/live-proof-story:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "telegram/direct/live-proof-story",
+        "freshestCreatedAt": "2026-03-27T06:49:19.657Z"
+      },
+      "warnings": []
+    }
+  ]
+}
