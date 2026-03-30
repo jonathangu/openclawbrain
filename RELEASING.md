@@ -50,17 +50,30 @@ make sure a maintainer gets a `.changeset/*.md` file onto `main`.
      - `packages/cli/README.md`
    - if hosts still emit the known plugin id mismatch warning (`openclawbrain` manifest id vs `openclaw` package/entry hint), document it rather than implying it is fixed
 4. Merge the release PR to `main`
-5. Manually trigger the `Publish Package` workflow on the merged release commit
-6. Approve the workflow if a protected GitHub Environment is configured
-7. Let the workflow:
+5. On the merged release commit, run:
+
+```bash
+npm run release:plan
+```
+
+   It should print the exact split-package versions, tag, title, and release-notes file that publish will use. It also fails closed when:
+   - the selected ref is not reachable from `main`
+   - pending `.changeset/*.md` files are still present on the publish ref
+   - `CHANGELOG.md` or `docs/release-notes-<cli-version>.md` no longer matches the split versions being published
+6. Manually trigger the `Publish Package` workflow on that exact merged release commit
+   - paste the exact release commit SHA into the workflow input when the selected UI ref is ambiguous
+7. Approve the workflow if a protected GitHub Environment is configured
+8. Let the workflow:
+   - print the same publish plan into the GitHub step summary
    - install dependencies
+   - hydrate package-local dependencies for the canonical split-package tests and tarball checks
    - run tests
    - run the checked-in proof smoke gate so release claims fail closed when the frozen proof bundle is missing, incomplete, or stale
    - verify both canonical package tarballs
    - publish `packages/openclaw` to npm
    - publish `packages/cli` to npm
    - create tag `split-openclaw-vA.B.C-cli-vX.Y.Z`
-   - create the GitHub release
+   - create the GitHub release from `docs/release-notes-<cli-version>.md`
 
 The split publish order should stay deliberate:
 
@@ -77,7 +90,7 @@ Recommended external setup:
 
 1. Add an npm automation token as `NPM_TOKEN`, or migrate the workflow to trusted publishing before removing that secret
 2. Optionally create a GitHub Environment named `npm-publish` and add required reviewers
-3. Confirm the repository label taxonomy used by `.github/release.yml`
+3. Optionally keep `.github/release.yml` aligned if you still use GitHub-generated release notes outside the publish workflow
 
 When configuring npm trusted publishing, register the GitHub workflow using the exact workflow filename in this repo: `.github/workflows/publish.yml`.
 

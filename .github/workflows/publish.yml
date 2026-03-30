@@ -4,7 +4,7 @@ on:
   workflow_dispatch:
     inputs:
       ref:
-        description: Optional git ref to publish. Leave blank to use the selected branch or tag.
+        description: Exact merged release commit or ref to publish. Leave blank only when the selected UI ref already points at that release commit.
         required: false
         type: string
 
@@ -30,8 +30,15 @@ jobs:
           registry-url: https://registry.npmjs.org/
           cache: npm
 
+      - name: Read release plan and enforce publish contract
+        id: release
+        run: npm run release:plan -- --github-output "$GITHUB_OUTPUT" --write-summary "$GITHUB_STEP_SUMMARY"
+
       - name: Install dependencies
         run: npm ci
+
+      - name: Prepare canonical package dependencies
+        run: npm run release:prepare:packages
 
       - name: Run tests
         run: npm test
@@ -49,21 +56,9 @@ jobs:
           npm run release:verify:openclaw
           npm run release:verify:cli
 
-      - name: Read split package versions
-        id: packages
-        run: |
-          openclaw_version="$(node -p "require('./packages/openclaw/package.json').version")"
-          cli_version="$(node -p "require('./packages/cli/package.json').version")"
-          tag="split-openclaw-v${openclaw_version}-cli-v${cli_version}"
-          title="OpenClawBrain split release: openclaw ${openclaw_version} / cli ${cli_version}"
-          printf 'openclaw_version=%s\n' "$openclaw_version" >> "$GITHUB_OUTPUT"
-          printf 'cli_version=%s\n' "$cli_version" >> "$GITHUB_OUTPUT"
-          printf 'tag=%s\n' "$tag" >> "$GITHUB_OUTPUT"
-          printf 'title=%s\n' "$title" >> "$GITHUB_OUTPUT"
-
       - name: Ensure release tag does not already exist
         run: |
-          tag="${{ steps.packages.outputs.tag }}"
+          tag="${{ steps.release.outputs.tag }}"
           if git rev-parse "$tag" >/dev/null 2>&1; then
             echo "Tag $tag already exists"
             exit 1
@@ -81,7 +76,7 @@ jobs:
 
       - name: Create and push release tag
         run: |
-          tag="${{ steps.packages.outputs.tag }}"
+          tag="${{ steps.release.outputs.tag }}"
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git tag -a "$tag" -m "$tag"
@@ -91,6 +86,7 @@ jobs:
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
-          tag="${{ steps.packages.outputs.tag }}"
-          title="${{ steps.packages.outputs.title }}"
-          gh release create "$tag" --title "$title" --generate-notes --verify-tag
+          tag="${{ steps.release.outputs.tag }}"
+          title="${{ steps.release.outputs.title }}"
+          notes_file="${{ steps.release.outputs.release_notes_file }}"
+          gh release create "$tag" --title "$title" --notes-file "$notes_file" --verify-tag

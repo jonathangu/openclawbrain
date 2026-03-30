@@ -90,6 +90,7 @@ These are real enough to build on, but not frozen enough to oversell.
   - `openclawbrain proof --openclaw-home ~/.openclaw`
   - when manually managing the native package layer, the underlying package step is still `openclaw plugins install @openclawbrain/openclaw`, followed by the same `openclawbrain` lifecycle commands
   - release verification now includes a checked-in proof smoke gate that fails when the frozen proof bundle is missing, incomplete, or stale
+  - the publish workflow now derives the split tag/title/release-notes contract from one repo script and fails closed when the selected ref is off-mainline, still carries pending changesets, or lacks the matching changelog/release-notes pair
 - Boundary: older OpenClaw hosts may still emit the historical plugin-id mismatch warning during install. Treat that warning as cosmetic only when the canonical status/proof surfaces are healthy. CI-enforced release proof and broader host coverage are still open work.
   - checked-in proof freshness is now enforced in release smoke, but CI still does not rerun the full host-install proof lane on every publish job
 

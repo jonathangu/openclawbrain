@@ -181,6 +181,7 @@ The repo is now past theory-only and has frozen evidence for the operator instal
 
 The current release smoke gate requires:
 - tests
+- a mainline publish ref with no pending changesets and a matching split release-note/changelog pair
 - a fresh checked-in proof bundle for the frozen host/operator lane
 - the expected proof files (`summary.md`, `validation-report.json`, `status.json`, `doctor.json`, `config-snapshot.json`, `logs.txt`, `trace.json`, and the pre-run ladder snapshots)
 - the current replay/eval assertion set for the frozen host/operator lane

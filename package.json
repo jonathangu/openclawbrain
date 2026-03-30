@@ -28,10 +28,14 @@
   ],
   "scripts": {
     "changeset": "changeset",
+    "release:plan": "node scripts/release-plan.mjs",
+    "release:prepare:openclaw": "npm --prefix packages/openclaw install --package-lock=false --no-save --ignore-scripts --fund=false --audit=false",
+    "release:prepare:cli": "npm --prefix packages/cli install --package-lock=false --no-save --ignore-scripts --fund=false --audit=false",
+    "release:prepare:packages": "npm run release:prepare:openclaw && npm run release:prepare:cli",
     "release:verify": "npm test && npm run release:verify:proof && npm pack --dry-run && npm run release:verify:openclaw && npm run release:verify:cli",
     "release:verify:proof": "node scripts/verify-proof-smoke.mjs",
-    "release:verify:cli": "npm --prefix packages/cli run release:verify",
-    "release:verify:openclaw": "npm --prefix packages/openclaw run release:verify",
+    "release:verify:cli": "npm run release:prepare:cli && npm --prefix packages/cli run release:verify",
+    "release:verify:openclaw": "npm run release:prepare:openclaw && npm --prefix packages/openclaw run release:verify",
     "test": "vitest run --dir test",
     "version-packages": "changeset version"
   },
