@@ -30,6 +30,24 @@ What makes it different:
 - Explicit user corrections can outrank stale recap material when they conflict.
 - The extension fails open. When the memory layer is unavailable, the agent still answers.
 
+### Mental model: learner, teacher, and `route_fn`
+
+If you only remember one explanation, use this one:
+
+- **Learner** = the background OpenClawBrain pipeline. It watches exported events, binds feedback to prior decisions, builds candidate packs, and updates the learned routing policy.
+- **Teacher** = the optional local model that produces extra supervision artifacts off the hot path.
+- **`route_fn`** = the learned policy artifact the live runtime uses to decide which bounded graph blocks to inject before prompt build.
+
+In one pass:
+
+1. OpenClaw turns produce interactions plus explicit feedback such as corrections, teachings, approvals, and suppressions.
+2. OpenClawBrain normalizes those into event exports and serve-time route traces.
+3. The learner builds a candidate pack with graph blocks, embeddings, structural metadata, and a learned `route_fn`.
+4. Background learning attaches supervision from human feedback, harvested labels, and teacher artifacts, then updates the routing policy.
+5. Only promoted packs serve on the live path. The runtime injects a small useful slice of context, and fails open if nothing safe or useful is available.
+
+That is why OpenClawBrain is more than retrieval: it does not just find similar past text. It learns which context helps, keeps that learning off the hot path, and only serves immutable promoted packs.
+
 ## Install and verify
 
 Prerequisites:
