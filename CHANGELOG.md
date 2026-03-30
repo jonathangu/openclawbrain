@@ -4,6 +4,27 @@ Release history for the published OpenClawBrain packages. The README and operato
 
 ## Unreleased
 
+## 0.4.15 / 0.4.4
+
+`0.4.15 / 0.4.4` ships the runtime-fix release: learned-route proof scoring is sharper, embedder-backed promoted packs carry live numeric embeddings through the canonical learner path, teacher/runtime truth surfaces are cleaner, and live `learn` no longer recurses the traced-learning bridge until persistence fails.
+
+**Packages**
+
+- `@openclawbrain/openclaw@0.4.4`
+- `@openclawbrain/cli@0.4.15`
+
+**Changes**
+
+- learned-route replay proof now preserves aggregate phrase coverage instead of flattening truthful wins into ties
+- first-promotion route selection now carries seed cue blocks forward so the learned route can surface the right proof context earlier
+- candidate-pack embedder reindexing now reuses the canonical learner path, so promoted packs retain live numeric embeddings truthfully
+- traced-learning bridge persistence now flattens bridged source metadata instead of recursively nesting prior bridge state during live `learn`
+- teacher status truth now distinguishes fresh no-artifact no-op cycles from stale/broken teacher state
+
+**Full release note**
+
+- [docs/release-notes-0.4.15.md](docs/release-notes-0.4.15.md)
+
 - repo docs now lead with `openclawbrain install --openclaw-home <path>` as the public front door for one OpenClaw home
 - release docs keep `proof` framed as the current follow-up surface, with `--proof` still documented as planned rather than shipped
 - release truth now reflects that detailed status and proof expose runtime-guard/load-proof state for the selected home
