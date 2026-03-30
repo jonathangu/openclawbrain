@@ -3,7 +3,7 @@ import path from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import { buildRouteArtifactReference, CONTRACT_IDS, PACK_GRAPH_SCHEMAS, ROUTER_PG_PROFILE_V1, ROUTER_PG_PROFILE_V2, checksumJsonPayload, computeRouterCollectedLabelCounts, computeRouterFreshnessChecksum, computeRouterObjectiveChecksum, computeRouterQueryChecksum, computeRouterWeightsChecksum, sortNormalizedEvents, validateTeacherSupervisionArtifact } from "@openclawbrain/contracts";
 import { buildNormalizedEventDedupId, buildNormalizedEventExport, buildNormalizedEventExportBridge, createDefaultLearningSurface, createEventExportCursor, createExplicitEventRange, validateNormalizedEventExport, validateNormalizedEventExportBridge, validateNormalizedEventExportSlice } from "@openclawbrain/event-export";
-import { computePayloadChecksum, loadPack, PACK_LAYOUT, summarizeStructuralGraphEvolution, writePackFile } from "@openclawbrain/pack-format";
+import { computePayloadChecksum, loadPack, loadPackFromActivation, PACK_LAYOUT, summarizeStructuralGraphEvolution, writePackFile } from "@openclawbrain/pack-format";
 import { buildArtifactProvenance } from "@openclawbrain/provenance";
 import { createWorkspaceMetadata } from "@openclawbrain/workspace-metadata";
 import { createServeTimeDecisionMatcher } from "./teacher-decision-match.js";
@@ -27,6 +27,7 @@ export const ALWAYS_ON_STRUCTURAL_PLASTICITY_OP_CEILING = {
 export const ALWAYS_ON_STRUCTURAL_PLASTICITY_MIN_INTERACTIONS = 2;
 export const ALWAYS_ON_STRUCTURAL_PLASTICITY_MIN_FEEDBACK = 1;
 const CONNECT_PAIR_SCORE_THRESHOLD = 2;
+const MAX_CARRY_FORWARD_SEED_BLOCKS = 12;
 export const DEFAULT_SPARSE_FEEDBACK_POLICY = {
     teacherBudget: 32,
     teacherDelayMs: 0,
@@ -4845,6 +4846,55 @@ function defaultLearningSurface(workspace, offlineArtifacts, workspaceInit) {
         ...offlineArtifacts.map((artifact) => `offline:${artifact}`)
     ]));
 }
+function isCarryForwardSeedBlock(block) {
+    const role = block.learning?.role ?? "";
+    if (role !== "interaction" && role !== "feedback" && role !== "teacher_supervision" && role !== "label_surface") {
+        return false;
+    }
+    if (typeof block.text !== "string" || block.text.trim().length === 0) {
+        return false;
+    }
+    return block.initSeed !== undefined ||
+        block.semantic?.sourceKind === "recorded_session_seed" ||
+        block.source.includes("/seed:");
+}
+function carryForwardSeedBlockScore(block) {
+    return (block.initSeed?.score ?? 0) +
+        (block.state?.strength ?? 0) +
+        (block.learning?.humanLabels ?? 0) * 2 +
+        (block.learning?.selfLabels ?? 0);
+}
+function loadCarryForwardSeedBlocksFromActivation(activationRoot, currentGraphBlockIds) {
+    try {
+        const activePack = loadPackFromActivation(activationRoot, "active", { requireActivationReady: true });
+        if (activePack === null) {
+            return [];
+        }
+        const candidates = activePack.graph.blocks
+            .filter((block) => isCarryForwardSeedBlock(block) && !currentGraphBlockIds.has(block.id));
+        const preferred = candidates.filter((block) => block.learning?.role !== "interaction");
+        const selected = (preferred.length > 0 ? preferred : candidates)
+            .sort((left, right) => carryForwardSeedBlockScore(right) - carryForwardSeedBlockScore(left) ||
+            right.priority - left.priority ||
+            left.id.localeCompare(right.id))
+            .slice(0, MAX_CARRY_FORWARD_SEED_BLOCKS);
+        if (selected.length === 0) {
+            return [];
+        }
+        const selectedIds = new Set(selected.map((block) => block.id));
+        return selected.map((block) => ({
+            ...structuredClone(block),
+            ...(block.edges === undefined
+                ? {}
+                : {
+                    edges: block.edges.filter((edge) => selectedIds.has(edge.targetBlockId))
+                })
+        }));
+    }
+    catch {
+        return [];
+    }
+}
 function cloneRuntimeGraphForPack(packId, runtimeGraph, builtAt) {
     const cloned = structuredClone(runtimeGraph);
     cloned.packId = packId;
@@ -4918,9 +4968,18 @@ function buildRuntimeGraphSnapshot(input) {
         rootDir: workspace.rootDir,
         observedAt: builtAt
     }));
+    const carryForwardSeedBlocks = input.activationRoot === undefined
+        ? []
+        : loadCarryForwardSeedBlocksFromActivation(input.activationRoot, new Set(graph.blocks.map((block) => block.id)));
+    const graphWithCarryForwardSeed = carryForwardSeedBlocks.length === 0
+        ? graph
+        : {
+            ...graph,
+            blocks: [...graph.blocks, ...carryForwardSeedBlocks]
+        };
     return {
-        graph,
-        plasticity: summarizeRuntimeGraphPlasticity("live_loop", graph, builtAt, null, normalizedEventExport)
+        graph: graphWithCarryForwardSeed,
+        plasticity: summarizeRuntimeGraphPlasticity("live_loop", graphWithCarryForwardSeed, builtAt, null, normalizedEventExport)
     };
 }
 export function buildCandidatePack(input) {

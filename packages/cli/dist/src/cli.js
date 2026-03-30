@@ -9,7 +9,7 @@ import { DEFAULT_OLLAMA_EMBEDDING_MODEL, createOllamaEmbedder } from "@openclawb
 import { ensureManagedLearnerServiceForActivationRoot, inspectManagedLearnerService, removeManagedLearnerServiceForActivationRoot, parseDaemonArgs, runDaemonCommand } from "./daemon.js";
 import { exportBrain, importBrain } from "./import-export.js";
 import { buildNormalizedEventExport } from "@openclawbrain/contracts";
-import { buildTeacherSupervisionArtifactsFromNormalizedEventExport, createAlwaysOnLearningRuntimeState, describeAlwaysOnLearningRuntimeState, drainAlwaysOnLearningRuntime, loadOrInitBaseline, reindexCandidatePackBuildResultWithEmbedder, materializeAlwaysOnLearningCandidatePack, persistBaseline } from "./local-learner.js";
+import { buildTeacherSupervisionArtifactsFromNormalizedEventExport, createAlwaysOnLearningRuntimeState, describeAlwaysOnLearningRuntimeState, drainAlwaysOnLearningRuntime, loadOrInitBaseline, materializeAlwaysOnLearningCandidatePack, persistBaseline } from "./local-learner.js";
 import { inspectActivationState, loadPackFromActivation, promoteCandidatePack, readLearningSpineLogEntries, stageCandidatePack } from "@openclawbrain/pack-format";
 import { resolveActivationRoot } from "./resolve-activation-root.js";
 import { describeOpenClawHomeInspection, discoverOpenClawHomes, formatOpenClawHomeLayout, formatOpenClawHomeProfileSource, inspectOpenClawHome } from "./openclaw-home-layout.js";
@@ -20,6 +20,7 @@ import { loadAttachmentPolicyDeclaration, resolveEffectiveAttachmentPolicyTruth,
 import { DEFAULT_WATCH_POLL_INTERVAL_SECONDS, buildNormalizedEventExportFromScannedEvents, bootstrapRuntimeAttach, buildOperatorSurfaceReport, clearOpenClawProfileRuntimeLoadProof, compileRuntimeContext, createAsyncTeacherLiveLoop, createOpenClawLocalSessionTail, createRuntimeEventExportScanner, describeCurrentProfileBrainStatus, formatOperatorRollbackReport, listOpenClawProfileRuntimeLoadProofs, loadRuntimeEventExportBundle, loadWatchTeacherSnapshotState, persistWatchTeacherSnapshot, rollbackRuntimeAttach, resolveAttachmentRuntimeLoadProofsPath, resolveOperatorTeacherSnapshotPath, resolveAsyncTeacherLiveLoopSnapshotPath, resolveWatchSessionTailCursorPath, resolveWatchStateRoot, resolveWatchTeacherSnapshotPath, scanLiveEventExport, scanRecordedSession, summarizeLearningPathFromMaterialization, summarizeNormalizedEventExportLabelFlow, writeScannedEventExportBundle } from "./index.js";
 import { appendLearningUpdateLogs } from "./learning-spine.js";
 import { buildPassiveLearningSessionExportFromOpenClawSessionStore } from "./local-session-passive-learning.js";
+import { reindexMaterializationCandidateWithEmbedder } from "./materialization-embedder.js";
 import { summarizePackVectorEmbeddingState } from "./embedding-status.js";
 import { buildTracedLearningBridgePayloadFromRuntime, buildTracedLearningStatusSurface, persistTracedLearningBridgeState } from "./traced-learning-bridge.js";
 import { discoverOpenClawSessionStores, loadOpenClawSessionIndex, readOpenClawSessionFile } from "./session-store.js";
@@ -1081,7 +1082,7 @@ function summarizeStatusTeacher(report, providerConfig, localLlm) {
             detail: `${providerConfig.teacher.model} is enabled on Ollama, but no watch teacher snapshot is visible yet`
         };
     }
-    const stale = report.teacherLoop.latestFreshness === "stale" || report.teacherLoop.watchState === "stale_snapshot";
+    const stale = report.teacherLoop.watchState === "stale_snapshot" || (report.teacherLoop.latestFreshness === "stale" && report.teacherLoop.lastNoOpReason !== "no_teacher_artifacts");
     const idle = report.teacherLoop.running === false &&
         (report.teacherLoop.queueDepth ?? 0) === 0 &&
         report.teacherLoop.failureMode === "none";
@@ -4499,7 +4500,7 @@ function persistWatchTracedLearningBridgeSurface(input) {
         }
     }));
 }
-function runLearnCommand(parsed) {
+async function runLearnCommand(parsed) {
     const learnStatePath = path.join(parsed.activationRoot, "learn-cli-state.json");
     const teacherSnapshotPath = resolveAsyncTeacherLiveLoopSnapshotPath(parsed.activationRoot);
     function isLearnRuntimeStateLike(value) {
@@ -4712,6 +4713,7 @@ function runLearnCommand(parsed) {
         return 0;
     }
     const learningExport = normalizedEventExport;
+    const resolvedEmbedder = resolveCliEmbedderConfig(undefined, activationRoot);
     const serveTimeLearning = resolveServeTimeLearningRuntimeInput(activationRoot);
     const learnerResult = drainAlwaysOnLearningRuntime({
         packLabel: "learn-cli",
@@ -4734,7 +4736,11 @@ function runLearnCommand(parsed) {
         ...(serveTimeLearning.baselineState !== undefined ? { baselineState: serveTimeLearning.baselineState } : {}),
         activationRoot
     });
-    const lastMaterialization = learnerResult.materializations.at(-1) ?? null;
+    let lastMaterialization = learnerResult.materializations.at(-1) ?? null;
+    lastMaterialization = await reindexMaterializationCandidateWithEmbedder(lastMaterialization, resolvedEmbedder.embedder);
+    if (lastMaterialization !== null && learnerResult.materializations.length > 0) {
+        learnerResult.materializations[learnerResult.materializations.length - 1] = lastMaterialization;
+    }
     const plan = describeAlwaysOnLearningRuntimeState(learnerResult.state, lastMaterialization);
     const learningPath = summarizeLearningPathFromMaterialization(lastMaterialization);
     const graphEvolution = lastMaterialization?.candidate.payloads.graph.evolution;
@@ -5127,14 +5133,9 @@ async function applyWatchMaterialization(activationRoot, snapshot, lastHandledMa
             failure: null
         };
     }
-    if (embedder !== null) {
-        materialization = {
-            ...materialization,
-            candidate: await reindexCandidatePackBuildResultWithEmbedder(materialization.candidate, embedder)
-        };
-        if (snapshot?.learner !== undefined && snapshot.learner !== null) {
-            snapshot.learner.lastMaterialization = materialization;
-        }
+    materialization = await reindexMaterializationCandidateWithEmbedder(materialization, embedder);
+    if (snapshot?.learner !== undefined && snapshot.learner !== null) {
+        snapshot.learner.lastMaterialization = materialization;
     }
     const shortPackId = packId.length > 16 ? packId.slice(0, 16) : packId;
     const observedAt = new Date().toISOString();
@@ -5315,7 +5316,7 @@ function resolveWatchTeacherLabelerConfig(input, activationRoot) {
         warnings
     };
 }
-function resolveWatchEmbedderConfig(input, activationRoot) {
+function resolveCliEmbedderConfig(input, activationRoot) {
     if (input !== undefined) {
         return {
             embedder: input,
@@ -5499,7 +5500,7 @@ export async function createWatchCommandRuntime(input) {
     log(`Scan root: ${shortenPath(scanRoot)}`);
     log(`State: cursor=${shortenPath(sessionTailCursorPath)} snapshot=${shortenPath(teacherSnapshotPath)}`);
     const resolvedTeacherLabeler = resolveWatchTeacherLabelerConfig(input.teacherLabeler, activationRoot);
-    const resolvedEmbedder = resolveWatchEmbedderConfig(input.embedder, activationRoot);
+    const resolvedEmbedder = resolveCliEmbedderConfig(input.embedder, activationRoot);
     const teacherLabeler = resolvedTeacherLabeler.teacherLabeler;
     for (const warning of resolvedTeacherLabeler.warnings) {
         startupWarnings.push(`teacher_config_warning:${warning}`);
@@ -6120,7 +6121,12 @@ export function runOperatorCli(argv = process.argv.slice(2)) {
         return runHistoryCommand(parsed);
     }
     if (parsed.command === "learn") {
-        return runLearnCommand(parsed);
+        runLearnCommand(parsed).then((code) => { process.exitCode = code; }, (error) => {
+            console.error("[openclawbrain] learn failed");
+            console.error(error instanceof Error ? error.stack ?? error.message : String(error));
+            process.exitCode = 1;
+        });
+        return 0;
     }
     if (parsed.command === "watch") {
         // Watch is async — bridge to sync CLI entry by scheduling and returning 0.

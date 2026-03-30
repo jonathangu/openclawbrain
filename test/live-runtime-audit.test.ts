@@ -37,6 +37,23 @@ describe("summarizeTeacherLoopTruth", () => {
     });
   });
 
+  it("keeps stale snapshots unhealthy even when the last cycle was a no-op and prior artifacts stay fresh", () => {
+    expect(
+      summarizeTeacherLoopTruth({
+        failureMode: "none",
+        lastNoOpReason: "no_teacher_artifacts",
+        latestFreshness: "fresh",
+        queueDepth: 0,
+        running: false,
+        watchState: "stale_snapshot",
+      }),
+    ).toEqual({
+      healthy: false,
+      idle: true,
+      stale: true,
+    });
+  });
+
   it("keeps explicit teacher failures unhealthy", () => {
     expect(
       summarizeTeacherLoopTruth({

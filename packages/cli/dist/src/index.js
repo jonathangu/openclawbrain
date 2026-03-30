@@ -4722,6 +4722,16 @@ function buildRecordedSessionReplayScannerEvidence(mode, turns) {
         warnings: buildRecordedSessionReplayScannerWarnings(mode, turns, activePackChangeCount)
     };
 }
+function buildRecordedSessionReplayModeQualityScore(turns, compileOkCount, phraseHitCount, phraseCount) {
+    if (turns.length === 0) {
+        return 0;
+    }
+    // Score mode quality from aggregate replay coverage so multi-phrase turns
+    // keep their full weight instead of being flattened into a per-turn average.
+    const compileScore = (compileOkCount / turns.length) * 40;
+    const phraseScore = phraseCount === 0 ? 60 : (phraseHitCount / phraseCount) * 60;
+    return Math.min(100, Math.round(compileScore + phraseScore));
+}
 function buildRecordedSessionReplayModeSummary(mode, turns, options = {}) {
     const plan = recordedSessionReplayModePlan(mode);
     const compileOkCount = turns.filter((turn) => turn.compileOk).length;
@@ -4729,7 +4739,7 @@ function buildRecordedSessionReplayModeSummary(mode, turns, options = {}) {
     const phraseCount = turns.reduce((sum, turn) => sum + turn.expectedContextPhrases.length, 0);
     const usedLearnedRouteTurnCount = turns.filter((turn) => turn.usedLearnedRouteFn).length;
     const promotionCount = turns.filter((turn) => turn.promoted).length;
-    const qualityScore = turns.length === 0 ? 0 : Math.round(turns.reduce((sum, turn) => sum + turn.qualityScore, 0) / turns.length);
+    const qualityScore = buildRecordedSessionReplayModeQualityScore(turns, compileOkCount, phraseHitCount, phraseCount);
     const packIds = uniqueStringsInOrder(turns.map((turn) => turn.activePackId).filter(isPresent));
     const trainTurnCount = turns.filter((turn) => turn.phase === "train").length;
     const evalTurnCount = turns.filter((turn) => turn.phase === "eval").length;
@@ -6968,7 +6978,7 @@ function summarizeLearningWarningStates(input) {
         input.teacherSnapshot.queue.depth >= input.teacherSnapshot.queue.capacity) {
         warnings.add("teacher_queue_full");
     }
-    if (input.teacherSnapshot.diagnostics.latestFreshness === "stale") {
+    if (input.teacherSnapshot.diagnostics.latestFreshness === "stale" && input.teacherSnapshot.diagnostics.lastNoOpReason !== "no_teacher_artifacts") {
         warnings.add("teacher_labels_stale");
     }
     if (input.teacherSnapshot.diagnostics.lastNoOpReason === "no_teacher_artifacts") {
