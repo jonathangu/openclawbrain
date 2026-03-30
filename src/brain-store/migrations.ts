@@ -206,11 +206,6 @@ export function runBrainMigrations(db: DatabaseSync): void {
     CREATE INDEX IF NOT EXISTS brain_observations_status_idx ON brain_observations(status, created_at);
     CREATE INDEX IF NOT EXISTS brain_observations_conversation_idx ON brain_observations(conversation_id, created_at);
     CREATE INDEX IF NOT EXISTS brain_observations_trace_idx ON brain_observations(trace_id, created_at);
-    CREATE INDEX IF NOT EXISTS brain_observations_binding_mode_idx ON brain_observations(binding_mode);
-    CREATE INDEX IF NOT EXISTS brain_observations_decision_record_idx ON brain_observations(serve_decision_record_id);
-    CREATE INDEX IF NOT EXISTS brain_observations_selection_digest_idx ON brain_observations(selection_digest);
-    CREATE INDEX IF NOT EXISTS brain_observations_turn_compile_event_idx ON brain_observations(turn_compile_event_id);
-    CREATE INDEX IF NOT EXISTS brain_observations_pack_digest_idx ON brain_observations(active_pack_graph_checksum, selection_digest);
 
     -- ═══════════════════════════════════════════
     -- Packs (immutable serving snapshots)

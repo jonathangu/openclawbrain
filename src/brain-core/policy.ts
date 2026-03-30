@@ -11,6 +11,7 @@
  */
 
 import type {
+  BrainNode,
   TraversalAction,
   TraversalState,
   PolicyParams,
@@ -42,22 +43,17 @@ function computeFrontierPressure(state: TraversalState): number {
 }
 
 function computeBranchOpportunityCostSignal(
-  targetNodeId: string,
+  targetNode: BrainNode,
   state: TraversalState,
   graph: BrainGraph,
 ): number {
-  const targetNode = graph.getNode(targetNodeId);
-  if (!targetNode) {
-    return 1;
-  }
-
   const effectiveBudgetRemaining = computeEffectiveBudgetRemaining(state);
   const budgetUsedFraction = computeBudgetUsedFraction(state);
   const frontierPressure = computeFrontierPressure(state);
   const tokenCostFraction = effectiveBudgetRemaining > 0
     ? Math.min(1, targetNode.tokenCount / effectiveBudgetRemaining)
     : 1;
-  const downstreamOpportunityCount = graph.getNeighbors(targetNodeId).filter((neighborId) => (
+  const downstreamOpportunityCount = graph.getNeighbors(targetNode.id).filter((neighborId) => (
     neighborId !== state.sourceNodeId
     && !state.visited.has(neighborId)
     && !state.frontier.includes(neighborId)
@@ -68,11 +64,10 @@ function computeBranchOpportunityCostSignal(
 }
 
 function computeLocalRedundancySignal(
-  targetNodeId: string,
+  targetNode: BrainNode,
   state: TraversalState,
   graph: BrainGraph,
 ): number {
-  const targetNode = graph.getNode(targetNodeId);
   if (!targetNode?.embedding) {
     return 0;
   }
@@ -85,7 +80,7 @@ function computeLocalRedundancySignal(
   if (state.sourceNodeId) {
     comparisonNodeIds.add(state.sourceNodeId);
   }
-  comparisonNodeIds.delete(targetNodeId);
+  comparisonNodeIds.delete(targetNode.id);
 
   let maxSimilarity = 0;
   for (const nodeId of comparisonNodeIds) {
@@ -102,14 +97,9 @@ function computeLocalRedundancySignal(
   return maxSimilarity;
 }
 
-function computeNearbyEvidenceQualitySignal(targetNodeId: string, graph: BrainGraph): number {
-  const targetNode = graph.getNode(targetNodeId);
-  if (!targetNode) {
-    return 0;
-  }
-
+function computeNearbyEvidenceQualitySignal(targetNode: BrainNode, graph: BrainGraph): number {
   const trustSignal = TRUST_EVIDENCE_SCORE[targetNode.trust];
-  const supportiveIncomingEdgeCount = graph.getIncomingEdges(targetNodeId).filter((edge) => (
+  const supportiveIncomingEdgeCount = graph.getIncomingEdges(targetNode.id).filter((edge) => (
     edge.kind !== "inhibitory" && edge.weight >= 0
   )).length;
   const structuralSupportSignal = supportiveIncomingEdgeCount / (supportiveIncomingEdgeCount + 1);
@@ -165,11 +155,11 @@ export function scoreAction(
   // Edge kind bias
   const kindBias = edge ? (params.edgeKindBias[edge.kind] ?? 0) : 0;
   const opportunityCostPenalty =
-    params.branchOpportunityCost * computeBranchOpportunityCostSignal(action.targetNodeId, state, graph);
+    params.branchOpportunityCost * computeBranchOpportunityCostSignal(targetNode, state, graph);
   const redundancyPenalty =
-    params.localRedundancyPenalty * computeLocalRedundancySignal(action.targetNodeId, state, graph);
+    params.localRedundancyPenalty * computeLocalRedundancySignal(targetNode, state, graph);
   const evidenceQualityBonus =
-    params.evidenceQualityBias * computeNearbyEvidenceQualitySignal(action.targetNodeId, graph);
+    params.evidenceQualityBias * computeNearbyEvidenceQualitySignal(targetNode, graph);
 
   return edgeScore + relevance + kindBias + evidenceQualityBonus
     - opportunityCostPenalty - redundancyPenalty;

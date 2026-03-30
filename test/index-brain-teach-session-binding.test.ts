@@ -1,6 +1,6 @@
 import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
-import { join } from "node:path";
+import { dirname, join } from "node:path";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import type { OpenClawPluginApi } from "openclaw/plugin-sdk";
 import type { AgentMessage, OpenClawPluginToolContext } from "../src/openclaw-sdk-compat.js";
@@ -16,6 +16,7 @@ function buildApi(params: { dbPath: string; storePath: string }): {
   getFactory: () => RegisteredEngineFactory;
   registerTool: ReturnType<typeof vi.fn>;
 } {
+  const brainRoot = join(dirname(params.dbPath), "brain-root");
   let factory: RegisteredEngineFactory;
   const registerTool = vi.fn();
 
@@ -27,6 +28,7 @@ function buildApi(params: { dbPath: string; storePath: string }): {
     pluginConfig: {
       enabled: true,
       dbPath: params.dbPath,
+      brainRoot,
       brainEnabled: true,
     },
     runtime: {
