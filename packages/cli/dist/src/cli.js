@@ -17,7 +17,7 @@ import { inspectOpenClawBrainHookStatus, inspectOpenClawBrainPluginAllowlist } f
 import { describeOpenClawBrainInstallIdentity, describeOpenClawBrainInstallLayout, findInstalledOpenClawBrainPlugin, getOpenClawBrainKnownPluginIds, normalizeOpenClawBrainPluginsConfig, pinInstalledOpenClawBrainPluginActivationRoot, resolveOpenClawBrainInstallTarget } from "./openclaw-plugin-install.js";
 import { buildOpenClawBrainConvergeRestartPlan, classifyOpenClawBrainConvergeVerification, describeOpenClawBrainConvergeChangeReasons, diffOpenClawBrainConvergeRuntimeFingerprint, finalizeOpenClawBrainConvergeResult, planOpenClawBrainConvergePluginAction } from "./install-converge.js";
 import { loadAttachmentPolicyDeclaration, resolveEffectiveAttachmentPolicyTruth, writeAttachmentPolicyDeclaration } from "./attachment-policy-truth.js";
-import { DEFAULT_WATCH_POLL_INTERVAL_SECONDS, buildNormalizedEventExportFromScannedEvents, bootstrapRuntimeAttach, buildOperatorSurfaceReport, clearOpenClawProfileRuntimeLoadProof, compileRuntimeContext, createAsyncTeacherLiveLoop, createOpenClawLocalSessionTail, createRuntimeEventExportScanner, describeCurrentProfileBrainStatus, formatOperatorRollbackReport, listOpenClawProfileRuntimeLoadProofs, loadRuntimeEventExportBundle, loadWatchTeacherSnapshotState, persistWatchTeacherSnapshot, rollbackRuntimeAttach, resolveAttachmentRuntimeLoadProofsPath, resolveOperatorTeacherSnapshotPath, resolveAsyncTeacherLiveLoopSnapshotPath, resolveWatchSessionTailCursorPath, resolveWatchStateRoot, resolveWatchTeacherSnapshotPath, scanLiveEventExport, scanRecordedSession, summarizeLearningPathFromMaterialization, summarizeNormalizedEventExportLabelFlow, writeScannedEventExportBundle } from "./index.js";
+import { DEFAULT_WATCH_POLL_INTERVAL_SECONDS, buildNormalizedEventExportFromScannedEvents, bootstrapRuntimeAttach, buildOperatorSurfaceReport, clearOpenClawProfileRuntimeLoadProof, compileRuntimeContext, createAsyncTeacherLiveLoop, createOpenClawLocalSessionTail, createRuntimeEventExportScanner, describeCurrentProfileBrainStatus, formatOperatorRollbackReport, listOpenClawProfileRuntimeLoadProofs, loadRuntimeEventExportBundle, loadWatchTeacherSnapshotState, persistWatchTeacherSnapshot, rollbackRuntimeAttach, resolveAttachmentRuntimeLoadProofsPath, resolveOperatorTeacherSnapshotPath, resolveAsyncTeacherLiveLoopSnapshotPath, resolveWatchSessionTailCursorPath, resolveWatchStateRoot, resolveWatchTeacherSnapshotPath, scanLiveEventExport, scanRecordedSession, summarizeLearningPathFromMaterialization, summarizeNormalizedEventExportLabelFlow, summarizeTeacherNoArtifactCycle, writeScannedEventExportBundle } from "./index.js";
 import { appendLearningUpdateLogs } from "./learning-spine.js";
 import { buildPassiveLearningSessionExportFromOpenClawSessionStore } from "./local-session-passive-learning.js";
 import { reindexMaterializationCandidateWithEmbedder } from "./materialization-embedder.js";
@@ -682,14 +682,14 @@ const LEARNING_WARNING_MESSAGES = {
     passive_backfill_pending: "passive backfill remains queued",
     teacher_queue_full: "teacher queue is full",
     teacher_labels_stale: "teacher labels are stale",
-    teacher_no_artifacts: "teacher produced no artifacts",
+    teacher_no_artifacts: "latest no-op cycle had teachable material but no new teacher artifact",
     teacher_snapshot_unavailable: "teacher snapshot is unavailable"
 };
 const TEACHER_NO_OP_MESSAGES = {
     none: "the latest processed export produced teacher artifacts",
     duplicate_export: "the latest cycle was a no-op because the export was already seen",
     queue_full: "the latest cycle was a no-op because the teacher queue was full",
-    no_teacher_artifacts: "the latest cycle was a no-op because no teacher artifacts were produced",
+    no_teacher_artifacts: "the latest cycle produced no new teacher artifacts",
     empty_scan: "the latest cycle was a no-op because the scanner did not produce any events",
     unavailable: "the latest cycle is not visible from the current operator snapshot"
 };
@@ -1089,7 +1089,9 @@ function summarizeStatusTeacher(report, providerConfig, localLlm) {
     const healthy = report.teacherLoop.failureMode === "none" &&
         stale === false &&
         report.teacherLoop.watchState !== "not_visible";
-    const cycleDetail = TEACHER_NO_OP_MESSAGES[report.teacherLoop.lastNoOpReason] ?? "the latest teacher cycle detail is unavailable";
+    const cycleDetail = report.teacherLoop.lastNoOpReason === "no_teacher_artifacts"
+        ? summarizeTeacherNoArtifactCycle(report.teacherLoop.notes).detail
+        : TEACHER_NO_OP_MESSAGES[report.teacherLoop.lastNoOpReason] ?? "the latest teacher cycle detail is unavailable";
     if (report.teacherLoop.failureMode !== "none" && report.teacherLoop.failureMode !== "unavailable") {
         return {
             model: providerConfig.teacher.model,

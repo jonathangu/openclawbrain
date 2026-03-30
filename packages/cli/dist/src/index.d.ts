@@ -5,7 +5,7 @@ import { type AdvanceAlwaysOnLearningRuntimeInput, type AlwaysOnLearningCadenceV
 import { type ActivationInspection, type ActivationObservabilityReport, type GraphEvolutionLogV1, type LearningSpineServeRouteBreadcrumbsV1, type ActivationSlotInspection, type InitHandoffState, type LearningSpineServeRouteDecisionLogEntryV1 } from "@openclawbrain/pack-format";
 export { clearOpenClawProfileRuntimeLoadProof, listOpenClawProfileRuntimeLoadProofs, recordOpenClawProfileRuntimeLoadProof, resolveAttachmentRuntimeLoadProofsPath, type OpenClawProfileRuntimeLoadProofRecordV1, type OpenClawProfileRuntimeLoadProofSetV1, type OpenClawProfileRuntimeLoadProofsV1 } from "./attachment-truth.js";
 import { type AsyncTeacherLabelerConfigV1 } from "./teacher-labeler.js";
-export { createHttpOllamaTeacherLabelerClient, createOllamaTeacherLabeler, createTeacherLabeler, type AsyncTeacherLabelerConfigV1, type AsyncTeacherNoopLabelerConfigV1, type AsyncTeacherOllamaLabelerConfigV1, type OllamaTeacherLabelerClient, type TeacherLabeler, type TeacherLabelerResultV1, type TeacherLabelerRunInputV1 } from "./teacher-labeler.js";
+export { createHttpOllamaTeacherLabelerClient, createOllamaTeacherLabeler, createTeacherLabeler, summarizeTeacherLabelerOpportunity, type AsyncTeacherLabelerConfigV1, type AsyncTeacherNoopLabelerConfigV1, type AsyncTeacherOllamaLabelerConfigV1, type OllamaTeacherLabelerClient, type TeacherLabeler, type TeacherLabelerOpportunityInputV1, type TeacherLabelerOpportunityV1, type TeacherLabelerResultV1, type TeacherLabelerRunInputV1 } from "./teacher-labeler.js";
 export declare const DEFAULT_ASYNC_TEACHER_QUEUE_CAPACITY = 8;
 declare const RECORDED_SESSION_TRACE_CONTRACT: "recorded_session_trace.v1";
 declare const RECORDED_SESSION_FIXTURE_CONTRACT: "recorded_session_replay_fixture.v1";
@@ -401,6 +401,10 @@ export interface AsyncTeacherLiveLoopInput extends Pick<AdvanceAlwaysOnLearningR
     persistUpdatedBaseline?: (state: BaselineStateV1) => void;
     teacherLabeler?: AsyncTeacherLabelerConfigV1 | null;
 }
+export interface TeacherNoArtifactCycleSummaryV1 {
+    shouldWarn: boolean;
+    detail: string;
+}
 export interface AsyncTeacherQueuedExportJobV1 {
     jobId: string;
     exportDigest: string;
@@ -681,6 +685,7 @@ export declare const WATCH_STATE_DIRNAME = "watch";
 export declare const WATCH_SESSION_TAIL_CURSOR_BASENAME = "session-tail-cursor.json";
 export declare const WATCH_TEACHER_SNAPSHOT_BASENAME = "teacher-snapshot.json";
 export declare const DEFAULT_WATCH_POLL_INTERVAL_SECONDS = 30;
+export declare function summarizeTeacherNoArtifactCycle(notes: readonly string[] | null | undefined): TeacherNoArtifactCycleSummaryV1;
 export interface WatchTeacherSnapshotFailureV1 {
     mode: "materialization_failed" | "teacher_fail_open";
     detail: string;

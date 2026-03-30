@@ -12,8 +12,8 @@ import { inspectOpenClawBrainHookStatus, summarizeOpenClawBrainHookLoad } from "
 import { appendLearningUpdateLogs, appendServeTimeRouteDecisionLog } from "./learning-spine.js";
 import { buildFeedbackSemanticMetadata, buildInteractionSemanticMetadata } from "./semantic-metadata.js";
 export { clearOpenClawProfileRuntimeLoadProof, listOpenClawProfileRuntimeLoadProofs, recordOpenClawProfileRuntimeLoadProof, resolveAttachmentRuntimeLoadProofsPath } from "./attachment-truth.js";
-import { createTeacherLabeler } from "./teacher-labeler.js";
-export { createHttpOllamaTeacherLabelerClient, createOllamaTeacherLabeler, createTeacherLabeler } from "./teacher-labeler.js";
+import { createTeacherLabeler, summarizeTeacherLabelerOpportunity } from "./teacher-labeler.js";
+export { createHttpOllamaTeacherLabelerClient, createOllamaTeacherLabeler, createTeacherLabeler, summarizeTeacherLabelerOpportunity } from "./teacher-labeler.js";
 const DEFAULT_AGENT_ID = "openclaw-runtime";
 const FEEDBACK_KINDS = new Set(["correction", "teaching", "approval", "suppression"]);
 export const DEFAULT_ASYNC_TEACHER_QUEUE_CAPACITY = 8;
@@ -250,8 +250,44 @@ function buildAsyncTeacherLoopNotes(input) {
         `teacher_noop=${input.noOpReason}`,
         `teacher_labeler=${input.teacherLabeler?.status ?? "disabled"}`,
         `teacher_labeler_detail=${input.teacherLabeler?.detail ?? "disabled"}`,
+        `teacher_last_cycle_deterministic_artifacts=${input.lastCycle?.deterministicArtifactCount ?? "unknown"}`,
+        `teacher_last_cycle_new_deterministic_artifacts=${input.lastCycle?.newDeterministicArtifactCount ?? "unknown"}`,
+        `teacher_last_cycle_labeler_candidates=${input.lastCycle?.labelerCandidateCount ?? "unknown"}`,
+        `teacher_last_cycle_labeler_budgeted_candidates=${input.lastCycle?.labelerBudgetedCandidateCount ?? "unknown"}`,
+        `teacher_last_cycle_labeler_status=${input.lastCycle?.labelerStatus ?? "unknown"}`,
+        `teacher_last_cycle_labeler_detail=${input.lastCycle?.labelerDetail ?? "unknown"}`,
         input.materialization === null ? "teacher_materialization=noop" : `teacher_materialized_pack=${input.materialization.candidate.summary.packId}`
     ];
+}
+function parseAsyncTeacherLastCycleNotes(notes) {
+    const values = new Map();
+    for (const note of notes) {
+        const separator = note.indexOf("=");
+        if (separator <= 0) {
+            continue;
+        }
+        values.set(note.slice(0, separator), note.slice(separator + 1));
+    }
+    const readNullableNumber = (key) => {
+        const raw = values.get(key);
+        if (raw === undefined || raw === "unknown") {
+            return null;
+        }
+        const parsed = Number.parseInt(raw, 10);
+        return Number.isFinite(parsed) ? parsed : null;
+    };
+    const readNullableString = (key) => {
+        const raw = values.get(key);
+        return raw === undefined || raw === "unknown" ? null : raw;
+    };
+    return {
+        deterministicArtifactCount: readNullableNumber("teacher_last_cycle_deterministic_artifacts"),
+        newDeterministicArtifactCount: readNullableNumber("teacher_last_cycle_new_deterministic_artifacts"),
+        labelerCandidateCount: readNullableNumber("teacher_last_cycle_labeler_candidates"),
+        labelerBudgetedCandidateCount: readNullableNumber("teacher_last_cycle_labeler_budgeted_candidates"),
+        labelerStatus: readNullableString("teacher_last_cycle_labeler_status"),
+        labelerDetail: readNullableString("teacher_last_cycle_labeler_detail")
+    };
 }
 function cloneAlwaysOnLearningMaterializationJobOrNull(value) {
     return value === null ? null : structuredClone(value);
@@ -565,6 +601,14 @@ export class AsyncTeacherLiveLoop {
     learnerState = createAlwaysOnLearningRuntimeState();
     lastMaterialization = null;
     lastTeacherLabelerResult = null;
+    lastCycle = {
+        deterministicArtifactCount: null,
+        newDeterministicArtifactCount: null,
+        labelerCandidateCount: null,
+        labelerBudgetedCandidateCount: null,
+        labelerStatus: null,
+        labelerDetail: null
+    };
     diagnostics = {
         acceptedExportCount: 0,
         processedExportCount: 0,
@@ -584,7 +628,8 @@ export class AsyncTeacherLiveLoop {
             sparseFeedback: this.learnerState.sparseFeedback,
             noOpReason: "none",
             materialization: null,
-            teacherLabeler: null
+            teacherLabeler: null,
+            lastCycle: this.lastCycle
         })
     };
     constructor(input) {
@@ -612,6 +657,7 @@ export class AsyncTeacherLiveLoop {
                 ...structuredClone(resumedSnapshot.diagnostics),
                 notes: [...resumedSnapshot.diagnostics.notes]
             };
+            this.lastCycle = parseAsyncTeacherLastCycleNotes(this.diagnostics.notes);
             for (const exportDigest of resumedSnapshot.state?.seenExportDigests ?? []) {
                 this.seenExportDigests.add(exportDigest);
             }
@@ -858,6 +904,19 @@ export class AsyncTeacherLiveLoop {
                     feedbackEvents: this.feedbackEvents
                 });
                 const learnedRoutingState = this.input.resolveLearnedRoutingState?.() ?? {};
+                const currentDedupIds = new Set(this.teacherArtifacts.map((artifact) => artifact.dedupId));
+                const currentCycleBuiltArtifacts = buildTeacherSupervisionArtifactsFromNormalizedEventExport({
+                    normalizedEventExport: job.normalizedEventExport,
+                    observedAt: job.observedAt,
+                    staleAfterMs: this.staleAfterMs,
+                    ...(this.input.sparseFeedback !== undefined ? { sparseFeedback: this.input.sparseFeedback } : {})
+                });
+                const currentCycleOpportunity = summarizeTeacherLabelerOpportunity({
+                    normalizedEventExport: job.normalizedEventExport,
+                    ...(learnedRoutingState.serveTimeDecisions !== undefined
+                        ? { serveTimeDecisions: learnedRoutingState.serveTimeDecisions }
+                        : {})
+                }, this.input.teacherLabeler ?? null);
                 const builtArtifacts = buildTeacherSupervisionArtifactsFromNormalizedEventExport({
                     normalizedEventExport: mergedNormalizedEventExport,
                     observedAt: job.observedAt,
@@ -887,10 +946,21 @@ export class AsyncTeacherLiveLoop {
                     }
                 }
                 const nextBuiltArtifacts = mergeTeacherArtifacts([], [...builtArtifacts, ...generatedTeacherArtifacts]);
-                const currentDedupIds = new Set(this.teacherArtifacts.map((artifact) => artifact.dedupId));
                 const nextTeacherArtifacts = mergeTeacherArtifacts(this.teacherArtifacts, nextBuiltArtifacts);
                 const emittedArtifactCount = nextBuiltArtifacts.filter((artifact) => !currentDedupIds.has(artifact.dedupId)).length;
                 const dedupedArtifactCount = nextBuiltArtifacts.length - emittedArtifactCount;
+                this.lastCycle = {
+                    deterministicArtifactCount: currentCycleBuiltArtifacts.length,
+                    newDeterministicArtifactCount: currentCycleBuiltArtifacts.filter((artifact) => !currentDedupIds.has(artifact.dedupId)).length,
+                    labelerCandidateCount: currentCycleOpportunity.candidateCount,
+                    labelerBudgetedCandidateCount: currentCycleOpportunity.budgetedCandidateCount,
+                    labelerStatus: currentCycleOpportunity.candidateCount === 0
+                        ? currentCycleOpportunity.status
+                        : this.lastTeacherLabelerResult?.status ?? (currentCycleOpportunity.enabled ? "unknown" : "disabled"),
+                    labelerDetail: currentCycleOpportunity.candidateCount === 0
+                        ? currentCycleOpportunity.detail
+                        : this.lastTeacherLabelerResult?.detail ?? currentCycleOpportunity.detail
+                };
                 this.teacherArtifacts = nextTeacherArtifacts;
                 const learnerResult = advanceAlwaysOnLearningRuntime({
                     packLabel: this.input.packLabel,
@@ -952,7 +1022,8 @@ export class AsyncTeacherLiveLoop {
             sparseFeedback: this.learnerState.sparseFeedback,
             noOpReason: this.diagnostics.lastNoOpReason,
             materialization: this.lastMaterialization,
-            teacherLabeler: this.lastTeacherLabelerResult
+            teacherLabeler: this.lastTeacherLabelerResult,
+            lastCycle: this.lastCycle
         });
     }
 }
@@ -6981,10 +7052,103 @@ function summarizeLearningWarningStates(input) {
     if (input.teacherSnapshot.diagnostics.latestFreshness === "stale" && input.teacherSnapshot.diagnostics.lastNoOpReason !== "no_teacher_artifacts") {
         warnings.add("teacher_labels_stale");
     }
-    if (input.teacherSnapshot.diagnostics.lastNoOpReason === "no_teacher_artifacts") {
+    if (input.teacherSnapshot.diagnostics.lastNoOpReason === "no_teacher_artifacts" &&
+        summarizeTeacherNoArtifactCycle(input.teacherSnapshot.diagnostics.notes).shouldWarn) {
         warnings.add("teacher_no_artifacts");
     }
     return [...warnings];
+}
+export function summarizeTeacherNoArtifactCycle(notes) {
+    const values = new Map();
+    for (const note of notes ?? []) {
+        const separator = note.indexOf("=");
+        if (separator <= 0) {
+            continue;
+        }
+        values.set(note.slice(0, separator), note.slice(separator + 1));
+    }
+    const readNullableNumber = (key) => {
+        const raw = values.get(key);
+        if (raw === undefined || raw === "unknown") {
+            return null;
+        }
+        const parsed = Number.parseInt(raw, 10);
+        return Number.isFinite(parsed) ? parsed : null;
+    };
+    const readNullableString = (key) => {
+        const raw = values.get(key);
+        return raw === undefined || raw === "unknown" ? null : raw;
+    };
+    const deterministicArtifactCount = readNullableNumber("teacher_last_cycle_deterministic_artifacts");
+    const newDeterministicArtifactCount = readNullableNumber("teacher_last_cycle_new_deterministic_artifacts");
+    const labelerCandidateCount = readNullableNumber("teacher_last_cycle_labeler_candidates");
+    const labelerBudgetedCandidateCount = readNullableNumber("teacher_last_cycle_labeler_budgeted_candidates");
+    const labelerStatus = readNullableString("teacher_last_cycle_labeler_status");
+    const labelerDetail = readNullableString("teacher_last_cycle_labeler_detail");
+    if (deterministicArtifactCount === null && labelerCandidateCount === null) {
+        return {
+            shouldWarn: true,
+            detail: "the latest cycle produced no new teacher artifacts, and the snapshot did not say whether any teachable material was present"
+        };
+    }
+    if ((deterministicArtifactCount ?? 0) === 0 && (labelerCandidateCount ?? 0) === 0) {
+        return {
+            shouldWarn: false,
+            detail: "the latest cycle produced no new teacher artifacts because the current export had no eligible feedback, operator overrides, or matched interaction text"
+        };
+    }
+    if ((deterministicArtifactCount ?? 0) > 0 &&
+        (newDeterministicArtifactCount ?? 0) === 0 &&
+        (labelerCandidateCount ?? 0) === 0) {
+        return {
+            shouldWarn: false,
+            detail: "the latest cycle produced no new teacher artifacts because the current export only repeated supervision that was already captured"
+        };
+    }
+    if ((labelerCandidateCount ?? 0) > 0) {
+        if ((labelerBudgetedCandidateCount ?? labelerCandidateCount) === 0) {
+            return {
+                shouldWarn: true,
+                detail: "the latest cycle produced no new teacher artifacts because candidate interactions exceeded the teacher labeler prompt budget"
+            };
+        }
+        if (labelerStatus === "disabled") {
+            return {
+                shouldWarn: false,
+                detail: "the latest cycle produced no new teacher artifacts because candidate interactions existed, but the background teacher labeler is disabled"
+            };
+        }
+        if (labelerStatus === "ok") {
+            return {
+                shouldWarn: false,
+                detail: "the latest cycle produced no new teacher artifacts because candidate interactions were evaluated but did not add a new reusable label"
+            };
+        }
+        if (labelerStatus === "fail_open") {
+            return {
+                shouldWarn: true,
+                detail: labelerDetail === null
+                    ? "the latest cycle produced no new teacher artifacts because the teacher labeler failed open while candidate interactions were present"
+                    : `the latest cycle produced no new teacher artifacts because the teacher labeler failed open while candidate interactions were present: ${labelerDetail}`
+            };
+        }
+        if (labelerDetail === "no_labels_emitted") {
+            return {
+                shouldWarn: true,
+                detail: "the latest cycle produced no new teacher artifacts even though candidate interactions were present; the teacher labeler emitted no reusable labels"
+            };
+        }
+        return {
+            shouldWarn: true,
+            detail: labelerDetail === null
+                ? "the latest cycle produced no new teacher artifacts even though candidate interactions were present"
+                : `the latest cycle produced no new teacher artifacts even though candidate interactions were present: ${labelerDetail}`
+        };
+    }
+    return {
+        shouldWarn: true,
+        detail: "the latest cycle produced no new teacher artifacts even though teachable material was present"
+    };
 }
 function summarizeAlwaysOnLearning(input, active) {
     const unavailableLag = {

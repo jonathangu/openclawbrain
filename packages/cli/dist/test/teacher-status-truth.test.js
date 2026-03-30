@@ -13,7 +13,8 @@ function loadFunction({ file, startMarker, endMarker, prelude = "" }) {
     if (start === -1 || end === -1) {
         throw new Error(`failed to locate ${startMarker} in ${file}`);
     }
-    return new Function(`${prelude}\n${source.slice(start, end)}\nreturn ${startMarker.split(" ")[1]};`)();
+    const block = source.slice(start, end).replace(/^export\s+/gmu, "");
+    return new Function(`${prelude}\n${block}\nreturn ${startMarker.split(" ")[1]};`)();
 }
 
 function loadBlock(file, startMarker, endMarker) {
@@ -27,11 +28,13 @@ function loadBlock(file, startMarker, endMarker) {
 }
 
 const teacherMessagesBlock = loadBlock("cli.js", "const TEACHER_NO_OP_MESSAGES =", "function summarizeStatusInstallHook");
+const teacherNoArtifactBlock = loadBlock("index.js", "export function summarizeTeacherNoArtifactCycle", "function summarizeAlwaysOnLearning")
+    .replace("export function summarizeTeacherNoArtifactCycle", "function summarizeTeacherNoArtifactCycle");
 const summarizeStatusTeacher = loadFunction({
     file: "cli.js",
     startMarker: "function summarizeStatusTeacher",
     endMarker: "function summarizeStatusEmbedder",
-    prelude: teacherMessagesBlock
+    prelude: `${teacherMessagesBlock}\n${teacherNoArtifactBlock}`
 });
 const summarizeLearningWarningStates = loadFunction({
     file: "index.js",
@@ -60,6 +63,14 @@ function makeTeacherReport(overrides = {}) {
             queueDepth: 0,
             failureMode: "none",
             failureDetail: null,
+            notes: [
+                "teacher_last_cycle_deterministic_artifacts=0",
+                "teacher_last_cycle_new_deterministic_artifacts=0",
+                "teacher_last_cycle_labeler_candidates=0",
+                "teacher_last_cycle_labeler_budgeted_candidates=0",
+                "teacher_last_cycle_labeler_status=skipped",
+                "teacher_last_cycle_labeler_detail=no_matching_interaction_text"
+            ],
             ...overrides
         }
     };
@@ -86,7 +97,15 @@ function makeWarningInput(overrides = {}) {
             },
             diagnostics: {
                 latestFreshness: "stale",
-                lastNoOpReason: "no_teacher_artifacts"
+                lastNoOpReason: "no_teacher_artifacts",
+                notes: [
+                    "teacher_last_cycle_deterministic_artifacts=0",
+                    "teacher_last_cycle_new_deterministic_artifacts=0",
+                    "teacher_last_cycle_labeler_candidates=0",
+                    "teacher_last_cycle_labeler_budgeted_candidates=0",
+                    "teacher_last_cycle_labeler_status=skipped",
+                    "teacher_last_cycle_labeler_detail=no_matching_interaction_text"
+                ]
             }
         },
         ...overrides
@@ -100,6 +119,7 @@ test("status teacher stays healthy for a fresh watch heartbeat with no teacher a
     assert.equal(summary.healthy, true);
     assert.equal(summary.stale, false);
     assert.equal(summary.idle, true);
+    assert.match(summary.detail, /no eligible feedback, operator overrides, or matched interaction text/);
 });
 
 test("status teacher stays unhealthy when the watch snapshot itself is stale", () => {
@@ -114,7 +134,7 @@ test("status teacher stays unhealthy when the watch snapshot itself is stale", (
 
 test("learning warnings separate no-artifact no-ops from genuinely stale teacher labels", () => {
     const noArtifactWarnings = summarizeLearningWarningStates(makeWarningInput());
-    assert.deepEqual(noArtifactWarnings, ["teacher_no_artifacts"]);
+    assert.deepEqual(noArtifactWarnings, []);
     const staleWarnings = summarizeLearningWarningStates(makeWarningInput({
         teacherSnapshot: {
             queue: {
@@ -123,9 +143,50 @@ test("learning warnings separate no-artifact no-ops from genuinely stale teacher
             },
             diagnostics: {
                 latestFreshness: "stale",
-                lastNoOpReason: "none"
+                lastNoOpReason: "none",
+                notes: []
             }
         }
     }));
     assert.deepEqual(staleWarnings, ["teacher_labels_stale"]);
+});
+
+test("learning warnings keep flagging no-artifact cycles when teachable material was missed", () => {
+    const warnings = summarizeLearningWarningStates(makeWarningInput({
+        teacherSnapshot: {
+            queue: {
+                capacity: 1,
+                depth: 0
+            },
+            diagnostics: {
+                latestFreshness: "stale",
+                lastNoOpReason: "no_teacher_artifacts",
+                notes: [
+                    "teacher_last_cycle_deterministic_artifacts=0",
+                    "teacher_last_cycle_new_deterministic_artifacts=0",
+                    "teacher_last_cycle_labeler_candidates=2",
+                    "teacher_last_cycle_labeler_budgeted_candidates=2",
+                    "teacher_last_cycle_labeler_status=skipped",
+                    "teacher_last_cycle_labeler_detail=no_labels_emitted"
+                ]
+            }
+        }
+    }));
+    assert.deepEqual(warnings, ["teacher_no_artifacts"]);
+});
+
+test("status teacher explains when no-artifact no-ops should worry the operator", () => {
+    const summary = summarizeStatusTeacher(makeTeacherReport({
+        notes: [
+            "teacher_last_cycle_deterministic_artifacts=0",
+            "teacher_last_cycle_new_deterministic_artifacts=0",
+            "teacher_last_cycle_labeler_candidates=2",
+            "teacher_last_cycle_labeler_budgeted_candidates=2",
+            "teacher_last_cycle_labeler_status=skipped",
+            "teacher_last_cycle_labeler_detail=no_labels_emitted"
+        ]
+    }), providerConfig, localLlm);
+    assert.equal(summary.healthy, true);
+    assert.match(summary.detail, /candidate interactions were present/);
+    assert.match(summary.detail, /no reusable labels/);
 });

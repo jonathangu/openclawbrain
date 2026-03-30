@@ -15,6 +15,17 @@ export interface TeacherLabelerResultV1 {
 export interface TeacherLabeler {
     label(input: TeacherLabelerRunInputV1): Promise<TeacherLabelerResultV1>;
 }
+export interface TeacherLabelerOpportunityInputV1 {
+    normalizedEventExport: NormalizedEventExportV1;
+    serveTimeDecisions?: readonly LearningSpineServeRouteDecisionLogEntryV1[];
+}
+export interface TeacherLabelerOpportunityV1 {
+    enabled: boolean;
+    candidateCount: number;
+    budgetedCandidateCount: number;
+    status: "disabled" | "ready" | "skipped";
+    detail: string;
+}
 export interface OllamaTeacherLabelerGenerateInputV1 {
     model: string;
     prompt: string;
@@ -47,4 +58,5 @@ export interface AsyncTeacherNoopLabelerConfigV1 {
 export type AsyncTeacherLabelerConfigV1 = AsyncTeacherNoopLabelerConfigV1 | AsyncTeacherOllamaLabelerConfigV1;
 export declare function createHttpOllamaTeacherLabelerClient(baseUrl?: string): OllamaTeacherLabelerClient;
 export declare function createOllamaTeacherLabeler(config: AsyncTeacherOllamaLabelerConfigV1): TeacherLabeler;
+export declare function summarizeTeacherLabelerOpportunity(input: TeacherLabelerOpportunityInputV1, config?: AsyncTeacherLabelerConfigV1 | null): TeacherLabelerOpportunityV1;
 export declare function createTeacherLabeler(config: AsyncTeacherLabelerConfigV1 | null | undefined): TeacherLabeler | null;

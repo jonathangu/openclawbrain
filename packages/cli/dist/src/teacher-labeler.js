@@ -246,6 +246,48 @@ function normalizeOllamaTeacherLabelerConfig(config) {
         client: config.client ?? createHttpOllamaTeacherLabelerClient(normalizeBaseUrl(config.baseUrl))
     };
 }
+export function summarizeTeacherLabelerOpportunity(input, config) {
+    const normalized = config === undefined || config === null || config.provider === "none"
+        ? {
+            enabled: false,
+            maxPromptChars: DEFAULT_OLLAMA_MAX_PROMPT_CHARS,
+            maxArtifactsPerExport: DEFAULT_OLLAMA_MAX_ARTIFACTS_PER_EXPORT,
+            maxInteractionsPerExport: DEFAULT_OLLAMA_MAX_INTERACTIONS,
+            maxUserMessageChars: DEFAULT_OLLAMA_MAX_USER_MESSAGE_CHARS,
+            maxContextIdsPerDecision: DEFAULT_OLLAMA_MAX_CONTEXT_IDS
+        }
+        : {
+            enabled: true,
+            ...normalizeOllamaTeacherLabelerConfig(config)
+        };
+    const candidates = collectCandidates(input, normalized);
+    if (candidates.length === 0) {
+        return {
+            enabled: normalized.enabled,
+            candidateCount: 0,
+            budgetedCandidateCount: 0,
+            status: normalized.enabled ? "skipped" : "disabled",
+            detail: "no_matching_interaction_text"
+        };
+    }
+    const budgetedCandidates = fitCandidatesToPromptBudget(candidates, normalized);
+    if (budgetedCandidates.length === 0) {
+        return {
+            enabled: normalized.enabled,
+            candidateCount: candidates.length,
+            budgetedCandidateCount: 0,
+            status: normalized.enabled ? "skipped" : "disabled",
+            detail: "prompt_budget_exhausted"
+        };
+    }
+    return {
+        enabled: normalized.enabled,
+        candidateCount: candidates.length,
+        budgetedCandidateCount: budgetedCandidates.length,
+        status: normalized.enabled ? "ready" : "disabled",
+        detail: `candidates=${budgetedCandidates.length}`
+    };
+}
 class HttpOllamaTeacherLabelerClient {
     baseUrl;
     constructor(baseUrl) {
