@@ -4854,8 +4854,10 @@ function isCarryForwardSeedBlock(block) {
     if (typeof block.text !== "string" || block.text.trim().length === 0) {
         return false;
     }
-    return block.initSeed !== undefined ||
-        block.semantic?.sourceKind === "recorded_session_seed" ||
+    // Only true seed-session evidence should survive prefix-changing promotions.
+    // Ordinary runtime-turn feedback is re-materialized from learnedEventExport;
+    // carrying it forward under the old runtime-graph id duplicates evidence.
+    return block.semantic?.sourceKind === "recorded_session_seed" ||
         block.source.includes("/seed:");
 }
 function carryForwardSeedBlockScore(block) {
