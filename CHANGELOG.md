@@ -4,6 +4,27 @@ Release history for the published OpenClawBrain packages. The README and operato
 
 ## Unreleased
 
+## 0.4.16 / 0.4.5
+
+`0.4.16 / 0.4.5` publishes the harvested post-0.4.15 fixes: the public CLI proof/reinstall surfaces now classify fresh-state runtime truth correctly, learned-route replay no longer duplicates non-seed carry-forward evidence into the held-out eval turn, teacher no-op status separates benign idle cycles from likely missed teachable material, and the split release contract is enforced from one canonical plan helper.
+
+**Packages**
+
+- `@openclawbrain/openclaw@0.4.5`
+- `@openclawbrain/cli@0.4.16`
+
+**Changes**
+
+- `proof` now supports explicit gateway probe overrides and downgrades fresh-state `STATUS warn` to a warning when stronger runtime proofs already show live load
+- reinstall/repair no longer returns `manual_action_required` when runtime is already proven
+- the former `real-trace-live-proof-story` tie is closed in the published CLI lane: `learned_route` now reruns at `100` versus `70` for `graph_prior_only` and `vector_only`
+- teacher status now distinguishes benign no-artifact idle cycles from likely missed teachable-material cycles
+- publish preflight now derives the split tag/title/release-notes contract from one checked-in helper and verifies package-local dependencies before canonical tarball checks
+
+**Full release note**
+
+- [docs/release-notes-0.4.16.md](docs/release-notes-0.4.16.md)
+
 ## 0.4.15 / 0.4.4
 
 `0.4.15 / 0.4.4` ships the runtime-fix release: learned-route proof scoring is sharper, embedder-backed promoted packs carry live numeric embeddings through the canonical learner path, teacher/runtime truth surfaces are cleaner, and live `learn` no longer recurses the traced-learning bridge until persistence fails.
