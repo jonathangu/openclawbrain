@@ -308,6 +308,10 @@ test("brain-store traced-learning bridge truthfully lifts supervision and update
         assert.equal(merged.source?.bridge, "brain_store_state");
         assert.equal(merged.source?.bridgedRuntime?.path, dbPath);
         assert.equal(merged.source?.bridgedRuntime?.routerUpdateCount, 3);
+        assert.equal(merged.source?.bridgedRuntime?.source?.bridge, "brain_store_state");
+        assert.equal(merged.source?.bridgedRuntime?.source?.command, "brain-store");
+        assert.equal(merged.source?.bridgedRuntime?.source?.candidatePackVersion, 9);
+        assert.equal(JSON.parse(JSON.stringify(merged)).source?.bridgedRuntime?.source?.bridge, "brain_store_state");
     }
     finally {
         db.close();

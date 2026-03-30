@@ -18,6 +18,22 @@ function normalizeOptionalString(value) {
 function normalizeSource(value) {
     return value !== null && typeof value === "object" && !Array.isArray(value) ? value : null;
 }
+function summarizeBridgeSource(value) {
+    const source = normalizeSource(value);
+    if (source === null) {
+        return null;
+    }
+    const summarized = {
+        command: normalizeOptionalString(source.command),
+        bridge: normalizeOptionalString(source.bridge),
+        brainRoot: normalizeOptionalString(source.brainRoot),
+        stateDbPath: normalizeOptionalString(source.stateDbPath),
+        persistedKey: normalizeOptionalString(source.persistedKey),
+        candidatePackVersion: Number.isFinite(source.candidatePackVersion) ? Math.trunc(source.candidatePackVersion) : undefined,
+        candidateUpdateCount: normalizeCount(source.candidateUpdateCount)
+    };
+    return Object.fromEntries(Object.entries(summarized).filter(([, candidate]) => candidate !== null && candidate !== undefined));
+}
 function normalizeBridgePayload(payload) {
     if (payload === null || typeof payload !== "object" || Array.isArray(payload)) {
         throw new Error("expected traced-learning bridge payload object");
@@ -579,7 +595,7 @@ export function mergeTracedLearningBridgePayload(payload, persisted) {
                 supervisionCount: persistedBridge.supervisionCount,
                 routerUpdateCount: persistedBridge.routerUpdateCount,
                 teacherArtifactCount: persistedBridge.teacherArtifactCount,
-                source: persistedBridge.source
+                source: summarizeBridgeSource(persistedBridge.source)
             }
         }
     });
