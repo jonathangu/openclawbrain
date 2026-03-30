@@ -151,6 +151,10 @@ test("proof parser resolves paths and command strings for the public operator la
         "--skip-restart",
         "--plugin-id",
         "openclawbrain-alt",
+        "--gateway-url",
+        "ws://127.0.0.1:19081",
+        "--gateway-token",
+        "proof-token",
         "--timeout-ms",
         "1500",
         "--json"
@@ -162,6 +166,8 @@ test("proof parser resolves paths and command strings for the public operator la
     assert.equal(parsed.skipInstall, true);
     assert.equal(parsed.skipRestart, true);
     assert.equal(parsed.pluginId, "openclawbrain-alt");
+    assert.equal(parsed.gatewayUrl, "ws://127.0.0.1:19081");
+    assert.equal(parsed.gatewayToken, "proof-token");
     assert.equal(parsed.timeoutMs, 1500);
     assert.equal(parsed.json, true);
     assert.equal(buildProofCommandForOpenClawHome(openclawHome), `openclawbrain proof --openclaw-home '${path.resolve(openclawHome)}'`);
@@ -229,6 +235,24 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     assert.deepEqual(captures[2]?.args, ["gateway", "status", "--profile", "Tern"]);
 });
 
+test("proof capture forwards explicit gateway probe overrides to gateway status", (t) => {
+    const fixture = createProofFixture(t);
+    const { captures } = captureProofScenario(fixture, createHealthyLabelOutputs(fixture), {
+        gatewayUrl: "ws://127.0.0.1:19081",
+        gatewayToken: "proof-token"
+    });
+    assert.deepEqual(captures[2]?.args, [
+        "gateway",
+        "status",
+        "--profile",
+        "Tern",
+        "--url",
+        "ws://127.0.0.1:19081",
+        "--token",
+        "proof-token"
+    ]);
+});
+
 test("proof capture reports warnings when proof support is incomplete but runtime truth is healthy", (t) => {
     const fixture = createProofFixture(t, {
         gatewayLogText: null,
@@ -280,6 +304,25 @@ test("proof capture treats partial detailed-status proof failures as warnings wh
     assert.ok(result.verdict.warnings.includes("05-detailed-status ended as timed_out with partial capture"));
     assert.equal(detailedStatusStep?.resultClass, "timed_out");
     assert.equal(detailedStatusStep?.captureState, "partial");
+});
+
+test("proof capture treats STATUS warn as a proof warning when stronger runtime truths stay healthy", (t) => {
+    const fixture = createProofFixture(t);
+    const { result } = captureProofScenario(fixture, createHealthyLabelOutputs(fixture, {
+        "detailed status": {
+            stdout: createDetailedStatusText(fixture, {
+                statusLine: "STATUS warn"
+            })
+        }
+    }));
+    const summary = readFileSync(path.join(fixture.bundleDir, "summary.md"), "utf8");
+    assert.equal(result.verdict.verdict, "success_but_proof_incomplete");
+    assert.equal(result.verdict.severity, "degraded");
+    assert.deepEqual(result.verdict.missingProofs, ["status_warn"]);
+    assert.deepEqual(result.verdict.warnings, [
+        "detailed status did not return STATUS ok, but loadProof/runtime/serve/routeFn proofs stayed healthy"
+    ]);
+    assert.match(summary, /status_warn/);
 });
 
 test("proof capture stays blocking when detailed status fails to prove runtime truth", (t) => {

@@ -142,9 +142,10 @@ export function classifyOpenClawBrainConvergeVerification(input) {
   if (displayedStatus === "fail") {
     blockingReasons.push("status still reports fail");
   }
-  const runtimeTruthAlreadyProven = displayedStatus === "ok"
-    && runtimeLoad === "proven"
-    && loadProof === "status_probe_ready";
+  const runtimeTruthAlreadyProven = runtimeLoad === "proven"
+    && loadProof === "status_probe_ready"
+    && installState === "installed"
+    && loadability === "loadable";
   if (input.restartRequired === true && input.restartPerformed !== true && !runtimeTruthAlreadyProven) {
     blockingReasons.push("restart is still required before runtime load can be trusted");
   }

@@ -398,8 +398,10 @@ function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, brea
     const runtimeProofMatched = Array.isArray(runtimeLoadProofSnapshot?.value?.profiles)
         && runtimeLoadProofSnapshot.value.profiles.some((profile) => canonicalizeExistingProofPath(profile?.openclawHome ?? "") === canonicalizeExistingProofPath(openclawHome));
     const runtimeTruthGaps = [];
-    if (!statusSignals.statusOk)
-        runtimeTruthGaps.push("status_ok");
+    const strongRuntimeTruth = statusSignals.loadProofReady
+        && statusSignals.runtimeProven
+        && statusSignals.serveActivePack
+        && statusSignals.routeFnAvailable;
     if (!statusSignals.loadProofReady)
         runtimeTruthGaps.push("load_proof");
     if (!statusSignals.runtimeProven)
@@ -410,6 +412,15 @@ function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, brea
         runtimeTruthGaps.push("route_fn");
     const warningCodes = [];
     const warnings = [];
+    if (!statusSignals.statusOk) {
+        if (strongRuntimeTruth) {
+            warningCodes.push("status_warn");
+            warnings.push("detailed status did not return STATUS ok, but loadProof/runtime/serve/routeFn proofs stayed healthy");
+        }
+        else {
+            runtimeTruthGaps.push("status_ok");
+        }
+    }
     if (!gatewayHealthy) {
         warningCodes.push("gateway_health");
         warnings.push("gateway status did not confirm runtime running and RPC probe ok");
@@ -597,6 +608,17 @@ function buildGatewayArgs(action, profileName) {
         : ["gateway", action, "--profile", profileName];
 }
 
+function buildGatewayStatusArgs(profileName, gatewayUrl, gatewayToken) {
+    const args = buildGatewayArgs("status", profileName);
+    if (gatewayUrl !== null) {
+        args.push("--url", gatewayUrl);
+    }
+    if (gatewayToken !== null) {
+        args.push("--token", gatewayToken);
+    }
+    return args;
+}
+
 export function buildProofCommandForOpenClawHome(openclawHome) {
     return `openclawbrain proof --openclaw-home ${quoteShellArg(path.resolve(openclawHome))}`;
 }
@@ -609,6 +631,8 @@ export function buildProofCommandHelpSection() {
             "  --skip-install              Capture proof without rerunning install first (proof only).",
             "  --skip-restart              Capture proof without restarting OpenClaw first (proof only).",
             `  --plugin-id <id>            Plugin id for \`openclaw plugins inspect\` (proof only; default: ${DEFAULT_OPERATOR_PROOF_PLUGIN_ID}).`,
+            "  --gateway-url <url>         Override the gateway-status probe target for proof capture (proof only).",
+            "  --gateway-token <token>     Gateway token to use with --gateway-url or other non-default proof probes.",
             `  --timeout-ms <ms>           Per-step timeout in ms for proof capture (proof only; default: ${DEFAULT_OPERATOR_PROOF_TIMEOUT_MS}).`,
         ],
         lifecycle: "  5. proof              openclawbrain proof --openclaw-home <path> - capture one durable operator proof bundle after install/restart/status",
@@ -624,6 +648,8 @@ export function parseProofCliArgs(argv, options = {}) {
     let skipInstall = false;
     let skipRestart = false;
     let pluginId = DEFAULT_OPERATOR_PROOF_PLUGIN_ID;
+    let gatewayUrl = null;
+    let gatewayToken = null;
     let timeoutMs = DEFAULT_OPERATOR_PROOF_TIMEOUT_MS;
     let json = false;
     let help = false;
@@ -681,6 +707,24 @@ export function parseProofCliArgs(argv, options = {}) {
             index += 1;
             continue;
         }
+        if (arg === "--gateway-url") {
+            const next = argv[index + 1];
+            if (next === undefined) {
+                throw new Error("--gateway-url requires a value");
+            }
+            gatewayUrl = next;
+            index += 1;
+            continue;
+        }
+        if (arg === "--gateway-token") {
+            const next = argv[index + 1];
+            if (next === undefined) {
+                throw new Error("--gateway-token requires a value");
+            }
+            gatewayToken = next;
+            index += 1;
+            continue;
+        }
         if (arg === "--timeout-ms") {
             const next = argv[index + 1];
             if (next === undefined) {
@@ -705,6 +749,8 @@ export function parseProofCliArgs(argv, options = {}) {
             skipInstall,
             skipRestart,
             pluginId,
+            gatewayUrl,
+            gatewayToken,
             timeoutMs,
             json,
             help
@@ -725,6 +771,8 @@ export function parseProofCliArgs(argv, options = {}) {
         skipInstall,
         skipRestart,
         pluginId,
+        gatewayUrl,
+        gatewayToken,
         timeoutMs,
         json,
         help
@@ -783,7 +831,11 @@ export function captureOperatorProofBundle(options) {
     }
     addStep("01-install", "install", cliInvocation.command, [...cliInvocation.args, "install", "--openclaw-home", options.openclawHome], { skipped: options.skipInstall === true });
     addStep("02-restart", "gateway restart", "openclaw", buildGatewayArgs("restart", gatewayProfile), { skipped: options.skipRestart === true });
-    const gatewayStatusCapture = addStep("03-gateway-status", "gateway status", "openclaw", buildGatewayArgs("status", gatewayProfile));
+    const gatewayStatusCapture = addStep("03-gateway-status", "gateway status", "openclaw", buildGatewayStatusArgs(
+        gatewayProfile,
+        normalizeOptionalCliString(options.gatewayUrl ?? null),
+        normalizeOptionalCliString(options.gatewayToken ?? null),
+    ));
     const pluginInspectCapture = addStep("04-plugin-inspect", "plugin inspect", "openclaw", ["plugins", "inspect", options.pluginId]);
     const statusCapture = addStep("05-detailed-status", "detailed status", cliInvocation.command, [...cliInvocation.args, "status", "--openclaw-home", options.openclawHome, "--detailed"]);
     const gatewayLogPath = extractGatewayLogPath(gatewayStatusCapture.stdout);

@@ -89,6 +89,28 @@ test("converge classifies manual-action and warning outcomes truthfully from sta
     assert.equal(restartWarningVerification.state, "warning");
     assert.equal(restartWarningVerdict.verdict, "converged_with_warnings");
     assert.match(restartWarningVerdict.why, /automatic restart was not performed/);
+    const restartWarningWithStatusWarn = classifyOpenClawBrainConvergeVerification({
+        installLayout: "native_package_plugin",
+        installState: "installed",
+        loadability: "loadable",
+        displayedStatus: "warn",
+        runtimeLoad: "proven",
+        loadProof: "status_probe_ready",
+        serveState: "serving_active_pack",
+        routeFnAvailable: true,
+        awaitingFirstExport: true,
+        restartRequired: true,
+        restartPerformed: false
+    });
+    const restartWarningWithStatusWarnVerdict = finalizeOpenClawBrainConvergeResult({
+        stepFailure: null,
+        verification: restartWarningWithStatusWarn,
+        warnings: []
+    });
+    assert.equal(restartWarningWithStatusWarn.state, "warning");
+    assert.equal(restartWarningWithStatusWarnVerdict.verdict, "converged_with_warnings");
+    assert.match(restartWarningWithStatusWarnVerdict.why, /automatic restart was not performed/);
+    assert.match(restartWarningWithStatusWarnVerdict.why, /status is warn/);
     const warningVerification = classifyOpenClawBrainConvergeVerification({
         installLayout: "native_package_plugin",
         installState: "installed",
