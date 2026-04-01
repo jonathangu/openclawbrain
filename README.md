@@ -2,7 +2,7 @@
 
 A graph-brain memory layer for OpenClaw agents that keeps useful context bounded.
 
-OpenClawBrain organizes memories and tool-call history into a graph, retrieves a small useful slice before the prompt is built, and learns from outcomes in the background. The live path serves promoted packs only, so latency stays predictable and the hot path does not call a live LLM on every traversal hop. Publicly, the story is performance first, cost second, mechanism third: better agent performance is the win, lower cost is plausible, and bounded useful memory plus background learning are the mechanism. If the memory layer is unavailable, the agent keeps running.
+OpenClawBrain organizes memories and tool-call history into a graph, retrieves a small useful slice before the prompt is built, and learns from outcomes in the background. The live path serves promoted packs only, so latency stays predictable and the hot path does not call a live LLM on every traversal hop. Publicly, the story is performance first, cost second, mechanism third: better agent performance is the win, lower cost is plausible, and bounded useful memory plus background learning are the mechanism. Checked replay is already better than `no_brain` on real traces, but the replay set is still small and mixed, so direct spend savings and `learned_route` dominance are not proven. If the memory layer is unavailable, the agent keeps running.
 
 Status: actively developed. See [CHANGELOG.md](CHANGELOG.md) for current package versions and release history.
 
