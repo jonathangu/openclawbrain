@@ -428,6 +428,42 @@ function createMockSummaryStore() {
       return summaries.filter((s) => childIds.has(s.summaryId));
     }),
 
+    invalidateSummaryLineages: vi.fn(
+      async (input: {
+        summaryIds: string[];
+        freshnessState: "stale" | "superseded";
+        reason: string;
+        invalidatedAt?: Date;
+      }) => {
+        const invalidatedAt = input.invalidatedAt ?? new Date();
+        const invalidationReason = input.reason;
+        const refreshed: Array<
+          SummaryRecord & {
+            freshnessState: "stale" | "superseded";
+            invalidatedAt: Date;
+            invalidationReason: string;
+          }
+        > = [];
+        for (const summaryId of input.summaryIds) {
+          const summary = summaries.find((candidate) => candidate.summaryId === summaryId);
+          if (!summary) {
+            continue;
+          }
+          Object.assign(summary as SummaryRecord & Record<string, unknown>, {
+            freshnessState: input.freshnessState,
+            invalidatedAt,
+            invalidationReason,
+          });
+          refreshed.push(summary as SummaryRecord & {
+            freshnessState: "stale" | "superseded";
+            invalidatedAt: Date;
+            invalidationReason: string;
+          });
+        }
+        return refreshed;
+      },
+    ),
+
     getSummarySubtree: vi.fn(async (rootSummaryId: string) => {
       const root = summaries.find((summary) => summary.summaryId === rootSummaryId);
       if (!root) {

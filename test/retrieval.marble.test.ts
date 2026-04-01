@@ -190,7 +190,8 @@ describe("marble retrieval surfaces", () => {
       id: "mar_tools_001",
       conversationId: conversation.conversationId,
     });
-    const describeText = describeOutput.content[0]?.text ?? "";
+    const describeText =
+      describeOutput.content[0]?.type === "text" ? describeOutput.content[0].text : "";
     expect(describeText).toContain("## Marble mar_tools_001");
     expect(describeText).toContain("**Freshness:** fresh");
     expect(describeText).toContain("**Provenance:** prov_002");
@@ -205,7 +206,7 @@ describe("marble retrieval surfaces", () => {
       conversationId: conversation.conversationId,
       limit: 10,
     });
-    const grepText = grepOutput.content[0]?.text ?? "";
+    const grepText = grepOutput.content[0]?.type === "text" ? grepOutput.content[0].text : "";
     expect(grepText).toContain("### Marbles");
     expect(grepText).toContain("prov prov_002");
     expect(grepText).toContain("src srcfp_002");
