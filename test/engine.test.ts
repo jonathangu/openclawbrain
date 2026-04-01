@@ -836,6 +836,7 @@ describe("LcmContextEngine.assemble canonical path", () => {
       );
 
       const sessionId = "session-brain-trailing-live";
+      const sessionKey = "agent:main:subagent:route-coverage";
       await engine.ingest({
         sessionId,
         message: { role: "user", content: "persisted message only" } as unknown as AgentMessage,
@@ -843,6 +844,7 @@ describe("LcmContextEngine.assemble canonical path", () => {
 
       const result = await engine.assemble({
         sessionId,
+        sessionKey,
         messages: [
           { role: "user", content: "How do I open a pull request?" },
           { role: "assistant", content: "Let me think." },
@@ -853,6 +855,25 @@ describe("LcmContextEngine.assemble canonical path", () => {
       expect(typeof result.messages[0]?.content).toBe("string");
       expect(result.messages[0]?.content).toContain("OpenClawBrain retrieved context");
       expect(result.messages[0]?.content).toContain("Correction Cards");
+      expect((await brainService!.status()).contextFeedback).toMatchObject({
+        coverage: {
+          routeTraceCount: 1,
+          identifiedRouteTraceCount: 1,
+          unidentifiedRouteTraceCount: 0,
+          agentIdentityCoverage: 1,
+          supervisedTraceCount: 0,
+          unsupervisedTraceCount: 1,
+        },
+        agents: [
+          expect.objectContaining({
+            agentIdentity: { agentId: "main", lane: "subagent" },
+            routeTraceCount: 1,
+            supervisedTraceCount: 0,
+            unsupervisedTraceCount: 1,
+            supervisionCoverage: 0,
+          }),
+        ],
+      });
     } finally {
       if (previousOpenAiApiKey === undefined) {
         delete process.env.OPENAI_API_KEY;

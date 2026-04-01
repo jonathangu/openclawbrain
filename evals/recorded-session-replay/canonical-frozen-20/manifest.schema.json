@@ -1,0 +1,313 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Canonical Recorded Session Trace Set Manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "contract",
+    "setId",
+    "frozenAt",
+    "traceContract",
+    "root",
+    "traceCount",
+    "categoryOrder",
+    "categoryCounts",
+    "sourceSummary",
+    "realTraceCoverage",
+    "redactionPolicy",
+    "bundlePathTemplate",
+    "selectionPrinciples",
+    "entries"
+  ],
+  "properties": {
+    "contract": {
+      "const": "canonical_recorded_session_trace_set_manifest.v1"
+    },
+    "setId": {
+      "type": "string",
+      "minLength": 1
+    },
+    "frozenAt": {
+      "type": "string",
+      "minLength": 1
+    },
+    "traceContract": {
+      "const": "recorded_session_trace.v1"
+    },
+    "root": {
+      "type": "string",
+      "minLength": 1
+    },
+    "traceCount": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "categoryOrder": {
+      "type": "array",
+      "minItems": 4,
+      "maxItems": 4,
+      "items": {
+        "enum": [
+          "direct_answer",
+          "plan_execution",
+          "retrieval_memory_heavy",
+          "correction_follow_up_heavy"
+        ]
+      }
+    },
+    "categoryCounts": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "direct_answer",
+        "plan_execution",
+        "retrieval_memory_heavy",
+        "correction_follow_up_heavy"
+      ],
+      "properties": {
+        "direct_answer": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "plan_execution": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "retrieval_memory_heavy": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "correction_follow_up_heavy": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "sourceSummary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "repo_published_fixture",
+        "repo_test_fixture_static",
+        "repo_test_fixture_normalized",
+        "derived_replayable_equivalent"
+      ],
+      "properties": {
+        "repo_published_fixture": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "repo_test_fixture_static": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "repo_test_fixture_normalized": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "derived_replayable_equivalent": {
+          "type": "integer",
+          "minimum": 0
+        }
+      }
+    },
+    "realTraceCoverage": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "availableCount",
+        "missingCount",
+        "summary"
+      ],
+      "properties": {
+        "availableCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "missingCount": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "redactionPolicy": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "additionalRedactionRequired",
+        "summary"
+      ],
+      "properties": {
+        "additionalRedactionRequired": {
+          "type": "boolean"
+        },
+        "summary": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "bundlePathTemplate": {
+      "type": "string",
+      "minLength": 1
+    },
+    "selectionPrinciples": {
+      "type": "array",
+      "minItems": 1,
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "entries": {
+      "type": "array",
+      "minItems": 20,
+      "items": {
+        "type": "object",
+        "additionalProperties": false,
+        "required": [
+          "slotId",
+          "title",
+          "category",
+          "sourceKind",
+          "sourcePaths",
+          "tags",
+          "notes",
+          "path",
+          "status",
+          "realTraceSourceAvailable",
+          "sanitization",
+          "shape"
+        ],
+        "properties": {
+          "slotId": {
+            "type": "string",
+            "minLength": 1
+          },
+          "title": {
+            "type": "string",
+            "minLength": 1
+          },
+          "category": {
+            "enum": [
+              "direct_answer",
+              "plan_execution",
+              "retrieval_memory_heavy",
+              "correction_follow_up_heavy"
+            ]
+          },
+          "sourceKind": {
+            "enum": [
+              "repo_published_fixture",
+              "repo_test_fixture_static",
+              "repo_test_fixture_normalized",
+              "derived_replayable_equivalent"
+            ]
+          },
+          "sourcePaths": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "tags": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "notes": {
+            "type": "array",
+            "minItems": 1,
+            "items": {
+              "type": "string",
+              "minLength": 1
+            }
+          },
+          "path": {
+            "type": "string",
+            "minLength": 1
+          },
+          "status": {
+            "const": "frozen_replayable_equivalent"
+          },
+          "realTraceSourceAvailable": {
+            "const": false
+          },
+          "sanitization": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "classification",
+              "redactionRequired",
+              "notes"
+            ],
+            "properties": {
+              "classification": {
+                "enum": [
+                  "synthetic_replayable_equivalent",
+                  "synthetic_or_sanitized_repo_fixture"
+                ]
+              },
+              "redactionRequired": {
+                "type": "boolean"
+              },
+              "notes": {
+                "type": "array",
+                "minItems": 1,
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              }
+            }
+          },
+          "shape": {
+            "type": "object",
+            "additionalProperties": false,
+            "required": [
+              "turnCount",
+              "evalTurnCount",
+              "feedbackKinds",
+              "followUpTurnCount",
+              "runtimeHintTurnCount"
+            ],
+            "properties": {
+              "turnCount": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "evalTurnCount": {
+                "type": "integer",
+                "minimum": 1
+              },
+              "feedbackKinds": {
+                "type": "array",
+                "items": {
+                  "type": "string",
+                  "minLength": 1
+                }
+              },
+              "followUpTurnCount": {
+                "type": "integer",
+                "minimum": 0
+              },
+              "runtimeHintTurnCount": {
+                "type": "integer",
+                "minimum": 0
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

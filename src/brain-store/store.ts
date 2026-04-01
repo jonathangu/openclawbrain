@@ -12,6 +12,7 @@ import { randomUUID } from "node:crypto";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { join } from "node:path";
 import type {
+  BrainAgentIdentity,
   BrainNode,
   BrainEdge,
   EdgeKind,
@@ -43,6 +44,7 @@ import type {
   BrainContextUsefulnessSignal,
   BrainContextUsefulnessRecord,
   BrainContextUsefulnessSignalsV1,
+  ContextFeedbackAgentCoverageSummary,
   ContextFeedbackFocusAction,
   ContextFeedbackSummary,
   ContextFeedbackVerdict,
@@ -55,8 +57,9 @@ import type {
   BundleEvaluationStartedJournalPayload,
   BundleEvaluationCompletedJournalPayload,
   PromotionJournalPayload,
+  TeacherFeedbackRichness,
 } from "../brain-core/types.js";
-import { resolveObservationBindingMode } from "../brain-core/types.js";
+import { classifyObservationBindingQuality, resolveObservationBindingMode } from "../brain-core/types.js";
 import { usefulnessThresholds } from "../brain-core/usefulness.js";
 import { summarizeRecentDecisionTraces, type RecentDecisionTraceSummary } from "../brain-core/trace.js";
 
@@ -125,6 +128,70 @@ function toRecord(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
+function hasNonEmptyToolResults(value: unknown): boolean {
+  if (Array.isArray(value)) {
+    return value.length > 0;
+  }
+  if (typeof value !== "string") {
+    return false;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 && trimmed !== "[]";
+}
+
+function classifyTeacherFeedbackRichnessFromFields(params: {
+  followUpText: unknown;
+  toolResults: unknown;
+}): TeacherFeedbackRichness {
+  const hasFollowUp = toOptionalString(params.followUpText) !== null;
+  const hasToolResults = hasNonEmptyToolResults(params.toolResults);
+  if (hasFollowUp && hasToolResults) {
+    return "followup_and_tool";
+  }
+  if (hasFollowUp) {
+    return "followup_only";
+  }
+  if (hasToolResults) {
+    return "tool_only";
+  }
+  return "sparse";
+}
+
+function isObservationReadyForTeacher(params: {
+  status: unknown;
+  followUpText: unknown;
+  toolResults: unknown;
+  createdAt: unknown;
+  readyBefore: number;
+}): boolean {
+  if (params.status === "pending_teacher") {
+    return true;
+  }
+  if (toOptionalString(params.followUpText) !== null) {
+    return true;
+  }
+  if (hasNonEmptyToolResults(params.toolResults)) {
+    return true;
+  }
+  return toFiniteNumber(params.createdAt) <= params.readyBefore;
+}
+
+function toBrainAgentIdentity(value: unknown): BrainAgentIdentity | null {
+  const record = toRecord(value);
+  const agentId = toOptionalString(record?.agentId);
+  const lane = toOptionalString(record?.lane);
+  if (!agentId || !lane) {
+    return null;
+  }
+  return { agentId, lane };
+}
+
+function formatAgentIdentity(identity: BrainAgentIdentity): string {
+  return identity.lane === "main"
+    ? identity.agentId
+    : `${identity.agentId}:${identity.lane}`;
+}
+
 function cloneJsonRecord(value: unknown): Record<string, unknown> | null {
   const record = toRecord(value);
   return record ? JSON.parse(JSON.stringify(record)) as Record<string, unknown> : null;
@@ -165,6 +232,7 @@ function normalizeObservationRouteMetadata(
   const activePackGraphChecksum = toOptionalString(record.activePackGraphChecksum);
   return {
     requestDigest: toOptionalString(record.requestDigest),
+    agentIdentity: toBrainAgentIdentity(record.agentIdentity),
     activePackId: toOptionalString(record.activePackId),
     routerIdentity: toOptionalString(record.routerIdentity),
     persistenceMode:
@@ -366,22 +434,6 @@ function emptyObservationBindingModeCounts(): Record<BrainObservationBindingMode
     legacy_heuristic: 0,
     unbound: 0,
   };
-}
-
-function classifyObservationBindingQuality(
-  mode: BrainObservationBindingMode,
-): "exact" | "fallback" | "unbound" {
-  if (
-    mode === "exact_decision_id"
-    || mode === "exact_selection_digest"
-    || mode === "turn_compile_event_id"
-  ) {
-    return "exact";
-  }
-  if (mode === "unbound") {
-    return "unbound";
-  }
-  return "fallback";
 }
 
 const CONTEXT_FEEDBACK_HELPFUL_MIN = 0.25;
@@ -1160,6 +1212,7 @@ export class BrainStore {
         AND (
           status = 'pending_teacher'
           OR follow_up_text IS NOT NULL
+          OR COALESCE(tool_results_json, '[]') <> '[]'
           OR created_at <= ?
         )
       ORDER BY created_at ASC
@@ -1194,22 +1247,185 @@ export class BrainStore {
     return counts;
   }
 
+  getTeacherQueueSummary(
+    readyBefore: number,
+    budgetPerTick: number,
+    sampleLimit = 12,
+  ): {
+    budgetPerTick: number;
+    delayMs: number;
+    pendingCount: number;
+    readyCount: number;
+    delayedCount: number;
+    budgetDeferredCount: number;
+    sparseReadyCount: number;
+    richReadyCount: number;
+    sample: Array<{
+      observationId: string;
+      episodeId: string;
+      traceId: string | null;
+      status: BrainObservationStatus;
+      gate: "ready" | "delayed" | "budget_deferred";
+      reason: string;
+      feedbackRichness: TeacherFeedbackRichness;
+      createdAt: number;
+    }>;
+    detail: string;
+  } {
+    const pendingRow = this.db.prepare(`
+      SELECT COUNT(*) as count
+      FROM brain_observations
+      WHERE status IN ('pending_followup', 'pending_teacher')
+    `).get() as { count: number };
+    const readyRow = this.db.prepare(`
+      SELECT COUNT(*) as count
+      FROM brain_observations
+      WHERE status IN ('pending_followup', 'pending_teacher')
+        AND (
+          status = 'pending_teacher'
+          OR follow_up_text IS NOT NULL
+          OR COALESCE(tool_results_json, '[]') <> '[]'
+          OR created_at <= ?
+        )
+    `).get(readyBefore) as { count: number };
+    const sparseReadyRow = this.db.prepare(`
+      SELECT COUNT(*) as count
+      FROM brain_observations
+      WHERE status IN ('pending_followup', 'pending_teacher')
+        AND (
+          status = 'pending_teacher'
+          OR follow_up_text IS NOT NULL
+          OR COALESCE(tool_results_json, '[]') <> '[]'
+          OR created_at <= ?
+        )
+        AND follow_up_text IS NULL
+        AND COALESCE(tool_results_json, '[]') = '[]'
+    `).get(readyBefore) as { count: number };
+    const sampleRows = this.db.prepare(`
+      SELECT id, episode_id, trace_id, status, follow_up_text, tool_results_json, created_at
+      FROM brain_observations
+      WHERE status IN ('pending_followup', 'pending_teacher')
+      ORDER BY created_at ASC
+      LIMIT ?
+    `).all(Math.max(sampleLimit, budgetPerTick + 2)) as Array<{
+      id: string;
+      episode_id: string;
+      trace_id: string | null;
+      status: BrainObservationStatus;
+      follow_up_text: string | null;
+      tool_results_json: string | null;
+      created_at: number;
+    }>;
+
+    const pendingCount = pendingRow.count ?? 0;
+    const readyCount = readyRow.count ?? 0;
+    const sparseReadyCount = sparseReadyRow.count ?? 0;
+    const delayedCount = Math.max(0, pendingCount - readyCount);
+    const budgetDeferredCount = Math.max(0, readyCount - budgetPerTick);
+    const richReadyCount = Math.max(0, readyCount - sparseReadyCount);
+    const sample = sampleRows.map((row, index) => {
+      const feedbackRichness = classifyTeacherFeedbackRichnessFromFields({
+        followUpText: row.follow_up_text,
+        toolResults: row.tool_results_json,
+      });
+      const ready = isObservationReadyForTeacher({
+        status: row.status,
+        followUpText: row.follow_up_text,
+        toolResults: row.tool_results_json,
+        createdAt: row.created_at,
+        readyBefore,
+      });
+      const gate: "ready" | "delayed" | "budget_deferred" =
+        ready && index >= budgetPerTick
+          ? "budget_deferred"
+          : ready
+            ? "ready"
+            : "delayed";
+      let reason = "ready for teacher scoring";
+      if (gate === "delayed") {
+        reason = "waiting for follow-up or the teacher delay window";
+      } else if (gate === "budget_deferred") {
+        reason = "ready, but deferred behind older observations by the per-tick teacher budget";
+      } else if (feedbackRichness === "tool_only") {
+        reason = "tool results make the observation ready without waiting for follow-up";
+      } else if (feedbackRichness === "followup_only") {
+        reason = "operator follow-up makes the observation ready";
+      } else if (feedbackRichness === "followup_and_tool") {
+        reason = "follow-up and tool results make the observation ready";
+      } else if (feedbackRichness === "sparse") {
+        reason = "teacher delay elapsed, so sparse feedback is now eligible for scoring";
+      }
+
+      return {
+        observationId: row.id,
+        episodeId: row.episode_id,
+        traceId: toOptionalString(row.trace_id),
+        status: row.status,
+        gate,
+        reason,
+        feedbackRichness,
+        createdAt: Number(row.created_at ?? 0),
+      };
+    }).slice(0, sampleLimit);
+
+    const detail =
+      pendingCount === 0
+        ? "no teacher observations are pending"
+        : `${readyCount} ready, ${delayedCount} delayed, ${budgetDeferredCount} deferred by the per-tick teacher budget; ${sparseReadyCount} ready observation(s) are still sparse-feedback cases`;
+
+    return {
+      budgetPerTick,
+      delayMs: Math.max(0, Date.now() - readyBefore),
+      pendingCount,
+      readyCount,
+      delayedCount,
+      budgetDeferredCount,
+      sparseReadyCount,
+      richReadyCount,
+      sample,
+      detail,
+    };
+  }
+
   getObservationAttributionSummary(): {
     totalObservationCount: number;
     completedObservationCount: number;
     teacherEvaluationCount: number;
+    nonExactCount: number;
     bindingModes: Record<BrainObservationBindingMode, number>;
     attributionQuality: {
       exact: number;
       fallback: number;
       unbound: number;
     };
+    latestNonExact: {
+      observationId: string;
+      episodeId: string;
+      traceId: string | null;
+      bindingMode: BrainObservationBindingMode;
+      attributionQuality: "fallback" | "unbound";
+      feedbackRichness: TeacherFeedbackRichness;
+      confidence: number | null;
+      reason: string | null;
+      evaluatedAt: number | null;
+    } | null;
     detail: string;
   } {
     const rows = this.db.prepare(`
-      SELECT status, teacher_evaluation_json
+      SELECT id, episode_id, trace_id, status, follow_up_text, tool_results_json, teacher_evaluation_json, evaluated_at, created_at
       FROM brain_observations
-    `).all() as Array<{ status?: BrainObservationStatus; teacher_evaluation_json?: string | null }>;
+      ORDER BY evaluated_at DESC, created_at DESC
+    `).all() as Array<{
+      id: string;
+      episode_id: string;
+      trace_id: string | null;
+      status?: BrainObservationStatus;
+      follow_up_text?: string | null;
+      tool_results_json?: string | null;
+      teacher_evaluation_json?: string | null;
+      evaluated_at?: number | null;
+      created_at?: number;
+    }>;
     const bindingModes = emptyObservationBindingModeCounts();
     const attributionQuality = {
       exact: 0,
@@ -1218,6 +1434,17 @@ export class BrainStore {
     };
     let completedObservationCount = 0;
     let teacherEvaluationCount = 0;
+    let latestNonExact: {
+      observationId: string;
+      episodeId: string;
+      traceId: string | null;
+      bindingMode: BrainObservationBindingMode;
+      attributionQuality: "fallback" | "unbound";
+      feedbackRichness: TeacherFeedbackRichness;
+      confidence: number | null;
+      reason: string | null;
+      evaluatedAt: number | null;
+    } | null = null;
 
     for (const row of rows) {
       if (row.status === "completed") {
@@ -1232,31 +1459,57 @@ export class BrainStore {
       }
       teacherEvaluationCount += 1;
       bindingModes[bindingMode] += 1;
-      attributionQuality[classifyObservationBindingQuality(bindingMode)] += 1;
+      const quality = classifyObservationBindingQuality(bindingMode);
+      attributionQuality[quality] += 1;
+      if (quality !== "exact" && !latestNonExact) {
+        latestNonExact = {
+          observationId: row.id,
+          episodeId: row.episode_id,
+          traceId: toOptionalString(row.trace_id),
+          bindingMode,
+          attributionQuality: quality,
+          feedbackRichness: classifyTeacherFeedbackRichnessFromFields({
+            followUpText: row.follow_up_text,
+            toolResults: row.tool_results_json,
+          }),
+          confidence: evaluation?.confidence ?? null,
+          reason: evaluation?.reason ?? null,
+          evaluatedAt: row.evaluated_at === null ? null : Number(row.evaluated_at),
+        };
+      }
     }
 
+    const nonExactCount = attributionQuality.fallback + attributionQuality.unbound;
     let detail = "no teacher evaluations recorded";
     if (teacherEvaluationCount > 0) {
       detail =
-        attributionQuality.unbound > 0
-          ? "teacher evaluations include unbound attribution"
-          : attributionQuality.fallback > 0
-            ? "teacher evaluations include fallback attribution binding"
-            : "teacher evaluations are exact-bound";
+        nonExactCount > 0
+          ? `teacher evaluations include ${nonExactCount} non-exact attribution binding(s) (${attributionQuality.fallback} fallback, ${attributionQuality.unbound} unbound)`
+          : "teacher evaluations are exact-bound";
     }
 
     return {
       totalObservationCount: rows.length,
       completedObservationCount,
       teacherEvaluationCount,
+      nonExactCount,
       bindingModes,
       attributionQuality,
+      latestNonExact,
       detail,
     };
   }
 
   getContextFeedbackSummary(): ContextFeedbackSummary {
-    const routeTraceCount = this.countTraces();
+    const traceRows = this.db.prepare(`
+      SELECT id, created_at, route_trace_json
+      FROM brain_traces
+    `).all() as Array<{
+      id: string;
+      created_at: number;
+      route_trace_json?: string;
+    }>;
+    const routeTraceCount = traceRows.length;
     const observationRows = this.db.prepare(`
       SELECT id, status
       FROM brain_observations
@@ -1280,6 +1533,41 @@ export class BrainStore {
       irrelevant: 0,
       harmful: 0,
     };
+    const traceAgentIdentityById = new Map<string, BrainAgentIdentity>();
+    const agentCoverage = new Map<string, {
+      agentIdentity: BrainAgentIdentity;
+      routeTraceCount: number;
+      supervisedTraceCount: number;
+      verdictCounts: Record<ContextFeedbackVerdict, number>;
+      latestTraceAt: number | null;
+      latestVerdictAt: number | null;
+    }>();
+    let identifiedRouteTraceCount = 0;
+    for (const row of traceRows) {
+      const routeTrace = parseJsonValue<DecisionRouteTrace | null>(row.route_trace_json, null);
+      const agentIdentity = toBrainAgentIdentity(routeTrace?.agentIdentity);
+      if (!agentIdentity) {
+        continue;
+      }
+      identifiedRouteTraceCount += 1;
+      traceAgentIdentityById.set(row.id, agentIdentity);
+      const key = `${agentIdentity.agentId}::${agentIdentity.lane}`;
+      const entry = agentCoverage.get(key) ?? {
+        agentIdentity,
+        routeTraceCount: 0,
+        supervisedTraceCount: 0,
+        verdictCounts: {
+          helpful: 0,
+          irrelevant: 0,
+          harmful: 0,
+        },
+        latestTraceAt: null,
+        latestVerdictAt: null,
+      };
+      entry.routeTraceCount += 1;
+      entry.latestTraceAt = Math.max(entry.latestTraceAt ?? 0, row.created_at ?? 0) || null;
+      agentCoverage.set(key, entry);
+    }
     let latest: ContextFeedbackSummary["latest"] = null;
     const latestVerdictByTrace = new Map<string, true>();
     const supervisionRows = this.db.prepare(`
@@ -1300,6 +1588,10 @@ export class BrainStore {
       verdictCounts[verdict] += 1;
       const metadata = toRecord(record.metadata);
       const teacherEvaluation = toRecord(metadata?.teacherEvaluation);
+      const agentIdentity =
+        toBrainAgentIdentity(metadata?.agentIdentity)
+        ?? traceAgentIdentityById.get(record.traceId)
+        ?? null;
       const bindingMode =
         toObservationBindingMode(metadata?.bindingMode)
         ?? toObservationBindingMode(teacherEvaluation?.bindingMode);
@@ -1308,6 +1600,7 @@ export class BrainStore {
         traceId: record.traceId,
         episodeId: record.episodeId,
         observationId: toOptionalString(metadata?.observationId),
+        agentIdentity,
         source: record.source,
         verdict,
         score: record.value,
@@ -1319,10 +1612,60 @@ export class BrainStore {
       if (!latest) {
         latest = current;
       }
+
+      if (agentIdentity) {
+        const key = `${agentIdentity.agentId}::${agentIdentity.lane}`;
+        const entry = agentCoverage.get(key) ?? {
+          agentIdentity,
+          routeTraceCount: 0,
+          supervisedTraceCount: 0,
+          verdictCounts: {
+            helpful: 0,
+            irrelevant: 0,
+            harmful: 0,
+          },
+          latestTraceAt: null,
+          latestVerdictAt: null,
+        };
+        entry.supervisedTraceCount += 1;
+        entry.verdictCounts[verdict] += 1;
+        entry.latestVerdictAt = Math.max(entry.latestVerdictAt ?? 0, record.createdAt ?? 0) || null;
+        agentCoverage.set(key, entry);
+      }
     }
 
     const supervisedTraceCount = latestVerdictByTrace.size;
     const unsupervisedTraceCount = Math.max(0, routeTraceCount - supervisedTraceCount);
+    const unidentifiedRouteTraceCount = Math.max(0, routeTraceCount - identifiedRouteTraceCount);
+    const agents: ContextFeedbackAgentCoverageSummary[] = [...agentCoverage.values()]
+      .map((entry) => {
+        const supervisionCoverage = entry.routeTraceCount > 0
+          ? entry.supervisedTraceCount / entry.routeTraceCount
+          : 0;
+        const unsupervisedCount = Math.max(0, entry.routeTraceCount - entry.supervisedTraceCount);
+        return {
+          agentIdentity: entry.agentIdentity,
+          routeTraceCount: entry.routeTraceCount,
+          supervisedTraceCount: entry.supervisedTraceCount,
+          unsupervisedTraceCount: unsupervisedCount,
+          supervisionCoverage,
+          verdictCounts: entry.verdictCounts,
+          latestTraceAt: entry.latestTraceAt,
+          latestVerdictAt: entry.latestVerdictAt,
+          detail:
+            `${formatAgentIdentity(entry.agentIdentity)}: feedback covers ${entry.supervisedTraceCount}/${entry.routeTraceCount} traced route(s); `
+            + `${entry.verdictCounts.helpful} helpful, ${entry.verdictCounts.irrelevant} irrelevant, ${entry.verdictCounts.harmful} harmful`,
+        };
+      })
+      .sort((left, right) => {
+        if (right.routeTraceCount !== left.routeTraceCount) {
+          return right.routeTraceCount - left.routeTraceCount;
+        }
+        if (right.supervisedTraceCount !== left.supervisedTraceCount) {
+          return right.supervisedTraceCount - left.supervisedTraceCount;
+        }
+        return formatAgentIdentity(left.agentIdentity).localeCompare(formatAgentIdentity(right.agentIdentity));
+      });
     const focus = toContextFeedbackFocusAction({
       routeTraceCount,
       harmfulCount: verdictCounts.harmful,
@@ -1339,6 +1682,9 @@ export class BrainStore {
       verdictCounts,
       coverage: {
         routeTraceCount,
+        identifiedRouteTraceCount,
+        unidentifiedRouteTraceCount,
+        agentIdentityCoverage: routeTraceCount > 0 ? identifiedRouteTraceCount / routeTraceCount : 0,
         observationCount: observationRows.length,
         completedObservationCount,
         supervisedTraceCount,
@@ -1348,12 +1694,13 @@ export class BrainStore {
         pendingFollowupCount,
         pendingTeacherCount,
       },
+      agents,
       latest,
       focus,
       detail:
         routeTraceCount === 0
           ? "no traced routes recorded yet"
-          : `${verdictCounts.helpful} helpful, ${verdictCounts.irrelevant} irrelevant, ${verdictCounts.harmful} harmful traced route verdicts; feedback covers ${supervisedTraceCount}/${routeTraceCount} traced route(s); helpful >= ${CONTEXT_FEEDBACK_HELPFUL_MIN}, harmful <= ${CONTEXT_FEEDBACK_HARMFUL_MAX}`,
+          : `${verdictCounts.helpful} helpful, ${verdictCounts.irrelevant} irrelevant, ${verdictCounts.harmful} harmful traced route verdicts; feedback covers ${supervisedTraceCount}/${routeTraceCount} traced route(s); agent identity covers ${identifiedRouteTraceCount}/${routeTraceCount} traced route(s); helpful >= ${CONTEXT_FEEDBACK_HELPFUL_MIN}, harmful <= ${CONTEXT_FEEDBACK_HARMFUL_MAX}`,
     };
   }
 

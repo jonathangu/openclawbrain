@@ -38,7 +38,7 @@ import {
   BrainAssemblerExtension,
   type BrainAssembledContextResult,
 } from "./brain-runtime/assembler-extension.js";
-import type { BrainObservationToolResult } from "./brain-core/types.js";
+import type { BrainAgentIdentity, BrainObservationToolResult } from "./brain-core/types.js";
 import type { UserMemoryObservation } from "./brain-runtime/user-memory-proposals.js";
 import { BrainService } from "./brain-runtime/service.js";
 
@@ -922,6 +922,21 @@ export class LcmContextEngine implements ContextEngine {
     }
   }
 
+  private resolveBrainAgentIdentity(sessionKey: string | undefined): BrainAgentIdentity | null {
+    const trimmedKey = sessionKey?.trim() ?? "";
+    if (!trimmedKey) {
+      return null;
+    }
+    const parsed = this.deps.parseAgentSessionKey(trimmedKey);
+    if (!parsed) {
+      return null;
+    }
+    return {
+      agentId: this.deps.normalizeAgentId(parsed.agentId),
+      lane: this.deps.isSubagentSessionKey(trimmedKey) ? this.deps.agentLaneSubagent : "main",
+    };
+  }
+
   /** Build a summarize callback with runtime provider fallback handling. */
   private async resolveSummarize(params: {
     legacyParams?: Record<string, unknown>;
@@ -1529,6 +1544,7 @@ export class LcmContextEngine implements ContextEngine {
 
   async assemble(params: {
     sessionId: string;
+    sessionKey?: string;
     messages: AgentMessage[];
     tokenBudget?: number;
     maxContextChars?: number;
@@ -1543,6 +1559,7 @@ export class LcmContextEngine implements ContextEngine {
           ? Math.floor(params.tokenBudget)
           : 128_000;
       const maxContextChars = normalizeOptionalMaxContextChars(params.maxContextChars);
+      const agentIdentity = this.resolveBrainAgentIdentity(params.sessionKey);
 
       const brainDecision = this.brainAssembler?.decide({
         tokenBudget,
@@ -1573,6 +1590,7 @@ export class LcmContextEngine implements ContextEngine {
           : undefined;
         if (brainDecision && this.brainService && !shouldRouteThroughBrain) {
           this.brainService.noteAssemblyDecision({
+            agentIdentity,
             ...fallbackBrainDecision!,
           });
         }
@@ -1638,6 +1656,7 @@ export class LcmContextEngine implements ContextEngine {
           : undefined;
         if (brainDecision && this.brainService) {
           this.brainService.noteAssemblyDecision({
+            agentIdentity,
             ...fallbackBrainDecision!,
           });
         }
@@ -1668,6 +1687,7 @@ export class LcmContextEngine implements ContextEngine {
       const hybrid: AssembleContextResult | BrainAssembledContextResult = this.brainAssembler
         ? await this.brainAssembler.augmentAssembly({
             conversationId: conversation.conversationId,
+            agentIdentity,
             tokenBudget,
             ...(maxContextChars === undefined ? {} : { maxContextChars }),
             assembled,

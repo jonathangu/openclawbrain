@@ -1447,6 +1447,7 @@ function registerHookCompatibilityBridge(
 
     const assembled = await lcm.assemble({
       sessionId,
+      sessionKey: ctx.sessionKey,
       messages: assembleMessages as Parameters<LcmContextEngine["assemble"]>[0]["messages"],
       ...(maxContextChars === undefined ? {} : { maxContextChars }),
     }) as AssembleResultWithSystemPrompt;

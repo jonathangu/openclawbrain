@@ -970,7 +970,18 @@ describe("BrainAssemblerExtension", () => {
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: 3,
+      fittedNodeCount: expect.any(Number),
+      droppedNodeCount: expect.any(Number),
     }));
+    if ((result.brainDecision?.droppedNodeCount ?? 0) > 0) {
+      expect(result.brainDecision?.fittingDropReasons).toEqual(expect.objectContaining({
+        omitted_for_partial_serve: expect.any(Number),
+      }));
+    } else {
+      expect(result.brainDecision?.fittingDropReasons ?? null).toBeNull();
+    }
     expect(brain.recordTraceSelectionMetadata).toHaveBeenCalledWith(
       expect.objectContaining({ id: "tr_structured_1" }),
       expect.objectContaining({
@@ -995,6 +1006,10 @@ describe("BrainAssemblerExtension", () => {
         injectedChars: expect.any(Number),
         droppedChars: expect.any(Number),
         contextClipped: true,
+        fitStrategy: "structured_node_budget",
+        retrievedNodeCount: 3,
+        fittedNodeCount: expect.any(Number),
+        droppedNodeCount: expect.any(Number),
       }),
     );
   });
@@ -1065,8 +1080,18 @@ describe("BrainAssemblerExtension", () => {
       injectedChars: expect.any(Number),
       droppedChars: expect.any(Number),
       contextClipped: true,
-      fitStrategy: "legacy_raw_clip",
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: 3,
+      fittedNodeCount: expect.any(Number),
+      droppedNodeCount: expect.any(Number),
     }));
+    if ((result.brainDecision?.droppedNodeCount ?? 0) > 0) {
+      expect(result.brainDecision?.fittingDropReasons).toEqual(expect.objectContaining({
+        omitted_for_partial_serve: expect.any(Number),
+      }));
+    } else {
+      expect(result.brainDecision?.fittingDropReasons ?? null).toBeNull();
+    }
     expect(brain.recordTraceSelectionMetadata).toHaveBeenCalledWith(
       expect.objectContaining({ id: "tr_structured_1" }),
       expect.objectContaining({
@@ -1091,7 +1116,90 @@ describe("BrainAssemblerExtension", () => {
         injectedChars: expect.any(Number),
         droppedChars: expect.any(Number),
         contextClipped: true,
-        fitStrategy: "legacy_raw_clip",
+        fitStrategy: "structured_node_budget",
+        retrievedNodeCount: 3,
+        fittedNodeCount: expect.any(Number),
+        droppedNodeCount: expect.any(Number),
+      }),
+    );
+  });
+
+  it("partially serves committed context when query traversal itself interrupts under deadline pressure", async () => {
+    const traversalResult = makeStructuredTraversalResult();
+    const brain = createBrainStub({
+      query: vi.fn(async () => traversalResult),
+      lastQueryInterruption: {
+        interrupted: true,
+        stage: "traversal",
+        reason: "deadline_during_traversal",
+        servedPartial: true,
+      },
+    });
+    const extension = new BrainAssemblerExtension(brain as never);
+
+    const assembled = {
+      messages: [{ role: "user", content: "live tail" }],
+      estimatedTokens: 2,
+      stats: {
+        rawMessageCount: 1,
+        summaryCount: 0,
+        totalContextItems: 1,
+      },
+    };
+
+    const result = await extension.augmentAssembly({
+      conversationId: 42,
+      tokenBudget: 4096,
+      maxContextChars: 240,
+      assembled,
+      liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
+    });
+
+    expect(result.messages).toHaveLength(2);
+    expect(result.messages[0]).toMatchObject({
+      role: "user",
+      content: expect.stringContaining("[brain partial]"),
+    });
+    expect(String(result.messages[0]?.content ?? "")).toContain("Use gh pr create");
+    expect(result.brainDecision).toEqual(expect.objectContaining({
+      mode: "partial_query_interruption",
+      episodeId: "ep_structured_1",
+      traceId: "tr_structured_1",
+      footer: "[brain] partial serve: query interrupted under budget pressure; injected committed prefix.",
+      interruption: {
+        interrupted: true,
+        stage: "traversal",
+        reason: "deadline_during_traversal",
+        servedPartial: true,
+      },
+      queryInterrupted: true,
+      interruptionStage: "traversal",
+      interruptionReason: "deadline_during_traversal",
+      servedPartial: true,
+      brainDropReason: "deadline_after_query",
+      brainDropStage: "query",
+      budgetFraction: 0.3,
+      maxContextChars: 240,
+      queryBudgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: 3,
+      fittedNodeCount: expect.any(Number),
+      droppedNodeCount: expect.any(Number),
+    }));
+    if ((result.brainDecision?.droppedNodeCount ?? 0) > 0) {
+      expect(result.brainDecision?.fittingDropReasons).toEqual(expect.objectContaining({
+        omitted_for_partial_serve: expect.any(Number),
+      }));
+    } else {
+      expect(result.brainDecision?.fittingDropReasons ?? null).toBeNull();
+    }
+    expect(brain.recordTraceSelectionMetadata).toHaveBeenCalledWith(
+      expect.objectContaining({ id: "tr_structured_1" }),
+      expect.objectContaining({
+        interruptionStage: "traversal",
+        interruptionReason: "deadline_during_traversal",
+        fitStrategy: "structured_node_budget",
+        retrievedNodeCount: 3,
       }),
     );
   });

@@ -1,0 +1,79 @@
+{
+  "contract": "recorded_session_trace.v1",
+  "traceId": "trace-plan-proof-artifact-triage",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T02:20:00.000Z",
+  "bundleBuiltAt": "2026-04-01T02:30:00.000Z",
+  "sessionId": "session-plan-proof-artifact-triage",
+  "channel": "cli",
+  "sourceStream": "openclaw/runtime/cli",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from docs/reproduce-eval.md"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-trace-plan-proof-artifact-triage",
+    "snapshotId": "snapshot-trace-plan-proof-artifact-triage",
+    "capturedAt": "2026-04-01T02:19:00.000Z",
+    "rootDir": "/tmp/openclawbrain-canonical-frozen-20/trace-plan-proof-artifact-triage",
+    "branch": "main",
+    "revision": "rev-trace-plan-proof-artifact-triage",
+    "labels": [
+      "canonical-frozen-20"
+    ]
+  },
+  "evalTurnCount": 1,
+  "seedBuiltAt": "2026-04-01T02:21:00.000Z",
+  "seedActivatedAt": "2026-04-01T02:22:00.000Z",
+  "seedCues": [
+    {
+      "cueId": "cue-artifact-order",
+      "createdAt": "2026-04-01T02:18:30.000Z",
+      "content": "Start replay proof triage with summary.md, validation-report.json, hashes.json, coverage-snapshot.json, and hardening-snapshot.json before diving into bundle.json or the per-mode files.",
+      "kind": "teaching"
+    }
+  ],
+  "turns": [
+    {
+      "turnId": "artifact-triage-turn-1",
+      "createdAt": "2026-04-01T02:23:00.000Z",
+      "deliveredAt": "2026-04-01T02:23:20.000Z",
+      "userMessage": "I reran a proof bundle. What should I inspect first?",
+      "runtimeHints": [
+        "triage",
+        "artifacts"
+      ],
+      "feedback": [
+        {
+          "createdAt": "2026-04-01T02:23:35.000Z",
+          "content": "Start with summary.md, validation-report.json, and hashes.json.",
+          "kind": "teaching"
+        }
+      ],
+      "expectedContextPhrases": [
+        "summary.md",
+        "validation-report.json",
+        "hashes.json"
+      ],
+      "minimumPhraseHits": 1
+    },
+    {
+      "turnId": "artifact-triage-turn-2",
+      "createdAt": "2026-04-01T02:24:40.000Z",
+      "deliveredAt": "2026-04-01T02:25:00.000Z",
+      "userMessage": "Convert that into an execution checklist.",
+      "runtimeHints": [
+        "checklist",
+        "execution"
+      ],
+      "expectedContextPhrases": [
+        "summary.md",
+        "validation-report.json",
+        "hashes.json"
+      ],
+      "minimumPhraseHits": 2
+    }
+  ]
+}

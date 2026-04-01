@@ -385,6 +385,8 @@ export interface PolicyGradientSupervisionArtifact {
   turnCompileEventId: string | null;
   activePackGraphChecksum: string | null;
   bindingMode: BrainObservationBindingMode | null;
+  attributionQuality: ObservationBindingQuality | null;
+  feedbackRichness: TeacherFeedbackRichness | null;
   traceRequestDigest: string | null;
   traceSelectedNodeIds: string[];
   traceSelectedPathNodeIds: string[];
@@ -397,6 +399,9 @@ export interface PolicyGradientEpisodeUpdateArtifact {
   supervisionIds: string[];
   reward: number;
   rewardSource: RewardSource | null;
+  attributionQuality: ObservationBindingQuality | "mixed" | null;
+  feedbackRichness: TeacherFeedbackRichness | "mixed" | null;
+  updateReason: string;
   baselineBefore: number;
   baselineAfter: number;
   advantage: number;
@@ -676,6 +681,11 @@ export type BrainPersistenceMode =
   | "redacted"
   | "redacted_with_operator_audit";
 
+export interface BrainAgentIdentity {
+  agentId: string;
+  lane: string;
+}
+
 export interface DecisionTraceOperatorAudit {
   queryText: string;
   injectedNodeSummaries: DecisionTraceInjectedNodeSummary[];
@@ -826,12 +836,18 @@ export interface BrainInterruptionMetadata {
 export interface InterruptionAccounting {
   /** Frontier node IDs that were queued but never expanded due to deadline. */
   droppedFrontierNodeIds: string[];
+  /** Target node IDs that were dropped before commit across interrupted expansions. */
+  droppedProposalNodeIds: string[];
+  /** Source node being expanded, or the next frontier node, when interruption fired. */
+  interruptedExpansionSourceNodeId: string | null;
   /** Number of source-node expansions that completed before interruption. */
   completedExpansionCount: number;
   /** Maximum expansions allowed (maxHops). */
   maxExpansions: number;
   /** Budget chars consumed by fired nodes. */
   budgetUsed: number;
+  /** Budget chars still available when interruption fired. */
+  remainingBudgetChars: number;
   /** Total budget chars available at query start. */
   budgetTotal: number;
   /** Fraction of budget consumed: budgetUsed / budgetTotal (0–1). */
@@ -847,12 +863,14 @@ export type BrainFitStrategy =
   | "legacy_raw_clip";
 
 export type BrainFittingDropReason =
-  | "omitted_for_max_context_chars";
+  | "omitted_for_max_context_chars"
+  | "omitted_for_partial_serve";
 
 export interface DecisionRouteTrace {
   persistenceMode?: BrainPersistenceMode | null;
   requestDigest: string;
   conversationId: number | null;
+  agentIdentity?: BrainAgentIdentity | null;
   activePackId: string | null;
   routerIdentity: string;
   candidateNodeIds: string[];
@@ -1016,6 +1034,17 @@ export type BrainObservationBindingMode =
   | "legacy_heuristic"
   | "unbound";
 
+export type ObservationBindingQuality =
+  | "exact"
+  | "fallback"
+  | "unbound";
+
+export type TeacherFeedbackRichness =
+  | "followup_and_tool"
+  | "followup_only"
+  | "tool_only"
+  | "sparse";
+
 export interface BrainObservationServedArtifact {
   [key: string]: unknown;
 }
@@ -1030,6 +1059,7 @@ export interface BrainObservationOperatorAudit {
 
 export interface BrainObservationRouteMetadata {
   requestDigest: string | null;
+  agentIdentity?: BrainAgentIdentity | null;
   activePackId: string | null;
   routerIdentity: string | null;
   persistenceMode?: BrainPersistenceMode | null;
@@ -1138,6 +1168,9 @@ export type ContextFeedbackFocusAction =
 
 export interface ContextFeedbackCoverageSummary {
   routeTraceCount: number;
+  identifiedRouteTraceCount: number;
+  unidentifiedRouteTraceCount: number;
+  agentIdentityCoverage: number;
   observationCount: number;
   completedObservationCount: number;
   supervisedTraceCount: number;
@@ -1152,6 +1185,7 @@ export interface ContextFeedbackLatestVerdict {
   traceId: string;
   episodeId: string;
   observationId: string | null;
+  agentIdentity: BrainAgentIdentity | null;
   source: RewardSource;
   verdict: ContextFeedbackVerdict;
   score: number;
@@ -1161,6 +1195,18 @@ export interface ContextFeedbackLatestVerdict {
   createdAt: number;
 }
 
+export interface ContextFeedbackAgentCoverageSummary {
+  agentIdentity: BrainAgentIdentity;
+  routeTraceCount: number;
+  supervisedTraceCount: number;
+  unsupervisedTraceCount: number;
+  supervisionCoverage: number;
+  verdictCounts: Record<ContextFeedbackVerdict, number>;
+  latestTraceAt: number | null;
+  latestVerdictAt: number | null;
+  detail: string;
+}
+
 export interface ContextFeedbackSummary {
   scoreBands: {
     helpfulMin: number;
@@ -1168,6 +1214,7 @@ export interface ContextFeedbackSummary {
   };
   verdictCounts: Record<ContextFeedbackVerdict, number>;
   coverage: ContextFeedbackCoverageSummary;
+  agents: ContextFeedbackAgentCoverageSummary[];
   latest: ContextFeedbackLatestVerdict | null;
   focus: {
     action: ContextFeedbackFocusAction;
@@ -1315,6 +1362,22 @@ export function resolveObservationBindingMode(params: {
     return "trace_id";
   }
   return "unbound";
+}
+
+export function classifyObservationBindingQuality(
+  mode: BrainObservationBindingMode,
+): ObservationBindingQuality {
+  if (
+    mode === "exact_decision_id"
+    || mode === "exact_selection_digest"
+    || mode === "turn_compile_event_id"
+  ) {
+    return "exact";
+  }
+  if (mode === "unbound") {
+    return "unbound";
+  }
+  return "fallback";
 }
 
 // ═══════════════════════════════════════════

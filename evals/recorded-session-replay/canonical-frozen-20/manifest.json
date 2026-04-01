@@ -1,0 +1,764 @@
+{
+  "contract": "canonical_recorded_session_trace_set_manifest.v1",
+  "setId": "canonical-frozen-20",
+  "frozenAt": "2026-04-01T00:00:00.000Z",
+  "traceContract": "recorded_session_trace.v1",
+  "root": "evals/recorded-session-replay/canonical-frozen-20",
+  "traceCount": 20,
+  "categoryOrder": [
+    "direct_answer",
+    "plan_execution",
+    "retrieval_memory_heavy",
+    "correction_follow_up_heavy"
+  ],
+  "categoryCounts": {
+    "direct_answer": 5,
+    "plan_execution": 5,
+    "retrieval_memory_heavy": 5,
+    "correction_follow_up_heavy": 5
+  },
+  "sourceSummary": {
+    "repo_published_fixture": 2,
+    "repo_test_fixture_static": 2,
+    "derived_replayable_equivalent": 13,
+    "repo_test_fixture_normalized": 3
+  },
+  "realTraceCoverage": {
+    "availableCount": 0,
+    "missingCount": 20,
+    "summary": "No checked-in recorded_session_trace.v1 input in this repo carries provenance strong enough to call it a verified first-party real production trace. This freeze therefore uses replayable equivalents only: 7 sourced directly or normalized from existing repo fixtures and 13 newly frozen equivalents derived from checked-in docs/tests."
+  },
+  "redactionPolicy": {
+    "additionalRedactionRequired": false,
+    "summary": "All 20 inputs are synthetic or sanitized replayable equivalents. No extra redaction was needed during freeze; provenance and synthetic status are recorded in this manifest."
+  },
+  "bundlePathTemplate": "docs/evidence/<YYYY-MM-DD>/<git-sha>/recorded-session-replay/<trace-id>/",
+  "selectionPrinciples": [
+    "Prefer checked-in replayable recorded_session_trace.v1 sources before authoring any new equivalent.",
+    "If no suitable source exists for a slot, freeze a replayable equivalent and mark the real-trace gap explicitly in provenance.",
+    "Keep every slot replayable through the existing recorded-session proof-bundle writer.",
+    "Preserve fixed category counts and stable on-disk paths so downstream lanes can build without re-deciding layout."
+  ],
+  "entries": [
+    {
+      "slotId": "direct-answer-01",
+      "title": "README-before-editing rule recall",
+      "category": "direct_answer",
+      "sourceKind": "repo_published_fixture",
+      "sourcePaths": [
+        "docs/evidence/2026-03-26/0ca08242290103617b5bcaa2f80522d0124fc53d/recorded-session-replay/trace-train-freeze-eval/trace.json"
+      ],
+      "tags": [
+        "readme",
+        "rule-recall"
+      ],
+      "notes": [
+        "Published proof-bundle trace checked into docs/evidence. The source itself is a synthetic replay fixture, not a verified production session."
+      ],
+      "path": "traces/direct-answer/direct-answer-01/trace.json",
+      "status": "frozen_replayable_equivalent",
+      "realTraceSourceAvailable": false,
+      "sanitization": {
+        "classification": "synthetic_or_sanitized_repo_fixture",
+        "redactionRequired": false,
+        "notes": [
+          "Checked-in source fixture already carries sanitized or synthetic content; no additional redaction was needed for freeze."
+        ]
+      },
+      "shape": {
+        "turnCount": 3,
+        "evalTurnCount": 2,
+        "feedbackKinds": [
+          "approval"
+        ],
+        "followUpTurnCount": 2,
+        "runtimeHintTurnCount": 0
+      }
+    },
+    {
+      "slotId": "direct-answer-02",
+      "title": "Frozen identity rule recall",
+      "category": "direct_answer",
+      "sourceKind": "repo_test_fixture_static",
+      "sourcePaths": [
+        "packages/openclaw/dist/test/replay-freeze-identity.test.js"
+      ],
+      "tags": [
+        "rule-recall",
+        "frozen-identity"
+      ],
+      "notes": [
+        "Exactly transcribed from the checked-in OpenClaw package test fixture."
+      ],
+      "path": "traces/direct-answer/direct-answer-02/trace.json",
+      "status": "frozen_replayable_equivalent",
+      "realTraceSourceAvailable": false,
+      "sanitization": {
+        "classification": "synthetic_or_sanitized_repo_fixture",
+        "redactionRequired": false,
+        "notes": [
+          "Checked-in source fixture already carries sanitized or synthetic content; no additional redaction was needed for freeze."
+        ]
+      },
+      "shape": {
+        "turnCount": 3,
+        "evalTurnCount": 2,
+        "feedbackKinds": [
+          "approval"
+        ],
+        "followUpTurnCount": 2,
+        "runtimeHintTurnCount": 0
+      }
+    },
+    {
+      "slotId": "direct-answer-03",
+      "title": "Proof bundle layout answer",
+      "category": "direct_answer",
+      "sourceKind": "derived_replayable_equivalent",
+      "sourcePaths": [
+        "docs/internal/recorded-session-replay.md"
+      ],
+      "tags": [
+        "proof-layout",
+        "single-answer"
+      ],
+      "notes": [
+        "Real trace source missing. Frozen as a replayable equivalent derived from the fixed proof-bundle layout doc."
+      ],
+      "path": "traces/direct-answer/direct-answer-03/trace.json",
+      "status": "frozen_replayable_equivalent",
+      "realTraceSourceAvailable": false,
+      "sanitization": {
+        "classification": "synthetic_replayable_equivalent",
+        "redactionRequired": false,
+        "notes": [
+          "Authored from checked-in docs/tests because no stronger real-trace source is present in-repo."
+        ]
+      },
+      "shape": {
+        "turnCount": 2,
+        "evalTurnCount": 1,
+        "feedbackKinds": [
+          "teaching"
+        ],
+        "followUpTurnCount": 1,
+        "runtimeHintTurnCount": 2
+      }
+    },
+    {
+      "slotId": "direct-answer-04",
+      "title": "Proof rerun command answer",
+      "category": "direct_answer",
+      "sourceKind": "derived_replayable_equivalent",
+      "sourcePaths": [
+        "docs/reproduce-eval.md"
+      ],
+      "tags": [
+        "command",
+        "proof-rerun"
+      ],
+      "notes": [
+        "Real trace source missing. Frozen as a replayable equivalent around the checked-in reproduction command."
+      ],
+      "path": "traces/direct-answer/direct-answer-04/trace.json",
+      "status": "frozen_replayable_equivalent",
+      "realTraceSourceAvailable": false,
+      "sanitization": {
+        "classification": "synthetic_replayable_equivalent",
+        "redactionRequired": false,
+        "notes": [
+          "Authored from checked-in docs/tests because no stronger real-trace source is present in-repo."
+        ]
+      },
+      "shape": {
+        "turnCount": 2,
+        "evalTurnCount": 1,
+        "feedbackKinds": [
+          "teaching"
+        ],
+        "followUpTurnCount": 1,
+        "runtimeHintTurnCount": 1
+      }
+    },
+    {
+      "slotId": "direct-answer-05",
+      "title": "Root release verification answer",
+      "category": "direct_answer",
+      "sourceKind": "derived_replayable_equivalent",
+      "sourcePaths": [
+        "package.json"
+      ],
+      "tags": [
+        "release",
+        "command"
+      ],
+      "notes": [
+        "Real trace source missing. Frozen as a replayable equivalent around the root release verification scripts."
+      ],
+      "path": "traces/direct-answer/direct-answer-05/trace.json",
+      "status": "frozen_replayable_equivalent",
+      "realTraceSourceAvailable": false,
+      "sanitization": {
+        "classification": "synthetic_replayable_equivalent",
+        "redactionRequired": false,
+        "notes": [
+          "Authored from checked-in docs/tests because no stronger real-trace source is present in-repo."
+        ]
+      },
+      "shape": {
+        "turnCount": 2,
+        "evalTurnCount": 1,
+        "feedbackKinds": [
+          "teaching"
+        ],
+        "followUpTurnCount": 1,
+        "runtimeHintTurnCount": 1
+      }
+    },
+    {
+      "slotId": "plan-execution-01",
+      "title": "Master proof plan and execution follow-through",
+      "category": "plan_execution",
+      "sourceKind": "repo_test_fixture_normalized",
+      "sourcePaths": [
+        "packages/cli/dist/test/replay-score-resolution.test.js"
+      ],
+      "tags": [
+        "plan",
+        "execution",
+        "master-plan"
+      ],
+      "notes": [
+        "Normalized from a dynamic test fixture by freezing workspace.rootDir to a stable path."
+      ],
+      "path": "traces/plan-execution/plan-execution-01/trace.json",
+      "status": "frozen_replayable_equivalent",
+      "realTraceSourceAvailable": false,
+      "sanitization": {
+        "classification": "synthetic_or_sanitized_repo_fixture",
+        "redactionRequired": false,
+        "notes": [
+          "Checked-in source fixture already carries sanitized or synthetic content; no additional redaction was needed for freeze."
+        ]
+      },
+      "shape": {
+        "turnCount": 3,
+        "evalTurnCount": 1,
+        "feedbackKinds": [
+          "teaching"
+        ],
+        "followUpTurnCount": 2,
+        "runtimeHintTurnCount": 3
+      }
+    },
+    {
+      "slotId": "plan-execution-02",
+      "title": "Learned-route proof run kickoff",
+      "category": "plan_execution",
+      "sourceKind": "repo_test_fixture_normalized",
+      "sourcePaths": [
+        "packages/cli/dist/test/learned-route-seed-carry-forward.test.js"
+      ],
+      "tags": [
+        "plan",
+        "proof-run",
+        "kickoff"
+      ],
+      "notes": [
+        "Normalized from a dynamic test fixture by freezing workspace.rootDir to a stable path."
+      ],
+      "path": "traces/plan-execution/plan-execution-02/trace.json",
+      "status": "frozen_replayable_equivalent",
+      "realTraceSourceAvailable": false,
+      "sanitization": {
+        "classification": "synthetic_or_sanitized_repo_fixture",
+        "redactionRequired": false,
+        "notes": [
+          "Checked-in source fixture already carries sanitized or synthetic content; no additional redaction was needed for freeze."
+        ]
+      },
+      "shape": {
+        "turnCount": 2,
+        "evalTurnCount": 1,
+        "feedbackKinds": [
+          "teaching"
+        ],
+        "followUpTurnCount": 1,
+        "runtimeHintTurnCount": 2
+      }
+    },
+    {
+      "slotId": "plan-execution-03",
+      "title": "Replay regression workflow plan",
+      "category": "plan_execution",
+      "sourceKind": "derived_replayable_equivalent",
+      "sourcePaths": [
+        "docs/reproduce-eval.md",
+        "docs/internal/recorded-session-replay.md"
+      ],
+      "tags": [
+        "regression",
+        "workflow",
+        "hash-drift"
+      ],
+      "notes": [
+        "Real trace source missing. Frozen as a replayable equivalent around the checked-in replay regression workflow."
+      ],
+      "path": "traces/plan-execution/plan-execution-03/trace.json",
+      "status": "frozen_replayable_equivalent",
+      "realTraceSourceAvailable": false,
+      "sanitization": {
+        "classification": "synthetic_replayable_equivalent",
+        "redactionRequired": false,
+        "notes": [
+          "Authored from checked-in docs/tests because no stronger real-trace source is present in-repo."
+        ]
+      },
+      "shape": {
+        "turnCount": 2,
+        "evalTurnCount": 1,
+        "feedbackKinds": [
+          "teaching"
+        ],
+        "followUpTurnCount": 1,
+        "runtimeHintTurnCount": 2
+      }
+    },
+    {
+      "slotId": "plan-execution-04",
+      "title": "Proof artifact triage checklist",
+      "category": "plan_execution",
+      "sourceKind": "derived_replayable_equivalent",
+      "sourcePaths": [
+        "docs/reproduce-eval.md"
+      ],
+      "tags": [
+        "triage",
+        "artifacts",
+        "checklist"
+      ],
+      "notes": [
+        "Real trace source missing. Frozen as a replayable equivalent around the checked-in artifact inspection order."
+      ],
+      "path": "traces/plan-execution/plan-execution-04/trace.json",
+      "status": "frozen_replayable_equivalent",
+      "realTraceSourceAvailable": false,
+      "sanitization": {
+        "classification": "synthetic_replayable_equivalent",
+        "redactionRequired": false,
+        "notes": [
+          "Authored from checked-in docs/tests because no stronger real-trace source is present in-repo."
+        ]
+      },
+      "shape": {
+        "turnCount": 2,
+        "evalTurnCount": 1,
+        "feedbackKinds": [
+          "teaching"
+        ],
+        "followUpTurnCount": 1,
+        "runtimeHintTurnCount": 2
+      }
+    },
+    {
+      "slotId": "plan-execution-05",
+      "title": "Lane handoff checklist",
+      "category": "plan_execution",
+      "sourceKind": "derived_replayable_equivalent",
+      "sourcePaths": [
+        "task-artifacts/T-20260331-077/lane-b-serving.md",
+        "task-status/T-20260331-077/lane-b-serving.json"
+      ],
+      "tags": [
+        "handoff",
+        "reporting",
+        "execution"
+      ],
+      "notes": [
+        "Real trace source missing. Frozen as a replayable equivalent around the repo's checked-in handoff artifact pattern."
+      ],
+      "path": "traces/plan-execution/plan-execution-05/trace.json",
+      "status": "frozen_replayable_equivalent",
+      "realTraceSourceAvailable": false,
+      "sanitization": {
+        "classification": "synthetic_replayable_equivalent",
+        "redactionRequired": false,
+        "notes": [
+          "Authored from checked-in docs/tests because no stronger real-trace source is present in-repo."
+        ]
+      },
+      "shape": {
+        "turnCount": 2,
+        "evalTurnCount": 1,
+        "feedbackKinds": [
+          "teaching"
+        ],
+        "followUpTurnCount": 1,
+        "runtimeHintTurnCount": 1
+      }
+    },
+    {
+      "slotId": "retrieval-memory-01",
+      "title": "Routing guide retrieval replay",
+      "category": "retrieval_memory_heavy",
+      "sourceKind": "repo_published_fixture",
+      "sourcePaths": [
+        "docs/evidence/2026-03-26/0ca08242290103617b5bcaa2f80522d0124fc53d/recorded-session-replay/trace-comparative-replay/trace.json"
+      ],
+      "tags": [
+        "retrieval",
+        "routing-guide",
+        "follow-up"
+      ],
+      "notes": [
+        "Published proof-bundle trace checked into docs/evidence. The source itself is a synthetic replay fixture, not a verified production session."
+      ],
+      "path": "traces/retrieval-memory-heavy/retrieval-memory-01/trace.json",
+      "status": "frozen_replayable_equivalent",
+      "realTraceSourceAvailable": false,
+      "sanitization": {
+        "classification": "synthetic_or_sanitized_repo_fixture",
+        "redactionRequired": false,
+        "notes": [
+          "Checked-in source fixture already carries sanitized or synthetic content; no additional redaction was needed for freeze."
+        ]
+      },
+      "shape": {
+        "turnCount": 2,
+        "evalTurnCount": 1,
+        "feedbackKinds": [
+          "approval",
+          "teaching"
+        ],
+        "followUpTurnCount": 1,
+        "runtimeHintTurnCount": 2
+      }
+    },
+    {
+      "slotId": "retrieval-memory-02",
+      "title": "Host-proof signal recall under follow-up pressure",
+      "category": "retrieval_memory_heavy",
+      "sourceKind": "repo_test_fixture_normalized",
+      "sourcePaths": [
+        "packages/cli/dist/test/learned-route-seed-carry-forward.test.js"
+      ],
+      "tags": [
+        "retrieval",
+        "host-proof",
+        "follow-up"
+      ],
+      "notes": [
+        "Normalized from a dynamic test fixture by freezing workspace.rootDir to a stable path."
+      ],
+      "path": "traces/retrieval-memory-heavy/retrieval-memory-02/trace.json",
+      "status": "frozen_replayable_equivalent",
+      "realTraceSourceAvailable": false,
+      "sanitization": {
+        "classification": "synthetic_or_sanitized_repo_fixture",
+        "redactionRequired": false,
+        "notes": [
+          "Checked-in source fixture already carries sanitized or synthetic content; no additional redaction was needed for freeze."
+        ]
+      },
+      "shape": {
+        "turnCount": 3,
+        "evalTurnCount": 1,
+        "feedbackKinds": [
+          "teaching"
+        ],
+        "followUpTurnCount": 2,
+        "runtimeHintTurnCount": 3
+      }
+    },
+    {
+      "slotId": "retrieval-memory-03",
+      "title": "Replay semantic hash recall",
+      "category": "retrieval_memory_heavy",
+      "sourceKind": "derived_replayable_equivalent",
+      "sourcePaths": [
+        "docs/internal/recorded-session-replay.md"
+      ],
+      "tags": [
+        "retrieval",
+        "hashes",
+        "memory"
+      ],
+      "notes": [
+        "Real trace source missing. Frozen as a replayable equivalent around the semantic hash contract."
+      ],
+      "path": "traces/retrieval-memory-heavy/retrieval-memory-03/trace.json",
+      "status": "frozen_replayable_equivalent",
+      "realTraceSourceAvailable": false,
+      "sanitization": {
+        "classification": "synthetic_replayable_equivalent",
+        "redactionRequired": false,
+        "notes": [
+          "Authored from checked-in docs/tests because no stronger real-trace source is present in-repo."
+        ]
+      },
+      "shape": {
+        "turnCount": 2,
+        "evalTurnCount": 1,
+        "feedbackKinds": [
+          "teaching"
+        ],
+        "followUpTurnCount": 1,
+        "runtimeHintTurnCount": 2
+      }
+    },
+    {
+      "slotId": "retrieval-memory-04",
+      "title": "Routing prior doc follow-up lookup",
+      "category": "retrieval_memory_heavy",
+      "sourceKind": "derived_replayable_equivalent",
+      "sourcePaths": [
+        "docs/architecture/routing-prior.md",
+        "packages/cli/dist/test/comparative-replay-modes.test.js"
+      ],
+      "tags": [
+        "retrieval",
+        "routing",
+        "follow-up"
+      ],
+      "notes": [
+        "Real trace source missing. Frozen as a replayable equivalent combining the routing-guide fixture with the checked-in routing-prior doc path."
+      ],
+      "path": "traces/retrieval-memory-heavy/retrieval-memory-04/trace.json",
+      "status": "frozen_replayable_equivalent",
+      "realTraceSourceAvailable": false,
+      "sanitization": {
+        "classification": "synthetic_replayable_equivalent",
+        "redactionRequired": false,
+        "notes": [
+          "Authored from checked-in docs/tests because no stronger real-trace source is present in-repo."
+        ]
+      },
+      "shape": {
+        "turnCount": 2,
+        "evalTurnCount": 1,
+        "feedbackKinds": [
+          "teaching"
+        ],
+        "followUpTurnCount": 1,
+        "runtimeHintTurnCount": 2
+      }
+    },
+    {
+      "slotId": "retrieval-memory-05",
+      "title": "Restart checklist archive lookup",
+      "category": "retrieval_memory_heavy",
+      "sourceKind": "derived_replayable_equivalent",
+      "sourcePaths": [
+        "packages/cli/dist/test/recorded-session-replay-proof-bundle.test.js"
+      ],
+      "tags": [
+        "retrieval",
+        "restart-checklist",
+        "follow-up"
+      ],
+      "notes": [
+        "Real trace source missing. Frozen as a replayable equivalent around the checked-in restart-checklist fixture language."
+      ],
+      "path": "traces/retrieval-memory-heavy/retrieval-memory-05/trace.json",
+      "status": "frozen_replayable_equivalent",
+      "realTraceSourceAvailable": false,
+      "sanitization": {
+        "classification": "synthetic_replayable_equivalent",
+        "redactionRequired": false,
+        "notes": [
+          "Authored from checked-in docs/tests because no stronger real-trace source is present in-repo."
+        ]
+      },
+      "shape": {
+        "turnCount": 2,
+        "evalTurnCount": 1,
+        "feedbackKinds": [
+          "teaching"
+        ],
+        "followUpTurnCount": 1,
+        "runtimeHintTurnCount": 1
+      }
+    },
+    {
+      "slotId": "correction-follow-up-01",
+      "title": "Restart order correction replay",
+      "category": "correction_follow_up_heavy",
+      "sourceKind": "repo_test_fixture_static",
+      "sourcePaths": [
+        "packages/cli/dist/test/recorded-session-replay-proof-bundle.test.js"
+      ],
+      "tags": [
+        "correction",
+        "restart-order",
+        "follow-up"
+      ],
+      "notes": [
+        "Exactly transcribed from the checked-in proof-bundle writer test fixture."
+      ],
+      "path": "traces/correction-follow-up-heavy/correction-follow-up-01/trace.json",
+      "status": "frozen_replayable_equivalent",
+      "realTraceSourceAvailable": false,
+      "sanitization": {
+        "classification": "synthetic_or_sanitized_repo_fixture",
+        "redactionRequired": false,
+        "notes": [
+          "Checked-in source fixture already carries sanitized or synthetic content; no additional redaction was needed for freeze."
+        ]
+      },
+      "shape": {
+        "turnCount": 2,
+        "evalTurnCount": 1,
+        "feedbackKinds": [
+          "correction",
+          "teaching"
+        ],
+        "followUpTurnCount": 1,
+        "runtimeHintTurnCount": 1
+      }
+    },
+    {
+      "slotId": "correction-follow-up-02",
+      "title": "Explicit archive-path correction",
+      "category": "correction_follow_up_heavy",
+      "sourceKind": "derived_replayable_equivalent",
+      "sourcePaths": [
+        "packages/cli/dist/test/recorded-session-replay-proof-bundle.test.js"
+      ],
+      "tags": [
+        "correction",
+        "explicit-paths"
+      ],
+      "notes": [
+        "Real trace source missing. Frozen as a replayable equivalent emphasizing the correction-heavy path/label requirement."
+      ],
+      "path": "traces/correction-follow-up-heavy/correction-follow-up-02/trace.json",
+      "status": "frozen_replayable_equivalent",
+      "realTraceSourceAvailable": false,
+      "sanitization": {
+        "classification": "synthetic_replayable_equivalent",
+        "redactionRequired": false,
+        "notes": [
+          "Authored from checked-in docs/tests because no stronger real-trace source is present in-repo."
+        ]
+      },
+      "shape": {
+        "turnCount": 2,
+        "evalTurnCount": 1,
+        "feedbackKinds": [
+          "correction"
+        ],
+        "followUpTurnCount": 1,
+        "runtimeHintTurnCount": 1
+      }
+    },
+    {
+      "slotId": "correction-follow-up-03",
+      "title": "Rollout verdict correction",
+      "category": "correction_follow_up_heavy",
+      "sourceKind": "derived_replayable_equivalent",
+      "sourcePaths": [
+        "packages/cli/dist/test/replay-score-resolution.test.js"
+      ],
+      "tags": [
+        "correction",
+        "verdict",
+        "plan"
+      ],
+      "notes": [
+        "Real trace source missing. Frozen as a replayable equivalent around the rollout-verdict correction in the score-resolution fixture."
+      ],
+      "path": "traces/correction-follow-up-heavy/correction-follow-up-03/trace.json",
+      "status": "frozen_replayable_equivalent",
+      "realTraceSourceAvailable": false,
+      "sanitization": {
+        "classification": "synthetic_replayable_equivalent",
+        "redactionRequired": false,
+        "notes": [
+          "Authored from checked-in docs/tests because no stronger real-trace source is present in-repo."
+        ]
+      },
+      "shape": {
+        "turnCount": 2,
+        "evalTurnCount": 1,
+        "feedbackKinds": [
+          "correction"
+        ],
+        "followUpTurnCount": 1,
+        "runtimeHintTurnCount": 1
+      }
+    },
+    {
+      "slotId": "correction-follow-up-04",
+      "title": "Deeper proof story rewrite",
+      "category": "correction_follow_up_heavy",
+      "sourceKind": "derived_replayable_equivalent",
+      "sourcePaths": [
+        "packages/cli/dist/test/learned-route-seed-carry-forward.test.js"
+      ],
+      "tags": [
+        "correction",
+        "rewrite",
+        "host-proof"
+      ],
+      "notes": [
+        "Real trace source missing. Frozen as a replayable equivalent around the deep-plan and host-proof-signal correction pattern."
+      ],
+      "path": "traces/correction-follow-up-heavy/correction-follow-up-04/trace.json",
+      "status": "frozen_replayable_equivalent",
+      "realTraceSourceAvailable": false,
+      "sanitization": {
+        "classification": "synthetic_replayable_equivalent",
+        "redactionRequired": false,
+        "notes": [
+          "Authored from checked-in docs/tests because no stronger real-trace source is present in-repo."
+        ]
+      },
+      "shape": {
+        "turnCount": 3,
+        "evalTurnCount": 1,
+        "feedbackKinds": [
+          "correction",
+          "teaching"
+        ],
+        "followUpTurnCount": 2,
+        "runtimeHintTurnCount": 1
+      }
+    },
+    {
+      "slotId": "correction-follow-up-05",
+      "title": "Per-mode path correction",
+      "category": "correction_follow_up_heavy",
+      "sourceKind": "derived_replayable_equivalent",
+      "sourcePaths": [
+        "docs/internal/recorded-session-replay.md"
+      ],
+      "tags": [
+        "correction",
+        "paths",
+        "mode-files"
+      ],
+      "notes": [
+        "Real trace source missing. Frozen as a replayable equivalent around the per-mode output path requirement."
+      ],
+      "path": "traces/correction-follow-up-heavy/correction-follow-up-05/trace.json",
+      "status": "frozen_replayable_equivalent",
+      "realTraceSourceAvailable": false,
+      "sanitization": {
+        "classification": "synthetic_replayable_equivalent",
+        "redactionRequired": false,
+        "notes": [
+          "Authored from checked-in docs/tests because no stronger real-trace source is present in-repo."
+        ]
+      },
+      "shape": {
+        "turnCount": 2,
+        "evalTurnCount": 1,
+        "feedbackKinds": [
+          "correction"
+        ],
+        "followUpTurnCount": 1,
+        "runtimeHintTurnCount": 1
+      }
+    }
+  ]
+}

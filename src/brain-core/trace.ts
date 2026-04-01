@@ -4,6 +4,7 @@
 
 import { createHash, randomUUID } from "node:crypto";
 import type {
+  BrainAgentIdentity,
   BrainCompileReportV1,
   BrainPersistenceMode,
   BrainNode,
@@ -430,6 +431,34 @@ function buildCompileItem(params: {
   };
 }
 
+function orderedCompileInjectedNodeSummaries(
+  routeTrace: DecisionRouteTrace,
+): DecisionTraceInjectedNodeSummary[] {
+  const corrections = routeTrace.injectedNodeSummaries.filter((node) => node.kind === "correction");
+  const evidence = routeTrace.injectedNodeSummaries
+    .filter((node) => node.kind !== "correction" && node.kind !== "workflow" && node.kind !== "toolcard");
+  const playbooks = routeTrace.injectedNodeSummaries
+    .filter((node) => node.kind === "workflow" || node.kind === "toolcard");
+  return [...corrections, ...evidence, ...playbooks];
+}
+
+function expandCompileDropReasons(
+  reasons: Record<string, number> | null | undefined,
+  total: number,
+  fallbackReason: string,
+): string[] {
+  const expanded = Object.entries(reasons ?? {})
+    .filter(([, count]) => Number.isFinite(count) && count > 0)
+    .sort(([leftKey, leftCount], [rightKey, rightCount]) => (
+      rightCount === leftCount ? leftKey.localeCompare(rightKey) : rightCount - leftCount
+    ))
+    .flatMap(([reason, count]) => Array.from({ length: count }, () => reason));
+  while (expanded.length < total) {
+    expanded.push(fallbackReason);
+  }
+  return expanded.slice(0, total);
+}
+
 export function buildBrainCompileReport(params: {
   routeTrace: DecisionRouteTrace | null | undefined;
   decision?: {
@@ -448,8 +477,22 @@ export function buildBrainCompileReport(params: {
   const selectedIds = new Set(routeTrace.selectedNodeIds);
   const selectedTraversalIds = routeTrace.selectedTraversalNodeIds.length;
   const candidateIds = routeTrace.candidateNodeIds;
-  const droppedIds = candidateIds.filter((nodeId) => !selectedIds.has(nodeId));
-  const selectedItems = routeTrace.injectedNodeSummaries
+  const traversalDroppedIds = candidateIds.filter((nodeId) => !selectedIds.has(nodeId));
+  const injectedNodeSummaries = routeTrace.selectionMetadata.fitStrategy === "structured_node_budget"
+    ? orderedCompileInjectedNodeSummaries(routeTrace)
+    : routeTrace.injectedNodeSummaries;
+  const fittedNodeCount = routeTrace.selectionMetadata.fitStrategy === "structured_node_budget"
+    && Number.isFinite(routeTrace.selectionMetadata.fittedNodeCount)
+    ? Math.max(0, Math.min(routeTrace.selectionMetadata.fittedNodeCount ?? 0, injectedNodeSummaries.length))
+    : injectedNodeSummaries.length;
+  const selectedSummaries = injectedNodeSummaries.slice(0, fittedNodeCount);
+  const clippedSummaries = injectedNodeSummaries.slice(fittedNodeCount);
+  const clippedSummaryReasons = expandCompileDropReasons(
+    routeTrace.selectionMetadata.fittingDropReasons ?? null,
+    clippedSummaries.length,
+    "omitted_after_selection",
+  );
+  const selectedItems = selectedSummaries
     .slice(0, COMPILE_MAX_BUCKET_ITEMS)
     .map((summary) => buildCompileItem({
       nodeId: summary.nodeId,
@@ -466,8 +509,20 @@ export function buildBrainCompileReport(params: {
     }));
 
   const canExposeRawSource = routeTrace.persistenceMode === "redacted_with_operator_audit";
-  const droppedItems = droppedIds
-    .slice(0, COMPILE_MAX_BUCKET_ITEMS)
+  const clippedDroppedItems = clippedSummaries.map((summary, index) => buildCompileItem({
+    nodeId: summary.nodeId,
+    provenanceRef: summary.provenanceRef,
+    kind: summary.kind,
+    trust: summary.trust,
+    tokenCount: summary.tokenCount,
+    preview: truncateCompilePreview(summary.contentPreview),
+    state: "dropped",
+    reason: clippedSummaryReasons[index] ?? "omitted_after_selection",
+    sourceUri: summary.sourceUri,
+    stage: routeTrace.selectionMetadata.brainDropStage ?? null,
+    fitStrategy: routeTrace.selectionMetadata.fitStrategy ?? null,
+  }));
+  const traversalDroppedItems = traversalDroppedIds
     .map((nodeId) => {
       const node = params.lookupNode?.(nodeId) ?? null;
       return buildCompileItem({
@@ -478,23 +533,25 @@ export function buildBrainCompileReport(params: {
         tokenCount: node?.tokenCount ?? null,
         preview: canExposeRawSource && node ? truncateCompilePreview(node.content) : null,
         state: "dropped",
-        reason: routeTrace.selectionMetadata.fittingDropReasons && Object.keys(routeTrace.selectionMetadata.fittingDropReasons).length > 0
-          ? Object.keys(routeTrace.selectionMetadata.fittingDropReasons)[0] ?? "not_selected"
-          : "not_selected",
+        reason: "not_selected",
         sourceUri: canExposeRawSource ? (node?.sourceUri ?? null) : null,
         stage: routeTrace.selectionMetadata.brainDropStage ?? null,
         fitStrategy: routeTrace.selectionMetadata.fitStrategy ?? null,
       });
     });
+  const droppedItems = [...clippedDroppedItems, ...traversalDroppedItems]
+    .slice(0, COMPILE_MAX_BUCKET_ITEMS)
+    .map((item) => item);
 
-  const selectedNodeCount = routeTrace.injectedNodeSummaries.length;
-  const droppedNodeCount = Math.max(0, droppedIds.length);
+  const selectedNodeCount = selectedSummaries.length;
+  const droppedNodeCount = clippedSummaries.length + traversalDroppedIds.length;
   const prefetchedNodeCount = 0;
   const compressedNodeCount = 0;
   const branchSummary = routeTrace.selectionMetadata.branchOutcomeSummary ?? null;
-  const droppedReasonHistogram = routeTrace.selectionMetadata.fittingDropReasons
-    ? Object.fromEntries(Object.entries(routeTrace.selectionMetadata.fittingDropReasons).map(([key, count]) => [key, count]))
-    : (droppedNodeCount > 0 ? { not_selected: droppedNodeCount } : {});
+  const droppedReasonHistogram = {
+    ...(clippedSummaries.length > 0 ? (routeTrace.selectionMetadata.fittingDropReasons ?? {}) : {}),
+    ...(traversalDroppedIds.length > 0 ? { not_selected: traversalDroppedIds.length } : {}),
+  };
   const droppedProposalReasons = routeTrace.selectionMetadata.droppedProposalReasons ?? null;
   const terminationReasons = branchSummary?.terminationReasons ?? null;
   const limitedDroppedReasons = takeTopHistogramEntries(droppedReasonHistogram);
@@ -571,8 +628,8 @@ export function buildBrainCompileReport(params: {
       compressed: [],
     },
     overflow: {
-      selectedOverflowCount: Math.max(0, routeTrace.injectedNodeSummaries.length - selectedItems.length),
-      droppedOverflowCount: Math.max(0, droppedIds.length - droppedItems.length),
+      selectedOverflowCount: Math.max(0, selectedSummaries.length - selectedItems.length),
+      droppedOverflowCount: Math.max(0, droppedNodeCount - droppedItems.length),
       prefetchedOverflowCount: 0,
       compressedOverflowCount: 0,
       reasonOverflowCount,
@@ -844,6 +901,7 @@ function buildRouteTrace(params: {
   traversalResult: TraverseResult;
   queryText: string;
   conversationId: number | null;
+  agentIdentity?: BrainAgentIdentity | null;
   packVersion: number | null;
   budgetChars: number;
   maxHops: number;
@@ -877,6 +935,7 @@ function buildRouteTrace(params: {
     persistenceMode: buildPersistenceMode(params.persistRawSurfaces),
     requestDigest: hashQuery(params.queryText),
     conversationId: params.conversationId,
+    agentIdentity: params.agentIdentity ?? null,
     activePackId: params.packVersion === null ? null : `brain-pack-v${params.packVersion}`,
     routerIdentity: ROUTER_IDENTITY,
     candidateNodeIds: candidateIds,
@@ -944,6 +1003,7 @@ export function recordTrace(params: {
   queryText: string;
   episodeId: string | null;
   conversationId: number | null;
+  agentIdentity?: BrainAgentIdentity | null;
   packVersion: number | null;
   budgetChars: number;
   maxHops: number;

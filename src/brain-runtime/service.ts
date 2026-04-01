@@ -4,8 +4,11 @@ import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import type { OpenClawBrainRuntimeConfig } from "../db/config.js";
 import type {
+  BrainAgentIdentity,
   BrainConfig,
   BrainCompileReportV1,
+  ContextFeedbackSummary,
+  ContextUsefulnessSummary,
   BrainDropReason,
   BrainDropStage,
   BrainFitStrategy,
@@ -20,8 +23,10 @@ import type {
   BrainPrefetchState,
   DecisionRouteTrace,
   DecisionTrace,
+  MutationBundleRecord,
   NodeKind,
   RecentPrefetchSummary,
+  ReplayGateVerdict,
   TraversalResult,
 } from "../brain-core/types.js";
 import { DEFAULT_BRAIN_CONFIG, resolveObservationBindingMode } from "../brain-core/types.js";
@@ -86,6 +91,7 @@ type BrainAssemblyDecisionMode =
   | "skip_deadline_before_query"
   | "skip_deadline_after_query"
   | "skip_deadline_before_injection"
+  | "partial_query_interruption"
   | "partial_deadline_after_query"
   | "partial_deadline_before_injection";
 
@@ -118,6 +124,7 @@ type BrainAssemblyDecisionSelectionSurface = Pick<
 type BrainAssemblyDecisionSnapshot = {
   mode: BrainAssemblyDecisionMode;
   conversationId?: number;
+  agentIdentity?: BrainAgentIdentity | null;
   episodeId?: string | null;
   traceId?: string | null;
   footer?: string | null;
@@ -136,6 +143,38 @@ type BrainAssemblyDecisionSnapshot = {
   compileReport?: BrainCompileReportV1 | null;
   compileReportSummary?: string | null;
 } & BrainAssemblyDecisionSelectionSurface;
+
+type LearningHealthStatus =
+  | "idle"
+  | "review_harmful_context"
+  | "changing_without_feedback"
+  | "needs_feedback_coverage"
+  | "learning_backed_by_feedback"
+  | "monitor";
+
+type LearningHealthSummary = {
+  status: LearningHealthStatus;
+  summary: string;
+  detail: string;
+  focus: {
+    action: string;
+    detail: string;
+  };
+  signals: {
+    routeTraceCount: number;
+    supervisedTraceCount: number;
+    supervisionCoverage: number;
+    helpfulCount: number;
+    irrelevantCount: number;
+    harmfulCount: number;
+    scoredObservationCount: number;
+    recentBundleCount: number;
+    promotedBundleCount: number;
+    rejectedBundleCount: number;
+    pendingBundleCount: number;
+    replayGatePassed: boolean | null;
+  };
+};
 
 type BrainPrefetchCacheEntry = {
   key: string;
@@ -198,6 +237,7 @@ function normalizeAssemblyDecision(
     (artifact as Record<string, unknown>).compileReportSummary = compileReportSummary;
     return {
       ...decision,
+      agentIdentity: cloneAgentIdentity(decision.agentIdentity),
       bindingMode,
       servedArtifact: artifact,
       compileReport,
@@ -211,6 +251,7 @@ function normalizeAssemblyDecision(
   }
   return {
     ...decision,
+    agentIdentity: cloneAgentIdentity(decision.agentIdentity),
     bindingMode,
     servedArtifact: normalizedServedArtifact,
     compileReport,
@@ -245,6 +286,143 @@ function normalizePrefetchDecision(decision: BrainPrefetchDecision): BrainPrefet
 
 function clonePrefetchDecision(decision: BrainPrefetchDecision | null | undefined): BrainPrefetchDecision | null {
   return decision ? normalizePrefetchDecision(decision) : null;
+}
+
+function cloneAgentIdentity(identity: BrainAgentIdentity | null | undefined): BrainAgentIdentity | null {
+  return identity
+    ? {
+        agentId: identity.agentId,
+        lane: identity.lane,
+      }
+    : null;
+}
+
+function buildLearningHealthSummary(params: {
+  contextFeedback: ContextFeedbackSummary;
+  contextUsefulness: ContextUsefulnessSummary;
+  recentMutationBundles: MutationBundleRecord[];
+  lastReplayGateVerdict: ReplayGateVerdict | null;
+}): LearningHealthSummary {
+  const recentBundleCount = params.recentMutationBundles.length;
+  const promotedBundleCount = params.recentMutationBundles.filter((bundle) => bundle.status === "promoted").length;
+  const rejectedBundleCount = params.recentMutationBundles.filter((bundle) => bundle.status === "rejected").length;
+  const pendingBundleCount = params.recentMutationBundles.filter((bundle) => bundle.status === "pending").length;
+  const replayGatePassed =
+    typeof params.lastReplayGateVerdict?.passed === "boolean"
+      ? params.lastReplayGateVerdict.passed
+      : null;
+
+  const signals = {
+    routeTraceCount: params.contextFeedback.coverage.routeTraceCount,
+    supervisedTraceCount: params.contextFeedback.coverage.supervisedTraceCount,
+    supervisionCoverage: params.contextFeedback.coverage.supervisionCoverage,
+    helpfulCount: params.contextFeedback.verdictCounts.helpful,
+    irrelevantCount: params.contextFeedback.verdictCounts.irrelevant,
+    harmfulCount: params.contextFeedback.verdictCounts.harmful,
+    scoredObservationCount: params.contextUsefulness.coverage.scoredObservationCount,
+    recentBundleCount,
+    promotedBundleCount,
+    rejectedBundleCount,
+    pendingBundleCount,
+    replayGatePassed,
+  };
+
+  if (
+    signals.routeTraceCount === 0
+    && signals.recentBundleCount === 0
+    && signals.scoredObservationCount === 0
+  ) {
+    return {
+      status: "idle",
+      summary: "no learning activity recorded yet",
+      detail: "No traced routes, shadow usefulness scores, or mutation bundles are present yet.",
+      focus: {
+        action: "monitor",
+        detail: "wait for traced routes before judging learning health",
+      },
+      signals,
+    };
+  }
+
+  if (signals.harmfulCount > 0) {
+    return {
+      status: "review_harmful_context",
+      summary: `${signals.harmfulCount} harmful traced route verdict(s) need review`,
+      detail: "Feedback is landing, but at least one traced route was harmful. Investigate the latest harmful context before trusting further change.",
+      focus: {
+        action: params.contextFeedback.focus.action,
+        detail: params.contextFeedback.focus.detail,
+      },
+      signals,
+    };
+  }
+
+  if (signals.promotedBundleCount > 0 && signals.supervisedTraceCount === 0) {
+    return {
+      status: "changing_without_feedback",
+      summary: `${signals.promotedBundleCount} promoted bundle(s) recorded without traced-route feedback`,
+      detail: "The system is changing, but no traced routes have been closed with helpful/irrelevant/harmful supervision yet. Treat this as unverified change, not demonstrated learning.",
+      focus: {
+        action: "increase_feedback_coverage",
+        detail: "capture operator or teacher feedback on recent traced routes before trusting promoted changes",
+      },
+      signals,
+    };
+  }
+
+  if (signals.promotedBundleCount > 0 && signals.supervisedTraceCount < signals.routeTraceCount) {
+    return {
+      status: "changing_without_feedback",
+      summary: `${signals.promotedBundleCount} promoted bundle(s); feedback covers ${signals.supervisedTraceCount}/${signals.routeTraceCount} traced route(s)`,
+      detail: "Recent change is visible, but supervision still trails routed behavior. The system may be changing faster than operators can tell whether that change is useful.",
+      focus: {
+        action: params.contextFeedback.focus.action,
+        detail: params.contextFeedback.focus.detail,
+      },
+      signals,
+    };
+  }
+
+  if (signals.routeTraceCount > 0 && signals.supervisedTraceCount < signals.routeTraceCount) {
+    return {
+      status: "needs_feedback_coverage",
+      summary: `feedback covers ${signals.supervisedTraceCount}/${signals.routeTraceCount} traced route(s)`,
+      detail: "Learning-health truth is incomplete until more traced routes are closed with operator or teacher verdicts.",
+      focus: {
+        action: params.contextFeedback.focus.action,
+        detail: params.contextFeedback.focus.detail,
+      },
+      signals,
+    };
+  }
+
+  if (
+    signals.supervisedTraceCount > 0
+    && signals.helpfulCount > signals.harmfulCount
+    && (signals.promotedBundleCount > 0 || signals.scoredObservationCount > 0)
+  ) {
+    return {
+      status: "learning_backed_by_feedback",
+      summary: `${signals.helpfulCount} helpful traced route verdict(s) back recent learning activity`,
+      detail: "Recent change is being evaluated by traced-route feedback. That is stronger than mere churn, but it is still local evidence rather than proof of broad answer-quality improvement.",
+      focus: {
+        action: "monitor",
+        detail: "keep sampling traced routes to confirm the current helpful trend holds",
+      },
+      signals,
+    };
+  }
+
+  return {
+    status: "monitor",
+    summary: "learning surfaces are active but mixed",
+    detail: "There is learning-related activity, but the current evidence is not yet strong enough to call it clearly useful or clearly harmful.",
+    focus: {
+      action: params.contextFeedback.focus.action,
+      detail: params.contextFeedback.focus.detail,
+    },
+    signals,
+  };
 }
 
 function hashQueryDigest(queryText: string): string {
@@ -554,6 +732,7 @@ export class BrainService {
     });
     return {
       requestDigest: routeTrace?.requestDigest ?? null,
+      agentIdentity: cloneAgentIdentity(routeTrace?.agentIdentity ?? assemblyDecision?.agentIdentity),
       activePackId: assemblyDecision?.activePackId ?? routeTrace?.activePackId ?? null,
       routerIdentity: routeTrace?.routerIdentity ?? null,
       persistenceMode: routeTrace?.persistenceMode ?? null,
@@ -725,14 +904,45 @@ export class BrainService {
       return;
     }
 
+    const mergedSelectionMetadata = {
+      ...trace.routeTrace.selectionMetadata,
+      ...selectionMetadata,
+    };
+    const compileReportDecision = {
+      mode:
+        selectionMetadata.compileReport?.decision.mode
+        ?? ((this.lastAssemblyDecision?.traceId === trace.id ? this.lastAssemblyDecision.mode : null) ?? null)
+        ?? trace.routeTrace.selectionMetadata.compileReport?.decision.mode
+        ?? null,
+      bindingMode:
+        selectionMetadata.compileReport?.bindingMode
+        ?? ((this.lastAssemblyDecision?.traceId === trace.id ? this.lastAssemblyDecision.bindingMode : null) ?? null)
+        ?? trace.routeTrace.selectionMetadata.compileReport?.bindingMode
+        ?? null,
+      traceId: trace.id,
+      episodeId: trace.episodeId,
+    };
+    const compileReport = buildBrainCompileReport({
+      routeTrace: {
+        ...trace.routeTrace,
+        selectionMetadata: mergedSelectionMetadata,
+      },
+      decision: compileReportDecision,
+      lookupNode: (nodeId) => this.servingGraph.getNode(nodeId) ?? null,
+    });
+    const persistedSelectionMetadata = compileReport
+      ? {
+          ...mergedSelectionMetadata,
+          compileReport,
+          compileReportSummary: compileReport.summary,
+        }
+      : mergedSelectionMetadata;
+
     trace.routeTrace = {
       ...trace.routeTrace,
-      selectionMetadata: {
-        ...trace.routeTrace.selectionMetadata,
-        ...selectionMetadata,
-      },
+      selectionMetadata: persistedSelectionMetadata,
     };
-    this.store.updateTraceSelectionMetadata(trace.id, selectionMetadata);
+    this.store.updateTraceSelectionMetadata(trace.id, persistedSelectionMetadata);
   }
 
   private buildPrefetchDecision(params: {
@@ -874,6 +1084,7 @@ export class BrainService {
     conversationId: number;
     queryText: string;
     budgetChars: number;
+    agentIdentity?: BrainAgentIdentity | null;
     compileResult: TraversalCompileResult;
   }): Promise<TraversalResult | null> {
     const { compileResult } = params;
@@ -901,6 +1112,7 @@ export class BrainService {
       queryText: params.queryText,
       episodeId: episode.id,
       conversationId: params.conversationId,
+      agentIdentity: params.agentIdentity,
       packVersion: episode.packVersion,
       budgetChars: params.budgetChars,
       maxHops: this.config.maxHops,
@@ -947,6 +1159,7 @@ export class BrainService {
     conversationId: number;
     queryText: string;
     budgetChars: number;
+    agentIdentity?: BrainAgentIdentity | null;
     queryEmbedding?: Float32Array;
     deadlineAtMs?: number | null;
     summaryRoutingMode?: string | null;
@@ -1015,6 +1228,7 @@ export class BrainService {
           conversationId: params.conversationId,
           queryText: params.queryText,
           budgetChars: params.budgetChars,
+          agentIdentity: params.agentIdentity,
           compileResult: {
             traversalResult: resolvedEntry.traversalResult,
             queryEmbedding: resolvedEntry.queryEmbedding,
@@ -1123,6 +1337,7 @@ export class BrainService {
       conversationId: params.conversationId,
       queryText: params.queryText,
       budgetChars: params.budgetChars,
+      agentIdentity: params.agentIdentity,
       compileResult: liveCompile,
     });
   }
@@ -1701,6 +1916,12 @@ export class BrainService {
     const routeTraceCount = this.store.countTraces();
     const supervisionCount = this.store.countTraceSupervision();
     const observationAttribution = this.store.getObservationAttributionSummary();
+    const teacherReadyBefore = Date.now() - Math.max(1_000, this.config.trainerIntervalMs);
+    const teacherTruth = {
+      queue: this.store.getTeacherQueueSummary(teacherReadyBefore, 20),
+      lastEvaluationCycle: this.store.getTrainingStateJson("last_teacher_evaluation_cycle_json"),
+      lastUpdateCycle: this.store.getTrainingStateJson("last_teacher_update_cycle_json"),
+    };
     const lastPgCandidateUpdate = this.store.getTrainingStateJson("last_pg_candidate_update_json");
     const lastPgCandidatePackVersionRaw = this.store.getTrainingState("last_pg_candidate_pack_version");
     const lastPgCandidatePackVersion = lastPgCandidatePackVersionRaw
@@ -1708,6 +1929,14 @@ export class BrainService {
       : null;
     const lastAssemblyDecision = this.lastAssemblyDecision ?? this.getStoredLastAssemblyDecision();
     const lastPrefetchDecision = this.getLastPrefetchDecision();
+    const recentMutationBundles = this.store.getRecentMutationBundles(5);
+    const lastReplayGateVerdict = this.store.getTrainingStateJson<ReplayGateVerdict>("last_replay_gate_verdict_json") ?? null;
+    const learningHealth = buildLearningHealthSummary({
+      contextFeedback,
+      contextUsefulness,
+      recentMutationBundles,
+      lastReplayGateVerdict,
+    });
     const lastCompileReportSummary = lastAssemblyDecision?.compileReportSummary
       ?? (lastAssemblyDecision?.servedArtifact as { compileReportSummary?: string | null } | null | undefined)?.compileReportSummary
       ?? recentTraces[0]?.routeTrace?.selectionMetadata?.compileReportSummary
@@ -1758,13 +1987,15 @@ export class BrainService {
       pendingObservations: this.store.countPendingObservations(),
       pendingObservationsByStatus: this.store.countObservationsByStatus(),
       observationAttribution,
+      teacherTruth,
       contextFeedback,
       contextUsefulness,
+      learningHealth,
       ...workerState,
       pendingLabels: this.store.getPendingLabels().length,
       pendingLabelsBySource: this.store.countPendingLabelsBySource(),
       mutationBacklog: this.store.countMutationsByStatus(),
-      recentMutationBundles: this.store.getRecentMutationBundles(5),
+      recentMutationBundles,
       seedLearningEnabled: this.mutableGraph.hasSeedWeights(),
       routeTraceCount,
       supervisionCount,
@@ -1786,7 +2017,7 @@ export class BrainService {
       lastPromotionReason: this.store.getTrainingState("last_promotion_reason"),
       lastPromotionVerdict: this.store.getTrainingStateJson("last_promotion_verdict_json"),
       lastReplayFailureReason: this.store.getTrainingState("last_replay_failure_reason"),
-      lastReplayGateVerdict: this.store.getTrainingStateJson("last_replay_gate_verdict_json"),
+      lastReplayGateVerdict,
       promotionStory,
       brainRoot: this.config.root,
       ...health,

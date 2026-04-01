@@ -7,6 +7,7 @@ import type {
   BundleEvaluationVerdict,
   Episode,
   MutationProposal,
+  ObservationBindingQuality,
   PolicyGradientCandidateUpdateArtifact,
   PolicyGradientCandidateUpdateArtifactV2,
   PolicyGradientEpisodeUpdateArtifact,
@@ -16,8 +17,9 @@ import type {
   PromotionRunVerdict,
   ReplayGateVerdict,
   RewardSource,
+  TeacherFeedbackRichness,
 } from "../brain-core/types.js";
-import { START_NODE_ID, trustRank } from "../brain-core/types.js";
+import { classifyObservationBindingQuality, START_NODE_ID, trustRank } from "../brain-core/types.js";
 import type { BrainStore } from "../brain-store/store.js";
 import type { BrainGraph } from "../brain-core/graph.js";
 import type { BrainTeacher } from "../brain-core/teacher.js";
@@ -35,6 +37,9 @@ import { computeHealth } from "../brain-core/health.js";
 import { clusterMutationsIntoBundles, evaluateBundle, DEFAULT_BUNDLE_CONFIG } from "../brain-core/bundle-evaluator.js";
 import type { BundleEvaluationConfig, MutationBundle } from "../brain-core/bundle-evaluator.js";
 import { evaluateContextUsefulness } from "../brain-core/usefulness.js";
+
+const TEACHER_OBSERVATION_BUDGET = 20;
+const TEACHER_CYCLE_DECISION_LIMIT = 8;
 
 function toOptionalString(value: unknown): string | null {
   if (typeof value !== "string") {
@@ -56,6 +61,30 @@ function toRecord(value: unknown): Record<string, unknown> | null {
     : null;
 }
 
+function hasNonEmptyToolResults(value: unknown): boolean {
+  return Array.isArray(value)
+    ? value.length > 0
+    : typeof value === "string" && value.trim().length > 0 && value.trim() !== "[]";
+}
+
+function classifyTeacherFeedbackRichness(params: {
+  followUpText: unknown;
+  toolResults: unknown;
+}): TeacherFeedbackRichness {
+  const hasFollowUp = toOptionalString(params.followUpText) !== null;
+  const hasToolResults = hasNonEmptyToolResults(params.toolResults);
+  if (hasFollowUp && hasToolResults) {
+    return "followup_and_tool";
+  }
+  if (hasFollowUp) {
+    return "followup_only";
+  }
+  if (hasToolResults) {
+    return "tool_only";
+  }
+  return "sparse";
+}
+
 function toObservationBindingMode(value: unknown): BrainObservationBindingMode | null {
   switch (value) {
     case "exact_decision_id":
@@ -72,6 +101,10 @@ function toObservationBindingMode(value: unknown): BrainObservationBindingMode |
 
 function readTeacherEvaluationRecord(metadata: Record<string, unknown> | null | undefined): Record<string, unknown> | null {
   return toRecord(metadata?.teacherEvaluation);
+}
+
+function readTeacherInputRecord(metadata: Record<string, unknown> | null | undefined): Record<string, unknown> | null {
+  return toRecord(metadata?.teacherInput);
 }
 
 function readObservationId(metadata: Record<string, unknown> | null | undefined): string | null {
@@ -102,6 +135,114 @@ function readSupervisionBindingMode(
 ): BrainObservationBindingMode | null {
   return toObservationBindingMode(metadata?.bindingMode)
     ?? toObservationBindingMode(readTeacherEvaluationRecord(metadata)?.bindingMode);
+}
+
+function readSupervisionAttributionQuality(
+  metadata: Record<string, unknown> | null | undefined,
+): ObservationBindingQuality | null {
+  const explicit = toOptionalString(metadata?.attributionQuality);
+  if (explicit === "exact" || explicit === "fallback" || explicit === "unbound") {
+    return explicit;
+  }
+  const bindingMode = readSupervisionBindingMode(metadata);
+  return bindingMode ? classifyObservationBindingQuality(bindingMode) : null;
+}
+
+function readSupervisionFeedbackRichness(
+  metadata: Record<string, unknown> | null | undefined,
+): TeacherFeedbackRichness | null {
+  const explicit = toOptionalString(metadata?.feedbackRichness);
+  if (
+    explicit === "followup_and_tool"
+    || explicit === "followup_only"
+    || explicit === "tool_only"
+    || explicit === "sparse"
+  ) {
+    return explicit;
+  }
+  const teacherInput = readTeacherInputRecord(metadata);
+  if (!teacherInput) {
+    return null;
+  }
+  return classifyTeacherFeedbackRichness({
+    followUpText: teacherInput.nextUserTurn,
+    toolResults: teacherInput.toolResults,
+  });
+}
+
+function combineAttributionQualities(
+  supervision: PolicyGradientSupervisionArtifact[],
+): ObservationBindingQuality | "mixed" | null {
+  const values = new Set(
+    supervision
+      .map((entry) => entry.attributionQuality)
+      .filter((entry): entry is ObservationBindingQuality => entry !== null),
+  );
+  if (values.size === 0) {
+    return null;
+  }
+  if (values.size === 1) {
+    return [...values][0] ?? null;
+  }
+  return "mixed";
+}
+
+function combineFeedbackRichness(
+  supervision: PolicyGradientSupervisionArtifact[],
+): TeacherFeedbackRichness | "mixed" | null {
+  const values = new Set(
+    supervision
+      .map((entry) => entry.feedbackRichness)
+      .filter((entry): entry is TeacherFeedbackRichness => entry !== null),
+  );
+  if (values.size === 0) {
+    return null;
+  }
+  if (values.size === 1) {
+    return [...values][0] ?? null;
+  }
+  return "mixed";
+}
+
+function describeTeacherReadyReason(feedbackRichness: TeacherFeedbackRichness): string {
+  switch (feedbackRichness) {
+    case "tool_only":
+      return "tool results made the observation ready without waiting for follow-up";
+    case "followup_only":
+      return "operator follow-up made the observation ready";
+    case "followup_and_tool":
+      return "follow-up and tool results made the observation ready";
+    case "sparse":
+      return "teacher delay elapsed, so sparse feedback became eligible";
+  }
+}
+
+function buildEpisodeUpdateReason(params: {
+  episode: Episode;
+  supervision: PolicyGradientSupervisionArtifact[];
+  routeUpdateCount: number;
+}): string {
+  const primary =
+    params.supervision.find((entry) => entry.source === params.episode.rewardSource)
+    ?? params.supervision[0]
+    ?? null;
+  if (!primary) {
+    return `episode reward ${params.episode.reward?.toFixed(2) ?? "n/a"} updated ${params.routeUpdateCount} route weight(s)`;
+  }
+
+  const score = Number.isFinite(primary.value) ? primary.value.toFixed(2) : "n/a";
+  const confidence = Number.isFinite(primary.confidence) ? primary.confidence.toFixed(2) : "n/a";
+  const binding =
+    primary.attributionQuality === null
+      ? "without observation attribution"
+      : primary.attributionQuality === "exact"
+        ? `${primary.bindingMode ?? "exact"} attribution`
+        : `${primary.bindingMode ?? "unknown"} ${primary.attributionQuality} attribution`;
+  const feedback =
+    primary.feedbackRichness === null
+      ? "no feedback richness detail"
+      : primary.feedbackRichness.replaceAll("_", " ");
+  return `${primary.source} ${primary.kind} ${score} (confidence ${confidence}, ${binding}, ${feedback}) updated ${params.routeUpdateCount} route weight(s)`;
 }
 
 function readPolicyWeightBeforeUpdate(
@@ -290,8 +431,49 @@ export class BrainWorker {
       return;
     }
 
-    const pending = this.store.getPendingObservations(20, this.observationReadyBefore());
+    const readyBefore = this.observationReadyBefore();
+    const queue = this.store.getTeacherQueueSummary(readyBefore, TEACHER_OBSERVATION_BUDGET);
+    const pending = this.store.getPendingObservations(TEACHER_OBSERVATION_BUDGET, readyBefore);
+    const decisions: Array<{
+      observationId: string;
+      episodeId: string;
+      traceId: string | null;
+      decision: "delayed" | "budget_deferred" | "skipped" | "evaluated";
+      reason: string;
+      feedbackRichness: TeacherFeedbackRichness;
+      bindingMode: BrainObservationBindingMode | null;
+      attributionQuality: ObservationBindingQuality | null;
+      finalScore: number | null;
+      confidence: number | null;
+      createdAt: number;
+      evaluatedAt: number | null;
+    }> = queue.sample
+      .filter((entry) => entry.gate !== "ready")
+      .map((entry) => ({
+        observationId: entry.observationId,
+        episodeId: entry.episodeId,
+        traceId: entry.traceId,
+        decision: entry.gate as "delayed" | "budget_deferred",
+        reason: entry.reason,
+        feedbackRichness: entry.feedbackRichness,
+        bindingMode: null,
+        attributionQuality: null,
+        finalScore: null,
+        confidence: null,
+        createdAt: entry.createdAt,
+        evaluatedAt: null,
+      }));
+    let evaluatedCount = 0;
+    let skippedCount = 0;
+    let exactAttributionCount = 0;
+    let fallbackAttributionCount = 0;
+    let unboundAttributionCount = 0;
+
     for (const observation of pending) {
+      const feedbackRichness = classifyTeacherFeedbackRichness({
+        followUpText: observation.followUpText,
+        toolResults: observation.toolResults,
+      });
       const episode = this.store.getEpisode(observation.episodeId);
       if (!episode) {
         this.store.completeObservationEvaluation({
@@ -301,6 +483,21 @@ export class BrainWorker {
           finalScore: 0,
           confidence: 0,
           reason: "episode missing",
+        });
+        skippedCount += 1;
+        decisions.push({
+          observationId: observation.id,
+          episodeId: observation.episodeId,
+          traceId: observation.traceId,
+          decision: "skipped",
+          reason: "episode missing",
+          feedbackRichness,
+          bindingMode: null,
+          attributionQuality: null,
+          finalScore: 0,
+          confidence: 0,
+          createdAt: observation.createdAt,
+          evaluatedAt: Date.now(),
         });
         continue;
       }
@@ -315,7 +512,30 @@ export class BrainWorker {
           confidence: 0,
           reason: "teacher input unavailable",
         });
+        skippedCount += 1;
+        decisions.push({
+          observationId: observation.id,
+          episodeId: observation.episodeId,
+          traceId: observation.traceId,
+          decision: "skipped",
+          reason: "teacher input unavailable",
+          feedbackRichness,
+          bindingMode: null,
+          attributionQuality: null,
+          finalScore: 0,
+          confidence: 0,
+          createdAt: observation.createdAt,
+          evaluatedAt: Date.now(),
+        });
         continue;
+      }
+      const attributionQuality = classifyObservationBindingQuality(review.bindingMode);
+      if (attributionQuality === "exact") {
+        exactAttributionCount += 1;
+      } else if (attributionQuality === "fallback") {
+        fallbackAttributionCount += 1;
+      } else {
+        unboundAttributionCount += 1;
       }
       const teacherEvaluation = {
         version: review.version,
@@ -357,6 +577,8 @@ export class BrainWorker {
           turnCompileEventId: review.turnCompileEventId,
           activePackGraphChecksum: review.activePackGraphChecksum,
           bindingMode: review.bindingMode,
+          attributionQuality,
+          feedbackRichness,
           phase1Score: review.retrievalRelevance,
           phase2Score: review.outcomeSupport,
           agentUsage: review.agentUsage,
@@ -387,7 +609,45 @@ export class BrainWorker {
         reason: review.reason,
         teacherEvaluation,
       });
+      evaluatedCount += 1;
+      decisions.push({
+        observationId: observation.id,
+        episodeId: observation.episodeId,
+        traceId: observation.traceId,
+        decision: "evaluated",
+        reason: `${review.reason}; ${describeTeacherReadyReason(feedbackRichness)}`,
+        feedbackRichness,
+        bindingMode: review.bindingMode,
+        attributionQuality,
+        finalScore: review.finalScore,
+        confidence: review.confidence,
+        createdAt: observation.createdAt,
+        evaluatedAt: Date.now(),
+      });
     }
+
+    this.store.setTrainingStateJson("last_teacher_evaluation_cycle_json", {
+      version: 1,
+      generatedAt: Date.now(),
+      budgetPerTick: TEACHER_OBSERVATION_BUDGET,
+      delayMs: Math.max(0, Date.now() - readyBefore),
+      pendingCount: queue.pendingCount,
+      readyCount: queue.readyCount,
+      delayedCount: queue.delayedCount,
+      budgetDeferredCount: queue.budgetDeferredCount,
+      sparseReadyCount: queue.sparseReadyCount,
+      richReadyCount: queue.richReadyCount,
+      evaluatedCount,
+      skippedCount,
+      exactAttributionCount,
+      fallbackAttributionCount,
+      unboundAttributionCount,
+      decisions: decisions.slice(0, TEACHER_CYCLE_DECISION_LIMIT),
+      detail:
+        queue.pendingCount === 0
+          ? "no teacher observations were pending this cycle"
+          : `${evaluatedCount} evaluated, ${skippedCount} skipped; ${queue.readyCount} ready, ${queue.delayedCount} delayed, ${queue.budgetDeferredCount} deferred by teacher budget`,
+    });
   }
 
   private async evaluatePendingShadowUsefulness(): Promise<void> {
@@ -452,6 +712,7 @@ export class BrainWorker {
       const teacherTraceId = record.source === "teacher"
         ? (readTeacherTraceId(record.metadata) ?? record.traceId)
         : null;
+      const bindingMode = readSupervisionBindingMode(record.metadata);
       if (record.source === "teacher") {
         teacherTraceIds.add(teacherTraceId ?? record.traceId);
       }
@@ -471,7 +732,9 @@ export class BrainWorker {
         selectionDigest: readSupervisionProvenanceField(record.metadata, "selectionDigest"),
         turnCompileEventId: readSupervisionProvenanceField(record.metadata, "turnCompileEventId"),
         activePackGraphChecksum: readSupervisionProvenanceField(record.metadata, "activePackGraphChecksum"),
-        bindingMode: readSupervisionBindingMode(record.metadata),
+        bindingMode,
+        attributionQuality: readSupervisionAttributionQuality(record.metadata),
+        feedbackRichness: readSupervisionFeedbackRichness(record.metadata),
         traceRequestDigest: readSupervisionProvenanceField(record.metadata, "traceRequestDigest"),
         traceSelectedNodeIds: toStringArray(record.metadata?.traceSelectedNodeIds),
         traceSelectedPathNodeIds: toStringArray(record.metadata?.traceSelectedPathNodeIds),
@@ -544,6 +807,8 @@ export class BrainWorker {
       for (const teacherTraceId of consumed.teacherTraceIds) {
         teacherTraceIds.add(teacherTraceId);
       }
+      const attributionQuality = combineAttributionQualities(consumed.supervision);
+      const feedbackRichness = combineFeedbackRichness(consumed.supervision);
       if (entry.episode.reward !== null) {
         episodeUpdates.push({
           episodeId: entry.episode.id,
@@ -552,6 +817,13 @@ export class BrainWorker {
           supervisionIds: consumed.supervisionIds,
           reward: entry.episode.reward,
           rewardSource: entry.episode.rewardSource,
+          attributionQuality,
+          feedbackRichness,
+          updateReason: buildEpisodeUpdateReason({
+            episode: entry.episode,
+            supervision: consumed.supervision,
+            routeUpdateCount: entry.routeUpdateCount,
+          }),
           baselineBefore: entry.baselineBeforeEpisode,
           baselineAfter: entry.baselineAfterEpisode,
           advantage: entry.episode.reward - entry.baselineBeforeEpisode,
@@ -653,9 +925,70 @@ export class BrainWorker {
       edgeUpdateCount: number;
       routeUpdates: PolicyGradientRouteUpdateArtifact[];
     }> = [];
+    const decisions: Array<{
+      episodeId: string;
+      status: "applied" | "skipped";
+      reason: string;
+      reward: number | null;
+      rewardSource: RewardSource | null;
+      observationIds: string[];
+      supervisionIds: string[];
+      traceIds: string[];
+      attributionQuality: ObservationBindingQuality | "mixed" | null;
+      feedbackRichness: TeacherFeedbackRichness | "mixed" | null;
+      routeUpdateCount: number;
+      baselineBefore: number;
+      baselineAfter: number;
+    }> = [];
+    const skippedReasons = {
+      missing_reward: 0,
+      missing_supervision: 0,
+      zero_policy_delta: 0,
+    };
+    let appliedEpisodeCount = 0;
+    let skippedEpisodeCount = 0;
 
     for (const episode of episodes) {
       if (episode.reward === null) {
+        skippedEpisodeCount += 1;
+        skippedReasons.missing_reward += 1;
+        decisions.push({
+          episodeId: episode.id,
+          status: "skipped",
+          reason: "episode has no reward yet",
+          reward: null,
+          rewardSource: episode.rewardSource,
+          observationIds: [],
+          supervisionIds: [],
+          traceIds: [],
+          attributionQuality: null,
+          feedbackRichness: null,
+          routeUpdateCount: 0,
+          baselineBefore: baseline,
+          baselineAfter: baseline,
+        });
+        continue;
+      }
+
+      const consumed = this.collectPolicyGradientSupervision(episode);
+      if (!consumed) {
+        skippedEpisodeCount += 1;
+        skippedReasons.missing_supervision += 1;
+        decisions.push({
+          episodeId: episode.id,
+          status: "skipped",
+          reason: "reward is present, but no promoted supervision is bound to the route yet",
+          reward: episode.reward,
+          rewardSource: episode.rewardSource,
+          observationIds: [],
+          supervisionIds: [],
+          traceIds: [],
+          attributionQuality: null,
+          feedbackRichness: null,
+          routeUpdateCount: 0,
+          baselineBefore: baseline,
+          baselineAfter: baseline,
+        });
         continue;
       }
 
@@ -666,6 +999,33 @@ export class BrainWorker {
         baselineBeforeEpisode,
       );
       const updates = computeReinforceUpdates(episode, this.config.learningRate, baselineBeforeEpisode);
+      const attributionQuality = combineAttributionQualities(consumed.supervision);
+      const feedbackRichness = combineFeedbackRichness(consumed.supervision);
+      if (updates.length === 0) {
+        const baselineAfterEpisode = updateBaseline(baseline, episode.reward, this.config.baselineAlpha);
+        this.store.markEpisodeUpdated(episode.id);
+        baseline = baselineAfterEpisode;
+        skippedEpisodeCount += 1;
+        skippedReasons.zero_policy_delta += 1;
+        decisions.push({
+          episodeId: episode.id,
+          status: "skipped",
+          reason: contributions.length === 0
+            ? "reward matched the running baseline, so no policy delta was emitted"
+            : "no policy updates were materialized from the routed trajectory",
+          reward: episode.reward,
+          rewardSource: episode.rewardSource,
+          observationIds: consumed.observationIds,
+          supervisionIds: consumed.supervisionIds,
+          traceIds: consumed.traceIds,
+          attributionQuality,
+          feedbackRichness,
+          routeUpdateCount: 0,
+          baselineBefore: baselineBeforeEpisode,
+          baselineAfter: baselineAfterEpisode,
+        });
+        continue;
+      }
       const contributionsByKey = new Map<string, PolicyGradientRouteUpdateContribution[]>();
       for (const contribution of contributions) {
         const existing = contributionsByKey.get(contribution.updateKey);
@@ -740,12 +1100,42 @@ export class BrainWorker {
         edgeUpdateCount,
         routeUpdates,
       });
+      appliedEpisodeCount += 1;
+      decisions.push({
+        episodeId: episode.id,
+        status: "applied",
+        reason: buildEpisodeUpdateReason({
+          episode,
+          supervision: consumed.supervision,
+          routeUpdateCount: updates.length,
+        }),
+        reward: episode.reward,
+        rewardSource: episode.rewardSource,
+        observationIds: consumed.observationIds,
+        supervisionIds: consumed.supervisionIds,
+        traceIds: consumed.traceIds,
+        attributionQuality,
+        feedbackRichness,
+        routeUpdateCount: updates.length,
+        baselineBefore: baselineBeforeEpisode,
+        baselineAfter: baselineAfterEpisode,
+      });
       this.store.markEpisodeUpdated(episode.id);
       baseline = baselineAfterEpisode;
     }
 
     this.store.setTrainingState("baseline_reward", baseline);
     this.store.setTrainingState("last_update_at", Date.now());
+    this.store.setTrainingStateJson("last_teacher_update_cycle_json", {
+      version: 1,
+      generatedAt: Date.now(),
+      eligibleEpisodeCount: episodes.length,
+      appliedEpisodeCount,
+      skippedEpisodeCount,
+      skippedReasons,
+      decisions: decisions.slice(0, TEACHER_CYCLE_DECISION_LIMIT),
+      detail: `${appliedEpisodeCount} episode(s) updated, ${skippedEpisodeCount} skipped; missing supervision=${skippedReasons.missing_supervision}, zero policy delta=${skippedReasons.zero_policy_delta}`,
+    });
     this.materializePolicyGradientCandidateUpdate({
       baselineBefore,
       baselineAfter: baseline,

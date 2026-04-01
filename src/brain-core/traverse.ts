@@ -187,6 +187,7 @@ export function traverse(options: TraverseOptions): TraverseResult {
   const vetoedNodes: Array<{ nodeId: string; reason: string }> = [];
   const seedScores = initializeSeedScores(graph, seedCandidates);
   let interruption: BrainInterruptionMetadata | null = null;
+  let interruptedExpansionSourceNodeId: string | null = null;
 
   const expandSource = (
     sourceNodeId: string | null,
@@ -262,6 +263,7 @@ export function traverse(options: TraverseOptions): TraverseResult {
       if (isDeadlineExceeded(deadlineAtMs)) {
         appendForcedStopSubstep(selectionIndex, "interrupt");
         interruption ??= createTraversalInterruption(firedNodes.length > 0);
+        interruptedExpansionSourceNodeId ??= sourceNodeId;
         break;
       }
 
@@ -352,6 +354,7 @@ export function traverse(options: TraverseOptions): TraverseResult {
         }
         terminationReason ??= "interrupt";
         interruption ??= createTraversalInterruption(firedNodes.length > 0);
+        interruptedExpansionSourceNodeId ??= sourceNodeId;
         break;
       }
 
@@ -462,6 +465,7 @@ export function traverse(options: TraverseOptions): TraverseResult {
   ) {
     if (isDeadlineExceeded(deadlineAtMs)) {
       interruption ??= createTraversalInterruption(firedNodes.length > 0);
+      interruptedExpansionSourceNodeId ??= state.frontier[0] ?? null;
       break;
     }
     const frontierBefore = [...state.frontier];
@@ -482,11 +486,13 @@ export function traverse(options: TraverseOptions): TraverseResult {
 
   if (interruption) {
     const droppedProposalReasons: Record<string, number> = {};
+    const droppedProposalNodeIds: string[] = [];
     let droppedProposalCount = 0;
     for (const expansion of trajectory) {
       for (const outcome of expansion.proposalOutcomes ?? []) {
         if (outcome.outcome === "dropped") {
           droppedProposalCount += 1;
+          droppedProposalNodeIds.push(outcome.targetNodeId);
           droppedProposalReasons[outcome.reason] = (droppedProposalReasons[outcome.reason] ?? 0) + 1;
         }
       }
@@ -494,9 +500,12 @@ export function traverse(options: TraverseOptions): TraverseResult {
 
     interruptionAccounting = {
       droppedFrontierNodeIds: [...state.frontier],
+      droppedProposalNodeIds,
+      interruptedExpansionSourceNodeId,
       completedExpansionCount: state.expansionCount,
       maxExpansions: maxHops,
       budgetUsed,
+      remainingBudgetChars: state.budgetRemaining,
       budgetTotal: budgetChars,
       budgetUtilization,
       droppedProposalCount,

@@ -559,6 +559,68 @@ describe("BrainWorker observation reward cutover", () => {
     });
   });
 
+  it("treats tool-result observations as ready immediately instead of waiting for sparse-feedback delay", async () => {
+    const evaluateObservation = vi.fn(async (observation: BrainObservation) => makeTeacherReview(
+      observation,
+      {
+        retrievalRelevance: 0.8,
+        agentUsage: 0.9,
+        outcomeSupport: 0.75,
+        finalScore: 0.77,
+        confidence: 0.81,
+        reason: "tool output confirmed the routed answer without needing user follow-up",
+      },
+    ));
+    const { store, worker } = setup({
+      teacher: { evaluateObservation },
+      config: { teacherEnabled: true },
+    });
+    store.insertEpisode(makeEpisode({
+      id: "ep_tool_ready",
+      conversationId: 8,
+      queryText: "did the command succeed?",
+      trajectory: [makeStep("node_1", 0.6)],
+      firedNodes: ["node_1"],
+    }));
+    store.insertTrace(makeTrace({
+      id: "bt_tool_ready",
+      episodeId: "ep_tool_ready",
+      conversationId: 8,
+      queryText: "did the command succeed?",
+      selectedNodeId: "node_1",
+    }));
+    const observation = store.insertObservation(makeObservation({
+      episodeId: "ep_tool_ready",
+      conversationId: 8,
+      traceId: "bt_tool_ready",
+      queryText: "did the command succeed?",
+      assistantResponse: "The command completed successfully.",
+      toolResults: [
+        {
+          sourceRole: "tool",
+          toolCallId: "call_tool_ready",
+          toolName: "bash",
+          input: "npm test",
+          output: "{\"ok\":true,\"exitCode\":0}",
+          isError: false,
+          excerpt: "{\"ok\":true,\"exitCode\":0}",
+        },
+      ],
+      createdAt: Date.now(),
+      updatedAt: Date.now(),
+    }));
+
+    await (worker as any).evaluatePendingObservations();
+
+    expect(evaluateObservation).toHaveBeenCalledTimes(1);
+    expect(store.getObservation(observation.id)).toMatchObject({
+      id: observation.id,
+      status: "completed",
+      finalScore: 0.77,
+      reason: "tool output confirmed the routed answer without needing user follow-up",
+    });
+  });
+
   it("scores shadow usefulness off-path without teacher involvement", async () => {
     const { store, worker } = setup({
       config: { teacherEnabled: false },
@@ -877,6 +939,9 @@ describe("BrainWorker observation reward cutover", () => {
       observationIds: [],
       reward: -0.5,
       rewardSource: "human",
+      attributionQuality: null,
+      feedbackRichness: null,
+      updateReason: "human teach_correction -0.50 (confidence 1.00, without observation attribution, no feedback richness detail) updated 1 route weight(s)",
       baselineBefore: 0,
       routeUpdateCount: 1,
       seedUpdateCount: 1,
@@ -889,6 +954,8 @@ describe("BrainWorker observation reward cutover", () => {
           source: "human",
           kind: "teach_correction",
           value: -0.5,
+          attributionQuality: null,
+          feedbackRichness: null,
           traceSelectedNodeIds: [],
         }),
       ],
@@ -921,6 +988,9 @@ describe("BrainWorker observation reward cutover", () => {
       observationIds: [teacherObservation.id],
       reward: 0.6,
       rewardSource: "teacher",
+      attributionQuality: "exact",
+      feedbackRichness: "sparse",
+      updateReason: "teacher teacher_review 0.60 (confidence 0.65, exact_decision_id attribution, sparse) updated 1 route weight(s)",
       routeUpdateCount: 1,
       seedUpdateCount: 1,
       stopLocalUpdateCount: 0,
@@ -937,6 +1007,8 @@ describe("BrainWorker observation reward cutover", () => {
           serveDecisionRecordId: "decision-bt_teacher_pg",
           selectionDigest: "selection-bt_teacher_pg",
           bindingMode: "exact_decision_id",
+          attributionQuality: "exact",
+          feedbackRichness: "sparse",
           traceSelectedNodeIds: ["node_teacher"],
           traceSelectedPathNodeIds: ["node_teacher"],
         }),

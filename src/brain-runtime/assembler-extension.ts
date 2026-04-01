@@ -1,6 +1,7 @@
 import type { AssembleContextResult, AssembledSummaryMetadata } from "../assembler.js";
 import type { ContextEngine, AgentMessage } from "../openclaw-sdk-compat.js";
 import type {
+  BrainAgentIdentity,
   BrainCompileReportV1,
   BrainDropReason,
   BrainDropStage,
@@ -14,7 +15,7 @@ import type {
   DecisionTraceInjectedNodeSummary,
   TraversalResult,
 } from "../brain-core/types.js";
-import { rewriteBrainCompileReportSummary } from "../brain-core/trace.js";
+import { buildBrainCompileReport } from "../brain-core/trace.js";
 import type { BrainService } from "./service.js";
 import { decideSummaryRouting } from "./summary-routing-policy.js";
 
@@ -33,6 +34,7 @@ export type BrainAssemblyOutcomeMode =
   | "skip_deadline_before_query"
   | "skip_deadline_after_query"
   | "skip_deadline_before_injection"
+  | "partial_query_interruption"
   | "partial_deadline_after_query"
   | "partial_deadline_before_injection";
 
@@ -129,6 +131,8 @@ function decisionFooter(mode: BrainAssemblyOutcomeMode): string {
       return "[brain] bypassed: soft compile deadline hit after query.";
     case "skip_deadline_before_injection":
       return "[brain] bypassed: soft compile deadline hit before injection.";
+    case "partial_query_interruption":
+      return "[brain] partial serve: query interrupted under budget pressure; injected committed prefix.";
     case "partial_deadline_after_query":
       return "[brain] partial serve: soft compile deadline hit after query; injected committed prefix.";
     case "partial_deadline_before_injection":
@@ -179,15 +183,15 @@ function buildLegacyBrainContextBlock(result: TraversalResult): string {
   return sections.join("\n");
 }
 
-function compactPreview(content: string): string {
+function compactPreview(content: string, maxChars = COMPACT_INJECTED_PREVIEW_CHARS): string {
   const normalized = content.replace(/\s+/g, " ").trim();
   if (!normalized) {
     return "(preview unavailable)";
   }
-  if (normalized.length <= COMPACT_INJECTED_PREVIEW_CHARS) {
+  if (normalized.length <= maxChars) {
     return normalized;
   }
-  return `${normalized.slice(0, COMPACT_INJECTED_PREVIEW_CHARS - 1)}…`;
+  return `${normalized.slice(0, Math.max(1, maxChars - 1))}…`;
 }
 
 function formatCountMap(counts: Record<string, number | undefined>): string {
@@ -264,6 +268,10 @@ function buildCompactFittedNodeLine(summary: DecisionTraceInjectedNodeSummary): 
   return `- [${summary.kind}/${summary.trust}] ${compactPreview(summary.contentPreview)}`;
 }
 
+function buildCompactPartialFittedNodeLine(summary: DecisionTraceInjectedNodeSummary): string {
+  return `- [${summary.kind}] ${compactPreview(summary.contentPreview, 56)}`;
+}
+
 function buildCompactStructuredBrainContext(
   injectedNodeSummaries: DecisionTraceInjectedNodeSummary[],
 ): string {
@@ -286,6 +294,8 @@ function buildBrainContextBlock(result: TraversalResult): string {
 
 function buildPartialServeNotice(stage: InterruptionStage): string {
   switch (stage) {
+    case "traversal":
+      return "[brain partial] Query traversal stopped under deadline pressure. Committed prefix only.";
     case "query":
       return "[brain partial] Soft compile deadline hit after query. Committed prefix only.";
     case "injection":
@@ -297,6 +307,8 @@ function buildPartialServeNotice(stage: InterruptionStage): string {
 
 function buildPartialAuditLine(stage: InterruptionStage): string {
   switch (stage) {
+    case "traversal":
+      return "- Partial serve reason: traversal stopped under deadline pressure.";
     case "query":
       return "- Partial serve reason: soft compile deadline hit after query.";
     case "injection":
@@ -367,6 +379,37 @@ function buildPartialBrainContextBlock(result: TraversalResult, stage: Interrupt
     return buildLegacyPartialBrainContextBlock(result, stage);
   }
   return buildStructuredPartialBrainContextBlock(result, routeTrace, stage);
+}
+
+function buildCompactStructuredPartialBrainContext(params: {
+  routeTrace: DecisionRouteTrace;
+  stage: InterruptionStage;
+  fittedNodeSummaries: DecisionTraceInjectedNodeSummary[];
+}): string {
+  const retrievedNodeCount = params.routeTrace.injectedNodeSummaries.length;
+  const fittedNodeCount = params.fittedNodeSummaries.length;
+  const droppedNodeCount = Math.max(0, retrievedNodeCount - fittedNodeCount);
+  const stageDetail = (() => {
+    switch (params.stage) {
+      case "traversal":
+        return "query interrupted";
+      case "query":
+        return "deadline after query";
+      case "injection":
+        return "deadline before injection";
+      default:
+        return "committed prefix";
+    }
+  })();
+  const lines = [
+    `[brain partial] ${stageDetail}.`,
+    `- committed prefix ${fittedNodeCount}/${retrievedNodeCount} nodes${droppedNodeCount > 0 ? `; omitted ${droppedNodeCount}` : ""}.`,
+  ];
+  if (droppedNodeCount > 0) {
+    lines.push("- omitted context was not completed before the deadline.");
+  }
+  lines.push(...params.fittedNodeSummaries.map(buildCompactPartialFittedNodeLine));
+  return lines.join("\n");
 }
 
 function buildSummaryRoutingPrompt(
@@ -574,9 +617,24 @@ function withCompileReport(
   selectionMetadata: AssemblyDecisionDetails,
   mode: BrainAssemblyOutcomeMode | BrainAssemblyRouteMode,
 ): AssemblyDecisionDetails & { compileReport?: BrainCompileReportV1 | null; compileReportSummary?: string | null; prefetch?: BrainPrefetchDecision | null } {
-  const compileReport = trace?.routeTrace?.selectionMetadata?.compileReport
-    ? rewriteBrainCompileReportSummary(trace.routeTrace.selectionMetadata.compileReport, { mode })
-    : null;
+  if (!trace?.routeTrace?.selectionMetadata) {
+    return selectionMetadata;
+  }
+  const compileReport = buildBrainCompileReport({
+    routeTrace: {
+      ...trace.routeTrace,
+      selectionMetadata: {
+        ...trace.routeTrace.selectionMetadata,
+        ...selectionMetadata,
+      },
+    },
+    decision: {
+      mode,
+      bindingMode: trace.routeTrace.selectionMetadata.compileReport?.bindingMode ?? null,
+      traceId: trace.id,
+      episodeId: trace.episodeId,
+    },
+  });
   if (!compileReport) {
     return selectionMetadata;
   }
@@ -587,13 +645,15 @@ function withCompileReport(
   };
 }
 
-function applyStructuredMaxContextChars(
-  result: TraversalResult,
+function applyStructuredNodeBudget(params: {
   routeTrace: DecisionRouteTrace,
-  maxContextChars?: number,
-): BudgetedBrainContext {
-  const fullText = buildStructuredBrainContextBlock(result, routeTrace);
-  if (typeof maxContextChars !== "number" || !Number.isFinite(maxContextChars)) {
+  maxContextChars?: number;
+  buildFullContext: () => string;
+  buildCompactContext: (fittedNodeSummaries: DecisionTraceInjectedNodeSummary[]) => string;
+  dropReason: BrainFittingDropReason;
+}): BudgetedBrainContext {
+  const fullText = params.buildFullContext();
+  if (typeof params.maxContextChars !== "number" || !Number.isFinite(params.maxContextChars)) {
     return {
       brainContext: fullText,
       injectedChars: fullText.length,
@@ -602,8 +662,8 @@ function applyStructuredMaxContextChars(
     };
   }
 
-  const limit = Math.max(0, Math.floor(maxContextChars));
-  const retrievedNodeCount = routeTrace.injectedNodeSummaries.length;
+  const limit = Math.max(0, Math.floor(params.maxContextChars));
+  const retrievedNodeCount = params.routeTrace.injectedNodeSummaries.length;
   const baseDetails = {
     fitStrategy: "structured_node_budget" as const,
     retrievedNodeCount,
@@ -631,22 +691,22 @@ function applyStructuredMaxContextChars(
       fittedNodeCount: 0,
       droppedNodeCount: retrievedNodeCount,
       fittingDropReasons: retrievedNodeCount > 0
-        ? { omitted_for_max_context_chars: retrievedNodeCount }
+        ? { [params.dropReason]: retrievedNodeCount }
         : null,
     };
   }
 
-  const orderedNodes = orderedInjectedNodeSummaries(routeTrace);
+  const orderedNodes = orderedInjectedNodeSummaries(params.routeTrace);
   const fittedNodeSummaries: DecisionTraceInjectedNodeSummary[] = [];
   for (const summary of orderedNodes) {
-    const candidateContext = buildCompactStructuredBrainContext([...fittedNodeSummaries, summary]);
+    const candidateContext = params.buildCompactContext([...fittedNodeSummaries, summary]);
     if (candidateContext.length > limit) {
       break;
     }
     fittedNodeSummaries.push(summary);
   }
 
-  const brainContext = buildCompactStructuredBrainContext(fittedNodeSummaries);
+  const brainContext = params.buildCompactContext(fittedNodeSummaries);
   const fittedNodeCount = fittedNodeSummaries.length;
   const droppedNodeCount = Math.max(0, retrievedNodeCount - fittedNodeCount);
   return {
@@ -658,9 +718,45 @@ function applyStructuredMaxContextChars(
     fittedNodeCount,
     droppedNodeCount,
     fittingDropReasons: droppedNodeCount > 0
-      ? { omitted_for_max_context_chars: droppedNodeCount }
+      ? { [params.dropReason]: droppedNodeCount }
       : null,
   };
+}
+
+function applyStructuredMaxContextChars(
+  result: TraversalResult,
+  routeTrace: DecisionRouteTrace,
+  maxContextChars?: number,
+): BudgetedBrainContext {
+  return applyStructuredNodeBudget({
+    routeTrace,
+    maxContextChars,
+    buildFullContext: () => buildStructuredBrainContextBlock(result, routeTrace),
+    buildCompactContext: (fittedNodeSummaries) => buildCompactStructuredBrainContext(fittedNodeSummaries),
+    dropReason: "omitted_for_max_context_chars",
+  });
+}
+
+function buildInterruptedBudgetedBrainContext(
+  result: TraversalResult,
+  stage: InterruptionStage,
+  maxContextChars?: number,
+): BudgetedBrainContext {
+  const routeTrace = result.trace.routeTrace;
+  if (!routeTrace || routeTrace.injectedNodeSummaries.length === 0) {
+    return applyLegacyMaxContextChars(buildPartialBrainContextBlock(result, stage), maxContextChars);
+  }
+  return applyStructuredNodeBudget({
+    routeTrace,
+    maxContextChars,
+    buildFullContext: () => buildStructuredPartialBrainContextBlock(result, routeTrace, stage),
+    buildCompactContext: (fittedNodeSummaries) => buildCompactStructuredPartialBrainContext({
+      routeTrace,
+      stage,
+      fittedNodeSummaries,
+    }),
+    dropReason: "omitted_for_partial_serve",
+  });
 }
 
 function buildBudgetedBrainContext(
@@ -729,6 +825,7 @@ export class BrainAssemblerExtension {
 
   async augmentAssembly(params: {
     conversationId: number;
+    agentIdentity?: BrainAgentIdentity | null;
     tokenBudget: number;
     maxContextChars?: number;
     assembled: AssembleContextResult;
@@ -756,6 +853,7 @@ export class BrainAssemblerExtension {
       this.brain.noteAssemblyDecision({
         mode: decision.mode,
         conversationId: params.conversationId,
+        agentIdentity: params.agentIdentity,
         footer: decisionFooter(decision.mode),
         ...metadata,
       });
@@ -801,6 +899,7 @@ export class BrainAssemblerExtension {
       this.brain.noteAssemblyDecision({
         mode,
         conversationId: params.conversationId,
+        agentIdentity: params.agentIdentity,
         footer: decisionFooter(mode),
         ...metadata,
       });
@@ -827,6 +926,7 @@ export class BrainAssemblerExtension {
     });
     const result = await this.brain.query({
       conversationId: params.conversationId,
+      agentIdentity: params.agentIdentity,
       queryText: decision.queryText,
       budgetChars: queryBudgetChars,
       summaryRoutingMode: summaryRouting.mode,
@@ -848,6 +948,7 @@ export class BrainAssemblerExtension {
       this.brain.noteAssemblyDecision({
         mode,
         conversationId: params.conversationId,
+        agentIdentity: params.agentIdentity,
         footer: decisionFooter(mode),
         ...metadata,
       });
@@ -881,6 +982,7 @@ export class BrainAssemblerExtension {
         this.brain.noteAssemblyDecision({
           mode,
           conversationId: params.conversationId,
+          agentIdentity: params.agentIdentity,
           episodeId: null,
           traceId: null,
           footer: decisionFooter(mode),
@@ -913,6 +1015,7 @@ export class BrainAssemblerExtension {
       this.brain.noteAssemblyDecision({
         mode,
         conversationId: params.conversationId,
+        agentIdentity: params.agentIdentity,
         footer: decisionFooter(mode),
         ...metadata,
       });
@@ -931,8 +1034,9 @@ export class BrainAssemblerExtension {
     }
     if (afterQueryCheckpoint.compileDeadlineHit && decision.mode === "use_brain") {
       const interruptedMaxContextChars = resolveInterruptedMaxContextChars(params.maxContextChars);
-      const interruptedBrainContext = applyMaxContextChars(
-        buildPartialBrainContextBlock(result, "query"),
+      const interruptedBrainContext = buildInterruptedBudgetedBrainContext(
+        result,
+        "query",
         interruptedMaxContextChars,
       );
       const mode: BrainAssemblyOutcomeMode = "partial_deadline_after_query";
@@ -960,6 +1064,7 @@ export class BrainAssemblerExtension {
       this.brain.noteAssemblyDecision({
         mode,
         conversationId: params.conversationId,
+        agentIdentity: params.agentIdentity,
         episodeId: result.episode.id,
         traceId: result.trace.id,
         footer: decisionFooter(mode),
@@ -988,6 +1093,62 @@ export class BrainAssemblerExtension {
       };
     }
     if (afterQueryInterruption) {
+      if (decision.mode === "use_brain" && afterQueryInterruption.servedPartial) {
+        const interruptedMaxContextChars = resolveInterruptedMaxContextChars(params.maxContextChars);
+        const interruptedBrainContext = buildInterruptedBudgetedBrainContext(
+          result,
+          afterQueryInterruption.stage,
+          interruptedMaxContextChars,
+        );
+        const mode: BrainAssemblyOutcomeMode = "partial_query_interruption";
+        const traceSelectionMetadata = withCompileReport(result.trace, assemblyDecisionDetails({
+          checkpoint: afterQueryCheckpoint,
+          brainDropReason: "deadline_after_query",
+          brainDropStage: "query",
+          interruption: afterQueryInterruption,
+          budgetFraction,
+          maxContextChars: interruptedMaxContextChars,
+          queryBudgetChars,
+          budgetedBrainContext: interruptedBrainContext,
+        }), mode);
+        traceSelectionMetadata.prefetch = prefetchDecision;
+        this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
+        const brainMessage: AgentMessage | null = interruptedBrainContext.brainContext.length > 0
+          ? ({
+              role: "user",
+              content: interruptedBrainContext.brainContext,
+            } as AgentMessage)
+          : null;
+        this.brain.noteAssemblyDecision({
+          mode,
+          conversationId: params.conversationId,
+          episodeId: result.episode.id,
+          traceId: result.trace.id,
+          footer: decisionFooter(mode),
+          ...traceSelectionMetadata,
+        });
+        return {
+          ...params.assembled,
+          messages: brainMessage ? [brainMessage, ...params.assembled.messages] : params.assembled.messages,
+          estimatedTokens: brainMessage
+            ? params.assembled.estimatedTokens + estimateTokens(extractText(brainMessage.content))
+            : params.assembled.estimatedTokens,
+          systemPromptAddition: mergeSystemPromptAddition(
+            params.assembled.systemPromptAddition,
+            brainMessage
+              ? "OpenClawBrain partial serves are committed prefixes; omitted context was cut by query-time deadline pressure."
+              : undefined,
+            summaryRoutingPrompt,
+          ),
+          brainDecision: {
+            mode,
+            episodeId: result.episode.id,
+            traceId: result.trace.id,
+            footer: decisionFooter(mode),
+            ...traceSelectionMetadata,
+          },
+        };
+      }
       const mode: BrainAssemblyOutcomeMode = "skip_deadline_after_query";
       const traceSelectionMetadata = withCompileReport(result.trace, assemblyDecisionDetails({
         checkpoint: afterQueryCheckpoint,
@@ -1002,6 +1163,7 @@ export class BrainAssemblerExtension {
       this.brain.noteAssemblyDecision({
         mode,
         conversationId: params.conversationId,
+        agentIdentity: params.agentIdentity,
         episodeId: result.episode.id,
         traceId: result.trace.id,
         footer: decisionFooter(mode),
@@ -1031,8 +1193,9 @@ export class BrainAssemblerExtension {
     if (beforeInjectionCheckpoint.compileDeadlineHit) {
       if (decision.mode === "use_brain") {
         const interruptedMaxContextChars = resolveInterruptedMaxContextChars(params.maxContextChars);
-        const interruptedBrainContext = applyMaxContextChars(
-          buildPartialBrainContextBlock(result, "injection"),
+        const interruptedBrainContext = buildInterruptedBudgetedBrainContext(
+          result,
+          "injection",
           interruptedMaxContextChars,
         );
         const mode: BrainAssemblyOutcomeMode = "partial_deadline_before_injection";
@@ -1061,6 +1224,7 @@ export class BrainAssemblerExtension {
         this.brain.noteAssemblyDecision({
           mode,
           conversationId: params.conversationId,
+          agentIdentity: params.agentIdentity,
           episodeId: result.episode.id,
           traceId: result.trace.id,
           footer: decisionFooter(mode),
@@ -1108,6 +1272,7 @@ export class BrainAssemblerExtension {
       this.brain.noteAssemblyDecision({
         mode,
         conversationId: params.conversationId,
+        agentIdentity: params.agentIdentity,
         episodeId: result.episode.id,
         traceId: result.trace.id,
         footer: decisionFooter(mode),
@@ -1158,6 +1323,7 @@ export class BrainAssemblerExtension {
       this.brain.noteAssemblyDecision({
         mode: "shadow",
         conversationId: params.conversationId,
+        agentIdentity: params.agentIdentity,
         episodeId: result.episode.id,
         traceId: result.trace.id,
         footer: decisionFooter("shadow"),
@@ -1182,6 +1348,7 @@ export class BrainAssemblerExtension {
     this.brain.noteAssemblyDecision({
       mode: "use_brain",
       conversationId: params.conversationId,
+      agentIdentity: params.agentIdentity,
       episodeId: result.episode.id,
       traceId: result.trace.id,
       footer: result.trace.footer,

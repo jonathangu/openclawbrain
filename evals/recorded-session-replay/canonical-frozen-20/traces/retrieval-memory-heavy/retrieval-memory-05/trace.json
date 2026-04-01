@@ -1,0 +1,72 @@
+{
+  "contract": "recorded_session_trace.v1",
+  "traceId": "trace-retrieval-restart-checklist-lookup",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T03:40:00.000Z",
+  "bundleBuiltAt": "2026-04-01T03:50:00.000Z",
+  "sessionId": "session-retrieval-restart-checklist-lookup",
+  "channel": "cli",
+  "sourceStream": "openclaw/runtime/cli",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from packages/cli/dist/test/recorded-session-replay-proof-bundle.test.js"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-trace-retrieval-restart-checklist-lookup",
+    "snapshotId": "snapshot-trace-retrieval-restart-checklist-lookup",
+    "capturedAt": "2026-04-01T03:39:00.000Z",
+    "rootDir": "/tmp/openclawbrain-canonical-frozen-20/trace-retrieval-restart-checklist-lookup",
+    "branch": "main",
+    "revision": "rev-trace-retrieval-restart-checklist-lookup",
+    "labels": [
+      "canonical-frozen-20"
+    ]
+  },
+  "evalTurnCount": 1,
+  "seedBuiltAt": "2026-04-01T03:41:00.000Z",
+  "seedActivatedAt": "2026-04-01T03:42:00.000Z",
+  "seedCues": [
+    {
+      "cueId": "cue-restart-checklist",
+      "createdAt": "2026-04-01T03:38:30.000Z",
+      "content": "The operator lane restart checklist is archived in docs/evidence and incidents are tagged with postmortem IDs.",
+      "kind": "teaching"
+    }
+  ],
+  "turns": [
+    {
+      "turnId": "restart-checklist-turn-1",
+      "createdAt": "2026-04-01T03:43:00.000Z",
+      "deliveredAt": "2026-04-01T03:43:20.000Z",
+      "userMessage": "Where is the restart checklist archived?",
+      "feedback": [
+        {
+          "createdAt": "2026-04-01T03:43:35.000Z",
+          "content": "Answer with docs/evidence and postmortem IDs.",
+          "kind": "teaching"
+        }
+      ],
+      "expectedContextPhrases": [
+        "docs/evidence"
+      ]
+    },
+    {
+      "turnId": "restart-checklist-turn-2",
+      "createdAt": "2026-04-01T03:44:30.000Z",
+      "deliveredAt": "2026-04-01T03:44:50.000Z",
+      "userMessage": "Where is it archived and how are incidents tagged again?",
+      "runtimeHints": [
+        "restart",
+        "archive",
+        "again"
+      ],
+      "expectedContextPhrases": [
+        "docs/evidence",
+        "postmortem IDs"
+      ],
+      "minimumPhraseHits": 1
+    }
+  ]
+}

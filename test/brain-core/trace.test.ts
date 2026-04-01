@@ -236,6 +236,89 @@ describe("decision trace branch proofs", () => {
     }));
   });
 
+  it("attributes clipped selected nodes separately from traversal misses in the compile report", () => {
+    const trace = makeTrace([
+      {
+        sourceNodeId: null,
+        expansionIndex: 0,
+        frontierBefore: [],
+        frontierAfter: ["a", "b", "c"],
+        budgetBefore: 100,
+        budgetAfter: 70,
+        substeps: [
+          makeTraverseSubstep(null, 0, 0, "a"),
+          makeTraverseSubstep(null, 0, 1, "b"),
+          makeTraverseSubstep(null, 0, 2, "c"),
+          makeStopSubstep(null, 0, 3, "forced", "fanout_cap"),
+        ],
+        selectedTargets: ["a", "b", "c"],
+        acceptedTargets: ["a", "b", "c"],
+        vetoedTargets: [],
+        proposalOutcomes: [
+          { targetNodeId: "a", outcome: "accepted", reason: "accepted" },
+          { targetNodeId: "b", outcome: "accepted", reason: "accepted" },
+          { targetNodeId: "c", outcome: "accepted", reason: "accepted" },
+        ],
+        terminationReason: "fanout_cap",
+      },
+    ], ["a", "b", "c"], [makeNode("a"), makeNode("b"), makeNode("c")]);
+
+    if (!trace.routeTrace?.selectionMetadata) {
+      throw new Error("expected route trace metadata");
+    }
+    trace.routeTrace = {
+      ...trace.routeTrace,
+      candidateNodeIds: ["a", "b", "c", "d"],
+      selectionMetadata: {
+        ...trace.routeTrace.selectionMetadata,
+        brainDropReason: "deadline_after_query",
+        brainDropStage: "query",
+        contextClipped: true,
+        fitStrategy: "structured_node_budget",
+        fittedNodeCount: 2,
+        droppedNodeCount: 2,
+        fittingDropReasons: {
+          omitted_for_partial_serve: 1,
+        },
+      },
+    };
+
+    const compileReport = buildBrainCompileReport({
+      routeTrace: trace.routeTrace,
+      decision: {
+        mode: "partial_query_interruption",
+        traceId: trace.id,
+        episodeId: trace.episodeId,
+      },
+      lookupNode: (nodeId) => makeNode(nodeId),
+    });
+
+    expect(compileReport).toEqual(expect.objectContaining({
+      counters: expect.objectContaining({
+        selectedNodeCount: 2,
+        droppedNodeCount: 2,
+      }),
+      reasons: expect.objectContaining({
+        droppedNodeReasons: {
+          omitted_for_partial_serve: 1,
+          not_selected: 1,
+        },
+      }),
+    }));
+    expect(compileReport?.buckets.selected.map((item) => item.nodeId)).toEqual(["a", "b"]);
+    expect(compileReport?.buckets.dropped).toEqual(expect.arrayContaining([
+      expect.objectContaining({
+        nodeId: "c",
+        reason: "omitted_for_partial_serve",
+        fitStrategy: "structured_node_budget",
+      }),
+      expect.objectContaining({
+        nodeId: "d",
+        reason: "not_selected",
+      }),
+    ]));
+  });
+
   it("aggregates branch stop and continue behavior across recent traced decisions", () => {
     const firstTrace = makeTrace([
       {

@@ -414,10 +414,12 @@ describe("traverse", () => {
       const accounting = result.interruptionAccounting!;
       expect(accounting.maxExpansions).toBe(4);
       expect(accounting.budgetTotal).toBe(1000);
+      expect(accounting.remainingBudgetChars).toBeGreaterThanOrEqual(0);
       expect(accounting.budgetUtilization).toBeGreaterThan(0);
       expect(accounting.budgetUtilization).toBeLessThanOrEqual(1);
       // droppedFrontierNodeIds contains frontier nodes never expanded
       expect(accounting.droppedFrontierNodeIds.length).toBeGreaterThanOrEqual(0);
+      expect(accounting.interruptedExpansionSourceNodeId).not.toBeUndefined();
       // Budget used should match fired nodes
       const firedTokens = result.firedNodes.reduce((sum, n) => sum + n.tokenCount, 0);
       expect(accounting.budgetUsed).toBe(firedTokens);
@@ -487,6 +489,7 @@ describe("traverse", () => {
         expect(accounting.completedExpansionCount).toBeGreaterThanOrEqual(0);
         expect(typeof accounting.droppedProposalCount).toBe("number");
         expect(typeof accounting.droppedProposalReasons).toBe("object");
+        expect(Array.isArray(accounting.droppedProposalNodeIds)).toBe(true);
       }
     });
 

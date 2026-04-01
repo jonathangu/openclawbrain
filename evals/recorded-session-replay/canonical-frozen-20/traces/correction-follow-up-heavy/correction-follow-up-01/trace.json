@@ -1,0 +1,86 @@
+{
+  "contract": "recorded_session_trace.v1",
+  "traceId": "tern-recorded-session-proof",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-03-25T00:00:00.000Z",
+  "bundleBuiltAt": "2026-03-25T00:30:00.000Z",
+  "sessionId": "session-tern-proof",
+  "channel": "cli",
+  "sourceStream": "openclaw/runtime/cli",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic fixture for deterministic proof bundle tests"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "workspace-tern",
+    "snapshotId": "snapshot-tern",
+    "capturedAt": "2026-03-24T23:59:00.000Z",
+    "rootDir": "/workspace/tern",
+    "branch": "task/T-20260325-031-wave3-proof-bundle-writer",
+    "revision": "109e9b3",
+    "labels": [
+      "proof",
+      "recorded-session"
+    ]
+  },
+  "seedBuiltAt": "2026-03-25T00:05:00.000Z",
+  "seedActivatedAt": "2026-03-25T00:06:00.000Z",
+  "seedCues": [
+    {
+      "cueId": "cue-deploy-journal",
+      "createdAt": "2026-03-25T00:01:00.000Z",
+      "content": "The operator lane restart checklist is archived in docs/evidence and incidents are tagged with postmortem IDs.",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-restart-order",
+      "createdAt": "2026-03-25T00:02:00.000Z",
+      "content": "Keep the operator lane restart order explicit when proving a recorded session replay.",
+      "kind": "teaching"
+    }
+  ],
+  "turns": [
+    {
+      "turnId": "turn-alpha",
+      "createdAt": "2026-03-25T00:10:00.000Z",
+      "deliveredAt": "2026-03-25T00:10:30.000Z",
+      "userMessage": "Where is the restart checklist archived and how are incidents tagged?",
+      "feedback": [
+        {
+          "createdAt": "2026-03-25T00:11:00.000Z",
+          "content": "Answer with docs/evidence and postmortem IDs.",
+          "kind": "correction"
+        }
+      ],
+      "expectedContextPhrases": [
+        "docs/evidence",
+        "postmortem IDs"
+      ],
+      "minimumPhraseHits": 1
+    },
+    {
+      "turnId": "turn-beta",
+      "createdAt": "2026-03-25T00:20:00.000Z",
+      "deliveredAt": "2026-03-25T00:20:20.000Z",
+      "userMessage": "Summarize the operator lane restart order.",
+      "runtimeHints": [
+        "proof",
+        "replay"
+      ],
+      "feedback": [
+        {
+          "createdAt": "2026-03-25T00:21:00.000Z",
+          "content": "Keep the operator lane restart order explicit.",
+          "kind": "teaching"
+        }
+      ],
+      "expectedContextPhrases": [
+        "operator lane",
+        "restart order"
+      ],
+      "minimumPhraseHits": 1
+    }
+  ]
+}

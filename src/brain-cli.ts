@@ -5,7 +5,13 @@ import { DatabaseSync } from "node:sqlite";
 import { BrainGraph } from "./brain-core/graph.js";
 import { computeHealth } from "./brain-core/health.js";
 import { PackManager } from "./brain-core/pack.js";
-import type { BrainPrefetchDecision } from "./brain-core/types.js";
+import type {
+  BrainPrefetchDecision,
+  ContextFeedbackSummary,
+  ContextUsefulnessSummary,
+  MutationBundleRecord,
+  ReplayGateVerdict,
+} from "./brain-core/types.js";
 import { summarizeRecentPrefetchDecisions } from "./brain-core/trace.js";
 import { BrainStore } from "./brain-store/store.js";
 import { runBrainMigrations } from "./brain-store/migrations.js";
@@ -25,6 +31,122 @@ import { readWorkerRuntimeState } from "./brain-runtime/worker-state.js";
 
 function printJson(payload: unknown): void {
   process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
+}
+
+function buildLearningHealthSummary(params: {
+  contextFeedback: ContextFeedbackSummary;
+  contextUsefulness: ContextUsefulnessSummary;
+  recentMutationBundles: MutationBundleRecord[];
+  lastReplayGateVerdict: ReplayGateVerdict | null;
+}) {
+  const recentBundleCount = params.recentMutationBundles.length;
+  const promotedBundleCount = params.recentMutationBundles.filter((bundle) => bundle.status === "promoted").length;
+  const rejectedBundleCount = params.recentMutationBundles.filter((bundle) => bundle.status === "rejected").length;
+  const pendingBundleCount = params.recentMutationBundles.filter((bundle) => bundle.status === "pending").length;
+  const replayGatePassed =
+    typeof params.lastReplayGateVerdict?.passed === "boolean"
+      ? params.lastReplayGateVerdict.passed
+      : null;
+
+  const signals = {
+    routeTraceCount: params.contextFeedback.coverage.routeTraceCount,
+    supervisedTraceCount: params.contextFeedback.coverage.supervisedTraceCount,
+    supervisionCoverage: params.contextFeedback.coverage.supervisionCoverage,
+    helpfulCount: params.contextFeedback.verdictCounts.helpful,
+    irrelevantCount: params.contextFeedback.verdictCounts.irrelevant,
+    harmfulCount: params.contextFeedback.verdictCounts.harmful,
+    scoredObservationCount: params.contextUsefulness.coverage.scoredObservationCount,
+    recentBundleCount,
+    promotedBundleCount,
+    rejectedBundleCount,
+    pendingBundleCount,
+    replayGatePassed,
+  };
+
+  if (
+    signals.routeTraceCount === 0
+    && signals.recentBundleCount === 0
+    && signals.scoredObservationCount === 0
+  ) {
+    return {
+      status: "idle",
+      summary: "no learning activity recorded yet",
+      detail: "No traced routes, shadow usefulness scores, or mutation bundles are present yet.",
+      focus: {
+        action: "monitor",
+        detail: "wait for traced routes before judging learning health",
+      },
+      signals,
+    };
+  }
+
+  if (signals.harmfulCount > 0) {
+    return {
+      status: "review_harmful_context",
+      summary: `${signals.harmfulCount} harmful traced route verdict(s) need review`,
+      detail: "Feedback is landing, but at least one traced route was harmful. Investigate the latest harmful context before trusting further change.",
+      focus: params.contextFeedback.focus,
+      signals,
+    };
+  }
+
+  if (signals.promotedBundleCount > 0 && signals.supervisedTraceCount === 0) {
+    return {
+      status: "changing_without_feedback",
+      summary: `${signals.promotedBundleCount} promoted bundle(s) recorded without traced-route feedback`,
+      detail: "The system is changing, but no traced routes have been closed with helpful/irrelevant/harmful supervision yet. Treat this as unverified change, not demonstrated learning.",
+      focus: {
+        action: "increase_feedback_coverage",
+        detail: "capture operator or teacher feedback on recent traced routes before trusting promoted changes",
+      },
+      signals,
+    };
+  }
+
+  if (signals.promotedBundleCount > 0 && signals.supervisedTraceCount < signals.routeTraceCount) {
+    return {
+      status: "changing_without_feedback",
+      summary: `${signals.promotedBundleCount} promoted bundle(s); feedback covers ${signals.supervisedTraceCount}/${signals.routeTraceCount} traced route(s)`,
+      detail: "Recent change is visible, but supervision still trails routed behavior. The system may be changing faster than operators can tell whether that change is useful.",
+      focus: params.contextFeedback.focus,
+      signals,
+    };
+  }
+
+  if (signals.routeTraceCount > 0 && signals.supervisedTraceCount < signals.routeTraceCount) {
+    return {
+      status: "needs_feedback_coverage",
+      summary: `feedback covers ${signals.supervisedTraceCount}/${signals.routeTraceCount} traced route(s)`,
+      detail: "Learning-health truth is incomplete until more traced routes are closed with operator or teacher verdicts.",
+      focus: params.contextFeedback.focus,
+      signals,
+    };
+  }
+
+  if (
+    signals.supervisedTraceCount > 0
+    && signals.helpfulCount > signals.harmfulCount
+    && (signals.promotedBundleCount > 0 || signals.scoredObservationCount > 0)
+  ) {
+    return {
+      status: "learning_backed_by_feedback",
+      summary: `${signals.helpfulCount} helpful traced route verdict(s) back recent learning activity`,
+      detail: "Recent change is being evaluated by traced-route feedback. That is stronger than mere churn, but it is still local evidence rather than proof of broad answer-quality improvement.",
+      focus: {
+        action: "monitor",
+        detail: "keep sampling traced routes to confirm the current helpful trend holds",
+      },
+      signals,
+    };
+  }
+
+  return {
+    status: "monitor",
+    summary: "learning surfaces are active but mixed",
+    detail: "There is learning-related activity, but the current evidence is not yet strong enough to call it clearly useful or clearly harmful.",
+    focus: params.contextFeedback.focus,
+    signals,
+  };
 }
 
 function buildInitLog(): { info: (msg: string) => void; warn: (msg: string) => void } {
@@ -137,7 +259,21 @@ function commandStatus(): void {
   const contextUsefulness = store.getContextUsefulnessSummary();
   const promotionStory = buildPromotionStory(store, { contextFeedback });
   const observationAttribution = store.getObservationAttributionSummary();
+  const teacherReadyBefore = Date.now() - Math.max(1_000, brainConfig.trainerIntervalMs);
+  const teacherTruth = {
+    queue: store.getTeacherQueueSummary(teacherReadyBefore, 20),
+    lastEvaluationCycle: store.getTrainingStateJson("last_teacher_evaluation_cycle_json"),
+    lastUpdateCycle: store.getTrainingStateJson("last_teacher_update_cycle_json"),
+  };
   const recentDecisionSummary = store.getRecentDecisionSummary(25);
+  const recentMutationBundles = store.getRecentMutationBundles(5);
+  const lastReplayGateVerdict = store.getTrainingStateJson<ReplayGateVerdict>("last_replay_gate_verdict_json") ?? null;
+  const learningHealth = buildLearningHealthSummary({
+    contextFeedback,
+    contextUsefulness,
+    recentMutationBundles,
+    lastReplayGateVerdict,
+  });
   const recentPrefetchDecisions = store.getTrainingStateJson<BrainPrefetchDecision[]>("recent_prefetch_decisions_json") ?? [];
   const recentPrefetchSummary = summarizeRecentPrefetchDecisions(recentPrefetchDecisions, 25);
   const recentTrace = store.getRecentTraces(1)[0] ?? null;
@@ -180,16 +316,18 @@ function commandStatus(): void {
     pendingObservations: store.countPendingObservations(),
     pendingObservationsByStatus: store.countObservationsByStatus(),
     observationAttribution,
+    teacherTruth,
     contextFeedback,
     contextUsefulness,
+    learningHealth,
     pendingLabels: store.getPendingLabels().length,
     pendingLabelsBySource: store.countPendingLabelsBySource(),
     mutationBacklog: store.countMutationsByStatus(),
-    recentMutationBundles: store.getRecentMutationBundles(5),
+    recentMutationBundles,
     lastPromotionReason: store.getTrainingState("last_promotion_reason"),
     lastPromotionVerdict: store.getTrainingStateJson("last_promotion_verdict_json"),
     lastReplayFailureReason: store.getTrainingState("last_replay_failure_reason"),
-    lastReplayGateVerdict: store.getTrainingStateJson("last_replay_gate_verdict_json"),
+    lastReplayGateVerdict,
     promotionStory,
     recentDecisionSummary,
     recentPrefetchSummary,

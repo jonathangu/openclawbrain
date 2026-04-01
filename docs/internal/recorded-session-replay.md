@@ -94,3 +94,62 @@ The published proof bundle is deterministic with respect to the replay inputs an
 The replay execution scratch root is temporary and deleted after the run. That scratch state is intentionally not part of the durable proof bundle.
 
 `environment.json` records the local writer runtime (`nodeVersion`, `platform`, `arch`). That file is expected to vary if the proof is regenerated on a different machine, but the semantic replay hashes should remain stable when the replay inputs are unchanged.
+
+## Lane-level aggregate artifacts
+
+When you need to rerun a corpus instead of a single trace, use the lane writer:
+
+```bash
+tsx scripts/build-recorded-session-replay-lane.ts \
+  --trace path/to/trace-a.json \
+  --trace path/to/trace-b.json
+```
+
+That keeps the existing per-trace bundle contract intact under:
+
+```text
+docs/evidence/YYYY-MM-DD/<git-sha>/recorded-session-replay/<trace-id>/
+```
+
+and adds one aggregate surface under:
+
+```text
+docs/evidence/YYYY-MM-DD/<git-sha>/recorded-session-replay/_lane/
+  README.md
+  index.json
+  summary-tables.json
+  pairwise-deltas.json
+  win-rate-matrix.json
+  worked-traces.md
+  generation-report.json
+```
+
+The `_lane/` directory is intentionally separate from the per-trace bundle roots so proof-cron and other bundle scanners do not confuse the aggregate view with a single replay bundle.
+
+### Aggregate file roles
+
+- `README.md`: compact operator-facing overview of mode totals and pairwise results.
+- `index.json`: machine-readable lane index, bundle listing, and assumptions.
+- `summary-tables.json`: stable cross-trace mode, trace, and per-turn tables in fixed mode order.
+- `pairwise-deltas.json`: left-minus-right aggregate deltas plus per-trace pairwise records.
+- `win-rate-matrix.json`: trace-level and turn-level win/loss/tie matrices for every mode pairing.
+- `worked-traces.md`: short human-readable worked examples sorted by score spread.
+- `generation-report.json`: rerun report with the exact bundle validation outcomes and any failed traces.
+
+### Canonical manifest contract
+
+The canonical replay corpus now lives at:
+
+`evals/recorded-session-replay/canonical-frozen-20/manifest.json`
+
+That manifest uses contract `canonical_recorded_session_trace_set_manifest.v1` and stable trace paths from `entries[].path`.
+
+The lane writer defaults to that manifest when no explicit `--trace` or `--trace-manifest` input is provided:
+
+```bash
+npm run proof:replay-lane
+```
+
+The frozen set is still truthfully equivalent-only, not first-party real-trace-backed. That boundary is recorded in the manifest itself under `realTraceCoverage.summary`.
+
+Compatibility fallback for ad hoc manifests remains available, but the canonical lane-c manifest is the primary replay/eval contract.

@@ -35,6 +35,59 @@ Without `--artifact-dir`, the script writes to:
 docs/evidence/YYYY-MM-DD/<git-sha>/recorded-session-replay/<trace-id>/
 ```
 
+## Run the lane writer for multiple traces
+
+When you want a rerunnable corpus-level proof surface with aggregate tables and worked traces:
+
+```bash
+npm run proof:replay-lane
+```
+
+That defaults to the canonical frozen manifest at:
+
+`evals/recorded-session-replay/canonical-frozen-20/manifest.json`
+
+The canonical set is currently equivalent-only, not first-party real-trace-backed. Keep that truth boundary attached to any claims made from the replay lane.
+
+You can still override the input set explicitly:
+
+```bash
+tsx scripts/build-recorded-session-replay-lane.ts \
+  --trace path/to/trace-a.json \
+  --trace path/to/trace-b.json
+```
+
+or with an explicit manifest:
+
+```bash
+tsx scripts/build-recorded-session-replay-lane.ts \
+  --trace-manifest path/to/replay-manifest.json
+```
+
+The lane writer keeps the per-trace bundles under `recorded-session-replay/<trace-id>/` and writes aggregate artifacts under `recorded-session-replay/_lane/`.
+
+## Run the frozen eval gate
+
+To score the same canonical frozen set as one eval gate:
+
+```bash
+npm run proof:frozen-eval-gate
+```
+
+That defaults to the same canonical manifest and writes:
+
+```text
+docs/evidence/YYYY-MM-DD/<git-sha>/frozen-recorded-session-eval/manifest/
+```
+
+Override the manifest or output path if needed:
+
+```bash
+tsx scripts/run-frozen-recorded-session-eval-gate.ts \
+  --manifest path/to/replay-manifest.json \
+  --output-dir path/to/out
+```
+
 ## What to inspect
 
 Start with:
@@ -50,6 +103,15 @@ Then inspect:
 - `bundle.json` for the full replay result
 - `summary-tables.json` for compact ranking and per-turn tables
 - `modes/learned_route.json` when the learned lane is the interesting delta
+
+For the corpus lane, inspect:
+
+- `_lane/README.md`
+- `_lane/summary-tables.json`
+- `_lane/pairwise-deltas.json`
+- `_lane/win-rate-matrix.json`
+- `_lane/worked-traces.md`
+- `_lane/generation-report.json`
 
 ## Expected success conditions
 
@@ -67,6 +129,13 @@ A healthy run should leave `validation-report.json` with:
 3. If semantic hashes changed, inspect `bundle.json` and the per-mode files before claiming the replay contract moved.
 4. If only file digests changed, inspect `summary.md`, `manifest.json`, and `modes/*.json` for writer drift.
 
+For the corpus lane:
+
+1. Re-run `build-recorded-session-replay-lane.ts` with the same trace list or manifest.
+2. Compare `_lane/summary-tables.json`, `_lane/pairwise-deltas.json`, and `_lane/win-rate-matrix.json`.
+3. Use `_lane/worked-traces.md` to inspect the highest-spread traces first.
+4. Check `_lane/generation-report.json` before trusting the aggregate view if any trace bundle failed validation.
+
 ## Fast contract test
 
 The focused package test for this lane is:
@@ -76,3 +145,9 @@ node --test packages/cli/dist/test/recorded-session-replay-proof-bundle.test.js
 ```
 
 That test freezes the curated artifact layout, reproducibility across output roots, and validator failure on per-mode drift.
+
+The lane-level aggregate test is:
+
+```bash
+npx vitest run test/replay-proof-lane.test.ts
+```

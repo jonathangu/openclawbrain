@@ -194,6 +194,7 @@ describe("BrainService", () => {
 
     const result = await service.query({
       conversationId: 42,
+      agentIdentity: { agentId: "main", lane: "main" },
       queryText: "how do I open a pull request?",
       budgetChars: 4000,
       queryEmbedding: embed("gh pr create pull request"),
@@ -967,7 +968,20 @@ describe("BrainService", () => {
       maxContextChars: 240,
       queryBudgetChars,
       injectedChars: expect.any(Number),
+      droppedChars: expect.any(Number),
+      contextClipped: expect.any(Boolean),
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: expect.any(Number),
+      fittedNodeCount: expect.any(Number),
+      droppedNodeCount: expect.any(Number),
     }));
+    if ((result.brainDecision?.droppedNodeCount ?? 0) > 0) {
+      expect(result.brainDecision?.fittingDropReasons).toEqual(expect.objectContaining({
+        omitted_for_partial_serve: expect.any(Number),
+      }));
+    } else {
+      expect(result.brainDecision?.fittingDropReasons ?? null).toBeNull();
+    }
 
     const trace = await service.getTrace(String(result.brainDecision?.traceId ?? ""));
     expect(trace?.routeTrace?.selectionMetadata).toMatchObject({
@@ -984,11 +998,24 @@ describe("BrainService", () => {
       maxContextChars: 240,
       queryBudgetChars,
       injectedChars: expect.any(Number),
+      droppedChars: expect.any(Number),
+      contextClipped: expect.any(Boolean),
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: expect.any(Number),
+      fittedNodeCount: expect.any(Number),
+      droppedNodeCount: expect.any(Number),
       chosenStopCount: expect.any(Number),
       forcedStopCount: expect.any(Number),
     });
     expect((trace?.routeTrace?.selectionMetadata.injectedChars ?? 0)).toBeGreaterThan(0);
     expect((trace?.routeTrace?.selectionMetadata?.forcedStopCount ?? 0)).toBeGreaterThan(0);
+    if ((trace?.routeTrace?.selectionMetadata.droppedNodeCount ?? 0) > 0) {
+      expect(trace?.routeTrace?.selectionMetadata.fittingDropReasons).toEqual(expect.objectContaining({
+        omitted_for_partial_serve: expect.any(Number),
+      }));
+    } else {
+      expect(trace?.routeTrace?.selectionMetadata.fittingDropReasons ?? null).toBeNull();
+    }
 
     await service.recordTurnObservation({
       episodeId: String(result.brainDecision?.episodeId ?? ""),
@@ -1016,6 +1043,12 @@ describe("BrainService", () => {
           maxContextChars: 240,
           queryBudgetChars,
           injectedChars: expect.any(Number),
+          droppedChars: expect.any(Number),
+          contextClipped: expect.any(Boolean),
+          fitStrategy: "structured_node_budget",
+          retrievedNodeCount: expect.any(Number),
+          fittedNodeCount: expect.any(Number),
+          droppedNodeCount: expect.any(Number),
           chosenStopCount: expect.any(Number),
           forcedStopCount: expect.any(Number),
         },
@@ -1035,6 +1068,12 @@ describe("BrainService", () => {
       maxContextChars: 240,
       queryBudgetChars,
       injectedChars: expect.any(Number),
+      droppedChars: expect.any(Number),
+      contextClipped: expect.any(Boolean),
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: expect.any(Number),
+      fittedNodeCount: expect.any(Number),
+      droppedNodeCount: expect.any(Number),
     }));
     expect(status.lastTraceSelectionMetadata).toEqual(expect.objectContaining({
       budgetChars: queryBudgetChars,
@@ -1047,6 +1086,12 @@ describe("BrainService", () => {
       maxContextChars: 240,
       queryBudgetChars,
       injectedChars: expect.any(Number),
+      droppedChars: expect.any(Number),
+      contextClipped: expect.any(Boolean),
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: expect.any(Number),
+      fittedNodeCount: expect.any(Number),
+      droppedNodeCount: expect.any(Number),
       chosenStopCount: expect.any(Number),
       forcedStopCount: expect.any(Number),
     }));
@@ -1084,6 +1129,7 @@ describe("BrainService", () => {
 
     const result = await service.query({
       conversationId: 42,
+      agentIdentity: { agentId: "main", lane: "main" },
       queryText: "how do I open a pull request?",
       budgetChars: 4000,
       queryEmbedding: embed("gh pr create pull request"),
@@ -1137,6 +1183,7 @@ describe("BrainService", () => {
       totalObservationCount: 1,
       completedObservationCount: 1,
       teacherEvaluationCount: 1,
+      nonExactCount: 1,
       bindingModes: {
         exact_decision_id: 0,
         exact_selection_digest: 0,
@@ -1150,7 +1197,54 @@ describe("BrainService", () => {
         fallback: 1,
         unbound: 0,
       },
-      detail: "teacher evaluations include fallback attribution binding",
+      latestNonExact: {
+        observationId: expect.stringMatching(/^bo_/),
+        episodeId: result?.episode.id,
+        traceId: result?.trace.id,
+        bindingMode: "trace_id",
+        attributionQuality: "fallback",
+        feedbackRichness: "followup_only",
+        confidence: 0.67,
+      },
+      detail: "teacher evaluations include 1 non-exact attribution binding(s) (1 fallback, 0 unbound)",
+    });
+    expect(status.teacherTruth).toMatchObject({
+      queue: {
+        pendingCount: 0,
+        readyCount: 0,
+        delayedCount: 0,
+        budgetDeferredCount: 0,
+        sparseReadyCount: 0,
+      },
+      lastEvaluationCycle: {
+        evaluatedCount: 1,
+        skippedCount: 0,
+        exactAttributionCount: 0,
+        fallbackAttributionCount: 1,
+        unboundAttributionCount: 0,
+        decisions: [
+          expect.objectContaining({
+            episodeId: result?.episode.id,
+            decision: "evaluated",
+            feedbackRichness: "followup_only",
+            attributionQuality: "fallback",
+          }),
+        ],
+      },
+      lastUpdateCycle: {
+        appliedEpisodeCount: 0,
+        skippedEpisodeCount: 1,
+        decisions: [
+          expect.objectContaining({
+            episodeId: result?.episode.id,
+            status: "skipped",
+            reason: "reward matched the running baseline, so no policy delta was emitted",
+            routeUpdateCount: 0,
+            attributionQuality: "fallback",
+            feedbackRichness: "followup_only",
+          }),
+        ],
+      },
     });
     expect(status.contextFeedback).toMatchObject({
       verdictCounts: {
@@ -1160,6 +1254,9 @@ describe("BrainService", () => {
       },
       coverage: {
         routeTraceCount: 1,
+        identifiedRouteTraceCount: 1,
+        unidentifiedRouteTraceCount: 0,
+        agentIdentityCoverage: 1,
         observationCount: 1,
         completedObservationCount: 1,
         supervisedTraceCount: 1,
@@ -1173,6 +1270,7 @@ describe("BrainService", () => {
         traceId: result?.trace.id,
         episodeId: result?.episode.id,
         observationId: expect.stringMatching(/^bo_/),
+        agentIdentity: { agentId: "main", lane: "main" },
         source: "teacher",
         verdict: "helpful",
         score: 0.82,
@@ -1183,6 +1281,20 @@ describe("BrainService", () => {
         action: "monitor",
         detail: "feedback loop is closed on every traced route",
       },
+      agents: [
+        expect.objectContaining({
+          agentIdentity: { agentId: "main", lane: "main" },
+          routeTraceCount: 1,
+          supervisedTraceCount: 1,
+          unsupervisedTraceCount: 0,
+          supervisionCoverage: 1,
+          verdictCounts: {
+            helpful: 1,
+            irrelevant: 0,
+            harmful: 0,
+          },
+        }),
+      ],
     });
     expect(status.contextUsefulness).toMatchObject({
       verdictCounts: {
@@ -1200,6 +1312,15 @@ describe("BrainService", () => {
         observationId: expect.stringMatching(/^bo_/),
         episodeId: result?.episode.id,
         verdict: "irrelevant",
+      },
+    });
+    expect(status.learningHealth).toMatchObject({
+      status: "learning_backed_by_feedback",
+      signals: {
+        routeTraceCount: 1,
+        supervisedTraceCount: 1,
+        helpfulCount: 1,
+        harmfulCount: 0,
       },
     });
     expect((status.contextFeedback as { detail?: string }).detail).toContain("1 helpful");
@@ -1341,6 +1462,9 @@ describe("BrainService", () => {
           supervisionIds: ["ts_2"],
           reward: 0.79,
           rewardSource: "teacher",
+          attributionQuality: "exact",
+          feedbackRichness: "followup_only",
+          updateReason: "teacher teacher_review 0.79 (confidence 0.80, exact_decision_id attribution, followup only) updated 1 route weight(s)",
           baselineBefore: 0.04,
           baselineAfter: 0.12,
           advantage: 0.75,
@@ -1366,6 +1490,8 @@ describe("BrainService", () => {
               turnCompileEventId: "compile-2",
               activePackGraphChecksum: "graph-2",
               bindingMode: "exact_decision_id",
+              attributionQuality: "exact",
+              feedbackRichness: "followup_only",
               traceRequestDigest: "digest-2",
               traceSelectedNodeIds: ["node_2"],
               traceSelectedPathNodeIds: ["node_2"],
@@ -1414,11 +1540,16 @@ describe("BrainService", () => {
       episodeUpdates: [
         expect.objectContaining({
           episodeId: "ep_2",
+          attributionQuality: "exact",
+          feedbackRichness: "followup_only",
           observationIds: ["bo_2"],
+          updateReason: "teacher teacher_review 0.79 (confidence 0.80, exact_decision_id attribution, followup only) updated 1 route weight(s)",
           supervision: [
             expect.objectContaining({
               observationId: "bo_2",
               selectionDigest: "selection-2",
+              attributionQuality: "exact",
+              feedbackRichness: "followup_only",
             }),
           ],
         }),
@@ -1532,6 +1663,15 @@ describe("BrainService", () => {
         },
       },
     ]);
+    expect(status.learningHealth).toMatchObject({
+      status: "changing_without_feedback",
+      signals: {
+        routeTraceCount: 0,
+        supervisedTraceCount: 0,
+        recentBundleCount: 1,
+        promotedBundleCount: 1,
+      },
+    });
   });
 
   it("teaches a correction against the active conversation, labels only matching episodes, and retrieves it immediately", async () => {
@@ -1559,12 +1699,14 @@ describe("BrainService", () => {
 
     const targetResult = await service.query({
       conversationId: 7,
+      agentIdentity: { agentId: "main", lane: "main" },
       queryText: "deployment failed",
       budgetChars: 4000,
       queryEmbedding: embed("deployment ci"),
     });
     await service.query({
       conversationId: 99,
+      agentIdentity: { agentId: "reviewer", lane: "subagent" },
       queryText: "deployment failed elsewhere",
       budgetChars: 4000,
       queryEmbedding: embed("deployment ci"),
@@ -1620,6 +1762,7 @@ describe("BrainService", () => {
 
     const retrieved = await service.query({
       conversationId: 7,
+      agentIdentity: { agentId: "main", lane: "main" },
       queryText: "deployment failed again",
       budgetChars: 4000,
       queryEmbedding: embed("deployment ci"),
@@ -1641,6 +1784,9 @@ describe("BrainService", () => {
       },
       coverage: {
         routeTraceCount: 3,
+        identifiedRouteTraceCount: 3,
+        unidentifiedRouteTraceCount: 0,
+        agentIdentityCoverage: 1,
         observationCount: 0,
         completedObservationCount: 0,
         supervisedTraceCount: 1,
@@ -1658,10 +1804,38 @@ describe("BrainService", () => {
         traceId: targetResult?.trace.id,
         episodeId: targetResult?.episode.id,
         observationId: null,
+        agentIdentity: { agentId: "main", lane: "main" },
         bindingMode: null,
       },
       focus: {
         action: "review_harmful_context",
+      },
+      agents: expect.arrayContaining([
+        expect.objectContaining({
+          agentIdentity: { agentId: "main", lane: "main" },
+          routeTraceCount: 2,
+          supervisedTraceCount: 1,
+          unsupervisedTraceCount: 1,
+          verdictCounts: {
+            helpful: 0,
+            irrelevant: 0,
+            harmful: 1,
+          },
+        }),
+        expect.objectContaining({
+          agentIdentity: { agentId: "reviewer", lane: "subagent" },
+          routeTraceCount: 1,
+          supervisedTraceCount: 0,
+          unsupervisedTraceCount: 1,
+        }),
+      ]),
+    });
+    expect(feedbackStatus.learningHealth).toMatchObject({
+      status: "review_harmful_context",
+      signals: {
+        routeTraceCount: 3,
+        supervisedTraceCount: 1,
+        harmfulCount: 1,
       },
     });
     expect((feedbackStatus.promotionStory as {

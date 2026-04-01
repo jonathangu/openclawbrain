@@ -1,0 +1,74 @@
+{
+  "contract": "recorded_session_trace.v1",
+  "traceId": "trace-direct-answer-release-verify",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T01:40:00.000Z",
+  "bundleBuiltAt": "2026-04-01T01:50:00.000Z",
+  "sessionId": "session-direct-answer-release-verify",
+  "channel": "cli",
+  "sourceStream": "openclaw/runtime/cli",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from package.json release scripts"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-trace-direct-answer-release-verify",
+    "snapshotId": "snapshot-trace-direct-answer-release-verify",
+    "capturedAt": "2026-04-01T01:39:00.000Z",
+    "rootDir": "/tmp/openclawbrain-canonical-frozen-20/trace-direct-answer-release-verify",
+    "branch": "main",
+    "revision": "rev-trace-direct-answer-release-verify",
+    "labels": [
+      "canonical-frozen-20"
+    ]
+  },
+  "evalTurnCount": 1,
+  "seedBuiltAt": "2026-04-01T01:41:00.000Z",
+  "seedActivatedAt": "2026-04-01T01:42:00.000Z",
+  "seedCues": [
+    {
+      "cueId": "cue-release-verify",
+      "createdAt": "2026-04-01T01:38:30.000Z",
+      "content": "The root release verification entrypoint is npm run release:verify. It starts with npm test before proof and package verification.",
+      "kind": "teaching"
+    }
+  ],
+  "turns": [
+    {
+      "turnId": "release-verify-turn-1",
+      "createdAt": "2026-04-01T01:43:00.000Z",
+      "deliveredAt": "2026-04-01T01:43:20.000Z",
+      "userMessage": "What root command runs release verification?",
+      "feedback": [
+        {
+          "createdAt": "2026-04-01T01:43:35.000Z",
+          "content": "Use npm run release:verify; it begins with npm test.",
+          "kind": "teaching"
+        }
+      ],
+      "expectedContextPhrases": [
+        "npm run release:verify",
+        "npm test"
+      ],
+      "minimumPhraseHits": 1
+    },
+    {
+      "turnId": "release-verify-turn-2",
+      "createdAt": "2026-04-01T01:44:30.000Z",
+      "deliveredAt": "2026-04-01T01:44:50.000Z",
+      "userMessage": "Which command is it again?",
+      "runtimeHints": [
+        "release",
+        "command",
+        "again"
+      ],
+      "expectedContextPhrases": [
+        "npm run release:verify",
+        "npm test"
+      ],
+      "minimumPhraseHits": 1
+    }
+  ]
+}

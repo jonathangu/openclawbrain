@@ -107,7 +107,7 @@ export interface IngestBatchResult {
 export interface ContextEngine {
 	readonly info: ContextEngineInfo;
 	bootstrap(params: { sessionId: string; sessionFile: string }): Promise<BootstrapResult>;
-	assemble(params: { sessionId: string; messages: unknown[]; tokenBudget?: number; maxContextChars?: number }): Promise<AssembleResult>;
+	assemble(params: { sessionId: string; sessionKey?: string; messages: unknown[]; tokenBudget?: number; maxContextChars?: number }): Promise<AssembleResult>;
 	ingest(params: { sessionId: string; message: unknown; isHeartbeat?: boolean; brainEpisodeId?: string }): Promise<IngestResult>;
 	compact(params: { sessionId: string; sessionFile: string; tokenBudget?: number; currentTokenCount?: number; compactionTarget?: string; customInstructions?: string; legacyParams?: Record<string, unknown>; force?: boolean }): Promise<CompactResult>;
 }
