@@ -55,8 +55,45 @@ describe("proof cron bundle scanning", () => {
       fixtureHash: "sha256-fixture",
       scoreHash: "sha256-score",
       bundleHash: "sha256-bundle",
-      summary: { winnerMode: "learned_route" },
-      modes: [],
+      summary: { winnerMode: "learned_route", ranking: [{ mode: "learned_route", qualityScore: 90 }] },
+      modes: [
+        {
+          mode: "no_brain",
+          turns: [
+            {
+              selectedContextIds: ["no-brain-ctx-1"],
+              selectedContextTexts: ["alpha"],
+            },
+          ],
+        },
+        {
+          mode: "vector_only",
+          turns: [
+            {
+              selectedContextIds: ["vector-ctx-1"],
+              selectedContextTexts: ["beta beta"],
+            },
+          ],
+        },
+        {
+          mode: "graph_prior_only",
+          turns: [
+            {
+              selectedContextIds: ["graph-ctx-1"],
+              selectedContextTexts: ["gamma"],
+            },
+          ],
+        },
+        {
+          mode: "learned_route",
+          turns: [
+            {
+              selectedContextIds: ["learned-ctx-1"],
+              selectedContextTexts: ["delta delta"],
+            },
+          ],
+        },
+      ],
     });
     writeJson(path.join(replayRoot, "summary-tables.json"), {
       winnerMode: "learned_route",
@@ -115,7 +152,61 @@ describe("proof cron bundle scanning", () => {
 
     const bundles = summarizeScan(candidates, new Date("2026-03-31T13:00:00.000Z"), workspaceRoot);
     expect(bundles.find((bundle: any) => bundle.kind === "operator-proof")?.metrics.totalStepDurationMs).toBe(1500);
-    expect(bundles.find((bundle: any) => bundle.kind === "recorded-session-replay")?.metrics.winnerMode).toBe("learned_route");
+    const replayBundle = bundles.find((bundle: any) => bundle.kind === "recorded-session-replay");
+    expect(replayBundle?.metrics.winnerMode).toBe("learned_route");
+    expect(replayBundle?.metrics.selectedContextChars).toBe(30);
+    expect(replayBundle?.metrics.selectedContextBlockCount).toBe(4);
+    expect(replayBundle?.metrics.estimatedPromptTokens).toBe(10);
+    expect(replayBundle?.metrics.savingsByMode).toEqual([
+      {
+        mode: "no_brain",
+        turnCount: 1,
+        selectedContextBlockCount: 1,
+        selectedContextChars: 5,
+        estimatedPromptTokens: 2,
+        selectedContextCharsPerTurnMean: 5,
+        selectedContextBlocksPerTurnMean: 1,
+        estimatedPromptTokensPerTurnMean: 2,
+        turnsWithSelectedContextCount: 1,
+        turnsWithSelectedContextRate: 1,
+      },
+      {
+        mode: "vector_only",
+        turnCount: 1,
+        selectedContextBlockCount: 1,
+        selectedContextChars: 9,
+        estimatedPromptTokens: 3,
+        selectedContextCharsPerTurnMean: 9,
+        selectedContextBlocksPerTurnMean: 1,
+        estimatedPromptTokensPerTurnMean: 3,
+        turnsWithSelectedContextCount: 1,
+        turnsWithSelectedContextRate: 1,
+      },
+      {
+        mode: "graph_prior_only",
+        turnCount: 1,
+        selectedContextBlockCount: 1,
+        selectedContextChars: 5,
+        estimatedPromptTokens: 2,
+        selectedContextCharsPerTurnMean: 5,
+        selectedContextBlocksPerTurnMean: 1,
+        estimatedPromptTokensPerTurnMean: 2,
+        turnsWithSelectedContextCount: 1,
+        turnsWithSelectedContextRate: 1,
+      },
+      {
+        mode: "learned_route",
+        turnCount: 1,
+        selectedContextBlockCount: 1,
+        selectedContextChars: 11,
+        estimatedPromptTokens: 3,
+        selectedContextCharsPerTurnMean: 11,
+        selectedContextBlocksPerTurnMean: 1,
+        estimatedPromptTokensPerTurnMean: 3,
+        turnsWithSelectedContextCount: 1,
+        turnsWithSelectedContextRate: 1,
+      },
+    ]);
     expect(bundles.find((bundle: any) => bundle.kind === "host-evidence")?.metrics.securityCriticalCount).toBe(1);
   });
 });
@@ -209,15 +300,70 @@ describe("proof cron metric surfaces", () => {
         fileCount: 6,
         artifactBytes: 4000,
         validationOk: true,
-        metrics: {
-          winnerMode: "learned_route",
-          winnerScore: 90,
-          compileOkRate: 0.75,
-          phraseHitRate: 0.75,
-          learnedRouteTurnRate: 0.25,
-          totalTurns: 4,
-        },
+      metrics: {
+        winnerMode: "learned_route",
+        winnerScore: 90,
+        compileOkRate: 0.75,
+        phraseHitRate: 0.75,
+        learnedRouteTurnRate: 0.25,
+        totalTurns: 4,
+        selectedContextChars: 30,
+        selectedContextBlockCount: 4,
+        estimatedPromptTokens: 10,
+        turnsWithSelectedContextCount: 4,
+        turnsWithSelectedContextRate: 1,
+        savingsByMode: [
+          {
+            mode: "no_brain",
+            turnCount: 1,
+            selectedContextBlockCount: 1,
+            selectedContextChars: 5,
+            estimatedPromptTokens: 2,
+            selectedContextCharsPerTurnMean: 5,
+            selectedContextBlocksPerTurnMean: 1,
+            estimatedPromptTokensPerTurnMean: 2,
+            turnsWithSelectedContextCount: 1,
+            turnsWithSelectedContextRate: 1,
+          },
+          {
+            mode: "vector_only",
+            turnCount: 1,
+            selectedContextBlockCount: 1,
+            selectedContextChars: 9,
+            estimatedPromptTokens: 3,
+            selectedContextCharsPerTurnMean: 9,
+            selectedContextBlocksPerTurnMean: 1,
+            estimatedPromptTokensPerTurnMean: 3,
+            turnsWithSelectedContextCount: 1,
+            turnsWithSelectedContextRate: 1,
+          },
+          {
+            mode: "graph_prior_only",
+            turnCount: 1,
+            selectedContextBlockCount: 1,
+            selectedContextChars: 5,
+            estimatedPromptTokens: 2,
+            selectedContextCharsPerTurnMean: 5,
+            selectedContextBlocksPerTurnMean: 1,
+            estimatedPromptTokensPerTurnMean: 2,
+            turnsWithSelectedContextCount: 1,
+            turnsWithSelectedContextRate: 1,
+          },
+          {
+            mode: "learned_route",
+            turnCount: 1,
+            selectedContextBlockCount: 1,
+            selectedContextChars: 11,
+            estimatedPromptTokens: 3,
+            selectedContextCharsPerTurnMean: 11,
+            selectedContextBlocksPerTurnMean: 1,
+            estimatedPromptTokensPerTurnMean: 3,
+            turnsWithSelectedContextCount: 1,
+            turnsWithSelectedContextRate: 1,
+          },
+        ],
       },
+    },
       {
         kind: "host-evidence",
         bundleId: "host-proof",
@@ -227,10 +373,10 @@ describe("proof cron metric surfaces", () => {
         fileCount: 4,
         artifactBytes: 1000,
         validationOk: true,
-        metrics: {
-          securityCriticalCount: 1,
-          securityWarnCount: 2,
-          gatewayReachable: true,
+      metrics: {
+        securityCriticalCount: 1,
+        securityWarnCount: 2,
+        gatewayReachable: true,
           workerHealthy: true,
           memoryFiles: 4,
           sessionCount: 1,
@@ -251,6 +397,8 @@ describe("proof cron metric surfaces", () => {
     expect(formatHealthMarkdown(health)).toContain("runtime healthy: true");
     expect(formatHealthMarkdown(health)).toContain("serve state: serving_active_pack");
     expect(formatHealthMarkdown(health)).toContain("clip rate: 0.25");
+    expect(formatHealthMarkdown(health)).toContain("replay context chars total");
+    expect(formatHealthMarkdown(health)).toContain("learned_route: 11 chars, 1 blocks, 3 estimated prompt tokens");
     expect(formatHealthMarkdown(health)).toContain("proof minutes proxy");
 
     const aggregate = buildNightlyAggregate({ config, bundles, now, scanDurationMs: 42 });
@@ -258,9 +406,15 @@ describe("proof cron metric surfaces", () => {
     expect(aggregate.bundleTypeCounts.recordedSessionReplay).toBe(1);
     expect(aggregate.bundleTypeCounts.hostEvidence).toBe(1);
     expect(aggregate.replayMetrics.winnerModeCounts.learned_route).toBe(1);
+    expect(aggregate.replayMetrics.selectedContextCharsTotal).toBe(30);
+    expect(aggregate.replayMetrics.selectedContextBlocksTotal).toBe(4);
+    expect(aggregate.replayMetrics.estimatedPromptTokensTotal).toBe(10);
+    expect(aggregate.replayMetrics.savingsByMode[3].mode).toBe("learned_route");
+    expect(aggregate.replayMetrics.savingsByMode[3].estimatedPromptTokens).toBe(3);
     expect(aggregate.operatorMetrics.stepMsTotal).toBe(1500);
     expect(aggregate.costProxy.bundleCount).toBe(3);
     expect(formatNightlyMarkdown(aggregate)).toContain("winner modes");
+    expect(formatNightlyMarkdown(aggregate)).toContain("| learned_route | 11 | 1 | 3 | 1 | 1 |");
     expect(formatNightlyMarkdown(aggregate)).toContain("proof minutes");
   });
 });

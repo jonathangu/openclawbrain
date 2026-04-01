@@ -15,6 +15,7 @@ const CONTRACT = "openclawbrain_proof_cron.v1";
 const DEFAULT_OUTPUT_ROOT = path.join(workspaceRoot, "artifacts", "openclawbrain-proof-cron");
 const DEFAULT_CONFIG_PATH = path.join(DEFAULT_OUTPUT_ROOT, "cron-config.json");
 const DEFAULT_OPENCLAW_HOME = path.join(process.env.HOME ?? "", ".openclaw");
+const RECORDED_SESSION_REPLAY_MODE_ORDER = ["no_brain", "vector_only", "graph_prior_only", "learned_route"];
 const LEGACY_STATUS_COMMAND = [
   process.execPath,
   path.join(repoRoot, "bin", "openclawbrain.js"),
@@ -465,6 +466,79 @@ function sum(values) {
   return values.filter((value) => Number.isFinite(value)).reduce((total, value) => total + value, 0);
 }
 
+function countStringChars(values) {
+  if (!Array.isArray(values)) {
+    return 0;
+  }
+  return values.reduce((total, value) => total + (typeof value === "string" ? value.length : 0), 0);
+}
+
+function summarizeReplayModeSavings(mode) {
+  const turns = Array.isArray(mode?.turns) ? mode.turns : [];
+  const turnCount = turns.length;
+  const selectedContextBlockCount = turns.reduce(
+    (total, turn) => total + (Array.isArray(turn?.selectedContextIds) ? turn.selectedContextIds.length : Array.isArray(turn?.selectedContextTexts) ? turn.selectedContextTexts.length : 0),
+    0,
+  );
+  const selectedContextChars = turns.reduce((total, turn) => total + countStringChars(turn?.selectedContextTexts), 0);
+  const turnsWithSelectedContextCount = turns.filter((turn) => countStringChars(turn?.selectedContextTexts) > 0).length;
+  const estimatedPromptTokens = selectedContextChars > 0 ? Math.ceil(selectedContextChars / 4) : 0;
+
+  return {
+    mode: mode?.mode ?? null,
+    turnCount,
+    selectedContextBlockCount,
+    selectedContextChars,
+    estimatedPromptTokens,
+    selectedContextCharsPerTurnMean: turnCount > 0 ? round(selectedContextChars / turnCount, 2) : null,
+    selectedContextBlocksPerTurnMean: turnCount > 0 ? round(selectedContextBlockCount / turnCount, 2) : null,
+    estimatedPromptTokensPerTurnMean: turnCount > 0 ? round(estimatedPromptTokens / turnCount, 2) : null,
+    turnsWithSelectedContextCount,
+    turnsWithSelectedContextRate: turnCount > 0 ? round(turnsWithSelectedContextCount / turnCount, 4) : null,
+  };
+}
+
+function aggregateReplaySavings(modeSavings) {
+  const byMode = new Map();
+  for (const entry of modeSavings) {
+    if (!entry || typeof entry.mode !== "string") {
+      continue;
+    }
+    const current = byMode.get(entry.mode) ?? {
+      mode: entry.mode,
+      turnCount: 0,
+      selectedContextBlockCount: 0,
+      selectedContextChars: 0,
+      estimatedPromptTokens: 0,
+      turnsWithSelectedContextCount: 0,
+    };
+    current.turnCount += Number(entry.turnCount ?? 0);
+    current.selectedContextBlockCount += Number(entry.selectedContextBlockCount ?? 0);
+    current.selectedContextChars += Number(entry.selectedContextChars ?? 0);
+    current.estimatedPromptTokens += Number(entry.estimatedPromptTokens ?? 0);
+    current.turnsWithSelectedContextCount += Number(entry.turnsWithSelectedContextCount ?? 0);
+    byMode.set(entry.mode, current);
+  }
+
+  return RECORDED_SESSION_REPLAY_MODE_ORDER.map((mode) => {
+    const entry = byMode.get(mode) ?? {
+      mode,
+      turnCount: 0,
+      selectedContextBlockCount: 0,
+      selectedContextChars: 0,
+      estimatedPromptTokens: 0,
+      turnsWithSelectedContextCount: 0,
+    };
+    return {
+      ...entry,
+      selectedContextCharsPerTurnMean: entry.turnCount > 0 ? round(entry.selectedContextChars / entry.turnCount, 2) : null,
+      selectedContextBlocksPerTurnMean: entry.turnCount > 0 ? round(entry.selectedContextBlockCount / entry.turnCount, 2) : null,
+      estimatedPromptTokensPerTurnMean: entry.turnCount > 0 ? round(entry.estimatedPromptTokens / entry.turnCount, 2) : null,
+      turnsWithSelectedContextRate: entry.turnCount > 0 ? round(entry.turnsWithSelectedContextCount / entry.turnCount, 4) : null,
+    };
+  });
+}
+
 function summarizeOperatorBundle(bundlePath, workspaceRoot) {
   const files = collectFiles(bundlePath);
   const fileStats = files.map((filePath) => {
@@ -549,6 +623,12 @@ function summarizeReplayBundle(bundlePath, workspaceRoot) {
   const winnerScore = ranking.length > 0 ? Number(ranking[0]?.qualityScore ?? 0) : null;
   const qualityScores = ranking.map((row) => Number(row.qualityScore ?? 0)).filter(Number.isFinite);
   const modeNames = modes.map((mode) => mode.mode).filter(Boolean);
+  const savingsByMode = modes.map((mode) => summarizeReplayModeSavings(mode));
+  const selectedContextChars = sum(savingsByMode.map((mode) => mode.selectedContextChars));
+  const selectedContextBlockCount = sum(savingsByMode.map((mode) => mode.selectedContextBlockCount));
+  const estimatedPromptTokens = savingsByMode.length > 0 ? sum(savingsByMode.map((mode) => mode.estimatedPromptTokens)) : null;
+  const turnsWithSelectedContextCount = sum(savingsByMode.map((mode) => mode.turnsWithSelectedContextCount));
+  const totalTurnCount = sum(savingsByMode.map((mode) => mode.turnCount));
 
   return {
     kind: "recorded-session-replay",
@@ -621,6 +701,12 @@ function summarizeReplayBundle(bundlePath, workspaceRoot) {
       fixtureHash: bundle?.fixtureHash ?? null,
       scoreHash: bundle?.scoreHash ?? null,
       validatedFileCount: validation?.verifiedFileCount ?? null,
+      savingsByMode,
+      selectedContextChars: savingsByMode.length > 0 ? selectedContextChars : null,
+      selectedContextBlockCount: savingsByMode.length > 0 ? selectedContextBlockCount : null,
+      estimatedPromptTokens,
+      turnsWithSelectedContextCount: savingsByMode.length > 0 ? turnsWithSelectedContextCount : null,
+      turnsWithSelectedContextRate: totalTurnCount > 0 ? round(turnsWithSelectedContextCount / totalTurnCount, 4) : null,
     },
   };
 }
@@ -843,6 +929,9 @@ function summarizePerformance(bundles, statusProbe, scanDurationMs) {
   const replayQuality = replayBundles.map((bundle) => bundle.metrics?.winnerScore ?? null).filter(Number.isFinite);
   const replayCompileRate = replayBundles.map((bundle) => bundle.metrics?.compileOkRate ?? null).filter(Number.isFinite);
   const replayPhraseRate = replayBundles.map((bundle) => bundle.metrics?.phraseHitRate ?? null).filter(Number.isFinite);
+  const replayContextChars = replayBundles.map((bundle) => bundle.metrics?.selectedContextChars ?? null).filter(Number.isFinite);
+  const replayContextBlocks = replayBundles.map((bundle) => bundle.metrics?.selectedContextBlockCount ?? null).filter(Number.isFinite);
+  const replayEstimatedPromptTokens = replayBundles.map((bundle) => bundle.metrics?.estimatedPromptTokens ?? null).filter(Number.isFinite);
 
   return {
     statusProbeMs: statusProbe.durationMs,
@@ -859,6 +948,12 @@ function summarizePerformance(bundles, statusProbe, scanDurationMs) {
     replayWinnerScoreMean: mean(replayQuality),
     replayCompileRateMean: mean(replayCompileRate),
     replayPhraseRateMean: mean(replayPhraseRate),
+    replayContextCharsTotal: sum(replayContextChars),
+    replayContextCharsMean: mean(replayContextChars),
+    replayContextBlockTotal: sum(replayContextBlocks),
+    replayContextBlockMean: mean(replayContextBlocks),
+    replayEstimatedPromptTokensTotal: sum(replayEstimatedPromptTokens),
+    replayEstimatedPromptTokensMean: mean(replayEstimatedPromptTokens),
   };
 }
 
@@ -929,6 +1024,7 @@ function buildHealthSnapshot({ config, statusProbe, bundles, now, scanDurationMs
     latestBundles: bundleFreshness,
     performance,
     costProxy,
+    replaySavings: latestReplay?.metrics?.savingsByMode ?? [],
     proofInventory: {
       bundleCount: bundles.length,
       operatorProofCount: bundles.filter((bundle) => bundle.kind === "operator-proof").length,
@@ -965,6 +1061,9 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs }) {
   const replayCompileRates = replayBundles.map((bundle) => bundle.metrics?.compileOkRate ?? null).filter(Number.isFinite);
   const replayPhraseRates = replayBundles.map((bundle) => bundle.metrics?.phraseHitRate ?? null).filter(Number.isFinite);
   const replayLearnedRouteRates = replayBundles.map((bundle) => bundle.metrics?.learnedRouteTurnRate ?? null).filter(Number.isFinite);
+  const replaySavingsByMode = aggregateReplaySavings(
+    replayBundles.flatMap((bundle) => Array.isArray(bundle.metrics?.savingsByMode) ? bundle.metrics.savingsByMode : []),
+  );
   const operatorStepDurations = operatorBundles.map((bundle) => bundle.metrics?.totalStepDurationMs ?? null).filter(Number.isFinite);
   const operatorFileSizes = operatorBundles.map((bundle) => bundle.artifactBytes ?? 0);
   const replayFileSizes = replayBundles.map((bundle) => bundle.artifactBytes ?? 0);
@@ -1020,6 +1119,11 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs }) {
       replayFileBytesTotal: sum(replayFileSizes),
       replayFileBytesMean: mean(replayFileSizes),
       totalTurns: sum(replayBundles.map((bundle) => bundle.metrics?.totalTurns ?? 0)),
+      savingsByMode: replaySavingsByMode,
+      selectedContextCharsTotal: sum(replaySavingsByMode.map((mode) => mode.selectedContextChars ?? 0)),
+      selectedContextBlocksTotal: sum(replaySavingsByMode.map((mode) => mode.selectedContextBlockCount ?? 0)),
+      estimatedPromptTokensTotal: sum(replaySavingsByMode.map((mode) => mode.estimatedPromptTokens ?? 0)),
+      turnsWithSelectedContextTotal: sum(replaySavingsByMode.map((mode) => mode.turnsWithSelectedContextCount ?? 0)),
     },
     operatorMetrics: {
       stepMsTotal: sum(operatorStepDurations),
@@ -1048,6 +1152,9 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs }) {
       replayBundleCount: replayBundles.length,
       operatorBundleCount: operatorBundles.length,
       hostBundleCount: hostBundles.length,
+      replayContextCharsTotal: sum(replaySavingsByMode.map((mode) => mode.selectedContextChars ?? 0)),
+      replaySelectedContextBlocksTotal: sum(replaySavingsByMode.map((mode) => mode.selectedContextBlockCount ?? 0)),
+      replayEstimatedPromptTokensTotal: sum(replaySavingsByMode.map((mode) => mode.estimatedPromptTokens ?? 0)),
     },
     costProxy: {
       proofMinutes: round((scanDurationMs + sum(operatorStepDurations)) / 60000, 4),
@@ -1116,8 +1223,18 @@ function formatHealthMarkdown(snapshot) {
   lines.push(`- scan ms: ${snapshot.performance.scanMs}`);
   lines.push(`- operator step ms total: ${round(snapshot.performance.operatorStepMsTotal ?? 0, 2)}`);
   lines.push(`- replay winner score mean: ${snapshot.performance.replayWinnerScoreMean ?? "n/a"}`);
+  lines.push(`- replay context chars total: ${snapshot.performance.replayContextCharsTotal ?? "n/a"}`);
+  lines.push(`- replay selected context blocks total: ${snapshot.performance.replaySelectedContextBlocksTotal ?? "n/a"}`);
+  lines.push(`- replay estimated prompt tokens total: ${snapshot.performance.replayEstimatedPromptTokensTotal ?? "n/a"}`);
   lines.push(`- proof minutes proxy: ${snapshot.costProxy.proofMinutes}`);
   lines.push(`- artifact bytes scanned: ${snapshot.costProxy.artifactBytes} (${snapshot.costProxy.artifactMB} MiB)`);
+  if (Array.isArray(snapshot.replaySavings) && snapshot.replaySavings.length > 0) {
+    lines.push("");
+    lines.push("## Replay savings proxy");
+    for (const mode of snapshot.replaySavings) {
+      lines.push(`- ${mode.mode}: ${mode.selectedContextChars} chars, ${mode.selectedContextBlockCount} blocks, ${mode.estimatedPromptTokens} estimated prompt tokens`);
+    }
+  }
   lines.push("");
   lines.push("## What to watch");
   if (snapshot.status.decisionSummary?.sampleSize === 0) {
@@ -1156,6 +1273,16 @@ function formatNightlyMarkdown(aggregate) {
   lines.push(`- mean phrase-hit rate: ${aggregate.replayMetrics.phraseRateMean ?? "n/a"}`);
   lines.push(`- mean learned-route rate: ${aggregate.replayMetrics.learnedRouteRateMean ?? "n/a"}`);
   lines.push(`- replay bytes total: ${aggregate.replayMetrics.replayFileBytesTotal} (${formatBytes(aggregate.replayMetrics.replayFileBytesTotal)})`);
+  lines.push(`- replay context chars total: ${aggregate.replayMetrics.selectedContextCharsTotal}`);
+  lines.push(`- replay selected context blocks total: ${aggregate.replayMetrics.selectedContextBlocksTotal}`);
+  lines.push(`- replay estimated prompt tokens total: ${aggregate.replayMetrics.estimatedPromptTokensTotal}`);
+  lines.push("");
+  lines.push("## Replay savings proxy");
+  lines.push("| mode | context chars | selected blocks | estimated prompt tokens | turns with context | turn coverage |");
+  lines.push("| --- | ---: | ---: | ---: | ---: | ---: |");
+  for (const mode of aggregate.replayMetrics.savingsByMode) {
+    lines.push(`| ${mode.mode} | ${mode.selectedContextChars} | ${mode.selectedContextBlockCount} | ${mode.estimatedPromptTokens} | ${mode.turnsWithSelectedContextCount} | ${mode.turnsWithSelectedContextRate ?? "n/a"} |`);
+  }
   lines.push("");
   lines.push("## Operator proof performance");
   lines.push(`- step ms total: ${round(aggregate.operatorMetrics.stepMsTotal ?? 0, 2)}`);
