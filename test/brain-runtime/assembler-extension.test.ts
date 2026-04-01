@@ -106,11 +106,13 @@ function makeStructuredTraversalResult(): TraversalResult {
         selectedTraversalNodeIds: ["bn_1", "bn_2", "bn_3"],
         selectedPathNodeIds: ["bn_1", "bn_2", "bn_3"],
         selectedSeedNodeIds: ["bn_1"],
+        branchOutcomes: [],
         injectedNodeSummaries: [
           {
             nodeId: "bn_1",
             kind: "correction",
             trust: "human",
+            provenanceRef: "prov_bn_1",
             sourceUri: "PLAYBOOK.md",
             tags: ["pull-request"],
             tokenCount: 20,
@@ -120,6 +122,7 @@ function makeStructuredTraversalResult(): TraversalResult {
             nodeId: "bn_2",
             kind: "chunk",
             trust: "scanner",
+            provenanceRef: "prov_bn_2",
             sourceUri: "docs/deploy.md",
             tags: ["deploy"],
             tokenCount: 18,
@@ -129,6 +132,7 @@ function makeStructuredTraversalResult(): TraversalResult {
             nodeId: "bn_3",
             kind: "workflow",
             trust: "scanner",
+            provenanceRef: "prov_bn_3",
             sourceUri: "docs/deploy.md",
             tags: ["workflow"],
             tokenCount: 16,
@@ -140,6 +144,7 @@ function makeStructuredTraversalResult(): TraversalResult {
           kinds: { correction: 1, chunk: 1, workflow: 1 },
           trusts: { human: 1, scanner: 2 },
           sourceUris: ["PLAYBOOK.md", "docs/deploy.md"],
+          sourceRefs: ["prov_bn_1", "prov_bn_2", "prov_bn_3"],
         },
         selectionMetadata: {
           traceSliceVersion: 4,
@@ -1166,6 +1171,14 @@ describe("BrainAssemblerExtension", () => {
           totalCount: 2,
           maxDepth: 3,
           condensedCount: 2,
+          episodeCount: 0,
+          snapshotCount: 0,
+          branchCount: 0,
+          typedMemoryRefCount: 0,
+          freshnessStateCounts: {},
+          hasNonFreshSummaries: false,
+          hasTruthConflict: false,
+          latestRole: null,
           items: [
             {
               summaryId: "sum_1",

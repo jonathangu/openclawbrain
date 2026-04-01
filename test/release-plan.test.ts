@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from "vitest";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
+// @ts-expect-error runtime script module has no checked-in .d.ts surface yet
 import { buildReleasePlan, verifyReleasePlan } from "../scripts/release-plan.mjs";
 
 const createdDirs: string[] = [];
@@ -112,7 +113,7 @@ describe("verifyReleasePlan", () => {
     });
 
     expect(result.ok).toBe(false);
-    expect(result.blockers.some((blocker) => blocker.code === "pending_changesets")).toBe(true);
+    expect(result.blockers.some((blocker: any) => blocker.code === "pending_changesets")).toBe(true);
   });
 
   it("fails when the versioned release note file is missing", () => {
@@ -144,7 +145,7 @@ describe("verifyReleasePlan", () => {
     });
 
     expect(result.ok).toBe(false);
-    expect(result.blockers.some((blocker) => blocker.code === "missing_release_notes")).toBe(true);
+    expect(result.blockers.some((blocker: any) => blocker.code === "missing_release_notes")).toBe(true);
   });
 
   it("fails when the changelog does not carry the current split release heading", () => {
@@ -158,7 +159,7 @@ describe("verifyReleasePlan", () => {
     });
 
     expect(result.ok).toBe(false);
-    expect(result.blockers.some((blocker) => blocker.code === "missing_changelog_heading")).toBe(true);
+    expect(result.blockers.some((blocker: any) => blocker.code === "missing_changelog_heading")).toBe(true);
   });
 
   it("fails when the selected ref is not reachable from main", () => {
@@ -174,6 +175,6 @@ describe("verifyReleasePlan", () => {
     });
 
     expect(result.ok).toBe(false);
-    expect(result.blockers.some((blocker) => blocker.code === "release_ref_not_on_mainline")).toBe(true);
+    expect(result.blockers.some((blocker: any) => blocker.code === "release_ref_not_on_mainline")).toBe(true);
   });
 });

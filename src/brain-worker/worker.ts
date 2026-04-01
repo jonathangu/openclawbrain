@@ -16,9 +16,8 @@ import type {
   PromotionRunVerdict,
   ReplayGateVerdict,
   RewardSource,
-  START_NODE_ID,
 } from "../brain-core/types.js";
-import { trustRank } from "../brain-core/types.js";
+import { START_NODE_ID, trustRank } from "../brain-core/types.js";
 import type { BrainStore } from "../brain-store/store.js";
 import type { BrainGraph } from "../brain-core/graph.js";
 import type { BrainTeacher } from "../brain-core/teacher.js";

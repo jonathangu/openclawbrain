@@ -2,12 +2,8 @@ import { afterEach, describe, expect, it } from "vitest";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-import {
-  DEFAULT_MAX_AGE_DAYS,
-  REQUIRED_ASSERTION_KEYS,
-  REQUIRED_PROOF_FILES,
-  verifyProofSmoke,
-} from "../scripts/verify-proof-smoke.mjs";
+// @ts-ignore runtime script module has no checked-in typed surface yet
+import { DEFAULT_MAX_AGE_DAYS, REQUIRED_ASSERTION_KEYS, REQUIRED_PROOF_FILES, verifyProofSmoke } from "../scripts/verify-proof-smoke.mjs";
 
 const createdDirs: string[] = [];
 
@@ -68,7 +64,7 @@ function writeProofBundle(root: string, options?: { date?: string; sha?: string;
   const sha = options?.sha ?? "4ccd71a22418b9170128b8d948f5a95801a10380";
   const bundleRoot = path.join("docs", "evidence", date, sha);
   const omitFile = options?.omitFile ?? null;
-  const assertions = Object.fromEntries(REQUIRED_ASSERTION_KEYS.map((key) => [key, {}]));
+  const assertions = Object.fromEntries(REQUIRED_ASSERTION_KEYS.map((key: string) => [key, {}]));
 
   Object.assign(assertions.teachRetrieval, {
     retrievedCorrectionVisible: true,
@@ -174,7 +170,7 @@ describe("verifyProofSmoke", () => {
 
     expect(result.ok).toBe(false);
     expect(result.enforced).toBe(true);
-    expect(result.failures?.[0]?.problems.some((problem) => problem.code === "stale_bundle")).toBe(true);
+    expect(result.failures?.[0]?.problems.some((problem: any) => problem.code === "stale_bundle")).toBe(true);
   });
 
   it("fails when the fresh bundle is missing required proof files", () => {
@@ -188,7 +184,7 @@ describe("verifyProofSmoke", () => {
     });
 
     expect(result.ok).toBe(false);
-    expect(result.failures?.[0]?.problems.some((problem) => problem.code === "missing_required_files")).toBe(true);
+    expect(result.failures?.[0]?.problems.some((problem: any) => problem.code === "missing_required_files")).toBe(true);
   });
 
   it("fails when the fresh bundle no longer carries the required assertion set", () => {
@@ -202,7 +198,7 @@ describe("verifyProofSmoke", () => {
     });
 
     expect(result.ok).toBe(false);
-    expect(result.failures?.[0]?.problems.some((problem) => problem.code === "validation_report_missing_assertion_keys")).toBe(true);
+    expect(result.failures?.[0]?.problems.some((problem: any) => problem.code === "validation_report_missing_assertion_keys")).toBe(true);
   });
 
   it("does not enforce the gate when the repo no longer advertises a proof-freshness claim", () => {

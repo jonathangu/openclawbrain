@@ -10,6 +10,7 @@ import type {
   BrainInterruptionStage,
   BrainPrefetchDecision,
   DecisionRouteTrace,
+  DecisionTrace,
   DecisionTraceInjectedNodeSummary,
   TraversalResult,
 } from "../brain-core/types.js";
@@ -83,10 +84,6 @@ type CompileDecisionDetails = {
   compileDeadlineHit?: boolean | null;
   brainDropReason?: BrainDropReason | null;
   brainDropStage?: BrainDropStage | null;
-  queryInterrupted?: boolean | null;
-  interruptionStage?: "embedding" | "query" | "injection" | null;
-  interruptionReason?: string | null;
-  servedPartial?: boolean | null;
 };
 
 type InterruptionStage = NonNullable<DecisionRouteTrace["selectionMetadata"]["interruptionStage"]>;

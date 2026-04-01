@@ -725,11 +725,12 @@ describe("BrainService", () => {
     expect(result).not.toBeNull();
 
     const status = await service.status();
+    const lastPrefetchDecision = status.lastPrefetchDecision as { invalidatedReason?: string | null } | null;
     expect(status.lastPrefetchDecision).toEqual(expect.objectContaining({
       state: expect.stringMatching(/^(stale|invalidated)$/),
       summaryRoutingMode: "ignore",
     }));
-    expect(status.lastPrefetchDecision?.invalidatedReason ?? null).toMatch(/pack_version_changed|prefetch_key_mismatch|budget_class_changed|summary_routing_changed/);
+    expect(lastPrefetchDecision?.invalidatedReason ?? null).toMatch(/pack_version_changed|prefetch_key_mismatch|budget_class_changed|summary_routing_changed/);
   });
 
   it("persists post-injection clip attribution through trace and observation metadata", async () => {
@@ -842,6 +843,7 @@ describe("BrainService", () => {
         store: { getObservationForEpisode: (episodeId: string) => Record<string, unknown> | null };
       }
     ).store.getObservationForEpisode(String(result.brainDecision?.episodeId ?? ""));
+    const observationSelectionMetadata = (observation as any)?.routeMetadata?.selectionMetadata ?? null;
 
     expect(observation).toMatchObject({
       traceId: result.brainDecision?.traceId,
@@ -864,15 +866,19 @@ describe("BrainService", () => {
         },
       },
     });
-    if ((observation?.routeMetadata?.selectionMetadata?.droppedNodeCount ?? 0) > 0) {
-      expect(observation?.routeMetadata?.selectionMetadata?.fittingDropReasons).toEqual(expect.objectContaining({
+    if ((observationSelectionMetadata?.droppedNodeCount ?? 0) > 0) {
+      expect(observationSelectionMetadata?.fittingDropReasons).toEqual(expect.objectContaining({
         omitted_for_max_context_chars: expect.any(Number),
       }));
     } else {
-      expect(observation?.routeMetadata?.selectionMetadata?.fittingDropReasons ?? null).toBeNull();
+      expect(observationSelectionMetadata?.fittingDropReasons ?? null).toBeNull();
     }
 
     const status = await service.status();
+    const lastTraceSelectionMetadata = status.lastTraceSelectionMetadata as {
+      droppedNodeCount?: number | null;
+      fittingDropReasons?: unknown;
+    } | null;
     expect(status.lastTraceSelectionMetadata).toEqual(expect.objectContaining({
       budgetChars: queryBudgetChars,
       compileElapsedMs: expect.any(Number),
@@ -889,12 +895,12 @@ describe("BrainService", () => {
       fittedNodeCount: expect.any(Number),
       droppedNodeCount: expect.any(Number),
     }));
-    if ((status.lastTraceSelectionMetadata?.droppedNodeCount ?? 0) > 0) {
-      expect(status.lastTraceSelectionMetadata?.fittingDropReasons).toEqual(expect.objectContaining({
+    if ((lastTraceSelectionMetadata?.droppedNodeCount ?? 0) > 0) {
+      expect(lastTraceSelectionMetadata?.fittingDropReasons).toEqual(expect.objectContaining({
         omitted_for_max_context_chars: expect.any(Number),
       }));
     } else {
-      expect(status.lastTraceSelectionMetadata?.fittingDropReasons ?? null).toBeNull();
+      expect(lastTraceSelectionMetadata?.fittingDropReasons ?? null).toBeNull();
     }
   });
 

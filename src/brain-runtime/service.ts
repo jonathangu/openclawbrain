@@ -27,6 +27,7 @@ import type {
 import { DEFAULT_BRAIN_CONFIG, resolveObservationBindingMode } from "../brain-core/types.js";
 import { BrainGraph } from "../brain-core/graph.js";
 import { traverse } from "../brain-core/traverse.js";
+import type { TraverseResult } from "../brain-core/traverse.js";
 import { recordEpisode } from "../brain-core/episode.js";
 import { buildBrainCompileReport, recordTrace, redactDecisionTrace, redactInjectedNodeSummary, redactRouteTrace, redactTextSurface, redactToolResult, rewriteBrainCompileReportSummary, summarizeRecentPrefetchDecisions } from "../brain-core/trace.js";
 import { computeHealth } from "../brain-core/health.js";
@@ -144,7 +145,7 @@ type BrainPrefetchCacheEntry = {
   activePackId: string | null;
   activePackVersion: number | null;
   state: BrainPrefetchState;
-  traversalResult: TraversalResult | null;
+  traversalResult: TraverseResult | null;
   queryEmbedding: Float32Array | null;
   queryEmbeddingSource: "provided" | "runtime";
   createdAt: number;
@@ -161,7 +162,7 @@ type BrainPrefetchCacheEntry = {
 };
 
 type TraversalCompileResult = {
-  traversalResult: TraversalResult | null;
+  traversalResult: TraverseResult | null;
   queryEmbedding: Float32Array | null;
   queryEmbeddingSource: "provided" | "runtime";
   embeddingMs: number;
@@ -1731,7 +1732,6 @@ export class BrainService {
       maxFrontierSize: this.config.maxFrontierSize,
       maxSeeds: this.config.maxSeeds,
       semanticThreshold: this.config.semanticThreshold,
-      workerMode: this.config.workerMode,
       workerHeartbeatTimeoutMs: this.config.workerHeartbeatTimeoutMs,
       workerRestartDelayMs: this.config.workerRestartDelayMs,
       currentPackVersion: this.store.getCurrentPackVersion(),

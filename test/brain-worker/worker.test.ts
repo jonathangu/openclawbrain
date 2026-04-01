@@ -127,6 +127,7 @@ function makeTrace(params: {
     nodeId,
     kind: "workflow" as const,
     trust: "human" as const,
+    provenanceRef: `prov_${nodeId}`,
     sourceUri: index === 0 ? "PLAYBOOK.md" : null,
     tags: ["worker"],
     tokenCount: 12,
@@ -153,12 +154,14 @@ function makeTrace(params: {
       selectedTraversalNodeIds: [...firedNodes],
       selectedPathNodeIds: [...firedNodes],
       selectedSeedNodeIds: [selectedNodeId],
+      branchOutcomes: [],
       injectedNodeSummaries,
       sourceSummary: {
         injectedCount: injectedNodeSummaries.length,
         kinds: { workflow: injectedNodeSummaries.length },
         trusts: { human: injectedNodeSummaries.length },
         sourceUris: injectedNodeSummaries.flatMap((summary) => summary.sourceUri ? [summary.sourceUri] : []),
+        sourceRefs: injectedNodeSummaries.flatMap((summary) => summary.provenanceRef ? [summary.provenanceRef] : []),
       },
       selectionMetadata: {
         traceSliceVersion: 4,
@@ -188,6 +191,7 @@ function makeTrace(params: {
 }
 
 function makeObservation(params: {
+  id?: string;
   episodeId: string;
   conversationId: number;
   traceId: string;
@@ -209,6 +213,7 @@ function makeObservation(params: {
         nodeId: "node_1",
         kind: "workflow",
         trust: "human",
+        provenanceRef: "prov_node_1",
         sourceUri: "PLAYBOOK.md",
         tags: ["worker"],
         tokenCount: 12,
@@ -242,6 +247,7 @@ function makeObservation(params: {
         kinds: { workflow: 1 },
         trusts: { human: 1 },
         sourceUris: ["PLAYBOOK.md"],
+        sourceRefs: ["prov_node_1"],
       },
       selectionMetadata: {
         traceSliceVersion: 4,

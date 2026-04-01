@@ -167,7 +167,6 @@ function commandStatus(): void {
     maxFrontierSize: brainConfig.maxFrontierSize,
     maxSeeds: brainConfig.maxSeeds,
     semanticThreshold: brainConfig.semanticThreshold,
-    workerMode: brainConfig.workerMode,
     workerHeartbeatTimeoutMs: brainConfig.workerHeartbeatTimeoutMs,
     workerRestartDelayMs: brainConfig.workerRestartDelayMs,
     embeddingProvider: brainConfig.embeddingProvider,
