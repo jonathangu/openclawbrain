@@ -4,6 +4,27 @@ Release history for the published OpenClawBrain packages. The README and operato
 
 ## Unreleased
 
+## 0.4.20 / 0.4.6
+
+`0.4.20 / 0.4.6` publishes the post-swarm operator follow-up: the CLI now carries cheap deterministic savings proxies, a versioned estimated-cost path, tighter public proof truth, and compatibility hardening for legacy `custom_message` session records in the local tail path.
+
+**Packages**
+
+- `@openclawbrain/openclaw@0.4.6`
+- `@openclawbrain/cli@0.4.20`
+
+**Changes**
+
+- proof surfaces now expose deterministic prompt-side savings proxies (selected context chars, blocks, estimated prompt tokens)
+- proof surfaces now expose deterministic hop/correction proxy metrics from replay and trace truth
+- a versioned pricing table now drives estimated prompt / completion / total USD rollups when the required signals exist
+- public truth surfaces now explicitly keep replay small/mixed, reject direct spend-savings claims, and preserve the bounded hot-path / no-live-LLM-per-hop framing
+- session-tail parsing now accepts legacy `custom_message` records instead of treating them as unknown and skipping the watch path
+
+**Full release note**
+
+- [docs/release-notes-0.4.20.md](docs/release-notes-0.4.20.md)
+
 ## 0.4.19 / 0.4.6
 
 `0.4.19 / 0.4.6` publishes the operator-surface follow-up after the merged OCB tranche: the CLI now keeps large-log status/proof reads bounded **and** the proof health snapshot stops declaring false outages when the live runtime is actually serving a pack.
