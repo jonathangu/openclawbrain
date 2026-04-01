@@ -8,13 +8,16 @@ import type {
   SummaryRecord,
   SummarySearchResult,
   LargeFileRecord,
+  MarbleRecord,
+  MarbleSearchResult,
+  MarbleSourceRecord,
 } from "./store/summary-store.js";
 
 // ── Public interfaces ────────────────────────────────────────────────────────
 
 export interface DescribeResult {
   id: string;
-  type: "summary" | "file";
+  type: "summary" | "file" | "marble";
   /** Summary-specific fields */
   summary?: {
     conversationId: number;
@@ -58,12 +61,17 @@ export interface DescribeResult {
     explorationSummary: string | null;
     createdAt: Date;
   };
+  /** Marble-specific fields */
+  marble?: MarbleRecord & {
+    sourceRefs: string[];
+    sources: MarbleSourceRecord[];
+  };
 }
 
 export interface GrepInput {
   query: string;
   mode: "regex" | "full_text";
-  scope: "messages" | "summaries" | "both";
+  scope: "messages" | "summaries" | "marbles" | "both";
   conversationId?: number;
   since?: Date;
   before?: Date;
@@ -73,6 +81,7 @@ export interface GrepInput {
 export interface GrepResult {
   messages: MessageSearchResult[];
   summaries: SummarySearchResult[];
+  marbles: MarbleSearchResult[];
   totalMatches: number;
 }
 
@@ -114,6 +123,13 @@ function estimateTokens(content: string): number {
   return Math.ceil(content.length / 4);
 }
 
+function formatMarbleSourceRef(source: MarbleSourceRecord): string {
+  const subId = typeof source.sourceSubId === "string" && source.sourceSubId.length > 0
+    ? `#${source.sourceSubId}`
+    : "";
+  return `${source.sourceKind}:${source.sourceId}${subId}`;
+}
+
 // ── RetrievalEngine ──────────────────────────────────────────────────────────
 
 export class RetrievalEngine {
@@ -134,6 +150,9 @@ export class RetrievalEngine {
   async describe(id: string): Promise<DescribeResult | null> {
     if (id.startsWith("sum_")) {
       return this.describeSummary(id);
+    }
+    if (id.startsWith("mar_")) {
+      return this.describeMarble(id);
     }
     if (id.startsWith("file_")) {
       return this.describeFile(id);
@@ -214,6 +233,24 @@ export class RetrievalEngine {
     };
   }
 
+  private async describeMarble(id: string): Promise<DescribeResult | null> {
+    const marble = await this.summaryStore.getMarble(id);
+    if (!marble) {
+      return null;
+    }
+
+    const sources = await this.summaryStore.getMarbleSources(id);
+    return {
+      id,
+      type: "marble",
+      marble: {
+        ...marble,
+        sourceRefs: sources.map(formatMarbleSourceRef),
+        sources,
+      },
+    };
+  }
+
   // ── grep ─────────────────────────────────────────────────────────────────
 
   /**
@@ -228,26 +265,32 @@ export class RetrievalEngine {
 
     let messages: MessageSearchResult[] = [];
     let summaries: SummarySearchResult[] = [];
+    let marbles: MarbleSearchResult[] = [];
 
     if (scope === "messages") {
       messages = await this.conversationStore.searchMessages(searchInput);
     } else if (scope === "summaries") {
       summaries = await this.summaryStore.searchSummaries(searchInput);
+    } else if (scope === "marbles") {
+      marbles = await this.summaryStore.searchMarbles(searchInput);
     } else {
-      // scope === "both" — run in parallel
-      [messages, summaries] = await Promise.all([
+      // scope === "both" — run in parallel across all artifact rails.
+      [messages, summaries, marbles] = await Promise.all([
         this.conversationStore.searchMessages(searchInput),
         this.summaryStore.searchSummaries(searchInput),
+        this.summaryStore.searchMarbles(searchInput),
       ]);
     }
 
     messages.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     summaries.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    marbles.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     return {
       messages,
       summaries,
-      totalMatches: messages.length + summaries.length,
+      marbles,
+      totalMatches: messages.length + summaries.length + marbles.length,
     };
   }
 

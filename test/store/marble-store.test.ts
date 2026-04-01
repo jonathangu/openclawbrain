@@ -99,6 +99,8 @@ describe("SummaryStore marbles", () => {
     expect(searchResults).toHaveLength(1);
     expect(searchResults[0]?.marbleId).toBe("mar_typed_001");
     expect(searchResults[0]?.freshnessState).toBe("fresh");
+    expect(searchResults[0]?.provenanceRef).toBe("prov_001");
+    expect(searchResults[0]?.sourceFingerprint).toBe("srcfp_001");
 
     const invalidated = await store.invalidateMarble({
       marbleId: "mar_typed_001",

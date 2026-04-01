@@ -96,6 +96,10 @@ export type MarbleSearchResult = {
   conversationId: number;
   marbleKind: MarbleKind;
   freshnessState: MarbleFreshnessState;
+  provenanceRef: string;
+  sourceFingerprint: string;
+  sourceCount: number;
+  sourceArtifactTokenCount: number;
   snippet: string;
   createdAt: Date;
   rank?: number;
@@ -296,6 +300,10 @@ interface MarbleSearchRow {
   conversation_id: number;
   marble_kind: MarbleKind;
   freshness_state: MarbleFreshnessState;
+  provenance_ref: string;
+  source_fingerprint: string;
+  source_count: number;
+  source_artifact_token_count: number;
   snippet: string;
   rank: number;
   created_at: string;
@@ -452,6 +460,10 @@ function toMarbleSearchResult(row: MarbleSearchRow): MarbleSearchResult {
     conversationId: row.conversation_id,
     marbleKind: row.marble_kind,
     freshnessState: row.freshness_state,
+    provenanceRef: row.provenance_ref,
+    sourceFingerprint: row.source_fingerprint,
+    sourceCount: normalizeNonNegativeInteger(row.source_count),
+    sourceArtifactTokenCount: normalizeNonNegativeInteger(row.source_artifact_token_count),
     snippet: row.snippet,
     createdAt: new Date(row.created_at),
     rank: row.rank,
@@ -959,6 +971,10 @@ export class SummaryStore {
          m.conversation_id,
          m.marble_kind,
          m.freshness_state,
+         m.provenance_ref,
+         m.source_fingerprint,
+         m.source_count,
+         m.source_artifact_token_count,
          snippet(marbles_fts, 1, '', '', '...', 32) AS snippet,
          rank,
          m.created_at
@@ -1002,7 +1018,9 @@ export class SummaryStore {
     const whereClause = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
     const rows = this.db
       .prepare(
-        `SELECT marble_id, conversation_id, marble_kind, freshness_state, content, created_at
+        `SELECT marble_id, conversation_id, marble_kind, freshness_state,
+                provenance_ref, source_fingerprint, source_count, source_artifact_token_count,
+                content, created_at
          FROM marbles
          ${whereClause}
          ORDER BY created_at DESC
@@ -1013,6 +1031,10 @@ export class SummaryStore {
       conversation_id: number;
       marble_kind: MarbleKind;
       freshness_state: MarbleFreshnessState;
+      provenance_ref: string;
+      source_fingerprint: string;
+      source_count: number;
+      source_artifact_token_count: number;
       content: string;
       created_at: string;
     }>;
@@ -1054,7 +1076,9 @@ export class SummaryStore {
     const whereClause = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
     const rows = this.db
       .prepare(
-        `SELECT marble_id, conversation_id, marble_kind, freshness_state, content, created_at
+        `SELECT marble_id, conversation_id, marble_kind, freshness_state,
+                provenance_ref, source_fingerprint, source_count, source_artifact_token_count,
+                content, created_at
          FROM marbles
          ${whereClause}
          ORDER BY created_at DESC`,
@@ -1064,6 +1088,10 @@ export class SummaryStore {
       conversation_id: number;
       marble_kind: MarbleKind;
       freshness_state: MarbleFreshnessState;
+      provenance_ref: string;
+      source_fingerprint: string;
+      source_count: number;
+      source_artifact_token_count: number;
       content: string;
       created_at: string;
     }>;

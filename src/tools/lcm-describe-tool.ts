@@ -12,7 +12,7 @@ import { formatTimestamp } from "../compaction.js";
 
 const LcmDescribeSchema = Type.Object({
   id: Type.String({
-    description: "The LCM ID to look up. Use sum_xxx for summaries, file_xxx for files.",
+    description: "The LCM ID to look up. Use sum_xxx for summaries, mar_xxx for marbles, file_xxx for files.",
   }),
   conversationId: Type.Optional(
     Type.Number({
@@ -49,6 +49,15 @@ function formatIso(value: Date | null | undefined, timezone?: string): string {
   return value.toISOString();
 }
 
+function formatMarbleSourceRef(source: {
+  sourceKind: string;
+  sourceId: string;
+  sourceSubId: string | null;
+}): string {
+  const suffix = source.sourceSubId ? `#${source.sourceSubId}` : "";
+  return `${source.sourceKind}:${source.sourceId}${suffix}`;
+}
+
 export function createLcmDescribeTool(input: {
   deps: LcmDependencies;
   lcm: LcmContextEngine;
@@ -60,9 +69,9 @@ export function createLcmDescribeTool(input: {
     label: "LCM Describe",
     description:
       "Look up metadata and content for an LCM item by ID. " +
-      "Use this to inspect summaries (sum_xxx) or stored files (file_xxx) " +
+      "Use this to inspect summaries (sum_xxx), marbles (mar_xxx), or stored files (file_xxx) " +
       "from compacted conversation history. Returns summary content, lineage, " +
-      "token counts, and file exploration results.",
+      "token counts, marble provenance, and file exploration results.",
     parameters: LcmDescribeSchema,
     async execute(_toolCallId, params) {
       const retrieval = input.lcm.getRetrieval();
@@ -88,12 +97,16 @@ export function createLcmDescribeTool(input: {
       if (!result) {
         return jsonResult({
           error: `Not found: ${id}`,
-          hint: "Check the ID format (sum_xxx for summaries, file_xxx for files).",
+          hint: "Check the ID format (sum_xxx for summaries, mar_xxx for marbles, file_xxx for files).",
         });
       }
       if (conversationScope.conversationId != null) {
         const itemConversationId =
-          result.type === "summary" ? result.summary?.conversationId : result.file?.conversationId;
+          result.type === "summary"
+            ? result.summary?.conversationId
+            : result.type === "marble"
+              ? result.marble?.conversationId
+              : result.file?.conversationId;
         if (itemConversationId != null && itemConversationId !== conversationScope.conversationId) {
           return jsonResult({
             error: `Not found in conversation ${conversationScope.conversationId}: ${id}`,
@@ -103,7 +116,6 @@ export function createLcmDescribeTool(input: {
       }
 
       if (result.type === "summary" && result.summary) {
-        const s = result.summary;
         const requestedTokenCap = normalizeRequestedTokenCap((params as Record<string, unknown>).tokenCap);
         const sessionKey =
           (typeof input.sessionKey === "string" ? input.sessionKey : input.sessionId)?.trim() ?? "";
@@ -124,6 +136,8 @@ export function createLcmDescribeTool(input: {
           }
           return Math.max(1, base);
         })();
+
+        const s = result.summary;
 
         const manifestNodes = s.subtree.map((node) => {
           const summariesOnlyCost = Math.max(0, node.tokenCount + node.descendantTokenCount);
@@ -195,6 +209,99 @@ export function createLcmDescribeTool(input: {
                     ? "delegated_grant_remaining"
                     : "config_default",
               nodes: manifestNodes,
+            },
+          },
+        };
+      }
+
+      if (result.type === "marble" && result.marble) {
+        const m = result.marble;
+        const requestedTokenCap = normalizeRequestedTokenCap((params as Record<string, unknown>).tokenCap);
+        const sessionKey =
+          (typeof input.sessionKey === "string" ? input.sessionKey : input.sessionId)?.trim() ?? "";
+        const delegatedGrantId = input.deps.isSubagentSessionKey(sessionKey)
+          ? (resolveDelegatedExpansionGrantId(sessionKey) ?? "")
+          : "";
+        const delegatedRemainingBudget =
+          delegatedGrantId !== ""
+            ? getRuntimeExpansionAuthManager().getRemainingTokenBudget(delegatedGrantId)
+            : null;
+        const defaultTokenCap = Math.max(1, Math.trunc(input.deps.config.maxExpandTokens));
+        const resolvedTokenCap = (() => {
+          const base =
+            requestedTokenCap ??
+            (typeof delegatedRemainingBudget === "number" ? delegatedRemainingBudget : defaultTokenCap);
+          if (typeof delegatedRemainingBudget === "number") {
+            return Math.max(0, Math.min(base, delegatedRemainingBudget));
+          }
+          return Math.max(1, base);
+        })();
+        const sourceCost = Math.max(0, m.tokenCount + m.sourceArtifactTokenCount);
+        const sourceRefs = m.sourceRefs.length > 0 ? m.sourceRefs : m.sources.map(formatMarbleSourceRef);
+        const freshnessWarning =
+          m.freshnessState === "fresh"
+            ? null
+            : `**Freshness:** ${m.freshnessState} — expand to source before relying on exact details.`;
+
+        const lines: string[] = [];
+        lines.push(`## Marble ${id}`);
+        lines.push(`**Conversation:** ${m.conversationId}`);
+        lines.push(`**Tier:** ${m.marbleKind}`);
+        lines.push(`**Freshness:** ${m.freshnessState}`);
+        lines.push(`**Confidence:** ${m.confidence.toFixed(2)}`);
+        lines.push(`**Render version:** ${m.renderVersion}`);
+        lines.push(`**Compression version:** ${m.compressionVersion}`);
+        lines.push(`**Source fingerprint:** ${m.sourceFingerprint}`);
+        lines.push(`**Content hash:** ${m.contentHash}`);
+        lines.push(`**Provenance:** ${m.provenanceRef}`);
+        lines.push(`**Source count:** ${m.sourceCount}`);
+        lines.push(`**Source artifact tokens:** ${m.sourceArtifactTokenCount}`);
+        lines.push(`**Budget cap:** ${resolvedTokenCap}`);
+        lines.push(`**Budget fit:** ${sourceCost <= resolvedTokenCap ? "in" : "over"}`);
+        if (m.derivedFromMarbleId) {
+          lines.push(`**Derived from:** ${m.derivedFromMarbleId}`);
+        }
+        lines.push(`**Created:** ${formatIso(m.createdAt, timezone)}`);
+        lines.push(`**Updated:** ${formatIso(m.updatedAt, timezone)}`);
+        if (m.invalidatedAt) {
+          lines.push(`**Invalidated:** ${formatIso(m.invalidatedAt, timezone)}${m.invalidationReason ? ` — ${m.invalidationReason}` : ""}`);
+        }
+        if (freshnessWarning) {
+          lines.push("");
+          lines.push(freshnessWarning);
+        }
+        lines.push("");
+        lines.push("## Source Refs");
+        for (const ref of sourceRefs) {
+          lines.push(`- ${ref}`);
+        }
+        lines.push("");
+        lines.push("## Source Details");
+        for (const source of m.sources) {
+          lines.push(
+            `- ${formatMarbleSourceRef(source)} · digest ${source.sourceDigest} · provenance ${source.sourceProvenanceRef}` +
+              (source.sourceUri ? ` · uri ${source.sourceUri}` : ""),
+          );
+        }
+        lines.push("");
+        lines.push("## Content");
+        lines.push(m.content);
+
+        return {
+          content: [{ type: "text", text: lines.join("\n") }],
+          details: {
+            ...result,
+            manifest: {
+              tokenCap: resolvedTokenCap,
+              budgetSource:
+                requestedTokenCap != null
+                  ? "request"
+                  : typeof delegatedRemainingBudget === "number"
+                    ? "delegated_grant_remaining"
+                    : "config_default",
+              sourceCost,
+              sourceFit: sourceCost <= resolvedTokenCap,
+              sources: sourceRefs,
             },
           },
         };
