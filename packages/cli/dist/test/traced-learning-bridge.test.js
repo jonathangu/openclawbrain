@@ -379,6 +379,66 @@ test("watch bridge helper persists traced-learning status surface for daemon rea
     }
 });
 
+test("repeated persisted status surfaces stay JSON-serializable instead of recursively inflating provenance", (t) => {
+    const activationRoot = createTempActivationRoot(t);
+    const { brainRoot, db } = createBrainStore(t);
+    try {
+        const watchBridge = buildTracedLearningBridgePayloadFromRuntime({
+            updatedAt: "2026-03-20T04:24:00.000Z",
+            teacherArtifactCount: 4,
+            materializedPackId: "pack-watch-123",
+            lastMaterialization: {
+                candidate: {
+                    summary: {
+                        packId: "pack-watch-123",
+                        learnedRouter: {
+                            routeTraceCount: 12,
+                            supervisionCount: 5,
+                            updateCount: 3,
+                            noOpReason: null
+                        }
+                    },
+                    routingBuild: {
+                        learnedRoutingPath: "policy_gradient_v2",
+                        pgVersionRequested: "v2",
+                        pgVersionUsed: "v2",
+                        decisionLogCount: 12,
+                        fallbackReason: null
+                    }
+                }
+            },
+            source: {
+                command: "watch",
+                teacherSnapshotPath: path.join(activationRoot, "watch", "teacher-snapshot.json")
+            }
+        });
+        persistTracedLearningBridgeState(activationRoot, watchBridge, {
+            env: {
+                OPENCLAWBRAIN_ROOT: brainRoot
+            }
+        });
+        persistTracedLearningBridgeState(activationRoot, watchBridge, {
+            env: {
+                OPENCLAWBRAIN_ROOT: brainRoot
+            }
+        });
+        const surface = buildTracedLearningStatusSurface(activationRoot, {
+            env: {
+                OPENCLAWBRAIN_ROOT: brainRoot
+            }
+        });
+        assert.doesNotThrow(() => JSON.stringify(surface));
+        assert.equal(surface.source?.command, "brain-store");
+        assert.equal(surface.source?.surfacedFrom?.command, "watch");
+        assert.equal(surface.source?.surfacedFrom?.bridgedRuntime, undefined);
+        assert.equal(surface.source?.runtimeMaterialized?.source?.command, "watch");
+        assert.equal(surface.source?.runtimeMaterialized?.source?.bridgedRuntime, undefined);
+    }
+    finally {
+        db.close();
+    }
+});
+
 test("brain-store traced-learning bridge truthfully lifts supervision and update counters", (t) => {
     const { brainRoot, db, dbPath } = createBrainStore(t);
     try {

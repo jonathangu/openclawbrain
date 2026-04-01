@@ -8,6 +8,7 @@ import {
   collectBundleCandidates,
   formatHealthMarkdown,
   formatNightlyMarkdown,
+  loadConfig,
   summarizeScan,
 } from "../scripts/proof-cron.mjs";
 
@@ -126,11 +127,38 @@ describe("proof cron bundle scanning", () => {
   });
 });
 
+describe("proof cron config", () => {
+  it("migrates the legacy brain-cli status probe to the operator CLI probe", () => {
+    const workspaceRoot = tempWorkspace();
+    const configPath = path.join(workspaceRoot, "cron-config.json");
+    writeJson(configPath, {
+      statusCommand: [
+        "node",
+        "bin/openclawbrain.js",
+        "status",
+        "--openclaw-home",
+        "{{openclawHome}}",
+        "--json",
+      ],
+    });
+
+    const loaded = loadConfig(configPath, { openclawHome: path.join(workspaceRoot, ".openclaw") });
+    expect(loaded.statusCommand).toEqual([
+      process.execPath,
+      path.join(process.cwd(), "packages", "cli", "dist", "src", "cli.js"),
+      "status",
+      "--openclaw-home",
+      "{{openclawHome}}",
+      "--json",
+    ]);
+  });
+});
+
 describe("proof cron metric surfaces", () => {
   it("builds a useful health snapshot and nightly aggregate", () => {
     const now = new Date("2026-03-31T13:00:00.000Z");
     const statusProbe = {
-      command: "node bin/openclawbrain.js status --json",
+      command: "node packages/cli/dist/src/cli.js status --openclaw-home ~/.openclaw --json",
       startedAt: "2026-03-31T12:59:00.000Z",
       endedAt: "2026-03-31T12:59:02.000Z",
       durationMs: 2000,
@@ -139,9 +167,21 @@ describe("proof cron metric surfaces", () => {
       stdout: "{}",
       stderr: "",
       parsed: {
-        workerHealthy: true,
-        workerMode: "child",
-        currentPackVersion: 17,
+        brain: {
+          activePackId: "pack-9e3c579b",
+          routeFreshness: "updated",
+        },
+        brainStatus: {
+          status: "ok",
+          serveState: "serving_active_pack",
+          usedLearnedRouteFn: true,
+        },
+        hook: {
+          loadProof: "status_probe_ready",
+        },
+        currentTurnAttribution: {
+          usedLearnedRouteFn: true,
+        },
         recentDecisionSummary: {
           sampleSize: 3,
           clipRate: { rate: 0.25 },
@@ -215,8 +255,10 @@ describe("proof cron metric surfaces", () => {
     expect(health.performance.operatorStepMsTotal).toBe(1500);
     expect(health.costProxy.artifactBytes).toBe(7000);
     expect(health.latestBundles.map((bundle) => bundle.kind)).toEqual(["operator-proof", "recorded-session-replay", "host-evidence"]);
-    expect(formatHealthMarkdown(health)).toContain("proof minutes proxy");
+    expect(formatHealthMarkdown(health)).toContain("runtime healthy: true");
+    expect(formatHealthMarkdown(health)).toContain("serve state: serving_active_pack");
     expect(formatHealthMarkdown(health)).toContain("clip rate: 0.25");
+    expect(formatHealthMarkdown(health)).toContain("proof minutes proxy");
 
     const aggregate = buildNightlyAggregate({ config, bundles, now, scanDurationMs: 42 });
     expect(aggregate.bundleTypeCounts.operatorProof).toBe(1);

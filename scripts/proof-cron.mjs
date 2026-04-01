@@ -15,9 +15,17 @@ const CONTRACT = "openclawbrain_proof_cron.v1";
 const DEFAULT_OUTPUT_ROOT = path.join(workspaceRoot, "artifacts", "openclawbrain-proof-cron");
 const DEFAULT_CONFIG_PATH = path.join(DEFAULT_OUTPUT_ROOT, "cron-config.json");
 const DEFAULT_OPENCLAW_HOME = path.join(process.env.HOME ?? "", ".openclaw");
-const DEFAULT_STATUS_COMMAND = [
+const LEGACY_STATUS_COMMAND = [
   process.execPath,
   path.join(repoRoot, "bin", "openclawbrain.js"),
+  "status",
+  "--openclaw-home",
+  "{{openclawHome}}",
+  "--json",
+];
+const DEFAULT_STATUS_COMMAND = [
+  process.execPath,
+  path.join(repoRoot, "packages", "cli", "dist", "src", "cli.js"),
   "status",
   "--openclaw-home",
   "{{openclawHome}}",
@@ -137,6 +145,18 @@ function defaultConfig(context) {
   };
 }
 
+function isLegacyStatusCommand(command) {
+  if (!Array.isArray(command) || command.length < 6) {
+    return false;
+  }
+  const [, scriptPath, subcommand, openclawHomeFlag, openclawHomeValue, jsonFlag] = command.map((part) => String(part));
+  return scriptPath.endsWith(path.join("bin", "openclawbrain.js"))
+    && subcommand === "status"
+    && openclawHomeFlag === "--openclaw-home"
+    && openclawHomeValue === "{{openclawHome}}"
+    && jsonFlag === "--json";
+}
+
 function loadConfig(configPath, context) {
   const defaults = defaultConfig(context);
   if (!existsSync(configPath)) {
@@ -144,13 +164,19 @@ function loadConfig(configPath, context) {
   }
   try {
     const parsed = JSON.parse(readFileSync(configPath, "utf8"));
+    const parsedStatusCommand = Array.isArray(parsed.statusCommand) && parsed.statusCommand.length > 0
+      ? parsed.statusCommand
+      : defaults.statusCommand;
+    const statusCommand = isLegacyStatusCommand(parsedStatusCommand)
+      ? defaults.statusCommand
+      : parsedStatusCommand;
     return {
       ...defaults,
       ...parsed,
       openclawHome: typeof parsed.openclawHome === "string" ? parsed.openclawHome : defaults.openclawHome,
       scanRoots: Array.isArray(parsed.scanRoots) && parsed.scanRoots.length > 0 ? parsed.scanRoots : defaults.scanRoots,
       excludeRoots: Array.isArray(parsed.excludeRoots) ? parsed.excludeRoots : defaults.excludeRoots,
-      statusCommand: Array.isArray(parsed.statusCommand) && parsed.statusCommand.length > 0 ? parsed.statusCommand : defaults.statusCommand,
+      statusCommand,
     };
   } catch {
     return defaults;
@@ -739,14 +765,37 @@ function summarizeScan(bundles, now, workspaceRoot) {
 
 function summarizeStatus(statusProbe) {
   const status = statusProbe.parsed ?? {};
+  const brainStatus = status.brainStatus ?? {};
+  const brain = status.brain ?? {};
+  const passiveLearning = status.passiveLearning ?? {};
+  const currentTurnAttribution = status.currentTurnAttribution ?? {};
+  const legacyWorkerHealthy = status.workerHealthy ?? null;
+  const serveState = brainStatus.serveState ?? null;
+  const activePackId = brain.activePackId ?? null;
+  const runtimeHealthy =
+    legacyWorkerHealthy ??
+    (brainStatus.status === "ok"
+      ? true
+      : serveState === "serving_active_pack"
+        ? true
+        : brainStatus.status === "fail"
+          ? false
+          : null);
   return {
     runtimeVersion: status.runtimeVersion ?? null,
     updateSha: status.update?.git?.sha ?? null,
-    workerHealthy: status.workerHealthy ?? null,
-    workerStatus: status.workerStatus ?? null,
+    runtimeHealthy,
+    serveState,
+    brainStatus: brainStatus.status ?? null,
+    activePackId,
+    routeFreshness: brain.routeFreshness ?? null,
+    usedLearnedRouteFn: brainStatus.usedLearnedRouteFn ?? currentTurnAttribution.usedLearnedRouteFn ?? null,
+    loadProof: status.hook?.loadProof ?? null,
+    workerHealthy: legacyWorkerHealthy,
+    workerStatus: status.workerStatus ?? passiveLearning.watchState ?? null,
     workerMode: status.workerMode ?? null,
     workerPid: status.workerPid ?? null,
-    currentPackVersion: status.currentPackVersion ?? null,
+    currentPackVersion: status.currentPackVersion ?? activePackId,
     packVersion: status.packVersion ?? null,
     recentTraceCount: status.recentTraceCount ?? null,
     totalEpisodes: status.totalEpisodes ?? null,
@@ -754,7 +803,7 @@ function summarizeStatus(statusProbe) {
     pendingLabels: status.pendingLabels ?? null,
     mutationBacklog: status.mutationBacklog ?? null,
     recentMutationBundles: Array.isArray(status.recentMutationBundles) ? status.recentMutationBundles.length : null,
-    decisionSummary: status.recentDecisionSummary ?? null,
+    decisionSummary: status.recentDecisionSummary ?? status.decisionSummary ?? null,
     promotionStory: status.promotionStory ?? null,
     securityAudit: status.securityAudit?.summary ?? null,
     gatewayReachable: status.gateway?.reachable ?? null,
@@ -1045,9 +1094,13 @@ function formatHealthMarkdown(snapshot) {
   lines.push(`- host evidence bundles: ${snapshot.proofInventory.hostEvidenceCount}`);
   lines.push("");
   lines.push("## Live status");
+  lines.push(`- runtime healthy: ${snapshot.status.runtimeHealthy}`);
+  lines.push(`- serve state: ${snapshot.status.serveState ?? "n/a"}`);
+  lines.push(`- active pack: ${snapshot.status.activePackId ?? snapshot.status.currentPackVersion ?? "n/a"}`);
+  lines.push(`- learned route active: ${snapshot.status.usedLearnedRouteFn ?? "n/a"}`);
+  lines.push(`- load proof: ${snapshot.status.loadProof ?? "n/a"}`);
   lines.push(`- worker healthy: ${snapshot.status.workerHealthy}`);
   lines.push(`- worker mode: ${snapshot.status.workerMode}`);
-  lines.push(`- current pack version: ${snapshot.status.currentPackVersion ?? "n/a"}`);
   lines.push(`- recent traced decisions: ${snapshot.status.decisionSummary?.sampleSize ?? 0}`);
   lines.push(`- clip rate: ${snapshot.status.decisionSummary?.clipRate?.rate ?? "n/a"}`);
   lines.push(`- fail-open rate: ${snapshot.status.decisionSummary?.failOpenRate?.rate ?? "n/a"}`);
