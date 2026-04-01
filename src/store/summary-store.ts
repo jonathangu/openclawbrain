@@ -3,6 +3,8 @@ import { sanitizeFts5Query } from "./fts5-sanitize.js";
 import { buildLikeSearchPlan, createFallbackSnippet } from "./full-text-fallback.js";
 
 export type SummaryKind = "leaf" | "condensed";
+export type SummaryLineageRole = "support" | "episode" | "snapshot";
+export type SummaryTruthBasis = "canonical" | "derived" | "open";
 export type ContextItemType = "message" | "summary";
 
 export type MarbleKind = "replay_stub" | "typed_extraction" | "operational_summary";
@@ -120,6 +122,64 @@ export type CreateSummaryInput = {
   sourceMessageTokenCount?: number;
 };
 
+export type CreateSummaryLineageInput = {
+  summaryId: string;
+  conversationId: number;
+  branchId: string;
+  episodeId: string;
+  summaryRole: SummaryLineageRole;
+  truthBasis: SummaryTruthBasis;
+  parentBranchId?: string | null;
+  typedMemoryRefs?: string[];
+  snapshotId?: string | null;
+  forkReason?: string | null;
+  createdAt?: Date;
+};
+
+export type SummaryLineageRecord = {
+  summaryId: string;
+  conversationId: number;
+  branchId: string;
+  episodeId: string;
+  summaryRole: SummaryLineageRole;
+  truthBasis: SummaryTruthBasis;
+  parentBranchId: string | null;
+  typedMemoryRefs: string[];
+  snapshotId: string | null;
+  forkReason: string | null;
+  createdAt: Date;
+};
+
+export type CreateBranchSnapshotInput = {
+  snapshotId: string;
+  conversationId: number;
+  branchId: string;
+  episodeId: string;
+  activeSummaryId?: string | null;
+  contextOrdinal: number;
+  packVersion?: number | null;
+  summarySpineIds?: string[];
+  typedMemoryRefs?: string[];
+  openQuestionRefs?: string[];
+  stateJson: string;
+  createdAt?: Date;
+};
+
+export type BranchSnapshotRecord = {
+  snapshotId: string;
+  conversationId: number;
+  branchId: string;
+  episodeId: string;
+  activeSummaryId: string | null;
+  contextOrdinal: number;
+  packVersion: number | null;
+  summarySpineIds: string[];
+  typedMemoryRefs: string[];
+  openQuestionRefs: string[];
+  stateJson: string;
+  createdAt: Date;
+};
+
 export type SummaryRecord = {
   summaryId: string;
   conversationId: number;
@@ -206,6 +266,35 @@ interface SummaryRow {
   descendant_count: number | null;
   descendant_token_count: number | null;
   source_message_token_count: number | null;
+  created_at: string;
+}
+
+interface SummaryLineageRow {
+  summary_id: string;
+  conversation_id: number;
+  branch_id: string;
+  episode_id: string;
+  summary_role: SummaryLineageRole;
+  truth_basis: SummaryTruthBasis;
+  parent_branch_id: string | null;
+  typed_memory_refs: string;
+  snapshot_id: string | null;
+  fork_reason: string | null;
+  created_at: string;
+}
+
+interface BranchSnapshotRow {
+  snapshot_id: string;
+  conversation_id: number;
+  branch_id: string;
+  episode_id: string;
+  active_summary_id: string | null;
+  context_ordinal: number;
+  pack_version: number | null;
+  summary_spine_ids: string;
+  typed_memory_refs: string;
+  open_question_refs: string;
+  state_json: string;
   created_at: string;
 }
 
@@ -346,6 +435,77 @@ function toSummaryRecord(row: SummaryRow): SummaryRecord {
       row.source_message_token_count >= 0
         ? Math.floor(row.source_message_token_count)
         : 0,
+    createdAt: new Date(row.created_at),
+  };
+}
+
+function parseStringArrayJson(value: string | null | undefined): string[] {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return [];
+  }
+  try {
+    const parsed = JSON.parse(value);
+    if (!Array.isArray(parsed)) {
+      return [];
+    }
+    return parsed.filter((entry): entry is string => typeof entry === "string");
+  } catch {
+    return [];
+  }
+}
+
+function dedupeStringArray(values: string[]): string[] {
+  return [...new Set(values.filter((value) => typeof value === "string" && value.length > 0))];
+}
+
+function makeDefaultSummaryLineage(summary: SummaryRecord): SummaryLineageRecord {
+  return {
+    summaryId: summary.summaryId,
+    conversationId: summary.conversationId,
+    branchId: `branch_${summary.conversationId}_main`,
+    episodeId: `episode_${summary.conversationId}_${summary.summaryId}`,
+    summaryRole: summary.kind === "leaf" ? "support" : "episode",
+    truthBasis: "derived",
+    parentBranchId: null,
+    typedMemoryRefs: [],
+    snapshotId: null,
+    forkReason: null,
+    createdAt: summary.createdAt,
+  };
+}
+
+function toSummaryLineageRecord(row: SummaryLineageRow): SummaryLineageRecord {
+  return {
+    summaryId: row.summary_id,
+    conversationId: row.conversation_id,
+    branchId: row.branch_id,
+    episodeId: row.episode_id,
+    summaryRole: row.summary_role,
+    truthBasis: row.truth_basis,
+    parentBranchId: row.parent_branch_id,
+    typedMemoryRefs: parseStringArrayJson(row.typed_memory_refs),
+    snapshotId: row.snapshot_id,
+    forkReason: row.fork_reason,
+    createdAt: new Date(row.created_at),
+  };
+}
+
+function toBranchSnapshotRecord(row: BranchSnapshotRow): BranchSnapshotRecord {
+  return {
+    snapshotId: row.snapshot_id,
+    conversationId: row.conversation_id,
+    branchId: row.branch_id,
+    episodeId: row.episode_id,
+    activeSummaryId: row.active_summary_id,
+    contextOrdinal: Math.max(0, Math.floor(row.context_ordinal)),
+    packVersion:
+      typeof row.pack_version === "number" && Number.isFinite(row.pack_version)
+        ? Math.max(0, Math.floor(row.pack_version))
+        : null,
+    summarySpineIds: parseStringArrayJson(row.summary_spine_ids),
+    typedMemoryRefs: parseStringArrayJson(row.typed_memory_refs),
+    openQuestionRefs: parseStringArrayJson(row.open_question_refs),
+    stateJson: row.state_json,
     createdAt: new Date(row.created_at),
   };
 }
@@ -599,6 +759,89 @@ export class SummaryStore {
     return rows.map(toSummaryRecord);
   }
 
+  async getSummaryLineage(summaryId: string): Promise<SummaryLineageRecord | null> {
+    const row = this.db
+      .prepare(
+        `SELECT summary_id, conversation_id, branch_id, episode_id, summary_role,
+                truth_basis, parent_branch_id, typed_memory_refs, snapshot_id,
+                fork_reason, created_at
+         FROM summary_lineage
+         WHERE summary_id = ?`,
+      )
+      .get(summaryId) as unknown as SummaryLineageRow | undefined;
+    if (row) {
+      return toSummaryLineageRecord(row);
+    }
+
+    const summary = await this.getSummary(summaryId);
+    return summary ? makeDefaultSummaryLineage(summary) : null;
+  }
+
+  async getSummaryLineageByConversation(conversationId: number): Promise<SummaryLineageRecord[]> {
+    const rows = this.db
+      .prepare(
+        `SELECT summary_id, conversation_id, branch_id, episode_id, summary_role,
+                truth_basis, parent_branch_id, typed_memory_refs, snapshot_id,
+                fork_reason, created_at
+         FROM summary_lineage
+         WHERE conversation_id = ?
+         ORDER BY created_at ASC`,
+      )
+      .all(conversationId) as unknown as SummaryLineageRow[];
+    return rows.map(toSummaryLineageRecord);
+  }
+
+  async insertSummaryLineage(input: CreateSummaryLineageInput): Promise<SummaryLineageRecord> {
+    const createdAt = (input.createdAt ?? new Date()).toISOString();
+    const typedMemoryRefs = JSON.stringify(dedupeStringArray(input.typedMemoryRefs ?? []));
+    this.db
+      .prepare(
+        `INSERT INTO summary_lineage (
+          summary_id,
+          conversation_id,
+          branch_id,
+          episode_id,
+          summary_role,
+          truth_basis,
+          parent_branch_id,
+          typed_memory_refs,
+          snapshot_id,
+          fork_reason,
+          created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(summary_id) DO UPDATE SET
+          conversation_id = excluded.conversation_id,
+          branch_id = excluded.branch_id,
+          episode_id = excluded.episode_id,
+          summary_role = excluded.summary_role,
+          truth_basis = excluded.truth_basis,
+          parent_branch_id = excluded.parent_branch_id,
+          typed_memory_refs = excluded.typed_memory_refs,
+          snapshot_id = excluded.snapshot_id,
+          fork_reason = excluded.fork_reason`,
+      )
+      .run(
+        input.summaryId,
+        input.conversationId,
+        input.branchId,
+        input.episodeId,
+        input.summaryRole,
+        input.truthBasis,
+        input.parentBranchId ?? null,
+        typedMemoryRefs,
+        input.snapshotId ?? null,
+        input.forkReason ?? null,
+        createdAt,
+      );
+
+    const lineage = await this.getSummaryLineage(input.summaryId);
+    if (!lineage) {
+      throw new Error(`Summary lineage not found after insert: ${input.summaryId}`);
+    }
+    return lineage;
+  }
+
   // ── Lineage ───────────────────────────────────────────────────────────────
 
   async linkSummaryToMessages(summaryId: string, messageIds: number[]): Promise<void> {
@@ -642,6 +885,115 @@ export class SummaryStore {
       )
       .all(summaryId) as unknown as MessageIdRow[];
     return rows.map((r) => r.message_id);
+  }
+
+  async insertBranchSnapshot(input: CreateBranchSnapshotInput): Promise<BranchSnapshotRecord> {
+    const createdAt = (input.createdAt ?? new Date()).toISOString();
+    const summarySpineIds = JSON.stringify(dedupeStringArray(input.summarySpineIds ?? []));
+    const typedMemoryRefs = JSON.stringify(dedupeStringArray(input.typedMemoryRefs ?? []));
+    const openQuestionRefs = JSON.stringify(dedupeStringArray(input.openQuestionRefs ?? []));
+
+    this.db
+      .prepare(
+        `INSERT INTO branch_snapshots (
+          snapshot_id,
+          conversation_id,
+          branch_id,
+          episode_id,
+          active_summary_id,
+          context_ordinal,
+          pack_version,
+          summary_spine_ids,
+          typed_memory_refs,
+          open_question_refs,
+          state_json,
+          created_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(snapshot_id) DO UPDATE SET
+          conversation_id = excluded.conversation_id,
+          branch_id = excluded.branch_id,
+          episode_id = excluded.episode_id,
+          active_summary_id = excluded.active_summary_id,
+          context_ordinal = excluded.context_ordinal,
+          pack_version = excluded.pack_version,
+          summary_spine_ids = excluded.summary_spine_ids,
+          typed_memory_refs = excluded.typed_memory_refs,
+          open_question_refs = excluded.open_question_refs,
+          state_json = excluded.state_json`,
+      )
+      .run(
+        input.snapshotId,
+        input.conversationId,
+        input.branchId,
+        input.episodeId,
+        input.activeSummaryId ?? null,
+        Math.max(0, Math.floor(input.contextOrdinal)),
+        typeof input.packVersion === "number" && Number.isFinite(input.packVersion)
+          ? Math.max(0, Math.floor(input.packVersion))
+          : null,
+        summarySpineIds,
+        typedMemoryRefs,
+        openQuestionRefs,
+        input.stateJson,
+        createdAt,
+      );
+
+    const row = this.db
+      .prepare(
+        `SELECT snapshot_id, conversation_id, branch_id, episode_id, active_summary_id,
+                context_ordinal, pack_version, summary_spine_ids, typed_memory_refs,
+                open_question_refs, state_json, created_at
+         FROM branch_snapshots
+         WHERE snapshot_id = ?`,
+      )
+      .get(input.snapshotId) as unknown as BranchSnapshotRow | undefined;
+    if (!row) {
+      throw new Error(`Branch snapshot not found after insert: ${input.snapshotId}`);
+    }
+    return toBranchSnapshotRecord(row);
+  }
+
+  async getBranchSnapshot(snapshotId: string): Promise<BranchSnapshotRecord | null> {
+    const row = this.db
+      .prepare(
+        `SELECT snapshot_id, conversation_id, branch_id, episode_id, active_summary_id,
+                context_ordinal, pack_version, summary_spine_ids, typed_memory_refs,
+                open_question_refs, state_json, created_at
+         FROM branch_snapshots
+         WHERE snapshot_id = ?`,
+      )
+      .get(snapshotId) as unknown as BranchSnapshotRow | undefined;
+    return row ? toBranchSnapshotRecord(row) : null;
+  }
+
+  async getBranchSnapshots(conversationId: number): Promise<BranchSnapshotRecord[]> {
+    const rows = this.db
+      .prepare(
+        `SELECT snapshot_id, conversation_id, branch_id, episode_id, active_summary_id,
+                context_ordinal, pack_version, summary_spine_ids, typed_memory_refs,
+                open_question_refs, state_json, created_at
+         FROM branch_snapshots
+         WHERE conversation_id = ?
+         ORDER BY created_at ASC`,
+      )
+      .all(conversationId) as unknown as BranchSnapshotRow[];
+    return rows.map(toBranchSnapshotRecord);
+  }
+
+  async getLatestBranchSnapshot(conversationId: number): Promise<BranchSnapshotRecord | null> {
+    const row = this.db
+      .prepare(
+        `SELECT snapshot_id, conversation_id, branch_id, episode_id, active_summary_id,
+                context_ordinal, pack_version, summary_spine_ids, typed_memory_refs,
+                open_question_refs, state_json, created_at
+         FROM branch_snapshots
+         WHERE conversation_id = ?
+         ORDER BY created_at DESC, context_ordinal DESC
+         LIMIT 1`,
+      )
+      .get(conversationId) as unknown as BranchSnapshotRow | undefined;
+    return row ? toBranchSnapshotRecord(row) : null;
   }
 
   async getSummaryChildren(parentSummaryId: string): Promise<SummaryRecord[]> {

@@ -5,7 +5,12 @@ import type {
   MessagePartRecord,
   MessageRole,
 } from "./store/conversation-store.js";
-import type { SummaryStore, ContextItemRecord, SummaryRecord } from "./store/summary-store.js";
+import type {
+  SummaryStore,
+  ContextItemRecord,
+  SummaryRecord,
+  SummaryLineageRecord,
+} from "./store/summary-store.js";
 
 // ── Public types ─────────────────────────────────────────────────────────────
 
@@ -23,12 +28,24 @@ export interface AssembledSummaryMetadataItem {
   descendantCount: number;
   earliestAt: Date | null;
   latestAt: Date | null;
+  branchId?: string | null;
+  episodeId?: string | null;
+  summaryRole?: SummaryLineageRecord["summaryRole"] | null;
+  truthBasis?: SummaryLineageRecord["truthBasis"] | null;
+  snapshotId?: string | null;
+  typedMemoryRefs?: string[];
 }
 
 export interface AssembledSummaryMetadata {
   totalCount: number;
   maxDepth: number;
   condensedCount: number;
+  episodeCount: number;
+  snapshotCount: number;
+  branchCount: number;
+  typedMemoryRefCount: number;
+  hasTruthConflict: boolean;
+  latestRole: SummaryLineageRecord["summaryRole"] | null;
   items: AssembledSummaryMetadataItem[];
 }
 
@@ -510,6 +527,7 @@ async function formatSummaryContent(
   summary: SummaryRecord,
   summaryStore: SummaryStore,
   timezone?: string,
+  lineage?: SummaryLineageRecord | null,
 ): Promise<string> {
   const attributes = [
     `id="${summary.summaryId}"`,
@@ -537,6 +555,17 @@ async function formatSummaryContent(
       }
       lines.push("  </parents>");
     }
+  }
+
+  if (lineage) {
+    const typedMemoryRefs = lineage.typedMemoryRefs.length > 0 ? lineage.typedMemoryRefs.join(",") : "-";
+    lines.push(
+      `  <lineage branch_id="${lineage.branchId}" episode_id="${lineage.episodeId}" role="${lineage.summaryRole}" truth_basis="${lineage.truthBasis}" typed_memory_refs="${typedMemoryRefs}"${lineage.parentBranchId ? ` parent_branch_id="${lineage.parentBranchId}"` : ""}${lineage.snapshotId ? ` snapshot_id="${lineage.snapshotId}"` : ""}>`,
+    );
+    if (lineage.forkReason) {
+      lines.push(`    <fork_reason>${lineage.forkReason}</fork_reason>`);
+    }
+    lines.push("  </lineage>");
   }
 
   lines.push("  <content>");
@@ -625,6 +654,14 @@ export class ContextAssembler {
           totalCount: summaryMetadataItems.length,
           maxDepth: summaryMetadataItems.reduce((deepest, item) => Math.max(deepest, item.depth), 0),
           condensedCount: summaryMetadataItems.filter((item) => item.kind === "condensed").length,
+          episodeCount: summaryMetadataItems.filter((item) => item.summaryRole === "episode").length,
+          snapshotCount: summaryMetadataItems.filter((item) => item.summaryRole === "snapshot" || item.snapshotId != null).length,
+          branchCount: new Set(summaryMetadataItems.map((item) => item.branchId).filter((value): value is string => typeof value === "string" && value.length > 0)).size,
+          typedMemoryRefCount: summaryMetadataItems.reduce((count, item) => count + (item.typedMemoryRefs?.length ?? 0), 0),
+          hasTruthConflict:
+            new Set(summaryMetadataItems.map((item) => item.branchId).filter((value): value is string => typeof value === "string" && value.length > 0)).size > 1 ||
+            summaryMetadataItems.some((item) => item.truthBasis === "open"),
+          latestRole: summaryMetadataItems.at(-1)?.summaryRole ?? null,
           items: summaryMetadataItems,
         }
       : undefined;
@@ -818,7 +855,9 @@ export class ContextAssembler {
       return null;
     }
 
-    const content = await formatSummaryContent(summary, this.summaryStore, this.timezone);
+    const lineage = await this.maybeGetSummaryLineage(summary.summaryId);
+
+    const content = await formatSummaryContent(summary, this.summaryStore, this.timezone, lineage);
     const tokens = estimateTokens(content);
 
     // Cast: summaries are synthetic user messages without full AgentMessage metadata
@@ -839,7 +878,23 @@ export class ContextAssembler {
         descendantCount: summary.descendantCount,
         earliestAt: summary.earliestAt,
         latestAt: summary.latestAt,
+        branchId: lineage?.branchId ?? null,
+        episodeId: lineage?.episodeId ?? null,
+        summaryRole: lineage?.summaryRole ?? null,
+        truthBasis: lineage?.truthBasis ?? null,
+        snapshotId: lineage?.snapshotId ?? null,
+        typedMemoryRefs: lineage?.typedMemoryRefs ?? [],
       },
     };
+  }
+
+  private async maybeGetSummaryLineage(summaryId: string): Promise<SummaryLineageRecord | null> {
+    const store = this.summaryStore as unknown as {
+      getSummaryLineage?: (summaryId: string) => Promise<SummaryLineageRecord | null>;
+    };
+    if (typeof store.getSummaryLineage !== "function") {
+      return null;
+    }
+    return store.getSummaryLineage(summaryId);
   }
 }

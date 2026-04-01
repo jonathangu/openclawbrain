@@ -175,6 +175,18 @@ export function createLcmDescribeTool(input: {
             `desc=${s.descendantCount} range=${formatIso(s.earliestAt, timezone)}..${formatIso(s.latestAt, timezone)} ` +
             `budgetCap=${resolvedTokenCap}`,
         );
+        if (s.lineage) {
+          lines.push(
+            `lineage branch=${s.lineage.branchId} episode=${s.lineage.episodeId} role=${s.lineage.summaryRole} truth=${s.lineage.truthBasis}` +
+              (s.lineage.snapshotId ? ` snapshot=${s.lineage.snapshotId}` : "") +
+              (s.lineage.typedMemoryRefs.length > 0 ? ` typed=${s.lineage.typedMemoryRefs.join(",")}` : ""),
+          );
+        }
+        if (s.snapshot) {
+          lines.push(
+            `snapshot id=${s.snapshot.snapshotId} active=${s.snapshot.activeSummaryId ?? "-"} contextOrdinal=${s.snapshot.contextOrdinal}`,
+          );
+        }
         if (s.parentIds.length > 0) {
           lines.push(`parents ${s.parentIds.join(" ")}`);
         }

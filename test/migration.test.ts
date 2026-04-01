@@ -117,6 +117,11 @@ describe("runLcmMigrations summary depth backfill", () => {
     expect(summaryColumns.some((column) => column.name === "descendant_token_count")).toBe(true);
     expect(summaryColumns.some((column) => column.name === "source_message_token_count")).toBe(true);
 
+    const lineageTables = db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('summary_lineage', 'branch_snapshots')")
+      .all() as Array<{ name: string }>;
+    expect(lineageTables.map((row) => row.name).sort()).toEqual(["branch_snapshots", "summary_lineage"]);
+
     const marbleColumns = db.prepare(`PRAGMA table_info(marbles)`).all() as Array<{
       name?: string;
     }>;

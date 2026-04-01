@@ -11,6 +11,8 @@ import type {
   MarbleRecord,
   MarbleSearchResult,
   MarbleSourceRecord,
+  SummaryLineageRecord,
+  BranchSnapshotRecord,
 } from "./store/summary-store.js";
 
 // ── Public interfaces ────────────────────────────────────────────────────────
@@ -49,6 +51,8 @@ export interface DescribeResult {
       childCount: number;
       path: string;
     }>;
+    lineage?: SummaryLineageRecord | null;
+    snapshot?: BranchSnapshotRecord | null;
     createdAt: Date;
   };
   /** File-specific fields */
@@ -167,12 +171,15 @@ export class RetrievalEngine {
     }
 
     // Fetch lineage in parallel
-    const [parents, children, messageIds, subtree] = await Promise.all([
+    const [parents, children, messageIds, subtree, lineage] = await Promise.all([
       this.summaryStore.getSummaryParents(id),
       this.summaryStore.getSummaryChildren(id),
       this.summaryStore.getSummaryMessages(id),
       this.summaryStore.getSummarySubtree(id),
+      this.maybeGetSummaryLineage(id),
     ]);
+
+    const snapshot = lineage?.snapshotId ? await this.maybeGetBranchSnapshot(lineage.snapshotId) : null;
 
     return {
       id,
@@ -207,9 +214,31 @@ export class RetrievalEngine {
           childCount: node.childCount,
           path: node.path,
         })),
+        lineage,
+        snapshot,
         createdAt: summary.createdAt,
       },
     };
+  }
+
+  private async maybeGetSummaryLineage(summaryId: string): Promise<SummaryLineageRecord | null> {
+    const store = this.summaryStore as unknown as {
+      getSummaryLineage?: (summaryId: string) => Promise<SummaryLineageRecord | null>;
+    };
+    if (typeof store.getSummaryLineage !== "function") {
+      return null;
+    }
+    return store.getSummaryLineage(summaryId);
+  }
+
+  private async maybeGetBranchSnapshot(snapshotId: string): Promise<BranchSnapshotRecord | null> {
+    const store = this.summaryStore as unknown as {
+      getBranchSnapshot?: (snapshotId: string) => Promise<BranchSnapshotRecord | null>;
+    };
+    if (typeof store.getBranchSnapshot !== "function") {
+      return null;
+    }
+    return store.getBranchSnapshot(snapshotId);
   }
 
   private async describeFile(id: string): Promise<DescribeResult | null> {
@@ -266,19 +295,28 @@ export class RetrievalEngine {
     let messages: MessageSearchResult[] = [];
     let summaries: SummarySearchResult[] = [];
     let marbles: MarbleSearchResult[] = [];
+    const maybeSearchMarbles = async (): Promise<MarbleSearchResult[]> => {
+      const store = this.summaryStore as unknown as {
+        searchMarbles?: (input: typeof searchInput) => Promise<MarbleSearchResult[]>;
+      };
+      if (typeof store.searchMarbles !== "function") {
+        return [];
+      }
+      return store.searchMarbles(searchInput);
+    };
 
     if (scope === "messages") {
       messages = await this.conversationStore.searchMessages(searchInput);
     } else if (scope === "summaries") {
       summaries = await this.summaryStore.searchSummaries(searchInput);
     } else if (scope === "marbles") {
-      marbles = await this.summaryStore.searchMarbles(searchInput);
+      marbles = await maybeSearchMarbles();
     } else {
       // scope === "both" — run in parallel across all artifact rails.
       [messages, summaries, marbles] = await Promise.all([
         this.conversationStore.searchMessages(searchInput),
         this.summaryStore.searchSummaries(searchInput),
-        this.summaryStore.searchMarbles(searchInput),
+        maybeSearchMarbles(),
       ]);
     }
 

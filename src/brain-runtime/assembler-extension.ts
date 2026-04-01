@@ -1,4 +1,4 @@
-import type { AssembleContextResult } from "../assembler.js";
+import type { AssembleContextResult, AssembledSummaryMetadata } from "../assembler.js";
 import type { ContextEngine, AgentMessage } from "../openclaw-sdk-compat.js";
 import type {
   BrainCompileReportV1,
@@ -372,14 +372,28 @@ function buildPartialBrainContextBlock(result: TraversalResult, stage: Interrupt
   return buildStructuredPartialBrainContextBlock(result, routeTrace, stage);
 }
 
-function buildSummaryRoutingPrompt(mode: ReturnType<typeof decideSummaryRouting>["mode"]): string | undefined {
+function buildSummaryRoutingPrompt(
+  mode: ReturnType<typeof decideSummaryRouting>["mode"],
+  summaryMetadata?: AssembledSummaryMetadata,
+): string | undefined {
+  const branchHeavy =
+    (summaryMetadata?.branchCount ?? 0) > 1 ||
+    (summaryMetadata?.snapshotCount ?? 0) > 0 ||
+    (summaryMetadata?.hasTruthConflict ?? false);
+
   switch (mode) {
     case "summary_suffices":
-      return "This turn looks like a broad recap. Summary-level context is a reasonable starting point unless the user asks for exact proof or current-truth conflict resolution.";
+      return branchHeavy
+        ? "This turn looks like a broad recap over branch-heavy compacted history. Summary-level context is a reasonable starting point, but expand toward source before making exact claims or resolving current-truth conflicts."
+        : "This turn looks like a broad recap. Summary-level context is a reasonable starting point unless the user asks for exact proof or current-truth conflict resolution.";
     case "prefer_typed_memory":
-      return "This turn looks current-truth or conflict-sensitive. Prefer explicit correction cards and typed memory over summary recap; if typed memory is missing, expand toward source before asserting specifics.";
+      return branchHeavy
+        ? "This turn looks current-truth or conflict-sensitive. Prefer explicit correction cards and typed memory over summary recap; if typed memory is missing or the branch history is forked/snapshotted, expand toward source before asserting specifics."
+        : "This turn looks current-truth or conflict-sensitive. Prefer explicit correction cards and typed memory over summary recap; if typed memory is missing, expand toward source before asserting specifics.";
     case "expand_to_source":
-      return "This turn looks precision-sensitive against compacted history. Use summaries only to locate the region, then expand toward source material before asserting exact details.";
+      return branchHeavy
+        ? "This turn looks precision-sensitive against branch-heavy compacted history. Use summaries only to locate the region, then expand toward source material and snapshots before asserting exact details."
+        : "This turn looks precision-sensitive against compacted history. Use summaries only to locate the region, then expand toward source material before asserting exact details.";
     default:
       return undefined;
   }
@@ -729,7 +743,7 @@ export class BrainAssemblerExtension {
       queryText: decision.queryText,
       summaryMetadata: params.assembled.summaryMetadata,
     });
-    const summaryRoutingPrompt = buildSummaryRoutingPrompt(summaryRouting.mode);
+    const summaryRoutingPrompt = buildSummaryRoutingPrompt(summaryRouting.mode, params.assembled.summaryMetadata);
     if (decision.mode !== "use_brain" && decision.mode !== "shadow") {
       const metadata = assemblyDecisionDetails({
         checkpoint: captureCompileCheckpoint(compileStartedAt, compileDeadlineMs),

@@ -18,9 +18,15 @@ export type {
 export { SummaryStore } from "./summary-store.js";
 export type {
   SummaryKind,
+  SummaryLineageRole,
+  SummaryTruthBasis,
   ContextItemType,
   CreateSummaryInput,
   SummaryRecord,
+  CreateSummaryLineageInput,
+  SummaryLineageRecord,
+  CreateBranchSnapshotInput,
+  BranchSnapshotRecord,
   ContextItemRecord,
   SummarySearchInput,
   SummarySearchResult,
