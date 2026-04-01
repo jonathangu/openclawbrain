@@ -4,6 +4,26 @@ Release history for the published OpenClawBrain packages. The README and operato
 
 ## Unreleased
 
+## 0.4.19 / 0.4.6
+
+`0.4.19 / 0.4.6` publishes the operator-surface follow-up after the merged OCB tranche: the CLI now keeps large-log status/proof reads bounded **and** the proof health snapshot stops declaring false outages when the live runtime is actually serving a pack.
+
+**Packages**
+
+- `@openclawbrain/openclaw@0.4.6`
+- `@openclawbrain/cli@0.4.19`
+
+**Changes**
+
+- keeps status/proof learning-spine reads bounded for oversized logs
+- hardens traced-learning status surfaces so repeated persisted status payloads stay JSON-serializable
+- fixes proof-cron health snapshots to read operator/runtime truth instead of stale legacy worker-only status
+- reports live serve-state facts in health snapshots (`runtime healthy`, `serve state`, active pack, learned-route state, load proof)
+
+**Full release note**
+
+- [docs/release-notes-0.4.19.md](docs/release-notes-0.4.19.md)
+
 ## 0.4.18 / 0.4.6
 
 `0.4.18 / 0.4.6` publishes the operator-surface status fix so the split-package lane no longer whole-reads oversized learning-spine logs during status/proof inspection, while the plugin/runtime package stays on `0.4.6`.
