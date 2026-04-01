@@ -151,6 +151,26 @@ function parseOpenClawSessionRecord(value, lineNumber) {
                 parentId: expectNullableString(record.parentId, `${lineNumber}.parentId`),
                 timestamp: expectString(record.timestamp, `${lineNumber}.timestamp`)
             };
+        case "custom_message": {
+            const data = {};
+            if (record.content !== undefined) {
+                data.content = record.content;
+            }
+            if (record.display !== undefined) {
+                data.display = record.display;
+            }
+            if (record.details !== undefined) {
+                data.details = record.details;
+            }
+            return {
+                type: "custom",
+                customType: expectString(record.customType, `${lineNumber}.customType`),
+                data,
+                id: expectString(record.id, `${lineNumber}.id`),
+                parentId: expectNullableString(record.parentId, `${lineNumber}.parentId`),
+                timestamp: expectString(record.timestamp, `${lineNumber}.timestamp`)
+            };
+        }
         case "message":
             return {
                 type,
