@@ -177,22 +177,25 @@ describe("BrainService observations", () => {
       ],
       status: "pending_followup",
       routeMetadata: {
+        servedArtifact: null,
         selectionMetadata: {
-          traceSliceVersion: 3,
+          traceSliceVersion: 4,
           chosenStopCount: 0,
           forcedStopCount: expect.any(Number),
           droppedProposalCount: 0,
           droppedProposalReasons: null,
+          compileReportSummary: expect.stringContaining("[brain compile]"),
         },
       },
     });
     const teacherInput = materializeTeacherLabelInput(observation!);
     expect(teacherInput?.routeMetadata.selectionMetadata).toMatchObject({
-      traceSliceVersion: 3,
+      traceSliceVersion: 4,
       chosenStopCount: 0,
       forcedStopCount: expect.any(Number),
       droppedProposalCount: 0,
       droppedProposalReasons: null,
+      compileReportSummary: expect.stringContaining("[brain compile]"),
     });
     expect((teacherInput?.routeMetadata.selectionMetadata?.forcedStopCount ?? 0)).toBeGreaterThan(0);
   });

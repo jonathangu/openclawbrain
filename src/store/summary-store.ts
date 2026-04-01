@@ -5,6 +5,102 @@ import { buildLikeSearchPlan, createFallbackSnippet } from "./full-text-fallback
 export type SummaryKind = "leaf" | "condensed";
 export type ContextItemType = "message" | "summary";
 
+export type MarbleKind = "replay_stub" | "typed_extraction" | "operational_summary";
+export type MarbleFreshnessState =
+  | "fresh"
+  | "stale_source"
+  | "stale_policy"
+  | "stale_pack"
+  | "superseded"
+  | "tombstoned";
+export type MarbleSourceKind = "message" | "summary" | "file" | "tool_result" | "trace";
+
+export type CreateMarbleSourceInput = {
+  sourceKind: MarbleSourceKind;
+  sourceId: string;
+  sourceSubId?: string | null;
+  sourceDigest: string;
+  sourceProvenanceRef: string;
+  sourceUri?: string | null;
+  ordinal?: number;
+};
+
+export type CreateMarbleInput = {
+  marbleId: string;
+  conversationId: number;
+  marbleKind: MarbleKind;
+  compressionVersion: number;
+  renderVersion: number;
+  content: string;
+  payloadJson: string;
+  tokenCount: number;
+  confidence: number;
+  freshnessState: MarbleFreshnessState;
+  sourceFingerprint: string;
+  contentHash: string;
+  provenanceRef: string;
+  sourceArtifactTokenCount?: number;
+  derivedFromMarbleId?: string | null;
+  invalidatedAt?: Date | null;
+  invalidationReason?: string | null;
+  createdAt?: Date;
+  updatedAt?: Date;
+  sources?: CreateMarbleSourceInput[];
+};
+
+export type MarbleRecord = {
+  marbleId: string;
+  conversationId: number;
+  marbleKind: MarbleKind;
+  compressionVersion: number;
+  renderVersion: number;
+  content: string;
+  payloadJson: string;
+  tokenCount: number;
+  confidence: number;
+  freshnessState: MarbleFreshnessState;
+  sourceFingerprint: string;
+  contentHash: string;
+  provenanceRef: string;
+  sourceCount: number;
+  sourceArtifactTokenCount: number;
+  derivedFromMarbleId: string | null;
+  invalidatedAt: Date | null;
+  invalidationReason: string | null;
+  createdAt: Date;
+  updatedAt: Date;
+};
+
+export type MarbleSourceRecord = {
+  marbleId: string;
+  sourceKind: MarbleSourceKind;
+  sourceId: string;
+  sourceSubId: string | null;
+  sourceDigest: string;
+  sourceProvenanceRef: string;
+  sourceUri: string | null;
+  ordinal: number;
+};
+
+export type MarbleSearchInput = {
+  conversationId?: number;
+  query: string;
+  mode: "regex" | "full_text";
+  since?: Date;
+  before?: Date;
+  limit?: number;
+};
+
+export type MarbleSearchResult = {
+  marbleId: string;
+  conversationId: number;
+  marbleKind: MarbleKind;
+  freshnessState: MarbleFreshnessState;
+  snippet: string;
+  createdAt: Date;
+  rank?: number;
+};
+
 export type CreateSummaryInput = {
   summaryId: string;
   conversationId: number;
@@ -161,6 +257,50 @@ interface LargeFileRow {
   created_at: string;
 }
 
+interface MarbleRow {
+  marble_id: string;
+  conversation_id: number;
+  marble_kind: MarbleKind;
+  compression_version: number;
+  render_version: number;
+  content: string;
+  payload_json: string;
+  token_count: number;
+  confidence: number;
+  freshness_state: MarbleFreshnessState;
+  source_fingerprint: string;
+  content_hash: string;
+  provenance_ref: string;
+  source_count: number | null;
+  source_artifact_token_count: number | null;
+  derived_from_marble_id: string | null;
+  invalidated_at: string | null;
+  invalidation_reason: string | null;
+  created_at: string;
+  updated_at: string | null;
+}
+
+interface MarbleSourceRow {
+  marble_id: string;
+  source_kind: MarbleSourceKind;
+  source_id: string;
+  source_sub_id: string | null;
+  source_digest: string;
+  source_provenance_ref: string;
+  source_uri: string | null;
+  ordinal: number;
+}
+
+interface MarbleSearchRow {
+  marble_id: string;
+  conversation_id: number;
+  marble_kind: MarbleKind;
+  freshness_state: MarbleFreshnessState;
+  snippet: string;
+  rank: number;
+  created_at: string;
+}
+
 // ── Row mappers ───────────────────────────────────────────────────────────────
 
 function toSummaryRecord(row: SummaryRow): SummaryRecord {
@@ -234,6 +374,87 @@ function toLargeFileRecord(row: LargeFileRow): LargeFileRecord {
     storageUri: row.storage_uri,
     explorationSummary: row.exploration_summary,
     createdAt: new Date(row.created_at),
+  };
+}
+
+function normalizeNullableDate(value: string | null | undefined): Date | null {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return null;
+  }
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
+}
+
+function normalizeNonNegativeInteger(value: number | null | undefined): number {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0
+    ? Math.floor(value)
+    : 0;
+}
+
+function normalizeConfidence(value: number | undefined): number {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return 0;
+  }
+  if (value < 0) {
+    return 0;
+  }
+  if (value > 1) {
+    return 1;
+  }
+  return value;
+}
+
+function normalizeOptionalSubId(value: string | null | undefined): string {
+  return typeof value === "string" ? value : "";
+}
+
+function toMarbleRecord(row: MarbleRow): MarbleRecord {
+  return {
+    marbleId: row.marble_id,
+    conversationId: row.conversation_id,
+    marbleKind: row.marble_kind,
+    compressionVersion: row.compression_version,
+    renderVersion: row.render_version,
+    content: row.content,
+    payloadJson: row.payload_json,
+    tokenCount: row.token_count,
+    confidence: normalizeConfidence(row.confidence),
+    freshnessState: row.freshness_state,
+    sourceFingerprint: row.source_fingerprint,
+    contentHash: row.content_hash,
+    provenanceRef: row.provenance_ref,
+    sourceCount: normalizeNonNegativeInteger(row.source_count),
+    sourceArtifactTokenCount: normalizeNonNegativeInteger(row.source_artifact_token_count),
+    derivedFromMarbleId: row.derived_from_marble_id,
+    invalidatedAt: normalizeNullableDate(row.invalidated_at),
+    invalidationReason: row.invalidation_reason,
+    createdAt: new Date(row.created_at),
+    updatedAt: normalizeNullableDate(row.updated_at) ?? new Date(row.created_at),
+  };
+}
+
+function toMarbleSourceRecord(row: MarbleSourceRow): MarbleSourceRecord {
+  return {
+    marbleId: row.marble_id,
+    sourceKind: row.source_kind,
+    sourceId: row.source_id,
+    sourceSubId: row.source_sub_id,
+    sourceDigest: row.source_digest,
+    sourceProvenanceRef: row.source_provenance_ref,
+    sourceUri: row.source_uri,
+    ordinal: normalizeNonNegativeInteger(row.ordinal),
+  };
+}
+
+function toMarbleSearchResult(row: MarbleSearchRow): MarbleSearchResult {
+  return {
+    marbleId: row.marble_id,
+    conversationId: row.conversation_id,
+    marbleKind: row.marble_kind,
+    freshnessState: row.freshness_state,
+    snippet: row.snippet,
+    createdAt: new Date(row.created_at),
+    rank: row.rank,
   };
 }
 
@@ -504,6 +725,368 @@ export class SummaryStore {
       });
     }
     return output;
+  }
+
+  // ── Marbles ──────────────────────────────────────────────────────────────
+
+  async insertMarble(input: CreateMarbleInput): Promise<MarbleRecord> {
+    const sources = input.sources ?? [];
+    const createdAt = (input.createdAt ?? new Date()).toISOString();
+    const updatedAt = (input.updatedAt ?? input.createdAt ?? new Date()).toISOString();
+    const invalidatedAt = input.invalidatedAt ? input.invalidatedAt.toISOString() : null;
+    const sourceArtifactTokenCount = normalizeNonNegativeInteger(input.sourceArtifactTokenCount);
+
+    this.db.exec("BEGIN");
+    try {
+      this.db
+        .prepare(
+          `INSERT INTO marbles (
+            marble_id,
+            conversation_id,
+            marble_kind,
+            compression_version,
+            render_version,
+            content,
+            payload_json,
+            token_count,
+            confidence,
+            freshness_state,
+            source_fingerprint,
+            content_hash,
+            provenance_ref,
+            source_count,
+            source_artifact_token_count,
+            derived_from_marble_id,
+            invalidated_at,
+            invalidation_reason,
+            created_at,
+            updated_at
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+        )
+        .run(
+          input.marbleId,
+          input.conversationId,
+          input.marbleKind,
+          input.compressionVersion,
+          input.renderVersion,
+          input.content,
+          input.payloadJson,
+          Math.max(0, Math.floor(input.tokenCount)),
+          normalizeConfidence(input.confidence),
+          input.freshnessState,
+          input.sourceFingerprint,
+          input.contentHash,
+          input.provenanceRef,
+          sources.length,
+          sourceArtifactTokenCount,
+          input.derivedFromMarbleId ?? null,
+          invalidatedAt,
+          input.invalidationReason ?? null,
+          createdAt,
+          updatedAt,
+        );
+
+      if (sources.length > 0) {
+        const sourceStmt = this.db.prepare(
+          `INSERT INTO marble_sources (
+            marble_id,
+            source_kind,
+            source_id,
+            source_sub_id,
+            source_digest,
+            source_provenance_ref,
+            source_uri,
+            ordinal
+          )
+          VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+        );
+        for (let idx = 0; idx < sources.length; idx++) {
+          const source = sources[idx];
+          sourceStmt.run(
+            input.marbleId,
+            source.sourceKind,
+            source.sourceId,
+            normalizeOptionalSubId(source.sourceSubId),
+            source.sourceDigest,
+            source.sourceProvenanceRef,
+            source.sourceUri ?? null,
+            normalizeNonNegativeInteger(source.ordinal ?? idx),
+          );
+        }
+      }
+
+      this.db.exec("COMMIT");
+    } catch (err) {
+      this.db.exec("ROLLBACK");
+      throw err;
+    }
+
+    const row = this.db
+      .prepare(
+        `SELECT marble_id, conversation_id, marble_kind, compression_version, render_version,
+                content, payload_json, token_count, confidence, freshness_state,
+                source_fingerprint, content_hash, provenance_ref, source_count,
+                source_artifact_token_count, derived_from_marble_id, invalidated_at,
+                invalidation_reason, created_at, updated_at
+         FROM marbles
+         WHERE marble_id = ?`,
+      )
+      .get(input.marbleId) as unknown as MarbleRow | undefined;
+    if (!row) {
+      throw new Error(`Marble not found after insert: ${input.marbleId}`);
+    }
+
+    if (this.fts5Available) {
+      try {
+        this.db
+          .prepare(`INSERT INTO marbles_fts(marble_id, content) VALUES (?, ?)`)
+          .run(input.marbleId, input.content);
+      } catch {
+        // best-effort only
+      }
+    }
+
+    return toMarbleRecord(row);
+  }
+
+  async getMarble(marbleId: string): Promise<MarbleRecord | null> {
+    const row = this.db
+      .prepare(
+        `SELECT marble_id, conversation_id, marble_kind, compression_version, render_version,
+                content, payload_json, token_count, confidence, freshness_state,
+                source_fingerprint, content_hash, provenance_ref, source_count,
+                source_artifact_token_count, derived_from_marble_id, invalidated_at,
+                invalidation_reason, created_at, updated_at
+         FROM marbles
+         WHERE marble_id = ?`,
+      )
+      .get(marbleId) as unknown as MarbleRow | undefined;
+    return row ? toMarbleRecord(row) : null;
+  }
+
+  async getMarblesByConversation(conversationId: number): Promise<MarbleRecord[]> {
+    const rows = this.db
+      .prepare(
+        `SELECT marble_id, conversation_id, marble_kind, compression_version, render_version,
+                content, payload_json, token_count, confidence, freshness_state,
+                source_fingerprint, content_hash, provenance_ref, source_count,
+                source_artifact_token_count, derived_from_marble_id, invalidated_at,
+                invalidation_reason, created_at, updated_at
+         FROM marbles
+         WHERE conversation_id = ?
+         ORDER BY created_at`,
+      )
+      .all(conversationId) as unknown as MarbleRow[];
+    return rows.map(toMarbleRecord);
+  }
+
+  async getMarbleSources(marbleId: string): Promise<MarbleSourceRecord[]> {
+    const rows = this.db
+      .prepare(
+        `SELECT marble_id, source_kind, source_id, source_sub_id, source_digest,
+                source_provenance_ref, source_uri, ordinal
+         FROM marble_sources
+         WHERE marble_id = ?
+         ORDER BY ordinal, source_kind, source_id, source_sub_id`,
+      )
+      .all(marbleId) as unknown as MarbleSourceRow[];
+    return rows.map(toMarbleSourceRecord).map((row) => ({
+      ...row,
+      sourceSubId: row.sourceSubId === "" ? null : row.sourceSubId,
+    }));
+  }
+
+  async invalidateMarble(input: {
+    marbleId: string;
+    freshnessState: Exclude<MarbleFreshnessState, "fresh">;
+    reason: string;
+    invalidatedAt?: Date;
+  }): Promise<MarbleRecord | null> {
+    const invalidatedAt = (input.invalidatedAt ?? new Date()).toISOString();
+    this.db
+      .prepare(
+        `UPDATE marbles
+         SET freshness_state = ?, invalidated_at = ?, invalidation_reason = ?, updated_at = ?
+         WHERE marble_id = ?`,
+      )
+      .run(input.freshnessState, invalidatedAt, input.reason, invalidatedAt, input.marbleId);
+    return this.getMarble(input.marbleId);
+  }
+
+  async searchMarbles(input: MarbleSearchInput): Promise<MarbleSearchResult[]> {
+    const limit = input.limit ?? 50;
+
+    if (input.mode === "full_text") {
+      if (this.fts5Available) {
+        try {
+          return this.searchMarbleFullText(input.query, limit, input.conversationId, input.since, input.before);
+        } catch {
+          return this.searchMarbleLike(input.query, limit, input.conversationId, input.since, input.before);
+        }
+      }
+      return this.searchMarbleLike(input.query, limit, input.conversationId, input.since, input.before);
+    }
+
+    return this.searchMarbleRegex(input.query, limit, input.conversationId, input.since, input.before);
+  }
+
+  private searchMarbleFullText(
+    query: string,
+    limit: number,
+    conversationId?: number,
+    since?: Date,
+    before?: Date,
+  ): MarbleSearchResult[] {
+    const where: string[] = ["marbles_fts MATCH ?"];
+    const args: Array<string | number> = [sanitizeFts5Query(query)];
+    if (conversationId != null) {
+      where.push("m.conversation_id = ?");
+      args.push(conversationId);
+    }
+    if (since) {
+      where.push("julianday(m.created_at) >= julianday(?)");
+      args.push(since.toISOString());
+    }
+    if (before) {
+      where.push("julianday(m.created_at) < julianday(?)");
+      args.push(before.toISOString());
+    }
+    args.push(limit);
+
+    const sql = `SELECT
+         marbles_fts.marble_id,
+         m.conversation_id,
+         m.marble_kind,
+         m.freshness_state,
+         snippet(marbles_fts, 1, '', '', '...', 32) AS snippet,
+         rank,
+         m.created_at
+       FROM marbles_fts
+       JOIN marbles m ON m.marble_id = marbles_fts.marble_id
+       WHERE ${where.join(" AND ")}
+       ORDER BY m.created_at DESC
+       LIMIT ?`;
+    const rows = this.db.prepare(sql).all(...args) as unknown as MarbleSearchRow[];
+    return rows.map(toMarbleSearchResult);
+  }
+
+  private searchMarbleLike(
+    query: string,
+    limit: number,
+    conversationId?: number,
+    since?: Date,
+    before?: Date,
+  ): MarbleSearchResult[] {
+    const plan = buildLikeSearchPlan("content", query);
+    if (plan.terms.length === 0) {
+      return [];
+    }
+
+    const where: string[] = [...plan.where];
+    const args: Array<string | number> = [...plan.args];
+    if (conversationId != null) {
+      where.push("conversation_id = ?");
+      args.push(conversationId);
+    }
+    if (since) {
+      where.push("julianday(created_at) >= julianday(?)");
+      args.push(since.toISOString());
+    }
+    if (before) {
+      where.push("julianday(created_at) < julianday(?)");
+      args.push(before.toISOString());
+    }
+    args.push(limit);
+
+    const whereClause = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
+    const rows = this.db
+      .prepare(
+        `SELECT marble_id, conversation_id, marble_kind, freshness_state, content, created_at
+         FROM marbles
+         ${whereClause}
+         ORDER BY created_at DESC
+         LIMIT ?`,
+      )
+      .all(...args) as unknown as Array<{
+      marble_id: string;
+      conversation_id: number;
+      marble_kind: MarbleKind;
+      freshness_state: MarbleFreshnessState;
+      content: string;
+      created_at: string;
+    }>;
+
+    return rows.map((row) => ({
+      marbleId: row.marble_id,
+      conversationId: row.conversation_id,
+      marbleKind: row.marble_kind,
+      freshnessState: row.freshness_state,
+      snippet: createFallbackSnippet(row.content, plan.terms),
+      createdAt: new Date(row.created_at),
+      rank: 0,
+    }));
+  }
+
+  private searchMarbleRegex(
+    pattern: string,
+    limit: number,
+    conversationId?: number,
+    since?: Date,
+    before?: Date,
+  ): MarbleSearchResult[] {
+    const re = new RegExp(pattern);
+
+    const where: string[] = [];
+    const args: Array<string | number> = [];
+    if (conversationId != null) {
+      where.push("conversation_id = ?");
+      args.push(conversationId);
+    }
+    if (since) {
+      where.push("julianday(created_at) >= julianday(?)");
+      args.push(since.toISOString());
+    }
+    if (before) {
+      where.push("julianday(created_at) < julianday(?)");
+      args.push(before.toISOString());
+    }
+    const whereClause = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
+    const rows = this.db
+      .prepare(
+        `SELECT marble_id, conversation_id, marble_kind, freshness_state, content, created_at
+         FROM marbles
+         ${whereClause}
+         ORDER BY created_at DESC`,
+      )
+      .all(...args) as unknown as Array<{
+      marble_id: string;
+      conversation_id: number;
+      marble_kind: MarbleKind;
+      freshness_state: MarbleFreshnessState;
+      content: string;
+      created_at: string;
+    }>;
+
+    const results: MarbleSearchResult[] = [];
+    for (const row of rows) {
+      if (results.length >= limit) {
+        break;
+      }
+      const match = re.exec(row.content);
+      if (match) {
+        results.push({
+          marbleId: row.marble_id,
+          conversationId: row.conversation_id,
+          marbleKind: row.marble_kind,
+          freshnessState: row.freshness_state,
+          snippet: match[0],
+          createdAt: new Date(row.created_at),
+          rank: 0,
+        });
+      }
+    }
+    return results;
   }
 
   // ── Context items ─────────────────────────────────────────────────────────

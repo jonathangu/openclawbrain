@@ -209,28 +209,37 @@ describe("BrainService", () => {
       conversationId: 42,
       activePackId: "brain-pack-v1",
       routerIdentity: "brain-graph-traverse.v2",
-      selectedNodeIds: [result?.fired[0]?.nodeId],
-      injectedNodeSummaries: [
-        expect.objectContaining({
-          nodeId: result?.fired[0]?.nodeId,
-          kind: "chunk",
-          provenanceRef: expect.stringMatching(/^prov_[a-f0-9]{16}$/),
-          sourceUri: null,
-          contentPreview: expect.stringContaining("[redacted source_content chars="),
-        }),
-      ],
-      selectionMetadata: expect.objectContaining({
-        traceSliceVersion: 3,
-        budgetChars: 4000,
-        maxHops: 8,
-        firedCount: result?.fired.length,
-        queryEmbeddingSource: "provided",
-        chosenStopCount: expect.any(Number),
-        forcedStopCount: expect.any(Number),
-        droppedProposalCount: 0,
-        droppedProposalReasons: null,
-      }),
     });
+    expect(trace?.routeTrace?.selectedNodeIds).toContain(result?.fired[0]?.nodeId ?? "");
+    expect(trace?.routeTrace?.injectedNodeSummaries).toEqual([
+      expect.objectContaining({
+        nodeId: result?.fired[0]?.nodeId,
+        kind: "chunk",
+        provenanceRef: expect.stringMatching(/^prov_[a-f0-9]{16}$/),
+        sourceUri: null,
+        contentPreview: expect.stringContaining("[redacted source_content chars="),
+      }),
+    ]);
+    expect(trace?.routeTrace?.selectionMetadata).toEqual(expect.objectContaining({
+      traceSliceVersion: 4,
+      budgetChars: 4000,
+      maxHops: 8,
+      firedCount: result?.fired.length,
+      queryEmbeddingSource: "provided",
+      chosenStopCount: expect.any(Number),
+      forcedStopCount: expect.any(Number),
+      droppedProposalCount: 0,
+      droppedProposalReasons: null,
+      compileReportSummary: expect.stringContaining("[brain compile]"),
+      compileReport: expect.objectContaining({
+        schemaVersion: 1,
+        summary: expect.stringContaining("[brain compile]"),
+        buckets: expect.objectContaining({
+          selected: expect.any(Array),
+          dropped: expect.any(Array),
+        }),
+      }),
+    }));
     expect(trace?.routeTrace?.requestDigest).toMatch(/^[a-f0-9]{16}$/);
     expect(trace?.routeTrace?.candidateNodeIds).toContain(result?.fired[0]?.nodeId ?? "");
     expect(trace?.routeTrace?.sourceSummary.kinds).toMatchObject({ chunk: 1 });
@@ -272,7 +281,9 @@ describe("BrainService", () => {
       }),
       droppedProposalCount: 0,
       droppedProposalReasons: null,
+      compileReportSummary: expect.stringContaining("[brain compile]"),
     }));
+    expect(status.lastCompileReportSummary).toEqual(expect.stringContaining("[brain compile]"));
   });
 
   it("reports recent decision histograms plus clip and fail-open rates", async () => {
@@ -404,7 +415,7 @@ describe("BrainService", () => {
 
     expect(result).not.toBeNull();
     expect(result?.trace.routeTrace?.selectionMetadata).toMatchObject({
-      traceSliceVersion: 3,
+      traceSliceVersion: 4,
       chosenStopCount: 0,
       forcedStopCount: 2,
       droppedProposalCount: 1,
@@ -602,6 +613,125 @@ describe("BrainService", () => {
     });
   });
 
+  it("reuses a prefetched traversal without duplicating persistence", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-prefetch-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-prefetch-state-");
+    writeFileSync(
+      join(workspaceRoot, "PLAYBOOK.md"),
+      "# Pull Requests\n\nUse gh pr create for pull request workflows.\n",
+      "utf8",
+    );
+
+    const service = new BrainService({
+      deps: createDeps(brainRoot),
+    });
+    await service.init({
+      workspaceRoot,
+      embedFn: async (text) => embed(text),
+    });
+
+    const store = service as unknown as {
+      store: {
+        getRecentEpisodes: (limit: number) => Array<{ id: string }>;
+        countTraces: () => number;
+      };
+    };
+
+    expect(store.store.getRecentEpisodes(10)).toHaveLength(0);
+    expect(store.store.countTraces()).toBe(0);
+
+    await service.schedulePrefetch({
+      conversationId: 7,
+      queryText: "How do I open a pull request?",
+      budgetChars: 4000,
+      summaryRoutingMode: "ignore",
+      queryEmbedding: embed("gh pr create pull request"),
+    });
+
+    expect(store.store.getRecentEpisodes(10)).toHaveLength(0);
+    expect(store.store.countTraces()).toBe(0);
+
+    const prefetchedStatus = await service.status();
+    expect(prefetchedStatus.lastPrefetchDecision).toMatchObject({
+      state: "materialized",
+      summaryRoutingMode: "ignore",
+      budgetClass: "large",
+    });
+
+    const result = await service.query({
+      conversationId: 7,
+      queryText: "How do I open a pull request?",
+      budgetChars: 4000,
+      summaryRoutingMode: "ignore",
+    });
+
+    expect(result).not.toBeNull();
+    expect(store.store.getRecentEpisodes(10)).toHaveLength(1);
+    expect(store.store.countTraces()).toBe(1);
+
+    const status = await service.status();
+    expect(status.lastPrefetchDecision).toMatchObject({
+      state: "hit",
+      summaryRoutingMode: "ignore",
+      budgetClass: "large",
+      reusedNodeCount: expect.any(Number),
+      reusedChars: expect.any(Number),
+    });
+    expect(status.recentPrefetchSummary).toEqual(expect.objectContaining({
+      sampleSize: expect.any(Number),
+      hitRate: expect.objectContaining({ count: expect.any(Number) }),
+    }));
+  });
+
+  it("invalidates a prefetched traversal after pack promotion and falls open safely", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-prefetch-invalidated-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-prefetch-invalidated-state-");
+    writeFileSync(
+      join(workspaceRoot, "PLAYBOOK.md"),
+      "# Pull Requests\n\nUse gh pr create for pull request workflows.\n",
+      "utf8",
+    );
+
+    const service = new BrainService({
+      deps: createDeps(brainRoot),
+    });
+    await service.init({
+      workspaceRoot,
+      embedFn: async (text) => embed(text),
+    });
+    (service as unknown as { embeddingClient: (text: string) => Promise<Float32Array> }).embeddingClient = async (text: string) => embed(text);
+
+    await service.schedulePrefetch({
+      conversationId: 7,
+      queryText: "How do I open a pull request?",
+      budgetChars: 4000,
+      summaryRoutingMode: "ignore",
+      queryEmbedding: embed("gh pr create pull request"),
+    });
+
+    await service.teach({
+      instruction: "Use gh pr create for pull request workflows and prefer the latest canonical command form.",
+      conversationId: 7,
+      kind: "correction",
+    });
+
+    const result = await service.query({
+      conversationId: 7,
+      queryText: "How do I open a pull request?",
+      budgetChars: 4000,
+      summaryRoutingMode: "ignore",
+    });
+
+    expect(result).not.toBeNull();
+
+    const status = await service.status();
+    expect(status.lastPrefetchDecision).toEqual(expect.objectContaining({
+      state: expect.stringMatching(/^(stale|invalidated)$/),
+      summaryRoutingMode: "ignore",
+    }));
+    expect(status.lastPrefetchDecision?.invalidatedReason ?? null).toMatch(/pack_version_changed|prefetch_key_mismatch|budget_class_changed|summary_routing_changed/);
+  });
+
   it("persists post-injection clip attribution through trace and observation metadata", async () => {
     const queryBudgetChars = deriveExpectedQueryBudgetChars(4096);
     const workspaceRoot = makeTempDir("openclawbrain-attribution-workspace-");
@@ -682,6 +812,14 @@ describe("BrainService", () => {
       retrievedNodeCount: expect.any(Number),
       fittedNodeCount: expect.any(Number),
       droppedNodeCount: expect.any(Number),
+      compileReportSummary: expect.stringContaining("mode=use_brain"),
+      compileReport: expect.objectContaining({
+        schemaVersion: 1,
+        summary: expect.stringContaining("mode=use_brain"),
+        decision: expect.objectContaining({
+          mode: "use_brain",
+        }),
+      }),
     });
     if ((trace?.routeTrace?.selectionMetadata.droppedNodeCount ?? 0) > 0) {
       expect(trace?.routeTrace?.selectionMetadata.fittingDropReasons).toEqual(expect.objectContaining({
@@ -722,6 +860,7 @@ describe("BrainService", () => {
           retrievedNodeCount: expect.any(Number),
           fittedNodeCount: expect.any(Number),
           droppedNodeCount: expect.any(Number),
+          compileReportSummary: expect.stringContaining("mode=use_brain"),
         },
       },
     });
@@ -1037,6 +1176,24 @@ describe("BrainService", () => {
       focus: {
         action: "monitor",
         detail: "feedback loop is closed on every traced route",
+      },
+    });
+    expect(status.contextUsefulness).toMatchObject({
+      verdictCounts: {
+        helpful: 1,
+        irrelevant: 0,
+        harmful: 0,
+      },
+      coverage: {
+        observationCount: 1,
+        readyObservationCount: 1,
+        scoredObservationCount: 1,
+        completedObservationCount: 1,
+      },
+      latest: {
+        observationId: expect.stringMatching(/^bo_/),
+        episodeId: result?.episode.id,
+        verdict: "helpful",
       },
     });
     expect((status.contextFeedback as { detail?: string }).detail).toContain("1 helpful");

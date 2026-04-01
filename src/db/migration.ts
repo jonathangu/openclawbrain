@@ -473,6 +473,41 @@ export function runLcmMigrations(
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS marbles (
+      marble_id TEXT PRIMARY KEY,
+      conversation_id INTEGER NOT NULL REFERENCES conversations(conversation_id) ON DELETE CASCADE,
+      marble_kind TEXT NOT NULL CHECK (marble_kind IN ('replay_stub', 'typed_extraction', 'operational_summary')),
+      compression_version INTEGER NOT NULL,
+      render_version INTEGER NOT NULL,
+      content TEXT NOT NULL,
+      payload_json TEXT NOT NULL,
+      token_count INTEGER NOT NULL,
+      confidence REAL NOT NULL,
+      freshness_state TEXT NOT NULL CHECK (freshness_state IN ('fresh', 'stale_source', 'stale_policy', 'stale_pack', 'superseded', 'tombstoned')),
+      source_fingerprint TEXT NOT NULL,
+      content_hash TEXT NOT NULL,
+      provenance_ref TEXT NOT NULL,
+      source_count INTEGER NOT NULL DEFAULT 0,
+      source_artifact_token_count INTEGER NOT NULL DEFAULT 0,
+      derived_from_marble_id TEXT,
+      invalidated_at TEXT,
+      invalidation_reason TEXT,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
+    CREATE TABLE IF NOT EXISTS marble_sources (
+      marble_id TEXT NOT NULL REFERENCES marbles(marble_id) ON DELETE CASCADE,
+      source_kind TEXT NOT NULL CHECK (source_kind IN ('message', 'summary', 'file', 'tool_result', 'trace')),
+      source_id TEXT NOT NULL,
+      source_sub_id TEXT NOT NULL DEFAULT '',
+      source_digest TEXT NOT NULL,
+      source_provenance_ref TEXT NOT NULL,
+      source_uri TEXT,
+      ordinal INTEGER NOT NULL,
+      PRIMARY KEY (marble_id, source_kind, source_id, source_sub_id)
+    );
+
     -- Indexes
     CREATE INDEX IF NOT EXISTS messages_conv_seq_idx ON messages (conversation_id, seq);
     CREATE INDEX IF NOT EXISTS summaries_conv_created_idx ON summaries (conversation_id, created_at);
@@ -480,6 +515,8 @@ export function runLcmMigrations(
     CREATE INDEX IF NOT EXISTS message_parts_type_idx ON message_parts (part_type);
     CREATE INDEX IF NOT EXISTS context_items_conv_idx ON context_items (conversation_id, ordinal);
     CREATE INDEX IF NOT EXISTS large_files_conv_idx ON large_files (conversation_id, created_at);
+    CREATE INDEX IF NOT EXISTS marbles_conv_created_idx ON marbles (conversation_id, created_at);
+    CREATE INDEX IF NOT EXISTS marble_sources_marble_idx ON marble_sources (marble_id, ordinal);
   `);
 
   // Forward-compatible conversations migration for existing DBs.
@@ -556,6 +593,32 @@ export function runLcmMigrations(
       );
       INSERT INTO summaries_fts(summary_id, content)
       SELECT summary_id, content FROM summaries;
+    `);
+  }
+
+  const marblesFtsInfo = db
+    .prepare("SELECT sql FROM sqlite_master WHERE type='table' AND name='marbles_fts'")
+    .get() as { sql?: string } | undefined;
+  const marblesFtsSql = marblesFtsInfo?.sql ?? "";
+  const marblesFtsColumns = db.prepare(`PRAGMA table_info(marbles_fts)`).all() as Array<{
+    name?: string;
+  }>;
+  const hasMarbleIdColumn = marblesFtsColumns.some((col) => col.name === "marble_id");
+  const shouldRecreateMarblesFts =
+    !marblesFtsInfo ||
+    !hasMarbleIdColumn ||
+    marblesFtsSql.includes("content_rowid='marble_id'") ||
+    marblesFtsSql.includes('content_rowid="marble_id"');
+  if (shouldRecreateMarblesFts) {
+    db.exec(`
+      DROP TABLE IF EXISTS marbles_fts;
+      CREATE VIRTUAL TABLE marbles_fts USING fts5(
+        marble_id UNINDEXED,
+        content,
+        tokenize='porter unicode61'
+      );
+      INSERT INTO marbles_fts(marble_id, content)
+      SELECT marble_id, content FROM marbles;
     `);
   }
 }

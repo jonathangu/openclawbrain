@@ -4,14 +4,18 @@
 
 import { createHash, randomUUID } from "node:crypto";
 import type {
+  BrainCompileReportV1,
   BrainPersistenceMode,
   BrainNode,
   BrainObservationToolResult,
+  BrainObservationBindingMode,
+  BrainPrefetchDecision,
   DecisionTraceBranchOutcome,
   DecisionRouteTrace,
   DecisionTrace,
   DecisionTraceInjectedNodeSummary,
   NodeKind,
+  RecentPrefetchSummary,
   TrustLevel,
 } from "./types.js";
 import type { TraverseResult } from "./traverse.js";
@@ -19,6 +23,9 @@ import { resolveStopTruth } from "./trajectory-stop.js";
 
 const ROUTER_IDENTITY = "brain-graph-traverse.v2";
 const TRACE_PREVIEW_CHARS = 160;
+const COMPILE_PREVIEW_CHARS = 96;
+const COMPILE_MAX_BUCKET_ITEMS = 5;
+const COMPILE_MAX_REASON_KEYS = 5;
 
 function hashValue(value: string): string {
   return createHash("sha256").update(value).digest("hex").slice(0, 16);
@@ -347,6 +354,259 @@ function summarizeInjectedNode(node: BrainNode): DecisionTraceInjectedNodeSummar
   };
 }
 
+function truncateCompilePreview(content: string): string {
+  const normalized = content.replace(/\s+/g, " ").trim();
+  if (normalized.length <= COMPILE_PREVIEW_CHARS) {
+    return normalized;
+  }
+  return `${normalized.slice(0, COMPILE_PREVIEW_CHARS - 1)}…`;
+}
+
+function takeTopHistogramEntries(
+  histogram: Record<string, number> | null | undefined,
+  limit = COMPILE_MAX_REASON_KEYS,
+): { entries: Record<string, number>; overflow: number } {
+  const source = Object.entries(histogram ?? {})
+    .filter(([, count]) => Number.isFinite(count) && count > 0)
+    .sort(([leftKey, leftCount], [rightKey, rightCount]) => (
+      rightCount === leftCount ? leftKey.localeCompare(rightKey) : rightCount - leftCount
+    ));
+  const entries: Record<string, number> = {};
+  let overflow = 0;
+  source.forEach(([key, count], index) => {
+    if (index < limit) {
+      entries[key] = count;
+      return;
+    }
+    overflow += count;
+  });
+  return { entries, overflow };
+}
+
+function buildCompileSummaryLine(report: BrainCompileReportV1): string {
+  const stage = report.decision.brainDropStage
+    ?? report.decision.interruptionStage
+    ?? (report.budget.contextClipped ? "injection" : "selection");
+  const clipped = report.budget.contextClipped === true ? "yes" : "no";
+  const failOpen = report.decision.queryInterrupted === true || report.decision.servedPartial === true
+    ? "yes"
+    : "no";
+  const elapsed = report.timing.compileElapsedMs ?? 0;
+  const deadline = report.timing.compileDeadlineMs === null
+    ? "n/a"
+    : `${report.timing.compileDeadlineMs}ms`;
+  const bindingMode = report.bindingMode ?? "unknown";
+  const mode = report.decision.mode ?? "unknown";
+  return `[brain compile] mode=${mode} stage=${stage} selected=${report.counters.selectedNodeCount} dropped=${report.counters.droppedNodeCount} prefetched=${report.counters.prefetchedNodeCount} compressed=${report.counters.compressedNodeCount} clipped=${clipped} fail_open=${failOpen} elapsed=${elapsed}ms deadline=${deadline} pack=${report.activePackId ?? "n/a"} bind=${bindingMode} trace=${report.traceId ?? "n/a"} ep=${report.episodeId ?? "n/a"}`;
+}
+
+function buildCompileItem(params: {
+  nodeId: string;
+  provenanceRef: string | null;
+  kind: BrainCompileReportV1["buckets"]["selected"][number]["kind"];
+  trust: BrainCompileReportV1["buckets"]["selected"][number]["trust"];
+  tokenCount: number | null;
+  preview: string | null;
+  state: BrainCompileReportV1["buckets"]["selected"][number]["state"];
+  reason: string | null;
+  sourceUri?: string | null;
+  stage?: BrainCompileReportV1["buckets"]["selected"][number]["stage"];
+  fitStrategy?: BrainCompileReportV1["buckets"]["selected"][number]["fitStrategy"];
+  compressionMode?: string | null;
+}): BrainCompileReportV1["buckets"]["selected"][number] {
+  return {
+    nodeId: params.nodeId,
+    provenanceRef: params.provenanceRef,
+    kind: params.kind,
+    trust: params.trust,
+    tokenCount: params.tokenCount,
+    preview: params.preview,
+    state: params.state,
+    reason: params.reason,
+    ...(params.sourceUri !== undefined ? { sourceUri: params.sourceUri } : {}),
+    ...(params.stage !== undefined ? { stage: params.stage } : {}),
+    ...(params.fitStrategy !== undefined ? { fitStrategy: params.fitStrategy } : {}),
+    ...(params.compressionMode !== undefined ? { compressionMode: params.compressionMode } : {}),
+  };
+}
+
+export function buildBrainCompileReport(params: {
+  routeTrace: DecisionRouteTrace | null | undefined;
+  decision?: {
+    mode?: string | null;
+    bindingMode?: BrainObservationBindingMode | null;
+    traceId?: string | null;
+    episodeId?: string | null;
+  };
+  lookupNode?: (nodeId: string) => BrainNode | null | undefined;
+}): BrainCompileReportV1 | null {
+  const routeTrace = params.routeTrace;
+  if (!routeTrace?.selectionMetadata) {
+    return null;
+  }
+
+  const selectedIds = new Set(routeTrace.selectedNodeIds);
+  const selectedTraversalIds = routeTrace.selectedTraversalNodeIds.length;
+  const candidateIds = routeTrace.candidateNodeIds;
+  const droppedIds = candidateIds.filter((nodeId) => !selectedIds.has(nodeId));
+  const selectedItems = routeTrace.injectedNodeSummaries
+    .slice(0, COMPILE_MAX_BUCKET_ITEMS)
+    .map((summary) => buildCompileItem({
+      nodeId: summary.nodeId,
+      provenanceRef: summary.provenanceRef,
+      kind: summary.kind,
+      trust: summary.trust,
+      tokenCount: summary.tokenCount,
+      preview: truncateCompilePreview(summary.contentPreview),
+      state: "selected",
+      reason: null,
+      sourceUri: summary.sourceUri,
+      stage: routeTrace.selectionMetadata.brainDropStage ?? null,
+      fitStrategy: routeTrace.selectionMetadata.fitStrategy ?? null,
+    }));
+
+  const canExposeRawSource = routeTrace.persistenceMode === "redacted_with_operator_audit";
+  const droppedItems = droppedIds
+    .slice(0, COMPILE_MAX_BUCKET_ITEMS)
+    .map((nodeId) => {
+      const node = params.lookupNode?.(nodeId) ?? null;
+      return buildCompileItem({
+        nodeId,
+        provenanceRef: node ? toProvenanceRef(node.sourceUri, node.id) : null,
+        kind: node?.kind ?? null,
+        trust: node?.trust ?? null,
+        tokenCount: node?.tokenCount ?? null,
+        preview: canExposeRawSource && node ? truncateCompilePreview(node.content) : null,
+        state: "dropped",
+        reason: routeTrace.selectionMetadata.fittingDropReasons && Object.keys(routeTrace.selectionMetadata.fittingDropReasons).length > 0
+          ? Object.keys(routeTrace.selectionMetadata.fittingDropReasons)[0] ?? "not_selected"
+          : "not_selected",
+        sourceUri: canExposeRawSource ? (node?.sourceUri ?? null) : null,
+        stage: routeTrace.selectionMetadata.brainDropStage ?? null,
+        fitStrategy: routeTrace.selectionMetadata.fitStrategy ?? null,
+      });
+    });
+
+  const selectedNodeCount = routeTrace.injectedNodeSummaries.length;
+  const droppedNodeCount = Math.max(0, droppedIds.length);
+  const prefetchedNodeCount = 0;
+  const compressedNodeCount = 0;
+  const branchSummary = routeTrace.selectionMetadata.branchOutcomeSummary ?? null;
+  const droppedReasonHistogram = routeTrace.selectionMetadata.fittingDropReasons
+    ? Object.fromEntries(Object.entries(routeTrace.selectionMetadata.fittingDropReasons).map(([key, count]) => [key, count]))
+    : (droppedNodeCount > 0 ? { not_selected: droppedNodeCount } : {});
+  const droppedProposalReasons = routeTrace.selectionMetadata.droppedProposalReasons ?? null;
+  const terminationReasons = branchSummary?.terminationReasons ?? null;
+  const limitedDroppedReasons = takeTopHistogramEntries(droppedReasonHistogram);
+  const limitedDroppedProposalReasons = takeTopHistogramEntries(droppedProposalReasons);
+  const limitedPrefetchedReasons = takeTopHistogramEntries({});
+  const limitedCompressionReasons = takeTopHistogramEntries({});
+  const limitedTerminationReasons = takeTopHistogramEntries(terminationReasons);
+  const reasonOverflowCount =
+    limitedDroppedReasons.overflow
+    + limitedDroppedProposalReasons.overflow
+    + limitedPrefetchedReasons.overflow
+    + limitedCompressionReasons.overflow
+    + limitedTerminationReasons.overflow;
+
+  const report: BrainCompileReportV1 = {
+    schemaVersion: 1,
+    summary: "",
+    traceId: params.decision?.traceId ?? null,
+    episodeId: params.decision?.episodeId ?? null,
+    requestDigest: routeTrace.requestDigest ?? null,
+    activePackId: routeTrace.activePackId ?? null,
+    routerIdentity: routeTrace.routerIdentity ?? null,
+    bindingMode: params.decision?.bindingMode ?? null,
+    decision: {
+      mode: params.decision?.mode ?? null,
+      brainDropReason: routeTrace.selectionMetadata.brainDropReason ?? null,
+      brainDropStage: routeTrace.selectionMetadata.brainDropStage ?? null,
+      queryInterrupted: routeTrace.selectionMetadata.queryInterrupted ?? null,
+      interruptionStage: routeTrace.selectionMetadata.interruptionStage ?? null,
+      interruptionReason: routeTrace.selectionMetadata.interruptionReason ?? null,
+      servedPartial: routeTrace.selectionMetadata.servedPartial ?? null,
+    },
+    timing: {
+      compileElapsedMs: routeTrace.selectionMetadata.compileElapsedMs ?? null,
+      compileDeadlineMs: routeTrace.selectionMetadata.compileDeadlineMs ?? null,
+      compileDeadlineHit: routeTrace.selectionMetadata.compileDeadlineHit ?? null,
+      routeSelectionMs: routeTrace.selectionMetadata.routeSelectionMs ?? null,
+      totalQueryMs: routeTrace.selectionMetadata.totalQueryMs ?? null,
+    },
+    budget: {
+      budgetFraction: routeTrace.selectionMetadata.budgetFraction ?? null,
+      budgetChars: routeTrace.selectionMetadata.budgetChars ?? null,
+      queryBudgetChars: routeTrace.selectionMetadata.queryBudgetChars ?? null,
+      maxContextChars: routeTrace.selectionMetadata.maxContextChars ?? null,
+      injectedChars: routeTrace.selectionMetadata.injectedChars ?? null,
+      droppedChars: routeTrace.selectionMetadata.droppedChars ?? null,
+      contextClipped: routeTrace.selectionMetadata.contextClipped ?? null,
+      fitStrategy: routeTrace.selectionMetadata.fitStrategy ?? null,
+    },
+    counters: {
+      candidateNodeCount: candidateIds.length,
+      selectedNodeCount,
+      selectedTraversalNodeCount: selectedTraversalIds,
+      selectedSeedNodeCount: routeTrace.selectedSeedNodeIds.length,
+      droppedNodeCount,
+      prefetchedNodeCount,
+      compressedNodeCount,
+      droppedProposalCount: routeTrace.selectionMetadata.droppedProposalCount ?? 0,
+      branchCount: branchSummary?.branchCount ?? routeTrace.branchOutcomes.length,
+      continuingBranchCount: branchSummary?.continuingBranchCount ?? routeTrace.branchOutcomes.filter((outcome) => outcome.continued).length,
+      sourceRefCount: routeTrace.sourceSummary.sourceRefs.length,
+    },
+    reasons: {
+      droppedNodeReasons: limitedDroppedReasons.entries,
+      droppedProposalReasons: limitedDroppedProposalReasons.entries,
+      prefetchedReasons: limitedPrefetchedReasons.entries,
+      compressionReasons: limitedCompressionReasons.entries,
+      terminationReasons: limitedTerminationReasons.entries,
+    },
+    buckets: {
+      selected: selectedItems,
+      dropped: droppedItems,
+      prefetched: [],
+      compressed: [],
+    },
+    overflow: {
+      selectedOverflowCount: Math.max(0, routeTrace.injectedNodeSummaries.length - selectedItems.length),
+      droppedOverflowCount: Math.max(0, droppedIds.length - droppedItems.length),
+      prefetchedOverflowCount: 0,
+      compressedOverflowCount: 0,
+      reasonOverflowCount,
+    },
+    boundedness: {
+      maxItemsPerBucket: COMPILE_MAX_BUCKET_ITEMS,
+      maxReasonKeys: COMPILE_MAX_REASON_KEYS,
+      maxPreviewChars: COMPILE_PREVIEW_CHARS,
+      maxSourceRefs: COMPILE_MAX_BUCKET_ITEMS,
+    },
+  };
+  report.summary = buildCompileSummaryLine(report);
+  return report;
+}
+
+export function rewriteBrainCompileReportSummary(
+  report: BrainCompileReportV1,
+  params: {
+    mode?: string | null;
+    bindingMode?: BrainObservationBindingMode | null;
+  },
+): BrainCompileReportV1 {
+  const next: BrainCompileReportV1 = {
+    ...report,
+    bindingMode: params.bindingMode ?? report.bindingMode,
+    decision: {
+      ...report.decision,
+      ...(params.mode !== undefined ? { mode: params.mode } : {}),
+    },
+  };
+  next.summary = buildCompileSummaryLine(next);
+  return next;
+}
+
 export type RecentDecisionOutcome =
   | "served_full"
   | "served_clipped"
@@ -381,6 +641,73 @@ export interface RecentDecisionTraceSummary {
   clipRate: RecentDecisionRateSummary;
   failOpenRate: RecentDecisionRateSummary;
   detail: string;
+}
+
+function emptyPrefetchStateHistogram(): Record<BrainPrefetchDecision["state"], number> {
+  return {
+    scheduled: 0,
+    materialized: 0,
+    hit: 0,
+    miss: 0,
+    stale: 0,
+    invalidated: 0,
+    dropped: 0,
+  };
+}
+
+export function summarizeRecentPrefetchDecisions(
+  prefetchDecisions: BrainPrefetchDecision[],
+  windowSize = prefetchDecisions.length,
+): RecentPrefetchSummary {
+  const histograms: RecentPrefetchSummary["histograms"] = {
+    state: emptyPrefetchStateHistogram(),
+    kind: {},
+    budgetClass: {},
+    summaryRoutingMode: {},
+    invalidationReason: {},
+  };
+
+  const sample = prefetchDecisions.slice(-windowSize);
+  let hitCount = 0;
+  let staleCount = 0;
+  let invalidationCount = 0;
+
+  for (const decision of sample) {
+    histograms.state[decision.state] += 1;
+    if (decision.kind) {
+      incrementHistogram(histograms.kind, decision.kind);
+    }
+    if (decision.budgetClass) {
+      incrementHistogram(histograms.budgetClass, decision.budgetClass);
+    }
+    if (decision.summaryRoutingMode) {
+      incrementHistogram(histograms.summaryRoutingMode, decision.summaryRoutingMode);
+    }
+    if (decision.invalidatedReason) {
+      incrementHistogram(histograms.invalidationReason, decision.invalidatedReason);
+    }
+    if (decision.state === "hit") {
+      hitCount += 1;
+    }
+    if (decision.state === "stale") {
+      staleCount += 1;
+    }
+    if (decision.state === "invalidated") {
+      invalidationCount += 1;
+    }
+  }
+
+  return {
+    windowSize,
+    sampleSize: sample.length,
+    histograms,
+    hitRate: buildRateSummary(hitCount, sample.length),
+    staleRate: buildRateSummary(staleCount, sample.length),
+    invalidationRate: buildRateSummary(invalidationCount, sample.length),
+    detail: sample.length === 0
+      ? "no recent prefetch decisions"
+      : `${hitCount}/${sample.length} hits; ${staleCount}/${sample.length} stale; ${invalidationCount}/${sample.length} invalidated`,
+  };
 }
 
 function incrementHistogram(histogram: Record<string, number>, key: string): void {
@@ -573,7 +900,7 @@ function buildRouteTrace(params: {
         }
       : null,
     selectionMetadata: {
-      traceSliceVersion: 3,
+      traceSliceVersion: 4,
       queryChars: params.queryText.length,
       budgetChars: params.budgetChars,
       maxHops: params.maxHops,

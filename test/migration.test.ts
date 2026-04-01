@@ -117,6 +117,19 @@ describe("runLcmMigrations summary depth backfill", () => {
     expect(summaryColumns.some((column) => column.name === "descendant_token_count")).toBe(true);
     expect(summaryColumns.some((column) => column.name === "source_message_token_count")).toBe(true);
 
+    const marbleColumns = db.prepare(`PRAGMA table_info(marbles)`).all() as Array<{
+      name?: string;
+    }>;
+    expect(marbleColumns.some((column) => column.name === "marble_kind")).toBe(true);
+    expect(marbleColumns.some((column) => column.name === "freshness_state")).toBe(true);
+    expect(marbleColumns.some((column) => column.name === "source_fingerprint")).toBe(true);
+
+    const marbleSourceColumns = db.prepare(`PRAGMA table_info(marble_sources)`).all() as Array<{
+      name?: string;
+    }>;
+    expect(marbleSourceColumns.some((column) => column.name === "source_digest")).toBe(true);
+    expect(marbleSourceColumns.some((column) => column.name === "source_provenance_ref")).toBe(true);
+
     const depthRows = db
       .prepare(
         `SELECT summary_id, depth, earliest_at, latest_at, descendant_count,

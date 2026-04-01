@@ -142,7 +142,7 @@ function makeStructuredTraversalResult(): TraversalResult {
           sourceUris: ["PLAYBOOK.md", "docs/deploy.md"],
         },
         selectionMetadata: {
-          traceSliceVersion: 3,
+          traceSliceVersion: 4,
           queryChars: 29,
           budgetChars: 1024,
           maxHops: 8,
@@ -177,6 +177,7 @@ function createBrainStub(overrides?: {
   compileDeadlineMs?: number | null;
   budgetFraction?: number;
   lastQueryInterruption?: BrainInterruptionMetadata | null;
+  lastPrefetchDecision?: Record<string, unknown> | null;
   query?: (params: {
     conversationId: number;
     queryText: string;
@@ -192,6 +193,8 @@ function createBrainStub(overrides?: {
     getCompileDeadlineMs: () => overrides?.compileDeadlineMs ?? null,
     getBudgetFraction: () => overrides?.budgetFraction ?? 0.3,
     getLastQueryInterruption: () => overrides?.lastQueryInterruption ?? null,
+    getLastPrefetchDecision: () => overrides?.lastPrefetchDecision ?? null,
+    schedulePrefetch: vi.fn(async () => null),
     noteAssemblyDecision: vi.fn(),
     recordTraceSelectionMetadata: vi.fn(),
     query: overrides?.query ?? vi.fn(async () => null),
@@ -558,6 +561,23 @@ describe("BrainAssemblerExtension", () => {
 
   it("caps injected context to explicit maxContextChars and records clip metrics", async () => {
     const brain = createBrainStub({
+      lastPrefetchDecision: {
+        enabled: true,
+        state: "materialized",
+        kind: "traversal",
+        budgetClass: "standard",
+        key: "prefetch-key",
+        queryDigest: "deadbeefdeadbeef",
+        activePackId: "brain-pack-v7",
+        activePackVersion: 7,
+        summaryRoutingMode: "ignore",
+        prefetchMs: 9,
+        cacheAgeMs: 3,
+        invalidatedReason: null,
+        reusedNodeCount: 3,
+        reusedChars: 196,
+        savingsChars: 196,
+      },
       query: vi.fn(async () => makeStructuredTraversalResult()),
     });
     const extension = new BrainAssemblerExtension(brain as never);
@@ -582,6 +602,14 @@ describe("BrainAssemblerExtension", () => {
       conversationId: 42,
       queryText: "How do I open a pull request?",
       budgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
+      summaryRoutingMode: "ignore",
+    });
+    expect(brain.schedulePrefetch).toHaveBeenCalledWith({
+      conversationId: 42,
+      queryText: "How do I open a pull request?",
+      budgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
+      summaryRoutingMode: "ignore",
+      deadlineAtMs: undefined,
     });
     expect(String(result.messages[0]?.content ?? "").length).toBeLessThanOrEqual(240);
     expect(String(result.messages[0]?.content ?? "")).toContain("[brain]");
@@ -605,6 +633,10 @@ describe("BrainAssemblerExtension", () => {
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
       servedPartial: true,
+      prefetch: expect.objectContaining({
+        state: "materialized",
+        budgetClass: "standard",
+      }),
     }));
     expect((result.brainDecision?.fittedNodeCount ?? 0)).toBeGreaterThan(0);
     expect((result.brainDecision?.fittedNodeCount ?? 0)).toBeLessThan(3);
@@ -629,6 +661,10 @@ describe("BrainAssemblerExtension", () => {
         brainDropReason: "injection_cap_clipped",
         brainDropStage: "injection",
         servedPartial: true,
+        prefetch: expect.objectContaining({
+          state: "materialized",
+          budgetClass: "standard",
+        }),
       }),
     );
     expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
@@ -651,6 +687,10 @@ describe("BrainAssemblerExtension", () => {
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
       servedPartial: true,
+      prefetch: expect.objectContaining({
+        state: "materialized",
+        budgetClass: "standard",
+      }),
     }));
   });
 
@@ -682,6 +722,7 @@ describe("BrainAssemblerExtension", () => {
       conversationId: 42,
       queryText: "How do I open a pull request?",
       budgetChars: expectedQueryBudgetChars,
+      summaryRoutingMode: "ignore",
     });
     expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
       budgetFraction: 0.5,

@@ -1,16 +1,19 @@
 import type { AssembleContextResult } from "../assembler.js";
 import type { ContextEngine, AgentMessage } from "../openclaw-sdk-compat.js";
 import type {
+  BrainCompileReportV1,
   BrainDropReason,
   BrainDropStage,
   BrainFitStrategy,
   BrainFittingDropReason,
   BrainInterruptionMetadata,
   BrainInterruptionStage,
+  BrainPrefetchDecision,
   DecisionRouteTrace,
   DecisionTraceInjectedNodeSummary,
   TraversalResult,
 } from "../brain-core/types.js";
+import { rewriteBrainCompileReportSummary } from "../brain-core/trace.js";
 import type { BrainService } from "./service.js";
 import { decideSummaryRouting } from "./summary-routing-policy.js";
 
@@ -101,7 +104,9 @@ type CompileCheckpoint = {
   compileDeadlineHit?: boolean | null;
 };
 
-type AssemblyDecisionDetails = BudgetDecisionDetails & CompileDecisionDetails & InterruptionDecisionDetails;
+type AssemblyDecisionDetails = BudgetDecisionDetails & CompileDecisionDetails & InterruptionDecisionDetails & {
+  prefetch?: BrainPrefetchDecision | null;
+};
 
 function decisionFooter(mode: BrainAssemblyOutcomeMode): string {
   switch (mode) {
@@ -549,6 +554,24 @@ function assemblyDecisionDetails(params: {
   };
 }
 
+function withCompileReport(
+  trace: DecisionTrace | null | undefined,
+  selectionMetadata: AssemblyDecisionDetails,
+  mode: BrainAssemblyOutcomeMode | BrainAssemblyRouteMode,
+): AssemblyDecisionDetails & { compileReport?: BrainCompileReportV1 | null; compileReportSummary?: string | null; prefetch?: BrainPrefetchDecision | null } {
+  const compileReport = trace?.routeTrace?.selectionMetadata?.compileReport
+    ? rewriteBrainCompileReportSummary(trace.routeTrace.selectionMetadata.compileReport, { mode })
+    : null;
+  if (!compileReport) {
+    return selectionMetadata;
+  }
+  return {
+    ...selectionMetadata,
+    compileReport,
+    compileReportSummary: compileReport.summary,
+  };
+}
+
 function applyStructuredMaxContextChars(
   result: TraversalResult,
   routeTrace: DecisionRouteTrace,
@@ -759,6 +782,7 @@ export class BrainAssemblerExtension {
         interruptionReason: "deadline_before_query",
         servedPartial: false,
       });
+      metadata.prefetch = null;
       this.brain.noteAssemblyDecision({
         mode,
         conversationId: params.conversationId,
@@ -779,12 +803,21 @@ export class BrainAssemblerExtension {
       };
     }
 
+    void this.brain.schedulePrefetch({
+      conversationId: params.conversationId,
+      queryText: decision.queryText,
+      budgetChars: queryBudgetChars,
+      deadlineAtMs: compileDeadlineMs === undefined ? undefined : compileStartedAt + compileDeadlineMs,
+      summaryRoutingMode: summaryRouting.mode,
+    });
     const result = await this.brain.query({
       conversationId: params.conversationId,
       queryText: decision.queryText,
       budgetChars: queryBudgetChars,
+      summaryRoutingMode: summaryRouting.mode,
       ...(compileDeadlineMs === undefined ? {} : { deadlineAtMs: compileStartedAt + compileDeadlineMs }),
     });
+    const prefetchDecision = this.brain.getLastPrefetchDecision();
     const queryInterruption = this.brain.getLastQueryInterruption();
     const afterQueryCheckpoint = captureCompileCheckpoint(compileStartedAt, compileDeadlineMs);
     if (!result && !queryInterruption) {
@@ -796,6 +829,7 @@ export class BrainAssemblerExtension {
         maxContextChars: params.maxContextChars,
         queryBudgetChars,
       });
+      metadata.prefetch = prefetchDecision;
       this.brain.noteAssemblyDecision({
         mode,
         conversationId: params.conversationId,
@@ -828,6 +862,7 @@ export class BrainAssemblerExtension {
           maxContextChars: params.maxContextChars,
           queryBudgetChars,
         });
+        traceSelectionMetadata.prefetch = prefetchDecision;
         this.brain.noteAssemblyDecision({
           mode,
           conversationId: params.conversationId,
@@ -886,7 +921,7 @@ export class BrainAssemblerExtension {
         interruptedMaxContextChars,
       );
       const mode: BrainAssemblyOutcomeMode = "partial_deadline_after_query";
-      const traceSelectionMetadata = assemblyDecisionDetails({
+      const traceSelectionMetadata = withCompileReport(result.trace, assemblyDecisionDetails({
         checkpoint: afterQueryCheckpoint,
         brainDropReason: "deadline_after_query",
         brainDropStage: "query",
@@ -899,7 +934,7 @@ export class BrainAssemblerExtension {
         maxContextChars: interruptedMaxContextChars,
         queryBudgetChars,
         budgetedBrainContext: interruptedBrainContext,
-      });
+      }), mode);
       this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
       const brainMessage: AgentMessage | null = interruptedBrainContext.brainContext.length > 0
         ? ({
@@ -939,7 +974,7 @@ export class BrainAssemblerExtension {
     }
     if (afterQueryInterruption) {
       const mode: BrainAssemblyOutcomeMode = "skip_deadline_after_query";
-      const traceSelectionMetadata = assemblyDecisionDetails({
+      const traceSelectionMetadata = withCompileReport(result.trace, assemblyDecisionDetails({
         checkpoint: afterQueryCheckpoint,
         brainDropReason: "deadline_after_query",
         brainDropStage: "query",
@@ -947,7 +982,7 @@ export class BrainAssemblerExtension {
         budgetFraction,
         maxContextChars: params.maxContextChars,
         queryBudgetChars,
-      });
+      }), mode);
       this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
       this.brain.noteAssemblyDecision({
         mode,
@@ -986,7 +1021,7 @@ export class BrainAssemblerExtension {
           interruptedMaxContextChars,
         );
         const mode: BrainAssemblyOutcomeMode = "partial_deadline_before_injection";
-        const traceSelectionMetadata = assemblyDecisionDetails({
+        const traceSelectionMetadata = withCompileReport(result.trace, assemblyDecisionDetails({
           checkpoint: beforeInjectionCheckpoint,
           brainDropReason: "deadline_before_injection",
           brainDropStage: "injection",
@@ -999,7 +1034,8 @@ export class BrainAssemblerExtension {
           maxContextChars: interruptedMaxContextChars,
           queryBudgetChars,
           budgetedBrainContext: interruptedBrainContext,
-        });
+        }), mode);
+        traceSelectionMetadata.prefetch = prefetchDecision;
         this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
         const brainMessage: AgentMessage | null = interruptedBrainContext.brainContext.length > 0
           ? ({
@@ -1039,7 +1075,7 @@ export class BrainAssemblerExtension {
       }
 
       const mode: BrainAssemblyOutcomeMode = "skip_deadline_before_injection";
-      const traceSelectionMetadata = assemblyDecisionDetails({
+      const traceSelectionMetadata = withCompileReport(result.trace, assemblyDecisionDetails({
         checkpoint: beforeInjectionCheckpoint,
         brainDropReason: "deadline_before_injection",
         brainDropStage: "injection",
@@ -1051,7 +1087,8 @@ export class BrainAssemblerExtension {
         maxContextChars: params.maxContextChars,
         queryBudgetChars,
         budgetedBrainContext,
-      });
+      }), mode);
+      traceSelectionMetadata.prefetch = prefetchDecision;
       this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
       this.brain.noteAssemblyDecision({
         mode,
@@ -1077,7 +1114,7 @@ export class BrainAssemblerExtension {
       };
     }
 
-    const traceSelectionMetadata = assemblyDecisionDetails({
+    const traceSelectionMetadata = withCompileReport(result.trace, assemblyDecisionDetails({
       checkpoint: beforeInjectionCheckpoint,
       brainDropReason: decision.mode === "shadow"
         ? "shadow_mode"
@@ -1093,7 +1130,8 @@ export class BrainAssemblerExtension {
         decision.mode !== "shadow"
         && budgetedBrainContext.contextClipped
         && budgetedBrainContext.injectedChars > 0,
-    });
+    }), decision.mode);
+    traceSelectionMetadata.prefetch = prefetchDecision;
     this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
     const brainMessage: AgentMessage | null = budgetedBrainContext.brainContext.length > 0
       ? ({

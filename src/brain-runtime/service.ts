@@ -1,10 +1,11 @@
-import { randomUUID } from "node:crypto";
+import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
 import type { OpenClawBrainRuntimeConfig } from "../db/config.js";
 import type {
   BrainConfig,
+  BrainCompileReportV1,
   BrainDropReason,
   BrainDropStage,
   BrainFitStrategy,
@@ -14,16 +15,20 @@ import type {
   BrainObservationBindingMode,
   BrainObservationRouteMetadata,
   BrainObservationToolResult,
+  BrainPrefetchBudgetClass,
+  BrainPrefetchDecision,
+  BrainPrefetchState,
   DecisionRouteTrace,
   DecisionTrace,
   NodeKind,
+  RecentPrefetchSummary,
   TraversalResult,
 } from "../brain-core/types.js";
 import { DEFAULT_BRAIN_CONFIG, resolveObservationBindingMode } from "../brain-core/types.js";
 import { BrainGraph } from "../brain-core/graph.js";
 import { traverse } from "../brain-core/traverse.js";
 import { recordEpisode } from "../brain-core/episode.js";
-import { recordTrace, redactDecisionTrace, redactInjectedNodeSummary, redactTextSurface, redactToolResult } from "../brain-core/trace.js";
+import { buildBrainCompileReport, recordTrace, redactDecisionTrace, redactInjectedNodeSummary, redactRouteTrace, redactTextSurface, redactToolResult, rewriteBrainCompileReportSummary, summarizeRecentPrefetchDecisions } from "../brain-core/trace.js";
 import { computeHealth } from "../brain-core/health.js";
 import { BrainTeacher } from "../brain-core/teacher.js";
 import { BrainMutator } from "../brain-core/mutator.js";
@@ -125,29 +130,161 @@ type BrainAssemblyDecisionSnapshot = {
   activePackGraphChecksum?: string | null;
   activePackRouterChecksum?: string | null;
   activePackBuiltAt?: string | null;
+  prefetch?: BrainPrefetchDecision | null;
   servedArtifact?: BrainObservationRouteMetadata["servedArtifact"];
+  compileReport?: BrainCompileReportV1 | null;
+  compileReportSummary?: string | null;
 } & BrainAssemblyDecisionSelectionSurface;
+
+type BrainPrefetchCacheEntry = {
+  key: string;
+  queryDigest: string;
+  budgetClass: BrainPrefetchBudgetClass;
+  summaryRoutingMode: string | null;
+  activePackId: string | null;
+  activePackVersion: number | null;
+  state: BrainPrefetchState;
+  traversalResult: TraversalResult | null;
+  queryEmbedding: Float32Array | null;
+  queryEmbeddingSource: "provided" | "runtime";
+  createdAt: number;
+  updatedAt: number;
+  readyAt: number | null;
+  consumedAt: number | null;
+  invalidatedReason: string | null;
+  prefetchMs: number | null;
+  cacheAgeMs: number | null;
+  reusedNodeCount: number | null;
+  reusedChars: number | null;
+  savingsChars: number | null;
+  promise: Promise<BrainPrefetchCacheEntry> | null;
+};
+
+type TraversalCompileResult = {
+  traversalResult: TraversalResult | null;
+  queryEmbedding: Float32Array | null;
+  queryEmbeddingSource: "provided" | "runtime";
+  embeddingMs: number;
+  routeSelectionMs: number;
+  totalQueryMs: number;
+  queryInterruption: BrainInterruptionMetadata | null;
+};
 
 function normalizeAssemblyDecision(
   decision: BrainAssemblyDecisionSnapshot,
 ): BrainAssemblyDecisionSnapshot {
+  const bindingMode = resolveObservationBindingMode({
+    bindingMode: decision.bindingMode,
+    serveDecisionRecordId: decision.serveDecisionRecordId,
+    selectionDigest: decision.selectionDigest,
+    activePackGraphChecksum: decision.activePackGraphChecksum,
+    turnCompileEventId: decision.turnCompileEventId,
+    traceId: decision.traceId ?? null,
+  });
+  const compileReportSource = decision.compileReport ?? (decision.servedArtifact?.compileReport as BrainCompileReportV1 | null | undefined) ?? null;
+  const compileReportSummarySource = decision.compileReportSummary ?? compileReportSource?.summary ?? null;
+  const compileReport = compileReportSource
+    ? rewriteBrainCompileReportSummary(compileReportSource, { bindingMode })
+    : null;
+  const compileReportSummary = compileReport?.summary ?? compileReportSummarySource;
+  const servedArtifact = cloneObservationServedArtifact(decision.servedArtifact);
+  const normalizedServedArtifact = servedArtifact
+    ? { ...servedArtifact }
+    : null;
+  if (compileReport || compileReportSummary !== null) {
+    const artifact = normalizedServedArtifact ?? {};
+    (artifact as Record<string, unknown>).compileReport = compileReport;
+    (artifact as Record<string, unknown>).compileReportSummary = compileReportSummary;
+    return {
+      ...decision,
+      bindingMode,
+      servedArtifact: artifact,
+      compileReport,
+      compileReportSummary,
+      fittingDropReasons: decision.fittingDropReasons
+        ? { ...decision.fittingDropReasons } as Partial<Record<BrainFittingDropReason, number>>
+        : decision.fittingDropReasons ?? null,
+      fitStrategy: decision.fitStrategy ?? null as BrainFitStrategy | null,
+      prefetch: decision.prefetch ? normalizePrefetchDecision(decision.prefetch) : null,
+    };
+  }
   return {
     ...decision,
-    bindingMode: resolveObservationBindingMode({
-      bindingMode: decision.bindingMode,
-      serveDecisionRecordId: decision.serveDecisionRecordId,
-      selectionDigest: decision.selectionDigest,
-      activePackGraphChecksum: decision.activePackGraphChecksum,
-      turnCompileEventId: decision.turnCompileEventId,
-      traceId: decision.traceId ?? null,
-    }),
-    servedArtifact: cloneObservationServedArtifact(decision.servedArtifact),
+    bindingMode,
+    servedArtifact: normalizedServedArtifact,
+    compileReport,
+    compileReportSummary,
     fittingDropReasons: decision.fittingDropReasons
       ? { ...decision.fittingDropReasons } as Partial<Record<BrainFittingDropReason, number>>
       : decision.fittingDropReasons ?? null,
     fitStrategy: decision.fitStrategy ?? null as BrainFitStrategy | null,
+    prefetch: decision.prefetch ? normalizePrefetchDecision(decision.prefetch) : null,
   };
 }
+
+function normalizePrefetchDecision(decision: BrainPrefetchDecision): BrainPrefetchDecision {
+  return {
+    enabled: decision.enabled,
+    state: decision.state,
+    kind: decision.kind ?? null,
+    budgetClass: decision.budgetClass ?? null,
+    key: decision.key ?? null,
+    queryDigest: decision.queryDigest ?? null,
+    activePackId: decision.activePackId ?? null,
+    activePackVersion: decision.activePackVersion ?? null,
+    summaryRoutingMode: decision.summaryRoutingMode ?? null,
+    prefetchMs: decision.prefetchMs ?? null,
+    cacheAgeMs: decision.cacheAgeMs ?? null,
+    invalidatedReason: decision.invalidatedReason ?? null,
+    reusedNodeCount: decision.reusedNodeCount ?? null,
+    reusedChars: decision.reusedChars ?? null,
+    savingsChars: decision.savingsChars ?? null,
+  };
+}
+
+function clonePrefetchDecision(decision: BrainPrefetchDecision | null | undefined): BrainPrefetchDecision | null {
+  return decision ? normalizePrefetchDecision(decision) : null;
+}
+
+function hashQueryDigest(queryText: string): string {
+  return createHash("sha256").update(queryText).digest("hex").slice(0, 16);
+}
+
+function derivePrefetchBudgetClass(params: {
+  budgetChars: number;
+  deadlineAtMs?: number | null;
+}): BrainPrefetchBudgetClass {
+  if (typeof params.deadlineAtMs === "number" && Number.isFinite(params.deadlineAtMs)) {
+    return "deadline_pressure";
+  }
+  if (params.budgetChars <= 512) {
+    return "tiny";
+  }
+  if (params.budgetChars <= 1200) {
+    return "small";
+  }
+  if (params.budgetChars <= 2600) {
+    return "standard";
+  }
+  return "large";
+}
+
+function buildPrefetchKey(params: {
+  queryDigest: string;
+  activePackVersion: number | null;
+  budgetClass: BrainPrefetchBudgetClass;
+  summaryRoutingMode: string | null;
+}): string {
+  return [
+    params.queryDigest,
+    params.activePackVersion ?? "no-pack",
+    params.budgetClass,
+    params.summaryRoutingMode ?? "ignore",
+    "traversal",
+  ].join("::");
+}
+
+const PREFETCH_CACHE_LIMIT = 32;
 
 export class BrainService {
   private deps: LcmDependencies;
@@ -170,6 +307,11 @@ export class BrainService {
   private latestEpisodeByConversation = new Map<number, string>();
   private lastQueryInterruption: BrainInterruptionMetadata | null = null;
   private lastAssemblyDecision: BrainAssemblyDecisionSnapshot | null = null;
+  private lastPrefetchDecision: BrainPrefetchDecision | null = null;
+  private recentPrefetchDecisions: BrainPrefetchDecision[] = [];
+  private prefetchCache = new Map<string, BrainPrefetchCacheEntry>();
+  private prefetchCacheByQueryDigest = new Map<string, string>();
+  private lastObservedPrefetchPackVersion: number | null = null;
 
   constructor(params: {
     deps: LcmDependencies;
@@ -226,6 +368,8 @@ export class BrainService {
 
     this.store = new BrainStore(db, { brainRoot: this.config.root });
     this.lastAssemblyDecision = this.getStoredLastAssemblyDecision();
+    this.lastPrefetchDecision = this.getStoredLastPrefetchDecision();
+    this.recentPrefetchDecisions = this.getStoredRecentPrefetchDecisions();
     this.embeddingClient = createEmbeddingClient({
       config: runtimeConfig,
       getApiKey: (provider, model) => params.deps.getApiKey(provider, model),
@@ -480,6 +624,88 @@ export class BrainService {
     return stored ? normalizeAssemblyDecision(stored) : null;
   }
 
+  private getStoredLastPrefetchDecision(): BrainPrefetchDecision | null {
+    const stored = this.store.getTrainingStateJson<BrainPrefetchDecision>("last_prefetch_decision_json");
+    return stored ? normalizePrefetchDecision(stored) : null;
+  }
+
+  private getStoredRecentPrefetchDecisions(): BrainPrefetchDecision[] {
+    const stored = this.store.getTrainingStateJson<BrainPrefetchDecision[]>("recent_prefetch_decisions_json");
+    if (!Array.isArray(stored)) {
+      return [];
+    }
+    return stored
+      .filter((decision): decision is BrainPrefetchDecision => !!decision && typeof decision === "object")
+      .map((decision) => normalizePrefetchDecision(decision))
+      .slice(-25);
+  }
+
+  private persistPrefetchDecisionHistory(): void {
+    this.store.setTrainingStateJson("last_prefetch_decision_json", this.lastPrefetchDecision);
+    this.store.setTrainingStateJson("recent_prefetch_decisions_json", this.recentPrefetchDecisions.slice(-25));
+  }
+
+  private notePrefetchDecision(decision: BrainPrefetchDecision): BrainPrefetchDecision {
+    const normalizedDecision = normalizePrefetchDecision(decision);
+    this.lastPrefetchDecision = normalizedDecision;
+    this.recentPrefetchDecisions = [...this.recentPrefetchDecisions.slice(-24), normalizedDecision];
+    this.persistPrefetchDecisionHistory();
+    return normalizedDecision;
+  }
+
+  getLastPrefetchDecision(): BrainPrefetchDecision | null {
+    return clonePrefetchDecision(this.lastPrefetchDecision);
+  }
+
+  getRecentPrefetchSummary(limit = 25): RecentPrefetchSummary {
+    return summarizeRecentPrefetchDecisions(this.recentPrefetchDecisions.slice(-limit), limit);
+  }
+
+  getPrefetchCacheSize(): number {
+    return this.prefetchCache.size;
+  }
+
+  getPrefetchInFlightCount(): number {
+    let count = 0;
+    for (const entry of this.prefetchCache.values()) {
+      if (entry.state === "scheduled" && entry.promise) {
+        count += 1;
+      }
+    }
+    return count;
+  }
+
+  private syncPrefetchCacheToPackVersion(currentPackVersion: number | null): void {
+    if (
+      this.lastObservedPrefetchPackVersion !== null
+      && this.lastObservedPrefetchPackVersion !== currentPackVersion
+    ) {
+      this.prefetchCache.clear();
+    }
+    this.lastObservedPrefetchPackVersion = currentPackVersion;
+  }
+
+  private trimPrefetchCache(limit = PREFETCH_CACHE_LIMIT): void {
+    if (this.prefetchCache.size <= limit) {
+      return;
+    }
+
+    const evictableEntries = [...this.prefetchCache.values()]
+      .filter((entry) => !(entry.state === "scheduled" && entry.promise))
+      .sort((left, right) => left.updatedAt - right.updatedAt || left.createdAt - right.createdAt);
+
+    while (this.prefetchCache.size > limit && evictableEntries.length > 0) {
+      const entry = evictableEntries.shift();
+      if (!entry) {
+        break;
+      }
+      if (this.prefetchCacheByQueryDigest.get(entry.queryDigest) === entry.key) {
+        this.prefetchCacheByQueryDigest.delete(entry.queryDigest);
+      }
+      this.prefetchCache.delete(entry.key);
+    }
+  }
+
   noteAssemblyDecision(decision: BrainAssemblyDecisionSnapshot): void {
     const normalizedDecision = normalizeAssemblyDecision(decision);
     this.lastAssemblyDecision = normalizedDecision;
@@ -508,53 +734,110 @@ export class BrainService {
     this.store.updateTraceSelectionMetadata(trace.id, selectionMetadata);
   }
 
-  async query(params: {
-    conversationId: number;
+  private buildPrefetchDecision(params: {
+    state: BrainPrefetchState;
+    kind?: BrainPrefetchDecision["kind"];
+    budgetClass?: BrainPrefetchBudgetClass | null;
+    key?: string | null;
+    queryDigest?: string | null;
+    activePackId?: string | null;
+    activePackVersion?: number | null;
+    summaryRoutingMode?: string | null;
+    prefetchMs?: number | null;
+    cacheAgeMs?: number | null;
+    invalidatedReason?: string | null;
+    reusedNodeCount?: number | null;
+    reusedChars?: number | null;
+    savingsChars?: number | null;
+  }): BrainPrefetchDecision {
+    return normalizePrefetchDecision({
+      enabled: true,
+      state: params.state,
+      kind: params.kind ?? "traversal",
+      budgetClass: params.budgetClass ?? null,
+      key: params.key ?? null,
+      queryDigest: params.queryDigest ?? null,
+      activePackId: params.activePackId ?? null,
+      activePackVersion: params.activePackVersion ?? null,
+      summaryRoutingMode: params.summaryRoutingMode ?? null,
+      prefetchMs: params.prefetchMs ?? null,
+      cacheAgeMs: params.cacheAgeMs ?? null,
+      invalidatedReason: params.invalidatedReason ?? null,
+      reusedNodeCount: params.reusedNodeCount ?? null,
+      reusedChars: params.reusedChars ?? null,
+      savingsChars: params.savingsChars ?? null,
+    });
+  }
+
+  private async performTraversalCompile(params: {
     queryText: string;
     budgetChars: number;
     queryEmbedding?: Float32Array;
     deadlineAtMs?: number | null;
-  }): Promise<TraversalResult | null> {
-    this.lastQueryInterruption = null;
-    if (!this.isEnabled() || this.servingGraph.nodeCount() === 0) {
-      return null;
-    }
-
+    recordInterruption?: (interruption: BrainInterruptionMetadata | null) => void;
+  }): Promise<TraversalCompileResult> {
+    const queryStartedAt = Date.now();
     const deadlineAtMs =
       typeof params.deadlineAtMs === "number" && Number.isFinite(params.deadlineAtMs)
         ? params.deadlineAtMs
         : null;
     const deadlineExceeded = () => deadlineAtMs !== null && Date.now() >= deadlineAtMs;
     const setQueryInterruption = (interruption: BrainInterruptionMetadata) => {
-      this.lastQueryInterruption = { ...interruption };
+      params.recordInterruption?.({ ...interruption });
     };
-    const queryStartedAt = Date.now();
     const embeddingStartedAt = Date.now();
     const usingProvidedEmbedding = !!params.queryEmbedding;
     if (deadlineExceeded()) {
-      setQueryInterruption({
+      const interruption = {
         interrupted: true,
         stage: usingProvidedEmbedding ? "query" : "embedding",
         reason: usingProvidedEmbedding ? "deadline_before_traversal" : "deadline_before_embedding",
         servedPartial: false,
-      });
-      return null;
+      } as BrainInterruptionMetadata;
+      setQueryInterruption(interruption);
+      return {
+        traversalResult: null,
+        queryEmbedding: null,
+        queryEmbeddingSource: usingProvidedEmbedding ? "provided" : "runtime",
+        embeddingMs: Date.now() - embeddingStartedAt,
+        routeSelectionMs: 0,
+        totalQueryMs: Date.now() - queryStartedAt,
+        queryInterruption: interruption,
+      };
     }
+
     const embedding =
       params.queryEmbedding
       ?? (this.embeddingClient ? await this.embeddingClient(params.queryText) : null);
     const embeddingMs = Date.now() - embeddingStartedAt;
     if (deadlineExceeded()) {
-      setQueryInterruption({
+      const interruption = {
         interrupted: true,
         stage: usingProvidedEmbedding ? "query" : "embedding",
         reason: usingProvidedEmbedding ? "deadline_before_traversal" : "deadline_during_embedding",
         servedPartial: false,
-      });
-      return null;
+      } as BrainInterruptionMetadata;
+      setQueryInterruption(interruption);
+      return {
+        traversalResult: null,
+        queryEmbedding: embedding,
+        queryEmbeddingSource: params.queryEmbedding ? "provided" : "runtime",
+        embeddingMs,
+        routeSelectionMs: 0,
+        totalQueryMs: Date.now() - queryStartedAt,
+        queryInterruption: interruption,
+      };
     }
     if (!embedding || embedding.length === 0) {
-      return null;
+      return {
+        traversalResult: null,
+        queryEmbedding: embedding,
+        queryEmbeddingSource: params.queryEmbedding ? "provided" : "runtime",
+        embeddingMs,
+        routeSelectionMs: 0,
+        totalQueryMs: Date.now() - queryStartedAt,
+        queryInterruption: null,
+      };
     }
 
     const routeSelectionStartedAt = Date.now();
@@ -575,14 +858,34 @@ export class BrainService {
     if (traversalResult.interruption) {
       setQueryInterruption(traversalResult.interruption);
     }
-    if (traversalResult.firedNodes.length === 0) {
+    return {
+      traversalResult: traversalResult.firedNodes.length === 0 ? null : traversalResult,
+      queryEmbedding: embedding,
+      queryEmbeddingSource: params.queryEmbedding ? "provided" : "runtime",
+      embeddingMs,
+      routeSelectionMs,
+      totalQueryMs: Date.now() - queryStartedAt,
+      queryInterruption: traversalResult.interruption ?? null,
+    };
+  }
+
+  private async persistTraversalCompileResult(params: {
+    conversationId: number;
+    queryText: string;
+    budgetChars: number;
+    compileResult: TraversalCompileResult;
+  }): Promise<TraversalResult | null> {
+    const { compileResult } = params;
+    this.lastQueryInterruption = compileResult.queryInterruption ? { ...compileResult.queryInterruption } : null;
+    if (!compileResult.traversalResult) {
       return null;
     }
 
+    const traversalResult = compileResult.traversalResult;
     const episode = recordEpisode({
       traversalResult,
       queryText: params.queryText,
-      queryEmbedding: embedding,
+      queryEmbedding: compileResult.queryEmbedding,
       conversationId: params.conversationId,
       packVersion: this.store.getCurrentPackVersion(),
     });
@@ -602,13 +905,32 @@ export class BrainService {
       maxHops: this.config.maxHops,
       maxFanoutPerNode: this.config.maxFanoutPerNode,
       maxFrontierSize: this.config.maxFrontierSize,
-      embeddingMs,
-      routeSelectionMs,
-      totalQueryMs: Date.now() - queryStartedAt,
-      queryEmbeddingSource: params.queryEmbedding ? "provided" : "runtime",
+      embeddingMs: compileResult.embeddingMs,
+      routeSelectionMs: compileResult.routeSelectionMs,
+      totalQueryMs: compileResult.totalQueryMs,
+      queryEmbeddingSource: compileResult.queryEmbeddingSource,
       selectedNodes,
       persistRawSurfaces: this.config.persistRawSurfaces,
     });
+
+    const compileReport = buildBrainCompileReport({
+      routeTrace: redactRouteTrace(trace.routeTrace, params.queryText, false) ?? trace.routeTrace,
+      decision: {
+        traceId: trace.id,
+        episodeId: episode.id,
+      },
+      lookupNode: (nodeId: string) => this.servingGraph.getNode(nodeId) ?? null,
+    });
+    if (compileReport && trace.routeTrace?.selectionMetadata) {
+      trace.routeTrace = {
+        ...trace.routeTrace,
+        selectionMetadata: {
+          ...trace.routeTrace.selectionMetadata,
+          compileReport,
+          compileReportSummary: compileReport.summary,
+        },
+      };
+    }
     this.store.insertTrace(trace);
 
     return {
@@ -620,6 +942,367 @@ export class BrainService {
     };
   }
 
+  async query(params: {
+    conversationId: number;
+    queryText: string;
+    budgetChars: number;
+    queryEmbedding?: Float32Array;
+    deadlineAtMs?: number | null;
+    summaryRoutingMode?: string | null;
+  }): Promise<TraversalResult | null> {
+    this.lastQueryInterruption = null;
+    if (!this.isEnabled() || this.servingGraph.nodeCount() === 0) {
+      return null;
+    }
+
+    const currentPackVersion = this.store.getCurrentPackVersion();
+    this.syncPrefetchCacheToPackVersion(currentPackVersion);
+
+    const queryDigest = hashQueryDigest(params.queryText);
+    const summaryRoutingMode = params.summaryRoutingMode ?? "ignore";
+    const budgetClass = derivePrefetchBudgetClass({
+      budgetChars: params.budgetChars,
+      deadlineAtMs: params.deadlineAtMs,
+    });
+    const prefetchKey = buildPrefetchKey({
+      queryDigest,
+      activePackVersion: currentPackVersion,
+      budgetClass,
+      summaryRoutingMode,
+    });
+
+    let recordedCacheOutcome = false;
+    const cachedEntry = this.prefetchCache.get(prefetchKey) ?? null;
+    if (cachedEntry) {
+      const resolvedEntry = cachedEntry.promise
+        ? await cachedEntry.promise.catch(() => cachedEntry)
+        : cachedEntry;
+      if (
+        resolvedEntry
+        && resolvedEntry.traversalResult
+        && resolvedEntry.state !== "dropped"
+        && resolvedEntry.state !== "invalidated"
+      ) {
+        const now = Date.now();
+        const cacheAgeMs = resolvedEntry.readyAt !== null
+          ? now - resolvedEntry.readyAt
+          : resolvedEntry.cacheAgeMs;
+        resolvedEntry.state = "hit";
+        resolvedEntry.consumedAt = now;
+        resolvedEntry.cacheAgeMs = cacheAgeMs ?? null;
+        resolvedEntry.reusedNodeCount = resolvedEntry.traversalResult.firedNodes.length;
+        resolvedEntry.reusedChars = resolvedEntry.traversalResult.contextChars;
+        resolvedEntry.savingsChars = resolvedEntry.traversalResult.contextChars;
+        resolvedEntry.updatedAt = now;
+        this.notePrefetchDecision(this.buildPrefetchDecision({
+          state: "hit",
+          kind: "traversal",
+          budgetClass: resolvedEntry.budgetClass,
+          key: resolvedEntry.key,
+          queryDigest: resolvedEntry.queryDigest,
+          activePackId: resolvedEntry.activePackId,
+          activePackVersion: resolvedEntry.activePackVersion,
+          summaryRoutingMode: resolvedEntry.summaryRoutingMode,
+          prefetchMs: resolvedEntry.prefetchMs,
+          cacheAgeMs: resolvedEntry.cacheAgeMs,
+          reusedNodeCount: resolvedEntry.reusedNodeCount,
+          reusedChars: resolvedEntry.reusedChars,
+          savingsChars: resolvedEntry.savingsChars,
+        }));
+        this.prefetchCacheByQueryDigest.set(queryDigest, prefetchKey);
+        const result = await this.persistTraversalCompileResult({
+          conversationId: params.conversationId,
+          queryText: params.queryText,
+          budgetChars: params.budgetChars,
+          compileResult: {
+            traversalResult: resolvedEntry.traversalResult,
+            queryEmbedding: resolvedEntry.queryEmbedding,
+            queryEmbeddingSource: resolvedEntry.queryEmbeddingSource,
+            embeddingMs: resolvedEntry.prefetchMs ?? 0,
+            routeSelectionMs: 0,
+            totalQueryMs: resolvedEntry.prefetchMs ?? 0,
+            queryInterruption: null,
+          },
+        });
+        return result;
+      }
+    }
+
+    const knownPrefetchKey = this.prefetchCacheByQueryDigest.get(queryDigest) ?? null;
+    let knownPrefetchState: BrainPrefetchState | null = null;
+    let knownPrefetchReason: string | null = null;
+    if (knownPrefetchKey && knownPrefetchKey !== prefetchKey) {
+      const knownEntry = this.prefetchCache.get(knownPrefetchKey) ?? null;
+      const prefetchState: BrainPrefetchState = knownEntry?.activePackVersion !== currentPackVersion
+        ? "invalidated"
+        : "stale";
+      knownPrefetchState = prefetchState;
+      knownPrefetchReason = knownEntry?.activePackVersion !== currentPackVersion
+        ? "pack_version_changed"
+        : knownEntry?.budgetClass !== budgetClass
+          ? "budget_class_changed"
+          : knownEntry?.summaryRoutingMode !== summaryRoutingMode
+            ? "summary_routing_changed"
+            : "prefetch_key_mismatch";
+      if (knownEntry) {
+        const now = Date.now();
+        knownEntry.state = knownPrefetchState;
+        knownEntry.invalidatedReason = knownPrefetchReason;
+        knownEntry.cacheAgeMs = knownEntry.readyAt !== null ? now - knownEntry.readyAt : knownEntry.cacheAgeMs;
+        knownEntry.updatedAt = now;
+        this.notePrefetchDecision(this.buildPrefetchDecision({
+          state: prefetchState,
+          kind: "traversal",
+          budgetClass: knownEntry.budgetClass,
+          key: knownEntry.key,
+          queryDigest: knownEntry.queryDigest,
+          activePackId: knownEntry.activePackId,
+          activePackVersion: knownEntry.activePackVersion,
+          summaryRoutingMode: knownEntry.summaryRoutingMode,
+          prefetchMs: knownEntry.prefetchMs,
+          cacheAgeMs: knownEntry.cacheAgeMs,
+          invalidatedReason: knownPrefetchReason,
+        }));
+      } else {
+        const prefetchState: BrainPrefetchState = knownPrefetchState ?? "stale";
+        this.notePrefetchDecision(this.buildPrefetchDecision({
+          state: prefetchState,
+          kind: "traversal",
+          budgetClass,
+          key: knownPrefetchKey,
+          queryDigest,
+          activePackId: currentPackVersion === null ? null : `brain-pack-v${currentPackVersion}`,
+          activePackVersion: currentPackVersion,
+          summaryRoutingMode,
+          invalidatedReason: knownPrefetchReason,
+        }));
+      }
+      recordedCacheOutcome = true;
+    }
+
+    const liveCompile = await this.performTraversalCompile({
+      queryText: params.queryText,
+      budgetChars: params.budgetChars,
+      queryEmbedding: params.queryEmbedding,
+      deadlineAtMs: params.deadlineAtMs,
+      recordInterruption: (interruption) => {
+        this.lastQueryInterruption = interruption ? { ...interruption } : null;
+      },
+    });
+    if (!liveCompile.traversalResult) {
+      if (!recordedCacheOutcome && (cachedEntry || knownPrefetchKey)) {
+        this.notePrefetchDecision(this.buildPrefetchDecision({
+          state: "miss",
+          kind: "traversal",
+          budgetClass,
+          key: prefetchKey,
+          queryDigest,
+          activePackId: currentPackVersion === null ? null : `brain-pack-v${currentPackVersion}`,
+          activePackVersion: currentPackVersion,
+          summaryRoutingMode,
+          invalidatedReason: cachedEntry?.state === "dropped" ? "prefetch_dropped" : "prefetch_unavailable",
+        }));
+      }
+      return null;
+    }
+    if (!recordedCacheOutcome && (cachedEntry || knownPrefetchKey)) {
+      this.notePrefetchDecision(this.buildPrefetchDecision({
+        state: "miss",
+        kind: "traversal",
+        budgetClass,
+        key: prefetchKey,
+        queryDigest,
+        activePackId: currentPackVersion === null ? null : `brain-pack-v${currentPackVersion}`,
+        activePackVersion: currentPackVersion,
+        summaryRoutingMode,
+        invalidatedReason: cachedEntry?.state === "dropped" ? "prefetch_dropped" : "prefetch_unavailable",
+      }));
+    }
+    return this.persistTraversalCompileResult({
+      conversationId: params.conversationId,
+      queryText: params.queryText,
+      budgetChars: params.budgetChars,
+      compileResult: liveCompile,
+    });
+  }
+
+  async schedulePrefetch(params: {
+    conversationId: number;
+    queryText: string;
+    budgetChars: number;
+    queryEmbedding?: Float32Array;
+    deadlineAtMs?: number | null;
+    summaryRoutingMode?: string | null;
+  }): Promise<BrainPrefetchDecision | null> {
+    if (!this.isEnabled() || !this.isInitialized() || this.servingGraph.nodeCount() === 0) {
+      return null;
+    }
+
+    const currentPackVersion = this.store.getCurrentPackVersion();
+    this.syncPrefetchCacheToPackVersion(currentPackVersion);
+
+    const queryDigest = hashQueryDigest(params.queryText);
+    const summaryRoutingMode = params.summaryRoutingMode ?? "ignore";
+    const budgetClass = derivePrefetchBudgetClass({
+      budgetChars: params.budgetChars,
+      deadlineAtMs: params.deadlineAtMs,
+    });
+    const key = buildPrefetchKey({
+      queryDigest,
+      activePackVersion: currentPackVersion,
+      budgetClass,
+      summaryRoutingMode,
+    });
+
+    const existingEntry = this.prefetchCache.get(key) ?? null;
+    if (existingEntry) {
+      return existingEntry.promise
+        ? existingEntry.promise.then(() => this.getLastPrefetchDecision())
+        : Promise.resolve(this.getLastPrefetchDecision());
+    }
+
+    const now = Date.now();
+    const scheduledDecision = this.notePrefetchDecision(this.buildPrefetchDecision({
+      state: "scheduled",
+      kind: "traversal",
+      budgetClass,
+      key,
+      queryDigest,
+      activePackId: currentPackVersion === null ? null : `brain-pack-v${currentPackVersion}`,
+      activePackVersion: currentPackVersion,
+      summaryRoutingMode,
+    }));
+
+    const cacheEntry: BrainPrefetchCacheEntry = {
+      key,
+      queryDigest,
+      budgetClass,
+      summaryRoutingMode,
+      activePackId: scheduledDecision.activePackId,
+      activePackVersion: currentPackVersion,
+      state: "scheduled",
+      traversalResult: null,
+      queryEmbedding: null,
+      queryEmbeddingSource: params.queryEmbedding ? "provided" : "runtime",
+      createdAt: now,
+      updatedAt: now,
+      readyAt: null,
+      consumedAt: null,
+      invalidatedReason: null,
+      prefetchMs: null,
+      cacheAgeMs: null,
+      reusedNodeCount: null,
+      reusedChars: null,
+      savingsChars: null,
+      promise: null,
+    };
+
+    const promise = (async () => {
+      try {
+        const compileResult = await this.performTraversalCompile({
+          queryText: params.queryText,
+          budgetChars: params.budgetChars,
+          queryEmbedding: params.queryEmbedding,
+          deadlineAtMs: params.deadlineAtMs,
+        });
+        const finishedAt = Date.now();
+        cacheEntry.updatedAt = finishedAt;
+        cacheEntry.prefetchMs = finishedAt - now;
+        cacheEntry.queryEmbedding = compileResult.queryEmbedding;
+        cacheEntry.queryEmbeddingSource = compileResult.queryEmbeddingSource;
+        if (!compileResult.traversalResult) {
+          cacheEntry.state = compileResult.queryInterruption ? "dropped" : "miss";
+          cacheEntry.invalidatedReason = compileResult.queryInterruption?.reason ?? "no_nodes";
+          cacheEntry.cacheAgeMs = finishedAt - now;
+          this.notePrefetchDecision(this.buildPrefetchDecision({
+            state: cacheEntry.state,
+            kind: "traversal",
+            budgetClass: cacheEntry.budgetClass,
+            key: cacheEntry.key,
+            queryDigest: cacheEntry.queryDigest,
+            activePackId: cacheEntry.activePackId,
+            activePackVersion: cacheEntry.activePackVersion,
+            summaryRoutingMode: cacheEntry.summaryRoutingMode,
+            prefetchMs: cacheEntry.prefetchMs,
+            cacheAgeMs: cacheEntry.cacheAgeMs,
+            invalidatedReason: cacheEntry.invalidatedReason,
+          }));
+          return cacheEntry;
+        }
+
+        const livePackVersion = this.store.getCurrentPackVersion();
+        if (livePackVersion !== currentPackVersion) {
+          cacheEntry.state = "invalidated";
+          cacheEntry.invalidatedReason = "pack_version_changed";
+          cacheEntry.cacheAgeMs = finishedAt - now;
+          this.notePrefetchDecision(this.buildPrefetchDecision({
+            state: cacheEntry.state,
+            kind: "traversal",
+            budgetClass: cacheEntry.budgetClass,
+            key: cacheEntry.key,
+            queryDigest: cacheEntry.queryDigest,
+            activePackId: cacheEntry.activePackId,
+            activePackVersion: cacheEntry.activePackVersion,
+            summaryRoutingMode: cacheEntry.summaryRoutingMode,
+            prefetchMs: cacheEntry.prefetchMs,
+            cacheAgeMs: cacheEntry.cacheAgeMs,
+            invalidatedReason: cacheEntry.invalidatedReason,
+          }));
+          return cacheEntry;
+        }
+
+        cacheEntry.state = "materialized";
+        cacheEntry.readyAt = finishedAt;
+        cacheEntry.traversalResult = compileResult.traversalResult;
+        cacheEntry.cacheAgeMs = 0;
+        this.prefetchCache.set(cacheEntry.key, cacheEntry);
+        this.trimPrefetchCache();
+        this.prefetchCacheByQueryDigest.set(cacheEntry.queryDigest, cacheEntry.key);
+        this.notePrefetchDecision(this.buildPrefetchDecision({
+          state: cacheEntry.state,
+          kind: "traversal",
+          budgetClass: cacheEntry.budgetClass,
+          key: cacheEntry.key,
+          queryDigest: cacheEntry.queryDigest,
+          activePackId: cacheEntry.activePackId,
+          activePackVersion: cacheEntry.activePackVersion,
+          summaryRoutingMode: cacheEntry.summaryRoutingMode,
+          prefetchMs: cacheEntry.prefetchMs,
+          cacheAgeMs: cacheEntry.cacheAgeMs,
+        }));
+        return cacheEntry;
+      } catch (error) {
+        const finishedAt = Date.now();
+        cacheEntry.state = "dropped";
+        cacheEntry.invalidatedReason = (error as Error).message || "prefetch_error";
+        cacheEntry.updatedAt = finishedAt;
+        cacheEntry.cacheAgeMs = finishedAt - now;
+        this.notePrefetchDecision(this.buildPrefetchDecision({
+          state: cacheEntry.state,
+          kind: "traversal",
+          budgetClass: cacheEntry.budgetClass,
+          key: cacheEntry.key,
+          queryDigest: cacheEntry.queryDigest,
+          activePackId: cacheEntry.activePackId,
+          activePackVersion: cacheEntry.activePackVersion,
+          summaryRoutingMode: cacheEntry.summaryRoutingMode,
+          prefetchMs: cacheEntry.prefetchMs,
+          cacheAgeMs: cacheEntry.cacheAgeMs,
+          invalidatedReason: cacheEntry.invalidatedReason,
+        }));
+        return cacheEntry;
+      } finally {
+        cacheEntry.promise = null;
+      }
+    })();
+
+    cacheEntry.promise = promise;
+    this.prefetchCache.set(key, cacheEntry);
+    this.trimPrefetchCache();
+    this.prefetchCacheByQueryDigest.set(queryDigest, key);
+    await promise;
+    return this.getLastPrefetchDecision();
+  }
   async recordTurnObservation(params: {
     episodeId?: string | null;
     assistantResponse: string;
@@ -1009,8 +1692,10 @@ export class BrainService {
     );
     const recentTraces = this.store.getRecentTraces(5);
     const recentDecisionSummary = this.store.getRecentDecisionSummary(25);
+    const recentPrefetchSummary = this.getRecentPrefetchSummary(25);
     const workerState = readWorkerRuntimeState(this.store, this.config);
     const contextFeedback = this.store.getContextFeedbackSummary();
+    const contextUsefulness = this.store.getContextUsefulnessSummary();
     const promotionStory = buildPromotionStory(this.store, { contextFeedback });
     const routeTraceCount = this.store.countTraces();
     const supervisionCount = this.store.countTraceSupervision();
@@ -1021,6 +1706,12 @@ export class BrainService {
       ? Number.parseInt(lastPgCandidatePackVersionRaw, 10)
       : null;
     const lastAssemblyDecision = this.lastAssemblyDecision ?? this.getStoredLastAssemblyDecision();
+    const lastPrefetchDecision = this.getLastPrefetchDecision();
+    const lastCompileReportSummary = lastAssemblyDecision?.compileReportSummary
+      ?? (lastAssemblyDecision?.servedArtifact as { compileReportSummary?: string | null } | null | undefined)?.compileReportSummary
+      ?? recentTraces[0]?.routeTrace?.selectionMetadata?.compileReportSummary
+      ?? recentTraces[0]?.routeTrace?.selectionMetadata?.compileReport?.summary
+      ?? null;
 
     const embeddingConfig = describeEmbeddingConfig(this.config);
 
@@ -1068,6 +1759,7 @@ export class BrainService {
       pendingObservationsByStatus: this.store.countObservationsByStatus(),
       observationAttribution,
       contextFeedback,
+      contextUsefulness,
       ...workerState,
       pendingLabels: this.store.getPendingLabels().length,
       pendingLabelsBySource: this.store.countPendingLabelsBySource(),
@@ -1082,10 +1774,15 @@ export class BrainService {
       lastPgCandidateUpdate,
       recentTraceCount: recentTraces.length,
       recentDecisionSummary,
+      recentPrefetchSummary,
       lastTraceFooter: recentTraces[0]?.footer ?? null,
       lastTraceContextChars: recentTraces[0]?.contextChars ?? null,
       lastTraceSelectionMetadata: recentTraces[0]?.routeTrace?.selectionMetadata ?? null,
+      lastCompileReportSummary,
       lastAssemblyDecision,
+      lastPrefetchDecision,
+      prefetchCacheSize: this.getPrefetchCacheSize(),
+      prefetchInFlightCount: this.getPrefetchInFlightCount(),
       lastPromotionReason: this.store.getTrainingState("last_promotion_reason"),
       lastPromotionVerdict: this.store.getTrainingStateJson("last_promotion_verdict_json"),
       lastReplayFailureReason: this.store.getTrainingState("last_replay_failure_reason"),

@@ -5,6 +5,8 @@ import { DatabaseSync } from "node:sqlite";
 import { BrainGraph } from "./brain-core/graph.js";
 import { computeHealth } from "./brain-core/health.js";
 import { PackManager } from "./brain-core/pack.js";
+import type { BrainPrefetchDecision } from "./brain-core/types.js";
+import { summarizeRecentPrefetchDecisions } from "./brain-core/trace.js";
 import { BrainStore } from "./brain-store/store.js";
 import { runBrainMigrations } from "./brain-store/migrations.js";
 import { initBrain } from "./brain-store/init.js";
@@ -132,9 +134,12 @@ function commandStatus(): void {
   const embeddingConfig = describeEmbeddingConfig(brainConfig);
   const workerState = readWorkerRuntimeState(store, brainConfig);
   const contextFeedback = store.getContextFeedbackSummary();
+  const contextUsefulness = store.getContextUsefulnessSummary();
   const promotionStory = buildPromotionStory(store, { contextFeedback });
   const observationAttribution = store.getObservationAttributionSummary();
   const recentDecisionSummary = store.getRecentDecisionSummary(25);
+  const recentPrefetchDecisions = store.getTrainingStateJson<BrainPrefetchDecision[]>("recent_prefetch_decisions_json") ?? [];
+  const recentPrefetchSummary = summarizeRecentPrefetchDecisions(recentPrefetchDecisions, 25);
   const recentTrace = store.getRecentTraces(1)[0] ?? null;
   const lastAssemblyDecision = store.getTrainingStateJson<Record<string, unknown>>("last_assembly_decision_json")
     ?? {
@@ -143,6 +148,12 @@ function commandStatus(): void {
       episodeId: store.getTrainingState("last_assembly_episode_id"),
       traceId: store.getTrainingState("last_assembly_trace_id"),
     };
+  const lastCompileReportSummary = (lastAssemblyDecision?.compileReportSummary as string | null | undefined)
+    ?? (lastAssemblyDecision?.servedArtifact as { compileReportSummary?: string | null } | null | undefined)?.compileReportSummary
+    ?? recentTrace?.routeTrace?.selectionMetadata?.compileReportSummary
+    ?? recentTrace?.routeTrace?.selectionMetadata?.compileReport?.summary
+    ?? null;
+  const lastPrefetchDecision = store.getTrainingStateJson<BrainPrefetchDecision>("last_prefetch_decision_json");
 
   printJson({
     command: "status",
@@ -171,6 +182,7 @@ function commandStatus(): void {
     pendingObservationsByStatus: store.countObservationsByStatus(),
     observationAttribution,
     contextFeedback,
+    contextUsefulness,
     pendingLabels: store.getPendingLabels().length,
     pendingLabelsBySource: store.countPendingLabelsBySource(),
     mutationBacklog: store.countMutationsByStatus(),
@@ -181,8 +193,11 @@ function commandStatus(): void {
     lastReplayGateVerdict: store.getTrainingStateJson("last_replay_gate_verdict_json"),
     promotionStory,
     recentDecisionSummary,
+    recentPrefetchSummary,
     lastTraceSelectionMetadata: recentTrace?.routeTrace?.selectionMetadata ?? null,
+    lastCompileReportSummary,
     lastAssemblyDecision,
+    lastPrefetchDecision,
     seedLearningEnabled: graph.hasSeedWeights(),
     recentTraceCount: store.getRecentTraces(5).length,
     ...health,
@@ -198,6 +213,8 @@ function commandTrace(traceId?: string): void {
     trace,
     chosenSeeds,
     chosenSeed: chosenSeeds.length === 1 ? chosenSeeds[0] : null,
+    compileReportSummary: trace?.routeTrace?.selectionMetadata?.compileReportSummary ?? trace?.routeTrace?.selectionMetadata?.compileReport?.summary ?? null,
+    compileReport: trace?.routeTrace?.selectionMetadata?.compileReport ?? null,
     finalSectionOrder: [
       "correction_cards",
       "route_selected_evidence",
