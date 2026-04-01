@@ -1,8 +1,8 @@
 # OpenClawBrain
 
-A local memory layer for OpenClaw agents that keeps useful context bounded.
+A graph-brain memory layer for OpenClaw agents that keeps useful context bounded.
 
-OpenClawBrain stores conversation history and explicit corrections, retrieves a bounded slice of the context most likely to matter, learns from outcomes in the background, and records why a retrieval won. The live path serves promoted packs so latency stays predictable. If the memory layer is unavailable, the agent keeps running.
+OpenClawBrain organizes memories and tool-call history into a graph, retrieves a small useful slice before the prompt is built, and learns from outcomes in the background. The live path serves promoted packs only, so latency stays predictable and the hot path does not call a live LLM on every traversal hop. Publicly, the story is performance first, cost second, mechanism third: better agent performance is the win, lower cost is plausible, and bounded useful memory plus background learning are the mechanism. If the memory layer is unavailable, the agent keeps running.
 
 Status: actively developed. See [CHANGELOG.md](CHANGELOG.md) for current package versions and release history.
 
@@ -44,7 +44,7 @@ In one pass:
 2. OpenClawBrain normalizes those into event exports and serve-time route traces.
 3. The learner builds a candidate pack with graph blocks, embeddings, structural metadata, and a learned `route_fn`.
 4. Background learning attaches supervision from human feedback, harvested labels, and teacher artifacts, then updates the routing policy.
-5. Only promoted packs serve on the live path. The runtime injects a small useful slice of context, and fails open if nothing safe or useful is available.
+5. Only promoted packs serve on the live path. The runtime injects a small useful slice of context, and the hot path stays bounded instead of calling a live LLM on every traversal hop. It fails open if nothing safe or useful is available.
 
 That is why OpenClawBrain is more than retrieval: it does not just find similar past text. It learns which context helps, keeps that learning off the hot path, and only serves immutable promoted packs.
 
