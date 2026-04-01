@@ -603,6 +603,7 @@ function buildRouteTrace(params: {
       interruptionStage: interruption?.stage ?? null,
       interruptionReason: interruption?.reason ?? null,
       servedPartial: interruption?.servedPartial ?? false,
+      interruptionAccounting: params.traversalResult.interruptionAccounting ?? null,
     },
   };
 

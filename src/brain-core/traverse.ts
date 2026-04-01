@@ -15,6 +15,7 @@
 
 import type {
   BrainInterruptionMetadata,
+  InterruptionAccounting,
   TraversalState,
   TraversalAction,
   TrajectoryExpansion,
@@ -55,6 +56,7 @@ export interface TraverseResult {
   contextChars: number;
   footer: string;
   interruption?: BrainInterruptionMetadata | null;
+  interruptionAccounting?: InterruptionAccounting | null;
 }
 
 function isDeadlineExceeded(deadlineAtMs?: number | null): boolean {
@@ -472,7 +474,37 @@ export function traverse(options: TraverseOptions): TraverseResult {
 
   const contextChars = firedNodes.reduce((sum, node) => sum + node.content.length, 0);
   const selectedSeedIds = seedScores.filter((seed) => seed.selected).map((seed) => seed.nodeId);
-  const footer = [
+
+  // Compute interruption accounting for bounded-anytime serving truth surfaces
+  const budgetUsed = budgetChars - state.budgetRemaining;
+  const budgetUtilization = budgetChars > 0 ? budgetUsed / budgetChars : 0;
+  let interruptionAccounting: InterruptionAccounting | null = null;
+
+  if (interruption) {
+    const droppedProposalReasons: Record<string, number> = {};
+    let droppedProposalCount = 0;
+    for (const expansion of trajectory) {
+      for (const outcome of expansion.proposalOutcomes ?? []) {
+        if (outcome.outcome === "dropped") {
+          droppedProposalCount += 1;
+          droppedProposalReasons[outcome.reason] = (droppedProposalReasons[outcome.reason] ?? 0) + 1;
+        }
+      }
+    }
+
+    interruptionAccounting = {
+      droppedFrontierNodeIds: [...state.frontier],
+      completedExpansionCount: state.expansionCount,
+      maxExpansions: maxHops,
+      budgetUsed,
+      budgetTotal: budgetChars,
+      budgetUtilization,
+      droppedProposalCount,
+      droppedProposalReasons,
+    };
+  }
+
+  const footerParts = [
     "Brain",
     `${seedScores.length} seed candidates`,
     `${selectedSeedIds.length} seed picks`,
@@ -480,7 +512,23 @@ export function traverse(options: TraverseOptions): TraverseResult {
     `${firedNodes.length} fired`,
     `${vetoedNodes.length} veto`,
     `${contextChars} chars`,
-  ].join(" · ");
+  ];
+
+  if (interruption) {
+    footerParts.push("INTERRUPTED");
+    if (interruptionAccounting) {
+      if (interruptionAccounting.droppedFrontierNodeIds.length > 0) {
+        footerParts.push(`${interruptionAccounting.droppedFrontierNodeIds.length} frontier dropped`);
+      }
+      if (interruptionAccounting.droppedProposalCount > 0) {
+        footerParts.push(`${interruptionAccounting.droppedProposalCount} proposals dropped`);
+      }
+      footerParts.push(`${Math.round(budgetUtilization * 100)}% budget used`);
+    }
+    footerParts.push(interruption.servedPartial ? "partial" : "empty");
+  }
+
+  const footer = footerParts.join(" · ");
 
   return {
     firedNodes,
@@ -490,5 +538,6 @@ export function traverse(options: TraverseOptions): TraverseResult {
     contextChars,
     footer,
     interruption,
+    interruptionAccounting,
   };
 }

@@ -719,6 +719,32 @@ export interface BrainInterruptionMetadata {
   servedPartial: boolean;
 }
 
+/**
+ * Accounting summary for bounded-anytime serving interruptions.
+ *
+ * Captures what was completed vs. dropped when a deadline forced
+ * early termination, providing the truth surface needed to evaluate
+ * serving quality under budget pressure.
+ */
+export interface InterruptionAccounting {
+  /** Frontier node IDs that were queued but never expanded due to deadline. */
+  droppedFrontierNodeIds: string[];
+  /** Number of source-node expansions that completed before interruption. */
+  completedExpansionCount: number;
+  /** Maximum expansions allowed (maxHops). */
+  maxExpansions: number;
+  /** Budget chars consumed by fired nodes. */
+  budgetUsed: number;
+  /** Total budget chars available at query start. */
+  budgetTotal: number;
+  /** Fraction of budget consumed: budgetUsed / budgetTotal (0–1). */
+  budgetUtilization: number;
+  /** Number of proposal outcomes with outcome "dropped" across all expansions. */
+  droppedProposalCount: number;
+  /** Breakdown of dropped proposal reasons. */
+  droppedProposalReasons: Record<string, number>;
+}
+
 export type BrainFitStrategy =
   | "structured_node_budget"
   | "legacy_raw_clip";
@@ -798,6 +824,7 @@ export interface DecisionRouteTrace {
     fittedNodeCount?: number | null;
     droppedNodeCount?: number | null;
     fittingDropReasons?: Partial<Record<BrainFittingDropReason, number>> | null;
+    interruptionAccounting?: InterruptionAccounting | null;
   };
 }
 

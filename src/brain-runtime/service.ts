@@ -106,6 +106,7 @@ type BrainAssemblyDecisionSelectionSurface = Pick<
   | "fittedNodeCount"
   | "droppedNodeCount"
   | "fittingDropReasons"
+  | "interruptionAccounting"
 >;
 
 type BrainAssemblyDecisionSnapshot = {
