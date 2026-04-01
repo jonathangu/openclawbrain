@@ -1,0 +1,52 @@
+{
+  "task": "T-20260331-077",
+  "lane": "p1-package-seam",
+  "status": "complete",
+  "completedAt": "2026-03-31T21:00:00Z",
+  "summary": "Mapped canonical package release seam. No code changes needed for current main state.",
+  "findings": {
+    "packageDistOwnership": "source-owned JavaScript, directly maintained and committed",
+    "compilationRequired": "only packages/openclaw/extension/ (TypeScript); all dist/src/ is hand-maintained JS",
+    "portRequired": false,
+    "portReason": "All 4 post-release commits are root engine changes (brain-core, brain-runtime, brain-store, brain-worker). Packages consume brain capabilities through @openclawbrain/* npm dependencies, not direct imports from root src/.",
+    "currentVersions": {
+      "openclaw": "0.4.5",
+      "cli": "0.4.16"
+    },
+    "lastReleaseTag": "split-openclaw-v0.4.5-cli-v0.4.16",
+    "lastReleaseCommit": "41c6f49",
+    "headCommit": "01295d0",
+    "postReleaseCommits": [
+      "01295d0 - InterruptionAccounting for bounded-anytime serving",
+      "e0fa1a4 - Provenance routing and operator improvements",
+      "b800978 - Proof cron health and aggregate surfaces",
+      "0e865a3 - Docs: learner teacher route_fn mental model"
+    ],
+    "pendingChangesets": 0,
+    "blockers": [],
+    "dependencyBoundary": [
+      "@openclawbrain/compiler@0.3.5",
+      "@openclawbrain/contracts@^0.3.5",
+      "@openclawbrain/learner@^0.3.4",
+      "@openclawbrain/pack-format@^0.3.4",
+      "@openclawbrain/provenance@^0.3.4",
+      "@openclawbrain/events@^0.3.4",
+      "@openclawbrain/event-export@^0.3.4",
+      "@openclawbrain/workspace-metadata@^0.3.4"
+    ],
+    "publishOrder": [
+      "@openclawbrain/openclaw",
+      "@openclawbrain/cli"
+    ],
+    "releaseCommands": [
+      "npm run changeset",
+      "npm run release:plan",
+      "npm run release:verify",
+      "GitHub Actions: .github/workflows/publish.yml (manual dispatch)"
+    ]
+  },
+  "artifacts": [
+    "task-artifacts/T-20260331-077/lane-p1-package-seam.md"
+  ],
+  "commitSha": null
+}
