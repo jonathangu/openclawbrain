@@ -10,7 +10,7 @@ import { ensureManagedLearnerServiceForActivationRoot, inspectManagedLearnerServ
 import { exportBrain, importBrain } from "./import-export.js";
 import { buildNormalizedEventExport } from "@openclawbrain/contracts";
 import { buildTeacherSupervisionArtifactsFromNormalizedEventExport, createAlwaysOnLearningRuntimeState, describeAlwaysOnLearningRuntimeState, drainAlwaysOnLearningRuntime, loadOrInitBaseline, materializeAlwaysOnLearningCandidatePack, persistBaseline } from "./local-learner.js";
-import { inspectActivationState, loadPackFromActivation, promoteCandidatePack, readLearningSpineLogEntries, stageCandidatePack } from "@openclawbrain/pack-format";
+import { inspectActivationState, loadPackFromActivation, promoteCandidatePack, resolveLearningSpineLogPath, stageCandidatePack } from "@openclawbrain/pack-format";
 import { resolveActivationRoot } from "./resolve-activation-root.js";
 import { describeOpenClawHomeInspection, discoverOpenClawHomes, formatOpenClawHomeLayout, formatOpenClawHomeProfileSource, inspectOpenClawHome } from "./openclaw-home-layout.js";
 import { inspectOpenClawBrainHookStatus, inspectOpenClawBrainPluginAllowlist } from "./openclaw-hook-truth.js";
@@ -37,6 +37,68 @@ const INSTALL_COMPATIBLE_LOCAL_TEACHER_MODEL_PREFIXES = [
     "qwen3:8b",
     "qwen2.5:7b"
 ];
+const DEFAULT_BOUNDED_JSONL_TAIL_BYTES = 4 * 1024 * 1024;
+const DEFAULT_BOUNDED_JSONL_MAX_ENTRIES = 512;
+const DEFAULT_BOUNDED_JSONL_MAX_LINE_BYTES = 128 * 1024;
+function readBoundedJsonlTail(filePath, options = {}) {
+    const tailBytes = options.tailBytes ?? DEFAULT_BOUNDED_JSONL_TAIL_BYTES;
+    const maxEntries = options.maxEntries ?? DEFAULT_BOUNDED_JSONL_MAX_ENTRIES;
+    const maxLineBytes = options.maxLineBytes ?? DEFAULT_BOUNDED_JSONL_MAX_LINE_BYTES;
+    if (!existsSync(filePath)) {
+        return { entries: [], fallbackReason: null };
+    }
+    let fallbackReason = null;
+    let raw;
+    try {
+        const fileSize = statSync(filePath).size;
+        if (fileSize <= tailBytes) {
+            raw = readFileSync(filePath, "utf8");
+        }
+        else {
+            fallbackReason = "tail_truncated";
+            const offset = fileSize - tailBytes;
+            const buffer = Buffer.alloc(tailBytes);
+            const fileDescriptor = openSync(filePath, "r");
+            try {
+                readSync(fileDescriptor, buffer, 0, tailBytes, offset);
+            }
+            finally {
+                closeSync(fileDescriptor);
+            }
+            raw = buffer.toString("utf8");
+            const firstNewline = raw.indexOf("\n");
+            if (firstNewline >= 0) {
+                raw = raw.slice(firstNewline + 1);
+            }
+        }
+    }
+    catch {
+        return { entries: [], fallbackReason: "read_error" };
+    }
+    const lines = raw.split(/\r?\n/u).map((line) => line.trim()).filter((line) => line.length > 0);
+    const entries = [];
+    let skippedOversized = 0;
+    for (const line of lines) {
+        if (Buffer.byteLength(line, "utf8") > maxLineBytes) {
+            skippedOversized++;
+            continue;
+        }
+        try {
+            entries.push(JSON.parse(line));
+        }
+        catch {
+            // skip malformed lines
+        }
+    }
+    if (skippedOversized > 0) {
+        fallbackReason = fallbackReason === null ? "oversized_lines_skipped" : `${fallbackReason}+oversized_lines_skipped`;
+    }
+    const trimmedEntries = entries.length > maxEntries ? entries.slice(-maxEntries) : entries;
+    if (entries.length > maxEntries) {
+        fallbackReason = fallbackReason === null ? "entry_count_capped" : `${fallbackReason}+entry_count_capped`;
+    }
+    return { entries: trimmedEntries, fallbackReason };
+}
 function quoteShellArg(value) {
     return `'${value.replace(/'/g, `"'"'`)}'`;
 }
@@ -1171,6 +1233,7 @@ function summarizeStatusEmbedder(embeddings) {
 }
 function summarizeStatusRouteFn(status, report) {
     const freshness = report.servePath.refreshStatus ?? status.brain.routeFreshness;
+    const fallbackReason = report.routeFn.fallbackReason ?? null;
     if (!report.routeFn.available) {
         return {
             available: false,
@@ -1178,6 +1241,7 @@ function summarizeStatusRouteFn(status, report) {
             trainedAt: report.routeFn.trainedAt,
             updatedAt: report.routeFn.updatedAt,
             usedAt: report.routeFn.usedAt,
+            fallbackReason,
             detail: report.routeFn.detail
         };
     }
@@ -1191,12 +1255,16 @@ function summarizeStatusRouteFn(status, report) {
     else if (report.routeFn.updatedAt !== null) {
         detail = `active route_fn was last updated at ${report.routeFn.updatedAt}, but no learned serve use is visible yet for the current pack`;
     }
+    if (fallbackReason !== null && !detail.includes(fallbackReason)) {
+        detail = `${detail}; bounded_log_read=${fallbackReason}`;
+    }
     return {
         available: true,
         freshness,
         trainedAt: report.routeFn.trainedAt,
         updatedAt: report.routeFn.updatedAt,
         usedAt: report.routeFn.usedAt,
+        fallbackReason,
         detail
     };
 }
@@ -4453,14 +4521,8 @@ function runUninstallCommand(parsed) {
     return 0;
 }
 function resolveServeTimeLearningRuntimeInput(activationRoot) {
-    let serveTimeDecisions = [];
-    let fallbackReason = null;
-    try {
-        serveTimeDecisions = readLearningSpineLogEntries(activationRoot, "serveTimeRouteDecisions");
-    }
-    catch {
-        fallbackReason = "serve_time_decision_log_read_failed";
-    }
+    const logPath = resolveLearningSpineLogPath(activationRoot, "serveTimeRouteDecisions");
+    const { entries: serveTimeDecisions, fallbackReason } = readBoundedJsonlTail(logPath);
     const decisionLogCount = serveTimeDecisions.length;
     const pgVersion = decisionLogCount > 0 ? "v2" : "v1";
     return {
@@ -4468,7 +4530,7 @@ function resolveServeTimeLearningRuntimeInput(activationRoot) {
         serveTimeDecisions,
         decisionLogCount,
         baselineState: pgVersion === "v2" ? loadOrInitBaseline(activationRoot) : undefined,
-        fallbackReason
+        fallbackReason: fallbackReason === null ? null : `serve_time_decision_log_${fallbackReason}`
     };
 }
 function resolveActivationInspectionPackId(inspection, slot) {

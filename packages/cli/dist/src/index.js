@@ -7,9 +7,10 @@ import { compileRuntimeFromActivation } from "@openclawbrain/compiler";
 import { CONTRACT_IDS, buildEventSemanticSurface, buildNormalizedEventExport, canonicalJson, checksumJsonPayload, createFeedbackEvent, createInteractionEvent, sortNormalizedEvents, validateKernelSurface, validateNormalizedEventExport } from "@openclawbrain/contracts";
 import { classifyFeedbackSignalContent, describeNormalizedEventExportObservability } from "@openclawbrain/event-export";
 import { DEFAULT_TEACHER_SUPERVISION_STALE_AFTER_MS, advanceAlwaysOnLearningRuntime, buildTeacherSupervisionArtifactsFromNormalizedEventExport, createAlwaysOnLearningRuntimeState, describeAlwaysOnLearningRuntimeState, materializeAlwaysOnLearningCandidatePack, materializeCandidatePackFromNormalizedEventExport } from "./local-learner.js";
-import { LEARNING_SPINE_LOG_LAYOUT, activatePack, describeActivationObservability, describeActivationTarget, describePackCompileTarget, inspectActivationState, loadPackFromActivation, promoteCandidatePack, readLearningSpineLogEntries, rollbackActivePack, stageCandidatePack } from "@openclawbrain/pack-format";
+import { LEARNING_SPINE_LOG_LAYOUT, activatePack, describeActivationObservability, describeActivationTarget, describePackCompileTarget, inspectActivationState, loadPackFromActivation, promoteCandidatePack, resolveLearningSpineLogPath, rollbackActivePack, stageCandidatePack } from "@openclawbrain/pack-format";
 import { inspectOpenClawBrainHookStatus, summarizeOpenClawBrainHookLoad } from "./openclaw-hook-truth.js";
 import { appendLearningUpdateLogs, appendServeTimeRouteDecisionLog } from "./learning-spine.js";
+import { readBoundedJsonlTail } from "./bounded-jsonl-reader.js";
 import { buildFeedbackSemanticMetadata, buildInteractionSemanticMetadata } from "./semantic-metadata.js";
 export { clearOpenClawProfileRuntimeLoadProof, listOpenClawProfileRuntimeLoadProofs, recordOpenClawProfileRuntimeLoadProof, resolveAttachmentRuntimeLoadProofsPath } from "./attachment-truth.js";
 import { createTeacherLabeler, summarizeTeacherLabelerOpportunity } from "./teacher-labeler.js";
@@ -6930,6 +6931,10 @@ function summarizeTeacherLoop(input) {
             : "raw async teacher snapshot loaded"
     };
 }
+function readBoundedLearningSpineLogEntries(activationRoot, stream) {
+    const logPath = resolveLearningSpineLogPath(activationRoot, stream);
+    return readBoundedJsonlTail(logPath).entries;
+}
 function matchesActiveRouteFnLog(input) {
     if (input.activePackId !== null && input.entryPackId === input.activePackId) {
         return true;
@@ -6970,8 +6975,8 @@ function summarizeRouteFnFreshness(input) {
                 : `active pack ${input.activePackId} does not require a learned route_fn`
         };
     }
-    const updates = readLearningSpineLogEntries(input.activationRoot, "pgRouteUpdates");
-    const decisions = readLearningSpineLogEntries(input.activationRoot, "serveTimeRouteDecisions");
+    const updates = readBoundedLearningSpineLogEntries(input.activationRoot, "pgRouteUpdates");
+    const decisions = readBoundedLearningSpineLogEntries(input.activationRoot, "serveTimeRouteDecisions");
     const updated = [...updates].reverse().find((entry) => matchesActiveRouteFnLog({
         activePackId: input.activePackId,
         routerChecksum: input.learnedRouting.routerChecksum,
@@ -7458,7 +7463,7 @@ function summarizeCurrentProfileLogRoot(activationRoot) {
     return existsSync(logRoot) ? logRoot : null;
 }
 function summarizeCurrentProfileLastLearningUpdateAt(activationRoot, learning, teacherLoop) {
-    const updates = readLearningSpineLogEntries(activationRoot, "pgRouteUpdates");
+    const updates = readBoundedLearningSpineLogEntries(activationRoot, "pgRouteUpdates");
     return updates.at(-1)?.recordedAt ?? teacherLoop.lastRunAt ?? learning.lastMaterializedAt ?? null;
 }
 function didCurrentProfileFirstExportOccur(report) {
