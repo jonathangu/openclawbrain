@@ -161,7 +161,7 @@ function makeTrace(params: {
         sourceUris: injectedNodeSummaries.flatMap((summary) => summary.sourceUri ? [summary.sourceUri] : []),
       },
       selectionMetadata: {
-        traceSliceVersion: 3,
+        traceSliceVersion: 4,
         queryChars: queryText.length,
         budgetChars: 4000,
         maxHops: 8,
@@ -244,7 +244,7 @@ function makeObservation(params: {
         sourceUris: ["PLAYBOOK.md"],
       },
       selectionMetadata: {
-        traceSliceVersion: 3,
+        traceSliceVersion: 4,
         queryChars: queryText.length,
         budgetChars: 4000,
         maxHops: 8,
@@ -550,6 +550,81 @@ describe("BrainWorker observation reward cutover", () => {
         phase2Score: -0.85,
         agentUsage: -0.4,
       }),
+    });
+  });
+
+  it("scores shadow usefulness off-path without teacher involvement", async () => {
+    const { store, worker } = setup({
+      config: { teacherEnabled: false },
+    });
+
+    store.insertEpisode(makeEpisode({
+      id: "ep_shadow_usefulness",
+      conversationId: 11,
+      queryText: "how do I run the test suite?",
+      trajectory: [makeStep("node_1", 0.6)],
+      firedNodes: ["node_1"],
+    }));
+    store.insertTrace(makeTrace({
+      id: "bt_shadow_usefulness",
+      episodeId: "ep_shadow_usefulness",
+      conversationId: 11,
+      queryText: "how do I run the test suite?",
+      selectedNodeId: "node_1",
+    }));
+    const observation = store.insertObservation(makeObservation({
+      id: "shadow",
+      episodeId: "ep_shadow_usefulness",
+      conversationId: 11,
+      traceId: "bt_shadow_usefulness",
+      queryText: "how do I run the test suite?",
+      assistantResponse: "Run `pnpm test` from the repo root.",
+      toolResults: [
+        {
+          sourceRole: "tool",
+          toolCallId: "call_shadow",
+          toolName: "bash",
+          input: "pnpm test",
+          output: '{"ok":true,"exitCode":0}',
+          isError: false,
+          excerpt: '{"ok":true,"exitCode":0}',
+        },
+      ],
+      followUpText: "Thanks, that worked.",
+      createdAt: Date.now() - 30_000,
+      updatedAt: Date.now() - 30_000,
+    }));
+
+    await worker.tick();
+
+    expect(store.getContextUsefulnessForObservation(observation.id)).toMatchObject({
+      observationId: observation.id,
+      episodeId: "ep_shadow_usefulness",
+      verdict: "helpful",
+      finalScore: expect.any(Number),
+      confidence: expect.any(Number),
+    });
+    expect(store.getContextUsefulnessSummary()).toMatchObject({
+      verdictCounts: {
+        helpful: 1,
+        irrelevant: 0,
+        harmful: 0,
+      },
+      coverage: {
+        observationCount: 1,
+        readyObservationCount: 1,
+        scoredObservationCount: 1,
+        completedObservationCount: 0,
+      },
+      latest: {
+        observationId: observation.id,
+        episodeId: "ep_shadow_usefulness",
+        verdict: "helpful",
+      },
+    });
+    expect(store.getEpisode("ep_shadow_usefulness")).toMatchObject({
+      reward: null,
+      rewardSource: null,
     });
   });
 

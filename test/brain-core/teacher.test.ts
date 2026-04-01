@@ -52,7 +52,7 @@ function makeObservation(overrides: Partial<BrainObservation> = {}): BrainObserv
         sourceRefs: ["prov_playbook"],
       },
       selectionMetadata: {
-        traceSliceVersion: 3,
+        traceSliceVersion: 4,
         queryChars: 29,
         budgetChars: 4000,
         maxHops: 8,
@@ -122,7 +122,7 @@ describe("teacher observation plumbing", () => {
         selectionDigest: "selection-digest-1",
         selectedNodeIds: ["node_pr"],
         selectionMetadata: {
-          traceSliceVersion: 3,
+          traceSliceVersion: 4,
           chosenStopCount: 0,
           forcedStopCount: 1,
           droppedProposalCount: 1,

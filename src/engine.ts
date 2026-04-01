@@ -1695,6 +1695,7 @@ export class LcmContextEngine implements ContextEngine {
         compileDeadlineHit: hybrid.brainDecision?.compileDeadlineHit ?? null,
         brainDropReason: hybrid.brainDecision?.brainDropReason ?? null,
         brainDropStage: hybrid.brainDecision?.brainDropStage ?? null,
+        compileReportSummary: hybrid.brainDecision?.compileReportSummary ?? null,
         traceId: hybrid.brainDecision?.traceId ?? null,
         episodeId: hybrid.brainDecision?.episodeId ?? null,
         tokenBudget,
