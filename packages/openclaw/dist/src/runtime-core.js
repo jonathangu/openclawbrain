@@ -134,6 +134,92 @@ function normalizeRuntimeHints(value) {
   return value.map((item) => item.trim());
 }
 
+function isPlainObject(value) {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return false;
+  }
+
+  const prototype = Object.getPrototypeOf(value);
+  return prototype === Object.prototype || prototype === null;
+}
+
+function normalizeOptionalBoolean(value) {
+  return typeof value === "boolean" ? value : undefined;
+}
+
+function normalizeOptionalFiniteNumber(value) {
+  return typeof value === "number" && Number.isFinite(value) ? value : undefined;
+}
+
+function buildPromptTruthSummaryLines(compileResponse) {
+  const lines = [];
+  const structuralSignals = isPlainObject(compileResponse.structuralSignals)
+    ? compileResponse.structuralSignals
+    : null;
+  const footer = normalizeOptionalString(compileResponse.footer);
+
+  if (structuralSignals !== null) {
+    const chosenStopCount = normalizeOptionalFiniteNumber(structuralSignals.chosenStopCount);
+    const forcedStopCount = normalizeOptionalFiniteNumber(structuralSignals.forcedStopCount);
+    const droppedProposalCount = normalizeOptionalFiniteNumber(structuralSignals.droppedProposalCount);
+
+    if (
+      chosenStopCount !== undefined ||
+      forcedStopCount !== undefined ||
+      droppedProposalCount !== undefined
+    ) {
+      lines.push(
+        `STOP_TRUTH: chosen=${chosenStopCount ?? 0} forced=${forcedStopCount ?? 0} dropped=${droppedProposalCount ?? 0}`,
+      );
+    }
+
+    const queryInterrupted = normalizeOptionalBoolean(structuralSignals.queryInterrupted);
+    const interruptionStage = normalizeOptionalString(structuralSignals.interruptionStage);
+    const interruptionReason = normalizeOptionalString(structuralSignals.interruptionReason);
+    const servedPartial = normalizeOptionalBoolean(structuralSignals.servedPartial);
+
+    if (
+      queryInterrupted !== undefined ||
+      interruptionStage !== undefined ||
+      interruptionReason !== undefined ||
+      servedPartial !== undefined
+    ) {
+      lines.push(
+        `INTERRUPTION: interrupted=${queryInterrupted === true ? "true" : "false"} stage=${interruptionStage ?? "unknown"} reason=${interruptionReason ?? "unknown"} servedPartial=${servedPartial === true ? "true" : "false"}`,
+      );
+    }
+
+    const interruptionAccounting = isPlainObject(structuralSignals.interruptionAccounting)
+      ? structuralSignals.interruptionAccounting
+      : null;
+    if (interruptionAccounting !== null) {
+      const droppedFrontierCount = Array.isArray(interruptionAccounting.droppedFrontierNodeIds)
+        ? interruptionAccounting.droppedFrontierNodeIds.filter((value) => typeof value === "string").length
+        : 0;
+      const completedExpansionCount = normalizeOptionalFiniteNumber(
+        interruptionAccounting.completedExpansionCount,
+      );
+      const maxExpansions = normalizeOptionalFiniteNumber(interruptionAccounting.maxExpansions);
+      const budgetUsed = normalizeOptionalFiniteNumber(interruptionAccounting.budgetUsed);
+      const budgetTotal = normalizeOptionalFiniteNumber(interruptionAccounting.budgetTotal);
+      const budgetUtilization = normalizeOptionalFiniteNumber(interruptionAccounting.budgetUtilization);
+      const droppedProposalTotal = normalizeOptionalFiniteNumber(
+        interruptionAccounting.droppedProposalCount,
+      );
+
+      lines.push(
+        `INTERRUPTION_ACCOUNTING: frontierDropped=${droppedFrontierCount} completedExpansions=${completedExpansionCount ?? 0}/${maxExpansions ?? 0} proposalsDropped=${droppedProposalTotal ?? 0} budgetUsed=${budgetUsed ?? 0}/${budgetTotal ?? 0} utilization=${budgetUtilization === undefined ? "unknown" : `${Math.round(budgetUtilization * 100)}%`}`,
+      );
+    }
+  }
+
+  if (footer !== undefined) {
+    lines.push(`TRACE: ${footer}`);
+  }
+
+  return lines;
+}
+
 function formatPromptContext(compileResponse) {
   const lines = [
     "[BRAIN_CONTEXT v1]",
@@ -143,6 +229,11 @@ function formatPromptContext(compileResponse) {
 
   if (compileResponse.diagnostics.routerIdentity !== null) {
     lines.push(`ROUTER: ${compileResponse.diagnostics.routerIdentity}`);
+  }
+
+  const truthSummaryLines = buildPromptTruthSummaryLines(compileResponse);
+  if (truthSummaryLines.length > 0) {
+    lines.push(...truthSummaryLines);
   }
 
   if (compileResponse.selectedContext.length > 0) {

@@ -66,6 +66,8 @@ test("serve-time operator audit code records explicit maxContextChars", () => {
   const learningSpineSource = readFileSync(path.join(__dirname, "..", "src", "learning-spine.js"), "utf8");
 
   assert.match(runtimeCoreSource, /syntheticTurn\.maxContextChars = input\.compileInput\.maxContextChars;/);
+  assert.match(runtimeCoreSource, /STOP_TRUTH: chosen=\$\{chosenStopCount \?\? 0\} forced=\$\{forcedStopCount \?\? 0\} dropped=\$\{droppedProposalCount \?\? 0\}/);
+  assert.match(runtimeCoreSource, /INTERRUPTION_ACCOUNTING: frontierDropped=\$\{droppedFrontierCount\}/);
   assert.match(learningSpineSource, /maxContextChars: input\.turn\.maxContextChars \?\? null/);
   assert.match(learningSpineSource, /activePackGraphChecksum: activePack\?\.manifest\.payloadChecksums\.graph \?\? null/);
   assert.match(learningSpineSource, /selectionDigest: input\.compileResult\.ok \? input\.compileResult\.compileResponse\.diagnostics\.selectionDigest : null/);
@@ -73,6 +75,8 @@ test("serve-time operator audit code records explicit maxContextChars", () => {
     learningSpineSource,
     /structuralSignals: compactStructuralSignals\(input\.compileResult\.ok \? input\.compileResult\.compileResponse\.structuralSignals : null\)/,
   );
+  assert.match(learningSpineSource, /queryInterrupted: interruptionTruth\.queryInterrupted/);
+  assert.match(learningSpineSource, /interruptionAccounting: interruptionTruth\.interruptionAccounting/);
   assert.doesNotMatch(learningSpineSource, /structuralSignals:\s*null/);
 });
 

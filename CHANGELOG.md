@@ -4,6 +4,26 @@ Release history for the published OpenClawBrain packages. The README and operato
 
 ## Unreleased
 
+## 0.4.17 / 0.4.6
+
+`0.4.17 / 0.4.6` publishes the bounded-anytime interruption-truth follow-up through the canonical split-package lane, so the packaged runtime and packaged CLI now surface interruption state and accounting instead of leaving that truth stranded in the repo-root runtime path.
+
+**Packages**
+
+- `@openclawbrain/openclaw@0.4.6`
+- `@openclawbrain/cli@0.4.17`
+
+**Changes**
+
+- the packaged `@openclawbrain/openclaw` runtime now forwards interruption summaries into runtime context and serve-time decision records
+- the packaged `@openclawbrain/cli` traced-learning bridge now surfaces a compact last-interruption summary derived from `last_assembly_decision_json`
+- persisted package status surfaces no longer hide newer bounded-serving truth
+- split-package verification stays green after package-local dependency hydration and tarball checks
+
+**Full release note**
+
+- [docs/release-notes-0.4.17.md](docs/release-notes-0.4.17.md)
+
 ## 0.4.16 / 0.4.5
 
 `0.4.16 / 0.4.5` publishes the harvested post-0.4.15 fixes: the public CLI proof/reinstall surfaces now classify fresh-state runtime truth correctly, learned-route replay no longer duplicates non-seed carry-forward evidence into the held-out eval turn, teacher no-op status separates benign idle cycles from likely missed teachable material, and the split release contract is enforced from one canonical plan helper.

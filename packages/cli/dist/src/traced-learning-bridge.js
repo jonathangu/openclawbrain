@@ -15,8 +15,65 @@ function normalizeCount(value) {
 function normalizeOptionalString(value) {
     return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
+function normalizeUnitInterval(value) {
+    return Number.isFinite(value) ? Math.max(0, Math.min(1, Number(value))) : 0;
+}
 function normalizeSource(value) {
     return value !== null && typeof value === "object" && !Array.isArray(value) ? value : null;
+}
+function normalizeLastInterruptionSummary(value) {
+    if (value === null || typeof value !== "object" || Array.isArray(value)) {
+        return null;
+    }
+    const normalized = {
+        reason: normalizeOptionalString(value.reason),
+        stage: normalizeOptionalString(value.stage),
+        servedPartial: value.servedPartial === true,
+        droppedFrontierCount: normalizeCount(value.droppedFrontierCount),
+        droppedProposalCount: normalizeCount(value.droppedProposalCount),
+        budgetUtilization: normalizeUnitInterval(value.budgetUtilization)
+    };
+    return normalized.reason !== null ||
+        normalized.stage !== null ||
+        normalized.servedPartial ||
+        normalized.droppedFrontierCount > 0 ||
+        normalized.droppedProposalCount > 0 ||
+        normalized.budgetUtilization > 0
+        ? normalized
+        : null;
+}
+function formatLastInterruptionDetail(value) {
+    const summary = normalizeLastInterruptionSummary(value);
+    if (summary === null) {
+        return null;
+    }
+    return [
+        `interrupt=${summary.reason ?? summary.stage ?? "unknown"}`,
+        `partial=${summary.servedPartial ? "yes" : "no"}`,
+        `frontier=${summary.droppedFrontierCount}`,
+        `proposals=${summary.droppedProposalCount}`,
+        `budget=${Math.round(summary.budgetUtilization * 100)}%`
+    ].join(" ");
+}
+function buildLastInterruptionSummaryFromAssemblyDecision(value) {
+    if (value === null || typeof value !== "object" || Array.isArray(value)) {
+        return null;
+    }
+    const accounting = value.interruptionAccounting !== null &&
+        typeof value.interruptionAccounting === "object" &&
+        !Array.isArray(value.interruptionAccounting)
+        ? value.interruptionAccounting
+        : null;
+    return normalizeLastInterruptionSummary({
+        reason: normalizeOptionalString(value.brainDropReason) ?? normalizeOptionalString(value.interruptionReason),
+        stage: normalizeOptionalString(value.interruptionStage),
+        servedPartial: value.servedPartial === true,
+        droppedFrontierCount: Array.isArray(accounting?.droppedFrontierNodeIds)
+            ? accounting.droppedFrontierNodeIds.filter((entry) => typeof entry === "string" && entry.trim().length > 0).length
+            : normalizeCount(accounting?.droppedFrontierCount),
+        droppedProposalCount: normalizeCount(accounting?.droppedProposalCount),
+        budgetUtilization: accounting?.budgetUtilization
+    });
 }
 function summarizeBridgeSource(value) {
     const source = normalizeSource(value);
@@ -53,6 +110,7 @@ function normalizeBridgePayload(payload) {
         materializedPackId: normalizeOptionalString(payload.materializedPackId),
         promoted: payload.promoted === true,
         baselinePersisted: payload.baselinePersisted === true,
+        lastInterruptionSummary: normalizeLastInterruptionSummary(payload.lastInterruptionSummary),
         source: normalizeSource(payload.source)
     };
 }
@@ -79,6 +137,7 @@ function normalizePersistedStatusSurface(payload) {
         materializedPackId: normalizeOptionalString(payload.materializedPackId),
         promoted: payload.promoted === true,
         baselinePersisted: payload.baselinePersisted === true,
+        lastInterruptionSummary: normalizeLastInterruptionSummary(payload.lastInterruptionSummary),
         source
     };
 }
@@ -97,6 +156,7 @@ function defaultSurface(pathname, detail, error = null) {
         materializedPackId: null,
         promoted: false,
         baselinePersisted: false,
+        lastInterruptionSummary: null,
         source: null,
         detail,
         error
@@ -145,6 +205,10 @@ function loadTrainingStateJson(db, key) {
         };
     }
 }
+function loadLastAssemblyInterruptionSummary(db) {
+    const loaded = loadTrainingStateJson(db, "last_assembly_decision_json");
+    return loaded.value === null ? null : buildLastInterruptionSummaryFromAssemblyDecision(loaded.value);
+}
 function writeTrainingStateJson(db, key, value) {
     db.prepare(`INSERT OR REPLACE INTO brain_training_state (key, value) VALUES (?, ?)`).run(key, JSON.stringify(value));
 }
@@ -187,6 +251,7 @@ export function buildTracedLearningBridgePayloadFromRuntime(input) {
         materializedPackId: input?.materializedPackId ?? lastMaterialization?.candidate?.summary?.packId ?? null,
         promoted: input?.promoted === true,
         baselinePersisted: input?.baselinePersisted === true,
+        lastInterruptionSummary: input?.lastInterruptionSummary ?? null,
         source: input?.source
     });
 }
@@ -212,6 +277,7 @@ function buildPersistedStatusSurfaceBridge(summary, context) {
         materializedPackId: summary.materializedPackId,
         promoted: summary.promoted,
         baselinePersisted: summary.baselinePersisted,
+        lastInterruptionSummary: summary.lastInterruptionSummary,
         source: {
             command: "brain-store",
             bridge: TRACED_LEARNING_STATUS_SURFACE_BRIDGE,
@@ -246,7 +312,7 @@ function loadPersistedStatusSurface(db, context) {
         };
     }
 }
-function buildDerivedBrainStoreBridge(db, context) {
+function buildDerivedBrainStoreBridge(db, context, lastInterruptionSummary = null) {
     const routeTraceCount = countRows(db, "brain_traces");
     const supervisionCount = countRows(db, "brain_trace_supervision");
     const candidateUpdateRaw = loadTrainingStateValue(db, "last_pg_candidate_update_json");
@@ -269,6 +335,7 @@ function buildDerivedBrainStoreBridge(db, context) {
         materializedPackId: null,
         promoted: false,
         baselinePersisted: false,
+        lastInterruptionSummary,
         source: {
             command: "brain-store",
             bridge: "brain_store_state",
@@ -288,6 +355,7 @@ function hasMeaningfulTracedLearningSignal(bridge) {
         bridge.materializedPackId !== null ||
         bridge.promoted ||
         bridge.baselinePersisted ||
+        bridge.lastInterruptionSummary !== null ||
         bridge.pgVersionRequested !== null ||
         bridge.pgVersionUsed !== null ||
         bridge.fallbackReason !== null ||
@@ -410,21 +478,28 @@ export function loadBrainStoreTracedLearningBridge(options = {}) {
     let db;
     try {
         db = new sqlite.DatabaseSync(dbPath, { readOnly: true });
+        const lastInterruptionSummary = loadLastAssemblyInterruptionSummary(db);
         const persisted = loadPersistedStatusSurface(db, {
             brainRoot,
             dbPath
         });
         if (persisted.bridge !== null) {
+            const bridge = lastInterruptionSummary === null
+                ? persisted.bridge
+                : normalizeBridgePayload({
+                    ...persisted.bridge,
+                    lastInterruptionSummary
+                });
             return {
                 path: dbPath,
-                bridge: persisted.bridge,
+                bridge,
                 error: null
             };
         }
         const bridge = buildDerivedBrainStoreBridge(db, {
             brainRoot,
             dbPath
-        });
+        }, lastInterruptionSummary);
         if (!hasMeaningfulTracedLearningSignal(bridge)) {
             return {
                 path: dbPath,
@@ -471,6 +546,10 @@ function buildStatusSurface(pathname, bridge, options = {}) {
     if (bridge.routerNoOpReason !== null) {
         detailParts.push(`noOp=${bridge.routerNoOpReason}`);
     }
+    const interruptionDetail = formatLastInterruptionDetail(bridge.lastInterruptionSummary);
+    if (interruptionDetail !== null) {
+        detailParts.push(interruptionDetail);
+    }
     return {
         path: pathname,
         present: true,
@@ -485,6 +564,7 @@ function buildStatusSurface(pathname, bridge, options = {}) {
         materializedPackId: bridge.materializedPackId,
         promoted: bridge.promoted,
         baselinePersisted: bridge.baselinePersisted,
+        lastInterruptionSummary: bridge.lastInterruptionSummary,
         source: bridge.source,
         detail: detailParts.join(" "),
         error: options.error ?? null
@@ -507,6 +587,7 @@ function buildRuntimeMaterializationMetadata(loaded) {
         materializedPackId: loaded.bridge.materializedPackId,
         promoted: loaded.bridge.promoted,
         baselinePersisted: loaded.bridge.baselinePersisted,
+        lastInterruptionSummary: loaded.bridge.lastInterruptionSummary,
         fallbackReason: loaded.bridge.fallbackReason,
         routerNoOpReason: loaded.bridge.routerNoOpReason,
         source: loaded.bridge.source
@@ -529,6 +610,7 @@ function mergeCanonicalStatusBridge(canonicalBridge, runtimeLoaded) {
             materializedPackId: canonicalBridge.materializedPackId,
             promoted: canonicalBridge.promoted,
             baselinePersisted: canonicalBridge.baselinePersisted,
+            lastInterruptionSummary: canonicalBridge.lastInterruptionSummary ?? runtimeBridge?.lastInterruptionSummary ?? null,
             fallbackReason: canonicalBridge.fallbackReason,
             routerNoOpReason: canonicalBridge.routerNoOpReason,
             source: runtimeMaterialized === null
@@ -551,6 +633,7 @@ function mergeCanonicalStatusBridge(canonicalBridge, runtimeLoaded) {
         materializedPackId: runtimeBridge?.materializedPackId ?? canonicalBridge.materializedPackId ?? null,
         promoted: runtimeBridge?.promoted ?? canonicalBridge.promoted,
         baselinePersisted: runtimeBridge?.baselinePersisted ?? canonicalBridge.baselinePersisted,
+        lastInterruptionSummary: canonicalBridge.lastInterruptionSummary ?? runtimeBridge?.lastInterruptionSummary ?? null,
         fallbackReason: runtimeBridge?.fallbackReason ?? canonicalBridge.fallbackReason ?? null,
         routerNoOpReason: runtimeBridge?.routerNoOpReason ?? canonicalBridge.routerNoOpReason ?? null,
         source: runtimeMaterialized === null
@@ -571,10 +654,12 @@ export function mergeTracedLearningBridgePayload(payload, persisted) {
     const supervisionCount = Math.max(current.supervisionCount, persistedBridge.supervisionCount);
     const routerUpdateCount = Math.max(current.routerUpdateCount, persistedBridge.routerUpdateCount);
     const teacherArtifactCount = Math.max(current.teacherArtifactCount, persistedBridge.teacherArtifactCount);
+    const lastInterruptionSummary = current.lastInterruptionSummary ?? persistedBridge.lastInterruptionSummary ?? null;
     const usedBridge = routeTraceCount !== current.routeTraceCount ||
         supervisionCount !== current.supervisionCount ||
         routerUpdateCount !== current.routerUpdateCount ||
-        teacherArtifactCount !== current.teacherArtifactCount;
+        teacherArtifactCount !== current.teacherArtifactCount ||
+        lastInterruptionSummary !== current.lastInterruptionSummary;
     if (!usedBridge) {
         return current;
     }
@@ -584,6 +669,7 @@ export function mergeTracedLearningBridgePayload(payload, persisted) {
         supervisionCount,
         routerUpdateCount,
         teacherArtifactCount,
+        lastInterruptionSummary,
         routerNoOpReason: supervisionCount > 0 || routerUpdateCount > 0 ? null : current.routerNoOpReason,
         source: {
             ...(current.source ?? {}),

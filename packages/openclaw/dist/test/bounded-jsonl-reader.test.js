@@ -120,6 +120,42 @@ test("persisted candidateScores are compact but keep actionScore", () => {
             droppedProposalCount: 1,
             droppedProposalReasons: {
                 missing_target_node: 1
+            },
+            queryInterrupted: true,
+            interruptionStage: "query",
+            interruptionReason: "soft_compile_deadline",
+            servedPartial: true,
+            interruptionAccounting: {
+                droppedFrontierNodeIds: [
+                    "ctx-faq"
+                ],
+                completedExpansionCount: 1,
+                maxExpansions: 4,
+                budgetUsed: 240,
+                budgetTotal: 400,
+                budgetUtilization: 0.6,
+                droppedProposalCount: 1,
+                droppedProposalReasons: {
+                    interrupt: 1
+                }
+            }
+        },
+        queryInterrupted: true,
+        interruptionStage: "query",
+        interruptionReason: "soft_compile_deadline",
+        servedPartial: true,
+        interruptionAccounting: {
+            droppedFrontierNodeIds: [
+                "ctx-faq"
+            ],
+            completedExpansionCount: 1,
+            maxExpansions: 4,
+            budgetUsed: 240,
+            budgetTotal: 400,
+            budgetUtilization: 0.6,
+            droppedProposalCount: 1,
+            droppedProposalReasons: {
+                interrupt: 1
             }
         }
     };
@@ -144,6 +180,42 @@ test("persisted candidateScores are compact but keep actionScore", () => {
             droppedProposalCount: 1,
             droppedProposalReasons: {
                 missing_target_node: 1
+            },
+            queryInterrupted: true,
+            interruptionStage: "query",
+            interruptionReason: "soft_compile_deadline",
+            servedPartial: true,
+            interruptionAccounting: {
+                droppedFrontierNodeIds: [
+                    "ctx-faq"
+                ],
+                completedExpansionCount: 1,
+                maxExpansions: 4,
+                budgetUsed: 240,
+                budgetTotal: 400,
+                budgetUtilization: 0.6,
+                droppedProposalCount: 1,
+                droppedProposalReasons: {
+                    interrupt: 1
+                }
+            }
+        });
+        assert.equal(entries[0].queryInterrupted, true);
+        assert.equal(entries[0].interruptionStage, "query");
+        assert.equal(entries[0].interruptionReason, "soft_compile_deadline");
+        assert.equal(entries[0].servedPartial, true);
+        assert.deepEqual(entries[0].interruptionAccounting, {
+            droppedFrontierNodeIds: [
+                "ctx-faq"
+            ],
+            completedExpansionCount: 1,
+            maxExpansions: 4,
+            budgetUsed: 240,
+            budgetTotal: 400,
+            budgetUtilization: 0.6,
+            droppedProposalCount: 1,
+            droppedProposalReasons: {
+                interrupt: 1
             }
         });
         // Verbose fields should NOT be present

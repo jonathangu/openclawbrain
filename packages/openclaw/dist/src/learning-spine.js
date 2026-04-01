@@ -65,6 +65,26 @@ function compactStructuralSignals(value) {
     const compacted = compactStructuralSignalValue(value);
     return compacted !== undefined && isPlainObject(compacted) ? compacted : null;
 }
+function normalizeOptionalBoolean(value) {
+    return typeof value === "boolean" ? value : null;
+}
+function normalizeOptionalString(value) {
+    if (typeof value !== "string") {
+        return null;
+    }
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+}
+function extractServeTimeInterruptionTruth(value) {
+    const signals = isPlainObject(value) ? value : null;
+    return {
+        queryInterrupted: normalizeOptionalBoolean(signals?.queryInterrupted),
+        interruptionStage: normalizeOptionalString(signals?.interruptionStage),
+        interruptionReason: normalizeOptionalString(signals?.interruptionReason),
+        servedPartial: normalizeOptionalBoolean(signals?.servedPartial),
+        interruptionAccounting: compactStructuralSignals(signals?.interruptionAccounting ?? null)
+    };
+}
 function isStableKernelContextBlock(block) {
     if (block.id.includes(":event:") || block.id.includes(":teacher:")) {
         return false;
@@ -236,6 +256,8 @@ export function appendServeTimeRouteDecisionLog(input) {
     const activationRoot = path.resolve(input.activationRoot);
     const compileEvent = input.normalizedEventExport?.interactionEvents.find((event) => event.kind === "memory_compiled") ?? null;
     const activePack = input.compileResult.ok ? loadPackFromActivation(activationRoot, "active") : null;
+    const rawStructuralSignals = input.compileResult.ok ? input.compileResult.compileResponse.structuralSignals : null;
+    const interruptionTruth = extractServeTimeInterruptionTruth(rawStructuralSignals);
     const resolvedMaxContextBlocks = input.compileResult.ok
         ? Number.parseInt(noteValue(input.compileResult.compileResponse.diagnostics.notes, "resolved_max_context_blocks=") ?? "", 10)
         : Number.NaN;
@@ -309,6 +331,11 @@ export function appendServeTimeRouteDecisionLog(input) {
         structuralSignals: compactStructuralSignals(input.compileResult.ok ? input.compileResult.compileResponse.structuralSignals : null),
         fallbackReason: serveFallbackReason(input.compileResult),
         hotPathTiming: input.compileResult.timing,
+        queryInterrupted: interruptionTruth.queryInterrupted,
+        interruptionStage: interruptionTruth.interruptionStage,
+        interruptionReason: interruptionTruth.interruptionReason,
+        servedPartial: interruptionTruth.servedPartial,
+        interruptionAccounting: interruptionTruth.interruptionAccounting,
         kernelContextCount: selectedKernelContextIds.length,
         brainContextCount: selectedBrainContextIds.length,
         selectedKernelContextIds,

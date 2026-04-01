@@ -43,6 +43,21 @@ function readPersistedStatusSurface(db) {
     }
     return JSON.parse(row.value);
 }
+function makeLastAssemblyDecision(overrides = {}) {
+    return {
+        mode: "partial_deadline_after_query",
+        brainDropReason: "deadline_after_query",
+        interruptionStage: "query",
+        interruptionReason: "soft_compile_deadline",
+        servedPartial: true,
+        interruptionAccounting: {
+            droppedFrontierNodeIds: ["node-a", "node-b"],
+            droppedProposalCount: 3,
+            budgetUtilization: 0.625
+        },
+        ...overrides
+    };
+}
 
 test("traced-learning bridge round-trips learn counters under activation-root/watch", (t) => {
     const activationRoot = createTempActivationRoot(t);
@@ -152,6 +167,121 @@ test("brain-store traced-learning surface persists surfaced learn truth", (t) =>
         assert.match(surface.detail, /source=brain-store/);
         assert.match(surface.detail, /bridge=brain_store_traced_learning_status_surface/);
         assert.match(surface.detail, /runtime=missing/);
+    }
+    finally {
+        db.close();
+    }
+});
+
+test("brain-store traced-learning bridge derives last assembly interruption summary from state.db", (t) => {
+    const activationRoot = createTempActivationRoot(t);
+    const { brainRoot, db, dbPath } = createBrainStore(t);
+    try {
+        db.prepare(`INSERT INTO brain_training_state (key, value) VALUES (?, ?)`).run(
+            "last_assembly_decision_json",
+            JSON.stringify(makeLastAssemblyDecision())
+        );
+        const loaded = loadBrainStoreTracedLearningBridge({
+            env: {
+                OPENCLAWBRAIN_ROOT: brainRoot
+            }
+        });
+        assert.equal(loaded.path, dbPath);
+        assert.deepEqual(loaded.bridge?.lastInterruptionSummary, {
+            reason: "deadline_after_query",
+            stage: "query",
+            servedPartial: true,
+            droppedFrontierCount: 2,
+            droppedProposalCount: 3,
+            budgetUtilization: 0.625
+        });
+        const surface = buildTracedLearningStatusSurface(activationRoot, {
+            env: {
+                OPENCLAWBRAIN_ROOT: brainRoot
+            }
+        });
+        assert.equal(surface.path, dbPath);
+        assert.equal(surface.present, true);
+        assert.deepEqual(surface.lastInterruptionSummary, {
+            reason: "deadline_after_query",
+            stage: "query",
+            servedPartial: true,
+            droppedFrontierCount: 2,
+            droppedProposalCount: 3,
+            budgetUtilization: 0.625
+        });
+        assert.match(surface.detail, /interrupt=deadline_after_query/);
+        assert.match(surface.detail, /partial=yes/);
+        assert.match(surface.detail, /frontier=2/);
+        assert.match(surface.detail, /proposals=3/);
+        assert.match(surface.detail, /budget=63%/);
+    }
+    finally {
+        db.close();
+    }
+});
+
+test("persisted traced-learning bridge keeps the last assembly interruption summary", (t) => {
+    const activationRoot = createTempActivationRoot(t);
+    const { brainRoot, db } = createBrainStore(t);
+    try {
+        db.prepare(`INSERT INTO brain_training_state (key, value) VALUES (?, ?)`).run(
+            "last_assembly_decision_json",
+            JSON.stringify(makeLastAssemblyDecision({
+                brainDropReason: "deadline_before_injection",
+                interruptionStage: "injection",
+                interruptionAccounting: {
+                    droppedFrontierNodeIds: ["node-z"],
+                    droppedProposalCount: 1,
+                    budgetUtilization: 0.4
+                }
+            }))
+        );
+        const bridge = buildTracedLearningBridgePayloadFromRuntime({
+            updatedAt: "2026-03-22T09:14:00.000Z",
+            teacherArtifactCount: 4,
+            serveTimeLearning: {
+                pgVersion: "v2",
+                decisionLogCount: 12,
+                fallbackReason: null
+            },
+            materializedPackId: "pack-watch-123",
+            promoted: false,
+            baselinePersisted: false,
+            source: {
+                command: "watch",
+                scanRoot: path.join(activationRoot, "event-exports")
+            }
+        });
+        const persisted = persistTracedLearningBridgeState(activationRoot, bridge, {
+            env: {
+                OPENCLAWBRAIN_ROOT: brainRoot
+            }
+        });
+        assert.deepEqual(persisted.lastInterruptionSummary, {
+            reason: "deadline_before_injection",
+            stage: "injection",
+            servedPartial: true,
+            droppedFrontierCount: 1,
+            droppedProposalCount: 1,
+            budgetUtilization: 0.4
+        });
+        assert.deepEqual(readPersistedStatusSurface(db)?.lastInterruptionSummary, {
+            reason: "deadline_before_injection",
+            stage: "injection",
+            servedPartial: true,
+            droppedFrontierCount: 1,
+            droppedProposalCount: 1,
+            budgetUtilization: 0.4
+        });
+        assert.deepEqual(loadTracedLearningBridge(activationRoot).bridge?.lastInterruptionSummary, {
+            reason: "deadline_before_injection",
+            stage: "injection",
+            servedPartial: true,
+            droppedFrontierCount: 1,
+            droppedProposalCount: 1,
+            budgetUtilization: 0.4
+        });
     }
     finally {
         db.close();
