@@ -101,6 +101,69 @@ describe("buildPromotionStory", () => {
     store.setTrainingState("last_promotion_reason", "bundle evaluation promoted 1 candidate");
     store.setTrainingState("last_replay_failure_reason", "candidate score regressed");
 
+    store.insertTrace({
+      id: "bt_feedback",
+      episodeId: "ep_feedback",
+      packVersion: pack.version,
+      queryText: "how do I open a pull request?",
+      seedScores: [],
+      trajectory: [],
+      firedNodes: [],
+      vetoedNodes: [],
+      contextChars: 128,
+      footer: "",
+      routeTrace: null,
+      createdAt: Date.now(),
+    });
+    const observation = store.insertObservation({
+      episodeId: "ep_feedback",
+      conversationId: 42,
+      traceId: "bt_feedback",
+      queryText: "how do I open a pull request?",
+      retrievedContext: [],
+      routeMetadata: {
+        requestDigest: null,
+        activePackId: `brain-pack-v${pack.version}`,
+        routerIdentity: "brain-graph-traverse.v2",
+        persistenceMode: "redacted",
+        bindingMode: "trace_id",
+        serveDecisionRecordId: null,
+        selectionDigest: null,
+        turnCompileEventId: null,
+        decisionRecordedAt: null,
+        activePackEventExportDigest: null,
+        activePackGraphChecksum: null,
+        activePackRouterChecksum: null,
+        activePackBuiltAt: null,
+        servedArtifact: null,
+        candidateNodeIds: [],
+        selectedNodeIds: [],
+        selectedTraversalNodeIds: [],
+        selectedPathNodeIds: [],
+        selectedSeedNodeIds: [],
+        sourceSummary: null,
+        selectionMetadata: null,
+      },
+      assistantResponse: "Use `gh pr create`.",
+      toolResults: [],
+      status: "completed",
+    });
+    store.insertTraceSupervision({
+      traceId: "bt_feedback",
+      episodeId: "ep_feedback",
+      conversationId: 42,
+      source: "teacher",
+      kind: "teacher_review",
+      value: 0.78,
+      confidence: 0.62,
+      reason: "retrieved context matched the query",
+      resolution: "promoted_to_label",
+      metadata: {
+        observationId: observation.id,
+        bindingMode: "trace_id",
+      },
+    });
+
     const story = buildPromotionStory(store);
 
     expect(story.summary.currentPackVersion).toBe(pack.version);
@@ -137,7 +200,30 @@ describe("buildPromotionStory", () => {
       candidateId: "bm_pending",
     });
     expect(story.integrations).toEqual({
-      structuredVerdict: null,
+      structuredVerdict: expect.objectContaining({
+        verdictCounts: {
+          helpful: 1,
+          irrelevant: 0,
+          harmful: 0,
+        },
+        coverage: expect.objectContaining({
+          routeTraceCount: 1,
+          observationCount: 1,
+          completedObservationCount: 1,
+          supervisedTraceCount: 1,
+          unsupervisedTraceCount: 0,
+        }),
+        latest: expect.objectContaining({
+          traceId: "bt_feedback",
+          episodeId: "ep_feedback",
+          observationId: observation.id,
+          source: "teacher",
+          verdict: "helpful",
+          score: 0.78,
+          confidence: 0.62,
+          bindingMode: "trace_id",
+        }),
+      }),
       learningJournal: null,
     });
   });

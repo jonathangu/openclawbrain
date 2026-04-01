@@ -52,6 +52,7 @@ function makeStateSnapshot(sourceNodeId: string | null, expansionIndex: number, 
     frontierNodeIds: [],
     visitedCount: 0,
     firedCount: 0,
+    maxFrontierSize: 4,
   };
 }
 
@@ -294,5 +295,49 @@ describe("decision trace branch proofs", () => {
       },
       detail: "1/3 recent branches continued; stop truths forced=2, chosen=1; reasons no_traversable_candidates=1, policy_stop=1, frontier_cap=1",
     });
+  });
+
+  it("adds pressure visibility to branch proofs when policy-state trace data is present", () => {
+    const trace = makeTrace([
+      {
+        sourceNodeId: "a",
+        expansionIndex: 0,
+        frontierBefore: ["a"],
+        frontierAfter: [],
+        budgetBefore: 90,
+        budgetAfter: 90,
+        substeps: [
+          {
+            ...makeStopSubstep("a", 0, 0, "chosen", "policy_stop"),
+            stopProbability: 0.64,
+            stateSnapshot: {
+              ...makeStateSnapshot("a", 0, 0),
+              pendingSelectionCount: 1,
+              pendingTargetNodeIds: ["b"],
+              policyState: {
+                effectiveBudgetRemaining: 45,
+                budgetUsedFraction: 0.55,
+                frontierBacklogPressure: 0.5,
+                frontierSaturation: 0.5,
+                frontierPressure: 0.5,
+                pressureLevel: 0.53,
+                remainingExpansionSlots: 2,
+                activeFrontierSize: 1,
+                pendingSelectionCount: 1,
+              },
+            },
+          },
+        ],
+        selectedTargets: [],
+        acceptedTargets: [],
+        vetoedTargets: [],
+        proposalOutcomes: [],
+        terminationReason: "policy_stop",
+      },
+    ], [], []);
+
+    expect(trace.routeTrace?.branchOutcomes[0]?.proof).toContain(
+      "chosen stop (policy_stop) [pressure=0.53 budget=0.55 frontier=0.50 stop_p=0.64 pending=1]",
+    );
   });
 });

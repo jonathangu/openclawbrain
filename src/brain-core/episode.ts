@@ -68,6 +68,8 @@ export function replayEpisode(
         reservedTokenCost: substep.stateSnapshot.reservedTokenCost,
         expansionCount: substep.stateSnapshot.expansionIndex,
         maxHops: substep.stateSnapshot.maxHops,
+        maxFrontierSize: substep.stateSnapshot.maxFrontierSize,
+        pendingNodeIds: [...(substep.stateSnapshot.pendingTargetNodeIds ?? [])],
       };
 
       const newDist = softmaxPolicy(actions, state, graph, policyParams);

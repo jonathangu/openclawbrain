@@ -749,7 +749,7 @@ describe("BrainWorker observation reward cutover", () => {
       queryText: "teacher routed query",
       selectedNodeId: "node_teacher",
     }));
-    store.insertObservation(makeObservation({
+    const teacherObservation = store.insertObservation(makeObservation({
       episodeId: "ep_teacher_pg",
       conversationId: 32,
       traceId: "bt_teacher_pg",
@@ -764,11 +764,16 @@ describe("BrainWorker observation reward cutover", () => {
 
     const artifact = store.getTrainingStateJson<PolicyGradientCandidateUpdateArtifact>("last_pg_candidate_update_json");
     expect(artifact).not.toBeNull();
+    expect(artifact?.version).toBe(2);
+    if (!artifact || artifact.version !== 2) {
+      throw new Error("expected policy-gradient candidate artifact v2");
+    }
     expect(artifact).toMatchObject({
-      version: 1,
+      version: 2,
       updateCount: 1,
       episodeCount: 2,
       traceCount: 2,
+      observationCount: 1,
       supervisionCount: 2,
       teacherLabelCount: 1,
       rewardSources: {
@@ -776,8 +781,109 @@ describe("BrainWorker observation reward cutover", () => {
         teacher: 1,
       },
     });
+    expect(artifact.observationIds).toEqual([teacherObservation.id]);
     expect(artifact?.traceIds).toEqual(["bt_human_pg", "bt_teacher_pg"]);
     expect(artifact?.teacherTraceIds).toEqual(["bt_teacher_pg"]);
+
+    expect(artifact.episodeUpdates).toHaveLength(2);
+    const humanEpisodeUpdate = artifact.episodeUpdates.find((entry) => entry.episodeId === "ep_human_pg");
+    const teacherEpisodeUpdate = artifact.episodeUpdates.find((entry) => entry.episodeId === "ep_teacher_pg");
+    expect(humanEpisodeUpdate).toBeDefined();
+    expect(teacherEpisodeUpdate).toBeDefined();
+
+    expect(humanEpisodeUpdate).toMatchObject({
+      episodeId: "ep_human_pg",
+      observationIds: [],
+      reward: -0.5,
+      rewardSource: "human",
+      baselineBefore: 0,
+      routeUpdateCount: 1,
+      seedUpdateCount: 1,
+      stopLocalUpdateCount: 0,
+      edgeUpdateCount: 0,
+      supervision: [
+        expect.objectContaining({
+          supervisionId: expect.stringMatching(/^ts_/),
+          traceId: "bt_human_pg",
+          source: "human",
+          kind: "teach_correction",
+          value: -0.5,
+          traceSelectedNodeIds: [],
+        }),
+      ],
+      routeUpdates: [
+        expect.objectContaining({
+          kind: "seed",
+          sourceNodeId: "__START__",
+          targetNodeId: "node_human",
+          previousWeight: 0.2,
+          contributionCount: 1,
+        }),
+      ],
+    });
+    expect(humanEpisodeUpdate?.baselineAfter).toBeCloseTo(-0.05, 10);
+    expect(humanEpisodeUpdate?.advantage).toBeCloseTo(-0.5, 10);
+    expect(humanEpisodeUpdate?.routeUpdates[0]?.delta).toBeCloseTo(-0.002, 10);
+    expect(humanEpisodeUpdate?.routeUpdates[0]?.nextWeight).toBeCloseTo(0.198, 10);
+    expect(humanEpisodeUpdate?.routeUpdates[0]?.contributions[0]).toMatchObject({
+      updateKey: "seed→node_human",
+      sourceNodeId: "__START__",
+      targetNodeId: "node_human",
+      expansionIndex: 0,
+      selectionIndex: 0,
+      chosenActionProbability: 0.6,
+    });
+    expect(humanEpisodeUpdate?.routeUpdates[0]?.contributions[0]?.delta).toBeCloseTo(-0.002, 10);
+
+    expect(teacherEpisodeUpdate).toMatchObject({
+      episodeId: "ep_teacher_pg",
+      observationIds: [teacherObservation.id],
+      reward: 0.6,
+      rewardSource: "teacher",
+      routeUpdateCount: 1,
+      seedUpdateCount: 1,
+      stopLocalUpdateCount: 0,
+      edgeUpdateCount: 0,
+      supervision: [
+        expect.objectContaining({
+          supervisionId: expect.stringMatching(/^ts_/),
+          traceId: "bt_teacher_pg",
+          source: "teacher",
+          kind: "teacher_review",
+          value: 0.6,
+          observationId: teacherObservation.id,
+          teacherTraceId: "bt_teacher_pg",
+          serveDecisionRecordId: "decision-bt_teacher_pg",
+          selectionDigest: "selection-bt_teacher_pg",
+          bindingMode: "exact_decision_id",
+          traceSelectedNodeIds: ["node_teacher"],
+          traceSelectedPathNodeIds: ["node_teacher"],
+        }),
+      ],
+      routeUpdates: [
+        expect.objectContaining({
+          kind: "seed",
+          sourceNodeId: "__START__",
+          targetNodeId: "node_teacher",
+          previousWeight: 0.1,
+          contributionCount: 1,
+        }),
+      ],
+    });
+    expect(teacherEpisodeUpdate?.baselineBefore).toBeCloseTo(-0.05, 10);
+    expect(teacherEpisodeUpdate?.baselineAfter).toBeCloseTo(0.015, 10);
+    expect(teacherEpisodeUpdate?.advantage).toBeCloseTo(0.65, 10);
+    expect(teacherEpisodeUpdate?.routeUpdates[0]?.delta).toBeCloseTo(0.00195, 10);
+    expect(teacherEpisodeUpdate?.routeUpdates[0]?.nextWeight).toBeCloseTo(0.10195, 10);
+    expect(teacherEpisodeUpdate?.routeUpdates[0]?.contributions[0]).toMatchObject({
+      updateKey: "seed→node_teacher",
+      sourceNodeId: "__START__",
+      targetNodeId: "node_teacher",
+      expansionIndex: 0,
+      selectionIndex: 0,
+      chosenActionProbability: 0.7,
+    });
+    expect(teacherEpisodeUpdate?.routeUpdates[0]?.contributions[0]?.delta).toBeCloseTo(0.00195, 10);
   });
 });
 

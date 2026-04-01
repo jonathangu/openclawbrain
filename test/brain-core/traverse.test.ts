@@ -134,6 +134,54 @@ describe("traverse", () => {
     expect(result.footer).not.toContain("hops");
   });
 
+  it("tracks pending local picks so later selections avoid redundant siblings", () => {
+    const graph = new BrainGraph();
+    graph.addNode(makeNode("a", new Float32Array([1, 0, 0])));
+    graph.addNode(makeNode("b", new Float32Array([0, 1, 0])));
+    graph.addNode(makeNode("c", new Float32Array([0, 1, 0])));
+    graph.addNode(makeNode("d", new Float32Array([0, 0, 1])));
+    graph.addEdge(makeEdge("a", "b"));
+    graph.addEdge(makeEdge("a", "c"));
+    graph.addEdge(makeEdge("a", "d"));
+    vi.spyOn(Math, "random")
+      .mockReturnValueOnce(0.1)
+      .mockReturnValueOnce(0.9)
+      .mockReturnValueOnce(0.1)
+      .mockReturnValueOnce(0.4)
+      .mockReturnValue(0.9);
+
+    const result = traverse({
+      ...baseOptions(graph),
+      maxHops: 2,
+      maxFrontierSize: 2,
+    });
+    const branchExpansion = result.trajectory.find((expansion) => expansion.sourceNodeId === "a");
+    const secondSubstep = branchExpansion?.substeps[1];
+    const redundantCandidate = secondSubstep?.candidates.find(
+      (candidate) => candidate.action.type === "traverse" && candidate.action.targetNodeId === "c",
+    );
+    const novelCandidate = secondSubstep?.candidates.find(
+      (candidate) => candidate.action.type === "traverse" && candidate.action.targetNodeId === "d",
+    );
+
+    expect(branchExpansion?.acceptedTargets).toEqual(["b", "d"]);
+    expect(secondSubstep?.stateSnapshot.pendingTargetNodeIds).toEqual(["b"]);
+    expect(secondSubstep?.stateSnapshot.policyState).toEqual(expect.objectContaining({
+      activeFrontierSize: 1,
+      pendingSelectionCount: 1,
+      frontierPressure: expect.any(Number),
+    }));
+    expect(redundantCandidate?.scoreBreakdown).toEqual(expect.objectContaining({
+      redundancySimilarity: 1,
+      redundancyPenalty: expect.any(Number),
+    }));
+    expect(novelCandidate?.scoreBreakdown).toEqual(expect.objectContaining({
+      redundancySimilarity: 0,
+      redundancyPenalty: 0,
+    }));
+    expect((redundantCandidate?.score ?? 0)).toBeLessThan(novelCandidate?.score ?? 0);
+  });
+
   it("executes the frontier in FIFO order when branching", () => {
     const graph = new BrainGraph();
     graph.addNode(makeNode("a", new Float32Array([1, 0, 0])));

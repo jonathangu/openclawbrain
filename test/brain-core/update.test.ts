@@ -1,5 +1,10 @@
 import { describe, it, expect } from "vitest";
-import { computeReinforceUpdates, updateBaseline, applyWeightUpdates } from "../../src/brain-core/update.js";
+import {
+  applyWeightUpdates,
+  collectReinforceUpdateContributions,
+  computeReinforceUpdates,
+  updateBaseline,
+} from "../../src/brain-core/update.js";
 import { BrainGraph } from "../../src/brain-core/graph.js";
 import { START_NODE_ID } from "../../src/brain-core/types.js";
 import type { Episode, TrajectoryExpansion, TrajectoryStep, BrainNode, BrainEdge } from "../../src/brain-core/types.js";
@@ -124,6 +129,58 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
     for (const u of updates) {
       expect(u.delta).toBeGreaterThan(0);
     }
+  });
+
+  it("preserves exact substep contributions when repeated choices collapse into one net update", () => {
+    const first = makeStep("a", "b", 0.6, 0);
+    const second = makeStep("a", "b", 0.3, 0);
+    second.stateSnapshot.selectionIndex = 1;
+    second.stateSnapshot.firedCount = 1;
+    const repeatedExpansion: TrajectoryExpansion = {
+      sourceNodeId: "a",
+      expansionIndex: 0,
+      frontierBefore: ["a"],
+      frontierAfter: ["b"],
+      budgetBefore: 1000,
+      budgetAfter: 800,
+      substeps: [first, second],
+      selectedTargets: ["b"],
+      acceptedTargets: ["b"],
+      vetoedTargets: [],
+    };
+    const episode = makeEpisode([repeatedExpansion], 1.0);
+
+    const contributions = collectReinforceUpdateContributions(episode, 0.1, 0.0);
+    expect(contributions).toHaveLength(2);
+    expect(contributions[0]).toMatchObject({
+      updateKey: "a→b",
+      kind: "edge",
+      sourceNodeId: "a",
+      targetNodeId: "b",
+      expansionIndex: 0,
+      selectionIndex: 0,
+      chosenActionProbability: 0.6,
+    });
+    expect(contributions[0]?.delta).toBeCloseTo(0.04, 10);
+    expect(contributions[1]).toMatchObject({
+      updateKey: "a→b",
+      kind: "edge",
+      sourceNodeId: "a",
+      targetNodeId: "b",
+      expansionIndex: 0,
+      selectionIndex: 1,
+      chosenActionProbability: 0.3,
+    });
+    expect(contributions[1]?.delta).toBeCloseTo(0.07, 10);
+
+    const updates = computeReinforceUpdates(episode, 0.1, 0.0);
+    expect(updates).toHaveLength(1);
+    expect(updates[0]).toMatchObject({
+      kind: "edge",
+      source: "a",
+      target: "b",
+    });
+    expect(updates[0]?.delta).toBeCloseTo(0.11, 10);
   });
 
   it("updates seed-phase transitions through explicit seed weights", () => {

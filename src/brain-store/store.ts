@@ -39,6 +39,9 @@ import type {
   BrainObservationStatus,
   BrainObservationTeacherEvaluation,
   BrainObservationToolResult,
+  ContextFeedbackFocusAction,
+  ContextFeedbackSummary,
+  ContextFeedbackVerdict,
   DecisionTraceInjectedNodeSummary,
   LearningJournalEventType,
   LearningJournalRecord,
@@ -313,6 +316,62 @@ function classifyObservationBindingQuality(
     return "unbound";
   }
   return "fallback";
+}
+
+const CONTEXT_FEEDBACK_HELPFUL_MIN = 0.25;
+const CONTEXT_FEEDBACK_HARMFUL_MAX = -0.25;
+
+function classifyContextFeedbackVerdict(score: number): ContextFeedbackVerdict {
+  if (score >= CONTEXT_FEEDBACK_HELPFUL_MIN) {
+    return "helpful";
+  }
+  if (score <= CONTEXT_FEEDBACK_HARMFUL_MAX) {
+    return "harmful";
+  }
+  return "irrelevant";
+}
+
+function toContextFeedbackFocusAction(params: {
+  routeTraceCount: number;
+  harmfulCount: number;
+  pendingFollowupCount: number;
+  pendingTeacherCount: number;
+  supervisedTraceCount: number;
+}): { action: ContextFeedbackFocusAction; detail: string } {
+  if (params.routeTraceCount === 0) {
+    return {
+      action: "monitor",
+      detail: "no traced routes recorded yet",
+    };
+  }
+  if (params.harmfulCount > 0) {
+    return {
+      action: "review_harmful_context",
+      detail: `${params.harmfulCount} traced route verdict(s) are harmful; inspect the latest harmful context first`,
+    };
+  }
+  if (params.pendingFollowupCount > 0) {
+    return {
+      action: "capture_follow_up",
+      detail: `${params.pendingFollowupCount} observation(s) still need operator follow-up before teacher scoring`,
+    };
+  }
+  if (params.pendingTeacherCount > 0) {
+    return {
+      action: "wait_for_teacher",
+      detail: `${params.pendingTeacherCount} observation(s) are ready for teacher scoring`,
+    };
+  }
+  if (params.supervisedTraceCount < params.routeTraceCount) {
+    return {
+      action: "increase_feedback_coverage",
+      detail: `feedback covers ${params.supervisedTraceCount}/${params.routeTraceCount} traced route(s)`,
+    };
+  }
+  return {
+    action: "monitor",
+    detail: "feedback loop is closed on every traced route",
+  };
 }
 
 export interface LearningJournalInsert {
@@ -1127,6 +1186,108 @@ export class BrainStore {
       bindingModes,
       attributionQuality,
       detail,
+    };
+  }
+
+  getContextFeedbackSummary(): ContextFeedbackSummary {
+    const routeTraceCount = this.countTraces();
+    const observationRows = this.db.prepare(`
+      SELECT id, status
+      FROM brain_observations
+    `).all() as Array<{ id: string; status: BrainObservationStatus }>;
+    let completedObservationCount = 0;
+    let pendingFollowupCount = 0;
+    let pendingTeacherCount = 0;
+
+    for (const row of observationRows) {
+      if (row.status === "completed") {
+        completedObservationCount += 1;
+      } else if (row.status === "pending_followup") {
+        pendingFollowupCount += 1;
+      } else if (row.status === "pending_teacher") {
+        pendingTeacherCount += 1;
+      }
+    }
+
+    const verdictCounts: Record<ContextFeedbackVerdict, number> = {
+      helpful: 0,
+      irrelevant: 0,
+      harmful: 0,
+    };
+    let latest: ContextFeedbackSummary["latest"] = null;
+    const latestVerdictByTrace = new Map<string, true>();
+    const supervisionRows = this.db.prepare(`
+      SELECT *
+      FROM brain_trace_supervision
+      WHERE resolution = 'promoted_to_label'
+      ORDER BY created_at DESC
+    `).all() as Record<string, unknown>[];
+
+    for (const row of supervisionRows) {
+      const record = this.toTraceSupervision(row);
+      if (!record.traceId || latestVerdictByTrace.has(record.traceId)) {
+        continue;
+      }
+      latestVerdictByTrace.set(record.traceId, true);
+
+      const verdict = classifyContextFeedbackVerdict(record.value);
+      verdictCounts[verdict] += 1;
+      const metadata = toRecord(record.metadata);
+      const teacherEvaluation = toRecord(metadata?.teacherEvaluation);
+      const bindingMode =
+        toObservationBindingMode(metadata?.bindingMode)
+        ?? toObservationBindingMode(teacherEvaluation?.bindingMode);
+
+      const current = {
+        traceId: record.traceId,
+        episodeId: record.episodeId,
+        observationId: toOptionalString(metadata?.observationId),
+        source: record.source,
+        verdict,
+        score: record.value,
+        confidence: record.confidence,
+        reason: record.reason,
+        bindingMode,
+        createdAt: record.createdAt,
+      };
+      if (!latest) {
+        latest = current;
+      }
+    }
+
+    const supervisedTraceCount = latestVerdictByTrace.size;
+    const unsupervisedTraceCount = Math.max(0, routeTraceCount - supervisedTraceCount);
+    const focus = toContextFeedbackFocusAction({
+      routeTraceCount,
+      harmfulCount: verdictCounts.harmful,
+      pendingFollowupCount,
+      pendingTeacherCount,
+      supervisedTraceCount,
+    });
+
+    return {
+      scoreBands: {
+        helpfulMin: CONTEXT_FEEDBACK_HELPFUL_MIN,
+        harmfulMax: CONTEXT_FEEDBACK_HARMFUL_MAX,
+      },
+      verdictCounts,
+      coverage: {
+        routeTraceCount,
+        observationCount: observationRows.length,
+        completedObservationCount,
+        supervisedTraceCount,
+        unsupervisedTraceCount,
+        observationCoverage: routeTraceCount > 0 ? observationRows.length / routeTraceCount : 0,
+        supervisionCoverage: routeTraceCount > 0 ? supervisedTraceCount / routeTraceCount : 0,
+        pendingFollowupCount,
+        pendingTeacherCount,
+      },
+      latest,
+      focus,
+      detail:
+        routeTraceCount === 0
+          ? "no traced routes recorded yet"
+          : `${verdictCounts.helpful} helpful, ${verdictCounts.irrelevant} irrelevant, ${verdictCounts.harmful} harmful traced route verdicts; feedback covers ${supervisedTraceCount}/${routeTraceCount} traced route(s); helpful >= ${CONTEXT_FEEDBACK_HELPFUL_MIN}, harmful <= ${CONTEXT_FEEDBACK_HARMFUL_MAX}`,
     };
   }
 

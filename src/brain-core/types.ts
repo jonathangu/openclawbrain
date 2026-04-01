@@ -99,6 +99,8 @@ export interface TraversalState {
   reservedTokenCost: number;
   expansionCount: number;
   maxHops: number;
+  pendingNodeIds?: string[];
+  maxFrontierSize?: number;
 }
 
 /**
@@ -161,6 +163,42 @@ export interface TrajectoryCandidate {
   probability: number;
   priorScore?: number;
   learnedSeedWeight?: number;
+  scoreBreakdown?: TrajectoryCandidateScoreBreakdown;
+}
+
+export interface TrajectoryPolicyStateSnapshot {
+  effectiveBudgetRemaining: number;
+  budgetUsedFraction: number;
+  frontierBacklogPressure: number;
+  frontierSaturation: number;
+  frontierPressure: number;
+  pressureLevel: number;
+  remainingExpansionSlots: number;
+  activeFrontierSize: number;
+  pendingSelectionCount: number;
+}
+
+export interface TrajectoryCandidateScoreBreakdown {
+  totalScore: number;
+  pressureLevel?: number;
+  edgeScore?: number;
+  seedPrior?: number;
+  learnedSeedWeight?: number;
+  learnedStopWeight?: number;
+  stopBias?: number;
+  budgetPressureContribution?: number;
+  hopPressureContribution?: number;
+  frontierPressureContribution?: number;
+  relevance?: number;
+  kindBias?: number;
+  evidenceQualityBonus?: number;
+  opportunityCostPenalty?: number;
+  tokenCostFraction?: number;
+  downstreamOpportunityCount?: number;
+  downstreamPressure?: number;
+  redundancyPenalty?: number;
+  redundancySimilarity?: number;
+  redundancyPressureMultiplier?: number;
 }
 
 export interface TrajectoryStateSnapshot {
@@ -171,26 +209,18 @@ export interface TrajectoryStateSnapshot {
   initialBudget: number;
   reservedTokenCost: number;
   maxHops: number;
+  maxFrontierSize?: number;
   frontierSize: number;
   frontierNodeIds: string[];
   visitedCount: number;
   firedCount: number;
+  pendingSelectionCount?: number;
+  pendingTargetNodeIds?: string[];
+  policyState?: TrajectoryPolicyStateSnapshot;
 }
 
 export interface TrajectorySubstep {
-  stateSnapshot: {
-    sourceNodeId: string | null;
-    expansionIndex: number;
-    selectionIndex: number;
-    budgetRemaining: number;
-    initialBudget: number;
-    reservedTokenCost: number;
-    maxHops: number;
-    frontierSize: number;
-    frontierNodeIds: string[];
-    visitedCount: number;
-    firedCount: number;
-  };
+  stateSnapshot: TrajectoryStateSnapshot;
   candidates: TrajectoryCandidate[];
   chosenAction: TraversalAction;
   chosenActionProbability: number;
@@ -313,8 +343,72 @@ export interface TraceSupervisionRecord {
   createdAt: number;
 }
 
-export interface PolicyGradientCandidateUpdateArtifact {
-  version: 1;
+export interface PolicyGradientRouteUpdateContribution {
+  updateKey: string;
+  kind: PolicyWeightUpdate["kind"];
+  sourceNodeId: string;
+  targetNodeId: string | null;
+  expansionIndex: number;
+  selectionIndex: number;
+  chosenActionProbability: number;
+  delta: number;
+  stopTruth: TrajectoryStopTruth | null;
+  stopReason: TrajectoryStopReason | null;
+}
+
+export interface PolicyGradientRouteUpdateArtifact {
+  updateKey: string;
+  kind: PolicyWeightUpdate["kind"];
+  sourceNodeId: string;
+  targetNodeId: string | null;
+  delta: number;
+  previousWeight: number | null;
+  nextWeight: number;
+  contributionCount: number;
+  contributions: PolicyGradientRouteUpdateContribution[];
+}
+
+export interface PolicyGradientSupervisionArtifact {
+  supervisionId: string;
+  traceId: string;
+  source: RewardSource;
+  kind: BrainEvidenceKind;
+  value: number;
+  confidence: number;
+  reason: string | null;
+  labelId: string | null;
+  evidenceId: string | null;
+  observationId: string | null;
+  teacherTraceId: string | null;
+  serveDecisionRecordId: string | null;
+  selectionDigest: string | null;
+  turnCompileEventId: string | null;
+  activePackGraphChecksum: string | null;
+  bindingMode: BrainObservationBindingMode | null;
+  traceRequestDigest: string | null;
+  traceSelectedNodeIds: string[];
+  traceSelectedPathNodeIds: string[];
+}
+
+export interface PolicyGradientEpisodeUpdateArtifact {
+  episodeId: string;
+  observationIds: string[];
+  traceIds: string[];
+  supervisionIds: string[];
+  reward: number;
+  rewardSource: RewardSource | null;
+  baselineBefore: number;
+  baselineAfter: number;
+  advantage: number;
+  routeUpdateCount: number;
+  seedUpdateCount: number;
+  stopLocalUpdateCount: number;
+  edgeUpdateCount: number;
+  supervision: PolicyGradientSupervisionArtifact[];
+  routeUpdates: PolicyGradientRouteUpdateArtifact[];
+}
+
+export interface PolicyGradientCandidateUpdateArtifactBase {
   updateCount: number;
   candidatePackVersion: number;
   currentPackVersion: number | null;
@@ -335,6 +429,23 @@ export interface PolicyGradientCandidateUpdateArtifact {
   baselineBefore: number;
   baselineAfter: number;
 }
+
+export interface PolicyGradientCandidateUpdateArtifactV1
+  extends PolicyGradientCandidateUpdateArtifactBase {
+  version: 1;
+}
+
+export interface PolicyGradientCandidateUpdateArtifactV2
+  extends PolicyGradientCandidateUpdateArtifactBase {
+  version: 2;
+  observationIds: string[];
+  observationCount: number;
+  episodeUpdates: PolicyGradientEpisodeUpdateArtifact[];
+}
+
+export type PolicyGradientCandidateUpdateArtifact =
+  | PolicyGradientCandidateUpdateArtifactV1
+  | PolicyGradientCandidateUpdateArtifactV2;
 
 // ═══════════════════════════════════════════
 // Packs & Mutations
@@ -830,6 +941,58 @@ export interface BrainObservation {
   createdAt: number;
   updatedAt: number;
   evaluatedAt: number | null;
+}
+
+export type ContextFeedbackVerdict =
+  | "helpful"
+  | "irrelevant"
+  | "harmful";
+
+export type ContextFeedbackFocusAction =
+  | "review_harmful_context"
+  | "capture_follow_up"
+  | "wait_for_teacher"
+  | "increase_feedback_coverage"
+  | "monitor";
+
+export interface ContextFeedbackCoverageSummary {
+  routeTraceCount: number;
+  observationCount: number;
+  completedObservationCount: number;
+  supervisedTraceCount: number;
+  unsupervisedTraceCount: number;
+  observationCoverage: number;
+  supervisionCoverage: number;
+  pendingFollowupCount: number;
+  pendingTeacherCount: number;
+}
+
+export interface ContextFeedbackLatestVerdict {
+  traceId: string;
+  episodeId: string;
+  observationId: string | null;
+  source: RewardSource;
+  verdict: ContextFeedbackVerdict;
+  score: number;
+  confidence: number;
+  reason: string | null;
+  bindingMode: BrainObservationBindingMode | null;
+  createdAt: number;
+}
+
+export interface ContextFeedbackSummary {
+  scoreBands: {
+    helpfulMin: number;
+    harmfulMax: number;
+  };
+  verdictCounts: Record<ContextFeedbackVerdict, number>;
+  coverage: ContextFeedbackCoverageSummary;
+  latest: ContextFeedbackLatestVerdict | null;
+  focus: {
+    action: ContextFeedbackFocusAction;
+    detail: string;
+  };
+  detail: string;
 }
 
 export function resolveObservationBindingMode(params: {

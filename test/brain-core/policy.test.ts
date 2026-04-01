@@ -89,6 +89,25 @@ describe("policy", () => {
       expect(scoreHigh).toBeGreaterThan(scoreLow);
     });
 
+    it("stop_local score increases when pending local picks consume frontier room", () => {
+      const graph = new BrainGraph();
+      const relaxedState = {
+        ...makeState("a"),
+        expansionCount: 2,
+        maxHops: 6,
+        maxFrontierSize: 3,
+      };
+      const pressuredState = {
+        ...relaxedState,
+        pendingNodeIds: ["b", "c"],
+      };
+
+      const relaxedScore = scoreAction({ type: "stop_local" }, relaxedState, graph);
+      const pressuredScore = scoreAction({ type: "stop_local" }, pressuredState, graph);
+
+      expect(pressuredScore).toBeGreaterThan(relaxedScore);
+    });
+
     it("traverse score incorporates edge weight and embedding similarity", () => {
       const graph = new BrainGraph();
       graph.addNode(makeNode("a"));
@@ -156,6 +175,26 @@ describe("policy", () => {
       expect(novelScore).toBeGreaterThan(redundantScore);
     });
 
+    it("penalizes targets that are redundant with already-pending local selections", () => {
+      const graph = new BrainGraph();
+      graph.addNode(makeNode("source", new Float32Array([1, 0, 0])));
+      graph.addNode(makeNode("picked", new Float32Array([0, 1, 0])));
+      graph.addNode(makeNode("redundant", new Float32Array([0, 1, 0])));
+      graph.addNode(makeNode("novel", new Float32Array([0, 0, 1])));
+      graph.addEdge(makeEdge("source", "redundant", 1));
+      graph.addEdge(makeEdge("source", "novel", 1));
+
+      const state = {
+        ...makeState("source"),
+        pendingNodeIds: ["picked"],
+      };
+
+      const redundantScore = scoreAction({ type: "traverse", targetNodeId: "redundant" }, state, graph);
+      const novelScore = scoreAction({ type: "traverse", targetNodeId: "novel" }, state, graph);
+
+      expect(novelScore).toBeGreaterThan(redundantScore);
+    });
+
     it("rewards higher-quality nearby evidence when other signals are similar", () => {
       const graph = new BrainGraph();
       graph.addNode(makeNode("a"));
@@ -173,6 +212,38 @@ describe("policy", () => {
       const lowerTrustScore = scoreAction({ type: "traverse", targetNodeId: "lower-trust" }, state, graph);
 
       expect(humanBackedScore).toBeGreaterThan(lowerTrustScore);
+    });
+
+    it("raises branch opportunity cost when pending picks leave little frontier room", () => {
+      const graph = new BrainGraph();
+      graph.addNode(makeNode("a"));
+      graph.addNode(makeNode("queued"));
+      graph.addNode({ ...makeNode("wide"), tokenCount: 200 });
+      graph.addNode({ ...makeNode("narrow"), tokenCount: 200 });
+      graph.addNode(makeNode("wide-1"));
+      graph.addNode(makeNode("wide-2"));
+      graph.addEdge(makeEdge("a", "wide", 1));
+      graph.addEdge(makeEdge("a", "narrow", 1));
+      graph.addEdge(makeEdge("wide", "wide-1", 1));
+      graph.addEdge(makeEdge("wide", "wide-2", 1));
+
+      const relaxedState = {
+        ...makeState("a"),
+        budgetRemaining: 600,
+        initialBudget: 1000,
+        expansionCount: 2,
+        maxHops: 4,
+        maxFrontierSize: 2,
+      };
+      const pressuredState = {
+        ...relaxedState,
+        pendingNodeIds: ["queued"],
+      };
+
+      const relaxedScore = scoreAction({ type: "traverse", targetNodeId: "wide" }, relaxedState, graph);
+      const pressuredScore = scoreAction({ type: "traverse", targetNodeId: "wide" }, pressuredState, graph);
+
+      expect(pressuredScore).toBeLessThan(relaxedScore);
     });
 
     it("learns seed-head preference from explicit seed weights", () => {

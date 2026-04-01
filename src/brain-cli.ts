@@ -131,7 +131,8 @@ function commandStatus(): void {
   const health = computeHealth(graph, recentEpisodes, currentPack ?? 0);
   const embeddingConfig = describeEmbeddingConfig(brainConfig);
   const workerState = readWorkerRuntimeState(store, brainConfig);
-  const promotionStory = buildPromotionStory(store);
+  const contextFeedback = store.getContextFeedbackSummary();
+  const promotionStory = buildPromotionStory(store, { contextFeedback });
   const observationAttribution = store.getObservationAttributionSummary();
   const recentDecisionSummary = store.getRecentDecisionSummary(25);
   const recentTrace = store.getRecentTraces(1)[0] ?? null;
@@ -169,6 +170,7 @@ function commandStatus(): void {
     pendingObservations: store.countPendingObservations(),
     pendingObservationsByStatus: store.countObservationsByStatus(),
     observationAttribution,
+    contextFeedback,
     pendingLabels: store.getPendingLabels().length,
     pendingLabelsBySource: store.countPendingLabelsBySource(),
     mutationBacklog: store.countMutationsByStatus(),

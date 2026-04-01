@@ -18,10 +18,91 @@
  * The full-trajectory sum is achieved by accumulating updates across all steps.
  */
 
-import type { Episode, PolicyWeightUpdate } from "./types.js";
+import type {
+  Episode,
+  PolicyGradientRouteUpdateContribution,
+  PolicyWeightUpdate,
+} from "./types.js";
 import { START_NODE_ID } from "./types.js";
 import type { BrainGraph } from "./graph.js";
 import { isChosenPolicyStopSubstep } from "./trajectory-stop.js";
+
+export function policyWeightUpdateKey(update: PolicyWeightUpdate): string {
+  switch (update.kind) {
+    case "seed":
+      return `seed→${update.nodeId}`;
+    case "stop_local":
+      return `stop→${update.sourceNodeId}`;
+    case "edge":
+      return `${update.source}→${update.target}`;
+  }
+}
+
+export function collectReinforceUpdateContributions(
+  episode: Episode,
+  learningRate: number,
+  baseline: number,
+): PolicyGradientRouteUpdateContribution[] {
+  if (episode.reward === null) {
+    return [];
+  }
+
+  const advantage = episode.reward - baseline;
+  if (Math.abs(advantage) < 1e-8) {
+    return [];
+  }
+
+  const contributions: PolicyGradientRouteUpdateContribution[] = [];
+
+  for (const expansion of episode.trajectory) {
+    for (const substep of expansion.substeps) {
+      const sourceNodeId = substep.stateSnapshot.sourceNodeId ?? START_NODE_ID;
+      const gradLogP = 1 - substep.chosenActionProbability;
+      const delta = learningRate * advantage * gradLogP;
+      if (Math.abs(delta) < 1e-12) {
+        continue;
+      }
+
+      if (substep.chosenAction.type === "stop_local") {
+        if (!isChosenPolicyStopSubstep(substep)) {
+          continue;
+        }
+        contributions.push({
+          updateKey: `stop→${sourceNodeId}`,
+          kind: "stop_local",
+          sourceNodeId,
+          targetNodeId: null,
+          expansionIndex: substep.stateSnapshot.expansionIndex,
+          selectionIndex: substep.stateSnapshot.selectionIndex,
+          chosenActionProbability: substep.chosenActionProbability,
+          delta,
+          stopTruth: substep.stopTruth ?? null,
+          stopReason: substep.stopReason ?? null,
+        });
+        continue;
+      }
+
+      const targetNodeId = substep.chosenAction.targetNodeId;
+      const updateKey = sourceNodeId === START_NODE_ID
+        ? `seed→${targetNodeId}`
+        : `${sourceNodeId}→${targetNodeId}`;
+      contributions.push({
+        updateKey,
+        kind: sourceNodeId === START_NODE_ID ? "seed" : "edge",
+        sourceNodeId,
+        targetNodeId,
+        expansionIndex: substep.stateSnapshot.expansionIndex,
+        selectionIndex: substep.stateSnapshot.selectionIndex,
+        chosenActionProbability: substep.chosenActionProbability,
+        delta,
+        stopTruth: null,
+        stopReason: null,
+      });
+    }
+  }
+
+  return contributions;
+}
 
 /**
  * Compute REINFORCE weight updates from a completed episode.
@@ -34,62 +115,46 @@ export function computeReinforceUpdates(
   learningRate: number,
   baseline: number,
 ): PolicyWeightUpdate[] {
-  if (episode.reward === null) return [];
-
-  const advantage = episode.reward - baseline;
-  if (Math.abs(advantage) < 1e-8) return [];
-
   const updates: Map<string, PolicyWeightUpdate> = new Map();
 
-  // Sum over all selection substeps l = 0 to T (full-trajectory, not one-step)
-  for (const expansion of episode.trajectory) {
-    for (const substep of expansion.substeps) {
-      const sourceId = substep.stateSnapshot.sourceNodeId ?? START_NODE_ID;
+  for (const contribution of collectReinforceUpdateContributions(episode, learningRate, baseline)) {
+    const existing = updates.get(contribution.updateKey);
 
-      // ∂logP(a_l|s_l)/∂ρ for the softmax = (1 - P(a_l|s_l))
-      const gradLogP = 1 - substep.chosenActionProbability;
-
-      // Δρ ∝ (z - baseline) × ∂logP/∂ρ
-      const delta = learningRate * advantage * gradLogP;
-      if (Math.abs(delta) < 1e-12) {
-        continue;
-      }
-
-      if (substep.chosenAction.type === "stop_local") {
-        if (!isChosenPolicyStopSubstep(substep)) {
-          continue;
-        }
-        const key = `stop→${sourceId}`;
-        const existing = updates.get(key);
-        if (existing && existing.kind === "stop_local") {
-          existing.delta += delta;
-        } else {
-          updates.set(key, { kind: "stop_local", sourceNodeId: sourceId, delta });
-        }
-        continue;
-      }
-
-      const targetId = substep.chosenAction.targetNodeId;
-
-      if (sourceId === START_NODE_ID) {
-        const key = `seed→${targetId}`;
-        const existing = updates.get(key);
-        if (existing && existing.kind === "seed") {
-          existing.delta += delta;
-        } else {
-          updates.set(key, { kind: "seed", nodeId: targetId, delta });
-        }
-        continue;
-      }
-
-      // Accumulate: the full-trajectory sum means each substep adds to the gradient.
-      const key = `${sourceId}→${targetId}`;
-      const existing = updates.get(key);
-      if (existing && existing.kind === "edge") {
-        existing.delta += delta;
+    if (contribution.kind === "stop_local") {
+      if (existing && existing.kind === "stop_local") {
+        existing.delta += contribution.delta;
       } else {
-        updates.set(key, { kind: "edge", source: sourceId, target: targetId, delta });
+        updates.set(contribution.updateKey, {
+          kind: "stop_local",
+          sourceNodeId: contribution.sourceNodeId,
+          delta: contribution.delta,
+        });
       }
+      continue;
+    }
+
+    if (contribution.kind === "seed") {
+      if (existing && existing.kind === "seed") {
+        existing.delta += contribution.delta;
+      } else if (contribution.targetNodeId) {
+        updates.set(contribution.updateKey, {
+          kind: "seed",
+          nodeId: contribution.targetNodeId,
+          delta: contribution.delta,
+        });
+      }
+      continue;
+    }
+
+    if (existing && existing.kind === "edge") {
+      existing.delta += contribution.delta;
+    } else if (contribution.targetNodeId) {
+      updates.set(contribution.updateKey, {
+        kind: "edge",
+        source: contribution.sourceNodeId,
+        target: contribution.targetNodeId,
+        delta: contribution.delta,
+      });
     }
   }
 

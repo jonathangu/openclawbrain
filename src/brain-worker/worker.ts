@@ -3,13 +3,20 @@ import type {
   BrainEdge,
   BrainEvidence,
   BrainEvidenceResolution,
+  BrainObservationBindingMode,
   BundleEvaluationVerdict,
   Episode,
   MutationProposal,
   PolicyGradientCandidateUpdateArtifact,
+  PolicyGradientCandidateUpdateArtifactV2,
+  PolicyGradientEpisodeUpdateArtifact,
+  PolicyGradientRouteUpdateArtifact,
+  PolicyGradientRouteUpdateContribution,
+  PolicyGradientSupervisionArtifact,
   PromotionRunVerdict,
   ReplayGateVerdict,
   RewardSource,
+  START_NODE_ID,
 } from "../brain-core/types.js";
 import { trustRank } from "../brain-core/types.js";
 import type { BrainStore } from "../brain-store/store.js";
@@ -17,26 +24,122 @@ import type { BrainGraph } from "../brain-core/graph.js";
 import type { BrainTeacher } from "../brain-core/teacher.js";
 import type { BrainMutator } from "../brain-core/mutator.js";
 import type { PackManager } from "../brain-core/pack.js";
-import { computeReinforceUpdates, updateBaseline, applyWeightUpdates } from "../brain-core/update.js";
+import {
+  applyWeightUpdates,
+  collectReinforceUpdateContributions,
+  computeReinforceUpdates,
+  policyWeightUpdateKey,
+  updateBaseline,
+} from "../brain-core/update.js";
 import { decayAllWeights } from "../brain-core/decay.js";
 import { computeHealth } from "../brain-core/health.js";
 import { clusterMutationsIntoBundles, evaluateBundle, DEFAULT_BUNDLE_CONFIG } from "../brain-core/bundle-evaluator.js";
 import type { BundleEvaluationConfig, MutationBundle } from "../brain-core/bundle-evaluator.js";
 
+function toOptionalString(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function toStringArray(value: unknown): string[] {
+  return Array.isArray(value)
+    ? value.filter((entry): entry is string => typeof entry === "string")
+    : [];
+}
+
+function toRecord(value: unknown): Record<string, unknown> | null {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? value as Record<string, unknown>
+    : null;
+}
+
+function toObservationBindingMode(value: unknown): BrainObservationBindingMode | null {
+  switch (value) {
+    case "exact_decision_id":
+    case "exact_selection_digest":
+    case "turn_compile_event_id":
+    case "trace_id":
+    case "legacy_heuristic":
+    case "unbound":
+      return value;
+    default:
+      return null;
+  }
+}
+
+function readTeacherEvaluationRecord(metadata: Record<string, unknown> | null | undefined): Record<string, unknown> | null {
+  return toRecord(metadata?.teacherEvaluation);
+}
+
+function readObservationId(metadata: Record<string, unknown> | null | undefined): string | null {
+  return toOptionalString(metadata?.observationId)
+    ?? toOptionalString(readTeacherEvaluationRecord(metadata)?.observationId);
+}
+
 function readTeacherTraceId(metadata: Record<string, unknown> | null | undefined): string | null {
-  const teacherEvaluation = metadata?.teacherEvaluation;
-  if (teacherEvaluation && typeof teacherEvaluation === "object") {
-    const traceId = (teacherEvaluation as { traceId?: unknown }).traceId;
-    if (typeof traceId === "string" && traceId.length > 0) {
-      return traceId;
-    }
+  const teacherEvaluation = readTeacherEvaluationRecord(metadata);
+  const traceId = toOptionalString(teacherEvaluation?.traceId);
+  if (traceId) {
+    return traceId;
   }
 
-  const teacherLabel = metadata?.teacherLabel;
-  const traceId = teacherLabel && typeof teacherLabel === "object"
-    ? (teacherLabel as { traceId?: unknown }).traceId
-    : metadata?.traceId;
-  return typeof traceId === "string" && traceId.length > 0 ? traceId : null;
+  const teacherLabel = toRecord(metadata?.teacherLabel);
+  return toOptionalString(teacherLabel?.traceId) ?? toOptionalString(metadata?.traceId);
+}
+
+function readSupervisionProvenanceField(
+  metadata: Record<string, unknown> | null | undefined,
+  key: string,
+): string | null {
+  return toOptionalString(metadata?.[key]) ?? toOptionalString(readTeacherEvaluationRecord(metadata)?.[key]);
+}
+
+function readSupervisionBindingMode(
+  metadata: Record<string, unknown> | null | undefined,
+): BrainObservationBindingMode | null {
+  return toObservationBindingMode(metadata?.bindingMode)
+    ?? toObservationBindingMode(readTeacherEvaluationRecord(metadata)?.bindingMode);
+}
+
+function readPolicyWeightBeforeUpdate(
+  graph: BrainGraph,
+  update: Parameters<typeof policyWeightUpdateKey>[0],
+): number | null {
+  switch (update.kind) {
+    case "seed":
+      return graph.getSeedWeight(update.nodeId);
+    case "stop_local":
+      return graph.getStopLocalWeight(update.sourceNodeId);
+    case "edge": {
+      const edge = graph.getEdge(update.source, update.target);
+      return edge ? edge.weight : null;
+    }
+  }
+}
+
+function buildRouteUpdateArtifact(
+  update: Parameters<typeof policyWeightUpdateKey>[0],
+  previousWeight: number | null,
+  nextWeight: number,
+  contributions: PolicyGradientRouteUpdateContribution[],
+): PolicyGradientRouteUpdateArtifact {
+  const firstContribution = contributions[0] ?? null;
+  return {
+    updateKey: policyWeightUpdateKey(update),
+    kind: update.kind,
+    sourceNodeId: firstContribution?.sourceNodeId
+      ?? (update.kind === "seed" ? START_NODE_ID : update.kind === "stop_local" ? update.sourceNodeId : update.source),
+    targetNodeId: firstContribution?.targetNodeId
+      ?? (update.kind === "stop_local" ? null : update.kind === "seed" ? update.nodeId : update.target),
+    delta: update.delta,
+    previousWeight,
+    nextWeight,
+    contributionCount: contributions.length,
+    contributions,
+  };
 }
 
 function incrementRewardSourceCount(
@@ -309,8 +412,10 @@ export class BrainWorker {
 
   private collectPolicyGradientSupervision(episode: Episode): {
     traceIds: string[];
+    observationIds: string[];
     supervisionIds: string[];
     teacherTraceIds: string[];
+    supervision: PolicyGradientSupervisionArtifact[];
   } | null {
     const supervision = this.store
       .getTraceSupervisionForEpisode(episode.id, 50)
@@ -320,22 +425,53 @@ export class BrainWorker {
     }
 
     const traceIds = new Set<string>();
+    const observationIds = new Set<string>();
     const supervisionIds = new Set<string>();
     const teacherTraceIds = new Set<string>();
+    const materialized: PolicyGradientSupervisionArtifact[] = [];
 
     for (const record of supervision) {
       traceIds.add(record.traceId);
       supervisionIds.add(record.id);
+      const observationId = readObservationId(record.metadata);
+      if (observationId) {
+        observationIds.add(observationId);
+      }
+      const teacherTraceId = record.source === "teacher"
+        ? (readTeacherTraceId(record.metadata) ?? record.traceId)
+        : null;
       if (record.source === "teacher") {
-        const teacherTraceId = readTeacherTraceId(record.metadata);
         teacherTraceIds.add(teacherTraceId ?? record.traceId);
       }
+      materialized.push({
+        supervisionId: record.id,
+        traceId: record.traceId,
+        source: record.source,
+        kind: record.kind,
+        value: record.value,
+        confidence: record.confidence,
+        reason: record.reason,
+        labelId: record.labelId,
+        evidenceId: record.evidenceId,
+        observationId,
+        teacherTraceId,
+        serveDecisionRecordId: readSupervisionProvenanceField(record.metadata, "serveDecisionRecordId"),
+        selectionDigest: readSupervisionProvenanceField(record.metadata, "selectionDigest"),
+        turnCompileEventId: readSupervisionProvenanceField(record.metadata, "turnCompileEventId"),
+        activePackGraphChecksum: readSupervisionProvenanceField(record.metadata, "activePackGraphChecksum"),
+        bindingMode: readSupervisionBindingMode(record.metadata),
+        traceRequestDigest: readSupervisionProvenanceField(record.metadata, "traceRequestDigest"),
+        traceSelectedNodeIds: toStringArray(record.metadata?.traceSelectedNodeIds),
+        traceSelectedPathNodeIds: toStringArray(record.metadata?.traceSelectedPathNodeIds),
+      });
     }
 
     return {
       traceIds: [...traceIds].sort(),
+      observationIds: [...observationIds].sort(),
       supervisionIds: [...supervisionIds].sort(),
       teacherTraceIds: [...teacherTraceIds].sort(),
+      supervision: materialized,
     };
   }
 
@@ -344,14 +480,18 @@ export class BrainWorker {
     baselineAfter: number;
     updatedEpisodes: Array<{
       episode: Episode;
+      baselineBeforeEpisode: number;
+      baselineAfterEpisode: number;
       routeUpdateCount: number;
       seedUpdateCount: number;
       stopLocalUpdateCount: number;
       edgeUpdateCount: number;
+      routeUpdates: PolicyGradientRouteUpdateArtifact[];
     }>;
   }): void {
     const episodeIds = new Set<string>();
     const traceIds = new Set<string>();
+    const observationIds = new Set<string>();
     const supervisionIds = new Set<string>();
     const teacherTraceIds = new Set<string>();
     const rewardSources: Record<RewardSource, number> = {
@@ -365,6 +505,7 @@ export class BrainWorker {
     let seedUpdateCount = 0;
     let stopLocalUpdateCount = 0;
     let edgeUpdateCount = 0;
+    const episodeUpdates: PolicyGradientEpisodeUpdateArtifact[] = [];
 
     for (const entry of params.updatedEpisodes) {
       const consumed = this.collectPolicyGradientSupervision(entry.episode);
@@ -382,11 +523,33 @@ export class BrainWorker {
       for (const traceId of consumed.traceIds) {
         traceIds.add(traceId);
       }
+      for (const observationId of consumed.observationIds) {
+        observationIds.add(observationId);
+      }
       for (const supervisionId of consumed.supervisionIds) {
         supervisionIds.add(supervisionId);
       }
       for (const teacherTraceId of consumed.teacherTraceIds) {
         teacherTraceIds.add(teacherTraceId);
+      }
+      if (entry.episode.reward !== null) {
+        episodeUpdates.push({
+          episodeId: entry.episode.id,
+          observationIds: consumed.observationIds,
+          traceIds: consumed.traceIds,
+          supervisionIds: consumed.supervisionIds,
+          reward: entry.episode.reward,
+          rewardSource: entry.episode.rewardSource,
+          baselineBefore: entry.baselineBeforeEpisode,
+          baselineAfter: entry.baselineAfterEpisode,
+          advantage: entry.episode.reward - entry.baselineBeforeEpisode,
+          routeUpdateCount: entry.routeUpdateCount,
+          seedUpdateCount: entry.seedUpdateCount,
+          stopLocalUpdateCount: entry.stopLocalUpdateCount,
+          edgeUpdateCount: entry.edgeUpdateCount,
+          supervision: consumed.supervision,
+          routeUpdates: entry.routeUpdates,
+        });
       }
     }
 
@@ -404,19 +567,21 @@ export class BrainWorker {
     const priorArtifact = this.store.getTrainingStateJson<PolicyGradientCandidateUpdateArtifact>(
       "last_pg_candidate_update_json",
     );
-    const artifact: PolicyGradientCandidateUpdateArtifact = {
-      version: 1,
+    const artifact: PolicyGradientCandidateUpdateArtifactV2 = {
+      version: 2,
       updateCount: (priorArtifact?.updateCount ?? 0) + 1,
       candidatePackVersion: candidatePack.version,
       currentPackVersion,
       generatedAt: Date.now(),
       episodeIds: [...episodeIds].sort(),
       traceIds: [...traceIds].sort(),
+      observationIds: [...observationIds].sort(),
       supervisionIds: [...supervisionIds].sort(),
       teacherTraceIds: [...teacherTraceIds].sort(),
       rewardSources,
       episodeCount: episodeIds.size,
       traceCount: traceIds.size,
+      observationCount: observationIds.size,
       supervisionCount: supervisionIds.size,
       teacherLabelCount: teacherTraceIds.size,
       routeUpdateCount,
@@ -425,6 +590,7 @@ export class BrainWorker {
       edgeUpdateCount,
       baselineBefore: params.baselineBefore,
       baselineAfter: params.baselineAfter,
+      episodeUpdates,
     };
 
     this.store.setTrainingStateJson("last_pg_candidate_update_json", artifact);
@@ -467,10 +633,13 @@ export class BrainWorker {
     let baseline = baselineBefore;
     const updatedEpisodes: Array<{
       episode: Episode;
+      baselineBeforeEpisode: number;
+      baselineAfterEpisode: number;
       routeUpdateCount: number;
       seedUpdateCount: number;
       stopLocalUpdateCount: number;
       edgeUpdateCount: number;
+      routeUpdates: PolicyGradientRouteUpdateArtifact[];
     }> = [];
 
     for (const episode of episodes) {
@@ -478,22 +647,49 @@ export class BrainWorker {
         continue;
       }
 
-      const updates = computeReinforceUpdates(episode, this.config.learningRate, baseline);
+      const baselineBeforeEpisode = baseline;
+      const contributions = collectReinforceUpdateContributions(
+        episode,
+        this.config.learningRate,
+        baselineBeforeEpisode,
+      );
+      const updates = computeReinforceUpdates(episode, this.config.learningRate, baselineBeforeEpisode);
+      const contributionsByKey = new Map<string, PolicyGradientRouteUpdateContribution[]>();
+      for (const contribution of contributions) {
+        const existing = contributionsByKey.get(contribution.updateKey);
+        if (existing) {
+          existing.push(contribution);
+        } else {
+          contributionsByKey.set(contribution.updateKey, [contribution]);
+        }
+      }
+      const previousWeights = new Map<string, number | null>();
+      for (const update of updates) {
+        previousWeights.set(policyWeightUpdateKey(update), readPolicyWeightBeforeUpdate(this.graph, update));
+      }
       applyWeightUpdates(this.graph, updates);
 
       let seedUpdateCount = 0;
       let stopLocalUpdateCount = 0;
       let edgeUpdateCount = 0;
+      const routeUpdates: PolicyGradientRouteUpdateArtifact[] = [];
       for (const update of updates) {
+        const updateKey = policyWeightUpdateKey(update);
+        const previousWeight = previousWeights.get(updateKey) ?? null;
+        const updateContributions = contributionsByKey.get(updateKey) ?? [];
         if (update.kind === "seed") {
           seedUpdateCount += 1;
-          this.store.setSeedWeight(update.nodeId, this.graph.getSeedWeight(update.nodeId));
+          const nextWeight = this.graph.getSeedWeight(update.nodeId);
+          this.store.setSeedWeight(update.nodeId, nextWeight);
+          routeUpdates.push(buildRouteUpdateArtifact(update, previousWeight, nextWeight, updateContributions));
           continue;
         }
 
         if (update.kind === "stop_local") {
           stopLocalUpdateCount += 1;
-          this.store.setStopLocalWeight(update.sourceNodeId, this.graph.getStopLocalWeight(update.sourceNodeId));
+          const nextWeight = this.graph.getStopLocalWeight(update.sourceNodeId);
+          this.store.setStopLocalWeight(update.sourceNodeId, nextWeight);
+          routeUpdates.push(buildRouteUpdateArtifact(update, previousWeight, nextWeight, updateContributions));
           continue;
         }
 
@@ -501,6 +697,7 @@ export class BrainWorker {
         const edge = this.graph.getEdge(update.source, update.target);
         if (edge) {
           this.store.updateEdgeWeight(edge.source, edge.target, edge.kind, edge.weight);
+          routeUpdates.push(buildRouteUpdateArtifact(update, previousWeight, edge.weight, updateContributions));
           continue;
         }
 
@@ -517,17 +714,22 @@ export class BrainWorker {
         };
         this.graph.addEdge(createdEdge);
         this.store.insertEdge(createdEdge);
+        routeUpdates.push(buildRouteUpdateArtifact(update, previousWeight, createdEdge.weight, updateContributions));
       }
 
+      const baselineAfterEpisode = updateBaseline(baseline, episode.reward, this.config.baselineAlpha);
       updatedEpisodes.push({
         episode,
+        baselineBeforeEpisode,
+        baselineAfterEpisode,
         routeUpdateCount: updates.length,
         seedUpdateCount,
         stopLocalUpdateCount,
         edgeUpdateCount,
+        routeUpdates,
       });
       this.store.markEpisodeUpdated(episode.id);
-      baseline = updateBaseline(baseline, episode.reward, this.config.baselineAlpha);
+      baseline = baselineAfterEpisode;
     }
 
     this.store.setTrainingState("baseline_reward", baseline);

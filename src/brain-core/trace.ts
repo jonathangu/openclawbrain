@@ -229,6 +229,24 @@ function formatBranchSource(sourceNodeId: string | null): string {
   return sourceNodeId ?? "start";
 }
 
+function formatPolicyVisibility(substep: TraverseResult["trajectory"][number]["substeps"][number] | null): string {
+  const policyState = substep?.stateSnapshot.policyState;
+  if (!substep || !policyState) {
+    return "";
+  }
+
+  const parts = [
+    `pressure=${policyState.pressureLevel.toFixed(2)}`,
+    `budget=${policyState.budgetUsedFraction.toFixed(2)}`,
+    `frontier=${policyState.frontierPressure.toFixed(2)}`,
+    `stop_p=${substep.stopProbability.toFixed(2)}`,
+  ];
+  if (policyState.pendingSelectionCount > 0) {
+    parts.push(`pending=${policyState.pendingSelectionCount}`);
+  }
+  return ` [${parts.join(" ")}]`;
+}
+
 function buildBranchProof(outcome: {
   sourceNodeId: string | null;
   acceptedTargetIds: string[];
@@ -236,14 +254,14 @@ function buildBranchProof(outcome: {
   droppedTargetIds: string[];
   stopTruth: "chosen" | "forced" | null;
   terminationReason: string | null;
-}): string {
+}, stopSubstep: TraverseResult["trajectory"][number]["substeps"][number] | null): string {
   const continuedSegment = outcome.acceptedTargetIds.length > 0
     ? `continued via ${outcome.acceptedTargetIds.join(",")}`
     : "stopped without continuation";
   const stopSegment = outcome.stopTruth === null
     ? "ended without explicit stop truth"
     : `${outcome.stopTruth} stop (${outcome.terminationReason ?? "unknown"})`;
-  return `branch ${formatBranchSource(outcome.sourceNodeId)} ${continuedSegment} then ${stopSegment}; accepted=${outcome.acceptedTargetIds.length} vetoed=${outcome.vetoedTargetIds.length} dropped=${outcome.droppedTargetIds.length}`;
+  return `branch ${formatBranchSource(outcome.sourceNodeId)} ${continuedSegment} then ${stopSegment}${formatPolicyVisibility(stopSubstep)}; accepted=${outcome.acceptedTargetIds.length} vetoed=${outcome.vetoedTargetIds.length} dropped=${outcome.droppedTargetIds.length}`;
 }
 
 function summarizeBranchOutcomes(traversalResult: TraverseResult): {
@@ -280,7 +298,7 @@ function summarizeBranchOutcomes(traversalResult: TraverseResult): {
         droppedTargetIds,
         stopTruth,
         terminationReason,
-      }),
+      }, stopSubstep),
     };
   });
 

@@ -1009,7 +1009,8 @@ export class BrainService {
     const recentTraces = this.store.getRecentTraces(5);
     const recentDecisionSummary = this.store.getRecentDecisionSummary(25);
     const workerState = readWorkerRuntimeState(this.store, this.config);
-    const promotionStory = buildPromotionStory(this.store);
+    const contextFeedback = this.store.getContextFeedbackSummary();
+    const promotionStory = buildPromotionStory(this.store, { contextFeedback });
     const routeTraceCount = this.store.countTraces();
     const supervisionCount = this.store.countTraceSupervision();
     const observationAttribution = this.store.getObservationAttributionSummary();
@@ -1065,6 +1066,7 @@ export class BrainService {
       pendingObservations: this.store.countPendingObservations(),
       pendingObservationsByStatus: this.store.countObservationsByStatus(),
       observationAttribution,
+      contextFeedback,
       ...workerState,
       pendingLabels: this.store.getPendingLabels().length,
       pendingLabelsBySource: this.store.countPendingLabelsBySource(),

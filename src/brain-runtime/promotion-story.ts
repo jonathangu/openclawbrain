@@ -1,5 +1,5 @@
 import type { BrainStore } from "../brain-store/store.js";
-import type { MutationProposal, MutationStatus, Pack } from "../brain-core/types.js";
+import type { ContextFeedbackSummary, MutationProposal, MutationStatus, Pack } from "../brain-core/types.js";
 
 export interface PromotionStoryPackSummary {
   version: number;
@@ -49,7 +49,7 @@ export interface PromotionStory {
   };
   latestActivity: PromotionStoryLatestActivity;
   integrations: {
-    structuredVerdict: null;
+    structuredVerdict: ContextFeedbackSummary | null;
     learningJournal: null;
   };
 }
@@ -194,10 +194,15 @@ export function buildWorkerPromotionSnapshotMetadata(
 
 export function buildPromotionStory(
   store: BrainStore,
-  options: { recentPromotionLimit?: number; recentCandidateLimit?: number } = {},
+  options: {
+    recentPromotionLimit?: number;
+    recentCandidateLimit?: number;
+    contextFeedback?: ContextFeedbackSummary | null;
+  } = {},
 ): PromotionStory {
   const recentPromotionLimit = options.recentPromotionLimit ?? 5;
   const recentCandidateLimit = options.recentCandidateLimit ?? 5;
+  const contextFeedback = options.contextFeedback ?? store.getContextFeedbackSummary();
   const recentPromotions = store.getRecentPromotedPacks(recentPromotionLimit).map((pack) => toPackSummary(store, pack));
   const currentPackRecord = store.getCurrentPack();
   const currentPackVersion = store.getCurrentPackVersion() ?? currentPackRecord?.version ?? null;
@@ -229,7 +234,7 @@ export function buildPromotionStory(
       rejected,
     }),
     integrations: {
-      structuredVerdict: null,
+      structuredVerdict: contextFeedback,
       learningJournal: null,
     },
   };

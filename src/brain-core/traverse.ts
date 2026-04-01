@@ -27,7 +27,7 @@ import type {
 } from "./types.js";
 import { DEFAULT_POLICY_PARAMS } from "./types.js";
 import type { BrainGraph } from "./graph.js";
-import { softmaxPolicy, sampleAction } from "./policy.js";
+import { computePolicyStateSnapshot, softmaxPolicy, sampleAction } from "./policy.js";
 
 const DEFAULT_MAX_FANOUT_PER_NODE = 4;
 const DEFAULT_MAX_FRONTIER_SIZE = 32;
@@ -176,6 +176,8 @@ export function traverse(options: TraverseOptions): TraverseResult {
     reservedTokenCost: 0,
     expansionCount: 0,
     maxHops,
+    pendingNodeIds: [],
+    maxFrontierSize,
   };
 
   const trajectory: TrajectoryExpansion[] = [];
@@ -199,6 +201,7 @@ export function traverse(options: TraverseOptions): TraverseResult {
 
     state.sourceNodeId = sourceNodeId;
     state.reservedTokenCost = 0;
+    state.pendingNodeIds = [];
 
     const buildStateSnapshot = (selectionIndex: number): TrajectorySubstep["stateSnapshot"] => ({
       sourceNodeId,
@@ -208,14 +211,23 @@ export function traverse(options: TraverseOptions): TraverseResult {
       initialBudget: state.initialBudget,
       reservedTokenCost: state.reservedTokenCost,
       maxHops: state.maxHops,
+      maxFrontierSize: state.maxFrontierSize,
       frontierSize: state.frontier.length,
       frontierNodeIds: [...state.frontier],
       visitedCount: state.visited.size,
       firedCount: state.fired.length,
+      pendingSelectionCount: state.pendingNodeIds?.length ?? 0,
+      pendingTargetNodeIds: [...(state.pendingNodeIds ?? [])],
+      policyState: computePolicyStateSnapshot(state),
     });
 
     const buildTrajectoryCandidates = (
-      distribution: Array<{ action: TraversalAction; score: number; probability: number }>,
+      distribution: Array<{
+        action: TraversalAction;
+        score: number;
+        probability: number;
+        scoreBreakdown?: TrajectorySubstep["candidates"][number]["scoreBreakdown"];
+      }>,
     ): TrajectorySubstep["candidates"] => (
       distribution.map((entry) => ({
         action: entry.action,
@@ -225,6 +237,7 @@ export function traverse(options: TraverseOptions): TraverseResult {
         learnedSeedWeight: entry.action.type === "traverse" && sourceNodeId === null
           ? graph.getSeedWeight(entry.action.targetNodeId)
           : undefined,
+        scoreBreakdown: entry.scoreBreakdown,
       }))
     );
 
@@ -322,6 +335,7 @@ export function traverse(options: TraverseOptions): TraverseResult {
       }
 
       selectedTargets.push(targetNode.id);
+      state.pendingNodeIds?.push(targetNode.id);
       state.reservedTokenCost += targetNode.tokenCount;
     }
 
@@ -430,6 +444,7 @@ export function traverse(options: TraverseOptions): TraverseResult {
 
     state.sourceNodeId = null;
     state.reservedTokenCost = 0;
+    state.pendingNodeIds = [];
     state.expansionCount++;
     return expansion;
   };

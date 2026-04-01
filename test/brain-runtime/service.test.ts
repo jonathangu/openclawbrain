@@ -1007,6 +1007,56 @@ describe("BrainService", () => {
       },
       detail: "teacher evaluations include fallback attribution binding",
     });
+    expect(status.contextFeedback).toMatchObject({
+      verdictCounts: {
+        helpful: 1,
+        irrelevant: 0,
+        harmful: 0,
+      },
+      coverage: {
+        routeTraceCount: 1,
+        observationCount: 1,
+        completedObservationCount: 1,
+        supervisedTraceCount: 1,
+        unsupervisedTraceCount: 0,
+        observationCoverage: 1,
+        supervisionCoverage: 1,
+        pendingFollowupCount: 0,
+        pendingTeacherCount: 0,
+      },
+      latest: {
+        traceId: result?.trace.id,
+        episodeId: result?.episode.id,
+        observationId: expect.stringMatching(/^bo_/),
+        source: "teacher",
+        verdict: "helpful",
+        score: 0.82,
+        confidence: 0.67,
+        bindingMode: "trace_id",
+      },
+      focus: {
+        action: "monitor",
+        detail: "feedback loop is closed on every traced route",
+      },
+    });
+    expect((status.contextFeedback as { detail?: string }).detail).toContain("1 helpful");
+    expect((status.promotionStory as {
+      integrations?: {
+        structuredVerdict?: {
+          verdictCounts?: { helpful?: number; irrelevant?: number; harmful?: number };
+          coverage?: { supervisionCoverage?: number };
+        } | null;
+      };
+    }).integrations?.structuredVerdict).toMatchObject({
+      verdictCounts: {
+        helpful: 1,
+        irrelevant: 0,
+        harmful: 0,
+      },
+      coverage: {
+        supervisionCoverage: 1,
+      },
+    });
   });
 
   it("replays pending observations after a process restart", async () => {
@@ -1098,35 +1148,118 @@ describe("BrainService", () => {
     }).store;
 
     store.setTrainingStateJson("last_pg_candidate_update_json", {
-      version: 1,
+      version: 2,
       updateCount: 2,
       candidatePackVersion: 9,
       currentPackVersion: 3,
       generatedAt: 123456789,
       episodeIds: ["ep_1", "ep_2"],
       traceIds: ["bt_1", "bt_2"],
+      observationIds: ["bo_2"],
       supervisionIds: ["ts_1", "ts_2"],
       teacherTraceIds: ["bt_2"],
       rewardSources: { human: 1, scanner: 0, teacher: 1, self: 0 },
       episodeCount: 2,
       traceCount: 2,
+      observationCount: 1,
       supervisionCount: 2,
       teacherLabelCount: 1,
       routeUpdateCount: 3,
       seedUpdateCount: 2,
+      stopLocalUpdateCount: 0,
       edgeUpdateCount: 1,
       baselineBefore: 0,
       baselineAfter: 0.12,
+      episodeUpdates: [
+        {
+          episodeId: "ep_2",
+          observationIds: ["bo_2"],
+          traceIds: ["bt_2"],
+          supervisionIds: ["ts_2"],
+          reward: 0.79,
+          rewardSource: "teacher",
+          baselineBefore: 0.04,
+          baselineAfter: 0.12,
+          advantage: 0.75,
+          routeUpdateCount: 1,
+          seedUpdateCount: 1,
+          stopLocalUpdateCount: 0,
+          edgeUpdateCount: 0,
+          supervision: [
+            {
+              supervisionId: "ts_2",
+              traceId: "bt_2",
+              source: "teacher",
+              kind: "teacher_review",
+              value: 0.79,
+              confidence: 0.8,
+              reason: "teacher verified the route",
+              labelId: "bl_2",
+              evidenceId: "be_2",
+              observationId: "bo_2",
+              teacherTraceId: "bt_2",
+              serveDecisionRecordId: "decision-2",
+              selectionDigest: "selection-2",
+              turnCompileEventId: "compile-2",
+              activePackGraphChecksum: "graph-2",
+              bindingMode: "exact_decision_id",
+              traceRequestDigest: "digest-2",
+              traceSelectedNodeIds: ["node_2"],
+              traceSelectedPathNodeIds: ["node_2"],
+            },
+          ],
+          routeUpdates: [
+            {
+              updateKey: "seed→node_2",
+              kind: "seed",
+              sourceNodeId: "__START__",
+              targetNodeId: "node_2",
+              delta: 0.01,
+              previousWeight: 0.1,
+              nextWeight: 0.11,
+              contributionCount: 1,
+              contributions: [
+                {
+                  updateKey: "seed→node_2",
+                  kind: "seed",
+                  sourceNodeId: "__START__",
+                  targetNodeId: "node_2",
+                  expansionIndex: 0,
+                  selectionIndex: 0,
+                  chosenActionProbability: 0.6,
+                  delta: 0.01,
+                  stopTruth: null,
+                  stopReason: null,
+                },
+              ],
+            },
+          ],
+        },
+      ],
     });
     store.setTrainingState("last_pg_candidate_pack_version", 9);
 
     const status = await service.status();
     expect(status.lastPgCandidatePackVersion).toBe(9);
     expect(status.lastPgCandidateUpdate).toMatchObject({
+      version: 2,
       updateCount: 2,
       candidatePackVersion: 9,
       teacherLabelCount: 1,
+      observationIds: ["bo_2"],
       traceIds: ["bt_1", "bt_2"],
+      episodeUpdates: [
+        expect.objectContaining({
+          episodeId: "ep_2",
+          observationIds: ["bo_2"],
+          supervision: [
+            expect.objectContaining({
+              observationId: "bo_2",
+              selectionDigest: "selection-2",
+            }),
+          ],
+        }),
+      ],
     });
   });
 
@@ -1335,6 +1468,54 @@ describe("BrainService", () => {
 
     const trace = await service.getTrace();
     expect(trace?.firedNodes).toContain(taught.nodeId);
+
+    const feedbackStatus = await service.status();
+    expect(feedbackStatus.contextFeedback).toMatchObject({
+      verdictCounts: {
+        helpful: 0,
+        irrelevant: 0,
+        harmful: 1,
+      },
+      coverage: {
+        routeTraceCount: 3,
+        observationCount: 0,
+        completedObservationCount: 0,
+        supervisedTraceCount: 1,
+        unsupervisedTraceCount: 2,
+        observationCoverage: 0,
+        supervisionCoverage: 1 / 3,
+        pendingFollowupCount: 0,
+        pendingTeacherCount: 0,
+      },
+      latest: {
+        source: "human",
+        verdict: "harmful",
+        score: -0.5,
+        confidence: 1,
+        traceId: targetResult?.trace.id,
+        episodeId: targetResult?.episode.id,
+        observationId: null,
+        bindingMode: null,
+      },
+      focus: {
+        action: "review_harmful_context",
+      },
+    });
+    expect((feedbackStatus.promotionStory as {
+      integrations?: {
+        structuredVerdict?: {
+          verdictCounts?: { harmful?: number };
+          focus?: { action?: string };
+        } | null;
+      };
+    }).integrations?.structuredVerdict).toMatchObject({
+      verdictCounts: {
+        harmful: 1,
+      },
+      focus: {
+        action: "review_harmful_context",
+      },
+    });
   });
 
   it("commits fast explicit user corrections immediately from recent context", async () => {
