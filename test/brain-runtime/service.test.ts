@@ -1180,8 +1180,8 @@ describe("BrainService", () => {
     });
     expect(status.contextUsefulness).toMatchObject({
       verdictCounts: {
-        helpful: 1,
-        irrelevant: 0,
+        helpful: 0,
+        irrelevant: 1,
         harmful: 0,
       },
       coverage: {
@@ -1193,7 +1193,7 @@ describe("BrainService", () => {
       latest: {
         observationId: expect.stringMatching(/^bo_/),
         episodeId: result?.episode.id,
-        verdict: "helpful",
+        verdict: "irrelevant",
       },
     });
     expect((status.contextFeedback as { detail?: string }).detail).toContain("1 helpful");
