@@ -32,6 +32,7 @@ const DEFAULT_STATUS_COMMAND = [
   "{{openclawHome}}",
   "--json",
 ];
+const DEFAULT_PRICING_TABLE_PATH = path.join(repoRoot, "scripts", "pricing-table.v1.json");
 
 function usage() {
   process.stderr.write(
@@ -473,6 +474,78 @@ function countStringChars(values) {
   return values.reduce((total, value) => total + (typeof value === "string" ? value.length : 0), 0);
 }
 
+function countTextChars(value) {
+  if (typeof value === "string") {
+    return value.length;
+  }
+  if (Array.isArray(value)) {
+    return value.reduce((total, entry) => total + (typeof entry === "string" ? entry.length : 0), 0);
+  }
+  return 0;
+}
+
+function sumOrNull(values) {
+  const filtered = values.filter(Number.isFinite);
+  if (filtered.length === 0) {
+    return null;
+  }
+  return filtered.reduce((total, value) => total + value, 0);
+}
+
+function loadPricingTable(pricingTablePath = DEFAULT_PRICING_TABLE_PATH) {
+  if (!existsSync(pricingTablePath)) {
+    return null;
+  }
+  const pricingTable = readJsonIfExists(pricingTablePath);
+  if (!pricingTable || pricingTable.contract !== "openclawbrain_pricing_table.v1") {
+    return null;
+  }
+  const charsPerToken = Number(pricingTable.charsPerToken ?? pricingTable.tokenCharsPerToken ?? 4);
+  const promptPriceUsdPer1mTokens = Number(pricingTable.promptPriceUsdPer1mTokens);
+  const completionPriceUsdPer1mTokens = Number(pricingTable.completionPriceUsdPer1mTokens);
+  if (!Number.isFinite(charsPerToken) || charsPerToken <= 0 || !Number.isFinite(promptPriceUsdPer1mTokens) || !Number.isFinite(completionPriceUsdPer1mTokens)) {
+    return null;
+  }
+  return {
+    contract: pricingTable.contract,
+    version: typeof pricingTable.version === "string" ? pricingTable.version : "v1",
+    path: path.relative(repoRoot, pricingTablePath).split(path.sep).join("/"),
+    charsPerToken,
+    promptPriceUsdPer1mTokens,
+    completionPriceUsdPer1mTokens,
+  };
+}
+
+function estimateTokensFromChars(chars, charsPerToken) {
+  if (!Number.isFinite(chars) || !Number.isFinite(charsPerToken) || charsPerToken <= 0) {
+    return null;
+  }
+  return Math.ceil(chars / charsPerToken);
+}
+
+function estimateUsdFromTokens(tokens, pricePer1mTokens) {
+  if (!Number.isFinite(tokens) || !Number.isFinite(pricePer1mTokens)) {
+    return null;
+  }
+  return round((tokens / 1_000_000) * pricePer1mTokens, 6);
+}
+
+function summarizeTurnCompletionChars(turn) {
+  const fields = ["assistantTexts", "completionTexts", "outputTexts", "assistantText", "completionText", "responseText"];
+  for (const field of fields) {
+    if (Object.prototype.hasOwnProperty.call(turn ?? {}, field)) {
+      const value = turn?.[field];
+      if (typeof value === "string" || Array.isArray(value)) {
+        return countTextChars(value);
+      }
+      if (value === null || value === undefined) {
+        return 0;
+      }
+    }
+  }
+  return null;
+}
+
 function normalizeLabelKind(kind) {
   return typeof kind === "string" ? kind.trim().toLowerCase() : "";
 }
@@ -513,7 +586,7 @@ function summarizeTraceFeedback(turns) {
   };
 }
 
-function summarizeReplayModeSavings(mode, traceTurnById = new Map()) {
+function summarizeReplayModeSavings(mode, traceTurnById = new Map(), pricingTable = null) {
   const turns = Array.isArray(mode?.turns) ? mode.turns : [];
   const turnCount = turns.length;
   const selectedContextBlockCount = turns.reduce(
@@ -522,7 +595,29 @@ function summarizeReplayModeSavings(mode, traceTurnById = new Map()) {
   );
   const selectedContextChars = turns.reduce((total, turn) => total + countStringChars(turn?.selectedContextTexts), 0);
   const turnsWithSelectedContextCount = turns.filter((turn) => countStringChars(turn?.selectedContextTexts) > 0).length;
-  const estimatedPromptTokens = selectedContextChars > 0 ? Math.ceil(selectedContextChars / 4) : 0;
+  const charsPerToken = Number.isFinite(pricingTable?.charsPerToken) && pricingTable.charsPerToken > 0 ? pricingTable.charsPerToken : 4;
+  const estimatedPromptTokens = estimateTokensFromChars(selectedContextChars, charsPerToken) ?? 0;
+  let completionCharsObservedTurnCount = 0;
+  let completionCharsTotal = 0;
+  let completionCharsMissing = turnCount === 0;
+
+  for (const turn of turns) {
+    const completionChars = summarizeTurnCompletionChars(turn);
+    if (completionChars === null) {
+      completionCharsMissing = true;
+      continue;
+    }
+    completionCharsObservedTurnCount += 1;
+    completionCharsTotal += completionChars;
+  }
+
+  const completionChars = completionCharsMissing ? null : completionCharsTotal;
+  const estimatedCompletionTokens = completionChars === null ? null : estimateTokensFromChars(completionChars, charsPerToken);
+  const estimatedPromptCostUsd = estimateUsdFromTokens(estimatedPromptTokens, pricingTable?.promptPriceUsdPer1mTokens ?? null);
+  const estimatedCompletionCostUsd = estimatedCompletionTokens === null ? null : estimateUsdFromTokens(estimatedCompletionTokens, pricingTable?.completionPriceUsdPer1mTokens ?? null);
+  const estimatedTotalCostUsd = estimatedPromptCostUsd !== null && estimatedCompletionCostUsd !== null
+    ? round(estimatedPromptCostUsd + estimatedCompletionCostUsd, 6)
+    : null;
   let retrievalToolHopCount = 0;
   let retrievalToolHopTurnCount = 0;
 
@@ -547,14 +642,28 @@ function summarizeReplayModeSavings(mode, traceTurnById = new Map()) {
   return {
     mode: mode?.mode ?? null,
     turnCount,
+    pricingTableVersion: pricingTable?.version ?? null,
+    pricingTablePath: pricingTable?.path ?? null,
     selectedContextBlockCount,
     selectedContextChars,
+    completionChars,
     estimatedPromptTokens,
+    estimatedCompletionTokens,
+    estimatedPromptCostUsd,
+    estimatedCompletionCostUsd,
+    estimatedTotalCostUsd,
     retrievalToolHopCount,
     retrievalToolHopTurnCount,
     selectedContextCharsPerTurnMean: turnCount > 0 ? round(selectedContextChars / turnCount, 2) : null,
     selectedContextBlocksPerTurnMean: turnCount > 0 ? round(selectedContextBlockCount / turnCount, 2) : null,
     estimatedPromptTokensPerTurnMean: turnCount > 0 ? round(estimatedPromptTokens / turnCount, 2) : null,
+    completionCharsObservedTurnCount,
+    completionCharsObservedRate: turnCount > 0 ? round(completionCharsObservedTurnCount / turnCount, 4) : null,
+    completionCharsPerTurnMean: completionChars === null || turnCount === 0 ? null : round(completionChars / turnCount, 2),
+    estimatedCompletionTokensPerTurnMean: estimatedCompletionTokens === null || turnCount === 0 ? null : round(estimatedCompletionTokens / turnCount, 2),
+    estimatedPromptCostUsdPerTurnMean: estimatedPromptCostUsd === null || turnCount === 0 ? null : round(estimatedPromptCostUsd / turnCount, 6),
+    estimatedCompletionCostUsdPerTurnMean: estimatedCompletionCostUsd === null || turnCount === 0 ? null : round(estimatedCompletionCostUsd / turnCount, 6),
+    estimatedTotalCostUsdPerTurnMean: estimatedTotalCostUsd === null || turnCount === 0 ? null : round(estimatedTotalCostUsd / turnCount, 6),
     turnsWithSelectedContextCount,
     turnsWithSelectedContextRate: turnCount > 0 ? round(turnsWithSelectedContextCount / turnCount, 4) : null,
     retrievalToolHopPerTurnMean: turnCount > 0 ? round(retrievalToolHopCount / turnCount, 2) : null,
@@ -571,20 +680,65 @@ function aggregateReplaySavings(modeSavings) {
     const current = byMode.get(entry.mode) ?? {
       mode: entry.mode,
       turnCount: 0,
+      pricingTableVersion: entry.pricingTableVersion ?? null,
+      pricingTablePath: entry.pricingTablePath ?? null,
       selectedContextBlockCount: 0,
       selectedContextChars: 0,
       estimatedPromptTokens: 0,
+      completionChars: 0,
+      completionCharsObservedTurnCount: 0,
+      estimatedCompletionTokens: 0,
+      estimatedPromptCostUsd: 0,
+      estimatedCompletionCostUsd: 0,
+      estimatedTotalCostUsd: 0,
       retrievalToolHopCount: 0,
       retrievalToolHopTurnCount: 0,
       turnsWithSelectedContextCount: 0,
+      completionCharsMissing: false,
+      estimatedPromptCostUsdMissing: false,
+      estimatedCompletionTokensMissing: false,
+      estimatedCompletionCostUsdMissing: false,
+      estimatedTotalCostUsdMissing: false,
     };
     current.turnCount += Number(entry.turnCount ?? 0);
     current.selectedContextBlockCount += Number(entry.selectedContextBlockCount ?? 0);
     current.selectedContextChars += Number(entry.selectedContextChars ?? 0);
     current.estimatedPromptTokens += Number(entry.estimatedPromptTokens ?? 0);
+    current.completionCharsObservedTurnCount += Number(entry.completionCharsObservedTurnCount ?? 0);
+    if (entry.completionChars === null || entry.completionChars === undefined) {
+      current.completionCharsMissing = true;
+    } else {
+      current.completionChars += Number(entry.completionChars ?? 0);
+    }
+    if (entry.estimatedPromptCostUsd === null || entry.estimatedPromptCostUsd === undefined) {
+      current.estimatedPromptCostUsdMissing = true;
+    } else {
+      current.estimatedPromptCostUsd += Number(entry.estimatedPromptCostUsd ?? 0);
+    }
+    if (entry.estimatedCompletionTokens === null || entry.estimatedCompletionTokens === undefined) {
+      current.estimatedCompletionTokensMissing = true;
+    } else {
+      current.estimatedCompletionTokens += Number(entry.estimatedCompletionTokens ?? 0);
+    }
+    if (entry.estimatedCompletionCostUsd === null || entry.estimatedCompletionCostUsd === undefined) {
+      current.estimatedCompletionCostUsdMissing = true;
+    } else {
+      current.estimatedCompletionCostUsd += Number(entry.estimatedCompletionCostUsd ?? 0);
+    }
+    if (entry.estimatedTotalCostUsd === null || entry.estimatedTotalCostUsd === undefined) {
+      current.estimatedTotalCostUsdMissing = true;
+    } else {
+      current.estimatedTotalCostUsd += Number(entry.estimatedTotalCostUsd ?? 0);
+    }
     current.retrievalToolHopCount += Number(entry.retrievalToolHopCount ?? 0);
     current.retrievalToolHopTurnCount += Number(entry.retrievalToolHopTurnCount ?? 0);
     current.turnsWithSelectedContextCount += Number(entry.turnsWithSelectedContextCount ?? 0);
+    if (current.pricingTableVersion === null && entry.pricingTableVersion !== null && entry.pricingTableVersion !== undefined) {
+      current.pricingTableVersion = entry.pricingTableVersion;
+    }
+    if (current.pricingTablePath === null && entry.pricingTablePath !== null && entry.pricingTablePath !== undefined) {
+      current.pricingTablePath = entry.pricingTablePath;
+    }
     byMode.set(entry.mode, current);
   }
 
@@ -592,18 +746,55 @@ function aggregateReplaySavings(modeSavings) {
     const entry = byMode.get(mode) ?? {
       mode,
       turnCount: 0,
+      pricingTableVersion: null,
+      pricingTablePath: null,
       selectedContextBlockCount: 0,
       selectedContextChars: 0,
       estimatedPromptTokens: 0,
+      completionChars: 0,
+      completionCharsObservedTurnCount: 0,
+      estimatedCompletionTokens: 0,
+      estimatedPromptCostUsd: 0,
+      estimatedCompletionCostUsd: 0,
+      estimatedTotalCostUsd: 0,
       retrievalToolHopCount: 0,
       retrievalToolHopTurnCount: 0,
       turnsWithSelectedContextCount: 0,
+      completionCharsMissing: false,
+      estimatedPromptCostUsdMissing: false,
+      estimatedCompletionTokensMissing: false,
+      estimatedCompletionCostUsdMissing: false,
+      estimatedTotalCostUsdMissing: false,
     };
+    const {
+      completionCharsMissing,
+      estimatedPromptCostUsdMissing,
+      estimatedCompletionTokensMissing,
+      estimatedCompletionCostUsdMissing,
+      estimatedTotalCostUsdMissing,
+      ...cleanEntry
+    } = entry;
+    const completionChars = entry.completionCharsMissing ? null : entry.completionChars;
+    const estimatedCompletionTokens = entry.estimatedCompletionTokensMissing ? null : entry.estimatedCompletionTokens;
+    const estimatedPromptCostUsd = entry.estimatedPromptCostUsdMissing ? null : round(entry.estimatedPromptCostUsd, 6);
+    const estimatedCompletionCostUsd = entry.estimatedCompletionCostUsdMissing ? null : round(entry.estimatedCompletionCostUsd, 6);
+    const estimatedTotalCostUsd = entry.estimatedTotalCostUsdMissing ? null : round(entry.estimatedTotalCostUsd, 6);
     return {
-      ...entry,
+      ...cleanEntry,
+      completionChars,
+      estimatedCompletionTokens,
+      estimatedPromptCostUsd,
+      estimatedCompletionCostUsd,
+      estimatedTotalCostUsd,
       selectedContextCharsPerTurnMean: entry.turnCount > 0 ? round(entry.selectedContextChars / entry.turnCount, 2) : null,
       selectedContextBlocksPerTurnMean: entry.turnCount > 0 ? round(entry.selectedContextBlockCount / entry.turnCount, 2) : null,
       estimatedPromptTokensPerTurnMean: entry.turnCount > 0 ? round(entry.estimatedPromptTokens / entry.turnCount, 2) : null,
+      completionCharsObservedRate: entry.turnCount > 0 ? round(entry.completionCharsObservedTurnCount / entry.turnCount, 4) : null,
+      completionCharsPerTurnMean: completionChars === null || entry.turnCount === 0 ? null : round(completionChars / entry.turnCount, 2),
+      estimatedCompletionTokensPerTurnMean: estimatedCompletionTokens === null || entry.turnCount === 0 ? null : round(estimatedCompletionTokens / entry.turnCount, 2),
+      estimatedPromptCostUsdPerTurnMean: estimatedPromptCostUsd === null || entry.turnCount === 0 ? null : round(estimatedPromptCostUsd / entry.turnCount, 6),
+      estimatedCompletionCostUsdPerTurnMean: estimatedCompletionCostUsd === null || entry.turnCount === 0 ? null : round(estimatedCompletionCostUsd / entry.turnCount, 6),
+      estimatedTotalCostUsdPerTurnMean: estimatedTotalCostUsd === null || entry.turnCount === 0 ? null : round(estimatedTotalCostUsd / entry.turnCount, 6),
       turnsWithSelectedContextRate: entry.turnCount > 0 ? round(entry.turnsWithSelectedContextCount / entry.turnCount, 4) : null,
       retrievalToolHopPerTurnMean: entry.turnCount > 0 ? round(entry.retrievalToolHopCount / entry.turnCount, 2) : null,
       retrievalToolHopTurnRate: entry.turnCount > 0 ? round(entry.retrievalToolHopTurnCount / entry.turnCount, 4) : null,
@@ -691,6 +882,7 @@ function summarizeReplayBundle(bundlePath, workspaceRoot) {
   const traceTurns = Array.isArray(trace?.turns) ? trace.turns : [];
   const traceTurnById = new Map(traceTurns.map((turn) => [turn.turnId, turn]));
   const traceFeedback = summarizeTraceFeedback(traceTurns);
+  const pricingTable = loadPricingTable();
 
   const modes = Array.isArray(bundle?.modes) ? bundle.modes : [];
   const winnerMode = summaryTables?.winnerMode ?? bundle?.summary?.winnerMode ?? null;
@@ -698,10 +890,15 @@ function summarizeReplayBundle(bundlePath, workspaceRoot) {
   const winnerScore = ranking.length > 0 ? Number(ranking[0]?.qualityScore ?? 0) : null;
   const qualityScores = ranking.map((row) => Number(row.qualityScore ?? 0)).filter(Number.isFinite);
   const modeNames = modes.map((mode) => mode.mode).filter(Boolean);
-  const savingsByMode = modes.map((mode) => summarizeReplayModeSavings(mode));
+  const savingsByMode = modes.map((mode) => summarizeReplayModeSavings(mode, traceTurnById, pricingTable));
   const selectedContextChars = sum(savingsByMode.map((mode) => mode.selectedContextChars));
   const selectedContextBlockCount = sum(savingsByMode.map((mode) => mode.selectedContextBlockCount));
   const estimatedPromptTokens = savingsByMode.length > 0 ? sum(savingsByMode.map((mode) => mode.estimatedPromptTokens)) : null;
+  const completionChars = sumOrNull(savingsByMode.map((mode) => mode.completionChars));
+  const estimatedCompletionTokens = sumOrNull(savingsByMode.map((mode) => mode.estimatedCompletionTokens));
+  const estimatedPromptCostUsd = sumOrNull(savingsByMode.map((mode) => mode.estimatedPromptCostUsd));
+  const estimatedCompletionCostUsd = sumOrNull(savingsByMode.map((mode) => mode.estimatedCompletionCostUsd));
+  const estimatedTotalCostUsd = sumOrNull(savingsByMode.map((mode) => mode.estimatedTotalCostUsd));
   const turnsWithSelectedContextCount = sum(savingsByMode.map((mode) => mode.turnsWithSelectedContextCount));
   const totalTurnCount = sum(savingsByMode.map((mode) => mode.turnCount));
   const totalRetrievalToolHopCount = sum(savingsByMode.map((mode) => mode.retrievalToolHopCount));
@@ -782,6 +979,13 @@ function summarizeReplayBundle(bundlePath, workspaceRoot) {
       selectedContextChars: savingsByMode.length > 0 ? selectedContextChars : null,
       selectedContextBlockCount: savingsByMode.length > 0 ? selectedContextBlockCount : null,
       estimatedPromptTokens,
+      completionChars,
+      estimatedCompletionTokens,
+      estimatedPromptCostUsd,
+      estimatedCompletionCostUsd,
+      estimatedTotalCostUsd,
+      pricingTableVersion: pricingTable?.version ?? null,
+      pricingTablePath: pricingTable?.path ?? null,
       retrievalToolHopCount: savingsByMode.length > 0 ? totalRetrievalToolHopCount : null,
       retrievalToolHopTurnCount: savingsByMode.length > 0 ? totalRetrievalToolHopTurnCount : null,
       retrievalToolHopTurnRate: totalTurnCount > 0 ? round(totalRetrievalToolHopTurnCount / totalTurnCount, 4) : null,
@@ -1017,11 +1221,16 @@ function summarizePerformance(bundles, statusProbe, scanDurationMs) {
   const replayContextChars = replayBundles.map((bundle) => bundle.metrics?.selectedContextChars ?? null).filter(Number.isFinite);
   const replayContextBlocks = replayBundles.map((bundle) => bundle.metrics?.selectedContextBlockCount ?? null).filter(Number.isFinite);
   const replayEstimatedPromptTokens = replayBundles.map((bundle) => bundle.metrics?.estimatedPromptTokens ?? null).filter(Number.isFinite);
+  const replayCompletionChars = replayBundles.map((bundle) => bundle.metrics?.completionChars ?? null).filter(Number.isFinite);
+  const replayEstimatedCompletionTokens = replayBundles.map((bundle) => bundle.metrics?.estimatedCompletionTokens ?? null).filter(Number.isFinite);
   const replayRetrievalToolHopCount = replayBundles.map((bundle) => bundle.metrics?.retrievalToolHopCount ?? null).filter(Number.isFinite);
   const replayRetrievalToolHopTurnCount = replayBundles.map((bundle) => bundle.metrics?.retrievalToolHopTurnCount ?? null).filter(Number.isFinite);
   const replayFeedbackEvents = replayBundles.map((bundle) => bundle.metrics?.feedbackEventCount ?? null).filter(Number.isFinite);
   const replayNonApprovalFeedbackEvents = replayBundles.map((bundle) => bundle.metrics?.nonApprovalFeedbackEventCount ?? null).filter(Number.isFinite);
   const replayTurnsWithNonApprovalFeedback = replayBundles.map((bundle) => bundle.metrics?.turnsWithNonApprovalFeedbackCount ?? null).filter(Number.isFinite);
+  const replayEstimatedPromptCostUsd = replayBundles.map((bundle) => bundle.metrics?.estimatedPromptCostUsd ?? null).filter(Number.isFinite);
+  const replayEstimatedCompletionCostUsd = replayBundles.map((bundle) => bundle.metrics?.estimatedCompletionCostUsd ?? null).filter(Number.isFinite);
+  const replayEstimatedTotalCostUsd = replayBundles.map((bundle) => bundle.metrics?.estimatedTotalCostUsd ?? null).filter(Number.isFinite);
 
   return {
     statusProbeMs: statusProbe.durationMs,
@@ -1044,11 +1253,18 @@ function summarizePerformance(bundles, statusProbe, scanDurationMs) {
     replayContextBlockMean: mean(replayContextBlocks),
     replayEstimatedPromptTokensTotal: sum(replayEstimatedPromptTokens),
     replayEstimatedPromptTokensMean: mean(replayEstimatedPromptTokens),
+    replayCompletionCharsTotal: sumOrNull(replayCompletionChars),
+    replayCompletionCharsMean: mean(replayCompletionChars),
+    replayEstimatedCompletionTokensTotal: sumOrNull(replayEstimatedCompletionTokens),
+    replayEstimatedCompletionTokensMean: mean(replayEstimatedCompletionTokens),
     replayRetrievalToolHopCountTotal: sum(replayRetrievalToolHopCount),
     replayRetrievalToolHopTurnCountTotal: sum(replayRetrievalToolHopTurnCount),
     replayFeedbackEventCountTotal: sum(replayFeedbackEvents),
     replayNonApprovalFeedbackEventCountTotal: sum(replayNonApprovalFeedbackEvents),
     replayTurnsWithNonApprovalFeedbackCountTotal: sum(replayTurnsWithNonApprovalFeedback),
+    replayEstimatedPromptCostUsdTotal: sumOrNull(replayEstimatedPromptCostUsd),
+    replayEstimatedCompletionCostUsdTotal: sumOrNull(replayEstimatedCompletionCostUsd),
+    replayEstimatedTotalCostUsdTotal: sumOrNull(replayEstimatedTotalCostUsd),
   };
 }
 
@@ -1120,6 +1336,15 @@ function buildHealthSnapshot({ config, statusProbe, bundles, now, scanDurationMs
     performance,
     costProxy,
     replaySavings: latestReplay?.metrics?.savingsByMode ?? [],
+    replayCostProxy: latestReplay
+      ? {
+          pricingTableVersion: latestReplay.metrics?.pricingTableVersion ?? null,
+          pricingTablePath: latestReplay.metrics?.pricingTablePath ?? null,
+          estimatedPromptCostUsd: latestReplay.metrics?.estimatedPromptCostUsd ?? null,
+          estimatedCompletionCostUsd: latestReplay.metrics?.estimatedCompletionCostUsd ?? null,
+          estimatedTotalCostUsd: latestReplay.metrics?.estimatedTotalCostUsd ?? null,
+        }
+      : null,
     proofInventory: {
       bundleCount: bundles.length,
       operatorProofCount: bundles.filter((bundle) => bundle.kind === "operator-proof").length,
@@ -1156,6 +1381,8 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs }) {
   const replayCompileRates = replayBundles.map((bundle) => bundle.metrics?.compileOkRate ?? null).filter(Number.isFinite);
   const replayPhraseRates = replayBundles.map((bundle) => bundle.metrics?.phraseHitRate ?? null).filter(Number.isFinite);
   const replayLearnedRouteRates = replayBundles.map((bundle) => bundle.metrics?.learnedRouteTurnRate ?? null).filter(Number.isFinite);
+  const replayPricingTableVersions = [...new Set(replayBundles.map((bundle) => bundle.metrics?.pricingTableVersion ?? null).filter((value) => typeof value === "string" && value.length > 0))];
+  const replayPricingTablePaths = [...new Set(replayBundles.map((bundle) => bundle.metrics?.pricingTablePath ?? null).filter((value) => typeof value === "string" && value.length > 0))];
   const replaySavingsByMode = aggregateReplaySavings(
     replayBundles.flatMap((bundle) => Array.isArray(bundle.metrics?.savingsByMode) ? bundle.metrics.savingsByMode : []),
   );
@@ -1211,6 +1438,8 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs }) {
       compileRateMean: mean(replayCompileRates),
       phraseRateMean: mean(replayPhraseRates),
       learnedRouteRateMean: mean(replayLearnedRouteRates),
+      pricingTableVersion: replayPricingTableVersions.length === 1 ? replayPricingTableVersions[0] : replayPricingTableVersions.length > 1 ? "mixed" : null,
+      pricingTablePath: replayPricingTablePaths.length === 1 ? replayPricingTablePaths[0] : replayPricingTablePaths.length > 1 ? "mixed" : null,
       replayFileBytesTotal: sum(replayFileSizes),
       replayFileBytesMean: mean(replayFileSizes),
       totalTurns: sum(replayBundles.map((bundle) => bundle.metrics?.totalTurns ?? 0)),
@@ -1218,6 +1447,11 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs }) {
       selectedContextCharsTotal: sum(replaySavingsByMode.map((mode) => mode.selectedContextChars ?? 0)),
       selectedContextBlocksTotal: sum(replaySavingsByMode.map((mode) => mode.selectedContextBlockCount ?? 0)),
       estimatedPromptTokensTotal: sum(replaySavingsByMode.map((mode) => mode.estimatedPromptTokens ?? 0)),
+      completionCharsTotal: sumOrNull(replaySavingsByMode.map((mode) => mode.completionChars)),
+      estimatedCompletionTokensTotal: sumOrNull(replaySavingsByMode.map((mode) => mode.estimatedCompletionTokens)),
+      estimatedPromptCostUsdTotal: sumOrNull(replaySavingsByMode.map((mode) => mode.estimatedPromptCostUsd)),
+      estimatedCompletionCostUsdTotal: sumOrNull(replaySavingsByMode.map((mode) => mode.estimatedCompletionCostUsd)),
+      estimatedTotalCostUsdTotal: sumOrNull(replaySavingsByMode.map((mode) => mode.estimatedTotalCostUsd)),
       turnsWithSelectedContextTotal: sum(replaySavingsByMode.map((mode) => mode.turnsWithSelectedContextCount ?? 0)),
       retrievalToolHopCountTotal: sum(replayBundles.map((bundle) => bundle.metrics?.retrievalToolHopCount ?? 0)),
       retrievalToolHopTurnCountTotal: sum(replayBundles.map((bundle) => bundle.metrics?.retrievalToolHopTurnCount ?? 0)),
@@ -1294,6 +1528,17 @@ function formatAge(ageDays) {
   return `${round(ageDays, 2)}d`;
 }
 
+function formatUsd(amount) {
+  if (!Number.isFinite(amount)) {
+    return "n/a";
+  }
+  const rounded = round(amount, 6);
+  if (rounded === null) {
+    return "n/a";
+  }
+  return `$${rounded.toFixed(6)}`;
+}
+
 function formatHealthMarkdown(snapshot) {
   const lines = [];
   lines.push("# OpenClawBrain proof health snapshot");
@@ -1331,18 +1576,25 @@ function formatHealthMarkdown(snapshot) {
   lines.push(`- replay context chars total: ${snapshot.performance.replayContextCharsTotal ?? "n/a"}`);
   lines.push(`- replay selected context blocks total: ${snapshot.performance.replaySelectedContextBlocksTotal ?? "n/a"}`);
   lines.push(`- replay estimated prompt tokens total: ${snapshot.performance.replayEstimatedPromptTokensTotal ?? "n/a"}`);
+  lines.push(`- replay completion chars total: ${snapshot.performance.replayCompletionCharsTotal ?? "n/a"}`);
+  lines.push(`- replay estimated completion tokens total: ${snapshot.performance.replayEstimatedCompletionTokensTotal ?? "n/a"}`);
   lines.push(`- replay retrieval/tool-hop count total: ${snapshot.performance.replayRetrievalToolHopCountTotal ?? "n/a"}`);
   lines.push(`- replay retrieval/tool-hop turns total: ${snapshot.performance.replayRetrievalToolHopTurnCountTotal ?? "n/a"}`);
   lines.push(`- replay feedback events total: ${snapshot.performance.replayFeedbackEventCountTotal ?? "n/a"}`);
   lines.push(`- replay non-approval feedback events total: ${snapshot.performance.replayNonApprovalFeedbackEventCountTotal ?? "n/a"}`);
   lines.push(`- replay turns with non-approval feedback total: ${snapshot.performance.replayTurnsWithNonApprovalFeedbackCountTotal ?? "n/a"}`);
+  lines.push(`- replay pricing table version: ${snapshot.replayCostProxy?.pricingTableVersion ?? "n/a"}`);
+  lines.push(`- replay pricing table path: ${snapshot.replayCostProxy?.pricingTablePath ?? "n/a"}`);
+  lines.push(`- replay estimated prompt cost: ${formatUsd(snapshot.replayCostProxy?.estimatedPromptCostUsd)}`);
+  lines.push(`- replay estimated completion cost: ${formatUsd(snapshot.replayCostProxy?.estimatedCompletionCostUsd)}`);
+  lines.push(`- replay estimated total cost: ${formatUsd(snapshot.replayCostProxy?.estimatedTotalCostUsd)}`);
   lines.push(`- proof minutes proxy: ${snapshot.costProxy.proofMinutes}`);
   lines.push(`- artifact bytes scanned: ${snapshot.costProxy.artifactBytes} (${snapshot.costProxy.artifactMB} MiB)`);
   if (Array.isArray(snapshot.replaySavings) && snapshot.replaySavings.length > 0) {
     lines.push("");
     lines.push("## Replay savings proxy");
     for (const mode of snapshot.replaySavings) {
-      lines.push(`- ${mode.mode}: ${mode.selectedContextChars} chars, ${mode.selectedContextBlockCount} blocks, ${mode.estimatedPromptTokens} estimated prompt tokens, ${mode.retrievalToolHopCount} retrieval/tool-hop proxy count, ${mode.retrievalToolHopTurnCount} retrieval/tool-hop turns`);
+      lines.push(`- ${mode.mode}: ${mode.selectedContextChars} prompt chars, ${mode.completionChars ?? "n/a"} completion chars, ${mode.selectedContextBlockCount} blocks, ${mode.estimatedPromptTokens} estimated prompt tokens, ${mode.estimatedCompletionTokens ?? "n/a"} estimated completion tokens, ${formatUsd(mode.estimatedPromptCostUsd)} prompt cost, ${formatUsd(mode.estimatedCompletionCostUsd)} completion cost, ${formatUsd(mode.estimatedTotalCostUsd)} total cost, ${mode.retrievalToolHopCount} retrieval/tool-hop proxy count, ${mode.retrievalToolHopTurnCount} retrieval/tool-hop turns`);
     }
   }
   lines.push("");
@@ -1386,17 +1638,24 @@ function formatNightlyMarkdown(aggregate) {
   lines.push(`- replay context chars total: ${aggregate.replayMetrics.selectedContextCharsTotal}`);
   lines.push(`- replay selected context blocks total: ${aggregate.replayMetrics.selectedContextBlocksTotal}`);
   lines.push(`- replay estimated prompt tokens total: ${aggregate.replayMetrics.estimatedPromptTokensTotal}`);
+  lines.push(`- replay completion chars total: ${aggregate.replayMetrics.completionCharsTotal ?? "n/a"}`);
+  lines.push(`- replay estimated completion tokens total: ${aggregate.replayMetrics.estimatedCompletionTokensTotal ?? "n/a"}`);
   lines.push(`- replay retrieval/tool-hop count total: ${aggregate.replayMetrics.retrievalToolHopCountTotal}`);
   lines.push(`- replay retrieval/tool-hop turns total: ${aggregate.replayMetrics.retrievalToolHopTurnCountTotal}`);
   lines.push(`- replay feedback events total: ${aggregate.replayMetrics.feedbackEventCountTotal}`);
   lines.push(`- replay non-approval feedback events total: ${aggregate.replayMetrics.nonApprovalFeedbackEventCountTotal}`);
   lines.push(`- replay turns with non-approval feedback total: ${aggregate.replayMetrics.turnsWithNonApprovalFeedbackCountTotal}`);
+  lines.push(`- pricing table version: ${aggregate.replayMetrics.pricingTableVersion ?? "n/a"}`);
+  lines.push(`- pricing table path: ${aggregate.replayMetrics.pricingTablePath ?? "n/a"}`);
+  lines.push(`- replay estimated prompt cost total: ${formatUsd(aggregate.replayMetrics.estimatedPromptCostUsdTotal)}`);
+  lines.push(`- replay estimated completion cost total: ${formatUsd(aggregate.replayMetrics.estimatedCompletionCostUsdTotal)}`);
+  lines.push(`- replay estimated total cost total: ${formatUsd(aggregate.replayMetrics.estimatedTotalCostUsdTotal)}`);
   lines.push("");
   lines.push("## Replay savings proxy");
-  lines.push("| mode | context chars | selected blocks | estimated prompt tokens | retrieval/tool-hop proxy count | retrieval/tool-hop turns | turns with context | turn coverage | retrieval/tool-hop turn rate |");
-  lines.push("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |");
+  lines.push("| mode | prompt chars | completion chars | selected blocks | estimated prompt tokens | estimated completion tokens | prompt cost USD | completion cost USD | total cost USD | retrieval/tool-hop proxy count | retrieval/tool-hop turns | turns with context | turn coverage | retrieval/tool-hop turn rate |");
+  lines.push("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |");
   for (const mode of aggregate.replayMetrics.savingsByMode) {
-    lines.push(`| ${mode.mode} | ${mode.selectedContextChars} | ${mode.selectedContextBlockCount} | ${mode.estimatedPromptTokens} | ${mode.retrievalToolHopCount} | ${mode.retrievalToolHopTurnCount} | ${mode.turnsWithSelectedContextCount} | ${mode.turnsWithSelectedContextRate ?? "n/a"} | ${mode.retrievalToolHopTurnRate ?? "n/a"} |`);
+    lines.push(`| ${mode.mode} | ${mode.selectedContextChars} | ${mode.completionChars ?? "n/a"} | ${mode.selectedContextBlockCount} | ${mode.estimatedPromptTokens} | ${mode.estimatedCompletionTokens ?? "n/a"} | ${formatUsd(mode.estimatedPromptCostUsd)} | ${formatUsd(mode.estimatedCompletionCostUsd)} | ${formatUsd(mode.estimatedTotalCostUsd)} | ${mode.retrievalToolHopCount} | ${mode.retrievalToolHopTurnCount} | ${mode.turnsWithSelectedContextCount} | ${mode.turnsWithSelectedContextRate ?? "n/a"} | ${mode.retrievalToolHopTurnRate ?? "n/a"} |`);
   }
   lines.push("");
   lines.push("## Operator proof performance");

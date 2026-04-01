@@ -64,6 +64,7 @@ describe("proof cron bundle scanning", () => {
               turnId: "turn-1",
               selectedContextIds: ["no-brain-ctx-1"],
               selectedContextTexts: ["alpha"],
+              completionTexts: ["alpha"],
               observability: { selectionDigestCount: 0 },
             },
           ],
@@ -75,6 +76,7 @@ describe("proof cron bundle scanning", () => {
               turnId: "turn-2",
               selectedContextIds: ["vector-ctx-1"],
               selectedContextTexts: ["beta beta"],
+              completionTexts: ["beta beta"],
               observability: { selectionDigestCount: 2 },
             },
           ],
@@ -86,6 +88,7 @@ describe("proof cron bundle scanning", () => {
               turnId: "turn-1",
               selectedContextIds: ["graph-ctx-1"],
               selectedContextTexts: ["gamma"],
+              completionTexts: ["gamma"],
               observability: { selectionDigestCount: 1 },
             },
           ],
@@ -97,6 +100,7 @@ describe("proof cron bundle scanning", () => {
               turnId: "turn-2",
               selectedContextIds: ["learned-ctx-1"],
               selectedContextTexts: ["delta delta"],
+              completionTexts: ["delta delta"],
               observability: { selectionDigestCount: 3 },
             },
           ],
@@ -173,6 +177,12 @@ describe("proof cron bundle scanning", () => {
     expect(replayBundle?.metrics.selectedContextChars).toBe(30);
     expect(replayBundle?.metrics.selectedContextBlockCount).toBe(4);
     expect(replayBundle?.metrics.estimatedPromptTokens).toBe(10);
+    expect(replayBundle?.metrics.completionChars).toBe(30);
+    expect(replayBundle?.metrics.estimatedCompletionTokens).toBe(10);
+    expect(replayBundle?.metrics.estimatedPromptCostUsd).toBeCloseTo(0.000014, 12);
+    expect(replayBundle?.metrics.estimatedCompletionCostUsd).toBeCloseTo(0.00005, 12);
+    expect(replayBundle?.metrics.estimatedTotalCostUsd).toBeCloseTo(0.000064, 12);
+    expect(replayBundle?.metrics.pricingTableVersion).toBe("v1");
     expect(replayBundle?.metrics.retrievalToolHopCount).toBe(6);
     expect(replayBundle?.metrics.retrievalToolHopTurnCount).toBe(3);
     expect(replayBundle?.metrics.feedbackEventCount).toBe(2);
@@ -182,14 +192,28 @@ describe("proof cron bundle scanning", () => {
       {
         mode: "no_brain",
         turnCount: 1,
+        pricingTableVersion: "v1",
+        pricingTablePath: "scripts/pricing-table.v1.json",
         selectedContextBlockCount: 1,
         selectedContextChars: 5,
+        completionChars: 5,
         estimatedPromptTokens: 2,
+        estimatedCompletionTokens: 2,
+        estimatedPromptCostUsd: 0.000003,
+        estimatedCompletionCostUsd: 0.00001,
+        estimatedTotalCostUsd: 0.000013,
         retrievalToolHopCount: 0,
         retrievalToolHopTurnCount: 0,
         selectedContextCharsPerTurnMean: 5,
         selectedContextBlocksPerTurnMean: 1,
         estimatedPromptTokensPerTurnMean: 2,
+        completionCharsObservedTurnCount: 1,
+        completionCharsObservedRate: 1,
+        completionCharsPerTurnMean: 5,
+        estimatedCompletionTokensPerTurnMean: 2,
+        estimatedPromptCostUsdPerTurnMean: 0.000003,
+        estimatedCompletionCostUsdPerTurnMean: 0.00001,
+        estimatedTotalCostUsdPerTurnMean: 0.000013,
         turnsWithSelectedContextCount: 1,
         turnsWithSelectedContextRate: 1,
         retrievalToolHopPerTurnMean: 0,
@@ -198,14 +222,28 @@ describe("proof cron bundle scanning", () => {
       {
         mode: "vector_only",
         turnCount: 1,
+        pricingTableVersion: "v1",
+        pricingTablePath: "scripts/pricing-table.v1.json",
         selectedContextBlockCount: 1,
         selectedContextChars: 9,
+        completionChars: 9,
         estimatedPromptTokens: 3,
+        estimatedCompletionTokens: 3,
+        estimatedPromptCostUsd: 0.000004,
+        estimatedCompletionCostUsd: 0.000015,
+        estimatedTotalCostUsd: 0.000019,
         retrievalToolHopCount: 2,
         retrievalToolHopTurnCount: 1,
         selectedContextCharsPerTurnMean: 9,
         selectedContextBlocksPerTurnMean: 1,
         estimatedPromptTokensPerTurnMean: 3,
+        completionCharsObservedTurnCount: 1,
+        completionCharsObservedRate: 1,
+        completionCharsPerTurnMean: 9,
+        estimatedCompletionTokensPerTurnMean: 3,
+        estimatedPromptCostUsdPerTurnMean: 0.000004,
+        estimatedCompletionCostUsdPerTurnMean: 0.000015,
+        estimatedTotalCostUsdPerTurnMean: 0.000019,
         turnsWithSelectedContextCount: 1,
         turnsWithSelectedContextRate: 1,
         retrievalToolHopPerTurnMean: 2,
@@ -214,14 +252,28 @@ describe("proof cron bundle scanning", () => {
       {
         mode: "graph_prior_only",
         turnCount: 1,
+        pricingTableVersion: "v1",
+        pricingTablePath: "scripts/pricing-table.v1.json",
         selectedContextBlockCount: 1,
         selectedContextChars: 5,
+        completionChars: 5,
         estimatedPromptTokens: 2,
+        estimatedCompletionTokens: 2,
+        estimatedPromptCostUsd: 0.000003,
+        estimatedCompletionCostUsd: 0.00001,
+        estimatedTotalCostUsd: 0.000013,
         retrievalToolHopCount: 1,
         retrievalToolHopTurnCount: 1,
         selectedContextCharsPerTurnMean: 5,
         selectedContextBlocksPerTurnMean: 1,
         estimatedPromptTokensPerTurnMean: 2,
+        completionCharsObservedTurnCount: 1,
+        completionCharsObservedRate: 1,
+        completionCharsPerTurnMean: 5,
+        estimatedCompletionTokensPerTurnMean: 2,
+        estimatedPromptCostUsdPerTurnMean: 0.000003,
+        estimatedCompletionCostUsdPerTurnMean: 0.00001,
+        estimatedTotalCostUsdPerTurnMean: 0.000013,
         turnsWithSelectedContextCount: 1,
         turnsWithSelectedContextRate: 1,
         retrievalToolHopPerTurnMean: 1,
@@ -230,14 +282,28 @@ describe("proof cron bundle scanning", () => {
       {
         mode: "learned_route",
         turnCount: 1,
+        pricingTableVersion: "v1",
+        pricingTablePath: "scripts/pricing-table.v1.json",
         selectedContextBlockCount: 1,
         selectedContextChars: 11,
+        completionChars: 11,
         estimatedPromptTokens: 3,
+        estimatedCompletionTokens: 3,
+        estimatedPromptCostUsd: 0.000004,
+        estimatedCompletionCostUsd: 0.000015,
+        estimatedTotalCostUsd: 0.000019,
         retrievalToolHopCount: 3,
         retrievalToolHopTurnCount: 1,
         selectedContextCharsPerTurnMean: 11,
         selectedContextBlocksPerTurnMean: 1,
         estimatedPromptTokensPerTurnMean: 3,
+        completionCharsObservedTurnCount: 1,
+        completionCharsObservedRate: 1,
+        completionCharsPerTurnMean: 11,
+        estimatedCompletionTokensPerTurnMean: 3,
+        estimatedPromptCostUsdPerTurnMean: 0.000004,
+        estimatedCompletionCostUsdPerTurnMean: 0.000015,
+        estimatedTotalCostUsdPerTurnMean: 0.000019,
         turnsWithSelectedContextCount: 1,
         turnsWithSelectedContextRate: 1,
         retrievalToolHopPerTurnMean: 3,
@@ -347,6 +413,13 @@ describe("proof cron metric surfaces", () => {
         selectedContextChars: 30,
         selectedContextBlockCount: 4,
         estimatedPromptTokens: 10,
+        completionChars: 30,
+        estimatedCompletionTokens: 10,
+        estimatedPromptCostUsd: 0.000013,
+        estimatedCompletionCostUsd: 0.00005,
+        estimatedTotalCostUsd: 0.000063,
+        pricingTableVersion: "v1",
+        pricingTablePath: "scripts/pricing-table.v1.json",
         retrievalToolHopCount: 6,
         retrievalToolHopTurnCount: 3,
         feedbackEventCount: 2,
@@ -360,14 +433,28 @@ describe("proof cron metric surfaces", () => {
           {
             mode: "no_brain",
             turnCount: 1,
+            pricingTableVersion: "v1",
+            pricingTablePath: "scripts/pricing-table.v1.json",
             selectedContextBlockCount: 1,
             selectedContextChars: 5,
+            completionChars: 5,
             estimatedPromptTokens: 2,
+            estimatedCompletionTokens: 2,
+            estimatedPromptCostUsd: 0.000003,
+            estimatedCompletionCostUsd: 0.00001,
+            estimatedTotalCostUsd: 0.000013,
             retrievalToolHopCount: 0,
             retrievalToolHopTurnCount: 0,
             selectedContextCharsPerTurnMean: 5,
             selectedContextBlocksPerTurnMean: 1,
             estimatedPromptTokensPerTurnMean: 2,
+            completionCharsObservedTurnCount: 1,
+            completionCharsObservedRate: 1,
+            completionCharsPerTurnMean: 5,
+            estimatedCompletionTokensPerTurnMean: 2,
+            estimatedPromptCostUsdPerTurnMean: 0.000003,
+            estimatedCompletionCostUsdPerTurnMean: 0.00001,
+            estimatedTotalCostUsdPerTurnMean: 0.000013,
             turnsWithSelectedContextCount: 1,
             turnsWithSelectedContextRate: 1,
             retrievalToolHopPerTurnMean: 0,
@@ -376,14 +463,28 @@ describe("proof cron metric surfaces", () => {
           {
             mode: "vector_only",
             turnCount: 1,
+            pricingTableVersion: "v1",
+            pricingTablePath: "scripts/pricing-table.v1.json",
             selectedContextBlockCount: 1,
             selectedContextChars: 9,
+            completionChars: 9,
             estimatedPromptTokens: 3,
+            estimatedCompletionTokens: 3,
+            estimatedPromptCostUsd: 0.000004,
+            estimatedCompletionCostUsd: 0.000015,
+            estimatedTotalCostUsd: 0.000019,
             retrievalToolHopCount: 2,
             retrievalToolHopTurnCount: 1,
             selectedContextCharsPerTurnMean: 9,
             selectedContextBlocksPerTurnMean: 1,
             estimatedPromptTokensPerTurnMean: 3,
+            completionCharsObservedTurnCount: 1,
+            completionCharsObservedRate: 1,
+            completionCharsPerTurnMean: 9,
+            estimatedCompletionTokensPerTurnMean: 3,
+            estimatedPromptCostUsdPerTurnMean: 0.000004,
+            estimatedCompletionCostUsdPerTurnMean: 0.000015,
+            estimatedTotalCostUsdPerTurnMean: 0.000019,
             turnsWithSelectedContextCount: 1,
             turnsWithSelectedContextRate: 1,
             retrievalToolHopPerTurnMean: 2,
@@ -392,14 +493,28 @@ describe("proof cron metric surfaces", () => {
           {
             mode: "graph_prior_only",
             turnCount: 1,
+            pricingTableVersion: "v1",
+            pricingTablePath: "scripts/pricing-table.v1.json",
             selectedContextBlockCount: 1,
             selectedContextChars: 5,
+            completionChars: 5,
             estimatedPromptTokens: 2,
+            estimatedCompletionTokens: 2,
+            estimatedPromptCostUsd: 0.000003,
+            estimatedCompletionCostUsd: 0.00001,
+            estimatedTotalCostUsd: 0.000013,
             retrievalToolHopCount: 1,
             retrievalToolHopTurnCount: 1,
             selectedContextCharsPerTurnMean: 5,
             selectedContextBlocksPerTurnMean: 1,
             estimatedPromptTokensPerTurnMean: 2,
+            completionCharsObservedTurnCount: 1,
+            completionCharsObservedRate: 1,
+            completionCharsPerTurnMean: 5,
+            estimatedCompletionTokensPerTurnMean: 2,
+            estimatedPromptCostUsdPerTurnMean: 0.000003,
+            estimatedCompletionCostUsdPerTurnMean: 0.00001,
+            estimatedTotalCostUsdPerTurnMean: 0.000013,
             turnsWithSelectedContextCount: 1,
             turnsWithSelectedContextRate: 1,
             retrievalToolHopPerTurnMean: 1,
@@ -408,14 +523,28 @@ describe("proof cron metric surfaces", () => {
           {
             mode: "learned_route",
             turnCount: 1,
+            pricingTableVersion: "v1",
+            pricingTablePath: "scripts/pricing-table.v1.json",
             selectedContextBlockCount: 1,
             selectedContextChars: 11,
+            completionChars: 11,
             estimatedPromptTokens: 3,
+            estimatedCompletionTokens: 3,
+            estimatedPromptCostUsd: 0.000004,
+            estimatedCompletionCostUsd: 0.000015,
+            estimatedTotalCostUsd: 0.000019,
             retrievalToolHopCount: 3,
             retrievalToolHopTurnCount: 1,
             selectedContextCharsPerTurnMean: 11,
             selectedContextBlocksPerTurnMean: 1,
             estimatedPromptTokensPerTurnMean: 3,
+            completionCharsObservedTurnCount: 1,
+            completionCharsObservedRate: 1,
+            completionCharsPerTurnMean: 11,
+            estimatedCompletionTokensPerTurnMean: 3,
+            estimatedPromptCostUsdPerTurnMean: 0.000004,
+            estimatedCompletionCostUsdPerTurnMean: 0.000015,
+            estimatedTotalCostUsdPerTurnMean: 0.000019,
             turnsWithSelectedContextCount: 1,
             turnsWithSelectedContextRate: 1,
             retrievalToolHopPerTurnMean: 3,
@@ -458,7 +587,10 @@ describe("proof cron metric surfaces", () => {
     expect(formatHealthMarkdown(health)).toContain("serve state: serving_active_pack");
     expect(formatHealthMarkdown(health)).toContain("clip rate: 0.25");
     expect(formatHealthMarkdown(health)).toContain("replay context chars total");
-    expect(formatHealthMarkdown(health)).toContain("learned_route: 11 chars, 1 blocks, 3 estimated prompt tokens");
+    expect(formatHealthMarkdown(health)).toContain("replay completion chars total");
+    expect(formatHealthMarkdown(health)).toContain("replay estimated completion tokens total");
+    expect(formatHealthMarkdown(health)).toContain("pricing table version: v1");
+    expect(formatHealthMarkdown(health)).toContain("learned_route: 11 prompt chars, 11 completion chars, 1 blocks, 3 estimated prompt tokens, 3 estimated completion tokens, $0.000004 prompt cost, $0.000015 completion cost, $0.000019 total cost");
     expect(formatHealthMarkdown(health)).toContain("proof minutes proxy");
 
     const aggregate = buildNightlyAggregate({ config, bundles, now, scanDurationMs: 42 });
@@ -469,6 +601,12 @@ describe("proof cron metric surfaces", () => {
     expect(aggregate.replayMetrics.selectedContextCharsTotal).toBe(30);
     expect(aggregate.replayMetrics.selectedContextBlocksTotal).toBe(4);
     expect(aggregate.replayMetrics.estimatedPromptTokensTotal).toBe(10);
+    expect(aggregate.replayMetrics.completionCharsTotal).toBe(30);
+    expect(aggregate.replayMetrics.estimatedCompletionTokensTotal).toBe(10);
+    expect(aggregate.replayMetrics.estimatedPromptCostUsdTotal).toBeCloseTo(0.000014, 12);
+    expect(aggregate.replayMetrics.estimatedCompletionCostUsdTotal).toBeCloseTo(0.00005, 12);
+    expect(aggregate.replayMetrics.estimatedTotalCostUsdTotal).toBeCloseTo(0.000064, 12);
+    expect(aggregate.replayMetrics.pricingTableVersion).toBe("v1");
     expect(aggregate.replayMetrics.retrievalToolHopCountTotal).toBe(6);
     expect(aggregate.replayMetrics.retrievalToolHopTurnCountTotal).toBe(3);
     expect(aggregate.replayMetrics.feedbackEventCountTotal).toBe(2);
@@ -476,11 +614,15 @@ describe("proof cron metric surfaces", () => {
     expect(aggregate.replayMetrics.turnsWithNonApprovalFeedbackCountTotal).toBe(1);
     expect(aggregate.replayMetrics.savingsByMode[3].mode).toBe("learned_route");
     expect(aggregate.replayMetrics.savingsByMode[3].estimatedPromptTokens).toBe(3);
+    expect(aggregate.replayMetrics.savingsByMode[3].estimatedCompletionTokens).toBe(3);
+    expect(aggregate.replayMetrics.savingsByMode[3].estimatedTotalCostUsd).toBe(0.000019);
     expect(aggregate.replayMetrics.savingsByMode[3].retrievalToolHopCount).toBe(3);
     expect(aggregate.operatorMetrics.stepMsTotal).toBe(1500);
     expect(aggregate.costProxy.bundleCount).toBe(3);
     expect(formatNightlyMarkdown(aggregate)).toContain("winner modes");
-    expect(formatNightlyMarkdown(aggregate)).toContain("| learned_route | 11 | 1 | 3 | 3 | 1 | 1 | 1 | 1 |");
+    expect(formatNightlyMarkdown(aggregate)).toContain("replay estimated completion tokens total: 10");
+    expect(formatNightlyMarkdown(aggregate)).toContain("pricing table version: v1");
+    expect(formatNightlyMarkdown(aggregate)).toContain("| learned_route | 11 | 11 | 1 | 3 | 3 | $0.000004 | $0.000015 | $0.000019 | 3 | 1 | 1 | 1 | 1 |");
     expect(formatNightlyMarkdown(aggregate)).toContain("replay retrieval/tool-hop count total: 6");
     expect(formatNightlyMarkdown(aggregate)).toContain("replay turns with non-approval feedback total: 1");
     expect(formatNightlyMarkdown(aggregate)).toContain("proof minutes");
