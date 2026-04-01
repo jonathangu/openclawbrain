@@ -36,6 +36,8 @@
     "release:verify:proof": "node scripts/verify-proof-smoke.mjs",
     "release:verify:cli": "npm run release:prepare:cli && npm --prefix packages/cli run release:verify",
     "release:verify:openclaw": "npm run release:prepare:openclaw && npm --prefix packages/openclaw run release:verify",
+    "proof:health": "node scripts/proof-cron.mjs health",
+    "proof:nightly": "node scripts/proof-cron.mjs nightly",
     "test": "vitest run --dir test",
     "version-packages": "changeset version"
   },
