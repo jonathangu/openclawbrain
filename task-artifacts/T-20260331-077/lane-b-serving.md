@@ -132,4 +132,4 @@ unrelated to this change.
 
 ## Commit SHA
 
-See task-status JSON for commit SHA (populated after commit).
+`41ab8a2` on branch `ocb/t-20260331-077-b-serving`
