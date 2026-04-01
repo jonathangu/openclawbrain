@@ -306,7 +306,7 @@ function writeCanonicalManifest(
 }
 
 describe("runFrozenRecordedSessionEvalGate", () => {
-  it("passes when learned_route improves quality enough to clear the quality-adjusted prompt-cost signal", () => {
+  it("records the quality-adjusted prompt-cost signal when learned_route improves quality", () => {
     const rootDir = createTempRoot("frozen-eval-gate-pass");
     const trace = writeTrace(rootDir, buildScoreResolutionTrace(rootDir, "pass-a"));
     const manifestPath = writeManifest(rootDir, "pass-manifest", [trace]);
@@ -321,6 +321,7 @@ describe("runFrozenRecordedSessionEvalGate", () => {
     expect(descriptor.report.contract).toBe(FROZEN_RECORDED_SESSION_EVAL_REPORT_CONTRACT);
     expect(descriptor.report.status).toBe("pass");
     expect(descriptor.report.checks.every((check: { status: string }) => check.status === "pass")).toBe(true);
+    expect(descriptor.report.checks.find((check: { id: string }) => check.id === "quality_adjusted_prompt_savings_reported")?.status).toBe("pass");
     expect(descriptor.report.traceResults).toHaveLength(1);
     expect(descriptor.report.traceResults[0]?.validationOk).toBe(true);
     expect(descriptor.report.qualityAdjustedPromptSavings.qualityAdjustedPromptSavingsUsd).not.toBeNull();
@@ -329,7 +330,7 @@ describe("runFrozenRecordedSessionEvalGate", () => {
     expect(readFileSync(descriptor.summaryPath, "utf8")).toContain("quality-adjusted prompt savings usd");
   });
 
-  it("fails when learned_route loses the prompt-cost signal even if quality holds", () => {
+  it("only hard-fails the prompt-cost signal when an explicit threshold is configured", () => {
     const rootDir = createTempRoot("frozen-eval-gate-fail");
     const trace = writeTrace(rootDir, buildTrainFreezeTrace(rootDir, "fail-a"));
     const manifestPath = writeManifest(rootDir, "fail-manifest", [trace]);
@@ -341,12 +342,26 @@ describe("runFrozenRecordedSessionEvalGate", () => {
       scratchRootDir: rootDir,
     });
 
-    expect(descriptor.report.status).toBe("fail");
+    expect(descriptor.report.status).toBe("pass");
     expect(descriptor.report.checks.find((check: { id: string }) => check.id === "trace_replay_proofs_valid")?.status).toBe("pass");
     expect(descriptor.report.checks.find((check: { id: string }) => check.id === "learned_route_non_inferior_to_graph_prior_only")?.status).toBe("pass");
     expect(descriptor.report.checks.find((check: { id: string }) => check.id === "graph_prior_only_clears_no_brain_floor")?.status).toBe("pass");
-    expect(descriptor.report.checks.find((check: { id: string }) => check.id === "quality_adjusted_prompt_savings_positive")?.status).toBe("fail");
-    expect((descriptor.report.qualityAdjustedPromptSavings.qualityAdjustedPromptSavingsUsd ?? 0) < 0).toBe(true);
+    expect(descriptor.report.checks.find((check: { id: string }) => check.id === "quality_adjusted_prompt_savings_reported")?.status).toBe("pass");
+
+    const computedSignal = descriptor.report.qualityAdjustedPromptSavings.qualityAdjustedPromptSavingsUsd;
+    expect(computedSignal).not.toBeNull();
+
+    const thresholdDescriptor = runFrozenRecordedSessionEvalGate({
+      manifestPath,
+      outputDir: path.join(rootDir, "threshold-output"),
+      scratchRootDir: rootDir,
+      thresholds: {
+        minQualityAdjustedPromptSavingsUsd: Number(((computedSignal ?? 0) + 0.000001).toFixed(6)),
+      },
+    });
+
+    expect(thresholdDescriptor.report.status).toBe("fail");
+    expect(thresholdDescriptor.report.checks.find((check: { id: string }) => check.id === "quality_adjusted_prompt_savings_threshold_met")?.status).toBe("fail");
   });
 
   it("accepts the canonical frozen trace-set manifest contract", () => {

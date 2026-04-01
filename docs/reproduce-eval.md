@@ -80,12 +80,21 @@ That defaults to the same canonical manifest and writes:
 docs/evidence/YYYY-MM-DD/<git-sha>/frozen-recorded-session-eval/manifest/
 ```
 
+By default, the gate hard-checks replay validity and quality. It still reports `qualityAdjustedPromptSavingsUsd`, but treats that prompt-cost proxy as observational unless you explicitly set `--min-quality-adjusted-prompt-savings-usd`. That matches the product framing: this equivalent-only replay lane does not prove long-run task-level economics or fewer raw LLM/API calls over time.
+
 Override the manifest or output path if needed:
 
 ```bash
 tsx scripts/run-frozen-recorded-session-eval-gate.ts \
   --manifest path/to/replay-manifest.json \
   --output-dir path/to/out
+```
+
+If you want an explicit prompt-cost floor for a local experiment, add:
+
+```bash
+tsx scripts/run-frozen-recorded-session-eval-gate.ts \
+  --min-quality-adjusted-prompt-savings-usd 0
 ```
 
 ## What to inspect

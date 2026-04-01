@@ -39,7 +39,7 @@ const MODE_ORDER = ["no_brain", "vector_only", "graph_prior_only", "learned_rout
 const DEFAULT_THRESHOLDS = {
   maxQualityRegression: 5,
   minGraphPriorOnlyQualityVsNoBrain: 5,
-  minQualityAdjustedPromptSavingsUsd: 0,
+  minQualityAdjustedPromptSavingsUsd: null,
 } as const;
 
 type GateStatus = "pass" | "fail" | "blocked";
@@ -49,7 +49,7 @@ type ModeName = (typeof MODE_ORDER)[number];
 export interface FrozenRecordedSessionEvalThresholds {
   maxQualityRegression: number;
   minGraphPriorOnlyQualityVsNoBrain: number;
-  minQualityAdjustedPromptSavingsUsd: number;
+  minQualityAdjustedPromptSavingsUsd: number | null;
 }
 
 export interface FrozenRecordedSessionEvalManifestTrace {
@@ -230,7 +230,8 @@ function usage() {
       "  --scratch-root-dir <path>                 Scratch parent for per-trace replay runs.",
       `  --max-quality-regression <number>         Max learned_route quality drop vs graph_prior_only. Default ${DEFAULT_THRESHOLDS.maxQualityRegression}`,
       `  --min-no-brain-uplift <number>            Min graph_prior_only quality uplift over no_brain. Default ${DEFAULT_THRESHOLDS.minGraphPriorOnlyQualityVsNoBrain}`,
-      `  --min-quality-adjusted-prompt-savings-usd <number>  Min quality-adjusted prompt savings signal. Default ${DEFAULT_THRESHOLDS.minQualityAdjustedPromptSavingsUsd}`,
+      "  --min-quality-adjusted-prompt-savings-usd <number>  Optional hard floor for the quality-adjusted prompt-savings proxy.",
+      "                                           Default disabled because this replay gate does not prove long-run task-level economics.",
       "  --help                                    Show this help.",
       "",
       "Outputs:",
@@ -753,6 +754,11 @@ function buildChecks(
     && learnedRoute?.estimatedPromptCostUsd !== undefined
     ? round(baselineEquivalentCandidatePromptCostUsd - learnedRoute.estimatedPromptCostUsd, 6)
     : null;
+  const qualityAdjustedPromptSavingsThresholdEnabled = thresholds.minQualityAdjustedPromptSavingsUsd !== null;
+  const qualityAdjustedPromptSavingsCheckPass = qualityAdjustedPromptSavingsUsd !== null && (
+    !qualityAdjustedPromptSavingsThresholdEnabled
+    || qualityAdjustedPromptSavingsUsd >= thresholds.minQualityAdjustedPromptSavingsUsd
+  );
 
   const checks: FrozenRecordedSessionEvalGateCheck[] = [
     {
@@ -810,14 +816,22 @@ function buildChecks(
       },
     },
     {
-      id: "quality_adjusted_prompt_savings_positive",
-      status: qualityAdjustedPromptSavingsUsd !== null && qualityAdjustedPromptSavingsUsd > thresholds.minQualityAdjustedPromptSavingsUsd ? "pass" : "fail",
-      summary: qualityAdjustedPromptSavingsUsd !== null && qualityAdjustedPromptSavingsUsd > thresholds.minQualityAdjustedPromptSavingsUsd
-        ? "quality-adjusted prompt savings signal is positive"
-        : "quality-adjusted prompt savings signal is not positive",
+      id: qualityAdjustedPromptSavingsThresholdEnabled
+        ? "quality_adjusted_prompt_savings_threshold_met"
+        : "quality_adjusted_prompt_savings_reported",
+      status: qualityAdjustedPromptSavingsCheckPass ? "pass" : "fail",
+      summary: qualityAdjustedPromptSavingsThresholdEnabled
+        ? (qualityAdjustedPromptSavingsCheckPass
+            ? "quality-adjusted prompt savings signal cleared the configured threshold"
+            : "quality-adjusted prompt savings signal missed the configured threshold")
+        : (qualityAdjustedPromptSavingsUsd !== null
+            ? "quality-adjusted prompt savings signal recorded for inspection"
+            : "quality-adjusted prompt savings signal could not be computed"),
       detail: qualityAdjustedPromptSavingsUsd === null
         ? "quality-adjusted prompt savings could not be computed"
-        : `quality-adjusted prompt savings = ${qualityAdjustedPromptSavingsUsd}`,
+        : qualityAdjustedPromptSavingsThresholdEnabled
+          ? `quality-adjusted prompt savings = ${qualityAdjustedPromptSavingsUsd}`
+          : `quality-adjusted prompt savings = ${qualityAdjustedPromptSavingsUsd}; this equivalent-only replay gate does not model long-run task-level economics or raw LLM/API call count`,
       observed: {
         baselineQualityGain,
         candidateQualityGain,
@@ -949,6 +963,7 @@ export function runFrozenRecordedSessionEvalGate(
     `canonical frozen set contract is ${CANONICAL_RECORDED_SESSION_TRACE_SET_MANIFEST_CONTRACT}`,
     "manifest trace paths resolve relative to the manifest file location",
     "traceHash, when present in the manifest, is checksumJsonPayload(trace-json)",
+    "the equivalent-only frozen replay gate does not model long-run task-level economics or raw LLM/API call count, so the prompt-cost proxy is observational unless you set an explicit threshold",
     "quality-adjusted prompt savings use prompt-context cost proxy from selected context chars because replay proof bundles do not model live completion costs",
     "quality adjustment scales graph_prior_only prompt cost to the learned_route quality gain above the no_brain floor",
     "graph_prior_only is the non-inferiority baseline and no_brain is the floor anchor",
