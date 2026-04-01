@@ -61,8 +61,10 @@ describe("proof cron bundle scanning", () => {
           mode: "no_brain",
           turns: [
             {
+              turnId: "turn-1",
               selectedContextIds: ["no-brain-ctx-1"],
               selectedContextTexts: ["alpha"],
+              observability: { selectionDigestCount: 0 },
             },
           ],
         },
@@ -70,8 +72,10 @@ describe("proof cron bundle scanning", () => {
           mode: "vector_only",
           turns: [
             {
+              turnId: "turn-2",
               selectedContextIds: ["vector-ctx-1"],
               selectedContextTexts: ["beta beta"],
+              observability: { selectionDigestCount: 2 },
             },
           ],
         },
@@ -79,8 +83,10 @@ describe("proof cron bundle scanning", () => {
           mode: "graph_prior_only",
           turns: [
             {
+              turnId: "turn-1",
               selectedContextIds: ["graph-ctx-1"],
               selectedContextTexts: ["gamma"],
+              observability: { selectionDigestCount: 1 },
             },
           ],
         },
@@ -88,11 +94,21 @@ describe("proof cron bundle scanning", () => {
           mode: "learned_route",
           turns: [
             {
+              turnId: "turn-2",
               selectedContextIds: ["learned-ctx-1"],
               selectedContextTexts: ["delta delta"],
+              observability: { selectionDigestCount: 3 },
             },
           ],
         },
+      ],
+    });
+    writeJson(path.join(replayRoot, "trace.json"), {
+      contract: "recorded_session_trace.v1",
+      traceId: "trace-a",
+      turns: [
+        { turnId: "turn-1", feedback: [{ kind: "teaching" }] },
+        { turnId: "turn-2", feedback: [{ kind: "approval" }] },
       ],
     });
     writeJson(path.join(replayRoot, "summary-tables.json"), {
@@ -157,6 +173,11 @@ describe("proof cron bundle scanning", () => {
     expect(replayBundle?.metrics.selectedContextChars).toBe(30);
     expect(replayBundle?.metrics.selectedContextBlockCount).toBe(4);
     expect(replayBundle?.metrics.estimatedPromptTokens).toBe(10);
+    expect(replayBundle?.metrics.retrievalToolHopCount).toBe(6);
+    expect(replayBundle?.metrics.retrievalToolHopTurnCount).toBe(3);
+    expect(replayBundle?.metrics.feedbackEventCount).toBe(2);
+    expect(replayBundle?.metrics.nonApprovalFeedbackEventCount).toBe(1);
+    expect(replayBundle?.metrics.turnsWithNonApprovalFeedbackCount).toBe(1);
     expect(replayBundle?.metrics.savingsByMode).toEqual([
       {
         mode: "no_brain",
@@ -164,11 +185,15 @@ describe("proof cron bundle scanning", () => {
         selectedContextBlockCount: 1,
         selectedContextChars: 5,
         estimatedPromptTokens: 2,
+        retrievalToolHopCount: 0,
+        retrievalToolHopTurnCount: 0,
         selectedContextCharsPerTurnMean: 5,
         selectedContextBlocksPerTurnMean: 1,
         estimatedPromptTokensPerTurnMean: 2,
         turnsWithSelectedContextCount: 1,
         turnsWithSelectedContextRate: 1,
+        retrievalToolHopPerTurnMean: 0,
+        retrievalToolHopTurnRate: 0,
       },
       {
         mode: "vector_only",
@@ -176,11 +201,15 @@ describe("proof cron bundle scanning", () => {
         selectedContextBlockCount: 1,
         selectedContextChars: 9,
         estimatedPromptTokens: 3,
+        retrievalToolHopCount: 2,
+        retrievalToolHopTurnCount: 1,
         selectedContextCharsPerTurnMean: 9,
         selectedContextBlocksPerTurnMean: 1,
         estimatedPromptTokensPerTurnMean: 3,
         turnsWithSelectedContextCount: 1,
         turnsWithSelectedContextRate: 1,
+        retrievalToolHopPerTurnMean: 2,
+        retrievalToolHopTurnRate: 1,
       },
       {
         mode: "graph_prior_only",
@@ -188,11 +217,15 @@ describe("proof cron bundle scanning", () => {
         selectedContextBlockCount: 1,
         selectedContextChars: 5,
         estimatedPromptTokens: 2,
+        retrievalToolHopCount: 1,
+        retrievalToolHopTurnCount: 1,
         selectedContextCharsPerTurnMean: 5,
         selectedContextBlocksPerTurnMean: 1,
         estimatedPromptTokensPerTurnMean: 2,
         turnsWithSelectedContextCount: 1,
         turnsWithSelectedContextRate: 1,
+        retrievalToolHopPerTurnMean: 1,
+        retrievalToolHopTurnRate: 1,
       },
       {
         mode: "learned_route",
@@ -200,11 +233,15 @@ describe("proof cron bundle scanning", () => {
         selectedContextBlockCount: 1,
         selectedContextChars: 11,
         estimatedPromptTokens: 3,
+        retrievalToolHopCount: 3,
+        retrievalToolHopTurnCount: 1,
         selectedContextCharsPerTurnMean: 11,
         selectedContextBlocksPerTurnMean: 1,
         estimatedPromptTokensPerTurnMean: 3,
         turnsWithSelectedContextCount: 1,
         turnsWithSelectedContextRate: 1,
+        retrievalToolHopPerTurnMean: 3,
+        retrievalToolHopTurnRate: 1,
       },
     ]);
     expect(bundles.find((bundle: any) => bundle.kind === "host-evidence")?.metrics.securityCriticalCount).toBe(1);
@@ -310,6 +347,13 @@ describe("proof cron metric surfaces", () => {
         selectedContextChars: 30,
         selectedContextBlockCount: 4,
         estimatedPromptTokens: 10,
+        retrievalToolHopCount: 6,
+        retrievalToolHopTurnCount: 3,
+        feedbackEventCount: 2,
+        nonApprovalFeedbackEventCount: 1,
+        turnsWithFeedbackCount: 2,
+        turnsWithNonApprovalFeedbackCount: 1,
+        turnsWithNonApprovalFeedbackRate: 0.25,
         turnsWithSelectedContextCount: 4,
         turnsWithSelectedContextRate: 1,
         savingsByMode: [
@@ -319,11 +363,15 @@ describe("proof cron metric surfaces", () => {
             selectedContextBlockCount: 1,
             selectedContextChars: 5,
             estimatedPromptTokens: 2,
+            retrievalToolHopCount: 0,
+            retrievalToolHopTurnCount: 0,
             selectedContextCharsPerTurnMean: 5,
             selectedContextBlocksPerTurnMean: 1,
             estimatedPromptTokensPerTurnMean: 2,
             turnsWithSelectedContextCount: 1,
             turnsWithSelectedContextRate: 1,
+            retrievalToolHopPerTurnMean: 0,
+            retrievalToolHopTurnRate: 0,
           },
           {
             mode: "vector_only",
@@ -331,11 +379,15 @@ describe("proof cron metric surfaces", () => {
             selectedContextBlockCount: 1,
             selectedContextChars: 9,
             estimatedPromptTokens: 3,
+            retrievalToolHopCount: 2,
+            retrievalToolHopTurnCount: 1,
             selectedContextCharsPerTurnMean: 9,
             selectedContextBlocksPerTurnMean: 1,
             estimatedPromptTokensPerTurnMean: 3,
             turnsWithSelectedContextCount: 1,
             turnsWithSelectedContextRate: 1,
+            retrievalToolHopPerTurnMean: 2,
+            retrievalToolHopTurnRate: 1,
           },
           {
             mode: "graph_prior_only",
@@ -343,11 +395,15 @@ describe("proof cron metric surfaces", () => {
             selectedContextBlockCount: 1,
             selectedContextChars: 5,
             estimatedPromptTokens: 2,
+            retrievalToolHopCount: 1,
+            retrievalToolHopTurnCount: 1,
             selectedContextCharsPerTurnMean: 5,
             selectedContextBlocksPerTurnMean: 1,
             estimatedPromptTokensPerTurnMean: 2,
             turnsWithSelectedContextCount: 1,
             turnsWithSelectedContextRate: 1,
+            retrievalToolHopPerTurnMean: 1,
+            retrievalToolHopTurnRate: 1,
           },
           {
             mode: "learned_route",
@@ -355,11 +411,15 @@ describe("proof cron metric surfaces", () => {
             selectedContextBlockCount: 1,
             selectedContextChars: 11,
             estimatedPromptTokens: 3,
+            retrievalToolHopCount: 3,
+            retrievalToolHopTurnCount: 1,
             selectedContextCharsPerTurnMean: 11,
             selectedContextBlocksPerTurnMean: 1,
             estimatedPromptTokensPerTurnMean: 3,
             turnsWithSelectedContextCount: 1,
             turnsWithSelectedContextRate: 1,
+            retrievalToolHopPerTurnMean: 3,
+            retrievalToolHopTurnRate: 1,
           },
         ],
       },
@@ -409,12 +469,20 @@ describe("proof cron metric surfaces", () => {
     expect(aggregate.replayMetrics.selectedContextCharsTotal).toBe(30);
     expect(aggregate.replayMetrics.selectedContextBlocksTotal).toBe(4);
     expect(aggregate.replayMetrics.estimatedPromptTokensTotal).toBe(10);
+    expect(aggregate.replayMetrics.retrievalToolHopCountTotal).toBe(6);
+    expect(aggregate.replayMetrics.retrievalToolHopTurnCountTotal).toBe(3);
+    expect(aggregate.replayMetrics.feedbackEventCountTotal).toBe(2);
+    expect(aggregate.replayMetrics.nonApprovalFeedbackEventCountTotal).toBe(1);
+    expect(aggregate.replayMetrics.turnsWithNonApprovalFeedbackCountTotal).toBe(1);
     expect(aggregate.replayMetrics.savingsByMode[3].mode).toBe("learned_route");
     expect(aggregate.replayMetrics.savingsByMode[3].estimatedPromptTokens).toBe(3);
+    expect(aggregate.replayMetrics.savingsByMode[3].retrievalToolHopCount).toBe(3);
     expect(aggregate.operatorMetrics.stepMsTotal).toBe(1500);
     expect(aggregate.costProxy.bundleCount).toBe(3);
     expect(formatNightlyMarkdown(aggregate)).toContain("winner modes");
-    expect(formatNightlyMarkdown(aggregate)).toContain("| learned_route | 11 | 1 | 3 | 1 | 1 |");
+    expect(formatNightlyMarkdown(aggregate)).toContain("| learned_route | 11 | 1 | 3 | 3 | 1 | 1 | 1 | 1 |");
+    expect(formatNightlyMarkdown(aggregate)).toContain("replay retrieval/tool-hop count total: 6");
+    expect(formatNightlyMarkdown(aggregate)).toContain("replay turns with non-approval feedback total: 1");
     expect(formatNightlyMarkdown(aggregate)).toContain("proof minutes");
   });
 });

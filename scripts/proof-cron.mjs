@@ -473,7 +473,47 @@ function countStringChars(values) {
   return values.reduce((total, value) => total + (typeof value === "string" ? value.length : 0), 0);
 }
 
-function summarizeReplayModeSavings(mode) {
+function normalizeLabelKind(kind) {
+  return typeof kind === "string" ? kind.trim().toLowerCase() : "";
+}
+
+function summarizeTraceFeedback(turns) {
+  const traceTurns = Array.isArray(turns) ? turns : [];
+  let feedbackEventCount = 0;
+  let nonApprovalFeedbackEventCount = 0;
+  let turnsWithFeedbackCount = 0;
+  let turnsWithNonApprovalFeedbackCount = 0;
+
+  for (const turn of traceTurns) {
+    const feedback = Array.isArray(turn?.feedback) ? turn.feedback : [];
+    if (feedback.length > 0) {
+      turnsWithFeedbackCount += 1;
+    }
+
+    let turnHasNonApprovalFeedback = false;
+    for (const item of feedback) {
+      feedbackEventCount += 1;
+      if (normalizeLabelKind(item?.kind) !== "approval") {
+        nonApprovalFeedbackEventCount += 1;
+        turnHasNonApprovalFeedback = true;
+      }
+    }
+
+    if (turnHasNonApprovalFeedback) {
+      turnsWithNonApprovalFeedbackCount += 1;
+    }
+  }
+
+  return {
+    feedbackEventCount,
+    nonApprovalFeedbackEventCount,
+    turnsWithFeedbackCount,
+    turnsWithNonApprovalFeedbackCount,
+    turnsWithNonApprovalFeedbackRate: traceTurns.length > 0 ? round(turnsWithNonApprovalFeedbackCount / traceTurns.length, 4) : null,
+  };
+}
+
+function summarizeReplayModeSavings(mode, traceTurnById = new Map()) {
   const turns = Array.isArray(mode?.turns) ? mode.turns : [];
   const turnCount = turns.length;
   const selectedContextBlockCount = turns.reduce(
@@ -483,6 +523,26 @@ function summarizeReplayModeSavings(mode) {
   const selectedContextChars = turns.reduce((total, turn) => total + countStringChars(turn?.selectedContextTexts), 0);
   const turnsWithSelectedContextCount = turns.filter((turn) => countStringChars(turn?.selectedContextTexts) > 0).length;
   const estimatedPromptTokens = selectedContextChars > 0 ? Math.ceil(selectedContextChars / 4) : 0;
+  let retrievalToolHopCount = 0;
+  let retrievalToolHopTurnCount = 0;
+
+  for (const turn of turns) {
+    const digestCount = Number(turn?.observability?.selectionDigestCount);
+    if (Number.isFinite(digestCount)) {
+      if (digestCount > 0) {
+        retrievalToolHopCount += digestCount;
+        retrievalToolHopTurnCount += 1;
+      }
+      continue;
+    }
+
+    const traceTurn = traceTurnById.get(turn?.turnId);
+    const hasSelectedContext = countStringChars(traceTurn?.selectedContextTexts) > 0 || (Array.isArray(turn?.selectedContextIds) && turn.selectedContextIds.length > 0);
+    if (hasSelectedContext) {
+      retrievalToolHopCount += 1;
+      retrievalToolHopTurnCount += 1;
+    }
+  }
 
   return {
     mode: mode?.mode ?? null,
@@ -490,11 +550,15 @@ function summarizeReplayModeSavings(mode) {
     selectedContextBlockCount,
     selectedContextChars,
     estimatedPromptTokens,
+    retrievalToolHopCount,
+    retrievalToolHopTurnCount,
     selectedContextCharsPerTurnMean: turnCount > 0 ? round(selectedContextChars / turnCount, 2) : null,
     selectedContextBlocksPerTurnMean: turnCount > 0 ? round(selectedContextBlockCount / turnCount, 2) : null,
     estimatedPromptTokensPerTurnMean: turnCount > 0 ? round(estimatedPromptTokens / turnCount, 2) : null,
     turnsWithSelectedContextCount,
     turnsWithSelectedContextRate: turnCount > 0 ? round(turnsWithSelectedContextCount / turnCount, 4) : null,
+    retrievalToolHopPerTurnMean: turnCount > 0 ? round(retrievalToolHopCount / turnCount, 2) : null,
+    retrievalToolHopTurnRate: turnCount > 0 ? round(retrievalToolHopTurnCount / turnCount, 4) : null,
   };
 }
 
@@ -510,12 +574,16 @@ function aggregateReplaySavings(modeSavings) {
       selectedContextBlockCount: 0,
       selectedContextChars: 0,
       estimatedPromptTokens: 0,
+      retrievalToolHopCount: 0,
+      retrievalToolHopTurnCount: 0,
       turnsWithSelectedContextCount: 0,
     };
     current.turnCount += Number(entry.turnCount ?? 0);
     current.selectedContextBlockCount += Number(entry.selectedContextBlockCount ?? 0);
     current.selectedContextChars += Number(entry.selectedContextChars ?? 0);
     current.estimatedPromptTokens += Number(entry.estimatedPromptTokens ?? 0);
+    current.retrievalToolHopCount += Number(entry.retrievalToolHopCount ?? 0);
+    current.retrievalToolHopTurnCount += Number(entry.retrievalToolHopTurnCount ?? 0);
     current.turnsWithSelectedContextCount += Number(entry.turnsWithSelectedContextCount ?? 0);
     byMode.set(entry.mode, current);
   }
@@ -527,6 +595,8 @@ function aggregateReplaySavings(modeSavings) {
       selectedContextBlockCount: 0,
       selectedContextChars: 0,
       estimatedPromptTokens: 0,
+      retrievalToolHopCount: 0,
+      retrievalToolHopTurnCount: 0,
       turnsWithSelectedContextCount: 0,
     };
     return {
@@ -535,6 +605,8 @@ function aggregateReplaySavings(modeSavings) {
       selectedContextBlocksPerTurnMean: entry.turnCount > 0 ? round(entry.selectedContextBlockCount / entry.turnCount, 2) : null,
       estimatedPromptTokensPerTurnMean: entry.turnCount > 0 ? round(entry.estimatedPromptTokens / entry.turnCount, 2) : null,
       turnsWithSelectedContextRate: entry.turnCount > 0 ? round(entry.turnsWithSelectedContextCount / entry.turnCount, 4) : null,
+      retrievalToolHopPerTurnMean: entry.turnCount > 0 ? round(entry.retrievalToolHopCount / entry.turnCount, 2) : null,
+      retrievalToolHopTurnRate: entry.turnCount > 0 ? round(entry.retrievalToolHopTurnCount / entry.turnCount, 4) : null,
     };
   });
 }
@@ -616,6 +688,9 @@ function summarizeReplayBundle(bundlePath, workspaceRoot) {
   const hardening = readJsonIfExists(path.join(bundlePath, "hardening-snapshot.json"));
   const hashes = readJsonIfExists(path.join(bundlePath, "hashes.json"));
   const validation = readJsonIfExists(path.join(bundlePath, "validation-report.json"));
+  const traceTurns = Array.isArray(trace?.turns) ? trace.turns : [];
+  const traceTurnById = new Map(traceTurns.map((turn) => [turn.turnId, turn]));
+  const traceFeedback = summarizeTraceFeedback(traceTurns);
 
   const modes = Array.isArray(bundle?.modes) ? bundle.modes : [];
   const winnerMode = summaryTables?.winnerMode ?? bundle?.summary?.winnerMode ?? null;
@@ -629,6 +704,8 @@ function summarizeReplayBundle(bundlePath, workspaceRoot) {
   const estimatedPromptTokens = savingsByMode.length > 0 ? sum(savingsByMode.map((mode) => mode.estimatedPromptTokens)) : null;
   const turnsWithSelectedContextCount = sum(savingsByMode.map((mode) => mode.turnsWithSelectedContextCount));
   const totalTurnCount = sum(savingsByMode.map((mode) => mode.turnCount));
+  const totalRetrievalToolHopCount = sum(savingsByMode.map((mode) => mode.retrievalToolHopCount));
+  const totalRetrievalToolHopTurnCount = sum(savingsByMode.map((mode) => mode.retrievalToolHopTurnCount));
 
   return {
     kind: "recorded-session-replay",
@@ -705,8 +782,16 @@ function summarizeReplayBundle(bundlePath, workspaceRoot) {
       selectedContextChars: savingsByMode.length > 0 ? selectedContextChars : null,
       selectedContextBlockCount: savingsByMode.length > 0 ? selectedContextBlockCount : null,
       estimatedPromptTokens,
+      retrievalToolHopCount: savingsByMode.length > 0 ? totalRetrievalToolHopCount : null,
+      retrievalToolHopTurnCount: savingsByMode.length > 0 ? totalRetrievalToolHopTurnCount : null,
+      retrievalToolHopTurnRate: totalTurnCount > 0 ? round(totalRetrievalToolHopTurnCount / totalTurnCount, 4) : null,
       turnsWithSelectedContextCount: savingsByMode.length > 0 ? turnsWithSelectedContextCount : null,
       turnsWithSelectedContextRate: totalTurnCount > 0 ? round(turnsWithSelectedContextCount / totalTurnCount, 4) : null,
+      feedbackEventCount: traceFeedback.feedbackEventCount,
+      nonApprovalFeedbackEventCount: traceFeedback.nonApprovalFeedbackEventCount,
+      turnsWithFeedbackCount: traceFeedback.turnsWithFeedbackCount,
+      turnsWithNonApprovalFeedbackCount: traceFeedback.turnsWithNonApprovalFeedbackCount,
+      turnsWithNonApprovalFeedbackRate: traceFeedback.turnsWithNonApprovalFeedbackRate,
     },
   };
 }
@@ -932,6 +1017,11 @@ function summarizePerformance(bundles, statusProbe, scanDurationMs) {
   const replayContextChars = replayBundles.map((bundle) => bundle.metrics?.selectedContextChars ?? null).filter(Number.isFinite);
   const replayContextBlocks = replayBundles.map((bundle) => bundle.metrics?.selectedContextBlockCount ?? null).filter(Number.isFinite);
   const replayEstimatedPromptTokens = replayBundles.map((bundle) => bundle.metrics?.estimatedPromptTokens ?? null).filter(Number.isFinite);
+  const replayRetrievalToolHopCount = replayBundles.map((bundle) => bundle.metrics?.retrievalToolHopCount ?? null).filter(Number.isFinite);
+  const replayRetrievalToolHopTurnCount = replayBundles.map((bundle) => bundle.metrics?.retrievalToolHopTurnCount ?? null).filter(Number.isFinite);
+  const replayFeedbackEvents = replayBundles.map((bundle) => bundle.metrics?.feedbackEventCount ?? null).filter(Number.isFinite);
+  const replayNonApprovalFeedbackEvents = replayBundles.map((bundle) => bundle.metrics?.nonApprovalFeedbackEventCount ?? null).filter(Number.isFinite);
+  const replayTurnsWithNonApprovalFeedback = replayBundles.map((bundle) => bundle.metrics?.turnsWithNonApprovalFeedbackCount ?? null).filter(Number.isFinite);
 
   return {
     statusProbeMs: statusProbe.durationMs,
@@ -954,6 +1044,11 @@ function summarizePerformance(bundles, statusProbe, scanDurationMs) {
     replayContextBlockMean: mean(replayContextBlocks),
     replayEstimatedPromptTokensTotal: sum(replayEstimatedPromptTokens),
     replayEstimatedPromptTokensMean: mean(replayEstimatedPromptTokens),
+    replayRetrievalToolHopCountTotal: sum(replayRetrievalToolHopCount),
+    replayRetrievalToolHopTurnCountTotal: sum(replayRetrievalToolHopTurnCount),
+    replayFeedbackEventCountTotal: sum(replayFeedbackEvents),
+    replayNonApprovalFeedbackEventCountTotal: sum(replayNonApprovalFeedbackEvents),
+    replayTurnsWithNonApprovalFeedbackCountTotal: sum(replayTurnsWithNonApprovalFeedback),
   };
 }
 
@@ -1124,6 +1219,11 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs }) {
       selectedContextBlocksTotal: sum(replaySavingsByMode.map((mode) => mode.selectedContextBlockCount ?? 0)),
       estimatedPromptTokensTotal: sum(replaySavingsByMode.map((mode) => mode.estimatedPromptTokens ?? 0)),
       turnsWithSelectedContextTotal: sum(replaySavingsByMode.map((mode) => mode.turnsWithSelectedContextCount ?? 0)),
+      retrievalToolHopCountTotal: sum(replayBundles.map((bundle) => bundle.metrics?.retrievalToolHopCount ?? 0)),
+      retrievalToolHopTurnCountTotal: sum(replayBundles.map((bundle) => bundle.metrics?.retrievalToolHopTurnCount ?? 0)),
+      feedbackEventCountTotal: sum(replayBundles.map((bundle) => bundle.metrics?.feedbackEventCount ?? 0)),
+      nonApprovalFeedbackEventCountTotal: sum(replayBundles.map((bundle) => bundle.metrics?.nonApprovalFeedbackEventCount ?? 0)),
+      turnsWithNonApprovalFeedbackCountTotal: sum(replayBundles.map((bundle) => bundle.metrics?.turnsWithNonApprovalFeedbackCount ?? 0)),
     },
     operatorMetrics: {
       stepMsTotal: sum(operatorStepDurations),
@@ -1155,6 +1255,11 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs }) {
       replayContextCharsTotal: sum(replaySavingsByMode.map((mode) => mode.selectedContextChars ?? 0)),
       replaySelectedContextBlocksTotal: sum(replaySavingsByMode.map((mode) => mode.selectedContextBlockCount ?? 0)),
       replayEstimatedPromptTokensTotal: sum(replaySavingsByMode.map((mode) => mode.estimatedPromptTokens ?? 0)),
+      replayRetrievalToolHopCountTotal: sum(replayBundles.map((bundle) => bundle.metrics?.retrievalToolHopCount ?? 0)),
+      replayRetrievalToolHopTurnCountTotal: sum(replayBundles.map((bundle) => bundle.metrics?.retrievalToolHopTurnCount ?? 0)),
+      replayFeedbackEventCountTotal: sum(replayBundles.map((bundle) => bundle.metrics?.feedbackEventCount ?? 0)),
+      replayNonApprovalFeedbackEventCountTotal: sum(replayBundles.map((bundle) => bundle.metrics?.nonApprovalFeedbackEventCount ?? 0)),
+      replayTurnsWithNonApprovalFeedbackCountTotal: sum(replayBundles.map((bundle) => bundle.metrics?.turnsWithNonApprovalFeedbackCount ?? 0)),
     },
     costProxy: {
       proofMinutes: round((scanDurationMs + sum(operatorStepDurations)) / 60000, 4),
@@ -1226,13 +1331,18 @@ function formatHealthMarkdown(snapshot) {
   lines.push(`- replay context chars total: ${snapshot.performance.replayContextCharsTotal ?? "n/a"}`);
   lines.push(`- replay selected context blocks total: ${snapshot.performance.replaySelectedContextBlocksTotal ?? "n/a"}`);
   lines.push(`- replay estimated prompt tokens total: ${snapshot.performance.replayEstimatedPromptTokensTotal ?? "n/a"}`);
+  lines.push(`- replay retrieval/tool-hop count total: ${snapshot.performance.replayRetrievalToolHopCountTotal ?? "n/a"}`);
+  lines.push(`- replay retrieval/tool-hop turns total: ${snapshot.performance.replayRetrievalToolHopTurnCountTotal ?? "n/a"}`);
+  lines.push(`- replay feedback events total: ${snapshot.performance.replayFeedbackEventCountTotal ?? "n/a"}`);
+  lines.push(`- replay non-approval feedback events total: ${snapshot.performance.replayNonApprovalFeedbackEventCountTotal ?? "n/a"}`);
+  lines.push(`- replay turns with non-approval feedback total: ${snapshot.performance.replayTurnsWithNonApprovalFeedbackCountTotal ?? "n/a"}`);
   lines.push(`- proof minutes proxy: ${snapshot.costProxy.proofMinutes}`);
   lines.push(`- artifact bytes scanned: ${snapshot.costProxy.artifactBytes} (${snapshot.costProxy.artifactMB} MiB)`);
   if (Array.isArray(snapshot.replaySavings) && snapshot.replaySavings.length > 0) {
     lines.push("");
     lines.push("## Replay savings proxy");
     for (const mode of snapshot.replaySavings) {
-      lines.push(`- ${mode.mode}: ${mode.selectedContextChars} chars, ${mode.selectedContextBlockCount} blocks, ${mode.estimatedPromptTokens} estimated prompt tokens`);
+      lines.push(`- ${mode.mode}: ${mode.selectedContextChars} chars, ${mode.selectedContextBlockCount} blocks, ${mode.estimatedPromptTokens} estimated prompt tokens, ${mode.retrievalToolHopCount} retrieval/tool-hop proxy count, ${mode.retrievalToolHopTurnCount} retrieval/tool-hop turns`);
     }
   }
   lines.push("");
@@ -1276,12 +1386,17 @@ function formatNightlyMarkdown(aggregate) {
   lines.push(`- replay context chars total: ${aggregate.replayMetrics.selectedContextCharsTotal}`);
   lines.push(`- replay selected context blocks total: ${aggregate.replayMetrics.selectedContextBlocksTotal}`);
   lines.push(`- replay estimated prompt tokens total: ${aggregate.replayMetrics.estimatedPromptTokensTotal}`);
+  lines.push(`- replay retrieval/tool-hop count total: ${aggregate.replayMetrics.retrievalToolHopCountTotal}`);
+  lines.push(`- replay retrieval/tool-hop turns total: ${aggregate.replayMetrics.retrievalToolHopTurnCountTotal}`);
+  lines.push(`- replay feedback events total: ${aggregate.replayMetrics.feedbackEventCountTotal}`);
+  lines.push(`- replay non-approval feedback events total: ${aggregate.replayMetrics.nonApprovalFeedbackEventCountTotal}`);
+  lines.push(`- replay turns with non-approval feedback total: ${aggregate.replayMetrics.turnsWithNonApprovalFeedbackCountTotal}`);
   lines.push("");
   lines.push("## Replay savings proxy");
-  lines.push("| mode | context chars | selected blocks | estimated prompt tokens | turns with context | turn coverage |");
-  lines.push("| --- | ---: | ---: | ---: | ---: | ---: |");
+  lines.push("| mode | context chars | selected blocks | estimated prompt tokens | retrieval/tool-hop proxy count | retrieval/tool-hop turns | turns with context | turn coverage | retrieval/tool-hop turn rate |");
+  lines.push("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |");
   for (const mode of aggregate.replayMetrics.savingsByMode) {
-    lines.push(`| ${mode.mode} | ${mode.selectedContextChars} | ${mode.selectedContextBlockCount} | ${mode.estimatedPromptTokens} | ${mode.turnsWithSelectedContextCount} | ${mode.turnsWithSelectedContextRate ?? "n/a"} |`);
+    lines.push(`| ${mode.mode} | ${mode.selectedContextChars} | ${mode.selectedContextBlockCount} | ${mode.estimatedPromptTokens} | ${mode.retrievalToolHopCount} | ${mode.retrievalToolHopTurnCount} | ${mode.turnsWithSelectedContextCount} | ${mode.turnsWithSelectedContextRate ?? "n/a"} | ${mode.retrievalToolHopTurnRate ?? "n/a"} |`);
   }
   lines.push("");
   lines.push("## Operator proof performance");
