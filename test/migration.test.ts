@@ -129,6 +129,13 @@ describe("runLcmMigrations summary depth backfill", () => {
     expect(marbleColumns.some((column) => column.name === "freshness_state")).toBe(true);
     expect(marbleColumns.some((column) => column.name === "source_fingerprint")).toBe(true);
 
+    const summaryLineageColumns = db.prepare(`PRAGMA table_info(summary_lineage)`).all() as Array<{
+      name?: string;
+    }>;
+    expect(summaryLineageColumns.some((column) => column.name === "freshness_state")).toBe(true);
+    expect(summaryLineageColumns.some((column) => column.name === "invalidated_at")).toBe(true);
+    expect(summaryLineageColumns.some((column) => column.name === "invalidation_reason")).toBe(true);
+
     const marbleSourceColumns = db.prepare(`PRAGMA table_info(marble_sources)`).all() as Array<{
       name?: string;
     }>;

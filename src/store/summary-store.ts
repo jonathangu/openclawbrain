@@ -5,6 +5,13 @@ import { buildLikeSearchPlan, createFallbackSnippet } from "./full-text-fallback
 export type SummaryKind = "leaf" | "condensed";
 export type SummaryLineageRole = "support" | "episode" | "snapshot";
 export type SummaryTruthBasis = "canonical" | "derived" | "open";
+export type SummaryFreshnessState =
+  | "fresh"
+  | "stale_source"
+  | "stale_branch"
+  | "stale_pack"
+  | "superseded"
+  | "tombstoned";
 export type ContextItemType = "message" | "summary";
 
 export type MarbleKind = "replay_stub" | "typed_extraction" | "operational_summary";
@@ -129,10 +136,13 @@ export type CreateSummaryLineageInput = {
   episodeId: string;
   summaryRole: SummaryLineageRole;
   truthBasis: SummaryTruthBasis;
+  freshnessState?: SummaryFreshnessState;
   parentBranchId?: string | null;
   typedMemoryRefs?: string[];
   snapshotId?: string | null;
   forkReason?: string | null;
+  invalidatedAt?: Date | null;
+  invalidationReason?: string | null;
   createdAt?: Date;
 };
 
@@ -143,10 +153,13 @@ export type SummaryLineageRecord = {
   episodeId: string;
   summaryRole: SummaryLineageRole;
   truthBasis: SummaryTruthBasis;
+  freshnessState: SummaryFreshnessState;
   parentBranchId: string | null;
   typedMemoryRefs: string[];
   snapshotId: string | null;
   forkReason: string | null;
+  invalidatedAt: Date | null;
+  invalidationReason: string | null;
   createdAt: Date;
 };
 
@@ -201,6 +214,7 @@ export type SummarySubtreeNodeRecord = SummaryRecord & {
   parentSummaryId: string | null;
   path: string;
   childCount: number;
+  freshnessState?: SummaryFreshnessState;
 };
 
 export type ContextItemRecord = {
@@ -225,6 +239,7 @@ export type SummarySearchResult = {
   summaryId: string;
   conversationId: number;
   kind: SummaryKind;
+  freshnessState?: SummaryFreshnessState;
   snippet: string;
   createdAt: Date;
   rank?: number;
@@ -276,10 +291,13 @@ interface SummaryLineageRow {
   episode_id: string;
   summary_role: SummaryLineageRole;
   truth_basis: SummaryTruthBasis;
+  freshness_state: SummaryFreshnessState;
   parent_branch_id: string | null;
   typed_memory_refs: string;
   snapshot_id: string | null;
   fork_reason: string | null;
+  invalidated_at: string | null;
+  invalidation_reason: string | null;
   created_at: string;
 }
 
@@ -299,6 +317,7 @@ interface BranchSnapshotRow {
 }
 
 interface SummarySubtreeRow extends SummaryRow {
+  freshness_state: SummaryFreshnessState | null;
   depth_from_root: number;
   parent_summary_id: string | null;
   path: string;
@@ -318,6 +337,7 @@ interface SummarySearchRow {
   summary_id: string;
   conversation_id: number;
   kind: SummaryKind;
+  freshness_state: SummaryFreshnessState | null;
   snippet: string;
   rank: number;
   created_at: string;
@@ -454,6 +474,20 @@ function parseStringArrayJson(value: string | null | undefined): string[] {
   }
 }
 
+function normalizeSummaryFreshnessState(value: string | null | undefined): SummaryFreshnessState {
+  switch (value) {
+    case "fresh":
+    case "stale_source":
+    case "stale_branch":
+    case "stale_pack":
+    case "superseded":
+    case "tombstoned":
+      return value;
+    default:
+      return "fresh";
+  }
+}
+
 function dedupeStringArray(values: string[]): string[] {
   return [...new Set(values.filter((value) => typeof value === "string" && value.length > 0))];
 }
@@ -466,10 +500,13 @@ function makeDefaultSummaryLineage(summary: SummaryRecord): SummaryLineageRecord
     episodeId: `episode_${summary.conversationId}_${summary.summaryId}`,
     summaryRole: summary.kind === "leaf" ? "support" : "episode",
     truthBasis: "derived",
+    freshnessState: "fresh",
     parentBranchId: null,
     typedMemoryRefs: [],
     snapshotId: null,
     forkReason: null,
+    invalidatedAt: null,
+    invalidationReason: null,
     createdAt: summary.createdAt,
   };
 }
@@ -482,10 +519,13 @@ function toSummaryLineageRecord(row: SummaryLineageRow): SummaryLineageRecord {
     episodeId: row.episode_id,
     summaryRole: row.summary_role,
     truthBasis: row.truth_basis,
+    freshnessState: normalizeSummaryFreshnessState(row.freshness_state),
     parentBranchId: row.parent_branch_id,
     typedMemoryRefs: parseStringArrayJson(row.typed_memory_refs),
     snapshotId: row.snapshot_id,
     forkReason: row.fork_reason,
+    invalidatedAt: normalizeNullableDate(row.invalidated_at),
+    invalidationReason: row.invalidation_reason,
     createdAt: new Date(row.created_at),
   };
 }
@@ -526,6 +566,7 @@ function toSearchResult(row: SummarySearchRow): SummarySearchResult {
     summaryId: row.summary_id,
     conversationId: row.conversation_id,
     kind: row.kind,
+    freshnessState: normalizeSummaryFreshnessState(row.freshness_state),
     snippet: row.snippet,
     createdAt: new Date(row.created_at),
     rank: row.rank,
@@ -763,8 +804,8 @@ export class SummaryStore {
     const row = this.db
       .prepare(
         `SELECT summary_id, conversation_id, branch_id, episode_id, summary_role,
-                truth_basis, parent_branch_id, typed_memory_refs, snapshot_id,
-                fork_reason, created_at
+                truth_basis, freshness_state, parent_branch_id, typed_memory_refs, snapshot_id,
+                fork_reason, invalidated_at, invalidation_reason, created_at
          FROM summary_lineage
          WHERE summary_id = ?`,
       )
@@ -781,8 +822,8 @@ export class SummaryStore {
     const rows = this.db
       .prepare(
         `SELECT summary_id, conversation_id, branch_id, episode_id, summary_role,
-                truth_basis, parent_branch_id, typed_memory_refs, snapshot_id,
-                fork_reason, created_at
+                truth_basis, freshness_state, parent_branch_id, typed_memory_refs, snapshot_id,
+                fork_reason, invalidated_at, invalidation_reason, created_at
          FROM summary_lineage
          WHERE conversation_id = ?
          ORDER BY created_at ASC`,
@@ -794,6 +835,9 @@ export class SummaryStore {
   async insertSummaryLineage(input: CreateSummaryLineageInput): Promise<SummaryLineageRecord> {
     const createdAt = (input.createdAt ?? new Date()).toISOString();
     const typedMemoryRefs = JSON.stringify(dedupeStringArray(input.typedMemoryRefs ?? []));
+    const freshnessState = input.freshnessState ?? "fresh";
+    const invalidatedAt = input.invalidatedAt ? input.invalidatedAt.toISOString() : null;
+    const invalidationReason = input.invalidationReason ?? null;
     this.db
       .prepare(
         `INSERT INTO summary_lineage (
@@ -803,23 +847,29 @@ export class SummaryStore {
           episode_id,
           summary_role,
           truth_basis,
+          freshness_state,
           parent_branch_id,
           typed_memory_refs,
           snapshot_id,
           fork_reason,
+          invalidated_at,
+          invalidation_reason,
           created_at
         )
-        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         ON CONFLICT(summary_id) DO UPDATE SET
           conversation_id = excluded.conversation_id,
           branch_id = excluded.branch_id,
           episode_id = excluded.episode_id,
           summary_role = excluded.summary_role,
           truth_basis = excluded.truth_basis,
+          freshness_state = excluded.freshness_state,
           parent_branch_id = excluded.parent_branch_id,
           typed_memory_refs = excluded.typed_memory_refs,
           snapshot_id = excluded.snapshot_id,
-          fork_reason = excluded.fork_reason`,
+          fork_reason = excluded.fork_reason,
+          invalidated_at = excluded.invalidated_at,
+          invalidation_reason = excluded.invalidation_reason`,
       )
       .run(
         input.summaryId,
@@ -828,10 +878,13 @@ export class SummaryStore {
         input.episodeId,
         input.summaryRole,
         input.truthBasis,
+        freshnessState,
         input.parentBranchId ?? null,
         typedMemoryRefs,
         input.snapshotId ?? null,
         input.forkReason ?? null,
+        invalidatedAt,
+        invalidationReason,
         createdAt,
       );
 
@@ -840,6 +893,61 @@ export class SummaryStore {
       throw new Error(`Summary lineage not found after insert: ${input.summaryId}`);
     }
     return lineage;
+  }
+
+  async invalidateSummaryLineage(input: {
+    summaryId: string;
+    freshnessState: Exclude<SummaryFreshnessState, "fresh">;
+    reason: string;
+    invalidatedAt?: Date;
+  }): Promise<SummaryLineageRecord | null> {
+    const invalidatedAt = (input.invalidatedAt ?? new Date()).toISOString();
+    this.db
+      .prepare(
+        `UPDATE summary_lineage
+         SET freshness_state = ?, invalidated_at = ?, invalidation_reason = ?
+         WHERE summary_id = ?`,
+      )
+      .run(input.freshnessState, invalidatedAt, input.reason, input.summaryId);
+    return this.getSummaryLineage(input.summaryId);
+  }
+
+  async invalidateSummaryLineages(input: {
+    summaryIds: string[];
+    freshnessState: Exclude<SummaryFreshnessState, "fresh">;
+    reason: string;
+    invalidatedAt?: Date;
+  }): Promise<SummaryLineageRecord[]> {
+    const summaryIds = dedupeStringArray(input.summaryIds);
+    if (summaryIds.length === 0) {
+      return [];
+    }
+
+    const invalidatedAt = input.invalidatedAt ?? new Date();
+    this.db.exec("BEGIN");
+    try {
+      const stmt = this.db.prepare(
+        `UPDATE summary_lineage
+         SET freshness_state = ?, invalidated_at = ?, invalidation_reason = ?
+         WHERE summary_id = ?`,
+      );
+      for (const summaryId of summaryIds) {
+        stmt.run(input.freshnessState, invalidatedAt.toISOString(), input.reason, summaryId);
+      }
+      this.db.exec("COMMIT");
+    } catch (error) {
+      this.db.exec("ROLLBACK");
+      throw error;
+    }
+
+    const refreshed: SummaryLineageRecord[] = [];
+    for (const summaryId of summaryIds) {
+      const lineage = await this.getSummaryLineage(summaryId);
+      if (lineage) {
+        refreshed.push(lineage);
+      }
+    }
+    return refreshed;
   }
 
   // ── Lineage ───────────────────────────────────────────────────────────────
@@ -1047,6 +1155,7 @@ export class SummaryStore {
            s.summary_id,
            s.conversation_id,
            s.kind,
+           COALESCE(sl.freshness_state, 'fresh') AS freshness_state,
            s.depth,
            s.content,
            s.token_count,
@@ -1066,6 +1175,7 @@ export class SummaryStore {
            ) AS child_count
          FROM subtree
          JOIN summaries s ON s.summary_id = subtree.summary_id
+         LEFT JOIN summary_lineage sl ON sl.summary_id = s.summary_id
          ORDER BY subtree.depth_from_root ASC, subtree.path ASC, s.created_at ASC`,
       )
       .all(summaryId) as unknown as SummarySubtreeRow[];
@@ -1082,6 +1192,7 @@ export class SummaryStore {
         depthFromRoot: Math.max(0, Math.floor(row.depth_from_root ?? 0)),
         parentSummaryId: row.parent_summary_id ?? null,
         path: typeof row.path === "string" ? row.path : "",
+        freshnessState: normalizeSummaryFreshnessState(row.freshness_state),
         childCount:
           typeof row.child_count === "number" && Number.isFinite(row.child_count)
             ? Math.max(0, Math.floor(row.child_count))
@@ -1728,11 +1839,13 @@ export class SummaryStore {
          summaries_fts.summary_id,
          s.conversation_id,
          s.kind,
+         COALESCE(sl.freshness_state, 'fresh') AS freshness_state,
          snippet(summaries_fts, 1, '', '', '...', 32) AS snippet,
          rank,
          s.created_at
        FROM summaries_fts
        JOIN summaries s ON s.summary_id = summaries_fts.summary_id
+       LEFT JOIN summary_lineage sl ON sl.summary_id = s.summary_id
        WHERE ${where.join(" AND ")}
        ORDER BY s.created_at DESC
        LIMIT ?`;
@@ -1755,15 +1868,15 @@ export class SummaryStore {
     const where: string[] = [...plan.where];
     const args: Array<string | number> = [...plan.args];
     if (conversationId != null) {
-      where.push("conversation_id = ?");
+      where.push("s.conversation_id = ?");
       args.push(conversationId);
     }
     if (since) {
-      where.push("julianday(created_at) >= julianday(?)");
+      where.push("julianday(s.created_at) >= julianday(?)");
       args.push(since.toISOString());
     }
     if (before) {
-      where.push("julianday(created_at) < julianday(?)");
+      where.push("julianday(s.created_at) < julianday(?)");
       args.push(before.toISOString());
     }
     args.push(limit);
@@ -1771,20 +1884,29 @@ export class SummaryStore {
     const whereClause = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
     const rows = this.db
       .prepare(
-        `SELECT summary_id, conversation_id, kind, depth, content, token_count, file_ids,
-                earliest_at, latest_at, descendant_count, descendant_token_count,
-                source_message_token_count, created_at
-         FROM summaries
+        `SELECT s.summary_id, s.conversation_id, s.kind,
+                COALESCE(sl.freshness_state, 'fresh') AS freshness_state,
+                s.content, s.created_at
+         FROM summaries s
+         LEFT JOIN summary_lineage sl ON sl.summary_id = s.summary_id
          ${whereClause}
-         ORDER BY created_at DESC
+         ORDER BY s.created_at DESC
          LIMIT ?`,
       )
-      .all(...args) as unknown as SummaryRow[];
+      .all(...args) as unknown as Array<{
+      summary_id: string;
+      conversation_id: number;
+      kind: SummaryKind;
+      freshness_state: SummaryFreshnessState | null;
+      content: string;
+      created_at: string;
+    }>;
 
     return rows.map((row) => ({
       summaryId: row.summary_id,
       conversationId: row.conversation_id,
       kind: row.kind,
+      freshnessState: normalizeSummaryFreshnessState(row.freshness_state),
       snippet: createFallbackSnippet(row.content, plan.terms),
       createdAt: new Date(row.created_at),
       rank: 0,
@@ -1803,28 +1925,36 @@ export class SummaryStore {
     const where: string[] = [];
     const args: Array<string | number> = [];
     if (conversationId != null) {
-      where.push("conversation_id = ?");
+      where.push("s.conversation_id = ?");
       args.push(conversationId);
     }
     if (since) {
-      where.push("julianday(created_at) >= julianday(?)");
+      where.push("julianday(s.created_at) >= julianday(?)");
       args.push(since.toISOString());
     }
     if (before) {
-      where.push("julianday(created_at) < julianday(?)");
+      where.push("julianday(s.created_at) < julianday(?)");
       args.push(before.toISOString());
     }
     const whereClause = where.length > 0 ? `WHERE ${where.join(" AND ")}` : "";
     const rows = this.db
       .prepare(
-        `SELECT summary_id, conversation_id, kind, depth, content, token_count, file_ids,
-                earliest_at, latest_at, descendant_count, descendant_token_count,
-                source_message_token_count, created_at
-         FROM summaries
+        `SELECT s.summary_id, s.conversation_id, s.kind,
+                COALESCE(sl.freshness_state, 'fresh') AS freshness_state,
+                s.content, s.created_at
+         FROM summaries s
+         LEFT JOIN summary_lineage sl ON sl.summary_id = s.summary_id
          ${whereClause}
-         ORDER BY created_at DESC`,
+         ORDER BY s.created_at DESC`,
       )
-      .all(...args) as unknown as SummaryRow[];
+      .all(...args) as unknown as Array<{
+      summary_id: string;
+      conversation_id: number;
+      kind: SummaryKind;
+      freshness_state: SummaryFreshnessState | null;
+      content: string;
+      created_at: string;
+    }>;
 
     const results: SummarySearchResult[] = [];
     for (const row of rows) {
@@ -1837,6 +1967,7 @@ export class SummaryStore {
           summaryId: row.summary_id,
           conversationId: row.conversation_id,
           kind: row.kind,
+          freshnessState: normalizeSummaryFreshnessState(row.freshness_state),
           snippet: match[0],
           createdAt: new Date(row.created_at),
           rank: 0,

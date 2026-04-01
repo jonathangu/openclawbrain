@@ -379,20 +379,24 @@ function buildSummaryRoutingPrompt(
   const branchHeavy =
     (summaryMetadata?.branchCount ?? 0) > 1 ||
     (summaryMetadata?.snapshotCount ?? 0) > 0 ||
+    (summaryMetadata?.hasNonFreshSummaries ?? false) ||
     (summaryMetadata?.hasTruthConflict ?? false);
+  const staleSummaryCount = Object.entries(summaryMetadata?.freshnessStateCounts ?? {})
+    .filter(([freshnessState]) => freshnessState !== "fresh")
+    .reduce((count, [, value]) => count + (value ?? 0), 0);
 
   switch (mode) {
     case "summary_suffices":
       return branchHeavy
-        ? "This turn looks like a broad recap over branch-heavy compacted history. Summary-level context is a reasonable starting point, but expand toward source before making exact claims or resolving current-truth conflicts."
+        ? `This turn looks like a broad recap over branch-heavy compacted history${staleSummaryCount > 0 ? ` with ${staleSummaryCount} stale or superseded summary(s).` : "."} Summary-level context is a reasonable starting point, but expand toward source before making exact claims or resolving current-truth conflicts.`
         : "This turn looks like a broad recap. Summary-level context is a reasonable starting point unless the user asks for exact proof or current-truth conflict resolution.";
     case "prefer_typed_memory":
       return branchHeavy
-        ? "This turn looks current-truth or conflict-sensitive. Prefer explicit correction cards and typed memory over summary recap; if typed memory is missing or the branch history is forked/snapshotted, expand toward source before asserting specifics."
+        ? `This turn looks current-truth or conflict-sensitive${staleSummaryCount > 0 ? `, and ${staleSummaryCount} summary(s) are stale or superseded.` : "."} Prefer explicit correction cards and typed memory over summary recap; if typed memory is missing or the branch history is forked/snapshotted, expand toward source before asserting specifics.`
         : "This turn looks current-truth or conflict-sensitive. Prefer explicit correction cards and typed memory over summary recap; if typed memory is missing, expand toward source before asserting specifics.";
     case "expand_to_source":
       return branchHeavy
-        ? "This turn looks precision-sensitive against branch-heavy compacted history. Use summaries only to locate the region, then expand toward source material and snapshots before asserting exact details."
+        ? `This turn looks precision-sensitive against branch-heavy compacted history${staleSummaryCount > 0 ? ` with ${staleSummaryCount} stale or superseded summary(s).` : "."} Use summaries only to locate the region, then expand toward source material and snapshots before asserting exact details.`
         : "This turn looks precision-sensitive against compacted history. Use summaries only to locate the region, then expand toward source material before asserting exact details.";
     default:
       return undefined;

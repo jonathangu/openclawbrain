@@ -12,6 +12,7 @@ import type {
   MarbleSearchResult,
   MarbleSourceRecord,
   SummaryLineageRecord,
+  SummaryFreshnessState,
   BranchSnapshotRecord,
 } from "./store/summary-store.js";
 
@@ -41,6 +42,7 @@ export interface DescribeResult {
       parentSummaryId: string | null;
       depthFromRoot: number;
       kind: "leaf" | "condensed";
+      freshnessState?: SummaryFreshnessState;
       depth: number;
       tokenCount: number;
       descendantCount: number;
@@ -204,6 +206,7 @@ export class RetrievalEngine {
           parentSummaryId: node.parentSummaryId,
           depthFromRoot: node.depthFromRoot,
           kind: node.kind,
+          freshnessState: node.freshnessState,
           depth: node.depth,
           tokenCount: node.tokenCount,
           descendantCount: node.descendantCount,

@@ -43,6 +43,7 @@ describe("SummaryStore lineage and snapshots", () => {
     expect(fallback?.branchId).toBe(`branch_${conversation.conversationId}_main`);
     expect(fallback?.summaryRole).toBe("support");
     expect(fallback?.truthBasis).toBe("derived");
+    expect(fallback?.freshnessState).toBe("fresh");
 
     const lineage = await summaryStore.insertSummaryLineage({
       summaryId: "sum_lineage_001",
@@ -59,6 +60,9 @@ describe("SummaryStore lineage and snapshots", () => {
     expect(lineage.branchId).toBe("branch_test_a");
     expect(lineage.snapshotId).toBeNull();
     expect(lineage.typedMemoryRefs).toEqual(["bn_correction_1"]);
+    expect(lineage.freshnessState).toBe("fresh");
+    expect(lineage.invalidatedAt).toBeNull();
+    expect(lineage.invalidationReason).toBeNull();
 
     const snapshot = await summaryStore.insertBranchSnapshot({
       snapshotId: "snap_test_a",
@@ -96,6 +100,15 @@ describe("SummaryStore lineage and snapshots", () => {
     const linkedLineage = await summaryStore.getSummaryLineage("sum_lineage_001");
     expect(linkedLineage?.snapshotId).toBe("snap_test_a");
     expect(linkedLineage?.summaryRole).toBe("snapshot");
+
+    const superseded = await summaryStore.invalidateSummaryLineage({
+      summaryId: "sum_lineage_001",
+      freshnessState: "superseded",
+      reason: "condensed_into:sum_lineage_002",
+    });
+    expect(superseded?.freshnessState).toBe("superseded");
+    expect(superseded?.invalidatedAt).not.toBeNull();
+    expect(superseded?.invalidationReason).toBe("condensed_into:sum_lineage_002");
 
     const latestSnapshot = await summaryStore.getLatestBranchSnapshot(conversation.conversationId);
     expect(latestSnapshot?.snapshotId).toBe("snap_test_a");

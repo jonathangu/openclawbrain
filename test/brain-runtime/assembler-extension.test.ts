@@ -730,6 +730,57 @@ describe("BrainAssemblerExtension", () => {
     }));
   });
 
+  it("warns when summary context includes stale or superseded lineages", async () => {
+    const brain = createBrainStub({
+      query: vi.fn(async () => makeTraversalResult()),
+    });
+    const extension = new BrainAssemblerExtension(brain as never);
+
+    const result = await extension.augmentAssembly({
+      conversationId: 42,
+      tokenBudget: 4096,
+      assembled: {
+        messages: [{ role: "user", content: "What exact command should I use?" }],
+        estimatedTokens: 4,
+        systemPromptAddition: undefined,
+        summaryMetadata: {
+          totalCount: 1,
+          maxDepth: 0,
+          condensedCount: 0,
+          episodeCount: 0,
+          snapshotCount: 0,
+          branchCount: 1,
+          typedMemoryRefCount: 0,
+          freshnessStateCounts: { fresh: 0, superseded: 1 },
+          hasNonFreshSummaries: true,
+          hasTruthConflict: false,
+          latestRole: "support",
+          items: [{
+            summaryId: "sum_stale",
+            kind: "leaf",
+            depth: 0,
+            descendantCount: 0,
+            earliestAt: null,
+            latestAt: null,
+            freshnessState: "superseded",
+          }],
+        },
+        stats: {
+          rawMessageCount: 1,
+          summaryCount: 1,
+          totalContextItems: 2,
+        },
+      },
+      liveMessages: [{ role: "user", content: "What exact command should I use?" }],
+    });
+
+    expect(result.brainDecision?.mode).toBe("use_brain");
+    expect(result.systemPromptAddition).toContain("stale or superseded");
+    expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
+      mode: "use_brain",
+    }));
+  });
+
   it("records zero-cap clipping as durable trace metadata without injecting a message", async () => {
     const brain = createBrainStub({
       query: vi.fn(async () => makeStructuredTraversalResult()),

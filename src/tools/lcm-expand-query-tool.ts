@@ -139,10 +139,11 @@ function buildDelegatedExpandQueryTask(params: {
     "1. Start with `lcm_describe` on seed summaries and any marble seeds to inspect subtree manifests, provenance, and branch costs.",
     "2. If additional candidates are needed, use `lcm_grep` scoped to summaries and marbles.",
     "3. For marble seeds, inspect the marble provenance and then follow the underlying source refs; do not treat a marble as final proof when exactness matters.",
-    "4. Select branches that fit remaining budget; prefer high-signal paths first.",
-    "5. Call `lcm_expand` selectively (do not expand everything blindly).",
-    "6. Keep includeMessages=false by default; use includeMessages=true only for specific leaf evidence.",
-    `7. Stay within ${params.tokenCap} total expansion tokens across all lcm_expand calls.`,
+    "4. For summary seeds, prefer fresh lineage records; if a summary is stale, superseded, or branch-forked, expand to source before asserting exact details.",
+    "5. Select branches that fit remaining budget; prefer high-signal paths first.",
+    "6. Call `lcm_expand` selectively (do not expand everything blindly).",
+    "7. Keep includeMessages=false by default; use includeMessages=true only for specific leaf evidence.",
+    `8. Stay within ${params.tokenCap} total expansion tokens across all lcm_expand calls.`,
     "",
     "User prompt to answer:",
     params.prompt,
@@ -347,10 +348,12 @@ async function resolveExpansionCandidates(params: {
       scope: "both",
       conversationId: params.conversationId,
     });
-    for (const summary of grepResult.summaries) {
+    const grepSummaries = grepResult.summaries ?? [];
+    const grepMarbles = grepResult.marbles ?? [];
+    for (const summary of grepSummaries) {
       addSummaryCandidate(summary.summaryId, summary.conversationId);
     }
-    for (const marble of grepResult.marbles) {
+    for (const marble of grepMarbles) {
       const described = await retrieval.describe(marble.marbleId);
       if (!described || described.type !== "marble" || !described.marble) {
         continue;

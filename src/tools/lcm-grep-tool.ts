@@ -151,10 +151,15 @@ export function createLcmGrepTool(input: {
 
       let currentChars = lines.join("\n").length;
 
-      if (result.messages.length > 0) {
+      const messages = result.messages ?? [];
+      const summaries = result.summaries ?? [];
+      const marbles = result.marbles ?? [];
+      const totalMatches = result.totalMatches ?? messages.length + summaries.length + marbles.length;
+
+      if (messages.length > 0) {
         lines.push("### Messages");
         lines.push("");
-        for (const msg of result.messages) {
+        for (const msg of messages) {
           const snippet = truncateSnippet(msg.snippet);
           const line = `- [msg#${msg.messageId}] (${msg.role}, ${formatTimestamp(msg.createdAt, timezone)}): ${snippet}`;
           if (currentChars + line.length > MAX_RESULT_CHARS) {
@@ -167,12 +172,13 @@ export function createLcmGrepTool(input: {
         lines.push("");
       }
 
-      if (result.summaries.length > 0) {
+      if (summaries.length > 0) {
         lines.push("### Summaries");
         lines.push("");
-        for (const sum of result.summaries) {
+        for (const sum of summaries) {
           const snippet = truncateSnippet(sum.snippet);
-          const line = `- [${sum.summaryId}] (${sum.kind}, ${formatTimestamp(sum.createdAt, timezone)}): ${snippet}`;
+          const freshness = sum.freshnessState ? `, ${sum.freshnessState}` : "";
+          const line = `- [${sum.summaryId}] (${sum.kind}${freshness}, ${formatTimestamp(sum.createdAt, timezone)}): ${snippet}`;
           if (currentChars + line.length > MAX_RESULT_CHARS) {
             lines.push("*(truncated — more results available)*");
             break;
@@ -183,10 +189,10 @@ export function createLcmGrepTool(input: {
         lines.push("");
       }
 
-      if (result.marbles.length > 0) {
+      if (marbles.length > 0) {
         lines.push("### Marbles");
         lines.push("");
-        for (const marble of result.marbles) {
+        for (const marble of marbles) {
           const snippet = truncateSnippet(marble.snippet);
           const line =
             `- [${marble.marbleId}] (${marble.marbleKind}, ${marble.freshnessState}, ${formatTimestamp(marble.createdAt, timezone)}): ${snippet} ` +
@@ -201,16 +207,16 @@ export function createLcmGrepTool(input: {
         lines.push("");
       }
 
-      if (result.totalMatches === 0) {
+      if (totalMatches === 0) {
         lines.push("No matches found.");
       }
 
       return {
         content: [{ type: "text", text: lines.join("\n") }],
         details: {
-          messageCount: result.messages.length,
-          summaryCount: result.summaries.length,
-          totalMatches: result.totalMatches,
+          messageCount: messages.length,
+          summaryCount: summaries.length,
+          totalMatches,
         },
       };
     },

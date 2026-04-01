@@ -148,6 +148,7 @@ export function createLcmDescribeTool(input: {
             depthFromRoot: node.depthFromRoot,
             depth: node.depth,
             kind: node.kind,
+            freshnessState: node.freshnessState ?? "fresh",
             tokenCount: node.tokenCount,
             descendantCount: node.descendantCount,
             descendantTokenCount: node.descendantTokenCount,
@@ -176,11 +177,21 @@ export function createLcmDescribeTool(input: {
             `budgetCap=${resolvedTokenCap}`,
         );
         if (s.lineage) {
+          const freshnessWarning =
+            s.lineage.freshnessState === "fresh"
+              ? null
+              : `**Freshness:** ${s.lineage.freshnessState} — expand to source before relying on exact details.`;
           lines.push(
-            `lineage branch=${s.lineage.branchId} episode=${s.lineage.episodeId} role=${s.lineage.summaryRole} truth=${s.lineage.truthBasis}` +
+            `lineage branch=${s.lineage.branchId} episode=${s.lineage.episodeId} role=${s.lineage.summaryRole} truth=${s.lineage.truthBasis} freshness=${s.lineage.freshnessState}` +
               (s.lineage.snapshotId ? ` snapshot=${s.lineage.snapshotId}` : "") +
+              (s.lineage.invalidatedAt ? ` invalidated=${formatIso(s.lineage.invalidatedAt, timezone)}` : "") +
+              (s.lineage.invalidationReason ? ` reason=${s.lineage.invalidationReason}` : "") +
               (s.lineage.typedMemoryRefs.length > 0 ? ` typed=${s.lineage.typedMemoryRefs.join(",")}` : ""),
           );
+          if (freshnessWarning) {
+            lines.push("");
+            lines.push(freshnessWarning);
+          }
         }
         if (s.snapshot) {
           lines.push(
@@ -197,6 +208,7 @@ export function createLcmDescribeTool(input: {
         for (const node of manifestNodes) {
           lines.push(
             `d${node.depthFromRoot} ${node.summaryId} k=${node.kind} tok=${node.tokenCount} ` +
+              `fresh=${node.freshnessState} ` +
               `descTok=${node.descendantTokenCount} srcTok=${node.sourceMessageTokenCount} ` +
               `desc=${node.descendantCount} child=${node.childCount} ` +
               `range=${formatIso(node.earliestAt, timezone)}..${formatIso(node.latestAt, timezone)} ` +

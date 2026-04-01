@@ -61,6 +61,25 @@ function ensureSummaryMetadataColumns(db: DatabaseSync): void {
   }
 }
 
+function ensureSummaryLineageFreshnessColumns(db: DatabaseSync): void {
+  const lineageColumns = db.prepare(`PRAGMA table_info(summary_lineage)`).all() as SummaryColumnInfo[];
+  const hasFreshnessState = lineageColumns.some((col) => col.name === "freshness_state");
+  const hasInvalidatedAt = lineageColumns.some((col) => col.name === "invalidated_at");
+  const hasInvalidationReason = lineageColumns.some((col) => col.name === "invalidation_reason");
+
+  if (!hasFreshnessState) {
+    db.exec(
+      `ALTER TABLE summary_lineage ADD COLUMN freshness_state TEXT NOT NULL DEFAULT 'fresh'`,
+    );
+  }
+  if (!hasInvalidatedAt) {
+    db.exec(`ALTER TABLE summary_lineage ADD COLUMN invalidated_at TEXT`);
+  }
+  if (!hasInvalidationReason) {
+    db.exec(`ALTER TABLE summary_lineage ADD COLUMN invalidation_reason TEXT`);
+  }
+}
+
 function parseTimestamp(value: string | null | undefined): Date | null {
   if (typeof value !== "string" || !value.trim()) {
     return null;
@@ -403,10 +422,13 @@ export function runLcmMigrations(
       episode_id TEXT NOT NULL,
       summary_role TEXT NOT NULL CHECK (summary_role IN ('support', 'episode', 'snapshot')),
       truth_basis TEXT NOT NULL CHECK (truth_basis IN ('canonical', 'derived', 'open')),
+      freshness_state TEXT NOT NULL DEFAULT 'fresh' CHECK (freshness_state IN ('fresh', 'stale_source', 'stale_branch', 'stale_pack', 'superseded', 'tombstoned')),
       parent_branch_id TEXT,
       typed_memory_refs TEXT NOT NULL DEFAULT '[]',
       snapshot_id TEXT,
       fork_reason TEXT,
+      invalidated_at TEXT,
+      invalidation_reason TEXT,
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
@@ -562,6 +584,7 @@ export function runLcmMigrations(
 
   ensureSummaryDepthColumn(db);
   ensureSummaryMetadataColumns(db);
+  ensureSummaryLineageFreshnessColumns(db);
   backfillSummaryDepths(db);
   backfillSummaryMetadata(db);
 

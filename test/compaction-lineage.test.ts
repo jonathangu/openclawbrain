@@ -115,4 +115,85 @@ describe("CompactionEngine lineage-aware behavior", () => {
     const summaries = await summaryStore.getSummariesByConversation(conversation.conversationId);
     expect(summaries).toHaveLength(2);
   });
+
+  it("marks replaced source summaries as superseded when condensation succeeds", async () => {
+    const tempDir = mkdtempSync(join(tmpdir(), "lossless-claw-compaction-supersede-"));
+    tempDirs.push(tempDir);
+    const db = getLcmConnection(join(tempDir, "compaction-supersede.db"));
+    runLcmMigrations(db);
+
+    const conversationStore = new ConversationStore(db);
+    const conversation = await conversationStore.createConversation({
+      sessionId: "compaction-supersede-session",
+      title: "Compaction supersede test",
+    });
+
+    const summaryStore = new SummaryStore(db);
+    const summaryA = await summaryStore.insertSummary({
+      summaryId: "sum_supersede_a",
+      conversationId: conversation.conversationId,
+      kind: "leaf",
+      depth: 0,
+      content: "Leaf summary A for supersede testing.",
+      tokenCount: 30,
+    });
+    await summaryStore.insertSummaryLineage({
+      summaryId: summaryA.summaryId,
+      conversationId: conversation.conversationId,
+      branchId: "branch_shared",
+      episodeId: "ep_shared",
+      summaryRole: "support",
+      truthBasis: "derived",
+      typedMemoryRefs: [],
+      forkReason: "seed_shared",
+    });
+    await summaryStore.appendContextSummary(conversation.conversationId, summaryA.summaryId);
+
+    const summaryB = await summaryStore.insertSummary({
+      summaryId: "sum_supersede_b",
+      conversationId: conversation.conversationId,
+      kind: "leaf",
+      depth: 0,
+      content: "Leaf summary B for supersede testing.",
+      tokenCount: 30,
+    });
+    await summaryStore.insertSummaryLineage({
+      summaryId: summaryB.summaryId,
+      conversationId: conversation.conversationId,
+      branchId: "branch_shared",
+      episodeId: "ep_shared",
+      summaryRole: "support",
+      truthBasis: "derived",
+      typedMemoryRefs: [],
+      forkReason: "seed_shared",
+    });
+    await summaryStore.appendContextSummary(conversation.conversationId, summaryB.summaryId);
+
+    const compaction = new CompactionEngine(conversationStore as any, summaryStore as any, makeConfig());
+    const summarize = vi.fn(async () => "condensed shared summary");
+
+    const result = await compaction.compactFullSweep({
+      conversationId: conversation.conversationId,
+      tokenBudget: 1_000,
+      summarize,
+      force: true,
+      hardTrigger: true,
+    });
+
+    expect(result.actionTaken).toBe(true);
+    expect(result.condensed).toBe(true);
+    expect(result.createdSummaryId).toMatch(/^sum_/);
+    expect(summarize).toHaveBeenCalled();
+
+    const supersededA = await summaryStore.getSummaryLineage(summaryA.summaryId);
+    const supersededB = await summaryStore.getSummaryLineage(summaryB.summaryId);
+    expect(supersededA?.freshnessState).toBe("superseded");
+    expect(supersededB?.freshnessState).toBe("superseded");
+    expect(supersededA?.invalidationReason).toContain(result.createdSummaryId ?? "");
+    expect(supersededB?.invalidationReason).toContain(result.createdSummaryId ?? "");
+
+    const contextItems = await summaryStore.getContextItems(conversation.conversationId);
+    expect(contextItems).toHaveLength(1);
+    expect(contextItems[0]?.summaryId).toBe(result.createdSummaryId ?? null);
+  });
 });

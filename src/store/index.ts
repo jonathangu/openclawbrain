@@ -20,6 +20,7 @@ export type {
   SummaryKind,
   SummaryLineageRole,
   SummaryTruthBasis,
+  SummaryFreshnessState,
   ContextItemType,
   CreateSummaryInput,
   SummaryRecord,

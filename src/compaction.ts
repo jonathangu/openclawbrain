@@ -1563,6 +1563,17 @@ export class CompactionEngine {
       summaryId,
     });
 
+    // The replaced summaries remain available as historical evidence but are
+    // no longer current context. Mark them superseded so higher layers can
+    // expand to source before treating them as truth.
+    if (parentSummaryIds.length > 0) {
+      await this.summaryStore.invalidateSummaryLineages({
+        summaryIds: parentSummaryIds,
+        freshnessState: "superseded",
+        reason: `condensed_into:${summaryId}`,
+      });
+    }
+
     return { summaryId, snapshotId: episodeSnapshotId ?? undefined, level: condensed.level };
   }
 

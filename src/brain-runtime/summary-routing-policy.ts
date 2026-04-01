@@ -35,7 +35,12 @@ export function decideSummaryRouting(params: {
   const branchHeavy =
     (summaryMetadata.branchCount ?? 0) > 1 ||
     (summaryMetadata.snapshotCount ?? 0) > 0 ||
+    (summaryMetadata.hasNonFreshSummaries ?? false) ||
     (summaryMetadata.hasTruthConflict ?? false);
+
+  const staleSummaryCount = Object.entries(summaryMetadata.freshnessStateCounts ?? {})
+    .filter(([freshnessState]) => freshnessState !== "fresh")
+    .reduce((count, [, value]) => count + (value ?? 0), 0);
 
   const preferTypedMemory = [
     /\bcurrent\b/i,
@@ -72,7 +77,8 @@ export function decideSummaryRouting(params: {
   const heavilyCompacted =
     summaryMetadata.maxDepth >= 2 ||
     summaryMetadata.condensedCount >= 2 ||
-    branchHeavy;
+    branchHeavy ||
+    staleSummaryCount > 0;
   const precisionSensitive = [
     /\bexact\b/i,
     /\bquote\b/i,
@@ -94,8 +100,8 @@ export function decideSummaryRouting(params: {
       mode: "expand_to_source",
       reason: precisionSensitive
         ? "precision-sensitive query should expand beyond summaries before asserting specifics"
-        : branchHeavy
-          ? "branch-heavy or snapshot-heavy summary context should expand before making exact claims"
+        : branchHeavy || staleSummaryCount > 0
+          ? "branch-heavy, snapshot-heavy, or stale summary context should expand before making exact claims"
           : "deeply compacted summary context should expand before making exact claims",
     };
   }
