@@ -11,12 +11,15 @@
 
 import type { PluginRuntime, RuntimeLogger } from "openclaw/plugin-sdk";
 import type {
+  BrainCompileReportV1,
   BrainDropReason,
   BrainDropStage,
   BrainFitStrategy,
   BrainFittingDropReason,
   BrainInterruptionMetadata,
   BrainInterruptionStage,
+  BrainObservationBindingMode,
+  BrainPrefetchDecision,
 } from "./brain-core/types.js";
 
 // Re-export what's actually available from the SDK
@@ -30,6 +33,7 @@ export interface BrainDecisionMetadata {
   episodeId?: string | null;
   traceId?: string | null;
   footer?: string | null;
+  bindingMode?: BrainObservationBindingMode | null;
   interruption?: BrainInterruptionMetadata | null;
   queryInterrupted?: boolean | null;
   interruptionStage?: BrainInterruptionStage | null;
@@ -51,6 +55,9 @@ export interface BrainDecisionMetadata {
   fittedNodeCount?: number | null;
   droppedNodeCount?: number | null;
   fittingDropReasons?: Partial<Record<BrainFittingDropReason, number>> | null;
+  prefetch?: BrainPrefetchDecision | null;
+  compileReport?: BrainCompileReportV1 | null;
+  compileReportSummary?: string | null;
 }
 
 /** Result from assemble - matches what the code expects */

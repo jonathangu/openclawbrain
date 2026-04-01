@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { recordTrace, summarizeRecentDecisionTraces } from "../../src/brain-core/trace.js";
+import { buildBrainCompileReport, recordTrace, summarizeRecentDecisionTraces } from "../../src/brain-core/trace.js";
 import type {
   BrainNode,
   SeedScore,
@@ -218,6 +218,22 @@ describe("decision trace branch proofs", () => {
       },
       detail: "1/2 branches continued; 1/2 stopped without continuation; chosen=1; forced=1; reasons no_traversable_candidates=1, policy_stop=1",
     });
+    const compileReport = buildBrainCompileReport({
+      routeTrace: trace.routeTrace,
+      decision: {
+        mode: "use_brain",
+        traceId: trace.id,
+        episodeId: trace.episodeId,
+      },
+      lookupNode: (nodeId) => (nodeId === "a" ? makeNode(nodeId) : null),
+    });
+    expect(compileReport).toEqual(expect.objectContaining({
+      schemaVersion: 1,
+      summary: expect.stringContaining("[brain compile]"),
+      counters: expect.objectContaining({
+        selectedNodeCount: 1,
+      }),
+    }));
   });
 
   it("aggregates branch stop and continue behavior across recent traced decisions", () => {

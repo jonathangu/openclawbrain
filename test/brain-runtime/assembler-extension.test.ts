@@ -106,11 +106,13 @@ function makeStructuredTraversalResult(): TraversalResult {
         selectedTraversalNodeIds: ["bn_1", "bn_2", "bn_3"],
         selectedPathNodeIds: ["bn_1", "bn_2", "bn_3"],
         selectedSeedNodeIds: ["bn_1"],
+        branchOutcomes: [],
         injectedNodeSummaries: [
           {
             nodeId: "bn_1",
             kind: "correction",
             trust: "human",
+            provenanceRef: "prov_bn_1",
             sourceUri: "PLAYBOOK.md",
             tags: ["pull-request"],
             tokenCount: 20,
@@ -120,6 +122,7 @@ function makeStructuredTraversalResult(): TraversalResult {
             nodeId: "bn_2",
             kind: "chunk",
             trust: "scanner",
+            provenanceRef: "prov_bn_2",
             sourceUri: "docs/deploy.md",
             tags: ["deploy"],
             tokenCount: 18,
@@ -129,6 +132,7 @@ function makeStructuredTraversalResult(): TraversalResult {
             nodeId: "bn_3",
             kind: "workflow",
             trust: "scanner",
+            provenanceRef: "prov_bn_3",
             sourceUri: "docs/deploy.md",
             tags: ["workflow"],
             tokenCount: 16,
@@ -140,9 +144,10 @@ function makeStructuredTraversalResult(): TraversalResult {
           kinds: { correction: 1, chunk: 1, workflow: 1 },
           trusts: { human: 1, scanner: 2 },
           sourceUris: ["PLAYBOOK.md", "docs/deploy.md"],
+          sourceRefs: ["prov_bn_1", "prov_bn_2", "prov_bn_3"],
         },
         selectionMetadata: {
-          traceSliceVersion: 3,
+          traceSliceVersion: 4,
           queryChars: 29,
           budgetChars: 1024,
           maxHops: 8,
@@ -177,6 +182,7 @@ function createBrainStub(overrides?: {
   compileDeadlineMs?: number | null;
   budgetFraction?: number;
   lastQueryInterruption?: BrainInterruptionMetadata | null;
+  lastPrefetchDecision?: Record<string, unknown> | null;
   query?: (params: {
     conversationId: number;
     queryText: string;
@@ -192,6 +198,8 @@ function createBrainStub(overrides?: {
     getCompileDeadlineMs: () => overrides?.compileDeadlineMs ?? null,
     getBudgetFraction: () => overrides?.budgetFraction ?? 0.3,
     getLastQueryInterruption: () => overrides?.lastQueryInterruption ?? null,
+    getLastPrefetchDecision: () => overrides?.lastPrefetchDecision ?? null,
+    schedulePrefetch: vi.fn(async () => null),
     noteAssemblyDecision: vi.fn(),
     recordTraceSelectionMetadata: vi.fn(),
     query: overrides?.query ?? vi.fn(async () => null),
@@ -558,6 +566,23 @@ describe("BrainAssemblerExtension", () => {
 
   it("caps injected context to explicit maxContextChars and records clip metrics", async () => {
     const brain = createBrainStub({
+      lastPrefetchDecision: {
+        enabled: true,
+        state: "materialized",
+        kind: "traversal",
+        budgetClass: "standard",
+        key: "prefetch-key",
+        queryDigest: "deadbeefdeadbeef",
+        activePackId: "brain-pack-v7",
+        activePackVersion: 7,
+        summaryRoutingMode: "ignore",
+        prefetchMs: 9,
+        cacheAgeMs: 3,
+        invalidatedReason: null,
+        reusedNodeCount: 3,
+        reusedChars: 196,
+        savingsChars: 196,
+      },
       query: vi.fn(async () => makeStructuredTraversalResult()),
     });
     const extension = new BrainAssemblerExtension(brain as never);
@@ -582,6 +607,14 @@ describe("BrainAssemblerExtension", () => {
       conversationId: 42,
       queryText: "How do I open a pull request?",
       budgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
+      summaryRoutingMode: "ignore",
+    });
+    expect(brain.schedulePrefetch).toHaveBeenCalledWith({
+      conversationId: 42,
+      queryText: "How do I open a pull request?",
+      budgetChars: QUERY_BUDGET_CHARS_FOR_4096_TOKENS,
+      summaryRoutingMode: "ignore",
+      deadlineAtMs: undefined,
     });
     expect(String(result.messages[0]?.content ?? "").length).toBeLessThanOrEqual(240);
     expect(String(result.messages[0]?.content ?? "")).toContain("[brain]");
@@ -605,6 +638,10 @@ describe("BrainAssemblerExtension", () => {
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
       servedPartial: true,
+      prefetch: expect.objectContaining({
+        state: "materialized",
+        budgetClass: "standard",
+      }),
     }));
     expect((result.brainDecision?.fittedNodeCount ?? 0)).toBeGreaterThan(0);
     expect((result.brainDecision?.fittedNodeCount ?? 0)).toBeLessThan(3);
@@ -629,6 +666,10 @@ describe("BrainAssemblerExtension", () => {
         brainDropReason: "injection_cap_clipped",
         brainDropStage: "injection",
         servedPartial: true,
+        prefetch: expect.objectContaining({
+          state: "materialized",
+          budgetClass: "standard",
+        }),
       }),
     );
     expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
@@ -651,6 +692,10 @@ describe("BrainAssemblerExtension", () => {
       brainDropReason: "injection_cap_clipped",
       brainDropStage: "injection",
       servedPartial: true,
+      prefetch: expect.objectContaining({
+        state: "materialized",
+        budgetClass: "standard",
+      }),
     }));
   });
 
@@ -682,10 +727,62 @@ describe("BrainAssemblerExtension", () => {
       conversationId: 42,
       queryText: "How do I open a pull request?",
       budgetChars: expectedQueryBudgetChars,
+      summaryRoutingMode: "ignore",
     });
     expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
       budgetFraction: 0.5,
       queryBudgetChars: expectedQueryBudgetChars,
+    }));
+  });
+
+  it("warns when summary context includes stale or superseded lineages", async () => {
+    const brain = createBrainStub({
+      query: vi.fn(async () => makeTraversalResult()),
+    });
+    const extension = new BrainAssemblerExtension(brain as never);
+
+    const result = await extension.augmentAssembly({
+      conversationId: 42,
+      tokenBudget: 4096,
+      assembled: {
+        messages: [{ role: "user", content: "What exact command should I use?" }],
+        estimatedTokens: 4,
+        systemPromptAddition: undefined,
+        summaryMetadata: {
+          totalCount: 1,
+          maxDepth: 0,
+          condensedCount: 0,
+          episodeCount: 0,
+          snapshotCount: 0,
+          branchCount: 1,
+          typedMemoryRefCount: 0,
+          freshnessStateCounts: { fresh: 0, superseded: 1 },
+          hasNonFreshSummaries: true,
+          hasTruthConflict: false,
+          latestRole: "support",
+          items: [{
+            summaryId: "sum_stale",
+            kind: "leaf",
+            depth: 0,
+            descendantCount: 0,
+            earliestAt: null,
+            latestAt: null,
+            freshnessState: "superseded",
+          }],
+        },
+        stats: {
+          rawMessageCount: 1,
+          summaryCount: 1,
+          totalContextItems: 2,
+        },
+      },
+      liveMessages: [{ role: "user", content: "What exact command should I use?" }],
+    });
+
+    expect(result.brainDecision?.mode).toBe("use_brain");
+    expect(result.systemPromptAddition).toContain("stale or superseded");
+    expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
+      mode: "use_brain",
     }));
   });
 
@@ -1074,6 +1171,14 @@ describe("BrainAssemblerExtension", () => {
           totalCount: 2,
           maxDepth: 3,
           condensedCount: 2,
+          episodeCount: 0,
+          snapshotCount: 0,
+          branchCount: 0,
+          typedMemoryRefCount: 0,
+          freshnessStateCounts: {},
+          hasNonFreshSummaries: false,
+          hasTruthConflict: false,
+          latestRole: null,
           items: [
             {
               summaryId: "sum_1",

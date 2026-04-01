@@ -284,7 +284,7 @@ function buildPersistedStatusSurfaceBridge(summary, context) {
             brainRoot: context.brainRoot,
             stateDbPath: context.dbPath,
             persistedKey: TRACED_LEARNING_STATUS_SURFACE_STATE_KEY,
-            surfacedFrom: summary.source
+            surfacedFrom: summarizeBridgeSource(summary.source)
         }
     });
 }
@@ -590,7 +590,7 @@ function buildRuntimeMaterializationMetadata(loaded) {
         lastInterruptionSummary: loaded.bridge.lastInterruptionSummary,
         fallbackReason: loaded.bridge.fallbackReason,
         routerNoOpReason: loaded.bridge.routerNoOpReason,
-        source: loaded.bridge.source
+        source: summarizeBridgeSource(loaded.bridge.source)
     };
 }
 function mergeCanonicalStatusBridge(canonicalBridge, runtimeLoaded) {

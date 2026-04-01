@@ -4,6 +4,25 @@ Release history for the published OpenClawBrain packages. The README and operato
 
 ## Unreleased
 
+## 0.4.18 / 0.4.6
+
+`0.4.18 / 0.4.6` publishes the operator-surface status fix so the split-package lane no longer whole-reads oversized learning-spine logs during status/proof inspection, while the plugin/runtime package stays on `0.4.6`.
+
+**Packages**
+
+- `@openclawbrain/openclaw@0.4.6`
+- `@openclawbrain/cli@0.4.18`
+
+**Changes**
+
+- `openclawbrain status` now uses bounded/tail reads for oversized learning-spine logs instead of unconditional whole-file reads
+- route-freshness and last-learning-update status/proof surfaces stop whole-reading large learning-spine logs
+- regression coverage now locks the large-log status path to the bounded read behavior
+
+**Full release note**
+
+- [docs/release-notes-0.4.18.md](docs/release-notes-0.4.18.md)
+
 ## 0.4.17 / 0.4.6
 
 `0.4.17 / 0.4.6` publishes the bounded-anytime interruption-truth follow-up through the canonical split-package lane, so the packaged runtime and packaged CLI now surface interruption state and accounting instead of leaving that truth stranded in the repo-root runtime path.

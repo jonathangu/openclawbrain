@@ -1,6 +1,14 @@
 import { createHash } from "node:crypto";
 import type { ConversationStore, CreateMessagePartInput } from "./store/conversation-store.js";
-import type { SummaryStore, SummaryRecord, ContextItemRecord } from "./store/summary-store.js";
+import type {
+  SummaryStore,
+  SummaryRecord,
+  ContextItemRecord,
+  SummaryLineageRecord,
+  SummaryLineageRole,
+  SummaryTruthBasis,
+  BranchSnapshotRecord,
+} from "./store/summary-store.js";
 import { extractFileIdsFromContent } from "./large-files.js";
 
 // ── Public types ─────────────────────────────────────────────────────────────
@@ -20,6 +28,8 @@ export interface CompactionResult {
   tokensAfter: number;
   /** Summary created (if any) */
   createdSummaryId?: string;
+  /** Branch snapshot created (if any) */
+  createdSnapshotId?: string;
   /** Whether condensation was performed */
   condensed: boolean;
   /** Escalation level used: "normal" | "aggressive" | "fallback" */
@@ -52,7 +62,7 @@ export interface CompactionConfig {
 }
 
 type CompactionLevel = "normal" | "aggressive" | "fallback";
-type CompactionPass = "leaf" | "condensed";
+type CompactionPass = "leaf" | "condensed" | "snapshot";
 type CompactionSummarizeOptions = {
   previousSummary?: string;
   isCondensed?: boolean;
@@ -63,7 +73,7 @@ type CompactionSummarizeFn = (
   aggressive?: boolean,
   options?: CompactionSummarizeOptions,
 ) => Promise<string>;
-type PassResult = { summaryId: string; level: CompactionLevel };
+type PassResult = { summaryId?: string; snapshotId?: string; level: CompactionLevel };
 type LeafChunkSelection = {
   items: ContextItemRecord[];
   rawTokensOutsideTail: number;
@@ -154,6 +164,73 @@ function dedupeOrderedIds(ids: Iterable<string>): string[] {
     }
   }
   return ordered;
+}
+
+type LineageStore = {
+  insertSummaryLineage?: (input: {
+    summaryId: string;
+    conversationId: number;
+    branchId: string;
+    episodeId: string;
+    summaryRole: SummaryLineageRole;
+    truthBasis: SummaryTruthBasis;
+    parentBranchId?: string | null;
+    typedMemoryRefs?: string[];
+    snapshotId?: string | null;
+    forkReason?: string | null;
+  }) => Promise<SummaryLineageRecord>;
+  getSummaryLineage?: (summaryId: string) => Promise<SummaryLineageRecord | null>;
+  getSummaryParents?: (summaryId: string) => Promise<SummaryRecord[]>;
+  insertBranchSnapshot?: (input: {
+    snapshotId: string;
+    conversationId: number;
+    branchId: string;
+    episodeId: string;
+    activeSummaryId?: string | null;
+    contextOrdinal: number;
+    packVersion?: number | null;
+    summarySpineIds?: string[];
+    typedMemoryRefs?: string[];
+    openQuestionRefs?: string[];
+    stateJson: string;
+  }) => Promise<BranchSnapshotRecord>;
+  getBranchSnapshot?: (snapshotId: string) => Promise<BranchSnapshotRecord | null>;
+};
+
+type SummaryLineageState = {
+  branchId: string;
+  episodeId: string;
+  summaryRole: SummaryLineageRole;
+  truthBasis: SummaryTruthBasis;
+  parentBranchId: string | null;
+  typedMemoryRefs: string[];
+  snapshotId: string | null;
+  forkReason: string | null;
+};
+
+function hashLineageId(prefix: string, parts: string[]): string {
+  return `${prefix}_${createHash("sha256").update(parts.join("|")).digest("hex").slice(0, 16)}`;
+}
+
+function lineageStore(store: SummaryStore): LineageStore {
+  return store as unknown as LineageStore;
+}
+
+function normalizeLineageRefs(values: string[] | null | undefined): string[] {
+  return dedupeOrderedIds((values ?? []).filter((value): value is string => typeof value === "string" && value.length > 0));
+}
+
+function summarizeLineageState(lineage: SummaryLineageState): string {
+  return JSON.stringify({
+    branchId: lineage.branchId,
+    episodeId: lineage.episodeId,
+    summaryRole: lineage.summaryRole,
+    truthBasis: lineage.truthBasis,
+    parentBranchId: lineage.parentBranchId,
+    typedMemoryRefs: lineage.typedMemoryRefs,
+    snapshotId: lineage.snapshotId,
+    forkReason: lineage.forkReason,
+  });
 }
 
 // ── CompactionEngine ─────────────────────────────────────────────────────────
@@ -296,6 +373,7 @@ export class CompactionEngine {
     let tokensAfter = tokensAfterLeaf;
     let condensed = false;
     let createdSummaryId = leafResult.summaryId;
+    let createdSnapshotId: string | undefined;
     let level = leafResult.level;
 
     const incrementalMaxDepth = this.resolveIncrementalMaxDepth();
@@ -326,8 +404,9 @@ export class CompactionEngine {
         });
 
         tokensAfter = passTokensAfter;
-        condensed = true;
-        createdSummaryId = condenseResult.summaryId;
+        condensed = condensed || typeof condenseResult.summaryId === "string";
+        createdSummaryId = condenseResult.summaryId ?? createdSummaryId;
+        createdSnapshotId = condenseResult.snapshotId ?? createdSnapshotId;
         level = condenseResult.level;
 
         if (passTokensAfter >= passTokensBefore) {
@@ -341,6 +420,7 @@ export class CompactionEngine {
       tokensBefore,
       tokensAfter,
       createdSummaryId,
+      createdSnapshotId,
       condensed,
       level,
     };
@@ -388,6 +468,7 @@ export class CompactionEngine {
     let actionTaken = false;
     let condensed = false;
     let createdSummaryId: string | undefined;
+    let createdSnapshotId: string | undefined;
     let level: CompactionLevel | undefined;
     let previousSummaryContent: string | undefined;
     let previousTokens = tokensBefore;
@@ -455,8 +536,9 @@ export class CompactionEngine {
       });
 
       actionTaken = true;
-      condensed = true;
-      createdSummaryId = condenseResult.summaryId;
+      condensed = condensed || typeof condenseResult.summaryId === "string";
+      createdSummaryId = condenseResult.summaryId ?? createdSummaryId;
+      createdSnapshotId = condenseResult.snapshotId ?? createdSnapshotId;
       level = condenseResult.level;
 
       if (passTokensAfter >= passTokensBefore || passTokensAfter >= previousTokens) {
@@ -472,6 +554,7 @@ export class CompactionEngine {
       tokensBefore,
       tokensAfter,
       createdSummaryId,
+      createdSnapshotId,
       condensed,
       level,
     };
@@ -819,6 +902,213 @@ export class CompactionEngine {
     return Math.max(this.config.condensedTargetTokens, ratioFloor);
   }
 
+  private async readSummaryLineage(summaryId: string): Promise<SummaryLineageRecord | null> {
+    const store = lineageStore(this.summaryStore);
+    if (typeof store.getSummaryLineage !== "function") {
+      return null;
+    }
+    return store.getSummaryLineage(summaryId);
+  }
+
+  private async readSummaryParents(summaryId: string): Promise<SummaryRecord[]> {
+    const store = lineageStore(this.summaryStore);
+    if (typeof store.getSummaryParents !== "function") {
+      return [];
+    }
+    return store.getSummaryParents(summaryId);
+  }
+
+  private async saveSummaryLineage(summaryId: string, lineage: SummaryLineageState, conversationId: number): Promise<void> {
+    const store = lineageStore(this.summaryStore);
+    if (typeof store.insertSummaryLineage !== "function") {
+      return;
+    }
+    await store.insertSummaryLineage({
+      summaryId,
+      conversationId,
+      branchId: lineage.branchId,
+      episodeId: lineage.episodeId,
+      summaryRole: lineage.summaryRole,
+      truthBasis: lineage.truthBasis,
+      parentBranchId: lineage.parentBranchId,
+      typedMemoryRefs: lineage.typedMemoryRefs,
+      snapshotId: lineage.snapshotId,
+      forkReason: lineage.forkReason,
+    });
+  }
+
+  private async saveBranchSnapshot(input: {
+    conversationId: number;
+    branchId: string;
+    episodeId: string;
+    activeSummaryId: string | null;
+    contextOrdinal: number;
+    summarySpineIds: string[];
+    typedMemoryRefs: string[];
+    openQuestionRefs?: string[];
+    stateJson: string;
+  }): Promise<BranchSnapshotRecord | null> {
+    const store = lineageStore(this.summaryStore);
+    if (typeof store.insertBranchSnapshot !== "function") {
+      return null;
+    }
+    const snapshotId = hashLineageId("snap", [
+      String(input.conversationId),
+      input.branchId,
+      input.episodeId,
+      input.activeSummaryId ?? "",
+      String(input.contextOrdinal),
+      input.summarySpineIds.join("/"),
+    ]);
+    return store.insertBranchSnapshot({
+      snapshotId,
+      conversationId: input.conversationId,
+      branchId: input.branchId,
+      episodeId: input.episodeId,
+      activeSummaryId: input.activeSummaryId,
+      contextOrdinal: input.contextOrdinal,
+      summarySpineIds: input.summarySpineIds,
+      typedMemoryRefs: input.typedMemoryRefs,
+      openQuestionRefs: input.openQuestionRefs ?? [],
+      stateJson: input.stateJson,
+    });
+  }
+
+  private normalizeSummaryTruthBasis(typedMemoryRefs: string[], fallback: SummaryTruthBasis = "derived"): SummaryTruthBasis {
+    return typedMemoryRefs.length > 0 ? "canonical" : fallback;
+  }
+
+  private async buildLeafLineage(params: {
+    conversationId: number;
+    messageItems: ContextItemRecord[];
+    summaryId: string;
+  }): Promise<SummaryLineageState> {
+    const startOrdinal = Math.min(...params.messageItems.map((item) => item.ordinal));
+    const contextItems = await this.summaryStore.getContextItems(params.conversationId);
+    const priorSummaryItem = [...contextItems]
+      .filter((item) => item.ordinal < startOrdinal && item.itemType === "summary" && typeof item.summaryId === "string")
+      .slice(-1)[0];
+
+    const priorLineage = priorSummaryItem?.summaryId ? await this.readSummaryLineage(priorSummaryItem.summaryId) : null;
+    const inheritedTypedRefs = normalizeLineageRefs(priorLineage?.typedMemoryRefs ?? []);
+    const branchId = priorLineage?.branchId ?? `branch_${params.conversationId}_main`;
+    const episodeId = priorLineage?.episodeId ?? hashLineageId("ep", [String(params.conversationId), branchId, params.summaryId]);
+
+    return {
+      branchId,
+      episodeId,
+      summaryRole: "support",
+      truthBasis: this.normalizeSummaryTruthBasis(inheritedTypedRefs, priorLineage?.truthBasis ?? "derived"),
+      parentBranchId: priorLineage?.branchId ?? null,
+      typedMemoryRefs: inheritedTypedRefs,
+      snapshotId: null,
+      forkReason: priorLineage ? null : "raw_leaf_compaction",
+    };
+  }
+
+  private async buildCondensedLineage(params: {
+    conversationId: number;
+    summaryItems: ContextItemRecord[];
+    summaryId: string;
+    targetDepth: number;
+  }): Promise<{ lineage: SummaryLineageState; incompatibleBranch: boolean; typedMemoryRefs: string[] }> {
+    const lineageRecords: SummaryLineageRecord[] = [];
+
+    for (const item of params.summaryItems) {
+      if (item.summaryId == null) {
+        continue;
+      }
+      const summary = await this.summaryStore.getSummary(item.summaryId);
+      const lineage = await this.readSummaryLineage(item.summaryId);
+      if (lineage) {
+        lineageRecords.push(lineage);
+      }
+    }
+
+    const parentBranchIds = dedupeOrderedIds(lineageRecords.map((lineage) => lineage.branchId));
+    const parentEpisodeIds = dedupeOrderedIds(lineageRecords.map((lineage) => lineage.episodeId));
+    const incompatibleBranch = parentBranchIds.length > 1 || parentEpisodeIds.length > 1;
+    const branchId = parentBranchIds[0] ?? `branch_${params.conversationId}_main`;
+    const episodeId = hashLineageId("ep", [String(params.conversationId), branchId, params.summaryId, String(params.targetDepth)]);
+    const typedMemoryRefs = dedupeOrderedIds(lineageRecords.flatMap((lineage) => lineage.typedMemoryRefs));
+    const summaryTruthBasis = this.normalizeSummaryTruthBasis(typedMemoryRefs, lineageRecords.some((lineage) => lineage.truthBasis === "canonical") ? "canonical" : "derived");
+
+    return {
+      lineage: {
+        branchId,
+        episodeId,
+        summaryRole: "episode",
+        truthBasis: incompatibleBranch ? "open" : summaryTruthBasis,
+        parentBranchId: incompatibleBranch ? null : (parentBranchIds[0] ?? null),
+        typedMemoryRefs,
+        snapshotId: null,
+        forkReason: incompatibleBranch ? "branch_conflict" : `condense_depth_${params.targetDepth}`,
+      },
+      incompatibleBranch,
+      typedMemoryRefs,
+    };
+  }
+
+  private async collectSummarySpineIds(summaryId: string, limit = 12): Promise<string[]> {
+    const spine: string[] = [];
+    let currentSummaryId: string | null = summaryId;
+    let remaining = Math.max(1, limit);
+
+    while (currentSummaryId && remaining > 0) {
+      spine.push(currentSummaryId);
+      remaining -= 1;
+
+      const parents = await this.readSummaryParents(currentSummaryId);
+      if (parents.length === 0) {
+        break;
+      }
+      currentSummaryId = parents[0]?.summaryId ?? null;
+    }
+
+    return spine;
+  }
+
+  private async writeEpisodeSnapshot(params: {
+    conversationId: number;
+    summaryId: string;
+    lineage: SummaryLineageState;
+    contextOrdinal: number;
+    reason: string;
+  }): Promise<string | null> {
+    const spineIds = await this.collectSummarySpineIds(params.summaryId);
+    const snapshot = await this.saveBranchSnapshot({
+      conversationId: params.conversationId,
+      branchId: params.lineage.branchId,
+      episodeId: params.lineage.episodeId,
+      activeSummaryId: params.summaryId,
+      contextOrdinal: params.contextOrdinal,
+      summarySpineIds: spineIds,
+      typedMemoryRefs: params.lineage.typedMemoryRefs,
+      stateJson: summarizeLineageState({
+        ...params.lineage,
+        snapshotId: null,
+        forkReason: params.reason,
+      }),
+    });
+
+    if (!snapshot) {
+      return null;
+    }
+
+    await this.saveSummaryLineage(
+      params.summaryId,
+      {
+        ...params.lineage,
+        summaryRole: "snapshot",
+        snapshotId: snapshot.snapshotId,
+        forkReason: params.reason,
+      },
+      params.conversationId,
+    );
+
+    return snapshot.snapshotId;
+  }
+
   /**
    * Find the shallowest depth with an eligible same-depth summary chunk.
    */
@@ -1041,6 +1331,11 @@ export class CompactionEngine {
     // Persist the leaf summary
     const summaryId = generateSummaryId(summary.content);
     const tokenCount = estimateTokens(summary.content);
+    const lineage = await this.buildLeafLineage({
+      conversationId,
+      messageItems,
+      summaryId,
+    });
 
     await this.summaryStore.insertSummary({
       summaryId,
@@ -1065,6 +1360,8 @@ export class CompactionEngine {
         0,
       ),
     });
+
+    await this.saveSummaryLineage(summaryId, lineage, conversationId);
 
     // Link to source messages
     const messageIds = messageContents.map((m) => m.messageId);
@@ -1108,6 +1405,14 @@ export class CompactionEngine {
       }
     }
 
+    const plannedSummaryId = generateSummaryId(summaryRecords.map((summary) => summary.summaryId).join("|"));
+    const lineagePlan = await this.buildCondensedLineage({
+      conversationId,
+      summaryItems,
+      summaryId: plannedSummaryId,
+      targetDepth,
+    });
+
     const concatenated = summaryRecords
       .map((summary) => {
         const earliestAt = summary.earliestAt ?? summary.createdAt;
@@ -1136,6 +1441,27 @@ export class CompactionEngine {
         depth: targetDepth + 1,
       },
     });
+
+    if (lineagePlan.incompatibleBranch) {
+      const endOrdinal = Math.max(...summaryItems.map((ci) => ci.ordinal));
+      const snapshot = await this.saveBranchSnapshot({
+        conversationId,
+        branchId: lineagePlan.lineage.branchId,
+        episodeId: lineagePlan.lineage.episodeId,
+        activeSummaryId: summaryRecords.at(-1)?.summaryId ?? null,
+        contextOrdinal: endOrdinal,
+        summarySpineIds: summaryRecords.map((summary) => summary.summaryId),
+        typedMemoryRefs: lineagePlan.typedMemoryRefs,
+        stateJson: summarizeLineageState({
+          ...lineagePlan.lineage,
+          summaryRole: "snapshot",
+          snapshotId: null,
+          forkReason: "branch_conflict",
+        }),
+      });
+
+      return { snapshotId: snapshot?.snapshotId, level: condensed.level };
+    }
 
     // Persist the condensed summary
     const summaryId = generateSummaryId(condensed.content);
@@ -1192,15 +1518,44 @@ export class CompactionEngine {
       }, 0),
     });
 
+    await this.saveSummaryLineage(
+      summaryId,
+      {
+        ...lineagePlan.lineage,
+        forkReason: `condense_depth_${targetDepth}`,
+      },
+      conversationId,
+    );
+
     // Link to parent summaries
     const parentSummaryIds = summaryRecords.map((s) => s.summaryId);
     await this.summaryStore.linkSummaryToParents(summaryId, parentSummaryIds);
 
-    // Replace all summary items in context with the condensed summary
     const ordinals = summaryItems.map((ci) => ci.ordinal);
     const startOrdinal = Math.min(...ordinals);
     const endOrdinal = Math.max(...ordinals);
 
+    const episodeSnapshotId = await this.writeEpisodeSnapshot({
+      conversationId,
+      summaryId,
+      lineage: lineagePlan.lineage,
+      contextOrdinal: endOrdinal,
+      reason: `condense_depth_${targetDepth}`,
+    });
+
+    if (episodeSnapshotId) {
+      await this.saveSummaryLineage(
+        summaryId,
+        {
+          ...lineagePlan.lineage,
+          snapshotId: episodeSnapshotId,
+          forkReason: `condense_depth_${targetDepth}`,
+        },
+        conversationId,
+      );
+    }
+
+    // Replace all summary items in context with the condensed summary
     await this.summaryStore.replaceContextRangeWithSummary({
       conversationId,
       startOrdinal,
@@ -1208,7 +1563,18 @@ export class CompactionEngine {
       summaryId,
     });
 
-    return { summaryId, level: condensed.level };
+    // The replaced summaries remain available as historical evidence but are
+    // no longer current context. Mark them superseded so higher layers can
+    // expand to source before treating them as truth.
+    if (parentSummaryIds.length > 0) {
+      await this.summaryStore.invalidateSummaryLineages({
+        summaryIds: parentSummaryIds,
+        freshnessState: "superseded",
+        reason: `condensed_into:${summaryId}`,
+      });
+    }
+
+    return { summaryId, snapshotId: episodeSnapshotId ?? undefined, level: condensed.level };
   }
 
   /**
@@ -1223,7 +1589,7 @@ export class CompactionEngine {
     tokensAfterLeaf: number;
     tokensAfterFinal: number;
     leafResult: { summaryId: string; level: CompactionLevel } | null;
-    condenseResult: { summaryId: string; level: CompactionLevel } | null;
+    condenseResult: { summaryId?: string; snapshotId?: string; level: CompactionLevel } | null;
   }): Promise<void> {
     const {
       conversationId,
@@ -1246,6 +1612,7 @@ export class CompactionEngine {
     const createdSummaryIds = [leafResult?.summaryId, condenseResult?.summaryId].filter(
       (id): id is string => typeof id === "string" && id.length > 0,
     );
+    const createdSnapshotId = condenseResult?.snapshotId ?? null;
     const condensedPassOccurred = condenseResult !== null;
 
     if (leafResult) {
@@ -1258,20 +1625,22 @@ export class CompactionEngine {
         tokensAfter: tokensAfterLeaf,
         createdSummaryId: leafResult.summaryId,
         createdSummaryIds,
+        createdSnapshotId: null,
         condensedPassOccurred,
       });
     }
 
-    if (condenseResult) {
+    if (condenseResult && (typeof condenseResult.summaryId === "string" || typeof condenseResult.snapshotId === "string")) {
       await this.persistCompactionEvent({
         conversationId,
         sessionId: conversation.sessionId,
-        pass: "condensed",
+        pass: typeof condenseResult.summaryId === "string" ? "condensed" : "snapshot",
         level: condenseResult.level,
-        tokensBefore: tokensAfterLeaf,
-        tokensAfter: tokensAfterFinal,
-        createdSummaryId: condenseResult.summaryId,
+        tokensBefore: typeof condenseResult.summaryId === "string" ? tokensAfterLeaf : tokensBefore,
+        tokensAfter: typeof condenseResult.summaryId === "string" ? tokensAfterFinal : tokensAfterFinal,
+        createdSummaryId: condenseResult.summaryId ?? "",
         createdSummaryIds,
+        createdSnapshotId,
         condensedPassOccurred,
       });
     }
@@ -1287,6 +1656,7 @@ export class CompactionEngine {
     tokensAfter: number;
     createdSummaryId: string;
     createdSummaryIds: string[];
+    createdSnapshotId: string | null;
     condensedPassOccurred: boolean;
   }): Promise<void> {
     const content = `LCM compaction ${input.pass} pass (${input.level}): ${input.tokensBefore} -> ${input.tokensAfter}`;
@@ -1296,8 +1666,9 @@ export class CompactionEngine {
       level: input.level,
       tokensBefore: input.tokensBefore,
       tokensAfter: input.tokensAfter,
-      createdSummaryId: input.createdSummaryId,
+      createdSummaryId: input.createdSummaryId || input.createdSnapshotId || "",
       createdSummaryIds: input.createdSummaryIds,
+      createdSnapshotId: input.createdSnapshotId,
       condensedPassOccurred: input.condensedPassOccurred,
     });
 

@@ -208,6 +208,34 @@ export function runBrainMigrations(db: DatabaseSync): void {
     CREATE INDEX IF NOT EXISTS brain_observations_trace_idx ON brain_observations(trace_id, created_at);
 
     -- ═══════════════════════════════════════════
+    -- Shadow Usefulness Evaluations
+    -- ═══════════════════════════════════════════
+
+    CREATE TABLE IF NOT EXISTS brain_context_usefulness (
+      id              TEXT PRIMARY KEY,
+      observation_id  TEXT NOT NULL UNIQUE,
+      episode_id      TEXT NOT NULL,
+      trace_id        TEXT,
+      conversation_id INTEGER,
+      binding_mode    TEXT,
+      follow_up_text  TEXT,
+      tool_results_json TEXT NOT NULL DEFAULT '[]',
+      signal_json     TEXT NOT NULL DEFAULT '{}',
+      final_score     REAL NOT NULL,
+      confidence      REAL NOT NULL,
+      verdict         TEXT NOT NULL,
+      reason          TEXT,
+      created_at      INTEGER NOT NULL,
+      updated_at      INTEGER NOT NULL,
+      evaluated_at    INTEGER NOT NULL
+    );
+
+    CREATE INDEX IF NOT EXISTS brain_context_usefulness_observation_idx ON brain_context_usefulness(observation_id);
+    CREATE INDEX IF NOT EXISTS brain_context_usefulness_trace_idx ON brain_context_usefulness(trace_id, evaluated_at);
+    CREATE INDEX IF NOT EXISTS brain_context_usefulness_episode_idx ON brain_context_usefulness(episode_id, evaluated_at);
+    CREATE INDEX IF NOT EXISTS brain_context_usefulness_created_idx ON brain_context_usefulness(created_at DESC);
+
+    -- ═══════════════════════════════════════════
     -- Packs (immutable serving snapshots)
     -- ═══════════════════════════════════════════
 

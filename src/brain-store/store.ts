@@ -39,9 +39,15 @@ import type {
   BrainObservationStatus,
   BrainObservationTeacherEvaluation,
   BrainObservationToolResult,
+  BrainContextUsefulnessEvaluationV1,
+  BrainContextUsefulnessSignal,
+  BrainContextUsefulnessRecord,
+  BrainContextUsefulnessSignalsV1,
   ContextFeedbackFocusAction,
   ContextFeedbackSummary,
   ContextFeedbackVerdict,
+  ContextUsefulnessLatestVerdict,
+  ContextUsefulnessSummary,
   DecisionTraceInjectedNodeSummary,
   LearningJournalEventType,
   LearningJournalRecord,
@@ -51,6 +57,7 @@ import type {
   PromotionJournalPayload,
 } from "../brain-core/types.js";
 import { resolveObservationBindingMode } from "../brain-core/types.js";
+import { usefulnessThresholds } from "../brain-core/usefulness.js";
 import { summarizeRecentDecisionTraces, type RecentDecisionTraceSummary } from "../brain-core/trace.js";
 
 // ═══════════════════════════════════════════
@@ -279,6 +286,65 @@ function normalizeObservationTeacherEvaluation(
     finalScore: toFiniteNumber(record.finalScore),
     confidence: toFiniteNumber(record.confidence),
     reason: typeof record.reason === "string" ? record.reason : "",
+  };
+}
+
+function normalizeContextUsefulnessSignal(
+  value: unknown,
+  fallbackClass: string,
+  fallbackDetail: string,
+): BrainContextUsefulnessSignal {
+  const record = toRecord(value) ?? {};
+  return {
+    class: typeof record.class === "string" && record.class.trim().length > 0 ? record.class : fallbackClass,
+    score: toFiniteNumber(record.score),
+    evidence: toStringArray(record.evidence),
+    detail: typeof record.detail === "string" && record.detail.trim().length > 0
+      ? record.detail
+      : fallbackDetail,
+  };
+}
+
+function normalizeContextUsefulnessSignals(
+  value: unknown,
+): BrainContextUsefulnessSignalsV1 {
+  const record = toRecord(value) ?? {};
+  const authorityGate = toRecord(record.authorityGate) ?? {};
+  return {
+    followUp: normalizeContextUsefulnessSignal(record.followUp, "missing", "no follow-up signal") as BrainContextUsefulnessSignalsV1["followUp"],
+    toolOutcome: normalizeContextUsefulnessSignal(record.toolOutcome, "missing", "no tool outcome signal") as BrainContextUsefulnessSignalsV1["toolOutcome"],
+    routeIntegrity: normalizeContextUsefulnessSignal(record.routeIntegrity, "fallback", "no route integrity signal") as BrainContextUsefulnessSignalsV1["routeIntegrity"],
+    teacherAlignment: record.teacherAlignment
+      ? normalizeContextUsefulnessSignal(record.teacherAlignment, "calibration", "teacher calibration signal") as BrainContextUsefulnessSignalsV1["teacherAlignment"]
+      : null,
+    authorityGate: {
+      blocked: Boolean(authorityGate.blocked),
+      reason: typeof authorityGate.reason === "string" && authorityGate.reason.trim().length > 0
+        ? authorityGate.reason
+        : null,
+    },
+  };
+}
+
+function toContextUsefulness(row: Record<string, unknown>): BrainContextUsefulnessRecord {
+  const signals = normalizeContextUsefulnessSignals(parseJsonValue(row.signal_json, {}));
+  return {
+    id: row.id as string,
+    observationId: row.observation_id as string,
+    episodeId: row.episode_id as string,
+    traceId: toOptionalString(row.trace_id),
+    conversationId: typeof row.conversation_id === "number" ? row.conversation_id : null,
+    bindingMode: toObservationBindingMode(row.binding_mode),
+    followUpText: toOptionalString(row.follow_up_text),
+    toolResults: parseJsonValue<BrainObservationToolResult[]>(row.tool_results_json, []),
+    signals,
+    finalScore: toFiniteNumber(row.final_score),
+    confidence: toFiniteNumber(row.confidence),
+    verdict: (row.verdict as BrainContextUsefulnessRecord["verdict"]) ?? "irrelevant",
+    reason: toOptionalString(row.reason),
+    createdAt: toFiniteNumber(row.created_at),
+    updatedAt: toFiniteNumber(row.updated_at),
+    evaluatedAt: toFiniteNumber(row.evaluated_at),
   };
 }
 
@@ -1374,6 +1440,184 @@ export class BrainStore {
       params.observationId,
     );
     return this.getObservation(params.observationId);
+  }
+
+  insertContextUsefulnessEvaluation(params: {
+    observation: BrainObservation;
+    evaluation: BrainContextUsefulnessEvaluationV1;
+  }): BrainContextUsefulnessRecord | null {
+    const existing = this.getContextUsefulnessForObservation(params.observation.id);
+    if (existing) {
+      return existing;
+    }
+
+    const now = params.evaluation.computedAt;
+    const id = `uc_${randomUUID().slice(0, 8)}`;
+    this.db.prepare(`
+      INSERT INTO brain_context_usefulness (
+        id,
+        observation_id,
+        episode_id,
+        trace_id,
+        conversation_id,
+        binding_mode,
+        follow_up_text,
+        tool_results_json,
+        signal_json,
+        final_score,
+        confidence,
+        verdict,
+        reason,
+        created_at,
+        updated_at,
+        evaluated_at
+      )
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      id,
+      params.evaluation.observationId,
+      params.evaluation.episodeId,
+      params.evaluation.traceId,
+      params.evaluation.conversationId,
+      params.evaluation.bindingMode,
+      params.observation.followUpText,
+      JSON.stringify(params.observation.toolResults ?? []),
+      JSON.stringify(params.evaluation.signals),
+      params.evaluation.finalScore,
+      params.evaluation.confidence,
+      params.evaluation.verdict,
+      params.evaluation.reason,
+      now,
+      now,
+      now,
+    );
+
+    return this.getContextUsefulnessForObservation(params.observation.id);
+  }
+
+  getContextUsefulnessForObservation(observationId: string): BrainContextUsefulnessRecord | null {
+    const row = this.db.prepare(`
+      SELECT *
+      FROM brain_context_usefulness
+      WHERE observation_id = ?
+      LIMIT 1
+    `).get(observationId) as Record<string, unknown> | undefined;
+    return row ? toContextUsefulness(row) : null;
+  }
+
+  getPendingContextUsefulnessObservations(limit = 20): BrainObservation[] {
+    const rows = this.db.prepare(`
+      SELECT o.*
+      FROM brain_observations o
+      LEFT JOIN brain_context_usefulness u ON u.observation_id = o.id
+      WHERE u.id IS NULL
+        AND o.follow_up_text IS NOT NULL
+        AND o.status IN ('pending_teacher', 'completed')
+      ORDER BY o.updated_at ASC, o.created_at ASC
+      LIMIT ?
+    `).all(limit) as Record<string, unknown>[];
+    return rows.map((row) => this.toObservation(row));
+  }
+
+  countContextUsefulness(): number {
+    const row = this.db.prepare(`SELECT COUNT(*) as count FROM brain_context_usefulness`).get() as { count: number };
+    return row.count ?? 0;
+  }
+
+  countContextUsefulnessByVerdict(): Record<BrainContextUsefulnessRecord["verdict"], number> {
+    const rows = this.db.prepare(`
+      SELECT verdict, COUNT(*) as count
+      FROM brain_context_usefulness
+      GROUP BY verdict
+    `).all() as Array<{ verdict: BrainContextUsefulnessRecord["verdict"]; count: number }>;
+    const counts: Record<BrainContextUsefulnessRecord["verdict"], number> = {
+      helpful: 0,
+      irrelevant: 0,
+      harmful: 0,
+    };
+    for (const row of rows) {
+      if (row.verdict in counts) {
+        counts[row.verdict] = row.count;
+      }
+    }
+    return counts;
+  }
+
+  getContextUsefulnessSummary(): ContextUsefulnessSummary {
+    const thresholds = usefulnessThresholds();
+    const observationRow = this.db.prepare(`
+      SELECT COUNT(*) as count
+      FROM brain_observations
+    `).get() as { count: number };
+    const readyRow = this.db.prepare(`
+      SELECT COUNT(*) as count
+      FROM brain_observations
+      WHERE follow_up_text IS NOT NULL
+        AND status IN ('pending_teacher', 'completed')
+    `).get() as { count: number };
+    const completedRow = this.db.prepare(`
+      SELECT COUNT(*) as count
+      FROM brain_observations
+      WHERE status = 'completed'
+    `).get() as { count: number };
+    const pendingRows = this.db.prepare(`
+      SELECT status, COUNT(*) as count
+      FROM brain_observations
+      GROUP BY status
+    `).all() as Array<{ status: BrainObservationStatus; count: number }>;
+    let pendingFollowupCount = 0;
+    let pendingTeacherCount = 0;
+    for (const row of pendingRows) {
+      if (row.status === "pending_followup") {
+        pendingFollowupCount = row.count;
+      } else if (row.status === "pending_teacher") {
+        pendingTeacherCount = row.count;
+      }
+    }
+    const verdictCounts = this.countContextUsefulnessByVerdict();
+    const latestRow = this.db.prepare(`
+      SELECT *
+      FROM brain_context_usefulness
+      ORDER BY evaluated_at DESC, created_at DESC
+      LIMIT 1
+    `).get() as Record<string, unknown> | undefined;
+    const latest = latestRow ? (() => {
+      const record = toContextUsefulness(latestRow);
+      return {
+        observationId: record.observationId,
+        episodeId: record.episodeId,
+        traceId: record.traceId,
+        verdict: record.verdict,
+        score: record.finalScore,
+        confidence: record.confidence,
+        reason: record.reason,
+        bindingMode: record.bindingMode,
+        createdAt: record.createdAt,
+      } satisfies ContextUsefulnessLatestVerdict;
+    })() : null;
+    const scoredObservationCount = this.countContextUsefulness();
+    const readyObservationCount = readyRow.count ?? 0;
+    const observationCount = observationRow.count ?? 0;
+
+    return {
+      scoreBands: thresholds,
+      verdictCounts,
+      coverage: {
+        observationCount,
+        readyObservationCount,
+        scoredObservationCount,
+        completedObservationCount: completedRow.count ?? 0,
+        observationCoverage: observationCount > 0 ? scoredObservationCount / observationCount : 0,
+        readyCoverage: readyObservationCount > 0 ? scoredObservationCount / readyObservationCount : 0,
+        pendingFollowupCount,
+        pendingTeacherCount,
+      },
+      latest,
+      detail:
+        scoredObservationCount === 0
+          ? "no shadow usefulness scores recorded yet"
+          : `${verdictCounts.helpful} helpful, ${verdictCounts.irrelevant} irrelevant, ${verdictCounts.harmful} harmful shadow verdicts; ${scoredObservationCount}/${readyObservationCount} ready observation(s) scored`,
+    };
   }
 
   private toEvidence(row: Record<string, unknown>): BrainEvidence {

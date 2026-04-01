@@ -23,8 +23,8 @@ const LcmGrepSchema = Type.Object({
   scope: Type.Optional(
     Type.String({
       description:
-        'What to search: "messages" for raw messages, "summaries" for compacted summaries, "both" for all. Default: "both".',
-      enum: ["messages", "summaries", "both"],
+        'What to search: "messages" for raw messages, "summaries" for compacted summaries, "marbles" for marble packets, "both" for all. Default: "both".',
+      enum: ["messages", "summaries", "marbles", "both"],
     }),
   ),
   conversationId: Type.Optional(
@@ -75,11 +75,11 @@ export function createLcmGrepTool(input: {
   return {
     name: "lcm_grep",
     label: "LCM Grep",
-    description:
+      description:
       "Search compacted conversation history using regex or full-text search. " +
-      "Searches across messages and/or summaries stored by LCM. " +
+      "Searches across messages, summaries, and marbles stored by LCM. " +
       "Use this to find specific content that may have been compacted away from " +
-      "active context. Returns matching snippets with their summary/message IDs " +
+      "active context. Returns matching snippets with their summary/message/marble IDs " +
       "for follow-up with lcm_expand or lcm_describe.",
     parameters: LcmGrepSchema,
     async execute(_toolCallId, params) {
@@ -89,7 +89,7 @@ export function createLcmGrepTool(input: {
       const p = params as Record<string, unknown>;
       const pattern = (p.pattern as string).trim();
       const mode = (p.mode as "regex" | "full_text") ?? "regex";
-      const scope = (p.scope as "messages" | "summaries" | "both") ?? "both";
+      const scope = (p.scope as "messages" | "summaries" | "marbles" | "both") ?? "both";
       const limit = typeof p.limit === "number" ? Math.trunc(p.limit) : 50;
       let since: Date | undefined;
       let before: Date | undefined;
@@ -151,10 +151,15 @@ export function createLcmGrepTool(input: {
 
       let currentChars = lines.join("\n").length;
 
-      if (result.messages.length > 0) {
+      const messages = result.messages ?? [];
+      const summaries = result.summaries ?? [];
+      const marbles = result.marbles ?? [];
+      const totalMatches = result.totalMatches ?? messages.length + summaries.length + marbles.length;
+
+      if (messages.length > 0) {
         lines.push("### Messages");
         lines.push("");
-        for (const msg of result.messages) {
+        for (const msg of messages) {
           const snippet = truncateSnippet(msg.snippet);
           const line = `- [msg#${msg.messageId}] (${msg.role}, ${formatTimestamp(msg.createdAt, timezone)}): ${snippet}`;
           if (currentChars + line.length > MAX_RESULT_CHARS) {
@@ -167,12 +172,13 @@ export function createLcmGrepTool(input: {
         lines.push("");
       }
 
-      if (result.summaries.length > 0) {
+      if (summaries.length > 0) {
         lines.push("### Summaries");
         lines.push("");
-        for (const sum of result.summaries) {
+        for (const sum of summaries) {
           const snippet = truncateSnippet(sum.snippet);
-          const line = `- [${sum.summaryId}] (${sum.kind}, ${formatTimestamp(sum.createdAt, timezone)}): ${snippet}`;
+          const freshness = sum.freshnessState ? `, ${sum.freshnessState}` : "";
+          const line = `- [${sum.summaryId}] (${sum.kind}${freshness}, ${formatTimestamp(sum.createdAt, timezone)}): ${snippet}`;
           if (currentChars + line.length > MAX_RESULT_CHARS) {
             lines.push("*(truncated — more results available)*");
             break;
@@ -183,16 +189,34 @@ export function createLcmGrepTool(input: {
         lines.push("");
       }
 
-      if (result.totalMatches === 0) {
+      if (marbles.length > 0) {
+        lines.push("### Marbles");
+        lines.push("");
+        for (const marble of marbles) {
+          const snippet = truncateSnippet(marble.snippet);
+          const line =
+            `- [${marble.marbleId}] (${marble.marbleKind}, ${marble.freshnessState}, ${formatTimestamp(marble.createdAt, timezone)}): ${snippet} ` +
+            `· prov ${marble.provenanceRef} · src ${marble.sourceFingerprint} · links ${marble.sourceCount}`;
+          if (currentChars + line.length > MAX_RESULT_CHARS) {
+            lines.push("*(truncated — more results available)*");
+            break;
+          }
+          lines.push(line);
+          currentChars += line.length;
+        }
+        lines.push("");
+      }
+
+      if (totalMatches === 0) {
         lines.push("No matches found.");
       }
 
       return {
         content: [{ type: "text", text: lines.join("\n") }],
         details: {
-          messageCount: result.messages.length,
-          summaryCount: result.summaries.length,
-          totalMatches: result.totalMatches,
+          messageCount: messages.length,
+          summaryCount: summaries.length,
+          totalMatches,
         },
       };
     },

@@ -1,6 +1,6 @@
-# OpenClawBrain 0.4.18 CLI release notes
+# OpenClawBrain 0.4.18 / 0.4.6 split-package release notes
 
-Published package:
+Published packages:
 
 - `@openclawbrain/cli@0.4.18`
 - plugin/runtime remains `@openclawbrain/openclaw@0.4.6`

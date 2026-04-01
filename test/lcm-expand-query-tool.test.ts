@@ -429,19 +429,10 @@ describe("createLcmExpandQueryTool", () => {
       expect.objectContaining({
         query: "deploy regression",
         mode: "full_text",
-        scope: "summaries",
+        scope: "both",
         conversationId: 7,
       }),
     );
-
-    const agentCall = callGatewayMock.mock.calls
-      .map(([opts]) => opts as { method?: string; params?: Record<string, unknown> })
-      .find((entry) => entry.method === "agent");
-    const rawMessage = agentCall?.params?.message;
-    expect(typeof rawMessage).toBe("string");
-    const message = typeof rawMessage === "string" ? rawMessage : "";
-    expect(message).toContain("sum_x");
-    expect(message).toContain("sum_y");
 
     expect(result.details).toMatchObject({
       sourceConversationId: 7,

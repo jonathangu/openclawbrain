@@ -117,6 +117,31 @@ describe("runLcmMigrations summary depth backfill", () => {
     expect(summaryColumns.some((column) => column.name === "descendant_token_count")).toBe(true);
     expect(summaryColumns.some((column) => column.name === "source_message_token_count")).toBe(true);
 
+    const lineageTables = db
+      .prepare("SELECT name FROM sqlite_master WHERE type='table' AND name IN ('summary_lineage', 'branch_snapshots')")
+      .all() as Array<{ name: string }>;
+    expect(lineageTables.map((row) => row.name).sort()).toEqual(["branch_snapshots", "summary_lineage"]);
+
+    const marbleColumns = db.prepare(`PRAGMA table_info(marbles)`).all() as Array<{
+      name?: string;
+    }>;
+    expect(marbleColumns.some((column) => column.name === "marble_kind")).toBe(true);
+    expect(marbleColumns.some((column) => column.name === "freshness_state")).toBe(true);
+    expect(marbleColumns.some((column) => column.name === "source_fingerprint")).toBe(true);
+
+    const summaryLineageColumns = db.prepare(`PRAGMA table_info(summary_lineage)`).all() as Array<{
+      name?: string;
+    }>;
+    expect(summaryLineageColumns.some((column) => column.name === "freshness_state")).toBe(true);
+    expect(summaryLineageColumns.some((column) => column.name === "invalidated_at")).toBe(true);
+    expect(summaryLineageColumns.some((column) => column.name === "invalidation_reason")).toBe(true);
+
+    const marbleSourceColumns = db.prepare(`PRAGMA table_info(marble_sources)`).all() as Array<{
+      name?: string;
+    }>;
+    expect(marbleSourceColumns.some((column) => column.name === "source_digest")).toBe(true);
+    expect(marbleSourceColumns.some((column) => column.name === "source_provenance_ref")).toBe(true);
+
     const depthRows = db
       .prepare(
         `SELECT summary_id, depth, earliest_at, latest_at, descendant_count,

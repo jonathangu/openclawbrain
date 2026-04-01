@@ -706,6 +706,103 @@ export interface DecisionTraceBranchOutcomeSummary {
   detail: string;
 }
 
+export interface BrainCompileItemV1 {
+  nodeId: string;
+  provenanceRef: string | null;
+  kind: NodeKind | null;
+  trust: TrustLevel | null;
+  tokenCount: number | null;
+  preview: string | null;
+  state: "selected" | "dropped" | "prefetched" | "compressed";
+  reason: string | null;
+  sourceUri?: string | null;
+  stage?: BrainDropStage | null;
+  fitStrategy?: BrainFitStrategy | null;
+  compressionMode?: string | null;
+}
+
+export interface BrainCompileReportV1 {
+  schemaVersion: 1;
+  summary: string;
+  traceId: string | null;
+  episodeId: string | null;
+  requestDigest: string | null;
+  activePackId: string | null;
+  routerIdentity: string | null;
+  bindingMode: BrainObservationBindingMode | null;
+  decision: {
+    mode: string | null;
+    brainDropReason: BrainDropReason | null;
+    brainDropStage: BrainDropStage | null;
+    queryInterrupted: boolean | null;
+    interruptionStage: BrainInterruptionStage | null;
+    interruptionReason: string | null;
+    servedPartial: boolean | null;
+  };
+  timing: {
+    compileElapsedMs: number | null;
+    compileDeadlineMs: number | null;
+    compileDeadlineHit: boolean | null;
+    routeSelectionMs: number | null;
+    totalQueryMs: number | null;
+  };
+  budget: {
+    budgetFraction: number | null;
+    budgetChars: number | null;
+    queryBudgetChars: number | null;
+    maxContextChars: number | null;
+    injectedChars: number | null;
+    droppedChars: number | null;
+    contextClipped: boolean | null;
+    fitStrategy: BrainFitStrategy | null;
+  };
+  counters: {
+    candidateNodeCount: number;
+    selectedNodeCount: number;
+    selectedTraversalNodeCount: number;
+    selectedSeedNodeCount: number;
+    droppedNodeCount: number;
+    prefetchedNodeCount: number;
+    compressedNodeCount: number;
+    droppedProposalCount: number;
+    branchCount: number;
+    continuingBranchCount: number;
+    sourceRefCount: number;
+  };
+  reasons: {
+    droppedNodeReasons: Record<string, number>;
+    droppedProposalReasons: Record<string, number>;
+    prefetchedReasons: Record<string, number>;
+    compressionReasons: Record<string, number>;
+    terminationReasons: Record<string, number>;
+  };
+  buckets: {
+    selected: BrainCompileItemV1[];
+    dropped: BrainCompileItemV1[];
+    prefetched: BrainCompileItemV1[];
+    compressed: BrainCompileItemV1[];
+  };
+  overflow: {
+    selectedOverflowCount: number;
+    droppedOverflowCount: number;
+    prefetchedOverflowCount: number;
+    compressedOverflowCount: number;
+    reasonOverflowCount: number;
+  };
+  boundedness: {
+    maxItemsPerBucket: number;
+    maxReasonKeys: number;
+    maxPreviewChars: number;
+    maxSourceRefs: number;
+  };
+}
+
+export type DecisionTraceSelectionMetadataV4 = DecisionRouteTrace["selectionMetadata"] & {
+  traceSliceVersion: 4;
+  compileReport?: BrainCompileReportV1 | null;
+  compileReportSummary?: string | null;
+};
+
 export type BrainInterruptionStage =
   | "embedding"
   | "query"
@@ -825,7 +922,64 @@ export interface DecisionRouteTrace {
     droppedNodeCount?: number | null;
     fittingDropReasons?: Partial<Record<BrainFittingDropReason, number>> | null;
     interruptionAccounting?: InterruptionAccounting | null;
+    prefetch?: BrainPrefetchDecision | null;
+    compileReport?: BrainCompileReportV1 | null;
+    compileReportSummary?: string | null;
   };
+}
+
+export type BrainPrefetchState =
+  | "scheduled"
+  | "materialized"
+  | "hit"
+  | "miss"
+  | "stale"
+  | "invalidated"
+  | "dropped";
+
+export type BrainPrefetchKind =
+  | "traversal"
+  | "support_packet";
+
+export type BrainPrefetchBudgetClass =
+  | "tiny"
+  | "small"
+  | "standard"
+  | "large"
+  | "deadline_pressure";
+
+export interface BrainPrefetchDecision {
+  enabled: boolean;
+  state: BrainPrefetchState;
+  kind: BrainPrefetchKind | null;
+  budgetClass: BrainPrefetchBudgetClass | null;
+  key: string | null;
+  queryDigest: string | null;
+  activePackId: string | null;
+  activePackVersion: number | null;
+  summaryRoutingMode: string | null;
+  prefetchMs: number | null;
+  cacheAgeMs: number | null;
+  invalidatedReason: string | null;
+  reusedNodeCount: number | null;
+  reusedChars: number | null;
+  savingsChars: number | null;
+}
+
+export interface RecentPrefetchSummary {
+  windowSize: number;
+  sampleSize: number;
+  histograms: {
+    state: Record<BrainPrefetchState, number>;
+    kind: Record<string, number>;
+    budgetClass: Record<string, number>;
+    summaryRoutingMode: Record<string, number>;
+    invalidationReason: Record<string, number>;
+  };
+  hitRate: { count: number; rate: number | null };
+  staleRate: { count: number; rate: number | null };
+  invalidationRate: { count: number; rate: number | null };
+  detail: string;
 }
 
 export interface DecisionTrace {
@@ -1019,6 +1173,121 @@ export interface ContextFeedbackSummary {
     action: ContextFeedbackFocusAction;
     detail: string;
   };
+  detail: string;
+}
+
+export type BrainContextUsefulnessVerdict =
+  | "helpful"
+  | "irrelevant"
+  | "harmful";
+
+export type BrainContextUsefulnessFollowUpClass =
+  | "confirmation"
+  | "neutral_ack"
+  | "reask"
+  | "correction"
+  | "contradiction"
+  | "missing";
+
+export type BrainContextUsefulnessToolOutcomeClass =
+  | "success"
+  | "partial"
+  | "failure"
+  | "error"
+  | "missing";
+
+export type BrainContextUsefulnessRouteIntegrityClass =
+  | "exact_full_serve"
+  | "fallback"
+  | "clipped_or_fail_open"
+  | "unbound";
+
+export type BrainContextUsefulnessTeacherAlignmentClass =
+  | "calibration";
+
+export interface BrainContextUsefulnessSignal {
+  class: string;
+  score: number;
+  evidence: string[];
+  detail: string | null;
+}
+
+export interface BrainContextUsefulnessSignalsV1 {
+  followUp: BrainContextUsefulnessSignal & { class: BrainContextUsefulnessFollowUpClass };
+  toolOutcome: BrainContextUsefulnessSignal & { class: BrainContextUsefulnessToolOutcomeClass };
+  routeIntegrity: BrainContextUsefulnessSignal & { class: BrainContextUsefulnessRouteIntegrityClass };
+  teacherAlignment: (BrainContextUsefulnessSignal & { class: BrainContextUsefulnessTeacherAlignmentClass }) | null;
+  authorityGate: {
+    blocked: boolean;
+    reason: string | null;
+  };
+}
+
+export interface BrainContextUsefulnessEvaluationV1 {
+  version: 1;
+  observationId: string;
+  episodeId: string;
+  traceId: string | null;
+  conversationId: number | null;
+  bindingMode: BrainObservationBindingMode | null;
+  signals: BrainContextUsefulnessSignalsV1;
+  finalScore: number;
+  confidence: number;
+  verdict: BrainContextUsefulnessVerdict;
+  reason: string;
+  computedAt: number;
+}
+
+export interface BrainContextUsefulnessRecord {
+  id: string;
+  observationId: string;
+  episodeId: string;
+  traceId: string | null;
+  conversationId: number | null;
+  bindingMode: BrainObservationBindingMode | null;
+  followUpText: string | null;
+  toolResults: BrainObservationToolResult[];
+  signals: BrainContextUsefulnessSignalsV1;
+  finalScore: number;
+  confidence: number;
+  verdict: BrainContextUsefulnessVerdict;
+  reason: string | null;
+  createdAt: number;
+  updatedAt: number;
+  evaluatedAt: number;
+}
+
+export interface ContextUsefulnessCoverageSummary {
+  observationCount: number;
+  readyObservationCount: number;
+  scoredObservationCount: number;
+  completedObservationCount: number;
+  observationCoverage: number;
+  readyCoverage: number;
+  pendingFollowupCount: number;
+  pendingTeacherCount: number;
+}
+
+export interface ContextUsefulnessLatestVerdict {
+  observationId: string;
+  episodeId: string;
+  traceId: string | null;
+  verdict: BrainContextUsefulnessVerdict;
+  score: number;
+  confidence: number;
+  reason: string | null;
+  bindingMode: BrainObservationBindingMode | null;
+  createdAt: number;
+}
+
+export interface ContextUsefulnessSummary {
+  scoreBands: {
+    helpfulMin: number;
+    harmfulMax: number;
+  };
+  verdictCounts: Record<BrainContextUsefulnessVerdict, number>;
+  coverage: ContextUsefulnessCoverageSummary;
+  latest: ContextUsefulnessLatestVerdict | null;
   detail: string;
 }
 

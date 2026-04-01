@@ -8,13 +8,19 @@ import type {
   SummaryRecord,
   SummarySearchResult,
   LargeFileRecord,
+  MarbleRecord,
+  MarbleSearchResult,
+  MarbleSourceRecord,
+  SummaryLineageRecord,
+  SummaryFreshnessState,
+  BranchSnapshotRecord,
 } from "./store/summary-store.js";
 
 // ── Public interfaces ────────────────────────────────────────────────────────
 
 export interface DescribeResult {
   id: string;
-  type: "summary" | "file";
+  type: "summary" | "file" | "marble";
   /** Summary-specific fields */
   summary?: {
     conversationId: number;
@@ -36,6 +42,7 @@ export interface DescribeResult {
       parentSummaryId: string | null;
       depthFromRoot: number;
       kind: "leaf" | "condensed";
+      freshnessState?: SummaryFreshnessState;
       depth: number;
       tokenCount: number;
       descendantCount: number;
@@ -46,6 +53,8 @@ export interface DescribeResult {
       childCount: number;
       path: string;
     }>;
+    lineage?: SummaryLineageRecord | null;
+    snapshot?: BranchSnapshotRecord | null;
     createdAt: Date;
   };
   /** File-specific fields */
@@ -58,12 +67,17 @@ export interface DescribeResult {
     explorationSummary: string | null;
     createdAt: Date;
   };
+  /** Marble-specific fields */
+  marble?: MarbleRecord & {
+    sourceRefs: string[];
+    sources: MarbleSourceRecord[];
+  };
 }
 
 export interface GrepInput {
   query: string;
   mode: "regex" | "full_text";
-  scope: "messages" | "summaries" | "both";
+  scope: "messages" | "summaries" | "marbles" | "both";
   conversationId?: number;
   since?: Date;
   before?: Date;
@@ -73,6 +87,7 @@ export interface GrepInput {
 export interface GrepResult {
   messages: MessageSearchResult[];
   summaries: SummarySearchResult[];
+  marbles: MarbleSearchResult[];
   totalMatches: number;
 }
 
@@ -114,6 +129,13 @@ function estimateTokens(content: string): number {
   return Math.ceil(content.length / 4);
 }
 
+function formatMarbleSourceRef(source: MarbleSourceRecord): string {
+  const subId = typeof source.sourceSubId === "string" && source.sourceSubId.length > 0
+    ? `#${source.sourceSubId}`
+    : "";
+  return `${source.sourceKind}:${source.sourceId}${subId}`;
+}
+
 // ── RetrievalEngine ──────────────────────────────────────────────────────────
 
 export class RetrievalEngine {
@@ -135,6 +157,9 @@ export class RetrievalEngine {
     if (id.startsWith("sum_")) {
       return this.describeSummary(id);
     }
+    if (id.startsWith("mar_")) {
+      return this.describeMarble(id);
+    }
     if (id.startsWith("file_")) {
       return this.describeFile(id);
     }
@@ -148,12 +173,15 @@ export class RetrievalEngine {
     }
 
     // Fetch lineage in parallel
-    const [parents, children, messageIds, subtree] = await Promise.all([
+    const [parents, children, messageIds, subtree, lineage] = await Promise.all([
       this.summaryStore.getSummaryParents(id),
       this.summaryStore.getSummaryChildren(id),
       this.summaryStore.getSummaryMessages(id),
       this.summaryStore.getSummarySubtree(id),
+      this.maybeGetSummaryLineage(id),
     ]);
+
+    const snapshot = lineage?.snapshotId ? await this.maybeGetBranchSnapshot(lineage.snapshotId) : null;
 
     return {
       id,
@@ -178,6 +206,7 @@ export class RetrievalEngine {
           parentSummaryId: node.parentSummaryId,
           depthFromRoot: node.depthFromRoot,
           kind: node.kind,
+          freshnessState: node.freshnessState,
           depth: node.depth,
           tokenCount: node.tokenCount,
           descendantCount: node.descendantCount,
@@ -188,9 +217,31 @@ export class RetrievalEngine {
           childCount: node.childCount,
           path: node.path,
         })),
+        lineage,
+        snapshot,
         createdAt: summary.createdAt,
       },
     };
+  }
+
+  private async maybeGetSummaryLineage(summaryId: string): Promise<SummaryLineageRecord | null> {
+    const store = this.summaryStore as unknown as {
+      getSummaryLineage?: (summaryId: string) => Promise<SummaryLineageRecord | null>;
+    };
+    if (typeof store.getSummaryLineage !== "function") {
+      return null;
+    }
+    return store.getSummaryLineage(summaryId);
+  }
+
+  private async maybeGetBranchSnapshot(snapshotId: string): Promise<BranchSnapshotRecord | null> {
+    const store = this.summaryStore as unknown as {
+      getBranchSnapshot?: (snapshotId: string) => Promise<BranchSnapshotRecord | null>;
+    };
+    if (typeof store.getBranchSnapshot !== "function") {
+      return null;
+    }
+    return store.getBranchSnapshot(snapshotId);
   }
 
   private async describeFile(id: string): Promise<DescribeResult | null> {
@@ -214,6 +265,24 @@ export class RetrievalEngine {
     };
   }
 
+  private async describeMarble(id: string): Promise<DescribeResult | null> {
+    const marble = await this.summaryStore.getMarble(id);
+    if (!marble) {
+      return null;
+    }
+
+    const sources = await this.summaryStore.getMarbleSources(id);
+    return {
+      id,
+      type: "marble",
+      marble: {
+        ...marble,
+        sourceRefs: sources.map(formatMarbleSourceRef),
+        sources,
+      },
+    };
+  }
+
   // ── grep ─────────────────────────────────────────────────────────────────
 
   /**
@@ -228,26 +297,41 @@ export class RetrievalEngine {
 
     let messages: MessageSearchResult[] = [];
     let summaries: SummarySearchResult[] = [];
+    let marbles: MarbleSearchResult[] = [];
+    const maybeSearchMarbles = async (): Promise<MarbleSearchResult[]> => {
+      const store = this.summaryStore as unknown as {
+        searchMarbles?: (input: typeof searchInput) => Promise<MarbleSearchResult[]>;
+      };
+      if (typeof store.searchMarbles !== "function") {
+        return [];
+      }
+      return store.searchMarbles(searchInput);
+    };
 
     if (scope === "messages") {
       messages = await this.conversationStore.searchMessages(searchInput);
     } else if (scope === "summaries") {
       summaries = await this.summaryStore.searchSummaries(searchInput);
+    } else if (scope === "marbles") {
+      marbles = await maybeSearchMarbles();
     } else {
-      // scope === "both" — run in parallel
-      [messages, summaries] = await Promise.all([
+      // scope === "both" — run in parallel across all artifact rails.
+      [messages, summaries, marbles] = await Promise.all([
         this.conversationStore.searchMessages(searchInput),
         this.summaryStore.searchSummaries(searchInput),
+        maybeSearchMarbles(),
       ]);
     }
 
     messages.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
     summaries.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
+    marbles.sort((a, b) => b.createdAt.getTime() - a.createdAt.getTime());
 
     return {
       messages,
       summaries,
-      totalMatches: messages.length + summaries.length,
+      marbles,
+      totalMatches: messages.length + summaries.length + marbles.length,
     };
   }
 

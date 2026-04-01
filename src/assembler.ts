@@ -5,7 +5,12 @@ import type {
   MessagePartRecord,
   MessageRole,
 } from "./store/conversation-store.js";
-import type { SummaryStore, ContextItemRecord, SummaryRecord } from "./store/summary-store.js";
+import type {
+  SummaryStore,
+  ContextItemRecord,
+  SummaryRecord,
+  SummaryLineageRecord,
+} from "./store/summary-store.js";
 
 // ── Public types ─────────────────────────────────────────────────────────────
 
@@ -23,12 +28,27 @@ export interface AssembledSummaryMetadataItem {
   descendantCount: number;
   earliestAt: Date | null;
   latestAt: Date | null;
+  freshnessState?: SummaryLineageRecord["freshnessState"] | null;
+  branchId?: string | null;
+  episodeId?: string | null;
+  summaryRole?: SummaryLineageRecord["summaryRole"] | null;
+  truthBasis?: SummaryLineageRecord["truthBasis"] | null;
+  snapshotId?: string | null;
+  typedMemoryRefs?: string[];
 }
 
 export interface AssembledSummaryMetadata {
   totalCount: number;
   maxDepth: number;
   condensedCount: number;
+  episodeCount: number;
+  snapshotCount: number;
+  branchCount: number;
+  typedMemoryRefCount: number;
+  freshnessStateCounts: Partial<Record<SummaryLineageRecord["freshnessState"], number>>;
+  hasNonFreshSummaries: boolean;
+  hasTruthConflict: boolean;
+  latestRole: SummaryLineageRecord["summaryRole"] | null;
   items: AssembledSummaryMetadataItem[];
 }
 
@@ -66,7 +86,10 @@ type SummaryPromptSignal = Pick<SummaryRecord, "kind" | "depth" | "descendantCou
  * Guidance is emitted only when summaries are present in assembled context.
  * Depth-aware: minimal for shallow compaction, full guidance for deep trees.
  */
-function buildSystemPromptAddition(summarySignals: SummaryPromptSignal[]): string | undefined {
+function buildSystemPromptAddition(
+  summarySignals: SummaryPromptSignal[],
+  summaryMetadata?: AssembledSummaryMetadata,
+): string | undefined {
   if (summarySignals.length === 0) {
     return undefined;
   }
@@ -74,6 +97,7 @@ function buildSystemPromptAddition(summarySignals: SummaryPromptSignal[]): strin
   const maxDepth = summarySignals.reduce((deepest, signal) => Math.max(deepest, signal.depth), 0);
   const condensedCount = summarySignals.filter((signal) => signal.kind === "condensed").length;
   const heavilyCompacted = maxDepth >= 2 || condensedCount >= 2;
+  const hasNonFreshSummaries = Boolean(summaryMetadata?.hasNonFreshSummaries);
 
   const sections: string[] = [];
 
@@ -117,6 +141,11 @@ function buildSystemPromptAddition(summarySignals: SummaryPromptSignal[]): strin
       "If yes to any \u2192 expand first.",
       "",
       "**Do not guess** exact commands, SHAs, file paths, timestamps, config values, or causal claims from condensed summaries. Expand first or state that you need to expand.",
+    );
+  } else if (hasNonFreshSummaries) {
+    sections.push(
+      "",
+      "**Some summaries are stale or superseded.** Treat them as maps, not proof; expand to source before making exact claims or quoting details.",
     );
   } else {
     sections.push(
@@ -510,6 +539,7 @@ async function formatSummaryContent(
   summary: SummaryRecord,
   summaryStore: SummaryStore,
   timezone?: string,
+  lineage?: SummaryLineageRecord | null,
 ): Promise<string> {
   const attributes = [
     `id="${summary.summaryId}"`,
@@ -537,6 +567,17 @@ async function formatSummaryContent(
       }
       lines.push("  </parents>");
     }
+  }
+
+  if (lineage) {
+    const typedMemoryRefs = lineage.typedMemoryRefs.length > 0 ? lineage.typedMemoryRefs.join(",") : "-";
+    lines.push(
+      `  <lineage branch_id="${lineage.branchId}" episode_id="${lineage.episodeId}" role="${lineage.summaryRole}" truth_basis="${lineage.truthBasis}" freshness_state="${lineage.freshnessState}" typed_memory_refs="${typedMemoryRefs}"${lineage.parentBranchId ? ` parent_branch_id="${lineage.parentBranchId}"` : ""}${lineage.snapshotId ? ` snapshot_id="${lineage.snapshotId}"` : ""}${lineage.invalidatedAt ? ` invalidated_at="${formatDateForAttribute(lineage.invalidatedAt, timezone)}"` : ""}${lineage.invalidationReason ? ` invalidation_reason="${lineage.invalidationReason}"` : ""}>`,
+    );
+    if (lineage.forkReason) {
+      lines.push(`    <fork_reason>${lineage.forkReason}</fork_reason>`);
+    }
+    lines.push("  </lineage>");
   }
 
   lines.push("  <content>");
@@ -619,15 +660,36 @@ export class ContextAssembler {
       }
     }
 
-    const systemPromptAddition = buildSystemPromptAddition(summarySignals);
+    const freshnessStateCounts = summaryMetadataItems.reduce(
+      (counts, item) => {
+        const freshnessState = item.freshnessState ?? "fresh";
+        counts[freshnessState] = (counts[freshnessState] ?? 0) + 1;
+        return counts;
+      },
+      {} as Partial<Record<NonNullable<AssembledSummaryMetadataItem["freshnessState"]>, number>>,
+    );
+    const summaryBranchIds = new Set(
+      summaryMetadataItems
+        .map((item) => item.branchId)
+        .filter((value): value is string => typeof value === "string" && value.length > 0),
+    );
     const summaryMetadata = summaryMetadataItems.length > 0
       ? {
           totalCount: summaryMetadataItems.length,
           maxDepth: summaryMetadataItems.reduce((deepest, item) => Math.max(deepest, item.depth), 0),
           condensedCount: summaryMetadataItems.filter((item) => item.kind === "condensed").length,
+          episodeCount: summaryMetadataItems.filter((item) => item.summaryRole === "episode").length,
+          snapshotCount: summaryMetadataItems.filter((item) => item.summaryRole === "snapshot" || item.snapshotId != null).length,
+          branchCount: summaryBranchIds.size,
+          typedMemoryRefCount: summaryMetadataItems.reduce((count, item) => count + (item.typedMemoryRefs?.length ?? 0), 0),
+          freshnessStateCounts,
+          hasNonFreshSummaries: summaryMetadataItems.some((item) => (item.freshnessState ?? "fresh") !== "fresh"),
+          hasTruthConflict: summaryBranchIds.size > 1 || summaryMetadataItems.some((item) => item.truthBasis === "open"),
+          latestRole: summaryMetadataItems.at(-1)?.summaryRole ?? null,
           items: summaryMetadataItems,
         }
       : undefined;
+    const systemPromptAddition = buildSystemPromptAddition(summarySignals, summaryMetadata);
 
     // Step 3: Split into evictable prefix and protected fresh tail
     const tailStart = Math.max(0, resolved.length - freshTailCount);
@@ -818,7 +880,9 @@ export class ContextAssembler {
       return null;
     }
 
-    const content = await formatSummaryContent(summary, this.summaryStore, this.timezone);
+    const lineage = await this.maybeGetSummaryLineage(summary.summaryId);
+
+    const content = await formatSummaryContent(summary, this.summaryStore, this.timezone, lineage);
     const tokens = estimateTokens(content);
 
     // Cast: summaries are synthetic user messages without full AgentMessage metadata
@@ -839,7 +903,24 @@ export class ContextAssembler {
         descendantCount: summary.descendantCount,
         earliestAt: summary.earliestAt,
         latestAt: summary.latestAt,
+        freshnessState: lineage?.freshnessState ?? "fresh",
+        branchId: lineage?.branchId ?? null,
+        episodeId: lineage?.episodeId ?? null,
+        summaryRole: lineage?.summaryRole ?? null,
+        truthBasis: lineage?.truthBasis ?? null,
+        snapshotId: lineage?.snapshotId ?? null,
+        typedMemoryRefs: lineage?.typedMemoryRefs ?? [],
       },
     };
+  }
+
+  private async maybeGetSummaryLineage(summaryId: string): Promise<SummaryLineageRecord | null> {
+    const store = this.summaryStore as unknown as {
+      getSummaryLineage?: (summaryId: string) => Promise<SummaryLineageRecord | null>;
+    };
+    if (typeof store.getSummaryLineage !== "function") {
+      return null;
+    }
+    return store.getSummaryLineage(summaryId);
   }
 }

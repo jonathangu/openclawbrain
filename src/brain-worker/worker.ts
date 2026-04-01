@@ -16,9 +16,8 @@ import type {
   PromotionRunVerdict,
   ReplayGateVerdict,
   RewardSource,
-  START_NODE_ID,
 } from "../brain-core/types.js";
-import { trustRank } from "../brain-core/types.js";
+import { START_NODE_ID, trustRank } from "../brain-core/types.js";
 import type { BrainStore } from "../brain-store/store.js";
 import type { BrainGraph } from "../brain-core/graph.js";
 import type { BrainTeacher } from "../brain-core/teacher.js";
@@ -35,6 +34,7 @@ import { decayAllWeights } from "../brain-core/decay.js";
 import { computeHealth } from "../brain-core/health.js";
 import { clusterMutationsIntoBundles, evaluateBundle, DEFAULT_BUNDLE_CONFIG } from "../brain-core/bundle-evaluator.js";
 import type { BundleEvaluationConfig, MutationBundle } from "../brain-core/bundle-evaluator.js";
+import { evaluateContextUsefulness } from "../brain-core/usefulness.js";
 
 function toOptionalString(value: unknown): string | null {
   if (typeof value !== "string") {
@@ -211,6 +211,7 @@ export class BrainWorker {
     try {
       this.store.setTrainingState("worker_last_tick_at", Date.now());
       await this.evaluatePendingObservations();
+      await this.evaluatePendingShadowUsefulness();
       await this.processLabels();
       await this.applyUpdates();
       this.runDecay();
@@ -385,6 +386,17 @@ export class BrainWorker {
         confidence: review.confidence,
         reason: review.reason,
         teacherEvaluation,
+      });
+    }
+  }
+
+  private async evaluatePendingShadowUsefulness(): Promise<void> {
+    const pending = this.store.getPendingContextUsefulnessObservations(20);
+    for (const observation of pending) {
+      const evaluation = evaluateContextUsefulness(observation);
+      this.store.insertContextUsefulnessEvaluation({
+        observation,
+        evaluation,
       });
     }
   }

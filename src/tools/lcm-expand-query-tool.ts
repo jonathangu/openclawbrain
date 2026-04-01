@@ -28,7 +28,8 @@ const DEFAULT_MAX_ANSWER_TOKENS = 2_000;
 const LcmExpandQuerySchema = Type.Object({
   summaryIds: Type.Optional(
     Type.Array(Type.String(), {
-      description: "Summary IDs to expand (sum_xxx). Required when query is not provided.",
+      description:
+        "Summary IDs to expand (sum_xxx). Marble IDs (mar_xxx) are also accepted as seeds and resolve to source refs. Required when query is not provided.",
     }),
   ),
   query: Type.Optional(
@@ -75,9 +76,24 @@ type ExpandQueryReply = {
   truncated: boolean;
 };
 
-type SummaryCandidate = {
-  summaryId: string;
+type MarbleSeedSnapshot = {
+  marbleId: string;
+  marbleKind: string;
+  freshnessState: string;
+  provenanceRef: string;
+  sourceFingerprint: string;
+  sourceCount: number;
+  sourceArtifactTokenCount: number;
+  sourceRefs: string[];
+  sourceSummaryIds: string[];
+};
+
+type ExpansionCandidate = {
+  seedId: string;
+  seedType: "summary" | "marble";
   conversationId: number;
+  summaryIds: string[];
+  marble?: MarbleSeedSnapshot;
 };
 
 /**
@@ -85,6 +101,7 @@ type SummaryCandidate = {
  */
 function buildDelegatedExpandQueryTask(params: {
   summaryIds: string[];
+  marbleSeeds: MarbleSeedSnapshot[];
   conversationId: number;
   query?: string;
   prompt: string;
@@ -95,6 +112,18 @@ function buildDelegatedExpandQueryTask(params: {
   originSessionKey: string;
 }) {
   const seedSummaryIds = params.summaryIds.length > 0 ? params.summaryIds.join(", ") : "(none)";
+  const marbleSeedLines =
+    params.marbleSeeds.length > 0
+      ? params.marbleSeeds
+          .map(
+            (marble) =>
+              `- ${marble.marbleId} (${marble.marbleKind}, ${marble.freshnessState}) ` +
+              `prov=${marble.provenanceRef} src=${marble.sourceFingerprint} ` +
+              `links=${marble.sourceCount} tokens=${marble.sourceArtifactTokenCount} ` +
+              `refs=${marble.sourceRefs.join(", ") || "(none)"}`,
+          )
+          .join("\n")
+      : "- (none)";
   return [
     "You are an autonomous LCM retrieval navigator. Plan and execute retrieval before answering.",
     "",
@@ -102,15 +131,19 @@ function buildDelegatedExpandQueryTask(params: {
     `Conversation scope: ${params.conversationId}`,
     `Expansion token budget (total across this run): ${params.tokenCap}`,
     `Seed summary IDs: ${seedSummaryIds}`,
+    "Marble seeds:",
+    marbleSeedLines,
     params.query ? `Routing query: ${params.query}` : undefined,
     "",
     "Strategy:",
-    "1. Start with `lcm_describe` on seed summaries to inspect subtree manifests and branch costs.",
-    "2. If additional candidates are needed, use `lcm_grep` scoped to summaries.",
-    "3. Select branches that fit remaining budget; prefer high-signal paths first.",
-    "4. Call `lcm_expand` selectively (do not expand everything blindly).",
-    "5. Keep includeMessages=false by default; use includeMessages=true only for specific leaf evidence.",
-    `6. Stay within ${params.tokenCap} total expansion tokens across all lcm_expand calls.`,
+    "1. Start with `lcm_describe` on seed summaries and any marble seeds to inspect subtree manifests, provenance, and branch costs.",
+    "2. If additional candidates are needed, use `lcm_grep` scoped to summaries and marbles.",
+    "3. For marble seeds, inspect the marble provenance and then follow the underlying source refs; do not treat a marble as final proof when exactness matters.",
+    "4. For summary seeds, prefer fresh lineage records; if a summary is stale, superseded, or branch-forked, expand to source before asserting exact details.",
+    "5. Select branches that fit remaining budget; prefer high-signal paths first.",
+    "6. Call `lcm_expand` selectively (do not expand everything blindly).",
+    "7. Keep includeMessages=false by default; use includeMessages=true only for specific leaf evidence.",
+    `8. Stay within ${params.tokenCap} total expansion tokens across all lcm_expand calls.`,
     "",
     "User prompt to answer:",
     params.prompt,
@@ -132,6 +165,7 @@ function buildDelegatedExpandQueryTask(params: {
     "Rules:",
     "- In delegated context, call `lcm_expand` directly for source retrieval.",
     "- DO NOT call `lcm_expand_query` from this delegated session.",
+    "- If a marble seed is stale or precision-sensitive, expand to the marble's source refs before answering.",
     "- Synthesize the final answer from retrieved evidence, not assumptions.",
     `- Keep answer concise and focused (target <= ${params.maxTokens} tokens).`,
     "- citedIds must be unique summary IDs.",
@@ -214,15 +248,15 @@ function parseDelegatedExpandQueryReply(
 function resolveSourceConversationId(params: {
   scopedConversationId?: number;
   allConversations: boolean;
-  candidates: SummaryCandidate[];
+  candidates: ExpansionCandidate[];
 }): number {
   if (typeof params.scopedConversationId === "number") {
     const mismatched = params.candidates
       .filter((candidate) => candidate.conversationId !== params.scopedConversationId)
-      .map((candidate) => candidate.summaryId);
+      .map((candidate) => candidate.seedId);
     if (mismatched.length > 0) {
       throw new Error(
-        `Some summaryIds are outside conversation ${params.scopedConversationId}: ${mismatched.join(", ")}`,
+        `Some seed IDs are outside conversation ${params.scopedConversationId}: ${mismatched.join(", ")}`,
       );
     }
     return params.scopedConversationId;
@@ -237,7 +271,7 @@ function resolveSourceConversationId(params: {
 
   if (params.allConversations && conversationIds.length > 1) {
     throw new Error(
-      "Query matched summaries from multiple conversations. Provide conversationId or narrow the query.",
+      "Query matched seeds from multiple conversations. Provide conversationId or narrow the query.",
     );
   }
 
@@ -249,38 +283,95 @@ function resolveSourceConversationId(params: {
 /**
  * Resolve summary candidates from explicit IDs and/or query matches.
  */
-async function resolveSummaryCandidates(params: {
+async function resolveExpansionCandidates(params: {
   lcm: LcmContextEngine;
   explicitSummaryIds: string[];
   query?: string;
   conversationId?: number;
-}): Promise<SummaryCandidate[]> {
+}): Promise<ExpansionCandidate[]> {
   const retrieval = params.lcm.getRetrieval();
-  const candidates = new Map<string, SummaryCandidate>();
+  const candidates = new Map<string, ExpansionCandidate>();
+
+  const addSummaryCandidate = (summaryId: string, conversationId: number): void => {
+    candidates.set(`sum:${summaryId}`, {
+      seedId: summaryId,
+      seedType: "summary",
+      conversationId,
+      summaryIds: [summaryId],
+    });
+  };
+
+  const addMarbleCandidate = (seed: MarbleSeedSnapshot, conversationId: number): void => {
+    candidates.set(`mar:${seed.marbleId}`, {
+      seedId: seed.marbleId,
+      seedType: "marble",
+      conversationId,
+      summaryIds: seed.sourceSummaryIds,
+      marble: seed,
+    });
+  };
 
   for (const summaryId of params.explicitSummaryIds) {
     const described = await retrieval.describe(summaryId);
-    if (!described || described.type !== "summary" || !described.summary) {
-      throw new Error(`Summary not found: ${summaryId}`);
+    if (!described) {
+      throw new Error(`Seed not found: ${summaryId}`);
     }
-    candidates.set(summaryId, {
-      summaryId,
-      conversationId: described.summary.conversationId,
-    });
+    if (described.type === "summary" && described.summary) {
+      addSummaryCandidate(summaryId, described.summary.conversationId);
+      continue;
+    }
+    if (described.type === "marble" && described.marble) {
+      const marble = described.marble;
+      addMarbleCandidate(
+        {
+          marbleId: marble.marbleId,
+          marbleKind: marble.marbleKind,
+          freshnessState: marble.freshnessState,
+          provenanceRef: marble.provenanceRef,
+          sourceFingerprint: marble.sourceFingerprint,
+          sourceCount: marble.sourceCount,
+          sourceArtifactTokenCount: marble.sourceArtifactTokenCount,
+          sourceRefs: marble.sourceRefs,
+          sourceSummaryIds: marble.sourceRefs.filter((ref) => ref.startsWith("sum_")),
+        },
+        marble.conversationId,
+      );
+      continue;
+    }
+    throw new Error(`Seed not expandable: ${summaryId}`);
   }
 
   if (params.query) {
     const grepResult = await retrieval.grep({
       query: params.query,
       mode: "full_text",
-      scope: "summaries",
+      scope: "both",
       conversationId: params.conversationId,
     });
-    for (const summary of grepResult.summaries) {
-      candidates.set(summary.summaryId, {
-        summaryId: summary.summaryId,
-        conversationId: summary.conversationId,
-      });
+    const grepSummaries = grepResult.summaries ?? [];
+    const grepMarbles = grepResult.marbles ?? [];
+    for (const summary of grepSummaries) {
+      addSummaryCandidate(summary.summaryId, summary.conversationId);
+    }
+    for (const marble of grepMarbles) {
+      const described = await retrieval.describe(marble.marbleId);
+      if (!described || described.type !== "marble" || !described.marble) {
+        continue;
+      }
+      addMarbleCandidate(
+        {
+          marbleId: described.marble.marbleId,
+          marbleKind: described.marble.marbleKind,
+          freshnessState: described.marble.freshnessState,
+          provenanceRef: described.marble.provenanceRef,
+          sourceFingerprint: described.marble.sourceFingerprint,
+          sourceCount: described.marble.sourceCount,
+          sourceArtifactTokenCount: described.marble.sourceArtifactTokenCount,
+          sourceRefs: described.marble.sourceRefs,
+          sourceSummaryIds: described.marble.sourceRefs.filter((ref) => ref.startsWith("sum_")),
+        },
+        described.marble.conversationId,
+      );
     }
   }
 
@@ -302,7 +393,7 @@ export function createLcmExpandQueryTool(input: {
     label: "LCM Expand Query",
     description:
       "Answer a focused question using delegated LCM expansion. " +
-      "Find candidate summaries (by IDs or query), expand them in a delegated sub-agent, " +
+      "Find candidate summaries or marbles (by IDs or query), expand them in a delegated sub-agent, " +
       "and return a compact prompt-focused answer with cited summary IDs.",
     parameters: LcmExpandQuerySchema,
     async execute(_toolCallId, params) {
@@ -405,7 +496,7 @@ export function createLcmExpandQueryTool(input: {
       let grantCreated = false;
 
       try {
-        const candidates = await resolveSummaryCandidates({
+        const candidates = await resolveExpansionCandidates({
           lcm: input.lcm,
           explicitSummaryIds,
           query: query || undefined,
@@ -415,11 +506,11 @@ export function createLcmExpandQueryTool(input: {
         if (candidates.length === 0) {
           if (typeof scopedConversationId !== "number") {
             return jsonResult({
-              error: "No matching summaries found.",
+              error: "No matching summaries or marbles found.",
             });
           }
           return jsonResult({
-            answer: "No matching summaries found for this scope.",
+            answer: "No matching summaries or marbles found for this scope.",
             citedIds: [],
             sourceConversationId: scopedConversationId,
             expandedSummaryCount: 0,
@@ -436,14 +527,11 @@ export function createLcmExpandQueryTool(input: {
         const summaryIds = normalizeSummaryIds(
           candidates
             .filter((candidate) => candidate.conversationId === sourceConversationId)
-            .map((candidate) => candidate.summaryId),
+            .flatMap((candidate) => candidate.summaryIds),
         );
-
-        if (summaryIds.length === 0) {
-          return jsonResult({
-            error: "No summaryIds available after applying conversation scope.",
-          });
-        }
+        const marbleSeeds = candidates
+          .filter((candidate) => candidate.conversationId === sourceConversationId)
+          .flatMap((candidate) => (candidate.marble ? [candidate.marble] : []));
 
         const requesterAgentId = input.deps.normalizeAgentId(
           input.deps.parseAgentSessionKey(callerSessionKey)?.agentId,
@@ -470,6 +558,7 @@ export function createLcmExpandQueryTool(input: {
 
         const task = buildDelegatedExpandQueryTask({
           summaryIds,
+          marbleSeeds,
           conversationId: sourceConversationId,
           query: query || undefined,
           prompt,
