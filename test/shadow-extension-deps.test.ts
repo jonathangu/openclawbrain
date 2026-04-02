@@ -24,14 +24,16 @@ describe("shadow extension dependency completeness", () => {
     );
     expect(match).not.toBeNull();
 
-    // Verify the fix: the function must contain a guard that adds
-    // @openclawbrain/openclaw when packageMetadata.name differs.
+    // Verify the fix: the function resolves runtime package metadata from the
+    // real @openclawbrain/openclaw package and uses that dependency in the
+    // generated shadow extension package.json.
     const fnBody = cliSource.slice(
       cliSource.indexOf("function buildExtensionPackageJson()"),
       cliSource.indexOf("function buildExtensionPackageJson()") + 1200,
     );
-    expect(fnBody).toContain('"@openclawbrain/openclaw"');
-    expect(fnBody).toContain('packageMetadata.name !== "@openclawbrain/openclaw"');
+    expect(cliSource).toContain("function readOpenClawRuntimePackageMetadata()");
+    expect(fnBody).toContain("runtimePackageMetadata");
+    expect(fnBody).toContain("[runtimePackageMetadata.name]: runtimePackageMetadata.version");
   });
 
   it("extension template imports from @openclawbrain/openclaw", () => {
