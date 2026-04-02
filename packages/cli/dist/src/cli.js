@@ -15,7 +15,7 @@ import { resolveActivationRoot } from "./resolve-activation-root.js";
 import { describeOpenClawHomeInspection, discoverOpenClawHomes, formatOpenClawHomeLayout, formatOpenClawHomeProfileSource, inspectOpenClawHome } from "./openclaw-home-layout.js";
 import { inspectOpenClawBrainHookStatus, inspectOpenClawBrainPluginAllowlist } from "./openclaw-hook-truth.js";
 import { describeOpenClawBrainInstallIdentity, describeOpenClawBrainInstallLayout, findInstalledOpenClawBrainPlugin, getOpenClawBrainKnownPluginIds, normalizeOpenClawBrainPluginsConfig, pinInstalledOpenClawBrainPluginActivationRoot, resolveOpenClawBrainInstallTarget } from "./openclaw-plugin-install.js";
-import { buildOpenClawBrainConvergeRestartPlan, classifyOpenClawBrainConvergeVerification, describeOpenClawBrainConvergeChangeReasons, diffOpenClawBrainConvergeRuntimeFingerprint, finalizeOpenClawBrainConvergeResult, planOpenClawBrainConvergePluginAction } from "./install-converge.js";
+import { buildOpenClawBrainConvergeRestartPlan, classifyOpenClawBrainConvergeVerification, describeOpenClawBrainConvergeChangeReasons, diffOpenClawBrainConvergeRuntimeFingerprint, finalizeOpenClawBrainConvergeResult, planOpenClawBrainConvergePluginAction, shouldReplaceOpenClawBrainInstallBeforeConverge } from "./install-converge.js";
 import { loadAttachmentPolicyDeclaration, resolveEffectiveAttachmentPolicyTruth, writeAttachmentPolicyDeclaration } from "./attachment-policy-truth.js";
 import { DEFAULT_WATCH_POLL_INTERVAL_SECONDS, buildNormalizedEventExportFromScannedEvents, bootstrapRuntimeAttach, buildOperatorSurfaceReport, clearOpenClawProfileRuntimeLoadProof, compileRuntimeContext, createAsyncTeacherLiveLoop, createOpenClawLocalSessionTail, createRuntimeEventExportScanner, describeCurrentProfileBrainStatus, formatOperatorRollbackReport, listOpenClawProfileRuntimeLoadProofs, loadRuntimeEventExportBundle, loadWatchTeacherSnapshotState, persistWatchTeacherSnapshot, rollbackRuntimeAttach, resolveAttachmentRuntimeLoadProofsPath, resolveOperatorTeacherSnapshotPath, resolveAsyncTeacherLiveLoopSnapshotPath, resolveWatchSessionTailCursorPath, resolveWatchStateRoot, resolveWatchTeacherSnapshotPath, scanLiveEventExport, scanRecordedSession, summarizeLearningPathFromMaterialization, summarizeNormalizedEventExportLabelFlow, summarizeTeacherNoArtifactCycle, writeScannedEventExportBundle } from "./index.js";
 import { appendLearningUpdateLogs } from "./learning-spine.js";
@@ -1622,6 +1622,13 @@ function readInstallRuntimeFingerprint(openclawHome) {
 function runOpenClawBrainConvergePluginStep(openclawHome) {
     const before = readInstallRuntimeFingerprint(openclawHome);
     const plan = planOpenClawBrainConvergePluginAction(before);
+    let uninstallCapture = null;
+    if (plan.action === "install" && shouldReplaceOpenClawBrainInstallBeforeConverge(before)) {
+        uninstallCapture = runCapturedExternalCommand("openclaw", ["plugins", "uninstall", plan.pluginId]);
+        if (uninstallCapture.error !== null || uninstallCapture.exitCode !== 0) {
+            throw new Error(`OpenClaw plugin-manager uninstall failed while migrating ${path.resolve(openclawHome)} onto the canonical plugin lane. Tried \`${uninstallCapture.shellCommand}\`. Detail: ${summarizeCapturedCommandFailure(uninstallCapture)}`);
+        }
+    }
     const commandArgs = plan.action === "install"
         ? ["plugins", "install", plan.packageSpec]
         : ["plugins", "update", plan.pluginId];
@@ -1652,7 +1659,7 @@ function runOpenClawBrainConvergePluginStep(openclawHome) {
         changed: diff.changed,
         changeReasons: diff.reasons,
         detail: diff.changed
-            ? `${plan.action === "install" ? "Installed" : "Refreshed"} plugin-manager state: ${describeOpenClawBrainConvergeChangeReasons(diff.reasons)}`
+            ? `${uninstallCapture !== null ? "Replaced legacy/plugin-shadow install and " : ""}${plan.action === "install" ? "installed" : "refreshed"} plugin-manager state: ${describeOpenClawBrainConvergeChangeReasons(diff.reasons)}`
             : `${plan.action === "install" ? "Ran install" : "Ran update"} through the OpenClaw plugin manager, but no runtime-affecting plugin delta was detected`,
         warning: null,
         capture,
@@ -3157,6 +3164,7 @@ function installExtensionFromLocalWorkspaceBuild(extensionDir) {
     return [...LOCAL_WORKSPACE_EXTENSION_PACKAGES];
 }
 let cachedOpenClawPackageMetadata = null;
+let cachedOpenClawRuntimePackageMetadata = null;
 function resolveOpenClawPackageManifestPath() {
     const candidates = [
         path.resolve(__dirname, "..", "package.json"),
@@ -3185,6 +3193,34 @@ function readOpenClawPackageMetadata() {
     cachedOpenClawPackageMetadata = { name, version };
     return cachedOpenClawPackageMetadata;
 }
+function resolveOpenClawRuntimePackageManifestPath() {
+    const candidates = [
+        path.resolve(__dirname, "..", "..", "..", "openclaw", "package.json"),
+        path.resolve(__dirname, "..", "..", "..", "..", "packages", "openclaw", "package.json"),
+    ];
+    for (const candidate of candidates) {
+        if (existsSync(candidate)) {
+            return candidate;
+        }
+    }
+    throw new Error("OpenClawBrain runtime package manifest not found. Searched:\n" +
+        candidates.map((candidate) => `  - ${candidate}`).join("\n"));
+}
+function readOpenClawRuntimePackageMetadata() {
+    if (cachedOpenClawRuntimePackageMetadata !== null) {
+        return cachedOpenClawRuntimePackageMetadata;
+    }
+    const manifestPath = resolveOpenClawRuntimePackageManifestPath();
+    const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+    const name = typeof manifest.name === "string" && manifest.name.trim().length > 0
+        ? manifest.name.trim()
+        : "@openclawbrain/openclaw";
+    const version = typeof manifest.version === "string" && manifest.version.trim().length > 0
+        ? manifest.version.trim()
+        : "0.0.0";
+    cachedOpenClawRuntimePackageMetadata = { name, version };
+    return cachedOpenClawRuntimePackageMetadata;
+}
 function buildExtensionIndexTs(activationRoot) {
     const templatePath = resolveExtensionTemplatePath();
     const template = readFileSync(templatePath, "utf8");
@@ -3192,15 +3228,10 @@ function buildExtensionIndexTs(activationRoot) {
 }
 function buildExtensionPackageJson() {
     const packageMetadata = readOpenClawPackageMetadata();
+    const runtimePackageMetadata = readOpenClawRuntimePackageMetadata();
     const dependencies = {
-        [packageMetadata.name]: packageMetadata.version
+        [runtimePackageMetadata.name]: runtimePackageMetadata.version
     };
-    // The shadow extension template imports from @openclawbrain/openclaw.
-    // Ensure it is always declared as a dependency even when the CLI
-    // package metadata resolves to a different package name.
-    if (packageMetadata.name !== "@openclawbrain/openclaw") {
-        dependencies["@openclawbrain/openclaw"] = packageMetadata.version;
-    }
     return JSON.stringify({
         name: "openclawbrain",
         version: packageMetadata.version,

@@ -3,7 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
-import { buildOpenClawBrainConvergeRestartPlan, classifyOpenClawBrainConvergeVerification, describeOpenClawBrainConvergeChangeReasons, diffOpenClawBrainConvergeRuntimeFingerprint, finalizeOpenClawBrainConvergeResult, planOpenClawBrainConvergePluginAction } from "../src/install-converge.js";
+import { buildOpenClawBrainConvergeRestartPlan, classifyOpenClawBrainConvergeVerification, describeOpenClawBrainConvergeChangeReasons, diffOpenClawBrainConvergeRuntimeFingerprint, finalizeOpenClawBrainConvergeResult, planOpenClawBrainConvergePluginAction, shouldReplaceOpenClawBrainInstallBeforeConverge } from "../src/install-converge.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -14,6 +14,25 @@ test("converge plans plugin install when the authoritative split-package plugin 
     assert.equal(plan.action, "install");
     assert.equal(plan.packageSpec, "@openclawbrain/openclaw");
     assert.match(plan.reason, /no authoritative OpenClawBrain plugin install/);
+});
+
+test("converge knows when an existing non-native install must be replaced before migrating onto the canonical plugin lane", () => {
+    assert.equal(shouldReplaceOpenClawBrainInstallBeforeConverge({ selectedInstall: null }), false);
+    assert.equal(shouldReplaceOpenClawBrainInstallBeforeConverge({
+        selectedInstall: {
+            packageName: "@openclawbrain/openclaw"
+        }
+    }), false);
+    assert.equal(shouldReplaceOpenClawBrainInstallBeforeConverge({
+        selectedInstall: {
+            packageName: "@jonathangu/openclawbrain"
+        }
+    }), true);
+    assert.equal(shouldReplaceOpenClawBrainInstallBeforeConverge({
+        selectedInstall: {
+            packageName: "openclawbrain"
+        }
+    }), true);
 });
 
 test("converge diff and restart plan skip restart when no runtime-affecting install state changed", () => {
@@ -164,4 +183,7 @@ test("install writes a live runtime config manifest instead of an empty stub", (
         cliSource,
         /function buildExtensionPluginManifest\(\) \{[\s\S]*properties:\s*\{\}[\s\S]*\}/,
     );
+
+    assert.match(cliSource, /function readOpenClawRuntimePackageMetadata\(/);
+    assert.match(cliSource, /\[runtimePackageMetadata\.name\]: runtimePackageMetadata\.version/);
 });

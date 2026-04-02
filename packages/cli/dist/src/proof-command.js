@@ -384,20 +384,33 @@ function buildHardeningSnapshot({ attachTruthLine, serveLine, routeFnLine, verdi
     };
 }
 
-function hasPackagedHookSource(pluginInspectText) {
-    return /Source:\s+.*(?:@openclawbrain[\\/]+openclaw|openclawbrain)[\\/]+dist[\\/]+extension[\\/]+index\.js/m.test(pluginInspectText);
+function hasPackagedHookSource(pluginInspectText, openclawHome) {
+    if (/Source:\s+.*(?:@openclawbrain[\\/]+openclaw|openclawbrain)[\\/]+dist[\\/]+extension[\\/]+index\.js/m.test(pluginInspectText)) {
+        return true;
+    }
+    const generatedShadowHookPath = canonicalizeExistingProofPath(path.join(openclawHome, "extensions", "openclawbrain", "index.ts"));
+    const sourceMatch = pluginInspectText.match(/^Source:\s+(.+)$/m);
+    const reportedSourcePath = canonicalizeExistingProofPath(sourceMatch?.[1] ?? "");
+    return reportedSourcePath === generatedShadowHookPath;
 }
 
-function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, breadcrumbs, runtimeLoadProofSnapshot, openclawHome }) {
+function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, breadcrumbs, runtimeLoadProofSnapshot, coverageSnapshot, openclawHome }) {
     const failedSteps = steps.filter((step) => step.resultClass !== "success" && step.skipped !== true);
     const failedDetailedStatusStep = failedSteps.find((step) => step.stepId === "05-detailed-status");
     const gatewayHealthy = /Runtime:\s+running/m.test(gatewayStatus) && /RPC probe:\s+ok/m.test(gatewayStatus);
     const pluginLoaded = /Status:\s+loaded/m.test(pluginInspect);
-    const packagedHookPath = hasPackagedHookSource(pluginInspect);
+    const packagedHookPath = hasPackagedHookSource(pluginInspect, openclawHome);
     const breadcrumbLoaded = breadcrumbs.afterBundleStart.some((entry) => entry.kind === "loaded");
     const runtimeProofMatched = Array.isArray(runtimeLoadProofSnapshot?.value?.profiles)
         && runtimeLoadProofSnapshot.value.profiles.some((profile) => canonicalizeExistingProofPath(profile?.openclawHome ?? "") === canonicalizeExistingProofPath(openclawHome));
     const runtimeTruthGaps = [];
+    const currentCoverageEntry = Array.isArray(coverageSnapshot?.profiles)
+        ? coverageSnapshot.profiles.find((entry) => entry.current)
+        : null;
+    const currentProfileRuntimeCovered = currentCoverageEntry?.runtimeLoad === "proven";
+    const crossProfileCoverageGapOnly = currentProfileRuntimeCovered
+        && (coverageSnapshot?.attachedProfileCount ?? 0) > (coverageSnapshot?.runtimeProvenCount ?? 0)
+        && (statusSignals.proofError === null || statusSignals.proofError === "none");
     const strongRuntimeTruth = statusSignals.loadProofReady
         && statusSignals.runtimeProven
         && statusSignals.serveActivePack
@@ -414,8 +427,10 @@ function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, brea
     const warnings = [];
     if (!statusSignals.statusOk) {
         if (strongRuntimeTruth) {
-            warningCodes.push("status_warn");
-            warnings.push("detailed status did not return STATUS ok, but loadProof/runtime/serve/routeFn proofs stayed healthy");
+            if (!crossProfileCoverageGapOnly) {
+                warningCodes.push("status_warn");
+                warnings.push("detailed status did not return STATUS ok, but loadProof/runtime/serve/routeFn proofs stayed healthy");
+            }
         }
         else {
             runtimeTruthGaps.push("status_ok");
@@ -870,6 +885,7 @@ export function captureOperatorProofBundle(options) {
         statusSignals,
         breadcrumbs,
         runtimeLoadProofSnapshot,
+        coverageSnapshot,
         openclawHome: options.openclawHome,
     });
     const hardeningSnapshot = buildHardeningSnapshot({

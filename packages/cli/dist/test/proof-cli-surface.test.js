@@ -325,6 +325,35 @@ test("proof capture treats STATUS warn as a proof warning when stronger runtime 
     assert.match(summary, /status_warn/);
 });
 
+test("proof capture accepts generated shadow hook sources and ignores unrelated profile coverage gaps when the target profile is proven", (t) => {
+    const fixture = createProofFixture(t);
+    const otherHome = path.join(fixture.root, ".openclaw-Other");
+    const detailedStatusText = [
+        "STATUS warn",
+        `target activation=${fixture.activationRoot} boundary=current_profile`,
+        "attachTruth current=current_profile runtime=proven hook=present config=allows_load",
+        "hook        install=installed loadable=loadable",
+        "guard       severity=none actionability=none action=none summary=profile hook is installed and loadable",
+        "serve       state=serving_active_pack",
+        "routeFn     available=yes",
+        "path        source=materialized_candidate pg=v2 method=policy_gradient_v2 target=trajectory_reconstruction connect=4 trajectories=12 bindingQuality=exact_only",
+        "attribution quality=exact_only source=latest_materialization/watch_snapshot nonZero=1 exact=1 heuristic=0 unmatched=0 ambiguous=0 modes=decision:1|digest:0|compile:0|heuristic:0",
+        `attachedSet *current_profile@${path.resolve(fixture.openclawHome)} [hook=present config=allows_load runtime=proven loadedAt=2026-03-23T01:00:05.000Z] other_profile@${path.resolve(otherHome)} [hook=present config=allows_load runtime=not_proven loadedAt=none] proofPath=${fixture.runtimeLoadProofPath} proofError=none`,
+        "loadProof=status_probe_ready"
+    ].join("\n");
+    const { result } = captureProofScenario(fixture, createHealthyLabelOutputs(fixture, {
+        "plugin inspect": {
+            stdout: `Status: loaded\nSource: ${path.join(fixture.openclawHome, "extensions", "openclawbrain", "index.ts")}\n`
+        },
+        "detailed status": {
+            stdout: detailedStatusText
+        }
+    }));
+    assert.equal(result.verdict.verdict, "success_and_proven");
+    assert.deepEqual(result.verdict.missingProofs, []);
+    assert.deepEqual(result.verdict.warnings, []);
+});
+
 test("proof capture stays blocking when detailed status fails to prove runtime truth", (t) => {
     const fixture = createProofFixture(t);
     const { result } = captureProofScenario(fixture, createHealthyLabelOutputs(fixture, {
