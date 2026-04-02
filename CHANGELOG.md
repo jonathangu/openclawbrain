@@ -4,6 +4,28 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.22
+
+`0.4.22` is the public OpenClawBrain release for the post-issue-#7 async watch/teacher reliability fixes. It closes the wedge where 0.4.21 could install cleanly, attach cleanly, and still prove green while the passive watch/teacher loop was unhealthy. It also realigns the split packages onto the same published version number so the public product story stays one version, not two competing live numbers.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.22`
+- `@openclawbrain/cli@0.4.22`
+
+**Changes**
+
+- startup replay now skips the historical export rewalk when restored teacher state already knows the seen export digests
+- no-op always-on learner cycles stop rebuilding the runtime graph when `selectedSlices=0`
+- session-tail cursor state now self-heals: missing path/file sessions stabilize and stale cursor entries are pruned instead of churning forever
+- session parsing now accepts top-level `compaction` records and string-valued `message.content` payloads from current real session shapes
+- install-time local teacher autodetect now prefers larger compatible Qwen lanes instead of biasing toward smaller models
+- internal split-package publish numbers are realigned to the same release number so the public OpenClawBrain version stays singular
+
+**Full release note**
+
+- [docs/release-notes-0.4.22.md](docs/release-notes-0.4.22.md)
+
 ## 0.4.21
 
 `0.4.21` is the public OpenClawBrain release that makes the single-product story truer in both behavior and operator proof: legacy compatibility seams now fail closed or self-correct, compatibility migration onto the canonical lane is more coherent, generated shadow extension deps are correct, and proof stops degrading the repaired target profile for the wrong reason.
