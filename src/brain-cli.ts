@@ -28,6 +28,8 @@ import {
 } from "./brain-runtime/graph-io.js";
 import { buildPromotionStory } from "./brain-runtime/promotion-story.js";
 import { readWorkerRuntimeState } from "./brain-runtime/worker-state.js";
+import { buildContextManagementModel } from "./context-management-model.js";
+import { summarizeOperatorHealth } from "./live-runtime-audit.js";
 
 function printJson(payload: unknown): void {
   process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
@@ -265,6 +267,14 @@ function commandStatus(): void {
     lastEvaluationCycle: store.getTrainingStateJson("last_teacher_evaluation_cycle_json"),
     lastUpdateCycle: store.getTrainingStateJson("last_teacher_update_cycle_json"),
   };
+  const operatorHealth = summarizeOperatorHealth({
+    workerHealthy: workerState.workerHealthy,
+    workerMode: workerState.workerMode,
+    workerStatus: workerState.workerStatus,
+    watchState: null,
+    proofState: null,
+    teacherArtifactCount: null,
+  });
   const recentDecisionSummary = store.getRecentDecisionSummary(25);
   const recentMutationBundles = store.getRecentMutationBundles(5);
   const lastReplayGateVerdict = store.getTrainingStateJson<ReplayGateVerdict>("last_replay_gate_verdict_json") ?? null;
@@ -290,6 +300,10 @@ function commandStatus(): void {
     ?? recentTrace?.routeTrace?.selectionMetadata?.compileReport?.summary
     ?? null;
   const lastPrefetchDecision = store.getTrainingStateJson<BrainPrefetchDecision>("last_prefetch_decision_json");
+  const contextManagement = buildContextManagementModel({
+    lcmConfig: config,
+    brainConfig,
+  });
 
   printJson({
     command: "status",
@@ -310,6 +324,7 @@ function commandStatus(): void {
     embeddingBaseUrl: brainConfig.embeddingModel ? embeddingConfig.baseUrl : "",
     embeddingAuthMode: embeddingConfig.authMode,
     embeddingConfigError: embeddingConfig.error,
+    contextManagement,
     ...workerState,
     currentPackVersion: currentPack,
     currentPackMetadata: promotionStory.currentPack?.metadata ?? null,
@@ -317,6 +332,7 @@ function commandStatus(): void {
     pendingObservationsByStatus: store.countObservationsByStatus(),
     observationAttribution,
     teacherTruth,
+    operatorHealth,
     contextFeedback,
     contextUsefulness,
     learningHealth,

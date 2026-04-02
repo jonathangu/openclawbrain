@@ -125,7 +125,7 @@ export function createBrainStatusTool(deps: BrainToolDeps) {
     name: "brain_status",
     label: "Brain Status",
     description:
-      "Show brain health: node/edge counts, pack version, learning stats, recent traces, observation attribution truth, and helpful/irrelevant/harmful context feedback coverage.",
+      "Show runtime/operator truth for the learned layer: pack health, learning stats, assembly and prefetch decisions, and the canonical context-management model (summary spine, protected fresh tail, freshness, expansion, and budget controls).",
     parameters: BrainStatusSchema,
     async execute() {
       const status = await deps.status();

@@ -6,6 +6,16 @@ import { type ActivationInspection, type ActivationObservabilityReport, type Gra
 export { clearOpenClawProfileRuntimeLoadProof, listOpenClawProfileRuntimeLoadProofs, recordOpenClawProfileRuntimeLoadProof, resolveAttachmentRuntimeLoadProofsPath, type OpenClawProfileRuntimeLoadProofRecordV1, type OpenClawProfileRuntimeLoadProofSetV1, type OpenClawProfileRuntimeLoadProofsV1 } from "./attachment-truth.js";
 import { type AsyncTeacherLabelerConfigV1 } from "./teacher-labeler.js";
 export { createHttpOllamaTeacherLabelerClient, createOllamaTeacherLabeler, createTeacherLabeler, summarizeTeacherLabelerOpportunity, type AsyncTeacherLabelerConfigV1, type AsyncTeacherNoopLabelerConfigV1, type AsyncTeacherOllamaLabelerConfigV1, type OllamaTeacherLabelerClient, type TeacherLabeler, type TeacherLabelerOpportunityInputV1, type TeacherLabelerOpportunityV1, type TeacherLabelerResultV1, type TeacherLabelerRunInputV1 } from "./teacher-labeler.js";
+export type OperatorPassiveLearningWatchState = CurrentProfilePassiveLearningWatchStateV1 | "lagging";
+export interface OperatorPassiveLearningWatchSummary {
+    state: OperatorPassiveLearningWatchState;
+    detail: string;
+    lastHeartbeatAt: string | null;
+    lagSeconds: number | null;
+    intervalSeconds: number | null;
+    healthyWithinSeconds: number | null;
+    staleAfterSeconds: number | null;
+}
 export declare const DEFAULT_ASYNC_TEACHER_QUEUE_CAPACITY = 8;
 declare const RECORDED_SESSION_TRACE_CONTRACT: "recorded_session_trace.v1";
 declare const RECORDED_SESSION_FIXTURE_CONTRACT: "recorded_session_replay_fixture.v1";
@@ -1687,7 +1697,8 @@ export interface OperatorTeacherLoopSummary {
     lastHeartbeatAt: string | null;
     lastScanAt: string | null;
     pollIntervalSeconds: number | null;
-    watchState: CurrentProfilePassiveLearningWatchStateV1;
+    watchState: OperatorPassiveLearningWatchState;
+    watch: OperatorPassiveLearningWatchSummary;
     lastProcessedAt: string | null;
     artifactCount: number | null;
     queueDepth: number | null;

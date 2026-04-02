@@ -8,13 +8,13 @@ Public operator front door: `openclawbrain install --openclaw-home <path>` for o
 
 - [Quick start](getting-started/quick-start.md) for the one-command install, verify, and optional proof flow
 - [Lifecycle](lifecycle.md) for install, proof, rollback, detach, and uninstall
-- [Configuration guide](configuration.md) for embeddings, worker mode, and operator controls
+- [Configuration guide](configuration.md) for embeddings, worker mode, operator controls, and the canonical context-management model
 
 ## Operating
 
 - [Troubleshooting](operating/troubleshooting.md) for common install and serve-path issues
 - [Lifecycle](lifecycle.md) for removal and rollback
-- [Configuration guide](configuration.md) for advanced operator commands
+- [Configuration guide](configuration.md) for advanced operator commands and context-management truth
 
 ## Architecture
 

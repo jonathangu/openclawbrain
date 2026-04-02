@@ -2,6 +2,7 @@ import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { describe, expect, it } from "vitest";
+import { summarizeOperatorHealth } from "../src/live-runtime-audit.js";
 // @ts-ignore runtime script module has no checked-in typed surface yet
 import { buildHealthSnapshot, buildNightlyAggregate, collectBundleCandidates, formatHealthMarkdown, formatNightlyMarkdown, loadConfig, summarizeScan } from "../scripts/proof-cron.mjs";
 
@@ -404,8 +405,73 @@ describe("proof cron bundle scanning", () => {
     expect(markdown).toContain("watch state: stale_snapshot");
     expect(markdown).toContain("watch heartbeat: 2026-04-02T11:26:18.163Z");
     expect(markdown).toContain("teacher artifacts: 735");
-    expect(markdown).toContain("watcher state is stale_snapshot; do not treat this as a fully healthy background-learning surface");
-    expect(markdown).toContain("worker health is unknown in the live status probe");
+    expect(markdown).toContain("operator health: stale");
+    expect(markdown).toContain("operator health flags: partial=false, unknown=false, stale=true");
+    expect(markdown).toContain("watcher state is stale_snapshot; background-learning truth is stale");
+    expect(markdown).toContain("worker health is unknown in the live status surface");
+  });
+
+  it("consumes the structured lagging watch object without overstating health", () => {
+    const health = buildHealthSnapshot({
+      config: {
+        healthFreshnessDays: 7,
+        freshnessThresholdDays: 21,
+      },
+      now: new Date("2026-04-02T11:30:00.000Z"),
+      scanDurationMs: 42,
+      bundles: [],
+      statusProbe: {
+        command: "openclawbrain status --json",
+        startedAt: "2026-04-02T11:29:59.000Z",
+        endedAt: "2026-04-02T11:30:00.000Z",
+        durationMs: 1000,
+        exitCode: 0,
+        signal: null,
+        parsed: {
+          brainStatus: {
+            status: "ok",
+            serveState: "serving_active_pack",
+            usedLearnedRouteFn: true,
+          },
+          brain: {
+            activePackId: "pack-abc",
+          },
+          hook: {
+            loadProof: "status_probe_ready",
+          },
+          passiveLearning: {
+            watch: {
+              state: "lagging",
+              detail: "watch heartbeat missed the healthy window but has not crossed the stale snapshot threshold",
+              lastHeartbeatAt: "2026-04-02T11:28:44.060Z",
+              lagSeconds: 75.94,
+              intervalSeconds: 30,
+              healthyWithinSeconds: 75,
+              staleAfterSeconds: 105,
+            },
+            proofState: "self_proving",
+            teacherArtifactCount: 735,
+          },
+          workerHealthy: null,
+          workerMode: null,
+        },
+      },
+    });
+
+    expect(health.watch).toMatchObject({
+      state: "lagging",
+      lastHeartbeatAt: "2026-04-02T11:28:44.060Z",
+      lagSeconds: 75.94,
+      intervalSeconds: 30,
+      healthyWithinSeconds: 75,
+      staleAfterSeconds: 105,
+      proofState: "self_proving",
+      teacherArtifactCount: 735,
+    });
+
+    const markdown = formatHealthMarkdown(health);
+    expect(markdown).toContain("watch state: lagging");
+    expect(markdown).toContain("watcher state is lagging; do not treat this as a fully healthy background-learning surface");
   });
 });
 
@@ -679,6 +745,7 @@ describe("proof cron metric surfaces", () => {
     expect(health.costProxy.artifactBytes).toBe(7000);
     expect(health.latestBundles.map((bundle: any) => bundle.kind)).toEqual(["operator-proof", "recorded-session-replay", "host-evidence"]);
     expect(formatHealthMarkdown(health)).toContain("runtime healthy: true");
+    expect(formatHealthMarkdown(health)).toContain("operator health: unknown");
     expect(formatHealthMarkdown(health)).toContain("serve state: serving_active_pack");
     expect(formatHealthMarkdown(health)).toContain("clip rate: 0.25");
     expect(formatHealthMarkdown(health)).toContain("replay context chars total");
@@ -721,5 +788,58 @@ describe("proof cron metric surfaces", () => {
     expect(formatNightlyMarkdown(aggregate)).toContain("replay retrieval/tool-hop count total: 6");
     expect(formatNightlyMarkdown(aggregate)).toContain("replay turns with non-approval feedback total: 1");
     expect(formatNightlyMarkdown(aggregate)).toContain("proof minutes");
+  });
+
+  it("carries latest operator-health truth into the nightly markdown", () => {
+    const now = new Date("2026-03-31T13:00:00.000Z");
+    const config = {
+      healthFreshnessDays: 7,
+      freshnessThresholdDays: 21,
+    };
+    const aggregate = buildNightlyAggregate({
+      config,
+      now,
+      scanDurationMs: 42,
+      bundles: [
+        {
+          kind: "host-evidence",
+          bundleId: "host-proof",
+          relativePath: "openclawbrain/docs/evidence/2026-03-26/abc123/host-proof",
+          canonicalAt: "2026-03-26T00:00:00.000Z",
+          ageDays: 5,
+          fileCount: 4,
+          artifactBytes: 1000,
+          validationOk: true,
+          operatorHealth: summarizeOperatorHealth({
+            workerHealthy: true,
+            workerMode: "child",
+            workerStatus: "running",
+            watchState: null,
+            proofState: null,
+            teacherArtifactCount: null,
+          }),
+          metrics: {
+            securityCriticalCount: null,
+            securityWarnCount: null,
+            gatewayReachable: null,
+            workerHealthy: true,
+            memoryFiles: null,
+            sessionCount: null,
+          },
+        },
+      ],
+    });
+
+    expect(aggregate.latestOperatorHealth).toMatchObject({
+      status: "partial",
+      partial: true,
+      unknown: false,
+      stale: false,
+    });
+    const markdown = formatNightlyMarkdown(aggregate);
+    expect(markdown).toContain("## Latest operator health");
+    expect(markdown).toContain("operator health: partial");
+    expect(markdown).toContain("operator health flags: partial=true, unknown=false, stale=false");
+    expect(markdown).toContain("background-learning truth is partial in the current status surface");
   });
 });

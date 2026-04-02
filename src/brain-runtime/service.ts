@@ -55,6 +55,8 @@ import { buildPromotionStory, buildWorkerPromotionSnapshotMetadata } from "./pro
 import { readWorkerRuntimeState } from "./worker-state.js";
 import { WorkerSupervisor } from "./worker-supervisor.js";
 import { isSystemMessage } from "../brain-harvest/system-filter.js";
+import { buildContextManagementModel } from "../context-management-model.js";
+import { summarizeOperatorHealth } from "../live-runtime-audit.js";
 import {
   proposeUserCorrectionFast,
   proposeUserCorrectionWithModel,
@@ -1922,6 +1924,14 @@ export class BrainService {
       lastEvaluationCycle: this.store.getTrainingStateJson("last_teacher_evaluation_cycle_json"),
       lastUpdateCycle: this.store.getTrainingStateJson("last_teacher_update_cycle_json"),
     };
+    const operatorHealth = summarizeOperatorHealth({
+      workerHealthy: workerState.workerHealthy,
+      workerMode: workerState.workerMode,
+      workerStatus: workerState.workerStatus,
+      watchState: null,
+      proofState: null,
+      teacherArtifactCount: null,
+    });
     const lastPgCandidateUpdate = this.store.getTrainingStateJson("last_pg_candidate_update_json");
     const lastPgCandidatePackVersionRaw = this.store.getTrainingState("last_pg_candidate_pack_version");
     const lastPgCandidatePackVersion = lastPgCandidatePackVersionRaw
@@ -1944,6 +1954,10 @@ export class BrainService {
       ?? null;
 
     const embeddingConfig = describeEmbeddingConfig(this.config);
+    const contextManagement = buildContextManagementModel({
+      lcmConfig: this.deps.config,
+      brainConfig: this.config,
+    });
 
     return {
       initialized: this.initialized,
@@ -1954,6 +1968,7 @@ export class BrainService {
       embeddingBaseUrl: this.config.embeddingModel ? embeddingConfig.baseUrl : "",
       embeddingAuthMode: embeddingConfig.authMode,
       embeddingConfigError: embeddingConfig.error,
+      contextManagement,
       maxCompileMs: this.config.maxCompileMs,
       budgetFraction: this.config.budgetFraction,
       maxHops: this.config.maxHops,
@@ -1988,6 +2003,7 @@ export class BrainService {
       pendingObservationsByStatus: this.store.countObservationsByStatus(),
       observationAttribution,
       teacherTruth,
+      operatorHealth,
       contextFeedback,
       contextUsefulness,
       learningHealth,

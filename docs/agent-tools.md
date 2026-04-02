@@ -99,6 +99,7 @@ Typical surfaces include:
 - embedding configuration truth
 - worker mode / PID / heartbeat / health
 - current promoted pack metadata
+- canonical `contextManagement` truth for the summary spine, protected fresh tail, freshness, expansion, and prefetch lifecycle
 - last assembly decision
 - graph and health counters
 

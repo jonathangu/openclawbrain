@@ -818,10 +818,14 @@ function summarizeStatusHookFilesState(installHook) {
     return "unverified";
 }
 function summarizeStatusAttachmentWatcher(status) {
-    if (status.passiveLearning.watchState === "watching") {
+    const watchState = status.passiveLearning.watch?.state ?? status.passiveLearning.watchState;
+    if (watchState === "watching") {
         return "alive";
     }
-    if (status.passiveLearning.watchState === "stale_snapshot") {
+    if (watchState === "lagging") {
+        return "lagging";
+    }
+    if (watchState === "stale_snapshot") {
         return "stale";
     }
     return "not_visible";
@@ -1150,13 +1154,14 @@ function summarizeStatusTeacher(report, providerConfig, localLlm) {
             detail: `${providerConfig.teacher.model} is enabled on Ollama, but no watch teacher snapshot is visible yet`
         };
     }
-    const stale = report.teacherLoop.watchState === "stale_snapshot" || (report.teacherLoop.latestFreshness === "stale" && report.teacherLoop.lastNoOpReason !== "no_teacher_artifacts");
+    const watchState = report.teacherLoop.watch?.state ?? report.teacherLoop.watchState ?? "not_visible";
+    const stale = watchState === "stale_snapshot" || (report.teacherLoop.latestFreshness === "stale" && report.teacherLoop.lastNoOpReason !== "no_teacher_artifacts");
     const idle = report.teacherLoop.running === false &&
         (report.teacherLoop.queueDepth ?? 0) === 0 &&
         report.teacherLoop.failureMode === "none";
     const healthy = report.teacherLoop.failureMode === "none" &&
         stale === false &&
-        report.teacherLoop.watchState !== "not_visible";
+        watchState === "watching";
     const cycleDetail = report.teacherLoop.lastNoOpReason === "no_teacher_artifacts"
         ? summarizeTeacherNoArtifactCycle(report.teacherLoop.notes).detail
         : TEACHER_NO_OP_MESSAGES[report.teacherLoop.lastNoOpReason] ?? "the latest teacher cycle detail is unavailable";
@@ -1180,7 +1185,9 @@ function summarizeStatusTeacher(report, providerConfig, localLlm) {
         stale,
         idle,
         latestCycle,
-        detail: `${providerConfig.teacher.model} is enabled on Ollama; ${cycleDetail}`
+        detail: watchState === "lagging"
+            ? `${providerConfig.teacher.model} is enabled on Ollama, but the watch heartbeat is lagging; ${cycleDetail}`
+            : `${providerConfig.teacher.model} is enabled on Ollama; ${cycleDetail}`
     };
 }
 function summarizeStatusEmbedder(embeddings) {
@@ -1334,7 +1341,7 @@ function summarizeStatusAlerts(report, providerConfig, embeddings, localLlm) {
     return buckets;
 }
 function summarizeStatusWatchState(status) {
-    return status.passiveLearning.watchState;
+    return status.passiveLearning.watch?.state ?? status.passiveLearning.watchState;
 }
 function summarizeStatusServeReality(status) {
     if (status.brainStatus.serveState === "serving_active_pack") {
@@ -1483,7 +1490,7 @@ function formatCurrentProfileStatusSummary(status, report, targetInspection, opt
         `budget      requested=${report.servePath.requestedBudgetStrategy ?? "none"} resolved=${report.servePath.resolvedBudgetStrategy ?? "none"} maxBlocks=${report.servePath.resolvedMaxContextBlocks ?? "none"} source=${report.servePath.structuralBudgetSource ?? "none"} origin=${status.brainStatus.structuralDecision.origin} basis=${status.brainStatus.structuralDecision.basis}`,
         `decision    ${status.brainStatus.structuralDecision.detail}`,
         `principal   latest=${formatPrincipalLatest(report)} pending=${report.principal.pendingCount ?? report.learning.pendingPrincipalCount ?? "none"} checkpoint=${formatPrincipalCheckpointFrontier(report)} downstream=${yesNo(report.principal.servingDownstreamOfLatestCorrection)} lag=${report.learning.principalLagToPromotion.sequenceLag ?? "none"}`,
-        `passive     learner=${yesNo(status.passiveLearning.learnerRunning)} firstExport=${yesNo(status.passiveLearning.firstExportOccurred)} watch=${status.passiveLearning.watchState} export=${status.passiveLearning.exportState} backlog=${status.passiveLearning.backlogState} pending=${formatStatusNullableNumber(status.passiveLearning.pendingLive)}/${formatStatusNullableNumber(status.passiveLearning.pendingBackfill)} detail=${status.passiveLearning.detail}`,
+        `passive     learner=${yesNo(status.passiveLearning.learnerRunning)} firstExport=${yesNo(status.passiveLearning.firstExportOccurred)} watch=${summarizeStatusWatchState(status)} export=${status.passiveLearning.exportState} backlog=${status.passiveLearning.backlogState} pending=${formatStatusNullableNumber(status.passiveLearning.pendingLive)}/${formatStatusNullableNumber(status.passiveLearning.pendingBackfill)} detail=${status.passiveLearning.detail}`,
         `delta       observed=${status.passiveLearning.lastObservedDelta.observedAt ?? "none"} exported=${formatStatusNullableYesNo(status.passiveLearning.lastObservedDelta.exported)} labeled=${formatStatusNullableYesNo(status.passiveLearning.lastObservedDelta.labeled)} promoted=${formatStatusNullableYesNo(status.passiveLearning.lastObservedDelta.promoted)} served=${formatStatusNullableYesNo(status.passiveLearning.lastObservedDelta.served)} transition=${formatStatusObservedDeltaTransition(status.passiveLearning.lastObservedDelta)} detail=${status.passiveLearning.lastObservedDelta.explanation}`,
         `scanner     flowing=${yesNo(report.supervision.flowing)} scan=${report.supervision.scanPolicy ?? "none"} surfaces=${formatScannerSurfaces(report)} labels=${report.supervision.humanLabelCount ?? "none"}/${report.supervision.selfLabelCount ?? "none"} attributable=${report.supervision.attributedEventCount ?? "none"}/${report.supervision.totalEventCount ?? "none"} digests=${report.supervision.selectionDigestCount ?? "none"}`,
         `labels      ${formatLabelFlowSummary(report.labelFlow)}`,

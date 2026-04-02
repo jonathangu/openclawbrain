@@ -21,6 +21,82 @@ function loadFunction({ file, startMarker, endMarker, prelude = "" }) {
   return new Function(`${prelude}\n${block}\nreturn ${match[1]};`)();
 }
 
+test("teacher loop watch state keeps near-threshold heartbeat jitter in lagging instead of stale", () => {
+  const summarizeTeacherLoopWatchState = loadFunction({
+    file: "index.js",
+    startMarker: "function summarizeTeacherLoopWatchState",
+    endMarker: "function emptyOperatorLearningAttribution",
+  });
+
+  const result = summarizeTeacherLoopWatchState({
+    observedAt: "2026-04-02T11:30:00.000Z",
+    sourceKind: "watch_snapshot",
+    watchSnapshot: {
+      updatedAt: "2026-04-02T11:30:00.000Z",
+      lastRunAt: "2026-04-02T11:30:00.000Z",
+      pollIntervalSeconds: 30,
+      snapshot: {
+        runtime: {
+          lastHeartbeatAt: "2026-04-02T11:28:44.060Z",
+        },
+      },
+    },
+  });
+
+  assert.equal(result.watchState, "lagging");
+  assert.deepEqual(result.watch, {
+    state: "lagging",
+    detail: "watch heartbeat missed the healthy window but has not crossed the stale snapshot threshold",
+    lastHeartbeatAt: "2026-04-02T11:28:44.060Z",
+    lagSeconds: 75.94,
+    intervalSeconds: 30,
+    healthyWithinSeconds: 75,
+    staleAfterSeconds: 105,
+  });
+});
+
+test("teacher loop watch state stays watching at the healthy edge and only goes stale after the grace window", () => {
+  const summarizeTeacherLoopWatchState = loadFunction({
+    file: "index.js",
+    startMarker: "function summarizeTeacherLoopWatchState",
+    endMarker: "function emptyOperatorLearningAttribution",
+  });
+
+  const watching = summarizeTeacherLoopWatchState({
+    observedAt: "2026-04-02T11:30:00.000Z",
+    sourceKind: "watch_snapshot",
+    watchSnapshot: {
+      updatedAt: "2026-04-02T11:30:00.000Z",
+      lastRunAt: "2026-04-02T11:30:00.000Z",
+      pollIntervalSeconds: 30,
+      snapshot: {
+        runtime: {
+          lastHeartbeatAt: "2026-04-02T11:28:45.000Z",
+        },
+      },
+    },
+  });
+  const stale = summarizeTeacherLoopWatchState({
+    observedAt: "2026-04-02T11:30:00.000Z",
+    sourceKind: "watch_snapshot",
+    watchSnapshot: {
+      updatedAt: "2026-04-02T11:30:00.000Z",
+      lastRunAt: "2026-04-02T11:30:00.000Z",
+      pollIntervalSeconds: 30,
+      snapshot: {
+        runtime: {
+          lastHeartbeatAt: "2026-04-02T11:28:14.990Z",
+        },
+      },
+    },
+  });
+
+  assert.equal(watching.watchState, "watching");
+  assert.equal(watching.watch.state, "watching");
+  assert.equal(stale.watchState, "stale_snapshot");
+  assert.equal(stale.watch.state, "stale_snapshot");
+});
+
 test("watch replay guard can skip stored replay without touching bundle roots", async () => {
   globalThis.__ocbReplayHarness = {
     listCalls: 0,

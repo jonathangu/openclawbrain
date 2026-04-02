@@ -24,6 +24,17 @@ The intended canonical lane is the same install command with optional `--proof`.
 
 If you only need the minimal happy path, stop there and use [Quick start](getting-started/quick-start.md).
 
+## Canonical context-management model
+
+OpenClawBrain does not have a separate operator-only "tier" model for context. The real serve-time model is:
+
+- **Hot context** = the ordered summary spine plus the protected fresh tail of raw messages. `LCM_FRESH_TAIL_COUNT` controls how many latest raw messages stay protected from compaction and truncation.
+- **Summary freshness** = lineage state on each summary. `fresh` can start recall. `stale_source`, `stale_branch`, `stale_pack`, `superseded`, and `tombstoned` mean the summary is a locator map, not proof, so exact or current-truth claims should expand back to source.
+- **Prefetch** = an opportunistic traversal cache, not a second memory tier. It is keyed by query digest, active pack version, budget class, summary-routing mode, and kind. It can be reused on a hit, but pack, routing, or budget changes can make it stale or invalidated before serve time.
+- **Budget controls** = `LCM_FRESH_TAIL_COUNT` protects the raw tail, `OPENCLAWBRAIN_BUDGET_FRACTION` splits learned-query budget from the turn budget, and `LCM_MAX_EXPAND_TOKENS` caps expand-to-source work. Per-turn status and trace surfaces report `queryBudgetChars`, `maxContextChars`, `injectedChars`, and `droppedChars` when serve-time clipping happens.
+
+In the runtime and internal CLI JSON status surfaces, this model is grouped under `contextManagement`. Use that as the canonical status vocabulary.
+
 ## Recommended starting configuration
 
 This is a practical starting point for local embeddings and the supervised child-worker boundary:
@@ -145,8 +156,10 @@ The CLI also exposes foreground and daemonized learner controls. These are optio
 ```bash
 openclawbrain daemon status --activation-root ~/.openclawbrain/activation
 openclawbrain history --openclaw-home ~/.openclaw --limit 20 --json
-openclawbrain context "How should I answer this?" --openclaw-home ~/.openclaw
+lcm-tui --db ~/.openclaw/lcm.db
 ```
+
+This repo does not implement a standalone `openclawbrain context` command. Use `status` for runtime truth and `lcm-tui` Context View when you need to inspect the assembled hot context directly.
 
 If you hit an operator seam, start with [Troubleshooting](operating/troubleshooting.md).
 

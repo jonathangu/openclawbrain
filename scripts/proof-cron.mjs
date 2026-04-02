@@ -5,6 +5,7 @@ import { existsSync, mkdirSync, readdirSync, readFileSync, statSync, writeFileSy
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
+import { isOperatorHealthSummary, summarizeOperatorHealth } from "./operator-health-contract.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -1015,6 +1016,7 @@ function summarizeHostBundle(bundlePath, workspaceRoot) {
   const summary = readTextIfExists(path.join(bundlePath, "summary.md"));
   const status = readJsonIfExists(path.join(bundlePath, "status.json"));
   const validation = readJsonIfExists(path.join(bundlePath, "validation-report.json"));
+  const operatorHealth = summarizeOperatorHealthFromStatusPayload(status);
 
   const securitySummary = status?.securityAudit?.summary ?? null;
   const recentSession = status?.sessions?.recent?.[0] ?? null;
@@ -1033,6 +1035,7 @@ function summarizeHostBundle(bundlePath, workspaceRoot) {
     validationOk: validation?.ok ?? null,
     validationReport: validation,
     summary,
+    operatorHealth,
     statusSummary: status
       ? {
           runtimeVersion: status.runtimeVersion ?? null,
@@ -1048,6 +1051,7 @@ function summarizeHostBundle(bundlePath, workspaceRoot) {
           decisionSampleSize: status.recentDecisionSummary?.sampleSize ?? null,
           clipRate: status.recentDecisionSummary?.clipRate?.rate ?? null,
           failOpenRate: status.recentDecisionSummary?.failOpenRate?.rate ?? null,
+          operatorHealth,
         }
       : null,
     metrics: {
@@ -1064,6 +1068,7 @@ function summarizeHostBundle(bundlePath, workspaceRoot) {
       failOpenRate: decisionSummary?.failOpenRate?.rate ?? null,
       decisionSampleSize: decisionSummary?.sampleSize ?? null,
       currentPackVersion: promotionSummary?.currentPackVersion ?? null,
+      operatorHealthStatus: operatorHealth.status,
     },
   };
 }
@@ -1138,15 +1143,50 @@ function summarizeScan(bundles, now, workspaceRoot) {
     });
 }
 
+function summarizeOperatorHealthFromStatusPayload(status) {
+  if (isOperatorHealthSummary(status?.operatorHealth)) {
+    return status.operatorHealth;
+  }
+
+  const passiveLearning = status?.passiveLearning ?? {};
+  const passiveLearningWatch = passiveLearning.watch && typeof passiveLearning.watch === "object"
+    ? passiveLearning.watch
+    : {};
+  return summarizeOperatorHealth({
+    workerHealthy: status?.workerHealthy ?? null,
+    workerMode: status?.workerMode ?? null,
+    workerStatus: status?.workerStatus ?? null,
+    watchState: status?.watchState ?? passiveLearningWatch.state ?? passiveLearning.watchState ?? null,
+    proofState: status?.proofState ?? passiveLearningWatch.proofState ?? passiveLearning.proofState ?? null,
+    teacherArtifactCount: status?.teacherArtifactCount ?? passiveLearningWatch.teacherArtifactCount ?? passiveLearning.teacherArtifactCount ?? null,
+  });
+}
+
 function summarizeStatus(statusProbe) {
   const status = statusProbe.parsed ?? {};
   const brainStatus = status.brainStatus ?? {};
   const brain = status.brain ?? {};
   const passiveLearning = status.passiveLearning ?? {};
+  const passiveLearningWatch = passiveLearning.watch && typeof passiveLearning.watch === "object"
+    ? passiveLearning.watch
+    : {};
+  const watch = {
+    state: passiveLearningWatch.state ?? passiveLearning.watchState ?? null,
+    detail: passiveLearningWatch.detail ?? null,
+    lastHeartbeatAt: passiveLearningWatch.lastHeartbeatAt ?? passiveLearning.lastWatchHeartbeatAt ?? null,
+    lagSeconds: passiveLearningWatch.lagSeconds ?? null,
+    intervalSeconds: passiveLearningWatch.intervalSeconds ?? passiveLearning.watchIntervalSeconds ?? null,
+    healthyWithinSeconds: passiveLearningWatch.healthyWithinSeconds ?? null,
+    staleAfterSeconds: passiveLearningWatch.staleAfterSeconds ?? null,
+    proofState: passiveLearningWatch.proofState ?? passiveLearning.proofState ?? null,
+    watchOnly: passiveLearningWatch.watchOnly ?? passiveLearning.watchOnly ?? null,
+    teacherArtifactCount: passiveLearningWatch.teacherArtifactCount ?? passiveLearning.teacherArtifactCount ?? null,
+  };
   const currentTurnAttribution = status.currentTurnAttribution ?? {};
   const legacyWorkerHealthy = status.workerHealthy ?? null;
   const serveState = brainStatus.serveState ?? null;
   const activePackId = brain.activePackId ?? null;
+  const operatorHealth = summarizeOperatorHealthFromStatusPayload(status);
   const runtimeHealthy =
     legacyWorkerHealthy ??
     (brainStatus.status === "ok"
@@ -1166,16 +1206,18 @@ function summarizeStatus(statusProbe) {
     routeFreshness: brain.routeFreshness ?? null,
     usedLearnedRouteFn: brainStatus.usedLearnedRouteFn ?? currentTurnAttribution.usedLearnedRouteFn ?? null,
     loadProof: status.hook?.loadProof ?? null,
+    operatorHealth,
     workerHealthy: legacyWorkerHealthy,
-    workerStatus: status.workerStatus ?? passiveLearning.watchState ?? null,
+    workerStatus: status.workerStatus ?? watch.state ?? null,
     workerMode: status.workerMode ?? null,
     workerPid: status.workerPid ?? null,
-    watchState: passiveLearning.watchState ?? null,
-    lastWatchHeartbeatAt: passiveLearning.lastWatchHeartbeatAt ?? null,
-    watchIntervalSeconds: passiveLearning.watchIntervalSeconds ?? null,
-    proofState: passiveLearning.proofState ?? null,
-    watchOnly: passiveLearning.watchOnly ?? null,
-    teacherArtifactCount: passiveLearning.teacherArtifactCount ?? null,
+    watch,
+    watchState: watch.state,
+    lastWatchHeartbeatAt: watch.lastHeartbeatAt,
+    watchIntervalSeconds: watch.intervalSeconds,
+    proofState: watch.proofState,
+    watchOnly: watch.watchOnly,
+    teacherArtifactCount: watch.teacherArtifactCount,
     currentPackVersion: status.currentPackVersion ?? activePackId,
     packVersion: status.packVersion ?? null,
     recentTraceCount: status.recentTraceCount ?? null,
@@ -1347,7 +1389,7 @@ function freshnessBand(ageDays, healthFreshnessDays, freshnessThresholdDays) {
 
 function buildHealthSnapshot({ config, statusProbe, bundles, now, scanDurationMs }) {
   const status = summarizeStatus(statusProbe);
-  const watchHeartbeatAt = safeParseDate(status.lastWatchHeartbeatAt);
+  const watchHeartbeatAt = safeParseDate(status.watch?.lastHeartbeatAt ?? null);
   const watchHeartbeatAgeMinutes = watchHeartbeatAt ? round((now.getTime() - watchHeartbeatAt.getTime()) / 60000, 2) : null;
   const latest = latestBundlesByKind(bundles);
   const latestOperator = latest["operator-proof"] ?? null;
@@ -1383,14 +1425,16 @@ function buildHealthSnapshot({ config, statusProbe, bundles, now, scanDurationMs
       signal: statusProbe.signal,
     },
     status,
+    operatorHealth: status.operatorHealth,
     watch: {
-      state: status.watchState ?? status.workerStatus ?? null,
-      lastHeartbeatAt: status.lastWatchHeartbeatAt ?? null,
+      ...(status.watch ?? {}),
+      state: status.watch?.state ?? status.watchState ?? status.workerStatus ?? null,
+      lastHeartbeatAt: status.watch?.lastHeartbeatAt ?? null,
       heartbeatAgeMinutes: watchHeartbeatAgeMinutes,
-      intervalSeconds: status.watchIntervalSeconds ?? null,
-      proofState: status.proofState ?? null,
-      watchOnly: status.watchOnly ?? null,
-      teacherArtifactCount: status.teacherArtifactCount ?? null,
+      intervalSeconds: status.watch?.intervalSeconds ?? status.watchIntervalSeconds ?? null,
+      proofState: status.watch?.proofState ?? status.proofState ?? null,
+      watchOnly: status.watch?.watchOnly ?? status.watchOnly ?? null,
+      teacherArtifactCount: status.watch?.teacherArtifactCount ?? status.teacherArtifactCount ?? null,
     },
     latestBundles: bundleFreshness,
     performance,
@@ -1561,6 +1605,7 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs }) {
       recordedSessionReplay: latestReplay,
       hostEvidence: latestHost,
     },
+    latestOperatorHealth: latestHost?.operatorHealth ?? null,
     performance: {
       scanMs: scanDurationMs,
       replayBundleCount: replayBundles.length,
@@ -1649,6 +1694,16 @@ function formatHealthMarkdown(snapshot) {
   lines.push(`- fail-open rate: ${snapshot.status.decisionSummary?.failOpenRate?.rate ?? "n/a"}`);
   lines.push(`- security critical findings: ${snapshot.status.securityAudit?.critical ?? 0}`);
   lines.push("");
+  lines.push("## Operator health");
+  lines.push(`- operator health: ${snapshot.operatorHealth.status}`);
+  lines.push(`- operator health detail: ${snapshot.operatorHealth.detail}`);
+  lines.push(`- operator health flags: partial=${snapshot.operatorHealth.partial}, unknown=${snapshot.operatorHealth.unknown}, stale=${snapshot.operatorHealth.stale}`);
+  lines.push(`- worker health truth: ${snapshot.operatorHealth.workerHealthy ?? "n/a"}`);
+  lines.push(`- worker mode truth: ${snapshot.operatorHealth.workerMode ?? "n/a"}`);
+  lines.push(`- worker status truth: ${snapshot.operatorHealth.workerStatus ?? "n/a"}`);
+  lines.push(`- background-learning healthy: ${snapshot.operatorHealth.backgroundLearning.healthy ?? "n/a"}`);
+  lines.push(`- background-learning idle: ${snapshot.operatorHealth.backgroundLearning.idle ?? "n/a"}`);
+  lines.push("");
   lines.push("## Latest bundle surface");
   for (const bundle of snapshot.latestBundles) {
     lines.push(`- ${bundle.kind}: ${bundle.relativePath} (${formatAge(bundle.ageDays)}, ${bundle.validationOk === true ? "ok" : bundle.validationOk === false ? "fail" : "unknown"})`);
@@ -1688,11 +1743,8 @@ function formatHealthMarkdown(snapshot) {
   if (snapshot.status.decisionSummary?.sampleSize === 0) {
     lines.push("- no recent traced decisions were found; this is a quiet surface, not a proof failure");
   }
-  if (snapshot.watch?.state && snapshot.watch.state !== "watching") {
-    lines.push(`- watcher state is ${snapshot.watch.state}; do not treat this as a fully healthy background-learning surface`);
-  }
-  if (snapshot.status.workerHealthy === null) {
-    lines.push("- worker health is unknown in the live status probe; background-learning health should be treated as partial until the probe reports it directly");
+  for (const reason of snapshot.operatorHealth.reasons) {
+    lines.push(`- ${reason}`);
   }
   if (snapshot.latestBundles.length === 0) {
     lines.push("- no proof bundles matched the scan roots");
@@ -1796,6 +1848,22 @@ function formatNightlyMarkdown(aggregate) {
     unknownCount: aggregate.hostMetrics.sessionCountUnknownCount,
     totalBundles: aggregate.bundleTypeCounts.hostEvidence,
   }));
+  if (aggregate.latestOperatorHealth) {
+    lines.push("");
+    lines.push("## Latest operator health");
+    lines.push(`- operator health: ${aggregate.latestOperatorHealth.status}`);
+    lines.push(`- operator health detail: ${aggregate.latestOperatorHealth.detail}`);
+    lines.push(`- operator health flags: partial=${aggregate.latestOperatorHealth.partial}, unknown=${aggregate.latestOperatorHealth.unknown}, stale=${aggregate.latestOperatorHealth.stale}`);
+    lines.push(`- worker health truth: ${aggregate.latestOperatorHealth.workerHealthy ?? "n/a"}`);
+    lines.push(`- worker mode truth: ${aggregate.latestOperatorHealth.workerMode ?? "n/a"}`);
+    lines.push(`- worker status truth: ${aggregate.latestOperatorHealth.workerStatus ?? "n/a"}`);
+    lines.push(`- watch state truth: ${aggregate.latestOperatorHealth.watchState ?? "n/a"}`);
+    lines.push(`- proof state truth: ${aggregate.latestOperatorHealth.proofState ?? "n/a"}`);
+    lines.push(`- teacher artifacts truth: ${aggregate.latestOperatorHealth.teacherArtifactCount ?? "n/a"}`);
+    for (const reason of aggregate.latestOperatorHealth.reasons) {
+      lines.push(`- ${reason}`);
+    }
+  }
   lines.push("");
   lines.push("## Cost proxy");
   lines.push(`- proof minutes: ${aggregate.costProxy.proofMinutes}`);

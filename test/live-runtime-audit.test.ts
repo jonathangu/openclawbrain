@@ -70,4 +70,23 @@ describe("summarizeTeacherLoopTruth", () => {
       stale: false,
     });
   });
+
+  it("treats lagging watch heartbeats as aging instead of healthy or stale", () => {
+    expect(
+      summarizeTeacherLoopTruth({
+        failureMode: "none",
+        lastNoOpReason: "no_teacher_artifacts",
+        latestFreshness: "fresh",
+        queueDepth: 0,
+        running: false,
+        watch: {
+          state: "lagging",
+        },
+      }),
+    ).toEqual({
+      healthy: false,
+      idle: true,
+      stale: false,
+    });
+  });
 });

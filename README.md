@@ -36,7 +36,7 @@ Do not use the old compatibility-package binary for modern install/repair/status
 
 What makes it different:
 
-- Useful context stays bounded on the live path, and learning stays off that path so latency stays predictable.
+- Useful context stays bounded on the live path: the serve-time hot context is the summary spine plus a protected fresh tail of raw messages, and learning stays off that path so latency stays predictable.
 - The runtime serves promoted packs, not partially written state.
 - Explicit user corrections can outrank stale recap material when they conflict.
 - The extension fails open. When the memory layer is unavailable, the agent still answers.

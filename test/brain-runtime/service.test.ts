@@ -563,6 +563,77 @@ describe("BrainService", () => {
     });
   });
 
+  it("surfaces the canonical context-management model in status", async () => {
+    const brainRoot = makeTempDir("openclawbrain-context-model-");
+    const service = new BrainService({
+      deps: createDeps(brainRoot),
+    });
+
+    const status = await service.status();
+
+    expect(status.contextManagement).toMatchObject({
+      model: "summary_spine_with_protected_fresh_tail",
+      hotContext: {
+        layout: "summary_spine_then_protected_fresh_tail",
+        sourceOfTruth: "context_items",
+        freshTailCount: 8,
+      },
+      freshness: {
+        nonFreshStates: [
+          "stale_source",
+          "stale_branch",
+          "stale_pack",
+          "superseded",
+          "tombstoned",
+        ],
+      },
+      expansion: {
+        maxExpandTokens: 4000,
+        summaryRoutingModes: [
+          "ignore",
+          "summary_suffices",
+          "expand_to_source",
+          "prefer_typed_memory",
+        ],
+      },
+      prefetch: {
+        lifecycleStates: [
+          "scheduled",
+          "materialized",
+          "hit",
+          "miss",
+          "stale",
+          "invalidated",
+          "dropped",
+        ],
+        keyDimensions: [
+          "queryDigest",
+          "activePackVersion",
+          "budgetClass",
+          "summaryRoutingMode",
+          "kind",
+        ],
+      },
+      budget: {
+        controls: {
+          freshTailCount: {
+            env: "LCM_FRESH_TAIL_COUNT",
+            value: 8,
+          },
+          maxExpandTokens: {
+            env: "LCM_MAX_EXPAND_TOKENS",
+            value: 4000,
+          },
+          learnedQueryBudgetFraction: {
+            env: "OPENCLAWBRAIN_BUDGET_FRACTION",
+            value: 0.3,
+          },
+        },
+      },
+    });
+    expect((status.contextManagement as { operatorSummary?: string }).operatorSummary).toContain("protected fresh tail");
+  });
+
   it("hydrates the persisted bounded assembly decision across service restart", async () => {
     const brainRoot = makeTempDir("openclawbrain-status-restart-");
     const first = new BrainService({

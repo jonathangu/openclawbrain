@@ -132,6 +132,21 @@ test("status teacher stays unhealthy when the watch snapshot itself is stale", (
     assert.equal(summary.idle, true);
 });
 
+test("status teacher treats lagging watch heartbeats as aging instead of stale", () => {
+    const summary = summarizeStatusTeacher(makeTeacherReport({
+        latestFreshness: "fresh",
+        watchState: "lagging",
+        watch: {
+            state: "lagging",
+            detail: "watch heartbeat missed the healthy window but has not crossed the stale snapshot threshold"
+        }
+    }), providerConfig, localLlm);
+    assert.equal(summary.healthy, false);
+    assert.equal(summary.stale, false);
+    assert.equal(summary.idle, true);
+    assert.match(summary.detail, /watch heartbeat is lagging/);
+});
+
 test("learning warnings separate no-artifact no-ops from genuinely stale teacher labels", () => {
     const noArtifactWarnings = summarizeLearningWarningStates(makeWarningInput());
     assert.deepEqual(noArtifactWarnings, []);

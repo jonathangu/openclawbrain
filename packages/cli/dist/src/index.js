@@ -6646,11 +6646,18 @@ function loadTeacherSurfaceFromInput(input) {
 }
 function summarizeTeacherLoopWatchState(input) {
     if (input.sourceKind !== "watch_snapshot" || input.watchSnapshot === null) {
+        const watchState = input.sourceKind === "async_snapshot" ? "snapshot_only" : "not_visible";
         return {
             snapshotUpdatedAt: null,
             lastWatchHeartbeatAt: null,
             pollIntervalSeconds: null,
-            watchState: input.sourceKind === "async_snapshot" ? "snapshot_only" : "not_visible"
+            watchState,
+            watch: buildTeacherLoopWatchSummary({
+                state: watchState,
+                detail: watchState === "snapshot_only"
+                    ? "only a saved watcher snapshot is visible; no live heartbeat is available"
+                    : "no watcher snapshot is visible from the current activation root"
+            })
         };
     }
     const lastWatchHeartbeatAt = input.watchSnapshot.snapshot.runtime?.lastHeartbeatAt ?? input.watchSnapshot.lastRunAt;
@@ -6660,16 +6667,55 @@ function summarizeTeacherLoopWatchState(input) {
             snapshotUpdatedAt: input.watchSnapshot.updatedAt,
             lastWatchHeartbeatAt: null,
             pollIntervalSeconds,
-            watchState: "snapshot_only"
+            watchState: "snapshot_only",
+            watch: buildTeacherLoopWatchSummary({
+                state: "snapshot_only",
+                detail: "only a saved watcher snapshot is visible; no live heartbeat is available",
+                intervalSeconds: pollIntervalSeconds
+            })
         };
     }
-    const lagMs = Date.parse(input.observedAt) - Date.parse(lastWatchHeartbeatAt);
-    const staleAfterMs = pollIntervalSeconds * 2000 + 15_000;
+    const rawLagMs = Date.parse(input.observedAt) - Date.parse(lastWatchHeartbeatAt);
+    const lagMs = Number.isFinite(rawLagMs) ? Math.max(0, rawLagMs) : null;
+    const healthyWithinMs = pollIntervalSeconds * 2000 + 15_000;
+    const staleAfterMs = healthyWithinMs + Math.max(15_000, pollIntervalSeconds * 1000);
+    const watchState = lagMs !== null && lagMs <= healthyWithinMs
+        ? "watching"
+        : lagMs !== null && lagMs <= staleAfterMs
+            ? "lagging"
+            : "stale_snapshot";
     return {
         snapshotUpdatedAt: input.watchSnapshot.updatedAt,
         lastWatchHeartbeatAt,
         pollIntervalSeconds,
-            watchState: Number.isFinite(lagMs) && lagMs >= 0 && lagMs <= staleAfterMs ? "watching" : "stale_snapshot"
+        watchState,
+        watch: buildTeacherLoopWatchSummary({
+            state: watchState,
+            detail: watchState === "watching"
+                ? "watch heartbeat is inside the healthy window"
+                : watchState === "lagging"
+                    ? "watch heartbeat missed the healthy window but has not crossed the stale snapshot threshold"
+                    : "watch heartbeat is older than the stale snapshot threshold",
+            lastHeartbeatAt: lastWatchHeartbeatAt,
+            lagMs,
+            intervalSeconds: pollIntervalSeconds,
+            healthyWithinMs,
+            staleAfterMs
+        })
+    };
+}
+function buildTeacherLoopWatchSummary(input) {
+    const lagSeconds = Number.isFinite(input.lagMs) ? Math.round((input.lagMs / 1000) * 100) / 100 : null;
+    const healthyWithinSeconds = Number.isFinite(input.healthyWithinMs) ? Math.round((input.healthyWithinMs / 1000) * 100) / 100 : null;
+    const staleAfterSeconds = Number.isFinite(input.staleAfterMs) ? Math.round((input.staleAfterMs / 1000) * 100) / 100 : null;
+    return {
+        state: input.state,
+        detail: input.detail,
+        lastHeartbeatAt: input.lastHeartbeatAt ?? null,
+        lagSeconds,
+        intervalSeconds: input.intervalSeconds ?? null,
+        healthyWithinSeconds,
+        staleAfterSeconds
     };
 }
 function emptyOperatorLearningAttribution(source, snapshotKind, detail) {
@@ -6798,6 +6844,10 @@ function summarizeTeacherLoop(input) {
     const teacherSnapshotPath = resolveOperatorTeacherSnapshotPath(input.activationRoot, normalizeOptionalString(input.teacherSnapshotPath) ?? null);
     const unavailableFromMissing = buildUnavailableLastObservedDelta("no watch teacher snapshot is visible for the latest observed cycle");
     const unavailableFromAsync = buildUnavailableLastObservedDelta("raw async teacher snapshots do not record the last observed export/label/promotion delta");
+    const notVisibleWatch = buildTeacherLoopWatchSummary({
+        state: "not_visible",
+        detail: "no watcher snapshot is visible from the current activation root"
+    });
     if (loaded === null && teacherSnapshotPath === null) {
         return {
             available: false,
@@ -6812,6 +6862,7 @@ function summarizeTeacherLoop(input) {
             lastScanAt: null,
             pollIntervalSeconds: null,
             watchState: "not_visible",
+            watch: notVisibleWatch,
             lastProcessedAt: null,
             artifactCount: null,
             queueDepth: null,
@@ -6852,6 +6903,7 @@ function summarizeTeacherLoop(input) {
             lastScanAt: null,
             pollIntervalSeconds: null,
             watchState: "not_visible",
+            watch: notVisibleWatch,
             lastProcessedAt: null,
             artifactCount: null,
             queueDepth: null,
@@ -6898,6 +6950,7 @@ function summarizeTeacherLoop(input) {
         lastScanAt: snapshot.runtime?.lastScanAt ?? null,
         pollIntervalSeconds: watchState.pollIntervalSeconds,
         watchState: watchState.watchState,
+        watch: watchState.watch,
         lastProcessedAt: snapshot.diagnostics.lastProcessedAt,
         artifactCount: watchSnapshot?.teacher.artifactCount ?? snapshot.teacher.artifactCount,
         queueDepth: snapshot.queue.depth,
@@ -7486,6 +7539,13 @@ function didCurrentProfileFirstExportOccur(report) {
 }
 function summarizeCurrentProfilePassiveLearning(report, activePackId) {
     const firstExportOccurred = didCurrentProfileFirstExportOccur(report);
+    const watch = report.teacherLoop.watch ?? buildTeacherLoopWatchSummary({
+        state: report.teacherLoop.watchState,
+        detail: "watch state came from the legacy passive-learning surface",
+        lastHeartbeatAt: report.teacherLoop.lastHeartbeatAt,
+        intervalSeconds: report.teacherLoop.pollIntervalSeconds
+    });
+    const watchState = watch.state ?? report.teacherLoop.watchState;
     const exportState = !firstExportOccurred
         ? "awaiting_first_export"
         : report.supervision.exportedAt !== null
@@ -7495,28 +7555,33 @@ function summarizeCurrentProfilePassiveLearning(report, activePackId) {
         ? report.learning.backlogState
         : "unknown";
     const detail = !firstExportOccurred
-        ? report.teacherLoop.watchState === "watching"
+        ? watchState === "watching"
             ? "watch heartbeat is fresh, but this activation root has not observed its first export yet"
+            : watchState === "lagging"
+                ? "watch heartbeat is lagging, and this activation root is still waiting for the first export before passive learning can advance"
             : "this activation root is still waiting for the first export before passive learning can advance"
         : backlogState === "unknown"
             ? "first export is proven, but passive backlog state is not visible from the current local artifacts"
-            : report.teacherLoop.watchState === "watching"
+            : watchState === "watching"
                 ? `watch heartbeat is fresh; passive backlog is ${backlogState} with live=${report.learning.pendingLive ?? 0} and backfill=${report.learning.pendingBackfill ?? 0}`
-                : report.teacherLoop.watchState === "stale_snapshot"
+                : watchState === "lagging"
+                    ? `watch heartbeat is lagging; latest known passive backlog is ${backlogState} with live=${report.learning.pendingLive ?? 0} and backfill=${report.learning.pendingBackfill ?? 0}`
+                    : watchState === "stale_snapshot"
                     ? `last saved watch snapshot is stale; latest known passive backlog is ${backlogState}`
-                    : report.teacherLoop.watchState === "snapshot_only"
+                    : watchState === "snapshot_only"
                         ? `passive backlog is visible from the last saved snapshot: ${backlogState}`
                         : `passive backlog is visible from the last known learner state: ${backlogState}`;
     return {
-        learnerRunning: report.teacherLoop.watchState === "watching",
+        learnerRunning: watchState === "watching",
         firstExportOccurred,
-        watchState: report.teacherLoop.watchState,
+        watchState,
+        watch,
         exportState,
         backlogState,
         pendingLive: report.learning.available ? report.learning.pendingLive : null,
         pendingBackfill: report.learning.available ? report.learning.pendingBackfill : null,
-        lastWatchHeartbeatAt: report.teacherLoop.lastHeartbeatAt,
-        watchIntervalSeconds: report.teacherLoop.pollIntervalSeconds,
+        lastWatchHeartbeatAt: watch.lastHeartbeatAt ?? report.teacherLoop.lastHeartbeatAt,
+        watchIntervalSeconds: watch.intervalSeconds ?? report.teacherLoop.pollIntervalSeconds,
         lastExportAt: report.supervision.exportedAt,
         lastPromotionAt: report.promotion.lastPromotion.at,
         currentServingPackId: activePackId,

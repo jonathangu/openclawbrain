@@ -138,7 +138,7 @@ The bottom panel shows the detail view for the selected summary: full content te
 
 ## Context View
 
-Shows exactly what the model sees: the ordered list of context items (summaries + fresh tail messages) that LCM assembles for the next turn. This is the ground truth for "what does the agent know right now?"
+Shows exactly what the model sees: the assembled hot context for the next turn. In OpenClawBrain terms, that means the ordered summary spine plus the protected fresh tail of raw messages.
 
 Each row shows:
 ```
@@ -153,7 +153,7 @@ The status bar shows totals: how many summaries, how many messages, total items,
 ### When to Use
 
 - **Debug context overflow** — see total token count and identify what's consuming the budget
-- **Verify assembly order** — summaries should appear before fresh tail messages, ordered chronologically
+- **Verify assembly order** — the summary spine should appear before the protected fresh tail, ordered chronologically
 - **Check after dissolve/rewrite** — confirm your changes are reflected in what the model sees
 - **Compare with raw conversation** — the conversation view shows everything; the context view shows what survives compaction
 
