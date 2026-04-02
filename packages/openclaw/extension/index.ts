@@ -10,11 +10,15 @@
  *   - Compilation errors → fail-open, never breaks the session
  *   - Missing activation root → fail-open with console.warn
  */
+import { mkdirSync, writeFileSync } from "node:fs";
+import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import {
   compileRuntimeContext,
-  recordOpenClawProfileRuntimeLoadProof
+  listOpenClawProfileRuntimeLoadProofs,
+  recordOpenClawProfileRuntimeLoadProof,
+  resolveAttachmentRuntimeLoadProofsPath
 } from "@openclawbrain/openclaw";
 import {
   createBeforePromptBuildHandler,
@@ -26,6 +30,7 @@ import {
 const ACTIVATION_ROOT = "__ACTIVATION_ROOT__";
 const EXTENSION_ENTRY_PATH = fileURLToPath(import.meta.url);
 const warnedDiagnostics = new Set<string>();
+const RUNTIME_LOAD_PROOFS_CONTRACT = "openclaw_profile_runtime_load_proofs.v1";
 
 function warnOnce(key: string, message: string): void {
   if (warnedDiagnostics.has(key)) {
@@ -87,6 +92,76 @@ function formatDiagnosticMessage(input: ExtensionDiagnostic): string {
   ].join(" ");
 }
 
+function repairRuntimeLoadProofsIfUnreadable(activationRoot: string): { repaired: boolean; path: string; error: string | null } {
+  const loadedProofs = listOpenClawProfileRuntimeLoadProofs(activationRoot);
+  if (loadedProofs.error === null) {
+    return {
+      repaired: false,
+      path: loadedProofs.path,
+      error: null
+    };
+  }
+
+  const proofPath = resolveAttachmentRuntimeLoadProofsPath(activationRoot);
+  mkdirSync(path.dirname(proofPath), { recursive: true });
+  writeFileSync(
+    proofPath,
+    `${JSON.stringify({
+      contract: RUNTIME_LOAD_PROOFS_CONTRACT,
+      runtimeOwner: "openclaw",
+      activationRoot,
+      updatedAt: new Date().toISOString(),
+      profiles: []
+    }, null, 2)}\n`,
+    "utf8"
+  );
+
+  return {
+    repaired: true,
+    path: proofPath,
+    error: loadedProofs.error
+  };
+}
+
+function maybeRegisterRuntimeLoadProofIntegrityService(
+  api: { registerService?: (service: { id: string; start: (ctx: unknown) => void | Promise<void> }) => void },
+): void {
+  if (typeof api.registerService !== "function" || isActivationRootPlaceholder(ACTIVATION_ROOT)) {
+    return;
+  }
+
+  api.registerService({
+    id: "openclawbrain-runtime-load-proof-integrity",
+    start: async () => {
+      try {
+        const repair = repairRuntimeLoadProofsIfUnreadable(ACTIVATION_ROOT);
+        if (repair.repaired) {
+          await reportDiagnostic({
+            key: "runtime-load-proof-reset",
+            once: true,
+            severity: "degraded",
+            actionability: "inspect_local_proof_write",
+            summary: "runtime-load proof file was unreadable and was reset to an empty proof set",
+            action: "Inspect the activation-root proof path if historical runtime-load proof entries were expected; future runtime loads will repopulate the file.",
+            message: `[openclawbrain] runtime load proof file was unreadable and was reset: ${repair.path} (${repair.error ?? "unknown error"})`
+          });
+        }
+      } catch (error) {
+        const detail = error instanceof Error ? error.message : String(error);
+        await reportDiagnostic({
+          key: "runtime-load-proof-reset-failed",
+          once: true,
+          severity: "degraded",
+          actionability: "inspect_local_proof_write",
+          summary: "runtime-load proof integrity service could not repair the local proof file",
+          action: "Inspect the activation-root proof path permissions and contents; runtime load proof capture may stay degraded until repaired.",
+          message: `[openclawbrain] runtime load proof repair failed: ${detail}`
+        });
+      }
+    }
+  });
+}
+
 function announceStartupBreadcrumb(): void {
   if (isActivationRootPlaceholder(ACTIVATION_ROOT)) {
     warnOnce(
@@ -110,6 +185,7 @@ function register(api: unknown) {
   }
 
   try {
+    maybeRegisterRuntimeLoadProofIntegrityService(registration.api);
     registration.api.on(
       "before_prompt_build",
       createBeforePromptBuildHandler({
@@ -123,6 +199,18 @@ function register(api: unknown) {
     );
     if (!isActivationRootPlaceholder(ACTIVATION_ROOT)) {
       try {
+        const repair = repairRuntimeLoadProofsIfUnreadable(ACTIVATION_ROOT);
+        if (repair.repaired) {
+          void reportDiagnostic({
+            key: "runtime-load-proof-reset",
+            once: true,
+            severity: "degraded",
+            actionability: "inspect_local_proof_write",
+            summary: "runtime-load proof file was unreadable and was reset to an empty proof set",
+            action: "Inspect the activation-root proof path if historical runtime-load proof entries were expected; future runtime loads will repopulate the file.",
+            message: `[openclawbrain] runtime load proof file was unreadable and was reset: ${repair.path} (${repair.error ?? "unknown error"})`
+          });
+        }
         recordOpenClawProfileRuntimeLoadProof({
           activationRoot: ACTIVATION_ROOT,
           extensionEntryPath: EXTENSION_ENTRY_PATH

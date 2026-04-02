@@ -37,6 +37,11 @@ export interface ExtensionRegistrationApi {
     on(eventName: string, handler: (event: unknown, ctx: unknown) => Promise<Record<string, unknown>>, options?: {
         priority?: number;
     }): void;
+    registerService?: (service: {
+        id: string;
+        start: (ctx: unknown) => void | Promise<void>;
+        stop?: (ctx: unknown) => void | Promise<void>;
+    }) => void;
 }
 export interface NormalizedPromptBuildEvent {
     message: string;
