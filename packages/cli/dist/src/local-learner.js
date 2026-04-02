@@ -928,13 +928,15 @@ export function advanceAlwaysOnLearningRuntime(input) {
     const schedule = selectScheduledSlices(pending, current.learnedEventExport, cadence);
     const selectedSlices = schedule.selected;
     const learnedEventExport = mergeNormalizedEventExports(current.learnedEventExport, selectedSlices);
-    const runtimeGraphSnapshot = buildRuntimeGraphSnapshot({
-        ...input,
-        state: {
-            ...current,
-            structuralController
-        }
-    });
+    const runtimeGraphSnapshot = selectedSlices.length === 0
+        ? null
+        : buildRuntimeGraphSnapshot({
+            ...input,
+            state: {
+                ...current,
+                structuralController
+            }
+        });
     const runtimeGraph = runtimeGraphSnapshot?.graph ?? current.runtimeGraph;
     const runtimePlasticity = runtimeGraphSnapshot?.plasticity ?? current.runtimePlasticity;
     const sparseFeedbackObservedAt = input.builtAt ?? learnedEventExport?.range.lastCreatedAt ?? learnedEventExport?.range.firstCreatedAt ?? current.lastMaterializedAt ?? "1970-01-01T00:00:00.000Z";

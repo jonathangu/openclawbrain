@@ -33,6 +33,11 @@ const OPENCLAWBRAIN_EMBEDDER_MODEL_ENV = "OPENCLAWBRAIN_EMBEDDER_MODEL";
 const OPENCLAWBRAIN_INSTALL_SKIP_EMBEDDER_PROVISION_ENV = "OPENCLAWBRAIN_INSTALL_SKIP_EMBEDDER_PROVISION";
 const LEGACY_COMPAT_PACKAGE_NAME = "@jonathangu/openclawbrain";
 const INSTALL_COMPATIBLE_LOCAL_TEACHER_MODEL_PREFIXES = [
+    "unsloth-qwen3.5-27b:q4_k_m",
+    "unsloth-qwen3.5-27b",
+    "qwen3.5:32b",
+    "qwen3.5:27b",
+    "qwen3.5:14b",
     "qwen3.5:9b",
     "qwen3.5:8b",
     "qwen3:8b",
@@ -5111,7 +5116,13 @@ function listWatchRuntimeEventExportBundleRoots(scanRoot) {
         .map((entry) => path.join(scanRoot, entry.name))
         .sort((left, right) => left.localeCompare(right));
 }
-async function replayWatchScanRootIntoTeacherLoop(teacherLoop, scanRoot) {
+async function replayWatchScanRootIntoTeacherLoop(teacherLoop, scanRoot, options = {}) {
+    if (options.skip === true) {
+        return {
+            replayedBundleCount: 0,
+            replayedEventCount: 0
+        };
+    }
     const seenExportDigests = new Set();
     const bundles = listWatchRuntimeEventExportBundleRoots(scanRoot)
         .map((rootDir) => {
@@ -5733,6 +5744,7 @@ export async function createWatchCommandRuntime(input) {
         const restoredSeenExportCount = restoredTeacherState.snapshot.state?.seenExportDigests.length ?? 0;
         log(`Restored teacher snapshot: seen=${restoredSeenExportCount} artifacts=${restoredTeacherState.snapshot.teacher.artifactCount}`);
     }
+    const restoredSeenExportCount = restoredTeacherState.snapshot?.state?.seenExportDigests.length ?? 0;
     const resolvedWatchProfileScope = input.profileRoots === undefined
         ? resolveWatchProfileRootsForActivationRoot(activationRoot)
         : {
@@ -5774,7 +5786,13 @@ export async function createWatchCommandRuntime(input) {
         replayedEventCount: 0
     };
     try {
-        replayState = await replayWatchScanRootIntoTeacherLoop(teacherLoop, scanRoot);
+        const skipStoredReplay = restoredSeenExportCount > 0 && startupWarnings.length === 0;
+        if (skipStoredReplay) {
+            log(`Stored replay skipped: restored teacher snapshot already tracks ${restoredSeenExportCount} export digest${restoredSeenExportCount === 1 ? "" : "s"}.`);
+        }
+        replayState = await replayWatchScanRootIntoTeacherLoop(teacherLoop, scanRoot, {
+            skip: skipStoredReplay
+        });
     }
     catch (error) {
         const message = formatWatchError(error);

@@ -383,6 +383,7 @@ export class OpenClawLocalSessionTail {
         const firstPoll = this.initialized === false;
         const warnings = [];
         const changes = [];
+        const observedKeys = new Set();
         const sources = discoverOpenClawSessionStores({
             ...(this.homeDir === undefined ? {} : { homeDir: this.homeDir }),
             ...(this.profileRoots === undefined ? {} : { profileRoots: this.profileRoots })
@@ -409,9 +410,21 @@ export class OpenClawLocalSessionTail {
                     continue;
                 }
                 const key = cursorKey(source.indexPath, sessionKey);
+                observedKeys.add(key);
                 const existing = this.cursorBySession.get(key) ?? null;
                 const sessionFile = typeof entry.sessionFile === "string" && entry.sessionFile.trim().length > 0 ? path.resolve(entry.sessionFile) : null;
                 if (sessionFile === null) {
+                    const nextCursor = createCursor(source.indexPath, sessionKey, entry.sessionId, null, entry.updatedAt, 0, 0);
+                    this.cursorBySession.set(key, nextCursor);
+                    const changed = existing === null ||
+                        existing.sessionId !== entry.sessionId ||
+                        existing.sessionFile !== null ||
+                        existing.updatedAt !== entry.updatedAt ||
+                        existing.rawRecordCount !== 0 ||
+                        existing.bridgedEventCount !== 0;
+                    if (!changed) {
+                        continue;
+                    }
                     changes.push(createChange({
                         source,
                         sessionKey,
@@ -425,6 +438,17 @@ export class OpenClawLocalSessionTail {
                     continue;
                 }
                 if (!existsSync(sessionFile)) {
+                    const nextCursor = createCursor(source.indexPath, sessionKey, entry.sessionId, sessionFile, entry.updatedAt, 0, 0);
+                    this.cursorBySession.set(key, nextCursor);
+                    const changed = existing === null ||
+                        existing.sessionId !== entry.sessionId ||
+                        existing.sessionFile !== sessionFile ||
+                        existing.updatedAt !== entry.updatedAt ||
+                        existing.rawRecordCount !== 0 ||
+                        existing.bridgedEventCount !== 0;
+                    if (!changed) {
+                        continue;
+                    }
                     changes.push(createChange({
                         source,
                         sessionKey,
@@ -534,6 +558,17 @@ export class OpenClawLocalSessionTail {
                     scannedEventExport: deltaExport
                 }));
             }
+        }
+        let prunedCursorCount = 0;
+        for (const key of [...this.cursorBySession.keys()]) {
+            if (observedKeys.has(key)) {
+                continue;
+            }
+            this.cursorBySession.delete(key);
+            prunedCursorCount += 1;
+        }
+        if (prunedCursorCount > 0) {
+            warnings.push(`session tail pruned ${prunedCursorCount} stale cursor entr${prunedCursorCount === 1 ? "y" : "ies"}`);
         }
         this.initialized = true;
         const noopReason = firstPoll && !changes.some((change) => change.scannedEventExport !== null)

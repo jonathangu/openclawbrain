@@ -171,6 +171,35 @@ function parseOpenClawSessionRecord(value, lineNumber) {
                 timestamp: expectString(record.timestamp, `${lineNumber}.timestamp`)
             };
         }
+        case "compaction": {
+            const data = {};
+            if (record.summary !== undefined) {
+                data.summary = expectString(record.summary, `${lineNumber}.summary`);
+            }
+            if (record.firstKeptEntryId !== undefined) {
+                data.firstKeptEntryId = expectString(record.firstKeptEntryId, `${lineNumber}.firstKeptEntryId`);
+            }
+            if (record.tokensBefore !== undefined) {
+                data.tokensBefore = expectNumber(record.tokensBefore, `${lineNumber}.tokensBefore`);
+            }
+            if (record.details !== undefined) {
+                data.details = expectRecord(record.details, `${lineNumber}.details`);
+            }
+            if (record.fromHook !== undefined) {
+                if (typeof record.fromHook !== "boolean") {
+                    throw new Error(`${lineNumber}.fromHook must be a boolean`);
+                }
+                data.fromHook = record.fromHook;
+            }
+            return {
+                type: "custom",
+                customType: "openclaw.compaction",
+                data,
+                id: expectString(record.id, `${lineNumber}.id`),
+                parentId: expectNullableString(record.parentId, `${lineNumber}.parentId`),
+                timestamp: expectString(record.timestamp, `${lineNumber}.timestamp`)
+            };
+        }
         case "message":
             return {
                 type,
@@ -185,7 +214,9 @@ function parseOpenClawSessionRecord(value, lineNumber) {
 }
 function parseMessagePayload(value, path) {
     const payload = expectRecord(value, path);
-    const content = expectArray(payload.content, `${path}.content`).map((entry, index) => parseContentPart(entry, `${path}.content[${index}]`));
+    const content = typeof payload.content === "string"
+        ? [{ type: "text", text: payload.content }]
+        : expectArray(payload.content, `${path}.content`).map((entry, index) => parseContentPart(entry, `${path}.content[${index}]`));
     return {
         ...payload,
         role: expectString(payload.role, `${path}.role`),
