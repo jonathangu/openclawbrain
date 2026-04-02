@@ -3192,6 +3192,15 @@ function buildExtensionIndexTs(activationRoot) {
 }
 function buildExtensionPackageJson() {
     const packageMetadata = readOpenClawPackageMetadata();
+    const dependencies = {
+        [packageMetadata.name]: packageMetadata.version
+    };
+    // The shadow extension template imports from @openclawbrain/openclaw.
+    // Ensure it is always declared as a dependency even when the CLI
+    // package metadata resolves to a different package name.
+    if (packageMetadata.name !== "@openclawbrain/openclaw") {
+        dependencies["@openclawbrain/openclaw"] = packageMetadata.version;
+    }
     return JSON.stringify({
         name: "openclawbrain",
         version: packageMetadata.version,
@@ -3200,9 +3209,7 @@ function buildExtensionPackageJson() {
         openclaw: {
             extensions: ["index.ts"]
         },
-        dependencies: {
-            [packageMetadata.name]: packageMetadata.version
-        }
+        dependencies
     }, null, 2) + "\n";
 }
 function buildExtensionPluginManifest() {

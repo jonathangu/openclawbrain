@@ -109,8 +109,11 @@ test("converge classifies manual-action and warning outcomes truthfully from sta
     });
     assert.equal(restartWarningWithStatusWarn.state, "warning");
     assert.equal(restartWarningWithStatusWarnVerdict.verdict, "converged_with_warnings");
+    // When runtime proof is green (proven + status_probe_ready), proof-promotion
+    // skips the stale "status is warn" warning. The remaining warnings are the
+    // restart-not-performed note and awaiting-first-export.
     assert.match(restartWarningWithStatusWarnVerdict.why, /automatic restart was not performed/);
-    assert.match(restartWarningWithStatusWarnVerdict.why, /status is warn/);
+    assert.match(restartWarningWithStatusWarnVerdict.why, /first export/);
     const warningVerification = classifyOpenClawBrainConvergeVerification({
         installLayout: "native_package_plugin",
         installState: "installed",

@@ -1,3 +1,5 @@
+const LEGACY_COMPAT_PACKAGE_NAME = "@jonathangu/openclawbrain";
+
 const CHANGE_REASON_LABELS = {
   install_identity: "plugin install identity changed",
   install_layout: "authoritative install layout changed",
@@ -26,6 +28,14 @@ function installIdentityOf(fingerprint) {
   });
 }
 
+export function shouldReplaceOpenClawBrainInstallBeforeConverge(fingerprint) {
+  const selectedInstall = fingerprint?.selectedInstall ?? null;
+  if (selectedInstall === null) {
+    return false;
+  }
+  return selectedInstall.packageName !== "@openclawbrain/openclaw";
+}
+
 export function planOpenClawBrainConvergePluginAction(fingerprint) {
   const selectedInstall = fingerprint?.selectedInstall ?? null;
   if (selectedInstall === null) {
@@ -34,6 +44,14 @@ export function planOpenClawBrainConvergePluginAction(fingerprint) {
       packageSpec: "@openclawbrain/openclaw",
       pluginId: "openclawbrain",
       reason: "no authoritative OpenClawBrain plugin install was discovered for this OpenClaw home",
+    };
+  }
+  if (selectedInstall.packageName === LEGACY_COMPAT_PACKAGE_NAME) {
+    return {
+      action: "install",
+      packageSpec: "@openclawbrain/openclaw",
+      pluginId: "openclawbrain",
+      reason: `the authoritative install still points at the retired compatibility package ${LEGACY_COMPAT_PACKAGE_NAME}, so converge must replace it with the canonical split-package plugin`,
     };
   }
   if (selectedInstall.installLayout !== "native_package_plugin") {
@@ -130,6 +148,10 @@ export function classifyOpenClawBrainConvergeVerification(input) {
   const runtimeLoad = input.runtimeLoad ?? "unverified";
   const loadProof = input.loadProof ?? "unverified";
   const serveState = input.serveState ?? "unknown";
+  const installedPackageName = input.installedPackageName ?? null;
+  if (installedPackageName === LEGACY_COMPAT_PACKAGE_NAME) {
+    blockingReasons.push(`installed plugin still references the retired compatibility package ${LEGACY_COMPAT_PACKAGE_NAME}; converge must replace it with @openclawbrain/openclaw`);
+  }
   if (installLayout !== "native_package_plugin") {
     blockingReasons.push("split-package native package plugin is not authoritative after converge");
   }
@@ -159,6 +181,23 @@ export function classifyOpenClawBrainConvergeVerification(input) {
   }
   if (input.restartRequired === true && input.restartPerformed !== true && runtimeTruthAlreadyProven) {
     warnings.push("automatic restart was not performed because install could not infer an exact OpenClaw profile token, but current status already proves runtime load");
+  }
+  // When runtime proof is green for the repaired profile, promote the proof
+  // surface to healthy rather than leaving stale degraded warnings that
+  // contradict the proven truth.
+  if (runtimeTruthAlreadyProven) {
+    if (serveState !== "serving_active_pack") {
+      warnings.push(`serve state is ${serveState}`);
+    }
+    if (input.awaitingFirstExport === true) {
+      warnings.push("the attached profile has not emitted its first export yet");
+    }
+    return {
+      state: warnings.length > 0 ? "warning" : "healthy",
+      manualActionRequired: false,
+      blockingReasons,
+      warnings,
+    };
   }
   if (displayedStatus !== "ok") {
     warnings.push(`status is ${displayedStatus}`);
