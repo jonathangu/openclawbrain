@@ -155,6 +155,17 @@ function buildTrainFreezeTrace(rootDir: string, label: string) {
   };
 }
 
+function buildUnsanitizedTrace(rootDir: string, label: string) {
+  const trace = buildComparativeTrace(rootDir, label);
+  return {
+    ...trace,
+    privacy: {
+      ...trace.privacy,
+      sanitized: false,
+    },
+  };
+}
+
 function writeTrace(rootDir: string, trace: Record<string, unknown>) {
   const tracePath = path.join(rootDir, `${trace.traceId as string}.json`);
   writeJson(tracePath, trace);
@@ -211,7 +222,7 @@ function writeFrozenManifest(
 }
 
 describe("comparative eval runner", () => {
-  it("runs the canonical manifest contract and writes a deterministic scorecard scaffold", () => {
+  it("runs the canonical manifest contract and writes a deterministic scorecard with a passing policy verdict", () => {
     const rootDir = createTempRoot("comparative-eval-runner");
     const outputDir = path.join(rootDir, "output");
     const comparativeTrace = writeTrace(rootDir, buildComparativeTrace(rootDir, "canon-a"));
@@ -231,6 +242,8 @@ describe("comparative eval runner", () => {
     expect(descriptor.scorecard.requestedTraceCount).toBe(2);
     expect(descriptor.scorecard.successfulTraceCount).toBe(2);
     expect(descriptor.scorecard.failedTraceCount).toBe(0);
+    expect(descriptor.report.gateStatus).toBe("pass");
+    expect(descriptor.report.gateDecisive).toBe(true);
     expect(descriptor.scorecard.modeOrder).toEqual([
       "no_brain",
       "vector_only",
@@ -239,6 +252,13 @@ describe("comparative eval runner", () => {
     ]);
     expect(descriptor.scorecard.scorecardHash).toMatch(/^sha256-/);
     expect(descriptor.report.notes.some((note) => note.includes("truth boundary"))).toBe(true);
+    expect(descriptor.scorecard.policy.status).toBe("pass");
+    expect(descriptor.scorecard.policy.checks.find((check) => check.id === "candidate_trace_tie_or_better_vs_baseline")?.status).toBe("pass");
+    expect(
+      descriptor.scorecard.pairwise.find(
+        (row) => row.leftMode === "graph_prior_only" && row.rightMode === "learned_route",
+      )?.traceTieOrBetter.rightRate,
+    ).toBe(1);
 
     const learnedRouteRow = descriptor.scorecard.modes.find((row) => row.mode === "learned_route");
     expect(learnedRouteRow?.estimatedPromptTokens).toBeGreaterThan(0);
@@ -252,6 +272,56 @@ describe("comparative eval runner", () => {
     expect(existsSync(path.join(outputDir, "traces", "_lane", "worked-traces.md"))).toBe(true);
   });
 
+  it("marks the gate as fail when the explicit policy thresholds are not met", () => {
+    const rootDir = createTempRoot("comparative-eval-runner-fail");
+    const outputDir = path.join(rootDir, "output");
+    const comparativeTrace = writeTrace(rootDir, buildComparativeTrace(rootDir, "fail-a"));
+    const trainFreezeTrace = writeTrace(rootDir, buildTrainFreezeTrace(rootDir, "fail-b"));
+    const manifestPath = writeCanonicalManifest(rootDir, "fail-eval", [comparativeTrace, trainFreezeTrace]);
+
+    const descriptor = runComparativeEval({
+      manifestPath,
+      outputDir,
+      scratchRootDir: rootDir,
+      policy: {
+        minBaselineMeanQualityGainVsFloor: 101,
+      },
+    });
+
+    expect(descriptor.report.status).toBe("ok");
+    expect(descriptor.report.gateStatus).toBe("fail");
+    expect(descriptor.report.gateDecisive).toBe(true);
+    expect(descriptor.report.gateFailedCheckIds).toContain("baseline_mean_quality_gain_vs_floor");
+    expect(descriptor.scorecard.policy.status).toBe("fail");
+    expect(descriptor.scorecard.policy.reasons).toContain(
+      "baseline_mean_quality_gain_vs_floor: baseline does not clear the floor anchor by the configured mean quality margin",
+    );
+  });
+
+  it("marks the gate as partial when only a subset of traces validate", () => {
+    const rootDir = createTempRoot("comparative-eval-runner-partial");
+    const outputDir = path.join(rootDir, "output");
+    const validTrace = writeTrace(rootDir, buildComparativeTrace(rootDir, "partial-a"));
+    const invalidTrace = writeTrace(rootDir, buildUnsanitizedTrace(rootDir, "partial-b"));
+    const manifestPath = writeFrozenManifest(rootDir, "partial-eval", [validTrace, invalidTrace]);
+
+    const descriptor = runComparativeEval({
+      manifestPath,
+      outputDir,
+      scratchRootDir: rootDir,
+    });
+
+    expect(descriptor.report.status).toBe("partial");
+    expect(descriptor.report.gateStatus).toBe("partial");
+    expect(descriptor.report.gateDecisive).toBe(false);
+    expect(descriptor.scorecard.successfulTraceCount).toBe(1);
+    expect(descriptor.scorecard.failedTraceCount).toBe(1);
+    expect(descriptor.scorecard.policy.status).toBe("partial");
+    expect(descriptor.scorecard.policy.checks.find((check) => check.id === "trace_coverage_complete")?.status).toBe("fail");
+    expect(descriptor.scorecard.policy.reasons[0]).toContain("only 1/2 traces validated");
+    expect(descriptor.report.issues.some((issue) => issue.includes("recorded session trace must be explicitly sanitized"))).toBe(true);
+  });
+
   it("accepts the frozen manifest contract and blocks on an invalid manifest contract", () => {
     const validRoot = createTempRoot("comparative-eval-runner-frozen");
     const validTrace = writeTrace(validRoot, buildComparativeTrace(validRoot, "frozen-a"));
@@ -263,6 +333,7 @@ describe("comparative eval runner", () => {
     });
 
     expect(validDescriptor.report.status).toBe("ok");
+    expect(validDescriptor.report.gateStatus).toBe("pass");
     expect(validDescriptor.report.manifestContract).toBe(FROZEN_RECORDED_SESSION_EVAL_MANIFEST_CONTRACT);
     expect(validDescriptor.scorecard.successfulTraceCount).toBe(1);
 
@@ -279,6 +350,8 @@ describe("comparative eval runner", () => {
     });
 
     expect(blockedDescriptor.report.status).toBe("blocked");
+    expect(blockedDescriptor.report.gateStatus).toBe("blocked");
+    expect(blockedDescriptor.scorecard.policy.status).toBe("blocked");
     expect(blockedDescriptor.report.files.laneDir).toBeNull();
     expect(blockedDescriptor.report.issues[0]).toContain("manifest contract must be");
   });
@@ -308,6 +381,8 @@ describe("comparative eval runner", () => {
     );
 
     expect(stdout).toContain("Comparative eval runner: ok");
+    expect(stdout).toContain("Comparative eval gate: pass");
+    expect(stdout).toContain("candidate_trace_tie_or_better_vs_baseline: pass");
     expect(stdout).toContain(`outputDir: ${outputDir}`);
     expect(existsSync(path.join(outputDir, "report.json"))).toBe(true);
 

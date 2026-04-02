@@ -40,6 +40,7 @@ export const COMPARATIVE_EVAL_RUNNER_LAYOUT = {
 
 type ComparativeEvalMode = (typeof RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER)[number];
 type ComparativeEvalStatus = "ok" | "partial" | "blocked";
+type ComparativeEvalGateStatus = "pass" | "fail" | "partial" | "blocked";
 
 interface PricingTable {
   version: string | null;
@@ -151,6 +152,85 @@ export interface ComparativeEvalModeScorecardRowV1 {
   estimatedPromptCostUsd: number | null;
 }
 
+export interface ComparativeEvalWinRateRowV1 {
+  left: number;
+  right: number;
+  ties: number;
+  leftRate: number | null;
+  rightRate: number | null;
+  tieRate: number | null;
+}
+
+export interface ComparativeEvalTieOrBetterRowV1 {
+  left: number;
+  right: number;
+  leftRate: number | null;
+  rightRate: number | null;
+}
+
+export interface ComparativeEvalPairwiseScorecardRowV1 {
+  leftMode: ComparativeEvalMode;
+  rightMode: ComparativeEvalMode;
+  comparableTraceCount: number;
+  comparableTurnCount: number;
+  traceWins: ComparativeEvalWinRateRowV1;
+  traceTieOrBetter: ComparativeEvalTieOrBetterRowV1;
+  turnWins: ComparativeEvalWinRateRowV1;
+  turnTieOrBetter: ComparativeEvalTieOrBetterRowV1;
+  aggregateDeltas: {
+    qualityScoreDeltaLeftMinusRightSum: number;
+    qualityScoreDeltaLeftMinusRightMean: number | null;
+    compileOkDeltaLeftMinusRightSum: number;
+    phraseHitDeltaLeftMinusRightSum: number;
+    promotionDeltaLeftMinusRightSum: number;
+  };
+}
+
+export interface ComparativeEvalPolicyThresholdsV1 {
+  candidateMode: ComparativeEvalMode;
+  baselineMode: ComparativeEvalMode;
+  floorMode: ComparativeEvalMode;
+  maxFailedTraceCount: number;
+  minCandidateTraceTieOrBetterRateVsBaseline: number;
+  maxCandidateMeanQualityRegressionVsBaseline: number;
+  minBaselineMeanQualityGainVsFloor: number;
+}
+
+export interface ComparativeEvalPolicyCheckV1 {
+  id: string;
+  status: "pass" | "fail";
+  summary: string;
+  detail: string;
+  observed: Record<string, number | string | boolean | null>;
+  threshold: Record<string, number | string | boolean | null>;
+}
+
+export interface ComparativeEvalPolicyObservedV1 {
+  requestedTraceCount: number;
+  successfulTraceCount: number;
+  failedTraceCount: number;
+  comparableTraceCount: number;
+  comparableTurnCount: number;
+  baselineMeanQualityScore: number | null;
+  candidateMeanQualityScore: number | null;
+  floorMeanQualityScore: number | null;
+  candidateTraceTieOrBetterCountVsBaseline: number | null;
+  candidateTraceTieOrBetterRateVsBaseline: number | null;
+  candidateTurnTieOrBetterCountVsBaseline: number | null;
+  candidateTurnTieOrBetterRateVsBaseline: number | null;
+  candidateMeanQualityRegressionVsBaseline: number | null;
+  baselineMeanQualityGainVsFloor: number | null;
+}
+
+export interface ComparativeEvalPolicyV1 {
+  status: ComparativeEvalGateStatus;
+  decisive: boolean;
+  thresholds: ComparativeEvalPolicyThresholdsV1;
+  observed: ComparativeEvalPolicyObservedV1;
+  reasons: string[];
+  checks: ComparativeEvalPolicyCheckV1[];
+}
+
 export interface ComparativeEvalScorecardV1 {
   contract: typeof COMPARATIVE_EVAL_SCORECARD_CONTRACT;
   manifestId: string | null;
@@ -163,6 +243,8 @@ export interface ComparativeEvalScorecardV1 {
   pricingTable: PricingTable;
   scoringProxyNotes: string[];
   modes: ComparativeEvalModeScorecardRowV1[];
+  pairwise: ComparativeEvalPairwiseScorecardRowV1[];
+  policy: ComparativeEvalPolicyV1;
   traces: ComparativeEvalTraceScorecardRowV1[];
 }
 
@@ -186,6 +268,9 @@ export interface ComparativeEvalRunnerReportV1 {
   issues: string[];
   pricingTable: PricingTable;
   scorecardHash: string;
+  gateStatus: ComparativeEvalGateStatus;
+  gateDecisive: boolean;
+  gateFailedCheckIds: string[];
   files: {
     sourceManifest: string | null;
     report: string;
@@ -218,7 +303,18 @@ export interface RunComparativeEvalInput {
   outputDir?: string;
   scratchRootDir?: string;
   workedTraceLimit?: number | null;
+  policy?: Partial<ComparativeEvalPolicyThresholdsV1>;
 }
+
+const DEFAULT_COMPARATIVE_EVAL_POLICY_THRESHOLDS: ComparativeEvalPolicyThresholdsV1 = {
+  candidateMode: "learned_route",
+  baselineMode: "graph_prior_only",
+  floorMode: "no_brain",
+  maxFailedTraceCount: 0,
+  minCandidateTraceTieOrBetterRateVsBaseline: 1,
+  maxCandidateMeanQualityRegressionVsBaseline: 5,
+  minBaselineMeanQualityGainVsFloor: 5,
+};
 
 function normalizeCliString(value: string | undefined): string | null {
   if (typeof value !== "string") {
@@ -568,6 +664,32 @@ function toRate(numerator: number, denominator: number): number | null {
   return denominator > 0 ? round(numerator / denominator, 6) : null;
 }
 
+function mergePolicyThresholds(
+  overrides: Partial<ComparativeEvalPolicyThresholdsV1> | undefined,
+): ComparativeEvalPolicyThresholdsV1 {
+  const merged = {
+    ...DEFAULT_COMPARATIVE_EVAL_POLICY_THRESHOLDS,
+    ...(overrides ?? {}),
+  };
+  if (!Number.isInteger(merged.maxFailedTraceCount) || merged.maxFailedTraceCount < 0) {
+    throw new Error("policy.maxFailedTraceCount must be a non-negative integer");
+  }
+  if (
+    !Number.isFinite(merged.minCandidateTraceTieOrBetterRateVsBaseline)
+    || merged.minCandidateTraceTieOrBetterRateVsBaseline < 0
+    || merged.minCandidateTraceTieOrBetterRateVsBaseline > 1
+  ) {
+    throw new Error("policy.minCandidateTraceTieOrBetterRateVsBaseline must be between 0 and 1");
+  }
+  if (!Number.isFinite(merged.maxCandidateMeanQualityRegressionVsBaseline)) {
+    throw new Error("policy.maxCandidateMeanQualityRegressionVsBaseline must be finite");
+  }
+  if (!Number.isFinite(merged.minBaselineMeanQualityGainVsFloor)) {
+    throw new Error("policy.minBaselineMeanQualityGainVsFloor must be finite");
+  }
+  return merged;
+}
+
 function buildTraceModeRow(
   mode: RecordedSessionReplayModeReportV1,
   pricingTable: PricingTable,
@@ -721,16 +843,325 @@ function buildModeScorecardRows(traceRows: ComparativeEvalTraceScorecardRowV1[])
   });
 }
 
+function buildWinRateRow(left: number, right: number, ties: number): ComparativeEvalWinRateRowV1 {
+  const comparableCount = left + right + ties;
+  return {
+    left,
+    right,
+    ties,
+    leftRate: toRate(left, comparableCount),
+    rightRate: toRate(right, comparableCount),
+    tieRate: toRate(ties, comparableCount),
+  };
+}
+
+function buildTieOrBetterRow(
+  wins: ComparativeEvalWinRateRowV1,
+  comparableCount: number,
+): ComparativeEvalTieOrBetterRowV1 {
+  const left = wins.left + wins.ties;
+  const right = wins.right + wins.ties;
+  return {
+    left,
+    right,
+    leftRate: toRate(left, comparableCount),
+    rightRate: toRate(right, comparableCount),
+  };
+}
+
+function buildPairwiseScorecardRows(params: {
+  laneDescriptor: RecordedSessionReplayProofLaneDescriptorV1 | null;
+  successfulTraceIds: Set<string>;
+}): ComparativeEvalPairwiseScorecardRowV1[] {
+  if (params.laneDescriptor === null || params.successfulTraceIds.size === 0) {
+    return [];
+  }
+
+  const traceRows = params.laneDescriptor.summaryTables.traces.filter((trace) =>
+    trace.validationOk === true && params.successfulTraceIds.has(trace.traceId)
+  );
+  const turnRows = params.laneDescriptor.summaryTables.turns.filter((turn) => params.successfulTraceIds.has(turn.traceId));
+  const pairwiseRows: ComparativeEvalPairwiseScorecardRowV1[] = [];
+
+  for (let leftIndex = 0; leftIndex < RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER.length; leftIndex += 1) {
+    for (let rightIndex = leftIndex + 1; rightIndex < RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER.length; rightIndex += 1) {
+      const leftMode = RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER[leftIndex];
+      const rightMode = RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER[rightIndex];
+      let traceLeftWins = 0;
+      let traceRightWins = 0;
+      let traceTies = 0;
+      let turnLeftWins = 0;
+      let turnRightWins = 0;
+      let turnTies = 0;
+      let qualityScoreDeltaLeftMinusRightSum = 0;
+      let compileOkDeltaLeftMinusRightSum = 0;
+      let phraseHitDeltaLeftMinusRightSum = 0;
+      let promotionDeltaLeftMinusRightSum = 0;
+
+      for (const trace of traceRows) {
+        const left = trace.modes.find((candidate) => candidate.mode === leftMode);
+        const right = trace.modes.find((candidate) => candidate.mode === rightMode);
+        if (!left || !right) {
+          throw new Error(`Missing pairwise trace mode rows for ${leftMode} vs ${rightMode}`);
+        }
+        if (left.qualityScore > right.qualityScore) {
+          traceLeftWins += 1;
+        } else if (left.qualityScore < right.qualityScore) {
+          traceRightWins += 1;
+        } else {
+          traceTies += 1;
+        }
+        qualityScoreDeltaLeftMinusRightSum += left.qualityScore - right.qualityScore;
+        compileOkDeltaLeftMinusRightSum += left.compileOkCount - right.compileOkCount;
+        phraseHitDeltaLeftMinusRightSum += left.phraseHitCount - right.phraseHitCount;
+        promotionDeltaLeftMinusRightSum += left.promotionCount - right.promotionCount;
+      }
+
+      for (const turn of turnRows) {
+        const left = turn.modes.find((candidate) => candidate.mode === leftMode);
+        const right = turn.modes.find((candidate) => candidate.mode === rightMode);
+        if (!left || !right) {
+          throw new Error(`Missing pairwise turn mode rows for ${leftMode} vs ${rightMode}`);
+        }
+        if (left.qualityScore > right.qualityScore) {
+          turnLeftWins += 1;
+        } else if (left.qualityScore < right.qualityScore) {
+          turnRightWins += 1;
+        } else {
+          turnTies += 1;
+        }
+      }
+
+      const traceWins = buildWinRateRow(traceLeftWins, traceRightWins, traceTies);
+      const turnWins = buildWinRateRow(turnLeftWins, turnRightWins, turnTies);
+      pairwiseRows.push({
+        leftMode,
+        rightMode,
+        comparableTraceCount: traceRows.length,
+        comparableTurnCount: turnRows.length,
+        traceWins,
+        traceTieOrBetter: buildTieOrBetterRow(traceWins, traceRows.length),
+        turnWins,
+        turnTieOrBetter: buildTieOrBetterRow(turnWins, turnRows.length),
+        aggregateDeltas: {
+          qualityScoreDeltaLeftMinusRightSum,
+          qualityScoreDeltaLeftMinusRightMean: toRate(qualityScoreDeltaLeftMinusRightSum, traceRows.length),
+          compileOkDeltaLeftMinusRightSum,
+          phraseHitDeltaLeftMinusRightSum,
+          promotionDeltaLeftMinusRightSum,
+        },
+      });
+    }
+  }
+
+  return pairwiseRows;
+}
+
+function buildPolicy(params: {
+  requestedTraceCount: number;
+  successfulTraceCount: number;
+  failedTraceCount: number;
+  runnerStatus: ComparativeEvalStatus;
+  modeRows: ComparativeEvalModeScorecardRowV1[];
+  pairwiseRows: ComparativeEvalPairwiseScorecardRowV1[];
+  thresholds: ComparativeEvalPolicyThresholdsV1;
+  issues: string[];
+}): ComparativeEvalPolicyV1 {
+  const baseline = params.modeRows.find((row) => row.mode === params.thresholds.baselineMode) ?? null;
+  const candidate = params.modeRows.find((row) => row.mode === params.thresholds.candidateMode) ?? null;
+  const floor = params.modeRows.find((row) => row.mode === params.thresholds.floorMode) ?? null;
+  const baselineVsCandidate = params.pairwiseRows.find((row) =>
+    row.leftMode === params.thresholds.baselineMode && row.rightMode === params.thresholds.candidateMode
+  ) ?? null;
+  const candidateMeanQualityRegressionVsBaseline = baseline?.meanQualityScore !== null && baseline?.meanQualityScore !== undefined
+    && candidate?.meanQualityScore !== null && candidate?.meanQualityScore !== undefined
+    ? round(baseline.meanQualityScore - candidate.meanQualityScore, 6)
+    : null;
+  const baselineMeanQualityGainVsFloor = baseline?.meanQualityScore !== null && baseline?.meanQualityScore !== undefined
+    && floor?.meanQualityScore !== null && floor?.meanQualityScore !== undefined
+    ? round(baseline.meanQualityScore - floor.meanQualityScore, 6)
+    : null;
+  const observed: ComparativeEvalPolicyObservedV1 = {
+    requestedTraceCount: params.requestedTraceCount,
+    successfulTraceCount: params.successfulTraceCount,
+    failedTraceCount: params.failedTraceCount,
+    comparableTraceCount: baselineVsCandidate?.comparableTraceCount ?? 0,
+    comparableTurnCount: baselineVsCandidate?.comparableTurnCount ?? 0,
+    baselineMeanQualityScore: baseline?.meanQualityScore ?? null,
+    candidateMeanQualityScore: candidate?.meanQualityScore ?? null,
+    floorMeanQualityScore: floor?.meanQualityScore ?? null,
+    candidateTraceTieOrBetterCountVsBaseline: baselineVsCandidate?.traceTieOrBetter.right ?? null,
+    candidateTraceTieOrBetterRateVsBaseline: baselineVsCandidate?.traceTieOrBetter.rightRate ?? null,
+    candidateTurnTieOrBetterCountVsBaseline: baselineVsCandidate?.turnTieOrBetter.right ?? null,
+    candidateTurnTieOrBetterRateVsBaseline: baselineVsCandidate?.turnTieOrBetter.rightRate ?? null,
+    candidateMeanQualityRegressionVsBaseline,
+    baselineMeanQualityGainVsFloor,
+  };
+
+  if (params.runnerStatus === "blocked") {
+    return {
+      status: "blocked",
+      decisive: false,
+      thresholds: params.thresholds,
+      observed,
+      reasons: params.issues.length > 0 ? [...params.issues] : ["comparative eval runner was blocked before any traces could be compared"],
+      checks: [],
+    };
+  }
+
+  if (observed.comparableTraceCount === 0 || baselineVsCandidate === null || baseline === null || candidate === null || floor === null) {
+    return {
+      status: "blocked",
+      decisive: false,
+      thresholds: params.thresholds,
+      observed,
+      reasons: ["comparative eval produced no complete baseline/candidate comparison set"],
+      checks: [],
+    };
+  }
+
+  const checks: ComparativeEvalPolicyCheckV1[] = [
+    {
+      id: "trace_coverage_complete",
+      status: params.failedTraceCount <= params.thresholds.maxFailedTraceCount ? "pass" : "fail",
+      summary: params.failedTraceCount <= params.thresholds.maxFailedTraceCount
+        ? "all requested traces produced validated scorecard rows"
+        : "comparative eval coverage is incomplete",
+      detail: `${params.successfulTraceCount}/${params.requestedTraceCount} traces validated`,
+      observed: {
+        requestedTraceCount: params.requestedTraceCount,
+        successfulTraceCount: params.successfulTraceCount,
+        failedTraceCount: params.failedTraceCount,
+      },
+      threshold: {
+        maxFailedTraceCount: params.thresholds.maxFailedTraceCount,
+      },
+    },
+    {
+      id: "candidate_trace_tie_or_better_vs_baseline",
+      status: observed.candidateTraceTieOrBetterRateVsBaseline !== null
+        && observed.candidateTraceTieOrBetterRateVsBaseline >= params.thresholds.minCandidateTraceTieOrBetterRateVsBaseline
+        ? "pass"
+        : "fail",
+      summary: observed.candidateTraceTieOrBetterRateVsBaseline !== null
+        && observed.candidateTraceTieOrBetterRateVsBaseline >= params.thresholds.minCandidateTraceTieOrBetterRateVsBaseline
+        ? "candidate tied or beat the baseline at the configured per-trace rate"
+        : "candidate missed the configured per-trace tie-or-better rate versus the baseline",
+      detail: observed.candidateTraceTieOrBetterRateVsBaseline === null
+        ? "trace tie-or-better rate could not be computed"
+        : `${params.thresholds.candidateMode} tie-or-better vs ${params.thresholds.baselineMode} = ${observed.candidateTraceTieOrBetterRateVsBaseline}`,
+      observed: {
+        candidateMode: params.thresholds.candidateMode,
+        baselineMode: params.thresholds.baselineMode,
+        comparableTraceCount: observed.comparableTraceCount,
+        candidateTraceTieOrBetterCountVsBaseline: observed.candidateTraceTieOrBetterCountVsBaseline,
+        candidateTraceTieOrBetterRateVsBaseline: observed.candidateTraceTieOrBetterRateVsBaseline,
+      },
+      threshold: {
+        minCandidateTraceTieOrBetterRateVsBaseline: params.thresholds.minCandidateTraceTieOrBetterRateVsBaseline,
+      },
+    },
+    {
+      id: "candidate_mean_quality_regression_vs_baseline",
+      status: observed.candidateMeanQualityRegressionVsBaseline !== null
+        && observed.candidateMeanQualityRegressionVsBaseline <= params.thresholds.maxCandidateMeanQualityRegressionVsBaseline
+        ? "pass"
+        : "fail",
+      summary: observed.candidateMeanQualityRegressionVsBaseline !== null
+        && observed.candidateMeanQualityRegressionVsBaseline <= params.thresholds.maxCandidateMeanQualityRegressionVsBaseline
+        ? "candidate mean quality stayed within the allowed regression budget"
+        : "candidate mean quality regressed beyond the allowed budget",
+      detail: observed.candidateMeanQualityRegressionVsBaseline === null
+        ? "mean quality regression could not be computed"
+        : `${params.thresholds.baselineMode} - ${params.thresholds.candidateMode} mean quality = ${observed.candidateMeanQualityRegressionVsBaseline}`,
+      observed: {
+        baselineMeanQualityScore: observed.baselineMeanQualityScore,
+        candidateMeanQualityScore: observed.candidateMeanQualityScore,
+        candidateMeanQualityRegressionVsBaseline: observed.candidateMeanQualityRegressionVsBaseline,
+      },
+      threshold: {
+        maxCandidateMeanQualityRegressionVsBaseline: params.thresholds.maxCandidateMeanQualityRegressionVsBaseline,
+      },
+    },
+    {
+      id: "baseline_mean_quality_gain_vs_floor",
+      status: observed.baselineMeanQualityGainVsFloor !== null
+        && observed.baselineMeanQualityGainVsFloor >= params.thresholds.minBaselineMeanQualityGainVsFloor
+        ? "pass"
+        : "fail",
+      summary: observed.baselineMeanQualityGainVsFloor !== null
+        && observed.baselineMeanQualityGainVsFloor >= params.thresholds.minBaselineMeanQualityGainVsFloor
+        ? "baseline clears the floor anchor by the configured mean quality margin"
+        : "baseline does not clear the floor anchor by the configured mean quality margin",
+      detail: observed.baselineMeanQualityGainVsFloor === null
+        ? "baseline floor gain could not be computed"
+        : `${params.thresholds.baselineMode} - ${params.thresholds.floorMode} mean quality = ${observed.baselineMeanQualityGainVsFloor}`,
+      observed: {
+        baselineMeanQualityScore: observed.baselineMeanQualityScore,
+        floorMeanQualityScore: observed.floorMeanQualityScore,
+        baselineMeanQualityGainVsFloor: observed.baselineMeanQualityGainVsFloor,
+      },
+      threshold: {
+        minBaselineMeanQualityGainVsFloor: params.thresholds.minBaselineMeanQualityGainVsFloor,
+      },
+    },
+  ];
+
+  const coverageCheck = checks[0];
+  if (coverageCheck.status === "fail") {
+    return {
+      status: "partial",
+      decisive: false,
+      thresholds: params.thresholds,
+      observed,
+      reasons: [`final gate verdict withheld because only ${params.successfulTraceCount}/${params.requestedTraceCount} traces validated`],
+      checks,
+    };
+  }
+
+  const failingChecks = checks.filter((check) => check.status === "fail");
+  return {
+    status: failingChecks.length === 0 ? "pass" : "fail",
+    decisive: true,
+    thresholds: params.thresholds,
+    observed,
+    reasons: failingChecks.map((check) => `${check.id}: ${check.summary}`),
+    checks,
+  };
+}
+
 function buildScorecard(params: {
   manifestContract: string | null;
   manifestId: string | null;
   requestedTraceCount: number;
   pricingTable: PricingTable;
   traceRows: ComparativeEvalTraceScorecardRowV1[];
+  laneDescriptor: RecordedSessionReplayProofLaneDescriptorV1 | null;
+  runnerStatus: ComparativeEvalStatus;
+  policyThresholds: ComparativeEvalPolicyThresholdsV1;
+  issues: string[];
 }): ComparativeEvalScorecardV1 {
   const successfulTraceCount = params.traceRows.filter((traceRow) => traceRow.status === "ok" && traceRow.validationOk === true).length;
   const failedTraceCount = params.traceRows.length - successfulTraceCount;
   const modes = buildModeScorecardRows(params.traceRows);
+  const pairwise = buildPairwiseScorecardRows({
+    laneDescriptor: params.laneDescriptor,
+    successfulTraceIds: new Set(
+      params.traceRows
+        .filter((traceRow) => traceRow.status === "ok" && traceRow.validationOk === true)
+        .map((traceRow) => traceRow.traceId),
+    ),
+  });
+  const policy = buildPolicy({
+    requestedTraceCount: params.requestedTraceCount,
+    successfulTraceCount,
+    failedTraceCount,
+    runnerStatus: params.runnerStatus,
+    modeRows: modes,
+    pairwiseRows: pairwise,
+    thresholds: params.policyThresholds,
+    issues: params.issues,
+  });
   const base: Omit<ComparativeEvalScorecardV1, "scorecardHash"> = {
     contract: COMPARATIVE_EVAL_SCORECARD_CONTRACT,
     manifestId: params.manifestId,
@@ -744,9 +1175,12 @@ function buildScorecard(params: {
       "qualityScore comes from the deterministic replay proof bundle scoring surface",
       "estimatedPromptTokens is ceil(selectedContextChars / charsPerToken)",
       "estimatedPromptCostUsd uses promptPriceUsdPer1mTokens from scripts/pricing-table.v1.json",
+      "pairwise tie-or-better rates compare deterministic qualityScore outcomes across the same validated traces and turns",
       "the scorecard is observational scaffold output; it does not claim long-run task or API economics",
     ],
     modes,
+    pairwise,
+    policy,
     traces: params.traceRows,
   };
   return {
@@ -756,8 +1190,20 @@ function buildScorecard(params: {
 }
 
 function buildSummary(report: ComparativeEvalRunnerReportV1, scorecard: ComparativeEvalScorecardV1): string {
+  const checkRows = scorecard.policy.checks.map((check) => {
+    const observedText = Object.entries(check.observed)
+      .map(([key, value]) => `${key}=${value === null ? "null" : String(value)}`)
+      .join(", ");
+    const thresholdText = Object.entries(check.threshold)
+      .map(([key, value]) => `${key}=${value === null ? "null" : String(value)}`)
+      .join(", ");
+    return `| ${check.id} | ${check.status} | ${observedText} | ${thresholdText} |`;
+  });
   const modeRows = scorecard.modes.map((mode) =>
     `| ${mode.mode} | ${mode.traceCount} | ${mode.rankedWinnerCount} | ${mode.meanQualityScore ?? "null"} | ${mode.compileOkRate ?? "null"} | ${mode.phraseHitRate ?? "null"} | ${mode.estimatedPromptTokens} | ${mode.estimatedPromptCostUsd ?? "null"} |`,
+  );
+  const pairwiseRows = scorecard.pairwise.map((pair) =>
+    `| ${pair.leftMode} vs ${pair.rightMode} | ${pair.comparableTraceCount} | ${pair.traceWins.left}-${pair.traceWins.right}-${pair.traceWins.ties} | ${pair.traceTieOrBetter.leftRate ?? "null"} | ${pair.traceTieOrBetter.rightRate ?? "null"} | ${pair.aggregateDeltas.qualityScoreDeltaLeftMinusRightMean ?? "null"} |`,
   );
   const traceRows = scorecard.traces.map((trace) =>
     `| ${trace.traceId} | ${trace.status} | ${trace.validationOk ?? "null"} | ${trace.winnerMode ?? "null"} | ${trace.scoreSpread ?? "null"} | ${trace.error ?? "none"} |`,
@@ -766,6 +1212,8 @@ function buildSummary(report: ComparativeEvalRunnerReportV1, scorecard: Comparat
     "# Comparative Eval Runner",
     "",
     `- status: \`${report.status}\``,
+    `- gate: \`${report.gateStatus}\``,
+    `- gate decisive: \`${report.gateDecisive}\``,
     `- manifest path: \`${report.manifestPath}\``,
     `- manifest contract: \`${report.manifestContract ?? "null"}\``,
     `- manifest id: \`${report.manifestId ?? "null"}\``,
@@ -778,10 +1226,29 @@ function buildSummary(report: ComparativeEvalRunnerReportV1, scorecard: Comparat
     "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ...(modeRows.length > 0 ? modeRows : ["| none | 0 | 0 | null | null | null | 0 | null |"]),
     "",
+    "## Policy",
+    `- candidate mode: \`${scorecard.policy.thresholds.candidateMode}\``,
+    `- baseline mode: \`${scorecard.policy.thresholds.baselineMode}\``,
+    `- floor mode: \`${scorecard.policy.thresholds.floorMode}\``,
+    `- comparable traces: ${scorecard.policy.observed.comparableTraceCount}`,
+    `- successful traces: ${scorecard.policy.observed.successfulTraceCount}`,
+    `- failed traces: ${scorecard.policy.observed.failedTraceCount}`,
+    "| check | status | observed | threshold |",
+    "| --- | --- | --- | --- |",
+    ...(checkRows.length > 0 ? checkRows : ["| none | blocked | none | none |"]),
+    "",
+    "## Pairwise",
+    "| pair | traces | left-right-ties | left tie-or-better rate | right tie-or-better rate | mean quality delta |",
+    "| --- | ---: | --- | ---: | ---: | ---: |",
+    ...(pairwiseRows.length > 0 ? pairwiseRows : ["| none | 0 | 0-0-0 | null | null | null |"]),
+    "",
     "## Traces",
     "| trace | status | validation ok | winner | score spread | error |",
     "| --- | --- | --- | --- | ---: | --- |",
     ...(traceRows.length > 0 ? traceRows : ["| none | blocked | null | null | null | none |"]),
+    "",
+    "## Policy Reasons",
+    ...(scorecard.policy.reasons.length > 0 ? scorecard.policy.reasons.map((reason) => `- ${reason}`) : ["- none"]),
     "",
     "## Notes",
     ...report.notes.map((note) => `- ${note}`),
@@ -805,6 +1272,7 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
   const traceRoot = path.join(outputDir, COMPARATIVE_EVAL_RUNNER_LAYOUT.traceDir);
   const manifestLoad = loadManifestInputs(manifestPath);
   const pricingTable = loadPricingTable();
+  const policyThresholds = mergePolicyThresholds(input.policy);
   const notes = [
     `default manifest path is ${DEFAULT_COMPARATIVE_EVAL_MANIFEST_PATH}`,
     `mode order is ${RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER.join(", ")}`,
@@ -816,6 +1284,7 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
     "manifest trace paths resolve relative to the manifest file location",
     "traceHash, when present in the manifest, is checksumJsonPayload(trace-json)",
     "scorecard prompt-cost metrics are cheap deterministic proxies derived from selected context chars",
+    `${policyThresholds.candidateMode} is the candidate mode, ${policyThresholds.baselineMode} is the baseline mode, and ${policyThresholds.floorMode} is the floor anchor for the explicit comparative policy`,
     "this scaffold does not finalize the frozen trace set or widen proof-bundle generation scope",
   ];
 
@@ -858,6 +1327,10 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
     requestedTraceCount: manifestLoad.traces.length,
     pricingTable,
     traceRows,
+    laneDescriptor,
+    runnerStatus: status,
+    policyThresholds,
+    issues,
   });
 
   const sourceManifestPath = manifestLoad.manifest === null
@@ -886,6 +1359,9 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
     issues,
     pricingTable,
     scorecardHash: scorecard.scorecardHash,
+    gateStatus: scorecard.policy.status,
+    gateDecisive: scorecard.policy.decisive,
+    gateFailedCheckIds: scorecard.policy.checks.filter((check) => check.status === "fail").map((check) => check.id),
     files: {
       sourceManifest: sourceManifestPath === null ? null : COMPARATIVE_EVAL_RUNNER_LAYOUT.sourceManifest,
       report: COMPARATIVE_EVAL_RUNNER_LAYOUT.report,
