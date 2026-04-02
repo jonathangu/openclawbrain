@@ -194,6 +194,7 @@ describe("lcm plugin registration", () => {
     );
     expect(assembleSpy).toHaveBeenCalledWith({
       sessionId: "sess_1",
+      sessionKey: "main:sess_1",
       messages: [{ role: "user", content: "latest prompt" }],
       maxContextChars: 384,
     });
@@ -258,6 +259,7 @@ describe("lcm plugin registration", () => {
 
     expect(assembleSpy).toHaveBeenCalledWith({
       sessionId: "sess_1",
+      sessionKey: "main:sess_1",
       messages: [{ role: "user", content: "latest prompt" }],
     });
     expect(beforePromptResult).toEqual({
