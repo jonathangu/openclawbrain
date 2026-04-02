@@ -1,4 +1,5 @@
-import { mkdirSync, rmSync, writeFileSync } from "node:fs";
+import { createHash } from "node:crypto";
+import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import {
   validateRecordedSessionReplayProofBundle,
@@ -22,6 +23,8 @@ export const RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER = [
 export const RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT = {
   laneDir: "_lane",
   readme: "README.md",
+  summary: "summary.md",
+  closeout: "closeout.json",
   index: "index.json",
   summaryTables: "summary-tables.json",
   pairwiseDeltas: "pairwise-deltas.json",
@@ -32,8 +35,23 @@ export const RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT = {
 
 const DEFAULT_WORKED_TRACE_LIMIT = 8;
 const DEFAULT_WORKED_TURN_LIMIT = 2;
+const RECORDED_SESSION_REPLAY_PROOF_LANE_SOURCE_MANIFEST_CONTRACT = "recorded_session_replay_proof_lane_source_manifest.v1";
+const RECORDED_SESSION_REPLAY_PROOF_LANE_CLOSEOUT_CONTRACT = "recorded_session_replay_proof_lane_closeout.v1";
+const RECORDED_SESSION_REPLAY_PROOF_LANE_SUMMARY_TABLES_CONTRACT = "recorded_session_replay_proof_lane_summary_tables.v1";
+const RECORDED_SESSION_REPLAY_PROOF_LANE_PAIRWISE_DELTAS_CONTRACT = "recorded_session_replay_proof_lane_pairwise_deltas.v1";
+const RECORDED_SESSION_REPLAY_PROOF_LANE_WIN_RATE_MATRIX_CONTRACT = "recorded_session_replay_proof_lane_win_rate_matrix.v1";
+const RECORDED_SESSION_REPLAY_PROOF_LANE_INDEX_CONTRACT = "recorded_session_replay_proof_lane_index.v1";
+const RECORDED_SESSION_REPLAY_PROOF_LANE_GENERATION_REPORT_CONTRACT = "recorded_session_replay_proof_lane_generation_report.v1";
 
 type ReplayLaneMode = (typeof RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER)[number];
+
+export interface RecordedSessionReplayProofLaneSourceManifestV1 {
+  contract: typeof RECORDED_SESSION_REPLAY_PROOF_LANE_SOURCE_MANIFEST_CONTRACT;
+  provided: boolean;
+  manifestId: string | null;
+  manifestContract: string | null;
+  manifestDigest: string | null;
+}
 
 export interface RecordedSessionReplayProofLaneTraceInputV1 {
   trace: RecordedSessionTraceV1;
@@ -121,7 +139,8 @@ interface RecordedSessionReplayProofLaneModeSummaryRowV1 {
 }
 
 export interface RecordedSessionReplayProofLaneSummaryTablesV1 {
-  contract: "recorded_session_replay_proof_lane_summary_tables.v1";
+  contract: typeof RECORDED_SESSION_REPLAY_PROOF_LANE_SUMMARY_TABLES_CONTRACT;
+  sourceManifest: RecordedSessionReplayProofLaneSourceManifestV1;
   modeOrder: ReplayLaneMode[];
   requestedTraceCount: number;
   successfulTraceCount: number;
@@ -134,6 +153,8 @@ export interface RecordedSessionReplayProofLaneSummaryTablesV1 {
 interface RecordedSessionReplayProofLanePairwiseTraceDeltaV1 {
   traceId: string;
   bundleDir: string;
+  bundleHash: string;
+  scoreHash: string;
   qualityScoreDeltaLeftMinusRight: number;
   compileOkDeltaLeftMinusRight: number;
   phraseHitDeltaLeftMinusRight: number;
@@ -180,7 +201,8 @@ interface RecordedSessionReplayProofLanePairwiseRowV1 {
 }
 
 export interface RecordedSessionReplayProofLanePairwiseDeltasV1 {
-  contract: "recorded_session_replay_proof_lane_pairwise_deltas.v1";
+  contract: typeof RECORDED_SESSION_REPLAY_PROOF_LANE_PAIRWISE_DELTAS_CONTRACT;
+  sourceManifest: RecordedSessionReplayProofLaneSourceManifestV1;
   modeOrder: ReplayLaneMode[];
   requestedTraceCount: number;
   successfulTraceCount: number;
@@ -205,7 +227,8 @@ interface RecordedSessionReplayProofLaneMatrixRowV1 {
 }
 
 export interface RecordedSessionReplayProofLaneWinRateMatrixV1 {
-  contract: "recorded_session_replay_proof_lane_win_rate_matrix.v1";
+  contract: typeof RECORDED_SESSION_REPLAY_PROOF_LANE_WIN_RATE_MATRIX_CONTRACT;
+  sourceManifest: RecordedSessionReplayProofLaneSourceManifestV1;
   modeOrder: ReplayLaneMode[];
   requestedTraceCount: number;
   successfulTraceCount: number;
@@ -228,8 +251,9 @@ interface RecordedSessionReplayProofLaneBundleIndexRowV1 {
 }
 
 export interface RecordedSessionReplayProofLaneIndexV1 {
-  contract: "recorded_session_replay_proof_lane_index.v1";
+  contract: typeof RECORDED_SESSION_REPLAY_PROOF_LANE_INDEX_CONTRACT;
   laneDir: string;
+  sourceManifest: RecordedSessionReplayProofLaneSourceManifestV1;
   modeOrder: ReplayLaneMode[];
   requestedTraceCount: number;
   successfulTraceCount: number;
@@ -238,6 +262,8 @@ export interface RecordedSessionReplayProofLaneIndexV1 {
   assumptions: string[];
   files: {
     readme: string;
+    summary: string;
+    closeout: string;
     index: string;
     summaryTables: string;
     pairwiseDeltas: string;
@@ -259,21 +285,61 @@ interface RecordedSessionReplayProofLaneGenerationEntryV1 {
 }
 
 export interface RecordedSessionReplayProofLaneGenerationReportV1 {
-  contract: "recorded_session_replay_proof_lane_generation_report.v1";
+  contract: typeof RECORDED_SESSION_REPLAY_PROOF_LANE_GENERATION_REPORT_CONTRACT;
   artifactRoot: string;
   laneDir: string;
   requestedTraceCount: number;
   successfulTraceCount: number;
   failedTraceCount: number;
   sourceManifestPath: string | null;
+  sourceManifest: RecordedSessionReplayProofLaneSourceManifestV1;
   assumptions: string[];
   entries: RecordedSessionReplayProofLaneGenerationEntryV1[];
+}
+
+export interface RecordedSessionReplayProofLaneCloseoutArtifactV1 {
+  role: string;
+  path: string;
+  digest: string;
+  contract: string | null;
+}
+
+export interface RecordedSessionReplayProofLaneCloseoutV1 {
+  contract: typeof RECORDED_SESSION_REPLAY_PROOF_LANE_CLOSEOUT_CONTRACT;
+  hashAlgorithm: "sha256";
+  laneDir: string;
+  sourceManifest: RecordedSessionReplayProofLaneSourceManifestV1;
+  verdict: {
+    verdict: "success_and_proven" | "partial_proof" | "no_successful_replays";
+    severity: "none" | "warn" | "error";
+    why: string;
+  };
+  requestedTraceCount: number;
+  successfulTraceCount: number;
+  failedTraceCount: number;
+  failedTraceIds: string[];
+  modeOrder: ReplayLaneMode[];
+  winnerModeCounts: Array<{
+    mode: ReplayLaneMode;
+    rankedWinnerCount: number;
+    sharedTopScoreTraceCount: number;
+  }>;
+  traceHashes: Array<{
+    traceId: string;
+    bundleHash: string;
+    scoreHash: string;
+    winnerMode: ReplayLaneMode | null;
+    scoreSpread: number;
+  }>;
+  files: RecordedSessionReplayProofLaneCloseoutArtifactV1[];
 }
 
 export interface RecordedSessionReplayProofLaneDescriptorV1 {
   artifactRoot: string;
   laneDir: string;
   readmePath: string;
+  summaryPath: string;
+  closeoutPath: string;
   indexPath: string;
   summaryTablesPath: string;
   pairwiseDeltasPath: string;
@@ -284,6 +350,7 @@ export interface RecordedSessionReplayProofLaneDescriptorV1 {
   summaryTables: RecordedSessionReplayProofLaneSummaryTablesV1;
   pairwiseDeltas: RecordedSessionReplayProofLanePairwiseDeltasV1;
   winRateMatrix: RecordedSessionReplayProofLaneWinRateMatrixV1;
+  closeout: RecordedSessionReplayProofLaneCloseoutV1;
   generationReport: RecordedSessionReplayProofLaneGenerationReportV1;
   successfulBundles: RecordedSessionReplayProofBundleDescriptorV1[];
 }
@@ -311,6 +378,58 @@ function writeJson(filePath: string, value: unknown): void {
 function writeText(filePath: string, value: string): void {
   ensureDir(path.dirname(filePath));
   writeFileSync(filePath, value.endsWith("\n") ? value : `${value}\n`, "utf8");
+}
+
+function renderJson(value: unknown): string {
+  return `${JSON.stringify(value, null, 2)}\n`;
+}
+
+function sha256Text(value: string): string {
+  return `sha256-${createHash("sha256").update(value, "utf8").digest("hex")}`;
+}
+
+function cloneSourceManifest(
+  sourceManifest: RecordedSessionReplayProofLaneSourceManifestV1,
+): RecordedSessionReplayProofLaneSourceManifestV1 {
+  return { ...sourceManifest };
+}
+
+function readSourceManifest(
+  sourceManifestPath: string | null | undefined,
+): RecordedSessionReplayProofLaneSourceManifestV1 {
+  if (!sourceManifestPath) {
+    return {
+      contract: RECORDED_SESSION_REPLAY_PROOF_LANE_SOURCE_MANIFEST_CONTRACT,
+      provided: false,
+      manifestId: null,
+      manifestContract: null,
+      manifestDigest: null,
+    };
+  }
+  try {
+    const sourceManifestText = readFileSync(sourceManifestPath, "utf8");
+    const sourceManifest = JSON.parse(sourceManifestText) as Record<string, unknown>;
+    const manifestId = typeof sourceManifest.manifestId === "string"
+      ? sourceManifest.manifestId
+      : typeof sourceManifest.setId === "string"
+        ? sourceManifest.setId
+        : null;
+    return {
+      contract: RECORDED_SESSION_REPLAY_PROOF_LANE_SOURCE_MANIFEST_CONTRACT,
+      provided: true,
+      manifestId,
+      manifestContract: typeof sourceManifest.contract === "string" ? sourceManifest.contract : null,
+      manifestDigest: sha256Text(sourceManifestText),
+    };
+  } catch {
+    return {
+      contract: RECORDED_SESSION_REPLAY_PROOF_LANE_SOURCE_MANIFEST_CONTRACT,
+      provided: true,
+      manifestId: null,
+      manifestContract: null,
+      manifestDigest: null,
+    };
+  }
 }
 
 function portableRelativePath(fromPath: string, toPath: string): string {
@@ -366,6 +485,20 @@ function shortDigest(value: string | null): string {
     return "none";
   }
   return value.startsWith("sha256-") ? value.slice(7, 19) : value.slice(0, 12);
+}
+
+function buildCloseoutArtifact(
+  role: string,
+  artifactPath: string,
+  text: string,
+  contract: string | null,
+): RecordedSessionReplayProofLaneCloseoutArtifactV1 {
+  return {
+    role,
+    path: artifactPath,
+    digest: sha256Text(text),
+    contract,
+  };
 }
 
 function compareQualityRows(
@@ -489,11 +622,13 @@ function buildTraceAnalysis(
 
 function buildSummaryTables(
   analyses: RecordedSessionReplayProofLaneTraceAnalysisV1[],
+  sourceManifest: RecordedSessionReplayProofLaneSourceManifestV1,
   requestedTraceCount: number,
   failedTraceCount: number,
 ): RecordedSessionReplayProofLaneSummaryTablesV1 {
   return {
-    contract: "recorded_session_replay_proof_lane_summary_tables.v1",
+    contract: RECORDED_SESSION_REPLAY_PROOF_LANE_SUMMARY_TABLES_CONTRACT,
+    sourceManifest: cloneSourceManifest(sourceManifest),
     modeOrder: [...RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER],
     requestedTraceCount,
     successfulTraceCount: analyses.length,
@@ -546,6 +681,7 @@ function buildSummaryTables(
 
 function buildPairwiseDeltas(
   analyses: RecordedSessionReplayProofLaneTraceAnalysisV1[],
+  sourceManifest: RecordedSessionReplayProofLaneSourceManifestV1,
   requestedTraceCount: number,
   failedTraceCount: number,
 ): RecordedSessionReplayProofLanePairwiseDeltasV1 {
@@ -588,6 +724,8 @@ function buildPairwiseDeltas(
         return {
           traceId: analysis.traceId,
           bundleDir: analysis.bundleDir,
+          bundleHash: analysis.descriptor.bundle.bundleHash,
+          scoreHash: analysis.descriptor.bundle.scoreHash,
           qualityScoreDeltaLeftMinusRight: left.qualityScore - right.qualityScore,
           compileOkDeltaLeftMinusRight: left.compileOkCount - right.compileOkCount,
           phraseHitDeltaLeftMinusRight: left.phraseHitCount - right.phraseHitCount,
@@ -639,7 +777,8 @@ function buildPairwiseDeltas(
     }
   }
   return {
-    contract: "recorded_session_replay_proof_lane_pairwise_deltas.v1",
+    contract: RECORDED_SESSION_REPLAY_PROOF_LANE_PAIRWISE_DELTAS_CONTRACT,
+    sourceManifest: cloneSourceManifest(sourceManifest),
     modeOrder: [...RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER],
     requestedTraceCount,
     successfulTraceCount: analyses.length,
@@ -701,11 +840,13 @@ function buildMatrix(
 
 function buildWinRateMatrix(
   analyses: RecordedSessionReplayProofLaneTraceAnalysisV1[],
+  sourceManifest: RecordedSessionReplayProofLaneSourceManifestV1,
   requestedTraceCount: number,
   failedTraceCount: number,
 ): RecordedSessionReplayProofLaneWinRateMatrixV1 {
   return {
-    contract: "recorded_session_replay_proof_lane_win_rate_matrix.v1",
+    contract: RECORDED_SESSION_REPLAY_PROOF_LANE_WIN_RATE_MATRIX_CONTRACT,
+    sourceManifest: cloneSourceManifest(sourceManifest),
     modeOrder: [...RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER],
     requestedTraceCount,
     successfulTraceCount: analyses.length,
@@ -733,6 +874,7 @@ function buildWinRateMatrix(
 
 function buildWorkedTracesMarkdown(
   analyses: RecordedSessionReplayProofLaneTraceAnalysisV1[],
+  sourceManifest: RecordedSessionReplayProofLaneSourceManifestV1,
   workedTraceLimit: number,
 ): string {
   const sorted = [...analyses].sort(
@@ -749,6 +891,11 @@ function buildWorkedTracesMarkdown(
     `- traces included: ${selected.length}/${sorted.length}`,
     `- selection rule: highest bundle score spread first, then trace id; turns ordered by per-turn score spread`,
   ];
+  if (sourceManifest.manifestId !== null || sourceManifest.manifestDigest !== null) {
+    lines.push(
+      `- source manifest: \`${sourceManifest.manifestId ?? "unknown"}\` (${sourceManifest.manifestContract ?? "unknown"}, ${shortDigest(sourceManifest.manifestDigest)})`,
+    );
+  }
   if (omittedCount > 0) {
     lines.push(`- omitted traces: ${omittedCount} (see _lane/summary-tables.json for the complete table)`);
   }
@@ -818,6 +965,11 @@ function buildLaneReadme(
     `- failed traces: ${summaryTables.failedTraceCount}`,
     `- mode order: \`${summaryTables.modeOrder.join("`, `")}\``,
   ];
+  if (index.sourceManifest.manifestId !== null || index.sourceManifest.manifestDigest !== null) {
+    lines.push(
+      `- source manifest: \`${index.sourceManifest.manifestId ?? "unknown"}\` (${index.sourceManifest.manifestContract ?? "unknown"}, ${shortDigest(index.sourceManifest.manifestDigest)})`,
+    );
+  }
   if (index.assumptions.length > 0) {
     lines.push(`- assumptions: ${index.assumptions.map((assumption) => `\`${assumption}\``).join(", ")}`);
   }
@@ -844,12 +996,117 @@ function buildLaneReadme(
   }
   lines.push("");
   lines.push("## Artifacts");
+  lines.push(`- summary: \`${RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.summary}\``);
+  lines.push(`- closeout: \`${RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.closeout}\``);
   lines.push(`- index: \`${RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.index}\``);
   lines.push(`- summary tables: \`${RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.summaryTables}\``);
   lines.push(`- pairwise deltas: \`${RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.pairwiseDeltas}\``);
   lines.push(`- win-rate matrix: \`${RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.winRateMatrix}\``);
   lines.push(`- worked traces: \`${RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.workedTraces}\``);
   lines.push(`- generation report: \`${RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.generationReport}\``);
+  return lines.join("\n");
+}
+
+function buildLaneCloseout(
+  sourceManifest: RecordedSessionReplayProofLaneSourceManifestV1,
+  summaryTables: RecordedSessionReplayProofLaneSummaryTablesV1,
+  index: RecordedSessionReplayProofLaneIndexV1,
+  artifacts: RecordedSessionReplayProofLaneCloseoutArtifactV1[],
+): RecordedSessionReplayProofLaneCloseoutV1 {
+  const failedTraceIds = [...index.failedTraceIds];
+  const successfulTraceCount = summaryTables.successfulTraceCount;
+  let verdict: RecordedSessionReplayProofLaneCloseoutV1["verdict"];
+  if (successfulTraceCount === 0) {
+    verdict = {
+      verdict: "no_successful_replays",
+      severity: "error",
+      why: "No replay proof bundles were generated successfully, so the aggregate outputs are observationally empty.",
+    };
+  } else if (failedTraceIds.length > 0) {
+    verdict = {
+      verdict: "partial_proof",
+      severity: "warn",
+      why: `${successfulTraceCount}/${summaryTables.requestedTraceCount} replay proof bundles generated successfully; inspect generation-report.json before trusting the aggregate view.`,
+    };
+  } else {
+    verdict = {
+      verdict: "success_and_proven",
+      severity: "none",
+      why: `${successfulTraceCount}/${summaryTables.requestedTraceCount} replay proof bundles generated successfully and produced deterministic aggregate outputs.`,
+    };
+  }
+  return {
+    contract: RECORDED_SESSION_REPLAY_PROOF_LANE_CLOSEOUT_CONTRACT,
+    hashAlgorithm: "sha256",
+    laneDir: RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.laneDir,
+    sourceManifest: cloneSourceManifest(sourceManifest),
+    verdict,
+    requestedTraceCount: summaryTables.requestedTraceCount,
+    successfulTraceCount,
+    failedTraceCount: summaryTables.failedTraceCount,
+    failedTraceIds,
+    modeOrder: [...summaryTables.modeOrder],
+    winnerModeCounts: summaryTables.modes.map((row) => ({
+      mode: row.mode,
+      rankedWinnerCount: row.rankedWinnerCount,
+      sharedTopScoreTraceCount: row.sharedTopScoreTraceCount,
+    })),
+    traceHashes: summaryTables.traces.map((trace) => ({
+      traceId: trace.traceId,
+      bundleHash: trace.bundleHash,
+      scoreHash: trace.scoreHash,
+      winnerMode: trace.winnerMode,
+      scoreSpread: trace.scoreSpread,
+    })),
+    files: artifacts.map((artifact) => ({ ...artifact })),
+  };
+}
+
+function buildLaneSummary(
+  closeout: RecordedSessionReplayProofLaneCloseoutV1,
+  artifacts: RecordedSessionReplayProofLaneCloseoutArtifactV1[],
+): string {
+  const lines: string[] = [
+    "# Recorded Session Replay Proof Lane Closeout",
+    "",
+    `- verdict: **${closeout.verdict.verdict}**`,
+    `- severity: **${closeout.verdict.severity}**`,
+    `- why: ${closeout.verdict.why}`,
+    `- requested traces: ${closeout.requestedTraceCount}`,
+    `- successful traces: ${closeout.successfulTraceCount}`,
+    `- failed traces: ${closeout.failedTraceCount}`,
+  ];
+  if (closeout.sourceManifest.manifestId !== null || closeout.sourceManifest.manifestDigest !== null) {
+    lines.push(
+      `- source manifest: \`${closeout.sourceManifest.manifestId ?? "unknown"}\` (${closeout.sourceManifest.manifestContract ?? "unknown"}, ${shortDigest(closeout.sourceManifest.manifestDigest)})`,
+    );
+  }
+  if (closeout.failedTraceIds.length > 0) {
+    lines.push(`- failed trace ids: ${closeout.failedTraceIds.map((traceId) => `\`${traceId}\``).join(", ")}`);
+  }
+  lines.push("");
+  lines.push("## Winner Counts");
+  lines.push("| mode | ranked winners | shared top score traces |");
+  lines.push("| --- | ---: | ---: |");
+  for (const row of closeout.winnerModeCounts) {
+    lines.push(`| ${row.mode} | ${row.rankedWinnerCount} | ${row.sharedTopScoreTraceCount} |`);
+  }
+  lines.push("");
+  lines.push("## Trace Hashes");
+  lines.push("| trace | winner | spread | bundle hash | score hash |");
+  lines.push("| --- | --- | ---: | --- | --- |");
+  for (const trace of closeout.traceHashes) {
+    lines.push(
+      `| ${trace.traceId} | ${trace.winnerMode ?? "none"} | ${trace.scoreSpread} | ${shortDigest(trace.bundleHash)} | ${shortDigest(trace.scoreHash)} |`,
+    );
+  }
+  lines.push("");
+  lines.push("## Deterministic Outputs");
+  lines.push("| role | path | contract | digest |");
+  lines.push("| --- | --- | --- | --- |");
+  for (const artifact of artifacts) {
+    lines.push(`| ${artifact.role} | ${artifact.path} | ${artifact.contract ?? "none"} | ${artifact.digest} |`);
+  }
   return lines.join("\n");
 }
 
@@ -860,6 +1117,7 @@ export function writeRecordedSessionReplayProofLane(
   const laneDir = path.join(artifactRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.laneDir);
   const workedTraceLimit = normalizeWorkedTraceLimit(input.workedTraceLimit);
   const assumptions = normalizeStringArray(input.assumptions);
+  const sourceManifest = readSourceManifest(input.sourceManifestPath ?? null);
   ensureDir(artifactRoot);
   rmSync(laneDir, { recursive: true, force: true });
   ensureDir(laneDir);
@@ -906,12 +1164,13 @@ export function writeRecordedSessionReplayProofLane(
     .filter((entry) => entry.result === "failed")
     .map((entry) => entry.traceId)
     .sort((left, right) => left.localeCompare(right));
-  const summaryTables = buildSummaryTables(traceAnalyses, input.traces.length, failedTraceIds.length);
-  const pairwiseDeltas = buildPairwiseDeltas(traceAnalyses, input.traces.length, failedTraceIds.length);
-  const winRateMatrix = buildWinRateMatrix(traceAnalyses, input.traces.length, failedTraceIds.length);
+  const summaryTables = buildSummaryTables(traceAnalyses, sourceManifest, input.traces.length, failedTraceIds.length);
+  const pairwiseDeltas = buildPairwiseDeltas(traceAnalyses, sourceManifest, input.traces.length, failedTraceIds.length);
+  const winRateMatrix = buildWinRateMatrix(traceAnalyses, sourceManifest, input.traces.length, failedTraceIds.length);
   const index: RecordedSessionReplayProofLaneIndexV1 = {
-    contract: "recorded_session_replay_proof_lane_index.v1",
+    contract: RECORDED_SESSION_REPLAY_PROOF_LANE_INDEX_CONTRACT,
     laneDir: RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.laneDir,
+    sourceManifest: cloneSourceManifest(sourceManifest),
     modeOrder: [...RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER],
     requestedTraceCount: input.traces.length,
     successfulTraceCount: successfulBundles.length,
@@ -920,6 +1179,8 @@ export function writeRecordedSessionReplayProofLane(
     assumptions,
     files: {
       readme: RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.readme,
+      summary: RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.summary,
+      closeout: RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.closeout,
       index: RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.index,
       summaryTables: RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.summaryTables,
       pairwiseDeltas: RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.pairwiseDeltas,
@@ -941,36 +1202,64 @@ export function writeRecordedSessionReplayProofLane(
       .sort((left, right) => left.traceId.localeCompare(right.traceId)),
   };
   const generationReport: RecordedSessionReplayProofLaneGenerationReportV1 = {
-    contract: "recorded_session_replay_proof_lane_generation_report.v1",
+    contract: RECORDED_SESSION_REPLAY_PROOF_LANE_GENERATION_REPORT_CONTRACT,
     artifactRoot,
     laneDir,
     requestedTraceCount: input.traces.length,
     successfulTraceCount: successfulBundles.length,
     failedTraceCount: failedTraceIds.length,
     sourceManifestPath: input.sourceManifestPath ?? null,
+    sourceManifest: cloneSourceManifest(sourceManifest),
     assumptions,
     entries: generationEntries,
   };
-  const workedTraces = buildWorkedTracesMarkdown(traceAnalyses, workedTraceLimit);
+  const workedTraces = buildWorkedTracesMarkdown(traceAnalyses, sourceManifest, workedTraceLimit);
   const laneReadme = buildLaneReadme(summaryTables, pairwiseDeltas, index);
+  const readmeText = laneReadme.endsWith("\n") ? laneReadme : `${laneReadme}\n`;
+  const indexText = renderJson(index);
+  const summaryTablesText = renderJson(summaryTables);
+  const pairwiseDeltasText = renderJson(pairwiseDeltas);
+  const winRateMatrixText = renderJson(winRateMatrix);
+  const workedTracesText = workedTraces.endsWith("\n") ? workedTraces : `${workedTraces}\n`;
+  const generationReportText = renderJson(generationReport);
+  const deterministicArtifacts = [
+    buildCloseoutArtifact("readme", RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.readme, readmeText, null),
+    buildCloseoutArtifact("index", RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.index, indexText, index.contract),
+    buildCloseoutArtifact("summary-tables", RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.summaryTables, summaryTablesText, summaryTables.contract),
+    buildCloseoutArtifact("pairwise-deltas", RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.pairwiseDeltas, pairwiseDeltasText, pairwiseDeltas.contract),
+    buildCloseoutArtifact("win-rate-matrix", RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.winRateMatrix, winRateMatrixText, winRateMatrix.contract),
+    buildCloseoutArtifact("worked-traces", RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.workedTraces, workedTracesText, null),
+    buildCloseoutArtifact("generation-report", RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.generationReport, generationReportText, generationReport.contract),
+  ];
+  const provisionalCloseout = buildLaneCloseout(sourceManifest, summaryTables, index, deterministicArtifacts);
+  const summaryText = `${buildLaneSummary(provisionalCloseout, deterministicArtifacts)}\n`;
+  const summaryArtifact = buildCloseoutArtifact("summary", RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.summary, summaryText, null);
+  const closeout = buildLaneCloseout(sourceManifest, summaryTables, index, [...deterministicArtifacts, summaryArtifact]);
+  const closeoutText = renderJson(closeout);
   const readmePath = path.join(laneDir, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.readme);
+  const summaryPath = path.join(laneDir, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.summary);
+  const closeoutPath = path.join(laneDir, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.closeout);
   const indexPath = path.join(laneDir, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.index);
   const summaryTablesPath = path.join(laneDir, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.summaryTables);
   const pairwiseDeltasPath = path.join(laneDir, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.pairwiseDeltas);
   const winRateMatrixPath = path.join(laneDir, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.winRateMatrix);
   const workedTracesPath = path.join(laneDir, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.workedTraces);
   const generationReportPath = path.join(laneDir, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.generationReport);
-  writeText(readmePath, laneReadme);
-  writeJson(indexPath, index);
-  writeJson(summaryTablesPath, summaryTables);
-  writeJson(pairwiseDeltasPath, pairwiseDeltas);
-  writeJson(winRateMatrixPath, winRateMatrix);
-  writeText(workedTracesPath, workedTraces);
-  writeJson(generationReportPath, generationReport);
+  writeText(readmePath, readmeText);
+  writeText(summaryPath, summaryText);
+  writeText(closeoutPath, closeoutText);
+  writeText(indexPath, indexText);
+  writeText(summaryTablesPath, summaryTablesText);
+  writeText(pairwiseDeltasPath, pairwiseDeltasText);
+  writeText(winRateMatrixPath, winRateMatrixText);
+  writeText(workedTracesPath, workedTracesText);
+  writeText(generationReportPath, generationReportText);
   return {
     artifactRoot,
     laneDir,
     readmePath,
+    summaryPath,
+    closeoutPath,
     indexPath,
     summaryTablesPath,
     pairwiseDeltasPath,
@@ -981,6 +1270,7 @@ export function writeRecordedSessionReplayProofLane(
     summaryTables,
     pairwiseDeltas,
     winRateMatrix,
+    closeout,
     generationReport,
     successfulBundles,
   };

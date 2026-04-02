@@ -365,6 +365,13 @@ function collectBundleCandidates(roots, excludeRoots = []) {
 
 function classifyBundleRoot(fileNames) {
   const hasSummary = fileNames.has("summary.md");
+  const hasCloseout = fileNames.has("closeout.json");
+  const hasLaneIndex = fileNames.has("index.json");
+  const hasLaneSummaryTables = fileNames.has("summary-tables.json");
+  const hasPairwiseDeltas = fileNames.has("pairwise-deltas.json");
+  const hasWinRateMatrix = fileNames.has("win-rate-matrix.json");
+  const hasWorkedTraces = fileNames.has("worked-traces.md");
+  const hasGenerationReport = fileNames.has("generation-report.json");
   const hasValidation = fileNames.has("validation-report.json");
   const hasSteps = fileNames.has("steps.json");
   const hasVerdict = fileNames.has("verdict.json");
@@ -374,6 +381,9 @@ function classifyBundleRoot(fileNames) {
   const hasDoctor = fileNames.has("doctor.json");
   const hasConfigSnapshot = fileNames.has("config-snapshot.json");
 
+  if ((hasLaneIndex || hasCloseout) && hasSummary && hasLaneSummaryTables && hasPairwiseDeltas && hasWinRateMatrix && hasWorkedTraces && hasGenerationReport) {
+    return "recorded-session-replay-lane";
+  }
   if (hasSummary && (hasSteps || hasVerdict)) {
     return "operator-proof";
   }
@@ -1026,6 +1036,94 @@ function summarizeReplayBundle(bundlePath, workspaceRoot) {
   };
 }
 
+function summarizeReplayLaneBundle(bundlePath, workspaceRoot) {
+  const files = collectFiles(bundlePath);
+  const fileStats = files.map((filePath) => {
+    const stat = statSync(filePath);
+    return {
+      path: filePath,
+      relativePath: path.relative(workspaceRoot, filePath).split(path.sep).join("/"),
+      size: stat.size,
+    };
+  });
+
+  const fileNames = new Set(fileStats.map((entry) => path.basename(entry.path)));
+  const readme = readTextIfExists(path.join(bundlePath, "README.md"));
+  const summary = readTextIfExists(path.join(bundlePath, "summary.md"));
+  const closeout = readJsonIfExists(path.join(bundlePath, "closeout.json"));
+  const index = readJsonIfExists(path.join(bundlePath, "index.json"));
+  const summaryTables = readJsonIfExists(path.join(bundlePath, "summary-tables.json"));
+  const pairwiseDeltas = readJsonIfExists(path.join(bundlePath, "pairwise-deltas.json"));
+  const winRateMatrix = readJsonIfExists(path.join(bundlePath, "win-rate-matrix.json"));
+  const generationReport = readJsonIfExists(path.join(bundlePath, "generation-report.json"));
+  const workedTraces = readTextIfExists(path.join(bundlePath, "worked-traces.md"));
+
+  const closeoutArtifactByRole = new Map(
+    (Array.isArray(closeout?.files) ? closeout.files : [])
+      .map((artifact) => [artifact?.role ?? null, artifact]),
+  );
+  const sourceManifest = closeout?.sourceManifest ?? index?.sourceManifest ?? generationReport?.sourceManifest ?? null;
+  const traceHashes = Array.isArray(closeout?.traceHashes)
+    ? closeout.traceHashes
+    : Array.isArray(summaryTables?.traces)
+      ? summaryTables.traces
+      : [];
+  const requestedTraceCount = closeout?.requestedTraceCount ?? index?.requestedTraceCount ?? summaryTables?.requestedTraceCount ?? generationReport?.requestedTraceCount ?? null;
+  const successfulTraceCount = closeout?.successfulTraceCount ?? index?.successfulTraceCount ?? summaryTables?.successfulTraceCount ?? generationReport?.successfulTraceCount ?? null;
+  const failedTraceCount = closeout?.failedTraceCount ?? index?.failedTraceCount ?? summaryTables?.failedTraceCount ?? generationReport?.failedTraceCount ?? null;
+  const closeoutVerdict = closeout?.verdict?.verdict ?? null;
+  const summaryDigest = closeoutArtifactByRole.get("summary")?.digest ?? (summary ? sha256Text(summary) : null);
+  const closeoutDigest = closeout ? sha256Text(renderJson(closeout)) : null;
+  const summaryTablesDigest = closeoutArtifactByRole.get("summary-tables")?.digest ?? (summaryTables ? sha256Text(renderJson(summaryTables)) : null);
+  const pairwiseDeltasDigest = closeoutArtifactByRole.get("pairwise-deltas")?.digest ?? (pairwiseDeltas ? sha256Text(renderJson(pairwiseDeltas)) : null);
+  const winRateMatrixDigest = closeoutArtifactByRole.get("win-rate-matrix")?.digest ?? (winRateMatrix ? sha256Text(renderJson(winRateMatrix)) : null);
+  const workedTracesDigest = closeoutArtifactByRole.get("worked-traces")?.digest ?? (workedTraces ? sha256Text(workedTraces) : null);
+  const generationReportDigest = closeoutArtifactByRole.get("generation-report")?.digest ?? (generationReport ? sha256Text(renderJson(generationReport)) : null);
+
+  return {
+    kind: "recorded-session-replay-lane",
+    bundleId: sourceManifest?.manifestId ?? path.basename(bundlePath),
+    path: bundlePath,
+    relativePath: path.relative(workspaceRoot, bundlePath).split(path.sep).join("/"),
+    canonicalAt: parseTimestampFromPath(bundlePath)?.toISOString() ?? null,
+    fileCount: fileStats.length,
+    artifactBytes: sum(fileStats.map((entry) => entry.size)),
+    fileNames: [...fileNames].sort(),
+    validationOk: closeoutVerdict === "success_and_proven"
+      ? true
+      : closeoutVerdict === "partial_proof" || closeoutVerdict === "no_successful_replays"
+        ? false
+        : null,
+    readme,
+    summary,
+    closeout,
+    index,
+    summaryTables,
+    pairwiseDeltas,
+    winRateMatrix,
+    generationReport,
+    metrics: {
+      sourceManifestId: sourceManifest?.manifestId ?? null,
+      sourceManifestContract: sourceManifest?.manifestContract ?? null,
+      sourceManifestDigest: sourceManifest?.manifestDigest ?? null,
+      verdict: closeoutVerdict,
+      severity: closeout?.verdict?.severity ?? null,
+      requestedTraceCount,
+      successfulTraceCount,
+      failedTraceCount,
+      summaryDigest,
+      closeoutDigest,
+      summaryTablesDigest,
+      pairwiseDeltasDigest,
+      winRateMatrixDigest,
+      workedTracesDigest,
+      generationReportDigest,
+      bundleHashCount: traceHashes.filter((trace) => typeof trace?.bundleHash === "string" && trace.bundleHash.length > 0).length,
+      scoreHashCount: traceHashes.filter((trace) => typeof trace?.scoreHash === "string" && trace.scoreHash.length > 0).length,
+    },
+  };
+}
+
 function summarizeHostBundle(bundlePath, workspaceRoot) {
   const files = collectFiles(bundlePath);
   const fileStats = files.map((filePath) => {
@@ -1134,6 +1232,9 @@ function summarizeBundle(bundlePath, kind, workspaceRoot) {
   }
   if (kind === "recorded-session-replay") {
     return summarizeReplayBundle(bundlePath, workspaceRoot);
+  }
+  if (kind === "recorded-session-replay-lane") {
+    return summarizeReplayLaneBundle(bundlePath, workspaceRoot);
   }
   if (kind === "host-evidence") {
     return summarizeHostBundle(bundlePath, workspaceRoot);

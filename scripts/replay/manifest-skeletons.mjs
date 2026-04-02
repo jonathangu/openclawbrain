@@ -2,6 +2,7 @@ import { createHash } from "node:crypto";
 import path from "node:path";
 
 export const REPLAY_MANIFEST_SKELETON_CONTRACT = "openclawbrain_replay_manifest_skeleton.v1";
+export const REPLAY_LANE_MANIFEST_SKELETON_CONTRACT = "openclawbrain_replay_lane_manifest_skeleton.v1";
 export const REPLAY_MANIFEST_SKELETON_SET_CONTRACT = "openclawbrain_replay_manifest_skeleton_set.v1";
 export const PROOF_MANIFEST_SKELETON_CONTRACT = "openclawbrain_proof_manifest_skeleton.v1";
 export const PROOF_MANIFEST_SMOKE_CONTRACT = "openclawbrain_proof_manifest_smoke.v1";
@@ -84,6 +85,30 @@ function buildReplayLightweightReference(item) {
     bundleHash: item.replay.bundle.bundleHash,
     scoreHash: item.replay.bundle.scoreHash,
     proofManifestDigest: item.proofBundle.files.manifest.digest,
+  };
+}
+
+function buildReplayLaneArtifactReference(root, artifact) {
+  return {
+    relativePath: artifact ? joinRelativePath(root ?? "", artifact.path ?? "") : null,
+    digest: normalizeOptionalString(artifact?.digest),
+    contract: normalizeOptionalString(artifact?.contract),
+  };
+}
+
+function buildReplayLaneLightweightReference(item) {
+  return {
+    relativePath: item.relativePath,
+    manifestId: item.sourceManifest.manifestId,
+    manifestDigest: item.sourceManifest.manifestDigest,
+    verdict: item.verdict.verdict,
+    summaryDigest: item.files.summary.digest,
+    closeoutDigest: item.files.closeout.digest,
+    summaryTablesDigest: item.files.summaryTables.digest,
+    pairwiseDeltasDigest: item.files.pairwiseDeltas.digest,
+    winRateMatrixDigest: item.files.winRateMatrix.digest,
+    workedTracesDigest: item.files.workedTraces.digest,
+    generationReportDigest: item.files.generationReport.digest,
   };
 }
 
@@ -204,6 +229,71 @@ export function buildReplayManifestSkeleton(bundle) {
   };
 }
 
+export function buildReplayLaneManifestSkeleton(bundle) {
+  const closeout = bundle?.closeout ?? null;
+  const closeoutFiles = new Map(
+    (Array.isArray(closeout?.files) ? closeout.files : []).map((file) => [normalizeOptionalString(file?.role), file]),
+  );
+  const summaryArtifact = closeoutFiles.get("summary") ?? null;
+  const indexArtifact = closeoutFiles.get("index") ?? null;
+  const summaryTablesArtifact = closeoutFiles.get("summary-tables") ?? null;
+  const pairwiseDeltasArtifact = closeoutFiles.get("pairwise-deltas") ?? null;
+  const winRateMatrixArtifact = closeoutFiles.get("win-rate-matrix") ?? null;
+  const workedTracesArtifact = closeoutFiles.get("worked-traces") ?? null;
+  const generationReportArtifact = closeoutFiles.get("generation-report") ?? null;
+  const readmeArtifact = closeoutFiles.get("readme") ?? null;
+  const relativePath = firstString(bundle?.relativePath);
+  const closeoutDigest = firstString(bundle?.metrics?.closeoutDigest, closeout ? sha256Text(renderJson(closeout)) : null);
+
+  return {
+    contract: REPLAY_LANE_MANIFEST_SKELETON_CONTRACT,
+    kind: "recorded-session-replay-lane",
+    hashAlgorithm: firstString(closeout?.hashAlgorithm, "sha256"),
+    canonicalAt: bundle?.canonicalAt ?? null,
+    relativePath,
+    sourceManifest: {
+      manifestId: firstString(closeout?.sourceManifest?.manifestId, bundle?.metrics?.sourceManifestId),
+      manifestContract: firstString(closeout?.sourceManifest?.manifestContract, bundle?.metrics?.sourceManifestContract),
+      manifestDigest: firstString(closeout?.sourceManifest?.manifestDigest, bundle?.metrics?.sourceManifestDigest),
+    },
+    verdict: {
+      verdict: closeout?.verdict?.verdict ?? null,
+      severity: closeout?.verdict?.severity ?? null,
+      why: closeout?.verdict?.why ?? null,
+    },
+    traceSummary: {
+      requestedTraceCount: closeout?.requestedTraceCount ?? bundle?.metrics?.requestedTraceCount ?? 0,
+      successfulTraceCount: closeout?.successfulTraceCount ?? bundle?.metrics?.successfulTraceCount ?? 0,
+      failedTraceCount: closeout?.failedTraceCount ?? bundle?.metrics?.failedTraceCount ?? 0,
+      failedTraceIds: Array.isArray(closeout?.failedTraceIds) ? closeout.failedTraceIds : [],
+      traceHashes: Array.isArray(closeout?.traceHashes)
+        ? closeout.traceHashes.map((trace) => ({
+            traceId: trace?.traceId ?? null,
+            bundleHash: trace?.bundleHash ?? null,
+            scoreHash: trace?.scoreHash ?? null,
+            winnerMode: trace?.winnerMode ?? null,
+            scoreSpread: trace?.scoreSpread ?? null,
+          }))
+        : [],
+    },
+    files: {
+      readme: buildReplayLaneArtifactReference(relativePath, readmeArtifact),
+      summary: buildReplayLaneArtifactReference(relativePath, summaryArtifact),
+      closeout: {
+        relativePath: joinRelativePath(relativePath ?? "", "closeout.json"),
+        digest: closeoutDigest,
+        contract: closeout?.contract ?? null,
+      },
+      index: buildReplayLaneArtifactReference(relativePath, indexArtifact),
+      summaryTables: buildReplayLaneArtifactReference(relativePath, summaryTablesArtifact),
+      pairwiseDeltas: buildReplayLaneArtifactReference(relativePath, pairwiseDeltasArtifact),
+      winRateMatrix: buildReplayLaneArtifactReference(relativePath, winRateMatrixArtifact),
+      workedTraces: buildReplayLaneArtifactReference(relativePath, workedTracesArtifact),
+      generationReport: buildReplayLaneArtifactReference(relativePath, generationReportArtifact),
+    },
+  };
+}
+
 export function buildReplayManifestLinkageSummary(items) {
   return {
     traceToReplayLinkedCount: items.filter((item) => item.linkage.traceToReplay.linked).length,
@@ -216,7 +306,8 @@ export function buildReplayManifestLinkageSummary(items) {
 }
 
 export function buildReplayManifestSkeletonSet(bundles) {
-  const items = (Array.isArray(bundles) ? bundles : [])
+  const allBundles = Array.isArray(bundles) ? bundles : [];
+  const items = allBundles
     .filter((bundle) => bundle?.kind === "recorded-session-replay")
     .map((bundle) => buildReplayManifestSkeleton(bundle))
     .sort((left, right) => {
@@ -227,6 +318,17 @@ export function buildReplayManifestSkeletonSet(bundles) {
       }
       return String(left.proofBundle.relativePath ?? "").localeCompare(String(right.proofBundle.relativePath ?? ""));
     });
+  const replayLanes = allBundles
+    .filter((bundle) => bundle?.kind === "recorded-session-replay-lane")
+    .map((bundle) => buildReplayLaneManifestSkeleton(bundle))
+    .sort((left, right) => {
+      const leftMs = left.canonicalAt ? Date.parse(left.canonicalAt) : 0;
+      const rightMs = right.canonicalAt ? Date.parse(right.canonicalAt) : 0;
+      if (rightMs !== leftMs) {
+        return rightMs - leftMs;
+      }
+      return String(left.relativePath ?? "").localeCompare(String(right.relativePath ?? ""));
+    });
 
   return {
     contract: REPLAY_MANIFEST_SKELETON_SET_CONTRACT,
@@ -234,6 +336,11 @@ export function buildReplayManifestSkeletonSet(bundles) {
     count: items.length,
     traceIds: items.map((item) => item.replay.traceId),
     linkageSummary: buildReplayManifestLinkageSummary(items),
+    replayLaneCount: replayLanes.length,
+    replayLaneManifestIds: replayLanes
+      .map((lane) => lane.sourceManifest.manifestId)
+      .filter((manifestId) => typeof manifestId === "string" && manifestId.length > 0),
+    replayLanes,
     items,
   };
 }
@@ -279,6 +386,7 @@ export function buildProofManifestSkeleton(input) {
       totalBundles: input?.bundleInventory?.totalBundles ?? 0,
       operatorProofCount: input?.bundleInventory?.operatorProofCount ?? 0,
       replayProofCount: input?.bundleInventory?.replayProofCount ?? 0,
+      replayLaneProofCount: input?.bundleInventory?.replayLaneProofCount ?? 0,
       hostEvidenceCount: input?.bundleInventory?.hostEvidenceCount ?? 0,
       genericProofCount: input?.bundleInventory?.genericProofCount ?? 0,
       validationOkCount: input?.bundleInventory?.validationOkCount ?? 0,
@@ -289,6 +397,11 @@ export function buildProofManifestSkeleton(input) {
       count: replayManifestSet.count,
       traceIds: replayManifestSet.traceIds,
       linkageSummary: replayManifestSet.linkageSummary,
+      replayLaneCount: replayManifestSet.replayLaneCount ?? 0,
+      replayLaneManifestIds: Array.isArray(replayManifestSet.replayLaneManifestIds) ? replayManifestSet.replayLaneManifestIds : [],
+      replayLanes: Array.isArray(replayManifestSet.replayLanes)
+        ? replayManifestSet.replayLanes.map((item) => buildReplayLaneLightweightReference(item))
+        : [],
       items: replayManifestSet.items.map((item) => buildReplayLightweightReference(item)),
     },
     releaseCloseout: buildReleaseCloseoutLink(),
@@ -323,6 +436,7 @@ export function buildProofManifestSmoke(input) {
       totalBundles: input?.bundleInventory?.totalBundles ?? 0,
       operatorProofCount: input?.bundleInventory?.operatorProofCount ?? 0,
       replayProofCount: input?.bundleInventory?.replayProofCount ?? 0,
+      replayLaneProofCount: input?.bundleInventory?.replayLaneProofCount ?? 0,
       hostEvidenceCount: input?.bundleInventory?.hostEvidenceCount ?? 0,
       genericProofCount: input?.bundleInventory?.genericProofCount ?? 0,
     },
@@ -330,6 +444,11 @@ export function buildProofManifestSmoke(input) {
       count: input?.replayManifestSet?.count ?? 0,
       traceIds: Array.isArray(input?.replayManifestSet?.traceIds) ? input.replayManifestSet.traceIds : [],
       linkageSummary: input?.replayManifestSet?.linkageSummary ?? buildReplayManifestLinkageSummary([]),
+      replayLaneCount: input?.replayManifestSet?.replayLaneCount ?? 0,
+      replayLaneManifestIds: Array.isArray(input?.replayManifestSet?.replayLaneManifestIds) ? input.replayManifestSet.replayLaneManifestIds : [],
+      replayLanes: Array.isArray(input?.replayManifestSet?.replayLanes)
+        ? input.replayManifestSet.replayLanes.map((item) => buildReplayLaneLightweightReference(item))
+        : [],
       allReplayHashesLinked:
         (input?.replayManifestSet?.linkageSummary?.fixtureToReplayLinkedCount ?? 0) === (input?.replayManifestSet?.count ?? 0)
         && (input?.replayManifestSet?.linkageSummary?.replayToProofManifestLinkedCount ?? 0) === (input?.replayManifestSet?.count ?? 0)
