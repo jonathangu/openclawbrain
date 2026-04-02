@@ -1170,6 +1170,12 @@ function summarizeStatus(statusProbe) {
     workerStatus: status.workerStatus ?? passiveLearning.watchState ?? null,
     workerMode: status.workerMode ?? null,
     workerPid: status.workerPid ?? null,
+    watchState: passiveLearning.watchState ?? null,
+    lastWatchHeartbeatAt: passiveLearning.lastWatchHeartbeatAt ?? null,
+    watchIntervalSeconds: passiveLearning.watchIntervalSeconds ?? null,
+    proofState: passiveLearning.proofState ?? null,
+    watchOnly: passiveLearning.watchOnly ?? null,
+    teacherArtifactCount: passiveLearning.teacherArtifactCount ?? null,
     currentPackVersion: status.currentPackVersion ?? activePackId,
     packVersion: status.packVersion ?? null,
     recentTraceCount: status.recentTraceCount ?? null,
@@ -1206,6 +1212,49 @@ function latestBundlesByKind(bundles) {
     }
   }
   return Object.fromEntries(byKind.entries());
+}
+
+function summarizeBooleanBundleMetric(bundles, accessor) {
+  const values = bundles.map(accessor);
+  const known = values.filter((value) => typeof value === "boolean");
+  return {
+    trueCount: known.filter((value) => value === true).length,
+    falseCount: known.filter((value) => value === false).length,
+    knownCount: known.length,
+    unknownCount: values.length - known.length,
+    totalBundles: values.length,
+  };
+}
+
+function summarizeNumericBundleMetric(bundles, accessor) {
+  const values = bundles.map(accessor).filter(Number.isFinite);
+  return {
+    total: values.length > 0 ? sum(values) : null,
+    mean: values.length > 0 ? mean(values) : null,
+    knownCount: values.length,
+    unknownCount: bundles.length - values.length,
+    totalBundles: bundles.length,
+  };
+}
+
+function formatBooleanBundleMetric(label, summary) {
+  if (!summary || summary.totalBundles === 0) {
+    return `- ${label}: none`;
+  }
+  if (summary.knownCount === 0) {
+    return `- ${label}: unknown (${summary.unknownCount}/${summary.totalBundles} bundles missing metric)`;
+  }
+  return `- ${label}: ${summary.trueCount}/${summary.knownCount} known true (${summary.falseCount} known false, ${summary.unknownCount} unknown)`;
+}
+
+function formatNumericBundleMetric(label, summary) {
+  if (!summary || summary.totalBundles === 0) {
+    return `- ${label}: none`;
+  }
+  if (summary.knownCount === 0 || !Number.isFinite(summary.total)) {
+    return `- ${label}: unknown (${summary.unknownCount}/${summary.totalBundles} bundles missing metric)`;
+  }
+  return `- ${label}: ${summary.total} (${summary.knownCount}/${summary.totalBundles} bundles reported, ${summary.unknownCount} unknown)`;
 }
 
 function summarizePerformance(bundles, statusProbe, scanDurationMs) {
@@ -1298,6 +1347,8 @@ function freshnessBand(ageDays, healthFreshnessDays, freshnessThresholdDays) {
 
 function buildHealthSnapshot({ config, statusProbe, bundles, now, scanDurationMs }) {
   const status = summarizeStatus(statusProbe);
+  const watchHeartbeatAt = safeParseDate(status.lastWatchHeartbeatAt);
+  const watchHeartbeatAgeMinutes = watchHeartbeatAt ? round((now.getTime() - watchHeartbeatAt.getTime()) / 60000, 2) : null;
   const latest = latestBundlesByKind(bundles);
   const latestOperator = latest["operator-proof"] ?? null;
   const latestReplay = latest["recorded-session-replay"] ?? null;
@@ -1332,6 +1383,15 @@ function buildHealthSnapshot({ config, statusProbe, bundles, now, scanDurationMs
       signal: statusProbe.signal,
     },
     status,
+    watch: {
+      state: status.watchState ?? status.workerStatus ?? null,
+      lastHeartbeatAt: status.lastWatchHeartbeatAt ?? null,
+      heartbeatAgeMinutes: watchHeartbeatAgeMinutes,
+      intervalSeconds: status.watchIntervalSeconds ?? null,
+      proofState: status.proofState ?? null,
+      watchOnly: status.watchOnly ?? null,
+      teacherArtifactCount: status.teacherArtifactCount ?? null,
+    },
     latestBundles: bundleFreshness,
     performance,
     costProxy,
@@ -1412,6 +1472,12 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs }) {
   const latestReplay = latestBundlesByKind(replayBundles)["recorded-session-replay"] ?? null;
   const latestOperator = latestBundlesByKind(operatorBundles)["operator-proof"] ?? null;
   const latestHost = latestBundlesByKind(hostBundles)["host-evidence"] ?? null;
+  const gatewayReachable = summarizeBooleanBundleMetric(hostBundles, (bundle) => bundle.metrics?.gatewayReachable ?? null);
+  const workerHealthy = summarizeBooleanBundleMetric(hostBundles, (bundle) => bundle.metrics?.workerHealthy ?? null);
+  const memoryFiles = summarizeNumericBundleMetric(hostBundles, (bundle) => bundle.metrics?.memoryFiles ?? null);
+  const sessionCount = summarizeNumericBundleMetric(hostBundles, (bundle) => bundle.metrics?.sessionCount ?? null);
+  const securityCritical = summarizeNumericBundleMetric(hostBundles, (bundle) => bundle.metrics?.securityCriticalCount ?? null);
+  const securityWarn = summarizeNumericBundleMetric(hostBundles, (bundle) => bundle.metrics?.securityWarnCount ?? null);
 
   const aggregate = {
     contract: CONTRACT,
@@ -1469,12 +1535,26 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs }) {
       totalSteps: sum(operatorBundles.map((bundle) => bundle.metrics?.stepCount ?? 0)),
     },
     hostMetrics: {
-      securityCriticalTotal: sum(hostBundles.map((bundle) => bundle.metrics?.securityCriticalCount ?? 0)),
-      securityWarnTotal: sum(hostBundles.map((bundle) => bundle.metrics?.securityWarnCount ?? 0)),
-      gatewayReachableCount: hostBundles.filter((bundle) => bundle.metrics?.gatewayReachable === true).length,
-      workerHealthyCount: hostBundles.filter((bundle) => bundle.metrics?.workerHealthy === true).length,
-      memoryFilesTotal: sum(hostBundles.map((bundle) => bundle.metrics?.memoryFiles ?? 0)),
-      sessionCountTotal: sum(hostBundles.map((bundle) => bundle.metrics?.sessionCount ?? 0)),
+      securityCriticalTotal: securityCritical.total,
+      securityCriticalKnownCount: securityCritical.knownCount,
+      securityCriticalUnknownCount: securityCritical.unknownCount,
+      securityWarnTotal: securityWarn.total,
+      securityWarnKnownCount: securityWarn.knownCount,
+      securityWarnUnknownCount: securityWarn.unknownCount,
+      gatewayReachableCount: gatewayReachable.trueCount,
+      gatewayReachableKnownCount: gatewayReachable.knownCount,
+      gatewayReachableUnknownCount: gatewayReachable.unknownCount,
+      gatewayReachableFalseCount: gatewayReachable.falseCount,
+      workerHealthyCount: workerHealthy.trueCount,
+      workerHealthyKnownCount: workerHealthy.knownCount,
+      workerHealthyUnknownCount: workerHealthy.unknownCount,
+      workerHealthyFalseCount: workerHealthy.falseCount,
+      memoryFilesTotal: memoryFiles.total,
+      memoryFilesKnownCount: memoryFiles.knownCount,
+      memoryFilesUnknownCount: memoryFiles.unknownCount,
+      sessionCountTotal: sessionCount.total,
+      sessionCountKnownCount: sessionCount.knownCount,
+      sessionCountUnknownCount: sessionCount.unknownCount,
     },
     latestBundles: {
       operatorProof: latestOperator,
@@ -1558,6 +1638,12 @@ function formatHealthMarkdown(snapshot) {
   lines.push(`- load proof: ${snapshot.status.loadProof ?? "n/a"}`);
   lines.push(`- worker healthy: ${snapshot.status.workerHealthy}`);
   lines.push(`- worker mode: ${snapshot.status.workerMode}`);
+  lines.push(`- watch state: ${snapshot.watch?.state ?? "n/a"}`);
+  lines.push(`- watch heartbeat: ${snapshot.watch?.lastHeartbeatAt ?? "n/a"}`);
+  lines.push(`- watch heartbeat age (minutes): ${snapshot.watch?.heartbeatAgeMinutes ?? "n/a"}`);
+  lines.push(`- watch interval seconds: ${snapshot.watch?.intervalSeconds ?? "n/a"}`);
+  lines.push(`- proof state: ${snapshot.watch?.proofState ?? "n/a"}`);
+  lines.push(`- teacher artifacts: ${snapshot.watch?.teacherArtifactCount ?? "n/a"}`);
   lines.push(`- recent traced decisions: ${snapshot.status.decisionSummary?.sampleSize ?? 0}`);
   lines.push(`- clip rate: ${snapshot.status.decisionSummary?.clipRate?.rate ?? "n/a"}`);
   lines.push(`- fail-open rate: ${snapshot.status.decisionSummary?.failOpenRate?.rate ?? "n/a"}`);
@@ -1601,6 +1687,12 @@ function formatHealthMarkdown(snapshot) {
   lines.push("## What to watch");
   if (snapshot.status.decisionSummary?.sampleSize === 0) {
     lines.push("- no recent traced decisions were found; this is a quiet surface, not a proof failure");
+  }
+  if (snapshot.watch?.state && snapshot.watch.state !== "watching") {
+    lines.push(`- watcher state is ${snapshot.watch.state}; do not treat this as a fully healthy background-learning surface`);
+  }
+  if (snapshot.status.workerHealthy === null) {
+    lines.push("- worker health is unknown in the live status probe; background-learning health should be treated as partial until the probe reports it directly");
   }
   if (snapshot.latestBundles.length === 0) {
     lines.push("- no proof bundles matched the scan roots");
@@ -1666,12 +1758,44 @@ function formatNightlyMarkdown(aggregate) {
   lines.push(`- operator proof bytes total: ${aggregate.operatorMetrics.operatorFileBytesTotal} (${formatBytes(aggregate.operatorMetrics.operatorFileBytesTotal)})`);
   lines.push("");
   lines.push("## Host evidence health");
-  lines.push(`- security critical total: ${aggregate.hostMetrics.securityCriticalTotal}`);
-  lines.push(`- security warn total: ${aggregate.hostMetrics.securityWarnTotal}`);
-  lines.push(`- gateway reachable bundles: ${aggregate.hostMetrics.gatewayReachableCount}`);
-  lines.push(`- worker healthy bundles: ${aggregate.hostMetrics.workerHealthyCount}`);
-  lines.push(`- memory files total: ${aggregate.hostMetrics.memoryFilesTotal}`);
-  lines.push(`- session count total: ${aggregate.hostMetrics.sessionCountTotal}`);
+  lines.push(formatNumericBundleMetric("security critical total", {
+    total: aggregate.hostMetrics.securityCriticalTotal,
+    knownCount: aggregate.hostMetrics.securityCriticalKnownCount,
+    unknownCount: aggregate.hostMetrics.securityCriticalUnknownCount,
+    totalBundles: aggregate.bundleTypeCounts.hostEvidence,
+  }));
+  lines.push(formatNumericBundleMetric("security warn total", {
+    total: aggregate.hostMetrics.securityWarnTotal,
+    knownCount: aggregate.hostMetrics.securityWarnKnownCount,
+    unknownCount: aggregate.hostMetrics.securityWarnUnknownCount,
+    totalBundles: aggregate.bundleTypeCounts.hostEvidence,
+  }));
+  lines.push(formatBooleanBundleMetric("gateway reachable bundles", {
+    trueCount: aggregate.hostMetrics.gatewayReachableCount,
+    falseCount: aggregate.hostMetrics.gatewayReachableFalseCount,
+    knownCount: aggregate.hostMetrics.gatewayReachableKnownCount,
+    unknownCount: aggregate.hostMetrics.gatewayReachableUnknownCount,
+    totalBundles: aggregate.bundleTypeCounts.hostEvidence,
+  }));
+  lines.push(formatBooleanBundleMetric("worker healthy bundles", {
+    trueCount: aggregate.hostMetrics.workerHealthyCount,
+    falseCount: aggregate.hostMetrics.workerHealthyFalseCount,
+    knownCount: aggregate.hostMetrics.workerHealthyKnownCount,
+    unknownCount: aggregate.hostMetrics.workerHealthyUnknownCount,
+    totalBundles: aggregate.bundleTypeCounts.hostEvidence,
+  }));
+  lines.push(formatNumericBundleMetric("memory files total", {
+    total: aggregate.hostMetrics.memoryFilesTotal,
+    knownCount: aggregate.hostMetrics.memoryFilesKnownCount,
+    unknownCount: aggregate.hostMetrics.memoryFilesUnknownCount,
+    totalBundles: aggregate.bundleTypeCounts.hostEvidence,
+  }));
+  lines.push(formatNumericBundleMetric("session count total", {
+    total: aggregate.hostMetrics.sessionCountTotal,
+    knownCount: aggregate.hostMetrics.sessionCountKnownCount,
+    unknownCount: aggregate.hostMetrics.sessionCountUnknownCount,
+    totalBundles: aggregate.bundleTypeCounts.hostEvidence,
+  }));
   lines.push("");
   lines.push("## Cost proxy");
   lines.push(`- proof minutes: ${aggregate.costProxy.proofMinutes}`);

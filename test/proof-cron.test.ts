@@ -312,6 +312,101 @@ describe("proof cron bundle scanning", () => {
     ]);
     expect(bundles.find((bundle: any) => bundle.kind === "host-evidence")?.metrics.securityCriticalCount).toBe(1);
   });
+
+  it("marks unknown host metrics as unknown instead of collapsing them to zero", () => {
+    const now = new Date("2026-03-31T13:00:00.000Z");
+    const config = {
+      healthFreshnessDays: 7,
+      freshnessThresholdDays: 21,
+    };
+    const aggregate = buildNightlyAggregate({
+      config,
+      now,
+      scanDurationMs: 42,
+      bundles: [
+        {
+          kind: "host-evidence",
+          bundleId: "host-proof",
+          relativePath: "openclawbrain/docs/evidence/2026-03-26/abc123/host-proof",
+          canonicalAt: "2026-03-26T00:00:00.000Z",
+          ageDays: 5,
+          fileCount: 4,
+          artifactBytes: 1000,
+          validationOk: true,
+          metrics: {
+            securityCriticalCount: null,
+            securityWarnCount: null,
+            gatewayReachable: null,
+            workerHealthy: null,
+            memoryFiles: null,
+            sessionCount: null,
+          },
+        },
+      ],
+    });
+
+    expect(aggregate.hostMetrics.gatewayReachableCount).toBe(0);
+    expect(aggregate.hostMetrics.gatewayReachableKnownCount).toBe(0);
+    expect(aggregate.hostMetrics.gatewayReachableUnknownCount).toBe(1);
+    expect(aggregate.hostMetrics.workerHealthyKnownCount).toBe(0);
+    expect(aggregate.hostMetrics.memoryFilesTotal).toBeNull();
+    expect(aggregate.hostMetrics.sessionCountTotal).toBeNull();
+
+    const markdown = formatNightlyMarkdown(aggregate);
+    expect(markdown).toContain("gateway reachable bundles: unknown (1/1 bundles missing metric)");
+    expect(markdown).toContain("worker healthy bundles: unknown (1/1 bundles missing metric)");
+    expect(markdown).toContain("memory files total: unknown (1/1 bundles missing metric)");
+    expect(markdown).toContain("session count total: unknown (1/1 bundles missing metric)");
+  });
+
+  it("surfaces stale watcher state explicitly in the health markdown", () => {
+    const health = buildHealthSnapshot({
+      config: {
+        healthFreshnessDays: 7,
+        freshnessThresholdDays: 21,
+      },
+      now: new Date("2026-04-02T11:30:00.000Z"),
+      scanDurationMs: 42,
+      bundles: [],
+      statusProbe: {
+        command: "openclawbrain status --json",
+        startedAt: "2026-04-02T11:29:59.000Z",
+        endedAt: "2026-04-02T11:30:00.000Z",
+        durationMs: 1000,
+        exitCode: 0,
+        signal: null,
+        parsed: {
+          brainStatus: {
+            status: "ok",
+            serveState: "serving_active_pack",
+            usedLearnedRouteFn: true,
+          },
+          brain: {
+            activePackId: "pack-abc",
+          },
+          hook: {
+            loadProof: "status_probe_ready",
+          },
+          passiveLearning: {
+            watchState: "stale_snapshot",
+            lastWatchHeartbeatAt: "2026-04-02T11:26:18.163Z",
+            watchIntervalSeconds: 30,
+            proofState: "self_proving",
+            teacherArtifactCount: 735,
+          },
+          workerHealthy: null,
+          workerMode: null,
+        },
+      },
+    });
+
+    const markdown = formatHealthMarkdown(health);
+    expect(markdown).toContain("watch state: stale_snapshot");
+    expect(markdown).toContain("watch heartbeat: 2026-04-02T11:26:18.163Z");
+    expect(markdown).toContain("teacher artifacts: 735");
+    expect(markdown).toContain("watcher state is stale_snapshot; do not treat this as a fully healthy background-learning surface");
+    expect(markdown).toContain("worker health is unknown in the live status probe");
+  });
 });
 
 describe("proof cron config", () => {
