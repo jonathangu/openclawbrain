@@ -1381,6 +1381,108 @@ export function classifyObservationBindingQuality(
 }
 
 // ═══════════════════════════════════════════
+// Attribution Truth
+// ═══════════════════════════════════════════
+
+export type AttributionTruthState =
+  | "matched"
+  | "ambiguous"
+  | "unmatched"
+  | "delayed";
+
+export type AttributionTruthMatchBasis =
+  | "decision_record_id"
+  | "selection_digest"
+  | "turn_compile_event_id"
+  | "trace_id"
+  | "episode_id"
+  | "heuristic"
+  | "manual"
+  | "pending_observation"
+  | "pending_update"
+  | "missing"
+  | "conflict";
+
+export interface AttributionTruthObservationRef {
+  observationId: string;
+  episodeId: string;
+  conversationId: number | null;
+  traceId: string | null;
+  bindingMode: BrainObservationBindingMode | null;
+  requestDigest: string | null;
+  serveDecisionRecordId: string | null;
+  selectionDigest: string | null;
+  turnCompileEventId: string | null;
+  provenanceRef: string | null;
+}
+
+export interface AttributionTruthSupervisionRef {
+  supervisionId: string;
+  episodeId: string;
+  conversationId: number | null;
+  source: RewardSource;
+  kind: BrainEvidenceKind;
+  observationId: string | null;
+  traceId: string | null;
+  teacherTraceId: string | null;
+  serveDecisionRecordId: string | null;
+  selectionDigest: string | null;
+  turnCompileEventId: string | null;
+  bindingMode: BrainObservationBindingMode | null;
+  attributionQuality: ObservationBindingQuality | null;
+  feedbackRichness: TeacherFeedbackRichness | null;
+  traceRequestDigest: string | null;
+  provenanceRef: string | null;
+}
+
+export interface AttributionTruthUpdateRef {
+  updateId: string;
+  episodeId: string;
+  observationIds: string[];
+  supervisionIds: string[];
+  traceIds: string[];
+  rewardSource: RewardSource | null;
+  attributionQuality: ObservationBindingQuality | "mixed" | null;
+  feedbackRichness: TeacherFeedbackRichness | "mixed" | null;
+  routeUpdateCount: number;
+  seedUpdateCount: number;
+  stopLocalUpdateCount: number;
+  edgeUpdateCount: number;
+  updateReason: string | null;
+  provenanceRef: string | null;
+}
+
+export interface AttributionTruthLink {
+  state: AttributionTruthState;
+  basis: AttributionTruthMatchBasis;
+  confidence: number | null;
+  detail: string | null;
+  candidateIds: string[];
+}
+
+export interface AttributionTruthLinkage {
+  observationToSupervision: AttributionTruthLink;
+  supervisionToUpdate: AttributionTruthLink;
+}
+
+export interface AttributionTruthRecord {
+  schemaVersion: 1;
+  attributionTruthId: string;
+  conversationId: number | null;
+  episodeId: string | null;
+  state: AttributionTruthState;
+  observation: AttributionTruthObservationRef | null;
+  supervision: AttributionTruthSupervisionRef | null;
+  update: AttributionTruthUpdateRef | null;
+  linkage: AttributionTruthLinkage;
+  contentHash: string;
+  lineageHash: string;
+  provenanceRef: string;
+  createdAt: number;
+  updatedAt: number;
+}
+
+// ═══════════════════════════════════════════
 // Configuration
 // ═══════════════════════════════════════════
 

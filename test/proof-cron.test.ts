@@ -1,10 +1,21 @@
-import { mkdirSync, mkdtempSync, writeFileSync } from "node:fs";
+import { mkdirSync, mkdtempSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import os from "node:os";
 import { describe, expect, it } from "vitest";
 import { summarizeOperatorHealth } from "../src/live-runtime-audit.js";
 // @ts-ignore runtime script module has no checked-in typed surface yet
-import { buildHealthSnapshot, buildNightlyAggregate, collectBundleCandidates, formatHealthMarkdown, formatNightlyMarkdown, loadConfig, summarizeScan } from "../scripts/proof-cron.mjs";
+import {
+  PROOF_CRON_MANIFEST_LAYOUT,
+  buildHealthSnapshot,
+  buildNightlyAggregate,
+  collectBundleCandidates,
+  formatHealthMarkdown,
+  formatNightlyMarkdown,
+  loadConfig,
+  summarizeScan,
+  writeHealthOutputs,
+  writeNightlyOutputs,
+} from "../scripts/proof-cron.mjs";
 
 function tempWorkspace() {
   return mkdtempSync(path.join(os.tmpdir(), "ocb-proof-cron-"));
@@ -17,6 +28,10 @@ function writeText(filePath: string, content: string) {
 
 function writeJson(filePath: string, value: unknown) {
   writeText(filePath, `${JSON.stringify(value, null, 2)}\n`);
+}
+
+function readText(rootDir: string, relativePath: string) {
+  return readFileSync(path.join(rootDir, relativePath), "utf8");
 }
 
 describe("proof cron bundle scanning", () => {
@@ -46,7 +61,54 @@ describe("proof cron bundle scanning", () => {
 
     const replayRoot = path.join(docsEvidenceRoot, "2026-03-26", "abc123", "recorded-session-replay", "trace-a");
     writeText(path.join(replayRoot, "summary.md"), "# replay proof\n");
-    writeJson(path.join(replayRoot, "manifest.json"), { contract: "recorded_session_replay_manifest.v1" });
+    writeJson(path.join(replayRoot, "manifest.json"), {
+      contract: "recorded_session_replay_proof_manifest.v1",
+      traceId: "trace-a",
+      source: "sanitized_recorded_session",
+      recordedAt: "2026-03-26T00:00:00.000Z",
+      generatedAt: "2026-03-26T00:10:00.000Z",
+      hashAlgorithm: "sha256",
+      modeOrder: ["no_brain", "vector_only", "graph_prior_only", "learned_route"],
+      contracts: {
+        trace: "recorded_session_trace.v1",
+        fixture: "recorded_session_replay_fixture.v1",
+        bundle: "recorded_session_replay_bundle.v1",
+        environment: "recorded_session_replay_environment.v1",
+        summaryTables: "recorded_session_replay_summary_tables.v1",
+        coverageSnapshot: "recorded_session_replay_coverage_snapshot.v1",
+        hardeningSnapshot: "recorded_session_replay_hardening_snapshot.v1",
+        hashes: "recorded_session_replay_hashes.v1",
+      },
+      hashes: {
+        traceHash: "sha256-trace",
+        fixtureHash: "sha256-fixture",
+        scoreHash: "sha256-score",
+        bundleHash: "sha256-bundle",
+      },
+      files: {
+        trace: "trace.json",
+        fixture: "fixture.json",
+        bundle: "bundle.json",
+        environment: "environment.json",
+        summary: "summary.md",
+        summaryTables: "summary-tables.json",
+        coverageSnapshot: "coverage-snapshot.json",
+        hardeningSnapshot: "hardening-snapshot.json",
+        hashes: "hashes.json",
+        modes: [
+          { mode: "no_brain", path: "modes/no_brain.json" },
+          { mode: "vector_only", path: "modes/vector_only.json" },
+          { mode: "graph_prior_only", path: "modes/graph_prior_only.json" },
+          { mode: "learned_route", path: "modes/learned_route.json" },
+        ],
+      },
+    });
+    writeJson(path.join(replayRoot, "fixture.json"), {
+      contract: "recorded_session_replay_fixture.v1",
+      traceId: "trace-a",
+      fixtureHash: "sha256-fixture",
+      turns: [],
+    });
     writeJson(path.join(replayRoot, "bundle.json"), {
       contract: "recorded_session_replay_bundle.v1",
       traceId: "trace-a",
@@ -137,6 +199,22 @@ describe("proof cron bundle scanning", () => {
       ],
     });
     writeJson(path.join(replayRoot, "hardening-snapshot.json"), { warnings: [] });
+    writeJson(path.join(replayRoot, "hashes.json"), {
+      contract: "recorded_session_replay_hashes.v1",
+      algorithm: "sha256",
+      semantic: {
+        traceHash: "sha256-trace",
+        fixtureHash: "sha256-fixture",
+        scoreHash: "sha256-score",
+        bundleHash: "sha256-bundle",
+      },
+      files: [
+        { path: "trace.json", digest: "sha256-trace-file" },
+        { path: "fixture.json", digest: "sha256-fixture-file" },
+        { path: "bundle.json", digest: "sha256-bundle-file" },
+        { path: "manifest.json", digest: "sha256-manifest-file" },
+      ],
+    });
     writeJson(path.join(replayRoot, "validation-report.json"), { ok: true, verifiedFileCount: 6 });
 
     const hostRoot = path.join(docsEvidenceRoot, "2026-03-26", "abc123", "host-proof");
@@ -312,6 +390,97 @@ describe("proof cron bundle scanning", () => {
       },
     ]);
     expect(bundles.find((bundle: any) => bundle.kind === "host-evidence")?.metrics.securityCriticalCount).toBe(1);
+
+    const config = {
+      healthFreshnessDays: 7,
+      freshnessThresholdDays: 21,
+    };
+    const now = new Date("2026-03-31T13:00:00.000Z");
+    const nightlyAggregate = buildNightlyAggregate({
+      config,
+      now,
+      scanDurationMs: 42,
+      bundles,
+    });
+    const nightlyOutputDir = path.join(workspaceRoot, "artifacts", "openclawbrain-proof-cron", "nightly-aggregate");
+    writeNightlyOutputs(nightlyOutputDir, nightlyAggregate, bundles, workspaceRoot);
+
+    const nightlyManifest = JSON.parse(readText(nightlyOutputDir, PROOF_CRON_MANIFEST_LAYOUT.manifest));
+    const nightlyReplayManifests = JSON.parse(readText(nightlyOutputDir, PROOF_CRON_MANIFEST_LAYOUT.replayManifests));
+    const nightlySmoke = JSON.parse(readText(nightlyOutputDir, PROOF_CRON_MANIFEST_LAYOUT.smoke));
+
+    expect(nightlyManifest.contract).toBe("openclawbrain_proof_manifest_skeleton.v1");
+    expect(nightlyManifest.runKind).toBe("nightly");
+    expect(nightlyManifest.replayInputs.count).toBe(1);
+    expect(nightlyManifest.replayInputs.items).toEqual([
+      {
+        traceId: "trace-a",
+        proofBundleRelativePath: "openclawbrain/docs/evidence/2026-03-26/abc123/recorded-session-replay/trace-a",
+        fixtureHash: "sha256-fixture",
+        bundleHash: "sha256-bundle",
+        scoreHash: "sha256-score",
+        proofManifestDigest: "sha256-manifest-file",
+      },
+    ]);
+    expect(nightlyReplayManifests.contract).toBe("openclawbrain_replay_manifest_skeleton_set.v1");
+    expect(nightlyReplayManifests.linkageSummary.fixtureToReplayLinkedCount).toBe(1);
+    expect(nightlyReplayManifests.linkageSummary.replayToProofManifestLinkedCount).toBe(1);
+    expect(nightlyReplayManifests.linkageSummary.manifestToHashLedgerLinkedCount).toBe(1);
+    expect(nightlyReplayManifests.items[0].releaseCloseout.state).toBe("unlinked");
+    expect(nightlySmoke.contract).toBe("openclawbrain_proof_manifest_smoke.v1");
+    expect(nightlySmoke.output.primary.path).toBe("aggregate.json");
+    expect(nightlySmoke.replayInputs.allReplayHashesLinked).toBe(true);
+
+    const statusProbe = {
+      command: "node packages/cli/dist/src/cli.js status --openclaw-home ~/.openclaw --json",
+      startedAt: "2026-03-31T12:59:00.000Z",
+      endedAt: "2026-03-31T12:59:02.000Z",
+      durationMs: 2000,
+      exitCode: 0,
+      signal: null,
+      parsed: {
+        brainStatus: {
+          status: "ok",
+          serveState: "serving_active_pack",
+          usedLearnedRouteFn: true,
+        },
+        brain: {
+          activePackId: "pack-9e3c579b",
+          routeFreshness: "updated",
+        },
+        hook: {
+          loadProof: "status_probe_ready",
+        },
+        passiveLearning: {
+          watch: {
+            state: "healthy",
+            lastHeartbeatAt: "2026-03-31T12:58:45.000Z",
+            intervalSeconds: 30,
+            proofState: "self_proving",
+            teacherArtifactCount: 3,
+          },
+        },
+        workerHealthy: true,
+        workerMode: "child",
+      },
+    };
+    const healthSnapshot = buildHealthSnapshot({
+      config,
+      now,
+      scanDurationMs: 42,
+      bundles,
+      statusProbe,
+    });
+    const healthOutputDir = path.join(workspaceRoot, "artifacts", "openclawbrain-proof-cron", "health-snapshot");
+    writeHealthOutputs(healthOutputDir, healthSnapshot, statusProbe, bundles, workspaceRoot);
+
+    const healthManifest = JSON.parse(readText(healthOutputDir, PROOF_CRON_MANIFEST_LAYOUT.manifest));
+    const healthSmoke = JSON.parse(readText(healthOutputDir, PROOF_CRON_MANIFEST_LAYOUT.smoke));
+    expect(healthManifest.runKind).toBe("health");
+    expect(healthManifest.output.primary.path).toBe("snapshot.json");
+    expect(healthManifest.replayInputs.linkageSummary.fixtureToReplayLinkedCount).toBe(1);
+    expect(healthSmoke.output.primary.path).toBe("snapshot.json");
+    expect(healthSmoke.replayInputs.allReplayHashesLinked).toBe(true);
   });
 
   it("marks unknown host metrics as unknown instead of collapsing them to zero", () => {

@@ -56,7 +56,7 @@ import { readWorkerRuntimeState } from "./worker-state.js";
 import { WorkerSupervisor } from "./worker-supervisor.js";
 import { isSystemMessage } from "../brain-harvest/system-filter.js";
 import { buildContextManagementModel } from "../context-management-model.js";
-import { summarizeOperatorHealth } from "../live-runtime-audit.js";
+import { summarizeAttributionTruth, summarizeOperatorHealth } from "../live-runtime-audit.js";
 import {
   proposeUserCorrectionFast,
   proposeUserCorrectionWithModel,
@@ -1924,6 +1924,10 @@ export class BrainService {
       lastEvaluationCycle: this.store.getTrainingStateJson("last_teacher_evaluation_cycle_json"),
       lastUpdateCycle: this.store.getTrainingStateJson("last_teacher_update_cycle_json"),
     };
+    const attributionTruth = summarizeAttributionTruth({
+      observationAttribution,
+      teacherTruth,
+    });
     const operatorHealth = summarizeOperatorHealth({
       workerHealthy: workerState.workerHealthy,
       workerMode: workerState.workerMode,
@@ -2002,6 +2006,7 @@ export class BrainService {
       pendingObservations: this.store.countPendingObservations(),
       pendingObservationsByStatus: this.store.countObservationsByStatus(),
       observationAttribution,
+      attributionTruth,
       teacherTruth,
       operatorHealth,
       contextFeedback,

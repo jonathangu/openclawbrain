@@ -6,6 +6,14 @@ import path from "node:path";
 import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { isOperatorHealthSummary, summarizeOperatorHealth } from "./operator-health-contract.mjs";
+import {
+  PROOF_CRON_MANIFEST_LAYOUT,
+  buildProofManifestSkeleton,
+  buildProofManifestSmoke,
+  buildReplayManifestSkeletonSet,
+  renderJson,
+  sha256Text,
+} from "./replay/manifest-skeletons.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -872,7 +880,9 @@ function summarizeReplayBundle(bundlePath, workspaceRoot) {
   });
 
   const fileNames = new Set(fileStats.map((entry) => path.basename(entry.path)));
+  const manifest = readJsonIfExists(path.join(bundlePath, "manifest.json"));
   const trace = readJsonIfExists(path.join(bundlePath, "trace.json"));
+  const fixture = readJsonIfExists(path.join(bundlePath, "fixture.json"));
   const bundle = readJsonIfExists(path.join(bundlePath, "bundle.json"));
   const summary = readTextIfExists(path.join(bundlePath, "summary.md"));
   const summaryTables = readJsonIfExists(path.join(bundlePath, "summary-tables.json"));
@@ -923,6 +933,8 @@ function summarizeReplayBundle(bundlePath, workspaceRoot) {
           ranking: Array.isArray(summaryTables.ranking) ? summaryTables.ranking : [],
         }
       : null,
+    manifest: manifest ?? null,
+    fixture: fixture ?? null,
     coverage: coverage
       ? {
           totalTurns: coverage.totalTurns ?? null,
@@ -947,16 +959,29 @@ function summarizeReplayBundle(bundlePath, workspaceRoot) {
       : null,
     hashes: hashes
       ? {
+          contract: hashes.contract ?? null,
+          algorithm: hashes.algorithm ?? null,
           traceHash: hashes.traceHash ?? bundle?.traceHash ?? null,
           fixtureHash: hashes.fixtureHash ?? bundle?.fixtureHash ?? null,
           scoreHash: hashes.scoreHash ?? bundle?.scoreHash ?? null,
           bundleHash: hashes.bundleHash ?? bundle?.bundleHash ?? null,
+          semantic: hashes.semantic ?? null,
+          files: Array.isArray(hashes.files)
+            ? hashes.files.map((entry) => ({
+                path: entry?.path ?? null,
+                digest: entry?.digest ?? null,
+              }))
+            : [],
         }
       : {
+          contract: null,
+          algorithm: null,
           traceHash: bundle?.traceHash ?? null,
           fixtureHash: bundle?.fixtureHash ?? null,
           scoreHash: bundle?.scoreHash ?? null,
           bundleHash: bundle?.bundleHash ?? null,
+          semantic: null,
+          files: [],
         },
     metrics: {
       traceId: bundle?.traceId ?? trace?.traceId ?? null,
@@ -1881,18 +1906,168 @@ function formatNightlyMarkdown(aggregate) {
   return `${lines.join("\n")}\n`;
 }
 
-function writeHealthOutputs(outputDir, snapshot, statusProbe) {
-  ensureDir(outputDir);
-  saveJson(path.join(outputDir, "status.json"), statusProbe);
-  saveJson(path.join(outputDir, "snapshot.json"), snapshot);
-  saveText(path.join(outputDir, "summary.md"), formatHealthMarkdown(snapshot));
+function writeHealthOutputs(outputDir, snapshot, statusProbe, bundles = [], currentWorkspaceRoot = workspaceRoot) {
+  writeHealthOutputsWithManifests(outputDir, snapshot, statusProbe, bundles, currentWorkspaceRoot);
 }
 
-function writeNightlyOutputs(outputDir, aggregate, bundles) {
+function writeNightlyOutputs(outputDir, aggregate, bundles, currentWorkspaceRoot = workspaceRoot) {
+  writeNightlyOutputsWithManifests(outputDir, aggregate, bundles, currentWorkspaceRoot);
+}
+
+function buildOutputRelativePath(outputDir, currentWorkspaceRoot) {
+  return path.relative(currentWorkspaceRoot, outputDir).split(path.sep).join("/");
+}
+
+function buildBundleInventoryFromSnapshot(snapshot) {
+  const proofInventory = snapshot?.proofInventory ?? {};
+  const validationOkCount = Number(proofInventory.validationOkCount ?? 0);
+  const validationFailCount = Number(proofInventory.validationFailCount ?? 0);
+  const totalBundles = Number(proofInventory.bundleCount ?? 0);
+  return {
+    totalBundles,
+    operatorProofCount: Number(proofInventory.operatorProofCount ?? 0),
+    replayProofCount: Number(proofInventory.replayProofCount ?? 0),
+    hostEvidenceCount: Number(proofInventory.hostEvidenceCount ?? 0),
+    genericProofCount: Number(proofInventory.genericProofCount ?? 0),
+    validationOkCount,
+    validationFailCount,
+    validationUnknownCount: Math.max(0, totalBundles - validationOkCount - validationFailCount),
+  };
+}
+
+function buildBundleInventoryFromAggregate(aggregate) {
+  const bundleTypeCounts = aggregate?.bundleTypeCounts ?? {};
+  const validationCounts = aggregate?.validationCounts ?? {};
+  return {
+    totalBundles: Array.isArray(aggregate?.bundles) ? aggregate.bundles.length : 0,
+    operatorProofCount: Number(bundleTypeCounts.operatorProof ?? 0),
+    replayProofCount: Number(bundleTypeCounts.recordedSessionReplay ?? 0),
+    hostEvidenceCount: Number(bundleTypeCounts.hostEvidence ?? 0),
+    genericProofCount: Number(bundleTypeCounts.genericProof ?? 0),
+    validationOkCount: Number(validationCounts.ok ?? 0),
+    validationFailCount: Number(validationCounts.fail ?? 0),
+    validationUnknownCount: Number(validationCounts.unknown ?? 0),
+  };
+}
+
+function writeHealthOutputsWithManifests(outputDir, snapshot, statusProbe, bundles = [], currentWorkspaceRoot = workspaceRoot) {
   ensureDir(outputDir);
-  saveJson(path.join(outputDir, "aggregate.json"), aggregate);
-  saveJson(path.join(outputDir, "bundle-index.json"), bundles);
-  saveText(path.join(outputDir, "summary.md"), formatNightlyMarkdown(aggregate));
+  const statusText = renderJson(statusProbe);
+  const snapshotText = renderJson(snapshot);
+  const summaryText = formatHealthMarkdown(snapshot);
+  const replayManifestSet = buildReplayManifestSkeletonSet(bundles);
+  const replayManifestsText = renderJson(replayManifestSet);
+  const outputRelativePath = buildOutputRelativePath(outputDir, currentWorkspaceRoot);
+  const primary = {
+    role: "snapshot",
+    path: "snapshot.json",
+    digest: sha256Text(snapshotText),
+    contract: snapshot?.contract ?? null,
+  };
+  const supporting = [
+    {
+      role: "status-probe",
+      path: "status.json",
+      digest: sha256Text(statusText),
+      contract: null,
+    },
+    {
+      role: "summary",
+      path: "summary.md",
+      digest: sha256Text(summaryText),
+      contract: null,
+    },
+  ];
+  const bundleInventory = buildBundleInventoryFromSnapshot(snapshot);
+  const manifest = buildProofManifestSkeleton({
+    runKind: "health",
+    generatedAt: snapshot?.generatedAt ?? null,
+    sourceContract: CONTRACT,
+    outputRelativePath,
+    primary,
+    supporting,
+    replayManifestSet,
+    replayManifestsDigest: sha256Text(replayManifestsText),
+    bundleInventory,
+  });
+  const manifestText = renderJson(manifest);
+  const smoke = buildProofManifestSmoke({
+    runKind: "health",
+    generatedAt: snapshot?.generatedAt ?? null,
+    manifestDigest: sha256Text(manifestText),
+    replayManifestsDigest: sha256Text(replayManifestsText),
+    primary,
+    supporting,
+    replayManifestSet,
+    bundleInventory,
+  });
+
+  saveText(path.join(outputDir, "status.json"), statusText);
+  saveText(path.join(outputDir, "snapshot.json"), snapshotText);
+  saveText(path.join(outputDir, "summary.md"), summaryText);
+  saveText(path.join(outputDir, PROOF_CRON_MANIFEST_LAYOUT.replayManifests), replayManifestsText);
+  saveText(path.join(outputDir, PROOF_CRON_MANIFEST_LAYOUT.manifest), manifestText);
+  saveText(path.join(outputDir, PROOF_CRON_MANIFEST_LAYOUT.smoke), renderJson(smoke));
+}
+
+function writeNightlyOutputsWithManifests(outputDir, aggregate, bundles, currentWorkspaceRoot = workspaceRoot) {
+  ensureDir(outputDir);
+  const aggregateText = renderJson(aggregate);
+  const bundleIndexText = renderJson(bundles);
+  const summaryText = formatNightlyMarkdown(aggregate);
+  const replayManifestSet = buildReplayManifestSkeletonSet(bundles);
+  const replayManifestsText = renderJson(replayManifestSet);
+  const outputRelativePath = buildOutputRelativePath(outputDir, currentWorkspaceRoot);
+  const primary = {
+    role: "aggregate",
+    path: "aggregate.json",
+    digest: sha256Text(aggregateText),
+    contract: aggregate?.contract ?? null,
+  };
+  const supporting = [
+    {
+      role: "bundle-index",
+      path: "bundle-index.json",
+      digest: sha256Text(bundleIndexText),
+      contract: null,
+    },
+    {
+      role: "summary",
+      path: "summary.md",
+      digest: sha256Text(summaryText),
+      contract: null,
+    },
+  ];
+  const bundleInventory = buildBundleInventoryFromAggregate(aggregate);
+  const manifest = buildProofManifestSkeleton({
+    runKind: "nightly",
+    generatedAt: aggregate?.generatedAt ?? null,
+    sourceContract: CONTRACT,
+    outputRelativePath,
+    primary,
+    supporting,
+    replayManifestSet,
+    replayManifestsDigest: sha256Text(replayManifestsText),
+    bundleInventory,
+  });
+  const manifestText = renderJson(manifest);
+  const smoke = buildProofManifestSmoke({
+    runKind: "nightly",
+    generatedAt: aggregate?.generatedAt ?? null,
+    manifestDigest: sha256Text(manifestText),
+    replayManifestsDigest: sha256Text(replayManifestsText),
+    primary,
+    supporting,
+    replayManifestSet,
+    bundleInventory,
+  });
+
+  saveText(path.join(outputDir, "aggregate.json"), aggregateText);
+  saveText(path.join(outputDir, "bundle-index.json"), bundleIndexText);
+  saveText(path.join(outputDir, "summary.md"), summaryText);
+  saveText(path.join(outputDir, PROOF_CRON_MANIFEST_LAYOUT.replayManifests), replayManifestsText);
+  saveText(path.join(outputDir, PROOF_CRON_MANIFEST_LAYOUT.manifest), manifestText);
+  saveText(path.join(outputDir, PROOF_CRON_MANIFEST_LAYOUT.smoke), renderJson(smoke));
 }
 
 function buildWorkspaceOutputDir(subdir) {
@@ -1937,7 +2112,7 @@ function main() {
       now: new Date(),
       scanDurationMs,
     });
-    writeHealthOutputs(outputDir, snapshot, statusProbe);
+    writeHealthOutputs(outputDir, snapshot, statusProbe, bundles, workspaceRoot);
     process.stdout.write(
       [
         `health snapshot written to ${outputDir}`,
@@ -1957,7 +2132,7 @@ function main() {
     now: new Date(),
     scanDurationMs,
   });
-  writeNightlyOutputs(outputDir, aggregate, bundles);
+  writeNightlyOutputs(outputDir, aggregate, bundles, workspaceRoot);
   process.stdout.write(
     [
       `nightly aggregate written to ${outputDir}`,
@@ -1979,8 +2154,12 @@ if (process.argv[1] && path.resolve(process.argv[1]) === __filename) {
 }
 
 export {
+  PROOF_CRON_MANIFEST_LAYOUT,
   buildHealthSnapshot,
   buildNightlyAggregate,
+  buildProofManifestSkeleton,
+  buildProofManifestSmoke,
+  buildReplayManifestSkeletonSet,
   bundleTimestamp,
   classifyBundleRoot,
   collectBundleCandidates,
@@ -1995,4 +2174,6 @@ export {
   summarizeOperatorBundle,
   summarizeReplayBundle,
   summarizeScan,
+  writeHealthOutputs,
+  writeNightlyOutputs,
 };

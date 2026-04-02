@@ -4,6 +4,13 @@
 
 import { createHash, randomUUID } from "node:crypto";
 import type {
+  AttributionTruthLink,
+  AttributionTruthLinkage,
+  AttributionTruthObservationRef,
+  AttributionTruthRecord,
+  AttributionTruthState,
+  AttributionTruthSupervisionRef,
+  AttributionTruthUpdateRef,
   BrainAgentIdentity,
   BrainCompileReportV1,
   BrainPersistenceMode,
@@ -36,6 +43,38 @@ function hashQuery(queryText: string): string {
   return hashValue(queryText);
 }
 
+function normalizeStableString(value: string | null | undefined): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const normalized = value.trim();
+  return normalized.length > 0 ? normalized : null;
+}
+
+function normalizeStableStringArray(values: string[] | null | undefined): string[] {
+  if (!Array.isArray(values)) {
+    return [];
+  }
+  return [...new Set(values.map((value) => normalizeStableString(value)).filter((value): value is string => value !== null))].sort();
+}
+
+function normalizeConfidence(value: number | null | undefined): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return null;
+  }
+  if (value <= 0) {
+    return 0;
+  }
+  if (value >= 1) {
+    return 1;
+  }
+  return value;
+}
+
+function hashStableParts(parts: Array<string | null | undefined>): string {
+  return hashValue(parts.map((part) => part ?? "").join("\u001f"));
+}
+
 function truncatePreview(content: string): string {
   const normalized = content.replace(/\s+/g, " ").trim();
   if (normalized.length <= TRACE_PREVIEW_CHARS) {
@@ -65,6 +104,287 @@ export function redactTextSurface(label: string, value: string | null | undefine
 export function toProvenanceRef(value: string | null | undefined, fallback: string): string {
   const basis = typeof value === "string" && value.trim().length > 0 ? value.trim() : fallback;
   return `prov_${hashValue(basis)}`;
+}
+
+function normalizeAttributionTruthObservationRef(
+  observation: AttributionTruthObservationRef | null | undefined,
+): AttributionTruthObservationRef | null {
+  if (!observation) {
+    return null;
+  }
+  return {
+    observationId: normalizeStableString(observation.observationId) ?? observation.observationId,
+    episodeId: normalizeStableString(observation.episodeId) ?? observation.episodeId,
+    conversationId: observation.conversationId ?? null,
+    traceId: normalizeStableString(observation.traceId),
+    bindingMode: observation.bindingMode ?? null,
+    requestDigest: normalizeStableString(observation.requestDigest),
+    serveDecisionRecordId: normalizeStableString(observation.serveDecisionRecordId),
+    selectionDigest: normalizeStableString(observation.selectionDigest),
+    turnCompileEventId: normalizeStableString(observation.turnCompileEventId),
+    provenanceRef: normalizeStableString(observation.provenanceRef),
+  };
+}
+
+function normalizeAttributionTruthSupervisionRef(
+  supervision: AttributionTruthSupervisionRef | null | undefined,
+): AttributionTruthSupervisionRef | null {
+  if (!supervision) {
+    return null;
+  }
+  return {
+    supervisionId: normalizeStableString(supervision.supervisionId) ?? supervision.supervisionId,
+    episodeId: normalizeStableString(supervision.episodeId) ?? supervision.episodeId,
+    conversationId: supervision.conversationId ?? null,
+    source: supervision.source,
+    kind: supervision.kind,
+    observationId: normalizeStableString(supervision.observationId),
+    traceId: normalizeStableString(supervision.traceId),
+    teacherTraceId: normalizeStableString(supervision.teacherTraceId),
+    serveDecisionRecordId: normalizeStableString(supervision.serveDecisionRecordId),
+    selectionDigest: normalizeStableString(supervision.selectionDigest),
+    turnCompileEventId: normalizeStableString(supervision.turnCompileEventId),
+    bindingMode: supervision.bindingMode ?? null,
+    attributionQuality: supervision.attributionQuality ?? null,
+    feedbackRichness: supervision.feedbackRichness ?? null,
+    traceRequestDigest: normalizeStableString(supervision.traceRequestDigest),
+    provenanceRef: normalizeStableString(supervision.provenanceRef),
+  };
+}
+
+export function normalizeAttributionTruthUpdateRef(
+  update: AttributionTruthUpdateRef | null | undefined,
+): AttributionTruthUpdateRef | null {
+  if (!update) {
+    return null;
+  }
+  return {
+    ...update,
+    updateId: normalizeStableString(update.updateId) ?? update.updateId,
+    episodeId: normalizeStableString(update.episodeId) ?? update.episodeId,
+    observationIds: normalizeStableStringArray(update.observationIds),
+    supervisionIds: normalizeStableStringArray(update.supervisionIds),
+    traceIds: normalizeStableStringArray(update.traceIds),
+    updateReason: normalizeStableString(update.updateReason),
+    provenanceRef: normalizeStableString(update.provenanceRef),
+  };
+}
+
+export function normalizeAttributionTruthLink(link: AttributionTruthLink): AttributionTruthLink {
+  return {
+    state: link.state,
+    basis: link.basis,
+    confidence: normalizeConfidence(link.confidence),
+    detail: normalizeStableString(link.detail),
+    candidateIds: normalizeStableStringArray(link.candidateIds),
+  };
+}
+
+export function normalizeAttributionTruthLinkage(
+  linkage: AttributionTruthLinkage,
+): AttributionTruthLinkage {
+  return {
+    observationToSupervision: normalizeAttributionTruthLink(linkage.observationToSupervision),
+    supervisionToUpdate: normalizeAttributionTruthLink(linkage.supervisionToUpdate),
+  };
+}
+
+export function toAttributionUpdateId(params: {
+  episodeId: string;
+  observationIds?: string[] | null;
+  supervisionIds?: string[] | null;
+  traceIds?: string[] | null;
+}): string {
+  return `atu_${hashStableParts([
+    "v1",
+    normalizeStableString(params.episodeId),
+    normalizeStableStringArray(params.observationIds).join(","),
+    normalizeStableStringArray(params.supervisionIds).join(","),
+    normalizeStableStringArray(params.traceIds).join(","),
+  ])}`;
+}
+
+export function toAttributionTruthId(params: {
+  observationId?: string | null;
+  supervisionId?: string | null;
+  updateId?: string | null;
+  episodeId?: string | null;
+}): string {
+  return `att_${hashStableParts([
+    "v1",
+    normalizeStableString(params.episodeId),
+    normalizeStableString(params.observationId),
+    normalizeStableString(params.supervisionId),
+    normalizeStableString(params.updateId),
+  ])}`;
+}
+
+function serializeAttributionTruthLink(label: string, link: AttributionTruthLink): string[] {
+  return [
+    `${label}.state:${link.state}`,
+    `${label}.basis:${link.basis}`,
+    `${label}.confidence:${link.confidence === null ? "" : link.confidence.toFixed(6)}`,
+    `${label}.detail:${link.detail ?? ""}`,
+    `${label}.candidates:${link.candidateIds.join(",")}`,
+  ];
+}
+
+export function toAttributionTruthProvenanceRef(params: {
+  observation?: AttributionTruthObservationRef | null;
+  supervision?: AttributionTruthSupervisionRef | null;
+  update?: AttributionTruthUpdateRef | null;
+  fallback?: string;
+}): string {
+  const observation = normalizeAttributionTruthObservationRef(params.observation);
+  const supervision = normalizeAttributionTruthSupervisionRef(params.supervision);
+  const update = normalizeAttributionTruthUpdateRef(params.update);
+  const fallback = normalizeStableString(params.fallback) ?? "attribution_truth";
+
+  const basis = observation?.serveDecisionRecordId
+    ?? supervision?.serveDecisionRecordId
+    ?? observation?.selectionDigest
+    ?? supervision?.selectionDigest
+    ?? observation?.turnCompileEventId
+    ?? supervision?.turnCompileEventId
+    ?? update?.updateId
+    ?? observation?.observationId
+    ?? supervision?.supervisionId
+    ?? observation?.episodeId
+    ?? supervision?.episodeId
+    ?? update?.episodeId
+    ?? fallback;
+  return toProvenanceRef(basis, fallback);
+}
+
+export function toAttributionTruthHashes(params: {
+  state: AttributionTruthState;
+  observation?: AttributionTruthObservationRef | null;
+  supervision?: AttributionTruthSupervisionRef | null;
+  update?: AttributionTruthUpdateRef | null;
+  linkage: AttributionTruthLinkage;
+}): { contentHash: string; lineageHash: string } {
+  const observation = normalizeAttributionTruthObservationRef(params.observation);
+  const supervision = normalizeAttributionTruthSupervisionRef(params.supervision);
+  const update = normalizeAttributionTruthUpdateRef(params.update);
+  const linkage = normalizeAttributionTruthLinkage(params.linkage);
+  const episodeId = observation?.episodeId ?? supervision?.episodeId ?? update?.episodeId ?? null;
+
+  const lineageParts = [
+    `episode:${episodeId ?? ""}`,
+    `observation:${observation?.observationId ?? ""}`,
+    `supervision:${supervision?.supervisionId ?? ""}`,
+    `update:${update?.updateId ?? ""}`,
+    `update.observationIds:${update?.observationIds.join(",") ?? ""}`,
+    `update.supervisionIds:${update?.supervisionIds.join(",") ?? ""}`,
+    `update.traceIds:${update?.traceIds.join(",") ?? ""}`,
+  ];
+
+  const contentParts = [
+    `state:${params.state}`,
+    ...lineageParts,
+    `observation.bindingMode:${observation?.bindingMode ?? ""}`,
+    `observation.requestDigest:${observation?.requestDigest ?? ""}`,
+    `observation.serveDecisionRecordId:${observation?.serveDecisionRecordId ?? ""}`,
+    `observation.selectionDigest:${observation?.selectionDigest ?? ""}`,
+    `observation.turnCompileEventId:${observation?.turnCompileEventId ?? ""}`,
+    `supervision.source:${supervision?.source ?? ""}`,
+    `supervision.kind:${supervision?.kind ?? ""}`,
+    `supervision.bindingMode:${supervision?.bindingMode ?? ""}`,
+    `supervision.attributionQuality:${supervision?.attributionQuality ?? ""}`,
+    `supervision.feedbackRichness:${supervision?.feedbackRichness ?? ""}`,
+    `supervision.traceRequestDigest:${supervision?.traceRequestDigest ?? ""}`,
+    `update.rewardSource:${update?.rewardSource ?? ""}`,
+    `update.attributionQuality:${update?.attributionQuality ?? ""}`,
+    `update.feedbackRichness:${update?.feedbackRichness ?? ""}`,
+    `update.routeUpdateCount:${update?.routeUpdateCount ?? ""}`,
+    `update.seedUpdateCount:${update?.seedUpdateCount ?? ""}`,
+    `update.stopLocalUpdateCount:${update?.stopLocalUpdateCount ?? ""}`,
+    `update.edgeUpdateCount:${update?.edgeUpdateCount ?? ""}`,
+    `update.reason:${update?.updateReason ?? ""}`,
+    ...serializeAttributionTruthLink("observationToSupervision", linkage.observationToSupervision),
+    ...serializeAttributionTruthLink("supervisionToUpdate", linkage.supervisionToUpdate),
+  ];
+
+  return {
+    contentHash: `hash_${hashStableParts(contentParts)}`,
+    lineageHash: `lineage_${hashStableParts(lineageParts)}`,
+  };
+}
+
+export function createAttributionTruthRecord(params: {
+  attributionTruthId?: string | null;
+  conversationId?: number | null;
+  episodeId?: string | null;
+  state: AttributionTruthState;
+  observation?: AttributionTruthObservationRef | null;
+  supervision?: AttributionTruthSupervisionRef | null;
+  update?: AttributionTruthUpdateRef | null;
+  linkage: AttributionTruthLinkage;
+  contentHash?: string | null;
+  lineageHash?: string | null;
+  provenanceRef?: string | null;
+  createdAt?: number;
+  updatedAt?: number;
+}): AttributionTruthRecord {
+  const observation = normalizeAttributionTruthObservationRef(params.observation);
+  const supervision = normalizeAttributionTruthSupervisionRef(params.supervision);
+  const update = normalizeAttributionTruthUpdateRef(params.update);
+  const linkage = normalizeAttributionTruthLinkage(params.linkage);
+  const episodeId = normalizeStableString(params.episodeId)
+    ?? observation?.episodeId
+    ?? supervision?.episodeId
+    ?? update?.episodeId
+    ?? null;
+  const conversationId = params.conversationId
+    ?? observation?.conversationId
+    ?? supervision?.conversationId
+    ?? null;
+  const attributionTruthId = normalizeStableString(params.attributionTruthId)
+    ?? toAttributionTruthId({
+      observationId: observation?.observationId,
+      supervisionId: supervision?.supervisionId,
+      updateId: update?.updateId,
+      episodeId,
+    });
+  const computedHashes = toAttributionTruthHashes({
+    state: params.state,
+    observation,
+    supervision,
+    update,
+    linkage,
+  });
+  const contentHash = normalizeStableString(params.contentHash) ?? computedHashes.contentHash;
+  const lineageHash = normalizeStableString(params.lineageHash) ?? computedHashes.lineageHash;
+  const provenanceRef = normalizeStableString(params.provenanceRef)
+    ?? toAttributionTruthProvenanceRef({
+      observation,
+      supervision,
+      update,
+      fallback: attributionTruthId,
+    });
+  const createdAt = typeof params.createdAt === "number" && Number.isFinite(params.createdAt)
+    ? Math.floor(params.createdAt)
+    : Date.now();
+  const updatedAt = typeof params.updatedAt === "number" && Number.isFinite(params.updatedAt)
+    ? Math.floor(params.updatedAt)
+    : createdAt;
+
+  return {
+    schemaVersion: 1,
+    attributionTruthId,
+    conversationId,
+    episodeId,
+    state: params.state,
+    observation,
+    supervision,
+    update,
+    linkage,
+    contentHash,
+    lineageHash,
+    provenanceRef,
+    createdAt,
+    updatedAt,
+  };
 }
 
 export function redactInjectedNodeSummary(

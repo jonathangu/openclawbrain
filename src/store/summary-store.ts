@@ -1,4 +1,13 @@
 import type { DatabaseSync } from "node:sqlite";
+import type {
+  AttributionTruthLinkage,
+  AttributionTruthObservationRef,
+  AttributionTruthRecord as CanonicalAttributionTruthRecord,
+  AttributionTruthState,
+  AttributionTruthSupervisionRef,
+  AttributionTruthUpdateRef,
+} from "../brain-core/types.js";
+import { createAttributionTruthRecord } from "../brain-core/trace.js";
 import { sanitizeFts5Query } from "./fts5-sanitize.js";
 import { buildLikeSearchPlan, createFallbackSnippet } from "./full-text-fallback.js";
 
@@ -266,6 +275,27 @@ export type LargeFileRecord = {
   createdAt: Date;
 };
 
+export type CreateAttributionTruthInput = {
+  attributionTruthId?: string;
+  conversationId?: number | null;
+  episodeId?: string | null;
+  state: AttributionTruthState;
+  observation?: AttributionTruthObservationRef | null;
+  supervision?: AttributionTruthSupervisionRef | null;
+  update?: AttributionTruthUpdateRef | null;
+  linkage: AttributionTruthLinkage;
+  contentHash?: string;
+  lineageHash?: string;
+  provenanceRef?: string;
+  createdAt?: Date;
+  updatedAt?: Date;
+};
+
+export type AttributionTruthRecord = Omit<CanonicalAttributionTruthRecord, "createdAt" | "updatedAt"> & {
+  createdAt: Date;
+  updatedAt: Date;
+};
+
 // ── DB row shapes (snake_case) ────────────────────────────────────────────────
 
 interface SummaryRow {
@@ -368,6 +398,26 @@ interface LargeFileRow {
   storage_uri: string;
   exploration_summary: string | null;
   created_at: string;
+}
+
+interface AttributionTruthRow {
+  attribution_truth_id: string;
+  schema_version: 1;
+  conversation_id: number | null;
+  episode_id: string | null;
+  attribution_state: AttributionTruthState;
+  observation_id: string | null;
+  supervision_id: string | null;
+  update_id: string | null;
+  observation_json: string;
+  supervision_json: string;
+  update_json: string;
+  linkage_json: string;
+  content_hash: string;
+  lineage_hash: string;
+  provenance_ref: string;
+  created_at: string;
+  updated_at: string | null;
 }
 
 interface MarbleRow {
@@ -586,6 +636,36 @@ function toLargeFileRecord(row: LargeFileRow): LargeFileRecord {
   };
 }
 
+function parseJsonValue<T>(value: string | null | undefined): T | null {
+  if (typeof value !== "string" || value.trim().length === 0) {
+    return null;
+  }
+  try {
+    return JSON.parse(value) as T;
+  } catch {
+    return null;
+  }
+}
+
+function defaultAttributionTruthLinkage(): AttributionTruthLinkage {
+  return {
+    observationToSupervision: {
+      state: "unmatched",
+      basis: "missing",
+      confidence: null,
+      detail: null,
+      candidateIds: [],
+    },
+    supervisionToUpdate: {
+      state: "unmatched",
+      basis: "missing",
+      confidence: null,
+      detail: null,
+      candidateIds: [],
+    },
+  };
+}
+
 function normalizeNullableDate(value: string | null | undefined): Date | null {
   if (typeof value !== "string" || value.trim().length === 0) {
     return null;
@@ -615,6 +695,32 @@ function normalizeConfidence(value: number | undefined): number {
 
 function normalizeOptionalSubId(value: string | null | undefined): string {
   return typeof value === "string" ? value : "";
+}
+
+function toAttributionTruthRecord(row: AttributionTruthRow): AttributionTruthRecord {
+  const createdAt = new Date(row.created_at);
+  const updatedAt = normalizeNullableDate(row.updated_at) ?? createdAt;
+  const canonical = createAttributionTruthRecord({
+    attributionTruthId: row.attribution_truth_id,
+    conversationId: row.conversation_id ?? null,
+    episodeId: row.episode_id ?? null,
+    state: row.attribution_state,
+    observation: parseJsonValue<AttributionTruthObservationRef>(row.observation_json),
+    supervision: parseJsonValue<AttributionTruthSupervisionRef>(row.supervision_json),
+    update: parseJsonValue<AttributionTruthUpdateRef>(row.update_json),
+    linkage: parseJsonValue<AttributionTruthLinkage>(row.linkage_json) ?? defaultAttributionTruthLinkage(),
+    contentHash: row.content_hash,
+    lineageHash: row.lineage_hash,
+    provenanceRef: row.provenance_ref,
+    createdAt: createdAt.getTime(),
+    updatedAt: updatedAt.getTime(),
+  });
+
+  return {
+    ...canonical,
+    createdAt,
+    updatedAt,
+  };
 }
 
 function toMarbleRecord(row: MarbleRow): MarbleRecord {
@@ -1200,6 +1306,146 @@ export class SummaryStore {
       });
     }
     return output;
+  }
+
+  // ── Attribution Truth ────────────────────────────────────────────────────
+
+  async insertAttributionTruth(input: CreateAttributionTruthInput): Promise<AttributionTruthRecord> {
+    const record = createAttributionTruthRecord({
+      attributionTruthId: input.attributionTruthId,
+      conversationId: input.conversationId,
+      episodeId: input.episodeId,
+      state: input.state,
+      observation: input.observation,
+      supervision: input.supervision,
+      update: input.update,
+      linkage: input.linkage,
+      contentHash: input.contentHash,
+      lineageHash: input.lineageHash,
+      provenanceRef: input.provenanceRef,
+      createdAt: input.createdAt?.getTime(),
+      updatedAt: input.updatedAt?.getTime() ?? input.createdAt?.getTime(),
+    });
+    const createdAt = new Date(record.createdAt).toISOString();
+    const updatedAt = new Date(record.updatedAt).toISOString();
+
+    this.db
+      .prepare(
+        `INSERT INTO attribution_truths (
+          attribution_truth_id,
+          schema_version,
+          conversation_id,
+          episode_id,
+          attribution_state,
+          observation_id,
+          supervision_id,
+          update_id,
+          observation_json,
+          supervision_json,
+          update_json,
+          linkage_json,
+          content_hash,
+          lineage_hash,
+          provenance_ref,
+          created_at,
+          updated_at
+        )
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ON CONFLICT(attribution_truth_id) DO UPDATE SET
+          schema_version = excluded.schema_version,
+          conversation_id = excluded.conversation_id,
+          episode_id = excluded.episode_id,
+          attribution_state = excluded.attribution_state,
+          observation_id = excluded.observation_id,
+          supervision_id = excluded.supervision_id,
+          update_id = excluded.update_id,
+          observation_json = excluded.observation_json,
+          supervision_json = excluded.supervision_json,
+          update_json = excluded.update_json,
+          linkage_json = excluded.linkage_json,
+          content_hash = excluded.content_hash,
+          lineage_hash = excluded.lineage_hash,
+          provenance_ref = excluded.provenance_ref,
+          updated_at = excluded.updated_at`,
+      )
+      .run(
+        record.attributionTruthId,
+        record.schemaVersion,
+        record.conversationId,
+        record.episodeId,
+        record.state,
+        record.observation?.observationId ?? null,
+        record.supervision?.supervisionId ?? null,
+        record.update?.updateId ?? null,
+        JSON.stringify(record.observation),
+        JSON.stringify(record.supervision),
+        JSON.stringify(record.update),
+        JSON.stringify(record.linkage),
+        record.contentHash,
+        record.lineageHash,
+        record.provenanceRef,
+        createdAt,
+        updatedAt,
+      );
+
+    const row = this.db
+      .prepare(
+        `SELECT attribution_truth_id, schema_version, conversation_id, episode_id,
+                attribution_state, observation_id, supervision_id, update_id,
+                observation_json, supervision_json, update_json, linkage_json,
+                content_hash, lineage_hash, provenance_ref, created_at, updated_at
+         FROM attribution_truths
+         WHERE attribution_truth_id = ?`,
+      )
+      .get(record.attributionTruthId) as unknown as AttributionTruthRow | undefined;
+    if (!row) {
+      throw new Error(`Attribution truth not found after insert: ${record.attributionTruthId}`);
+    }
+    return toAttributionTruthRecord(row);
+  }
+
+  async getAttributionTruth(attributionTruthId: string): Promise<AttributionTruthRecord | null> {
+    const row = this.db
+      .prepare(
+        `SELECT attribution_truth_id, schema_version, conversation_id, episode_id,
+                attribution_state, observation_id, supervision_id, update_id,
+                observation_json, supervision_json, update_json, linkage_json,
+                content_hash, lineage_hash, provenance_ref, created_at, updated_at
+         FROM attribution_truths
+         WHERE attribution_truth_id = ?`,
+      )
+      .get(attributionTruthId) as unknown as AttributionTruthRow | undefined;
+    return row ? toAttributionTruthRecord(row) : null;
+  }
+
+  async getAttributionTruthsByConversation(conversationId: number): Promise<AttributionTruthRecord[]> {
+    const rows = this.db
+      .prepare(
+        `SELECT attribution_truth_id, schema_version, conversation_id, episode_id,
+                attribution_state, observation_id, supervision_id, update_id,
+                observation_json, supervision_json, update_json, linkage_json,
+                content_hash, lineage_hash, provenance_ref, created_at, updated_at
+         FROM attribution_truths
+         WHERE conversation_id = ?
+         ORDER BY created_at ASC, attribution_truth_id ASC`,
+      )
+      .all(conversationId) as unknown as AttributionTruthRow[];
+    return rows.map(toAttributionTruthRecord);
+  }
+
+  async getAttributionTruthsByEpisode(episodeId: string): Promise<AttributionTruthRecord[]> {
+    const rows = this.db
+      .prepare(
+        `SELECT attribution_truth_id, schema_version, conversation_id, episode_id,
+                attribution_state, observation_id, supervision_id, update_id,
+                observation_json, supervision_json, update_json, linkage_json,
+                content_hash, lineage_hash, provenance_ref, created_at, updated_at
+         FROM attribution_truths
+         WHERE episode_id = ?
+         ORDER BY created_at ASC, attribution_truth_id ASC`,
+      )
+      .all(episodeId) as unknown as AttributionTruthRow[];
+    return rows.map(toAttributionTruthRecord);
   }
 
   // ── Marbles ──────────────────────────────────────────────────────────────

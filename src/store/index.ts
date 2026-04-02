@@ -42,4 +42,16 @@ export type {
   MarbleSearchResult,
   CreateLargeFileInput,
   LargeFileRecord,
+  CreateAttributionTruthInput,
+  AttributionTruthRecord,
 } from "./summary-store.js";
+
+export type {
+  AttributionTruthState,
+  AttributionTruthMatchBasis,
+  AttributionTruthObservationRef,
+  AttributionTruthSupervisionRef,
+  AttributionTruthUpdateRef,
+  AttributionTruthLink,
+  AttributionTruthLinkage,
+} from "../brain-core/types.js";

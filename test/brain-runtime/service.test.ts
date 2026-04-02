@@ -1250,6 +1250,34 @@ describe("BrainService", () => {
     expect(status.routeTraceCount).toBe(1);
     expect(status.supervisionCount).toBe(1);
     expect(status.pendingObservations).toBe(0);
+    expect(status.attributionTruth).toMatchObject({
+      contract: "openclawbrain_attribution_truth.v1",
+      visible: true,
+      primaryState: "ambiguous",
+      activeStates: ["ambiguous"],
+      counts: {
+        observationCount: 1,
+        evaluatedCount: 1,
+        matchedCount: 0,
+        ambiguousCount: 1,
+        unmatchedCount: 0,
+        pendingCount: 0,
+        readyCount: 0,
+        delayedCount: 0,
+        budgetDeferredCount: 0,
+        sparseReadyCount: 0,
+        richReadyCount: 0,
+      },
+      latest: {
+        ambiguous: {
+          observationId: expect.stringMatching(/^bo_/),
+          episodeId: result?.episode.id,
+          traceId: result?.trace.id,
+          attributionQuality: "fallback",
+          feedbackRichness: "followup_only",
+        },
+      },
+    });
     expect(status.observationAttribution).toMatchObject({
       totalObservationCount: 1,
       completedObservationCount: 1,
@@ -1410,6 +1438,73 @@ describe("BrainService", () => {
       },
       coverage: {
         supervisionCoverage: 1,
+      },
+    });
+  });
+
+  it("surfaces delayed attribution truth before follow-up or the teacher delay window completes", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-delayed-attribution-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-delayed-attribution-state-");
+    writeFileSync(
+      join(workspaceRoot, "PLAYBOOK.md"),
+      "# Pull Requests\n\nUse gh pr create for pull request workflows.\n",
+      "utf8",
+    );
+
+    const service = new BrainService({
+      deps: createDeps(brainRoot, {
+        teacherEnabled: true,
+      }),
+    });
+    await service.init({
+      workspaceRoot,
+      embedFn: async (text) => embed(text),
+    });
+
+    const result = await service.query({
+      conversationId: 7,
+      agentIdentity: { agentId: "main", lane: "main" },
+      queryText: "how do I open a pull request?",
+      budgetChars: 4000,
+      queryEmbedding: embed("gh pr create pull request"),
+    });
+    expect(result).not.toBeNull();
+
+    await service.recordTurnObservation({
+      episodeId: result?.episode.id,
+      assistantResponse: "Use `gh pr create` to open the pull request.",
+      toolResults: [],
+    });
+
+    const status = await service.status();
+    expect(status.pendingObservations).toBe(1);
+    expect(status.attributionTruth).toMatchObject({
+      contract: "openclawbrain_attribution_truth.v1",
+      visible: true,
+      primaryState: "delayed",
+      activeStates: ["delayed"],
+      counts: {
+        observationCount: 1,
+        evaluatedCount: 0,
+        matchedCount: 0,
+        ambiguousCount: 0,
+        unmatchedCount: 0,
+        pendingCount: 1,
+        readyCount: 0,
+        delayedCount: 1,
+        budgetDeferredCount: 0,
+        sparseReadyCount: 0,
+        richReadyCount: 0,
+      },
+      latest: {
+        delayed: {
+          observationId: expect.stringMatching(/^bo_/),
+          episodeId: result?.episode.id,
+          traceId: result?.trace.id,
+          gate: "delayed",
+          feedbackRichness: "sparse",
+          reason: "waiting for follow-up or the teacher delay window",
+        },
       },
     });
   });

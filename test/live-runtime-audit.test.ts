@@ -1,6 +1,9 @@
 import { describe, expect, it } from "vitest";
 
-import { summarizeTeacherLoopTruth } from "../src/live-runtime-audit.js";
+import {
+  summarizeAttributionTruth,
+  summarizeTeacherLoopTruth,
+} from "../src/live-runtime-audit.js";
 
 describe("summarizeTeacherLoopTruth", () => {
   it("treats a fresh watch heartbeat with no teacher artifacts as healthy and not stale", () => {
@@ -88,5 +91,175 @@ describe("summarizeTeacherLoopTruth", () => {
       idle: true,
       stale: false,
     });
+  });
+});
+
+describe("summarizeAttributionTruth", () => {
+  it("marks attribution truth missing when neither evaluation nor queue surfaces are present", () => {
+    expect(summarizeAttributionTruth()).toEqual({
+      contract: "openclawbrain_attribution_truth.v1",
+      visible: false,
+      primaryState: "missing",
+      activeStates: [],
+      detail: "attribution truth is not visible in the current status surface",
+      counts: {
+        observationCount: 0,
+        evaluatedCount: 0,
+        matchedCount: 0,
+        ambiguousCount: 0,
+        unmatchedCount: 0,
+        pendingCount: 0,
+        readyCount: 0,
+        delayedCount: 0,
+        budgetDeferredCount: 0,
+        sparseReadyCount: 0,
+        richReadyCount: 0,
+      },
+      states: {
+        matched: {
+          count: 0,
+          detail: "exact-bound teacher evaluations matched a concrete route/decision binding",
+        },
+        ambiguous: {
+          count: 0,
+          detail: "fallback-bound teacher evaluations are inferred, not exact",
+        },
+        unmatched: {
+          count: 0,
+          detail: "teacher evaluations have no surviving route binding",
+        },
+        ready: {
+          count: 0,
+          detail: "observations are ready for teacher scoring",
+        },
+        delayed: {
+          count: 0,
+          detail: "observations are still waiting for follow-up or the teacher delay window",
+        },
+        budgetDeferred: {
+          count: 0,
+          detail: "ready observations are deferred behind older work by the per-tick teacher budget",
+        },
+        sparseReady: {
+          count: 0,
+          detail: "ready observations are sparse-feedback cases made eligible only by the teacher delay",
+        },
+      },
+      gating: {
+        budgetPerTick: null,
+        delayMs: null,
+        detail: "teacher gating truth is not visible in the current status surface",
+      },
+      latest: {
+        ambiguous: null,
+        unmatched: null,
+        delayed: null,
+        budgetDeferred: null,
+        sparseReady: null,
+      },
+    });
+  });
+
+  it("surfaces ambiguous, delayed, budget-deferred, and sparse-ready attribution truth together", () => {
+    const summary = summarizeAttributionTruth({
+      observationAttribution: {
+        totalObservationCount: 4,
+        teacherEvaluationCount: 2,
+        attributionQuality: {
+          exact: 1,
+          fallback: 1,
+          unbound: 0,
+        },
+        latestNonExact: {
+          observationId: "bo_ambiguous",
+          episodeId: "ep_ambiguous",
+          traceId: "bt_ambiguous",
+          bindingMode: "trace_id",
+          attributionQuality: "fallback",
+          feedbackRichness: "followup_only",
+          confidence: 0.55,
+          reason: "follow-up stayed ambiguous",
+          evaluatedAt: 123,
+        },
+      },
+      teacherTruth: {
+        queue: {
+          budgetPerTick: 20,
+          delayMs: 10_000,
+          pendingCount: 2,
+          readyCount: 1,
+          delayedCount: 1,
+          budgetDeferredCount: 1,
+          sparseReadyCount: 1,
+          richReadyCount: 0,
+          sample: [
+            {
+              observationId: "bo_delayed",
+              episodeId: "ep_delayed",
+              traceId: "bt_delayed",
+              status: "pending_followup",
+              gate: "delayed",
+              reason: "waiting for follow-up or the teacher delay window",
+              feedbackRichness: "sparse",
+              createdAt: 111,
+            },
+            {
+              observationId: "bo_budget",
+              episodeId: "ep_budget",
+              traceId: "bt_budget",
+              status: "pending_followup",
+              gate: "budget_deferred",
+              reason: "ready, but deferred behind older observations by the per-tick teacher budget",
+              feedbackRichness: "sparse",
+              createdAt: 222,
+            },
+          ],
+          detail: "1 ready, 1 delayed, 1 deferred by the per-tick teacher budget; 1 ready observation(s) are still sparse-feedback cases",
+        },
+      },
+    });
+
+    expect(summary).toMatchObject({
+      contract: "openclawbrain_attribution_truth.v1",
+      visible: true,
+      primaryState: "mixed",
+      activeStates: ["ambiguous", "delayed", "budget_deferred", "sparse_ready", "ready", "matched"],
+      counts: {
+        observationCount: 4,
+        evaluatedCount: 2,
+        matchedCount: 1,
+        ambiguousCount: 1,
+        unmatchedCount: 0,
+        pendingCount: 2,
+        readyCount: 1,
+        delayedCount: 1,
+        budgetDeferredCount: 1,
+        sparseReadyCount: 1,
+        richReadyCount: 0,
+      },
+      gating: {
+        budgetPerTick: 20,
+        delayMs: 10_000,
+      },
+      latest: {
+        ambiguous: {
+          observationId: "bo_ambiguous",
+          attributionQuality: "fallback",
+        },
+        delayed: {
+          observationId: "bo_delayed",
+          gate: "delayed",
+        },
+        budgetDeferred: {
+          observationId: "bo_budget",
+          gate: "budget_deferred",
+        },
+        sparseReady: {
+          observationId: "bo_budget",
+          feedbackRichness: "sparse",
+        },
+      },
+    });
+    expect(summary.detail).toContain("attribution truth is mixed");
   });
 });

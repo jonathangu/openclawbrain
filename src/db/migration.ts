@@ -524,6 +524,26 @@ export function runLcmMigrations(
       created_at TEXT NOT NULL DEFAULT (datetime('now'))
     );
 
+    CREATE TABLE IF NOT EXISTS attribution_truths (
+      attribution_truth_id TEXT PRIMARY KEY,
+      schema_version INTEGER NOT NULL DEFAULT 1,
+      conversation_id INTEGER REFERENCES conversations(conversation_id) ON DELETE CASCADE,
+      episode_id TEXT,
+      attribution_state TEXT NOT NULL CHECK (attribution_state IN ('matched', 'ambiguous', 'unmatched', 'delayed')),
+      observation_id TEXT,
+      supervision_id TEXT,
+      update_id TEXT,
+      observation_json TEXT NOT NULL DEFAULT 'null',
+      supervision_json TEXT NOT NULL DEFAULT 'null',
+      update_json TEXT NOT NULL DEFAULT 'null',
+      linkage_json TEXT NOT NULL DEFAULT '{}',
+      content_hash TEXT NOT NULL,
+      lineage_hash TEXT NOT NULL,
+      provenance_ref TEXT NOT NULL,
+      created_at TEXT NOT NULL DEFAULT (datetime('now')),
+      updated_at TEXT NOT NULL DEFAULT (datetime('now'))
+    );
+
     CREATE TABLE IF NOT EXISTS marbles (
       marble_id TEXT PRIMARY KEY,
       conversation_id INTEGER NOT NULL REFERENCES conversations(conversation_id) ON DELETE CASCADE,
@@ -569,6 +589,12 @@ export function runLcmMigrations(
     CREATE INDEX IF NOT EXISTS message_parts_type_idx ON message_parts (part_type);
     CREATE INDEX IF NOT EXISTS context_items_conv_idx ON context_items (conversation_id, ordinal);
     CREATE INDEX IF NOT EXISTS large_files_conv_idx ON large_files (conversation_id, created_at);
+    CREATE INDEX IF NOT EXISTS attribution_truths_conv_created_idx ON attribution_truths (conversation_id, created_at);
+    CREATE INDEX IF NOT EXISTS attribution_truths_episode_idx ON attribution_truths (episode_id, created_at);
+    CREATE INDEX IF NOT EXISTS attribution_truths_state_idx ON attribution_truths (attribution_state, created_at);
+    CREATE INDEX IF NOT EXISTS attribution_truths_observation_idx ON attribution_truths (observation_id, created_at);
+    CREATE INDEX IF NOT EXISTS attribution_truths_supervision_idx ON attribution_truths (supervision_id, created_at);
+    CREATE INDEX IF NOT EXISTS attribution_truths_update_idx ON attribution_truths (update_id, created_at);
     CREATE INDEX IF NOT EXISTS marbles_conv_created_idx ON marbles (conversation_id, created_at);
     CREATE INDEX IF NOT EXISTS marble_sources_marble_idx ON marble_sources (marble_id, ordinal);
   `);

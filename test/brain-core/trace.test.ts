@@ -1,5 +1,12 @@
 import { describe, expect, it } from "vitest";
-import { buildBrainCompileReport, recordTrace, summarizeRecentDecisionTraces } from "../../src/brain-core/trace.js";
+import {
+  buildBrainCompileReport,
+  createAttributionTruthRecord,
+  recordTrace,
+  summarizeRecentDecisionTraces,
+  toAttributionTruthId,
+  toAttributionUpdateId,
+} from "../../src/brain-core/trace.js";
 import type {
   BrainNode,
   SeedScore,
@@ -438,5 +445,104 @@ describe("decision trace branch proofs", () => {
     expect(trace.routeTrace?.branchOutcomes[0]?.proof).toContain(
       "chosen stop (policy_stop) [pressure=0.53 budget=0.55 frontier=0.50 stop_p=0.64 pending=1]",
     );
+  });
+
+  it("normalizes attribution truth ids and hashes from linkage inputs", () => {
+    const updateIdA = toAttributionUpdateId({
+      episodeId: "ep_attr",
+      observationIds: ["bo_2", "bo_1", "bo_1"],
+      supervisionIds: ["ts_2", "ts_1"],
+      traceIds: ["bt_2", "bt_1"],
+    });
+    const updateIdB = toAttributionUpdateId({
+      episodeId: "ep_attr",
+      observationIds: ["bo_1", "bo_2"],
+      supervisionIds: ["ts_1", "ts_2"],
+      traceIds: ["bt_1", "bt_2"],
+    });
+
+    expect(updateIdA).toBe(updateIdB);
+
+    const record = createAttributionTruthRecord({
+      conversationId: 7,
+      state: "ambiguous",
+      observation: {
+        observationId: "bo_1",
+        episodeId: "ep_attr",
+        conversationId: 7,
+        traceId: "bt_1",
+        bindingMode: "legacy_heuristic",
+        requestDigest: "digest_1",
+        serveDecisionRecordId: null,
+        selectionDigest: "selection_1",
+        turnCompileEventId: null,
+        provenanceRef: null,
+      },
+      supervision: {
+        supervisionId: "ts_1",
+        episodeId: "ep_attr",
+        conversationId: 7,
+        source: "teacher",
+        kind: "teacher_review",
+        observationId: null,
+        traceId: "bt_1",
+        teacherTraceId: "bt_1",
+        serveDecisionRecordId: null,
+        selectionDigest: "selection_1",
+        turnCompileEventId: null,
+        bindingMode: "legacy_heuristic",
+        attributionQuality: "fallback",
+        feedbackRichness: "followup_only",
+        traceRequestDigest: "digest_1",
+        provenanceRef: null,
+      },
+      update: {
+        updateId: updateIdA,
+        episodeId: "ep_attr",
+        observationIds: ["bo_2", "bo_1", "bo_1"],
+        supervisionIds: ["ts_2", "ts_1"],
+        traceIds: ["bt_2", "bt_1"],
+        rewardSource: "teacher",
+        attributionQuality: "mixed",
+        feedbackRichness: "mixed",
+        routeUpdateCount: 3,
+        seedUpdateCount: 1,
+        stopLocalUpdateCount: 1,
+        edgeUpdateCount: 1,
+        updateReason: "teacher fallback attribution updated 3 route weight(s)",
+        provenanceRef: null,
+      },
+      linkage: {
+        observationToSupervision: {
+          state: "ambiguous",
+          basis: "heuristic",
+          confidence: 0.42,
+          detail: "two viable observations remained after heuristic matching",
+          candidateIds: ["bo_2", "bo_1", "bo_1"],
+        },
+        supervisionToUpdate: {
+          state: "matched",
+          basis: "manual",
+          confidence: 1,
+          detail: "update consumed the teacher supervision directly",
+          candidateIds: ["upd_alt", updateIdA],
+        },
+      },
+    });
+
+    expect(record.attributionTruthId).toBe(toAttributionTruthId({
+      observationId: "bo_1",
+      supervisionId: "ts_1",
+      updateId: updateIdA,
+      episodeId: "ep_attr",
+    }));
+    expect(record.update?.observationIds).toEqual(["bo_1", "bo_2"]);
+    expect(record.update?.supervisionIds).toEqual(["ts_1", "ts_2"]);
+    expect(record.update?.traceIds).toEqual(["bt_1", "bt_2"]);
+    expect(record.linkage.observationToSupervision.candidateIds).toEqual(["bo_1", "bo_2"]);
+    expect(record.linkage.supervisionToUpdate.candidateIds).toEqual([updateIdA, "upd_alt"]);
+    expect(record.contentHash).toMatch(/^hash_/);
+    expect(record.lineageHash).toMatch(/^lineage_/);
+    expect(record.provenanceRef).toMatch(/^prov_/);
   });
 });

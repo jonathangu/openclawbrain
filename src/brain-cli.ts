@@ -29,7 +29,7 @@ import {
 import { buildPromotionStory } from "./brain-runtime/promotion-story.js";
 import { readWorkerRuntimeState } from "./brain-runtime/worker-state.js";
 import { buildContextManagementModel } from "./context-management-model.js";
-import { summarizeOperatorHealth } from "./live-runtime-audit.js";
+import { summarizeAttributionTruth, summarizeOperatorHealth } from "./live-runtime-audit.js";
 
 function printJson(payload: unknown): void {
   process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
@@ -251,7 +251,7 @@ async function commandInit(workspaceArg?: string): Promise<void> {
 }
 
 function commandStatus(): void {
-  const { store, graph, brainConfig } = loadStore();
+  const { config, store, graph, brainConfig } = loadStore();
   const recentEpisodes = store.getRecentEpisodes(100);
   const currentPack = store.getCurrentPackVersion();
   const health = computeHealth(graph, recentEpisodes, currentPack ?? 0);
@@ -267,6 +267,10 @@ function commandStatus(): void {
     lastEvaluationCycle: store.getTrainingStateJson("last_teacher_evaluation_cycle_json"),
     lastUpdateCycle: store.getTrainingStateJson("last_teacher_update_cycle_json"),
   };
+  const attributionTruth = summarizeAttributionTruth({
+    observationAttribution,
+    teacherTruth,
+  });
   const operatorHealth = summarizeOperatorHealth({
     workerHealthy: workerState.workerHealthy,
     workerMode: workerState.workerMode,
@@ -331,6 +335,7 @@ function commandStatus(): void {
     pendingObservations: store.countPendingObservations(),
     pendingObservationsByStatus: store.countObservationsByStatus(),
     observationAttribution,
+    attributionTruth,
     teacherTruth,
     operatorHealth,
     contextFeedback,

@@ -1,0 +1,389 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "additionalProperties": false,
+  "properties": {
+    "contract": {
+      "const": "frozen_recorded_session_fixture_manifest.v1"
+    },
+    "entries": {
+      "items": {
+        "additionalProperties": false,
+        "properties": {
+          "fixtureHash": {
+            "type": "null"
+          },
+          "fixtureHashStatus": {
+            "const": "pending_materialization"
+          },
+          "fixtureId": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "fixturePath": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "metadata": {
+            "additionalProperties": false,
+            "properties": {
+              "notes": {
+                "items": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "minItems": 1,
+                "type": "array"
+              },
+              "realTraceSourceAvailable": {
+                "type": "boolean"
+              },
+              "sanitization": {
+                "additionalProperties": false,
+                "properties": {
+                  "classification": {
+                    "minLength": 1,
+                    "type": "string"
+                  },
+                  "notes": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "minItems": 1,
+                    "type": "array"
+                  },
+                  "redactionRequired": {
+                    "type": "boolean"
+                  }
+                },
+                "required": [
+                  "classification",
+                  "redactionRequired",
+                  "notes"
+                ],
+                "type": "object"
+              },
+              "shape": {
+                "additionalProperties": false,
+                "properties": {
+                  "evalTurnCount": {
+                    "minimum": 1,
+                    "type": "integer"
+                  },
+                  "feedbackKinds": {
+                    "items": {
+                      "minLength": 1,
+                      "type": "string"
+                    },
+                    "type": "array"
+                  },
+                  "followUpTurnCount": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "runtimeHintTurnCount": {
+                    "minimum": 0,
+                    "type": "integer"
+                  },
+                  "turnCount": {
+                    "minimum": 1,
+                    "type": "integer"
+                  }
+                },
+                "required": [
+                  "turnCount",
+                  "evalTurnCount",
+                  "feedbackKinds",
+                  "followUpTurnCount",
+                  "runtimeHintTurnCount"
+                ],
+                "type": "object"
+              },
+              "sourceKind": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "sourcePaths": {
+                "items": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "minItems": 1,
+                "type": "array"
+              },
+              "sourceTraceStatus": {
+                "minLength": 1,
+                "type": "string"
+              },
+              "tags": {
+                "items": {
+                  "minLength": 1,
+                  "type": "string"
+                },
+                "minItems": 1,
+                "type": "array"
+              }
+            },
+            "required": [
+              "sourceKind",
+              "sourcePaths",
+              "tags",
+              "notes",
+              "sourceTraceStatus",
+              "realTraceSourceAvailable",
+              "sanitization",
+              "shape"
+            ],
+            "type": "object"
+          },
+          "selectionHash": {
+            "pattern": "^sha256-[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "slotId": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "title": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "traceFamily": {
+            "enum": [
+              "direct_answer",
+              "plan_execution",
+              "retrieval_memory_heavy",
+              "correction_follow_up_heavy"
+            ]
+          },
+          "traceFamilyDir": {
+            "enum": [
+              "direct-answer",
+              "plan-execution",
+              "retrieval-memory-heavy",
+              "correction-follow-up-heavy"
+            ]
+          },
+          "traceHash": {
+            "pattern": "^sha256-[a-f0-9]{64}$",
+            "type": "string"
+          },
+          "tracePath": {
+            "minLength": 1,
+            "type": "string"
+          }
+        },
+        "required": [
+          "fixtureId",
+          "slotId",
+          "title",
+          "traceFamily",
+          "traceFamilyDir",
+          "tracePath",
+          "traceHash",
+          "selectionHash",
+          "fixturePath",
+          "fixtureHash",
+          "fixtureHashStatus",
+          "metadata"
+        ],
+        "type": "object"
+      },
+      "minItems": 20,
+      "type": "array"
+    },
+    "fixtureContract": {
+      "const": "recorded_session_replay_fixture.v1"
+    },
+    "fixturePathTemplate": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "generatedAt": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "hashing": {
+      "additionalProperties": false,
+      "properties": {
+        "algorithm": {
+          "const": "sha256"
+        },
+        "fixtureHashRule": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "immutabilityRules": {
+          "items": {
+            "minLength": 1,
+            "type": "string"
+          },
+          "minItems": 1,
+          "type": "array"
+        },
+        "manifestCanonicalization": {
+          "const": "canonicalJson"
+        },
+        "manifestHashRule": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "selectionHashRule": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "traceHashRule": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "algorithm",
+        "traceHashRule",
+        "selectionHashRule",
+        "fixtureHashRule",
+        "manifestHashRule",
+        "manifestCanonicalization",
+        "immutabilityRules"
+      ],
+      "type": "object"
+    },
+    "manifestId": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "materialization": {
+      "additionalProperties": false,
+      "properties": {
+        "fixtureFilesCheckedIn": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "pendingFixtureCount": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "summary": {
+          "minLength": 1,
+          "type": "string"
+        }
+      },
+      "required": [
+        "fixtureFilesCheckedIn",
+        "pendingFixtureCount",
+        "summary"
+      ],
+      "type": "object"
+    },
+    "root": {
+      "minLength": 1,
+      "type": "string"
+    },
+    "selectionRules": {
+      "items": {
+        "minLength": 1,
+        "type": "string"
+      },
+      "minItems": 1,
+      "type": "array"
+    },
+    "status": {
+      "const": "scaffold_only"
+    },
+    "traceFamilyCounts": {
+      "additionalProperties": false,
+      "properties": {
+        "correction_follow_up_heavy": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "direct_answer": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "plan_execution": {
+          "minimum": 0,
+          "type": "integer"
+        },
+        "retrieval_memory_heavy": {
+          "minimum": 0,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "direct_answer",
+        "plan_execution",
+        "retrieval_memory_heavy",
+        "correction_follow_up_heavy"
+      ],
+      "type": "object"
+    },
+    "traceFamilyOrder": {
+      "items": {
+        "enum": [
+          "direct_answer",
+          "plan_execution",
+          "retrieval_memory_heavy",
+          "correction_follow_up_heavy"
+        ]
+      },
+      "maxItems": 4,
+      "minItems": 4,
+      "type": "array"
+    },
+    "traceManifest": {
+      "additionalProperties": false,
+      "properties": {
+        "contract": {
+          "const": "canonical_recorded_session_trace_set_manifest.v1"
+        },
+        "frozenAt": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "path": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "setId": {
+          "minLength": 1,
+          "type": "string"
+        },
+        "traceContract": {
+          "const": "recorded_session_trace.v1"
+        },
+        "traceCount": {
+          "minimum": 1,
+          "type": "integer"
+        }
+      },
+      "required": [
+        "contract",
+        "setId",
+        "path",
+        "frozenAt",
+        "traceContract",
+        "traceCount"
+      ],
+      "type": "object"
+    }
+  },
+  "required": [
+    "contract",
+    "manifestId",
+    "generatedAt",
+    "status",
+    "root",
+    "traceManifest",
+    "fixtureContract",
+    "traceFamilyOrder",
+    "traceFamilyCounts",
+    "materialization",
+    "hashing",
+    "selectionRules",
+    "fixturePathTemplate",
+    "entries"
+  ],
+  "title": "Frozen Recorded Session Fixture Manifest",
+  "type": "object"
+}
