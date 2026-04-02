@@ -15,11 +15,248 @@ function normalizeCount(value) {
 function normalizeOptionalString(value) {
     return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
+function parseJsonValue(value, fallback) {
+    if (typeof value !== "string" || value.trim().length === 0) {
+        return fallback;
+    }
+    try {
+        return JSON.parse(value);
+    }
+    catch {
+        return fallback;
+    }
+}
 function normalizeUnitInterval(value) {
     return Number.isFinite(value) ? Math.max(0, Math.min(1, Number(value))) : 0;
 }
 function normalizeSource(value) {
     return value !== null && typeof value === "object" && !Array.isArray(value) ? value : null;
+}
+function toRecord(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value) ? value : null;
+}
+function normalizeAgentIdentity(value) {
+    const record = toRecord(value);
+    const agentId = normalizeOptionalString(record?.agentId);
+    const lane = normalizeOptionalString(record?.lane);
+    return agentId === null || lane === null ? null : { agentId, lane };
+}
+function formatAgentIdentity(identity) {
+    if (identity === null) {
+        return null;
+    }
+    return identity.lane === "main" ? identity.agentId : `${identity.agentId}:${identity.lane}`;
+}
+function defaultFeedbackSummary(routeTraceCount = 0, supervisedTraceCount = 0, detail = "feedback truth is not visible in the current status surface") {
+    return {
+        visible: false,
+        helpfulCount: 0,
+        irrelevantCount: 0,
+        harmfulCount: 0,
+        supervisedTraceCount,
+        routeTraceCount,
+        latestAgentIdentity: null,
+        latestLabel: null,
+        detail
+    };
+}
+function normalizeFeedbackSummary(value, counts = {}) {
+    if (value === null || typeof value !== "object" || Array.isArray(value)) {
+        return defaultFeedbackSummary(normalizeCount(counts.routeTraceCount), normalizeCount(counts.supervisedTraceCount));
+    }
+    const routeTraceCount = normalizeCount(value.routeTraceCount ?? counts.routeTraceCount);
+    const supervisedTraceCount = normalizeCount(value.supervisedTraceCount ?? counts.supervisedTraceCount);
+    const latestAgentIdentity = normalizeAgentIdentity(value.latestAgentIdentity);
+    return {
+        visible: value.visible === true,
+        helpfulCount: normalizeCount(value.helpfulCount),
+        irrelevantCount: normalizeCount(value.irrelevantCount),
+        harmfulCount: normalizeCount(value.harmfulCount),
+        supervisedTraceCount,
+        routeTraceCount,
+        latestAgentIdentity,
+        latestLabel: normalizeOptionalString(value.latestLabel) ?? formatAgentIdentity(latestAgentIdentity),
+        detail: normalizeOptionalString(value.detail)
+            ?? (routeTraceCount === 0
+                ? "no traced routes recorded yet"
+                : `${supervisedTraceCount}/${routeTraceCount} traced routes are covered by live verdicts`)
+    };
+}
+function defaultAttributionCoverage(detail = "teacher gating truth is not visible in the current status surface") {
+    return {
+        visible: false,
+        gatingVisible: false,
+        completedWithoutEvaluationCount: 0,
+        readyCount: 0,
+        delayedCount: 0,
+        budgetDeferredCount: 0,
+        detail
+    };
+}
+function normalizeAttributionCoverage(value) {
+    if (value === null || typeof value !== "object" || Array.isArray(value)) {
+        return defaultAttributionCoverage();
+    }
+    return {
+        visible: value.visible === true,
+        gatingVisible: value.gatingVisible === true,
+        completedWithoutEvaluationCount: normalizeCount(value.completedWithoutEvaluationCount),
+        readyCount: normalizeCount(value.readyCount),
+        delayedCount: normalizeCount(value.delayedCount),
+        budgetDeferredCount: normalizeCount(value.budgetDeferredCount),
+        detail: normalizeOptionalString(value.detail)
+            ?? "teacher gating truth is not visible in the current status surface"
+    };
+}
+function hasNonEmptyToolResults(value) {
+    if (Array.isArray(value)) {
+        return value.length > 0;
+    }
+    return typeof value === "string" && value.trim().length > 0 && value.trim() !== "[]";
+}
+function hasTeacherBindingMode(rawEvaluation) {
+    const evaluation = parseJsonValue(rawEvaluation, null);
+    switch (evaluation?.bindingMode) {
+        case "exact_decision_id":
+        case "exact_selection_digest":
+        case "turn_compile_event_id":
+        case "trace_id":
+        case "legacy_heuristic":
+        case "unbound":
+            return true;
+        default:
+            return false;
+    }
+}
+function classifyContextFeedbackVerdict(score) {
+    if (Number(score) >= 0.25) {
+        return "helpful";
+    }
+    if (Number(score) <= -0.25) {
+        return "harmful";
+    }
+    return "irrelevant";
+}
+function isObservationReadyForTeacher(row, readyBefore) {
+    return row.status === "pending_teacher"
+        || normalizeOptionalString(row.follow_up_text) !== null
+        || hasNonEmptyToolResults(row.tool_results_json)
+        || Number(row.created_at ?? 0) <= readyBefore;
+}
+function buildDerivedFeedbackSummary(db, routeTraceCount, defaultSupervisionCount) {
+    const traceRows = db.prepare(`
+      SELECT id, route_trace_json
+      FROM brain_traces
+    `).all();
+    const traceAgentIdentityById = new Map();
+    for (const row of traceRows) {
+        const routeTrace = parseJsonValue(row?.route_trace_json, null);
+        const agentIdentity = normalizeAgentIdentity(routeTrace?.agentIdentity);
+        if (agentIdentity !== null && typeof row?.id === "string") {
+            traceAgentIdentityById.set(row.id, agentIdentity);
+        }
+    }
+    const verdictCounts = {
+        helpfulCount: 0,
+        irrelevantCount: 0,
+        harmfulCount: 0
+    };
+    const latestTraceIds = new Set();
+    let latestAgentIdentity = null;
+    const supervisionRows = db.prepare(`
+      SELECT trace_id, metadata, value
+      FROM brain_trace_supervision
+      WHERE resolution = 'promoted_to_label'
+      ORDER BY created_at DESC
+    `).all();
+    for (const row of supervisionRows) {
+        const traceId = normalizeOptionalString(row?.trace_id);
+        if (traceId === null || latestTraceIds.has(traceId)) {
+            continue;
+        }
+        latestTraceIds.add(traceId);
+        const metadata = parseJsonValue(row?.metadata, {});
+        const agentIdentity = normalizeAgentIdentity(metadata?.agentIdentity)
+            ?? traceAgentIdentityById.get(traceId)
+            ?? null;
+        if (latestAgentIdentity === null) {
+            latestAgentIdentity = agentIdentity;
+        }
+        const verdict = classifyContextFeedbackVerdict(Number(row?.value ?? 0));
+        if (verdict === "helpful") {
+            verdictCounts.helpfulCount += 1;
+        }
+        else if (verdict === "harmful") {
+            verdictCounts.harmfulCount += 1;
+        }
+        else {
+            verdictCounts.irrelevantCount += 1;
+        }
+    }
+    const supervisedTraceCount = latestTraceIds.size || normalizeCount(defaultSupervisionCount);
+    return {
+        visible: true,
+        ...verdictCounts,
+        supervisedTraceCount,
+        routeTraceCount,
+        latestAgentIdentity,
+        latestLabel: formatAgentIdentity(latestAgentIdentity),
+        detail: routeTraceCount === 0
+            ? "no traced routes recorded yet"
+            : `${verdictCounts.helpfulCount} helpful, ${verdictCounts.irrelevantCount} irrelevant, ${verdictCounts.harmfulCount} harmful; ${supervisedTraceCount}/${routeTraceCount} traced routes are supervised`
+    };
+}
+function buildDerivedAttributionCoverage(db) {
+    const completedRows = db.prepare(`
+      SELECT teacher_evaluation_json
+      FROM brain_observations
+      WHERE status = 'completed'
+    `).all();
+    const completedWithoutEvaluationCount = completedRows.reduce((sum, row) => sum + (hasTeacherBindingMode(row?.teacher_evaluation_json) ? 0 : 1), 0);
+    const evaluationCycle = loadTrainingStateJson(db, "last_teacher_evaluation_cycle_json");
+    const budgetPerTick = Number.isFinite(evaluationCycle.value?.budgetPerTick)
+        ? Math.max(0, Math.trunc(evaluationCycle.value.budgetPerTick))
+        : null;
+    const delayMs = Number.isFinite(evaluationCycle.value?.delayMs)
+        ? Math.max(0, Math.trunc(evaluationCycle.value.delayMs))
+        : null;
+    if (budgetPerTick === null || delayMs === null) {
+        return {
+            visible: true,
+            gatingVisible: false,
+            completedWithoutEvaluationCount,
+            readyCount: 0,
+            delayedCount: 0,
+            budgetDeferredCount: 0,
+            detail: "teacher gating truth is not visible in the current status surface"
+        };
+    }
+    const pendingRows = db.prepare(`
+      SELECT status, follow_up_text, tool_results_json, created_at
+      FROM brain_observations
+      WHERE status IN ('pending_followup', 'pending_teacher')
+      ORDER BY created_at ASC
+    `).all();
+    const readyBefore = Date.now() - delayMs;
+    let readyCount = 0;
+    for (const row of pendingRows) {
+        if (isObservationReadyForTeacher(row, readyBefore)) {
+            readyCount += 1;
+        }
+    }
+    const delayedCount = Math.max(0, pendingRows.length - readyCount);
+    const budgetDeferredCount = Math.max(0, readyCount - budgetPerTick);
+    return {
+        visible: true,
+        gatingVisible: true,
+        completedWithoutEvaluationCount,
+        readyCount,
+        delayedCount,
+        budgetDeferredCount,
+        detail: pendingRows.length === 0
+            ? "no teacher observations are pending"
+            : `completed_without_evaluation=${completedWithoutEvaluationCount}; ready=${readyCount}, delayed=${delayedCount}, budget_deferred=${budgetDeferredCount}`
+    };
 }
 function normalizeLastInterruptionSummary(value) {
     if (value === null || typeof value !== "object" || Array.isArray(value)) {
@@ -95,11 +332,13 @@ function normalizeBridgePayload(payload) {
     if (payload === null || typeof payload !== "object" || Array.isArray(payload)) {
         throw new Error("expected traced-learning bridge payload object");
     }
+    const routeTraceCount = normalizeCount(payload.routeTraceCount);
+    const supervisionCount = normalizeCount(payload.supervisionCount);
     return {
         contract: TRACED_LEARNING_BRIDGE_CONTRACT,
         updatedAt: normalizeOptionalString(payload.updatedAt) ?? new Date().toISOString(),
-        routeTraceCount: normalizeCount(payload.routeTraceCount),
-        supervisionCount: normalizeCount(payload.supervisionCount),
+        routeTraceCount,
+        supervisionCount,
         routerUpdateCount: normalizeCount(payload.routerUpdateCount),
         teacherArtifactCount: normalizeCount(payload.teacherArtifactCount),
         pgVersionRequested: normalizeOptionalString(payload.pgVersionRequested),
@@ -111,6 +350,11 @@ function normalizeBridgePayload(payload) {
         promoted: payload.promoted === true,
         baselinePersisted: payload.baselinePersisted === true,
         lastInterruptionSummary: normalizeLastInterruptionSummary(payload.lastInterruptionSummary),
+        feedbackSummary: normalizeFeedbackSummary(payload.feedbackSummary, {
+            routeTraceCount,
+            supervisedTraceCount: supervisionCount
+        }),
+        attributionCoverage: normalizeAttributionCoverage(payload.attributionCoverage),
         source: normalizeSource(payload.source)
     };
 }
@@ -122,11 +366,13 @@ function normalizePersistedStatusSurface(payload) {
     if (source === null) {
         throw new Error("expected traced-learning status surface source");
     }
+    const routeTraceCount = normalizeCount(payload.routeTraceCount);
+    const supervisionCount = normalizeCount(payload.supervisionCount);
     return {
         contract: TRACED_LEARNING_STATUS_SURFACE_CONTRACT,
         updatedAt: normalizeOptionalString(payload.updatedAt) ?? new Date().toISOString(),
-        routeTraceCount: normalizeCount(payload.routeTraceCount),
-        supervisionCount: normalizeCount(payload.supervisionCount),
+        routeTraceCount,
+        supervisionCount,
         routerUpdateCount: normalizeCount(payload.routerUpdateCount),
         teacherArtifactCount: normalizeCount(payload.teacherArtifactCount),
         pgVersionRequested: normalizeOptionalString(payload.pgVersionRequested),
@@ -138,6 +384,11 @@ function normalizePersistedStatusSurface(payload) {
         promoted: payload.promoted === true,
         baselinePersisted: payload.baselinePersisted === true,
         lastInterruptionSummary: normalizeLastInterruptionSummary(payload.lastInterruptionSummary),
+        feedbackSummary: normalizeFeedbackSummary(payload.feedbackSummary, {
+            routeTraceCount,
+            supervisedTraceCount: supervisionCount
+        }),
+        attributionCoverage: normalizeAttributionCoverage(payload.attributionCoverage),
         source
     };
 }
@@ -157,6 +408,8 @@ function defaultSurface(pathname, detail, error = null) {
         promoted: false,
         baselinePersisted: false,
         lastInterruptionSummary: null,
+        feedbackSummary: defaultFeedbackSummary(),
+        attributionCoverage: defaultAttributionCoverage(),
         source: null,
         detail,
         error
@@ -278,6 +531,8 @@ function buildPersistedStatusSurfaceBridge(summary, context) {
         promoted: summary.promoted,
         baselinePersisted: summary.baselinePersisted,
         lastInterruptionSummary: summary.lastInterruptionSummary,
+        feedbackSummary: summary.feedbackSummary,
+        attributionCoverage: summary.attributionCoverage,
         source: {
             command: "brain-store",
             bridge: TRACED_LEARNING_STATUS_SURFACE_BRIDGE,
@@ -321,6 +576,20 @@ function buildDerivedBrainStoreBridge(db, context, lastInterruptionSummary = nul
         ? null
         : JSON.parse(candidateUpdateRaw);
     const candidatePackVersion = Number.parseInt(candidatePackVersionRaw ?? "", 10);
+    let feedbackSummary = defaultFeedbackSummary(routeTraceCount, supervisionCount);
+    try {
+        feedbackSummary = buildDerivedFeedbackSummary(db, routeTraceCount, supervisionCount);
+    }
+    catch {
+        feedbackSummary = defaultFeedbackSummary(routeTraceCount, supervisionCount);
+    }
+    let attributionCoverage = defaultAttributionCoverage();
+    try {
+        attributionCoverage = buildDerivedAttributionCoverage(db);
+    }
+    catch {
+        attributionCoverage = defaultAttributionCoverage();
+    }
     return normalizeBridgePayload({
         updatedAt: toIsoTimestamp(candidateUpdate?.generatedAt),
         routeTraceCount,
@@ -336,6 +605,8 @@ function buildDerivedBrainStoreBridge(db, context, lastInterruptionSummary = nul
         promoted: false,
         baselinePersisted: false,
         lastInterruptionSummary,
+        feedbackSummary,
+        attributionCoverage,
         source: {
             command: "brain-store",
             bridge: "brain_store_state",
@@ -360,6 +631,13 @@ function hasMeaningfulTracedLearningSignal(bridge) {
         bridge.pgVersionUsed !== null ||
         bridge.fallbackReason !== null ||
         bridge.routerNoOpReason !== null ||
+        bridge.feedbackSummary.helpfulCount > 0 ||
+        bridge.feedbackSummary.irrelevantCount > 0 ||
+        bridge.feedbackSummary.harmfulCount > 0 ||
+        bridge.attributionCoverage.completedWithoutEvaluationCount > 0 ||
+        bridge.attributionCoverage.readyCount > 0 ||
+        bridge.attributionCoverage.delayedCount > 0 ||
+        bridge.attributionCoverage.budgetDeferredCount > 0 ||
         Number.isFinite(bridge.source?.candidatePackVersion) ||
         normalizeCount(bridge.source?.candidateUpdateCount) > 0;
 }
@@ -479,27 +757,41 @@ export function loadBrainStoreTracedLearningBridge(options = {}) {
     try {
         db = new sqlite.DatabaseSync(dbPath, { readOnly: true });
         const lastInterruptionSummary = loadLastAssemblyInterruptionSummary(db);
+        let derived = null;
+        try {
+            derived = buildDerivedBrainStoreBridge(db, {
+                brainRoot,
+                dbPath
+            }, lastInterruptionSummary);
+        }
+        catch {
+            derived = null;
+        }
         const persisted = loadPersistedStatusSurface(db, {
             brainRoot,
             dbPath
         });
         if (persisted.bridge !== null) {
-            const bridge = lastInterruptionSummary === null
-                ? persisted.bridge
-                : normalizeBridgePayload({
-                    ...persisted.bridge,
-                    lastInterruptionSummary
-                });
+            const bridge = normalizeBridgePayload({
+                ...persisted.bridge,
+                lastInterruptionSummary: lastInterruptionSummary ?? persisted.bridge.lastInterruptionSummary,
+                feedbackSummary: derived?.feedbackSummary ?? persisted.bridge.feedbackSummary,
+                attributionCoverage: derived?.attributionCoverage ?? persisted.bridge.attributionCoverage
+            });
             return {
                 path: dbPath,
                 bridge,
                 error: null
             };
         }
-        const bridge = buildDerivedBrainStoreBridge(db, {
-            brainRoot,
-            dbPath
-        }, lastInterruptionSummary);
+        const bridge = derived;
+        if (bridge === null) {
+            return {
+                path: dbPath,
+                bridge: null,
+                error: persisted.error
+            };
+        }
         if (!hasMeaningfulTracedLearningSignal(bridge)) {
             return {
                 path: dbPath,
@@ -565,6 +857,8 @@ function buildStatusSurface(pathname, bridge, options = {}) {
         promoted: bridge.promoted,
         baselinePersisted: bridge.baselinePersisted,
         lastInterruptionSummary: bridge.lastInterruptionSummary,
+        feedbackSummary: bridge.feedbackSummary,
+        attributionCoverage: bridge.attributionCoverage,
         source: bridge.source,
         detail: detailParts.join(" "),
         error: options.error ?? null
@@ -611,6 +905,8 @@ function mergeCanonicalStatusBridge(canonicalBridge, runtimeLoaded) {
             promoted: canonicalBridge.promoted,
             baselinePersisted: canonicalBridge.baselinePersisted,
             lastInterruptionSummary: canonicalBridge.lastInterruptionSummary ?? runtimeBridge?.lastInterruptionSummary ?? null,
+            feedbackSummary: canonicalBridge.feedbackSummary,
+            attributionCoverage: canonicalBridge.attributionCoverage,
             fallbackReason: canonicalBridge.fallbackReason,
             routerNoOpReason: canonicalBridge.routerNoOpReason,
             source: runtimeMaterialized === null
@@ -634,6 +930,8 @@ function mergeCanonicalStatusBridge(canonicalBridge, runtimeLoaded) {
         promoted: runtimeBridge?.promoted ?? canonicalBridge.promoted,
         baselinePersisted: runtimeBridge?.baselinePersisted ?? canonicalBridge.baselinePersisted,
         lastInterruptionSummary: canonicalBridge.lastInterruptionSummary ?? runtimeBridge?.lastInterruptionSummary ?? null,
+        feedbackSummary: canonicalBridge.feedbackSummary,
+        attributionCoverage: canonicalBridge.attributionCoverage,
         fallbackReason: runtimeBridge?.fallbackReason ?? canonicalBridge.fallbackReason ?? null,
         routerNoOpReason: runtimeBridge?.routerNoOpReason ?? canonicalBridge.routerNoOpReason ?? null,
         source: runtimeMaterialized === null
@@ -655,11 +953,16 @@ export function mergeTracedLearningBridgePayload(payload, persisted) {
     const routerUpdateCount = Math.max(current.routerUpdateCount, persistedBridge.routerUpdateCount);
     const teacherArtifactCount = Math.max(current.teacherArtifactCount, persistedBridge.teacherArtifactCount);
     const lastInterruptionSummary = current.lastInterruptionSummary ?? persistedBridge.lastInterruptionSummary ?? null;
+    const feedbackSummary = current.feedbackSummary.visible ? current.feedbackSummary : persistedBridge.feedbackSummary;
+    const attributionCoverage = current.attributionCoverage.visible ? current.attributionCoverage : persistedBridge.attributionCoverage;
     const usedBridge = routeTraceCount !== current.routeTraceCount ||
         supervisionCount !== current.supervisionCount ||
         routerUpdateCount !== current.routerUpdateCount ||
         teacherArtifactCount !== current.teacherArtifactCount ||
-        lastInterruptionSummary !== current.lastInterruptionSummary;
+        lastInterruptionSummary !== current.lastInterruptionSummary ||
+        feedbackSummary.visible !== current.feedbackSummary.visible ||
+        attributionCoverage.visible !== current.attributionCoverage.visible ||
+        attributionCoverage.gatingVisible !== current.attributionCoverage.gatingVisible;
     if (!usedBridge) {
         return current;
     }
@@ -670,6 +973,8 @@ export function mergeTracedLearningBridgePayload(payload, persisted) {
         routerUpdateCount,
         teacherArtifactCount,
         lastInterruptionSummary,
+        feedbackSummary,
+        attributionCoverage,
         routerNoOpReason: supervisionCount > 0 || routerUpdateCount > 0 ? null : current.routerNoOpReason,
         source: {
             ...(current.source ?? {}),

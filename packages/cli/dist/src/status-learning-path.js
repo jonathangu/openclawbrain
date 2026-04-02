@@ -7,6 +7,29 @@ function isSeedAwaitingFirstPromotion(status) {
 function normalizeOptionalString(value) {
     return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
+function formatOptionalFeedbackLatest(tracedLearning) {
+    const latestLabel = normalizeOptionalString(tracedLearning?.feedbackSummary?.latestLabel);
+    return latestLabel === null ? "" : ` latest=${latestLabel}`;
+}
+function formatOperatorFeedbackSummary({ tracedLearning }) {
+    const routeTraceCount = tracedLearning?.feedbackSummary?.routeTraceCount ?? tracedLearning?.routeTraceCount ?? 0;
+    const supervisedTraceCount = tracedLearning?.feedbackSummary?.supervisedTraceCount ?? tracedLearning?.supervisionCount ?? 0;
+    return [
+        `helpful=${tracedLearning?.feedbackSummary?.helpfulCount ?? 0}`,
+        `irrelevant=${tracedLearning?.feedbackSummary?.irrelevantCount ?? 0}`,
+        `harmful=${tracedLearning?.feedbackSummary?.harmfulCount ?? 0}`,
+        `supervisedTraceCount=${supervisedTraceCount}`,
+        `routeTraceCount=${routeTraceCount}`
+    ].join(" ") + formatOptionalFeedbackLatest(tracedLearning);
+}
+function formatOperatorAttributionCoverageSummary({ tracedLearning }) {
+    return [
+        `completedWithoutEvaluation=${tracedLearning?.attributionCoverage?.completedWithoutEvaluationCount ?? 0}`,
+        `ready=${tracedLearning?.attributionCoverage?.readyCount ?? 0}`,
+        `delayed=${tracedLearning?.attributionCoverage?.delayedCount ?? 0}`,
+        `budgetDeferred=${tracedLearning?.attributionCoverage?.budgetDeferredCount ?? 0}`
+    ].join(" ");
+}
 function formatOperatorLearningAttributionSummary({ status }) {
     const attribution = status?.learningAttribution ?? null;
     if (!attribution) {
@@ -55,4 +78,4 @@ export function formatOperatorLearningPathSummary({ status, learningPath, traced
         ...detailParts
     ].join(" ");
 }
-export { formatOperatorLearningAttributionSummary };
+export { formatOperatorAttributionCoverageSummary, formatOperatorFeedbackSummary, formatOperatorLearningAttributionSummary };

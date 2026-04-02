@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { formatOperatorLearningAttributionSummary, formatOperatorLearningPathSummary } from "../src/status-learning-path.js";
+import { formatOperatorAttributionCoverageSummary, formatOperatorFeedbackSummary, formatOperatorLearningAttributionSummary, formatOperatorLearningPathSummary } from "../src/status-learning-path.js";
 
 const baseLearningPath = {
     source: "active_pack",
@@ -85,4 +85,27 @@ test("attribution summary reports exact-vs-heuristic and unresolved counters", (
         }
     });
     assert.equal(summary, "quality=exact_with_unmatched source=latest_materialization/watch_snapshot nonZero=3 exact=2 heuristic=1 unmatched=1 ambiguous=0 modes=decision:1|digest:1|compile:0|heuristic:1");
+});
+
+test("feedback and attribution coverage summaries stay thin and conservative", () => {
+    const tracedLearning = {
+        routeTraceCount: 3,
+        supervisionCount: 2,
+        feedbackSummary: {
+            helpfulCount: 1,
+            irrelevantCount: 1,
+            harmfulCount: 0,
+            supervisedTraceCount: 2,
+            routeTraceCount: 3,
+            latestLabel: "main:subagent"
+        },
+        attributionCoverage: {
+            completedWithoutEvaluationCount: 1,
+            readyCount: 2,
+            delayedCount: 1,
+            budgetDeferredCount: 1
+        }
+    };
+    assert.equal(formatOperatorFeedbackSummary({ tracedLearning }), "helpful=1 irrelevant=1 harmful=0 supervisedTraceCount=2 routeTraceCount=3 latest=main:subagent");
+    assert.equal(formatOperatorAttributionCoverageSummary({ tracedLearning }), "completedWithoutEvaluation=1 ready=2 delayed=1 budgetDeferred=1");
 });

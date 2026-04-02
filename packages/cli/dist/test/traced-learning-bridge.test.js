@@ -30,8 +30,45 @@ function createBrainStore(t) {
     const dbPath = path.join(brainRoot, "state.db");
     const db = new DatabaseSync(dbPath);
     db.exec(`
-      CREATE TABLE brain_traces (id TEXT PRIMARY KEY);
-      CREATE TABLE brain_trace_supervision (id TEXT PRIMARY KEY);
+      CREATE TABLE brain_traces (
+        id TEXT PRIMARY KEY,
+        created_at INTEGER,
+        route_trace_json TEXT
+      );
+      CREATE TABLE brain_trace_supervision (
+        id TEXT PRIMARY KEY,
+        trace_id TEXT,
+        episode_id TEXT,
+        conversation_id INTEGER,
+        source TEXT,
+        kind TEXT,
+        value REAL,
+        confidence REAL,
+        reason TEXT,
+        content_snippet TEXT,
+        resolution TEXT,
+        label_id TEXT,
+        evidence_id TEXT,
+        metadata TEXT,
+        created_at INTEGER
+      );
+      CREATE TABLE brain_observations (
+        id TEXT PRIMARY KEY,
+        episode_id TEXT NOT NULL UNIQUE,
+        conversation_id INTEGER,
+        trace_id TEXT,
+        query_text TEXT NOT NULL DEFAULT '',
+        retrieved_context_json TEXT NOT NULL DEFAULT '[]',
+        route_metadata_json TEXT NOT NULL DEFAULT '{}',
+        assistant_response TEXT NOT NULL DEFAULT '',
+        tool_results_json TEXT NOT NULL DEFAULT '[]',
+        follow_up_text TEXT,
+        status TEXT NOT NULL DEFAULT 'pending_followup',
+        teacher_evaluation_json TEXT,
+        created_at INTEGER NOT NULL,
+        updated_at INTEGER NOT NULL,
+        evaluated_at INTEGER
+      );
       CREATE TABLE brain_training_state (key TEXT PRIMARY KEY, value TEXT NOT NULL);
     `);
     return { brainRoot, db, dbPath };
@@ -167,6 +204,172 @@ test("brain-store traced-learning surface persists surfaced learn truth", (t) =>
         assert.match(surface.detail, /source=brain-store/);
         assert.match(surface.detail, /bridge=brain_store_traced_learning_status_surface/);
         assert.match(surface.detail, /runtime=missing/);
+    }
+    finally {
+        db.close();
+    }
+});
+
+test("brain-store traced-learning surface derives live feedback and attribution coverage truth from state.db", (t) => {
+    const activationRoot = createTempActivationRoot(t);
+    const { brainRoot, db, dbPath } = createBrainStore(t);
+    const now = Date.now();
+    try {
+        db.prepare(`INSERT INTO brain_traces (id, created_at, route_trace_json) VALUES (?, ?, ?)`).run(
+            "trace-1",
+            now - 5_000,
+            JSON.stringify({ agentIdentity: { agentId: "main", lane: "subagent" } })
+        );
+        db.prepare(`INSERT INTO brain_traces (id, created_at, route_trace_json) VALUES (?, ?, ?)`).run(
+            "trace-2",
+            now - 4_000,
+            JSON.stringify({ agentIdentity: { agentId: "main", lane: "main" } })
+        );
+        db.prepare(`
+          INSERT INTO brain_trace_supervision (
+            id, trace_id, episode_id, conversation_id, source, kind, value, confidence, reason, content_snippet, resolution, label_id, evidence_id, metadata, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+            "sup-1",
+            "trace-1",
+            "ep-1",
+            1,
+            "teacher_review",
+            "teacher_review",
+            0.9,
+            1,
+            "helpful",
+            "",
+            "promoted_to_label",
+            null,
+            null,
+            JSON.stringify({ agentIdentity: { agentId: "main", lane: "subagent" } }),
+            now - 2_000
+        );
+        db.prepare(`
+          INSERT INTO brain_trace_supervision (
+            id, trace_id, episode_id, conversation_id, source, kind, value, confidence, reason, content_snippet, resolution, label_id, evidence_id, metadata, created_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+            "sup-2",
+            "trace-2",
+            "ep-2",
+            1,
+            "teacher_review",
+            "teacher_review",
+            -0.5,
+            1,
+            "harmful",
+            "",
+            "promoted_to_label",
+            null,
+            null,
+            "{}",
+            now - 1_000
+        );
+        db.prepare(`
+          INSERT INTO brain_observations (
+            id, episode_id, conversation_id, trace_id, tool_results_json, follow_up_text, status, teacher_evaluation_json, created_at, updated_at, evaluated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+            "obs-completed",
+            "ep-completed",
+            1,
+            "trace-1",
+            "[]",
+            null,
+            "completed",
+            null,
+            now - 6_000,
+            now - 6_000,
+            now - 5_500
+        );
+        db.prepare(`
+          INSERT INTO brain_observations (
+            id, episode_id, conversation_id, trace_id, tool_results_json, follow_up_text, status, teacher_evaluation_json, created_at, updated_at, evaluated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+            "obs-ready-old",
+            "ep-ready-old",
+            1,
+            "trace-1",
+            "[]",
+            null,
+            "pending_followup",
+            null,
+            now - 5_000,
+            now - 5_000,
+            null
+        );
+        db.prepare(`
+          INSERT INTO brain_observations (
+            id, episode_id, conversation_id, trace_id, tool_results_json, follow_up_text, status, teacher_evaluation_json, created_at, updated_at, evaluated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+            "obs-ready-followup",
+            "ep-ready-followup",
+            1,
+            "trace-2",
+            "[]",
+            "operator follow-up",
+            "pending_teacher",
+            null,
+            now - 800,
+            now - 800,
+            null
+        );
+        db.prepare(`
+          INSERT INTO brain_observations (
+            id, episode_id, conversation_id, trace_id, tool_results_json, follow_up_text, status, teacher_evaluation_json, created_at, updated_at, evaluated_at
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+            "obs-delayed",
+            "ep-delayed",
+            1,
+            "trace-2",
+            "[]",
+            null,
+            "pending_followup",
+            null,
+            now - 200,
+            now - 200,
+            null
+        );
+        db.prepare(`INSERT INTO brain_training_state (key, value) VALUES (?, ?)`).run(
+            "last_teacher_evaluation_cycle_json",
+            JSON.stringify({
+                generatedAt: now - 100,
+                budgetPerTick: 1,
+                delayMs: 1_000
+            })
+        );
+        const surface = buildTracedLearningStatusSurface(activationRoot, {
+            env: {
+                OPENCLAWBRAIN_ROOT: brainRoot
+            }
+        });
+        assert.equal(surface.path, dbPath);
+        assert.equal(surface.present, true);
+        assert.deepEqual(surface.feedbackSummary, {
+            visible: true,
+            helpfulCount: 1,
+            irrelevantCount: 0,
+            harmfulCount: 1,
+            supervisedTraceCount: 2,
+            routeTraceCount: 2,
+            latestAgentIdentity: { agentId: "main", lane: "main" },
+            latestLabel: "main",
+            detail: "1 helpful, 0 irrelevant, 1 harmful; 2/2 traced routes are supervised"
+        });
+        assert.deepEqual(surface.attributionCoverage, {
+            visible: true,
+            gatingVisible: true,
+            completedWithoutEvaluationCount: 1,
+            readyCount: 2,
+            delayedCount: 1,
+            budgetDeferredCount: 1,
+            detail: "completed_without_evaluation=1; ready=2, delayed=1, budget_deferred=1"
+        });
     }
     finally {
         db.close();

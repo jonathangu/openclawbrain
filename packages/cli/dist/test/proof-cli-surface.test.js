@@ -84,7 +84,9 @@ function createDetailedStatusText(fixture, overrides = {}) {
         `serve       state=${overrides.serveState ?? "serving_active_pack"}`,
         `routeFn     available=${overrides.routeFnAvailable ?? "yes"}`,
         overrides.pathLine ?? "path        source=materialized_candidate pg=v2 method=policy_gradient_v2 target=trajectory_reconstruction connect=4 trajectories=12 bindingQuality=exact_only",
+        overrides.feedbackLine ?? "feedback    helpful=1 irrelevant=0 harmful=0 supervisedTraceCount=1 routeTraceCount=1 latest=main",
         overrides.attributionLine ?? "attribution quality=exact_only source=latest_materialization/watch_snapshot nonZero=1 exact=1 heuristic=0 unmatched=0 ambiguous=0 modes=decision:1|digest:0|compile:0|heuristic:0",
+        overrides.attributionCoverageLine ?? "attrCover   completedWithoutEvaluation=0 ready=1 delayed=0 budgetDeferred=0",
         `attachedSet current_profile@${path.resolve(fixture.openclawHome)} proofPath=${overrides.proofPath ?? fixture.runtimeLoadProofPath} proofError=${overrides.proofError ?? "none"}`,
         `loadProof=${overrides.loadProof ?? "status_probe_ready"}`
     ].join("\n");
@@ -234,7 +236,9 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     assert.match(summary, /## Learning Attribution/);
     assert.match(summary, /## Runtime Guard/);
     assert.match(summary, /guard       severity=none actionability=none action=none summary=profile hook is installed and loadable/);
+    assert.match(summary, /feedback    helpful=1 irrelevant=0 harmful=0 supervisedTraceCount=1 routeTraceCount=1 latest=main/);
     assert.match(summary, /attribution quality=exact_only/);
+    assert.match(summary, /attrCover   completedWithoutEvaluation=0 ready=1 delayed=0 budgetDeferred=0/);
     assert.match(summary, /path        source=materialized_candidate/);
     assert.match(summary, /## Warnings/);
     assert.match(summary, /- none/);
@@ -250,7 +254,9 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     assert.equal(coverageSnapshot.profiles[0].coverageState, "covered");
     assert.equal(hardeningSnapshot.statusSignals.runtimeProven, true);
     assert.equal(hardeningSnapshot.verdict.verdict, "success_and_proven");
+    assert.equal(verdictPayload.feedbackLine, "feedback    helpful=1 irrelevant=0 harmful=0 supervisedTraceCount=1 routeTraceCount=1 latest=main");
     assert.equal(verdictPayload.attributionLine, "attribution quality=exact_only source=latest_materialization/watch_snapshot nonZero=1 exact=1 heuristic=0 unmatched=0 ambiguous=0 modes=decision:1|digest:0|compile:0|heuristic:0");
+    assert.equal(verdictPayload.attributionCoverageLine, "attrCover   completedWithoutEvaluation=0 ready=1 delayed=0 budgetDeferred=0");
     assert.equal(verdictPayload.learningPathLine, "path        source=materialized_candidate pg=v2 method=policy_gradient_v2 target=trajectory_reconstruction connect=4 trajectories=12 bindingQuality=exact_only");
     assert.deepEqual(captures[0]?.args, ["install", "--openclaw-home", fixture.openclawHome, "--json"]);
     assert.deepEqual(captures[1]?.args, ["gateway", "restart", "--profile", "Tern"]);

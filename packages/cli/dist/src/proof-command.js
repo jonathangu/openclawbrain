@@ -546,7 +546,7 @@ function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, brea
     };
 }
 
-function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspectText, statusSignals, breadcrumbs, runtimeLoadProofSnapshot, guardLine, attributionLine, learningPathLine, coverageSnapshot, hardeningSnapshot }) {
+function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspectText, statusSignals, breadcrumbs, runtimeLoadProofSnapshot, guardLine, feedbackLine, attributionLine, attributionCoverageLine, learningPathLine, coverageSnapshot, hardeningSnapshot }) {
     const passed = [];
     const missing = [];
     const warnings = Array.isArray(verdict.warnings) ? verdict.warnings : [];
@@ -608,9 +608,15 @@ function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspec
             : [`- ${guardLine}`]),
         "",
         "## Learning Attribution",
+        ...(feedbackLine === null
+            ? ["- feedback line not reported by detailed status"]
+            : [`- ${feedbackLine}`]),
         ...(attributionLine === null
             ? ["- attribution line not reported by detailed status"]
             : [`- ${attributionLine}`]),
+        ...(attributionCoverageLine === null
+            ? ["- attribution coverage line not reported by detailed status"]
+            : [`- ${attributionCoverageLine}`]),
         ...(learningPathLine === null
             ? []
             : [`- ${learningPathLine}`]),
@@ -915,7 +921,9 @@ export function captureOperatorProofBundle(options) {
     const serveLine = extractDetailedStatusLine(statusCapture.stdout, "serve");
     const routeFnLine = extractDetailedStatusLine(statusCapture.stdout, "routeFn");
     const guardLine = extractDetailedStatusLine(statusCapture.stdout, "guard");
+    const feedbackLine = extractDetailedStatusLine(statusCapture.stdout, "feedback");
     const attributionLine = extractDetailedStatusLine(statusCapture.stdout, "attribution");
+    const attributionCoverageLine = extractDetailedStatusLine(statusCapture.stdout, "attrCover");
     const learningPathLine = extractDetailedStatusLine(statusCapture.stdout, "path");
     const runtimeLoadProofPath = normalizeReportedProofPath(statusSignals.proofPath)
         ?? path.join(activationRoot, "attachment-truth", "runtime-load-proofs.json");
@@ -971,7 +979,9 @@ export function captureOperatorProofBundle(options) {
         runtimeLoadProofPath,
         runtimeLoadProofError: runtimeLoadProofSnapshot.error,
         guardLine,
+        feedbackLine,
         attributionLine,
+        attributionCoverageLine,
         learningPathLine,
     });
     writeJson(path.join(bundleDir, "hardening-snapshot.json"), hardeningSnapshot);
@@ -985,7 +995,9 @@ export function captureOperatorProofBundle(options) {
         breadcrumbs,
         runtimeLoadProofSnapshot,
         guardLine,
+        feedbackLine,
         attributionLine,
+        attributionCoverageLine,
         learningPathLine,
         coverageSnapshot,
         hardeningSnapshot,
@@ -1004,7 +1016,9 @@ export function captureOperatorProofBundle(options) {
         verdict,
         statusSignals,
         guardLine,
+        feedbackLine,
         attributionLine,
+        attributionCoverageLine,
         learningPathLine,
         steps,
         summaryPath: path.join(bundleDir, "summary.md"),
