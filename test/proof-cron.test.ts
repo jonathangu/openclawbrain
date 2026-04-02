@@ -217,6 +217,50 @@ describe("proof cron bundle scanning", () => {
     });
     writeJson(path.join(replayRoot, "validation-report.json"), { ok: true, verifiedFileCount: 6 });
 
+    const replayLaneRoot = path.join(docsEvidenceRoot, "2026-03-30", "def456", "recorded-session-replay", "_lane");
+    writeText(path.join(replayLaneRoot, "summary.md"), "# replay lane proof\n");
+    writeJson(path.join(replayLaneRoot, "closeout.json"), {
+      sourceManifest: {
+        manifestId: "replay-lane-20260330",
+        manifestContract: "openclawbrain_replay_manifest_skeleton_set.v1",
+        manifestDigest: "sha256-replay-lane-manifest",
+      },
+      requestedTraceCount: 20,
+      successfulTraceCount: 18,
+      failedTraceCount: 2,
+      verdict: {
+        verdict: "success_and_proven",
+        severity: "none",
+      },
+      files: [],
+      traceHashes: [
+        { bundleHash: "sha256-bundle-a", scoreHash: "sha256-score-a" },
+        { bundleHash: "sha256-bundle-b", scoreHash: "sha256-score-b" },
+      ],
+    });
+    writeJson(path.join(replayLaneRoot, "index.json"), {
+      requestedTraceCount: 20,
+      successfulTraceCount: 18,
+      failedTraceCount: 2,
+    });
+    writeJson(path.join(replayLaneRoot, "summary-tables.json"), {
+      requestedTraceCount: 20,
+      successfulTraceCount: 18,
+      failedTraceCount: 2,
+      traces: [
+        { bundleHash: "sha256-bundle-a", scoreHash: "sha256-score-a" },
+        { bundleHash: "sha256-bundle-b", scoreHash: "sha256-score-b" },
+      ],
+    });
+    writeJson(path.join(replayLaneRoot, "pairwise-deltas.json"), {});
+    writeJson(path.join(replayLaneRoot, "win-rate-matrix.json"), {});
+    writeText(path.join(replayLaneRoot, "worked-traces.md"), "# worked traces\n");
+    writeJson(path.join(replayLaneRoot, "generation-report.json"), {
+      requestedTraceCount: 20,
+      successfulTraceCount: 18,
+      failedTraceCount: 2,
+    });
+
     const hostRoot = path.join(docsEvidenceRoot, "2026-03-26", "abc123", "host-proof");
     writeText(path.join(hostRoot, "summary.md"), "# host evidence\n");
     writeJson(path.join(hostRoot, "status.json"), {
@@ -234,6 +278,34 @@ describe("proof cron bundle scanning", () => {
       memory: { files: 4, chunks: 8 },
       gateway: { reachable: true },
       promotionStory: { summary: { currentPackVersion: 17 } },
+      contextFeedback: {
+        verdictCounts: {
+          helpful: 3,
+          irrelevant: 1,
+          harmful: 0,
+        },
+        coverage: {
+          routeTraceCount: 5,
+          supervisedTraceCount: 4,
+        },
+        latest: {
+          agentIdentity: {
+            agentId: "operator",
+            lane: "proof-summary",
+          },
+        },
+      },
+      attributionTruth: {
+        primaryState: "matched",
+        counts: {
+          observationCount: 5,
+          evaluatedCount: 4,
+          completedWithoutEvaluationCount: 1,
+          readyCount: 1,
+          delayedCount: 0,
+          budgetDeferredCount: 0,
+        },
+      },
     });
     writeJson(path.join(hostRoot, "doctor.json"), { ok: true });
     writeJson(path.join(hostRoot, "config-snapshot.json"), { ok: true });
@@ -247,7 +319,7 @@ describe("proof cron bundle scanning", () => {
     const candidates = collectBundleCandidates([artifactsRoot, docsEvidenceRoot], [excludedRoot]);
     const bundleKinds = candidates.map((bundle: any) => bundle.kind).sort();
 
-    expect(bundleKinds).toEqual(["host-evidence", "operator-proof", "recorded-session-replay"]);
+    expect(bundleKinds).toEqual(["host-evidence", "operator-proof", "recorded-session-replay", "recorded-session-replay-lane"]);
 
     const bundles = summarizeScan(candidates, new Date("2026-03-31T13:00:00.000Z"), workspaceRoot);
     expect(bundles.find((bundle: any) => bundle.kind === "operator-proof")?.metrics.totalStepDurationMs).toBe(1500);
@@ -267,6 +339,25 @@ describe("proof cron bundle scanning", () => {
     expect(replayBundle?.metrics.feedbackEventCount).toBe(2);
     expect(replayBundle?.metrics.nonApprovalFeedbackEventCount).toBe(1);
     expect(replayBundle?.metrics.turnsWithNonApprovalFeedbackCount).toBe(1);
+    const replayLaneBundle = bundles.find((bundle: any) => bundle.kind === "recorded-session-replay-lane");
+    expect(replayLaneBundle?.bundleId).toBe("replay-lane-20260330");
+    expect(replayLaneBundle?.metrics.requestedTraceCount).toBe(20);
+    expect(replayLaneBundle?.metrics.successfulTraceCount).toBe(18);
+    const hostBundle = bundles.find((bundle: any) => bundle.kind === "host-evidence");
+    expect(hostBundle?.feedbackTruth).toMatchObject({
+      visible: true,
+      helpfulCount: 3,
+      supervisedTraceCount: 4,
+      routeTraceCount: 5,
+      latestAgentIdentity: "operator/proof-summary",
+    });
+    expect(hostBundle?.attributionCoverageTruth).toMatchObject({
+      visible: true,
+      evaluatedCount: 4,
+      observationCount: 5,
+      completedWithoutEvaluationCount: 1,
+      readyCount: 1,
+    });
     expect(replayBundle?.metrics.savingsByMode).toEqual([
       {
         mode: "no_brain",
@@ -408,6 +499,7 @@ describe("proof cron bundle scanning", () => {
     const nightlyManifest = JSON.parse(readText(nightlyOutputDir, PROOF_CRON_MANIFEST_LAYOUT.manifest));
     const nightlyReplayManifests = JSON.parse(readText(nightlyOutputDir, PROOF_CRON_MANIFEST_LAYOUT.replayManifests));
     const nightlySmoke = JSON.parse(readText(nightlyOutputDir, PROOF_CRON_MANIFEST_LAYOUT.smoke));
+    const nightlySummary = readText(nightlyOutputDir, "summary.md");
 
     expect(nightlyManifest.contract).toBe("openclawbrain_proof_manifest_skeleton.v1");
     expect(nightlyManifest.runKind).toBe("nightly");
@@ -430,6 +522,30 @@ describe("proof cron bundle scanning", () => {
     expect(nightlySmoke.contract).toBe("openclawbrain_proof_manifest_smoke.v1");
     expect(nightlySmoke.output.primary.path).toBe("aggregate.json");
     expect(nightlySmoke.replayInputs.allReplayHashesLinked).toBe(true);
+    expect(nightlyAggregate.feedbackTruth).toMatchObject({
+      visible: true,
+      helpfulCount: 3,
+      supervisedTraceCount: 4,
+      routeTraceCount: 5,
+    });
+    expect(nightlyAggregate.attributionCoverageTruth).toMatchObject({
+      visible: true,
+      evaluatedCount: 4,
+      observationCount: 5,
+      completedWithoutEvaluationCount: 1,
+      readyCount: 1,
+    });
+    expect(nightlyAggregate.replayFreshnessTruth).toMatchObject({
+      visible: true,
+      bundleId: "replay-lane-20260330",
+      requestedTraceCount: 20,
+      successfulTraceCount: 18,
+      freshness: "fresh",
+    });
+    expect(nightlySummary).toContain("## Thin truth");
+    expect(nightlySummary).toContain("feedback: helpful=3 irrelevant=1 harmful=0 coverage=4/5 latest=operator/proof-summary (source=latest_host_evidence)");
+    expect(nightlySummary).toContain("attribution coverage: evaluated=4/5 completedWithoutEval=1 ready=1 delayed=0 budgetDeferred=0 (source=latest_host_evidence)");
+    expect(nightlySummary).toContain("replay freshness: latest=replay-lane-20260330 age=1.54d band=fresh traces=18/20");
 
     const statusProbe = {
       command: "node packages/cli/dist/src/cli.js status --openclaw-home ~/.openclaw --json",
@@ -476,11 +592,36 @@ describe("proof cron bundle scanning", () => {
 
     const healthManifest = JSON.parse(readText(healthOutputDir, PROOF_CRON_MANIFEST_LAYOUT.manifest));
     const healthSmoke = JSON.parse(readText(healthOutputDir, PROOF_CRON_MANIFEST_LAYOUT.smoke));
+    const healthSummary = readText(healthOutputDir, "summary.md");
     expect(healthManifest.runKind).toBe("health");
     expect(healthManifest.output.primary.path).toBe("snapshot.json");
     expect(healthManifest.replayInputs.linkageSummary.fixtureToReplayLinkedCount).toBe(1);
     expect(healthSmoke.output.primary.path).toBe("snapshot.json");
     expect(healthSmoke.replayInputs.allReplayHashesLinked).toBe(true);
+    expect(healthSnapshot.feedbackTruth).toMatchObject({
+      visible: true,
+      helpfulCount: 3,
+      supervisedTraceCount: 4,
+      routeTraceCount: 5,
+    });
+    expect(healthSnapshot.attributionCoverageTruth).toMatchObject({
+      visible: true,
+      evaluatedCount: 4,
+      observationCount: 5,
+      completedWithoutEvaluationCount: 1,
+      readyCount: 1,
+    });
+    expect(healthSnapshot.replayFreshnessTruth).toMatchObject({
+      visible: true,
+      bundleId: "replay-lane-20260330",
+      requestedTraceCount: 20,
+      successfulTraceCount: 18,
+      freshness: "fresh",
+    });
+    expect(healthSummary).toContain("## Thin truth");
+    expect(healthSummary).toContain("feedback: helpful=3 irrelevant=1 harmful=0 coverage=4/5 latest=operator/proof-summary (source=latest_host_evidence)");
+    expect(healthSummary).toContain("attribution coverage: evaluated=4/5 completedWithoutEval=1 ready=1 delayed=0 budgetDeferred=0 (source=latest_host_evidence)");
+    expect(healthSummary).toContain("replay freshness: latest=replay-lane-20260330 age=1.54d band=fresh traces=18/20");
   });
 
   it("marks unknown host metrics as unknown instead of collapsing them to zero", () => {

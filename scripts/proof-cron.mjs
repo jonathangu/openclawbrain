@@ -1145,6 +1145,8 @@ function summarizeHostBundle(bundlePath, workspaceRoot) {
   const recentSession = status?.sessions?.recent?.[0] ?? null;
   const decisionSummary = status?.recentDecisionSummary ?? null;
   const promotionSummary = status?.promotionStory?.summary ?? null;
+  const feedbackTruth = buildThinFeedbackTruthFromStatusPayload(status, "latest_host_evidence");
+  const attributionCoverageTruth = buildThinAttributionCoverageTruthFromStatusPayload(status, "latest_host_evidence");
 
   return {
     kind: "host-evidence",
@@ -1159,6 +1161,8 @@ function summarizeHostBundle(bundlePath, workspaceRoot) {
     validationReport: validation,
     summary,
     operatorHealth,
+    feedbackTruth,
+    attributionCoverageTruth,
     statusSummary: status
       ? {
           runtimeVersion: status.runtimeVersion ?? null,
@@ -1175,6 +1179,8 @@ function summarizeHostBundle(bundlePath, workspaceRoot) {
           clipRate: status.recentDecisionSummary?.clipRate?.rate ?? null,
           failOpenRate: status.recentDecisionSummary?.failOpenRate?.rate ?? null,
           operatorHealth,
+          feedbackTruth,
+          attributionCoverageTruth,
         }
       : null,
     metrics: {
@@ -1288,6 +1294,149 @@ function summarizeOperatorHealthFromStatusPayload(status) {
   });
 }
 
+function formatCompactAgentIdentity(agentIdentity) {
+  if (!agentIdentity || typeof agentIdentity !== "object") {
+    return null;
+  }
+  const agentId = typeof agentIdentity.agentId === "string" && agentIdentity.agentId.length > 0
+    ? agentIdentity.agentId
+    : "unknown";
+  const lane = typeof agentIdentity.lane === "string" && agentIdentity.lane.length > 0
+    ? agentIdentity.lane
+    : null;
+  return lane ? `${agentId}/${lane}` : agentId;
+}
+
+function buildUnavailableFeedbackTruth(detail, source = null) {
+  return {
+    visible: false,
+    source,
+    helpfulCount: null,
+    irrelevantCount: null,
+    harmfulCount: null,
+    supervisedTraceCount: null,
+    routeTraceCount: null,
+    latestAgentIdentity: null,
+    line: detail,
+  };
+}
+
+function buildThinFeedbackTruthFromStatusPayload(status, source = null) {
+  const contextFeedback = status?.contextFeedback;
+  if (!contextFeedback || typeof contextFeedback !== "object") {
+    return buildUnavailableFeedbackTruth("feedback truth is not visible in the current proof surface", source);
+  }
+
+  const helpfulCount = Number.isFinite(contextFeedback?.verdictCounts?.helpful)
+    ? Number(contextFeedback.verdictCounts.helpful)
+    : 0;
+  const irrelevantCount = Number.isFinite(contextFeedback?.verdictCounts?.irrelevant)
+    ? Number(contextFeedback.verdictCounts.irrelevant)
+    : 0;
+  const harmfulCount = Number.isFinite(contextFeedback?.verdictCounts?.harmful)
+    ? Number(contextFeedback.verdictCounts.harmful)
+    : 0;
+  const supervisedTraceCount = Number.isFinite(contextFeedback?.coverage?.supervisedTraceCount)
+    ? Number(contextFeedback.coverage.supervisedTraceCount)
+    : 0;
+  const routeTraceCount = Number.isFinite(contextFeedback?.coverage?.routeTraceCount)
+    ? Number(contextFeedback.coverage.routeTraceCount)
+    : 0;
+  const latestAgentIdentity = formatCompactAgentIdentity(contextFeedback?.latest?.agentIdentity ?? null);
+
+  return {
+    visible: true,
+    source,
+    helpfulCount,
+    irrelevantCount,
+    harmfulCount,
+    supervisedTraceCount,
+    routeTraceCount,
+    latestAgentIdentity,
+    line: [
+      `helpful=${helpfulCount}`,
+      `irrelevant=${irrelevantCount}`,
+      `harmful=${harmfulCount}`,
+      `coverage=${supervisedTraceCount}/${routeTraceCount}`,
+      latestAgentIdentity === null ? null : `latest=${latestAgentIdentity}`,
+    ].filter(Boolean).join(" "),
+  };
+}
+
+function buildUnavailableAttributionCoverageTruth(detail, source = null) {
+  return {
+    visible: false,
+    source,
+    primaryState: null,
+    evaluatedCount: null,
+    observationCount: null,
+    completedWithoutEvaluationCount: null,
+    readyCount: null,
+    delayedCount: null,
+    budgetDeferredCount: null,
+    line: detail,
+  };
+}
+
+function buildThinAttributionCoverageTruthFromStatusPayload(status, source = null) {
+  const attributionTruth = status?.attributionTruth;
+  if (!attributionTruth || typeof attributionTruth !== "object") {
+    return buildUnavailableAttributionCoverageTruth("attribution coverage truth is not visible in the current proof surface", source);
+  }
+
+  const evaluatedCount = Number.isFinite(attributionTruth?.counts?.evaluatedCount)
+    ? Number(attributionTruth.counts.evaluatedCount)
+    : 0;
+  const observationCount = Number.isFinite(attributionTruth?.counts?.observationCount)
+    ? Number(attributionTruth.counts.observationCount)
+    : 0;
+  const completedWithoutEvaluationCount = Number.isFinite(attributionTruth?.counts?.completedWithoutEvaluationCount)
+    ? Number(attributionTruth.counts.completedWithoutEvaluationCount)
+    : 0;
+  const readyCount = Number.isFinite(attributionTruth?.counts?.readyCount)
+    ? Number(attributionTruth.counts.readyCount)
+    : 0;
+  const delayedCount = Number.isFinite(attributionTruth?.counts?.delayedCount)
+    ? Number(attributionTruth.counts.delayedCount)
+    : 0;
+  const budgetDeferredCount = Number.isFinite(attributionTruth?.counts?.budgetDeferredCount)
+    ? Number(attributionTruth.counts.budgetDeferredCount)
+    : 0;
+
+  return {
+    visible: true,
+    source,
+    primaryState: typeof attributionTruth.primaryState === "string" ? attributionTruth.primaryState : null,
+    evaluatedCount,
+    observationCount,
+    completedWithoutEvaluationCount,
+    readyCount,
+    delayedCount,
+    budgetDeferredCount,
+    line: [
+      `evaluated=${evaluatedCount}/${observationCount}`,
+      `completedWithoutEval=${completedWithoutEvaluationCount}`,
+      `ready=${readyCount}`,
+      `delayed=${delayedCount}`,
+      `budgetDeferred=${budgetDeferredCount}`,
+    ].join(" "),
+  };
+}
+
+function pickPreferredThinTruth(...truths) {
+  for (const truth of truths) {
+    if (truth?.visible) {
+      return truth;
+    }
+  }
+  for (const truth of truths) {
+    if (truth) {
+      return truth;
+    }
+  }
+  return null;
+}
+
 function summarizeStatus(statusProbe) {
   const status = statusProbe.parsed ?? {};
   const brainStatus = status.brainStatus ?? {};
@@ -1356,6 +1505,8 @@ function summarizeStatus(statusProbe) {
     recentMutationBundles: Array.isArray(status.recentMutationBundles) ? status.recentMutationBundles.length : null,
     decisionSummary: status.recentDecisionSummary ?? status.decisionSummary ?? null,
     promotionStory: status.promotionStory ?? null,
+    feedbackTruth: buildThinFeedbackTruthFromStatusPayload(status, "live_status"),
+    attributionCoverageTruth: buildThinAttributionCoverageTruthFromStatusPayload(status, "live_status"),
     securityAudit: status.securityAudit?.summary ?? null,
     gatewayReachable: status.gateway?.reachable ?? null,
     memoryFiles: status.memory?.files ?? null,
@@ -1643,6 +1794,54 @@ function summarizeEffectivenessReadout({
   };
 }
 
+function buildReplayFreshnessTruth({ bundles, healthFreshnessDays, freshnessThresholdDays }) {
+  const latest = latestBundlesByKind(bundles);
+  const latestReplayLane = latest["recorded-session-replay-lane"] ?? null;
+  const latestReplay = latest["recorded-session-replay"] ?? null;
+  const chosen = latestReplayLane ?? latestReplay ?? null;
+
+  if (!chosen) {
+    return {
+      visible: false,
+      kind: null,
+      bundleId: null,
+      relativePath: null,
+      ageDays: null,
+      freshness: "unknown",
+      requestedTraceCount: null,
+      successfulTraceCount: null,
+      line: "no replay proof bundles were found",
+    };
+  }
+
+  const freshness = freshnessBand(chosen.ageDays, healthFreshnessDays, freshnessThresholdDays);
+  const requestedTraceCount = Number.isFinite(chosen?.metrics?.requestedTraceCount)
+    ? Number(chosen.metrics.requestedTraceCount)
+    : null;
+  const successfulTraceCount = Number.isFinite(chosen?.metrics?.successfulTraceCount)
+    ? Number(chosen.metrics.successfulTraceCount)
+    : null;
+
+  return {
+    visible: true,
+    kind: chosen.kind,
+    bundleId: chosen.bundleId,
+    relativePath: chosen.relativePath,
+    ageDays: chosen.ageDays ?? null,
+    freshness,
+    requestedTraceCount,
+    successfulTraceCount,
+    line: [
+      `latest=${chosen.bundleId}`,
+      `age=${formatAge(chosen.ageDays)}`,
+      `band=${freshness}`,
+      requestedTraceCount === null
+        ? null
+        : `traces=${successfulTraceCount === null ? "n/a" : successfulTraceCount}/${requestedTraceCount}`,
+    ].filter(Boolean).join(" "),
+  };
+}
+
 function buildHealthSnapshot({ config, statusProbe, bundles, now, scanDurationMs }) {
   const status = summarizeStatus(statusProbe);
   const watchHeartbeatAt = safeParseDate(status.watch?.lastHeartbeatAt ?? null);
@@ -1655,6 +1854,15 @@ function buildHealthSnapshot({ config, statusProbe, bundles, now, scanDurationMs
   const costProxy = buildCostProxy(performance, bundles);
   const healthFreshnessDays = Number(config.healthFreshnessDays ?? 7);
   const freshnessThresholdDays = Number(config.freshnessThresholdDays ?? 21);
+  const feedbackTruth = pickPreferredThinTruth(status.feedbackTruth, latestHost?.feedbackTruth)
+    ?? buildUnavailableFeedbackTruth("feedback truth is not visible in the current proof surface");
+  const attributionCoverageTruth = pickPreferredThinTruth(status.attributionCoverageTruth, latestHost?.attributionCoverageTruth)
+    ?? buildUnavailableAttributionCoverageTruth("attribution coverage truth is not visible in the current proof surface");
+  const replayFreshnessTruth = buildReplayFreshnessTruth({
+    bundles,
+    healthFreshnessDays,
+    freshnessThresholdDays,
+  });
 
   const bundleFreshness = [latestOperator, latestReplay, latestHost]
     .filter(Boolean)
@@ -1703,6 +1911,9 @@ function buildHealthSnapshot({ config, statusProbe, bundles, now, scanDurationMs
       teacherArtifactCount: status.watch?.teacherArtifactCount ?? status.teacherArtifactCount ?? null,
     },
     latestBundles: bundleFreshness,
+    feedbackTruth,
+    attributionCoverageTruth,
+    replayFreshnessTruth,
     performance,
     costProxy,
     replaySavings: latestReplay?.metrics?.savingsByMode ?? [],
@@ -1788,6 +1999,15 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs }) {
   const sessionCount = summarizeNumericBundleMetric(hostBundles, (bundle) => bundle.metrics?.sessionCount ?? null);
   const securityCritical = summarizeNumericBundleMetric(hostBundles, (bundle) => bundle.metrics?.securityCriticalCount ?? null);
   const securityWarn = summarizeNumericBundleMetric(hostBundles, (bundle) => bundle.metrics?.securityWarnCount ?? null);
+  const feedbackTruth = latestHost?.feedbackTruth
+    ?? buildUnavailableFeedbackTruth("feedback truth is not visible in the latest host evidence bundle");
+  const attributionCoverageTruth = latestHost?.attributionCoverageTruth
+    ?? buildUnavailableAttributionCoverageTruth("attribution coverage truth is not visible in the latest host evidence bundle");
+  const replayFreshnessTruth = buildReplayFreshnessTruth({
+    bundles,
+    healthFreshnessDays,
+    freshnessThresholdDays,
+  });
 
   const aggregate = {
     contract: CONTRACT,
@@ -1871,6 +2091,9 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs }) {
       recordedSessionReplay: latestReplay,
       hostEvidence: latestHost,
     },
+    feedbackTruth,
+    attributionCoverageTruth,
+    replayFreshnessTruth,
     latestOperatorHealth: latestHost?.operatorHealth ?? null,
     performance: {
       scanMs: scanDurationMs,
@@ -1967,6 +2190,11 @@ function formatHealthMarkdown(snapshot) {
   lines.push(`- why: ${snapshot.effectivenessReadout.why.length > 0 ? snapshot.effectivenessReadout.why.join("; ") : "none"}`);
   lines.push(`- stale/missing: ${snapshot.effectivenessReadout.staleOrMissing.length > 0 ? snapshot.effectivenessReadout.staleOrMissing.join("; ") : "none"}`);
   lines.push("");
+  lines.push("## Thin truth");
+  lines.push(`- feedback: ${snapshot.feedbackTruth?.line ?? "unavailable"}${snapshot.feedbackTruth?.source ? ` (source=${snapshot.feedbackTruth.source})` : ""}`);
+  lines.push(`- attribution coverage: ${snapshot.attributionCoverageTruth?.line ?? "unavailable"}${snapshot.attributionCoverageTruth?.source ? ` (source=${snapshot.attributionCoverageTruth.source})` : ""}`);
+  lines.push(`- replay freshness: ${snapshot.replayFreshnessTruth?.line ?? "unavailable"}`);
+  lines.push("");
   lines.push("## Operator health");
   lines.push(`- operator health: ${snapshot.operatorHealth.status}`);
   lines.push(`- operator health detail: ${snapshot.operatorHealth.detail}`);
@@ -2044,6 +2272,11 @@ function formatNightlyMarkdown(aggregate) {
   lines.push(`- warm: ${aggregate.freshnessCounts.warm}`);
   lines.push(`- stale: ${aggregate.freshnessCounts.stale}`);
   lines.push(`- unknown: ${aggregate.freshnessCounts.unknown}`);
+  lines.push("");
+  lines.push("## Thin truth");
+  lines.push(`- feedback: ${aggregate.feedbackTruth?.line ?? "unavailable"}${aggregate.feedbackTruth?.source ? ` (source=${aggregate.feedbackTruth.source})` : ""}`);
+  lines.push(`- attribution coverage: ${aggregate.attributionCoverageTruth?.line ?? "unavailable"}${aggregate.attributionCoverageTruth?.source ? ` (source=${aggregate.attributionCoverageTruth.source})` : ""}`);
+  lines.push(`- replay freshness: ${aggregate.replayFreshnessTruth?.line ?? "unavailable"}`);
   lines.push("");
   lines.push("## Replay proof metrics");
   lines.push(`- winner modes: ${JSON.stringify(aggregate.replayMetrics.winnerModeCounts)}`);
