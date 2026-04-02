@@ -4,6 +4,26 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.23
+
+`0.4.23` is the public OpenClawBrain follow-up release for the single-source-of-truth tranche: the CLI now reports watcher freshness, operator health, and context-management truth from one cleaner operator model instead of leaving those surfaces fragmented across status, proof, and stale docs.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.22`
+- `@openclawbrain/cli@0.4.23`
+
+**Changes**
+
+- watcher freshness now reports a structured `lagging` state so near-threshold heartbeat jitter does not flip straight to `stale_snapshot`
+- proof health and nightly aggregates now consume a shared `operatorHealth` contract with explicit `partial`, `unknown`, `stale`, and `unhealthy` semantics
+- `openclawbrain status` now exposes a canonical `contextManagement` model covering summary spine + protected fresh tail, freshness states, prefetch lifecycle, expand-to-source behavior, and budget controls
+- stale docs/operator seams are cleaned up, including the phantom `openclawbrain context` command claim
+
+**Full release note**
+
+- [docs/release-notes-0.4.23.md](docs/release-notes-0.4.23.md)
+
 ## 0.4.22
 
 `0.4.22` is the public OpenClawBrain release for the post-issue-#7 async watch/teacher reliability fixes. It closes the wedge where 0.4.21 could install cleanly, attach cleanly, and still prove green while the passive watch/teacher loop was unhealthy. It also realigns the split packages onto the same published version number so the public product story stays one version, not two competing live numbers.
