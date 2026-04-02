@@ -43,12 +43,11 @@ function writeReleaseScaffold(root: string): void {
     root,
     "docs/release-notes-0.4.15.md",
     [
-      "# OpenClawBrain 0.4.15 / 0.4.4 split-package release notes",
+      "# OpenClawBrain 0.4.15",
       "",
-      "Published packages:",
+      "Canonical install lane:",
       "",
-      "- `@openclawbrain/openclaw@0.4.4`",
-      "- `@openclawbrain/cli@0.4.15`",
+      "openclawbrain install --openclaw-home ~/.openclaw",
     ].join("\n"),
   );
   writeText(
@@ -57,7 +56,7 @@ function writeReleaseScaffold(root: string): void {
     [
       "# Changelog",
       "",
-      "## 0.4.15 / 0.4.4",
+      "## 0.4.15",
       "",
       "- [docs/release-notes-0.4.15.md](docs/release-notes-0.4.15.md)",
     ].join("\n"),
@@ -74,7 +73,7 @@ const MAINLINE_GIT_FACTS = {
 };
 
 describe("buildReleasePlan", () => {
-  it("derives canonical split release metadata from the package versions", () => {
+  it("derives canonical public release metadata from the package versions", () => {
     const repoRoot = makeTempRepo();
     writeReleaseScaffold(repoRoot);
 
@@ -82,9 +81,10 @@ describe("buildReleasePlan", () => {
 
     expect(plan.openclawVersion).toBe("0.4.4");
     expect(plan.cliVersion).toBe("0.4.15");
-    expect(plan.tag).toBe("split-openclaw-v0.4.4-cli-v0.4.15");
+    expect(plan.publicVersion).toBe("0.4.15");
+    expect(plan.tag).toBe("openclawbrain-v0.4.15");
     expect(plan.releaseNotesFile).toBe("docs/release-notes-0.4.15.md");
-    expect(plan.title).toBe("OpenClawBrain split release: openclaw 0.4.4 / cli 0.4.15");
+    expect(plan.title).toBe("OpenClawBrain 0.4.15");
   });
 });
 
@@ -133,7 +133,7 @@ describe("verifyReleasePlan", () => {
       [
         "# Changelog",
         "",
-        "## 0.4.15 / 0.4.4",
+        "## 0.4.15",
         "",
         "- [docs/release-notes-0.4.15.md](docs/release-notes-0.4.15.md)",
       ].join("\n"),

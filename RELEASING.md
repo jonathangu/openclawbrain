@@ -56,10 +56,10 @@ make sure a maintainer gets a `.changeset/*.md` file onto `main`.
 npm run release:plan
 ```
 
-   It should print the exact split-package versions, tag, title, and release-notes file that publish will use. It also fails closed when:
+   It should print the single public OpenClawBrain version plus the internal publish order, tag, title, and release-notes file that publish will use. It also fails closed when:
    - the selected ref is not reachable from `main`
    - pending `.changeset/*.md` files are still present on the publish ref
-   - `CHANGELOG.md` or `docs/release-notes-<cli-version>.md` no longer matches the split versions being published
+   - `CHANGELOG.md` or `docs/release-notes-<public-version>.md` no longer matches the public release contract
 6. Manually trigger the `Publish Package` workflow on that exact merged release commit
    - paste the exact release commit SHA into the workflow input when the selected UI ref is ambiguous
 7. Approve the workflow if a protected GitHub Environment is configured
@@ -72,10 +72,10 @@ npm run release:plan
    - verify both canonical package tarballs
    - publish `packages/openclaw` to npm
    - publish `packages/cli` to npm
-   - create tag `split-openclaw-vA.B.C-cli-vX.Y.Z`
-   - create the GitHub release from `docs/release-notes-<cli-version>.md`
+   - create tag `openclawbrain-vX.Y.Z`
+   - create the GitHub release from `docs/release-notes-<public-version>.md`
 
-The split publish order should stay deliberate:
+The internal publish order should stay deliberate even though the public story is one product version:
 
 1. publish `@openclawbrain/openclaw` first
 2. publish `@openclawbrain/cli` second

@@ -138,6 +138,7 @@ export function buildReleasePlan(repoRoot = process.cwd()) {
 
   const openclawVersion = versions.openclaw;
   const cliVersion = versions.cli;
+  const publicVersion = cliVersion;
 
   return {
     packages: SPLIT_PACKAGE_SPECS.map((spec) => ({
@@ -146,12 +147,13 @@ export function buildReleasePlan(repoRoot = process.cwd()) {
       version: versions[spec.key],
       packageJsonPath: spec.packageJsonPath,
     })),
+    publicVersion,
     openclawVersion,
     cliVersion,
-    tag: `split-openclaw-v${openclawVersion}-cli-v${cliVersion}`,
-    title: `OpenClawBrain split release: openclaw ${openclawVersion} / cli ${cliVersion}`,
-    changelogHeading: `${cliVersion} / ${openclawVersion}`,
-    releaseNotesFile: `docs/release-notes-${cliVersion}.md`,
+    tag: `openclawbrain-v${publicVersion}`,
+    title: `OpenClawBrain ${publicVersion}`,
+    changelogHeading: publicVersion,
+    releaseNotesFile: `docs/release-notes-${publicVersion}.md`,
   };
 }
 
@@ -209,26 +211,22 @@ function verifyReleaseNotes(repoRoot, releasePlan, blockers) {
 
   const releaseNotes = readText(releaseNotesPath);
   const headingPattern = new RegExp(
-    `^#\\s+OpenClawBrain\\s+${escapeForRegex(releasePlan.cliVersion)}\\s*/\\s*${escapeForRegex(releasePlan.openclawVersion)}\\s+split-package release notes\\s*$`,
+    `^#\\s+OpenClawBrain\\s+${escapeForRegex(releasePlan.publicVersion)}\\s*$`,
     "m",
   );
 
   if (!headingPattern.test(releaseNotes)) {
     blockers.push({
       code: "release_notes_heading_mismatch",
-      detail: `${releasePlan.releaseNotesFile} must headline ${releasePlan.cliVersion} / ${releasePlan.openclawVersion}`,
+      detail: `${releasePlan.releaseNotesFile} must headline OpenClawBrain ${releasePlan.publicVersion}`,
     });
   }
 
-  const expectedPackageVersions = [
-    `@openclawbrain/openclaw@${releasePlan.openclawVersion}`,
-    `@openclawbrain/cli@${releasePlan.cliVersion}`,
-  ];
-  const missingPackageVersions = expectedPackageVersions.filter((entry) => !releaseNotes.includes(entry));
-  if (missingPackageVersions.length > 0) {
+  const expectedInstallLane = "openclawbrain install --openclaw-home";
+  if (!releaseNotes.includes(expectedInstallLane)) {
     blockers.push({
-      code: "release_notes_version_mismatch",
-      detail: `${releasePlan.releaseNotesFile} is missing package version lines: ${missingPackageVersions.join(", ")}`,
+      code: "release_notes_missing_install_lane",
+      detail: `${releasePlan.releaseNotesFile} must mention the canonical install lane (${expectedInstallLane} ...)`,
     });
   }
 }
@@ -327,6 +325,7 @@ function appendGitHubOutput(outputPath, key, value) {
 function writeGitHubOutputs(outputPath, result) {
   const outputs = {
     ok: result.ok ? "true" : "false",
+    public_version: result.release.publicVersion,
     openclaw_version: result.release.openclawVersion,
     cli_version: result.release.cliVersion,
     tag: result.release.tag,
@@ -350,10 +349,11 @@ function renderSummary(result) {
   lines.push(`- Result: ${result.ok ? "ready" : "blocked"}`);
   lines.push(`- Ref: \`${result.git.headSha ?? "unknown"}\``);
   lines.push(`- Mainline ref: \`${result.git.mainlineRef ?? "missing"}\``);
+  lines.push(`- Public version: \`${result.release.publicVersion}\``);
   lines.push(`- Tag: \`${result.release.tag}\``);
   lines.push(`- Title: \`${result.release.title}\``);
   lines.push(`- Release notes: \`${result.release.releaseNotesFile}\``);
-  lines.push(`- Publish order: \`@openclawbrain/openclaw@${result.release.openclawVersion}\`, then \`@openclawbrain/cli@${result.release.cliVersion}\``);
+  lines.push(`- Internal publish order: \`@openclawbrain/openclaw@${result.release.openclawVersion}\`, then \`@openclawbrain/cli@${result.release.cliVersion}\``);
 
   if (result.pendingChangesets.length > 0) {
     lines.push(`- Pending changesets: ${result.pendingChangesets.map((entry) => `\`${entry}\``).join(", ")}`);
@@ -376,10 +376,11 @@ function formatResult(result) {
   lines.push(`publish plan: ${result.ok ? "ready" : "blocked"}`);
   lines.push(`ref: ${result.git.headSha ?? "unknown"}`);
   lines.push(`mainline: ${result.git.mainlineRef ?? "missing"}${result.git.onMainline === true ? " (contains HEAD)" : ""}`);
+  lines.push(`public version: ${result.release.publicVersion}`);
   lines.push(`tag: ${result.release.tag}`);
   lines.push(`title: ${result.release.title}`);
   lines.push(`release notes: ${result.release.releaseNotesFile}`);
-  lines.push(`publish order: @openclawbrain/openclaw@${result.release.openclawVersion} -> @openclawbrain/cli@${result.release.cliVersion}`);
+  lines.push(`internal publish order: @openclawbrain/openclaw@${result.release.openclawVersion} -> @openclawbrain/cli@${result.release.cliVersion}`);
 
   if (result.pendingChangesets.length > 0) {
     lines.push(`pending changesets: ${result.pendingChangesets.join(", ")}`);

@@ -2,7 +2,7 @@
  * OpenClawBrain extension template — canonical, pre-built, versioned with the package.
  *
  * The placeholder __ACTIVATION_ROOT__ is replaced by
- * `@openclawbrain/cli`'s `openclawbrain install`
+ * OpenClawBrain's `openclawbrain install`
  * with the real activation root path at install time.
  *
  * Design constraints:
@@ -91,7 +91,7 @@ function announceStartupBreadcrumb(): void {
   if (isActivationRootPlaceholder(ACTIVATION_ROOT)) {
     warnOnce(
       "startup-brain-not-yet-loaded",
-      "[openclawbrain] BRAIN NOT YET LOADED: install has not pinned ACTIVATION_ROOT yet. Install @openclawbrain/cli, then run: openclawbrain install --openclaw-home <path>"
+      "[openclawbrain] BRAIN NOT YET LOADED: install has not pinned ACTIVATION_ROOT yet. Install OpenClawBrain, then run: openclawbrain install --openclaw-home <path>"
     );
     return;
   }

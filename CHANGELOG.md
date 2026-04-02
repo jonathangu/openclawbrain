@@ -1,14 +1,14 @@
 # Changelog
 
-Release history for the published OpenClawBrain packages. The README and operator docs lead with the current public front door; release notes carry version-specific detail.
+Release history for the published OpenClawBrain releases. The README and operator docs lead with the current public front door; release notes carry version-specific detail. Older split-package headings remain below as archived maintainer detail from before the public release lane converged on one visible version number.
 
 ## Unreleased
 
-## 0.4.20 / 0.4.6
+## 0.4.20
 
-`0.4.20 / 0.4.6` publishes the post-swarm operator follow-up: the CLI now carries cheap deterministic savings proxies, a versioned estimated-cost path, tighter public proof truth, and compatibility hardening for legacy `custom_message` session records in the local tail path.
+`0.4.20` is the public OpenClawBrain release for the post-swarm operator follow-up: the front door now carries cheap deterministic savings proxies, a versioned estimated-cost path, tighter public proof truth, and compatibility hardening for legacy `custom_message` session records in the local tail path.
 
-**Packages**
+**Internal published packages**
 
 - `@openclawbrain/openclaw@0.4.6`
 - `@openclawbrain/cli@0.4.20`

@@ -4,9 +4,9 @@ A graph-brain memory layer for OpenClaw agents that keeps useful context bounded
 
 OpenClawBrain organizes memories and tool-call history into a graph, retrieves a small useful slice before the prompt is built, and learns from outcomes in the background. The live path serves promoted packs only, so latency stays predictable and the hot path does not call a live LLM on every traversal hop. Publicly, the story is performance first, cost second, mechanism third: better agent performance is the win, lower cost is plausible, and bounded useful memory plus background learning are the mechanism. Checked replay is already better than `no_brain` on real traces, but the replay set is still small and mixed, so direct spend savings and `learned_route` dominance are not proven. If the memory layer is unavailable, the agent keeps running.
 
-Status: actively developed. See [CHANGELOG.md](CHANGELOG.md) for current package versions and release history.
+Status: actively developed. See [CHANGELOG.md](CHANGELOG.md) for the current public OpenClawBrain release and release history.
 
-[Documentation](docs/README.md) · [Claims boundary](CLAIMS.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md) · [npm: plugin](https://www.npmjs.com/package/@openclawbrain/openclaw) · [npm: CLI](https://www.npmjs.com/package/@openclawbrain/cli)
+[Documentation](docs/README.md) · [Quick start](docs/getting-started/quick-start.md) · [Claims boundary](CLAIMS.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md)
 
 ## Start Here
 
@@ -76,7 +76,7 @@ openclawbrain proof --openclaw-home ~/.openclaw
 
 The intended canonical lane is the same install command with optional `--proof`. Until that lands cleanly across every operator surface, proof stays a separate follow-up command. `proof` writes `summary.md`, `steps.json`, `verdict.json`, raw step logs, and proof pointers under one bundle directory.
 
-Manual native-package lane (not the public default):
+Manual native-package lane (maintainer-only, not the public default):
 
 ```bash
 openclaw plugins install @openclawbrain/openclaw
@@ -86,7 +86,7 @@ openclaw plugins update openclawbrain
 openclawbrain install --openclaw-home ~/.openclaw
 ```
 
-Use that manual lane only for explicit compatibility or maintainer work on the native package layer. The public operator story stays on `openclawbrain install`.
+Use that manual lane only for explicit compatibility or maintainer work on the native package layer. The public product story stays on `openclawbrain install`.
 
 A healthy install or repair should report the profile as attached. After the first promoted pack is available, detailed status should also report `serveState=serving_active_pack`. If you are using an optional teacher model, the same detailed status should also show `teacherConfigured=true`, the expected provider/model, and `teacherConfigError=null`.
 

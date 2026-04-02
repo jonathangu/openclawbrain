@@ -1,6 +1,6 @@
 # @openclawbrain/openclaw
 
-Plugin and runtime payload for OpenClawBrain.
+Plugin and runtime payload internals for OpenClawBrain.
 
 Most operators should start with the `openclawbrain` front door, not with manual package management:
 
@@ -19,6 +19,8 @@ openclawbrain proof --openclaw-home ~/.openclaw
 ```
 
 This package is still the runtime payload under the hood. If you are explicitly managing the native package layer yourself, use OpenClaw's plugin manager for `@openclawbrain/openclaw`, then rerun `openclawbrain install --openclaw-home ~/.openclaw`.
+
+Public docs should lead with the OpenClawBrain product lane and the `openclawbrain install` command, not with direct runtime-package management.
 
 ## What this package contains
 

@@ -1,6 +1,15 @@
-# OpenClawBrain 0.4.20 / 0.4.6 split-package release notes
+# OpenClawBrain 0.4.20
 
-Published packages:
+Canonical install lane:
+
+```bash
+openclawbrain install --openclaw-home ~/.openclaw
+openclaw gateway restart
+openclawbrain status --openclaw-home ~/.openclaw --detailed
+openclawbrain proof --openclaw-home ~/.openclaw
+```
+
+Internal published packages:
 
 - `@openclawbrain/cli@0.4.20`
 - plugin/runtime remains `@openclawbrain/openclaw@0.4.6`
@@ -9,7 +18,7 @@ Published packages:
 
 This is the honest public follow-up after the savings-instrumentation + truth-sync + teacher/watch hardening swarm landed on `main`.
 
-It improves three user-facing things without changing the plugin/runtime package version:
+It improves three user-facing things while keeping the runtime/package split as an internal implementation detail:
 
 - better public truth surfaces about what OpenClawBrain is already proving vs what is still only proxied
 - better cheap proof metrics for prompt/context, hop/correction, and estimated cost rollups
@@ -17,7 +26,7 @@ It improves three user-facing things without changing the plugin/runtime package
 
 ## What changed
 
-### `@openclawbrain/cli@0.4.20`
+### Public release changes
 
 - proof surfaces now expose deterministic prompt-side savings proxies from replay truth:
   - selected context chars
@@ -37,10 +46,10 @@ It improves three user-facing things without changing the plugin/runtime package
   - the hot path stays bounded and does not call a live LLM on every traversal hop
 - session-tail parsing now accepts legacy `custom_message` records instead of treating them as unknown and skipping the path
 
-### `@openclawbrain/openclaw@0.4.6`
+### Internal package note
 
-- no runtime/plugin version bump in this release
-- the published package delta is in the operator CLI surface, proof rollups, and session-tail compatibility logic carried by the CLI package
+- the runtime/plugin package stays on `@openclawbrain/openclaw@0.4.6`
+- the main shipped delta in this release is in the operator/front-door surface, proof rollups, and session-tail compatibility logic
 
 ## Important caveats
 
@@ -59,8 +68,8 @@ It improves three user-facing things without changing the plugin/runtime package
 ## Upgrade
 
 ```bash
-npm install -g @openclawbrain/cli@0.4.20
+openclawbrain install --openclaw-home ~/.openclaw
 openclawbrain status --openclaw-home ~/.openclaw --detailed
 ```
 
-If you are already on the canonical split-package lane, you do **not** need a plugin/runtime reinstall for this specific release.
+If you are already on the canonical install lane, you do **not** need a plugin/runtime reinstall for this specific release.
