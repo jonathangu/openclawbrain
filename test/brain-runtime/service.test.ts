@@ -1258,10 +1258,13 @@ describe("BrainService", () => {
       counts: {
         observationCount: 1,
         evaluatedCount: 1,
+        completedWithoutEvaluationCount: 0,
         matchedCount: 0,
         ambiguousCount: 1,
         unmatchedCount: 0,
         pendingCount: 0,
+        pendingFollowupCount: 0,
+        pendingTeacherCount: 0,
         readyCount: 0,
         delayedCount: 0,
         budgetDeferredCount: 0,
@@ -1281,6 +1284,7 @@ describe("BrainService", () => {
     expect(status.observationAttribution).toMatchObject({
       totalObservationCount: 1,
       completedObservationCount: 1,
+      completedWithoutEvaluationCount: 0,
       teacherEvaluationCount: 1,
       nonExactCount: 1,
       bindingModes: {
@@ -1305,7 +1309,17 @@ describe("BrainService", () => {
         feedbackRichness: "followup_only",
         confidence: 0.67,
       },
-      detail: "teacher evaluations include 1 non-exact attribution binding(s) (1 fallback, 0 unbound)",
+      latestAmbiguous: {
+        observationId: expect.stringMatching(/^bo_/),
+        episodeId: result?.episode.id,
+        traceId: result?.trace.id,
+        bindingMode: "trace_id",
+        attributionQuality: "fallback",
+        feedbackRichness: "followup_only",
+        confidence: 0.67,
+      },
+      latestUnmatched: null,
+      detail: "teacher attribution counts: evaluated=1/1, exact=0, fallback=1, unbound=0, pending_followup=0, pending_teacher=0, completed_without_evaluation=0",
     });
     expect(status.teacherTruth).toMatchObject({
       queue: {
@@ -1486,10 +1500,13 @@ describe("BrainService", () => {
       counts: {
         observationCount: 1,
         evaluatedCount: 0,
+        completedWithoutEvaluationCount: 0,
         matchedCount: 0,
         ambiguousCount: 0,
         unmatchedCount: 0,
         pendingCount: 1,
+        pendingFollowupCount: 1,
+        pendingTeacherCount: 0,
         readyCount: 0,
         delayedCount: 1,
         budgetDeferredCount: 0,
@@ -1497,6 +1514,12 @@ describe("BrainService", () => {
         richReadyCount: 0,
       },
       latest: {
+        followupPending: {
+          observationId: expect.stringMatching(/^bo_/),
+          episodeId: result?.episode.id,
+          traceId: result?.trace.id,
+          status: "pending_followup",
+        },
         delayed: {
           observationId: expect.stringMatching(/^bo_/),
           episodeId: result?.episode.id,

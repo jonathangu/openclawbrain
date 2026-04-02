@@ -209,14 +209,27 @@ export function toAttributionTruthId(params: {
   supervisionId?: string | null;
   updateId?: string | null;
   episodeId?: string | null;
+  state?: AttributionTruthState | null;
 }): string {
-  return `att_${hashStableParts([
-    "v1",
-    normalizeStableString(params.episodeId),
-    normalizeStableString(params.observationId),
-    normalizeStableString(params.supervisionId),
-    normalizeStableString(params.updateId),
-  ])}`;
+  const state = normalizeStableString(params.state);
+  return `att_${hashStableParts(
+    state
+      ? [
+        "v2",
+        state,
+        normalizeStableString(params.episodeId),
+        normalizeStableString(params.observationId),
+        normalizeStableString(params.supervisionId),
+        normalizeStableString(params.updateId),
+      ]
+      : [
+        "v1",
+        normalizeStableString(params.episodeId),
+        normalizeStableString(params.observationId),
+        normalizeStableString(params.supervisionId),
+        normalizeStableString(params.updateId),
+      ],
+  )}`;
 }
 
 function serializeAttributionTruthLink(label: string, link: AttributionTruthLink): string[] {
@@ -268,15 +281,32 @@ export function toAttributionTruthHashes(params: {
   const update = normalizeAttributionTruthUpdateRef(params.update);
   const linkage = normalizeAttributionTruthLinkage(params.linkage);
   const episodeId = observation?.episodeId ?? supervision?.episodeId ?? update?.episodeId ?? null;
+  const lineageObservationId =
+    observation?.observationId
+    ?? supervision?.observationId
+    ?? update?.observationIds[0]
+    ?? null;
+  const lineageTraceId =
+    observation?.traceId
+    ?? supervision?.traceId
+    ?? supervision?.teacherTraceId
+    ?? update?.traceIds[0]
+    ?? null;
+  const lineageSupervisionId =
+    lineageObservationId === null
+      ? (supervision?.supervisionId ?? update?.supervisionIds[0] ?? null)
+      : null;
+  const lineageUpdateId =
+    lineageObservationId === null && lineageSupervisionId === null
+      ? update?.updateId
+      : null;
 
   const lineageParts = [
     `episode:${episodeId ?? ""}`,
-    `observation:${observation?.observationId ?? ""}`,
-    `supervision:${supervision?.supervisionId ?? ""}`,
-    `update:${update?.updateId ?? ""}`,
-    `update.observationIds:${update?.observationIds.join(",") ?? ""}`,
-    `update.supervisionIds:${update?.supervisionIds.join(",") ?? ""}`,
-    `update.traceIds:${update?.traceIds.join(",") ?? ""}`,
+    `lineage.observation:${lineageObservationId ?? ""}`,
+    `lineage.trace:${lineageTraceId ?? ""}`,
+    `lineage.supervision:${lineageSupervisionId ?? ""}`,
+    `lineage.update:${lineageUpdateId ?? ""}`,
   ];
 
   const contentParts = [
@@ -345,6 +375,7 @@ export function createAttributionTruthRecord(params: {
       supervisionId: supervision?.supervisionId,
       updateId: update?.updateId,
       episodeId,
+      state: params.state,
     });
   const computedHashes = toAttributionTruthHashes({
     state: params.state,

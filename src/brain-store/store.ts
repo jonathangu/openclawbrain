@@ -1255,6 +1255,8 @@ export class BrainStore {
     budgetPerTick: number;
     delayMs: number;
     pendingCount: number;
+    pendingFollowupCount: number;
+    pendingTeacherCount: number;
     readyCount: number;
     delayedCount: number;
     budgetDeferredCount: number;
@@ -1317,7 +1319,10 @@ export class BrainStore {
       created_at: number;
     }>;
 
+    const pendingStatusCounts = this.countObservationsByStatus();
     const pendingCount = pendingRow.count ?? 0;
+    const pendingFollowupCount = pendingStatusCounts.pending_followup;
+    const pendingTeacherCount = pendingStatusCounts.pending_teacher;
     const readyCount = readyRow.count ?? 0;
     const sparseReadyCount = sparseReadyRow.count ?? 0;
     const delayedCount = Math.max(0, pendingCount - readyCount);
@@ -1371,12 +1376,14 @@ export class BrainStore {
     const detail =
       pendingCount === 0
         ? "no teacher observations are pending"
-        : `${readyCount} ready, ${delayedCount} delayed, ${budgetDeferredCount} deferred by the per-tick teacher budget; ${sparseReadyCount} ready observation(s) are still sparse-feedback cases`;
+        : `pending_followup=${pendingFollowupCount}, pending_teacher=${pendingTeacherCount}; ready=${readyCount}, delayed=${delayedCount}, budget_deferred=${budgetDeferredCount}, sparse_ready=${sparseReadyCount}, rich_ready=${richReadyCount}`;
 
     return {
       budgetPerTick,
       delayMs: Math.max(0, Date.now() - readyBefore),
       pendingCount,
+      pendingFollowupCount,
+      pendingTeacherCount,
       readyCount,
       delayedCount,
       budgetDeferredCount,
@@ -1390,6 +1397,7 @@ export class BrainStore {
   getObservationAttributionSummary(): {
     totalObservationCount: number;
     completedObservationCount: number;
+    completedWithoutEvaluationCount: number;
     teacherEvaluationCount: number;
     nonExactCount: number;
     bindingModes: Record<BrainObservationBindingMode, number>;
@@ -1398,6 +1406,28 @@ export class BrainStore {
       fallback: number;
       unbound: number;
     };
+    latestAmbiguous: {
+      observationId: string;
+      episodeId: string;
+      traceId: string | null;
+      bindingMode: BrainObservationBindingMode;
+      attributionQuality: "fallback" | "unbound";
+      feedbackRichness: TeacherFeedbackRichness;
+      confidence: number | null;
+      reason: string | null;
+      evaluatedAt: number | null;
+    } | null;
+    latestUnmatched: {
+      observationId: string;
+      episodeId: string;
+      traceId: string | null;
+      bindingMode: BrainObservationBindingMode;
+      attributionQuality: "fallback" | "unbound";
+      feedbackRichness: TeacherFeedbackRichness;
+      confidence: number | null;
+      reason: string | null;
+      evaluatedAt: number | null;
+    } | null;
     latestNonExact: {
       observationId: string;
       episodeId: string;
@@ -1411,6 +1441,7 @@ export class BrainStore {
     } | null;
     detail: string;
   } {
+    const pendingStatusCounts = this.countObservationsByStatus();
     const rows = this.db.prepare(`
       SELECT id, episode_id, trace_id, status, follow_up_text, tool_results_json, teacher_evaluation_json, evaluated_at, created_at
       FROM brain_observations
@@ -1433,7 +1464,30 @@ export class BrainStore {
       unbound: 0,
     };
     let completedObservationCount = 0;
+    let completedWithoutEvaluationCount = 0;
     let teacherEvaluationCount = 0;
+    let latestAmbiguous: {
+      observationId: string;
+      episodeId: string;
+      traceId: string | null;
+      bindingMode: BrainObservationBindingMode;
+      attributionQuality: "fallback" | "unbound";
+      feedbackRichness: TeacherFeedbackRichness;
+      confidence: number | null;
+      reason: string | null;
+      evaluatedAt: number | null;
+    } | null = null;
+    let latestUnmatched: {
+      observationId: string;
+      episodeId: string;
+      traceId: string | null;
+      bindingMode: BrainObservationBindingMode;
+      attributionQuality: "fallback" | "unbound";
+      feedbackRichness: TeacherFeedbackRichness;
+      confidence: number | null;
+      reason: string | null;
+      evaluatedAt: number | null;
+    } | null = null;
     let latestNonExact: {
       observationId: string;
       episodeId: string;
@@ -1455,46 +1509,53 @@ export class BrainStore {
         : null;
       const bindingMode = evaluation?.bindingMode;
       if (!bindingMode || !OBSERVATION_BINDING_MODES.includes(bindingMode)) {
+        if (row.status === "completed") {
+          completedWithoutEvaluationCount += 1;
+        }
         continue;
       }
       teacherEvaluationCount += 1;
       bindingModes[bindingMode] += 1;
       const quality = classifyObservationBindingQuality(bindingMode);
       attributionQuality[quality] += 1;
+      const sample = {
+        observationId: row.id,
+        episodeId: row.episode_id,
+        traceId: toOptionalString(row.trace_id),
+        bindingMode,
+        attributionQuality: quality,
+        feedbackRichness: classifyTeacherFeedbackRichnessFromFields({
+          followUpText: row.follow_up_text,
+          toolResults: row.tool_results_json,
+        }),
+        confidence: evaluation?.confidence ?? null,
+        reason: evaluation?.reason ?? null,
+        evaluatedAt: row.evaluated_at === null ? null : Number(row.evaluated_at),
+      };
       if (quality !== "exact" && !latestNonExact) {
-        latestNonExact = {
-          observationId: row.id,
-          episodeId: row.episode_id,
-          traceId: toOptionalString(row.trace_id),
-          bindingMode,
-          attributionQuality: quality,
-          feedbackRichness: classifyTeacherFeedbackRichnessFromFields({
-            followUpText: row.follow_up_text,
-            toolResults: row.tool_results_json,
-          }),
-          confidence: evaluation?.confidence ?? null,
-          reason: evaluation?.reason ?? null,
-          evaluatedAt: row.evaluated_at === null ? null : Number(row.evaluated_at),
-        };
+        latestNonExact = sample;
+      }
+      if (quality === "fallback" && !latestAmbiguous) {
+        latestAmbiguous = sample;
+      }
+      if (quality === "unbound" && !latestUnmatched) {
+        latestUnmatched = sample;
       }
     }
 
     const nonExactCount = attributionQuality.fallback + attributionQuality.unbound;
-    let detail = "no teacher evaluations recorded";
-    if (teacherEvaluationCount > 0) {
-      detail =
-        nonExactCount > 0
-          ? `teacher evaluations include ${nonExactCount} non-exact attribution binding(s) (${attributionQuality.fallback} fallback, ${attributionQuality.unbound} unbound)`
-          : "teacher evaluations are exact-bound";
-    }
+    const detail = `teacher attribution counts: evaluated=${teacherEvaluationCount}/${rows.length}, exact=${attributionQuality.exact}, fallback=${attributionQuality.fallback}, unbound=${attributionQuality.unbound}, pending_followup=${pendingStatusCounts.pending_followup}, pending_teacher=${pendingStatusCounts.pending_teacher}, completed_without_evaluation=${completedWithoutEvaluationCount}`;
 
     return {
       totalObservationCount: rows.length,
       completedObservationCount,
+      completedWithoutEvaluationCount,
       teacherEvaluationCount,
       nonExactCount,
       bindingModes,
       attributionQuality,
+      latestAmbiguous,
+      latestUnmatched,
       latestNonExact,
       detail,
     };

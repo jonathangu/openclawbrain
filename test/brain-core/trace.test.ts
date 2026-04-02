@@ -535,6 +535,7 @@ describe("decision trace branch proofs", () => {
       supervisionId: "ts_1",
       updateId: updateIdA,
       episodeId: "ep_attr",
+      state: "ambiguous",
     }));
     expect(record.update?.observationIds).toEqual(["bo_1", "bo_2"]);
     expect(record.update?.supervisionIds).toEqual(["ts_1", "ts_2"]);
@@ -544,5 +545,94 @@ describe("decision trace branch proofs", () => {
     expect(record.contentHash).toMatch(/^hash_/);
     expect(record.lineageHash).toMatch(/^lineage_/);
     expect(record.provenanceRef).toMatch(/^prov_/);
+  });
+
+  it("derives distinct automatic attribution truth ids for different truth states on the same lineage", () => {
+    const delayed = createAttributionTruthRecord({
+      conversationId: 7,
+      state: "delayed",
+      observation: {
+        observationId: "bo_1",
+        episodeId: "ep_attr",
+        conversationId: 7,
+        traceId: "bt_1",
+        bindingMode: "trace_id",
+        requestDigest: "digest_1",
+        serveDecisionRecordId: null,
+        selectionDigest: null,
+        turnCompileEventId: null,
+        provenanceRef: null,
+      },
+      linkage: {
+        observationToSupervision: {
+          state: "delayed",
+          basis: "pending_observation",
+          confidence: null,
+          detail: "waiting for teacher supervision",
+          candidateIds: [],
+        },
+        supervisionToUpdate: {
+          state: "delayed",
+          basis: "pending_update",
+          confidence: null,
+          detail: "no learner update yet",
+          candidateIds: [],
+        },
+      },
+    });
+    const matched = createAttributionTruthRecord({
+      conversationId: 7,
+      state: "matched",
+      observation: {
+        observationId: "bo_1",
+        episodeId: "ep_attr",
+        conversationId: 7,
+        traceId: "bt_1",
+        bindingMode: "trace_id",
+        requestDigest: "digest_1",
+        serveDecisionRecordId: null,
+        selectionDigest: null,
+        turnCompileEventId: null,
+        provenanceRef: null,
+      },
+      supervision: {
+        supervisionId: "ts_1",
+        episodeId: "ep_attr",
+        conversationId: 7,
+        source: "teacher",
+        kind: "teacher_review",
+        observationId: "bo_1",
+        traceId: "bt_1",
+        teacherTraceId: "bt_1",
+        serveDecisionRecordId: null,
+        selectionDigest: null,
+        turnCompileEventId: null,
+        bindingMode: "trace_id",
+        attributionQuality: "fallback",
+        feedbackRichness: "followup_only",
+        traceRequestDigest: "digest_1",
+        provenanceRef: null,
+      },
+      linkage: {
+        observationToSupervision: {
+          state: "matched",
+          basis: "trace_id",
+          confidence: 1,
+          detail: "trace id bound the supervision",
+          candidateIds: ["bo_1"],
+        },
+        supervisionToUpdate: {
+          state: "matched",
+          basis: "manual",
+          confidence: 1,
+          detail: "teacher supervision was consumed directly",
+          candidateIds: ["upd_1"],
+        },
+      },
+    });
+
+    expect(delayed.attributionTruthId).not.toBe(matched.attributionTruthId);
+    expect(delayed.lineageHash).toBe(matched.lineageHash);
+    expect(delayed.contentHash).not.toBe(matched.contentHash);
   });
 });

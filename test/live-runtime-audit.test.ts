@@ -105,10 +105,13 @@ describe("summarizeAttributionTruth", () => {
       counts: {
         observationCount: 0,
         evaluatedCount: 0,
+        completedWithoutEvaluationCount: 0,
         matchedCount: 0,
         ambiguousCount: 0,
         unmatchedCount: 0,
         pendingCount: 0,
+        pendingFollowupCount: 0,
+        pendingTeacherCount: 0,
         readyCount: 0,
         delayedCount: 0,
         budgetDeferredCount: 0,
@@ -122,11 +125,15 @@ describe("summarizeAttributionTruth", () => {
         },
         ambiguous: {
           count: 0,
-          detail: "fallback-bound teacher evaluations are inferred, not exact",
+          detail: "fallback-bound teacher evaluations are inferred rather than exact-bound",
         },
         unmatched: {
           count: 0,
           detail: "teacher evaluations have no surviving route binding",
+        },
+        missingAttribution: {
+          count: 0,
+          detail: "completed observations still have no recorded teacher attribution",
         },
         ready: {
           count: 0,
@@ -153,6 +160,7 @@ describe("summarizeAttributionTruth", () => {
       latest: {
         ambiguous: null,
         unmatched: null,
+        followupPending: null,
         delayed: null,
         budgetDeferred: null,
         sparseReady: null,
@@ -164,13 +172,8 @@ describe("summarizeAttributionTruth", () => {
     const summary = summarizeAttributionTruth({
       observationAttribution: {
         totalObservationCount: 4,
-        teacherEvaluationCount: 2,
-        attributionQuality: {
-          exact: 1,
-          fallback: 1,
-          unbound: 0,
-        },
-        latestNonExact: {
+        teacherEvaluationCount: 3,
+        latestAmbiguous: {
           observationId: "bo_ambiguous",
           episodeId: "ep_ambiguous",
           traceId: "bt_ambiguous",
@@ -181,12 +184,30 @@ describe("summarizeAttributionTruth", () => {
           reason: "follow-up stayed ambiguous",
           evaluatedAt: 123,
         },
+        latestUnmatched: {
+          observationId: "bo_unmatched",
+          episodeId: "ep_unmatched",
+          traceId: null,
+          bindingMode: "unbound",
+          attributionQuality: "unbound",
+          feedbackRichness: "sparse",
+          confidence: 0.31,
+          reason: "teacher review could not recover a binding",
+          evaluatedAt: 456,
+        },
+        attributionQuality: {
+          exact: 1,
+          fallback: 1,
+          unbound: 1,
+        },
       },
       teacherTruth: {
         queue: {
           budgetPerTick: 20,
           delayMs: 10_000,
           pendingCount: 2,
+          pendingFollowupCount: 2,
+          pendingTeacherCount: 0,
           readyCount: 1,
           delayedCount: 1,
           budgetDeferredCount: 1,
@@ -214,7 +235,7 @@ describe("summarizeAttributionTruth", () => {
               createdAt: 222,
             },
           ],
-          detail: "1 ready, 1 delayed, 1 deferred by the per-tick teacher budget; 1 ready observation(s) are still sparse-feedback cases",
+          detail: "pending_followup=2, pending_teacher=0; ready=1, delayed=1, budget_deferred=1, sparse_ready=1, rich_ready=0",
         },
       },
     });
@@ -223,14 +244,17 @@ describe("summarizeAttributionTruth", () => {
       contract: "openclawbrain_attribution_truth.v1",
       visible: true,
       primaryState: "mixed",
-      activeStates: ["ambiguous", "delayed", "budget_deferred", "sparse_ready", "ready", "matched"],
+      activeStates: ["unmatched", "ambiguous", "delayed", "budget_deferred", "sparse_ready", "ready", "matched"],
       counts: {
         observationCount: 4,
-        evaluatedCount: 2,
+        evaluatedCount: 3,
+        completedWithoutEvaluationCount: 0,
         matchedCount: 1,
         ambiguousCount: 1,
-        unmatchedCount: 0,
+        unmatchedCount: 1,
         pendingCount: 2,
+        pendingFollowupCount: 2,
+        pendingTeacherCount: 0,
         readyCount: 1,
         delayedCount: 1,
         budgetDeferredCount: 1,
@@ -245,6 +269,14 @@ describe("summarizeAttributionTruth", () => {
         ambiguous: {
           observationId: "bo_ambiguous",
           attributionQuality: "fallback",
+        },
+        unmatched: {
+          observationId: "bo_unmatched",
+          attributionQuality: "unbound",
+        },
+        followupPending: {
+          observationId: "bo_delayed",
+          status: "pending_followup",
         },
         delayed: {
           observationId: "bo_delayed",
@@ -261,5 +293,49 @@ describe("summarizeAttributionTruth", () => {
       },
     });
     expect(summary.detail).toContain("attribution truth is mixed");
+  });
+
+  it("treats completed observations without teacher attribution as explicit missing attribution rather than matched truth", () => {
+    expect(summarizeAttributionTruth({
+      observationAttribution: {
+        totalObservationCount: 1,
+        teacherEvaluationCount: 0,
+        completedWithoutEvaluationCount: 1,
+        attributionQuality: {
+          exact: 0,
+          fallback: 0,
+          unbound: 0,
+        },
+      },
+      teacherTruth: {
+        queue: {
+          budgetPerTick: 20,
+          delayMs: 10_000,
+          pendingCount: 0,
+          pendingFollowupCount: 0,
+          pendingTeacherCount: 0,
+          readyCount: 0,
+          delayedCount: 0,
+          budgetDeferredCount: 0,
+          sparseReadyCount: 0,
+          richReadyCount: 0,
+          sample: [],
+          detail: "no teacher observations are pending",
+        },
+      },
+    })).toMatchObject({
+      visible: true,
+      primaryState: "missing_attribution",
+      activeStates: ["missing_attribution"],
+      counts: {
+        completedWithoutEvaluationCount: 1,
+      },
+      states: {
+        missingAttribution: {
+          count: 1,
+        },
+      },
+      detail: "1 completed observation(s) still have no recorded teacher attribution",
+    });
   });
 });
