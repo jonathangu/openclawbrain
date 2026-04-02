@@ -76,6 +76,41 @@ function writeJson(filePath, value) {
     writeText(filePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
+function readJsonObject(value) {
+    if (value === null || typeof value !== "object" || Array.isArray(value)) {
+        return null;
+    }
+    return value;
+}
+
+function parseJsonObjectText(text) {
+    if (typeof text !== "string" || text.trim().length === 0) {
+        return null;
+    }
+    try {
+        return readJsonObject(JSON.parse(text));
+    }
+    catch {
+        return null;
+    }
+}
+
+function normalizeOptionalBoolean(value) {
+    return value === true ? true : value === false ? false : null;
+}
+
+function extractInstallRestartState(text) {
+    const parsed = parseJsonObjectText(text);
+    const restart = readJsonObject(parsed?.restart ?? null);
+    if (restart === null) {
+        return null;
+    }
+    return {
+        required: normalizeOptionalBoolean(restart.required),
+        performed: normalizeOptionalBoolean(restart.performed),
+    };
+}
+
 function buildCurrentCliInvocation(cliEntryPath = process.argv[1]) {
     const normalizedEntryPath = normalizeOptionalCliString(cliEntryPath);
     if (normalizedEntryPath === null) {
@@ -802,7 +837,7 @@ export function captureOperatorProofBundle(options) {
     mkdirSync(bundleDir, { recursive: true });
     const steps = [];
     const gatewayProfile = readOpenClawProfileName(options.openclawHome);
-    function addStep(stepId, label, command, args, { skipped = false } = {}) {
+    function addStep(stepId, label, command, args, { skipped = false, skipSummary = "step intentionally skipped" } = {}) {
         if (skipped) {
             steps.push({
                 stepId,
@@ -811,7 +846,7 @@ export function captureOperatorProofBundle(options) {
                 skipped: true,
                 captureState: "complete",
                 resultClass: "success",
-                summary: "step intentionally skipped",
+                summary: skipSummary,
                 stdoutPath: null,
                 stderrPath: null,
             });
@@ -844,8 +879,27 @@ export function captureOperatorProofBundle(options) {
         });
         return capture;
     }
-    addStep("01-install", "install", cliInvocation.command, [...cliInvocation.args, "install", "--openclaw-home", options.openclawHome], { skipped: options.skipInstall === true });
-    addStep("02-restart", "gateway restart", "openclaw", buildGatewayArgs("restart", gatewayProfile), { skipped: options.skipRestart === true });
+    const installCapture = addStep("01-install", "install", cliInvocation.command, [...cliInvocation.args, "install", "--openclaw-home", options.openclawHome, "--json"], { skipped: options.skipInstall === true });
+    const installRestartState = options.skipInstall === true || installCapture.exitCode !== 0 || installCapture.error
+        ? null
+        : extractInstallRestartState(installCapture.stdout);
+    let restartSkipSummary = null;
+    if (options.skipRestart === true) {
+        restartSkipSummary = "step intentionally skipped";
+    }
+    else if (installRestartState?.performed === true) {
+        restartSkipSummary = "step intentionally skipped because install already performed the gateway restart";
+    }
+    else if (installRestartState?.required === false) {
+        restartSkipSummary = "step intentionally skipped because install reported no gateway restart was required";
+    }
+    else if (gatewayProfile === null) {
+        restartSkipSummary = "skipped because exact OpenClaw profile token could not be inferred; avoiding shared-gateway self-interrupt during proof capture";
+    }
+    addStep("02-restart", "gateway restart", "openclaw", buildGatewayArgs("restart", gatewayProfile), {
+        skipped: restartSkipSummary !== null,
+        skipSummary: restartSkipSummary ?? undefined
+    });
     const gatewayStatusCapture = addStep("03-gateway-status", "gateway status", "openclaw", buildGatewayStatusArgs(
         gatewayProfile,
         normalizeOptionalCliString(options.gatewayUrl ?? null),

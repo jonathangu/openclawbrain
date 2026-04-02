@@ -571,6 +571,10 @@ describe("proof cron bundle scanning", () => {
     });
 
     const markdown = formatHealthMarkdown(health);
+    expect(health.effectivenessReadout).toMatchObject({
+      helping: "unproven",
+    });
+    expect(markdown).toContain("helping: unproven");
     expect(markdown).toContain("watch state: stale_snapshot");
     expect(markdown).toContain("watch heartbeat: 2026-04-02T11:26:18.163Z");
     expect(markdown).toContain("teacher artifacts: 735");
@@ -672,6 +676,127 @@ describe("proof cron config", () => {
 });
 
 describe("proof cron metric surfaces", () => {
+  function buildThinReadoutStatusProbe(params: {
+    contextFeedback?: any;
+    learningAttribution?: any;
+    workerHealthy?: boolean | null;
+    workerMode?: string | null;
+    workerStatus?: string | null;
+    watchState?: string | null;
+  } = {}) {
+    const {
+      contextFeedback = null,
+      learningAttribution = {
+        quality: "exact_only",
+        nonZeroObservationCount: 2,
+        exactMatchCount: 2,
+        heuristicMatchCount: 0,
+        unmatchedCount: 0,
+        ambiguousCount: 0,
+      },
+      workerHealthy = true,
+      workerMode = "child",
+      workerStatus = "running",
+      watchState = "watching",
+    } = params;
+
+    return {
+      command: "node packages/cli/dist/src/cli.js status --openclaw-home ~/.openclaw --json",
+      startedAt: "2026-04-02T11:59:58.000Z",
+      endedAt: "2026-04-02T12:00:00.000Z",
+      durationMs: 2000,
+      exitCode: 0,
+      signal: null,
+      stdout: "{}",
+      stderr: "",
+      parsed: {
+        brain: {
+          activePackId: "pack-live",
+          routeFreshness: "updated",
+        },
+        brainStatus: {
+          status: "ok",
+          serveState: "serving_active_pack",
+          usedLearnedRouteFn: true,
+        },
+        hook: {
+          loadProof: "status_probe_ready",
+        },
+        passiveLearning: {
+          watch: {
+            state: watchState,
+            lastHeartbeatAt: "2026-04-02T11:59:45.000Z",
+            intervalSeconds: 30,
+            proofState: "self_proving",
+            teacherArtifactCount: 3,
+          },
+        },
+        workerHealthy,
+        workerMode,
+        workerStatus,
+        ...(learningAttribution === null ? {} : { learningAttribution }),
+        ...(contextFeedback === null ? {} : { contextFeedback }),
+      },
+    };
+  }
+
+  function buildThinReadoutBundles(params: {
+    replayAgeDays?: number;
+    replayValidationOk?: boolean;
+  } = {}) {
+    const {
+      replayAgeDays = 1,
+      replayValidationOk = true,
+    } = params;
+
+    return [
+      {
+        kind: "operator-proof",
+        bundleId: "operator-proof-live",
+        relativePath: "artifacts/operator-proof-live",
+        canonicalAt: "2026-04-02T11:00:00.000Z",
+        ageDays: 0,
+        fileCount: 5,
+        artifactBytes: 2000,
+        validationOk: true,
+        metrics: {
+          totalStepDurationMs: 1200,
+          stepCount: 2,
+          verdict: "success_and_proven",
+        },
+      },
+      {
+        kind: "recorded-session-replay",
+        bundleId: "trace-live",
+        relativePath: "docs/evidence/2026-04-01/demo/recorded-session-replay/trace-live",
+        canonicalAt: "2026-04-01T12:00:00.000Z",
+        ageDays: replayAgeDays,
+        fileCount: 6,
+        artifactBytes: 3000,
+        validationOk: replayValidationOk,
+        metrics: {
+          winnerMode: "learned_route",
+          compileOkRate: 0.9,
+          phraseHitRate: 0.8,
+        },
+      },
+      {
+        kind: "host-evidence",
+        bundleId: "host-proof-live",
+        relativePath: "docs/evidence/2026-04-01/demo/host-proof",
+        canonicalAt: "2026-04-01T12:00:00.000Z",
+        ageDays: 1,
+        fileCount: 4,
+        artifactBytes: 1000,
+        validationOk: true,
+        metrics: {
+          workerHealthy: true,
+          gatewayReachable: true,
+        },
+      },
+    ];
+  }
+
   it("builds a useful health snapshot and nightly aggregate", () => {
     const now = new Date("2026-03-31T13:00:00.000Z");
     const statusProbe = {
@@ -913,8 +1038,13 @@ describe("proof cron metric surfaces", () => {
     expect(health.performance.operatorStepMsTotal).toBe(1500);
     expect(health.costProxy.artifactBytes).toBe(7000);
     expect(health.latestBundles.map((bundle: any) => bundle.kind)).toEqual(["operator-proof", "recorded-session-replay", "host-evidence"]);
+    expect(health.effectivenessReadout).toMatchObject({
+      helping: "replay_backed_only",
+    });
     expect(formatHealthMarkdown(health)).toContain("runtime healthy: true");
     expect(formatHealthMarkdown(health)).toContain("operator health: unknown");
+    expect(formatHealthMarkdown(health)).toContain("helping: replay_backed_only");
+    expect(formatHealthMarkdown(health)).toContain("latest replay proof is healthy, but live helpful/irrelevant/harmful context feedback is not visible here");
     expect(formatHealthMarkdown(health)).toContain("serve state: serving_active_pack");
     expect(formatHealthMarkdown(health)).toContain("clip rate: 0.25");
     expect(formatHealthMarkdown(health)).toContain("replay context chars total");
@@ -957,6 +1087,100 @@ describe("proof cron metric surfaces", () => {
     expect(formatNightlyMarkdown(aggregate)).toContain("replay retrieval/tool-hop count total: 6");
     expect(formatNightlyMarkdown(aggregate)).toContain("replay turns with non-approval feedback total: 1");
     expect(formatNightlyMarkdown(aggregate)).toContain("proof minutes");
+  });
+
+  it("reports a feedback-backed thin readout when live helpful verdicts are visible", () => {
+    const health = buildHealthSnapshot({
+      config: {
+        healthFreshnessDays: 7,
+        freshnessThresholdDays: 21,
+      },
+      now: new Date("2026-04-02T12:00:00.000Z"),
+      scanDurationMs: 42,
+      bundles: buildThinReadoutBundles(),
+      statusProbe: buildThinReadoutStatusProbe({
+        contextFeedback: {
+          verdictCounts: {
+            helpful: 2,
+            irrelevant: 0,
+            harmful: 0,
+          },
+          coverage: {
+            supervisedTraceCount: 2,
+            routeTraceCount: 3,
+          },
+          latest: {
+            agentIdentity: {
+              agentId: "operator-readout",
+              lane: "t107",
+            },
+          },
+        },
+      }),
+    });
+
+    expect(health.effectivenessReadout).toMatchObject({
+      helping: "feedback_backed",
+      summary: "live traced-route feedback trends helpful, but coverage is still partial",
+    });
+    expect(health.effectivenessReadout.where).toEqual(expect.arrayContaining([
+      "serve-path pack=pack-live",
+      "latest feedback lane=operator-readout/t107",
+      "replay bundle=trace-live winner=learned_route",
+    ]));
+    expect(health.effectivenessReadout.why).toEqual(expect.arrayContaining([
+      expect.stringContaining("feedback helpful=2 irrelevant=0 harmful=0 coverage=2/3"),
+      expect.stringContaining("attribution quality=exact_only"),
+      expect.stringContaining("replay winner=learned_route"),
+      expect.stringContaining("route freshness=updated"),
+    ]));
+    expect(health.effectivenessReadout.staleOrMissing).toEqual([
+      "operator health is partial: background-learning truth is partial in the current status surface",
+    ]);
+
+    const markdown = formatHealthMarkdown(health);
+    expect(markdown).toContain("helping: feedback_backed");
+    expect(markdown).toContain("summary: live traced-route feedback trends helpful, but coverage is still partial");
+  });
+
+  it("reports a mixed thin readout when live feedback includes harm", () => {
+    const health = buildHealthSnapshot({
+      config: {
+        healthFreshnessDays: 7,
+        freshnessThresholdDays: 21,
+      },
+      now: new Date("2026-04-02T12:00:00.000Z"),
+      scanDurationMs: 42,
+      bundles: buildThinReadoutBundles(),
+      statusProbe: buildThinReadoutStatusProbe({
+        contextFeedback: {
+          verdictCounts: {
+            helpful: 1,
+            irrelevant: 0,
+            harmful: 1,
+          },
+          coverage: {
+            supervisedTraceCount: 2,
+            routeTraceCount: 2,
+          },
+          latest: {
+            agentIdentity: {
+              agentId: "operator-readout",
+              lane: "t107",
+            },
+          },
+        },
+      }),
+    });
+
+    expect(health.effectivenessReadout).toMatchObject({
+      helping: "mixed",
+      summary: "live traced-route feedback includes harmful verdicts, so OCB is not yet safely helping",
+    });
+
+    const markdown = formatHealthMarkdown(health);
+    expect(markdown).toContain("helping: mixed");
+    expect(markdown).toContain("harmful verdicts");
   });
 
   it("carries latest operator-health truth into the nightly markdown", () => {

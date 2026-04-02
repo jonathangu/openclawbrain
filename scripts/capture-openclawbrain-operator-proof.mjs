@@ -112,6 +112,48 @@ function writeJson(filePath, value) {
   writeText(filePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
+function readJsonObject(value) {
+  if (value === null || typeof value !== "object" || Array.isArray(value)) {
+    return null;
+  }
+  return value;
+}
+
+function parseJsonObjectText(text) {
+  if (typeof text !== "string" || text.trim().length === 0) {
+    return null;
+  }
+  try {
+    return readJsonObject(JSON.parse(text));
+  } catch {
+    return null;
+  }
+}
+
+function normalizeOptionalCliString(value) {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function normalizeOptionalBoolean(value) {
+  return value === true ? true : value === false ? false : null;
+}
+
+function extractInstallRestartState(text) {
+  const parsed = parseJsonObjectText(text);
+  const restart = readJsonObject(parsed?.restart ?? null);
+  if (restart === null) {
+    return null;
+  }
+  return {
+    required: normalizeOptionalBoolean(restart.required),
+    performed: normalizeOptionalBoolean(restart.performed),
+  };
+}
+
 function shellJoin(parts) {
   return parts
     .map((part) => {
@@ -213,6 +255,16 @@ function readTextIfExists(filePath) {
     return null;
   }
   return readFileSync(filePath, "utf8");
+}
+
+function readOpenClawProfileName(openclawHome) {
+  return normalizeOptionalCliString(readJsonIfExists(path.join(openclawHome, "openclaw.json"))?.profile);
+}
+
+function buildGatewayArgs(action, profileName) {
+  return profileName === null
+    ? ["gateway", action]
+    : ["gateway", action, "--profile", profileName];
 }
 
 function extractStartupBreadcrumbs(logText, bundleStartedAtIso) {
@@ -378,8 +430,9 @@ function main() {
 
   const cliPackage = options.cliVersion ? `@openclawbrain/cli@${options.cliVersion}` : "@openclawbrain/cli";
   const steps = [];
+  const gatewayProfile = readOpenClawProfileName(options.openclawHome);
 
-  function addStep(stepId, label, command, args, { skipped = false } = {}) {
+  function addStep(stepId, label, command, args, { skipped = false, skipSummary = "step intentionally skipped" } = {}) {
     if (skipped) {
       steps.push({
         stepId,
@@ -388,7 +441,7 @@ function main() {
         skipped: true,
         captureState: "complete",
         resultClass: "success",
-        summary: "step intentionally skipped",
+        summary: skipSummary,
         stdoutPath: null,
         stderrPath: null,
       });
@@ -425,23 +478,39 @@ function main() {
     "01-install",
     "install",
     "npx",
-    [cliPackage, "install", "--openclaw-home", options.openclawHome],
+    [cliPackage, "install", "--openclaw-home", options.openclawHome, "--json"],
     { skipped: options.skipInstall },
   );
+  const installRestartState = options.skipInstall || installCapture.exitCode !== 0 || installCapture.error
+    ? null
+    : extractInstallRestartState(installCapture.stdout);
+  let restartSkipSummary = null;
+  if (options.skipRestart) {
+    restartSkipSummary = "step intentionally skipped";
+  } else if (installRestartState?.performed === true) {
+    restartSkipSummary = "step intentionally skipped because install already performed the gateway restart";
+  } else if (installRestartState?.required === false) {
+    restartSkipSummary = "step intentionally skipped because install reported no gateway restart was required";
+  } else if (gatewayProfile === null) {
+    restartSkipSummary = "skipped because exact OpenClaw profile token could not be inferred; avoiding shared-gateway self-interrupt during proof capture";
+  }
 
   const restartCapture = addStep(
     "02-restart",
     "gateway restart",
     "openclaw",
-    ["gateway", "restart"],
-    { skipped: options.skipRestart },
+    buildGatewayArgs("restart", gatewayProfile),
+    {
+      skipped: restartSkipSummary !== null,
+      skipSummary: restartSkipSummary ?? undefined,
+    },
   );
 
   const gatewayStatusCapture = addStep(
     "03-gateway-status",
     "gateway status",
     "openclaw",
-    ["gateway", "status"],
+    buildGatewayArgs("status", gatewayProfile),
   );
 
   const pluginInspectCapture = addStep(

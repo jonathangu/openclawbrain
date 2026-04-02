@@ -38,9 +38,11 @@ function createProofFixture(t, options = {}) {
     const gatewayLogPath = path.join(root, "gateway.log");
     const runtimeLoadProofPath = path.join(activationRoot, "attachment-truth", "runtime-load-proofs.json");
     mkdirSync(openclawHome, { recursive: true });
-    writeFileSync(path.join(openclawHome, "openclaw.json"), JSON.stringify({
-        profile: "Tern"
-    }, null, 2));
+    if (options.profileName !== null) {
+        writeFileSync(path.join(openclawHome, "openclaw.json"), JSON.stringify({
+            profile: options.profileName ?? "Tern"
+        }, null, 2));
+    }
     if (options.gatewayLogText !== null) {
         writeFileSync(gatewayLogPath, options.gatewayLogText ?? `${JSON.stringify({
             _meta: { date: "2999-01-01T00:00:00.000Z" },
@@ -102,6 +104,25 @@ function createHealthyLabelOutputs(fixture, overrides = {}) {
             stdout: createDetailedStatusText(fixture)
         },
         ...overrides
+    };
+}
+
+function createInstallJsonResult(restart = {}) {
+    return {
+        stdout: `${JSON.stringify({
+            command: "install",
+            restart: {
+                required: true,
+                automatic: true,
+                performed: true,
+                ...restart
+            },
+            verdict: {
+                verdict: "converged",
+                why: "test fixture converge result",
+                warnings: []
+            }
+        }, null, 2)}\n`
     };
 }
 
@@ -231,6 +252,7 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     assert.equal(hardeningSnapshot.verdict.verdict, "success_and_proven");
     assert.equal(verdictPayload.attributionLine, "attribution quality=exact_only source=latest_materialization/watch_snapshot nonZero=1 exact=1 heuristic=0 unmatched=0 ambiguous=0 modes=decision:1|digest:0|compile:0|heuristic:0");
     assert.equal(verdictPayload.learningPathLine, "path        source=materialized_candidate pg=v2 method=policy_gradient_v2 target=trajectory_reconstruction connect=4 trajectories=12 bindingQuality=exact_only");
+    assert.deepEqual(captures[0]?.args, ["install", "--openclaw-home", fixture.openclawHome, "--json"]);
     assert.deepEqual(captures[1]?.args, ["gateway", "restart", "--profile", "Tern"]);
     assert.deepEqual(captures[2]?.args, ["gateway", "status", "--profile", "Tern"]);
 });
@@ -251,6 +273,85 @@ test("proof capture forwards explicit gateway probe overrides to gateway status"
         "--token",
         "proof-token"
     ]);
+});
+
+test("proof capture skips the explicit restart when install already performed it", (t) => {
+    const fixture = createProofFixture(t);
+    const { result, captures } = captureProofScenario(fixture, createHealthyLabelOutputs(fixture, {
+        "install": createInstallJsonResult({
+            required: true,
+            performed: true
+        })
+    }));
+    const restartStep = result.steps.find((step) => step.stepId === "02-restart");
+    assert.equal(restartStep?.skipped, true);
+    assert.match(restartStep?.summary ?? "", /install already performed the gateway restart/);
+    assert.deepEqual(captures.map((capture) => capture.label), [
+        "install",
+        "gateway status",
+        "plugin inspect",
+        "detailed status"
+    ]);
+});
+
+test("proof capture skips the explicit restart when install reports that no restart was needed", (t) => {
+    const fixture = createProofFixture(t);
+    const { result, captures } = captureProofScenario(fixture, createHealthyLabelOutputs(fixture, {
+        "install": createInstallJsonResult({
+            required: false,
+            performed: false
+        })
+    }));
+    const restartStep = result.steps.find((step) => step.stepId === "02-restart");
+    assert.equal(restartStep?.skipped, true);
+    assert.match(restartStep?.summary ?? "", /install reported no gateway restart was required/);
+    assert.deepEqual(captures.map((capture) => capture.label), [
+        "install",
+        "gateway status",
+        "plugin inspect",
+        "detailed status"
+    ]);
+});
+
+test("proof capture keeps the explicit restart when install did not complete successfully", (t) => {
+    const fixture = createProofFixture(t);
+    const { result, captures } = captureProofScenario(fixture, createHealthyLabelOutputs(fixture, {
+        "install": {
+            ...createInstallJsonResult({
+                required: false,
+                performed: false
+            }),
+            exitCode: 1
+        }
+    }));
+    const restartStep = result.steps.find((step) => step.stepId === "02-restart");
+    assert.equal(restartStep?.skipped, undefined);
+    assert.deepEqual(captures.map((capture) => capture.label), [
+        "install",
+        "gateway restart",
+        "gateway status",
+        "plugin inspect",
+        "detailed status"
+    ]);
+});
+
+test("proof capture skips restart when no exact OpenClaw profile token can be inferred and still completes the bundle", (t) => {
+    const fixture = createProofFixture(t, {
+        profileName: null
+    });
+    const { result, captures } = captureProofScenario(fixture, createHealthyLabelOutputs(fixture));
+    const restartStep = result.steps.find((step) => step.stepId === "02-restart");
+    assert.equal(result.gatewayProfile, null);
+    assert.equal(result.verdict.verdict, "success_and_proven");
+    assert.equal(restartStep?.skipped, true);
+    assert.equal(restartStep?.summary, "skipped because exact OpenClaw profile token could not be inferred; avoiding shared-gateway self-interrupt during proof capture");
+    assert.deepEqual(captures.map((capture) => capture.label), [
+        "install",
+        "gateway status",
+        "plugin inspect",
+        "detailed status"
+    ]);
+    assert.deepEqual(captures[1]?.args, ["gateway", "status"]);
 });
 
 test("proof capture reports warnings when proof support is incomplete but runtime truth is healthy", (t) => {

@@ -1331,6 +1331,8 @@ function summarizeStatus(statusProbe) {
     activePackId,
     routeFreshness: brain.routeFreshness ?? null,
     usedLearnedRouteFn: brainStatus.usedLearnedRouteFn ?? currentTurnAttribution.usedLearnedRouteFn ?? null,
+    learningAttribution: status.learningAttribution ?? null,
+    contextFeedback: status.contextFeedback ?? null,
     loadProof: status.hook?.loadProof ?? null,
     operatorHealth,
     workerHealthy: legacyWorkerHealthy,
@@ -1513,6 +1515,134 @@ function freshnessBand(ageDays, healthFreshnessDays, freshnessThresholdDays) {
   return "stale";
 }
 
+function hasContextFeedbackVerdictCounts(status) {
+  const verdictCounts = status?.contextFeedback?.verdictCounts ?? null;
+  return typeof verdictCounts?.helpful === "number"
+    && typeof verdictCounts?.irrelevant === "number"
+    && typeof verdictCounts?.harmful === "number";
+}
+
+function summarizeEffectivenessReadout({
+  status,
+  operatorHealth,
+  latestOperator,
+  latestReplay,
+  latestHost,
+  healthFreshnessDays,
+  freshnessThresholdDays,
+}) {
+  const learningAttribution = status?.learningAttribution ?? null;
+  const contextFeedback = status?.contextFeedback ?? null;
+  const feedbackVisible = hasContextFeedbackVerdictCounts(status);
+  const coverage = contextFeedback?.coverage ?? null;
+  const latestReplayFreshness = latestReplay
+    ? freshnessBand(latestReplay.ageDays, healthFreshnessDays, freshnessThresholdDays)
+    : null;
+  const staleOrMissing = [];
+
+  if (!feedbackVisible) {
+    staleOrMissing.push("no live helpful/irrelevant/harmful context-feedback counters on this operator surface");
+  }
+  if (!learningAttribution) {
+    staleOrMissing.push("no learning attribution surface in the current status payload");
+  }
+  if (!latestReplay) {
+    staleOrMissing.push("no recorded-session-replay bundle found");
+  } else {
+    if (latestReplay.validationOk !== true) {
+      staleOrMissing.push("latest recorded-session-replay bundle did not validate cleanly");
+    }
+    if (latestReplayFreshness !== "fresh") {
+      staleOrMissing.push(`latest recorded-session-replay bundle is ${latestReplayFreshness ?? "unknown"} (${latestReplay.ageDays ?? "n/a"}d old)`);
+    }
+  }
+  if (!latestOperator) {
+    staleOrMissing.push("no operator-proof bundle found");
+  }
+  if (!latestHost) {
+    staleOrMissing.push("no host-evidence bundle found");
+  }
+  if (operatorHealth?.status && operatorHealth.status !== "healthy") {
+    staleOrMissing.push(`operator health is ${operatorHealth.status}: ${operatorHealth.detail}`);
+  }
+
+  let helping = "unproven";
+  let summary = "current operator surfaces do not yet prove OCB is helping";
+
+  if (feedbackVisible) {
+    const helpful = Number(contextFeedback.verdictCounts.helpful ?? 0);
+    const irrelevant = Number(contextFeedback.verdictCounts.irrelevant ?? 0);
+    const harmful = Number(contextFeedback.verdictCounts.harmful ?? 0);
+    const supervisedTraceCount = Number(coverage?.supervisedTraceCount ?? 0);
+    const routeTraceCount = Number(coverage?.routeTraceCount ?? 0);
+    if (harmful > 0) {
+      helping = "mixed";
+      summary = "live traced-route feedback includes harmful verdicts, so OCB is not yet safely helping";
+    } else if (helpful > 0 && supervisedTraceCount > 0) {
+      helping = "feedback_backed";
+      summary = routeTraceCount > supervisedTraceCount
+        ? "live traced-route feedback trends helpful, but coverage is still partial"
+        : "live traced-route feedback currently trends helpful";
+    } else if (supervisedTraceCount > 0 || irrelevant > 0) {
+      helping = "mixed";
+      summary = "live traced-route feedback is visible, but it is not yet clearly helpful";
+    }
+  } else if (latestReplay?.validationOk === true) {
+    helping = "replay_backed_only";
+    summary = latestReplayFreshness === "fresh"
+      ? "latest replay proof is healthy, but live helpful/irrelevant/harmful context feedback is not visible here"
+      : "replay evidence exists, but live helpful/irrelevant/harmful context feedback is not visible here";
+  }
+
+  const where = [];
+  const activePackId = status?.activePackId ?? status?.currentPackVersion ?? null;
+  if (activePackId !== null) {
+    where.push(`serve-path pack=${activePackId}`);
+  }
+  if (contextFeedback?.latest?.agentIdentity) {
+    where.push(`latest feedback lane=${contextFeedback.latest.agentIdentity.agentId}/${contextFeedback.latest.agentIdentity.lane}`);
+  }
+  if (latestReplay) {
+    where.push(`replay bundle=${latestReplay.bundleId} winner=${latestReplay.metrics?.winnerMode ?? "unknown"}`);
+  }
+
+  const why = [];
+  if (feedbackVisible) {
+    why.push(
+      `feedback helpful=${contextFeedback.verdictCounts.helpful} irrelevant=${contextFeedback.verdictCounts.irrelevant} harmful=${contextFeedback.verdictCounts.harmful}`
+      + ` coverage=${coverage?.supervisedTraceCount ?? 0}/${coverage?.routeTraceCount ?? 0}`,
+    );
+  }
+  if (learningAttribution) {
+    why.push(
+      `attribution quality=${learningAttribution.quality ?? "unavailable"}`
+      + ` nonZero=${learningAttribution.nonZeroObservationCount ?? 0}`
+      + ` exact=${learningAttribution.exactMatchCount ?? 0}`
+      + ` heuristic=${learningAttribution.heuristicMatchCount ?? 0}`
+      + ` unmatched=${learningAttribution.unmatchedCount ?? 0}`
+      + ` ambiguous=${learningAttribution.ambiguousCount ?? 0}`,
+    );
+  }
+  if (latestReplay?.metrics) {
+    why.push(
+      `replay winner=${latestReplay.metrics.winnerMode ?? "unknown"}`
+      + ` compileOkRate=${latestReplay.metrics.compileOkRate ?? "n/a"}`
+      + ` phraseHitRate=${latestReplay.metrics.phraseHitRate ?? "n/a"}`,
+    );
+  }
+  if (status?.routeFreshness) {
+    why.push(`route freshness=${status.routeFreshness}`);
+  }
+
+  return {
+    helping,
+    summary,
+    where,
+    why,
+    staleOrMissing,
+  };
+}
+
 function buildHealthSnapshot({ config, statusProbe, bundles, now, scanDurationMs }) {
   const status = summarizeStatus(statusProbe);
   const watchHeartbeatAt = safeParseDate(status.watch?.lastHeartbeatAt ?? null);
@@ -1538,6 +1668,15 @@ function buildHealthSnapshot({ config, statusProbe, bundles, now, scanDurationMs
       validationOk: bundle.validationOk,
       metrics: bundle.metrics,
     }));
+  const effectivenessReadout = summarizeEffectivenessReadout({
+    status,
+    operatorHealth: status.operatorHealth,
+    latestOperator,
+    latestReplay,
+    latestHost,
+    healthFreshnessDays,
+    freshnessThresholdDays,
+  });
 
   return {
     contract: CONTRACT,
@@ -1552,6 +1691,7 @@ function buildHealthSnapshot({ config, statusProbe, bundles, now, scanDurationMs
     },
     status,
     operatorHealth: status.operatorHealth,
+    effectivenessReadout,
     watch: {
       ...(status.watch ?? {}),
       state: status.watch?.state ?? status.watchState ?? status.workerStatus ?? null,
@@ -1819,6 +1959,13 @@ function formatHealthMarkdown(snapshot) {
   lines.push(`- clip rate: ${snapshot.status.decisionSummary?.clipRate?.rate ?? "n/a"}`);
   lines.push(`- fail-open rate: ${snapshot.status.decisionSummary?.failOpenRate?.rate ?? "n/a"}`);
   lines.push(`- security critical findings: ${snapshot.status.securityAudit?.critical ?? 0}`);
+  lines.push("");
+  lines.push("## Thin readout");
+  lines.push(`- helping: ${snapshot.effectivenessReadout.helping}`);
+  lines.push(`- summary: ${snapshot.effectivenessReadout.summary}`);
+  lines.push(`- where: ${snapshot.effectivenessReadout.where.length > 0 ? snapshot.effectivenessReadout.where.join("; ") : "none"}`);
+  lines.push(`- why: ${snapshot.effectivenessReadout.why.length > 0 ? snapshot.effectivenessReadout.why.join("; ") : "none"}`);
+  lines.push(`- stale/missing: ${snapshot.effectivenessReadout.staleOrMissing.length > 0 ? snapshot.effectivenessReadout.staleOrMissing.join("; ") : "none"}`);
   lines.push("");
   lines.push("## Operator health");
   lines.push(`- operator health: ${snapshot.operatorHealth.status}`);
