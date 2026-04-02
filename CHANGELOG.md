@@ -4,6 +4,25 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.24
+
+`0.4.24` is the public repair release that restores the one-version OpenClawBrain contract after the accidental mixed `0.4.23` split-package publish. It keeps the single-source-of-truth operator fixes and realigns both public package surfaces back onto the same visible version.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.24`
+- `@openclawbrain/cli@0.4.24`
+
+**Changes**
+
+- preserves the watcher freshness/operator-health/context-management fixes from the single-source-of-truth tranche
+- repairs the publish contract so users again see one visible OpenClawBrain version instead of a mixed CLI/runtime pair
+- keeps the canonical install lane unchanged: `openclawbrain install --openclaw-home ...`
+
+**Full release note**
+
+- [docs/release-notes-0.4.24.md](docs/release-notes-0.4.24.md)
+
 ## 0.4.23
 
 `0.4.23` is the public OpenClawBrain follow-up release for the single-source-of-truth tranche: the CLI now reports watcher freshness, operator health, and context-management truth from one cleaner operator model instead of leaving those surfaces fragmented across status, proof, and stale docs.
