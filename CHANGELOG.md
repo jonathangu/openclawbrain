@@ -1,6 +1,6 @@
 # Changelog
 
-Release history for the published OpenClawBrain releases. The README and operator docs lead with the current public front door; release notes carry version-specific detail. Older split-package headings remain below as archived maintainer detail from before the public release lane converged on one visible version number.
+Release history for the published OpenClawBrain releases. The README and operator docs lead with the current public front door; release notes carry version-specific detail. Internal split-package versions are maintainer detail and appear under each entry's **Internal published packages** label.
 
 ## Unreleased
 
@@ -25,11 +25,11 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 - [docs/release-notes-0.4.20.md](docs/release-notes-0.4.20.md)
 
-## 0.4.19 / 0.4.6
+## 0.4.19
 
-`0.4.19 / 0.4.6` publishes the operator-surface follow-up after the merged OCB tranche: the CLI now keeps large-log status/proof reads bounded **and** the proof health snapshot stops declaring false outages when the live runtime is actually serving a pack.
+`0.4.19` publishes the operator-surface follow-up after the merged OCB tranche: the CLI now keeps large-log status/proof reads bounded **and** the proof health snapshot stops declaring false outages when the live runtime is actually serving a pack.
 
-**Packages**
+**Internal published packages**
 
 - `@openclawbrain/openclaw@0.4.6`
 - `@openclawbrain/cli@0.4.19`
@@ -45,11 +45,11 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 - [docs/release-notes-0.4.19.md](docs/release-notes-0.4.19.md)
 
-## 0.4.18 / 0.4.6
+## 0.4.18
 
-`0.4.18 / 0.4.6` publishes the operator-surface status fix so the split-package lane no longer whole-reads oversized learning-spine logs during status/proof inspection, while the plugin/runtime package stays on `0.4.6`.
+`0.4.18` publishes the operator-surface status fix so the split-package lane no longer whole-reads oversized learning-spine logs during status/proof inspection.
 
-**Packages**
+**Internal published packages**
 
 - `@openclawbrain/openclaw@0.4.6`
 - `@openclawbrain/cli@0.4.18`
@@ -64,11 +64,11 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 - [docs/release-notes-0.4.18.md](docs/release-notes-0.4.18.md)
 
-## 0.4.17 / 0.4.6
+## 0.4.17
 
-`0.4.17 / 0.4.6` publishes the bounded-anytime interruption-truth follow-up through the canonical split-package lane, so the packaged runtime and packaged CLI now surface interruption state and accounting instead of leaving that truth stranded in the repo-root runtime path.
+`0.4.17` publishes the bounded-anytime interruption-truth follow-up so the packaged runtime and CLI now surface interruption state and accounting instead of leaving that truth stranded in the repo-root runtime path.
 
-**Packages**
+**Internal published packages**
 
 - `@openclawbrain/openclaw@0.4.6`
 - `@openclawbrain/cli@0.4.17`
@@ -84,11 +84,11 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 - [docs/release-notes-0.4.17.md](docs/release-notes-0.4.17.md)
 
-## 0.4.16 / 0.4.5
+## 0.4.16
 
-`0.4.16 / 0.4.5` publishes the harvested post-0.4.15 fixes: the public CLI proof/reinstall surfaces now classify fresh-state runtime truth correctly, learned-route replay no longer duplicates non-seed carry-forward evidence into the held-out eval turn, teacher no-op status separates benign idle cycles from likely missed teachable material, and the split release contract is enforced from one canonical plan helper.
+`0.4.16` publishes the harvested post-0.4.15 fixes: the public CLI proof/reinstall surfaces now classify fresh-state runtime truth correctly, learned-route replay no longer duplicates non-seed carry-forward evidence into the held-out eval turn, teacher no-op status separates benign idle cycles from likely missed teachable material, and the release contract is enforced from one canonical plan helper.
 
-**Packages**
+**Internal published packages**
 
 - `@openclawbrain/openclaw@0.4.5`
 - `@openclawbrain/cli@0.4.16`
@@ -105,11 +105,11 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 - [docs/release-notes-0.4.16.md](docs/release-notes-0.4.16.md)
 
-## 0.4.15 / 0.4.4
+## 0.4.15
 
-`0.4.15 / 0.4.4` ships the runtime-fix release: learned-route proof scoring is sharper, embedder-backed promoted packs carry live numeric embeddings through the canonical learner path, teacher/runtime truth surfaces are cleaner, and live `learn` no longer recurses the traced-learning bridge until persistence fails.
+`0.4.15` ships the runtime-fix release: learned-route proof scoring is sharper, embedder-backed promoted packs carry live numeric embeddings through the canonical learner path, teacher/runtime truth surfaces are cleaner, and live `learn` no longer recurses the traced-learning bridge until persistence fails.
 
-**Packages**
+**Internal published packages**
 
 - `@openclawbrain/openclaw@0.4.4`
 - `@openclawbrain/cli@0.4.15`
@@ -132,11 +132,11 @@ Release history for the published OpenClawBrain releases. The README and operato
 - release contract now treats bundle evaluation as a real replay gate and keeps the remaining public gaps narrowed to attribution, broader host/profile proof, and live-gain evidence
 - public positioning now emphasizes bounded useful context on promoted packs and predictable live-path latency
 
-## 0.4.14 / 0.4.3
+## 0.4.14
 
-`0.4.14 / 0.4.3` carries the canonical split-package install lane forward after the payload-sync work landed in the publishable package payloads.
+`0.4.14` carries the canonical install lane forward after the payload-sync work landed in the publishable package payloads.
 
-**Packages**
+**Internal published packages**
 
 - `@openclawbrain/openclaw@0.4.3`
 - `@openclawbrain/cli@0.4.14`
@@ -156,7 +156,7 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 `0.3.7` is a compatibility-package patch release that carries the bounded-runtime hardening lane for older combined-package installs.
 
-**Packages**
+**Internal published packages**
 
 - `@jonathangu/openclawbrain@0.3.7`
 
@@ -184,7 +184,7 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 `0.4.13` completes the split-package STOP_LOCAL release lane: the split public install path now carries learned source-specific STOP_LOCAL updates through the CLI learner and the runtime graph-walk compiler.
 
-**Packages**
+**Internal published packages**
 
 - `@openclawbrain/compiler@0.3.5`
 - `@openclawbrain/openclaw@0.4.2`
@@ -205,7 +205,7 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 `0.3.6` is a compatibility-package patch release that carries the unified learned local branching update for older combined-package installs.
 
-**Packages**
+**Internal published packages**
 
 - `@jonathangu/openclawbrain@0.3.6`
 
@@ -232,7 +232,7 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 `0.4.12` adds a first-class operator proof bundle and hardens daemon launch paths away from ephemeral `_npx` cache state.
 
-**Packages**
+**Internal published packages**
 
 - `@openclawbrain/cli@0.4.12`
 
@@ -244,7 +244,7 @@ Release history for the published OpenClawBrain releases. The README and operato
 - daemon launch/status now avoid `_npx` cache paths and surface the configured runtime command and arguments explicitly
 - README, quick-start, lifecycle, configuration, and troubleshooting docs now align around one canonical install / verify / proof lane
 
-**Operator commands**
+**Historical operator commands (pre-front-door; maintainer reference only)**
 
 ```bash
 openclaw plugins install @openclawbrain/openclaw
@@ -254,6 +254,8 @@ npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 npx @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-restart
 ```
 
+The public front door is now `openclawbrain install --openclaw-home ~/.openclaw`.
+
 **Full release note**
 
 - [docs/release-notes-0.4.12.md](docs/release-notes-0.4.12.md)
@@ -262,7 +264,7 @@ npx @openclawbrain/cli proof --openclaw-home ~/.openclaw --skip-install --skip-r
 
 Native V2 router metadata is now accurate end to end, so status and validator surfaces report real promoted-pack fields.
 
-**Packages**
+**Internal published packages**
 
 - `@openclawbrain/contracts@0.3.5`
 - `@openclawbrain/cli@0.4.10`
@@ -273,7 +275,7 @@ Native V2 router metadata is now accurate end to end, so status and validator su
 - validator reads promoted-pack metadata instead of stale placeholder fields
 - repo-side landing commits for this release were `63ea1e6` and `fe3c247`
 
-**Operator commands**
+**Historical operator commands (pre-front-door; maintainer reference only)**
 
 ```bash
 openclaw plugins install @openclawbrain/openclaw
@@ -281,6 +283,8 @@ npx @openclawbrain/cli install --openclaw-home ~/.openclaw
 openclaw gateway restart
 npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 ```
+
+The public front door is now `openclawbrain install --openclaw-home ~/.openclaw`.
 
 **Verification**
 
@@ -295,7 +299,7 @@ npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 
 `0.4.8` restores validator-compatible router artifact metadata after the broken `0.4.7` publish.
 
-**Packages**
+**Internal published packages**
 
 - `@openclawbrain/cli@0.4.8`
 
@@ -313,7 +317,7 @@ npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 
 `0.4.7` exposes native V2 policy-gradient observability directly in the router artifact.
 
-**Packages**
+**Internal published packages**
 
 - `@openclawbrain/cli@0.4.7`
 
@@ -330,7 +334,7 @@ npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 
 `0.4.6` fixes a strict native V2 full-replay bug in the published CLI bundle.
 
-**Packages**
+**Internal published packages**
 
 - `@openclawbrain/cli@0.4.6`
 
@@ -347,7 +351,7 @@ npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 
 `0.4.5` ships the native V2 route-update fix in the published CLI bundle.
 
-**Packages**
+**Internal published packages**
 
 - `@openclawbrain/cli@0.4.5`
 
@@ -365,7 +369,7 @@ npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 
 `0.4.4` fixes reinstall and status reporting for the split-package operator flow.
 
-**Packages**
+**Internal published packages**
 
 - `@openclawbrain/cli@0.4.4`
 
@@ -382,7 +386,7 @@ npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 
 `0.4.3` improves operator status output and supervision matching.
 
-**Packages**
+**Internal published packages**
 
 - `@openclawbrain/cli@0.4.3`
 
@@ -399,7 +403,7 @@ npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 
 `0.4.2` closes the remaining high-signal status and tarball seams left after `0.4.1`.
 
-**Packages**
+**Internal published packages**
 
 - `@openclawbrain/openclaw@0.4.0`
 - `@openclawbrain/cli@0.4.2`
@@ -418,7 +422,7 @@ npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 
 `0.4.1` makes the shared-home attach declaration idempotent.
 
-**Packages**
+**Internal published packages**
 
 - `@openclawbrain/openclaw@0.4.0`
 - `@openclawbrain/cli@0.4.1`
@@ -436,7 +440,7 @@ npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 
 `0.4.0` is the split-package public release.
 
-**Packages**
+**Internal published packages**
 
 - `@openclawbrain/openclaw@0.4.0`
 - `@openclawbrain/cli@0.4.0`
@@ -456,7 +460,7 @@ npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 
 `0.3.5` was the last combined-package release before the split.
 
-**Packages**
+**Internal published packages**
 
 - `@jonathangu/openclawbrain@0.3.5`
 
@@ -474,7 +478,7 @@ npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 
 `0.3.4` removes fake supervision caused by runtime scaffolding.
 
-**Packages**
+**Internal published packages**
 
 - `@jonathangu/openclawbrain@0.3.4`
 
@@ -491,7 +495,7 @@ npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 
 `0.3.3` fixes the child-worker boot path for launchd-style installs.
 
-**Packages**
+**Internal published packages**
 
 - `@jonathangu/openclawbrain@0.3.3`
 
@@ -509,7 +513,7 @@ npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 
 `0.3.2` introduced the summary-aware routing prior and explicit correction commit path.
 
-**Packages**
+**Internal published packages**
 
 - `@jonathangu/openclawbrain@0.3.2`
 
@@ -527,7 +531,7 @@ npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed
 
 `0.3.0` captured the combined-package release state before the later architecture and packaging work.
 
-**Packages**
+**Internal published packages**
 
 - `@jonathangu/openclawbrain@0.3.0`
 
