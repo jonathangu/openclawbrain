@@ -6,7 +6,7 @@ import { fileURLToPath, pathToFileURL } from "node:url";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import { DEFAULT_OLLAMA_EMBEDDING_MODEL, createOllamaEmbedder } from "@openclawbrain/compiler";
-import { ensureManagedLearnerServiceForActivationRoot, inspectManagedLearnerService, removeManagedLearnerServiceForActivationRoot, parseDaemonArgs, runDaemonCommand } from "./daemon.js";
+import { describeManagedLearnerServiceRuntimeGuard, ensureManagedLearnerServiceForActivationRoot, inspectManagedLearnerService, removeManagedLearnerServiceForActivationRoot, parseDaemonArgs, runDaemonCommand } from "./daemon.js";
 import { exportBrain, importBrain } from "./import-export.js";
 import { buildNormalizedEventExport } from "@openclawbrain/contracts";
 import { buildTeacherSupervisionArtifactsFromNormalizedEventExport, createAlwaysOnLearningRuntimeState, describeAlwaysOnLearningRuntimeState, drainAlwaysOnLearningRuntime, loadOrInitBaseline, materializeAlwaysOnLearningCandidatePack, persistBaseline } from "./local-learner.js";
@@ -31,6 +31,7 @@ const OPENCLAWBRAIN_EMBEDDER_BASE_URL_ENV = "OPENCLAWBRAIN_EMBEDDER_BASE_URL";
 const OPENCLAWBRAIN_EMBEDDER_PROVIDER_ENV = "OPENCLAWBRAIN_EMBEDDER_PROVIDER";
 const OPENCLAWBRAIN_EMBEDDER_MODEL_ENV = "OPENCLAWBRAIN_EMBEDDER_MODEL";
 const OPENCLAWBRAIN_INSTALL_SKIP_EMBEDDER_PROVISION_ENV = "OPENCLAWBRAIN_INSTALL_SKIP_EMBEDDER_PROVISION";
+const LEGACY_COMPAT_PACKAGE_NAME = "@jonathangu/openclawbrain";
 const INSTALL_COMPATIBLE_LOCAL_TEACHER_MODEL_PREFIXES = [
     "qwen3.5:9b",
     "qwen3.5:8b",
@@ -1721,6 +1722,27 @@ function buildAttachCommand(openclawHome, activationRoot = null) {
 }
 function buildInstallEmbedderProvisionCommand(baseUrl, model) {
     return `OLLAMA_HOST=${quoteShellArg(baseUrl)} ollama pull ${quoteShellArg(model)}`;
+}
+function buildCanonicalInstallRecoveryPath(parsed) {
+    return [
+        buildInstallCommand(parsed.openclawHome),
+        "openclaw gateway restart",
+        buildInstallStatusCommand(parsed.activationRoot),
+        buildProofCommandForOpenClawHome(parsed.openclawHome)
+    ].join(" -> ");
+}
+function inspectInstallGuardrailWarnings(parsed) {
+    const warnings = [];
+    const runtimeFingerprint = readInstallRuntimeFingerprint(parsed.openclawHome);
+    if (runtimeFingerprint.selectedInstall?.packageName === LEGACY_COMPAT_PACKAGE_NAME) {
+        warnings.push(`Detected legacy compatibility plugin state (${LEGACY_COMPAT_PACKAGE_NAME}) for this OpenClaw home. Install is converging it back onto the single supported OpenClawBrain path.`);
+    }
+    const learnerInspection = inspectManagedLearnerService(parsed.activationRoot);
+    const learnerRuntimeGuard = describeManagedLearnerServiceRuntimeGuard(learnerInspection);
+    if (learnerRuntimeGuard.state !== "ok") {
+        warnings.push(`${learnerRuntimeGuard.detail} Canonical recovery path: ${buildCanonicalInstallRecoveryPath(parsed)}`);
+    }
+    return warnings;
 }
 function describeExecOutput(value) {
     if (typeof value === "string") {
@@ -3967,8 +3989,10 @@ function emitInstallConvergeResult(result, parsed) {
 function runInstallCommand(parsed) {
     let pluginResult = null;
     let attachResult = null;
+    let guardrailWarnings = [];
     try {
         validateOpenClawHome(parsed.openclawHome);
+        guardrailWarnings = inspectInstallGuardrailWarnings(parsed);
         pluginResult = runOpenClawBrainConvergePluginStep(parsed.openclawHome);
         attachResult = executeProfileHookAttachCommand(parsed);
     }
@@ -3976,7 +4000,7 @@ function runInstallCommand(parsed) {
         const verdict = finalizeOpenClawBrainConvergeResult({
             stepFailure: toErrorMessage(error),
             verification: null,
-            warnings: []
+            warnings: guardrailWarnings
         });
         const failureResult = {
             command: "install",
@@ -4042,6 +4066,7 @@ function runInstallCommand(parsed) {
         restartPerformed: restartPlan.required && restartPlan.automatic && restartError === null
     });
     const convergeWarnings = [];
+    convergeWarnings.push(...guardrailWarnings);
     if (pluginResult.warning) {
         convergeWarnings.push(pluginResult.warning);
     }

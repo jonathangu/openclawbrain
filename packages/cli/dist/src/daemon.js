@@ -23,6 +23,7 @@ const DEFAULT_SCAN_ROOT_DIRNAME = "event-exports";
 const BASELINE_STATE_BASENAME = "baseline-state.json";
 const SCANNER_CHECKPOINT_BASENAME = ".openclawbrain-scanner-checkpoint.json";
 const CLI_PACKAGE_NAME = "@openclawbrain/cli";
+const LEGACY_COMPAT_PACKAGE_NAME = "@jonathangu/openclawbrain";
 const CLI_BIN_NAME = "openclawbrain";
 const DEFAULT_DAEMON_COMMAND_RUNNER = (command) => execSync(command, {
     encoding: "utf8",
@@ -198,6 +199,26 @@ function resolveCliPackageRoot(startDir) {
     }
     return null;
 }
+function readNearestPackageMetadataForPath(filePath) {
+    if (typeof filePath !== "string" || filePath.trim().length === 0) {
+        return null;
+    }
+    let currentDir = path.dirname(path.resolve(filePath));
+    while (true) {
+        const packageMetadata = readPackageMetadata(currentDir);
+        if (packageMetadata !== null) {
+            return {
+                root: currentDir,
+                ...packageMetadata,
+            };
+        }
+        const parentDir = path.dirname(currentDir);
+        if (parentDir === currentDir) {
+            return null;
+        }
+        currentDir = parentDir;
+    }
+}
 function resolveDaemonPackageManagerLaunchSpec(moduleDir) {
     const cliPackageRoot = resolveCliPackageRoot(moduleDir);
     const cliPackageMetadata = readPackageMetadata(cliPackageRoot);
@@ -244,12 +265,45 @@ function describeDaemonProgramArguments(programArguments) {
         ? programArguments[1]
         : programArguments[0];
     const runtimePackageSpec = programArguments.find((argument) => argument.startsWith("--package="))?.slice("--package=".length) ?? null;
+    const runtimePackageMetadata = runtimePath === null ? null : readNearestPackageMetadataForPath(runtimePath);
     return {
         configuredProgramArguments: programArguments,
         configuredCommand: formatCommand(programArguments),
         configuredRuntimePath: runtimePath,
         configuredRuntimePackageSpec: runtimePackageSpec,
+        configuredRuntimePackageName: runtimePackageMetadata?.name ?? null,
+        configuredRuntimePackageVersion: runtimePackageMetadata?.version ?? null,
         configuredRuntimeLooksEphemeral: runtimePath === null ? null : isNpxCachePath(runtimePath)
+    };
+}
+export function describeManagedLearnerServiceRuntimeGuard(inspection) {
+    if (inspection.installed !== true || inspection.configuredProgramArguments === null) {
+        return {
+            state: "ok",
+            reason: "not_installed",
+            detail: "No managed learner service is installed yet."
+        };
+    }
+    if (inspection.configuredRuntimeLooksEphemeral === true) {
+        return {
+            state: "refresh_required",
+            reason: "ephemeral_runtime",
+            detail: `Learner service still points at an ephemeral runtime path (${inspection.configuredRuntimePath ?? "unknown"}). Refresh it onto the durable OpenClawBrain CLI path before trusting background learning.`
+        };
+    }
+    const runtimePackageName = inspection.configuredRuntimePackageName;
+    const runtimePackageSpec = inspection.configuredRuntimePackageSpec;
+    if (runtimePackageName === LEGACY_COMPAT_PACKAGE_NAME || runtimePackageSpec?.startsWith(`${LEGACY_COMPAT_PACKAGE_NAME}@`) || runtimePackageSpec === LEGACY_COMPAT_PACKAGE_NAME) {
+        return {
+            state: "refresh_required",
+            reason: "legacy_compat_runtime",
+            detail: `Learner service still points at the retired compatibility package ${LEGACY_COMPAT_PACKAGE_NAME}${inspection.configuredRuntimePath ? ` (${inspection.configuredRuntimePath})` : ""}. Refresh it onto the single supported OpenClawBrain CLI path before trusting background learning.`
+        };
+    }
+    return {
+        state: "ok",
+        reason: "durable_runtime",
+        detail: `Learner service points at the durable ${CLI_PACKAGE_NAME} runtime.`
     };
 }
 function resolveDaemonProgramArguments() {
@@ -465,7 +519,8 @@ export function inspectManagedLearnerService(activationRoot) {
 }
 export function ensureManagedLearnerServiceForActivationRoot(activationRoot) {
     const inspection = inspectManagedLearnerServiceInternal(activationRoot);
-    if (inspection.matchesRequestedActivationRoot === true && inspection.running) {
+    const runtimeGuard = describeManagedLearnerServiceRuntimeGuard(inspection);
+    if (inspection.matchesRequestedActivationRoot === true && inspection.running && runtimeGuard.state === "ok") {
         return {
             state: "ensured",
             reason: "already_running_exact_root",
@@ -473,12 +528,25 @@ export function ensureManagedLearnerServiceForActivationRoot(activationRoot) {
             inspection
         };
     }
+    if (inspection.installed && runtimeGuard.state !== "ok") {
+        const stopResult = stopManagedLearnerService(activationRoot);
+        if (!stopResult.ok) {
+            return {
+                state: "deferred",
+                reason: "stale_runtime_refresh_failed",
+                detail: `${runtimeGuard.detail} Tried to stop the stale learner service first, but that failed: ${stopResult.message}`,
+                inspection: stopResult.inspection
+            };
+        }
+    }
     const startResult = startManagedLearnerService(activationRoot);
     if (startResult.ok) {
         return {
-            state: "started",
-            reason: "started_exact_root",
-            detail: `Started the background learner service for ${startResult.inspection.requestedActivationRoot}; passive learning can begin for this attached profile now.`,
+            state: runtimeGuard.state !== "ok" ? "refreshed" : "started",
+            reason: runtimeGuard.state !== "ok" ? runtimeGuard.reason : "started_exact_root",
+            detail: runtimeGuard.state !== "ok"
+                ? `${runtimeGuard.detail} Refreshed the learner daemon onto the durable OpenClawBrain CLI path for ${startResult.inspection.requestedActivationRoot}.`
+                : `Started the background learner service for ${startResult.inspection.requestedActivationRoot}; passive learning can begin for this attached profile now.`,
             inspection: startResult.inspection
         };
     }
@@ -940,10 +1008,20 @@ export function daemonStatus(activationRoot, json) {
         }
         if (daemonLaunchDescription.configuredRuntimePath !== null) {
             const runtimePackageSuffix = daemonLaunchDescription.configuredRuntimePackageSpec === null
-                ? ""
+                ? daemonLaunchDescription.configuredRuntimePackageName === null
+                    ? ""
+                    : ` (${daemonLaunchDescription.configuredRuntimePackageName}${daemonLaunchDescription.configuredRuntimePackageVersion === null ? "" : `@${daemonLaunchDescription.configuredRuntimePackageVersion}`})`
                 : ` (${daemonLaunchDescription.configuredRuntimePackageSpec})`;
             const runtimeWarning = daemonLaunchDescription.configuredRuntimeLooksEphemeral ? " [ephemeral]" : "";
             console.log(`  Runtime: ${daemonLaunchDescription.configuredRuntimePath}${runtimePackageSuffix}${runtimeWarning}`);
+        }
+        const runtimeGuard = describeManagedLearnerServiceRuntimeGuard({
+            installed: plistInstalled,
+            configuredProgramArguments,
+            ...daemonLaunchDescription,
+        });
+        if (runtimeGuard.state !== "ok") {
+            console.log(`  Guardrail: ${runtimeGuard.detail}`);
         }
         if (configuredProgramArguments !== null && configuredProgramArguments.length > 0) {
             console.log(`  Program: ${configuredProgramArguments[0]}`);

@@ -6,6 +6,17 @@ OpenClawBrain organizes memories and tool-call history into a graph, retrieves a
 
 Status: actively developed. See [CHANGELOG.md](CHANGELOG.md) for the current public OpenClawBrain release and release history.
 
+Legacy install warning: if you reached this repo through the retired `@jonathangu/openclawbrain` compatibility package, stop there. The canonical public lane is:
+
+```bash
+openclawbrain install --openclaw-home ~/.openclaw
+openclaw gateway restart
+openclawbrain status --openclaw-home ~/.openclaw --detailed
+openclawbrain proof --openclaw-home ~/.openclaw
+```
+
+Do not use the old compatibility-package binary for modern install/repair/status flows.
+
 [Documentation](docs/README.md) · [Quick start](docs/getting-started/quick-start.md) · [Claims boundary](CLAIMS.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md)
 
 ## Start Here
