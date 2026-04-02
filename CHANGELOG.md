@@ -4,6 +4,28 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.21
+
+`0.4.21` is the public OpenClawBrain release that makes the single-product story truer in both behavior and operator proof: legacy compatibility seams now fail closed or self-correct, compatibility migration onto the canonical lane is more coherent, generated shadow extension deps are correct, and proof stops degrading the repaired target profile for the wrong reason.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.6`
+- `@openclawbrain/cli@0.4.21`
+
+**Changes**
+
+- retired compatibility binary now fails closed and points operators back to the canonical install path
+- install/daemon guardrails now detect and refresh stale legacy compatibility runtime seams instead of treating them as healthy
+- compatibility migration onto the canonical plugin lane now replaces the wrong install seam instead of drifting into it
+- generated shadow extension package metadata now resolves the real runtime dependency correctly
+- proof accepts generated shadow hook sources and no longer degrades the target repaired profile just because unrelated attached profiles are only partially covered
+- first-read public docs now keep the product story on one install path and treat manual/plugin surgery as maintainer-only background detail
+
+**Full release note**
+
+- [docs/release-notes-0.4.21.md](docs/release-notes-0.4.21.md)
+
 ## 0.4.20
 
 `0.4.20` is the public OpenClawBrain release for the post-swarm operator follow-up: the front door now carries cheap deterministic savings proxies, a versioned estimated-cost path, tighter public proof truth, and compatibility hardening for legacy `custom_message` session records in the local tail path.

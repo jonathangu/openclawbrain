@@ -26,7 +26,7 @@ openclaw gateway restart
 openclawbrain status --openclaw-home ~/.openclaw --detailed
 ```
 
-If you just managed `@openclawbrain/openclaw` through OpenClaw's plugin manager, rerun `openclawbrain install --openclaw-home ~/.openclaw` for the same home afterward.
+If you bypassed the install lane and changed plugin files directly, rerun `openclawbrain install --openclaw-home ~/.openclaw` for the same home afterward.
 
 ## `status --detailed` does not show the selected home as attached
 

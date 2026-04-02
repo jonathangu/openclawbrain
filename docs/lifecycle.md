@@ -22,7 +22,7 @@ openclawbrain proof --openclaw-home ~/.openclaw
 
 The intended canonical lane is the same install command with optional `--proof`. Until that flag lands cleanly across the operator surfaces, proof stays a separate follow-up command.
 
-If you are explicitly managing the native plugin package yourself, use OpenClaw's plugin manager for `@openclawbrain/openclaw`, then rerun `openclawbrain install --openclaw-home ~/.openclaw`.
+If you do manual plugin surgery anyway, rerun `openclawbrain install --openclaw-home ~/.openclaw` before trusting the host again. The public story remains one install lane.
 
 ## Verify and prove
 
