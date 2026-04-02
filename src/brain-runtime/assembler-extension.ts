@@ -97,13 +97,23 @@ type InterruptionDecisionDetails = {
   servedPartial?: boolean | null;
 };
 
+type TraceCarryoverDecisionDetails = Partial<Pick<
+  DecisionRouteTrace["selectionMetadata"],
+  | "chosenStopCount"
+  | "forcedStopCount"
+  | "branchOutcomeSummary"
+  | "droppedProposalCount"
+  | "droppedProposalReasons"
+  | "interruptionAccounting"
+>>;
+
 type CompileCheckpoint = {
   compileElapsedMs: number;
   compileDeadlineMs?: number | null;
   compileDeadlineHit?: boolean | null;
 };
 
-type AssemblyDecisionDetails = BudgetDecisionDetails & CompileDecisionDetails & InterruptionDecisionDetails & {
+type AssemblyDecisionDetails = BudgetDecisionDetails & CompileDecisionDetails & InterruptionDecisionDetails & TraceCarryoverDecisionDetails & {
   prefetch?: BrainPrefetchDecision | null;
 };
 
@@ -567,6 +577,39 @@ function interruptionDecisionDetails(
   };
 }
 
+function traceCarryoverDecisionDetails(
+  trace: DecisionTrace | null | undefined,
+): TraceCarryoverDecisionDetails {
+  const selectionMetadata = trace?.routeTrace?.selectionMetadata;
+  if (!selectionMetadata) {
+    return {};
+  }
+  return {
+    chosenStopCount: selectionMetadata.chosenStopCount ?? null,
+    forcedStopCount: selectionMetadata.forcedStopCount ?? null,
+    branchOutcomeSummary: selectionMetadata.branchOutcomeSummary
+      ? {
+          ...selectionMetadata.branchOutcomeSummary,
+          terminationReasons: selectionMetadata.branchOutcomeSummary.terminationReasons
+            ? { ...selectionMetadata.branchOutcomeSummary.terminationReasons }
+            : null,
+        }
+      : null,
+    droppedProposalCount: selectionMetadata.droppedProposalCount ?? null,
+    droppedProposalReasons: selectionMetadata.droppedProposalReasons
+      ? { ...selectionMetadata.droppedProposalReasons }
+      : null,
+    interruptionAccounting: selectionMetadata.interruptionAccounting
+      ? {
+          ...selectionMetadata.interruptionAccounting,
+          droppedFrontierNodeIds: [...selectionMetadata.interruptionAccounting.droppedFrontierNodeIds],
+          droppedProposalNodeIds: [...selectionMetadata.interruptionAccounting.droppedProposalNodeIds],
+          droppedProposalReasons: { ...selectionMetadata.interruptionAccounting.droppedProposalReasons },
+        }
+      : null,
+  };
+}
+
 function createInterruption(params: {
   stage: BrainInterruptionStage;
   reason: string;
@@ -617,8 +660,12 @@ function withCompileReport(
   selectionMetadata: AssemblyDecisionDetails,
   mode: BrainAssemblyOutcomeMode | BrainAssemblyRouteMode,
 ): AssemblyDecisionDetails & { compileReport?: BrainCompileReportV1 | null; compileReportSummary?: string | null; prefetch?: BrainPrefetchDecision | null } {
+  const inheritedTraceDetails = traceCarryoverDecisionDetails(trace);
   if (!trace?.routeTrace?.selectionMetadata) {
-    return selectionMetadata;
+    return {
+      ...inheritedTraceDetails,
+      ...selectionMetadata,
+    };
   }
   const compileReport = buildBrainCompileReport({
     routeTrace: {
@@ -636,9 +683,13 @@ function withCompileReport(
     },
   });
   if (!compileReport) {
-    return selectionMetadata;
+    return {
+      ...inheritedTraceDetails,
+      ...selectionMetadata,
+    };
   }
   return {
+    ...inheritedTraceDetails,
     ...selectionMetadata,
     compileReport,
     compileReportSummary: compileReport.summary,
@@ -890,7 +941,7 @@ export class BrainAssemblerExtension {
         budgetFraction,
         maxContextChars: params.maxContextChars,
         queryBudgetChars,
-        queryInterrupted: true,
+        queryInterrupted: false,
         interruptionStage: "query",
         interruptionReason: "deadline_before_query",
         servedPartial: false,
@@ -1032,7 +1083,7 @@ export class BrainAssemblerExtension {
         },
       };
     }
-    if (afterQueryCheckpoint.compileDeadlineHit && decision.mode === "use_brain") {
+    if (afterQueryCheckpoint.compileDeadlineHit && decision.mode === "use_brain" && !afterQueryInterruption) {
       const interruptedMaxContextChars = resolveInterruptedMaxContextChars(params.maxContextChars);
       const interruptedBrainContext = buildInterruptedBudgetedBrainContext(
         result,
@@ -1053,6 +1104,7 @@ export class BrainAssemblerExtension {
         maxContextChars: interruptedMaxContextChars,
         queryBudgetChars,
         budgetedBrainContext: interruptedBrainContext,
+        queryInterrupted: false,
       }), mode);
       this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
       const brainMessage: AgentMessage | null = interruptedBrainContext.brainContext.length > 0
@@ -1212,6 +1264,7 @@ export class BrainAssemblerExtension {
           maxContextChars: interruptedMaxContextChars,
           queryBudgetChars,
           budgetedBrainContext: interruptedBrainContext,
+          queryInterrupted: false,
         }), mode);
         traceSelectionMetadata.prefetch = prefetchDecision;
         this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);
@@ -1266,6 +1319,7 @@ export class BrainAssemblerExtension {
         maxContextChars: params.maxContextChars,
         queryBudgetChars,
         budgetedBrainContext,
+        queryInterrupted: false,
       }), mode);
       traceSelectionMetadata.prefetch = prefetchDecision;
       this.brain.recordTraceSelectionMetadata(result.trace, traceSelectionMetadata);

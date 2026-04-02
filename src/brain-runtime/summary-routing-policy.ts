@@ -20,18 +20,6 @@ export function decideSummaryRouting(params: {
     return { mode: "ignore", reason: "no summaries present" };
   }
 
-  const broadRecap = [
-    /\brecap\b/i,
-    /\bsummary\b/i,
-    /\boverview\b/i,
-    /\bcatch me up\b/i,
-    /\bwhat happened\b/i,
-    /\btl;dr\b/i,
-  ].some((pattern) => pattern.test(query));
-  if (broadRecap) {
-    return { mode: "summary_suffices", reason: "broad recap question can start from summaries" };
-  }
-
   const branchHeavy =
     (summaryMetadata.branchCount ?? 0) > 1 ||
     (summaryMetadata.snapshotCount ?? 0) > 0 ||
@@ -74,6 +62,15 @@ export function decideSummaryRouting(params: {
     };
   }
 
+  const broadRecap = [
+    /\brecap\b/i,
+    /\bsummary\b/i,
+    /\boverview\b/i,
+    /\bcatch me up\b/i,
+    /\bwhat happened\b/i,
+    /\btl;dr\b/i,
+  ].some((pattern) => pattern.test(query));
+
   const heavilyCompacted =
     summaryMetadata.maxDepth >= 2 ||
     summaryMetadata.condensedCount >= 2 ||
@@ -95,14 +92,23 @@ export function decideSummaryRouting(params: {
     /\bvalue\b/i,
     /\bproof\b/i,
   ].some((pattern) => pattern.test(query));
-  if (precisionSensitive || heavilyCompacted) {
+  if (precisionSensitive) {
     return {
       mode: "expand_to_source",
-      reason: precisionSensitive
-        ? "precision-sensitive query should expand beyond summaries before asserting specifics"
-        : branchHeavy || staleSummaryCount > 0
-          ? "branch-heavy, snapshot-heavy, or stale summary context should expand before making exact claims"
-          : "deeply compacted summary context should expand before making exact claims",
+      reason: "precision-sensitive query should expand beyond summaries before asserting specifics",
+    };
+  }
+
+  if (broadRecap) {
+    return { mode: "summary_suffices", reason: "broad recap question can start from summaries" };
+  }
+
+  if (heavilyCompacted) {
+    return {
+      mode: "expand_to_source",
+      reason: branchHeavy || staleSummaryCount > 0
+        ? "branch-heavy, snapshot-heavy, or stale summary context should expand before making exact claims"
+        : "deeply compacted summary context should expand before making exact claims",
     };
   }
 

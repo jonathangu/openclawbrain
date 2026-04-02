@@ -285,6 +285,7 @@ describe("BrainService", () => {
       compileReportSummary: expect.stringContaining("[brain compile]"),
     }));
     expect(status.lastCompileReportSummary).toEqual(expect.stringContaining("[brain compile]"));
+    expect(status.lastCompileReportSummary).toEqual(expect.stringContaining("q_budget=4000"));
   });
 
   it("reports recent decision histograms plus clip and fail-open rates", async () => {
@@ -1032,7 +1033,7 @@ describe("BrainService", () => {
       compileDeadlineHit: true,
       brainDropReason: "deadline_after_query",
       brainDropStage: "query",
-      queryInterrupted: true,
+      queryInterrupted: false,
       interruptionStage: "query",
       interruptionReason: "soft_compile_deadline",
       servedPartial: true,
@@ -1045,6 +1046,10 @@ describe("BrainService", () => {
       retrievedNodeCount: expect.any(Number),
       fittedNodeCount: expect.any(Number),
       droppedNodeCount: expect.any(Number),
+      chosenStopCount: expect.any(Number),
+      forcedStopCount: expect.any(Number),
+      droppedProposalCount: expect.any(Number),
+      droppedProposalReasons: null,
     }));
     if ((result.brainDecision?.droppedNodeCount ?? 0) > 0) {
       expect(result.brainDecision?.fittingDropReasons).toEqual(expect.objectContaining({
@@ -1062,7 +1067,7 @@ describe("BrainService", () => {
       compileDeadlineHit: true,
       brainDropReason: "deadline_after_query",
       brainDropStage: "query",
-      queryInterrupted: true,
+      queryInterrupted: false,
       interruptionStage: "query",
       interruptionReason: "soft_compile_deadline",
       servedPartial: true,
@@ -1107,7 +1112,7 @@ describe("BrainService", () => {
           budgetChars: queryBudgetChars,
           brainDropReason: "deadline_after_query",
           brainDropStage: "query",
-          queryInterrupted: true,
+          queryInterrupted: false,
           interruptionStage: "query",
           interruptionReason: "soft_compile_deadline",
           servedPartial: true,
@@ -1132,7 +1137,7 @@ describe("BrainService", () => {
       traceId: result.brainDecision?.traceId,
       brainDropReason: "deadline_after_query",
       brainDropStage: "query",
-      queryInterrupted: true,
+      queryInterrupted: false,
       interruptionStage: "query",
       interruptionReason: "soft_compile_deadline",
       servedPartial: true,
@@ -1150,7 +1155,7 @@ describe("BrainService", () => {
       budgetChars: queryBudgetChars,
       brainDropReason: "deadline_after_query",
       brainDropStage: "query",
-      queryInterrupted: true,
+      queryInterrupted: false,
       interruptionStage: "query",
       interruptionReason: "soft_compile_deadline",
       servedPartial: true,

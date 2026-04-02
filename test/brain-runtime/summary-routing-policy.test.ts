@@ -42,4 +42,16 @@ describe("summary routing policy", () => {
     expect(decision.mode).toBe("prefer_typed_memory");
     expect(decision.reason).toContain("typed correction memory");
   });
+
+  it("does not let recap wording hide a current-truth query", () => {
+    const decision = decideSummaryRouting({
+      queryText: "give me the latest summary of what I should use now",
+      summaryMetadata: makeSummaryMetadata({
+        typedMemoryRefCount: 1,
+      }),
+    });
+
+    expect(decision.mode).toBe("prefer_typed_memory");
+    expect(decision.reason).toContain("current-truth");
+  });
 });

@@ -747,9 +747,22 @@ function buildCompileSummaryLine(report: BrainCompileReportV1): string {
   const deadline = report.timing.compileDeadlineMs === null
     ? "n/a"
     : `${report.timing.compileDeadlineMs}ms`;
+  const queryBudgetValue = report.budget.queryBudgetChars ?? report.budget.budgetChars;
+  const queryBudget = queryBudgetValue === null
+    ? "n/a"
+    : `${queryBudgetValue}`;
+  const injectionCap = report.budget.maxContextChars === null
+    ? "n/a"
+    : `${report.budget.maxContextChars}`;
+  const injectedChars = report.budget.injectedChars === null
+    ? "n/a"
+    : `${report.budget.injectedChars}`;
+  const droppedChars = report.budget.droppedChars === null
+    ? "n/a"
+    : `${report.budget.droppedChars}`;
   const bindingMode = report.bindingMode ?? "unknown";
   const mode = report.decision.mode ?? "unknown";
-  return `[brain compile] mode=${mode} stage=${stage} selected=${report.counters.selectedNodeCount} dropped=${report.counters.droppedNodeCount} prefetched=${report.counters.prefetchedNodeCount} compressed=${report.counters.compressedNodeCount} clipped=${clipped} fail_open=${failOpen} elapsed=${elapsed}ms deadline=${deadline} pack=${report.activePackId ?? "n/a"} bind=${bindingMode} trace=${report.traceId ?? "n/a"} ep=${report.episodeId ?? "n/a"}`;
+  return `[brain compile] mode=${mode} stage=${stage} selected=${report.counters.selectedNodeCount} dropped=${report.counters.droppedNodeCount} prefetched=${report.counters.prefetchedNodeCount} compressed=${report.counters.compressedNodeCount} clipped=${clipped} fail_open=${failOpen} q_budget=${queryBudget} inject_cap=${injectionCap} injected=${injectedChars} dropped_chars=${droppedChars} elapsed=${elapsed}ms deadline=${deadline} pack=${report.activePackId ?? "n/a"} bind=${bindingMode} trace=${report.traceId ?? "n/a"} ep=${report.episodeId ?? "n/a"}`;
 }
 
 function buildCompileItem(params: {

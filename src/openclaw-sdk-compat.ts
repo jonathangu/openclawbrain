@@ -20,6 +20,8 @@ import type {
   BrainInterruptionStage,
   BrainObservationBindingMode,
   BrainPrefetchDecision,
+  DecisionTraceBranchOutcomeSummary,
+  InterruptionAccounting,
 } from "./brain-core/types.js";
 
 // Re-export what's actually available from the SDK
@@ -44,6 +46,11 @@ export interface BrainDecisionMetadata {
   compileDeadlineHit?: boolean | null;
   brainDropReason?: BrainDropReason | null;
   brainDropStage?: BrainDropStage | null;
+  chosenStopCount?: number | null;
+  forcedStopCount?: number | null;
+  branchOutcomeSummary?: DecisionTraceBranchOutcomeSummary | null;
+  droppedProposalCount?: number | null;
+  droppedProposalReasons?: Record<string, number> | null;
   budgetFraction?: number | null;
   maxContextChars?: number | null;
   queryBudgetChars?: number | null;
@@ -55,6 +62,7 @@ export interface BrainDecisionMetadata {
   fittedNodeCount?: number | null;
   droppedNodeCount?: number | null;
   fittingDropReasons?: Partial<Record<BrainFittingDropReason, number>> | null;
+  interruptionAccounting?: InterruptionAccounting | null;
   prefetch?: BrainPrefetchDecision | null;
   compileReport?: BrainCompileReportV1 | null;
   compileReportSummary?: string | null;

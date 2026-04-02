@@ -241,6 +241,9 @@ describe("decision trace branch proofs", () => {
         selectedNodeCount: 1,
       }),
     }));
+    expect(compileReport?.summary).toContain("q_budget=");
+    expect(compileReport?.summary).toContain("inject_cap=");
+    expect(compileReport?.summary).toContain("dropped_chars=");
   });
 
   it("attributes clipped selected nodes separately from traversal misses in the compile report", () => {
@@ -312,6 +315,8 @@ describe("decision trace branch proofs", () => {
         },
       }),
     }));
+    expect(compileReport?.summary).toContain("q_budget=");
+    expect(compileReport?.summary).toContain("inject_cap=");
     expect(compileReport?.buckets.selected.map((item) => item.nodeId)).toEqual(["a", "b"]);
     expect(compileReport?.buckets.dropped).toEqual(expect.arrayContaining([
       expect.objectContaining({

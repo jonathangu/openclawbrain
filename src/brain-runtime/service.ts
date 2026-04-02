@@ -21,8 +21,10 @@ import type {
   BrainPrefetchBudgetClass,
   BrainPrefetchDecision,
   BrainPrefetchState,
+  DecisionTraceBranchOutcomeSummary,
   DecisionRouteTrace,
   DecisionTrace,
+  InterruptionAccounting,
   MutationBundleRecord,
   NodeKind,
   RecentPrefetchSummary,
@@ -81,6 +83,30 @@ function cloneObservationServedArtifact(
   return artifact ? JSON.parse(JSON.stringify(artifact)) as BrainObservationRouteMetadata["servedArtifact"] : null;
 }
 
+function cloneBranchOutcomeSummary(
+  summary: DecisionTraceBranchOutcomeSummary | null | undefined,
+): DecisionTraceBranchOutcomeSummary | null {
+  return summary
+    ? {
+        ...summary,
+        terminationReasons: summary.terminationReasons ? { ...summary.terminationReasons } : null,
+      }
+    : null;
+}
+
+function cloneInterruptionAccounting(
+  accounting: InterruptionAccounting | null | undefined,
+): InterruptionAccounting | null {
+  return accounting
+    ? {
+        ...accounting,
+        droppedFrontierNodeIds: [...accounting.droppedFrontierNodeIds],
+        droppedProposalNodeIds: [...accounting.droppedProposalNodeIds],
+        droppedProposalReasons: { ...accounting.droppedProposalReasons },
+      }
+    : null;
+}
+
 type BrainAssemblyDecisionMode =
   | "use_brain"
   | "shadow"
@@ -109,6 +135,11 @@ type BrainAssemblyDecisionSelectionSurface = Pick<
   | "compileDeadlineHit"
   | "brainDropReason"
   | "brainDropStage"
+  | "chosenStopCount"
+  | "forcedStopCount"
+  | "branchOutcomeSummary"
+  | "droppedProposalCount"
+  | "droppedProposalReasons"
   | "budgetFraction"
   | "maxContextChars"
   | "queryBudgetChars"
@@ -244,9 +275,14 @@ function normalizeAssemblyDecision(
       servedArtifact: artifact,
       compileReport,
       compileReportSummary,
+      branchOutcomeSummary: cloneBranchOutcomeSummary(decision.branchOutcomeSummary),
+      droppedProposalReasons: decision.droppedProposalReasons
+        ? { ...decision.droppedProposalReasons }
+        : decision.droppedProposalReasons ?? null,
       fittingDropReasons: decision.fittingDropReasons
         ? { ...decision.fittingDropReasons } as Partial<Record<BrainFittingDropReason, number>>
         : decision.fittingDropReasons ?? null,
+      interruptionAccounting: cloneInterruptionAccounting(decision.interruptionAccounting),
       fitStrategy: decision.fitStrategy ?? null as BrainFitStrategy | null,
       prefetch: decision.prefetch ? normalizePrefetchDecision(decision.prefetch) : null,
     };
@@ -258,9 +294,14 @@ function normalizeAssemblyDecision(
     servedArtifact: normalizedServedArtifact,
     compileReport,
     compileReportSummary,
+    branchOutcomeSummary: cloneBranchOutcomeSummary(decision.branchOutcomeSummary),
+    droppedProposalReasons: decision.droppedProposalReasons
+      ? { ...decision.droppedProposalReasons }
+      : decision.droppedProposalReasons ?? null,
     fittingDropReasons: decision.fittingDropReasons
       ? { ...decision.fittingDropReasons } as Partial<Record<BrainFittingDropReason, number>>
       : decision.fittingDropReasons ?? null,
+    interruptionAccounting: cloneInterruptionAccounting(decision.interruptionAccounting),
     fitStrategy: decision.fitStrategy ?? null as BrainFitStrategy | null,
     prefetch: decision.prefetch ? normalizePrefetchDecision(decision.prefetch) : null,
   };
@@ -768,6 +809,14 @@ export class BrainService {
       selectionMetadata: routeTrace?.selectionMetadata
         ? {
             ...routeTrace.selectionMetadata,
+            branchOutcomeSummary: cloneBranchOutcomeSummary(routeTrace.selectionMetadata.branchOutcomeSummary),
+            droppedProposalReasons: routeTrace.selectionMetadata.droppedProposalReasons
+              ? { ...routeTrace.selectionMetadata.droppedProposalReasons }
+              : routeTrace.selectionMetadata.droppedProposalReasons ?? null,
+            fittingDropReasons: routeTrace.selectionMetadata.fittingDropReasons
+              ? { ...routeTrace.selectionMetadata.fittingDropReasons }
+              : routeTrace.selectionMetadata.fittingDropReasons ?? null,
+            interruptionAccounting: cloneInterruptionAccounting(routeTrace.selectionMetadata.interruptionAccounting),
           }
         : null,
     };
