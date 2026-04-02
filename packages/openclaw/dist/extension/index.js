@@ -2,7 +2,7 @@
  * OpenClawBrain extension template — canonical, pre-built, versioned with the package.
  *
  * The placeholder __ACTIVATION_ROOT__ is replaced by
- * `@openclawbrain/cli`'s `openclawbrain install`
+ * OpenClawBrain's `openclawbrain install`
  * with the real activation root path at install time.
  *
  * Design constraints:
@@ -67,12 +67,12 @@ function formatDiagnosticMessage(input) {
 }
 function announceStartupBreadcrumb() {
     if (isActivationRootPlaceholder(ACTIVATION_ROOT)) {
-        warnOnce("startup-brain-not-yet-loaded", "[openclawbrain] BRAIN NOT YET LOADED: install has not pinned ACTIVATION_ROOT yet. Install @openclawbrain/cli, then run: openclawbrain install --openclaw-home <path>");
+        warnOnce("startup-brain-not-yet-loaded", "[openclawbrain] BRAIN NOT YET LOADED: install has not pinned ACTIVATION_ROOT yet. Install OpenClawBrain, then run: openclawbrain install --openclaw-home <path>");
         return;
     }
     warnOnce("startup-brain-loaded", `[openclawbrain] BRAIN LOADED: runtime hook registered for before_prompt_build (activationRoot=${ACTIVATION_ROOT})`);
 }
-export default function register(api) {
+function register(api) {
     const registration = validateExtensionRegistrationApi(api);
     if (!registration.ok) {
         void reportDiagnostic(registration.diagnostic);
@@ -121,4 +121,11 @@ export default function register(api) {
         });
     }
 }
+const openclawbrainPlugin = {
+    id: "openclawbrain",
+    name: "OpenClawBrain",
+    description: "Learned memory and context from OpenClawBrain",
+    register
+};
+export default openclawbrainPlugin;
 //# sourceMappingURL=index.js.map

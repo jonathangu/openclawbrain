@@ -102,7 +102,7 @@ function announceStartupBreadcrumb(): void {
   );
 }
 
-export default function register(api: unknown) {
+function register(api: unknown) {
   const registration = validateExtensionRegistrationApi(api);
   if (!registration.ok) {
     void reportDiagnostic(registration.diagnostic);
@@ -154,3 +154,12 @@ export default function register(api: unknown) {
     });
   }
 }
+
+const openclawbrainPlugin = {
+  id: "openclawbrain",
+  name: "OpenClawBrain",
+  description: "Learned memory and context from OpenClawBrain",
+  register
+};
+
+export default openclawbrainPlugin;
