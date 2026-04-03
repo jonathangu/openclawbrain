@@ -80,7 +80,7 @@ function createDetailedStatusText(fixture, overrides = {}) {
         `target activation=${overrides.activationRoot ?? fixture.activationRoot} boundary=current_profile`,
         `attachTruth current=current_profile runtime=${overrides.runtimeTruth ?? "proven"} hook=present config=allows_load`,
         overrides.hookLine ?? "hook        install=installed loadable=loadable",
-        overrides.surfaceLine ?? "surface     boundary=split_surfaces skew=split_path_same_version daemon=@openclawbrain/cli@0.4.26 hook=@openclawbrain/openclaw@0.4.26",
+        overrides.surfaceLine ?? "surface     boundary=split_surfaces skew=split_path_same_version daemon=@openclawbrain/cli@0.4.27 hook=@openclawbrain/openclaw@0.4.27",
         overrides.surfacesLine ?? "surfaces    daemonPath=/tmp/openclawbrain/cli.js hookPath=/tmp/.openclaw/extensions/openclawbrain/dist/extension/index.js runtimeGuard=/tmp/.openclaw/extensions/openclawbrain/dist/extension/runtime-guard.js",
         overrides.hotfixLine ?? "hotfix      Patch the daemon runtime path for background watch/learner fixes. Patch the installed hook/runtime-guard paths for OpenClaw load fixes.",
         overrides.guardLine ?? "guard       severity=none actionability=none action=none summary=profile hook is installed and loadable",
