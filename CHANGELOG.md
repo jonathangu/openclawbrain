@@ -4,6 +4,27 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.25
+
+`0.4.25` is the public OpenClawBrain proof/operator follow-up release: the default proof lane is hardened so the canonical `openclawbrain proof --openclaw-home ...` path completes cleanly again, and canonical status/proof surfaces now expose thin feedback and attribution-coverage truth directly.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.25`
+- `@openclawbrain/cli@0.4.25`
+
+**Changes**
+
+- hardens the default proof lane by skipping redundant restart choreography when install already handled restart or explicitly reported restart not required
+- keeps proof closed over real runtime failures while letting healthy runtime truth complete to full proof artifacts without the earlier skip-flag ritual
+- adds canonical `feedback` and `attrCover` lines to `openclawbrain status --detailed`
+- adds a thin operator readout plus thin proof-truth surfaces for feedback, attribution coverage, and replay freshness
+- preserves the one-version / one-install-lane public contract
+
+**Full release note**
+
+- [docs/release-notes-0.4.25.md](docs/release-notes-0.4.25.md)
+
 ## 0.4.24
 
 `0.4.24` is the public repair release that restores the one-version OpenClawBrain contract after the accidental mixed `0.4.23` split-package publish. It keeps the single-source-of-truth operator fixes and realigns both public package surfaces back onto the same visible version.

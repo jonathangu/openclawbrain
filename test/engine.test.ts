@@ -958,10 +958,12 @@ describe("LcmContextEngine.assemble canonical path", () => {
         reason: "deadline_before_query",
         servedPartial: false,
       },
-      queryInterrupted: true,
+      queryInterrupted: false,
       interruptionStage: "query",
       interruptionReason: "deadline_before_query",
       servedPartial: false,
+      brainDropReason: "deadline_before_query",
+      brainDropStage: "decision",
     }));
 
     const status = await brainService!.status();
@@ -973,7 +975,7 @@ describe("LcmContextEngine.assemble canonical path", () => {
         reason: "deadline_before_query",
         servedPartial: false,
       },
-      queryInterrupted: true,
+      queryInterrupted: false,
       interruptionStage: "query",
       interruptionReason: "deadline_before_query",
       servedPartial: false,
