@@ -141,11 +141,14 @@ function buildPrompt(candidates, config) {
         payload
     ].join("\n");
 }
+function isTeacherLabelerCandidateInteraction(interaction) {
+    return interaction.kind === "memory_compiled" || interaction.kind === "message_delivered";
+}
 function collectCandidates(input, config) {
     const decisions = [...(input.serveTimeDecisions ?? [])].sort((left, right) => Date.parse(right.recordedAt) - Date.parse(left.recordedAt));
     const matchServeTimeDecision = createServeTimeDecisionMatcher(decisions);
     return input.normalizedEventExport.interactionEvents
-        .filter((interaction) => interaction.kind === "memory_compiled")
+        .filter((interaction) => isTeacherLabelerCandidateInteraction(interaction))
         .sort((left, right) => Date.parse(right.createdAt) - Date.parse(left.createdAt))
         .map((interaction) => {
         const decision = matchServeTimeDecision(interaction);
