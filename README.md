@@ -27,33 +27,50 @@ Next: [Quick start](docs/getting-started/quick-start.md) · [Troubleshooting](do
 
 ## How it works
 
-1. **Store.** Conversations and explicit user corrections become durable memory.
-2. **Retrieve.** Before each prompt, the runtime injects a bounded slice of context from the current promoted pack.
-3. **Learn.** After the response completes, a background pipeline exports turns, builds a candidate pack, and promotes it when ready.
-4. **Trace.** Operator surfaces record which pack was served and why.
+OpenClawBrain is not a bigger transcript buffer. It is a graph memory system with a learned routing policy.
+
+The short version:
+
+1. **Store the raw material.** Transcripts, corrections, tool traces, status facts, and examples become durable memory.
+2. **Turn memory into a graph.** Nodes hold useful facts and artifacts. Edges start simple, then become meaningful: override, evidence, belongs-with, likely-next-step.
+3. **Traverse with a learned route function.** At runtime, a small local `route_fn` decides which branches to expand, which memories to pull forward, and when to stop.
+4. **Learn off the hot path.** Replay, human feedback, self-learning, harvester signals, and an async teacher label route decisions in the background.
+5. **Promote, then serve.** Candidate packs have to survive replay and health checks. Only promoted packs reach the live runtime.
 
 ### What makes it different
 
-Most retrieval systems find similar past text. OpenClawBrain goes further:
+Most retrieval systems ask, “what past text looks similar?” OpenClawBrain asks a harder question: “what path through memory will help this answer?”
 
-- **Bounded context, not growing context.** The live path serves a compact summary spine plus a protected tail of recent messages. Context size stays predictable.
-- **Immutable promoted packs.** Learning happens in the background. The runtime only serves packs that passed promotion — never partially written state.
-- **Corrections outrank stale recaps.** When a user corrects the agent, that correction takes priority over older summarized material.
-- **Fails open.** If the memory layer is unavailable, the agent answers without it. No hard dependency.
+That is the difference.
+
+- **Graph, not flat recall.** Memory has structure, not just similarity scores.
+- **Learned traversal, not static top-k.** The runtime can branch, stop, and choose better next hops.
+- **Bounded runtime, not prompt sprawl.** The live path serves a small useful slice, not the whole past.
+- **Background learning, not hot-path latency.** The async teacher and dreaming loop improve the system without slowing the current turn.
+- **Promoted packs, not half-written state.** Learning stays off to the side until the result passes replay.
+- **Fails open.** If memory is unavailable, the agent still runs.
 
 ### Mental model
 
-- **Learner** — the background pipeline. It watches events, binds feedback to decisions, builds candidate packs, and updates the routing policy.
-- **Teacher** — an optional local model that produces supervision artifacts off the hot path.
-- **`route_fn`** — the learned policy the runtime uses to pick which graph blocks to inject before prompt build.
+Think of OpenClawBrain as four layers working together:
 
-One pass through the system:
+- **Graph memory** stores corrections, examples, traces, docs, and evidence as nodes and edges.
+- **`route_fn`** is the fast runtime policy that decides what to retrieve now.
+- **Teacher + labels** provide dense background supervision. Human correction stays the highest-trust signal.
+- **Replay + promotion** decide what is safe enough to serve live.
 
-1. Agent turns produce interactions and feedback (corrections, approvals, suppressions).
-2. OpenClawBrain normalizes these into event exports.
-3. The learner builds a candidate pack: graph blocks, embeddings, metadata, and a learned `route_fn`.
-4. Background learning attaches supervision from human feedback and teacher artifacts, then updates routing.
-5. Only promoted packs serve. The runtime injects a small useful slice, and the hot path stays bounded.
+The cool part is the loop:
+
+1. The agent does work.
+2. The system records the result.
+3. Feedback gets attached to the earlier route decisions.
+4. Replay and the async teacher produce better labels.
+5. The route policy improves.
+6. A promoted pack serves a better small slice next time.
+
+If you want the deeper version — graph traversal, route selection, labels, async teacher, dreaming, and promotion — read the full page:
+
+**[How OpenClawBrain works →](https://openclawbrain.ai/how-it-works/)**
 
 ## Scope
 
