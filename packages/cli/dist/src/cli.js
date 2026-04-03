@@ -17,7 +17,7 @@ import { inspectOpenClawBrainHookStatus, inspectOpenClawBrainPluginAllowlist } f
 import { describeOpenClawBrainInstallIdentity, describeOpenClawBrainInstallLayout, findInstalledOpenClawBrainPlugin, getOpenClawBrainKnownPluginIds, normalizeOpenClawBrainPluginsConfig, pinInstalledOpenClawBrainPluginActivationRoot, resolveOpenClawBrainInstallTarget } from "./openclaw-plugin-install.js";
 import { buildOpenClawBrainConvergeRestartPlan, classifyOpenClawBrainConvergeVerification, describeOpenClawBrainConvergeChangeReasons, diffOpenClawBrainConvergeRuntimeFingerprint, finalizeOpenClawBrainConvergeResult, planOpenClawBrainConvergePluginAction, shouldReplaceOpenClawBrainInstallBeforeConverge } from "./install-converge.js";
 import { loadAttachmentPolicyDeclaration, resolveEffectiveAttachmentPolicyTruth, writeAttachmentPolicyDeclaration } from "./attachment-policy-truth.js";
-import { DEFAULT_WATCH_POLL_INTERVAL_SECONDS, buildNormalizedEventExportFromScannedEvents, bootstrapRuntimeAttach, buildOperatorSurfaceReport, clearOpenClawProfileRuntimeLoadProof, compileRuntimeContext, createAsyncTeacherLiveLoop, createOpenClawLocalSessionTail, createRuntimeEventExportScanner, describeCurrentProfileBrainStatus, formatOperatorRollbackReport, listOpenClawProfileRuntimeLoadProofs, loadRuntimeEventExportBundle, loadWatchTeacherSnapshotState, persistWatchTeacherSnapshot, rollbackRuntimeAttach, resolveAttachmentRuntimeLoadProofsPath, resolveOperatorTeacherSnapshotPath, resolveAsyncTeacherLiveLoopSnapshotPath, resolveWatchSessionTailCursorPath, resolveWatchStateRoot, resolveWatchTeacherSnapshotPath, scanLiveEventExport, scanRecordedSession, summarizeLearningPathFromMaterialization, summarizeNormalizedEventExportLabelFlow, summarizeTeacherNoArtifactCycle, writeScannedEventExportBundle } from "./index.js";
+import { DEFAULT_WATCH_POLL_INTERVAL_SECONDS, buildNormalizedEventExportFromScannedEvents, bootstrapRuntimeAttach, clearOpenClawProfileRuntimeLoadProof, compileRuntimeContext, createAsyncTeacherLiveLoop, createOpenClawLocalSessionTail, createRuntimeEventExportScanner, describeCurrentProfileBrainStatusWithReport, formatOperatorRollbackReport, listOpenClawProfileRuntimeLoadProofs, loadRuntimeEventExportBundle, loadWatchTeacherSnapshotState, persistWatchTeacherSnapshot, rollbackRuntimeAttach, resolveAttachmentRuntimeLoadProofsPath, resolveOperatorTeacherSnapshotPath, resolveAsyncTeacherLiveLoopSnapshotPath, resolveWatchSessionTailCursorPath, resolveWatchStateRoot, resolveWatchTeacherSnapshotPath, scanLiveEventExport, scanRecordedSession, summarizeLearningPathFromMaterialization, summarizeNormalizedEventExportLabelFlow, summarizeTeacherNoArtifactCycle, writeScannedEventExportBundle } from "./index.js";
 import { appendLearningUpdateLogs } from "./learning-spine.js";
 import { buildPassiveLearningSessionExportFromOpenClawSessionStore } from "./local-session-passive-learning.js";
 import { reindexMaterializationCandidateWithEmbedder } from "./materialization-embedder.js";
@@ -1692,8 +1692,7 @@ function inspectInstallConvergeVerification(parsed) {
         openclawHome: parsed.openclawHome,
         ...(targetInspection.profileId === null ? {} : { profileId: targetInspection.profileId })
     };
-    const status = describeCurrentProfileBrainStatus(operatorInput);
-    const report = buildOperatorSurfaceReport(operatorInput);
+    const { status, report } = describeCurrentProfileBrainStatusWithReport(operatorInput);
     const normalizedStatusAndReport = applyAttachmentPolicyTruth(status, report);
     const installHook = summarizeStatusInstallHook(parsed.openclawHome);
     const attachmentTruth = summarizeStatusAttachmentTruth({
@@ -6364,9 +6363,10 @@ export function runOperatorCli(argv = process.argv.slice(2)) {
             : { profileId: targetInspection.profileId }),
         teacherSnapshotPath: resolveOperatorTeacherSnapshotPath(activationRoot, statusOrRollback.input.teacherSnapshotPath)
     };
-    const status = describeCurrentProfileBrainStatus(operatorInput);
+    const statusWithReport = describeCurrentProfileBrainStatusWithReport(operatorInput);
+    const status = statusWithReport.status;
     const tracedLearning = buildTracedLearningStatusSurface(activationRoot);
-    const normalizedStatusAndReport = applyAttachmentPolicyTruth(status, statusOrRollback.json ? null : buildOperatorSurfaceReport(operatorInput));
+    const normalizedStatusAndReport = applyAttachmentPolicyTruth(status, statusOrRollback.json ? null : statusWithReport.report);
     if (statusOrRollback.json) {
         console.log(JSON.stringify({
             ...normalizedStatusAndReport.status,

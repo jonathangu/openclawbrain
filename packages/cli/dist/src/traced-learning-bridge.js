@@ -258,6 +258,169 @@ function buildDerivedAttributionCoverage(db) {
             : `completed_without_evaluation=${completedWithoutEvaluationCount}; ready=${readyCount}, delayed=${delayedCount}, budget_deferred=${budgetDeferredCount}`
     };
 }
+function loadJsonFile(pathname) {
+    if (!existsSync(pathname)) {
+        return null;
+    }
+    try {
+        return JSON.parse(readFileSync(pathname, "utf8"));
+    }
+    catch {
+        return null;
+    }
+}
+function resolveActivePackPaths(activationRoot) {
+    const pointers = toRecord(loadJsonFile(path.join(path.resolve(activationRoot), "activation-pointers.json")));
+    const active = toRecord(pointers?.active);
+    const packRootDir = normalizeOptionalString(active?.packRootDir)
+        ?? (normalizeOptionalString(active?.packId) === null
+            ? null
+            : path.join(path.resolve(activationRoot), "packs", String(active.packId)));
+    const manifestPath = normalizeOptionalString(active?.manifestPath)
+        ?? (packRootDir === null ? null : path.join(packRootDir, "manifest.json"));
+    return {
+        packRootDir,
+        manifestPath
+    };
+}
+function buildActivePackFeedbackSummary(activationRoot) {
+    const active = resolveActivePackPaths(activationRoot);
+    if (active.packRootDir === null || active.manifestPath === null) {
+        return null;
+    }
+    const manifest = toRecord(loadJsonFile(active.manifestPath));
+    const runtimeAssets = toRecord(manifest?.runtimeAssets);
+    const router = toRecord(runtimeAssets?.router);
+    const routerArtifactPath = normalizeOptionalString(router?.artifactPath);
+    if (routerArtifactPath === null) {
+        return null;
+    }
+    const routerPath = path.isAbsolute(routerArtifactPath)
+        ? routerArtifactPath
+        : path.join(active.packRootDir, routerArtifactPath);
+    const routerArtifact = toRecord(loadJsonFile(routerPath));
+    const traces = Array.isArray(routerArtifact?.traces) ? routerArtifact.traces : [];
+    const verdictCounts = {
+        helpfulCount: 0,
+        irrelevantCount: 0,
+        harmfulCount: 0
+    };
+    for (const trace of traces) {
+        const traceRecord = toRecord(trace);
+        if (normalizeOptionalString(traceRecord?.supervisionKind) === "route_trace") {
+            continue;
+        }
+        const verdict = classifyContextFeedbackVerdict(Number(traceRecord?.reward ?? 0));
+        if (verdict === "helpful") {
+            verdictCounts.helpfulCount += 1;
+        }
+        else if (verdict === "harmful") {
+            verdictCounts.harmfulCount += 1;
+        }
+        else {
+            verdictCounts.irrelevantCount += 1;
+        }
+    }
+    const routeTraceCount = normalizeCount(routerArtifact?.training?.routeTraceCount) || traces.length;
+    const supervisedTraceCount = verdictCounts.helpfulCount + verdictCounts.irrelevantCount + verdictCounts.harmfulCount;
+    if (routeTraceCount === 0 && supervisedTraceCount === 0) {
+        return null;
+    }
+    return {
+        visible: true,
+        ...verdictCounts,
+        supervisedTraceCount,
+        routeTraceCount,
+        latestAgentIdentity: null,
+        latestLabel: null,
+        detail: routeTraceCount === 0
+            ? "no active-pack traced routes are visible"
+            : `${verdictCounts.helpfulCount} helpful, ${verdictCounts.irrelevantCount} irrelevant, ${verdictCounts.harmfulCount} harmful; ${supervisedTraceCount}/${routeTraceCount} active-pack traced routes are supervised`
+    };
+}
+function readIntegerNote(notes, prefix) {
+    if (!Array.isArray(notes)) {
+        return null;
+    }
+    const entry = notes.find((candidate) => typeof candidate === "string" && candidate.startsWith(prefix));
+    if (typeof entry !== "string") {
+        return null;
+    }
+    const parsed = Number.parseInt(entry.slice(prefix.length), 10);
+    return Number.isFinite(parsed) ? parsed : null;
+}
+function buildWatchSnapshotAttributionCoverage(activationRoot) {
+    const snapshot = toRecord(loadJsonFile(path.join(path.resolve(activationRoot), "watch", "teacher-snapshot.json")));
+    const notes = Array.isArray(snapshot?.notes)
+        ? snapshot.notes
+        : Array.isArray(snapshot?.snapshot?.diagnostics?.notes)
+            ? snapshot.snapshot.diagnostics.notes
+            : Array.isArray(snapshot?.diagnostics?.notes)
+                ? snapshot.diagnostics.notes
+                : [];
+    const readyCount = readIntegerNote(notes, "teacher_feedback_eligible=");
+    const delayedCount = readIntegerNote(notes, "teacher_feedback_delayed=");
+    const budgetDeferredCount = readIntegerNote(notes, "teacher_feedback_budgeted_out=");
+    const budgetPerTick = readIntegerNote(notes, "teacher_budget=");
+    const delayMs = readIntegerNote(notes, "teacher_delay_ms=");
+    if (readyCount === null && delayedCount === null && budgetDeferredCount === null && budgetPerTick === null && delayMs === null) {
+        return null;
+    }
+    return {
+        visible: true,
+        gatingVisible: budgetPerTick !== null || delayMs !== null,
+        completedWithoutEvaluationCount: 0,
+        readyCount: normalizeCount(readyCount),
+        delayedCount: normalizeCount(delayedCount),
+        budgetDeferredCount: normalizeCount(budgetDeferredCount),
+        detail: `watch sparse-feedback queue: completed_without_evaluation=0, ready=${normalizeCount(readyCount)}, delayed=${normalizeCount(delayedCount)}, budget_deferred=${normalizeCount(budgetDeferredCount)}`
+    };
+}
+function shouldPreferActivationFeedbackSummary(current, fallback) {
+    if (fallback === null) {
+        return false;
+    }
+    if (current.visible !== true) {
+        return true;
+    }
+    return normalizeCount(current.supervisedTraceCount) === 0 && normalizeCount(fallback.supervisedTraceCount) > 0;
+}
+function shouldPreferWatchAttributionCoverage(current, fallback) {
+    if (fallback === null) {
+        return false;
+    }
+    if (current.visible !== true || current.gatingVisible !== true) {
+        return normalizeCount(fallback.readyCount) > 0
+            || normalizeCount(fallback.delayedCount) > 0
+            || normalizeCount(fallback.budgetDeferredCount) > 0;
+    }
+    const currentKnown = normalizeCount(current.completedWithoutEvaluationCount)
+        + normalizeCount(current.readyCount)
+        + normalizeCount(current.delayedCount)
+        + normalizeCount(current.budgetDeferredCount);
+    const fallbackKnown = normalizeCount(fallback.completedWithoutEvaluationCount)
+        + normalizeCount(fallback.readyCount)
+        + normalizeCount(fallback.delayedCount)
+        + normalizeCount(fallback.budgetDeferredCount);
+    return currentKnown === 0 && fallbackKnown > 0;
+}
+function enrichBridgeWithActivationTruth(activationRoot, bridge) {
+    const feedbackSummary = buildActivePackFeedbackSummary(activationRoot);
+    const attributionCoverage = buildWatchSnapshotAttributionCoverage(activationRoot);
+    if (!shouldPreferActivationFeedbackSummary(bridge.feedbackSummary, feedbackSummary)
+        && !shouldPreferWatchAttributionCoverage(bridge.attributionCoverage, attributionCoverage)) {
+        return bridge;
+    }
+    return normalizeBridgePayload({
+        ...bridge,
+        feedbackSummary: shouldPreferActivationFeedbackSummary(bridge.feedbackSummary, feedbackSummary)
+            ? feedbackSummary
+            : bridge.feedbackSummary,
+        attributionCoverage: shouldPreferWatchAttributionCoverage(bridge.attributionCoverage, attributionCoverage)
+            ? attributionCoverage
+            : bridge.attributionCoverage
+    });
+}
 function normalizeLastInterruptionSummary(value) {
     if (value === null || typeof value !== "object" || Array.isArray(value)) {
         return null;
@@ -995,12 +1158,12 @@ export function buildTracedLearningStatusSurface(activationRoot, options = {}) {
     const persisted = loadBrainStoreTracedLearningBridge(options);
     const runtime = loadTracedLearningBridge(activationRoot);
     if (persisted.bridge !== null) {
-        return buildStatusSurface(persisted.path, mergeCanonicalStatusBridge(persisted.bridge, runtime), {
+        return buildStatusSurface(persisted.path, enrichBridgeWithActivationTruth(activationRoot, mergeCanonicalStatusBridge(persisted.bridge, runtime)), {
             runtimeState: describeBridgeRuntimeState(runtime)
         });
     }
     if (runtime.bridge !== null) {
-        return buildStatusSurface(runtime.path, runtime.bridge);
+        return buildStatusSurface(runtime.path, enrichBridgeWithActivationTruth(activationRoot, runtime.bridge));
     }
     if (persisted.error !== null) {
         return defaultSurface(persisted.path, "brain_store_unreadable", persisted.error);

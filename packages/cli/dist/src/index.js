@@ -8031,9 +8031,15 @@ export function buildOperatorSurfaceReport(input) {
         findings
     };
 }
-export function describeCurrentProfileBrainStatus(input) {
+export function describeCurrentProfileBrainStatusWithReport(input) {
     const report = buildOperatorSurfaceReport(input);
-    return buildCurrentProfileBrainStatusFromReport(report, report.manyProfile.declaredAttachmentPolicy, normalizeOptionalString(input.profileId) ?? null);
+    return {
+        report,
+        status: buildCurrentProfileBrainStatusFromReport(report, report.manyProfile.declaredAttachmentPolicy, normalizeOptionalString(input.profileId) ?? null)
+    };
+}
+export function describeCurrentProfileBrainStatus(input) {
+    return describeCurrentProfileBrainStatusWithReport(input).status;
 }
 export function formatOperatorRollbackReport(result) {
     const header = result.allowed ? (result.dryRun ? "ROLLBACK ready" : "ROLLBACK ok") : "ROLLBACK blocked";

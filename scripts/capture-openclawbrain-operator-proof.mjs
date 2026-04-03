@@ -5,6 +5,13 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import process from "node:process";
+import { fileURLToPath, pathToFileURL } from "node:url";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const repoRoot = path.resolve(__dirname, "..");
+const workspaceRoot = path.resolve(repoRoot, "..");
+const DEFAULT_OUTPUT_PARENT = path.join(workspaceRoot, "artifacts");
 
 function usage() {
   process.stderr.write(
@@ -14,7 +21,7 @@ function usage() {
       "Options:",
       "  --cli-version <version>     Use npx @openclawbrain/cli@<version> (default: latest @openclawbrain/cli)",
       "  --activation-root <path>    Override activation root when status parsing is insufficient",
-      "  --output-dir <path>         Bundle directory to write (default: ./artifacts/operator-proof-<timestamp>)",
+      `  --output-dir <path>         Bundle directory to write (default: ${path.relative(repoRoot, path.join(DEFAULT_OUTPUT_PARENT, "operator-proof-<timestamp>"))})`,
       "  --skip-install              Do not run install step",
       "  --skip-restart              Do not run gateway restart step",
       "  --plugin-id <id>            Plugin id for inspect (default: openclawbrain)",
@@ -100,7 +107,7 @@ function resolveOutputDir(options) {
   if (options.outputDir) {
     return path.resolve(options.outputDir);
   }
-  return path.resolve(process.cwd(), "artifacts", `operator-proof-${timestampToken()}`);
+  return path.join(DEFAULT_OUTPUT_PARENT, `operator-proof-${timestampToken()}`);
 }
 
 function writeText(filePath, text) {
@@ -593,4 +600,8 @@ function main() {
   process.stdout.write(`${JSON.stringify({ ok: true, bundleDir, verdict }, null, 2)}\n`);
 }
 
-main();
+export { DEFAULT_OUTPUT_PARENT, resolveOutputDir };
+
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href) {
+  main();
+}

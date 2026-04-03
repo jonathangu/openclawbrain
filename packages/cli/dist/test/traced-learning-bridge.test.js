@@ -95,6 +95,85 @@ function makeLastAssemblyDecision(overrides = {}) {
         ...overrides
     };
 }
+function writeActivePackFixture(activationRoot, options = {}) {
+    const packId = options.packId ?? "pack-active";
+    const packRoot = path.join(activationRoot, "packs", packId);
+    const manifestPath = path.join(packRoot, "manifest.json");
+    const routerPath = path.join(packRoot, "router", "model.json");
+    mkdirSync(path.dirname(routerPath), { recursive: true });
+    writeFileSync(path.join(activationRoot, "activation-pointers.json"), `${JSON.stringify({
+        contract: "activation_pointers.v1",
+        active: {
+            slot: "active",
+            packId,
+            packRootDir: packRoot,
+            manifestPath
+        },
+        candidate: null,
+        previous: null
+    }, null, 2)}\n`);
+    writeFileSync(manifestPath, `${JSON.stringify({
+        contract: "artifact_manifest.v1",
+        packId,
+        runtimeAssets: {
+            router: {
+                kind: "artifact",
+                identity: `${packId}:route_fn`,
+                artifactPath: "router/model.json"
+            }
+        }
+    }, null, 2)}\n`);
+    writeFileSync(routerPath, `${JSON.stringify({
+        routerIdentity: `${packId}:route_fn`,
+        strategy: "learned_route_fn_v1",
+        trainedAt: "2026-04-02T02:50:43.775Z",
+        requiresLearnedRouting: true,
+        training: {
+            method: "policy_gradient_v1",
+            status: "updated",
+            routeTraceCount: options.routeTraceCount ?? 5,
+            supervisionCount: options.supervisionCount ?? 2,
+            updateCount: 3
+        },
+        traces: options.traces ?? [
+            {
+                traceId: "trace-1",
+                sourceEventId: "evt-1",
+                supervisionKind: "route_trace",
+                reward: 0
+            },
+            {
+                traceId: "trace-2",
+                sourceEventId: "evt-2",
+                supervisionKind: "route_trace",
+                reward: 0
+            },
+            {
+                traceId: "trace-3",
+                sourceEventId: "evt-3",
+                supervisionKind: "human_feedback",
+                reward: 1
+            },
+            {
+                traceId: "trace-4",
+                sourceEventId: "evt-4",
+                supervisionKind: "human_feedback",
+                reward: 0
+            },
+            {
+                traceId: "trace-5",
+                sourceEventId: "evt-5",
+                supervisionKind: "human_feedback",
+                reward: -1
+            }
+        ]
+    }, null, 2)}\n`);
+}
+function writeWatchTeacherSnapshotFixture(activationRoot, notes) {
+    const snapshotPath = path.join(activationRoot, "watch", "teacher-snapshot.json");
+    mkdirSync(path.dirname(snapshotPath), { recursive: true });
+    writeFileSync(snapshotPath, `${JSON.stringify({ notes }, null, 2)}\n`);
+}
 
 test("traced-learning bridge round-trips learn counters under activation-root/watch", (t) => {
     const activationRoot = createTempActivationRoot(t);
@@ -369,6 +448,73 @@ test("brain-store traced-learning surface derives live feedback and attribution 
             delayedCount: 1,
             budgetDeferredCount: 1,
             detail: "completed_without_evaluation=1; ready=2, delayed=1, budget_deferred=1"
+        });
+    }
+    finally {
+        db.close();
+    }
+});
+
+test("status surface falls back to active-pack supervision and watch teacher queue when brain tables are empty", (t) => {
+    const activationRoot = createTempActivationRoot(t);
+    const { brainRoot, db } = createBrainStore(t);
+    try {
+        persistBrainStoreTracedLearningBridge({
+            updatedAt: "2026-04-03T01:23:34.349Z",
+            routeTraceCount: 3111,
+            supervisionCount: 58,
+            routerUpdateCount: 65,
+            teacherArtifactCount: 748,
+            pgVersionRequested: "v1",
+            pgVersionUsed: "v1",
+            decisionLogCount: 0,
+            fallbackReason: "serve_time_decision_log_tail_truncated+oversized_lines_skipped",
+            routerNoOpReason: null,
+            materializedPackId: null,
+            promoted: false,
+            baselinePersisted: false,
+            source: {
+                command: "watch"
+            }
+        }, {
+            env: {
+                OPENCLAWBRAIN_ROOT: brainRoot
+            }
+        });
+        writeActivePackFixture(activationRoot);
+        writeWatchTeacherSnapshotFixture(activationRoot, [
+            "teacher_queue_depth=0",
+            "teacher_freshness=fresh",
+            "teacher_budget=32",
+            "teacher_delay_ms=0",
+            "teacher_feedback_eligible=83",
+            "teacher_feedback_delayed=2",
+            "teacher_feedback_budgeted_out=51"
+        ]);
+        const surface = buildTracedLearningStatusSurface(activationRoot, {
+            env: {
+                OPENCLAWBRAIN_ROOT: brainRoot
+            }
+        });
+        assert.deepEqual(surface.feedbackSummary, {
+            visible: true,
+            helpfulCount: 1,
+            irrelevantCount: 1,
+            harmfulCount: 1,
+            supervisedTraceCount: 3,
+            routeTraceCount: 5,
+            latestAgentIdentity: null,
+            latestLabel: null,
+            detail: "1 helpful, 1 irrelevant, 1 harmful; 3/5 active-pack traced routes are supervised"
+        });
+        assert.deepEqual(surface.attributionCoverage, {
+            visible: true,
+            gatingVisible: true,
+            completedWithoutEvaluationCount: 0,
+            readyCount: 83,
+            delayedCount: 2,
+            budgetDeferredCount: 51,
+            detail: "watch sparse-feedback queue: completed_without_evaluation=0, ready=83, delayed=2, budget_deferred=51"
         });
     }
     finally {
