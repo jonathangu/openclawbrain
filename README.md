@@ -1,12 +1,16 @@
 # OpenClawBrain
 
-A graph-brain memory layer for OpenClaw agents that keeps useful context bounded.
+**Better agent performance. Lower cost pressure.**
 
-OpenClawBrain organizes memories and tool-call history into a graph, retrieves a small useful slice before the prompt is built, and learns from outcomes in the background. The live path serves promoted packs only, so latency stays predictable and the hot path does not call a live LLM on every traversal hop. Publicly, the story is performance first, cost second, mechanism third: better agent performance is the win, lower cost is plausible, and bounded useful memory plus background learning are the mechanism. Checked replay is already better than `no_brain` on real traces, but the replay set is still small and mixed, so direct spend savings and `learned_route` dominance are not proven. If the memory layer is unavailable, the agent keeps running.
+OpenClawBrain is a memory layer for [OpenClaw](https://github.com/anthropics/openclaw) agents. It remembers what worked, learns from corrections, and injects bounded, useful context before every prompt — so your agent stops repeating the same mistakes and starts getting better over time.
 
-Status: actively developed. See [CHANGELOG.md](CHANGELOG.md) for the current public OpenClawBrain release and release history.
+The mechanism: a background pipeline watches agent interactions, binds feedback to past decisions, and builds compact memory packs. Only promoted packs reach the live path. The agent gets continuity without unbounded context growth, and latency stays predictable because the hot path never calls a live LLM. If the memory layer goes down, the agent keeps running.
 
-Legacy install warning: if you reached this repo through the retired `@jonathangu/openclawbrain` compatibility package, stop there. The canonical public lane is:
+Current version: **0.4.26** · [Changelog](CHANGELOG.md) · [Claims boundary](CLAIMS.md)
+
+## Install
+
+Prerequisites: a working OpenClaw installation, Node.js 20+, npm.
 
 ```bash
 openclawbrain install --openclaw-home ~/.openclaw
@@ -15,131 +19,75 @@ openclawbrain status --openclaw-home ~/.openclaw --detailed
 openclawbrain proof --openclaw-home ~/.openclaw
 ```
 
-Do not use the old compatibility-package binary for modern install/repair/status flows.
+`install` writes the hook for your OpenClaw home. `status --detailed` verifies the wiring. `proof` captures a durable evidence bundle you can inspect or keep.
 
-[Documentation](docs/README.md) · [Quick start](docs/getting-started/quick-start.md) · [Claims boundary](CLAIMS.md) · [Changelog](CHANGELOG.md) · [Contributing](CONTRIBUTING.md)
+A healthy install reports the profile as attached. After the first promoted pack is available, detailed status reports `serveState=serving_active_pack`.
 
-## Start Here
-
-| Audience | Start here | What you get |
-| --- | --- | --- |
-| Evaluator | [How it works](#how-it-works) | A fast read on what OpenClawBrain is and how it behaves |
-| Operator | [Install and verify](#install-and-verify) | The one-command front door and the next docs to read |
-| Contributor | [For contributors](#for-contributors) | Architecture docs, setup, and contribution boundaries |
+Next: [Quick start](docs/getting-started/quick-start.md) · [Troubleshooting](docs/operating/troubleshooting.md) · [Lifecycle](docs/lifecycle.md)
 
 ## How it works
 
-1. **Store.** OpenClawBrain keeps conversation history and explicit user corrections as durable memory.
-2. **Retrieve.** Before OpenClaw builds a prompt, the installed extension compiles a bounded slice of context from the currently promoted pack.
-3. **Learn.** After the response path completes, the learning pipeline exports turns, builds a candidate pack, and only serves it after promotion.
-4. **Trace.** Operator surfaces record why the serve path chose the current pack and whether learned routing is active.
+1. **Store.** Conversations and explicit user corrections become durable memory.
+2. **Retrieve.** Before each prompt, the runtime injects a bounded slice of context from the current promoted pack.
+3. **Learn.** After the response completes, a background pipeline exports turns, builds a candidate pack, and promotes it when ready.
+4. **Trace.** Operator surfaces record which pack was served and why.
 
-What makes it different:
+### What makes it different
 
-- Useful context stays bounded on the live path: the serve-time hot context is the summary spine plus a protected fresh tail of raw messages, and learning stays off that path so latency stays predictable.
-- The runtime serves promoted packs, not partially written state.
-- Explicit user corrections can outrank stale recap material when they conflict.
-- The extension fails open. When the memory layer is unavailable, the agent still answers.
+Most retrieval systems find similar past text. OpenClawBrain goes further:
 
-### Mental model: learner, teacher, and `route_fn`
+- **Bounded context, not growing context.** The live path serves a compact summary spine plus a protected tail of recent messages. Context size stays predictable.
+- **Immutable promoted packs.** Learning happens in the background. The runtime only serves packs that passed promotion — never partially written state.
+- **Corrections outrank stale recaps.** When a user corrects the agent, that correction takes priority over older summarized material.
+- **Fails open.** If the memory layer is unavailable, the agent answers without it. No hard dependency.
 
-If you only remember one explanation, use this one:
+### Mental model
 
-- **Learner** = the background OpenClawBrain pipeline. It watches exported events, binds feedback to prior decisions, builds candidate packs, and updates the learned routing policy.
-- **Teacher** = the optional local model that produces extra supervision artifacts off the hot path.
-- **`route_fn`** = the learned policy artifact the live runtime uses to decide which bounded graph blocks to inject before prompt build.
+- **Learner** — the background pipeline. It watches events, binds feedback to decisions, builds candidate packs, and updates the routing policy.
+- **Teacher** — an optional local model that produces supervision artifacts off the hot path.
+- **`route_fn`** — the learned policy the runtime uses to pick which graph blocks to inject before prompt build.
 
-In one pass:
+One pass through the system:
 
-1. OpenClaw turns produce interactions plus explicit feedback such as corrections, teachings, approvals, and suppressions.
-2. OpenClawBrain normalizes those into event exports and serve-time route traces.
-3. The learner builds a candidate pack with graph blocks, embeddings, structural metadata, and a learned `route_fn`.
-4. Background learning attaches supervision from human feedback, harvested labels, and teacher artifacts, then updates the routing policy.
-5. Only promoted packs serve on the live path. The runtime injects a small useful slice of context, and the hot path stays bounded instead of calling a live LLM on every traversal hop. It fails open if nothing safe or useful is available.
+1. Agent turns produce interactions and feedback (corrections, approvals, suppressions).
+2. OpenClawBrain normalizes these into event exports.
+3. The learner builds a candidate pack: graph blocks, embeddings, metadata, and a learned `route_fn`.
+4. Background learning attaches supervision from human feedback and teacher artifacts, then updates routing.
+5. Only promoted packs serve. The runtime injects a small useful slice, and the hot path stays bounded.
 
-That is why OpenClawBrain is more than retrieval: it does not just find similar past text. It learns which context helps, keeps that learning off the hot path, and only serves immutable promoted packs.
+## Scope
 
-## Install and verify
+OpenClawBrain is the memory layer. It does not own the gateway.
 
-Prerequisites:
-
-- A working OpenClaw installation
-- Node.js 20+
-- npm
-
-The public operator front door is one command pinned to one OpenClaw home:
-
-```bash
-openclawbrain install --openclaw-home ~/.openclaw
-openclaw gateway restart
-openclawbrain status --openclaw-home ~/.openclaw --detailed
-```
-
-`install` is the public front door for the selected home. It writes or repairs the hook for that home and pins the activation root the runtime serves from. `status --detailed` is the quick verification surface.
-
-Activation and teacher wiring are separate checks. Seeing `BRAIN LOADED` or an attached home means the runtime hook is wired correctly for that OpenClaw home. It does **not** by itself prove that an optional teacher model is configured. Teacher wiring lives on its own config path (`brainTeacherEnabled`, `brainTeacherProvider`, `brainTeacherModel`) and should be verified through status fields such as `teacherConfigured`, `teacherProvider`, `teacherModel`, and `teacherConfigError`.
-
-When you need durable operator evidence today, run the proof surface for the same home:
-
-```bash
-openclawbrain proof --openclaw-home ~/.openclaw
-```
-
-The intended canonical lane is the same install command with optional `--proof`. Until that lands cleanly across every operator surface, proof stays a separate follow-up command. `proof` writes `summary.md`, `steps.json`, `verdict.json`, raw step logs, and proof pointers under one bundle directory.
-
-If you bypass the canonical install lane and do manual plugin surgery anyway, rerun `openclawbrain install --openclaw-home ~/.openclaw` before trusting the host again. That is maintainer-only recovery, not the public product story.
-
-A healthy install or repair should report the profile as attached. After the first promoted pack is available, detailed status should also report `serveState=serving_active_pack`. If you are using an optional teacher model, the same detailed status should also show `teacherConfigured=true`, the expected provider/model, and `teacherConfigError=null`.
-
-Next docs:
-
-- [Quick start](docs/getting-started/quick-start.md)
-- [Troubleshooting](docs/operating/troubleshooting.md)
-- [Lifecycle](docs/lifecycle.md)
-
-## Scope and boundaries
-
-OpenClawBrain is a memory layer for OpenClaw. It does not own the gateway.
-
-It does:
-
-- Provide one operator front door for install and repair on a selected OpenClaw home
-- Store sessions and explicit corrections as durable memory
-- Build candidate packs in the background and promote them when ready
-- Keep the live path on promoted packs so useful context stays bounded and latency stays predictable
-- Expose status, rollback, detach, uninstall, and learning inspection commands
+**Does:**
+- Install, repair, and manage the memory hook for a selected OpenClaw home
+- Store sessions and corrections as durable memory
+- Build and promote memory packs in the background
+- Keep the live path bounded and latency predictable
+- Expose status, rollback, detach, uninstall, and learning inspection
 - Fail open when memory compilation cannot safely add context
 
-It does not:
-
-- Start, stop, or reconfigure the OpenClaw gateway for you
-- Edit LaunchAgent files or gateway environment files
-- Claim same-gateway multi-profile attachment as a proven public lane
-- Claim shared-root concurrent write safety
+**Does not:**
+- Start, stop, or reconfigure the OpenClaw gateway
+- Edit LaunchAgent or gateway environment files
+- Claim multi-profile attachment or shared-root concurrent writes as proven
 
 ## Documentation
 
-Start with the index at [docs/README.md](docs/README.md).
+Start at [docs/README.md](docs/README.md).
 
-Key docs:
+| Topic | Link |
+| --- | --- |
+| Quick start | [docs/getting-started/quick-start.md](docs/getting-started/quick-start.md) |
+| Troubleshooting | [docs/operating/troubleshooting.md](docs/operating/troubleshooting.md) |
+| Architecture | [docs/architecture/overview.md](docs/architecture/overview.md) |
+| Learning pipeline | [docs/architecture/learning-pipeline.md](docs/architecture/learning-pipeline.md) |
+| Fail-open design | [docs/architecture/fail-open.md](docs/architecture/fail-open.md) |
+| Deep dive | [docs/architecture/deep-dive.md](docs/architecture/deep-dive.md) |
 
-- [Quick start](docs/getting-started/quick-start.md) for the one-command install path
-- [Troubleshooting](docs/operating/troubleshooting.md) for the most common operator issues
-- [Architecture overview](docs/architecture/overview.md) for the high-level system design
-- [Learning pipeline](docs/architecture/learning-pipeline.md) for export, candidate packs, promotion, and rollback
-- [Fail-open design](docs/architecture/fail-open.md) for fallback behavior
-- [Architecture deep dive](docs/architecture/deep-dive.md) for the existing architecture notes
+## Contributing
 
-## For contributors
-
-If you want to work on the repo, start here:
-
-- [CONTRIBUTING.md](CONTRIBUTING.md)
-- [docs/architecture/overview.md](docs/architecture/overview.md)
-- [docs/architecture/deep-dive.md](docs/architecture/deep-dive.md)
-- [CLAIMS.md](CLAIMS.md)
-
-Repo setup and validation:
+Start with [CONTRIBUTING.md](CONTRIBUTING.md), then read the [architecture overview](docs/architecture/overview.md) and [claims boundary](CLAIMS.md).
 
 ```bash
 npm install
