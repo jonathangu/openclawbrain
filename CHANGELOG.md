@@ -4,6 +4,27 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.27
+
+`0.4.27` is the closed-loop repair release: the historical serve-decision recovery path is repaired, learner/materialization inputs are compacted so the loop can progress without hauling oversized raw payloads, operator status surfaces are more honest about learning progress and runtime truth, and the live host now proves nonzero supervision/router updates with a promoted pack.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.27`
+- `@openclawbrain/cli@0.4.27`
+
+**Changes**
+
+- repairs the closed learning loop so historical serve decisions can still be recovered for supervision even after they fall out of the bounded tail
+- admits `message_delivered` interactions into the teacher labeler so real user feedback is no longer starved out by one interaction-shape seam
+- compacts serve-decision / learner-materialization inputs and clarifies operator health/runtime-truth surfaces instead of hiding split-surface uncertainty
+- proves the repair live on host with nonzero supervision/router updates and promoted pack `pack-213597b7`
+- preserves the one-version / one-install-lane public contract
+
+**Full release note**
+
+- [docs/release-notes-0.4.27.md](docs/release-notes-0.4.27.md)
+
 ## 0.4.26
 
 `0.4.26` is the post-0.4.25 hardening release: proof capture defaults now avoid repo dirt, teacher status reuses one live operator snapshot instead of double-sampling watch state, and canonical `feedback` / `attrCover` surfaces now expose real on-disk supervision/queue truth on split-package hosts instead of falsely reading all-zero.
