@@ -4,6 +4,27 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.26
+
+`0.4.26` is the post-0.4.25 hardening release: proof capture defaults now avoid repo dirt, teacher status reuses one live operator snapshot instead of double-sampling watch state, and canonical `feedback` / `attrCover` surfaces now expose real on-disk supervision/queue truth on split-package hosts instead of falsely reading all-zero.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.26`
+- `@openclawbrain/cli@0.4.26`
+
+**Changes**
+
+- routes default operator-proof artifacts to the shared workspace sibling instead of dirtying repo-root `artifacts/operator-proof-*`
+- tightens ignore coverage for generated proof/runtime scratch paths
+- fixes the detailed-status teacher/watch seam by reusing one shared operator snapshot per command
+- surfaces historical active-pack supervision and live sparse-feedback queue truth when legacy Brain tables are empty on split-package hosts
+- preserves the one-version / one-install-lane public contract
+
+**Full release note**
+
+- [docs/release-notes-0.4.26.md](docs/release-notes-0.4.26.md)
+
 ## 0.4.25
 
 `0.4.25` is the public OpenClawBrain proof/operator follow-up release: the default proof lane is hardened so the canonical `openclawbrain proof --openclaw-home ...` path completes cleanly again, and canonical status/proof surfaces now expose thin feedback and attribution-coverage truth directly.
