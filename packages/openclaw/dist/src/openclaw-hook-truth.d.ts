@@ -16,6 +16,7 @@ export interface OpenClawBrainHookInspection {
     manifestId: string | null;
     installId: string | null;
     packageName: string | null;
+    packageVersion: string | null;
     installLayout: OpenClawBrainInstallLayout | null;
     additionalInstallCount: number;
     installState: OpenClawBrainHookInstallState;
@@ -31,9 +32,30 @@ export interface OpenClawBrainHookLoadSummary extends OpenClawBrainHookInspectio
     guardSummary: string;
     guardAction: string;
 }
+export interface OpenClawBrainDaemonRuntimeSurfaceInspection {
+    configuredRuntimePath: string | null;
+    configuredRuntimePackageSpec?: string | null;
+    configuredRuntimePackageName?: string | null;
+    configuredRuntimePackageVersion?: string | null;
+}
+export interface OpenClawBrainHotfixBoundarySummary {
+    boundary: string;
+    skew: string;
+    daemonPath: string | null;
+    hookPath: string | null;
+    runtimeGuardPath: string | null;
+    daemonPackage: string | null;
+    hookPackage: string | null;
+    guidance: string;
+    detail: string;
+}
 export declare function inspectOpenClawBrainPluginAllowlist(openclawHome: string): {
     state: Exclude<OpenClawBrainPluginAllowlistState, "unverified">;
     detail: string;
 };
 export declare function inspectOpenClawBrainHookStatus(openclawHome: string | null | undefined): OpenClawBrainHookInspection;
 export declare function summarizeOpenClawBrainHookLoad(inspection: OpenClawBrainHookInspection, statusProbeReady: boolean): OpenClawBrainHookLoadSummary;
+export declare function describeOpenClawBrainHotfixBoundary(input: {
+    hookInspection: OpenClawBrainHookInspection;
+    daemonInspection?: OpenClawBrainDaemonRuntimeSurfaceInspection | null;
+}): OpenClawBrainHotfixBoundarySummary;

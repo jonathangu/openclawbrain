@@ -1,6 +1,7 @@
 import { type AlwaysOnLearningMaterializationJobV1 } from "@openclawbrain/learner";
 import { type BrainServeHotPathTimingV1, type NormalizedEventExportV1, type RouteMode, type RuntimeCompileResponseV1 } from "@openclawbrain/contracts";
-import { type LearningSpinePgRouteUpdateLogEntryV1, type LearningSpineServeRouteBreadcrumbsV1, type LearningSpineServeRouteDecisionLogEntryV1, type PackDescriptor } from "@openclawbrain/pack-format";
+import { type LearningSpinePgRouteUpdateLogEntryV1, type LearningSpineServeRouteBreadcrumbsV1, type PackDescriptor } from "@openclawbrain/pack-format";
+import { type LearningSpineServeRouteDecisionLogEntryV1 } from "./local-learner.js";
 type CompileFailureLike = {
     ok: false;
     fallbackToStaticContext: boolean;

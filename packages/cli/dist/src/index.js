@@ -904,7 +904,7 @@ export class AsyncTeacherLiveLoop {
                     interactionEvents: this.interactionEvents,
                     feedbackEvents: this.feedbackEvents
                 });
-                const learnedRoutingState = this.input.resolveLearnedRoutingState?.() ?? {};
+                const learnedRoutingState = this.input.resolveLearnedRoutingState?.(mergedNormalizedEventExport) ?? {};
                 const currentDedupIds = new Set(this.teacherArtifacts.map((artifact) => artifact.dedupId));
                 const currentCycleBuiltArtifacts = buildTeacherSupervisionArtifactsFromNormalizedEventExport({
                     normalizedEventExport: job.normalizedEventExport,

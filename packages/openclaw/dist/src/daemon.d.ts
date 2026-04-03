@@ -46,6 +46,8 @@ export interface ManagedLearnerServiceInspection {
     configuredCommand: string | null;
     configuredRuntimePath: string | null;
     configuredRuntimePackageSpec: string | null;
+    configuredRuntimePackageName: string | null;
+    configuredRuntimePackageVersion: string | null;
     configuredRuntimeLooksEphemeral: boolean | null;
     matchesRequestedActivationRoot: boolean | null;
     launchctlAvailable: boolean;

@@ -306,6 +306,17 @@ export function describeManagedLearnerServiceRuntimeGuard(inspection) {
         detail: `Learner service points at the durable ${CLI_PACKAGE_NAME} runtime.`
     };
 }
+function buildDaemonHotfixBoundary(inspection) {
+    return {
+        surface: "daemon_runtime",
+        separateFromInstalledHookSurface: true,
+        runtimePath: inspection.configuredRuntimePath ?? null,
+        guidance: "Patch this daemon runtime path for background watch/learner fixes. Use `openclawbrain status --openclaw-home <path> --detailed` to inspect the separate installed hook/runtime-guard surface before patching OpenClaw load behavior.",
+        detail: inspection.configuredRuntimePath === null
+            ? "daemon status is only reporting the background watch surface; no configured runtime path is visible yet."
+            : `daemon status is reporting the background watch runtime at ${inspection.configuredRuntimePath}; installed hook/runtime-guard paths live on the OpenClaw profile side.`
+    };
+}
 function resolveDaemonProgramArguments() {
     for (const candidate of getOpenclawbrainCliScriptPathCandidates()) {
         const cliScriptPath = resolveCliScriptCandidate(candidate);
@@ -970,6 +981,11 @@ export function daemonStatus(activationRoot, json) {
         ? null
         : canonicalizeActivationRoot(configuredActivationRoot) === serviceIdentity.canonicalActivationRoot;
     const daemonLaunchDescription = describeDaemonProgramArguments(configuredProgramArguments);
+    const hotfixBoundary = buildDaemonHotfixBoundary({
+        installed: plistInstalled,
+        configuredProgramArguments,
+        ...daemonLaunchDescription,
+    });
     if (json) {
         console.log(JSON.stringify({
             command: "daemon status",
@@ -986,6 +1002,7 @@ export function daemonStatus(activationRoot, json) {
             ...watchStatePaths,
             watchState,
             lastLogLines,
+            hotfixBoundary,
         }, null, 2));
     }
     else {
@@ -1015,6 +1032,8 @@ export function daemonStatus(activationRoot, json) {
             const runtimeWarning = daemonLaunchDescription.configuredRuntimeLooksEphemeral ? " [ephemeral]" : "";
             console.log(`  Runtime: ${daemonLaunchDescription.configuredRuntimePath}${runtimePackageSuffix}${runtimeWarning}`);
         }
+        console.log("  Runtime surface: daemon watch/learner runtime");
+        console.log(`  Hotfix boundary: ${hotfixBoundary.guidance}`);
         const runtimeGuard = describeManagedLearnerServiceRuntimeGuard({
             installed: plistInstalled,
             configuredProgramArguments,

@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { readFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { formatOperatorLearningHealthSummary } from "../src/status-learning-path.js";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -145,6 +146,29 @@ test("status teacher treats lagging watch heartbeats as aging instead of stale",
     assert.equal(summary.stale, false);
     assert.equal(summary.idle, true);
     assert.match(summary.detail, /watch heartbeat is lagging/);
+});
+
+test("status truth shows stalled-learning separately from a healthy daemon", () => {
+    const teacher = summarizeStatusTeacher(makeTeacherReport({
+        latestFreshness: "fresh",
+        watchState: "watching"
+    }), providerConfig, localLlm);
+    assert.equal(teacher.healthy, true);
+    const health = formatOperatorLearningHealthSummary({
+        teacher,
+        tracedLearning: {
+            present: true,
+            teacherArtifactCount: 3,
+            routeTraceCount: 0,
+            supervisionCount: 0,
+            routerUpdateCount: 0,
+            attributionCoverage: {
+                visible: true,
+                readyCount: 2
+            }
+        }
+    });
+    assert.equal(health, "daemon=healthy-daemon learning=stalled-learning detail=harvested artifacts and eligible feedback are visible, but no matched routes, supervision, or router updates are visible");
 });
 
 test("learning warnings separate no-artifact no-ops from genuinely stale teacher labels", () => {

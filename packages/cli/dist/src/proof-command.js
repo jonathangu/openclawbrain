@@ -546,7 +546,7 @@ function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, brea
     };
 }
 
-function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspectText, statusSignals, breadcrumbs, runtimeLoadProofSnapshot, guardLine, feedbackLine, attributionLine, attributionCoverageLine, learningPathLine, coverageSnapshot, hardeningSnapshot }) {
+function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspectText, statusSignals, breadcrumbs, runtimeLoadProofSnapshot, surfaceLine, surfacesLine, hotfixLine, guardLine, feedbackLine, attributionLine, attributionCoverageLine, learningPathLine, learningFlowLine, learningHealthLine, coverageSnapshot, hardeningSnapshot }) {
     const passed = [];
     const missing = [];
     const warnings = Array.isArray(verdict.warnings) ? verdict.warnings : [];
@@ -602,10 +602,32 @@ function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspec
         "## Warnings",
         ...(warnings.length === 0 ? ["- none"] : warnings.map((item) => `- ${item}`)),
         "",
+        "## Hotfix Boundary",
+        ...(surfaceLine === null
+            ? ["- hotfix boundary line not reported by detailed status"]
+            : [`- ${surfaceLine}`]),
+        ...(surfacesLine === null
+            ? ["- hotfix paths line not reported by detailed status"]
+            : [`- ${surfacesLine}`]),
+        ...(hotfixLine === null
+            ? ["- hotfix guidance line not reported by detailed status"]
+            : [`- ${hotfixLine}`]),
+        "",
         "## Runtime Guard",
         ...(guardLine === null
             ? ["- runtime guard line not reported by detailed status"]
             : [`- ${guardLine}`]),
+        "",
+        "## Learning Flow",
+        ...(learningPathLine === null
+            ? ["- learning path line not reported by detailed status"]
+            : [`- ${learningPathLine}`]),
+        ...(learningFlowLine === null
+            ? ["- learning flow line not reported by detailed status"]
+            : [`- ${learningFlowLine}`]),
+        ...(learningHealthLine === null
+            ? ["- learning health line not reported by detailed status"]
+            : [`- ${learningHealthLine}`]),
         "",
         "## Learning Attribution",
         ...(feedbackLine === null
@@ -617,9 +639,6 @@ function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspec
         ...(attributionCoverageLine === null
             ? ["- attribution coverage line not reported by detailed status"]
             : [`- ${attributionCoverageLine}`]),
-        ...(learningPathLine === null
-            ? []
-            : [`- ${learningPathLine}`]),
         "",
         "## Coverage snapshot",
         `- attached profiles: ${coverageSnapshot.attachedProfileCount}`,
@@ -916,11 +935,16 @@ export function captureOperatorProofBundle(options) {
     const gatewayLogPath = extractGatewayLogPath(gatewayStatusCapture.stdout);
     const activationRoot = extractActivationRoot(statusCapture.stdout, options.activationRoot ?? null);
     const statusSignals = extractStatusSignals(statusCapture.stdout);
+    const surfaceLine = extractDetailedStatusLine(statusCapture.stdout, "surface");
+    const surfacesLine = extractDetailedStatusLine(statusCapture.stdout, "surfaces");
+    const hotfixLine = extractDetailedStatusLine(statusCapture.stdout, "hotfix");
     const attachTruthLine = extractDetailedStatusLine(statusCapture.stdout, "attachTruth");
     const attachedSetLine = extractDetailedStatusLine(statusCapture.stdout, "attachedSet");
     const serveLine = extractDetailedStatusLine(statusCapture.stdout, "serve");
     const routeFnLine = extractDetailedStatusLine(statusCapture.stdout, "routeFn");
     const guardLine = extractDetailedStatusLine(statusCapture.stdout, "guard");
+    const learningFlowLine = extractDetailedStatusLine(statusCapture.stdout, "learnFlow");
+    const learningHealthLine = extractDetailedStatusLine(statusCapture.stdout, "health");
     const feedbackLine = extractDetailedStatusLine(statusCapture.stdout, "feedback");
     const attributionLine = extractDetailedStatusLine(statusCapture.stdout, "attribution");
     const attributionCoverageLine = extractDetailedStatusLine(statusCapture.stdout, "attrCover");
@@ -978,7 +1002,12 @@ export function captureOperatorProofBundle(options) {
         },
         runtimeLoadProofPath,
         runtimeLoadProofError: runtimeLoadProofSnapshot.error,
+        surfaceLine,
+        surfacesLine,
+        hotfixLine,
         guardLine,
+        learningFlowLine,
+        learningHealthLine,
         feedbackLine,
         attributionLine,
         attributionCoverageLine,
@@ -994,7 +1023,12 @@ export function captureOperatorProofBundle(options) {
         statusSignals,
         breadcrumbs,
         runtimeLoadProofSnapshot,
+        surfaceLine,
+        surfacesLine,
+        hotfixLine,
         guardLine,
+        learningFlowLine,
+        learningHealthLine,
         feedbackLine,
         attributionLine,
         attributionCoverageLine,
@@ -1015,7 +1049,12 @@ export function captureOperatorProofBundle(options) {
         hardeningSnapshot,
         verdict,
         statusSignals,
+        surfaceLine,
+        surfacesLine,
+        hotfixLine,
         guardLine,
+        learningFlowLine,
+        learningHealthLine,
         feedbackLine,
         attributionLine,
         attributionCoverageLine,

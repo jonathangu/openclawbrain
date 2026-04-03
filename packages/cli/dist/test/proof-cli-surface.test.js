@@ -80,10 +80,15 @@ function createDetailedStatusText(fixture, overrides = {}) {
         `target activation=${overrides.activationRoot ?? fixture.activationRoot} boundary=current_profile`,
         `attachTruth current=current_profile runtime=${overrides.runtimeTruth ?? "proven"} hook=present config=allows_load`,
         overrides.hookLine ?? "hook        install=installed loadable=loadable",
+        overrides.surfaceLine ?? "surface     boundary=split_surfaces skew=split_path_same_version daemon=@openclawbrain/cli@0.4.26 hook=@openclawbrain/openclaw@0.4.26",
+        overrides.surfacesLine ?? "surfaces    daemonPath=/tmp/openclawbrain/cli.js hookPath=/tmp/.openclaw/extensions/openclawbrain/dist/extension/index.js runtimeGuard=/tmp/.openclaw/extensions/openclawbrain/dist/extension/runtime-guard.js",
+        overrides.hotfixLine ?? "hotfix      Patch the daemon runtime path for background watch/learner fixes. Patch the installed hook/runtime-guard paths for OpenClaw load fixes.",
         overrides.guardLine ?? "guard       severity=none actionability=none action=none summary=profile hook is installed and loadable",
         `serve       state=${overrides.serveState ?? "serving_active_pack"}`,
         `routeFn     available=${overrides.routeFnAvailable ?? "yes"}`,
         overrides.pathLine ?? "path        source=materialized_candidate pg=v2 method=policy_gradient_v2 target=trajectory_reconstruction connect=4 trajectories=12 bindingQuality=exact_only",
+        overrides.learningFlowLine ?? "learnFlow   harvested=1 eligible=1 loaded=yes pack=pack-status matched=1 supervised=1 updated=1",
+        overrides.learningHealthLine ?? "health      daemon=healthy-daemon learning=progress-visible detail=matched=1 supervised=1 updated=1",
         overrides.feedbackLine ?? "feedback    helpful=1 irrelevant=0 harmful=0 supervisedTraceCount=1 routeTraceCount=1 latest=main",
         overrides.attributionLine ?? "attribution quality=exact_only source=latest_materialization/watch_snapshot nonZero=1 exact=1 heuristic=0 unmatched=0 ambiguous=0 modes=decision:1|digest:0|compile:0|heuristic:0",
         overrides.attributionCoverageLine ?? "attrCover   completedWithoutEvaluation=0 ready=1 delayed=0 budgetDeferred=0",
@@ -233,15 +238,22 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     assert.equal(stepsPayload.steps.length, 5);
     assert.equal(verdictPayload.verdict.verdict, "success_and_proven");
     assert.match(summary, /bundle verdict: \*\*success_and_proven\*\*/);
+    assert.match(summary, /## Learning Flow/);
     assert.match(summary, /## Learning Attribution/);
     assert.match(summary, /## Runtime Guard/);
     assert.match(summary, /guard       severity=none actionability=none action=none summary=profile hook is installed and loadable/);
+    assert.match(summary, /learnFlow   harvested=1 eligible=1 loaded=yes pack=pack-status matched=1 supervised=1 updated=1/);
+    assert.match(summary, /health      daemon=healthy-daemon learning=progress-visible detail=matched=1 supervised=1 updated=1/);
     assert.match(summary, /feedback    helpful=1 irrelevant=0 harmful=0 supervisedTraceCount=1 routeTraceCount=1 latest=main/);
     assert.match(summary, /attribution quality=exact_only/);
     assert.match(summary, /attrCover   completedWithoutEvaluation=0 ready=1 delayed=0 budgetDeferred=0/);
     assert.match(summary, /path        source=materialized_candidate/);
     assert.match(summary, /## Warnings/);
     assert.match(summary, /- none/);
+    assert.match(summary, /## Hotfix Boundary/);
+    assert.match(summary, /surface     boundary=split_surfaces skew=split_path_same_version/);
+    assert.match(summary, /surfaces    daemonPath=\/tmp\/openclawbrain\/cli\.js/);
+    assert.match(summary, /hotfix      Patch the daemon runtime path for background watch\/learner fixes/);
     assert.match(summary, /startup log contained a post-bundle \[openclawbrain\] BRAIN LOADED breadcrumb/);
     assert.match(summary, /## Coverage snapshot/);
     assert.match(summary, /runtime-proven profiles: 1\/1/);
@@ -254,6 +266,8 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     assert.equal(coverageSnapshot.profiles[0].coverageState, "covered");
     assert.equal(hardeningSnapshot.statusSignals.runtimeProven, true);
     assert.equal(hardeningSnapshot.verdict.verdict, "success_and_proven");
+    assert.equal(verdictPayload.learningFlowLine, "learnFlow   harvested=1 eligible=1 loaded=yes pack=pack-status matched=1 supervised=1 updated=1");
+    assert.equal(verdictPayload.learningHealthLine, "health      daemon=healthy-daemon learning=progress-visible detail=matched=1 supervised=1 updated=1");
     assert.equal(verdictPayload.feedbackLine, "feedback    helpful=1 irrelevant=0 harmful=0 supervisedTraceCount=1 routeTraceCount=1 latest=main");
     assert.equal(verdictPayload.attributionLine, "attribution quality=exact_only source=latest_materialization/watch_snapshot nonZero=1 exact=1 heuristic=0 unmatched=0 ambiguous=0 modes=decision:1|digest:0|compile:0|heuristic:0");
     assert.equal(verdictPayload.attributionCoverageLine, "attrCover   completedWithoutEvaluation=0 ready=1 delayed=0 budgetDeferred=0");
@@ -444,6 +458,8 @@ test("proof capture accepts generated shadow hook sources and ignores unrelated 
         "serve       state=serving_active_pack",
         "routeFn     available=yes",
         "path        source=materialized_candidate pg=v2 method=policy_gradient_v2 target=trajectory_reconstruction connect=4 trajectories=12 bindingQuality=exact_only",
+        "learnFlow   harvested=1 eligible=1 loaded=yes pack=pack-status matched=1 supervised=1 updated=1",
+        "health      daemon=healthy-daemon learning=progress-visible detail=matched=1 supervised=1 updated=1",
         "attribution quality=exact_only source=latest_materialization/watch_snapshot nonZero=1 exact=1 heuristic=0 unmatched=0 ambiguous=0 modes=decision:1|digest:0|compile:0|heuristic:0",
         `attachedSet *current_profile@${path.resolve(fixture.openclawHome)} [hook=present config=allows_load runtime=proven loadedAt=2026-03-23T01:00:05.000Z] other_profile@${path.resolve(otherHome)} [hook=present config=allows_load runtime=not_proven loadedAt=none] proofPath=${fixture.runtimeLoadProofPath} proofError=none`,
         "loadProof=status_probe_ready"

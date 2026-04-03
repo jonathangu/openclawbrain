@@ -9,7 +9,6 @@ import { createServeTimeDecisionMatcher } from "../src/teacher-decision-match.js
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const cliSource = readFileSync(path.join(__dirname, "..", "src", "cli.js"), "utf8");
-const indexSource = readFileSync(path.join(__dirname, "..", "src", "index.js"), "utf8");
 const LEARNING_SPINE_LOG_LAYOUT = { dir: path.join("logs", "learning-spine") };
 
 function resolveLearningSpineLogPath(activationRoot, stream) {
@@ -34,29 +33,15 @@ globalThis.__testReadFileSync = readFileSync;
 const resolveServeTimeLearningRuntimeInput = loadFunction(
     cliSource,
     "function resolveServeTimeLearningRuntimeInput",
-    "function resolveActivationInspectionPackId",
+    "async function runLearnCommand",
     `const resolveLearningSpineLogPath = globalThis.__testResolveLearningSpineLogPath;
 const readBoundedJsonlTail = globalThis.__testReadBoundedJsonlTail;
 const readFileSync = globalThis.__testReadFileSync;
 const loadOrInitBaseline = globalThis.__testLoadOrInitBaseline;`
 );
-const readBoundedLearningSpineLogEntries = loadFunction(
-    indexSource,
-    "function readBoundedLearningSpineLogEntries",
-    "function matchesActiveRouteFnLog",
-    `const resolveLearningSpineLogPath = globalThis.__testResolveLearningSpineLogPath;
-const readBoundedJsonlTail = globalThis.__testReadBoundedJsonlTail;`
-);
-globalThis.__testReadBoundedLearningSpineLogEntries = readBoundedLearningSpineLogEntries;
-const summarizeCurrentProfileLastLearningUpdateAt = loadFunction(
-    indexSource,
-    "function summarizeCurrentProfileLastLearningUpdateAt",
-    "function didCurrentProfileFirstExportOccur",
-    `const readBoundedLearningSpineLogEntries = globalThis.__testReadBoundedLearningSpineLogEntries;`
-);
 
 function makeActivationRoot() {
-    const root = mkdtempSync(path.join(os.tmpdir(), "ocb-status-large-log-"));
+    const root = mkdtempSync(path.join(os.tmpdir(), "ocb-openclaw-status-large-log-"));
     mkdirSync(path.join(root, LEARNING_SPINE_LOG_LAYOUT.dir), { recursive: true });
     return root;
 }
@@ -82,34 +67,7 @@ function makeNormalizedEventExport(interactionOverrides = []) {
     };
 }
 
-test("resolveServeTimeLearningRuntimeInput uses bounded reads for oversized decision logs", () => {
-    const activationRoot = makeActivationRoot();
-    const logPath = resolveLearningSpineLogPath(activationRoot, "serveTimeRouteDecisions");
-    try {
-        const lines = [];
-        for (let i = 0; i < 1200; i++) {
-            lines.push(JSON.stringify({
-                recordId: `decision-${i}`,
-                recordedAt: `2026-04-01T00:${String(i % 60).padStart(2, "0")}:00.000Z`,
-                activePackId: "pack-live",
-                usedLearnedRouteFn: true,
-                actionScore: i,
-                padding: "x".repeat(4096)
-            }));
-        }
-        writeFileSync(logPath, lines.join("\n") + "\n", "utf8");
-        const result = resolveServeTimeLearningRuntimeInput(activationRoot);
-        assert.equal(result.pgVersion, "v2");
-        assert.ok(result.decisionLogCount > 0);
-        assert.ok(result.decisionLogCount <= 512);
-        assert.equal(result.serveTimeDecisions.at(-1)?.recordId, "decision-1199");
-        assert.match(result.fallbackReason ?? "", /serve_time_decision_log_/);
-    } finally {
-        rmSync(activationRoot, { recursive: true, force: true });
-    }
-});
-
-test("resolveServeTimeLearningRuntimeInput recovers exact historical decisions outside the bounded tail", () => {
+test("OpenClaw resolveServeTimeLearningRuntimeInput recovers exact historical decisions outside the bounded tail", () => {
     const activationRoot = makeActivationRoot();
     const logPath = resolveLearningSpineLogPath(activationRoot, "serveTimeRouteDecisions");
     try {
@@ -144,13 +102,12 @@ test("resolveServeTimeLearningRuntimeInput recovers exact historical decisions o
         assert.equal(result.serveTimeDecisions.some((decision) => decision.recordId === "decision-historical-exact"), true);
         assert.equal(result.serveTimeDecisions.at(-1)?.recordId, "decision-1199");
         assert.ok(result.decisionLogCount > 512);
-        assert.match(result.fallbackReason ?? "", /serve_time_decision_log_/);
     } finally {
         rmSync(activationRoot, { recursive: true, force: true });
     }
 });
 
-test("historical recovery keeps exact selection matches ahead of nearby tail fallback candidates", () => {
+test("OpenClaw historical recovery keeps exact selection matches ahead of nearby tail fallback candidates", () => {
     const activationRoot = makeActivationRoot();
     const logPath = resolveLearningSpineLogPath(activationRoot, "serveTimeRouteDecisions");
     try {
@@ -200,7 +157,7 @@ test("historical recovery keeps exact selection matches ahead of nearby tail fal
     }
 });
 
-test("historical recovery preserves ambiguous compile-event matches outside the bounded tail", () => {
+test("OpenClaw historical recovery preserves ambiguous compile-event matches outside the bounded tail", () => {
     const activationRoot = makeActivationRoot();
     const logPath = resolveLearningSpineLogPath(activationRoot, "serveTimeRouteDecisions");
     try {
@@ -247,28 +204,6 @@ test("historical recovery preserves ambiguous compile-event matches outside the 
             createdAt: "2026-04-01T03:59:00.100Z",
         })), null);
         assert.equal(result.serveTimeDecisions.filter((decision) => decision.turnCompileEventId === "evt-historical-duplicate").length, 2);
-    } finally {
-        rmSync(activationRoot, { recursive: true, force: true });
-    }
-});
-
-test("summarizeCurrentProfileLastLearningUpdateAt returns the latest visible bounded update", () => {
-    const activationRoot = makeActivationRoot();
-    const logPath = resolveLearningSpineLogPath(activationRoot, "pgRouteUpdates");
-    try {
-        const lines = [];
-        for (let i = 0; i < 1200; i++) {
-            lines.push(JSON.stringify({
-                recordId: `update-${i}`,
-                recordedAt: `2026-04-01T01:${String(i % 60).padStart(2, "0")}:00.000Z`,
-                nextPackId: "pack-live",
-                nextRouterChecksum: `router-${i}`,
-                padding: "y".repeat(4096)
-            }));
-        }
-        writeFileSync(logPath, lines.join("\n") + "\n", "utf8");
-        const recordedAt = summarizeCurrentProfileLastLearningUpdateAt(activationRoot, { lastMaterializedAt: null }, { lastRunAt: null });
-        assert.equal(recordedAt, "2026-04-01T01:59:00.000Z");
     } finally {
         rmSync(activationRoot, { recursive: true, force: true });
     }

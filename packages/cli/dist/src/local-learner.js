@@ -455,6 +455,98 @@ function normalizeTeacherSupervisionArtifacts(artifacts) {
         .filter((artifact) => !artifact.sourceEventIds.some((eventId) => supersededEventIds.has(eventId)))
         .sort(compareTeacherSupervisionArtifacts);
 }
+function normalizeServeTimeDecisionStringArray(values) {
+    if (!Array.isArray(values)) {
+        return [];
+    }
+    return values.filter((value) => typeof value === "string" && value.length > 0);
+}
+function normalizeServeTimeDecisionScore(score) {
+    if (score === null || typeof score !== "object" || Array.isArray(score)) {
+        return null;
+    }
+    if (typeof score.blockId !== "string" || score.blockId.length === 0) {
+        return null;
+    }
+    return {
+        blockId: score.blockId,
+        selected: score.selected === true,
+        actionScore: Number.isFinite(score.actionScore) ? score.actionScore : 0,
+        actionProbability: Number.isFinite(score.actionProbability) ? score.actionProbability : 0,
+        ...(Array.isArray(score.compactedFrom) ? { compactedFrom: normalizeServeTimeDecisionStringArray(score.compactedFrom) } : {}),
+        ...(Array.isArray(score.matchedTokens) ? { matchedTokens: normalizeServeTimeDecisionStringArray(score.matchedTokens) } : {}),
+        ...(Array.isArray(score.routingChannels) ? { routingChannels: normalizeServeTimeDecisionStringArray(score.routingChannels) } : {})
+    };
+}
+function normalizeServeTimeDecisionLogEntry(decision) {
+    if (decision === null || typeof decision !== "object" || Array.isArray(decision)) {
+        return null;
+    }
+    const selectedKernelContextIds = normalizeServeTimeDecisionStringArray(decision.selectedKernelContextIds);
+    const selectedBrainContextIds = normalizeServeTimeDecisionStringArray(decision.selectedBrainContextIds);
+    return {
+        ...decision,
+        candidateSetIds: normalizeServeTimeDecisionStringArray(decision.candidateSetIds),
+        chosenContextIds: normalizeServeTimeDecisionStringArray(decision.chosenContextIds),
+        candidateScores: Array.isArray(decision.candidateScores)
+            ? decision.candidateScores.map((score) => normalizeServeTimeDecisionScore(score)).filter((score) => score !== null)
+            : [],
+        kernelContextCount: Number.isInteger(decision.kernelContextCount) && decision.kernelContextCount >= 0
+            ? decision.kernelContextCount
+            : selectedKernelContextIds.length,
+        brainContextCount: Number.isInteger(decision.brainContextCount) && decision.brainContextCount >= 0
+            ? decision.brainContextCount
+            : selectedBrainContextIds.length,
+        selectedKernelContextIds,
+        selectedBrainContextIds
+    };
+}
+function normalizeServeTimeDecisionsForLearner(serveTimeDecisions) {
+    if (serveTimeDecisions === undefined) {
+        return undefined;
+    }
+    if (!Array.isArray(serveTimeDecisions)) {
+        return [];
+    }
+    return serveTimeDecisions
+        .map((decision) => normalizeServeTimeDecisionLogEntry(decision))
+        .filter((decision) => decision !== null);
+}
+function projectServeTimeDecisionForRoutingSeed(decision) {
+    return {
+        recordId: typeof decision.recordId === "string" ? decision.recordId : null,
+        recordedAt: typeof decision.recordedAt === "string" ? decision.recordedAt : null,
+        sessionId: typeof decision.sessionId === "string" ? decision.sessionId : null,
+        channel: typeof decision.channel === "string" ? decision.channel : null,
+        turnCompileEventId: typeof decision.turnCompileEventId === "string" ? decision.turnCompileEventId : null,
+        turnCreatedAt: typeof decision.turnCreatedAt === "string" ? decision.turnCreatedAt : null,
+        activePackId: typeof decision.activePackId === "string" ? decision.activePackId : null,
+        activePackGraphChecksum: typeof decision.activePackGraphChecksum === "string" ? decision.activePackGraphChecksum : null,
+        routerIdentity: typeof decision.routerIdentity === "string" ? decision.routerIdentity : null,
+        selectionDigest: typeof decision.selectionDigest === "string" ? decision.selectionDigest : null,
+        usedLearnedRouteFn: decision.usedLearnedRouteFn === true,
+        fallbackReason: typeof decision.fallbackReason === "string" ? decision.fallbackReason : null,
+        candidateSetIds: decision.candidateSetIds,
+        chosenContextIds: decision.chosenContextIds,
+        candidateScores: decision.candidateScores.map((score) => ({
+            blockId: score.blockId,
+            selected: score.selected,
+            actionScore: score.actionScore,
+            actionProbability: score.actionProbability,
+            compactedFrom: score.compactedFrom ?? []
+        })),
+        kernelContextCount: decision.kernelContextCount,
+        brainContextCount: decision.brainContextCount,
+        selectedKernelContextIds: decision.selectedKernelContextIds,
+        selectedBrainContextIds: decision.selectedBrainContextIds
+    };
+}
+function checksumServeTimeDecisionsForRoutingSeed(serveTimeDecisions) {
+    if (serveTimeDecisions === undefined) {
+        return null;
+    }
+    return checksumJsonPayload(serveTimeDecisions.map((decision) => projectServeTimeDecisionForRoutingSeed(decision)));
+}
 function teacherSupervisionContentForInteraction(event) {
     const message = event.messageId === undefined ? "" : ` Message: ${event.messageId}.`;
     const pack = event.packId === undefined ? "" : ` Pack: ${event.packId}.`;
@@ -893,7 +985,7 @@ function buildAlwaysOnLearningMaterializationJob(input, current, selectedSlices,
         ...(input.sparseFeedback !== undefined ? { sparseFeedback: input.sparseFeedback } : {}),
         principalBacklog,
         ...(input.pgVersion !== undefined ? { pgVersion: input.pgVersion } : {}),
-        ...(input.serveTimeDecisions !== undefined ? { serveTimeDecisions: [...input.serveTimeDecisions] } : {}),
+        ...(input.serveTimeDecisions !== undefined ? { serveTimeDecisions: normalizeServeTimeDecisionsForLearner(input.serveTimeDecisions) } : {}),
         ...(input.baselineState !== undefined ? { baselineState: { ...input.baselineState } } : {}),
         ...(input.activationRoot !== undefined ? { activationRoot: input.activationRoot } : {})
     };
@@ -1049,7 +1141,7 @@ export function buildCandidatePackFromNormalizedEventExportSlice(input) {
         ...(input.sparseFeedback !== undefined ? { sparseFeedback: input.sparseFeedback } : {}),
         ...(input.principalBacklog !== undefined ? { principalBacklog: input.principalBacklog } : {}),
         ...(input.pgVersion !== undefined ? { pgVersion: input.pgVersion } : {}),
-        ...(input.serveTimeDecisions !== undefined ? { serveTimeDecisions: [...input.serveTimeDecisions] } : {}),
+        ...(input.serveTimeDecisions !== undefined ? { serveTimeDecisions: normalizeServeTimeDecisionsForLearner(input.serveTimeDecisions) } : {}),
         ...(input.baselineState !== undefined ? { baselineState: { ...input.baselineState } } : {})
     });
 }
@@ -1080,7 +1172,7 @@ export function buildCandidatePackBundleFromNormalizedEventExportBridge(input) {
                 ...(input.sparseFeedback !== undefined ? { sparseFeedback: input.sparseFeedback } : {}),
                 ...(input.principalBacklog !== undefined ? { principalBacklog: input.principalBacklog } : {}),
                 ...(input.pgVersion !== undefined ? { pgVersion: input.pgVersion } : {}),
-                ...(input.serveTimeDecisions !== undefined ? { serveTimeDecisions: [...input.serveTimeDecisions] } : {}),
+                ...(input.serveTimeDecisions !== undefined ? { serveTimeDecisions: normalizeServeTimeDecisionsForLearner(input.serveTimeDecisions) } : {}),
                 ...(input.baselineState !== undefined ? { baselineState: { ...input.baselineState } } : {})
             })
         };
@@ -3565,7 +3657,8 @@ function remapServeTimeDecisionToGraph(decision, resolveBlockId) {
     const remappedSelectedBrainContextIds = remapIds(decision.selectedBrainContextIds);
     const chosenSet = new Set(remappedChosenContextIds);
     const remappedScoresByBlockId = new Map();
-    for (const score of decision.candidateScores) {
+    const candidateScores = Array.isArray(decision.candidateScores) ? decision.candidateScores : [];
+    for (const score of candidateScores) {
         const resolvedBlockId = resolveBlockId(score.blockId);
         if (resolvedBlockId === null) {
             continue;
@@ -4540,13 +4633,15 @@ function buildGraphLocalActionSetFromScores(nodeBlockId, neighborBlockIds, graph
  * Traces through the graph starting from the highest-scoring selected block.
  */
 export function reconstructTrajectoryFromServeDecision(decision, graph, vectors, adjacency, tau, outcome, baselineValue) {
-    const chosenSet = new Set(decision.chosenContextIds);
+    const chosenContextIds = Array.isArray(decision.chosenContextIds) ? decision.chosenContextIds : [];
+    const candidateScores = Array.isArray(decision.candidateScores) ? decision.candidateScores : [];
+    const chosenSet = new Set(chosenContextIds);
     const candidateScoresMap = new Map();
-    for (const cs of decision.candidateScores) {
+    for (const cs of candidateScores) {
         candidateScoresMap.set(cs.blockId, cs.actionScore);
     }
     // Sort chosen blocks by score descending to find entry point
-    const chosenWithScores = decision.chosenContextIds
+    const chosenWithScores = chosenContextIds
         .map((blockId) => ({ blockId, score: candidateScoresMap.get(blockId) ?? 0 }))
         .sort((a, b) => b.score - a.score);
     const steps = [];
@@ -4679,7 +4774,7 @@ function createRouterArtifactV2(packId, builtAt, graph, vectors, eventExport, se
     // 1. Build adjacency map from graph
     const adjacency = buildAdjacencyMap(graph);
     const resolveBlockId = buildGraphBlockIdResolver(graph);
-    const remappedServeTimeDecisions = serveTimeDecisions.map((decision) => remapServeTimeDecisionToGraph(decision, resolveBlockId));
+    const remappedServeTimeDecisions = (serveTimeDecisions ?? []).map((decision) => remapServeTimeDecisionToGraph(decision, resolveBlockId));
     // 2. Join serve-time decisions with explicit feedback first, then let teacher-v2 observations override when available.
     const outcomeMap = joinDecisionsWithFeedback(remappedServeTimeDecisions, eventExport);
     const teacherObservationBindings = joinDecisionsWithTeacherObservationOutcomes(remappedServeTimeDecisions, teacherObservationOutcomes);
@@ -4710,7 +4805,7 @@ function createRouterArtifactV2(packId, builtAt, graph, vectors, eventExport, se
             `traj-${stableHash(checksumJsonPayload({ decisionId: d.recordId, steps: trajectory.steps.map((s) => s.nodeBlockId) }))}` === trajectory.trajectoryId);
         const candidateScoresMap = new Map();
         if (decision !== undefined) {
-            for (const cs of decision.candidateScores) {
+            for (const cs of decision.candidateScores ?? []) {
                 candidateScoresMap.set(cs.blockId, cs.actionScore);
             }
         }
@@ -5000,7 +5095,8 @@ export function buildCandidatePack(input) {
     });
     const learningSurface = eventExport?.provenance.learningSurface ?? defaultLearningSurface(workspace, offlineArtifacts, workspaceInit);
     const sparseFeedback = normalizeSparseFeedbackPolicy(input.sparseFeedback);
-    const decisionLogCount = input.serveTimeDecisions?.length ?? 0;
+    const serveTimeDecisions = normalizeServeTimeDecisionsForLearner(input.serveTimeDecisions);
+    const decisionLogCount = serveTimeDecisions?.length ?? 0;
     const useV2 = input.pgVersion === "v2" && decisionLogCount > 0;
     const fallbackReason = !input.learnedRouting
         ? null
@@ -5010,7 +5106,7 @@ export function buildCandidatePack(input) {
     const routingSeed = input.learnedRouting && (input.pgVersion === "v2" || decisionLogCount > 0 || input.baselineState !== undefined)
         ? {
             pgVersionRequested: input.pgVersion ?? "v1",
-            serveTimeDecisionDigest: input.serveTimeDecisions === undefined ? null : checksumJsonPayload(input.serveTimeDecisions),
+            serveTimeDecisionDigest: checksumServeTimeDecisionsForRoutingSeed(serveTimeDecisions),
             baselineState: input.baselineState ?? null
         }
         : null;
@@ -5048,7 +5144,7 @@ export function buildCandidatePack(input) {
         : loadTeacherObservationOutcomesFromActivation(input.activationRoot);
     if (input.learnedRouting) {
         if (useV2) {
-            const v2Result = createRouterArtifactV2(packId, builtAt, graph, vectors, eventExport, input.serveTimeDecisions, input.baselineState ?? initBaseline(), input.sparseFeedback, input.principalBacklog, teacherObservationOutcomes);
+            const v2Result = createRouterArtifactV2(packId, builtAt, graph, vectors, eventExport, serveTimeDecisions ?? [], input.baselineState ?? initBaseline(), input.sparseFeedback, input.principalBacklog, teacherObservationOutcomes);
             router = v2Result.artifact;
             updatedBaseline = v2Result.updatedBaseline;
             observationBindingStats = v2Result.observationBindingStats;
@@ -5211,7 +5307,7 @@ export function buildCandidatePackFromNormalizedEventExport(input) {
         ...(input.sparseFeedback !== undefined ? { sparseFeedback: input.sparseFeedback } : {}),
         ...(input.principalBacklog !== undefined ? { principalBacklog: input.principalBacklog } : {}),
         ...(input.pgVersion !== undefined ? { pgVersion: input.pgVersion } : {}),
-        ...(input.serveTimeDecisions !== undefined ? { serveTimeDecisions: [...input.serveTimeDecisions] } : {}),
+        ...(input.serveTimeDecisions !== undefined ? { serveTimeDecisions: normalizeServeTimeDecisionsForLearner(input.serveTimeDecisions) } : {}),
         ...(input.baselineState !== undefined ? { baselineState: { ...input.baselineState } } : {}),
         ...(input.activationRoot !== undefined ? { activationRoot: input.activationRoot } : {})
     };

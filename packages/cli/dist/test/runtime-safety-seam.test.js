@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { summarizeOpenClawBrainHookLoad } from "../src/openclaw-hook-truth.js";
+import { describeOpenClawBrainHotfixBoundary, summarizeOpenClawBrainHookLoad } from "../src/openclaw-hook-truth.js";
 
 function buildInspection(overrides = {}) {
     return {
@@ -14,6 +14,7 @@ function buildInspection(overrides = {}) {
         manifestId: "openclawbrain",
         installId: "openclawbrain",
         packageName: "@openclawbrain/openclaw",
+        packageVersion: "1.2.3",
         installLayout: "native_package_plugin",
         additionalInstallCount: 0,
         installState: "installed",
@@ -69,4 +70,67 @@ test("hook load summary treats activation-root-only reads as degraded scope advi
     assert.equal(summary.guardActionability, "pin_openclaw_home");
     assert.match(summary.guardSummary, /not self-proven/);
     assert.match(summary.guardAction, /--openclaw-home/);
+});
+
+test("hotfix boundary marks daemon and installed hook as separate surfaces even on matching versions", () => {
+    const boundary = describeOpenClawBrainHotfixBoundary({
+        hookInspection: buildInspection(),
+        daemonInspection: {
+            configuredRuntimePath: "/tmp/openclawbrain/cli.js",
+            configuredRuntimePackageName: "@openclawbrain/cli",
+            configuredRuntimePackageVersion: "1.2.3",
+            configuredRuntimePackageSpec: null,
+        },
+    });
+    assert.equal(boundary.boundary, "split_surfaces");
+    assert.equal(boundary.skew, "split_path_same_version");
+    assert.match(boundary.detail, /daemon background watch runs from/);
+    assert.match(boundary.guidance, /Patch the daemon runtime path/);
+    assert.match(boundary.guidance, /installed hook\/runtime-guard/);
+});
+
+test("hotfix boundary calls out version skew when daemon and installed hook diverge", () => {
+    const boundary = describeOpenClawBrainHotfixBoundary({
+        hookInspection: buildInspection(),
+        daemonInspection: {
+            configuredRuntimePath: "/tmp/openclawbrain/cli.js",
+            configuredRuntimePackageName: "@openclawbrain/cli",
+            configuredRuntimePackageVersion: "9.9.9",
+            configuredRuntimePackageSpec: null,
+        },
+    });
+    assert.equal(boundary.boundary, "split_surfaces");
+    assert.equal(boundary.skew, "split_path_version_skew");
+});
+
+test("hotfix boundary refuses to imply hook truth from activation-root-only status", () => {
+    const boundary = describeOpenClawBrainHotfixBoundary({
+        hookInspection: buildInspection({
+            scope: "activation_root_only",
+            openclawHome: null,
+            extensionDir: null,
+            hookPath: null,
+            runtimeGuardPath: null,
+            manifestPath: null,
+            packageJsonPath: null,
+            manifestId: null,
+            installId: null,
+            packageName: null,
+            packageVersion: null,
+            installLayout: null,
+            installState: "unverified",
+            loadability: "unverified",
+            pluginAllowlistState: "unverified",
+            detail: "profile hook state is unknown from activation-root-only status",
+        }),
+        daemonInspection: {
+            configuredRuntimePath: "/tmp/openclawbrain/cli.js",
+            configuredRuntimePackageName: "@openclawbrain/cli",
+            configuredRuntimePackageVersion: "1.2.3",
+            configuredRuntimePackageSpec: null,
+        },
+    });
+    assert.equal(boundary.boundary, "hook_surface_unverified");
+    assert.equal(boundary.skew, "unverified");
+    assert.match(boundary.guidance, /Pin --openclaw-home/);
 });

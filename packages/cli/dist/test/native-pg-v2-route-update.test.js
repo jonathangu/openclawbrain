@@ -4,7 +4,7 @@ import { mkdtempSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { buildNormalizedEventExport } from "@openclawbrain/event-export";
-import { buildCandidatePackFromNormalizedEventExport } from "../src/local-learner.js";
+import { buildCandidatePackFromNormalizedEventExport, materializeCandidatePackFromNormalizedEventExport } from "../src/local-learner.js";
 import { CONTRACT_IDS, ROUTER_PG_PROFILE_V2 } from "@openclawbrain/contracts";
 
 function createWorkspace(t) {
@@ -182,6 +182,18 @@ function buildCrossSurfaceFixture(t) {
     };
     return { workspace, normalizedEventExport, structuralOps, serveTimeDecision };
 }
+function toCompactCanonicalServeTimeDecision(decision) {
+    return {
+        ...decision,
+        candidateScores: decision.candidateScores.map((score) => ({
+            blockId: score.blockId,
+            selected: score.selected,
+            actionScore: score.actionScore,
+            actionProbability: score.actionProbability,
+            ...(Array.isArray(score.compactedFrom) ? { compactedFrom: [...score.compactedFrom] } : {})
+        }))
+    };
+}
 
 test("native V2 route updates survive serve-pack to candidate-pack block-id remap", (t) => {
     const { workspace, normalizedEventExport, structuralOps, serveTimeDecision } = buildCrossSurfaceFixture(t);
@@ -267,6 +279,92 @@ test("native V2 remap tolerates missing optional block-id arrays during full rep
     });
     assert.equal(router.training.noOpReason, null);
     assert.ok(router.policyUpdates.some((update) => update.delta !== 0), "expected nonzero native V2 delta even when optional arrays are absent");
+});
+
+test("native V2 materialization accepts the compact serve-decision schema", (t) => {
+    const { workspace, normalizedEventExport, structuralOps, serveTimeDecision } = buildCrossSurfaceFixture(t);
+    const packRoot = mkdtempSync(path.join(os.tmpdir(), "ocb-native-pg-v2-materialize-"));
+    t.after(() => {
+        rmSync(packRoot, { recursive: true, force: true });
+    });
+    const compactDecision = {
+        ...toCompactCanonicalServeTimeDecision(serveTimeDecision),
+        candidateSetIds: undefined,
+        selectedKernelContextIds: undefined,
+        selectedBrainContextIds: undefined
+    };
+    const descriptor = materializeCandidatePackFromNormalizedEventExport(packRoot, {
+        packLabel: "native-pg-v2-compact-materialize",
+        workspace,
+        normalizedEventExport,
+        learnedRouting: true,
+        builtAt: "2026-03-22T10:07:30.000Z",
+        structuralOps,
+        pgVersion: "v2",
+        serveTimeDecisions: [compactDecision],
+        baselineState: {
+            movingAverage: 0,
+            count: 0,
+            alpha: 0.1,
+            lastUpdatedAt: "2026-03-22T10:00:00.000Z"
+        }
+    });
+    const router = descriptor.router;
+    assert.ok(router, "expected learned router artifact");
+    assert.equal(router.training.method, "policy_gradient_v2");
+    assert.equal(router.training.objective.updateVersion, "route_pg_update_v2");
+    assert.equal(router.training.objective.objective, "supervised_route_pg_v2");
+    assert.equal(router.training.routeTraceCount, 1);
+    assert.equal(router.training.noOpReason, null);
+    assert.ok(router.policyUpdates.some((update) => update.delta !== 0), "expected compact-schema materialization to keep native V2 updates");
+    assert.ok(descriptor.routerPath, "expected the compact-schema materialization to persist a router artifact");
+});
+
+test("routing seed digest ignores large raw serve-decision payload fields", (t) => {
+    const { workspace, normalizedEventExport, structuralOps, serveTimeDecision } = buildCrossSurfaceFixture(t);
+    const compactDecision = toCompactCanonicalServeTimeDecision(serveTimeDecision);
+    const largeLegacyBlob = "legacy-raw-route-payload-".repeat(8_192);
+    const legacyHeavyDecision = {
+        ...compactDecision,
+        legacyPayload: {
+            compileTrace: largeLegacyBlob,
+            selectedGraphSnapshot: largeLegacyBlob
+        },
+        candidateScores: compactDecision.candidateScores.map((score, index) => ({
+            ...score,
+            legacySource: `score-${index}`,
+            channelScores: {
+                graph: score.actionScore,
+                debug: score.actionProbability
+            },
+            routeFnScore: score.actionScore,
+            traversalScore: score.actionScore,
+            actionLogProbability: Math.log(Math.max(score.actionProbability, 0.0001)),
+            debugBlob: largeLegacyBlob
+        }))
+    };
+    const compactResult = buildCandidatePackFromNormalizedEventExport({
+        packLabel: "native-pg-v1-compact-seed",
+        workspace,
+        normalizedEventExport,
+        learnedRouting: true,
+        builtAt: "2026-03-22T10:09:00.000Z",
+        structuralOps,
+        pgVersion: "v1",
+        serveTimeDecisions: [compactDecision]
+    });
+    const legacyHeavyResult = buildCandidatePackFromNormalizedEventExport({
+        packLabel: "native-pg-v1-compact-seed",
+        workspace,
+        normalizedEventExport,
+        learnedRouting: true,
+        builtAt: "2026-03-22T10:09:00.000Z",
+        structuralOps,
+        pgVersion: "v1",
+        serveTimeDecisions: [legacyHeavyDecision]
+    });
+    assert.equal(legacyHeavyResult.summary.packId, compactResult.summary.packId, "pack identity should depend on the compact routing projection, not raw legacy payload weight");
+    assert.deepEqual(legacyHeavyResult.payloads.router, compactResult.payloads.router);
 });
 
 test("native V2 route updates do not session-fallback after partial exact interaction provenance misses", (t) => {

@@ -1,8 +1,24 @@
 import { type ArtifactManifestV1, type FeedbackEventV1, type InteractionEventV1, type NormalizedEventExportV1, type NormalizedEventV1, type PrincipalPriorityClassV1, type PrincipalRoleV1, type PackGraphPayloadV1, type PackVectorsPayloadV1, type RouterArtifactV1, type RouterPolicyUpdateV1, type RuntimeCompileStructuralSignalsV1, type RuntimeGraphPlasticityStateV1, type SparseFeedbackPolicyV1, type TeacherSupervisionArtifactV1 } from "@openclawbrain/contracts";
 import { type EventExportCursorV1, type EventExportLaneV1, type NormalizedEventExportBridgeV1, type NormalizedEventExportSliceV1 } from "@openclawbrain/event-export";
 import type { TextEmbedder } from "@openclawbrain/compiler";
-import { type PackDescriptor, type GraphEvolutionLogV1, type LearningSpineServeRouteDecisionLogEntryV1 } from "@openclawbrain/pack-format";
+import { type PackDescriptor, type GraphEvolutionLogV1, type LearningSpineServeRouteDecisionLogEntryV1 as PackFormatLearningSpineServeRouteDecisionLogEntryV1 } from "@openclawbrain/pack-format";
 import { type WorkspaceMetadataInput } from "@openclawbrain/workspace-metadata";
+export interface LearningSpineServeRouteCandidateScoreV1 {
+    blockId: string;
+    selected: boolean;
+    actionScore: number;
+    actionProbability: number;
+    compactedFrom?: string[];
+    matchedTokens?: string[];
+    routingChannels?: string[];
+}
+export type LearningSpineServeRouteDecisionLogEntryV1 = Omit<PackFormatLearningSpineServeRouteDecisionLogEntryV1, "candidateSetIds" | "chosenContextIds" | "candidateScores" | "selectedKernelContextIds" | "selectedBrainContextIds"> & {
+    candidateSetIds: string[];
+    chosenContextIds: string[];
+    candidateScores: LearningSpineServeRouteCandidateScoreV1[];
+    selectedKernelContextIds: string[];
+    selectedBrainContextIds: string[];
+};
 export interface CandidatePackEventExports {
     interactionEvents: InteractionEventV1[];
     feedbackEvents: FeedbackEventV1[];

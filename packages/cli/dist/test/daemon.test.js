@@ -185,6 +185,9 @@ test("daemon start emits a pinned npm exec launch command instead of an _npx cac
     ]);
     assert.equal(statusPayload.configuredRuntimePackageSpec, "@openclawbrain/cli@9.9.9");
     assert.equal(statusPayload.configuredRuntimeLooksEphemeral, false);
+    assert.equal(statusPayload.hotfixBoundary.surface, "daemon_runtime");
+    assert.equal(statusPayload.hotfixBoundary.separateFromInstalledHookSurface, true);
+    assert.match(statusPayload.hotfixBoundary.guidance, /status --openclaw-home <path> --detailed/);
   });
 });
 
@@ -241,6 +244,8 @@ test("daemon status shows the configured program, args, and command for a durabl
       statusOutcome.stdout,
       new RegExp(`Command: ${escapeRegex(process.execPath)} ${escapeRegex(durableCliPath)} watch --activation-root ${escapeRegex(activationRoot)}`),
     );
+    assert.match(statusOutcome.stdout, /Runtime surface: daemon watch\/learner runtime/);
+    assert.match(statusOutcome.stdout, /Hotfix boundary: Patch this daemon runtime path for background watch\/learner fixes/);
     assert.doesNotMatch(statusOutcome.stdout, /_npx/);
   });
 });

@@ -1,5 +1,5 @@
 import { type NormalizedEventExportV1, type TeacherSupervisionArtifactV1 } from "@openclawbrain/contracts";
-import type { LearningSpineServeRouteDecisionLogEntryV1 } from "@openclawbrain/pack-format";
+import type { LearningSpineServeRouteDecisionLogEntryV1 } from "./learning-spine.js";
 export interface TeacherLabelerRunInputV1 {
     normalizedEventExport: NormalizedEventExportV1;
     observedAt: string;

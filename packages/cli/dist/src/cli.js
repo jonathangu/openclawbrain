@@ -13,7 +13,7 @@ import { buildTeacherSupervisionArtifactsFromNormalizedEventExport, createAlways
 import { inspectActivationState, loadPackFromActivation, promoteCandidatePack, resolveLearningSpineLogPath, stageCandidatePack } from "@openclawbrain/pack-format";
 import { resolveActivationRoot } from "./resolve-activation-root.js";
 import { describeOpenClawHomeInspection, discoverOpenClawHomes, formatOpenClawHomeLayout, formatOpenClawHomeProfileSource, inspectOpenClawHome } from "./openclaw-home-layout.js";
-import { inspectOpenClawBrainHookStatus, inspectOpenClawBrainPluginAllowlist } from "./openclaw-hook-truth.js";
+import { describeOpenClawBrainHotfixBoundary, inspectOpenClawBrainHookStatus, inspectOpenClawBrainPluginAllowlist } from "./openclaw-hook-truth.js";
 import { describeOpenClawBrainInstallIdentity, describeOpenClawBrainInstallLayout, findInstalledOpenClawBrainPlugin, getOpenClawBrainKnownPluginIds, normalizeOpenClawBrainPluginsConfig, pinInstalledOpenClawBrainPluginActivationRoot, resolveOpenClawBrainInstallTarget } from "./openclaw-plugin-install.js";
 import { buildOpenClawBrainConvergeRestartPlan, classifyOpenClawBrainConvergeVerification, describeOpenClawBrainConvergeChangeReasons, diffOpenClawBrainConvergeRuntimeFingerprint, finalizeOpenClawBrainConvergeResult, planOpenClawBrainConvergePluginAction, shouldReplaceOpenClawBrainInstallBeforeConverge } from "./install-converge.js";
 import { loadAttachmentPolicyDeclaration, resolveEffectiveAttachmentPolicyTruth, writeAttachmentPolicyDeclaration } from "./attachment-policy-truth.js";
@@ -25,7 +25,7 @@ import { summarizePackVectorEmbeddingState } from "./embedding-status.js";
 import { buildTracedLearningBridgePayloadFromRuntime, buildTracedLearningStatusSurface, persistTracedLearningBridgeState } from "./traced-learning-bridge.js";
 import { discoverOpenClawSessionStores, loadOpenClawSessionIndex, readOpenClawSessionFile } from "./session-store.js";
 import { readOpenClawBrainProviderDefaults, readOpenClawBrainProviderConfig, readOpenClawBrainProviderConfigFromSources, resolveOpenClawBrainProviderDefaultsPath } from "./provider-config.js";
-import { formatOperatorAttributionCoverageSummary, formatOperatorFeedbackSummary, formatOperatorLearningAttributionSummary, formatOperatorLearningPathSummary } from "./status-learning-path.js";
+import { formatOperatorAttributionCoverageSummary, formatOperatorFeedbackSummary, formatOperatorLearningAttributionSummary, formatOperatorLearningFlowSummary, formatOperatorLearningHealthSummary, formatOperatorLearningPathSummary } from "./status-learning-path.js";
 import { buildProofCommandForOpenClawHome, buildProofCommandHelpSection, captureOperatorProofBundle, formatOperatorProofResult, parseProofCliArgs } from "./proof-command.js";
 const OPENCLAWBRAIN_EMBEDDER_BASE_URL_ENV = "OPENCLAWBRAIN_EMBEDDER_BASE_URL";
 const OPENCLAWBRAIN_EMBEDDER_PROVIDER_ENV = "OPENCLAWBRAIN_EMBEDDER_PROVIDER";
@@ -950,6 +950,27 @@ function summarizeStatusAttachmentTruth(input) {
         })
     };
 }
+function summarizeStatusHotfixBoundary(status) {
+    return describeOpenClawBrainHotfixBoundary({
+        hookInspection: status.hook,
+        daemonInspection: inspectManagedLearnerService(status.host.activationRoot)
+    });
+}
+function formatStatusHotfixBoundarySummary(boundary) {
+    return [
+        `boundary=${boundary.boundary}`,
+        `skew=${boundary.skew}`,
+        `daemon=${boundary.daemonPackage ?? "unverified"}`,
+        `hook=${boundary.hookPackage ?? "unverified"}`
+    ].join(" ");
+}
+function formatStatusHotfixBoundaryPaths(boundary) {
+    return [
+        `daemonPath=${boundary.daemonPath === null ? "none" : shortenPath(boundary.daemonPath)}`,
+        `hookPath=${boundary.hookPath === null ? "unverified" : shortenPath(boundary.hookPath)}`,
+        `runtimeGuard=${boundary.runtimeGuardPath === null ? "unverified" : shortenPath(boundary.runtimeGuardPath)}`
+    ].join(" ");
+}
 function normalizeAttachmentPolicyMode(value) {
     return value === "undeclared" || value === "dedicated" || value === "shared"
         ? value
@@ -1417,6 +1438,7 @@ function formatTracedLearningSurface(surface) {
 function buildCompactStatusHeader(status, report, options) {
     const installHook = summarizeStatusInstallHook(options.openclawHome);
     const hookLoad = summarizeStatusHookLoad(installHook, status);
+    const hotfixBoundary = summarizeStatusHotfixBoundary(status);
     const embeddings = summarizeStatusEmbeddings(report, options.providerConfig);
     const localLlm = summarizeStatusLocalLlm(options.providerConfig);
     const teacher = summarizeStatusTeacher(report, options.providerConfig, localLlm);
@@ -1433,6 +1455,9 @@ function buildCompactStatusHeader(status, report, options) {
     return [
         `lifecycle   attach=${status.attachment.state} learner=${yesNo(status.passiveLearning.learnerRunning)} watch=${summarizeStatusWatchState(status)} export=${status.passiveLearning.exportState} promote=${summarizeStatusPromotionState(status)} serve=${summarizeStatusServeReality(status)}`,
         `hook        install=${hookLoad.installState} loadability=${hookLoad.loadability} loadProof=${hookLoad.loadProof} layout=${status.hook.installLayout ?? "unverified"} additional=${status.hook.additionalInstallCount ?? 0} severity=${hookLoad.guardSeverity} actionability=${hookLoad.guardActionability} summary=${hookLoad.guardSummary}`,
+        `surface     ${formatStatusHotfixBoundarySummary(hotfixBoundary)}`,
+        `surfaces    ${formatStatusHotfixBoundaryPaths(hotfixBoundary)}`,
+        `hotfix      ${hotfixBoundary.guidance}`,
         `attachTruth current=${attachmentTruth.currentProfileLabel} hook=${attachmentTruth.hookFiles} config=${attachmentTruth.configLoad} runtime=${attachmentTruth.runtimeLoad} watcher=${attachmentTruth.watcher} attachedSet=${formatAttachedProfileTruthCompactList(attachmentTruth.attachedProfiles)} why=${attachmentTruth.detail}`,
         `passive     firstExport=${yesNo(status.passiveLearning.firstExportOccurred)} backlog=${status.passiveLearning.backlogState} pending=${formatStatusNullableNumber(status.passiveLearning.pendingLive)}/${formatStatusNullableNumber(status.passiveLearning.pendingBackfill)}`,
         `serving     pack=${status.passiveLearning.currentServingPackId ?? "none"} lastExport=${status.passiveLearning.lastExportAt ?? "none"} lastPromotion=${status.passiveLearning.lastPromotionAt ?? "none"}`,
@@ -1442,6 +1467,8 @@ function buildCompactStatusHeader(status, report, options) {
         `explain     ${status.brain.summary}`,
         `graph       blocks=${report.graph.blockCount ?? "none"} strongest=${report.graph.strongestBlockId ?? "none"} latest=${report.graph.latestMaterialization.packId ?? "none"} latestChanged=${yesNo(report.graph.latestMaterialization.changed)} connect=${formatCompactGraphConnectDiagnostics(report.graph.latestMaterialization.connectDiagnostics ?? report.graph.connectDiagnostics)}`,
         `attribution ${formatOperatorLearningAttributionSummary({ status })}`,
+        `learnFlow   ${formatOperatorLearningFlowSummary({ tracedLearning })}`,
+        `health      ${formatOperatorLearningHealthSummary({ tracedLearning, teacher })}`,
         `teacher     model=${teacher.model} enabled=${yesNo(teacher.enabled)} healthy=${yesNo(teacher.healthy)} stale=${yesNo(teacher.stale)} idle=${yesNo(teacher.idle)} cycle=${teacher.latestCycle} why=${teacher.detail}`,
         `embedder    model=${embedder.model} provisioned=${yesNo(embedder.provisioned)} live=${yesNo(embedder.live)} why=${embedder.detail}`,
         `routeFn     available=${yesNo(routeFn.available)} freshness=${routeFn.freshness} trained=${routeFn.trainedAt ?? "none"} updated=${routeFn.updatedAt ?? "none"} used=${routeFn.usedAt ?? "none"} why=${routeFn.detail}`,
@@ -1454,8 +1481,10 @@ function buildCompactStatusHeader(status, report, options) {
 function formatCurrentProfileStatusSummary(status, report, targetInspection, options) {
     const installHook = summarizeStatusInstallHook(options.openclawHome);
     const displayedStatus = summarizeDisplayedStatus(status, installHook);
+    const hotfixBoundary = summarizeStatusHotfixBoundary(status);
     const embeddings = summarizeStatusEmbeddings(report, options.providerConfig);
     const localLlm = summarizeStatusLocalLlm(options.providerConfig);
+    const teacher = summarizeStatusTeacher(report, options.providerConfig, localLlm);
     const liveModels = embeddings.models.length === 0 ? "none" : embeddings.models.join("|");
     const attachmentTruth = summarizeStatusAttachmentTruth({
         activationRoot: status.host.activationRoot,
@@ -1480,6 +1509,7 @@ function formatCurrentProfileStatusSummary(status, report, targetInspection, opt
         `host        runtime=${status.host.runtimeOwner} activation=${status.host.activationRoot}`,
         `profile     selector=${status.profile.selector}${profileIdSuffix} attachment=${status.attachment.state} policy=${status.attachment.policyMode}`,
         `guard       severity=${status.hook.guardSeverity} actionability=${status.hook.guardActionability} action=${status.hook.guardAction} summary=${status.hook.guardSummary}`,
+        `surfaceNote ${hotfixBoundary.detail}`,
         `attachTruth current=${attachmentTruth.currentProfileLabel} hook=${attachmentTruth.hookFiles} config=${attachmentTruth.configLoad} runtime=${attachmentTruth.runtimeLoad} watcher=${attachmentTruth.watcher} detail=${attachmentTruth.detail}`,
         `attachedSet ${formatAttachedProfileTruthDetailedList(attachmentTruth.attachedProfiles)} proofPath=${shortenPath(attachmentTruth.runtimeProofPath)} proofError=${attachmentTruth.runtimeProofError ?? "none"}`,
         `manyProfile surface=${report.manyProfile.operatorSurface} policy=${report.manyProfile.declaredAttachmentPolicy} intent=${report.manyProfile.sameGatewayIntent} checkedProof=${report.manyProfile.checkedInProofTopology} sameGatewayProof=${yesNo(report.manyProfile.sameGatewayProof)} sharedWriteProof=${yesNo(report.manyProfile.sharedWriteSafetyProof)}`,
@@ -1500,6 +1530,8 @@ function formatCurrentProfileStatusSummary(status, report, targetInspection, opt
             learningPath: report.learningPath,
             tracedLearning
         })}`,
+        `learnFlow   ${formatOperatorLearningFlowSummary({ tracedLearning })}`,
+        `health      ${formatOperatorLearningHealthSummary({ tracedLearning, teacher })}`,
         `feedback    ${formatOperatorFeedbackSummary({ tracedLearning })}`,
         `attribution ${formatOperatorLearningAttributionSummary({ status })}`,
         `attrCover   ${formatOperatorAttributionCoverageSummary({ tracedLearning })}`,
@@ -4596,18 +4628,169 @@ function runUninstallCommand(parsed) {
     }
     return 0;
 }
-function resolveServeTimeLearningRuntimeInput(activationRoot) {
+function resolveServeTimeLearningRuntimeInput(activationRoot, normalizedEventExport = null) {
     const logPath = resolveLearningSpineLogPath(activationRoot, "serveTimeRouteDecisions");
-    const { entries: serveTimeDecisions, fallbackReason } = readBoundedJsonlTail(logPath);
+    const { entries: boundedServeTimeDecisions, fallbackReason } = readBoundedJsonlTail(logPath);
+    const historicalRecovery = fallbackReason === null
+        ? { decisions: [], scanFailed: false }
+        : readHistoricalServeTimeDecisions(logPath, collectServeTimeDecisionRecoveryTargets(normalizedEventExport));
+    const serveTimeDecisions = mergeHistoricalServeTimeDecisions(historicalRecovery.decisions, boundedServeTimeDecisions);
     const decisionLogCount = serveTimeDecisions.length;
     const pgVersion = decisionLogCount > 0 ? "v2" : "v1";
+    const resolvedFallbackReason = combineServeTimeLearningFallbackReasons(fallbackReason, historicalRecovery.scanFailed ? "historical_recovery_scan_failed" : null);
     return {
         pgVersion,
         serveTimeDecisions,
         decisionLogCount,
         baselineState: pgVersion === "v2" ? loadOrInitBaseline(activationRoot) : undefined,
-        fallbackReason: fallbackReason === null ? null : `serve_time_decision_log_${fallbackReason}`
+        fallbackReason: resolvedFallbackReason === null ? null : `serve_time_decision_log_${resolvedFallbackReason}`
     };
+}
+function combineServeTimeLearningFallbackReasons(...reasons) {
+    const resolved = reasons
+        .filter((reason) => typeof reason === "string" && reason.length > 0);
+    if (resolved.length === 0) {
+        return null;
+    }
+    return [...new Set(resolved.flatMap((reason) => reason.split("+").filter((part) => part.length > 0)))].join("+");
+}
+function mergeHistoricalServeTimeDecisions(historicalDecisions, boundedServeTimeDecisions) {
+    const merged = [];
+    const seenRecordIds = new Set();
+    for (const decision of [...historicalDecisions, ...boundedServeTimeDecisions]) {
+        const recordId = normalizeServeTimeDecisionRecoveryString(decision?.recordId);
+        if (recordId !== null) {
+            if (seenRecordIds.has(recordId)) {
+                continue;
+            }
+            seenRecordIds.add(recordId);
+        }
+        merged.push(decision);
+    }
+    return merged;
+}
+function readHistoricalServeTimeDecisions(logPath, targets) {
+    if (!hasServeTimeDecisionRecoveryTargets(targets)) {
+        return { decisions: [], scanFailed: false };
+    }
+    let raw;
+    try {
+        raw = readFileSync(logPath, "utf8");
+    }
+    catch {
+        return { decisions: [], scanFailed: true };
+    }
+    const decisions = [];
+    for (const line of raw.split(/\r?\n/u)) {
+        const trimmed = line.trim();
+        if (trimmed.length === 0) {
+            continue;
+        }
+        try {
+            const decision = JSON.parse(trimmed);
+            const recordId = normalizeServeTimeDecisionRecoveryString(decision?.recordId);
+            const selectionDigestKey = buildServeTimeDecisionRecoverySelectionKey(decision?.selectionDigest, decision?.activePackGraphChecksum);
+            const turnCompileEventId = normalizeServeTimeDecisionRecoveryString(decision?.turnCompileEventId);
+            if ((recordId !== null && targets.recordIds.has(recordId)) ||
+                (selectionDigestKey !== null && targets.selectionDigestKeys.has(selectionDigestKey)) ||
+                (turnCompileEventId !== null && targets.turnCompileEventIds.has(turnCompileEventId))) {
+                decisions.push(decision);
+            }
+        }
+        catch {
+            // skip malformed lines
+        }
+    }
+    return { decisions, scanFailed: false };
+}
+function hasServeTimeDecisionRecoveryTargets(targets) {
+    return targets.recordIds.size > 0 ||
+        targets.selectionDigestKeys.size > 0 ||
+        targets.turnCompileEventIds.size > 0;
+}
+function collectServeTimeDecisionRecoveryTargets(normalizedEventExport) {
+    const targets = {
+        recordIds: new Set(),
+        selectionDigestKeys: new Set(),
+        turnCompileEventIds: new Set()
+    };
+    const interactions = Array.isArray(normalizedEventExport?.interactionEvents)
+        ? normalizedEventExport.interactionEvents
+        : [];
+    const feedbackEvents = Array.isArray(normalizedEventExport?.feedbackEvents)
+        ? normalizedEventExport.feedbackEvents
+        : [];
+    const interactionsById = new Map();
+    for (const interaction of interactions) {
+        const interactionId = normalizeServeTimeDecisionRecoveryString(interaction?.eventId);
+        if (interactionId !== null && !interactionsById.has(interactionId)) {
+            interactionsById.set(interactionId, interaction);
+        }
+    }
+    const candidateInteractions = [];
+    for (const feedback of feedbackEvents) {
+        const relatedInteractionId = normalizeServeTimeDecisionRecoveryString(feedback?.relatedInteractionId);
+        if (relatedInteractionId === null) {
+            continue;
+        }
+        targets.turnCompileEventIds.add(relatedInteractionId);
+        const relatedInteraction = interactionsById.get(relatedInteractionId);
+        if (relatedInteraction !== undefined) {
+            candidateInteractions.push(relatedInteraction);
+        }
+    }
+    for (const interaction of candidateInteractions) {
+        const routeMetadata = readServeTimeDecisionRecoveryRecord(interaction?.routeMetadata);
+        const decisionProvenance = readServeTimeDecisionRecoveryRecord(interaction?.decisionProvenance);
+        const metadata = readServeTimeDecisionRecoveryRecord(interaction?.metadata);
+        const serveDecisionRecordId = normalizeServeTimeDecisionRecoveryString(interaction?.serveDecisionRecordId)
+            ?? normalizeServeTimeDecisionRecoveryString(routeMetadata?.serveDecisionRecordId)
+            ?? normalizeServeTimeDecisionRecoveryString(decisionProvenance?.serveDecisionRecordId)
+            ?? normalizeServeTimeDecisionRecoveryString(metadata?.serveDecisionRecordId);
+        if (serveDecisionRecordId !== null) {
+            targets.recordIds.add(serveDecisionRecordId);
+        }
+        const selectionDigestKey = buildServeTimeDecisionRecoverySelectionKey(normalizeServeTimeDecisionRecoveryString(interaction?.selectionDigest)
+            ?? normalizeServeTimeDecisionRecoveryString(routeMetadata?.selectionDigest)
+            ?? normalizeServeTimeDecisionRecoveryString(decisionProvenance?.selectionDigest)
+            ?? normalizeServeTimeDecisionRecoveryString(metadata?.selectionDigest), normalizeServeTimeDecisionRecoveryString(interaction?.activePackGraphChecksum)
+            ?? normalizeServeTimeDecisionRecoveryString(routeMetadata?.activePackGraphChecksum)
+            ?? normalizeServeTimeDecisionRecoveryString(decisionProvenance?.activePackGraphChecksum)
+            ?? normalizeServeTimeDecisionRecoveryString(metadata?.activePackGraphChecksum));
+        if (selectionDigestKey !== null) {
+            targets.selectionDigestKeys.add(selectionDigestKey);
+        }
+        const explicitTurnCompileEventId = normalizeServeTimeDecisionRecoveryString(interaction?.turnCompileEventId)
+            ?? normalizeServeTimeDecisionRecoveryString(routeMetadata?.turnCompileEventId)
+            ?? normalizeServeTimeDecisionRecoveryString(decisionProvenance?.turnCompileEventId)
+            ?? normalizeServeTimeDecisionRecoveryString(metadata?.turnCompileEventId);
+        if (explicitTurnCompileEventId !== null) {
+            targets.turnCompileEventIds.add(explicitTurnCompileEventId);
+        }
+        const softTurnCompileEventId = normalizeServeTimeDecisionRecoveryString(interaction?.eventId);
+        if (softTurnCompileEventId !== null) {
+            targets.turnCompileEventIds.add(softTurnCompileEventId);
+        }
+    }
+    return targets;
+}
+function readServeTimeDecisionRecoveryRecord(value) {
+    return value && typeof value === "object" && !Array.isArray(value) ? value : null;
+}
+function normalizeServeTimeDecisionRecoveryString(value) {
+    if (typeof value !== "string") {
+        return null;
+    }
+    const trimmed = value.trim();
+    return trimmed.length > 0 ? trimmed : null;
+}
+function buildServeTimeDecisionRecoverySelectionKey(selectionDigest, activePackGraphChecksum) {
+    const normalizedSelectionDigest = normalizeServeTimeDecisionRecoveryString(selectionDigest);
+    const normalizedGraphChecksum = normalizeServeTimeDecisionRecoveryString(activePackGraphChecksum);
+    if (normalizedSelectionDigest === null || normalizedGraphChecksum === null) {
+        return null;
+    }
+    return `${normalizedGraphChecksum}|${normalizedSelectionDigest}`;
 }
 function resolveActivationInspectionPackId(inspection, slot) {
     return inspection?.[slot]?.packId ?? inspection?.pointers?.[slot]?.packId ?? null;
@@ -4854,7 +5037,7 @@ async function runLearnCommand(parsed) {
     }
     const learningExport = normalizedEventExport;
     const resolvedEmbedder = resolveCliEmbedderConfig(undefined, activationRoot);
-    const serveTimeLearning = resolveServeTimeLearningRuntimeInput(activationRoot);
+    const serveTimeLearning = resolveServeTimeLearningRuntimeInput(activationRoot, normalizedEventExport);
     const learnerResult = drainAlwaysOnLearningRuntime({
         packLabel: "learn-cli",
         workspace: {
@@ -5678,8 +5861,8 @@ export async function createWatchCommandRuntime(input) {
         },
         learnedRouting: true,
         ...(teacherLabeler !== null ? { teacherLabeler } : {}),
-        resolveLearnedRoutingState: () => {
-            const resolved = resolveServeTimeLearningRuntimeInput(activationRoot);
+        resolveLearnedRoutingState: (normalizedEventExport) => {
+            const resolved = resolveServeTimeLearningRuntimeInput(activationRoot, normalizedEventExport);
             if (resolved.fallbackReason !== null && resolved.fallbackReason !== lastServeTimeFallbackReason) {
                 log(`Serve-time routing fallback: ${resolved.fallbackReason}`);
             }
@@ -6367,10 +6550,12 @@ export function runOperatorCli(argv = process.argv.slice(2)) {
     const status = statusWithReport.status;
     const tracedLearning = buildTracedLearningStatusSurface(activationRoot);
     const normalizedStatusAndReport = applyAttachmentPolicyTruth(status, statusOrRollback.json ? null : statusWithReport.report);
+    const hotfixBoundaryTruth = summarizeStatusHotfixBoundary(normalizedStatusAndReport.status);
     if (statusOrRollback.json) {
         console.log(JSON.stringify({
             ...normalizedStatusAndReport.status,
-            tracedLearning
+            tracedLearning,
+            hotfixBoundaryTruth
         }, null, 2));
     }
     else {

@@ -35,6 +35,37 @@ function shortenPath(fullPath) {
     }
     return fullPath;
 }
+function readInstalledHookPackageVersion(packageJsonPath) {
+    if (typeof packageJsonPath !== "string" || packageJsonPath.trim().length === 0) {
+        return null;
+    }
+    try {
+        const parsed = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+        return typeof parsed?.version === "string" && parsed.version.trim().length > 0
+            ? parsed.version.trim()
+            : null;
+    }
+    catch {
+        return null;
+    }
+}
+function formatPackageIdentity(packageName, packageVersion, packageSpec = null) {
+    if (typeof packageSpec === "string" && packageSpec.trim().length > 0) {
+        return packageSpec.trim();
+    }
+    if (typeof packageName !== "string" || packageName.trim().length === 0) {
+        return null;
+    }
+    const normalizedName = packageName.trim();
+    return typeof packageVersion === "string" && packageVersion.trim().length > 0
+        ? `${normalizedName}@${packageVersion.trim()}`
+        : normalizedName;
+}
+function normalizeSurfacePath(filePath) {
+    return typeof filePath === "string" && filePath.trim().length > 0
+        ? path.resolve(filePath)
+        : null;
+}
 function inspectInstalledHookActivationRoot(loaderEntryPath) {
     let content;
     try {
@@ -147,6 +178,7 @@ export function inspectOpenClawBrainHookStatus(openclawHome) {
             manifestId: null,
             installId: null,
             packageName: null,
+            packageVersion: null,
             installLayout: null,
             additionalInstallCount: 0,
             installState: "unverified",
@@ -173,6 +205,7 @@ export function inspectOpenClawBrainHookStatus(openclawHome) {
             manifestId: incompleteInstall?.manifestId ?? null,
             installId: incompleteInstall?.installId ?? null,
             packageName: incompleteInstall?.packageName ?? null,
+            packageVersion: readInstalledHookPackageVersion(incompleteInstall?.packageJsonPath ?? null),
             installLayout: incompleteInstall?.installLayout ?? null,
             additionalInstallCount: installedPlugin.additionalInstalls.length,
             installState: "not_installed",
@@ -189,6 +222,7 @@ export function inspectOpenClawBrainHookStatus(openclawHome) {
     const allowlist = inspectOpenClawBrainPluginAllowlist(resolvedHome);
     const layoutLabel = describeOpenClawBrainInstallLayout(selectedInstall.installLayout);
     const identityDetail = describeOpenClawBrainInstallIdentity(selectedInstall);
+    const packageVersion = readInstalledHookPackageVersion(selectedInstall.packageJsonPath);
     const activationRootState = inspectInstalledHookActivationRoot(selectedInstall.loaderEntryPath);
     if (allowlist.state === "blocked") {
         return {
@@ -202,6 +236,7 @@ export function inspectOpenClawBrainHookStatus(openclawHome) {
             manifestId: selectedInstall.manifestId,
             installId: selectedInstall.installId,
             packageName: selectedInstall.packageName,
+            packageVersion,
             installLayout: selectedInstall.installLayout,
             additionalInstallCount: installedPlugin.additionalInstalls.length,
             installState: "blocked_by_allowlist",
@@ -224,6 +259,7 @@ export function inspectOpenClawBrainHookStatus(openclawHome) {
             manifestId: selectedInstall.manifestId,
             installId: selectedInstall.installId,
             packageName: selectedInstall.packageName,
+            packageVersion,
             installLayout: selectedInstall.installLayout,
             additionalInstallCount: installedPlugin.additionalInstalls.length,
             installState: "blocked_by_allowlist",
@@ -246,6 +282,7 @@ export function inspectOpenClawBrainHookStatus(openclawHome) {
             manifestId: selectedInstall.manifestId,
             installId: selectedInstall.installId,
             packageName: selectedInstall.packageName,
+            packageVersion,
             installLayout: selectedInstall.installLayout,
             additionalInstallCount: installedPlugin.additionalInstalls.length,
             installState: "installed",
@@ -266,6 +303,7 @@ export function inspectOpenClawBrainHookStatus(openclawHome) {
         manifestId: selectedInstall.manifestId,
         installId: selectedInstall.installId,
         packageName: selectedInstall.packageName,
+        packageVersion,
         installLayout: selectedInstall.installLayout,
         additionalInstallCount: installedPlugin.additionalInstalls.length,
         installState: "installed",
@@ -282,6 +320,85 @@ export function summarizeOpenClawBrainHookLoad(inspection, statusProbeReady) {
         loadProof: inspection.loadability === "loadable" && statusProbeReady
             ? "status_probe_ready"
             : "not_ready"
+    };
+}
+export function describeOpenClawBrainHotfixBoundary(input) {
+    const hookInspection = input.hookInspection;
+    const daemonInspection = input.daemonInspection ?? null;
+    const daemonPath = normalizeSurfacePath(daemonInspection?.configuredRuntimePath ?? null);
+    const hookPath = normalizeSurfacePath(hookInspection.hookPath);
+    const runtimeGuardPath = normalizeSurfacePath(hookInspection.runtimeGuardPath);
+    const daemonPackage = formatPackageIdentity(daemonInspection?.configuredRuntimePackageName ?? null, daemonInspection?.configuredRuntimePackageVersion ?? null, daemonInspection?.configuredRuntimePackageSpec ?? null);
+    const hookPackage = formatPackageIdentity(hookInspection.packageName, hookInspection.packageVersion);
+    if (hookInspection.scope === "activation_root_only") {
+        return {
+            boundary: "hook_surface_unverified",
+            skew: "unverified",
+            daemonPath,
+            hookPath: null,
+            runtimeGuardPath: null,
+            daemonPackage,
+            hookPackage: null,
+            guidance: "Pin --openclaw-home before patching the installed hook/runtime-guard surface; activation-root-only status does not prove which OpenClaw install you would be changing.",
+            detail: daemonPath === null
+                ? "activation-root-only status does not expose the installed hook/runtime-guard surface."
+                : `daemon runtime path ${shortenPath(daemonPath)} is visible, but activation-root-only status still does not expose the installed hook/runtime-guard surface.`
+        };
+    }
+    if (hookPath === null && runtimeGuardPath === null) {
+        return {
+            boundary: "hook_surface_unverified",
+            skew: "unverified",
+            daemonPath,
+            hookPath: null,
+            runtimeGuardPath: null,
+            daemonPackage,
+            hookPackage,
+            guidance: daemonPath === null
+                ? "Repair or reinstall the installed hook surface before patching OpenClaw load behavior."
+                : "Patch the daemon runtime path for background watch fixes, but repair or reinstall the installed hook/runtime-guard surface before patching OpenClaw load behavior.",
+            detail: daemonPath === null
+                ? "no verified daemon runtime path or installed hook/runtime-guard path is visible from this status snapshot."
+                : `daemon runtime path ${shortenPath(daemonPath)} is visible, but the installed hook/runtime-guard surface is not yet loadable.`
+        };
+    }
+    if (daemonPath === null) {
+        return {
+            boundary: "daemon_surface_only",
+            skew: "unverified",
+            daemonPath: null,
+            hookPath,
+            runtimeGuardPath,
+            daemonPackage: null,
+            hookPackage,
+            guidance: "Patch the installed hook/runtime-guard surface for OpenClaw load fixes. No configured daemon runtime path is visible from status.",
+            detail: `installed hook loads from ${hookPath === null ? "unverified" : shortenPath(hookPath)}${runtimeGuardPath === null ? "" : ` with runtime-guard ${shortenPath(runtimeGuardPath)}`}, but no configured daemon runtime path is visible.`
+        };
+    }
+    const samePath = daemonPath === hookPath || daemonPath === runtimeGuardPath;
+    const daemonVersion = daemonInspection?.configuredRuntimePackageVersion ?? null;
+    const hookVersion = hookInspection.packageVersion ?? null;
+    const skew = samePath
+        ? "same_path"
+        : daemonVersion !== null && hookVersion !== null
+            ? daemonVersion === hookVersion
+                ? "split_path_same_version"
+                : "split_path_version_skew"
+            : "split_path_version_unverified";
+    return {
+        boundary: samePath ? "same_surface" : "split_surfaces",
+        skew,
+        daemonPath,
+        hookPath,
+        runtimeGuardPath,
+        daemonPackage,
+        hookPackage,
+        guidance: samePath
+            ? "Daemon and installed hook paths currently collapse to the same file; verify both surfaces before patching anyway."
+            : "Patch the daemon runtime path for background watch/learner fixes. Patch the installed hook/runtime-guard paths for OpenClaw load fixes.",
+        detail: samePath
+            ? `daemon runtime path ${shortenPath(daemonPath)} currently resolves to the same file as the installed OpenClaw hook surface.`
+            : `daemon background watch runs from ${shortenPath(daemonPath)}${daemonPackage === null ? "" : ` (${daemonPackage})`}; OpenClaw loads the installed hook from ${hookPath === null ? "unverified" : shortenPath(hookPath)}${hookPackage === null ? "" : ` (${hookPackage})`}${runtimeGuardPath === null ? "" : ` and runtime-guard ${shortenPath(runtimeGuardPath)}`}.`
     };
 }
 //# sourceMappingURL=openclaw-hook-truth.js.map
