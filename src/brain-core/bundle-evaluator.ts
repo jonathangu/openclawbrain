@@ -14,6 +14,10 @@ import type {
   MutationBundleStatus,
   MutationProposal,
 } from "./types.js";
+import {
+  applyShadowMutationProposalToState,
+  createShadowCandidateState,
+} from "./shadow-application.js";
 
 /** Bundle of clustered mutations to evaluate together */
 export interface MutationBundle {
@@ -328,12 +332,14 @@ export async function evaluateBundle(
   // Calculate base score (current graph)
   const baseScore = await calculateRetrievalScore(graph, validEpisodes);
 
-  // Clone graph and apply mutations
-  const candidateGraph = graph.clone();
-  
+  // Clone graph and apply mutations off-path with reversible shadow application.
+  const shadowState = createShadowCandidateState(graph);
+
   for (const proposal of bundle.proposals) {
-    applyMutationToGraph(candidateGraph, proposal);
+    applyShadowMutationProposalToState(shadowState, proposal);
   }
+
+  const candidateGraph = shadowState.candidateGraph;
 
   // Calculate candidate score
   const candidateScore = await calculateRetrievalScore(candidateGraph, validEpisodes);
@@ -448,64 +454,6 @@ function hashString(str: string): string {
   return Math.abs(hash).toString(36);
 }
 
-/**
- * Apply a mutation to a cloned graph
- */
-function applyMutationToGraph(graph: BrainGraph, proposal: MutationProposal): void {
-  const p = proposal.proposal as Record<string, unknown>;
-  const now = Date.now();
-
-  switch (proposal.kind) {
-    case "connect": {
-      const nodeA = p.nodeA as string;
-      const nodeB = p.nodeB as string;
-      graph.addEdge({
-        source: nodeA,
-        target: nodeB,
-        kind: "learned",
-        weight: 0.3,
-        prior: 0.0,
-        metadata: { coFireCount: p.coFireCount },
-        decayedAt: now,
-        createdAt: now,
-      });
-      break;
-    }
-
-    case "prune": {
-      const source = p.source as string;
-      const target = p.target as string;
-      graph.removeEdge(source, target, "learned");
-      break;
-    }
-
-    case "inject": {
-      const nodeKind = p.nodeKind as string;
-      if (nodeKind === "episode_anchor") {
-        const content = p.content as string;
-        const firedNodes = p.firedNodes as string[];
-        
-        // Create anchor node
-        const nodeId = `__anchor_${hashString(content).slice(0, 8)}`;
-        // Note: would need to add node creation to graph interface
-        // For now, connect to fired nodes
-        for (const targetNode of firedNodes) {
-          graph.addEdge({
-            source: nodeId,
-            target: targetNode,
-            kind: "learned",
-            weight: 0.2,
-            prior: 0.0,
-            metadata: {},
-            decayedAt: now,
-            createdAt: now,
-          });
-        }
-      }
-      break;
-    }
-  }
-}
 
 /**
  * Check rejection criteria

@@ -9,6 +9,7 @@ import { randomUUID } from "node:crypto";
 import type { Episode, MutationProposal, BrainNode } from "./types.js";
 import type { BrainGraph } from "./graph.js";
 import { cosineSimilarity } from "./graph.js";
+import { applyShadowMutationProposal } from "./shadow-application.js";
 
 export interface BrainMutationPersistence {
   insertNode(node: BrainNode): void;
@@ -257,7 +258,7 @@ export class BrainMutator {
   }
 
   applyToCandidateGraph(targetGraph: BrainGraph, proposal: MutationProposal): void {
-    this.applyMutationToGraph(targetGraph, proposal);
+    applyShadowMutationProposal(targetGraph, proposal);
   }
 
   applyMutation(proposal: MutationProposal): void {
