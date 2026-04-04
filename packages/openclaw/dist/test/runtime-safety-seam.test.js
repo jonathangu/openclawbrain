@@ -84,3 +84,41 @@ test("openclaw hotfix boundary treats a blocked installed hook as half-converged
     assert.equal(boundary.skew, "split_path_same_version");
     assert.equal(boundary.convergeState, "half_converged");
 });
+
+test("openclaw hotfix boundary reports split_path_version_unverified when hook packageVersion is null", () => {
+    const boundary = describeOpenClawBrainHotfixBoundary({
+        hookInspection: buildInspection({
+            packageVersion: null,
+        }),
+        daemonInspection: {
+            configuredRuntimePath: "/tmp/openclawbrain/cli.js",
+            configuredRuntimePackageName: "@openclawbrain/cli",
+            configuredRuntimePackageVersion: "1.2.3",
+            configuredRuntimePackageSpec: null,
+        },
+    });
+    assert.equal(boundary.boundary, "split_surfaces");
+    assert.equal(boundary.skew, "split_path_version_unverified");
+    assert.equal(boundary.convergeState, "unverified");
+    assert.ok(boundary.convergeReasons.includes("version_unverified"));
+    assert.equal(boundary.hookPackage, "@openclawbrain/openclaw");
+});
+
+test("openclaw hotfix boundary resolves concrete version identity when hook packageVersion is present", () => {
+    const boundary = describeOpenClawBrainHotfixBoundary({
+        hookInspection: buildInspection({
+            packageVersion: "0.4.30",
+        }),
+        daemonInspection: {
+            configuredRuntimePath: "/tmp/openclawbrain/cli.js",
+            configuredRuntimePackageName: "@openclawbrain/cli",
+            configuredRuntimePackageVersion: "0.4.30",
+            configuredRuntimePackageSpec: null,
+        },
+    });
+    assert.equal(boundary.boundary, "split_surfaces");
+    assert.equal(boundary.skew, "split_path_same_version");
+    assert.equal(boundary.convergeState, "converged");
+    assert.equal(boundary.hookPackage, "@openclawbrain/openclaw@0.4.30");
+    assert.equal(boundary.hookPackageVersion, "0.4.30");
+});

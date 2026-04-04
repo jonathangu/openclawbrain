@@ -157,3 +157,56 @@ test("hotfix boundary treats a blocked installed hook as half-converged even whe
     assert.equal(boundary.convergeState, "half_converged");
     assert.ok(boundary.convergeReasons.includes("installed_surface_not_loadable"));
 });
+
+test("hotfix boundary reports split_path_version_unverified when hook packageVersion is null", () => {
+    const boundary = describeOpenClawBrainHotfixBoundary({
+        hookInspection: buildInspection({
+            packageVersion: null,
+        }),
+        daemonInspection: {
+            configuredRuntimePath: "/tmp/openclawbrain/cli.js",
+            configuredRuntimePackageName: "@openclawbrain/cli",
+            configuredRuntimePackageVersion: "1.2.3",
+            configuredRuntimePackageSpec: null,
+        },
+    });
+    assert.equal(boundary.boundary, "split_surfaces");
+    assert.equal(boundary.skew, "split_path_version_unverified");
+    assert.equal(boundary.convergeState, "unverified");
+    assert.ok(boundary.convergeReasons.includes("version_unverified"));
+    assert.equal(boundary.hookPackage, "@openclawbrain/openclaw");
+    assert.equal(boundary.hookPackageVersion, null);
+});
+
+test("hotfix boundary resolves concrete version identity when hook packageVersion is present", () => {
+    const boundary = describeOpenClawBrainHotfixBoundary({
+        hookInspection: buildInspection({
+            packageVersion: "0.4.30",
+        }),
+        daemonInspection: {
+            configuredRuntimePath: "/tmp/openclawbrain/cli.js",
+            configuredRuntimePackageName: "@openclawbrain/cli",
+            configuredRuntimePackageVersion: "0.4.30",
+            configuredRuntimePackageSpec: null,
+        },
+    });
+    assert.equal(boundary.boundary, "split_surfaces");
+    assert.equal(boundary.skew, "split_path_same_version");
+    assert.equal(boundary.convergeState, "converged");
+    assert.equal(boundary.hookPackage, "@openclawbrain/openclaw@0.4.30");
+    assert.equal(boundary.hookPackageVersion, "0.4.30");
+    assert.equal(boundary.daemonPackageVersion, "0.4.30");
+});
+
+test("hotfix boundary carries hook version identity on daemon_surface_only boundary", () => {
+    const boundary = describeOpenClawBrainHotfixBoundary({
+        hookInspection: buildInspection({
+            packageVersion: "0.4.30",
+        }),
+        daemonInspection: null,
+    });
+    assert.equal(boundary.boundary, "daemon_surface_only");
+    assert.equal(boundary.skew, "unverified");
+    assert.equal(boundary.hookPackage, "@openclawbrain/openclaw@0.4.30");
+    assert.equal(boundary.hookPackageVersion, "0.4.30");
+});

@@ -257,7 +257,7 @@ export function inspectOpenClawBrainHookStatus(openclawHome) {
             manifestId: incompleteInstall?.manifestId ?? null,
             installId: incompleteInstall?.installId ?? null,
             packageName: incompleteInstall?.packageName ?? null,
-            packageVersion: readInstalledHookPackageVersion(incompleteInstall?.packageJsonPath ?? null),
+            packageVersion: incompleteInstall?.packageVersion ?? readInstalledHookPackageVersion(incompleteInstall?.packageJsonPath ?? null) ?? incompleteInstall?.manifestVersion ?? null,
             installLayout: incompleteInstall?.installLayout ?? null,
             additionalInstallCount: installedPlugin.additionalInstalls.length,
             installState: "not_installed",
@@ -274,7 +274,7 @@ export function inspectOpenClawBrainHookStatus(openclawHome) {
     const allowlist = inspectOpenClawBrainPluginAllowlist(resolvedHome);
     const layoutLabel = describeOpenClawBrainInstallLayout(selectedInstall.installLayout);
     const identityDetail = describeOpenClawBrainInstallIdentity(selectedInstall);
-    const packageVersion = readInstalledHookPackageVersion(selectedInstall.packageJsonPath);
+    const packageVersion = selectedInstall.packageVersion ?? readInstalledHookPackageVersion(selectedInstall.packageJsonPath) ?? selectedInstall.manifestVersion ?? null;
     const activationRootState = inspectInstalledHookActivationRoot(selectedInstall.loaderEntryPath);
     if (allowlist.state === "blocked") {
         return {

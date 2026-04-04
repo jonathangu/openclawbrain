@@ -164,6 +164,10 @@ function inspectOpenClawBrainPluginInstall(extensionDir, pluginId) {
     const packageName = typeof packageJson.name === "string" && packageJson.name.trim().length > 0
         ? packageJson.name.trim()
         : null;
+    const packageVersion = typeof packageJson.version === "string" && packageJson.version.trim().length > 0
+        ? packageJson.version.trim()
+        : null;
+    const manifestVersion = normalizeOptionalString(manifest?.version);
     const installId = normalizeInstallId(packageName) ?? normalizeInstallId(path.basename(extensionDir));
     const installLayout = inferInstallLayout({
         extensionDir,
@@ -182,8 +186,10 @@ function inspectOpenClawBrainPluginInstall(extensionDir, pluginId) {
         runtimeGuardPath: loaderEntryPath === null ? null : resolveRuntimeGuardPath(loaderEntryPath),
         configuredEntries,
         manifestId,
+        manifestVersion,
         installId,
         packageName,
+        packageVersion,
         installLayout
     };
 }
