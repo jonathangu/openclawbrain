@@ -52,13 +52,13 @@ These checks are appropriate when the question is not just “is this broken?”
 
 ## 3) Release-drift motivating case
 
-The current repo already has a concrete example of why this split matters:
+The repo now lines up on the current release surface:
 
-- the root `README.md` still says `Current version: 0.4.26`
-- `docs/README.md` still points the release-history index at `Current release notes (0.4.24)`
+- the root `README.md` says `Current version: 0.4.27`
+- `docs/README.md` points the release-history index at `Current release notes (0.4.27)`
 - `docs/release-notes-0.4.27.md` exists and describes `0.4.27`
 
-That is a deterministic release-surface mismatch, not a semantic judgment call.
+That is the deterministic release-surface state this lint family is meant to keep enforced, not a semantic judgment call.
 
 A CI-first lint should catch this class of drift before the teacher-assisted lane ever runs. The teacher lane can then focus on the harder question: whether the surrounding narrative still matches the actual shipped behavior and public claims boundary.
 
