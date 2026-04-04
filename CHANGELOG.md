@@ -4,6 +4,26 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.30
+
+`0.4.30` is the runtime-surface convergence release: the canonical operator lane now makes daemon-vs-hook skew explicit, blocks half-converged install/runtime states more honestly, and treats explicit custom `--openclaw-home` paths as first-class in docs/help/examples.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.30`
+- `@openclawbrain/cli@0.4.30`
+
+**Changes**
+
+- surfaces daemon-vs-installed-hook/runtime-guard split-runtime skew more explicitly in status/proof truth
+- blocks half-converged daemon vs installed-hook states in converge/proof verification instead of reading like success
+- makes explicit custom OpenClaw homes like `./openclaw-cormorantai` first-class in docs/help/examples through the canonical `--openclaw-home` path
+- preserves the one-version / one-install-lane public contract
+
+**Full release note**
+
+- [docs/release-notes-0.4.30.md](docs/release-notes-0.4.30.md)
+
 ## 0.4.29
 
 `0.4.29` is the compatibility release that makes **Gemma 4 31B** a first-class compatible OpenClawBrain teacher on the canonical local Ollama install lane, while preserving the single public version / single install path story.

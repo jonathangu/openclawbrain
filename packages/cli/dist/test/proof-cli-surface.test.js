@@ -80,9 +80,9 @@ function createDetailedStatusText(fixture, overrides = {}) {
         `target activation=${overrides.activationRoot ?? fixture.activationRoot} boundary=current_profile`,
         `attachTruth current=current_profile runtime=${overrides.runtimeTruth ?? "proven"} hook=present config=allows_load`,
         overrides.hookLine ?? "hook        install=installed loadable=loadable",
-        overrides.surfaceLine ?? `surface     boundary=split_surfaces skew=split_path_same_version converge=converged daemonSource=managed_service selectedHome=${path.resolve(fixture.openclawHome)} daemon=@openclawbrain/cli@0.4.29 hook=@openclawbrain/openclaw@0.4.29`,
+        overrides.surfaceLine ?? `surface     boundary=split_surfaces skew=split_path_same_version converge=converged daemonSource=managed_service selectedHome=${path.resolve(fixture.openclawHome)} daemon=@openclawbrain/cli@0.4.30 hook=@openclawbrain/openclaw@0.4.30`,
         overrides.surfacesLine ?? "surfaces    daemonPath=/tmp/openclawbrain/cli.js hookPath=/tmp/.openclaw/extensions/openclawbrain/dist/extension/index.js runtimeGuard=/tmp/.openclaw/extensions/openclawbrain/dist/extension/runtime-guard.js",
-        overrides.surfaceNoteLine ?? "surfaceNote daemon background watch runs from /tmp/openclawbrain/cli.js (@openclawbrain/cli@0.4.29); OpenClaw loads the installed hook from /tmp/.openclaw/extensions/openclawbrain/dist/extension/index.js (@openclawbrain/openclaw@0.4.29) and runtime-guard /tmp/.openclaw/extensions/openclawbrain/dist/extension/runtime-guard.js.",
+        overrides.surfaceNoteLine ?? "surfaceNote daemon background watch runs from /tmp/openclawbrain/cli.js (@openclawbrain/cli@0.4.30); OpenClaw loads the installed hook from /tmp/.openclaw/extensions/openclawbrain/dist/extension/index.js (@openclawbrain/openclaw@0.4.30) and runtime-guard /tmp/.openclaw/extensions/openclawbrain/dist/extension/runtime-guard.js.",
         overrides.hotfixLine ?? "hotfix      Patch the daemon runtime path for background watch/learner fixes. Patch the installed hook/runtime-guard paths for OpenClaw load fixes.",
         overrides.guardLine ?? "guard       severity=none actionability=none action=none summary=profile hook is installed and loadable",
         `serve       state=${overrides.serveState ?? "serving_active_pack"}`,
@@ -456,7 +456,7 @@ test("proof capture blocks when detailed status reports daemon and installed hoo
     const { result } = captureProofScenario(fixture, createHealthyLabelOutputs(fixture, {
         "detailed status": {
             stdout: createDetailedStatusText(fixture, {
-                surfaceLine: `surface     boundary=split_surfaces skew=split_path_version_skew converge=half_converged daemonSource=managed_service selectedHome=${path.resolve(fixture.openclawHome)} daemon=@openclawbrain/cli@0.4.29 hook=@openclawbrain/openclaw@0.4.28`
+                surfaceLine: `surface     boundary=split_surfaces skew=split_path_version_skew converge=half_converged daemonSource=managed_service selectedHome=${path.resolve(fixture.openclawHome)} daemon=@openclawbrain/cli@0.4.30 hook=@openclawbrain/openclaw@0.4.29`
             })
         }
     }));
@@ -474,9 +474,9 @@ test("proof capture accepts generated shadow hook sources and ignores unrelated 
         `target activation=${fixture.activationRoot} boundary=current_profile`,
         "attachTruth current=current_profile runtime=proven hook=present config=allows_load",
         "hook        install=installed loadable=loadable",
-        `surface     boundary=split_surfaces skew=split_path_same_version converge=converged daemonSource=managed_service selectedHome=${path.resolve(fixture.openclawHome)} daemon=@openclawbrain/cli@0.4.29 hook=@openclawbrain/openclaw@0.4.29`,
+        `surface     boundary=split_surfaces skew=split_path_same_version converge=converged daemonSource=managed_service selectedHome=${path.resolve(fixture.openclawHome)} daemon=@openclawbrain/cli@0.4.30 hook=@openclawbrain/openclaw@0.4.30`,
         "surfaces    daemonPath=/tmp/openclawbrain/cli.js hookPath=/tmp/.openclaw/extensions/openclawbrain/dist/extension/index.js runtimeGuard=/tmp/.openclaw/extensions/openclawbrain/dist/extension/runtime-guard.js",
-        "surfaceNote daemon background watch runs from /tmp/openclawbrain/cli.js (@openclawbrain/cli@0.4.29); OpenClaw loads the installed hook from /tmp/.openclaw/extensions/openclawbrain/dist/extension/index.js (@openclawbrain/openclaw@0.4.29) and runtime-guard /tmp/.openclaw/extensions/openclawbrain/dist/extension/runtime-guard.js.",
+        "surfaceNote daemon background watch runs from /tmp/openclawbrain/cli.js (@openclawbrain/cli@0.4.30); OpenClaw loads the installed hook from /tmp/.openclaw/extensions/openclawbrain/dist/extension/index.js (@openclawbrain/openclaw@0.4.30) and runtime-guard /tmp/.openclaw/extensions/openclawbrain/dist/extension/runtime-guard.js.",
         "hotfix      Patch the daemon runtime path for background watch/learner fixes. Patch the installed hook/runtime-guard paths for OpenClaw load fixes.",
         "guard       severity=none actionability=none action=none summary=profile hook is installed and loadable",
         "serve       state=serving_active_pack",

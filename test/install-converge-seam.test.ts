@@ -246,7 +246,7 @@ describe("classifyOpenClawBrainConvergeVerification — proof promotion", () => 
       surfaceBoundary: "split_surfaces",
       surfaceConvergeState: "half_converged",
       surfaceSkew: "split_path_version_skew",
-      daemonPackage: "@openclawbrain/cli@0.4.29",
+      daemonPackage: "@openclawbrain/cli@0.4.30",
       hookPackage: "@openclawbrain/openclaw@0.4.28",
       selectedOpenClawHome: "/tmp/.openclaw-Tern",
       restartRequired: false,
