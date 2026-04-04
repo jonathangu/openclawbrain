@@ -280,6 +280,7 @@ export interface TeacherProposalProofBundleSummaryV1 {
   rollbackKey: string;
   replaySuites: string[];
   surfaceIds: string[];
+  surfaceCount: number;
   shippedSurfaceCount: number;
   targetSurfaceCount: number;
   evidenceLinkCount: number;
@@ -298,6 +299,7 @@ export function summarizeTeacherProposalProofBundleV1(
     rollbackKey: bundle.rollbackKey,
     replaySuites: [...bundle.replaySuites],
     surfaceIds: bundle.surfaceMap.map((surface) => surface.id),
+    surfaceCount: bundle.surfaceMap.length,
     shippedSurfaceCount: bundle.surfaceMap.filter((surface) => surface.state === "shipped").length,
     targetSurfaceCount: bundle.surfaceMap.filter((surface) => surface.state === "target").length,
     evidenceLinkCount: bundle.evidenceLinks.length,

@@ -20,6 +20,7 @@ import {
   TEACHER_PROPOSAL_SHADOW_ONLY_CLASSES_V1,
   TEACHER_PROPOSAL_REPLAY_GATES_V1,
   evaluateRetentionTransitionV1,
+  summarizeTeacherProposalProofBundleV1,
   summarizeTeacherV3LiveProofRungV1,
 } from "../../src/brain-core/teacher-v3-contracts.js";
 
@@ -300,6 +301,19 @@ describe("teacher v3 contracts", () => {
         "Bind any candidate pack by durable version or id, never by ad hoc display labels.",
       ]),
     );
+    expect(summarizeTeacherProposalProofBundleV1(proposal.proofBundle as TeacherProposalProofBundleV1)).toMatchObject({
+      bundleId: "pb_01",
+      proposalId: proposal.proposalId,
+      proposalClass: "compiler",
+      status: "promoted",
+      rollbackKey: proposal.rollbackKey,
+      surfaceCount: 3,
+      shippedSurfaceCount: 2,
+      targetSurfaceCount: 1,
+      evidenceLinkCount: 2,
+      counterevidenceLinkCount: 0,
+      surfaceIds: ["surface_runtime_status", "surface_operator_proof", "surface_teacher_v3_bundle"],
+    });
     expect(proposal.replayGate?.dimensions.truthInvariants.name).toBe("truth_invariants");
     expect(proposal.replayGate?.dimensions.attributionFloor.requirements).toContain(
       "Every proposal carries durable evidence refs.",

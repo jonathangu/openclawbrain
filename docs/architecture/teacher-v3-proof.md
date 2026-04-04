@@ -98,8 +98,10 @@ type TeacherV3ProofBundleV1 = {
 
 Promoted proposal bundles should keep the proposal id, proposal class, rollback key,
 replay suites, and an inspectable `surfaceMap` that labels each referenced
-surface as `shipped` or `target`. For operator review, the bundle should stay
-small enough to inspect without reconstructing proof ad hoc from raw logs.
+surface as `shipped` or `target`. The summary surface should stay bounded too:
+count the referenced surfaces, but do not dump raw bundle payloads or logs.
+For operator review, the bundle should stay small enough to inspect without
+reconstructing proof ad hoc from raw logs.
 
 ### First live-proof rung
 
