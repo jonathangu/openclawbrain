@@ -133,7 +133,7 @@ describe("teacher v3 contracts", () => {
     expect(proposal.replayGate?.reviewMode).toBe("shadow_only");
     expect(proposal.replayGate?.dimensions.truthInvariants.name).toBe("truth_invariants");
     expect(proposal.replayGate?.dimensions.attributionFloor.requirements).toContain(
-      "Every non-trivial claim has a durable EvidenceRef.",
+      "Every proposal carries durable evidence refs.",
     );
   });
 
