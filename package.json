@@ -34,6 +34,7 @@
     "release:prepare:packages": "npm run release:prepare:openclaw && npm run release:prepare:cli",
     "release:verify": "npm test && npm run release:verify:proof && npm pack --dry-run && npm run release:verify:openclaw && npm run release:verify:cli",
     "release:verify:proof": "node scripts/verify-proof-smoke.mjs",
+    "release:verify:docs-drift": "node scripts/verify-release-docs-drift.mjs",
     "release:verify:cli": "npm run release:prepare:cli && npm --prefix packages/cli run release:verify",
     "release:verify:openclaw": "npm run release:prepare:openclaw && npm --prefix packages/openclaw run release:verify",
     "proof:health": "node scripts/proof-cron.mjs health",

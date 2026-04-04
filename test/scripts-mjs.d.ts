@@ -25,3 +25,9 @@ declare module "../scripts/release-plan.mjs" {
   export const buildReleasePlan: any;
   export const verifyReleasePlan: any;
 }
+
+declare module "../scripts/verify-release-docs-drift.mjs" {
+  export const detectCurrentReleaseVersion: any;
+  export const runCli: any;
+  export const verifyReleaseDocsDrift: any;
+}
