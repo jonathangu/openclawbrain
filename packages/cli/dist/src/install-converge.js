@@ -10,7 +10,21 @@ const CHANGE_REASON_LABELS = {
   loader_source: "loader source changed",
   runtime_guard_source: "runtime-guard source changed",
   plugins_config: "OpenClaw plugins config changed",
+  daemon_runtime_path: "daemon runtime path changed",
+  daemon_runtime_identity: "daemon runtime identity changed",
 };
+
+const GATEWAY_RESTART_CHANGE_REASONS = new Set([
+  "install_identity",
+  "install_layout",
+  "hook_path",
+  "hook_state",
+  "loadability",
+  "activation_root",
+  "loader_source",
+  "runtime_guard_source",
+  "plugins_config",
+]);
 
 function sameValue(left, right) {
   return left === right;
@@ -26,6 +40,32 @@ function installIdentityOf(fingerprint) {
     installId: fingerprint.selectedInstall.installId ?? null,
     packageName: fingerprint.selectedInstall.packageName ?? null,
   });
+}
+
+function daemonRuntimeIdentityOf(fingerprint) {
+  return JSON.stringify({
+    runtimePackageName: fingerprint?.daemonRuntimePackageName ?? null,
+    runtimePackageVersion: fingerprint?.daemonRuntimePackageVersion ?? null,
+    runtimePackageSpec: fingerprint?.daemonRuntimePackageSpec ?? null,
+    runtimeSource: fingerprint?.daemonRuntimeSource ?? null,
+  });
+}
+
+function describeSurfaceHalfConvergedReason(input) {
+  const boundary = input.surfaceBoundary ?? null;
+  const skew = input.surfaceSkew ?? null;
+  const selectedOpenClawHome = input.selectedOpenClawHome ?? null;
+  const daemonPackage = input.daemonPackage ?? null;
+  const hookPackage = input.hookPackage ?? null;
+  const boundarySuffix = boundary === null
+    ? ""
+    : skew === null || skew === "unverified"
+      ? ` (${boundary})`
+      : ` (${boundary}/${skew})`;
+  const packageSuffix = daemonPackage === null && hookPackage === null
+    ? ""
+    : `; daemon=${daemonPackage ?? "unverified"} hook=${hookPackage ?? "unverified"}`;
+  return `daemon runtime and installed hook/runtime-guard are half-converged${selectedOpenClawHome === null ? "" : ` for ${selectedOpenClawHome}`}${boundarySuffix}${packageSuffix}`;
 }
 
 export function shouldReplaceOpenClawBrainInstallBeforeConverge(fingerprint) {
@@ -99,6 +139,12 @@ export function diffOpenClawBrainConvergeRuntimeFingerprint(before, after) {
   if (!sameValue(before?.pluginsConfig ?? null, after?.pluginsConfig ?? null)) {
     reasons.push("plugins_config");
   }
+  if (!sameValue(before?.daemonRuntimePath ?? null, after?.daemonRuntimePath ?? null)) {
+    reasons.push("daemon_runtime_path");
+  }
+  if (!sameValue(daemonRuntimeIdentityOf(before), daemonRuntimeIdentityOf(after))) {
+    reasons.push("daemon_runtime_identity");
+  }
   return {
     changed: reasons.length > 0,
     reasons,
@@ -114,12 +160,15 @@ export function describeOpenClawBrainConvergeChangeReasons(reasons) {
 
 export function buildOpenClawBrainConvergeRestartPlan(input) {
   const changeReasons = input.changeReasons ?? [];
-  if (changeReasons.length === 0) {
+  const gatewayRestartReasons = changeReasons.filter((reason) => GATEWAY_RESTART_CHANGE_REASONS.has(reason));
+  if (gatewayRestartReasons.length === 0) {
     return {
       required: false,
       automatic: false,
-      reason: "no_runtime_affecting_changes",
-      detail: "Skipped gateway restart because converge did not change plugin files, hook wiring, or the pinned activation root.",
+      reason: changeReasons.length === 0 ? "no_runtime_affecting_changes" : "daemon_only_runtime_changes",
+      detail: changeReasons.length === 0
+        ? "Skipped gateway restart because converge did not change plugin files, hook wiring, or the pinned activation root."
+        : "Skipped gateway restart because converge only changed the daemon runtime surface; the selected OpenClaw hook/runtime-guard wiring did not change.",
     };
   }
   if (input.profileName === null) {
@@ -149,6 +198,13 @@ export function classifyOpenClawBrainConvergeVerification(input) {
   const loadProof = input.loadProof ?? "unverified";
   const serveState = input.serveState ?? "unknown";
   const installedPackageName = input.installedPackageName ?? null;
+  const surfaceConvergeState = input.surfaceConvergeState ?? null;
+  const surfaceBoundary = input.surfaceBoundary ?? null;
+  const surfaceSkew = input.surfaceSkew ?? null;
+  const selectedOpenClawHome = input.selectedOpenClawHome ?? null;
+  const daemonPackage = input.daemonPackage ?? null;
+  const hookPackage = input.hookPackage ?? null;
+  const surfaceSummary = input.surfaceSummary ?? null;
   if (installedPackageName === LEGACY_COMPAT_PACKAGE_NAME) {
     blockingReasons.push(`installed plugin still references the retired compatibility package ${LEGACY_COMPAT_PACKAGE_NAME}; converge must replace it with @openclawbrain/openclaw`);
   }
@@ -163,6 +219,15 @@ export function classifyOpenClawBrainConvergeVerification(input) {
   }
   if (displayedStatus === "fail") {
     blockingReasons.push("status still reports fail");
+  }
+  if (surfaceConvergeState === "half_converged") {
+    blockingReasons.push(surfaceSummary ?? describeSurfaceHalfConvergedReason({
+      surfaceBoundary,
+      surfaceSkew,
+      selectedOpenClawHome,
+      daemonPackage,
+      hookPackage,
+    }));
   }
   const runtimeTruthAlreadyProven = runtimeLoad === "proven"
     && loadProof === "status_probe_ready"
@@ -181,6 +246,12 @@ export function classifyOpenClawBrainConvergeVerification(input) {
   }
   if (input.restartRequired === true && input.restartPerformed !== true && runtimeTruthAlreadyProven) {
     warnings.push("automatic restart was not performed because install could not infer an exact OpenClaw profile token, but current status already proves runtime load");
+  }
+  if (surfaceConvergeState === "warning") {
+    warnings.push(surfaceSummary ?? "daemon runtime vs installed hook/runtime-guard identity is not fully proven from this verification snapshot");
+  }
+  if (surfaceConvergeState === "unverified") {
+    warnings.push(surfaceSummary ?? "daemon runtime vs installed hook/runtime-guard convergence is not fully proven from this verification snapshot");
   }
   // When runtime proof is green for the repaired profile, promote the proof
   // surface to healthy rather than leaving stale degraded warnings that

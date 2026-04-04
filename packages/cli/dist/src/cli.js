@@ -955,16 +955,69 @@ function summarizeStatusAttachmentTruth(input) {
         })
     };
 }
+let cachedCliPackageMetadata = null;
+function resolveCliPackageManifestPath() {
+    const candidates = [
+        path.resolve(__dirname, "..", "..", "package.json"),
+        path.resolve(__dirname, "..", "package.json"),
+    ];
+    for (const candidate of candidates) {
+        if (existsSync(candidate)) {
+            return candidate;
+        }
+    }
+    throw new Error("OpenClawBrain CLI package manifest not found. Searched:\n" +
+        candidates.map((candidate) => `  - ${candidate}`).join("\n"));
+}
+function readCliPackageMetadata() {
+    if (cachedCliPackageMetadata !== null) {
+        return cachedCliPackageMetadata;
+    }
+    const manifest = JSON.parse(readFileSync(resolveCliPackageManifestPath(), "utf8"));
+    const name = typeof manifest.name === "string" && manifest.name.trim().length > 0
+        ? manifest.name.trim()
+        : "@openclawbrain/cli";
+    const version = typeof manifest.version === "string" && manifest.version.trim().length > 0
+        ? manifest.version.trim()
+        : "0.0.0";
+    cachedCliPackageMetadata = { name, version };
+    return cachedCliPackageMetadata;
+}
+function inspectDaemonRuntimeSurface(activationRoot) {
+    const managedInspection = inspectManagedLearnerService(activationRoot);
+    if (managedInspection.installed === true ||
+        managedInspection.configuredRuntimePath !== null ||
+        managedInspection.configuredRuntimePackageSpec !== null ||
+        managedInspection.configuredRuntimePackageName !== null ||
+        managedInspection.configuredRuntimePackageVersion !== null) {
+        return {
+            ...managedInspection,
+            surfaceIdentitySource: "managed_service"
+        };
+    }
+    const cliPackageMetadata = readCliPackageMetadata();
+    return {
+        ...managedInspection,
+        configuredRuntimePath: canonicalizeExistingCliPath(__filename),
+        configuredRuntimePackageName: cliPackageMetadata.name,
+        configuredRuntimePackageVersion: cliPackageMetadata.version,
+        configuredRuntimePackageSpec: null,
+        surfaceIdentitySource: "current_cli"
+    };
+}
 function summarizeStatusHotfixBoundary(status) {
     return describeOpenClawBrainHotfixBoundary({
         hookInspection: status.hook,
-        daemonInspection: inspectManagedLearnerService(status.host.activationRoot)
+        daemonInspection: inspectDaemonRuntimeSurface(status.host.activationRoot)
     });
 }
 function formatStatusHotfixBoundarySummary(boundary) {
     return [
         `boundary=${boundary.boundary}`,
         `skew=${boundary.skew}`,
+        `converge=${boundary.convergeState ?? "unverified"}`,
+        `daemonSource=${boundary.daemonSource ?? "unverified"}`,
+        `selectedHome=${boundary.selectedOpenClawHome === null ? "unverified" : shortenPath(boundary.selectedOpenClawHome)}`,
         `daemon=${boundary.daemonPackage ?? "unverified"}`,
         `hook=${boundary.hookPackage ?? "unverified"}`
     ].join(" ");
@@ -1649,6 +1702,8 @@ function readInstallRuntimeFingerprint(openclawHome) {
         openclawHome,
         quiet: true
     });
+    const activationRoot = resolvedActivationRoot.trim().length === 0 ? null : path.resolve(resolvedActivationRoot);
+    const daemonSurface = activationRoot === null ? null : inspectDaemonRuntimeSurface(activationRoot);
     const { config } = readOpenClawJsonConfig(openclawHome);
     return {
         selectedInstall: selectedInstall === null
@@ -1664,10 +1719,15 @@ function readInstallRuntimeFingerprint(openclawHome) {
         hookPath: hook.hookPath,
         hookState: hook.installState,
         loadability: hook.loadability,
-        activationRoot: resolvedActivationRoot.trim().length === 0 ? null : path.resolve(resolvedActivationRoot),
+        activationRoot,
         loaderSource: readTextFileIfExists(selectedInstall?.loaderEntryPath ?? null),
         runtimeGuardSource: readTextFileIfExists(selectedInstall?.runtimeGuardPath ?? null),
-        pluginsConfig: JSON.stringify(config.plugins ?? null)
+        pluginsConfig: JSON.stringify(config.plugins ?? null),
+        daemonRuntimePath: daemonSurface?.configuredRuntimePath ?? null,
+        daemonRuntimePackageName: daemonSurface?.configuredRuntimePackageName ?? null,
+        daemonRuntimePackageVersion: daemonSurface?.configuredRuntimePackageVersion ?? null,
+        daemonRuntimePackageSpec: daemonSurface?.configuredRuntimePackageSpec ?? null,
+        daemonRuntimeSource: daemonSurface?.surfaceIdentitySource ?? null
     };
 }
 function runOpenClawBrainConvergePluginStep(openclawHome) {
@@ -1738,7 +1798,22 @@ function inspectInstallConvergeVerification(parsed) {
         status: normalizedStatusAndReport.status
     });
     const displayedStatus = summarizeDisplayedStatus(normalizedStatusAndReport.status, installHook);
+    const hotfixBoundary = summarizeStatusHotfixBoundary(normalizedStatusAndReport.status);
+    const surfaceSummary = hotfixBoundary.convergeState === "half_converged"
+        ? `daemon runtime and installed hook/runtime-guard are half-converged: ${hotfixBoundary.detail}`
+        : hotfixBoundary.convergeState === "warning"
+            ? `daemon runtime and installed hook/runtime-guard identity is not fully proven: ${hotfixBoundary.detail}`
+            : hotfixBoundary.convergeState === "unverified"
+                ? `daemon runtime and installed hook/runtime-guard convergence is unverified: ${hotfixBoundary.detail}`
+                : hotfixBoundary.detail;
     const routeFn = summarizeStatusRouteFn(normalizedStatusAndReport.status, normalizedStatusAndReport.report);
+    const defaultNextStep = buildStatusNextStep(normalizedStatusAndReport.status, normalizedStatusAndReport.report, {
+        openclawHome: parsed.openclawHome,
+        installHook
+    });
+    const nextStep = hotfixBoundary.convergeState === "half_converged"
+        ? `Daemon runtime and installed hook/runtime-guard are half-converged for ${shortenPath(parsed.openclawHome)} (${hotfixBoundary.skew}); refresh the daemon-side CLI/runtime surface, then rerun ${buildInstallCommand(parsed.openclawHome)}.`
+        : defaultNextStep;
     return {
         targetInspection,
         status: normalizedStatusAndReport.status,
@@ -1747,11 +1822,9 @@ function inspectInstallConvergeVerification(parsed) {
         attachmentTruth,
         displayedStatus,
         routeFn,
-        nextStep: buildStatusNextStep(normalizedStatusAndReport.status, normalizedStatusAndReport.report, {
-            openclawHome: parsed.openclawHome,
-            installHook
-        }),
-        summaryLine: `STATUS ${displayedStatus}; hook=${installHook.state}/${installHook.loadability}; guard=${normalizedStatusAndReport.status.hook.guardSeverity}/${normalizedStatusAndReport.status.hook.guardActionability}; runtime=${attachmentTruth.runtimeLoad}; loadProof=${normalizedStatusAndReport.status.hook.loadProof}; serve=${normalizedStatusAndReport.status.brainStatus.serveState}`,
+        hotfixBoundary,
+        nextStep,
+        summaryLine: `STATUS ${displayedStatus}; hook=${installHook.state}/${installHook.loadability}; surface=${hotfixBoundary.convergeState}/${hotfixBoundary.skew}; guard=${normalizedStatusAndReport.status.hook.guardSeverity}/${normalizedStatusAndReport.status.hook.guardActionability}; runtime=${attachmentTruth.runtimeLoad}; loadProof=${normalizedStatusAndReport.status.hook.loadProof}; serve=${normalizedStatusAndReport.status.brainStatus.serveState}`,
         facts: {
             installLayout: normalizedStatusAndReport.status.hook.installLayout ?? installHook.installLayout ?? null,
             installState: installHook.state,
@@ -1763,7 +1836,17 @@ function inspectInstallConvergeVerification(parsed) {
             loadProof: normalizedStatusAndReport.status.hook.loadProof,
             serveState: normalizedStatusAndReport.status.brainStatus.serveState,
             routeFnAvailable: routeFn.available,
-            awaitingFirstExport: normalizedStatusAndReport.status.brainStatus.awaitingFirstExport
+            awaitingFirstExport: normalizedStatusAndReport.status.brainStatus.awaitingFirstExport,
+            surfaceBoundary: hotfixBoundary.boundary,
+            surfaceSkew: hotfixBoundary.skew,
+            surfaceConvergeState: hotfixBoundary.convergeState,
+            surfaceSummary,
+            daemonPackage: hotfixBoundary.daemonPackage,
+            hookPackage: hotfixBoundary.hookPackage,
+            daemonPath: hotfixBoundary.daemonPath,
+            hookPath: hotfixBoundary.hookPath,
+            runtimeGuardPath: hotfixBoundary.runtimeGuardPath,
+            selectedOpenClawHome: hotfixBoundary.selectedOpenClawHome
         }
     };
 }
@@ -4065,6 +4148,8 @@ function emitInstallConvergeResult(result, parsed) {
     console.log(`Attach:     ${result.attach.detail}`);
     console.log(`Restart:    ${result.restart.detail}`);
     console.log(`Verify:     ${result.verification.summaryLine}`);
+    console.log(`Surface:    ${result.verification.surface.summaryLine}`);
+    console.log(`Paths:      ${result.verification.surface.pathsLine}`);
     console.log(`Verdict:    ${result.verdict.verdict}`);
     console.log(`Why:        ${result.verdict.why}`);
     if (result.verdict.warnings.length > 0) {
@@ -4126,7 +4211,22 @@ function runInstallCommand(parsed) {
                 loadProof: "unknown",
                 serveState: "unknown",
                 routeFnAvailable: false,
-                awaitingFirstExport: false
+                awaitingFirstExport: false,
+                surface: {
+                    summaryLine: "daemon/runtime hook surface identity was not verified because install failed earlier",
+                    pathsLine: "daemonPath=none hookPath=unverified runtimeGuard=unverified",
+                    boundary: "unknown",
+                    skew: "unknown",
+                    convergeState: "unknown",
+                    daemonSource: "unknown",
+                    daemonPackage: null,
+                    hookPackage: null,
+                    detail: "install failed before daemon/runtime hook surface identity could be verified",
+                    daemonPath: null,
+                    hookPath: null,
+                    runtimeGuardPath: null,
+                    selectedOpenClawHome: parsed.openclawHome
+                }
             },
             verdict
         };
@@ -4211,7 +4311,22 @@ function runInstallCommand(parsed) {
             loadProof: verificationSnapshot.facts.loadProof,
             serveState: verificationSnapshot.facts.serveState,
             routeFnAvailable: verificationSnapshot.facts.routeFnAvailable,
-            awaitingFirstExport: verificationSnapshot.facts.awaitingFirstExport
+            awaitingFirstExport: verificationSnapshot.facts.awaitingFirstExport,
+            surface: {
+                summaryLine: `boundary=${verificationSnapshot.hotfixBoundary.boundary}; skew=${verificationSnapshot.hotfixBoundary.skew}; converge=${verificationSnapshot.hotfixBoundary.convergeState}; daemonSource=${verificationSnapshot.hotfixBoundary.daemonSource}; selectedHome=${verificationSnapshot.hotfixBoundary.selectedOpenClawHome === null ? "unverified" : shortenPath(verificationSnapshot.hotfixBoundary.selectedOpenClawHome)}; daemon=${verificationSnapshot.hotfixBoundary.daemonPackage ?? "unverified"}; hook=${verificationSnapshot.hotfixBoundary.hookPackage ?? "unverified"}; detail=${verificationSnapshot.hotfixBoundary.detail}`,
+                pathsLine: `daemonPath=${verificationSnapshot.hotfixBoundary.daemonPath === null ? "none" : shortenPath(verificationSnapshot.hotfixBoundary.daemonPath)} hookPath=${verificationSnapshot.hotfixBoundary.hookPath === null ? "unverified" : shortenPath(verificationSnapshot.hotfixBoundary.hookPath)} runtimeGuard=${verificationSnapshot.hotfixBoundary.runtimeGuardPath === null ? "unverified" : shortenPath(verificationSnapshot.hotfixBoundary.runtimeGuardPath)}`,
+                boundary: verificationSnapshot.hotfixBoundary.boundary,
+                skew: verificationSnapshot.hotfixBoundary.skew,
+                convergeState: verificationSnapshot.hotfixBoundary.convergeState,
+                daemonSource: verificationSnapshot.hotfixBoundary.daemonSource,
+                daemonPackage: verificationSnapshot.hotfixBoundary.daemonPackage,
+                hookPackage: verificationSnapshot.hotfixBoundary.hookPackage,
+                detail: verificationSnapshot.hotfixBoundary.detail,
+                daemonPath: verificationSnapshot.hotfixBoundary.daemonPath,
+                hookPath: verificationSnapshot.hotfixBoundary.hookPath,
+                runtimeGuardPath: verificationSnapshot.hotfixBoundary.runtimeGuardPath,
+                selectedOpenClawHome: verificationSnapshot.hotfixBoundary.selectedOpenClawHome
+            }
         },
         verdict,
         underlyingInstall: attachResult

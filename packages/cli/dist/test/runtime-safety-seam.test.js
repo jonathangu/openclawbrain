@@ -84,6 +84,8 @@ test("hotfix boundary marks daemon and installed hook as separate surfaces even 
     });
     assert.equal(boundary.boundary, "split_surfaces");
     assert.equal(boundary.skew, "split_path_same_version");
+    assert.equal(boundary.convergeState, "converged");
+    assert.equal(boundary.daemonSource, "managed_service");
     assert.match(boundary.detail, /daemon background watch runs from/);
     assert.match(boundary.guidance, /Patch the daemon runtime path/);
     assert.match(boundary.guidance, /installed hook\/runtime-guard/);
@@ -101,6 +103,7 @@ test("hotfix boundary calls out version skew when daemon and installed hook dive
     });
     assert.equal(boundary.boundary, "split_surfaces");
     assert.equal(boundary.skew, "split_path_version_skew");
+    assert.equal(boundary.convergeState, "half_converged");
 });
 
 test("hotfix boundary refuses to imply hook truth from activation-root-only status", () => {
@@ -132,5 +135,25 @@ test("hotfix boundary refuses to imply hook truth from activation-root-only stat
     });
     assert.equal(boundary.boundary, "hook_surface_unverified");
     assert.equal(boundary.skew, "unverified");
+    assert.equal(boundary.convergeState, "unverified");
     assert.match(boundary.guidance, /Pin --openclaw-home/);
+});
+
+test("hotfix boundary treats a blocked installed hook as half-converged even when paths are visible", () => {
+    const boundary = describeOpenClawBrainHotfixBoundary({
+        hookInspection: buildInspection({
+            loadability: "blocked",
+            desynced: true,
+            detail: "profile hook is present but OpenClaw will not load it",
+        }),
+        daemonInspection: {
+            configuredRuntimePath: "/tmp/openclawbrain/cli.js",
+            configuredRuntimePackageName: "@openclawbrain/cli",
+            configuredRuntimePackageVersion: "1.2.3",
+            configuredRuntimePackageSpec: null,
+        },
+    });
+    assert.equal(boundary.skew, "split_path_same_version");
+    assert.equal(boundary.convergeState, "half_converged");
+    assert.ok(boundary.convergeReasons.includes("installed_surface_not_loadable"));
 });

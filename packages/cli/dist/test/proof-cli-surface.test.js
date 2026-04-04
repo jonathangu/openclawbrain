@@ -80,8 +80,9 @@ function createDetailedStatusText(fixture, overrides = {}) {
         `target activation=${overrides.activationRoot ?? fixture.activationRoot} boundary=current_profile`,
         `attachTruth current=current_profile runtime=${overrides.runtimeTruth ?? "proven"} hook=present config=allows_load`,
         overrides.hookLine ?? "hook        install=installed loadable=loadable",
-        overrides.surfaceLine ?? "surface     boundary=split_surfaces skew=split_path_same_version daemon=@openclawbrain/cli@0.4.29 hook=@openclawbrain/openclaw@0.4.29",
+        overrides.surfaceLine ?? `surface     boundary=split_surfaces skew=split_path_same_version converge=converged daemonSource=managed_service selectedHome=${path.resolve(fixture.openclawHome)} daemon=@openclawbrain/cli@0.4.29 hook=@openclawbrain/openclaw@0.4.29`,
         overrides.surfacesLine ?? "surfaces    daemonPath=/tmp/openclawbrain/cli.js hookPath=/tmp/.openclaw/extensions/openclawbrain/dist/extension/index.js runtimeGuard=/tmp/.openclaw/extensions/openclawbrain/dist/extension/runtime-guard.js",
+        overrides.surfaceNoteLine ?? "surfaceNote daemon background watch runs from /tmp/openclawbrain/cli.js (@openclawbrain/cli@0.4.29); OpenClaw loads the installed hook from /tmp/.openclaw/extensions/openclawbrain/dist/extension/index.js (@openclawbrain/openclaw@0.4.29) and runtime-guard /tmp/.openclaw/extensions/openclawbrain/dist/extension/runtime-guard.js.",
         overrides.hotfixLine ?? "hotfix      Patch the daemon runtime path for background watch/learner fixes. Patch the installed hook/runtime-guard paths for OpenClaw load fixes.",
         overrides.guardLine ?? "guard       severity=none actionability=none action=none summary=profile hook is installed and loadable",
         `serve       state=${overrides.serveState ?? "serving_active_pack"}`,
@@ -251,8 +252,9 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     assert.match(summary, /## Warnings/);
     assert.match(summary, /- none/);
     assert.match(summary, /## Hotfix Boundary/);
-    assert.match(summary, /surface     boundary=split_surfaces skew=split_path_same_version/);
+    assert.match(summary, /surface     boundary=split_surfaces skew=split_path_same_version converge=converged/);
     assert.match(summary, /surfaces    daemonPath=\/tmp\/openclawbrain\/cli\.js/);
+    assert.match(summary, /surfaceNote daemon background watch runs from/);
     assert.match(summary, /hotfix      Patch the daemon runtime path for background watch\/learner fixes/);
     assert.match(summary, /startup log contained a post-bundle \[openclawbrain\] BRAIN LOADED breadcrumb/);
     assert.match(summary, /## Coverage snapshot/);
@@ -265,6 +267,7 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     assert.equal(coverageSnapshot.coverageRate, 1);
     assert.equal(coverageSnapshot.profiles[0].coverageState, "covered");
     assert.equal(hardeningSnapshot.statusSignals.runtimeProven, true);
+    assert.equal(hardeningSnapshot.statusSignals.surfaceConverged, true);
     assert.equal(hardeningSnapshot.verdict.verdict, "success_and_proven");
     assert.equal(verdictPayload.learningFlowLine, "learnFlow   harvested=1 eligible=1 loaded=yes pack=pack-status matched=1 supervised=1 updated=1");
     assert.equal(verdictPayload.learningHealthLine, "health      daemon=healthy-daemon learning=progress-visible detail=matched=1 supervised=1 updated=1");
@@ -446,6 +449,21 @@ test("proof capture treats STATUS warn as a proof warning when stronger runtime 
     assert.match(summary, /status_warn/);
 });
 
+test("proof capture blocks when detailed status reports daemon and installed hook surfaces as half-converged", (t) => {
+    const fixture = createProofFixture(t);
+    const { result } = captureProofScenario(fixture, createHealthyLabelOutputs(fixture, {
+        "detailed status": {
+            stdout: createDetailedStatusText(fixture, {
+                surfaceLine: `surface     boundary=split_surfaces skew=split_path_version_skew converge=half_converged daemonSource=managed_service selectedHome=${path.resolve(fixture.openclawHome)} daemon=@openclawbrain/cli@0.4.29 hook=@openclawbrain/openclaw@0.4.28`
+            })
+        }
+    }));
+    assert.equal(result.verdict.verdict, "degraded_or_failed_proof");
+    assert.equal(result.verdict.severity, "blocking");
+    assert.ok(result.verdict.missingProofs.includes("surface_converged"));
+    assert.ok(result.verdict.warnings.includes("detailed status reported daemon-vs-installed-surface half-converged (split_path_version_skew)"));
+});
+
 test("proof capture accepts generated shadow hook sources and ignores unrelated profile coverage gaps when the target profile is proven", (t) => {
     const fixture = createProofFixture(t);
     const otherHome = path.join(fixture.root, ".openclaw-Other");
@@ -454,6 +472,10 @@ test("proof capture accepts generated shadow hook sources and ignores unrelated 
         `target activation=${fixture.activationRoot} boundary=current_profile`,
         "attachTruth current=current_profile runtime=proven hook=present config=allows_load",
         "hook        install=installed loadable=loadable",
+        `surface     boundary=split_surfaces skew=split_path_same_version converge=converged daemonSource=managed_service selectedHome=${path.resolve(fixture.openclawHome)} daemon=@openclawbrain/cli@0.4.29 hook=@openclawbrain/openclaw@0.4.29`,
+        "surfaces    daemonPath=/tmp/openclawbrain/cli.js hookPath=/tmp/.openclaw/extensions/openclawbrain/dist/extension/index.js runtimeGuard=/tmp/.openclaw/extensions/openclawbrain/dist/extension/runtime-guard.js",
+        "surfaceNote daemon background watch runs from /tmp/openclawbrain/cli.js (@openclawbrain/cli@0.4.29); OpenClaw loads the installed hook from /tmp/.openclaw/extensions/openclawbrain/dist/extension/index.js (@openclawbrain/openclaw@0.4.29) and runtime-guard /tmp/.openclaw/extensions/openclawbrain/dist/extension/runtime-guard.js.",
+        "hotfix      Patch the daemon runtime path for background watch/learner fixes. Patch the installed hook/runtime-guard paths for OpenClaw load fixes.",
         "guard       severity=none actionability=none action=none summary=profile hook is installed and loadable",
         "serve       state=serving_active_pack",
         "routeFn     available=yes",

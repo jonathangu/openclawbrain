@@ -8,11 +8,27 @@ Keep the same `--openclaw-home` value through the whole lifecycle. The public la
 
 ```bash
 openclawbrain install --openclaw-home ~/.openclaw
-openclaw gateway restart
 openclawbrain status --openclaw-home ~/.openclaw --detailed
 ```
 
-`install` is the public front door for the selected home. It writes or repairs the hook for that home and pins the activation root the runtime serves from. `status --detailed` verifies that selected home.
+`install` is the public front door for the selected home. It repairs the installed hook/runtime-guard surface for that home and re-checks it against the separate daemon runtime surface for the same activation root:
+
+- the **installed hook/runtime-guard** surface that OpenClaw loads from the selected `--openclaw-home`
+- the **daemon runtime** surface that background watch/learner work runs from for that activation root
+
+`status --detailed` verifies both surfaces for the selected home. If you ever do manual hook or daemon surgery, the safe recovery lane is still the same command:
+
+```bash
+openclawbrain install --openclaw-home ~/.openclaw
+```
+
+Safe converge lane for upgrades or hotfixes:
+
+1. Update the global packages that own the daemon/runtime surface.
+2. If this activation root runs the managed background daemon, restart that daemon-side surface.
+3. Run `openclawbrain install --openclaw-home <path>` to reconverge the selected hook/runtime-guard surface.
+4. Run `openclawbrain status --openclaw-home <path> --detailed` and confirm the `surface` line reports `converge=converged`.
+5. Run `openclawbrain proof --openclaw-home <path>` when you need a durable bundle that captures the same surface truth.
 
 When you need durable operator evidence today, run:
 
@@ -31,6 +47,9 @@ Look for these checkpoints in `status --detailed`:
 - `STATUS ok`
 - `loadProof=status_probe_ready`
 - `attachTruth ... runtime=proven`
+- `surface ... converge=converged`
+
+If `surface ... converge=half_converged` appears, treat that as a failed converge. One side of the split runtime moved without the other. Refresh the daemon-side CLI/runtime surface if needed, then rerun `openclawbrain install --openclaw-home <path>` for the same selected home before trusting the host again.
 
 When you need a durable bundle, run the `proof` command above after install/restart or rerun it later with `--skip-install --skip-restart` to capture the current operator state without replaying lifecycle steps. When your installed proof surface still expects the explicit replay guards, use those flags there. The public story stays on the same selected `--openclaw-home`.
 

@@ -28,6 +28,27 @@ openclawbrain status --openclaw-home ~/.openclaw --detailed
 
 If you bypassed the install lane and changed plugin files directly, rerun `openclawbrain install --openclaw-home ~/.openclaw` for the same home afterward.
 
+## `status --detailed` shows `surface ... converge=half_converged`
+
+Cause:
+
+The two live runtime surfaces drifted apart:
+
+- the selected home's installed hook/runtime-guard moved one way
+- the daemon runtime used for background watch/learner work moved another way
+
+This is the main operator seam during upgrades or hotfixes.
+
+Fix:
+
+```bash
+openclawbrain install --openclaw-home ~/.openclaw
+openclaw gateway restart
+openclawbrain status --openclaw-home ~/.openclaw --detailed
+```
+
+Do not treat one-sided daemon or hook edits as converged just because the other surface still loads.
+
 ## `status --detailed` does not show the selected home as attached
 
 Cause:

@@ -66,6 +66,58 @@ function normalizeSurfacePath(filePath) {
         ? path.resolve(filePath)
         : null;
 }
+function classifyRuntimeSurfaceConvergeState(input) {
+    const reasons = [];
+    if (input.scope === "activation_root_only") {
+        reasons.push("selected_openclaw_home_unverified");
+        return {
+            state: "unverified",
+            reasons
+        };
+    }
+    if (input.daemonPath === null) {
+        reasons.push("daemon_surface_unverified");
+    }
+    if (input.hookPath === null && input.runtimeGuardPath === null) {
+        reasons.push("installed_surface_unverified");
+        return {
+            state: input.daemonPath === null ? "unverified" : "half_converged",
+            reasons
+        };
+    }
+    if (input.hookLoadability !== "loadable") {
+        reasons.push("installed_surface_not_loadable");
+        return {
+            state: input.daemonPath === null ? "unverified" : "half_converged",
+            reasons
+        };
+    }
+    if (input.daemonPath === null) {
+        return {
+            state: "unverified",
+            reasons
+        };
+    }
+    if (input.samePath) {
+        reasons.push("same_path");
+        return {
+            state: "converged",
+            reasons
+        };
+    }
+    if (input.daemonVersion !== null && input.hookVersion !== null) {
+        reasons.push(input.daemonVersion === input.hookVersion ? "split_path_same_version" : "version_skew");
+        return {
+            state: input.daemonVersion === input.hookVersion ? "converged" : "half_converged",
+            reasons
+        };
+    }
+    reasons.push("version_unverified");
+    return {
+        state: "unverified",
+        reasons
+    };
+}
 function inspectInstalledHookActivationRoot(loaderEntryPath) {
     let content;
     try {
@@ -328,77 +380,101 @@ export function describeOpenClawBrainHotfixBoundary(input) {
     const daemonPath = normalizeSurfacePath(daemonInspection?.configuredRuntimePath ?? null);
     const hookPath = normalizeSurfacePath(hookInspection.hookPath);
     const runtimeGuardPath = normalizeSurfacePath(hookInspection.runtimeGuardPath);
+    const selectedOpenClawHome = typeof hookInspection.openclawHome === "string" && hookInspection.openclawHome.trim().length > 0
+        ? path.resolve(hookInspection.openclawHome)
+        : null;
+    const daemonSource = daemonInspection?.surfaceIdentitySource ?? (daemonPath === null ? "unverified" : "managed_service");
+    const daemonPackageName = daemonInspection?.configuredRuntimePackageName ?? null;
+    const daemonPackageVersion = daemonInspection?.configuredRuntimePackageVersion ?? null;
+    const hookPackageName = hookInspection.packageName ?? null;
+    const hookPackageVersion = hookInspection.packageVersion ?? null;
     const daemonPackage = formatPackageIdentity(daemonInspection?.configuredRuntimePackageName ?? null, daemonInspection?.configuredRuntimePackageVersion ?? null, daemonInspection?.configuredRuntimePackageSpec ?? null);
     const hookPackage = formatPackageIdentity(hookInspection.packageName, hookInspection.packageVersion);
-    if (hookInspection.scope === "activation_root_only") {
-        return {
-            boundary: "hook_surface_unverified",
-            skew: "unverified",
-            daemonPath,
-            hookPath: null,
-            runtimeGuardPath: null,
-            daemonPackage,
-            hookPackage: null,
-            guidance: "Pin --openclaw-home before patching the installed hook/runtime-guard surface; activation-root-only status does not prove which OpenClaw install you would be changing.",
-            detail: daemonPath === null
-                ? "activation-root-only status does not expose the installed hook/runtime-guard surface."
-                : `daemon runtime path ${shortenPath(daemonPath)} is visible, but activation-root-only status still does not expose the installed hook/runtime-guard surface.`
-        };
-    }
-    if (hookPath === null && runtimeGuardPath === null) {
-        return {
-            boundary: "hook_surface_unverified",
-            skew: "unverified",
-            daemonPath,
-            hookPath: null,
-            runtimeGuardPath: null,
-            daemonPackage,
-            hookPackage,
-            guidance: daemonPath === null
-                ? "Repair or reinstall the installed hook surface before patching OpenClaw load behavior."
-                : "Patch the daemon runtime path for background watch fixes, but repair or reinstall the installed hook/runtime-guard surface before patching OpenClaw load behavior.",
-            detail: daemonPath === null
-                ? "no verified daemon runtime path or installed hook/runtime-guard path is visible from this status snapshot."
-                : `daemon runtime path ${shortenPath(daemonPath)} is visible, but the installed hook/runtime-guard surface is not yet loadable.`
-        };
-    }
-    if (daemonPath === null) {
-        return {
-            boundary: "daemon_surface_only",
-            skew: "unverified",
-            daemonPath: null,
-            hookPath,
-            runtimeGuardPath,
-            daemonPackage: null,
-            hookPackage,
-            guidance: "Patch the installed hook/runtime-guard surface for OpenClaw load fixes. No configured daemon runtime path is visible from status.",
-            detail: `installed hook loads from ${hookPath === null ? "unverified" : shortenPath(hookPath)}${runtimeGuardPath === null ? "" : ` with runtime-guard ${shortenPath(runtimeGuardPath)}`}, but no configured daemon runtime path is visible.`
-        };
-    }
     const samePath = daemonPath === hookPath || daemonPath === runtimeGuardPath;
-    const daemonVersion = daemonInspection?.configuredRuntimePackageVersion ?? null;
-    const hookVersion = hookInspection.packageVersion ?? null;
-    const skew = samePath
-        ? "same_path"
-        : daemonVersion !== null && hookVersion !== null
-            ? daemonVersion === hookVersion
-                ? "split_path_same_version"
-                : "split_path_version_skew"
-            : "split_path_version_unverified";
+    const daemonVersion = daemonPackageVersion;
+    const hookVersion = hookPackageVersion;
+    let boundary;
+    let skew;
+    let displayedHookPath = hookPath;
+    let displayedRuntimeGuardPath = runtimeGuardPath;
+    let displayedDaemonPackage = daemonPackage;
+    let displayedHookPackage = hookPackage;
+    let guidance;
+    let detail;
+    if (hookInspection.scope === "activation_root_only") {
+        boundary = "hook_surface_unverified";
+        skew = "unverified";
+        displayedHookPath = null;
+        displayedRuntimeGuardPath = null;
+        displayedHookPackage = null;
+        guidance = "Pin --openclaw-home before patching the installed hook/runtime-guard surface; activation-root-only status does not prove which OpenClaw install you would be changing.";
+        detail = daemonPath === null
+            ? "activation-root-only status does not expose the installed hook/runtime-guard surface."
+            : `daemon runtime path ${shortenPath(daemonPath)} is visible, but activation-root-only status still does not expose the installed hook/runtime-guard surface.`;
+    }
+    else if (hookPath === null && runtimeGuardPath === null) {
+        boundary = "hook_surface_unverified";
+        skew = "unverified";
+        displayedHookPath = null;
+        displayedRuntimeGuardPath = null;
+        guidance = daemonPath === null
+            ? "Repair or reinstall the installed hook surface before patching OpenClaw load behavior."
+            : "Patch the daemon runtime path for background watch fixes, but repair or reinstall the installed hook/runtime-guard surface before patching OpenClaw load behavior.";
+        detail = daemonPath === null
+            ? "no verified daemon runtime path or installed hook/runtime-guard path is visible from this status snapshot."
+            : `daemon runtime path ${shortenPath(daemonPath)} is visible, but the installed hook/runtime-guard surface is not yet loadable.`;
+    }
+    else if (daemonPath === null) {
+        boundary = "daemon_surface_only";
+        skew = "unverified";
+        displayedDaemonPackage = null;
+        guidance = "Patch the installed hook/runtime-guard surface for OpenClaw load fixes. No configured daemon runtime path is visible from status.";
+        detail = `installed hook loads from ${hookPath === null ? "unverified" : shortenPath(hookPath)}${runtimeGuardPath === null ? "" : ` with runtime-guard ${shortenPath(runtimeGuardPath)}`}, but no configured daemon runtime path is visible.`;
+    }
+    else {
+        skew = samePath
+            ? "same_path"
+            : daemonVersion !== null && hookVersion !== null
+                ? daemonVersion === hookVersion
+                    ? "split_path_same_version"
+                    : "split_path_version_skew"
+                : "split_path_version_unverified";
+        boundary = samePath ? "same_surface" : "split_surfaces";
+        guidance = samePath
+            ? "Daemon and installed hook paths currently collapse to the same file; verify both surfaces before patching anyway."
+            : "Patch the daemon runtime path for background watch/learner fixes. Patch the installed hook/runtime-guard paths for OpenClaw load fixes.";
+        detail = samePath
+            ? `daemon runtime path ${shortenPath(daemonPath)} currently resolves to the same file as the installed OpenClaw hook surface.`
+            : `daemon background watch runs from ${shortenPath(daemonPath)}${daemonPackage === null ? "" : ` (${daemonPackage})`}; OpenClaw loads the installed hook from ${hookPath === null ? "unverified" : shortenPath(hookPath)}${hookPackage === null ? "" : ` (${hookPackage})`}${runtimeGuardPath === null ? "" : ` and runtime-guard ${shortenPath(runtimeGuardPath)}`}.`;
+    }
+    const converge = classifyRuntimeSurfaceConvergeState({
+        scope: hookInspection.scope,
+        daemonPath,
+        hookPath: displayedHookPath,
+        runtimeGuardPath: displayedRuntimeGuardPath,
+        hookLoadability: hookInspection.loadability,
+        daemonVersion,
+        hookVersion,
+        samePath
+    });
     return {
-        boundary: samePath ? "same_surface" : "split_surfaces",
+        boundary,
         skew,
         daemonPath,
-        hookPath,
-        runtimeGuardPath,
-        daemonPackage,
-        hookPackage,
-        guidance: samePath
-            ? "Daemon and installed hook paths currently collapse to the same file; verify both surfaces before patching anyway."
-            : "Patch the daemon runtime path for background watch/learner fixes. Patch the installed hook/runtime-guard paths for OpenClaw load fixes.",
-        detail: samePath
-            ? `daemon runtime path ${shortenPath(daemonPath)} currently resolves to the same file as the installed OpenClaw hook surface.`
-            : `daemon background watch runs from ${shortenPath(daemonPath)}${daemonPackage === null ? "" : ` (${daemonPackage})`}; OpenClaw loads the installed hook from ${hookPath === null ? "unverified" : shortenPath(hookPath)}${hookPackage === null ? "" : ` (${hookPackage})`}${runtimeGuardPath === null ? "" : ` and runtime-guard ${shortenPath(runtimeGuardPath)}`}.`
+        hookPath: displayedHookPath,
+        runtimeGuardPath: displayedRuntimeGuardPath,
+        daemonPackage: displayedDaemonPackage,
+        hookPackage: displayedHookPackage,
+        daemonPackageName,
+        daemonPackageVersion,
+        hookPackageName,
+        hookPackageVersion,
+        daemonSource,
+        selectedOpenClawHome,
+        convergeState: converge.state,
+        convergeReasons: converge.reasons,
+        guidance,
+        detail
     };
 }
 //# sourceMappingURL=openclaw-hook-truth.js.map

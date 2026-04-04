@@ -279,6 +279,7 @@ function extractStartupBreadcrumbs(logText, bundleStartedAtIso) {
 }
 
 function extractStatusSignals(statusText) {
+    const surface = extractKeyValuePairs(extractDetailedStatusLine(statusText, "surface"));
     return {
         statusOk: /^STATUS ok$/m.test(statusText),
         loadProofReady: /loadProof=status_probe_ready/.test(statusText),
@@ -288,6 +289,11 @@ function extractStatusSignals(statusText) {
         routeFnAvailable: /routeFn\s+available=yes/.test(statusText),
         proofPath: statusText.match(/proofPath=([^\s]+)/)?.[1] ?? null,
         proofError: statusText.match(/proofError=([^\s]+)/)?.[1] ?? null,
+        surfaceBoundary: surface.boundary ?? null,
+        surfaceSkew: surface.skew ?? null,
+        surfaceConvergeState: surface.converge ?? null,
+        surfaceDaemonSource: surface.daemonSource ?? null,
+        surfaceSelectedHome: surface.selectedHome ?? null,
     };
 }
 function extractDetailedStatusLine(statusText, prefix) {
@@ -378,10 +384,11 @@ function buildCoverageSnapshot({ attachedSetLine, runtimeLoadProofSnapshot, open
         profiles
     };
 }
-function buildHardeningSnapshot({ attachTruthLine, serveLine, routeFnLine, verdict, statusSignals }) {
+function buildHardeningSnapshot({ attachTruthLine, serveLine, routeFnLine, surfaceLine, verdict, statusSignals }) {
     const attachTruth = extractKeyValuePairs(attachTruthLine);
     const serve = extractKeyValuePairs(serveLine);
     const routeFn = extractKeyValuePairs(routeFnLine);
+    const surface = extractKeyValuePairs(surfaceLine);
     return {
         contract: "openclaw_operator_hardening_snapshot.v1",
         generatedAt: new Date().toISOString(),
@@ -391,6 +398,7 @@ function buildHardeningSnapshot({ attachTruthLine, serveLine, routeFnLine, verdi
             runtimeProven: statusSignals.runtimeProven,
             serveActivePack: statusSignals.serveActivePack,
             routeFnAvailable: statusSignals.routeFnAvailable,
+            surfaceConverged: statusSignals.surfaceConvergeState === "converged",
         },
         attachTruth: {
             current: attachTruth.current ?? null,
@@ -398,6 +406,15 @@ function buildHardeningSnapshot({ attachTruthLine, serveLine, routeFnLine, verdi
             config: attachTruth.config ?? null,
             runtime: attachTruth.runtime ?? null,
             watcher: attachTruth.watcher ?? null,
+        },
+        surface: {
+            boundary: surface.boundary ?? null,
+            skew: surface.skew ?? null,
+            converge: surface.converge ?? null,
+            daemonSource: surface.daemonSource ?? null,
+            selectedHome: surface.selectedHome ?? null,
+            daemon: surface.daemon ?? null,
+            hook: surface.hook ?? null,
         },
         serve: {
             state: serve.state ?? null,
@@ -450,6 +467,8 @@ function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, brea
         && statusSignals.runtimeProven
         && statusSignals.serveActivePack
         && statusSignals.routeFnAvailable;
+    const surfaceConverged = statusSignals.surfaceConvergeState === "converged";
+    const surfaceHalfConverged = statusSignals.surfaceConvergeState === "half_converged";
     if (!statusSignals.loadProofReady)
         runtimeTruthGaps.push("load_proof");
     if (!statusSignals.runtimeProven)
@@ -458,6 +477,9 @@ function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, brea
         runtimeTruthGaps.push("serve_active_pack");
     if (!statusSignals.routeFnAvailable)
         runtimeTruthGaps.push("route_fn");
+    if (surfaceHalfConverged) {
+        runtimeTruthGaps.push("surface_converged");
+    }
     const warningCodes = [];
     const warnings = [];
     if (!statusSignals.statusOk) {
@@ -494,6 +516,14 @@ function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, brea
             : runtimeLoadProofSnapshot.exists
                 ? "runtime-load-proof snapshot did not include the current openclaw home"
                 : "runtime-load-proof snapshot was missing");
+    }
+    if (surfaceHalfConverged) {
+        warningCodes.push(`surface_half_converged:${statusSignals.surfaceSkew ?? "unknown"}`);
+        warnings.push(`detailed status reported daemon-vs-installed-surface half-converged (${statusSignals.surfaceSkew ?? "unknown"})`);
+    }
+    else if (!surfaceConverged) {
+        warningCodes.push(`surface_unverified:${statusSignals.surfaceConvergeState ?? "unknown"}`);
+        warnings.push("detailed status did not fully prove daemon-vs-installed-surface convergence");
     }
     if (statusSignals.proofError !== null && statusSignals.proofError !== "none") {
         warningCodes.push(`proof_error:${statusSignals.proofError}`);
@@ -546,7 +576,7 @@ function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, brea
     };
 }
 
-function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspectText, statusSignals, breadcrumbs, runtimeLoadProofSnapshot, surfaceLine, surfacesLine, hotfixLine, guardLine, feedbackLine, attributionLine, attributionCoverageLine, learningPathLine, learningFlowLine, learningHealthLine, coverageSnapshot, hardeningSnapshot }) {
+function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspectText, statusSignals, breadcrumbs, runtimeLoadProofSnapshot, surfaceLine, surfacesLine, surfaceNoteLine, hotfixLine, guardLine, feedbackLine, attributionLine, attributionCoverageLine, learningPathLine, learningFlowLine, learningHealthLine, coverageSnapshot, hardeningSnapshot }) {
     const passed = [];
     const missing = [];
     const warnings = Array.isArray(verdict.warnings) ? verdict.warnings : [];
@@ -574,11 +604,20 @@ function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspec
     if (statusSignals.routeFnAvailable) {
         passed.push("detailed status reported routeFn available=yes");
     }
+    if (statusSignals.surfaceConvergeState === "converged") {
+        passed.push("detailed status reported daemon-vs-installed-surface convergence");
+    }
     if (breadcrumbs.afterBundleStart.some((entry) => entry.kind === "loaded")) {
         passed.push("startup log contained a post-bundle [openclawbrain] BRAIN LOADED breadcrumb");
     }
     if (!statusSignals.loadProofReady)
         missing.push("detailed status did not prove hook load");
+    if (statusSignals.surfaceConvergeState === "half_converged") {
+        missing.push(`detailed status reported daemon-vs-installed-surface half-converged (${statusSignals.surfaceSkew ?? "unknown"})`);
+    }
+    else if (statusSignals.surfaceConvergeState !== "converged") {
+        missing.push("detailed status did not fully prove daemon-vs-installed-surface convergence");
+    }
     if (!breadcrumbs.afterBundleStart.some((entry) => entry.kind === "loaded"))
         missing.push("no post-bundle startup breadcrumb was found");
     if (runtimeLoadProofSnapshot.path === null)
@@ -609,6 +648,9 @@ function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspec
         ...(surfacesLine === null
             ? ["- hotfix paths line not reported by detailed status"]
             : [`- ${surfacesLine}`]),
+        ...(surfaceNoteLine === null
+            ? ["- hotfix detail line not reported by detailed status"]
+            : [`- ${surfaceNoteLine}`]),
         ...(hotfixLine === null
             ? ["- hotfix guidance line not reported by detailed status"]
             : [`- ${hotfixLine}`]),
@@ -649,7 +691,8 @@ function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspec
             : coverageSnapshot.profiles.map((entry) => `- ${entry.current ? "*" : ""}${entry.label} coverage=${entry.coverageState} hook=${entry.hookFiles} config=${entry.configLoad} runtime=${entry.runtimeLoad} loadedAt=${entry.loadedAt ?? "none"}`)),
         "",
         "## Hardening snapshot",
-        `- status signals: statusOk=${hardeningSnapshot.statusSignals.statusOk} loadProofReady=${hardeningSnapshot.statusSignals.loadProofReady} runtimeProven=${hardeningSnapshot.statusSignals.runtimeProven} serveActivePack=${hardeningSnapshot.statusSignals.serveActivePack} routeFnAvailable=${hardeningSnapshot.statusSignals.routeFnAvailable}`,
+        `- status signals: statusOk=${hardeningSnapshot.statusSignals.statusOk} loadProofReady=${hardeningSnapshot.statusSignals.loadProofReady} runtimeProven=${hardeningSnapshot.statusSignals.runtimeProven} serveActivePack=${hardeningSnapshot.statusSignals.serveActivePack} routeFnAvailable=${hardeningSnapshot.statusSignals.routeFnAvailable} surfaceConverged=${hardeningSnapshot.statusSignals.surfaceConverged}`,
+        `- surface: boundary=${hardeningSnapshot.surface.boundary ?? "none"} skew=${hardeningSnapshot.surface.skew ?? "none"} converge=${hardeningSnapshot.surface.converge ?? "none"} daemonSource=${hardeningSnapshot.surface.daemonSource ?? "none"} daemon=${hardeningSnapshot.surface.daemon ?? "none"} hook=${hardeningSnapshot.surface.hook ?? "none"} selectedHome=${hardeningSnapshot.surface.selectedHome ?? "none"}`,
         `- serve: state=${hardeningSnapshot.serve.state ?? "none"} failOpen=${hardeningSnapshot.serve.failOpen ?? "none"} hardFail=${hardeningSnapshot.serve.hardFail ?? "none"} usedRouteFn=${hardeningSnapshot.serve.usedRouteFn ?? "none"}`,
         `- attachTruth: current=${hardeningSnapshot.attachTruth.current ?? "none"} hook=${hardeningSnapshot.attachTruth.hook ?? "none"} config=${hardeningSnapshot.attachTruth.config ?? "none"} runtime=${hardeningSnapshot.attachTruth.runtime ?? "none"}`,
         `- proof verdict: ${hardeningSnapshot.verdict.verdict} severity=${hardeningSnapshot.verdict.severity} warnings=${hardeningSnapshot.verdict.warningCount}`,
@@ -937,6 +980,7 @@ export function captureOperatorProofBundle(options) {
     const statusSignals = extractStatusSignals(statusCapture.stdout);
     const surfaceLine = extractDetailedStatusLine(statusCapture.stdout, "surface");
     const surfacesLine = extractDetailedStatusLine(statusCapture.stdout, "surfaces");
+    const surfaceNoteLine = extractDetailedStatusLine(statusCapture.stdout, "surfaceNote");
     const hotfixLine = extractDetailedStatusLine(statusCapture.stdout, "hotfix");
     const attachTruthLine = extractDetailedStatusLine(statusCapture.stdout, "attachTruth");
     const attachedSetLine = extractDetailedStatusLine(statusCapture.stdout, "attachedSet");
@@ -978,6 +1022,7 @@ export function captureOperatorProofBundle(options) {
         attachTruthLine,
         serveLine,
         routeFnLine,
+        surfaceLine,
         verdict,
         statusSignals,
     });
@@ -1004,6 +1049,7 @@ export function captureOperatorProofBundle(options) {
         runtimeLoadProofError: runtimeLoadProofSnapshot.error,
         surfaceLine,
         surfacesLine,
+        surfaceNoteLine,
         hotfixLine,
         guardLine,
         learningFlowLine,
@@ -1025,6 +1071,7 @@ export function captureOperatorProofBundle(options) {
         runtimeLoadProofSnapshot,
         surfaceLine,
         surfacesLine,
+        surfaceNoteLine,
         hotfixLine,
         guardLine,
         learningFlowLine,
@@ -1051,6 +1098,7 @@ export function captureOperatorProofBundle(options) {
         statusSignals,
         surfaceLine,
         surfacesLine,
+        surfaceNoteLine,
         hotfixLine,
         guardLine,
         learningFlowLine,

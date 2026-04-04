@@ -97,6 +97,33 @@ describe("classifyOpenClawBrainConvergeVerification — compat-package blocking"
     expect(verification.state).toBe("healthy");
     expect(verification.blockingReasons).toHaveLength(0);
   });
+
+  it("blocks verification when daemon and installed hook surfaces are half-converged", () => {
+    const verification = classifyOpenClawBrainConvergeVerification({
+      installedPackageName: "@openclawbrain/openclaw",
+      installLayout: "native_package_plugin",
+      installState: "installed",
+      loadability: "loadable",
+      displayedStatus: "ok",
+      runtimeLoad: "proven",
+      loadProof: "status_probe_ready",
+      serveState: "serving_active_pack",
+      routeFnAvailable: true,
+      awaitingFirstExport: false,
+      restartRequired: false,
+      restartPerformed: false,
+      surfaceBoundary: "split_surfaces",
+      surfaceSkew: "split_path_version_skew",
+      surfaceConvergeState: "half_converged",
+      selectedOpenClawHome: "/tmp/.openclaw-Tern",
+      daemonPackage: "@openclawbrain/cli@1.2.2",
+      hookPackage: "@openclawbrain/openclaw@1.2.3",
+    });
+
+    expect(verification.state).toBe("failed");
+    expect(verification.blockingReasons.join("; ")).toContain("half-converged");
+    expect(verification.blockingReasons.join("; ")).toContain("split_surfaces/split_path_version_skew");
+  });
 });
 
 describe("classifyOpenClawBrainConvergeVerification — proof promotion", () => {
@@ -138,6 +165,26 @@ describe("classifyOpenClawBrainConvergeVerification — proof promotion", () => 
 
     expect(verification.state).toBe("warning");
     expect(verification.warnings.join("; ")).toContain("first export");
+  });
+
+  it("warns when surface convergence is still unverified even if runtime proof is green", () => {
+    const verification = classifyOpenClawBrainConvergeVerification({
+      installLayout: "native_package_plugin",
+      installState: "installed",
+      loadability: "loadable",
+      displayedStatus: "ok",
+      runtimeLoad: "proven",
+      loadProof: "status_probe_ready",
+      serveState: "serving_active_pack",
+      routeFnAvailable: true,
+      awaitingFirstExport: false,
+      restartRequired: false,
+      restartPerformed: false,
+      surfaceConvergeState: "unverified",
+    });
+
+    expect(verification.state).toBe("warning");
+    expect(verification.warnings.join("; ")).toContain("not fully proven");
   });
 
   it("produces degraded warnings without proof promotion when runtime is not proven", () => {
@@ -183,5 +230,38 @@ describe("classifyOpenClawBrainConvergeVerification — proof promotion", () => 
     });
 
     expect(result.verdict).toBe("converged");
+  });
+
+  it("blocks half-converged daemon-vs-installed-hook state loudly", () => {
+    const verification = classifyOpenClawBrainConvergeVerification({
+      installLayout: "native_package_plugin",
+      installState: "installed",
+      loadability: "loadable",
+      displayedStatus: "ok",
+      runtimeLoad: "proven",
+      loadProof: "status_probe_ready",
+      serveState: "serving_active_pack",
+      routeFnAvailable: true,
+      awaitingFirstExport: false,
+      surfaceBoundary: "split_surfaces",
+      surfaceConvergeState: "half_converged",
+      surfaceSkew: "split_path_version_skew",
+      daemonPackage: "@openclawbrain/cli@0.4.29",
+      hookPackage: "@openclawbrain/openclaw@0.4.28",
+      selectedOpenClawHome: "/tmp/.openclaw-Tern",
+      restartRequired: false,
+      restartPerformed: false,
+    });
+
+    const result = finalizeOpenClawBrainConvergeResult({
+      stepFailure: null,
+      verification,
+      warnings: [],
+    });
+
+    expect(verification.state).toBe("failed");
+    expect(result.verdict).toBe("manual_action_required");
+    expect(result.why).toContain("half-converged");
+    expect(result.why).toContain("split_path_version_skew");
   });
 });

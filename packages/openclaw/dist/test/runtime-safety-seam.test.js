@@ -47,6 +47,7 @@ test("openclaw hotfix boundary marks daemon and installed hook as separate surfa
     });
     assert.equal(boundary.boundary, "split_surfaces");
     assert.equal(boundary.skew, "split_path_same_version");
+    assert.equal(boundary.convergeState, "converged");
     assert.match(boundary.detail, /daemon background watch runs from/);
     assert.match(boundary.guidance, /Patch the daemon runtime path/);
 });
@@ -63,4 +64,23 @@ test("openclaw hotfix boundary calls out version skew when daemon and installed 
     });
     assert.equal(boundary.boundary, "split_surfaces");
     assert.equal(boundary.skew, "split_path_version_skew");
+    assert.equal(boundary.convergeState, "half_converged");
+});
+
+test("openclaw hotfix boundary treats a blocked installed hook as half-converged", () => {
+    const boundary = describeOpenClawBrainHotfixBoundary({
+        hookInspection: buildInspection({
+            loadability: "blocked",
+            desynced: true,
+            detail: "profile hook is present but OpenClaw will not load it",
+        }),
+        daemonInspection: {
+            configuredRuntimePath: "/tmp/openclawbrain/cli.js",
+            configuredRuntimePackageName: "@openclawbrain/cli",
+            configuredRuntimePackageVersion: "1.2.3",
+            configuredRuntimePackageSpec: null,
+        },
+    });
+    assert.equal(boundary.skew, "split_path_same_version");
+    assert.equal(boundary.convergeState, "half_converged");
 });
