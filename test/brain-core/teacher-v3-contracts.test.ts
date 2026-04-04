@@ -3,10 +3,14 @@ import type {
   CompiledArtifactMeta,
   EvidenceRef,
   ProposalLineage,
+  ProposalClass,
+  TeacherProposalReplayGateV1,
   TeacherProposal,
 } from "../../src/brain-core/teacher-v3-contracts.js";
 import {
+  describeTeacherProposalReplayGate,
   RETENTION_STATE_TRANSITIONS,
+  TEACHER_PROPOSAL_REPLAY_GATES_V1,
   evaluateRetentionTransitionV1,
 } from "../../src/brain-core/teacher-v3-contracts.js";
 
@@ -59,6 +63,7 @@ const proposal: TeacherProposal = {
   rollbackKey: "rollback::teacher-v3::compiler::docs-architecture",
   expiresAt: "2026-04-10T18:26:00Z",
   createdAt: "2026-04-03T18:26:00Z",
+  replayGate: describeTeacherProposalReplayGate("compiler"),
   artifacts: [
     {
       artifactId: "ca_01",
@@ -125,6 +130,42 @@ describe("teacher v3 contracts", () => {
     expect(artifact.proposalId).toBe(proposal.proposalId);
     expect(artifact.provenance.basePackId).toBe("pack_01");
     expect(artifact.claims?.[0]?.evidenceIds).toContain("evi_01");
+    expect(proposal.replayGate?.reviewMode).toBe("shadow_only");
+    expect(proposal.replayGate?.dimensions.truthInvariants.name).toBe("truth_invariants");
+    expect(proposal.replayGate?.dimensions.attributionFloor.requirements).toContain(
+      "Every non-trivial claim has a durable EvidenceRef.",
+    );
+  });
+
+  it("exposes shadow-only replay gate dimensions for every teacher proposal class", () => {
+    const proposalClasses: ProposalClass[] = [
+      "compiler",
+      "lint",
+      "mutation",
+      "forgetting",
+      "correction",
+    ];
+
+    expect(Object.keys(TEACHER_PROPOSAL_REPLAY_GATES_V1).sort()).toEqual(
+      [...proposalClasses].sort(),
+    );
+
+    for (const proposalClass of proposalClasses) {
+      const gate: TeacherProposalReplayGateV1 = describeTeacherProposalReplayGate(proposalClass);
+
+      expect(gate.proposalClass).toBe(proposalClass);
+      expect(gate.reviewMode).toBe("shadow_only");
+      expect(Object.keys(gate.dimensions).sort()).toEqual([
+        "attributionFloor",
+        "boundedness",
+        "reversibility",
+        "truthInvariants",
+      ]);
+      expect(gate.dimensions.truthInvariants.requirements.length).toBeGreaterThan(0);
+      expect(gate.dimensions.attributionFloor.requirements.length).toBeGreaterThan(0);
+      expect(gate.dimensions.boundedness.requirements.length).toBeGreaterThan(0);
+      expect(gate.dimensions.reversibility.requirements.length).toBeGreaterThan(0);
+    }
   });
 
   it("keeps teacher-forgetting retention fail-closed and protects user_explicit corrections from hard delete", () => {

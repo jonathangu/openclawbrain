@@ -308,7 +308,7 @@ The proposal should include:
 ```ts
 type TeacherProposalV1 = {
   proposalId: string;
-  lane: "compiler" | "lint" | "mutation" | "forgetting";
+  lane: "compiler" | "lint" | "mutation" | "forgetting" | "correction";
   lineage: {
     basePackId?: string;
     baseGraphHash?: string;
@@ -331,6 +331,7 @@ type TeacherProposalV1 = {
   expiresAt?: string;
   replaySuites: string[];
   rollbackKey: string;
+  replayGate?: TeacherProposalReplayGateV1;
 };
 ```
 

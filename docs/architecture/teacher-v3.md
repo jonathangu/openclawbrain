@@ -112,6 +112,11 @@ Minimum fields in the target-state contract:
 
 The envelope is a traceability contract first and a convenience format second.
 
+Each proposal class should also carry, or be able to derive, an inspectable
+shadow-only replay gate profile with four dimensions: truth invariants,
+attribution floor, boundedness, and reversibility. That gate is for offline
+review and replay only; it is not a canary/live rollout switch.
+
 ## Truth and derivation hygiene
 
 A recurring failure mode in architecture docs is to make teacher output sound more authoritative than it is.

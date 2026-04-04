@@ -191,6 +191,30 @@ State rules:
 - `expired` = stale before promotion.
 - `rolled_back` = once-promoted proposal was reversed.
 
+## Replay gate dimensions
+
+Every proposal class should expose the same four replay-gate dimensions in a
+shadow-only, inspectable surface:
+
+- truth invariants
+- attribution floor
+- boundedness
+- reversibility
+
+The gate is a review contract, not a canary/live rollout switch.
+
+Suggested class emphasis:
+
+- `compiler` — keep derived artifacts subordinate to explicit correction memory, require evidence-backed claims, and retain base pack / graph identity for replay.
+- `lint` — stay report-only, cite the triggering evidence, and keep findings bounded to a single-pass review bundle.
+- `mutation` — remain candidate-graph only, require evidence and rollback identity, and preserve the pre-mutation base state.
+- `forgetting` — protect `user_explicit` correction memory, prefer demote/archive/tombstone over delete, and preserve the supersession chain.
+- `correction` — keep explicit typed corrections above summaries and teacher inference, require source turns or raw quotes, and keep the correction scope small and auditable.
+
+The code surface now exposes this as an inspectable `TeacherProposalReplayGateV1`
+profile, with `reviewMode: "shadow_only"` until a later tranche decides whether
+anything is promotable beyond offline replay.
+
 ## Replay and rollback rules
 
 A proposal is not promotable unless it can answer:

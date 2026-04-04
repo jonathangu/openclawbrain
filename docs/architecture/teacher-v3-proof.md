@@ -44,7 +44,7 @@ These are the proposal-reporting surfaces this lane should define, but which are
 | target | `teacher-v3` proof bundle | one reviewable bundle per proposal run | contains both human-readable summary and machine-readable metadata |
 | target | `summary.md` | concise operator summary | should explain what the proposal is, what truth surfaces it read, and what changed relative to those surfaces |
 | target | `status.json` | thin machine status | should stay bounded and report counts/state, not dump raw source payloads |
-| target | `proposal-report.json` | machine-readable proposal report | should include proposal lane, proposal class, lineage, status, evidence refs, counterevidence refs, and recommendations |
+| target | `proposal-report.json` | machine-readable proposal report | should include proposal lane, proposal class, lineage, status, replay gate dimensions, evidence refs, counterevidence refs, and recommendations |
 | target | `surface-map.json` | shipped-vs-target inventory | should make explicit which referenced surfaces are already shipped and which are target-state only |
 | target | `evidence-links.json` | normalized source references | should point back to runtime status, operator proof, proof-cron outputs, and docs truth surfaces |
 | target | `verdict.json` | review verdict | should say whether the proposal bundle is reviewable, shadow-only, promotable, rejected, or expired |
@@ -65,7 +65,7 @@ type TeacherV3SurfaceRef = {
 type TeacherV3ProofBundleV1 = {
   bundleId: string;
   proposalId: string;
-  lane: "compiler" | "lint" | "mutation" | "forgetting";
+  lane: "compiler" | "lint" | "mutation" | "forgetting" | "correction";
   status: "draft" | "reviewable" | "shadow" | "promotable" | "promoted" | "rejected" | "expired";
   lineage: {
     basePackId?: string;

@@ -5,6 +5,8 @@
  * They intentionally do not wire live mutation behavior or storage.
  */
 
+import type { EdgeKind, NodeKind } from "./types.js";
+
 export type EvidenceSourceKind =
   | "user_turn"
   | "tool_trace"
@@ -258,6 +260,187 @@ export interface TeacherProposalV1 {
 }
 
 export type TeacherProposal = TeacherProposalV1;
+
+export type TeacherProposalReplayGateDimensionName =
+  | "truth_invariants"
+  | "attribution_floor"
+  | "boundedness"
+  | "reversibility";
+
+export interface TeacherProposalReplayGateDimensionV1 {
+  name: TeacherProposalReplayGateDimensionName;
+  summary: string;
+  requirements: string[];
+}
+
+export interface TeacherProposalReplayGateV1 {
+  proposalClass: ProposalClass;
+  reviewMode: "shadow_only";
+  dimensions: {
+    truthInvariants: TeacherProposalReplayGateDimensionV1;
+    attributionFloor: TeacherProposalReplayGateDimensionV1;
+    boundedness: TeacherProposalReplayGateDimensionV1;
+    reversibility: TeacherProposalReplayGateDimensionV1;
+  };
+}
+
+const buildTeacherProposalReplayGate = (
+  proposalClass: ProposalClass,
+  focus: string,
+): TeacherProposalReplayGateV1 => ({
+  proposalClass,
+  reviewMode: "shadow_only",
+  dimensions: {
+    truthInvariants: {
+      name: "truth_invariants",
+      summary: `${focus}: keep derived output subordinate to explicit authority.`,
+      requirements: [
+        "Explicit correction memory still outranks teacher synthesis.",
+        "The live path stays read-only to the proposal.",
+        "Evidence refs stay attached to any non-trivial claim.",
+      ],
+    },
+    attributionFloor: {
+      name: "attribution_floor",
+      summary: `${focus}: every proposed change needs clear evidence coverage.`,
+      requirements: [
+        "Every proposal carries durable evidence refs.",
+        "Source ids must be stable record ids, not display labels.",
+        "Unattributed payload stays out of promotion.",
+      ],
+    },
+    boundedness: {
+      name: "boundedness",
+      summary: `${focus}: keep the reviewable surface compact and inspectable.`,
+      requirements: [
+        "Proposal subject sets stay finite and small.",
+        "Payloads avoid raw corpus dumps and unbounded excerpts.",
+        "Replay fits inside a single review pass.",
+      ],
+    },
+    reversibility: {
+      name: "reversibility",
+      summary: `${focus}: preserve rollback and replay identity.`,
+      requirements: [
+        "RollbackKey identifies the reversible path.",
+        "Prior state remains recoverable for replay.",
+        "Rejected or superseded proposals keep lineage.",
+      ],
+    },
+  },
+});
+
+export const TEACHER_PROPOSAL_REPLAY_GATES_V1: Record<ProposalClass, TeacherProposalReplayGateV1> = {
+  compiler: buildTeacherProposalReplayGate("compiler", "Compiler lane"),
+  lint: buildTeacherProposalReplayGate("lint", "Lint lane"),
+  mutation: buildTeacherProposalReplayGate("mutation", "Mutation lane"),
+  forgetting: buildTeacherProposalReplayGate("forgetting", "Forgetting lane"),
+  correction: buildTeacherProposalReplayGate("correction", "Correction lane"),
+} as const;
+
+export function describeTeacherProposalReplayGate(
+  proposalClass: ProposalClass,
+): TeacherProposalReplayGateV1 {
+  return TEACHER_PROPOSAL_REPLAY_GATES_V1[proposalClass];
+}
+
+/**
+ * Shadow-only structural mutation DSL for Teacher v3.
+ *
+ * These proposal shapes stay off the live graph path until replay-gated
+ * promotion. The forgetting lane reuses the retention model below.
+ */
+export type TeacherMutationKindV1 =
+  | "add_node"
+  | "merge_nodes"
+  | "split_node"
+  | "add_edge"
+  | "strengthen_edge"
+  | "weaken_edge"
+  | "add_inhibitory_edge"
+  | "demote_node"
+  | "archive_node"
+  | "tombstone_node";
+
+export interface TeacherMutationNodeDraftV1 {
+  nodeId?: string;
+  kind: NodeKind;
+  content: string;
+  sourceUri?: string | null;
+  tags?: string[];
+  metadata?: Record<string, unknown>;
+}
+
+export interface TeacherMutationEdgeRefV1 {
+  sourceNodeId: string;
+  targetNodeId: string;
+  edgeKind: EdgeKind;
+  weight?: number;
+  prior?: number;
+  metadata?: Record<string, unknown>;
+}
+
+export interface TeacherAddNodeMutationProposalV1 {
+  mutationKind: "add_node";
+  node: TeacherMutationNodeDraftV1;
+  attachToNodeIds?: string[];
+  rationale?: string;
+}
+
+export interface TeacherMergeNodesMutationProposalV1 {
+  mutationKind: "merge_nodes";
+  sourceNodeIds: [string, string, ...string[]];
+  mergedNode?: TeacherMutationNodeDraftV1;
+  preserveNodeIds?: string[];
+  rationale?: string;
+}
+
+export interface TeacherSplitNodeMutationProposalV1 {
+  mutationKind: "split_node";
+  sourceNodeId: string;
+  splitNodeDrafts: [TeacherMutationNodeDraftV1, TeacherMutationNodeDraftV1, ...TeacherMutationNodeDraftV1[]];
+  preserveEdgeKinds?: EdgeKind[];
+  rationale?: string;
+}
+
+export interface TeacherEdgeMutationProposalV1 {
+  mutationKind:
+    | "add_edge"
+    | "strengthen_edge"
+    | "weaken_edge"
+    | "add_inhibitory_edge";
+  edge: TeacherMutationEdgeRefV1;
+  delta?: number;
+  targetWeight?: number;
+  rationale?: string;
+}
+
+export interface TeacherRetentionMutationProposalV1 {
+  mutationKind: "demote_node" | "archive_node" | "tombstone_node";
+  target: RetentionTargetRefV1;
+  requestedTransition: Extract<RetentionTransitionKind, "demote" | "archive" | "tombstone">;
+  rationale?: string;
+}
+
+export type TeacherMutationProposalPayloadV1 =
+  | TeacherAddNodeMutationProposalV1
+  | TeacherMergeNodesMutationProposalV1
+  | TeacherSplitNodeMutationProposalV1
+  | TeacherEdgeMutationProposalV1
+  | TeacherRetentionMutationProposalV1;
+
+export interface TeacherMutationProposalV1 extends TeacherProposalV1 {
+  proposalClass: "mutation";
+  lane?: "mutation";
+  shadowOnly: true;
+  payload: TeacherMutationProposalPayloadV1;
+}
+
+export type TeacherMutationKind = TeacherMutationKindV1;
+export type TeacherMutationNodeDraft = TeacherMutationNodeDraftV1;
+export type TeacherMutationEdgeRef = TeacherMutationEdgeRefV1;
+export type TeacherMutationProposalPayload = TeacherMutationProposalPayloadV1;
+export type TeacherMutationProposal = TeacherMutationProposalV1;
 
 export interface CompiledArtifactClaimRefV1 {
   claimId: string;
