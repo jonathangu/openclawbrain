@@ -56,6 +56,124 @@ export type CompiledArtifactStatus =
   | "expired"
   | "superseded";
 
+/**
+ * Retention state model for teacher-driven forgetting proposals.
+ *
+ * The progression is intentionally fail-closed: prefer retention, then
+ * demotion, then archive, then tombstone, and only then hard delete.
+ * Explicit user corrections are protected from hard deletion.
+ */
+export type RetentionState = "retained" | "demoted" | "archived" | "tombstoned" | "deleted";
+
+export type RetentionTransitionKind = "retain" | "demote" | "archive" | "tombstone" | "hard_delete";
+
+export interface RetentionTargetRefV1 {
+  sourceId: string;
+  sourceKind?: EvidenceSourceKind;
+  authority: EvidenceAuthority;
+  label?: string;
+}
+
+export interface RetentionTransitionDecisionV1 {
+  from: RetentionState;
+  to: RetentionState;
+  via: RetentionTransitionKind;
+  allowed: boolean;
+  reason: string;
+  guardrail?: "deny_hard_delete_user_explicit" | "requires_tombstoned_prestate";
+}
+
+export const RETENTION_STATE_TRANSITIONS: Record<RetentionState, readonly RetentionState[]> = {
+  retained: ["retained", "demoted", "archived", "tombstoned"],
+  demoted: ["demoted", "archived", "tombstoned"],
+  archived: ["archived", "tombstoned"],
+  tombstoned: ["tombstoned", "deleted"],
+  deleted: ["deleted"],
+} as const;
+
+export function evaluateRetentionTransitionV1(params: {
+  current: RetentionState;
+  requested: RetentionTransitionKind;
+  target: RetentionTargetRefV1;
+}): RetentionTransitionDecisionV1 {
+  const current = params.current;
+
+  if (params.requested === "retain") {
+    return {
+      from: current,
+      to: current,
+      via: params.requested,
+      allowed: true,
+      reason: "retention no-op",
+    };
+  }
+
+  if (params.requested === "hard_delete") {
+    if (params.target.authority === "user_explicit") {
+      return {
+        from: current,
+        to: current,
+        via: params.requested,
+        allowed: false,
+        guardrail: "deny_hard_delete_user_explicit",
+        reason: "teacher-driven forgetting may not hard-delete user_explicit correction memory",
+      };
+    }
+    if (current !== "tombstoned") {
+      return {
+        from: current,
+        to: current,
+        via: params.requested,
+        allowed: false,
+        guardrail: "requires_tombstoned_prestate",
+        reason: "hard delete requires a tombstoned pre-state",
+      };
+    }
+    return {
+      from: current,
+      to: "deleted",
+      via: params.requested,
+      allowed: true,
+      reason: "hard delete allowed after tombstone for non-user-explicit memory",
+    };
+  }
+
+  if (current === "deleted") {
+    return {
+      from: current,
+      to: current,
+      via: params.requested,
+      allowed: false,
+      reason: "deleted is terminal and cannot be revised by teacher forgetting",
+    };
+  }
+
+  const next =
+    params.requested === "demote"
+      ? "demoted"
+      : params.requested === "archive"
+        ? "archived"
+        : "tombstoned";
+
+  if (!RETENTION_STATE_TRANSITIONS[current].includes(next)) {
+    return {
+      from: current,
+      to: current,
+      via: params.requested,
+      allowed: false,
+      reason: `retention transition ${current} -> ${next} is not allowed`,
+    };
+  }
+
+  return {
+    from: current,
+    to: next,
+    via: params.requested,
+    allowed: true,
+    reason: `retention transition ${current} -> ${next}`,
+  };
+}
+
 export interface EvidenceSpan {
   start: number;
   end: number;

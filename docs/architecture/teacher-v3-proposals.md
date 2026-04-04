@@ -14,6 +14,11 @@ This contract covers proposal-like outputs from the Teacher v3 lanes:
 - forgetting proposals
 - correction proposals that are generated off-path before being committed
 
+For the forgetting lane, the payload should carry a retention action and state
+transition. Prefer soft retention first (`retained` → `demoted` → `archived`
+→ `tombstoned`) and only allow `hard_delete` after tombstoning. Teacher-driven
+forgetting must not hard-delete `user_explicit` correction memory.
+
 It does **not** make teacher output authoritative truth.
 
 Current-truth authority remains:

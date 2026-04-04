@@ -5,6 +5,10 @@ import type {
   ProposalLineage,
   TeacherProposal,
 } from "../../src/brain-core/teacher-v3-contracts.js";
+import {
+  RETENTION_STATE_TRANSITIONS,
+  evaluateRetentionTransitionV1,
+} from "../../src/brain-core/teacher-v3-contracts.js";
 
 const evidence: EvidenceRef = {
   evidenceId: "evi_01",
@@ -121,5 +125,68 @@ describe("teacher v3 contracts", () => {
     expect(artifact.proposalId).toBe(proposal.proposalId);
     expect(artifact.provenance.basePackId).toBe("pack_01");
     expect(artifact.claims?.[0]?.evidenceIds).toContain("evi_01");
+  });
+
+  it("keeps teacher-forgetting retention fail-closed and protects user_explicit corrections from hard delete", () => {
+    expect(RETENTION_STATE_TRANSITIONS).toMatchObject({
+      retained: ["retained", "demoted", "archived", "tombstoned"],
+      demoted: ["demoted", "archived", "tombstoned"],
+      archived: ["archived", "tombstoned"],
+      tombstoned: ["tombstoned", "deleted"],
+      deleted: ["deleted"],
+    });
+
+    const userExplicitCorrection = {
+      sourceId: "bn_correction_01",
+      sourceKind: "correction" as const,
+      authority: "user_explicit" as const,
+    };
+    const rawSourceMemory = {
+      sourceId: "bn_source_01",
+      sourceKind: "summary" as const,
+      authority: "raw_source" as const,
+    };
+
+    expect(
+      evaluateRetentionTransitionV1({
+        current: "retained",
+        requested: "archive",
+        target: rawSourceMemory,
+      }),
+    ).toMatchObject({
+      allowed: true,
+      to: "archived",
+    });
+
+    expect(
+      evaluateRetentionTransitionV1({
+        current: "retained",
+        requested: "hard_delete",
+        target: rawSourceMemory,
+      }),
+    ).toMatchObject({
+      allowed: false,
+      guardrail: "requires_tombstoned_prestate",
+    });
+
+    expect(
+      evaluateRetentionTransitionV1({
+        current: "tombstoned",
+        requested: "hard_delete",
+        target: rawSourceMemory,
+      }),
+    ).toMatchObject({
+      allowed: true,
+      to: "deleted",
+    });
+
+    const blocked = evaluateRetentionTransitionV1({
+      current: "tombstoned",
+      requested: "hard_delete",
+      target: userExplicitCorrection,
+    });
+    expect(blocked.allowed).toBe(false);
+    expect(blocked.guardrail).toBe("deny_hard_delete_user_explicit");
+    expect(blocked.reason).toContain("user_explicit correction memory");
   });
 });

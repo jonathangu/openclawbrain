@@ -149,6 +149,7 @@ Teacher v3 extends that posture with:
 - explicit proposal envelopes and lineage tracking
 - replay-gated structural mutation proposals
 - forgetting proposals that prefer compress/demote/archive over deletion
+- a retention state machine (`retained` → `demoted` → `archived` → `tombstoned` → `deleted`) with teacher-driven hard-delete guardrails that never delete `user_explicit` correction memory
 - canonical claims hygiene for current-truth vs derived surfaces
 
 ### Not claimed here
