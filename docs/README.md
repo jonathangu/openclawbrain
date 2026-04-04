@@ -20,10 +20,12 @@ Public operator front door: `openclawbrain install --openclaw-home <path>` for o
 
 - [Overview](architecture/overview.md) for the high-level system design
 - [Learning pipeline](architecture/learning-pipeline.md) for export, candidate packs, promotion, and rollback
+- [Lint families](architecture/teacher-v3-lints.md) for deterministic CI-first vs teacher-assisted audits
 - [Fail-open design](architecture/fail-open.md) for fallback behavior and recovery
 - [Deep dive](architecture/deep-dive.md) for the existing architecture notes
 - [Routing prior](architecture/routing-prior.md) for summary-aware retrieval
 - [Corrections](architecture/corrections.md) for the explicit user-correction path
+- [Teacher v3 proof surfaces](architecture/teacher-v3-proof.md) for the proposal-reporting / proof-bundle design and its shipped-vs-target-state mapping
 
 ## Release history
 
