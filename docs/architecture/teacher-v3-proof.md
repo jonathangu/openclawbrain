@@ -46,7 +46,7 @@ These are the proposal-reporting surfaces this lane should define, but which are
 | target | `summary.md` | concise operator summary | should explain what the proposal is, what truth surfaces it read, and what changed relative to those surfaces |
 | target | `status.json` | thin machine status | should stay bounded and report counts/state, not dump raw source payloads |
 | target | `proposal-report.json` | machine-readable proposal report | should include proposal lane, proposal class, lineage, status, replay gate dimensions, evidence refs, counterevidence refs, and recommendations |
-| target | `canary-rollout.json` | bounded canary plan for proposal classes / candidate packs | must stay off by default, carry `surfaceState: "target"`, and remain separate from the replay gate and live serve path |
+| target | `canary-rollout.json` | bounded canary plan for proposal classes / candidate packs | must stay off by default, carry `surfaceState: "target"`, bind an explicit rollback key, and remain separate from the replay gate and live serve path |
 | target | `surface-map.json` | shipped-vs-target inventory | should make explicit which referenced surfaces are already shipped and which are target-state only |
 | target | `evidence-links.json` | normalized source references | should point back to runtime status, operator proof, proof-cron outputs, and docs truth surfaces |
 | target | `verdict.json` | review verdict | should say whether the proposal bundle is reviewable, shadow-only, promotable, rejected, or expired |

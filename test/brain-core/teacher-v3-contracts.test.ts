@@ -13,6 +13,7 @@ import type {
 import {
   describeTeacherCanaryRolloutPlanV1,
   describeTeacherProposalReplayGate,
+  diffTeacherProposalV1,
   isTeacherProposalPromotableClassV1,
   RETENTION_STATE_TRANSITIONS,
   TEACHER_CANARY_ROLLOUT_PLANS_V1,
@@ -20,7 +21,9 @@ import {
   TEACHER_PROPOSAL_SHADOW_ONLY_CLASSES_V1,
   TEACHER_PROPOSAL_REPLAY_GATES_V1,
   evaluateRetentionTransitionV1,
+  summarizeTeacherCanaryRolloutPlanV1,
   summarizeTeacherProposalProofBundleV1,
+  summarizeTeacherProposalV1,
   summarizeTeacherV3LiveProofRungV1,
 } from "../../src/brain-core/teacher-v3-contracts.js";
 
@@ -147,7 +150,10 @@ const proposal: TeacherProposal = {
   createdAt: "2026-04-03T18:26:00Z",
   resolvedAt: "2026-04-03T18:28:00Z",
   replayGate: describeTeacherProposalReplayGate("compiler"),
-  canaryRollout: describeTeacherCanaryRolloutPlanV1("compiler"),
+  canaryRollout: describeTeacherCanaryRolloutPlanV1({
+    proposalClass: "compiler",
+    rollbackKey: "rollback:teacher-v3:canary:compiler:docs-architecture",
+  }),
   artifacts: [
     {
       artifactId: "ca_01",
@@ -311,6 +317,7 @@ describe("teacher v3 contracts", () => {
     expect(proposal.replayGate?.reviewMode).toBe("promotable");
     expect(proposal.canaryRollout).toMatchObject({
       proposalClass: "compiler",
+      rollbackKey: "rollback:teacher-v3:canary:compiler:docs-architecture",
       surfaceState: "target",
       rolloutMode: "off",
       enabled: false,
@@ -321,6 +328,7 @@ describe("teacher v3 contracts", () => {
         "Default rolloutMode stays off.",
         "Do not use the canary plan to change live serving without separate replay and rollback proof.",
         "Bind any candidate pack by durable version or id, never by ad hoc display labels.",
+        "Bind the plan to an explicit rollback key before any later tranche can opt it in.",
       ]),
     );
     expect(summarizeTeacherProposalProofBundleV1(proposal.proofBundle as TeacherProposalProofBundleV1)).toMatchObject({
@@ -355,7 +363,7 @@ describe("teacher v3 contracts", () => {
     ]);
   });
 
-  it("keeps canary rollout plans target-state only and off by default for proposal classes and candidate packs", () => {
+  it("keeps canary rollout plans target-state only and rollback-bound for proposal classes and candidate packs", () => {
     const proposalClasses: ProposalClass[] = [
       "compiler",
       "lint",
@@ -369,34 +377,95 @@ describe("teacher v3 contracts", () => {
     );
 
     for (const proposalClass of proposalClasses) {
-      const plan: TeacherCanaryRolloutPlanV1 = describeTeacherCanaryRolloutPlanV1(proposalClass);
+      const plan: TeacherCanaryRolloutPlanV1 = describeTeacherCanaryRolloutPlanV1({
+        proposalClass,
+        rollbackKey: `rollback:teacher-v3:canary:${proposalClass}`,
+      });
 
       expect(plan.proposalClass).toBe(proposalClass);
+      expect(plan.rollbackKey).toBe(`rollback:teacher-v3:canary:${proposalClass}`);
       expect(plan.surfaceState).toBe("target");
       expect(plan.rolloutMode).toBe("off");
       expect(plan.enabled).toBe(false);
       expect(plan.candidatePackVersion).toBeUndefined();
       expect(plan.shippedStateSummary).toContain("promoted packs");
-      expect(plan.targetStateSummary).toContain("off by default");
+      expect(plan.targetStateSummary).toContain("rollback-bound");
       expect(plan.guardrails).toEqual(
         expect.arrayContaining([
           "Keep the rollout plan target-state only until it is explicitly shipped.",
           "Default rolloutMode stays off.",
           "Do not use the canary plan to change live serving without separate replay and rollback proof.",
           "Bind any candidate pack by durable version or id, never by ad hoc display labels.",
+          "Bind the plan to an explicit rollback key before any later tranche can opt it in.",
         ]),
       );
 
-      const candidatePackScopedPlan = describeTeacherCanaryRolloutPlanV1(proposalClass, 9, "pack_09");
+      const candidatePackScopedPlan = describeTeacherCanaryRolloutPlanV1({
+        proposalClass,
+        rollbackKey: `rollback:teacher-v3:canary:${proposalClass}:pack-09`,
+        candidatePackVersion: 9,
+        candidatePackId: "pack_09",
+      });
       expect(candidatePackScopedPlan).toMatchObject({
         proposalClass,
+        rollbackKey: `rollback:teacher-v3:canary:${proposalClass}:pack-09`,
         surfaceState: "target",
         rolloutMode: "off",
         enabled: false,
         candidatePackVersion: 9,
         candidatePackId: "pack_09",
       });
+
+      const summarizedPlan = summarizeTeacherCanaryRolloutPlanV1(candidatePackScopedPlan);
+      expect(summarizedPlan).toMatchObject({
+        proposalClass,
+        rollbackKey: `rollback:teacher-v3:canary:${proposalClass}:pack-09`,
+        surfaceState: "target",
+        rolloutMode: "off",
+        enabled: false,
+        candidatePackVersion: 9,
+        candidatePackId: "pack_09",
+        guardrailCount: 5,
+      });
+      expect(summarizedPlan.summary).toContain("rollback-bound");
+      expect(summarizedPlan.summary).toContain("pack_09");
     }
+  });
+
+  it("surfaces canary rollout plans in proposal summaries and diffs them when they change", () => {
+    const canaryPlan = describeTeacherCanaryRolloutPlanV1({
+      proposalClass: "compiler",
+      rollbackKey: "rollback:teacher-v3:canary:compiler:docs-architecture",
+      candidatePackVersion: 9,
+      candidatePackId: "pack_09",
+    });
+
+    const proposalWithCanary: TeacherProposal = {
+      ...proposal,
+      canaryRollout: canaryPlan,
+    };
+
+    const proposalWithoutCanary: TeacherProposal = {
+      ...proposal,
+      canaryRollout: undefined,
+    };
+
+    const summary = summarizeTeacherProposalV1(proposalWithCanary);
+    expect(summary.hasCanaryRollout).toBe(true);
+    expect(summary.canaryRollout).toMatchObject({
+      proposalClass: "compiler",
+      rollbackKey: "rollback:teacher-v3:canary:compiler:docs-architecture",
+      surfaceState: "target",
+      rolloutMode: "off",
+      enabled: false,
+      candidatePackVersion: 9,
+      candidatePackId: "pack_09",
+      guardrailCount: 5,
+    });
+    expect(summary.canaryRollout?.summary).toContain("rollback-bound");
+
+    const diff = diffTeacherProposalV1(proposalWithoutCanary, proposalWithCanary);
+    expect(diff.changedFields).toContain("canaryRollout");
   });
 
   it("exposes class-specific replay gate modes and the four shared dimensions", () => {

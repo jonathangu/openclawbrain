@@ -478,6 +478,8 @@ export interface TeacherProposalSummaryV1 {
   replaySuites: string[];
   replaySuiteCount: number;
   rollbackKey: string;
+  hasCanaryRollout: boolean;
+  canaryRollout?: TeacherCanaryRolloutPlanSummaryV1;
   confidence: number;
   hasProofBundle: boolean;
   proofBundleId?: string;
@@ -548,6 +550,7 @@ export function summarizeTeacherProposalV1(
   const proofBundleReplayOutcomeSummary = proofBundle
     ? proofBundle.replayOutcomeSummary ?? summarizeTeacherProposalReplayOutcomesV1(proofBundle.replayOutcomes ?? [])
     : undefined;
+  const canaryRollout = proposal.canaryRollout ? summarizeTeacherCanaryRolloutPlanV1(proposal.canaryRollout) : undefined;
 
   return {
     proposalId: proposal.proposalId,
@@ -564,6 +567,8 @@ export function summarizeTeacherProposalV1(
     replaySuites: [...proposal.replaySuites],
     replaySuiteCount: proposal.replaySuites.length,
     rollbackKey: proposal.rollbackKey,
+    hasCanaryRollout: canaryRollout !== undefined,
+    canaryRollout,
     confidence: proposal.confidence,
     hasProofBundle: proofBundle !== undefined,
     proofBundleId: proofBundle?.bundleId,
@@ -597,6 +602,7 @@ export function diffTeacherProposalV1(
   compareField("rollbackKey", leftSummary.rollbackKey, rightSummary.rollbackKey);
   compareField("replaySuites", leftSummary.replaySuites, rightSummary.replaySuites);
   compareField("subjectIds", leftSummary.subjectIds, rightSummary.subjectIds);
+  compareField("canaryRollout", leftSummary.canaryRollout, rightSummary.canaryRollout);
   compareField("evidenceIds", leftSummary.evidenceIds, rightSummary.evidenceIds);
   compareField("counterevidenceIds", leftSummary.counterevidenceIds, rightSummary.counterevidenceIds);
   compareField("proofBundleId", leftSummary.proofBundleId ?? null, rightSummary.proofBundleId ?? null);
@@ -803,55 +809,102 @@ export function summarizeTeacherProposalReplayOutcomesV1(
   };
 }
 
-export type TeacherCanaryRolloutSurfaceStateV1 = "shipped" | "target";
+export type TeacherCanaryRolloutSurfaceStateV1 = "target";
 
-export interface TeacherCanaryRolloutPlanV1 {
+export interface TeacherCanaryRolloutPlanInputV1 {
   proposalClass: ProposalClass;
+  rollbackKey: string;
+  candidatePackVersion?: number;
+  candidatePackId?: string;
+}
+
+export interface TeacherCanaryRolloutPlanV1 extends TeacherCanaryRolloutPlanInputV1 {
   surfaceState: TeacherCanaryRolloutSurfaceStateV1;
   rolloutMode: "off";
   enabled: false;
-  candidatePackVersion?: number;
-  candidatePackId?: string;
   shippedStateSummary: string;
   targetStateSummary: string;
   guardrails: string[];
 }
 
+export interface TeacherCanaryRolloutPlanSummaryV1 extends TeacherCanaryRolloutPlanInputV1 {
+  surfaceState: TeacherCanaryRolloutSurfaceStateV1;
+  rolloutMode: "off";
+  enabled: false;
+  shippedStateSummary: string;
+  targetStateSummary: string;
+  guardrails: string[];
+  guardrailCount: number;
+  summary: string;
+}
+
 const buildTeacherCanaryRolloutPlan = (
-  proposalClass: ProposalClass,
+  params: TeacherCanaryRolloutPlanInputV1,
   focus: string,
 ): TeacherCanaryRolloutPlanV1 => ({
-  proposalClass,
+  proposalClass: params.proposalClass,
+  rollbackKey: params.rollbackKey,
+  candidatePackVersion: params.candidatePackVersion,
+  candidatePackId: params.candidatePackId,
   surfaceState: "target",
   rolloutMode: "off",
   enabled: false,
   shippedStateSummary: `${focus}: shipped runtime serves only promoted packs; no canary live rollout is shipped.`,
-  targetStateSummary: `${focus}: the canary plan stays explicit, replayable, and off by default until a later tranche opts it in.`,
+  targetStateSummary: `${focus}: the canary plan stays explicit, replayable, rollback-bound, and off by default until a later tranche opts it in.`,
   guardrails: [
     "Keep the rollout plan target-state only until it is explicitly shipped.",
     "Default rolloutMode stays off.",
     "Do not use the canary plan to change live serving without separate replay and rollback proof.",
     "Bind any candidate pack by durable version or id, never by ad hoc display labels.",
+    "Bind the plan to an explicit rollback key before any later tranche can opt it in.",
   ],
 });
 
 export const TEACHER_CANARY_ROLLOUT_PLANS_V1: Record<ProposalClass, TeacherCanaryRolloutPlanV1> = {
-  compiler: buildTeacherCanaryRolloutPlan("compiler", "Compiler lane"),
-  lint: buildTeacherCanaryRolloutPlan("lint", "Lint lane"),
-  mutation: buildTeacherCanaryRolloutPlan("mutation", "Mutation lane"),
-  forgetting: buildTeacherCanaryRolloutPlan("forgetting", "Forgetting lane"),
-  correction: buildTeacherCanaryRolloutPlan("correction", "Correction lane"),
+  compiler: buildTeacherCanaryRolloutPlan(
+    { proposalClass: "compiler", rollbackKey: "rollback:teacher-v3:canary:compiler" },
+    "Compiler lane",
+  ),
+  lint: buildTeacherCanaryRolloutPlan(
+    { proposalClass: "lint", rollbackKey: "rollback:teacher-v3:canary:lint" },
+    "Lint lane",
+  ),
+  mutation: buildTeacherCanaryRolloutPlan(
+    { proposalClass: "mutation", rollbackKey: "rollback:teacher-v3:canary:mutation" },
+    "Mutation lane",
+  ),
+  forgetting: buildTeacherCanaryRolloutPlan(
+    { proposalClass: "forgetting", rollbackKey: "rollback:teacher-v3:canary:forgetting" },
+    "Forgetting lane",
+  ),
+  correction: buildTeacherCanaryRolloutPlan(
+    { proposalClass: "correction", rollbackKey: "rollback:teacher-v3:canary:correction" },
+    "Correction lane",
+  ),
 } as const;
 
 export function describeTeacherCanaryRolloutPlanV1(
-  proposalClass: ProposalClass,
-  candidatePackVersion?: number,
-  candidatePackId?: string,
+  params: TeacherCanaryRolloutPlanInputV1,
 ): TeacherCanaryRolloutPlanV1 {
+  return buildTeacherCanaryRolloutPlan(params, `Teacher v3 ${params.proposalClass} lane`);
+}
+
+export function summarizeTeacherCanaryRolloutPlanV1(
+  plan: TeacherCanaryRolloutPlanV1,
+): TeacherCanaryRolloutPlanSummaryV1 {
   return {
-    ...TEACHER_CANARY_ROLLOUT_PLANS_V1[proposalClass],
-    candidatePackVersion,
-    candidatePackId,
+    proposalClass: plan.proposalClass,
+    rollbackKey: plan.rollbackKey,
+    candidatePackVersion: plan.candidatePackVersion,
+    candidatePackId: plan.candidatePackId,
+    surfaceState: plan.surfaceState,
+    rolloutMode: plan.rolloutMode,
+    enabled: plan.enabled,
+    shippedStateSummary: plan.shippedStateSummary,
+    targetStateSummary: plan.targetStateSummary,
+    guardrails: [...plan.guardrails],
+    guardrailCount: plan.guardrails.length,
+    summary: `${plan.proposalClass} canary plan stays ${plan.surfaceState}, rolloutMode=${plan.rolloutMode}, enabled=${plan.enabled ? "true" : "false"}, and rollback-bound to ${plan.rollbackKey}${plan.candidatePackVersion !== undefined ? `, candidatePackVersion=${plan.candidatePackVersion}` : ""}${plan.candidatePackId !== undefined ? `, candidatePackId=${plan.candidatePackId}` : ""}.`,
   };
 }
 

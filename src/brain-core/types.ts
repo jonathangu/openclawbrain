@@ -819,6 +819,8 @@ export type {
   EvidenceRef,
   EvidenceRefV1,
   EvidenceSourceKind,
+  TeacherCanaryRolloutPlanInputV1,
+  TeacherCanaryRolloutPlanSummaryV1,
   TeacherCanaryRolloutPlanV1,
   TeacherCanaryRolloutSurfaceStateV1,
   ProposalClass,

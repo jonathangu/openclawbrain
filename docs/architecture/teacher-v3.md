@@ -156,7 +156,7 @@ Teacher v3 extends that posture with:
 - canonical compiler/lint/proposal lanes
 - explicit proposal envelopes and lineage tracking
 - replay-gated structural mutation proposals
-- a separate canary rollout plan for proposal classes / candidate packs, with `surfaceState: "target"` and default `rolloutMode: "off"`
+- a separate canary rollout plan for proposal classes / candidate packs, rollback-bound and off by default, with `surfaceState: "target"` and default `rolloutMode: "off"`
 - forgetting proposals that prefer compress/demote/archive over deletion
 - a retention state machine (`retained` → `demoted` → `archived` → `tombstoned` → `deleted`) with teacher-driven hard-delete guardrails that never delete `user_explicit` correction memory
 - canonical claims hygiene for current-truth vs derived surfaces

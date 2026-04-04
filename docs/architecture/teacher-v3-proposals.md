@@ -204,8 +204,8 @@ inspectable surface with class-specific promotion mode:
 
 The gate is a review contract, not a canary/live rollout switch.
 If a later tranche adds canary rollout discipline, it should live in a separate
-proposal/candidate-pack plan object, default to off, and stay target-state only
-until explicitly shipped.
+proposal/candidate-pack plan object, default to off, stay target-state only, and
+bind an explicit rollback key until explicitly shipped.
 
 Suggested class emphasis:
 
