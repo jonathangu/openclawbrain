@@ -807,6 +807,28 @@ export interface BrainCompileReportV1 {
   };
 }
 
+export type {
+  CompiledArtifactKind,
+  CompiledArtifactMeta,
+  CompiledArtifactMetaV1,
+  CompiledArtifactPromotionMetaV1,
+  CompiledArtifactProvenanceV1,
+  CompiledArtifactStatus,
+  EvidenceAuthority,
+  EvidenceDerivation,
+  EvidenceRef,
+  EvidenceRefV1,
+  EvidenceSourceKind,
+  ProposalClass,
+  ProposalExpectedEffectV1,
+  ProposalLineage,
+  ProposalLineageV1,
+  ProposalStatus,
+  TeacherProposal,
+  TeacherProposalArtifactRefV1,
+  TeacherProposalV1,
+} from "./teacher-v3-contracts.js";
+
 export type DecisionTraceSelectionMetadataV4 = DecisionRouteTrace["selectionMetadata"] & {
   traceSliceVersion: 4;
   compileReport?: BrainCompileReportV1 | null;
