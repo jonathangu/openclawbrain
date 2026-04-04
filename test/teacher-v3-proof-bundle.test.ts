@@ -1,6 +1,13 @@
 import { mkdirSync, readFileSync, rmSync } from "node:fs";
 import path from "node:path";
 import { describe, expect, it } from "vitest";
+import { BrainGraph } from "../src/brain-core/graph.js";
+import { applyShadowMutationProposalToState, createShadowCandidateState } from "../src/brain-core/shadow-application.js";
+import type { BrainNode, MutationProposal } from "../src/brain-core/types.js";
+import {
+  summarizeTeacherForgettingShadowReplayV1,
+  summarizeTeacherMutationShadowReplayV1,
+} from "../src/brain-core/teacher-v3-shadow-replay.js";
 import {
   buildTeacherV3ProofBundle,
   TEACHER_V3_PROOF_BUNDLE_LAYOUT,
@@ -73,6 +80,92 @@ const docsTruth = {
   title: "Teacher v3 proposal reporting / proof surfaces",
   summary: "Design-only mapping of shipped truth to target-state proof surfaces.",
 };
+
+function makeNode(id: string, kind: BrainNode["kind"] = "chunk"): BrainNode {
+  const now = Date.now();
+  return {
+    id,
+    kind,
+    content: id,
+    embedding: null,
+    sourceUri: null,
+    trust: "scanner",
+    tags: [id],
+    tokenCount: id.length,
+    metadata: {},
+    createdAt: now,
+    updatedAt: now,
+  };
+}
+
+function makeGraph(): BrainGraph {
+  const graph = new BrainGraph();
+  graph.addNode(makeNode("a"));
+  graph.addNode(makeNode("b"));
+  graph.addNode(makeNode("c"));
+  graph.addEdge({
+    source: "a",
+    target: "b",
+    kind: "learned",
+    weight: 0.8,
+    prior: 0.5,
+    metadata: { seed: true },
+    decayedAt: Date.now(),
+    createdAt: Date.now(),
+  });
+  return graph;
+}
+
+function makeProposal(kind: MutationProposal["kind"], proposal: Record<string, unknown>): MutationProposal {
+  return {
+    id: `mut_${kind}`,
+    kind,
+    proposal,
+    evidence: null,
+    expectedGain: 0.1,
+    status: "pending",
+    createdAt: Date.now(),
+    resolvedAt: null,
+  };
+}
+
+function buildMutationShadowReplay() {
+  const baseGraph = makeGraph();
+  const state = createShadowCandidateState(baseGraph);
+
+  applyShadowMutationProposalToState(
+    state,
+    makeProposal("connect", { nodeA: "b", nodeB: "c" }),
+  );
+  applyShadowMutationProposalToState(
+    state,
+    makeProposal("inject", {
+      nodeKind: "episode_anchor",
+      content: "shadow note",
+      firedNodes: ["a", "b"],
+    }),
+  );
+
+  return summarizeTeacherMutationShadowReplayV1({
+    proposalId: "prop_mutation_shadow_01",
+    rollbackKey: "rollback:teacher-v3:mutation:shadow",
+    state,
+  });
+}
+
+function buildForgettingShadowReplay() {
+  return summarizeTeacherForgettingShadowReplayV1({
+    proposalId: "prop_forgetting_shadow_01",
+    rollbackKey: "rollback:teacher-v3:forgetting:shadow",
+    current: "retained",
+    target: {
+      sourceId: "bn_source_01",
+      sourceKind: "summary",
+      authority: "raw_source",
+    },
+    requestedTransition: "archive",
+  });
+}
 
 describe("teacher v3 proof bundle writer", () => {
   it("emits the bounded five-file bundle from real runtime/proof inputs", () => {
@@ -357,5 +450,176 @@ describe("teacher v3 proof bundle writer", () => {
     const writeResult = writeTeacherV3ProofBundle(outputDir, bundle);
     expect(writeResult.writtenFiles).toHaveLength(5);
     expect(readFileSync(path.join(outputDir, TEACHER_V3_PROOF_BUNDLE_LAYOUT.proposalReport), "utf8")).toContain("mutation-shadow-smoke");
+  });
+
+  it("emits a mutation shadow replay summary from real candidate state", () => {
+    const outputDir = path.join(process.cwd(), "scratch", "teacher-v3-proof-bundle-mutation-test");
+    rmSync(outputDir, { recursive: true, force: true });
+    mkdirSync(path.dirname(outputDir), { recursive: true });
+    const shadowReplay = buildMutationShadowReplay();
+
+    const bundle = buildTeacherV3ProofBundle({
+      bundleStartedAt: "2026-04-03T18:32:00Z",
+      outputDir,
+      runtimeStatusCommand: "npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed",
+      runtimeStatus,
+      operatorProofCommand: "openclawbrain proof --openclaw-home ~/.openclaw",
+      operatorProof,
+      docsTruth,
+      proposalId: shadowReplay.proposalId,
+      proposalLane: "mutation",
+      proposalClass: "mutation",
+      proposalStatus: "shadow_scored",
+      proposalRecord: {
+        recordSource: "candidate-state-replay",
+        confidence: 0.84,
+        replaySuites: ["mutation-candidate-graph", "mutation-rollback"],
+        rollbackKey: shadowReplay.rollbackKey,
+        gate1Seam: {
+          present: false,
+          recordSource: "candidate-state-replay",
+          note: "candidate-state replay stays shadow-only",
+        },
+        evidence: [
+          {
+            evidenceId: "evi_mutation_shadow_01",
+            sourceKind: "repo",
+            sourceId: "src/brain-core/shadow-application.ts",
+            authority: "raw_source",
+            derivation: "teacher_mutation_proposal",
+            excerpt: "Shadow candidate state replay stays on the candidate graph and rolls back explicitly.",
+            sourceHash: "sha256:mutation-shadow-01",
+          },
+        ],
+        payload: {
+          kind: "mutation-shadow-replay",
+          replayOutcome: shadowReplay.replayOutcome,
+          appliedCount: shadowReplay.applications.length,
+        },
+        createdAt: "2026-04-03T18:31:00Z",
+        resolvedAt: "2026-04-03T18:32:00Z",
+        updatedAt: "2026-04-03T18:32:30Z",
+      },
+      shadowReplay,
+      producerVersion: "openclawbrain@0.3.8",
+    });
+
+    expect(bundle.proposalReport.proposal).toMatchObject({
+      proposalClass: "mutation",
+      proposalLane: "mutation",
+      status: "shadow_scored",
+      reviewMode: "shadow_only",
+      recordSource: "candidate-state-replay",
+    });
+    expect(bundle.proposalReport.shadowReplay).toMatchObject({
+      proposalClass: "mutation",
+      reviewMode: "shadow_only",
+      shadowOnly: true,
+      promotionBypass: false,
+      replayOutcome: "applied",
+    });
+    expect(bundle.proposalReport.shadowReplay.rollback.restored).toBe(true);
+    expect(bundle.statusReport.shadowReplay).toMatchObject({
+      proposalClass: "mutation",
+      reviewMode: "shadow_only",
+      rollbackKey: shadowReplay.rollbackKey,
+    });
+    expect(bundle.verdictReport.shadowReplay).toMatchObject({
+      proposalClass: "mutation",
+      shadowOnly: true,
+      promotionBypass: false,
+      rollbackRestored: true,
+    });
+    expect(bundle.verdictReport.why).toContain("mutation replay stayed shadow-only");
+    expect(bundle.summaryMarkdown).toContain("## Shadow replay");
+    expect(bundle.summaryMarkdown).toContain("candidate graph");
+    expect(bundle.summaryMarkdown).toContain("rollback");
+    expect(bundle.statusReport.recommendations[2]).toContain("candidate graph");
+  });
+
+  it("emits a forgetting shadow replay summary with explicit rollback and guardrails", () => {
+    const outputDir = path.join(process.cwd(), "scratch", "teacher-v3-proof-bundle-forgetting-test");
+    rmSync(outputDir, { recursive: true, force: true });
+    mkdirSync(path.dirname(outputDir), { recursive: true });
+    const shadowReplay = buildForgettingShadowReplay();
+
+    const bundle = buildTeacherV3ProofBundle({
+      bundleStartedAt: "2026-04-03T18:33:00Z",
+      outputDir,
+      runtimeStatusCommand: "npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed",
+      runtimeStatus,
+      operatorProofCommand: "openclawbrain proof --openclaw-home ~/.openclaw",
+      operatorProof,
+      docsTruth,
+      proposalId: shadowReplay.proposalId,
+      proposalLane: "forgetting",
+      proposalClass: "forgetting",
+      proposalStatus: "shadow_scored",
+      proposalRecord: {
+        recordSource: "candidate-state-replay",
+        confidence: 0.81,
+        replaySuites: ["forgetting-retention-archive", "forgetting-rollback"],
+        rollbackKey: shadowReplay.rollbackKey,
+        gate1Seam: {
+          present: false,
+          recordSource: "candidate-state-replay",
+          note: "forgetting replay stays shadow-only",
+        },
+        evidence: [
+          {
+            evidenceId: "evi_forgetting_shadow_01",
+            sourceKind: "repo",
+            sourceId: "src/brain-core/teacher-v3-contracts.ts#evaluateRetentionTransitionV1",
+            authority: "raw_source",
+            derivation: "teacher_forgetting_proposal",
+            excerpt: "Teacher-driven forgetting prefers archive/tombstone transitions and guards user_explicit memory.",
+            sourceHash: "sha256:forgetting-shadow-01",
+          },
+        ],
+        payload: {
+          kind: "forgetting-shadow-replay",
+          replayOutcome: shadowReplay.replayOutcome,
+          current: shadowReplay.before.retentionState,
+          next: shadowReplay.after.retentionState,
+        },
+        createdAt: "2026-04-03T18:31:00Z",
+        resolvedAt: "2026-04-03T18:33:00Z",
+        updatedAt: "2026-04-03T18:33:30Z",
+      },
+      shadowReplay,
+      producerVersion: "openclawbrain@0.3.8",
+    });
+
+    expect(bundle.proposalReport.proposal).toMatchObject({
+      proposalClass: "forgetting",
+      proposalLane: "forgetting",
+      status: "shadow_scored",
+      reviewMode: "shadow_only",
+      recordSource: "candidate-state-replay",
+    });
+    expect(bundle.proposalReport.shadowReplay).toMatchObject({
+      proposalClass: "forgetting",
+      reviewMode: "shadow_only",
+      shadowOnly: true,
+      promotionBypass: false,
+      replayOutcome: "applied",
+    });
+    expect(bundle.proposalReport.shadowReplay.rollback.restored).toBe(true);
+    expect(bundle.statusReport.shadowReplay).toMatchObject({
+      proposalClass: "forgetting",
+      reviewMode: "shadow_only",
+      rollbackKey: shadowReplay.rollbackKey,
+    });
+    expect(bundle.verdictReport.shadowReplay).toMatchObject({
+      proposalClass: "forgetting",
+      shadowOnly: true,
+      promotionBypass: false,
+      rollbackRestored: true,
+    });
+    expect(bundle.verdictReport.why).toContain("forgetting replay stayed shadow-only");
+    expect(bundle.summaryMarkdown).toContain("## Shadow replay");
+    expect(bundle.summaryMarkdown).toContain("retention state");
+    expect(bundle.summaryMarkdown).toContain("rollback");
+    expect(bundle.statusReport.recommendations[2]).toContain("retention state machine");
   });
 });

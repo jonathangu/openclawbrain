@@ -65,6 +65,63 @@ function normalizeArray(value) {
   return Array.isArray(value) ? value.filter((item) => item !== null && item !== undefined) : [];
 }
 
+function normalizeShadowReplaySummary(value, fallback = {}) {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const proposalClass = normalizeText(value.proposalClass);
+  if (proposalClass !== "mutation" && proposalClass !== "forgetting") {
+    return null;
+  }
+
+  const reviewMode = normalizeText(value.reviewMode) ?? "shadow_only";
+  const rollback = value.rollback && typeof value.rollback === "object"
+    ? {
+      strategy: normalizeText(value.rollback.strategy),
+      restored: normalizeBoolean(value.rollback.restored),
+      summary: normalizeText(value.rollback.summary),
+      before: value.rollback.before ?? null,
+      after: value.rollback.after ?? null,
+    }
+    : null;
+
+  return {
+    proposalId: normalizeText(value.proposalId) ?? normalizeText(fallback.proposalId),
+    proposalClass,
+    reviewMode,
+    shadowOnly: normalizeBoolean(value.shadowOnly) ?? reviewMode === "shadow_only",
+    promotionBypass: normalizeBoolean(value.promotionBypass) ?? false,
+    rollbackKey: normalizeText(value.rollbackKey) ?? normalizeText(fallback.rollbackKey),
+    applied: normalizeBoolean(value.applied),
+    reversible: normalizeBoolean(value.reversible),
+    replayOutcome: normalizeText(value.replayOutcome),
+    summary: normalizeText(value.summary),
+    candidateStateKind: normalizeText(value.candidateStateKind),
+    before: value.before ?? null,
+    after: value.after ?? null,
+    rollback,
+    target: value.target ?? null,
+    decision: value.decision ?? null,
+    guardrail: normalizeText(value.guardrail),
+    reason: normalizeText(value.reason),
+    requestedTransition: normalizeText(value.requestedTransition),
+    applications: Array.isArray(value.applications)
+      ? value.applications.map((application) => ({
+        index: normalizeNumber(application?.index),
+        proposalId: normalizeText(application?.proposalId),
+        proposalKind: normalizeText(application?.proposalKind),
+        applied: normalizeBoolean(application?.applied),
+        reversible: normalizeBoolean(application?.reversible),
+        reason: normalizeText(application?.reason),
+        before: application?.before ?? null,
+        after: application?.after ?? null,
+        operationKinds: normalizeArray(application?.operationKinds).map((operationKind) => normalizeText(operationKind)).filter(Boolean),
+      }))
+      : undefined,
+  };
+}
+
 function relativeWorkspacePath(value) {
   const text = normalizeText(value);
   if (!text) {
@@ -209,6 +266,11 @@ function buildTeacherV3ProposalSeed(input) {
   const proposalRecordCounterevidence = normalizeArray(proposalRecord?.counterevidence);
   const proposalRecordReplaySuites = normalizeArray(proposalRecord?.replaySuites);
   const proposalRecordReplaySummary = proposalRecord?.replaySummary ?? null;
+  const rollbackKey = normalizeText(input.proposalRecord?.rollbackKey) ?? `rollback:teacher-v3-proof-bundle:${bundleId}`;
+  const shadowReplaySummary = normalizeShadowReplaySummary(input.shadowReplay ?? proposalRecord?.shadowReplay ?? null, {
+    proposalId,
+    rollbackKey,
+  });
   const idempotencyKey = sha256Text(JSON.stringify({
     bundleId,
     proposalId,
@@ -301,7 +363,7 @@ function buildTeacherV3ProposalSeed(input) {
         "operator-proof-surface",
         "teacher-v3-docs-truth",
       ],
-    rollbackKey: normalizeText(input.proposalRecord?.rollbackKey) ?? `rollback:teacher-v3-proof-bundle:${bundleId}`,
+    rollbackKey,
     createdAt: normalizeText(input.proposalRecord?.createdAt) ?? input.bundleStartedAt,
     resolvedAt: normalizeText(input.proposalRecord?.resolvedAt) ?? input.bundleStartedAt,
     updatedAt: normalizeText(input.proposalRecord?.updatedAt) ?? input.bundleStartedAt,
@@ -315,6 +377,7 @@ function buildTeacherV3ProposalSeed(input) {
     runtimeTruth: runtimeStatus,
     proofTruth: operatorProof,
     replaySummary: proposalRecordReplaySummary,
+    shadowReplaySummary,
     proposalReviewMode: proposalClass === "mutation" || proposalClass === "forgetting" || proposalClass === "correction"
       ? "shadow_only"
       : "promotable",
@@ -452,6 +515,11 @@ function buildProposalReport(seed, surfaceMap, bundlePaths, replayCapture) {
   const runtimeTruth = seed.runtimeTruth;
   const proofTruth = seed.proofTruth;
   const docsTruth = seed.docsTruth;
+  const replayRecommendation = seed.shadowReplaySummary?.proposalClass === "mutation"
+    ? "Keep mutation replay on the candidate graph and verify rollback before considering canary activation."
+    : seed.shadowReplaySummary?.proposalClass === "forgetting"
+      ? "Keep forgetting replay on the retention state machine and preserve the hard-delete guardrail before considering canary activation."
+      : "Thread candidate-state replay and rollback binding in the next tranche before considering canary activation.";
   const recommendations = normalizeArray(seed.proposalRecord?.recommendations).length > 0
     ? normalizeArray(seed.proposalRecord.recommendations)
     : [
@@ -459,7 +527,7 @@ function buildProposalReport(seed, surfaceMap, bundlePaths, replayCapture) {
         ? "Preserve the persisted proposal record seam and load it directly once Gate 1 lands."
         : "Add Gate 1 proposal persistence so the synthetic runtime-capture record can be replaced by a stored proposal row.",
       "Keep the bundle publication-safe and bounded; never spill raw logs into the target-state artifacts.",
-      "Thread candidate-state replay and rollback binding in the next tranche before considering canary activation.",
+      replayRecommendation,
     ];
 
   return {
@@ -525,6 +593,7 @@ function buildProposalReport(seed, surfaceMap, bundlePaths, replayCapture) {
     runtimeTruth,
     proofTruth,
     docsTruth,
+    shadowReplay: seed.shadowReplaySummary,
     surfaceMap: surfaceMap.observedSurfaces,
     surfaceCounts: surfaceMap.counts,
     evidenceLinks: seed.evidence,
@@ -574,6 +643,15 @@ function buildStatusReport(seed, surfaceMap, proposalReport) {
     replayOutcomeSummary: proposalReport.replayOutcomeSummary,
     replaySummary: proposalReport.replaySummary,
     gate1Seam: seed.gate1Seam,
+    shadowReplay: proposalReport.shadowReplay
+      ? {
+        proposalClass: proposalReport.shadowReplay.proposalClass,
+        reviewMode: proposalReport.shadowReplay.reviewMode,
+        shadowOnly: proposalReport.shadowReplay.shadowOnly,
+        rollbackKey: proposalReport.shadowReplay.rollbackKey,
+        summary: proposalReport.shadowReplay.summary,
+      }
+      : null,
     recommendations: proposalReport.recommendations,
     publicationSafeArtifacts: proposalReport.publicationSafeArtifacts.map((artifact) => ({
       artifactId: artifact.artifactId,
@@ -594,6 +672,19 @@ function buildVerdictReport(seed, statusReport, proposalReport) {
     || statusReport.runtimeTruth.teacherConfigured !== null;
   const proofReady = proposalReport.proofTruthSummary.runtimeLoadProofExists !== null;
   const blocking = !runtimeReady || !proofReady;
+  const shadowReplay = proposalReport.shadowReplay;
+  const shadowReplayVerdict = shadowReplay
+    ? {
+      proposalClass: shadowReplay.proposalClass,
+      reviewMode: shadowReplay.reviewMode,
+      shadowOnly: shadowReplay.shadowOnly,
+      promotionBypass: seed.shadowReplaySummary?.promotionBypass ?? false,
+      rollbackKey: shadowReplay.rollbackKey,
+      summary: shadowReplay.summary,
+      replayOutcome: seed.shadowReplaySummary?.replayOutcome ?? null,
+      rollbackRestored: seed.shadowReplaySummary?.rollback?.restored ?? null,
+    }
+    : null;
 
   return {
     contract: TEACHER_V3_PROOF_VERDICT_CONTRACT,
@@ -602,12 +693,17 @@ function buildVerdictReport(seed, statusReport, proposalReport) {
     severity: blocking ? "blocking" : proofSeverity === "blocking" ? "warn" : "info",
     why: blocking
       ? "runtime or proof truth could not be summarized into a bounded bundle"
-      : seed.gate1Seam.present
-        ? `runtime, proof, and docs truth were summarized; Gate 1 persistence is already wired so the record can be loaded from storage (${proposalReport.replayOutcomeSummary.summary})`
-        : `runtime, proof, and docs truth were summarized; Gate 1 persistence is still pending so the bundle remains a derived review surface (${proposalReport.replayOutcomeSummary.summary})`,
+      : shadowReplay
+        ? seed.gate1Seam.present
+          ? `runtime, proof, and docs truth were summarized; ${shadowReplay.proposalClass} replay stayed shadow-only with explicit rollback semantics and the record can still be loaded from storage (${proposalReport.replayOutcomeSummary.summary})`
+          : `runtime, proof, and docs truth were summarized; ${shadowReplay.proposalClass} replay stayed shadow-only with explicit rollback semantics and no promotion bypass (${proposalReport.replayOutcomeSummary.summary})`
+        : seed.gate1Seam.present
+          ? `runtime, proof, and docs truth were summarized; Gate 1 persistence is already wired so the record can be loaded from storage (${proposalReport.replayOutcomeSummary.summary})`
+          : `runtime, proof, and docs truth were summarized; Gate 1 persistence is still pending so the bundle remains a derived review surface (${proposalReport.replayOutcomeSummary.summary})`,
     reviewMode: seed.proposalReviewMode,
     gate1Seam: seed.gate1Seam,
     replayOutcomeSummary: proposalReport.replayOutcomeSummary,
+    shadowReplay: shadowReplayVerdict,
     blockers: blocking ? [
       !runtimeReady ? "missing runtime truth summary" : null,
       !proofReady ? "missing proof truth summary" : null,
@@ -653,12 +749,27 @@ function buildSummaryMarkdown(seed, statusReport, verdictReport, bundlePaths) {
     `- record source: ${seed.gate1Seam.recordSource}`,
     `- note: ${seed.gate1Seam.note}`,
     "",
+  ];
+
+  if (seed.shadowReplaySummary) {
+    lines.push(
+      "## Shadow replay",
+      `- proposal class: \`${seed.shadowReplaySummary.proposalClass}\``,
+      `- review mode: **${seed.shadowReplaySummary.reviewMode}**`,
+      `- promotion bypass: ${seed.shadowReplaySummary.promotionBypass ? "yes" : "no"}`,
+      `- rollback key: \`${seed.shadowReplaySummary.rollbackKey ?? seed.rollbackKey}\``,
+      ...shadowReplayMarkdownLines(seed.shadowReplaySummary),
+      "",
+    );
+  }
+
+  lines.push(
     "## Publication-safe artifacts",
     ...proposalReportArtifactsLines(bundlePaths),
     "",
     "## Recommendations",
     ...statusReport.recommendations.map((item) => `- ${item}`),
-  ];
+  );
 
   return `${lines.join("\n")}\n`;
 }
@@ -671,6 +782,39 @@ function proposalReportArtifactsLines(bundlePaths) {
     `- \`${bundlePaths.proposalReport}\` — machine-readable proposal report`,
     `- \`${bundlePaths.verdict}\` — review verdict`,
   ];
+}
+
+function shadowReplayMarkdownLines(shadowReplay) {
+  if (!shadowReplay) {
+    return [];
+  }
+
+  if (shadowReplay.proposalClass === "mutation") {
+    const before = shadowReplay.before ?? {};
+    const after = shadowReplay.after ?? {};
+    const rollback = shadowReplay.rollback ?? {};
+    return [
+      `- candidate graph: ${before.nodeCount ?? "?"} nodes / ${before.edgeCount ?? "?"} edges → ${after.nodeCount ?? "?"} nodes / ${after.edgeCount ?? "?"} edges`,
+      `- applications: ${Array.isArray(shadowReplay.applications) ? shadowReplay.applications.length : 0}`,
+      `- replay outcome: ${shadowReplay.replayOutcome ?? "n/a"}`,
+      `- rollback: ${rollback.restored === true ? "restored to base graph" : "not restored"}`,
+      rollback.summary ? `- rollback summary: ${rollback.summary}` : null,
+    ].filter(Boolean);
+  }
+
+  const before = shadowReplay.before ?? {};
+  const after = shadowReplay.after ?? {};
+  const rollback = shadowReplay.rollback ?? {};
+  return [
+    `- retention state: ${before.retentionState ?? "?"} → ${after.retentionState ?? "?"}`,
+    `- target source: ${shadowReplay.target?.sourceId ?? "?"} (${shadowReplay.target?.authority ?? "?"})`,
+    `- requested transition: ${shadowReplay.requestedTransition ?? "n/a"}`,
+    `- replay outcome: ${shadowReplay.replayOutcome ?? "n/a"}`,
+    shadowReplay.guardrail ? `- guardrail: ${shadowReplay.guardrail}` : null,
+    shadowReplay.reason ? `- reason: ${shadowReplay.reason}` : null,
+    `- rollback: ${rollback.restored === true ? "restored prior retention state" : "not restored"}`,
+    rollback.summary ? `- rollback summary: ${rollback.summary}` : null,
+  ].filter(Boolean);
 }
 
 export function resolveTeacherV3ProofOutputDir({ outputDir = null, bundleStartedAt = new Date() } = {}) {
