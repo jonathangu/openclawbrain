@@ -16,7 +16,7 @@ function usage() {
       "  --help               Show this help",
       "",
       "This deterministic lint compares the current release version in CHANGELOG.md",
-      "against public release-surfaces in README.md and docs/README.md.",
+      "against public release-surfaces in README.md, docs/README.md, and docs/END_STATE.md.",
     ].join("\n") + "\n",
   );
 }
@@ -76,6 +76,10 @@ function readVersionMatch(text, pattern) {
   return match.slice(1);
 }
 
+function readAllMatches(text, pattern) {
+  return [...text.matchAll(pattern)].map((match) => match.slice(1));
+}
+
 export function verifyReleaseDocsDrift(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? process.cwd());
   const blockers = [];
@@ -132,6 +136,8 @@ export function verifyReleaseDocsDrift(options = {}) {
       detail: `${releaseNotesFile} is required for the current release`,
     });
   }
+
+  const endStatePath = path.join(repoRoot, "docs", "END_STATE.md");
 
   let readmeVersion = null;
   if (currentVersion !== null && existsSync(readmePath)) {
@@ -201,6 +207,28 @@ export function verifyReleaseDocsDrift(options = {}) {
     }
   }
 
+  let endStateVersions = null;
+  if (currentVersion !== null && existsSync(endStatePath)) {
+    const endStateText = readText(endStatePath);
+    const matches = readAllMatches(
+      endStateText,
+      /split packages `@openclawbrain\/openclaw@((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))` and `@openclawbrain\/cli@((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))` are published/g,
+    );
+    endStateVersions = matches;
+
+    if (matches.length === 0) {
+      blockers.push({
+        code: "end_state_split_package_version_missing",
+        detail: "docs/END_STATE.md must record the current split-package versions in the current repo reality section",
+      });
+    } else if (matches.some(([openclawVersion, cliVersion]) => openclawVersion !== currentVersion || cliVersion !== currentVersion)) {
+      blockers.push({
+        code: "end_state_split_package_version_mismatch",
+        detail: `docs/END_STATE.md still mixes split-package versions instead of ${currentVersion}`,
+      });
+    }
+  }
+
   return {
     ok: blockers.length === 0,
     repoRoot,
@@ -208,6 +236,7 @@ export function verifyReleaseDocsDrift(options = {}) {
     readmeVersion,
     docsIndexVersion,
     docsIndexTargetVersion,
+    endStateVersions,
     releaseNotesFile,
     blockers,
     message:
@@ -225,6 +254,13 @@ function formatResult(result) {
   lines.push(`README.md version: ${result.readmeVersion ?? "missing"}`);
   lines.push(`docs/README.md release notes: ${result.docsIndexVersion ?? "missing"} -> ${result.docsIndexTargetVersion ?? "missing"}`);
   lines.push(`release notes file: ${result.releaseNotesFile ?? "missing"}`);
+  lines.push(
+    `docs/END_STATE.md split-package versions: ${
+      result.endStateVersions === null
+        ? "missing"
+        : result.endStateVersions.map(([openclawVersion, cliVersion]) => `${openclawVersion} -> ${cliVersion}`).join(", ")
+    }`,
+  );
 
   if (result.blockers.length > 0) {
     lines.push("blockers:");

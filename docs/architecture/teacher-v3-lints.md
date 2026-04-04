@@ -56,6 +56,7 @@ The repo now lines up on the current release surface:
 
 - the root `README.md` says `Current version: 0.4.27`
 - `docs/README.md` points the release-history index at `Current release notes (0.4.27)`
+- `docs/END_STATE.md` keeps its current split-package truth on `0.4.27`
 - `docs/release-notes-0.4.27.md` exists and describes `0.4.27`
 
 That is the deterministic release-surface state this lint family is meant to keep enforced, not a semantic judgment call.
@@ -66,7 +67,7 @@ A CI-first lint should catch this class of drift before the teacher-assisted lan
 
 This is the safe TODO surface for a future implementation.
 
-- [ ] scan public version strings across `README.md`, `docs/README.md`, and release notes
+- [ ] scan public version strings across `README.md`, `docs/README.md`, `docs/END_STATE.md`, and release notes
 - [ ] scan docs indexes for stale release-note links
 - [ ] scan architecture docs for versioned claim drift
 - [ ] scan backlinks and relative references for breakage
