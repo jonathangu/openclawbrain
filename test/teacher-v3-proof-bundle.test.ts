@@ -294,6 +294,11 @@ describe("teacher v3 proof bundle writer", () => {
       status: "promotable",
       reviewMode: "promotable",
       recordSource: "stored-proposal",
+      canaryRollout: expect.objectContaining({
+        rolloutMode: "off",
+        enabled: false,
+        rollbackBound: true,
+      }),
     });
     expect(bundle.proposalReport.replaySummary).toMatchObject({
       replayId: "treplay_01",
@@ -306,7 +311,21 @@ describe("teacher v3 proof bundle writer", () => {
       surfaceState: "target",
       rolloutMode: "off",
       enabled: false,
+      disabledByDefault: true,
+      rollbackBound: true,
+      rollbackKey: "rollback:teacher-v3:compiler:replay",
+      candidatePackVersion: 8,
       candidatePackId: "candidate_pack_08",
+    });
+    expect(bundle.statusReport.canaryRollout).toMatchObject({
+      surfaceState: "target",
+      rolloutMode: "off",
+      enabled: false,
+      rollbackBound: true,
+    });
+    expect(bundle.verdictReport.canaryRollout).toMatchObject({
+      rollbackBound: true,
+      enabled: false,
     });
     expect(bundle.statusReport.canaryActivationGuard).toMatchObject({
       requested: false,
@@ -336,6 +355,10 @@ describe("teacher v3 proof bundle writer", () => {
       targetStateOnly: true,
     });
     expect(bundle.summaryMarkdown).toContain("Teacher v3 proof bundle");
+    expect(bundle.summaryMarkdown).toContain("Canary rollout");
+    expect(bundle.summaryMarkdown).toContain("rollout mode: off");
+    expect(bundle.summaryMarkdown).toContain("enabled: no");
+    expect(bundle.summaryMarkdown).toContain("rollback-bound to rollback:teacher-v3:compiler:replay");
     expect(bundle.summaryMarkdown).toContain("Gate 1 seam");
     expect(bundle.summaryMarkdown).toContain("replay status: **promotable**");
     expect(bundle.summaryMarkdown).toContain("candidate_pack_08");
@@ -356,7 +379,7 @@ describe("teacher v3 proof bundle writer", () => {
 
     expect(readFileSync(summaryPath, "utf8")).toContain("runtime truth");
     expect(readFileSync(statusPath, "utf8")).toContain("teacher_v3_proof_bundle_status.v1");
-    expect(readFileSync(surfaceMapPath, "utf8")).toContain("runtime-truth");
+    expect(readFileSync(surfaceMapPath, "utf8")).toContain("canary rollout surfaced as target/off/disabled");
     expect(readFileSync(proposalReportPath, "utf8")).toContain("teacher_v3_proposal_report.v1");
     expect(readFileSync(verdictPath, "utf8")).toContain("reviewable");
   });

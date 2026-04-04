@@ -241,6 +241,50 @@ function summarizeDocsTruth(docsTruth) {
   };
 }
 
+function formatProposalClassLabel(proposalClass) {
+  const normalized = normalizeText(proposalClass) ?? "teacher";
+  return `${normalized.charAt(0).toUpperCase()}${normalized.slice(1)} lane`;
+}
+
+function buildTeacherV3CanaryRollout(plan, replaySummary = null) {
+  const proposalClass = normalizeText(plan?.proposalClass) ?? "compiler";
+  const rollbackKey = normalizeText(plan?.rollbackKey) ?? null;
+  const candidatePackVersion = normalizeNumber(plan?.candidatePackVersion)
+    ?? normalizeNumber(replaySummary?.candidatePackVersion);
+  const candidatePackId = normalizeText(plan?.candidatePackId)
+    ?? normalizeText(replaySummary?.candidatePackId);
+  const candidatePackText = candidatePackId ?? candidatePackVersion ?? "unbound";
+  const laneLabel = formatProposalClassLabel(proposalClass);
+  const rolloutMode = normalizeText(plan?.rolloutMode) ?? "off";
+  const enabled = normalizeBoolean(plan?.enabled) ?? false;
+  const guardrails = Array.isArray(plan?.guardrails) && plan.guardrails.length > 0
+    ? plan.guardrails
+    : [
+      "Keep the rollout plan target-state only until it is explicitly shipped.",
+      "Default rolloutMode stays off.",
+      "Do not use the canary plan to change live serving without separate replay and rollback proof.",
+      "Bind any candidate pack by durable version or id, never by ad hoc display labels.",
+    ];
+
+  return {
+    proposalClass,
+    surfaceState: normalizeText(plan?.surfaceState) ?? "target",
+    rolloutMode,
+    enabled,
+    disabledByDefault: rolloutMode === "off" && enabled === false,
+    rollbackBound: rollbackKey !== null,
+    rollbackKey,
+    candidatePackVersion: candidatePackVersion ?? null,
+    candidatePackId,
+    shippedStateSummary: normalizeText(plan?.shippedStateSummary)
+      ?? `${laneLabel}: shipped runtime serves only promoted packs; no canary live rollout is shipped.`,
+    targetStateSummary: normalizeText(plan?.targetStateSummary)
+      ?? `${laneLabel}: the canary plan stays explicit, replayable, and off by default until a later tranche opts it in.`,
+    bindingSummary: `${laneLabel}: rollback-bound to ${rollbackKey ?? "missing"}; candidate pack ${candidatePackText}.`,
+    guardrails,
+  };
+}
+
 function buildTeacherV3ProposalSeed(input) {
   const bundleId = normalizeText(input.bundleId) ?? `teacher-v3-proof-${timestampToken(input.bundleStartedAt)}`;
   const runtimeStatus = summarizeRuntimeStatus(input.runtimeStatus ?? null);
@@ -274,12 +318,14 @@ function buildTeacherV3ProposalSeed(input) {
   });
   const canaryCandidatePackVersion = proposalRecordReplaySummary?.candidatePackVersion ?? shadowReplaySummary?.candidatePackVersion ?? null;
   const canaryCandidatePackId = proposalRecordReplaySummary?.candidatePackId ?? shadowReplaySummary?.candidatePackId ?? null;
-  const canaryRollout = proposalRecord?.canaryRollout
-    ?? describeTeacherCanaryRolloutPlanV1(
+  const baseCanaryPlan = proposalRecord?.canaryRollout
+    ?? describeTeacherCanaryRolloutPlanV1({
       proposalClass,
-      canaryCandidatePackVersion ?? undefined,
-      canaryCandidatePackId ?? undefined,
-    );
+      rollbackKey,
+      candidatePackVersion: canaryCandidatePackVersion ?? undefined,
+      candidatePackId: canaryCandidatePackId ?? undefined,
+    });
+  const canaryRollout = buildTeacherV3CanaryRollout(baseCanaryPlan, proposalRecordReplaySummary);
   const canaryActivationGuard = describeTeacherCanaryActivationGuardV1({
     proposalId,
     proposalClass,
@@ -404,6 +450,10 @@ function buildTeacherV3ProposalSeed(input) {
 }
 
 function buildSurfaceMap(seed, bundlePaths) {
+  const canaryRolloutNote = seed.canaryRollout
+    ? `${seed.canaryRollout.surfaceState}/${seed.canaryRollout.rolloutMode}/${seed.canaryRollout.enabled ? "enabled" : "disabled"}; ${seed.canaryRollout.bindingSummary}`
+    : "canary rollout unavailable";
+
   const observedSurfaces = [
     {
       id: "runtime-truth",
@@ -453,7 +503,7 @@ function buildSurfaceMap(seed, bundlePaths) {
       state: "target",
       kind: "proposal_truth",
       source: bundlePaths.status,
-      note: "thin machine status",
+      note: `thin machine status with canary rollout surfaced as ${canaryRolloutNote}`,
     },
     {
       id: "teacher-v3-proof-surface-map",
@@ -467,14 +517,14 @@ function buildSurfaceMap(seed, bundlePaths) {
       state: "target",
       kind: "proposal_truth",
       source: bundlePaths.proposalReport,
-      note: "machine-readable proposal report",
+      note: `machine-readable proposal report with canary rollout surfaced as ${canaryRolloutNote}`,
     },
     {
       id: "teacher-v3-proof-verdict",
       state: "target",
       kind: "proposal_truth",
       source: bundlePaths.verdict,
-      note: "review verdict",
+      note: `review verdict; canary rollout remains target-only/off/rollback-bound (${canaryRolloutNote})`,
     },
   ];
 
@@ -563,10 +613,10 @@ function buildProposalReport(seed, surfaceMap, bundlePaths, replayCapture) {
       rollbackKey: seed.rollbackKey,
       replaySuites: seed.replaySuites,
       replayOutcomeCount: replayCapture.summary.replayOutcomeCount,
+      canaryRollout: seed.canaryRollout,
       confidence: seed.confidence,
       recordSource: seed.recordSource,
       replaySummary: seed.replaySummary,
-      canaryRollout: seed.canaryRollout,
       canaryActivationGuard: seed.canaryActivationGuard,
     },
     replayGate: {
@@ -620,6 +670,7 @@ function buildProposalReport(seed, surfaceMap, bundlePaths, replayCapture) {
     evidenceLinks: seed.evidence,
     counterevidenceLinks: seed.counterevidence,
     replaySummary: seed.replaySummary,
+    canaryRollout: seed.canaryRollout,
     recommendations,
     gate1Seam: seed.gate1Seam,
     publicationSafeArtifacts,
@@ -756,6 +807,17 @@ function buildSummaryMarkdown(seed, statusReport, verdictReport, bundlePaths) {
     `- runtime truth: \`${seed.runtimeStatusCommand}\``,
     `- proof truth: \`${seed.operatorProofCommand}\``,
     `- docs truth: \`${seed.docsTruth.path}\``,
+    "",
+    "## Canary rollout",
+    `- surface state: ${statusReport.canaryRollout?.surfaceState ?? "target"}`,
+    `- rollout mode: ${statusReport.canaryRollout?.rolloutMode ?? "off"}`,
+    `- enabled: ${statusReport.canaryRollout?.enabled ? "yes" : "no"}`,
+    `- disabled by default: ${statusReport.canaryRollout?.disabledByDefault ? "yes" : "no"}`,
+    `- rollback bound: ${statusReport.canaryRollout?.rollbackBound ? "yes" : "no"}`,
+    `- rollback key: \`${statusReport.canaryRollout?.rollbackKey ?? seed.rollbackKey}\``,
+    `- candidate pack: ${statusReport.canaryRollout?.candidatePackId ?? statusReport.canaryRollout?.candidatePackVersion ?? "unbound"}`,
+    `- binding: ${statusReport.canaryRollout?.bindingSummary ?? "rollback-bound and off by default"}`,
+    `- guardrails: ${Array.isArray(statusReport.canaryRollout?.guardrails) ? statusReport.canaryRollout.guardrails.join("; ") : "none"}`,
     "",
     "## Surface counts",
     `- shipped surfaces: ${statusReport.surfaceCounts.shippedSurfaceCount}`,
