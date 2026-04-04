@@ -4,6 +4,26 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.31
+
+`0.4.31` is the proof-surface closure release: the canonical operator lane now preserves the installed-hook package version through current-profile status/proof reporting, so a healthy shared host can prove concrete daemon-vs-hook same-version convergence instead of stopping at `split_path_version_unverified`.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.31`
+- `@openclawbrain/cli@0.4.31`
+
+**Changes**
+
+- preserves installed-hook `packageVersion` through the current-profile status/report surface instead of dropping it before hotfix-boundary formatting
+- makes detailed status and proof bundles report the installed hook as `@openclawbrain/openclaw@<version>` when the on-disk package/manifest already proves it
+- closes the final host-side daemon-vs-hook proof seam from issue `#16`, turning the shared-host lane from `success_but_proof_incomplete` into fully proven convergence
+- keeps restart/profile-token inference warnings honest without letting them blur actual brain-health truth
+
+**Full release note**
+
+- [docs/release-notes-0.4.31.md](docs/release-notes-0.4.31.md)
+
 ## 0.4.30
 
 `0.4.30` is the runtime-surface convergence release: the canonical operator lane now makes daemon-vs-hook skew explicit, blocks half-converged install/runtime states more honestly, and treats explicit custom `--openclaw-home` paths as first-class in docs/help/examples.

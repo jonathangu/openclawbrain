@@ -7832,6 +7832,7 @@ function buildCurrentProfileBrainStatusFromReport(report, policyMode, profileId)
             manifestId: report.hook.manifestId,
             installId: report.hook.installId,
             packageName: report.hook.packageName,
+            packageVersion: report.hook.packageVersion,
             installLayout: report.hook.installLayout,
             additionalInstallCount: report.hook.additionalInstallCount,
             installState: report.hook.installState,

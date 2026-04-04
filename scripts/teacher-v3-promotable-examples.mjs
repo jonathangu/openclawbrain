@@ -295,7 +295,7 @@ function makeLintProposal() {
       parentProposalIds: ["prop_seed_lint_00"],
     },
     subjectIds: [
-      "release:0.4.30",
+      "release:0.4.31",
       "docs:public-surface-truth",
       "docs:proof-surface-boundary",
     ],
@@ -314,7 +314,7 @@ function makeLintProposal() {
         sourceId: "README.md#current-version",
         authority: "raw_source",
         derivation: "teacher_lint",
-        excerpt: "Current version: **0.4.30**",
+        excerpt: "Current version: **0.4.31**",
       }),
       makeEvidence({
         evidenceId: "evi_lint_docs_01",
@@ -322,7 +322,7 @@ function makeLintProposal() {
         sourceId: "docs/README.md#current-release-notes",
         authority: "raw_source",
         derivation: "teacher_lint",
-        excerpt: "Current release notes (0.4.30)",
+        excerpt: "Current release notes (0.4.31)",
       }),
       makeEvidence({
         evidenceId: "evi_lint_endstate_01",
@@ -330,7 +330,7 @@ function makeLintProposal() {
         sourceId: "docs/END_STATE.md#split-package-story",
         authority: "raw_source",
         derivation: "teacher_lint",
-        excerpt: "split packages `@openclawbrain/openclaw@0.4.30` and `@openclawbrain/cli@0.4.30` are published",
+        excerpt: "split packages `@openclawbrain/openclaw@0.4.31` and `@openclawbrain/cli@0.4.31` are published",
       }),
     ],
     counterevidence: [
@@ -346,7 +346,7 @@ function makeLintProposal() {
     payload: {
       kind: "release-docs-truth-sweep",
       summary: "Keep the public release story aligned across README, docs index, changelog, and end-state docs.",
-      currentVersion: "0.4.30",
+      currentVersion: "0.4.31",
       surfacedFiles: ["README.md", "docs/README.md", "CHANGELOG.md", "docs/END_STATE.md"],
     },
     expectedEffect: {
@@ -550,7 +550,7 @@ function buildLintExample(store, root = outputRoot) {
           reviewMode: "promotable",
           result: "pass",
           source: "proposal_record",
-          summary: "Release-docs drift lint remained bounded against the current 0.4.30 public story.",
+          summary: "Release-docs drift lint remained bounded against the current 0.4.31 public story.",
           capturedAt: "2026-04-03T18:34:00Z",
         },
         {

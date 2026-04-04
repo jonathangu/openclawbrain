@@ -1820,6 +1820,7 @@ interface OperatorHookSummary {
     manifestId: string | null;
     installId: string | null;
     packageName: string | null;
+    packageVersion: string | null;
     installLayout: import("./openclaw-plugin-install.js").OpenClawBrainInstallLayout | null;
     additionalInstallCount: number;
     installState: CurrentProfileHookInstallStateV1;

@@ -5,7 +5,7 @@ import path from "node:path";
 import { verifyReleaseDocsDrift } from "../scripts/verify-release-docs-drift.mjs";
 
 const createdDirs: string[] = [];
-const CURRENT_VERSION = "0.4.30";
+const CURRENT_VERSION = "0.4.31";
 
 afterEach(() => {
   while (createdDirs.length > 0) {
