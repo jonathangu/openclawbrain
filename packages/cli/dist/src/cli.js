@@ -4165,6 +4165,7 @@ function emitInstallConvergeResult(result, parsed) {
     console.log(`Learner:    ${buildLearnerServiceStatusCommand(result.activationRoot)}`);
 }
 function runInstallCommand(parsed) {
+    const targetInspection = inspectOpenClawHome(parsed.openclawHome);
     let pluginResult = null;
     let attachResult = null;
     let guardrailWarnings = [];
@@ -4242,6 +4243,8 @@ function runInstallCommand(parsed) {
     const changeReasons = [...new Set([...pluginResult.changeReasons, ...attachDiff.reasons])];
     const restartPlan = buildOpenClawBrainConvergeRestartPlan({
         profileName: attachResult.brainFeedback.profile.exactProfileName,
+        openclawHome: targetInspection.openclawHome,
+        targetLayout: targetInspection.layout,
         changeReasons
     });
     let restartCapture = null;

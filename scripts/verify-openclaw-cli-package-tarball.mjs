@@ -63,9 +63,10 @@ try {
     "dist/src/runtime-core.js",
     "dist/src/teacher-decision-match.js",
     "dist/src/traced-learning-bridge.js",
+    "dist/extension/index.js",
+    "dist/extension/index.d.ts",
     "dist/extension/runtime-guard.js",
-    "extension/index.ts",
-    "extension/runtime-guard.ts",
+    "dist/extension/runtime-guard.d.ts",
     "dist/src/openclaw-home-layout.js",
     "dist/src/openclaw-hook-truth.js",
     "dist/src/openclaw-plugin-install.js",
@@ -77,13 +78,17 @@ try {
     "dist/src/session-tail.js",
     "dist/src/local-session-passive-learning.js",
     "dist/src/teacher-labeler.js",
-    "package.json",
+    "package.json"
   ]) {
     assert(tarballFiles.has(requiredFile), `cli tarball is missing ${requiredFile}`);
   }
 
-  for (const forbiddenFile of ["openclaw.plugin.json"]) {
+  for (const forbiddenFile of ["openclaw.plugin.json", "extension/index.ts", "extension/runtime-guard.ts"]) {
     assert(!tarballFiles.has(forbiddenFile), `cli tarball must not include ${forbiddenFile}`);
+  }
+
+  for (const tarballFile of tarballFiles) {
+    assert(!tarballFile.endsWith(".map"), `cli tarball must not include sourcemaps (${tarballFile})`);
   }
 
   console.log(
@@ -106,9 +111,10 @@ try {
             "dist/src/runtime-core.js",
             "dist/src/teacher-decision-match.js",
             "dist/src/traced-learning-bridge.js",
+            "dist/extension/index.js",
+            "dist/extension/index.d.ts",
             "dist/extension/runtime-guard.js",
-            "extension/index.ts",
-            "extension/runtime-guard.ts",
+            "dist/extension/runtime-guard.d.ts",
             "dist/src/openclaw-home-layout.js",
             "dist/src/openclaw-hook-truth.js",
             "dist/src/openclaw-plugin-install.js",
@@ -120,7 +126,7 @@ try {
             "dist/src/session-tail.js",
             "dist/src/local-session-passive-learning.js",
             "dist/src/teacher-labeler.js",
-            "package.json",
+            "package.json"
           ].includes(file))
           .sort(),
         tarballPath,

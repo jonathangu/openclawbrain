@@ -87,8 +87,14 @@ try {
     "dist/src/local-session-passive-learning.js",
     "dist/src/shadow-extension-proof.js",
     "dist/src/traced-learning-bridge.js",
+    "extension/index.ts",
+    "extension/runtime-guard.ts",
   ]) {
     assert(!tarballFiles.has(forbiddenFile), `plugin tarball must not include ${forbiddenFile}`);
+  }
+
+  for (const tarballFile of tarballFiles) {
+    assert(!tarballFile.endsWith(".map"), `plugin tarball must not include sourcemaps (${tarballFile})`);
   }
 
   assert.equal(pluginManifest.id, "openclawbrain");

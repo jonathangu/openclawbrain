@@ -1,3 +1,6 @@
+import { homedir } from "node:os";
+import path from "node:path";
+
 const LEGACY_COMPAT_PACKAGE_NAME = "@jonathangu/openclawbrain";
 
 const CHANGE_REASON_LABELS = {
@@ -161,6 +164,11 @@ export function describeOpenClawBrainConvergeChangeReasons(reasons) {
 export function buildOpenClawBrainConvergeRestartPlan(input) {
   const changeReasons = input.changeReasons ?? [];
   const gatewayRestartReasons = changeReasons.filter((reason) => GATEWAY_RESTART_CHANGE_REASONS.has(reason));
+  const resolvedHomeDir = path.resolve(input.homeDir ?? process.env.HOME ?? process.env.USERPROFILE ?? homedir());
+  const implicitCurrentProfileRestartSafe = input.profileName === null
+    && typeof input.openclawHome === "string"
+    && path.resolve(input.openclawHome) === path.join(resolvedHomeDir, ".openclaw")
+    && (input.targetLayout === "single_openclaw_home" || input.targetLayout === "shared_home_profiles_in_config");
   if (gatewayRestartReasons.length === 0) {
     return {
       required: false,
@@ -172,6 +180,14 @@ export function buildOpenClawBrainConvergeRestartPlan(input) {
     };
   }
   if (input.profileName === null) {
+    if (implicitCurrentProfileRestartSafe) {
+      return {
+        required: true,
+        automatic: true,
+        reason: "host_current_profile_boundary",
+        detail: "Restart is required because converge changed runtime-affecting install state for the default shared OpenClaw home, and automatic restart can safely target the host-selected current_profile boundary.",
+      };
+    }
     return {
       required: true,
       automatic: false,

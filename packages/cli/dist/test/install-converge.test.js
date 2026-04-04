@@ -109,6 +109,33 @@ test("converge diff tracks daemon runtime changes without forcing a gateway rest
     assert.match(restart.detail, /daemon runtime surface/);
 });
 
+test("converge auto-restarts safely for the default shared ~/.openclaw current_profile boundary", () => {
+    const restart = buildOpenClawBrainConvergeRestartPlan({
+        profileName: null,
+        openclawHome: "/Users/test/.openclaw",
+        targetLayout: "single_openclaw_home",
+        homeDir: "/Users/test",
+        changeReasons: ["hook_path"]
+    });
+    assert.equal(restart.required, true);
+    assert.equal(restart.automatic, true);
+    assert.equal(restart.reason, "host_current_profile_boundary");
+    assert.match(restart.detail, /host-selected current_profile boundary/);
+});
+
+test("converge keeps manual restart for unresolved custom-home profile boundaries", () => {
+    const restart = buildOpenClawBrainConvergeRestartPlan({
+        profileName: null,
+        openclawHome: "/tmp/custom-openclaw-home",
+        targetLayout: "custom_openclaw_home",
+        homeDir: "/Users/test",
+        changeReasons: ["hook_path"]
+    });
+    assert.equal(restart.required, true);
+    assert.equal(restart.automatic, false);
+    assert.equal(restart.reason, "exact_profile_unresolved");
+});
+
 test("converge classifies manual-action and warning outcomes truthfully from status facts", () => {
     const manualVerification = classifyOpenClawBrainConvergeVerification({
         installLayout: "generated_shadow_extension",
