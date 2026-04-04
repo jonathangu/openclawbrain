@@ -893,8 +893,18 @@ export const TEACHER_CANARY_ROLLOUT_PLANS_V1: Record<ProposalClass, TeacherCanar
 } as const;
 
 export function describeTeacherCanaryRolloutPlanV1(
-  params: TeacherCanaryRolloutPlanInputV1,
+  paramsOrProposalClass: TeacherCanaryRolloutPlanInputV1 | ProposalClass,
+  candidatePackVersion?: number,
+  candidatePackId?: string,
 ): TeacherCanaryRolloutPlanV1 {
+  const params: TeacherCanaryRolloutPlanInputV1 = typeof paramsOrProposalClass === "string"
+    ? {
+      proposalClass: paramsOrProposalClass,
+      rollbackKey: `rollback:teacher-v3:canary:${paramsOrProposalClass}`,
+      candidatePackVersion,
+      candidatePackId,
+    }
+    : paramsOrProposalClass;
   return buildTeacherCanaryRolloutPlan(params, `Teacher v3 ${params.proposalClass} lane`);
 }
 
