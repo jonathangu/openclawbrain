@@ -27,6 +27,18 @@ export type EvidenceDerivation =
 
 export type ProposalClass = "compiler" | "lint" | "mutation" | "forgetting" | "correction";
 
+export const TEACHER_PROPOSAL_PROMOTABLE_CLASSES_V1 = ["compiler", "lint"] as const satisfies readonly ProposalClass[];
+
+export const TEACHER_PROPOSAL_SHADOW_ONLY_CLASSES_V1 = [
+  "mutation",
+  "forgetting",
+  "correction",
+] as const satisfies readonly ProposalClass[];
+
+export type TeacherProposalPromotableClassV1 = (typeof TEACHER_PROPOSAL_PROMOTABLE_CLASSES_V1)[number];
+
+export type TeacherProposalShadowOnlyClassV1 = (typeof TEACHER_PROPOSAL_SHADOW_ONLY_CLASSES_V1)[number];
+
 export type ProposalStatus =
   | "proposed"
   | "validated"
@@ -36,6 +48,12 @@ export type ProposalStatus =
   | "rejected"
   | "expired"
   | "rolled_back";
+
+export interface TeacherProposalProofLinkV1 {
+  refId: string;
+  kind: string;
+  path: string;
+}
 
 export type CompiledArtifactKind =
   | "concept_page"
@@ -238,6 +256,22 @@ export interface TeacherProposalArtifactRefV1 {
   contentHash: string;
 }
 
+export interface TeacherProposalProofBundleV1 {
+  bundleId: string;
+  proposalId: string;
+  proposalClass: ProposalClass;
+  status: "promoted" | "rolled_back";
+  lineage: ProposalLineageV1;
+  rollbackKey: string;
+  replaySuites: string[];
+  surfaceMap: TeacherV3ProofSurfaceRefV1[];
+  evidenceLinks: TeacherProposalProofLinkV1[];
+  counterevidenceLinks?: TeacherProposalProofLinkV1[];
+  summary: string;
+  createdAt: string;
+  updatedAt?: string;
+}
+
 export interface TeacherProposalV1 {
   proposalId: string;
   proposalClass: ProposalClass;
@@ -253,10 +287,14 @@ export interface TeacherProposalV1 {
   confidence: number;
   replaySuites: string[];
   rollbackKey: string;
+  proofBundle?: TeacherProposalProofBundleV1;
   expiresAt?: string;
   createdAt: string;
   resolvedAt?: string;
   artifacts?: TeacherProposalArtifactRefV1[];
+  replayGate?: TeacherProposalReplayGateV1;
+  /** Target-state only: explicit canary rollout plan, defaulting to off. */
+  canaryRollout?: TeacherCanaryRolloutPlanV1;
 }
 
 export type TeacherProposal = TeacherProposalV1;
@@ -275,7 +313,7 @@ export interface TeacherProposalReplayGateDimensionV1 {
 
 export interface TeacherProposalReplayGateV1 {
   proposalClass: ProposalClass;
-  reviewMode: "shadow_only";
+  reviewMode: TeacherProposalReplayGateReviewModeV1;
   dimensions: {
     truthInvariants: TeacherProposalReplayGateDimensionV1;
     attributionFloor: TeacherProposalReplayGateDimensionV1;
@@ -284,12 +322,20 @@ export interface TeacherProposalReplayGateV1 {
   };
 }
 
+export type TeacherProposalReplayGateReviewModeV1 = "promotable" | "shadow_only";
+
+export function isTeacherProposalPromotableClassV1(
+  proposalClass: ProposalClass,
+): proposalClass is TeacherProposalPromotableClassV1 {
+  return TEACHER_PROPOSAL_PROMOTABLE_CLASSES_V1.includes(proposalClass as TeacherProposalPromotableClassV1);
+}
+
 const buildTeacherProposalReplayGate = (
   proposalClass: ProposalClass,
   focus: string,
 ): TeacherProposalReplayGateV1 => ({
   proposalClass,
-  reviewMode: "shadow_only",
+  reviewMode: isTeacherProposalPromotableClassV1(proposalClass) ? "promotable" : "shadow_only",
   dimensions: {
     truthInvariants: {
       name: "truth_invariants",
@@ -342,6 +388,58 @@ export function describeTeacherProposalReplayGate(
   proposalClass: ProposalClass,
 ): TeacherProposalReplayGateV1 {
   return TEACHER_PROPOSAL_REPLAY_GATES_V1[proposalClass];
+}
+
+export type TeacherCanaryRolloutSurfaceStateV1 = "shipped" | "target";
+
+export interface TeacherCanaryRolloutPlanV1 {
+  proposalClass: ProposalClass;
+  surfaceState: TeacherCanaryRolloutSurfaceStateV1;
+  rolloutMode: "off";
+  enabled: false;
+  candidatePackVersion?: number;
+  candidatePackId?: string;
+  shippedStateSummary: string;
+  targetStateSummary: string;
+  guardrails: string[];
+}
+
+const buildTeacherCanaryRolloutPlan = (
+  proposalClass: ProposalClass,
+  focus: string,
+): TeacherCanaryRolloutPlanV1 => ({
+  proposalClass,
+  surfaceState: "target",
+  rolloutMode: "off",
+  enabled: false,
+  shippedStateSummary: `${focus}: shipped runtime serves only promoted packs; no canary live rollout is shipped.`,
+  targetStateSummary: `${focus}: the canary plan stays explicit, replayable, and off by default until a later tranche opts it in.`,
+  guardrails: [
+    "Keep the rollout plan target-state only until it is explicitly shipped.",
+    "Default rolloutMode stays off.",
+    "Do not use the canary plan to change live serving without separate replay and rollback proof.",
+    "Bind any candidate pack by durable version or id, never by ad hoc display labels.",
+  ],
+});
+
+export const TEACHER_CANARY_ROLLOUT_PLANS_V1: Record<ProposalClass, TeacherCanaryRolloutPlanV1> = {
+  compiler: buildTeacherCanaryRolloutPlan("compiler", "Compiler lane"),
+  lint: buildTeacherCanaryRolloutPlan("lint", "Lint lane"),
+  mutation: buildTeacherCanaryRolloutPlan("mutation", "Mutation lane"),
+  forgetting: buildTeacherCanaryRolloutPlan("forgetting", "Forgetting lane"),
+  correction: buildTeacherCanaryRolloutPlan("correction", "Correction lane"),
+} as const;
+
+export function describeTeacherCanaryRolloutPlanV1(
+  proposalClass: ProposalClass,
+  candidatePackVersion?: number,
+  candidatePackId?: string,
+): TeacherCanaryRolloutPlanV1 {
+  return {
+    ...TEACHER_CANARY_ROLLOUT_PLANS_V1[proposalClass],
+    candidatePackVersion,
+    candidatePackId,
+  };
 }
 
 /**
@@ -457,6 +555,7 @@ export interface CompiledArtifactPromotionMetaV1 {
   rejectedReason?: string;
   replaySuites?: string[];
   rollbackKey?: string;
+  proofBundle?: TeacherProposalProofBundleV1;
 }
 
 export interface CompiledArtifactProvenanceV1 {
@@ -498,3 +597,140 @@ export interface CompiledArtifactMetaV1 {
 }
 
 export type CompiledArtifactMeta = CompiledArtifactMetaV1;
+
+export type TeacherV3ProofSurfaceState = "shipped" | "target";
+export type TeacherV3ProofSurfacePhase = "before" | "after";
+export type TeacherV3ProofSurfaceKind =
+  | "runtime_truth"
+  | "proof_truth"
+  | "docs_truth"
+  | "proposal_truth";
+
+export interface TeacherV3ProofSurfaceRefV1 {
+  id: string;
+  state: TeacherV3ProofSurfaceState;
+  phase: TeacherV3ProofSurfacePhase;
+  kind: TeacherV3ProofSurfaceKind;
+  source: string;
+  note?: string;
+}
+
+export type TeacherV3ProofCheckKind = "token" | "latency" | "truth";
+export type TeacherV3ProofCheckStatus = "pass" | "warn" | "fail";
+
+export interface TeacherV3ProofCheckV1 {
+  kind: TeacherV3ProofCheckKind;
+  status: TeacherV3ProofCheckStatus;
+  summary: string;
+  evidenceSurfaceIds?: string[];
+}
+
+export type TeacherV3PublicationSafeArtifactKind =
+  | "summary"
+  | "status"
+  | "metadata"
+  | "surface-map"
+  | "verdict";
+
+export interface TeacherV3PublicationSafeArtifactV1 {
+  artifactId: string;
+  kind: TeacherV3PublicationSafeArtifactKind;
+  path: string;
+  redactions: string[];
+  containsRawLogs: false;
+}
+
+export interface TeacherV3LiveProofRungV1 {
+  rungId: "live-proof-rung-1";
+  summary: string;
+  beforeSurfaces: TeacherV3ProofSurfaceRefV1[];
+  afterSurfaces: TeacherV3ProofSurfaceRefV1[];
+  checks: TeacherV3ProofCheckV1[];
+  publicationSafeArtifacts: TeacherV3PublicationSafeArtifactV1[];
+  shippedStateNotes: string[];
+  targetStateNotes: string[];
+}
+
+export interface TeacherV3LiveProofRungSummaryV1 {
+  rungId: string;
+  summary: string;
+  before: {
+    count: number;
+    shippedCount: number;
+    targetCount: number;
+    ids: string[];
+  };
+  after: {
+    count: number;
+    shippedCount: number;
+    targetCount: number;
+    ids: string[];
+  };
+  checks: Record<TeacherV3ProofCheckKind, TeacherV3ProofCheckV1>;
+  publicationSafeArtifacts: {
+    count: number;
+    ids: string[];
+    kinds: TeacherV3PublicationSafeArtifactKind[];
+    redactions: string[];
+  };
+}
+
+function summarizeProofSurfaces(surfaces: TeacherV3ProofSurfaceRefV1[]) {
+  return {
+    count: surfaces.length,
+    shippedCount: surfaces.filter((surface) => surface.state === "shipped").length,
+    targetCount: surfaces.filter((surface) => surface.state === "target").length,
+    ids: surfaces.map((surface) => surface.id),
+  };
+}
+
+function getTeacherV3ProofCheck(
+  checks: TeacherV3ProofCheckV1[],
+  kind: TeacherV3ProofCheckKind,
+): TeacherV3ProofCheckV1 {
+  const check = checks.find((entry) => entry.kind === kind);
+  if (!check) {
+    throw new Error(`missing teacher v3 live-proof ${kind} check`);
+  }
+  return check;
+}
+
+function summarizePublicationSafeArtifacts(
+  artifacts: TeacherV3PublicationSafeArtifactV1[],
+): TeacherV3LiveProofRungSummaryV1["publicationSafeArtifacts"] {
+  const unsafeArtifact = artifacts.find((artifact) => artifact.containsRawLogs !== false);
+  if (unsafeArtifact) {
+    throw new Error(`publication-safe artifact must not contain raw logs: ${unsafeArtifact.artifactId}`);
+  }
+
+  return {
+    count: artifacts.length,
+    ids: artifacts.map((artifact) => artifact.artifactId),
+    kinds: artifacts.map((artifact) => artifact.kind),
+    redactions: artifacts.flatMap((artifact) => artifact.redactions),
+  };
+}
+
+export function summarizeTeacherV3LiveProofRungV1(
+  rung: TeacherV3LiveProofRungV1,
+): TeacherV3LiveProofRungSummaryV1 {
+  if (rung.beforeSurfaces.length === 0) {
+    throw new Error("teacher v3 live-proof rung requires before surfaces");
+  }
+  if (rung.afterSurfaces.length === 0) {
+    throw new Error("teacher v3 live-proof rung requires after surfaces");
+  }
+
+  return {
+    rungId: rung.rungId,
+    summary: rung.summary,
+    before: summarizeProofSurfaces(rung.beforeSurfaces),
+    after: summarizeProofSurfaces(rung.afterSurfaces),
+    checks: {
+      token: getTeacherV3ProofCheck(rung.checks, "token"),
+      latency: getTeacherV3ProofCheck(rung.checks, "latency"),
+      truth: getTeacherV3ProofCheck(rung.checks, "truth"),
+    },
+    publicationSafeArtifacts: summarizePublicationSafeArtifacts(rung.publicationSafeArtifacts),
+  };
+}

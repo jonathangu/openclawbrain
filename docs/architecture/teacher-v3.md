@@ -113,9 +113,11 @@ Minimum fields in the target-state contract:
 The envelope is a traceability contract first and a convenience format second.
 
 Each proposal class should also carry, or be able to derive, an inspectable
-shadow-only replay gate profile with four dimensions: truth invariants,
-attribution floor, boundedness, and reversibility. That gate is for offline
-review and replay only; it is not a canary/live rollout switch.
+replay gate profile with four dimensions: truth invariants, attribution floor,
+boundedness, and reversibility. In this tranche, `compiler` and `lint` are
+`reviewMode: "promotable"` while `mutation`, `forgetting`, and `correction`
+remain `reviewMode: "shadow_only"`. The gate is for offline review and replay
+only; it is not a canary/live rollout switch.
 
 ## Truth and derivation hygiene
 
@@ -145,6 +147,7 @@ The repo already supports the key posture this spec builds on:
 - the runtime serves only promoted packs
 - explicit user corrections have durable runtime value
 - fail-open behavior keeps OpenClaw running when the memory layer cannot safely add context
+- there is no shipped canary rollout switch on the live path
 
 ### Target-state in this spec
 
@@ -153,6 +156,7 @@ Teacher v3 extends that posture with:
 - canonical compiler/lint/proposal lanes
 - explicit proposal envelopes and lineage tracking
 - replay-gated structural mutation proposals
+- a separate canary rollout plan for proposal classes / candidate packs, with `surfaceState: "target"` and default `rolloutMode: "off"`
 - forgetting proposals that prefer compress/demote/archive over deletion
 - a retention state machine (`retained` → `demoted` → `archived` → `tombstoned` → `deleted`) with teacher-driven hard-delete guardrails that never delete `user_explicit` correction memory
 - canonical claims hygiene for current-truth vs derived surfaces

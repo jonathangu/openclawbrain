@@ -42,9 +42,11 @@ These are the proposal-reporting surfaces this lane should define, but which are
 | State | Proposed surface | Purpose | Notes |
 |---|---|---|---|
 | target | `teacher-v3` proof bundle | one reviewable bundle per proposal run | contains both human-readable summary and machine-readable metadata |
+| target | `live-proof-rung-1` | first publication-safe proof overlay | before/after evidence surfaces plus token / latency / truth checks; still target-state only |
 | target | `summary.md` | concise operator summary | should explain what the proposal is, what truth surfaces it read, and what changed relative to those surfaces |
 | target | `status.json` | thin machine status | should stay bounded and report counts/state, not dump raw source payloads |
 | target | `proposal-report.json` | machine-readable proposal report | should include proposal lane, proposal class, lineage, status, replay gate dimensions, evidence refs, counterevidence refs, and recommendations |
+| target | `canary-rollout.json` | bounded canary plan for proposal classes / candidate packs | must stay off by default, carry `surfaceState: "target"`, and remain separate from the replay gate and live serve path |
 | target | `surface-map.json` | shipped-vs-target inventory | should make explicit which referenced surfaces are already shipped and which are target-state only |
 | target | `evidence-links.json` | normalized source references | should point back to runtime status, operator proof, proof-cron outputs, and docs truth surfaces |
 | target | `verdict.json` | review verdict | should say whether the proposal bundle is reviewable, shadow-only, promotable, rejected, or expired |
@@ -93,6 +95,32 @@ type TeacherV3ProofBundleV1 = {
 - **explicit**: every surfaced claim must cite a source surface
 - **comparative**: the bundle should say what is already shipped vs what is only target-state
 - **replayable**: lineage must be strong enough to regenerate or diff the bundle later
+
+### First live-proof rung
+
+The first live-proof rung is still **target-state only**. It sits underneath the shipped operator proof lane instead of replacing it.
+
+The rung should add a compact overlay with:
+
+- before and after evidence surfaces, each tagged as `shipped` or `target`
+- explicit `token`, `latency`, and `truth` checks with bounded `pass` / `warn` / `fail` status
+- publication-safe artifacts only; raw logs and secret-bearing captures stay out of the public bundle
+- a surface map that makes the shipped-vs-target split obvious at a glance
+
+Suggested shape:
+
+```ts
+type TeacherV3LiveProofRungV1 = {
+  rungId: "live-proof-rung-1";
+  summary: string;
+  beforeSurfaces: TeacherV3SurfaceRef[];
+  afterSurfaces: TeacherV3SurfaceRef[];
+  checks: Array<{ kind: "token" | "latency" | "truth"; status: "pass" | "warn" | "fail"; summary: string }>;
+  publicationSafeArtifacts: Array<{ artifactId: string; kind: string; path: string; redactions: string[] }>;
+  shippedStateNotes: string[];
+  targetStateNotes: string[];
+};
+```
 
 ## Status semantics
 

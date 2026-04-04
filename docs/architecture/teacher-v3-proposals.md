@@ -193,8 +193,8 @@ State rules:
 
 ## Replay gate dimensions
 
-Every proposal class should expose the same four replay-gate dimensions in a
-shadow-only, inspectable surface:
+Every proposal class should expose the same four replay-gate dimensions in an
+inspectable surface with class-specific promotion mode:
 
 - truth invariants
 - attribution floor
@@ -202,6 +202,9 @@ shadow-only, inspectable surface:
 - reversibility
 
 The gate is a review contract, not a canary/live rollout switch.
+If a later tranche adds canary rollout discipline, it should live in a separate
+proposal/candidate-pack plan object, default to off, and stay target-state only
+until explicitly shipped.
 
 Suggested class emphasis:
 
@@ -212,8 +215,8 @@ Suggested class emphasis:
 - `correction` — keep explicit typed corrections above summaries and teacher inference, require source turns or raw quotes, and keep the correction scope small and auditable.
 
 The code surface now exposes this as an inspectable `TeacherProposalReplayGateV1`
-profile, with `reviewMode: "shadow_only"` until a later tranche decides whether
-anything is promotable beyond offline replay.
+profile. In this tranche, `compiler` and `lint` are `reviewMode: "promotable"`
+while `mutation`, `forgetting`, and `correction` stay `reviewMode: "shadow_only"`.
 
 ## Replay and rollback rules
 
