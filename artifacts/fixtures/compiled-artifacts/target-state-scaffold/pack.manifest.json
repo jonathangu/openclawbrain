@@ -1,0 +1,52 @@
+{
+  "contract": "compiled_artifacts_example_pack.v1",
+  "packId": "pack_compiled_artifacts_example_01",
+  "title": "Compiled artifact example pack (target-state scaffold)",
+  "status": "example_scaffold",
+  "proposalId": "prop_compiled_artifacts_example_pack_01",
+  "lane": "compiler",
+  "scope": "docs/architecture/compiled-artifacts",
+  "createdAt": "2026-04-03T00:00:00Z",
+  "updatedAt": "2026-04-03T00:00:00Z",
+  "sourceDocs": [
+    "docs/architecture/compiled-artifacts.md",
+    "docs/architecture/teacher-v3.md",
+    "docs/architecture/teacher-v3-proposals.md",
+    "docs/architecture/teacher-v3-lints.md",
+    "docs/architecture/teacher-v3-proof.md"
+  ],
+  "artifacts": [
+    {
+      "artifactId": "ca_example_concept_substrate_01",
+      "kind": "concept_page",
+      "title": "Compiled artifact substrate examples",
+      "markdownPath": "artifacts/ca_example_concept_substrate_01/artifact.md",
+      "metaPath": "artifacts/ca_example_concept_substrate_01/artifact.meta.json",
+      "contentHash": "sha256:ad1cf16e9c63381686eea42236074bc16e3269e05d2fd4eb0bc4c6c9ca9db1f0",
+      "summary": "Shows the canonical pair shape for a compiled artifact: a human-readable markdown body plus a canonical machine-readable sidecar."
+    },
+    {
+      "artifactId": "ca_example_map_of_territory_01",
+      "kind": "map_of_territory",
+      "title": "Teacher v3 map of territory",
+      "markdownPath": "artifacts/ca_example_map_of_territory_01/artifact.md",
+      "metaPath": "artifacts/ca_example_map_of_territory_01/artifact.meta.json",
+      "contentHash": "sha256:e9f0e2645fb13002fe5d3a0e2a31603ee4859d4ef53eddd50f107b4d6d3ccab1",
+      "summary": "Shows the intended split between raw authority, compiled artifacts, candidate graph proposals, and promoted live state."
+    },
+    {
+      "artifactId": "ca_example_provenance_gap_report_01",
+      "kind": "provenance_gap_report",
+      "title": "Compiled artifact provenance gaps",
+      "markdownPath": "artifacts/ca_example_provenance_gap_report_01/artifact.md",
+      "metaPath": "artifacts/ca_example_provenance_gap_report_01/artifact.meta.json",
+      "contentHash": "sha256:7b4de74308f6197596d6f98e7fa7f67338d13397ee67fde21350e3a2202ad59d",
+      "summary": "Lists the implementation gaps that a future compiler and lint pass should close before promoting compiled artifacts."
+    }
+  ],
+  "notes": [
+    "This directory is intentionally synthetic target-state scaffolding.",
+    "The example artifacts should guide later compiler, provenance, and replay implementation without being treated as current truth.",
+    "Sidecar hashes must be regenerated whenever the markdown bodies change."
+  ]
+}

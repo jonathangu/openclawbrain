@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "artifactId": "ca_example_map_of_territory_01",
+  "kind": "map_of_territory",
+  "title": "Teacher v3 map of territory",
+  "status": "proposed",
+  "packId": "pack_compiled_artifacts_example_01",
+  "proposalId": "prop_compiled_artifacts_example_02",
+  "proposalLane": "compiler",
+  "subjectIds": [
+    "topic:teacher-v3",
+    "topic:compiled-artifacts",
+    "topic:promotion-gates"
+  ],
+  "evidence": [
+    {
+      "evidenceId": "ev-teacher-v3-layers",
+      "sourceKind": "file",
+      "sourceId": "docs/architecture/teacher-v3.md#layers",
+      "authority": "raw_source",
+      "derivation": "teacher_compilation",
+      "excerpt": "Compiled artifact layer, candidate graph layer, promoted pack layer."
+    },
+    {
+      "evidenceId": "ev-compiled-artifacts-storage-layout",
+      "sourceKind": "file",
+      "sourceId": "docs/architecture/compiled-artifacts.md#runtime-storage-layout",
+      "authority": "raw_source",
+      "derivation": "teacher_compilation",
+      "excerpt": "The authoritative runtime store should live under the activation root, not in the source repo."
+    },
+    {
+      "evidenceId": "ev-teacher-v3-proof-surface-hierarchy",
+      "sourceKind": "file",
+      "sourceId": "docs/architecture/teacher-v3-proof.md#surface-hierarchy",
+      "authority": "raw_source",
+      "derivation": "teacher_compilation",
+      "excerpt": "Teacher v3 should read truth in runtime, proof, docs, then proposal order."
+    }
+  ],
+  "provenance": {
+    "producer": "teacher-v3",
+    "producerVersion": "target-state-example",
+    "promptHash": "sha256:857dec43a769a001fc268cc16dcfa00d647444524785180e05469248bca62f60",
+    "scope": "docs/architecture/compiled-artifacts",
+    "idempotencyKey": "example:ca_example_map_of_territory_01",
+    "sourceRoots": [
+      "docs/architecture"
+    ],
+    "transformChain": [
+      "extract",
+      "cluster",
+      "synthesize",
+      "validate"
+    ]
+  },
+  "contentHash": "sha256:e9f0e2645fb13002fe5d3a0e2a31603ee4859d4ef53eddd50f107b4d6d3ccab1",
+  "markdownPath": "artifacts/ca_example_map_of_territory_01/artifact.md",
+  "metaPath": "artifacts/ca_example_map_of_territory_01/artifact.meta.json",
+  "createdAt": "2026-04-03T00:00:00Z",
+  "updatedAt": "2026-04-03T00:00:00Z",
+  "confidence": 0.92,
+  "claims": [
+    {
+      "claimId": "claim-example-layer-split",
+      "text": "Raw authority, compiled artifacts, candidate graph proposals, and promoted packs should stay distinct in later implementations.",
+      "confidence": 0.97,
+      "status": "supported",
+      "evidenceIds": [
+        "ev-teacher-v3-layers",
+        "ev-compiled-artifacts-storage-layout"
+      ]
+    },
+    {
+      "claimId": "claim-example-live-only-promoted",
+      "text": "Only promoted results should affect live serving; compiled artifacts and candidate graph changes remain inert until promoted.",
+      "confidence": 0.96,
+      "status": "supported",
+      "evidenceIds": [
+        "ev-teacher-v3-layers",
+        "ev-teacher-v3-proof-surface-hierarchy"
+      ]
+    }
+  ],
+  "promotion": {
+    "replaySuites": [
+      "layer-map-smoke",
+      "proof-surface-consistency-smoke"
+    ],
+    "rollbackKey": "rollback:compiled-artifacts-example-pack-02"
+  }
+}

@@ -1,0 +1,92 @@
+{
+  "schemaVersion": 1,
+  "artifactId": "ca_example_provenance_gap_report_01",
+  "kind": "provenance_gap_report",
+  "title": "Compiled artifact provenance gaps",
+  "status": "proposed",
+  "packId": "pack_compiled_artifacts_example_01",
+  "proposalId": "prop_compiled_artifacts_example_03",
+  "proposalLane": "compiler",
+  "subjectIds": [
+    "topic:provenance",
+    "topic:compiled-artifacts",
+    "topic:teacher-v3-lints"
+  ],
+  "evidence": [
+    {
+      "evidenceId": "ev-compiled-artifacts-provenance",
+      "sourceKind": "file",
+      "sourceId": "docs/architecture/compiled-artifacts.md#provenance-fields",
+      "authority": "raw_source",
+      "derivation": "teacher_compilation",
+      "excerpt": "The provenance block should explain where the artifact came from and how it was produced."
+    },
+    {
+      "evidenceId": "ev-teacher-v3-lints-ci-first",
+      "sourceKind": "file",
+      "sourceId": "docs/architecture/teacher-v3-lints.md#1-ci-first-deterministic-lint-family",
+      "authority": "raw_source",
+      "derivation": "teacher_compilation",
+      "excerpt": "Deterministic checks run first; teacher-assisted audits run second."
+    },
+    {
+      "evidenceId": "ev-teacher-v3-lints-release-drift",
+      "sourceKind": "file",
+      "sourceId": "docs/architecture/teacher-v3-lints.md#3-release-drift-motivating-case",
+      "authority": "raw_source",
+      "derivation": "teacher_compilation",
+      "excerpt": "Objective mismatches should be caught before semantic audits run."
+    }
+  ],
+  "provenance": {
+    "producer": "teacher-v3",
+    "producerVersion": "target-state-example",
+    "promptHash": "sha256:d0d28df22b25fed432a844e9d13e019834d794efacca651a8176c4e39ac30940",
+    "scope": "docs/architecture/compiled-artifacts",
+    "idempotencyKey": "example:ca_example_provenance_gap_report_01",
+    "sourceRoots": [
+      "docs/architecture"
+    ],
+    "transformChain": [
+      "extract",
+      "cluster",
+      "synthesize",
+      "validate"
+    ]
+  },
+  "contentHash": "sha256:7b4de74308f6197596d6f98e7fa7f67338d13397ee67fde21350e3a2202ad59d",
+  "markdownPath": "artifacts/ca_example_provenance_gap_report_01/artifact.md",
+  "metaPath": "artifacts/ca_example_provenance_gap_report_01/artifact.meta.json",
+  "createdAt": "2026-04-03T00:00:00Z",
+  "updatedAt": "2026-04-03T00:00:00Z",
+  "confidence": 0.87,
+  "claims": [
+    {
+      "claimId": "claim-example-gap-oriented",
+      "text": "The provenance-gap example should point later work toward hash verification, manifest generation, and replayable proposal wiring.",
+      "confidence": 0.95,
+      "status": "supported",
+      "evidenceIds": [
+        "ev-compiled-artifacts-provenance",
+        "ev-teacher-v3-lints-ci-first"
+      ]
+    },
+    {
+      "claimId": "claim-example-shadow-only",
+      "text": "This report example is for shadow review and future lint guidance, not live truth.",
+      "confidence": 0.92,
+      "status": "supported",
+      "evidenceIds": [
+        "ev-teacher-v3-lints-ci-first",
+        "ev-teacher-v3-lints-release-drift"
+      ]
+    }
+  ],
+  "promotion": {
+    "replaySuites": [
+      "provenance-gap-smoke",
+      "lint-boundary-smoke"
+    ],
+    "rollbackKey": "rollback:compiled-artifacts-example-pack-03"
+  }
+}

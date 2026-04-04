@@ -1,0 +1,91 @@
+{
+  "schemaVersion": 1,
+  "artifactId": "ca_example_concept_substrate_01",
+  "kind": "concept_page",
+  "title": "Compiled artifact substrate examples",
+  "status": "proposed",
+  "packId": "pack_compiled_artifacts_example_01",
+  "proposalId": "prop_compiled_artifacts_example_01",
+  "proposalLane": "compiler",
+  "subjectIds": [
+    "topic:compiled-artifacts",
+    "topic:teacher-v3"
+  ],
+  "evidence": [
+    {
+      "evidenceId": "ev-compiled-artifacts-core-rules",
+      "sourceKind": "file",
+      "sourceId": "docs/architecture/compiled-artifacts.md#core-rules",
+      "authority": "raw_source",
+      "derivation": "teacher_compilation",
+      "excerpt": "compiled artifacts are derived, off-path knowledge products"
+    },
+    {
+      "evidenceId": "ev-compiled-artifacts-sidecar-shape",
+      "sourceKind": "file",
+      "sourceId": "docs/architecture/compiled-artifacts.md#markdown--sidecar-shape",
+      "authority": "raw_source",
+      "derivation": "teacher_compilation",
+      "excerpt": "The sidecar JSON should be the authoritative metadata source."
+    },
+    {
+      "evidenceId": "ev-teacher-v3-off-path",
+      "sourceKind": "file",
+      "sourceId": "docs/architecture/teacher-v3.md#what-problem-teacher-v3-solves",
+      "authority": "raw_source",
+      "derivation": "teacher_compilation",
+      "excerpt": "Teacher v3 is an off-path compiler of graph structure and compiled artifacts, not an arbiter of current truth."
+    }
+  ],
+  "provenance": {
+    "producer": "teacher-v3",
+    "producerVersion": "target-state-example",
+    "promptHash": "sha256:b6058491d88f060e09841985d1dcfcd8b36ee76ec1017ef90b692beff47ded7d",
+    "scope": "docs/architecture/compiled-artifacts",
+    "idempotencyKey": "example:ca_example_concept_substrate_01",
+    "sourceRoots": [
+      "docs/architecture"
+    ],
+    "transformChain": [
+      "extract",
+      "cluster",
+      "synthesize",
+      "validate"
+    ]
+  },
+  "contentHash": "sha256:ad1cf16e9c63381686eea42236074bc16e3269e05d2fd4eb0bc4c6c9ca9db1f0",
+  "markdownPath": "artifacts/ca_example_concept_substrate_01/artifact.md",
+  "metaPath": "artifacts/ca_example_concept_substrate_01/artifact.meta.json",
+  "createdAt": "2026-04-03T00:00:00Z",
+  "updatedAt": "2026-04-03T00:00:00Z",
+  "confidence": 0.95,
+  "claims": [
+    {
+      "claimId": "claim-example-pair-shape",
+      "text": "A compiled artifact should be represented as a markdown body plus a canonical sidecar metadata record.",
+      "confidence": 0.98,
+      "status": "supported",
+      "evidenceIds": [
+        "ev-compiled-artifacts-core-rules",
+        "ev-compiled-artifacts-sidecar-shape"
+      ]
+    },
+    {
+      "claimId": "claim-example-derived",
+      "text": "The example pack is intentionally derived scaffolding, not a live truth source.",
+      "confidence": 0.93,
+      "status": "supported",
+      "evidenceIds": [
+        "ev-compiled-artifacts-core-rules",
+        "ev-teacher-v3-off-path"
+      ]
+    }
+  ],
+  "promotion": {
+    "replaySuites": [
+      "compiled-artifacts-shape-smoke",
+      "docs-consistency-smoke"
+    ],
+    "rollbackKey": "rollback:compiled-artifacts-example-pack-01"
+  }
+}
