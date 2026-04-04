@@ -96,6 +96,11 @@ type TeacherV3ProofBundleV1 = {
 - **comparative**: the bundle should say what is already shipped vs what is only target-state
 - **replayable**: lineage must be strong enough to regenerate or diff the bundle later
 
+Promoted proposal bundles should keep the proposal id, proposal class, rollback key,
+replay suites, and an inspectable `surfaceMap` that labels each referenced
+surface as `shipped` or `target`. For operator review, the bundle should stay
+small enough to inspect without reconstructing proof ad hoc from raw logs.
+
 ### First live-proof rung
 
 The first live-proof rung is still **target-state only**. It sits underneath the shipped operator proof lane instead of replacing it.
