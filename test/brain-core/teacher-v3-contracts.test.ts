@@ -326,7 +326,8 @@ describe("teacher v3 contracts", () => {
       expect.arrayContaining([
         "Keep the rollout plan target-state only until it is explicitly shipped.",
         "Default rolloutMode stays off.",
-        "Do not use the canary plan to change live serving without separate replay and rollback proof.",
+        "Do not use the canary plan to change live serving without separate replay, proof, and rollback binding.",
+        "Canary activation stays blocked until replay summary, proof bundle, and rollback binding are all present.",
         "Bind any candidate pack by durable version or id, never by ad hoc display labels.",
         "Bind the plan to an explicit rollback key before any later tranche can opt it in.",
       ]),
@@ -394,7 +395,8 @@ describe("teacher v3 contracts", () => {
         expect.arrayContaining([
           "Keep the rollout plan target-state only until it is explicitly shipped.",
           "Default rolloutMode stays off.",
-          "Do not use the canary plan to change live serving without separate replay and rollback proof.",
+          "Do not use the canary plan to change live serving without separate replay, proof, and rollback binding.",
+          "Canary activation stays blocked until replay summary, proof bundle, and rollback binding are all present.",
           "Bind any candidate pack by durable version or id, never by ad hoc display labels.",
           "Bind the plan to an explicit rollback key before any later tranche can opt it in.",
         ]),
@@ -425,7 +427,7 @@ describe("teacher v3 contracts", () => {
         enabled: false,
         candidatePackVersion: 9,
         candidatePackId: "pack_09",
-        guardrailCount: 5,
+        guardrailCount: 6,
       });
       expect(summarizedPlan.summary).toContain("rollback-bound");
       expect(summarizedPlan.summary).toContain("pack_09");
@@ -460,7 +462,7 @@ describe("teacher v3 contracts", () => {
       enabled: false,
       candidatePackVersion: 9,
       candidatePackId: "pack_09",
-      guardrailCount: 5,
+      guardrailCount: 6,
     });
     expect(summary.canaryRollout?.summary).toContain("rollback-bound");
 

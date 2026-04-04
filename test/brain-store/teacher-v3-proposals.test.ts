@@ -5,6 +5,7 @@ import { DatabaseSync } from "node:sqlite";
 import { afterEach, describe, expect, it } from "vitest";
 import type { EvidenceRef } from "../../src/brain-core/types.js";
 import {
+  describeTeacherCanaryRolloutPlanV1,
   describeTeacherProposalReplayGate,
   summarizeTeacherProposalV1,
   type TeacherProposal,
@@ -288,6 +289,11 @@ describe("BrainStore teacher proposals", () => {
       resolvedAt: "2026-04-03T18:31:00Z",
       proofBundle: makeCompilerProofBundle(compiler),
       replaySummary: makeReplaySummary(compiler),
+      canaryRollout: {
+        ...describeTeacherCanaryRolloutPlanV1("compiler", 8, "candidate_pack_08"),
+        rolloutMode: "canary",
+        enabled: true,
+      },
     });
 
     const loadedCompiler = store.getTeacherProposal(compiler.proposalId);
@@ -315,6 +321,14 @@ describe("BrainStore teacher proposals", () => {
         kind: "compiler",
         promotionDiscipline: "promotable",
       },
+    });
+    expect(loadedCompiler?.canaryRollout).toMatchObject({
+      proposalClass: "compiler",
+      surfaceState: "target",
+      rolloutMode: "canary",
+      enabled: true,
+      candidatePackVersion: 8,
+      candidatePackId: "candidate_pack_08",
     });
 
     const compilerByKey = store.getTeacherProposalByIdempotencyKey(compiler.lineage.idempotencyKey);
@@ -438,5 +452,26 @@ describe("BrainStore teacher proposals", () => {
       ]),
     );
     expect(diff?.summary).toContain("compiler prop_compiler_01 → prop_lint_01");
+  });
+
+  it("blocks canary activation when replay, proof, or rollback binding is missing", () => {
+    const store = setup();
+    const compiler = makeCompilerProposal();
+    const requestedCanaryRollout = {
+      ...describeTeacherCanaryRolloutPlanV1("compiler", 8, "candidate_pack_08"),
+      rolloutMode: "canary",
+      enabled: true,
+    };
+
+    store.insertTeacherProposal(compiler);
+
+    expect(() =>
+      store.updateTeacherProposalStatus({
+        proposalId: compiler.proposalId,
+        status: "promoted",
+        resolvedAt: "2026-04-03T18:31:00Z",
+        canaryRollout: requestedCanaryRollout,
+      }),
+    ).toThrow(/cannot activate Teacher v3 canary/);
   });
 });

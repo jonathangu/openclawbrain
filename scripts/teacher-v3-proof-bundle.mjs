@@ -5,6 +5,7 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { captureTeacherV3ReplayOutcomes } from "./teacher-v3-replay-outcomes.mjs";
+import { describeTeacherCanaryActivationGuardV1, describeTeacherCanaryRolloutPlanV1 } from "../src/brain-core/teacher-v3-contracts.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -271,6 +272,22 @@ function buildTeacherV3ProposalSeed(input) {
     proposalId,
     rollbackKey,
   });
+  const canaryCandidatePackVersion = proposalRecordReplaySummary?.candidatePackVersion ?? shadowReplaySummary?.candidatePackVersion ?? null;
+  const canaryCandidatePackId = proposalRecordReplaySummary?.candidatePackId ?? shadowReplaySummary?.candidatePackId ?? null;
+  const canaryRollout = proposalRecord?.canaryRollout
+    ?? describeTeacherCanaryRolloutPlanV1(
+      proposalClass,
+      canaryCandidatePackVersion ?? undefined,
+      canaryCandidatePackId ?? undefined,
+    );
+  const canaryActivationGuard = describeTeacherCanaryActivationGuardV1({
+    proposalId,
+    proposalClass,
+    rollbackKey,
+    canaryRollout,
+    replaySummary: proposalRecordReplaySummary,
+    proofBundle: proposalRecord?.proofBundle ?? null,
+  });
   const idempotencyKey = sha256Text(JSON.stringify({
     bundleId,
     proposalId,
@@ -377,6 +394,8 @@ function buildTeacherV3ProposalSeed(input) {
     runtimeTruth: runtimeStatus,
     proofTruth: operatorProof,
     replaySummary: proposalRecordReplaySummary,
+    canaryRollout,
+    canaryActivationGuard,
     shadowReplaySummary,
     proposalReviewMode: proposalClass === "mutation" || proposalClass === "forgetting" || proposalClass === "correction"
       ? "shadow_only"
@@ -547,6 +566,8 @@ function buildProposalReport(seed, surfaceMap, bundlePaths, replayCapture) {
       confidence: seed.confidence,
       recordSource: seed.recordSource,
       replaySummary: seed.replaySummary,
+      canaryRollout: seed.canaryRollout,
+      canaryActivationGuard: seed.canaryActivationGuard,
     },
     replayGate: {
       proposalClass: seed.proposalClass,
@@ -642,6 +663,8 @@ function buildStatusReport(seed, surfaceMap, proposalReport) {
     docsTruth: proposalReport.docsTruth,
     replayOutcomeSummary: proposalReport.replayOutcomeSummary,
     replaySummary: proposalReport.replaySummary,
+    canaryRollout: proposalReport.proposal.canaryRollout,
+    canaryActivationGuard: proposalReport.proposal.canaryActivationGuard,
     gate1Seam: seed.gate1Seam,
     shadowReplay: proposalReport.shadowReplay
       ? {
@@ -704,6 +727,8 @@ function buildVerdictReport(seed, statusReport, proposalReport) {
     gate1Seam: seed.gate1Seam,
     replayOutcomeSummary: proposalReport.replayOutcomeSummary,
     shadowReplay: shadowReplayVerdict,
+    canaryRollout: proposalReport.proposal.canaryRollout,
+    canaryActivationGuard: proposalReport.proposal.canaryActivationGuard,
     blockers: blocking ? [
       !runtimeReady ? "missing runtime truth summary" : null,
       !proofReady ? "missing proof truth summary" : null,
@@ -743,6 +768,14 @@ function buildSummaryMarkdown(seed, statusReport, verdictReport, bundlePaths) {
     `- results: pass=${statusReport.replayOutcomeSummary.resultCounts.pass}, warn=${statusReport.replayOutcomeSummary.resultCounts.warn}, fail=${statusReport.replayOutcomeSummary.resultCounts.fail}`,
     `- review modes: promotable=${statusReport.replayOutcomeSummary.reviewModeCounts.promotable}, shadow_only=${statusReport.replayOutcomeSummary.reviewModeCounts.shadow_only}`,
     `- sources: proposal_record=${statusReport.replayOutcomeSummary.sourceCounts.proposal_record}, proof_bundle=${statusReport.replayOutcomeSummary.sourceCounts.proof_bundle}, derived=${statusReport.replayOutcomeSummary.sourceCounts.derived}`,
+    "",
+    "## Canary rollout",
+    `- rollout mode: ${statusReport.canaryRollout?.rolloutMode ?? "off"}`,
+    `- enabled: ${statusReport.canaryRollout?.enabled ? "yes" : "no"}`,
+    `- candidate pack: ${statusReport.canaryRollout?.candidatePackId ?? statusReport.canaryRollout?.candidatePackVersion ?? "unbound"}`,
+    `- activation: ${statusReport.canaryActivationGuard?.blocked ? "blocked" : statusReport.canaryActivationGuard?.requested ? "permitted" : "off by default"}`,
+    statusReport.canaryActivationGuard?.summary ? `- guard summary: ${statusReport.canaryActivationGuard.summary}` : null,
+    statusReport.canaryActivationGuard?.blockers?.length ? `- blockers: ${statusReport.canaryActivationGuard.blockers.join(", ")}` : null,
     "",
     "## Gate 1 seam",
     `- present: ${seed.gate1Seam.present ? "yes" : "no"}`,

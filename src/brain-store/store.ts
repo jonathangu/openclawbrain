@@ -69,7 +69,7 @@ import type {
   TeacherProposalReplaySummaryV1,
   TeacherProposalSummaryV1,
 } from "../brain-core/teacher-v3-contracts.js";
-import { diffTeacherProposalV1, summarizeTeacherProposalV1 } from "../brain-core/teacher-v3-contracts.js";
+import { describeTeacherCanaryActivationGuardV1, diffTeacherProposalV1, summarizeTeacherProposalV1 } from "../brain-core/teacher-v3-contracts.js";
 import { usefulnessThresholds } from "../brain-core/usefulness.js";
 import { summarizeRecentDecisionTraces, type RecentDecisionTraceSummary } from "../brain-core/trace.js";
 
@@ -2315,8 +2315,24 @@ export class BrainStore {
 
   // ─── Teacher Proposals ───
 
+  private validateTeacherCanaryActivation(proposal: TeacherProposal): void {
+    const guard = describeTeacherCanaryActivationGuardV1({
+      proposalId: proposal.proposalId,
+      proposalClass: proposal.proposalClass,
+      rollbackKey: proposal.rollbackKey,
+      canaryRollout: proposal.canaryRollout ?? null,
+      replaySummary: proposal.replaySummary ?? null,
+      proofBundle: proposal.proofBundle ?? null,
+    });
+
+    if (guard.requested && !guard.allowed) {
+      throw new Error('cannot activate Teacher v3 canary for ' + proposal.proposalId + ': ' + guard.blockers.join('; '));
+    }
+  }
+
   insertTeacherProposal(proposal: TeacherProposal): void {
     const now = Date.now();
+    this.validateTeacherCanaryActivation(proposal);
     const record = this.toTeacherProposalRow(proposal, now, now);
     this.db.prepare(`
       INSERT INTO brain_teacher_proposals (
@@ -2388,6 +2404,7 @@ export class BrainStore {
       canaryRollout: params.canaryRollout === undefined ? existing.canaryRollout : params.canaryRollout ?? undefined,
       replaySummary: params.replaySummary === undefined ? existing.replaySummary : params.replaySummary ?? undefined,
     };
+    this.validateTeacherCanaryActivation(updated);
     const existingCreatedAt = Number.isFinite(Date.parse(existing.createdAt)) ? Date.parse(existing.createdAt) : Date.now();
     const record = this.toTeacherProposalRow(updated, existingCreatedAt, Date.now());
 

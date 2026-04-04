@@ -293,6 +293,8 @@ export interface TeacherProposalProofBundleV1 {
   replaySuites: string[];
   replayOutcomes?: TeacherProposalReplayOutcomeV1[];
   replayOutcomeSummary?: TeacherProposalReplayOutcomeSummaryV1;
+  canaryRollout?: TeacherCanaryRolloutPlanV1;
+  canaryActivationGuard?: TeacherCanaryActivationGuardV1;
   surfaceMap: TeacherV3ProofSurfaceRefV1[];
   evidenceLinks: TeacherProposalProofLinkV1[];
   counterevidenceLinks?: TeacherProposalProofLinkV1[];
@@ -309,6 +311,8 @@ export interface TeacherProposalProofBundleSummaryV1 {
   rollbackKey: string;
   replaySuites: string[];
   replayOutcomeSummary: TeacherProposalReplayOutcomeSummaryV1;
+  canaryRollout?: TeacherCanaryRolloutPlanV1;
+  canaryActivationGuard?: TeacherCanaryActivationGuardV1;
   surfaceIds: string[];
   surfaceCount: number;
   shippedSurfaceCount: number;
@@ -330,6 +334,8 @@ export function summarizeTeacherProposalProofBundleV1(
     rollbackKey: bundle.rollbackKey,
     replaySuites: [...bundle.replaySuites],
     replayOutcomeSummary,
+    canaryRollout: bundle.canaryRollout,
+    canaryActivationGuard: bundle.canaryActivationGuard,
     surfaceIds: bundle.surfaceMap.map((surface) => surface.id),
     surfaceCount: bundle.surfaceMap.length,
     shippedSurfaceCount: bundle.surfaceMap.filter((surface) => surface.state === "shipped").length,
@@ -811,6 +817,8 @@ export function summarizeTeacherProposalReplayOutcomesV1(
 
 export type TeacherCanaryRolloutSurfaceStateV1 = "target";
 
+export type TeacherCanaryRolloutModeV1 = "off" | "canary";
+
 export interface TeacherCanaryRolloutPlanInputV1 {
   proposalClass: ProposalClass;
   rollbackKey: string;
@@ -820,8 +828,8 @@ export interface TeacherCanaryRolloutPlanInputV1 {
 
 export interface TeacherCanaryRolloutPlanV1 extends TeacherCanaryRolloutPlanInputV1 {
   surfaceState: TeacherCanaryRolloutSurfaceStateV1;
-  rolloutMode: "off";
-  enabled: false;
+  rolloutMode: TeacherCanaryRolloutModeV1;
+  enabled: boolean;
   shippedStateSummary: string;
   targetStateSummary: string;
   guardrails: string[];
@@ -829,8 +837,8 @@ export interface TeacherCanaryRolloutPlanV1 extends TeacherCanaryRolloutPlanInpu
 
 export interface TeacherCanaryRolloutPlanSummaryV1 extends TeacherCanaryRolloutPlanInputV1 {
   surfaceState: TeacherCanaryRolloutSurfaceStateV1;
-  rolloutMode: "off";
-  enabled: false;
+  rolloutMode: TeacherCanaryRolloutModeV1;
+  enabled: boolean;
   shippedStateSummary: string;
   targetStateSummary: string;
   guardrails: string[];
@@ -854,7 +862,8 @@ const buildTeacherCanaryRolloutPlan = (
   guardrails: [
     "Keep the rollout plan target-state only until it is explicitly shipped.",
     "Default rolloutMode stays off.",
-    "Do not use the canary plan to change live serving without separate replay and rollback proof.",
+    "Do not use the canary plan to change live serving without separate replay, proof, and rollback binding.",
+    "Canary activation stays blocked until replay summary, proof bundle, and rollback binding are all present.",
     "Bind any candidate pack by durable version or id, never by ad hoc display labels.",
     "Bind the plan to an explicit rollback key before any later tranche can opt it in.",
   ],
@@ -905,6 +914,107 @@ export function summarizeTeacherCanaryRolloutPlanV1(
     guardrails: [...plan.guardrails],
     guardrailCount: plan.guardrails.length,
     summary: `${plan.proposalClass} canary plan stays ${plan.surfaceState}, rolloutMode=${plan.rolloutMode}, enabled=${plan.enabled ? "true" : "false"}, and rollback-bound to ${plan.rollbackKey}${plan.candidatePackVersion !== undefined ? `, candidatePackVersion=${plan.candidatePackVersion}` : ""}${plan.candidatePackId !== undefined ? `, candidatePackId=${plan.candidatePackId}` : ""}.`,
+  };
+}
+
+function normalizeTeacherCanaryText(value: string | null | undefined): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function isTeacherCanaryActivationRequestedV1(canaryRollout?: TeacherCanaryRolloutPlanV1 | null): boolean {
+  if (!canaryRollout) {
+    return false;
+  }
+  return canaryRollout.enabled === true || canaryRollout.rolloutMode !== "off";
+}
+
+export interface TeacherCanaryActivationGuardV1 {
+  proposalId: string;
+  proposalClass: ProposalClass;
+  requested: boolean;
+  allowed: boolean;
+  blocked: boolean;
+  rolloutMode: TeacherCanaryRolloutModeV1;
+  enabled: boolean;
+  replayReady: boolean;
+  proofReady: boolean;
+  rollbackReady: boolean;
+  rollbackKey: string | null;
+  proofRollbackKey: string | null;
+  replaySummaryId: string | null;
+  proofBundleId: string | null;
+  blockers: string[];
+  summary: string;
+  detail: string;
+}
+
+export function describeTeacherCanaryActivationGuardV1(params: {
+  proposalId: string;
+  proposalClass: ProposalClass;
+  rollbackKey?: string | null;
+  canaryRollout?: TeacherCanaryRolloutPlanV1 | null;
+  replaySummary?: TeacherProposalReplaySummaryV1 | null;
+  proofBundle?: TeacherProposalProofBundleV1 | null;
+}): TeacherCanaryActivationGuardV1 {
+  const canaryRollout = params.canaryRollout ?? null;
+  const requested = isTeacherCanaryActivationRequestedV1(canaryRollout);
+  const replaySummaryId = normalizeTeacherCanaryText(params.replaySummary?.replayId);
+  const proofBundleId = normalizeTeacherCanaryText(params.proofBundle?.bundleId);
+  const rollbackKey = normalizeTeacherCanaryText(params.rollbackKey);
+  const proofRollbackKey = normalizeTeacherCanaryText(params.proofBundle?.rollbackKey);
+  const replayReady = replaySummaryId !== null;
+  const proofReady = proofBundleId !== null;
+  const rollbackReady = rollbackKey !== null && proofRollbackKey !== null && rollbackKey === proofRollbackKey;
+  const blockers: string[] = [];
+
+  if (requested) {
+    if (!replayReady) {
+      blockers.push("missing replay summary");
+    }
+    if (!proofReady) {
+      blockers.push("missing proof bundle");
+    }
+    if (rollbackKey === null) {
+      blockers.push("missing proposal rollback key");
+    } else if (proofRollbackKey === null) {
+      blockers.push("missing proof rollback binding");
+    } else if (rollbackKey !== proofRollbackKey) {
+      blockers.push(`rollback key mismatch: proposal=${rollbackKey} proof=${proofRollbackKey}`);
+    }
+  }
+
+  const allowed = !requested || blockers.length === 0;
+  const blocked = requested && !allowed;
+  const candidatePackLabel = canaryRollout?.candidatePackId ?? canaryRollout?.candidatePackVersion ?? "unbound";
+
+  return {
+    proposalId: params.proposalId,
+    proposalClass: params.proposalClass,
+    requested,
+    allowed,
+    blocked,
+    rolloutMode: canaryRollout?.rolloutMode ?? "off",
+    enabled: canaryRollout?.enabled ?? false,
+    replayReady,
+    proofReady,
+    rollbackReady,
+    rollbackKey,
+    proofRollbackKey,
+    replaySummaryId,
+    proofBundleId,
+    blockers,
+    summary: !requested
+      ? `canary rollout remains off by default for ${params.proposalId}`
+      : blocked
+        ? `canary activation blocked for ${params.proposalId}: ${blockers.join(", ")}`
+        : `canary activation permitted for ${params.proposalId}`,
+    detail: !requested
+      ? `proposalClass=${params.proposalClass}; rolloutMode=${canaryRollout?.rolloutMode ?? "off"}; enabled=${canaryRollout?.enabled === true}; candidatePack=${candidatePackLabel}`
+      : `proposalClass=${params.proposalClass}; rolloutMode=${canaryRollout?.rolloutMode ?? "off"}; enabled=${canaryRollout?.enabled === true}; candidatePack=${candidatePackLabel}; replayReady=${replayReady}; proofReady=${proofReady}; rollbackReady=${rollbackReady}`,
   };
 }
 

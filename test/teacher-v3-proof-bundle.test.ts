@@ -301,6 +301,20 @@ describe("teacher v3 proof bundle writer", () => {
       status: "promotable",
       candidatePackId: "candidate_pack_08",
     });
+    expect(bundle.proposalReport.proposal.canaryRollout).toMatchObject({
+      proposalClass: "compiler",
+      surfaceState: "target",
+      rolloutMode: "off",
+      enabled: false,
+      candidatePackId: "candidate_pack_08",
+    });
+    expect(bundle.statusReport.canaryActivationGuard).toMatchObject({
+      requested: false,
+      allowed: true,
+      blocked: false,
+    });
+    expect(bundle.summaryMarkdown).toContain("Canary rollout");
+    expect(bundle.summaryMarkdown).toContain("off by default");
     expect(bundle.proposalReport.gate1Seam).toMatchObject({
       present: false,
       recordSource: "runtime-capture",
@@ -345,6 +359,64 @@ describe("teacher v3 proof bundle writer", () => {
     expect(readFileSync(surfaceMapPath, "utf8")).toContain("runtime-truth");
     expect(readFileSync(proposalReportPath, "utf8")).toContain("teacher_v3_proposal_report.v1");
     expect(readFileSync(verdictPath, "utf8")).toContain("reviewable");
+  });
+
+  it("blocks canary activation when replay, proof, and rollback binding are missing", () => {
+    const outputDir = path.join(process.cwd(), "scratch", "teacher-v3-proof-bundle-canary-block-test");
+    rmSync(outputDir, { recursive: true, force: true });
+    mkdirSync(path.dirname(outputDir), { recursive: true });
+
+    const bundle = buildTeacherV3ProofBundle({
+      bundleStartedAt: "2026-04-03T18:27:00Z",
+      outputDir,
+      runtimeStatusCommand: "npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed",
+      runtimeStatus,
+      operatorProofCommand: "openclawbrain proof --openclaw-home ~/.openclaw",
+      operatorProof,
+      docsTruth,
+      producerVersion: "openclawbrain@0.3.8",
+      proposalClass: "compiler",
+      proposalLane: "compiler",
+      proposalStatus: "promotable",
+      proposalRecord: {
+        recordSource: "stored-proposal",
+        rollbackKey: "rollback:teacher-v3:compiler:activation",
+        canaryRollout: {
+          ...{
+            proposalClass: "compiler",
+            surfaceState: "target",
+            rolloutMode: "canary",
+            enabled: true,
+            candidatePackVersion: 8,
+            candidatePackId: "candidate_pack_08",
+            shippedStateSummary: "Compiler lane: shipped runtime serves only promoted packs; no canary live rollout is shipped.",
+            targetStateSummary: "Compiler lane: the canary plan stays explicit, replayable, and off by default until a later tranche opts it in.",
+            guardrails: [
+              "Keep the rollout plan target-state only until it is explicitly shipped.",
+              "Default rolloutMode stays off.",
+              "Do not use the canary plan to change live serving without separate replay, proof, and rollback binding.",
+              "Canary activation stays blocked until replay summary, proof bundle, and rollback binding are all present.",
+              "Bind any candidate pack by durable version or id, never by ad hoc display labels.",
+            ],
+          },
+        },
+      },
+    });
+
+    expect(bundle.statusReport.canaryActivationGuard).toMatchObject({
+      requested: true,
+      allowed: false,
+      blocked: true,
+    });
+    expect(bundle.statusReport.canaryActivationGuard.blockers).toEqual(
+      expect.arrayContaining([
+        "missing replay summary",
+        "missing proof bundle",
+        "missing proof rollback binding",
+      ]),
+    );
+    expect(bundle.summaryMarkdown).toContain("blocked");
+    expect(bundle.summaryMarkdown).toContain("canary activation blocked");
   });
 
   it("captures explicit replay outcomes for a shadow-only proposal record seam", () => {
