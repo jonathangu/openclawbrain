@@ -4,6 +4,27 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.28
+
+`0.4.28` is the Teacher v3 public release: the substrate, persistence, proof-bundle emission, replay over real candidate state, bounded canary discipline, and honest worked-example/public-proof surfaces are now shipped together under one public version and one install lane.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.28`
+- `@openclawbrain/cli@0.4.28`
+
+**Changes**
+
+- lands durable Teacher v3 proposal persistence and runtime-emitted proof bundles
+- lands replay over real candidate state for promotable and shadow-only proposal classes
+- lands bounded canary discipline that is rollback-bound, operator-visible, and off by default
+- publishes honest worked examples plus repo/site proof packaging that keep shipped vs target-state boundaries explicit
+- preserves the one-version / one-install-lane public contract
+
+**Full release note**
+
+- [docs/release-notes-0.4.28.md](docs/release-notes-0.4.28.md)
+
 ## 0.4.27
 
 `0.4.27` is the closed-loop repair release: the historical serve-decision recovery path is repaired, learner/materialization inputs are compacted so the loop can progress without hauling oversized raw payloads, operator status surfaces are more honest about learning progress and runtime truth, and the live host now proves nonzero supervision/router updates with a promoted pack.

@@ -49,11 +49,11 @@
 - note: Lint proposal round-tripped through BrainStore before proof-bundle emission.
 
 ## Publication-safe artifacts
-- `ocb-t129-gate5a/artifacts/teacher-v3-promotable-examples/lint/proof-bundle/summary.md` — bounded human summary
-- `ocb-t129-gate5a/artifacts/teacher-v3-promotable-examples/lint/proof-bundle/status.json` — thin machine status
-- `ocb-t129-gate5a/artifacts/teacher-v3-promotable-examples/lint/proof-bundle/surface-map.json` — shipped-vs-target inventory
-- `ocb-t129-gate5a/artifacts/teacher-v3-promotable-examples/lint/proof-bundle/proposal-report.json` — machine-readable proposal report
-- `ocb-t129-gate5a/artifacts/teacher-v3-promotable-examples/lint/proof-bundle/verdict.json` — review verdict
+- `openclawbrain/artifacts/teacher-v3-promotable-examples/lint/proof-bundle/summary.md` — bounded human summary
+- `openclawbrain/artifacts/teacher-v3-promotable-examples/lint/proof-bundle/status.json` — thin machine status
+- `openclawbrain/artifacts/teacher-v3-promotable-examples/lint/proof-bundle/surface-map.json` — shipped-vs-target inventory
+- `openclawbrain/artifacts/teacher-v3-promotable-examples/lint/proof-bundle/proposal-report.json` — machine-readable proposal report
+- `openclawbrain/artifacts/teacher-v3-promotable-examples/lint/proof-bundle/verdict.json` — review verdict
 
 ## Recommendations
 - Preserve the persisted proposal record seam and load it directly once Gate 1 lands.
