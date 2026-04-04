@@ -33,6 +33,7 @@ These are the existing surfaces this design must anchor to.
 | shipped | `scripts/proof-cron.mjs health` and `scripts/proof-cron.mjs nightly` | proof-health snapshots and aggregates with `status.json`, `snapshot.json`, `summary.md`, `aggregate.json`, `bundle-index.json`, `manifest.json`, and `smoke.json` | use as freshness/health aggregation inputs for proposal reporting |
 | shipped | `scripts/verify-proof-smoke.mjs` | frozen proof freshness gate for the public operator proof claim | use as the claim guardrail, not as a Teacher v3 report generator |
 | shipped | `docs/EVIDENCE.md`, `docs/RELEASE_CONTRACT.md`, `CLAIMS.md` | public truth boundaries and what is or is not claimed today | use as the docs truth layer when deciding whether proposal surfaces may be described as shipped |
+| shipped | `docs/proof/README.md` | compact proof packaging index for the shipped operator proof lane, the target-state Teacher v3 bundle, and the worked examples | use as the front door for proof packaging and the shipped-vs-target split |
 | shipped | `README.md`, `docs/lifecycle.md`, `docs/getting-started/quick-start.md`, `docs/architecture/overview.md`, `docs/architecture/deep-dive.md` | operator-facing narrative for install / status / proof / recovery | use as the human-facing path map that proposal reporting should stay consistent with |
 
 ## Target-state surfaces
@@ -210,6 +211,16 @@ The exact path is less important than the contract:
 - bundle fields are stable
 - source surfaces are cited by exact command or file path
 - shipped vs target-state is explicit
+
+## Packaging references and worked examples
+
+Use these repo-side packaging surfaces when you need the public map rather than the deeper design note:
+
+- [Proof packaging](../proof/README.md) for the compact shipped-vs-target index
+- [Evidence bundle layout](../evidence/README.md) for checked-in frozen proof bundles
+- [Compiled artifact scaffold pack](../../artifacts/fixtures/compiled-artifacts/target-state-scaffold/README.md) for the docs-only worked examples that keep the target-state boundary honest
+
+The worked-example pack is intentionally synthetic. It explains the packaging shape, but it is not live truth and it is not a replacement for host-anchored proof.
 
 ## What should be visible in the report
 

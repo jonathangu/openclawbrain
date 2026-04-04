@@ -26,6 +26,7 @@ Public operator front door: `openclawbrain install --openclaw-home <path>` for o
 - [Routing prior](architecture/routing-prior.md) for summary-aware retrieval
 - [Corrections](architecture/corrections.md) for the explicit user-correction path
 - [Teacher v3 proof surfaces](architecture/teacher-v3-proof.md) for the proposal-reporting / proof-bundle design and its shipped-vs-target-state mapping
+- [Proof packaging](proof/README.md) for the shipped operator proof lane, the target-state Teacher v3 bundle, and the worked examples that keep the boundary honest
 
 ## Release history
 
