@@ -363,9 +363,101 @@ export interface TeacherProposalV1 {
   replayGate?: TeacherProposalReplayGateV1;
   /** Target-state only: explicit canary rollout plan, defaulting to off. */
   canaryRollout?: TeacherCanaryRolloutPlanV1;
+  /** Replay summary for candidate-pack evaluation, durable and inspectable. */
+  replaySummary?: TeacherProposalReplaySummaryV1;
 }
 
 export type TeacherProposal = TeacherProposalV1;
+
+export interface TeacherProposalReplayHealthSummaryV1 {
+  firedPerQuery: number | null;
+  dormantPercent: number | null;
+  orphanCount: number | null;
+}
+
+export interface TeacherProposalReplayStateSnapshotV1 {
+  phase: "before" | "after";
+  surfaceState: "shipped" | "target";
+  packVersion: number | null;
+  packId: string | null;
+  graphHash: string | null;
+  nodeCount: number | null;
+  edgeCount: number | null;
+  health: TeacherProposalReplayHealthSummaryV1;
+  notes: string[];
+}
+
+export interface TeacherCompilerReplaySummaryV1 {
+  kind: "compiler";
+  reviewMode: TeacherProposalReplayGateReviewModeV1;
+  promotionDiscipline: "promotable";
+  subjectCount: number;
+  evidenceCount: number;
+  counterevidenceCount: number;
+  replaySuites: string[];
+  candidatePackVersion: number | null;
+  candidatePackId: string | null;
+  candidateGraphHash: string | null;
+  summary: string;
+  notes: string[];
+}
+
+export interface TeacherLintReplaySummaryV1 {
+  kind: "lint";
+  reviewMode: TeacherProposalReplayGateReviewModeV1;
+  promotionDiscipline: "promotable";
+  subjectCount: number;
+  evidenceCount: number;
+  counterevidenceCount: number;
+  replaySuites: string[];
+  candidatePackVersion: number | null;
+  candidatePackId: string | null;
+  candidateGraphHash: string | null;
+  summary: string;
+  notes: string[];
+}
+
+export interface TeacherShadowReplaySummaryV1 {
+  kind: Exclude<ProposalClass, "compiler" | "lint">;
+  reviewMode: TeacherProposalReplayGateReviewModeV1;
+  promotionDiscipline: "shadow_only";
+  subjectCount: number;
+  evidenceCount: number;
+  counterevidenceCount: number;
+  replaySuites: string[];
+  candidatePackVersion: number | null;
+  candidatePackId: string | null;
+  candidateGraphHash: string | null;
+  summary: string;
+  notes: string[];
+}
+
+export type TeacherProposalClassReplaySummaryV1 =
+  | TeacherCompilerReplaySummaryV1
+  | TeacherLintReplaySummaryV1
+  | TeacherShadowReplaySummaryV1;
+
+export interface TeacherProposalReplaySummaryV1 {
+  replayId: string;
+  proposalId: string;
+  proposalClass: ProposalClass;
+  status: ProposalStatus;
+  reviewMode: TeacherProposalReplayGateReviewModeV1;
+  basePackVersion: number | null;
+  baseGraphHash: string | null;
+  candidatePackVersion: number | null;
+  candidatePackId: string | null;
+  candidateGraphHash: string | null;
+  beforeScore: number;
+  afterScore: number;
+  scoreDelta: number;
+  before: TeacherProposalReplayStateSnapshotV1;
+  after: TeacherProposalReplayStateSnapshotV1;
+  classSummary: TeacherProposalClassReplaySummaryV1;
+  summary: string;
+  createdAt: string;
+  updatedAt: string;
+}
 
 export interface TeacherProposalLineageSummaryV1 extends ProposalLineageV1 {
   parentProposalIds: string[];
@@ -391,6 +483,8 @@ export interface TeacherProposalSummaryV1 {
   proofBundleId?: string;
   proofBundleStatus?: TeacherProposalProofBundleV1["status"];
   proofBundleReplayOutcomeSummary?: TeacherProposalReplayOutcomeSummaryV1;
+  hasReplaySummary: boolean;
+  replaySummary?: TeacherProposalReplaySummaryV1;
   createdAt: string;
   resolvedAt?: string;
 }
@@ -439,6 +533,12 @@ function cloneProposalLineage(lineage: ProposalLineageV1): TeacherProposalLineag
   };
 }
 
+function cloneTeacherProposalReplaySummary(
+  replaySummary: TeacherProposalReplaySummaryV1 | undefined,
+): TeacherProposalReplaySummaryV1 | undefined {
+  return replaySummary === undefined ? undefined : JSON.parse(JSON.stringify(replaySummary)) as TeacherProposalReplaySummaryV1;
+}
+
 export function summarizeTeacherProposalV1(
   proposal: TeacherProposalV1,
 ): TeacherProposalSummaryV1 {
@@ -469,6 +569,8 @@ export function summarizeTeacherProposalV1(
     proofBundleId: proofBundle?.bundleId,
     proofBundleStatus: proofBundle?.status,
     proofBundleReplayOutcomeSummary,
+    hasReplaySummary: proposal.replaySummary !== undefined,
+    replaySummary: cloneTeacherProposalReplaySummary(proposal.replaySummary),
     createdAt: proposal.createdAt,
     resolvedAt: proposal.resolvedAt,
   };
@@ -504,6 +606,7 @@ export function diffTeacherProposalV1(
     leftSummary.proofBundleReplayOutcomeSummary ?? null,
     rightSummary.proofBundleReplayOutcomeSummary ?? null,
   );
+  compareField("replaySummary", leftSummary.replaySummary ?? null, rightSummary.replaySummary ?? null);
   compareField("createdAt", leftSummary.createdAt, rightSummary.createdAt);
   compareField("resolvedAt", leftSummary.resolvedAt ?? null, rightSummary.resolvedAt ?? null);
 

@@ -89,6 +89,96 @@ describe("teacher v3 proof bundle writer", () => {
       operatorProof,
       docsTruth,
       producerVersion: "openclawbrain@0.3.8",
+      proposalClass: "compiler",
+      proposalLane: "compiler",
+      proposalStatus: "promotable",
+      proposalRecord: {
+        recordSource: "stored-proposal",
+        evidence: [
+          {
+            evidenceId: "evi_replay_01",
+            sourceKind: "file",
+            sourceId: "docs/architecture/teacher-v3-replay.md",
+            authority: "raw_source",
+            derivation: "teacher_compilation",
+            excerpt: "Replay over real candidate state for compiler proposals.",
+            sourceHash: "sha256:replay-01",
+          },
+        ],
+        counterevidence: [],
+        replaySuites: ["teacher-v3/compiler-replay"],
+        confidence: 0.94,
+        rollbackKey: "rollback:teacher-v3:compiler:replay",
+        replaySummary: {
+          replayId: "treplay_01",
+          proposalId: "prop_01",
+          proposalClass: "compiler",
+          status: "promotable",
+          reviewMode: "promotable",
+          basePackVersion: 7,
+          baseGraphHash: "graph_sha_07",
+          candidatePackVersion: 8,
+          candidatePackId: "candidate_pack_08",
+          candidateGraphHash: "graph_sha_08",
+          beforeScore: 0.61,
+          afterScore: 0.79,
+          scoreDelta: 0.18,
+          before: {
+            phase: "before",
+            surfaceState: "shipped",
+            packVersion: 7,
+            packId: null,
+            graphHash: "graph_sha_07",
+            nodeCount: 10,
+            edgeCount: 11,
+            health: {
+              firedPerQuery: 1.1,
+              dormantPercent: 0.2,
+              orphanCount: 1,
+            },
+            notes: ["base lineage"],
+          },
+          after: {
+            phase: "after",
+            surfaceState: "target",
+            packVersion: 8,
+            packId: "candidate_pack_08",
+            graphHash: "graph_sha_08",
+            nodeCount: 12,
+            edgeCount: 13,
+            health: {
+              firedPerQuery: 1.8,
+              dormantPercent: 0.1,
+              orphanCount: 0,
+            },
+            notes: ["candidate pack replay"],
+          },
+          classSummary: {
+            kind: "compiler",
+            reviewMode: "promotable",
+            promotionDiscipline: "promotable",
+            subjectCount: 2,
+            evidenceCount: 1,
+            counterevidenceCount: 0,
+            replaySuites: ["teacher-v3/compiler-replay"],
+            candidatePackVersion: 8,
+            candidatePackId: "candidate_pack_08",
+            candidateGraphHash: "graph_sha_08",
+            summary: "Compiler replay is promotable on candidate pack candidate_pack_08; evidence-backed lineage stays intact and the candidate graph is distinct from base state.",
+            notes: [
+              "basePackVersion=7",
+              "baseGraphHash=graph_sha_07",
+              "beforeScore=0.610",
+              "afterScore=0.790",
+              "scoreDelta=0.180",
+              "compiler proposals may be evaluated as promotable, but they are not auto-promoted",
+            ],
+          },
+          summary: "compiler replay accepted on candidate_pack_08; before=0.610 after=0.790 delta=0.180",
+          createdAt: "2026-04-03T18:33:00Z",
+          updatedAt: "2026-04-03T18:33:00Z",
+        },
+      },
     });
 
     expect(Object.keys(bundle.files).sort()).toEqual([
@@ -106,18 +196,24 @@ describe("teacher v3 proof bundle writer", () => {
     });
     expect(bundle.statusReport.recommendations).toHaveLength(3);
     expect(bundle.proposalReport.proposal).toMatchObject({
-      proposalClass: "lint",
-      proposalLane: "lint",
-      status: "validated",
+      proposalClass: "compiler",
+      proposalLane: "compiler",
+      status: "promotable",
       reviewMode: "promotable",
-      recordSource: "runtime-capture",
+      recordSource: "stored-proposal",
+    });
+    expect(bundle.proposalReport.replaySummary).toMatchObject({
+      replayId: "treplay_01",
+      proposalClass: "compiler",
+      status: "promotable",
+      candidatePackId: "candidate_pack_08",
     });
     expect(bundle.proposalReport.gate1Seam).toMatchObject({
       present: false,
       recordSource: "runtime-capture",
     });
     expect(bundle.proposalReport.replayGate).toMatchObject({
-      proposalClass: "lint",
+      proposalClass: "compiler",
       reviewMode: "promotable",
     });
     expect(Object.keys(bundle.proposalReport.replayGate.dimensions).sort()).toEqual([
@@ -134,6 +230,8 @@ describe("teacher v3 proof bundle writer", () => {
     });
     expect(bundle.summaryMarkdown).toContain("Teacher v3 proof bundle");
     expect(bundle.summaryMarkdown).toContain("Gate 1 seam");
+    expect(bundle.summaryMarkdown).toContain("replay status: **promotable**");
+    expect(bundle.summaryMarkdown).toContain("candidate_pack_08");
 
     const writeResult = writeTeacherV3ProofBundle(outputDir, bundle);
     expect(writeResult.writtenFiles).toHaveLength(5);

@@ -10,6 +10,8 @@ import {
   type TeacherProposal,
   type TeacherProposalProofBundleV1,
 } from "../../src/brain-core/teacher-v3-contracts.js";
+import { BrainGraph } from "../../src/brain-core/graph.js";
+import { buildTeacherProposalReplaySummaryV1 } from "../../src/brain-core/teacher-v3-replay.js";
 import { runBrainMigrations } from "../../src/brain-store/migrations.js";
 import { BrainStore } from "../../src/brain-store/store.js";
 
@@ -62,6 +64,71 @@ const lintCounterevidence: EvidenceRef = {
   excerpt: "Changelog already notes 0.4.27.",
   sourceHash: "sha256:lint-counter-01",
 };
+
+function makeReplaySummary(proposal: TeacherProposal) {
+  const graph = new BrainGraph();
+  const now = Date.now();
+  graph.addNode({
+    id: "replay_a",
+    kind: "chunk",
+    content: "replay_a",
+    embedding: null,
+    sourceUri: null,
+    trust: "scanner",
+    tags: ["replay"],
+    tokenCount: 8,
+    metadata: {},
+    createdAt: now,
+    updatedAt: now,
+  });
+  graph.addNode({
+    id: "replay_b",
+    kind: "chunk",
+    content: "replay_b",
+    embedding: null,
+    sourceUri: null,
+    trust: "scanner",
+    tags: ["replay"],
+    tokenCount: 8,
+    metadata: {},
+    createdAt: now,
+    updatedAt: now,
+  });
+  graph.addEdge({
+    source: "replay_a",
+    target: "replay_b",
+    kind: "learned",
+    weight: 0.7,
+    prior: 0.5,
+    metadata: { seed: true },
+    decayedAt: now,
+    createdAt: now,
+  });
+
+  return buildTeacherProposalReplaySummaryV1({
+    proposal,
+    candidateState: {
+      candidatePack: {
+        version: 8,
+        nodeCount: 2,
+        edgeCount: 1,
+        healthJson: JSON.stringify({
+          nodeCount: 2,
+          edgeCount: 1,
+          firedPerQuery: 1.7,
+          dormantPercent: 0.1,
+          orphanCount: 0,
+        }),
+        promotedAt: null,
+        rolledBack: false,
+        createdAt: now,
+      },
+      candidatePackId: `candidate_pack_${proposal.proposalClass}_08`,
+      candidateGraph: graph,
+    },
+    evaluatedAt: "2026-04-03T18:33:00Z",
+  });
+}
 
 function makeCompilerProposal(): TeacherProposal {
   return {
@@ -220,6 +287,7 @@ describe("BrainStore teacher proposals", () => {
       status: "promoted",
       resolvedAt: "2026-04-03T18:31:00Z",
       proofBundle: makeCompilerProofBundle(compiler),
+      replaySummary: makeReplaySummary(compiler),
     });
 
     const loadedCompiler = store.getTeacherProposal(compiler.proposalId);
@@ -238,6 +306,16 @@ describe("BrainStore teacher proposals", () => {
     expect(loadedCompiler?.proofBundle?.lineage.idempotencyKey).toBe(compiler.lineage.idempotencyKey);
     expect(loadedCompiler?.proofBundle?.replayOutcomes).toHaveLength(2);
     expect(loadedCompiler?.replayGate?.reviewMode).toBe("promotable");
+    expect(loadedCompiler?.replaySummary).toMatchObject({
+      proposalId: compiler.proposalId,
+      proposalClass: "compiler",
+      status: "promotable",
+      reviewMode: "promotable",
+      classSummary: {
+        kind: "compiler",
+        promotionDiscipline: "promotable",
+      },
+    });
 
     const compilerByKey = store.getTeacherProposalByIdempotencyKey(compiler.lineage.idempotencyKey);
     expect(compilerByKey?.proposalId).toBe(compiler.proposalId);
@@ -262,6 +340,12 @@ describe("BrainStore teacher proposals", () => {
         resultCounts: { pass: 1, warn: 1, fail: 0 },
         reviewModeCounts: { promotable: 2, shadow_only: 0 },
         sourceCounts: { proposal_record: 2, proof_bundle: 0, derived: 0 },
+      },
+      hasReplaySummary: true,
+      replaySummary: {
+        proposalId: compiler.proposalId,
+        proposalClass: "compiler",
+        status: "promotable",
       },
       lineage: {
         proposalClass: "compiler",
@@ -348,6 +432,7 @@ describe("BrainStore teacher proposals", () => {
         "counterevidenceIds",
         "replaySuites",
         "proofBundleReplayOutcomeSummary",
+        "replaySummary",
         "lineage.scope",
         "lineage.idempotencyKey",
       ]),

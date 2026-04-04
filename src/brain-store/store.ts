@@ -66,6 +66,7 @@ import type {
   TeacherProposalDiffV1,
   TeacherProposalProofBundleV1,
   TeacherProposalReplayGateV1,
+  TeacherProposalReplaySummaryV1,
   TeacherProposalSummaryV1,
 } from "../brain-core/teacher-v3-contracts.js";
 import { diffTeacherProposalV1, summarizeTeacherProposalV1 } from "../brain-core/teacher-v3-contracts.js";
@@ -2369,6 +2370,7 @@ export class BrainStore {
     proofBundle?: TeacherProposalProofBundleV1 | null;
     replayGate?: TeacherProposalReplayGateV1 | null;
     canaryRollout?: TeacherCanaryRolloutPlanV1 | null;
+    replaySummary?: TeacherProposalReplaySummaryV1 | null;
   }): void {
     const existing = this.getTeacherProposal(params.proposalId);
     if (!existing) {
@@ -2384,6 +2386,7 @@ export class BrainStore {
       proofBundle: params.proofBundle === undefined ? existing.proofBundle : params.proofBundle ?? undefined,
       replayGate: params.replayGate === undefined ? existing.replayGate : params.replayGate ?? undefined,
       canaryRollout: params.canaryRollout === undefined ? existing.canaryRollout : params.canaryRollout ?? undefined,
+      replaySummary: params.replaySummary === undefined ? existing.replaySummary : params.replaySummary ?? undefined,
     };
     const existingCreatedAt = Number.isFinite(Date.parse(existing.createdAt)) ? Date.parse(existing.createdAt) : Date.now();
     const record = this.toTeacherProposalRow(updated, existingCreatedAt, Date.now());

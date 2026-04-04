@@ -839,6 +839,10 @@ export type {
   TeacherProposalReplayOutcomeV1,
   TeacherProposal,
   TeacherProposalArtifactRefV1,
+  TeacherProposalClassReplaySummaryV1,
+  TeacherProposalReplayHealthSummaryV1,
+  TeacherProposalReplayStateSnapshotV1,
+  TeacherProposalReplaySummaryV1,
   TeacherProposalV1,
 } from "./teacher-v3-contracts.js";
 

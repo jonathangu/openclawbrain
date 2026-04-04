@@ -208,6 +208,7 @@ function buildTeacherV3ProposalSeed(input) {
   const proposalRecordEvidence = normalizeArray(proposalRecord?.evidence);
   const proposalRecordCounterevidence = normalizeArray(proposalRecord?.counterevidence);
   const proposalRecordReplaySuites = normalizeArray(proposalRecord?.replaySuites);
+  const proposalRecordReplaySummary = proposalRecord?.replaySummary ?? null;
   const idempotencyKey = sha256Text(JSON.stringify({
     bundleId,
     proposalId,
@@ -313,6 +314,7 @@ function buildTeacherV3ProposalSeed(input) {
     docsTruth,
     runtimeTruth: runtimeStatus,
     proofTruth: operatorProof,
+    replaySummary: proposalRecordReplaySummary,
     proposalReviewMode: proposalClass === "mutation" || proposalClass === "forgetting" || proposalClass === "correction"
       ? "shadow_only"
       : "promotable",
@@ -476,6 +478,7 @@ function buildProposalReport(seed, surfaceMap, bundlePaths, replayCapture) {
       replayOutcomeCount: replayCapture.summary.replayOutcomeCount,
       confidence: seed.confidence,
       recordSource: seed.recordSource,
+      replaySummary: seed.replaySummary,
     },
     replayGate: {
       proposalClass: seed.proposalClass,
@@ -526,6 +529,7 @@ function buildProposalReport(seed, surfaceMap, bundlePaths, replayCapture) {
     surfaceCounts: surfaceMap.counts,
     evidenceLinks: seed.evidence,
     counterevidenceLinks: seed.counterevidence,
+    replaySummary: seed.replaySummary,
     recommendations,
     gate1Seam: seed.gate1Seam,
     publicationSafeArtifacts,
@@ -568,6 +572,7 @@ function buildStatusReport(seed, surfaceMap, proposalReport) {
     proofTruth: proposalReport.proofTruthSummary,
     docsTruth: proposalReport.docsTruth,
     replayOutcomeSummary: proposalReport.replayOutcomeSummary,
+    replaySummary: proposalReport.replaySummary,
     gate1Seam: seed.gate1Seam,
     recommendations: proposalReport.recommendations,
     publicationSafeArtifacts: proposalReport.publicationSafeArtifacts.map((artifact) => ({
@@ -620,6 +625,11 @@ function buildSummaryMarkdown(seed, statusReport, verdictReport, bundlePaths) {
     `- bundle: \`${seed.bundleId}\``,
     `- proposal: \`${seed.proposalId}\` (${seed.proposalClass}, ${seed.status})`,
     `- review mode: **${seed.proposalReviewMode}**`,
+    ...(seed.replaySummary ? [
+      `- replay status: **${seed.replaySummary.status}**`,
+      `- replay score: ${seed.replaySummary.beforeScore.toFixed(3)} → ${seed.replaySummary.afterScore.toFixed(3)} (Δ ${(seed.replaySummary.scoreDelta).toFixed(3)})`,
+      `- candidate pack: ${seed.replaySummary.candidatePackId ?? seed.replaySummary.candidatePackVersion ?? "unbound"}`,
+    ] : []),
     `- verdict: **${verdictReport.verdict}**`,
     `- severity: **${verdictReport.severity}**`,
     `- runtime truth: \`${seed.runtimeStatusCommand}\``,
