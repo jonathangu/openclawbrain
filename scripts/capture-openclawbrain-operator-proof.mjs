@@ -6,6 +6,9 @@ import { homedir } from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { buildTeacherV3ProofBundle, resolveTeacherV3ProofOutputDir, writeTeacherV3ProofBundle } from "./teacher-v3-proof-bundle.mjs";
+
+export { resolveTeacherV3ProofOutputDir } from "./teacher-v3-proof-bundle.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,6 +28,7 @@ function usage() {
       "  --skip-install              Do not run install step",
       "  --skip-restart              Do not run gateway restart step",
       "  --plugin-id <id>            Plugin id for inspect (default: openclawbrain)",
+      "  --teacher-v3-output-dir <p>  Teacher v3 proof bundle output dir (default: artifacts/teacher-v3-proof/<timestamp>)",
       "  --timeout-ms <ms>           Per-command timeout in ms (default: 120000)",
       "  --help                      Show this help",
       "",
@@ -36,6 +40,7 @@ function usage() {
       "- startup breadcrumb extraction",
       "- runtime-load-proof snapshot",
       "- summary.md, steps.json, and verdict.json",
+      "- Teacher v3 proof bundle: summary.md, status.json, surface-map.json, proposal-report.json, verdict.json",
     ].join("\n") + "\n",
   );
 }
@@ -49,6 +54,7 @@ function parseArgs(argv) {
     skipInstall: false,
     skipRestart: false,
     pluginId: "openclawbrain",
+    teacherV3OutputDir: null,
     timeoutMs: 120_000,
   };
 
@@ -75,6 +81,9 @@ function parseArgs(argv) {
         break;
       case "--plugin-id":
         out.pluginId = argv[++index] ?? out.pluginId;
+        break;
+      case "--teacher-v3-output-dir":
+        out.teacherV3OutputDir = argv[++index] ?? null;
         break;
       case "--timeout-ms":
         out.timeoutMs = Number.parseInt(argv[++index] ?? "120000", 10);
@@ -108,6 +117,15 @@ function resolveOutputDir(options) {
     return path.resolve(options.outputDir);
   }
   return path.join(DEFAULT_OUTPUT_PARENT, `operator-proof-${timestampToken()}`);
+}
+
+function readPackageVersion() {
+  try {
+    const pkg = JSON.parse(readFileSync(path.join(repoRoot, "package.json"), "utf8"));
+    return typeof pkg.version === "string" ? pkg.version : "workspace";
+  } catch {
+    return "workspace";
+  }
 }
 
 function writeText(filePath, text) {
@@ -563,6 +581,16 @@ function main() {
     runtimeLoadProof,
     openclawHome: path.resolve(options.openclawHome),
   });
+  const summaryText = buildSummary({
+    options,
+    steps,
+    verdict,
+    gatewayStatusText: gatewayStatusCapture.stdout,
+    pluginInspectText: pluginInspectCapture.stdout,
+    statusSignals,
+    breadcrumbs,
+    runtimeLoadProofPath,
+  });
 
   writeJson(path.join(bundleDir, "steps.json"), {
     bundleStartedAt,
@@ -583,21 +611,39 @@ function main() {
     },
     runtimeLoadProofPath,
   });
-  writeText(
-    path.join(bundleDir, "summary.md"),
-    buildSummary({
-      options,
-      steps,
-      verdict,
-      gatewayStatusText: gatewayStatusCapture.stdout,
-      pluginInspectText: pluginInspectCapture.stdout,
-      statusSignals,
-      breadcrumbs,
-      runtimeLoadProofPath,
-    }),
-  );
+  writeText(path.join(bundleDir, "summary.md"), summaryText);
 
-  process.stdout.write(`${JSON.stringify({ ok: true, bundleDir, verdict }, null, 2)}\n`);
+  const teacherV3OutputDir = resolveTeacherV3ProofOutputDir({
+    outputDir: options.teacherV3OutputDir,
+    bundleStartedAt: new Date(bundleStartedAt),
+  });
+  const teacherV3Bundle = buildTeacherV3ProofBundle({
+    bundleId: path.basename(teacherV3OutputDir),
+    bundleStartedAt,
+    outputDir: teacherV3OutputDir,
+    runtimeStatusCommand: statusCapture.shellCommand,
+    runtimeStatus: statusCapture.parsed,
+    operatorProofCommand: `openclawbrain proof --openclaw-home ${path.resolve(options.openclawHome)}`,
+    operatorProof: {
+      bundleDir,
+      command: `openclawbrain proof --openclaw-home ${path.resolve(options.openclawHome)}`,
+      summary: summaryText,
+      verdict,
+      runtimeLoadProofPath,
+      runtimeLoadProofExists: runtimeLoadProof !== null,
+      stepCount: steps.length,
+      postBundleCount: breadcrumbs.afterBundleStart.length,
+    },
+    docsTruth: {
+      path: path.join(repoRoot, "docs/architecture/teacher-v3-proof.md"),
+      title: "Teacher v3 proposal reporting / proof surfaces",
+      summary: "Design-only proof-surface map for runtime/proof adoption.",
+    },
+    producerVersion: readPackageVersion(),
+  });
+  writeTeacherV3ProofBundle(teacherV3OutputDir, teacherV3Bundle);
+
+  process.stdout.write(`${JSON.stringify({ ok: true, bundleDir, teacherV3OutputDir, verdict }, null, 2)}\n`);
 }
 
 export { DEFAULT_OUTPUT_PARENT, resolveOutputDir };
