@@ -33,14 +33,19 @@ const OPENCLAWBRAIN_EMBEDDER_MODEL_ENV = "OPENCLAWBRAIN_EMBEDDER_MODEL";
 const OPENCLAWBRAIN_INSTALL_SKIP_EMBEDDER_PROVISION_ENV = "OPENCLAWBRAIN_INSTALL_SKIP_EMBEDDER_PROVISION";
 const LEGACY_COMPAT_PACKAGE_NAME = "@jonathangu/openclawbrain";
 const INSTALL_COMPATIBLE_LOCAL_TEACHER_MODEL_PREFIXES = [
+    "gemma4:31b",
+    "gemma4:27b",
+    "gemma4:12b",
     "unsloth-qwen3.5-27b:q4_k_m",
     "unsloth-qwen3.5-27b",
+    "qwen3.5:35b-a3b",
     "qwen3.5:32b",
     "qwen3.5:27b",
     "qwen3.5:14b",
     "qwen3.5:9b",
     "qwen3.5:8b",
     "qwen3:8b",
+    "qwen2.5:32b-instruct",
     "qwen2.5:7b"
 ];
 const DEFAULT_BOUNDED_JSONL_TAIL_BYTES = 4 * 1024 * 1024;

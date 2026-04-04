@@ -30,7 +30,7 @@ Public operator front door: `openclawbrain install --openclaw-home <path>` for o
 
 ## Release history
 
-- [Current release notes (0.4.28)](release-notes-0.4.28.md)
+- [Current release notes (0.4.29)](release-notes-0.4.29.md)
 - [Full changelog](../CHANGELOG.md)
 
 ## Project notes

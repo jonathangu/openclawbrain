@@ -62,7 +62,7 @@ const lintCounterevidence: EvidenceRef = {
   sourceId: "docs/changelog.md#0-4-27",
   authority: "raw_source",
   derivation: "teacher_lint",
-  excerpt: "Changelog already notes 0.4.28.",
+  excerpt: "Changelog already notes 0.4.29.",
   sourceHash: "sha256:lint-counter-01",
 };
 
@@ -197,7 +197,7 @@ function makeLintProposal(): TeacherProposal {
     payload: {
       kind: "release-drift",
       currentVersion: "0.4.26",
-      targetVersion: "0.4.28",
+      targetVersion: "0.4.29",
       surfaces: ["README", "HowItWorks", "proof-page"],
     },
     expectedEffect: {

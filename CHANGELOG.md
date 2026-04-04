@@ -4,6 +4,25 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.29
+
+`0.4.29` is the compatibility release that makes **Gemma 4 31B** a first-class compatible OpenClawBrain teacher on the canonical local Ollama install lane, while preserving the single public version / single install path story.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.29`
+- `@openclawbrain/cli@0.4.29`
+
+**Changes**
+
+- adds Gemma 4 teacher compatibility to the local-teacher autodetect/install path
+- keeps the latest Teacher v3 runtime/proof/replay/canary/worked-example surfaces from `0.4.28`
+- closes the host seam where Gemma could be configured manually but not selected as a first-class compatible local teacher
+
+**Full release note**
+
+- [docs/release-notes-0.4.29.md](docs/release-notes-0.4.29.md)
+
 ## 0.4.28
 
 `0.4.28` is the Teacher v3 public release: the substrate, persistence, proof-bundle emission, replay over real candidate state, bounded canary discipline, and honest worked-example/public-proof surfaces are now shipped together under one public version and one install lane.

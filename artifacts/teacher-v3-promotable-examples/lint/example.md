@@ -12,13 +12,13 @@
 
 ## What was proposed
 - Keep the public release story aligned across README, docs index, changelog, and end-state docs.
-- subjects: release:0.4.28, docs:public-surface-truth, docs:proof-surface-boundary
+- subjects: release:0.4.29, docs:public-surface-truth, docs:proof-surface-boundary
 
 ## Evidence
 - `evi_lint_release_01` → `scripts/verify-release-docs-drift.mjs#verifyReleaseDocsDrift`: This deterministic lint compares the current release version in CHANGELOG.md against public release-surfaces.
-- `evi_lint_readme_01` → `README.md#current-version`: Current version: **0.4.28**
-- `evi_lint_docs_01` → `docs/README.md#current-release-notes`: Current release notes (0.4.28)
-- `evi_lint_endstate_01` → `docs/END_STATE.md#split-package-story`: split packages `@openclawbrain/openclaw@0.4.28` and `@openclawbrain/cli@0.4.28` are published
+- `evi_lint_readme_01` → `README.md#current-version`: Current version: **0.4.29**
+- `evi_lint_docs_01` → `docs/README.md#current-release-notes`: Current release notes (0.4.29)
+- `evi_lint_endstate_01` → `docs/END_STATE.md#split-package-story`: split packages `@openclawbrain/openclaw@0.4.29` and `@openclawbrain/cli@0.4.29` are published
 
 ## Counterevidence / boundary
 - `cevi_lint_target_01` → `docs/architecture/teacher-v3-proof.md#target-state-surfaces`: Teacher v3 reporting may summarize and cross-reference truth, but it must not become a new source of truth for the live runtime.

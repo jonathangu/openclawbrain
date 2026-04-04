@@ -148,21 +148,26 @@ test("watch replay guard can skip stored replay without touching bundle roots", 
   delete globalThis.__ocbReplayHarness;
 });
 
-test("teacher autodetect prefers larger compatible qwen lanes when available", () => {
+test("teacher autodetect accepts gemma4:31b as a compatible local teacher", () => {
   const selectCompatibleLocalTeacherModel = loadFunction({
     file: "cli.js",
     startMarker: "function selectCompatibleLocalTeacherModel",
     endMarker: "function detectInstallTeacherDefaults",
     prelude: `
       const INSTALL_COMPATIBLE_LOCAL_TEACHER_MODEL_PREFIXES = [
+        "gemma4:31b",
+        "gemma4:27b",
+        "gemma4:12b",
         "unsloth-qwen3.5-27b:q4_k_m",
         "unsloth-qwen3.5-27b",
+        "qwen3.5:35b-a3b",
         "qwen3.5:32b",
         "qwen3.5:27b",
         "qwen3.5:14b",
         "qwen3.5:9b",
         "qwen3.5:8b",
         "qwen3:8b",
+        "qwen2.5:32b-instruct",
         "qwen2.5:7b",
       ];
     `,
@@ -170,11 +175,11 @@ test("teacher autodetect prefers larger compatible qwen lanes when available", (
 
   const selected = selectCompatibleLocalTeacherModel([
     "qwen3.5:9b",
+    "gemma4:31b",
     "unsloth-qwen3.5-27b:q4_k_m",
-    "qwen3.5:14b",
   ]);
 
-  assert.equal(selected, "unsloth-qwen3.5-27b:q4_k_m");
+  assert.equal(selected, "gemma4:31b");
 });
 
 test("advanceAlwaysOnLearningRuntime does not rebuild the runtime graph on empty selected slices", () => {
