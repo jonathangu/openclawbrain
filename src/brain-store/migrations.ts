@@ -265,6 +265,39 @@ export function runBrainMigrations(db: DatabaseSync): void {
     );
 
     -- ═══════════════════════════════════════════
+    -- Teacher Proposals
+    -- ═══════════════════════════════════════════
+
+    CREATE TABLE IF NOT EXISTS brain_teacher_proposals (
+      proposal_id       TEXT PRIMARY KEY,
+      proposal_class    TEXT NOT NULL,
+      lane              TEXT,
+      status            TEXT NOT NULL,
+      idempotency_key   TEXT NOT NULL UNIQUE,
+      rollback_key      TEXT NOT NULL,
+      scope             TEXT NOT NULL,
+      base_pack_version INTEGER,
+      base_graph_hash   TEXT,
+      producer_version  TEXT NOT NULL,
+      producer_build_id TEXT,
+      prompt_hash       TEXT,
+      template_id       TEXT,
+      profile           TEXT,
+      source_bundle_id  TEXT,
+      proposal_json     TEXT NOT NULL,
+      created_at        INTEGER NOT NULL,
+      updated_at        INTEGER NOT NULL,
+      resolved_at       INTEGER
+    );
+
+    CREATE INDEX IF NOT EXISTS brain_teacher_proposals_class_status_idx
+      ON brain_teacher_proposals(proposal_class, status, created_at DESC);
+    CREATE INDEX IF NOT EXISTS brain_teacher_proposals_rollback_idx
+      ON brain_teacher_proposals(rollback_key, created_at DESC);
+    CREATE INDEX IF NOT EXISTS brain_teacher_proposals_scope_idx
+      ON brain_teacher_proposals(scope, created_at DESC);
+
+    -- ═══════════════════════════════════════════
     -- Mutation Bundles
     -- ═══════════════════════════════════════════
 

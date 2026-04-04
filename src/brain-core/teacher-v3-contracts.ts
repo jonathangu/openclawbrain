@@ -335,6 +335,173 @@ export interface TeacherProposalV1 {
 
 export type TeacherProposal = TeacherProposalV1;
 
+export interface TeacherProposalLineageSummaryV1 extends ProposalLineageV1 {
+  parentProposalIds: string[];
+}
+
+export interface TeacherProposalSummaryV1 {
+  proposalId: string;
+  proposalClass: ProposalClass;
+  lane?: ProposalClass;
+  status: ProposalStatus;
+  lineage: TeacherProposalLineageSummaryV1;
+  subjectIds: string[];
+  subjectCount: number;
+  evidenceIds: string[];
+  evidenceCount: number;
+  counterevidenceIds: string[];
+  counterevidenceCount: number;
+  replaySuites: string[];
+  replaySuiteCount: number;
+  rollbackKey: string;
+  confidence: number;
+  hasProofBundle: boolean;
+  proofBundleId?: string;
+  proofBundleStatus?: TeacherProposalProofBundleV1["status"];
+  createdAt: string;
+  resolvedAt?: string;
+}
+
+export interface TeacherProposalDiffListV1 {
+  added: string[];
+  removed: string[];
+}
+
+export interface TeacherProposalDiffV1 {
+  leftProposalId: string;
+  rightProposalId: string;
+  sameProposalClass: boolean;
+  sameIdempotencyKey: boolean;
+  sameRollbackKey: boolean;
+  sameStatus: boolean;
+  changedFields: string[];
+  subjectIds: TeacherProposalDiffListV1;
+  evidenceIds: TeacherProposalDiffListV1;
+  counterevidenceIds: TeacherProposalDiffListV1;
+  replaySuites: TeacherProposalDiffListV1;
+  summary: string;
+}
+
+function canonicalEvidenceRefId(ref: EvidenceRefV1): string {
+  return ref.evidenceId ?? ref.sourceId;
+}
+
+function uniqueStrings(values: string[]): string[] {
+  return [...new Set(values)];
+}
+
+function diffStringLists(left: string[], right: string[]): TeacherProposalDiffListV1 {
+  const rightSet = new Set(right);
+  const leftSet = new Set(left);
+  return {
+    added: right.filter((value) => !leftSet.has(value)),
+    removed: left.filter((value) => !rightSet.has(value)),
+  };
+}
+
+function cloneProposalLineage(lineage: ProposalLineageV1): TeacherProposalLineageSummaryV1 {
+  return {
+    ...lineage,
+    parentProposalIds: [...(lineage.parentProposalIds ?? [])],
+  };
+}
+
+export function summarizeTeacherProposalV1(
+  proposal: TeacherProposalV1,
+): TeacherProposalSummaryV1 {
+  const evidenceIds = uniqueStrings(proposal.evidence.map(canonicalEvidenceRefId));
+  const counterevidenceIds = uniqueStrings((proposal.counterevidence ?? []).map(canonicalEvidenceRefId));
+  const proofBundle = proposal.proofBundle;
+
+  return {
+    proposalId: proposal.proposalId,
+    proposalClass: proposal.proposalClass,
+    lane: proposal.lane,
+    status: proposal.status,
+    lineage: cloneProposalLineage(proposal.lineage),
+    subjectIds: [...proposal.subjectIds],
+    subjectCount: proposal.subjectIds.length,
+    evidenceIds,
+    evidenceCount: evidenceIds.length,
+    counterevidenceIds,
+    counterevidenceCount: counterevidenceIds.length,
+    replaySuites: [...proposal.replaySuites],
+    replaySuiteCount: proposal.replaySuites.length,
+    rollbackKey: proposal.rollbackKey,
+    confidence: proposal.confidence,
+    hasProofBundle: proofBundle !== undefined,
+    proofBundleId: proofBundle?.bundleId,
+    proofBundleStatus: proofBundle?.status,
+    createdAt: proposal.createdAt,
+    resolvedAt: proposal.resolvedAt,
+  };
+}
+
+export function diffTeacherProposalV1(
+  left: TeacherProposalV1,
+  right: TeacherProposalV1,
+): TeacherProposalDiffV1 {
+  const leftSummary = summarizeTeacherProposalV1(left);
+  const rightSummary = summarizeTeacherProposalV1(right);
+  const changedFields: string[] = [];
+
+  const compareField = (field: string, leftValue: unknown, rightValue: unknown): void => {
+    if (JSON.stringify(leftValue) !== JSON.stringify(rightValue)) {
+      changedFields.push(field);
+    }
+  };
+
+  compareField("proposalClass", leftSummary.proposalClass, rightSummary.proposalClass);
+  compareField("lane", leftSummary.lane ?? null, rightSummary.lane ?? null);
+  compareField("status", leftSummary.status, rightSummary.status);
+  compareField("confidence", leftSummary.confidence, rightSummary.confidence);
+  compareField("rollbackKey", leftSummary.rollbackKey, rightSummary.rollbackKey);
+  compareField("replaySuites", leftSummary.replaySuites, rightSummary.replaySuites);
+  compareField("subjectIds", leftSummary.subjectIds, rightSummary.subjectIds);
+  compareField("evidenceIds", leftSummary.evidenceIds, rightSummary.evidenceIds);
+  compareField("counterevidenceIds", leftSummary.counterevidenceIds, rightSummary.counterevidenceIds);
+  compareField("proofBundleId", leftSummary.proofBundleId ?? null, rightSummary.proofBundleId ?? null);
+  compareField("proofBundleStatus", leftSummary.proofBundleStatus ?? null, rightSummary.proofBundleStatus ?? null);
+  compareField("createdAt", leftSummary.createdAt, rightSummary.createdAt);
+  compareField("resolvedAt", leftSummary.resolvedAt ?? null, rightSummary.resolvedAt ?? null);
+
+  const lineageKeys: Array<keyof TeacherProposalLineageSummaryV1> = [
+    "proposalClass",
+    "basePackVersion",
+    "baseGraphHash",
+    "producerVersion",
+    "producerBuildId",
+    "promptHash",
+    "templateId",
+    "scope",
+    "profile",
+    "idempotencyKey",
+    "sourceBundleId",
+    "parentProposalIds",
+  ];
+  for (const key of lineageKeys) {
+    compareField(`lineage.${String(key)}`, leftSummary.lineage[key], rightSummary.lineage[key]);
+  }
+
+  return {
+    leftProposalId: leftSummary.proposalId,
+    rightProposalId: rightSummary.proposalId,
+    sameProposalClass: leftSummary.proposalClass === rightSummary.proposalClass,
+    sameIdempotencyKey: leftSummary.lineage.idempotencyKey === rightSummary.lineage.idempotencyKey,
+    sameRollbackKey: leftSummary.rollbackKey === rightSummary.rollbackKey,
+    sameStatus: leftSummary.status === rightSummary.status,
+    changedFields,
+    subjectIds: diffStringLists(leftSummary.subjectIds, rightSummary.subjectIds),
+    evidenceIds: diffStringLists(leftSummary.evidenceIds, rightSummary.evidenceIds),
+    counterevidenceIds: diffStringLists(leftSummary.counterevidenceIds, rightSummary.counterevidenceIds),
+    replaySuites: diffStringLists(leftSummary.replaySuites, rightSummary.replaySuites),
+    summary: `${leftSummary.proposalClass} ${leftSummary.proposalId} → ${rightSummary.proposalId}: ${
+      changedFields.length > 0 ? changedFields.join(", ") : "no material differences"
+    }`,
+  };
+}
+
+
 export type TeacherProposalReplayGateDimensionName =
   | "truth_invariants"
   | "attribution_floor"

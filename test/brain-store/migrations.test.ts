@@ -52,4 +52,40 @@ describe("runBrainMigrations usefulness schema", () => {
       "brain_context_usefulness_created_idx",
     ]));
   });
+
+  it("creates the teacher proposal persistence table with identity and replay indexes", () => {
+    const tempDir = mkdtempSync(join(tmpdir(), "openclawbrain-teacher-proposals-migrations-"));
+    tempDirs.push(tempDir);
+    const db = new DatabaseSync(join(tempDir, "brain.db"));
+    db.exec("PRAGMA foreign_keys = ON");
+
+    runBrainMigrations(db);
+
+    const tableInfo = db.prepare(`PRAGMA table_info(brain_teacher_proposals)`).all() as Array<{ name?: string }>;
+    expect(tableInfo.map((column) => column.name)).toEqual(expect.arrayContaining([
+      "proposal_id",
+      "proposal_class",
+      "lane",
+      "status",
+      "idempotency_key",
+      "rollback_key",
+      "scope",
+      "base_pack_version",
+      "base_graph_hash",
+      "producer_version",
+      "proposal_json",
+      "created_at",
+      "updated_at",
+      "resolved_at",
+    ]));
+
+    const indexNames = db
+      .prepare(`SELECT name FROM sqlite_master WHERE type = 'index' AND name LIKE 'brain_teacher_proposals_%'`)
+      .all() as Array<{ name: string }>;
+    expect(indexNames.map((row) => row.name)).toEqual(expect.arrayContaining([
+      "brain_teacher_proposals_class_status_idx",
+      "brain_teacher_proposals_rollback_idx",
+      "brain_teacher_proposals_scope_idx",
+    ]));
+  });
 });

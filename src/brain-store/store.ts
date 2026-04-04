@@ -60,6 +60,15 @@ import type {
   TeacherFeedbackRichness,
 } from "../brain-core/types.js";
 import { classifyObservationBindingQuality, resolveObservationBindingMode } from "../brain-core/types.js";
+import type {
+  TeacherCanaryRolloutPlanV1,
+  TeacherProposal,
+  TeacherProposalDiffV1,
+  TeacherProposalProofBundleV1,
+  TeacherProposalReplayGateV1,
+  TeacherProposalSummaryV1,
+} from "../brain-core/teacher-v3-contracts.js";
+import { diffTeacherProposalV1, summarizeTeacherProposalV1 } from "../brain-core/teacher-v3-contracts.js";
 import { usefulnessThresholds } from "../brain-core/usefulness.js";
 import { summarizeRecentDecisionTraces, type RecentDecisionTraceSummary } from "../brain-core/trace.js";
 
@@ -2303,6 +2312,159 @@ export class BrainStore {
     return rows.map((row) => this.toMutationBundle(row));
   }
 
+  // ─── Teacher Proposals ───
+
+  insertTeacherProposal(proposal: TeacherProposal): void {
+    const now = Date.now();
+    const record = this.toTeacherProposalRow(proposal, now, now);
+    this.db.prepare(`
+      INSERT INTO brain_teacher_proposals (
+        proposal_id,
+        proposal_class,
+        lane,
+        status,
+        idempotency_key,
+        rollback_key,
+        scope,
+        base_pack_version,
+        base_graph_hash,
+        producer_version,
+        producer_build_id,
+        prompt_hash,
+        template_id,
+        profile,
+        source_bundle_id,
+        proposal_json,
+        created_at,
+        updated_at,
+        resolved_at
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      record.proposalId,
+      record.proposalClass,
+      record.lane,
+      record.status,
+      record.idempotencyKey,
+      record.rollbackKey,
+      record.scope,
+      record.basePackVersion,
+      record.baseGraphHash,
+      record.producerVersion,
+      record.producerBuildId,
+      record.promptHash,
+      record.templateId,
+      record.profile,
+      record.sourceBundleId,
+      record.proposalJson,
+      record.createdAt,
+      record.updatedAt,
+      record.resolvedAt,
+    );
+  }
+
+  updateTeacherProposalStatus(params: {
+    proposalId: string;
+    status: TeacherProposal["status"];
+    resolvedAt?: string | null;
+    proofBundle?: TeacherProposalProofBundleV1 | null;
+    replayGate?: TeacherProposalReplayGateV1 | null;
+    canaryRollout?: TeacherCanaryRolloutPlanV1 | null;
+  }): void {
+    const existing = this.getTeacherProposal(params.proposalId);
+    if (!existing) {
+      throw new Error(`teacher proposal not found: ${params.proposalId}`);
+    }
+
+    const terminalStatuses: TeacherProposal["status"][] = ["promoted", "rejected", "expired", "rolled_back"];
+    const resolvedAt = params.resolvedAt ?? (terminalStatuses.includes(params.status) ? new Date().toISOString() : existing.resolvedAt ?? null);
+    const updated: TeacherProposal = {
+      ...existing,
+      status: params.status,
+      resolvedAt: resolvedAt ?? undefined,
+      proofBundle: params.proofBundle === undefined ? existing.proofBundle : params.proofBundle ?? undefined,
+      replayGate: params.replayGate === undefined ? existing.replayGate : params.replayGate ?? undefined,
+      canaryRollout: params.canaryRollout === undefined ? existing.canaryRollout : params.canaryRollout ?? undefined,
+    };
+    const existingCreatedAt = Number.isFinite(Date.parse(existing.createdAt)) ? Date.parse(existing.createdAt) : Date.now();
+    const record = this.toTeacherProposalRow(updated, existingCreatedAt, Date.now());
+
+    this.db.prepare(`
+      UPDATE brain_teacher_proposals
+      SET proposal_class = ?,
+          lane = ?,
+          status = ?,
+          idempotency_key = ?,
+          rollback_key = ?,
+          scope = ?,
+          base_pack_version = ?,
+          base_graph_hash = ?,
+          producer_version = ?,
+          producer_build_id = ?,
+          prompt_hash = ?,
+          template_id = ?,
+          profile = ?,
+          source_bundle_id = ?,
+          proposal_json = ?,
+          updated_at = ?,
+          resolved_at = ?
+      WHERE proposal_id = ?
+    `).run(
+      record.proposalClass,
+      record.lane,
+      record.status,
+      record.idempotencyKey,
+      record.rollbackKey,
+      record.scope,
+      record.basePackVersion,
+      record.baseGraphHash,
+      record.producerVersion,
+      record.producerBuildId,
+      record.promptHash,
+      record.templateId,
+      record.profile,
+      record.sourceBundleId,
+      record.proposalJson,
+      record.updatedAt,
+      record.resolvedAt,
+      record.proposalId,
+    );
+  }
+
+  getTeacherProposal(proposalId: string): TeacherProposal | null {
+    const row = this.db.prepare(`SELECT * FROM brain_teacher_proposals WHERE proposal_id = ?`).get(proposalId) as Record<string, unknown> | undefined;
+    return row ? this.toTeacherProposal(row) : null;
+  }
+
+  getTeacherProposalByIdempotencyKey(idempotencyKey: string): TeacherProposal | null {
+    const row = this.db.prepare(`SELECT * FROM brain_teacher_proposals WHERE idempotency_key = ?`).get(idempotencyKey) as Record<string, unknown> | undefined;
+    return row ? this.toTeacherProposal(row) : null;
+  }
+
+  getTeacherProposalsByClass(proposalClass: TeacherProposal["proposalClass"], limit = 50): TeacherProposal[] {
+    const rows = this.db.prepare(`
+      SELECT *
+      FROM brain_teacher_proposals
+      WHERE proposal_class = ?
+      ORDER BY created_at DESC
+      LIMIT ?
+    `).all(proposalClass, limit) as Record<string, unknown>[];
+    return rows.map((row) => this.toTeacherProposal(row));
+  }
+
+  summarizeTeacherProposal(proposalId: string): TeacherProposalSummaryV1 | null {
+    const proposal = this.getTeacherProposal(proposalId);
+    return proposal ? summarizeTeacherProposalV1(proposal) : null;
+  }
+
+  diffTeacherProposals(leftProposalId: string, rightProposalId: string): TeacherProposalDiffV1 | null {
+    const left = this.getTeacherProposal(leftProposalId);
+    const right = this.getTeacherProposal(rightProposalId);
+    if (!left || !right) {
+      return null;
+    }
+    return diffTeacherProposalV1(left, right);
+  }
+
   appendLearningJournal(params: LearningJournalInsert): LearningJournalRecord {
     const id = `bj_${randomUUID().slice(0, 8)}`;
     const createdAt = params.createdAt ?? Date.now();
@@ -2544,6 +2706,72 @@ export class BrainStore {
       promotedAt: (row.promoted_at as number) ?? null,
       rolledBack: !!(row.rolled_back as number),
       createdAt: row.created_at as number,
+    };
+  }
+
+  private toTeacherProposal(row: Record<string, unknown>): TeacherProposal {
+    const proposal = parseJsonValue<TeacherProposal | null>(row.proposal_json, null);
+    if (!proposal) {
+      throw new Error(`invalid teacher proposal payload for ${row.proposal_id as string}`);
+    }
+    return proposal;
+  }
+
+  private toTeacherProposalRow(
+    proposal: TeacherProposal,
+    createdAt: number,
+    updatedAt: number,
+  ): {
+    proposalId: string;
+    proposalClass: TeacherProposal["proposalClass"];
+    lane: string | null;
+    status: TeacherProposal["status"];
+    idempotencyKey: string;
+    rollbackKey: string;
+    scope: string;
+    basePackVersion: number | null;
+    baseGraphHash: string | null;
+    producerVersion: string;
+    producerBuildId: string | null;
+    promptHash: string | null;
+    templateId: string | null;
+    profile: string | null;
+    sourceBundleId: string | null;
+    proposalJson: string;
+    createdAt: number;
+    updatedAt: number;
+    resolvedAt: number | null;
+  } {
+    const toEpochMs = (value: string | undefined): number | null => {
+      if (!value) {
+        return null;
+      }
+      const parsed = Date.parse(value);
+      return Number.isFinite(parsed) ? parsed : null;
+    };
+
+    const createdAtValue = toEpochMs(proposal.createdAt) ?? createdAt;
+    const resolvedAtValue = toEpochMs(proposal.resolvedAt);
+    return {
+      proposalId: proposal.proposalId,
+      proposalClass: proposal.proposalClass,
+      lane: proposal.lane ?? null,
+      status: proposal.status,
+      idempotencyKey: proposal.lineage.idempotencyKey,
+      rollbackKey: proposal.rollbackKey,
+      scope: proposal.lineage.scope,
+      basePackVersion: proposal.lineage.basePackVersion ?? null,
+      baseGraphHash: proposal.lineage.baseGraphHash ?? null,
+      producerVersion: proposal.lineage.producerVersion,
+      producerBuildId: proposal.lineage.producerBuildId ?? null,
+      promptHash: proposal.lineage.promptHash ?? null,
+      templateId: proposal.lineage.templateId ?? null,
+      profile: proposal.lineage.profile ?? null,
+      sourceBundleId: proposal.lineage.sourceBundleId ?? null,
+      proposalJson: JSON.stringify(proposal),
+      createdAt: createdAtValue,
+      updatedAt,
+      resolvedAt: resolvedAtValue,
     };
   }
 
