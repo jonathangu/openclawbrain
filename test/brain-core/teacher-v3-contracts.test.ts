@@ -79,6 +79,28 @@ const proposal: TeacherProposal = {
     lineage,
     rollbackKey: "rollback::teacher-v3::compiler::docs-architecture",
     replaySuites: ["teacher-v3/compiler-replay"],
+    replayOutcomes: [
+      {
+        outcomeId: "replay_01",
+        replaySuite: "teacher-v3/compiler-replay",
+        proposalClass: "compiler",
+        reviewMode: "promotable",
+        result: "pass",
+        source: "proposal_record",
+        summary: "compiler replay passed",
+        capturedAt: "2026-04-03T18:28:30Z",
+      },
+      {
+        outcomeId: "replay_02",
+        replaySuite: "teacher-v3/compiler-review",
+        proposalClass: "compiler",
+        reviewMode: "promotable",
+        result: "warn",
+        source: "proposal_record",
+        summary: "compiler replay stayed bounded",
+        capturedAt: "2026-04-03T18:28:45Z",
+      },
+    ],
     surfaceMap: [
       {
         id: "surface_runtime_status",
@@ -307,6 +329,13 @@ describe("teacher v3 contracts", () => {
       proposalClass: "compiler",
       status: "promoted",
       rollbackKey: proposal.rollbackKey,
+      replayOutcomeSummary: {
+        replayOutcomeCount: 2,
+        replaySuites: ["teacher-v3/compiler-replay", "teacher-v3/compiler-review"],
+        resultCounts: { pass: 1, warn: 1, fail: 0 },
+        reviewModeCounts: { promotable: 2, shadow_only: 0 },
+        sourceCounts: { proposal_record: 2, proof_bundle: 0, derived: 0 },
+      },
       surfaceCount: 3,
       shippedSurfaceCount: 2,
       targetSurfaceCount: 1,

@@ -55,6 +55,33 @@ export interface TeacherProposalProofLinkV1 {
   path: string;
 }
 
+export type TeacherProposalReplayOutcomeResultV1 = "pass" | "warn" | "fail";
+
+export type TeacherProposalReplayOutcomeSourceV1 = "proposal_record" | "proof_bundle" | "derived";
+
+export interface TeacherProposalReplayOutcomeV1 {
+  outcomeId: string;
+  replaySuite: string;
+  proposalClass: ProposalClass;
+  reviewMode: "promotable" | "shadow_only";
+  result: TeacherProposalReplayOutcomeResultV1;
+  source: TeacherProposalReplayOutcomeSourceV1;
+  summary: string;
+  evidenceLinks?: TeacherProposalProofLinkV1[];
+  counterevidenceLinks?: TeacherProposalProofLinkV1[];
+  capturedAt: string;
+  notes?: string[];
+}
+
+export interface TeacherProposalReplayOutcomeSummaryV1 {
+  replayOutcomeCount: number;
+  replaySuites: string[];
+  resultCounts: Record<TeacherProposalReplayOutcomeResultV1, number>;
+  reviewModeCounts: Record<"promotable" | "shadow_only", number>;
+  sourceCounts: Record<TeacherProposalReplayOutcomeSourceV1, number>;
+  summary: string;
+}
+
 export type CompiledArtifactKind =
   | "concept_page"
   | "workflow_page"
@@ -264,6 +291,8 @@ export interface TeacherProposalProofBundleV1 {
   lineage: ProposalLineageV1;
   rollbackKey: string;
   replaySuites: string[];
+  replayOutcomes?: TeacherProposalReplayOutcomeV1[];
+  replayOutcomeSummary?: TeacherProposalReplayOutcomeSummaryV1;
   surfaceMap: TeacherV3ProofSurfaceRefV1[];
   evidenceLinks: TeacherProposalProofLinkV1[];
   counterevidenceLinks?: TeacherProposalProofLinkV1[];
@@ -279,6 +308,7 @@ export interface TeacherProposalProofBundleSummaryV1 {
   status: TeacherProposalProofBundleV1["status"];
   rollbackKey: string;
   replaySuites: string[];
+  replayOutcomeSummary: TeacherProposalReplayOutcomeSummaryV1;
   surfaceIds: string[];
   surfaceCount: number;
   shippedSurfaceCount: number;
@@ -291,6 +321,7 @@ export interface TeacherProposalProofBundleSummaryV1 {
 export function summarizeTeacherProposalProofBundleV1(
   bundle: TeacherProposalProofBundleV1,
 ): TeacherProposalProofBundleSummaryV1 {
+  const replayOutcomeSummary = bundle.replayOutcomeSummary ?? summarizeTeacherProposalReplayOutcomesV1(bundle.replayOutcomes ?? []);
   return {
     bundleId: bundle.bundleId,
     proposalId: bundle.proposalId,
@@ -298,6 +329,7 @@ export function summarizeTeacherProposalProofBundleV1(
     status: bundle.status,
     rollbackKey: bundle.rollbackKey,
     replaySuites: [...bundle.replaySuites],
+    replayOutcomeSummary,
     surfaceIds: bundle.surfaceMap.map((surface) => surface.id),
     surfaceCount: bundle.surfaceMap.length,
     shippedSurfaceCount: bundle.surfaceMap.filter((surface) => surface.state === "shipped").length,
@@ -358,6 +390,7 @@ export interface TeacherProposalSummaryV1 {
   hasProofBundle: boolean;
   proofBundleId?: string;
   proofBundleStatus?: TeacherProposalProofBundleV1["status"];
+  proofBundleReplayOutcomeSummary?: TeacherProposalReplayOutcomeSummaryV1;
   createdAt: string;
   resolvedAt?: string;
 }
@@ -412,6 +445,9 @@ export function summarizeTeacherProposalV1(
   const evidenceIds = uniqueStrings(proposal.evidence.map(canonicalEvidenceRefId));
   const counterevidenceIds = uniqueStrings((proposal.counterevidence ?? []).map(canonicalEvidenceRefId));
   const proofBundle = proposal.proofBundle;
+  const proofBundleReplayOutcomeSummary = proofBundle
+    ? proofBundle.replayOutcomeSummary ?? summarizeTeacherProposalReplayOutcomesV1(proofBundle.replayOutcomes ?? [])
+    : undefined;
 
   return {
     proposalId: proposal.proposalId,
@@ -432,6 +468,7 @@ export function summarizeTeacherProposalV1(
     hasProofBundle: proofBundle !== undefined,
     proofBundleId: proofBundle?.bundleId,
     proofBundleStatus: proofBundle?.status,
+    proofBundleReplayOutcomeSummary,
     createdAt: proposal.createdAt,
     resolvedAt: proposal.resolvedAt,
   };
@@ -462,6 +499,11 @@ export function diffTeacherProposalV1(
   compareField("counterevidenceIds", leftSummary.counterevidenceIds, rightSummary.counterevidenceIds);
   compareField("proofBundleId", leftSummary.proofBundleId ?? null, rightSummary.proofBundleId ?? null);
   compareField("proofBundleStatus", leftSummary.proofBundleStatus ?? null, rightSummary.proofBundleStatus ?? null);
+  compareField(
+    "proofBundleReplayOutcomeSummary",
+    leftSummary.proofBundleReplayOutcomeSummary ?? null,
+    rightSummary.proofBundleReplayOutcomeSummary ?? null,
+  );
   compareField("createdAt", leftSummary.createdAt, rightSummary.createdAt);
   compareField("resolvedAt", leftSummary.resolvedAt ?? null, rightSummary.resolvedAt ?? null);
 
@@ -605,6 +647,57 @@ export function describeTeacherProposalReplayGate(
   proposalClass: ProposalClass,
 ): TeacherProposalReplayGateV1 {
   return TEACHER_PROPOSAL_REPLAY_GATES_V1[proposalClass];
+}
+
+export function summarizeTeacherProposalReplayOutcomesV1(
+  outcomes: TeacherProposalReplayOutcomeV1[],
+): TeacherProposalReplayOutcomeSummaryV1 {
+  const resultCounts: TeacherProposalReplayOutcomeSummaryV1["resultCounts"] = {
+    pass: 0,
+    warn: 0,
+    fail: 0,
+  };
+  const reviewModeCounts: TeacherProposalReplayOutcomeSummaryV1["reviewModeCounts"] = {
+    promotable: 0,
+    shadow_only: 0,
+  };
+  const sourceCounts: TeacherProposalReplayOutcomeSummaryV1["sourceCounts"] = {
+    proposal_record: 0,
+    proof_bundle: 0,
+    derived: 0,
+  };
+  const replaySuites: string[] = [];
+
+  for (const outcome of outcomes ?? []) {
+    if (!outcome) {
+      continue;
+    }
+    if (Object.prototype.hasOwnProperty.call(resultCounts, outcome.result)) {
+      resultCounts[outcome.result] += 1;
+    }
+    if (Object.prototype.hasOwnProperty.call(reviewModeCounts, outcome.reviewMode)) {
+      reviewModeCounts[outcome.reviewMode] += 1;
+    }
+    if (Object.prototype.hasOwnProperty.call(sourceCounts, outcome.source)) {
+      sourceCounts[outcome.source] += 1;
+    }
+    replaySuites.push(outcome.replaySuite);
+  }
+
+  const uniqueReplaySuites = uniqueStrings(replaySuites);
+  const replayOutcomeCount = outcomes.length;
+  const summary = replayOutcomeCount === 0
+    ? "No replay outcomes captured."
+    : `Captured ${replayOutcomeCount} replay outcome${replayOutcomeCount === 1 ? "" : "s"} across ${uniqueReplaySuites.length} suite${uniqueReplaySuites.length === 1 ? "" : "s"} (${uniqueReplaySuites.join(", ") || "none"}); results pass=${resultCounts.pass}, warn=${resultCounts.warn}, fail=${resultCounts.fail}; review modes promotable=${reviewModeCounts.promotable}, shadow_only=${reviewModeCounts.shadow_only}; sources proposal_record=${sourceCounts.proposal_record}, proof_bundle=${sourceCounts.proof_bundle}, derived=${sourceCounts.derived}.`;
+
+  return {
+    replayOutcomeCount,
+    replaySuites: uniqueReplaySuites,
+    resultCounts,
+    reviewModeCounts,
+    sourceCounts,
+    summary,
+  };
 }
 
 export type TeacherCanaryRolloutSurfaceStateV1 = "shipped" | "target";

@@ -4,6 +4,7 @@ import { createHash } from "node:crypto";
 import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
+import { captureTeacherV3ReplayOutcomes } from "./teacher-v3-replay-outcomes.mjs";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -190,11 +191,16 @@ function buildTeacherV3ProposalSeed(input) {
   const runtimeStatusCommand = normalizeText(input.runtimeStatusCommand) ?? "runtime-status";
   const operatorProofCommand = normalizeText(input.operatorProofCommand) ?? "openclawbrain proof";
   const subjectIds = normalizeArray(input.subjectIds).map((subject) => normalizeText(subject)).filter(Boolean);
+  const proposalRecordSubjectIds = normalizeArray(input.proposalRecord?.subjectIds)
+    .map((subject) => normalizeText(subject))
+    .filter(Boolean);
   const proposalSubjectIds = subjectIds.length > 0
     ? subjectIds
-    : ["surface:runtime-truth", "surface:proof-truth", "surface:docs-truth"];
-  const proposalClass = normalizeText(input.proposalClass) ?? "lint";
-  const proposalLane = normalizeText(input.proposalLane) ?? proposalClass;
+    : proposalRecordSubjectIds.length > 0
+      ? proposalRecordSubjectIds
+      : ["surface:runtime-truth", "surface:proof-truth", "surface:docs-truth"];
+  const proposalClass = normalizeText(input.proposalClass) ?? normalizeText(input.proposalRecord?.proposalClass) ?? "lint";
+  const proposalLane = normalizeText(input.proposalLane) ?? normalizeText(input.proposalRecord?.proposalLane) ?? proposalClass;
   const producerVersion = normalizeText(input.producerVersion) ?? "openclawbrain-proof-capture";
   const proposalId = normalizeText(input.proposalId) ?? bundleId;
   const sourceBundleId = operatorProof.bundleDir ?? normalizeText(input.operatorProof?.bundleDir) ?? null;
@@ -222,7 +228,7 @@ function buildTeacherV3ProposalSeed(input) {
     proposalId,
     proposalLane,
     proposalClass,
-    status: normalizeText(input.proposalStatus) ?? "validated",
+    status: normalizeText(input.proposalStatus) ?? normalizeText(input.proposalRecord?.status) ?? "validated",
     lineage: {
       proposalClass,
       basePackVersion: runtimeStatus.currentPackVersion,
@@ -402,7 +408,7 @@ function buildSurfaceMap(seed, bundlePaths) {
   };
 }
 
-function buildProposalReport(seed, surfaceMap, bundlePaths) {
+function buildProposalReport(seed, surfaceMap, bundlePaths, replayCapture) {
   const publicationSafeArtifacts = [
     {
       artifactId: "teacher-v3-proof-summary",
@@ -467,6 +473,7 @@ function buildProposalReport(seed, surfaceMap, bundlePaths) {
       subjectIds: seed.subjectIds,
       rollbackKey: seed.rollbackKey,
       replaySuites: seed.replaySuites,
+      replayOutcomeCount: replayCapture.summary.replayOutcomeCount,
       confidence: seed.confidence,
       recordSource: seed.recordSource,
     },
@@ -542,6 +549,8 @@ function buildProposalReport(seed, surfaceMap, bundlePaths) {
       postBundleCount: proofTruth.postBundleCount,
       stepCount: proofTruth.stepCount,
     },
+    replayOutcomes: replayCapture.outcomes,
+    replayOutcomeSummary: replayCapture.summary,
   };
 }
 
@@ -558,6 +567,7 @@ function buildStatusReport(seed, surfaceMap, proposalReport) {
     runtimeTruth: proposalReport.runtimeTruthSummary,
     proofTruth: proposalReport.proofTruthSummary,
     docsTruth: proposalReport.docsTruth,
+    replayOutcomeSummary: proposalReport.replayOutcomeSummary,
     gate1Seam: seed.gate1Seam,
     recommendations: proposalReport.recommendations,
     publicationSafeArtifacts: proposalReport.publicationSafeArtifacts.map((artifact) => ({
@@ -588,10 +598,11 @@ function buildVerdictReport(seed, statusReport, proposalReport) {
     why: blocking
       ? "runtime or proof truth could not be summarized into a bounded bundle"
       : seed.gate1Seam.present
-        ? "runtime, proof, and docs truth were summarized; Gate 1 persistence is already wired so the record can be loaded from storage"
-        : "runtime, proof, and docs truth were summarized; Gate 1 persistence is still pending so the bundle remains a derived review surface",
+        ? `runtime, proof, and docs truth were summarized; Gate 1 persistence is already wired so the record can be loaded from storage (${proposalReport.replayOutcomeSummary.summary})`
+        : `runtime, proof, and docs truth were summarized; Gate 1 persistence is still pending so the bundle remains a derived review surface (${proposalReport.replayOutcomeSummary.summary})`,
     reviewMode: seed.proposalReviewMode,
     gate1Seam: seed.gate1Seam,
+    replayOutcomeSummary: proposalReport.replayOutcomeSummary,
     blockers: blocking ? [
       !runtimeReady ? "missing runtime truth summary" : null,
       !proofReady ? "missing proof truth summary" : null,
@@ -619,6 +630,13 @@ function buildSummaryMarkdown(seed, statusReport, verdictReport, bundlePaths) {
     `- shipped surfaces: ${statusReport.surfaceCounts.shippedSurfaceCount}`,
     `- target bundle artifacts: ${statusReport.surfaceCounts.targetSurfaceCount}`,
     `- total referenced surfaces: ${statusReport.surfaceCounts.totalSurfaceCount}`,
+    "",
+    "## Replay outcomes",
+    `- captured outcomes: ${statusReport.replayOutcomeSummary.replayOutcomeCount}`,
+    `- replay suites: ${statusReport.replayOutcomeSummary.replaySuites.length > 0 ? statusReport.replayOutcomeSummary.replaySuites.join(", ") : "none"}`,
+    `- results: pass=${statusReport.replayOutcomeSummary.resultCounts.pass}, warn=${statusReport.replayOutcomeSummary.resultCounts.warn}, fail=${statusReport.replayOutcomeSummary.resultCounts.fail}`,
+    `- review modes: promotable=${statusReport.replayOutcomeSummary.reviewModeCounts.promotable}, shadow_only=${statusReport.replayOutcomeSummary.reviewModeCounts.shadow_only}`,
+    `- sources: proposal_record=${statusReport.replayOutcomeSummary.sourceCounts.proposal_record}, proof_bundle=${statusReport.replayOutcomeSummary.sourceCounts.proof_bundle}, derived=${statusReport.replayOutcomeSummary.sourceCounts.derived}`,
     "",
     "## Gate 1 seam",
     `- present: ${seed.gate1Seam.present ? "yes" : "no"}`,
@@ -673,8 +691,18 @@ export function buildTeacherV3ProofBundle(input) {
     bundleId,
     bundleStartedAt,
   });
+  const replayCapture = captureTeacherV3ReplayOutcomes({
+    bundleId,
+    proposalId: seed.proposalId,
+    proposalClass: seed.proposalClass,
+    reviewMode: seed.proposalReviewMode,
+    replaySuites: seed.replaySuites,
+    proofVerdict: seed.proofTruth,
+    replayOutcomes: input.proposalRecord?.replayOutcomes,
+    bundleStartedAt,
+  });
   const surfaceMap = buildSurfaceMap(seed, bundlePaths);
-  const proposalReport = buildProposalReport(seed, surfaceMap, bundlePaths);
+  const proposalReport = buildProposalReport(seed, surfaceMap, bundlePaths, replayCapture);
   const statusReport = buildStatusReport(seed, surfaceMap, proposalReport);
   const verdictReport = buildVerdictReport(seed, statusReport, proposalReport);
   const summaryMarkdown = buildSummaryMarkdown(seed, statusReport, verdictReport, bundlePaths);

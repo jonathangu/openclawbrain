@@ -154,6 +154,28 @@ function makeCompilerProofBundle(proposal: TeacherProposal): TeacherProposalProo
     lineage: proposal.lineage,
     rollbackKey: proposal.rollbackKey,
     replaySuites: proposal.replaySuites,
+    replayOutcomes: [
+      {
+        outcomeId: "replay_compiler_01",
+        replaySuite: "compiler-shape-smoke",
+        proposalClass: proposal.proposalClass,
+        reviewMode: "promotable",
+        result: "pass",
+        source: "proposal_record",
+        summary: "compiler shape smoke passed",
+        capturedAt: "2026-04-03T18:30:30Z",
+      },
+      {
+        outcomeId: "replay_compiler_02",
+        replaySuite: "compiler-lineage-smoke",
+        proposalClass: proposal.proposalClass,
+        reviewMode: "promotable",
+        result: "warn",
+        source: "proposal_record",
+        summary: "compiler lineage smoke stayed bounded",
+        capturedAt: "2026-04-03T18:30:45Z",
+      },
+    ],
     surfaceMap: [
       {
         id: "runtime_before",
@@ -214,6 +236,7 @@ describe("BrainStore teacher proposals", () => {
     expect(loadedCompiler?.proofBundle?.bundleId).toBe("pb_compiler_01");
     expect(loadedCompiler?.proofBundle?.status).toBe("promoted");
     expect(loadedCompiler?.proofBundle?.lineage.idempotencyKey).toBe(compiler.lineage.idempotencyKey);
+    expect(loadedCompiler?.proofBundle?.replayOutcomes).toHaveLength(2);
     expect(loadedCompiler?.replayGate?.reviewMode).toBe("promotable");
 
     const compilerByKey = store.getTeacherProposalByIdempotencyKey(compiler.lineage.idempotencyKey);
@@ -233,6 +256,13 @@ describe("BrainStore teacher proposals", () => {
       hasProofBundle: true,
       proofBundleId: "pb_compiler_01",
       proofBundleStatus: "promoted",
+      proofBundleReplayOutcomeSummary: {
+        replayOutcomeCount: 2,
+        replaySuites: ["compiler-shape-smoke", "compiler-lineage-smoke"],
+        resultCounts: { pass: 1, warn: 1, fail: 0 },
+        reviewModeCounts: { promotable: 2, shadow_only: 0 },
+        sourceCounts: { proposal_record: 2, proof_bundle: 0, derived: 0 },
+      },
       lineage: {
         proposalClass: "compiler",
         basePackVersion: 7,
@@ -317,6 +347,7 @@ describe("BrainStore teacher proposals", () => {
         "evidenceIds",
         "counterevidenceIds",
         "replaySuites",
+        "proofBundleReplayOutcomeSummary",
         "lineage.scope",
         "lineage.idempotencyKey",
       ]),

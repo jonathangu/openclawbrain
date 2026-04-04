@@ -155,4 +155,109 @@ describe("teacher v3 proof bundle writer", () => {
     expect(readFileSync(proposalReportPath, "utf8")).toContain("teacher_v3_proposal_report.v1");
     expect(readFileSync(verdictPath, "utf8")).toContain("reviewable");
   });
+
+  it("captures explicit replay outcomes for a shadow-only proposal record seam", () => {
+    const outputDir = path.join(process.cwd(), "scratch", "teacher-v3-proof-bundle-shadow-test");
+    rmSync(outputDir, { recursive: true, force: true });
+    mkdirSync(path.dirname(outputDir), { recursive: true });
+
+    const bundle = buildTeacherV3ProofBundle({
+      bundleStartedAt: "2026-04-03T19:05:00Z",
+      outputDir,
+      bundleId: "teacher-v3-proof-shadow-01",
+      proposalId: "prop_shadow_01",
+      proposalClass: "mutation",
+      proposalLane: "mutation",
+      proposalStatus: "shadow_scored",
+      subjectIds: ["memory:shadow-01"],
+      proposalRecord: {
+        recordSource: "brain_teacher_proposals",
+        proposalClass: "mutation",
+        proposalLane: "mutation",
+        status: "shadow_scored",
+        confidence: 0.81,
+        rollbackKey: "rollback:teacher-v3:mutation:shadow",
+        createdAt: "2026-04-03T19:00:00Z",
+        resolvedAt: "2026-04-03T19:01:00Z",
+        updatedAt: "2026-04-03T19:01:30Z",
+        lineage: {
+          proposalClass: "mutation",
+          basePackVersion: 7,
+          baseGraphHash: "graph_sha_shadow_01",
+          producerVersion: "teacher-v3@0.1.0",
+          scope: "mutation-shadow",
+          idempotencyKey: "teacher-v3::mutation::mutation-shadow",
+        },
+        replaySuites: ["mutation-shadow-smoke", "mutation-rollback-smoke"],
+        replayOutcomes: [
+          {
+            outcomeId: "shadow_replay_01",
+            replaySuite: "mutation-shadow-smoke",
+            proposalClass: "mutation",
+            reviewMode: "shadow_only",
+            result: "pass",
+            source: "proposal_record",
+            summary: "mutation shadow replay stayed bounded",
+            capturedAt: "2026-04-03T19:00:30Z",
+          },
+          {
+            outcomeId: "shadow_replay_02",
+            replaySuite: "mutation-rollback-smoke",
+            proposalClass: "mutation",
+            reviewMode: "shadow_only",
+            result: "warn",
+            source: "proposal_record",
+            summary: "rollback path preserved inspectable lineage",
+            capturedAt: "2026-04-03T19:00:45Z",
+          },
+        ],
+        gate1Seam: {
+          present: true,
+          recordSource: "brain_teacher_proposals",
+          note: "loaded from the persisted proposal store seam",
+        },
+      },
+      runtimeStatusCommand: "npx @openclawbrain/cli status --openclaw-home ~/.openclaw --detailed",
+      runtimeStatus,
+      operatorProofCommand: "openclawbrain proof --openclaw-home ~/.openclaw",
+      operatorProof,
+      docsTruth,
+      producerVersion: "openclawbrain@0.3.8",
+    });
+
+    expect(bundle.proposalReport.proposal).toMatchObject({
+      proposalClass: "mutation",
+      proposalLane: "mutation",
+      status: "shadow_scored",
+      reviewMode: "shadow_only",
+      recordSource: "brain_teacher_proposals",
+      replayOutcomeCount: 2,
+    });
+    expect(bundle.proposalReport.gate1Seam).toMatchObject({
+      present: true,
+      recordSource: "brain_teacher_proposals",
+    });
+    expect(bundle.proposalReport.replayOutcomes).toHaveLength(2);
+    expect(bundle.proposalReport.replayOutcomeSummary).toMatchObject({
+      replayOutcomeCount: 2,
+      replaySuites: ["mutation-shadow-smoke", "mutation-rollback-smoke"],
+      resultCounts: { pass: 1, warn: 1, fail: 0 },
+      reviewModeCounts: { promotable: 0, shadow_only: 2 },
+      sourceCounts: { proposal_record: 2, proof_bundle: 0, derived: 0 },
+    });
+    expect(bundle.statusReport.replayOutcomeSummary).toMatchObject({
+      replayOutcomeCount: 2,
+      reviewModeCounts: { promotable: 0, shadow_only: 2 },
+    });
+    expect(bundle.verdictReport).toMatchObject({
+      verdict: "reviewable",
+      targetStateOnly: false,
+    });
+    expect(bundle.summaryMarkdown).toContain("Replay outcomes");
+    expect(bundle.summaryMarkdown).toContain("shadow_only=2");
+
+    const writeResult = writeTeacherV3ProofBundle(outputDir, bundle);
+    expect(writeResult.writtenFiles).toHaveLength(5);
+    expect(readFileSync(path.join(outputDir, TEACHER_V3_PROOF_BUNDLE_LAYOUT.proposalReport), "utf8")).toContain("mutation-shadow-smoke");
+  });
 });
