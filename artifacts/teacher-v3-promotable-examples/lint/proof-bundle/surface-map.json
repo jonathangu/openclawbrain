@@ -1,0 +1,70 @@
+{
+  "contract": "teacher_v3_surface_map.v1",
+  "bundleId": "teacher-v3-lint-worked-example",
+  "observedSurfaces": [
+    {
+      "id": "runtime-truth",
+      "state": "shipped",
+      "kind": "runtime_truth",
+      "source": "openclawbrain status --detailed",
+      "note": "Live runtime snapshot captured from the shipped status surface.; currentPackVersion=7; serveState=serving_active_pack"
+    },
+    {
+      "id": "operator-proof-truth",
+      "state": "shipped",
+      "kind": "proof_truth",
+      "source": "openclawbrain proof --openclaw-home ~/.openclaw",
+      "note": "Host-anchored proof bundle emitted by the shipped proof capture path.; verdict=success_and_proven; runtimeLoadProof=present"
+    },
+    {
+      "id": "docs-truth",
+      "state": "shipped",
+      "kind": "docs_truth",
+      "source": "docs/architecture/teacher-v3-proof.md",
+      "note": "Teacher v3 proof-surface design note that keeps shipped truth distinct from target-state proposal surfaces."
+    }
+  ],
+  "bundleArtifacts": [
+    {
+      "id": "teacher-v3-proof-summary",
+      "state": "target",
+      "kind": "proposal_truth",
+      "source": "ocb-t129-gate5a/artifacts/teacher-v3-promotable-examples/lint/proof-bundle/summary.md",
+      "note": "bounded human summary"
+    },
+    {
+      "id": "teacher-v3-proof-status",
+      "state": "target",
+      "kind": "proposal_truth",
+      "source": "ocb-t129-gate5a/artifacts/teacher-v3-promotable-examples/lint/proof-bundle/status.json",
+      "note": "thin machine status with canary rollout surfaced as target/off/disabled; Lint lane: rollback-bound to rollback:teacher-v3:lint:worked-example; candidate pack candidate_pack_lint_08."
+    },
+    {
+      "id": "teacher-v3-proof-surface-map",
+      "state": "target",
+      "kind": "proposal_truth",
+      "source": "ocb-t129-gate5a/artifacts/teacher-v3-promotable-examples/lint/proof-bundle/surface-map.json",
+      "note": "shipped-vs-target inventory"
+    },
+    {
+      "id": "teacher-v3-proof-proposal-report",
+      "state": "target",
+      "kind": "proposal_truth",
+      "source": "ocb-t129-gate5a/artifacts/teacher-v3-promotable-examples/lint/proof-bundle/proposal-report.json",
+      "note": "machine-readable proposal report with canary rollout surfaced as target/off/disabled; Lint lane: rollback-bound to rollback:teacher-v3:lint:worked-example; candidate pack candidate_pack_lint_08."
+    },
+    {
+      "id": "teacher-v3-proof-verdict",
+      "state": "target",
+      "kind": "proposal_truth",
+      "source": "ocb-t129-gate5a/artifacts/teacher-v3-promotable-examples/lint/proof-bundle/verdict.json",
+      "note": "review verdict; canary rollout remains target-only/off/rollback-bound (target/off/disabled; Lint lane: rollback-bound to rollback:teacher-v3:lint:worked-example; candidate pack candidate_pack_lint_08.)"
+    }
+  ],
+  "counts": {
+    "observedSurfaceCount": 3,
+    "shippedSurfaceCount": 3,
+    "targetSurfaceCount": 5,
+    "totalSurfaceCount": 8
+  }
+}

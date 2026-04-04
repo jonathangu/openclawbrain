@@ -1,0 +1,81 @@
+{
+  "contract": "teacher_v3_proof_bundle_verdict.v1",
+  "bundleId": "teacher-v3-lint-worked-example",
+  "verdict": "reviewable",
+  "severity": "info",
+  "why": "runtime, proof, and docs truth were summarized; Gate 1 persistence is already wired so the record can be loaded from storage (Captured 2 replay outcomes across 2 suites (release-docs-drift-smoke, teacher-v3-lint-proof-surface-smoke); results pass=1, warn=1, fail=0; review modes promotable=2, shadow_only=0; sources proposal_record=2, proof_bundle=0, derived=0.)",
+  "reviewMode": "promotable",
+  "gate1Seam": {
+    "present": true,
+    "recordSource": "brain_store",
+    "note": "Lint proposal round-tripped through BrainStore before proof-bundle emission."
+  },
+  "replayOutcomeSummary": {
+    "replayOutcomeCount": 2,
+    "replaySuites": [
+      "release-docs-drift-smoke",
+      "teacher-v3-lint-proof-surface-smoke"
+    ],
+    "resultCounts": {
+      "pass": 1,
+      "warn": 1,
+      "fail": 0
+    },
+    "reviewModeCounts": {
+      "promotable": 2,
+      "shadow_only": 0
+    },
+    "sourceCounts": {
+      "proposal_record": 2,
+      "proof_bundle": 0,
+      "derived": 0
+    },
+    "summary": "Captured 2 replay outcomes across 2 suites (release-docs-drift-smoke, teacher-v3-lint-proof-surface-smoke); results pass=1, warn=1, fail=0; review modes promotable=2, shadow_only=0; sources proposal_record=2, proof_bundle=0, derived=0."
+  },
+  "shadowReplay": null,
+  "canaryRollout": {
+    "proposalClass": "lint",
+    "surfaceState": "target",
+    "rolloutMode": "off",
+    "enabled": false,
+    "disabledByDefault": true,
+    "rollbackBound": true,
+    "rollbackKey": "rollback:teacher-v3:lint:worked-example",
+    "candidatePackVersion": 8,
+    "candidatePackId": "candidate_pack_lint_08",
+    "shippedStateSummary": "Teacher v3 lint lane: shipped runtime serves only promoted packs; no canary live rollout is shipped.",
+    "targetStateSummary": "Teacher v3 lint lane: the canary plan stays explicit, replayable, rollback-bound, and off by default until a later tranche opts it in.",
+    "bindingSummary": "Lint lane: rollback-bound to rollback:teacher-v3:lint:worked-example; candidate pack candidate_pack_lint_08.",
+    "guardrails": [
+      "Keep the rollout plan target-state only until it is explicitly shipped.",
+      "Default rolloutMode stays off.",
+      "Do not use the canary plan to change live serving without separate replay, proof, and rollback binding.",
+      "Canary activation stays blocked until replay summary, proof bundle, and rollback binding are all present.",
+      "Bind any candidate pack by durable version or id, never by ad hoc display labels.",
+      "Bind the plan to an explicit rollback key before any later tranche can opt it in."
+    ]
+  },
+  "canaryActivationGuard": {
+    "proposalId": "teacher-v3-lint-worked-example",
+    "proposalClass": "lint",
+    "requested": false,
+    "allowed": true,
+    "blocked": false,
+    "rolloutMode": "off",
+    "enabled": false,
+    "replayReady": true,
+    "proofReady": true,
+    "rollbackReady": true,
+    "rollbackKey": "rollback:teacher-v3:lint:worked-example",
+    "proofRollbackKey": "rollback:teacher-v3:lint:worked-example",
+    "replaySummaryId": "treplay_786d13c664ae",
+    "proofBundleId": "teacher-v3-lint-worked-example",
+    "blockers": [],
+    "summary": "canary rollout remains off by default for teacher-v3-lint-worked-example",
+    "detail": "proposalClass=lint; rolloutMode=off; enabled=false; candidatePack=candidate_pack_lint_08"
+  },
+  "blockers": [],
+  "targetStateOnly": false,
+  "createdAt": "2026-04-03T18:27:00Z",
+  "updatedAt": "2026-04-03T18:34:00Z"
+}

@@ -1,0 +1,244 @@
+{
+  "contract": "teacher_v3_proof_bundle_status.v1",
+  "bundleId": "teacher-v3-compiler-worked-example",
+  "proposalId": "teacher-v3-compiler-worked-example",
+  "proposalLane": "compiler",
+  "proposalClass": "compiler",
+  "proposalStatus": "promoted",
+  "reviewMode": "promotable",
+  "surfaceCounts": {
+    "observedSurfaceCount": 3,
+    "shippedSurfaceCount": 3,
+    "targetSurfaceCount": 5,
+    "totalSurfaceCount": 8
+  },
+  "runtimeTruth": {
+    "currentPackVersion": 7,
+    "serveState": "serving_active_pack",
+    "teacherConfigured": true,
+    "operatorHealthStatus": "healthy",
+    "learningHealthStatus": "healthy",
+    "routeTraceCount": 12,
+    "supervisionCount": 4,
+    "lastReplayGateVerdict": "pass",
+    "lastPromotionVerdict": "promoted"
+  },
+  "proofTruth": {
+    "verdict": "success_and_proven",
+    "severity": "info",
+    "runtimeLoadProofExists": true,
+    "postBundleCount": 2,
+    "stepCount": 5
+  },
+  "docsTruth": {
+    "path": "docs/architecture/teacher-v3-proof.md",
+    "title": "Teacher v3 proposal reporting / proof surfaces",
+    "state": "shipped",
+    "summary": "Design-only mapping of shipped truth to target-state proof surfaces."
+  },
+  "replayOutcomeSummary": {
+    "replayOutcomeCount": 2,
+    "replaySuites": [
+      "compiler-persistence-smoke",
+      "compiler-proof-bundle-smoke"
+    ],
+    "resultCounts": {
+      "pass": 1,
+      "warn": 1,
+      "fail": 0
+    },
+    "reviewModeCounts": {
+      "promotable": 2,
+      "shadow_only": 0
+    },
+    "sourceCounts": {
+      "proposal_record": 2,
+      "proof_bundle": 0,
+      "derived": 0
+    },
+    "summary": "Captured 2 replay outcomes across 2 suites (compiler-persistence-smoke, compiler-proof-bundle-smoke); results pass=1, warn=1, fail=0; review modes promotable=2, shadow_only=0; sources proposal_record=2, proof_bundle=0, derived=0."
+  },
+  "replaySummary": {
+    "replayId": "treplay_62ff48233f8c",
+    "proposalId": "prop_teacher_v3_compiler_worked_example",
+    "proposalClass": "compiler",
+    "status": "promotable",
+    "reviewMode": "promotable",
+    "basePackVersion": 7,
+    "baseGraphHash": "graph_sha_compiler_worked_example",
+    "candidatePackVersion": 8,
+    "candidatePackId": "candidate_pack_compiler_08",
+    "candidateGraphHash": "sha256:f94b87bfe931c09bb894933e5f818f25574425efa9ffb137fa665e7776928eb2",
+    "beforeScore": 0.792,
+    "afterScore": 1,
+    "scoreDelta": 0.208,
+    "before": {
+      "phase": "before",
+      "surfaceState": "shipped",
+      "packVersion": 7,
+      "packId": null,
+      "graphHash": "graph_sha_compiler_worked_example",
+      "nodeCount": null,
+      "edgeCount": null,
+      "health": {
+        "firedPerQuery": null,
+        "dormantPercent": null,
+        "orphanCount": null
+      },
+      "notes": [
+        "proposal evaluated against base lineage before candidate state replay",
+        "reviewMode=promotable"
+      ]
+    },
+    "after": {
+      "phase": "after",
+      "surfaceState": "target",
+      "packVersion": 8,
+      "packId": "candidate_pack_compiler_08",
+      "graphHash": "sha256:f94b87bfe931c09bb894933e5f818f25574425efa9ffb137fa665e7776928eb2",
+      "nodeCount": 3,
+      "edgeCount": 1,
+      "health": {
+        "firedPerQuery": 1.8,
+        "dormantPercent": 0.1,
+        "orphanCount": 0
+      },
+      "notes": [
+        "candidate state bound to a real pack / graph surface",
+        "candidatePackId=candidate_pack_compiler_08"
+      ]
+    },
+    "classSummary": {
+      "kind": "compiler",
+      "reviewMode": "promotable",
+      "promotionDiscipline": "promotable",
+      "subjectCount": 3,
+      "evidenceCount": 3,
+      "counterevidenceCount": 1,
+      "replaySuites": [
+        "compiler-persistence-smoke",
+        "compiler-proof-bundle-smoke"
+      ],
+      "candidatePackVersion": 8,
+      "candidatePackId": "candidate_pack_compiler_08",
+      "candidateGraphHash": "sha256:f94b87bfe931c09bb894933e5f818f25574425efa9ffb137fa665e7776928eb2",
+      "summary": "Compiler replay is promotable on candidate pack candidate_pack_compiler_08; evidence-backed lineage stays intact and the candidate graph is distinct from base state.",
+      "notes": [
+        "basePackVersion=7",
+        "baseGraphHash=graph_sha_compiler_worked_example",
+        "beforeScore=0.792",
+        "afterScore=1.000",
+        "scoreDelta=0.208",
+        "compiler proposals may be evaluated as promotable, but they are not auto-promoted"
+      ]
+    },
+    "summary": "compiler replay accepted on candidate_pack_compiler_08; before=0.792 after=1.000 delta=0.208",
+    "createdAt": "2026-04-03T18:33:00Z",
+    "updatedAt": "2026-04-03T18:33:00Z"
+  },
+  "canaryRollout": {
+    "proposalClass": "compiler",
+    "surfaceState": "target",
+    "rolloutMode": "off",
+    "enabled": false,
+    "disabledByDefault": true,
+    "rollbackBound": true,
+    "rollbackKey": "rollback:teacher-v3:compiler:worked-example",
+    "candidatePackVersion": 8,
+    "candidatePackId": "candidate_pack_compiler_08",
+    "shippedStateSummary": "Teacher v3 compiler lane: shipped runtime serves only promoted packs; no canary live rollout is shipped.",
+    "targetStateSummary": "Teacher v3 compiler lane: the canary plan stays explicit, replayable, rollback-bound, and off by default until a later tranche opts it in.",
+    "bindingSummary": "Compiler lane: rollback-bound to rollback:teacher-v3:compiler:worked-example; candidate pack candidate_pack_compiler_08.",
+    "guardrails": [
+      "Keep the rollout plan target-state only until it is explicitly shipped.",
+      "Default rolloutMode stays off.",
+      "Do not use the canary plan to change live serving without separate replay, proof, and rollback binding.",
+      "Canary activation stays blocked until replay summary, proof bundle, and rollback binding are all present.",
+      "Bind any candidate pack by durable version or id, never by ad hoc display labels.",
+      "Bind the plan to an explicit rollback key before any later tranche can opt it in."
+    ]
+  },
+  "canaryActivationGuard": {
+    "proposalId": "teacher-v3-compiler-worked-example",
+    "proposalClass": "compiler",
+    "requested": false,
+    "allowed": true,
+    "blocked": false,
+    "rolloutMode": "off",
+    "enabled": false,
+    "replayReady": true,
+    "proofReady": true,
+    "rollbackReady": true,
+    "rollbackKey": "rollback:teacher-v3:compiler:worked-example",
+    "proofRollbackKey": "rollback:teacher-v3:compiler:worked-example",
+    "replaySummaryId": "treplay_62ff48233f8c",
+    "proofBundleId": "teacher-v3-compiler-worked-example",
+    "blockers": [],
+    "summary": "canary rollout remains off by default for teacher-v3-compiler-worked-example",
+    "detail": "proposalClass=compiler; rolloutMode=off; enabled=false; candidatePack=candidate_pack_compiler_08"
+  },
+  "gate1Seam": {
+    "present": true,
+    "recordSource": "brain_store",
+    "note": "Compiler proposal round-tripped through BrainStore before proof-bundle emission."
+  },
+  "shadowReplay": null,
+  "recommendations": [
+    "Preserve the persisted proposal record seam and load it directly once Gate 1 lands.",
+    "Keep the bundle publication-safe and bounded; never spill raw logs into the target-state artifacts.",
+    "Thread candidate-state replay and rollback binding in the next tranche before considering canary activation."
+  ],
+  "publicationSafeArtifacts": [
+    {
+      "artifactId": "teacher-v3-proof-summary",
+      "kind": "summary",
+      "path": "ocb-t129-gate5a/artifacts/teacher-v3-promotable-examples/compiler/proof-bundle/summary.md",
+      "redactions": [
+        "raw stdout/stderr",
+        "secret-bearing values"
+      ],
+      "containsRawLogs": false
+    },
+    {
+      "artifactId": "teacher-v3-proof-status",
+      "kind": "status",
+      "path": "ocb-t129-gate5a/artifacts/teacher-v3-promotable-examples/compiler/proof-bundle/status.json",
+      "redactions": [
+        "raw stdout/stderr",
+        "secret-bearing values"
+      ],
+      "containsRawLogs": false
+    },
+    {
+      "artifactId": "teacher-v3-proof-surface-map",
+      "kind": "surface-map",
+      "path": "ocb-t129-gate5a/artifacts/teacher-v3-promotable-examples/compiler/proof-bundle/surface-map.json",
+      "redactions": [
+        "raw source payloads"
+      ],
+      "containsRawLogs": false
+    },
+    {
+      "artifactId": "teacher-v3-proof-proposal-report",
+      "kind": "metadata",
+      "path": "ocb-t129-gate5a/artifacts/teacher-v3-promotable-examples/compiler/proof-bundle/proposal-report.json",
+      "redactions": [
+        "raw stdout/stderr",
+        "secret-bearing values"
+      ],
+      "containsRawLogs": false
+    },
+    {
+      "artifactId": "teacher-v3-proof-verdict",
+      "kind": "verdict",
+      "path": "ocb-t129-gate5a/artifacts/teacher-v3-promotable-examples/compiler/proof-bundle/verdict.json",
+      "redactions": [
+        "raw stdout/stderr",
+        "secret-bearing values"
+      ],
+      "containsRawLogs": false
+    }
+  ],
+  "createdAt": "2026-04-03T18:26:00Z",
+  "updatedAt": "2026-04-03T18:33:00Z"
+}

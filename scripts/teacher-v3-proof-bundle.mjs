@@ -427,6 +427,8 @@ function buildTeacherV3ProposalSeed(input) {
         "teacher-v3-docs-truth",
       ],
     rollbackKey,
+    runtimeStatusCommand,
+    operatorProofCommand,
     createdAt: normalizeText(input.proposalRecord?.createdAt) ?? input.bundleStartedAt,
     resolvedAt: normalizeText(input.proposalRecord?.resolvedAt) ?? input.bundleStartedAt,
     updatedAt: normalizeText(input.proposalRecord?.updatedAt) ?? input.bundleStartedAt,
