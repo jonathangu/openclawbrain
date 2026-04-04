@@ -14,8 +14,8 @@ It is a map, not a claim: **shipped** surfaces are current truth, **target** sur
 
 | State | Surface | What it shows | Notes |
 | --- | --- | --- | --- |
-| shipped | `openclawbrain status --openclaw-home ~/.openclaw --detailed` | live runtime truth | canonical runtime snapshot |
-| shipped | `openclawbrain proof --openclaw-home ~/.openclaw` | host-anchored operator proof bundle | durable bundle with `summary.md`, `steps.json`, `verdict.json`, and runtime-load-proof truth |
+| shipped | `openclawbrain status --openclaw-home <path> --detailed` | live runtime truth | canonical runtime snapshot for that exact OpenClaw home, including explicit nonstandard homes like `./openclaw-cormorantai` |
+| shipped | `openclawbrain proof --openclaw-home <path>` | host-anchored operator proof bundle | durable bundle with `summary.md`, `steps.json`, `verdict.json`, and runtime-load-proof truth for that exact OpenClaw home |
 | shipped | `docs/evidence/YYYY-MM-DD/<git-sha>/` | frozen proof bundle snapshots | checked-in evidence tree; see `docs/evidence/README.md` |
 | shipped | `scripts/verify-proof-smoke.mjs` | proof freshness gate | only enforces when the repo still advertises frozen proof claims |
 | shipped | `docs/internal/recorded-session-replay.md` | replay proof bundle layout | shows the stable proof-bundle contract and worked-trace lane |

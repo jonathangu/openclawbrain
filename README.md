@@ -13,13 +13,13 @@ Current version: **0.4.29** · [Changelog](CHANGELOG.md) · [Claims boundary](CL
 Prerequisites: a working OpenClaw installation, Node.js 20+, npm.
 
 ```bash
-openclawbrain install --openclaw-home ~/.openclaw
+openclawbrain install --openclaw-home ./openclaw-cormorantai
 openclaw gateway restart
-openclawbrain status --openclaw-home ~/.openclaw --detailed
-openclawbrain proof --openclaw-home ~/.openclaw
+openclawbrain status --openclaw-home ./openclaw-cormorantai --detailed
+openclawbrain proof --openclaw-home ./openclaw-cormorantai
 ```
 
-`install` writes the hook for your OpenClaw home. `status --detailed` verifies the wiring. `proof` captures a durable evidence bundle you can inspect or keep.
+`install` writes the hook for your chosen OpenClaw home. That can be the default `~/.openclaw`, a profile home like `~/.openclaw-Tern`, or an explicit nonstandard path like `./openclaw-cormorantai`. `status --detailed` verifies the wiring for that same home. `proof` captures a durable evidence bundle you can inspect or keep.
 
 A healthy install reports the profile as attached. After the first promoted pack is available, detailed status reports `serveState=serving_active_pack`.
 

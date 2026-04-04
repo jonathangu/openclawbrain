@@ -745,6 +745,7 @@ export function buildProofCommandHelpSection() {
     return {
         usage: "  openclawbrain proof --openclaw-home <path> [options]",
         optionLines: [
+            "  --openclaw-home <path>      Target one explicit OpenClaw home (for example ./openclaw-cormorantai or ~/.openclaw).",
             "  --output-dir <path>         Bundle directory for proof artifacts (proof only). Defaults to ./artifacts/operator-proof-<timestamp>.",
             "  --skip-install              Capture proof without rerunning install first (proof only).",
             "  --skip-restart              Capture proof without restarting OpenClaw first (proof only).",

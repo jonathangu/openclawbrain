@@ -2,7 +2,7 @@
 
 Use this index to find the shortest path for your role.
 
-Public operator front door: `openclawbrain install --openclaw-home <path>` for one OpenClaw home. `status --detailed` is the quick check, and it now reports the daemon-side CLI surface separately from the installed hook/runtime-guard surface so skew is explicit. Durable proof is still a separate follow-up surface today.
+Public operator front door: `openclawbrain install --openclaw-home <path>` for one OpenClaw home. That path can be the default `~/.openclaw`, a profile-specific home, or an explicit nonstandard directory like `./openclaw-cormorantai`. `status --detailed` is the quick check, and it now reports the daemon-side CLI surface separately from the installed hook/runtime-guard surface so skew is explicit. Durable proof is still a separate follow-up surface today.
 
 ## Getting started
 

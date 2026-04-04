@@ -3,13 +3,13 @@
 Start every operator investigation with the canonical verify command:
 
 ```bash
-openclawbrain status --openclaw-home ~/.openclaw --detailed
+openclawbrain status --openclaw-home ./openclaw-cormorantai --detailed
 ```
 
 When you need a durable install/restart/status bundle instead of an ad hoc terminal check, run:
 
 ```bash
-openclawbrain proof --openclaw-home ~/.openclaw
+openclawbrain proof --openclaw-home ./openclaw-cormorantai
 ```
 
 ## `BRAIN NOT YET LOADED` appears after install
@@ -21,12 +21,12 @@ The hook for the selected OpenClaw home is not pinned yet, or the gateway has no
 Fix:
 
 ```bash
-openclawbrain install --openclaw-home ~/.openclaw
+openclawbrain install --openclaw-home ./openclaw-cormorantai
 openclaw gateway restart
-openclawbrain status --openclaw-home ~/.openclaw --detailed
+openclawbrain status --openclaw-home ./openclaw-cormorantai --detailed
 ```
 
-If you bypassed the install lane and changed plugin files directly, rerun `openclawbrain install --openclaw-home ~/.openclaw` for the same home afterward.
+If you bypassed the install lane and changed plugin files directly, rerun `openclawbrain install --openclaw-home ./openclaw-cormorantai` for that same home afterward. `./openclaw-cormorantai` is just an example here; use the exact nonstandard home you are actually targeting.
 
 ## `status --detailed` shows `surface ... converge=half_converged`
 
@@ -42,9 +42,9 @@ This is the main operator seam during upgrades or hotfixes.
 Fix:
 
 ```bash
-openclawbrain install --openclaw-home ~/.openclaw
+openclawbrain install --openclaw-home ./openclaw-cormorantai
 openclaw gateway restart
-openclawbrain status --openclaw-home ~/.openclaw --detailed
+openclawbrain status --openclaw-home ./openclaw-cormorantai --detailed
 ```
 
 Do not treat one-sided daemon or hook edits as converged just because the other surface still loads.
@@ -72,7 +72,7 @@ Fix:
 - confirm the teacher config uses the dedicated fields `brainTeacherEnabled`, `brainTeacherProvider`, and `brainTeacherModel`
 - remember that adding a model to Ollama only makes it available; it does not automatically select it as the OpenClawBrain teacher
 - restart the gateway after changing teacher config
-- rerun `openclawbrain status --openclaw-home ~/.openclaw --detailed`
+- rerun `openclawbrain status --openclaw-home ./openclaw-cormorantai --detailed`
 - verify `teacherConfigured=true`, the expected `teacherProvider` and `teacherModel`, and `teacherConfigError=null`
 
 ## `serveState=fail_open_static_context`
@@ -85,7 +85,7 @@ Fix:
 
 - confirm the install is attached
 - run a few real turns so the export and learning path have material to process
-- inspect `openclawbrain learn --openclaw-home ~/.openclaw --json`
+- inspect `openclawbrain learn --openclaw-home ./openclaw-cormorantai --json`
 - review `~/.openclawbrain/extension-errors.log` if the extension reported compile errors
 
 ## Plugin install warns about `openclaw` versus `openclawbrain`

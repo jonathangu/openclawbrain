@@ -209,6 +209,8 @@ test("proof help stays discoverable without requiring an OpenClaw home", () => {
     assert.equal(parsed.help, true);
     assert.equal(parsed.openclawHome, "");
     assert.match(help.usage, /openclawbrain proof --openclaw-home <path>/);
+    assert.match(help.optionLines.join("\n"), /\.\/openclaw-cormorantai/);
+    assert.match(help.optionLines.join("\n"), /~\/\.openclaw/);
     assert.match(help.lifecycle, /durable operator proof bundle/);
     assert.match(help.advanced, /startup breadcrumbs/);
 });

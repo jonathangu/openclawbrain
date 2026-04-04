@@ -12,10 +12,12 @@ This is the shortest supported path from a working OpenClaw install to a verifie
 
 Keep the same `--openclaw-home` value through install, restart, status, and proof. The public operator story is one command front door for one OpenClaw home.
 
+That home does **not** have to be `~/.openclaw`. Explicit nonstandard homes like `./openclaw-cormorantai` are first-class as long as you keep the same path pinned through the whole flow.
+
 ```bash
-openclawbrain install --openclaw-home ~/.openclaw
+openclawbrain install --openclaw-home ./openclaw-cormorantai
 openclaw gateway restart
-openclawbrain status --openclaw-home ~/.openclaw --detailed
+openclawbrain status --openclaw-home ./openclaw-cormorantai --detailed
 ```
 
 `install` is the public front door. It converges the selected home's installed hook/runtime-guard surface and the daemon runtime surface onto one coherent state for that activation root. `status --detailed` is the quick verify surface.
@@ -25,12 +27,12 @@ Activation and teacher wiring are separate checks. `BRAIN LOADED` and an attache
 When you need durable operator evidence today, run:
 
 ```bash
-openclawbrain proof --openclaw-home ~/.openclaw
+openclawbrain proof --openclaw-home ./openclaw-cormorantai
 ```
 
-The intended canonical lane is `openclawbrain install --openclaw-home ~/.openclaw --proof`. Until that flag lands cleanly across the operator surfaces, proof stays a separate follow-up command. `proof` writes `summary.md`, `steps.json`, `verdict.json`, raw step logs, and proof pointers under one bundle directory.
+The intended canonical lane is `openclawbrain install --openclaw-home <your-home> --proof`. Until that flag lands cleanly across the operator surfaces, proof stays a separate follow-up command. `proof` writes `summary.md`, `steps.json`, `verdict.json`, raw step logs, and proof pointers under one bundle directory.
 
-If you manually change plugin files anyway, treat that as maintainer-only surgery and rerun `openclawbrain install --openclaw-home ~/.openclaw` before trusting the host again.
+If you manually change plugin files anyway, treat that as maintainer-only surgery and rerun `openclawbrain install --openclaw-home ./openclaw-cormorantai` (or whatever exact home you are operating on) before trusting the host again.
 
 In the detailed status output, look for `surface ... converge=converged`. If it says `converge=half_converged`, the daemon runtime and installed hook/runtime-guard drifted apart and the safe lane is to rerun install for that same `--openclaw-home`.
 

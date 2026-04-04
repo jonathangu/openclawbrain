@@ -1,15 +1,17 @@
 # Configuration guide
 
-OpenClawBrain works with its default install path. Most operators only need `openclawbrain install --openclaw-home <path>`, a gateway restart, a status check for that same home, and proof only when they need durable operator evidence. The live path serves promoted packs so useful context stays bounded while learning stays off the response path.
+OpenClawBrain works with either the default install path or an explicit nonstandard home. Most operators only need `openclawbrain install --openclaw-home <path>`, a gateway restart, a status check for that same home, and proof only when they need durable operator evidence. The live path serves promoted packs so useful context stays bounded while learning stays off the response path.
 
 ## Default operator flow
 
 Keep the same `--openclaw-home` value through the whole operator flow. The public lane stays pinned to one OpenClaw home.
 
+That home can be `~/.openclaw`, a profile-specific path like `~/.openclaw-Tern`, or a repo-local/custom path like `./openclaw-cormorantai`.
+
 ```bash
-openclawbrain install --openclaw-home ~/.openclaw
+openclawbrain install --openclaw-home ./openclaw-cormorantai
 openclaw gateway restart
-openclawbrain status --openclaw-home ~/.openclaw --detailed
+openclawbrain status --openclaw-home ./openclaw-cormorantai --detailed
 ```
 
 `status --detailed` is the quick verify surface.
@@ -17,7 +19,7 @@ openclawbrain status --openclaw-home ~/.openclaw --detailed
 When you need durable operator evidence today, run:
 
 ```bash
-openclawbrain proof --openclaw-home ~/.openclaw
+openclawbrain proof --openclaw-home ./openclaw-cormorantai
 ```
 
 The intended canonical lane is the same install command with optional `--proof`. Until that flag lands cleanly across the operator surfaces, proof stays a separate follow-up command. `proof` writes `summary.md`, `steps.json`, `verdict.json`, raw step logs, and proof pointers under one bundle directory.
