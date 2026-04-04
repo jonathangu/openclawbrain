@@ -272,6 +272,40 @@ export interface TeacherProposalProofBundleV1 {
   updatedAt?: string;
 }
 
+export interface TeacherProposalProofBundleSummaryV1 {
+  bundleId: string;
+  proposalId: string;
+  proposalClass: ProposalClass;
+  status: TeacherProposalProofBundleV1["status"];
+  rollbackKey: string;
+  replaySuites: string[];
+  surfaceIds: string[];
+  shippedSurfaceCount: number;
+  targetSurfaceCount: number;
+  evidenceLinkCount: number;
+  counterevidenceLinkCount: number;
+  summary: string;
+}
+
+export function summarizeTeacherProposalProofBundleV1(
+  bundle: TeacherProposalProofBundleV1,
+): TeacherProposalProofBundleSummaryV1 {
+  return {
+    bundleId: bundle.bundleId,
+    proposalId: bundle.proposalId,
+    proposalClass: bundle.proposalClass,
+    status: bundle.status,
+    rollbackKey: bundle.rollbackKey,
+    replaySuites: [...bundle.replaySuites],
+    surfaceIds: bundle.surfaceMap.map((surface) => surface.id),
+    shippedSurfaceCount: bundle.surfaceMap.filter((surface) => surface.state === "shipped").length,
+    targetSurfaceCount: bundle.surfaceMap.filter((surface) => surface.state === "target").length,
+    evidenceLinkCount: bundle.evidenceLinks.length,
+    counterevidenceLinkCount: bundle.counterevidenceLinks?.length ?? 0,
+    summary: bundle.summary,
+  };
+}
+
 export interface TeacherProposalV1 {
   proposalId: string;
   proposalClass: ProposalClass;
@@ -305,6 +339,8 @@ export type TeacherProposalReplayGateDimensionName =
   | "boundedness"
   | "reversibility";
 
+export type TeacherProposalReplayGateReviewModeV1 = "promotable" | "shadow_only";
+
 export interface TeacherProposalReplayGateDimensionV1 {
   name: TeacherProposalReplayGateDimensionName;
   summary: string;
@@ -322,12 +358,24 @@ export interface TeacherProposalReplayGateV1 {
   };
 }
 
-export type TeacherProposalReplayGateReviewModeV1 = "promotable" | "shadow_only";
+export const TEACHER_PROPOSAL_REVIEW_MODE_BY_CLASS_V1 = {
+  compiler: "promotable",
+  lint: "promotable",
+  mutation: "shadow_only",
+  forgetting: "shadow_only",
+  correction: "shadow_only",
+} as const satisfies Record<ProposalClass, TeacherProposalReplayGateReviewModeV1>;
+
+export function describeTeacherProposalReplayGateReviewModeV1(
+  proposalClass: ProposalClass,
+): TeacherProposalReplayGateReviewModeV1 {
+  return TEACHER_PROPOSAL_REVIEW_MODE_BY_CLASS_V1[proposalClass];
+}
 
 export function isTeacherProposalPromotableClassV1(
   proposalClass: ProposalClass,
 ): proposalClass is TeacherProposalPromotableClassV1 {
-  return TEACHER_PROPOSAL_PROMOTABLE_CLASSES_V1.includes(proposalClass as TeacherProposalPromotableClassV1);
+  return describeTeacherProposalReplayGateReviewModeV1(proposalClass) === "promotable";
 }
 
 const buildTeacherProposalReplayGate = (
@@ -335,7 +383,7 @@ const buildTeacherProposalReplayGate = (
   focus: string,
 ): TeacherProposalReplayGateV1 => ({
   proposalClass,
-  reviewMode: isTeacherProposalPromotableClassV1(proposalClass) ? "promotable" : "shadow_only",
+  reviewMode: describeTeacherProposalReplayGateReviewModeV1(proposalClass),
   dimensions: {
     truthInvariants: {
       name: "truth_invariants",

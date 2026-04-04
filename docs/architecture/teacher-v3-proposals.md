@@ -150,6 +150,7 @@ type ProposalEnvelope = {
   confidence: number;
   replaySuites: string[];
   rollbackKey: string;
+  replayGate?: TeacherProposalReplayGateV1;
   expiresAt?: string;
   createdAt: string;
   resolvedAt?: string;
