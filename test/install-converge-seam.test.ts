@@ -42,7 +42,7 @@ describe("planOpenClawBrainConvergePluginAction — compat-package upgrade", () 
     expect(plan.reason).toContain(LEGACY_COMPAT_PACKAGE_NAME);
   });
 
-  it("plans update for the canonical native package plugin", () => {
+  it("treats the canonical native package plugin as a no-op", () => {
     const plan = planOpenClawBrainConvergePluginAction({
       selectedInstall: {
         extensionDir: "/tmp/openclaw/extensions/@openclawbrain/openclaw",
@@ -53,7 +53,7 @@ describe("planOpenClawBrainConvergePluginAction — compat-package upgrade", () 
       },
     });
 
-    expect(plan.action).toBe("update");
+    expect(plan.action).toBe("noop");
   });
 });
 

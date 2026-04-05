@@ -4,6 +4,26 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.32
+
+`0.4.32` is the trust-surfaces hardening release: it removes avoidable no-op churn from converge and traced-learning persistence, and it stops status surfaces from underreporting a clearly serving promoted pack.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.32`
+- `@openclawbrain/cli@0.4.32`
+
+**Changes**
+
+- treats an already-authoritative native OpenClawBrain plugin install as a converge no-op instead of blindly refreshing plugin-manager state
+- upgrades traced-learning/status pack truth from active-pack plus watch-snapshot evidence when stale bridge state says `materializedPackId=null` / `promoted=false`
+- avoids rewriting traced-learning persisted status summaries when the normalized payload is unchanged
+- keeps the release repo-only and trust-surface focused so operator truth improves without reintroducing live-host churn
+
+**Full release note**
+
+- [docs/release-notes-0.4.32.md](docs/release-notes-0.4.32.md)
+
 ## 0.4.31
 
 `0.4.31` is the proof-surface closure release: the canonical operator lane now preserves the installed-hook package version through current-profile status/proof reporting, so a healthy shared host can prove concrete daemon-vs-hook same-version convergence instead of stopping at `split_path_version_unverified`.
