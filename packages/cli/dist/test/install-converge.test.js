@@ -35,6 +35,19 @@ test("converge knows when an existing non-native install must be replaced before
     }), true);
 });
 
+test("converge treats an already-authoritative native plugin as a no-op", () => {
+    const plan = planOpenClawBrainConvergePluginAction({
+        selectedInstall: {
+            packageName: "@openclawbrain/openclaw",
+            installLayout: "native_package_plugin"
+        }
+    });
+    assert.equal(plan.action, "noop");
+    assert.equal(plan.packageSpec, "@openclawbrain/openclaw");
+    assert.match(plan.reason, /already installed/);
+    assert.match(plan.reason, /volatile install metadata/);
+});
+
 test("converge diff and restart plan skip restart when no runtime-affecting install state changed", () => {
     const before = {
         selectedInstall: {

@@ -103,10 +103,10 @@ export function planOpenClawBrainConvergePluginAction(fingerprint) {
     };
   }
   return {
-    action: "update",
+    action: "noop",
     packageSpec: "@openclawbrain/openclaw",
     pluginId: "openclawbrain",
-    reason: "refresh the existing split-package plugin install so install/upgrade/repair stays on one converge path",
+    reason: "the authoritative split-package plugin is already installed, so converge should preserve the current plugin-manager record instead of rewriting volatile install metadata",
   };
 }
 

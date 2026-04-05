@@ -1738,6 +1738,19 @@ function readInstallRuntimeFingerprint(openclawHome) {
 function runOpenClawBrainConvergePluginStep(openclawHome) {
     const before = readInstallRuntimeFingerprint(openclawHome);
     const plan = planOpenClawBrainConvergePluginAction(before);
+    if (plan.action === "noop") {
+        return {
+            plan,
+            command: null,
+            changed: false,
+            changeReasons: [],
+            detail: "Skipped the OpenClaw plugin manager because the authoritative split-package plugin is already present and a no-op refresh would only churn volatile install metadata.",
+            warning: null,
+            capture: null,
+            before,
+            after: before
+        };
+    }
     let uninstallCapture = null;
     if (plan.action === "install" && shouldReplaceOpenClawBrainInstallBeforeConverge(before)) {
         uninstallCapture = runCapturedExternalCommand("openclaw", ["plugins", "uninstall", plan.pluginId]);
