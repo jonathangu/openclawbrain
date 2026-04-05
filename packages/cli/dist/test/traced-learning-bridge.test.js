@@ -772,11 +772,18 @@ test("repeated persisted status surfaces stay JSON-serializable instead of recur
                 teacherSnapshotPath: path.join(activationRoot, "watch", "teacher-snapshot.json")
             }
         });
-        persistTracedLearningBridgeState(activationRoot, watchBridge, {
+        const first = persistBrainStoreTracedLearningBridge(watchBridge, {
             env: {
                 OPENCLAWBRAIN_ROOT: brainRoot
             }
         });
+        const second = persistBrainStoreTracedLearningBridge(watchBridge, {
+            env: {
+                OPENCLAWBRAIN_ROOT: brainRoot
+            }
+        });
+        assert.equal(first.persisted, true);
+        assert.equal(second.persisted, false);
         persistTracedLearningBridgeState(activationRoot, watchBridge, {
             env: {
                 OPENCLAWBRAIN_ROOT: brainRoot

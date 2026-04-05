@@ -916,6 +916,21 @@ export function persistBrainStoreTracedLearningBridge(payload, options = {}) {
     try {
         db = new sqlite.DatabaseSync(dbPath);
         const summary = normalizePersistedStatusSurface(payload);
+        const existingSummaryLoaded = loadTrainingStateJson(db, TRACED_LEARNING_STATUS_SURFACE_STATE_KEY);
+        if (existingSummaryLoaded.value !== null) {
+            const existingSummary = normalizePersistedStatusSurface(existingSummaryLoaded.value);
+            if (JSON.stringify(existingSummary) === JSON.stringify(summary)) {
+                return {
+                    path: dbPath,
+                    bridge: buildPersistedStatusSurfaceBridge(existingSummary, {
+                        brainRoot,
+                        dbPath
+                    }),
+                    persisted: false,
+                    error: null
+                };
+            }
+        }
         writeTrainingStateJson(db, TRACED_LEARNING_STATUS_SURFACE_STATE_KEY, summary);
         return {
             path: dbPath,
