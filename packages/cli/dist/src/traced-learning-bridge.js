@@ -272,13 +272,15 @@ function loadJsonFile(pathname) {
 function resolveActivePackPaths(activationRoot) {
     const pointers = toRecord(loadJsonFile(path.join(path.resolve(activationRoot), "activation-pointers.json")));
     const active = toRecord(pointers?.active);
+    const packId = normalizeOptionalString(active?.packId);
     const packRootDir = normalizeOptionalString(active?.packRootDir)
-        ?? (normalizeOptionalString(active?.packId) === null
+        ?? (packId === null
             ? null
-            : path.join(path.resolve(activationRoot), "packs", String(active.packId)));
+            : path.join(path.resolve(activationRoot), "packs", String(packId)));
     const manifestPath = normalizeOptionalString(active?.manifestPath)
         ?? (packRootDir === null ? null : path.join(packRootDir, "manifest.json"));
     return {
+        packId,
         packRootDir,
         manifestPath
     };
@@ -376,6 +378,38 @@ function buildWatchSnapshotAttributionCoverage(activationRoot) {
         detail: `watch sparse-feedback queue: completed_without_evaluation=0, ready=${normalizeCount(readyCount)}, delayed=${normalizeCount(delayedCount)}, budget_deferred=${normalizeCount(budgetDeferredCount)}`
     };
 }
+function readWatchTeacherSnapshotPackTruth(activationRoot) {
+    const snapshot = toRecord(loadJsonFile(path.join(path.resolve(activationRoot), "watch", "teacher-snapshot.json")));
+    const learning = toRecord(snapshot?.learning);
+    const nestedSnapshot = toRecord(snapshot?.snapshot);
+    const nestedLearning = toRecord(nestedSnapshot?.learning);
+    return {
+        lastHandledMaterializationPackId: normalizeOptionalString(snapshot?.lastHandledMaterializationPackId)
+            ?? normalizeOptionalString(learning?.lastHandledMaterializationPackId)
+            ?? normalizeOptionalString(nestedLearning?.lastHandledMaterializationPackId),
+        lastMaterializationPackId: normalizeOptionalString(snapshot?.lastMaterializationPackId)
+            ?? normalizeOptionalString(learning?.lastMaterializationPackId)
+            ?? normalizeOptionalString(nestedLearning?.lastMaterializationPackId)
+    };
+}
+function buildActivationPackTruth(activationRoot) {
+    const active = resolveActivePackPaths(activationRoot);
+    const activePackId = active.packId;
+    if (activePackId === null) {
+        return null;
+    }
+    const watchTruth = readWatchTeacherSnapshotPackTruth(activationRoot);
+    const handledPackId = watchTruth.lastHandledMaterializationPackId ?? watchTruth.lastMaterializationPackId;
+    if (handledPackId === null) {
+        return null;
+    }
+    return {
+        activePackId,
+        handledPackId,
+        materializedPackId: handledPackId,
+        promoted: handledPackId === activePackId
+    };
+}
 function shouldPreferActivationFeedbackSummary(current, fallback) {
     if (fallback === null) {
         return false;
@@ -407,18 +441,35 @@ function shouldPreferWatchAttributionCoverage(current, fallback) {
 function enrichBridgeWithActivationTruth(activationRoot, bridge) {
     const feedbackSummary = buildActivePackFeedbackSummary(activationRoot);
     const attributionCoverage = buildWatchSnapshotAttributionCoverage(activationRoot);
-    if (!shouldPreferActivationFeedbackSummary(bridge.feedbackSummary, feedbackSummary)
-        && !shouldPreferWatchAttributionCoverage(bridge.attributionCoverage, attributionCoverage)) {
+    const packTruth = buildActivationPackTruth(activationRoot);
+    const preferFeedbackSummary = shouldPreferActivationFeedbackSummary(bridge.feedbackSummary, feedbackSummary);
+    const preferAttributionCoverage = shouldPreferWatchAttributionCoverage(bridge.attributionCoverage, attributionCoverage);
+    const preferPackTruth = packTruth !== null
+        && (bridge.materializedPackId === null || (bridge.promoted !== true && packTruth.promoted === true))
+        && (packTruth.promoted === true || bridge.materializedPackId === null);
+    if (!preferFeedbackSummary && !preferAttributionCoverage && !preferPackTruth) {
         return bridge;
     }
     return normalizeBridgePayload({
         ...bridge,
-        feedbackSummary: shouldPreferActivationFeedbackSummary(bridge.feedbackSummary, feedbackSummary)
+        materializedPackId: preferPackTruth ? packTruth.materializedPackId : bridge.materializedPackId,
+        promoted: preferPackTruth ? packTruth.promoted : bridge.promoted,
+        feedbackSummary: preferFeedbackSummary
             ? feedbackSummary
             : bridge.feedbackSummary,
-        attributionCoverage: shouldPreferWatchAttributionCoverage(bridge.attributionCoverage, attributionCoverage)
+        attributionCoverage: preferAttributionCoverage
             ? attributionCoverage
-            : bridge.attributionCoverage
+            : bridge.attributionCoverage,
+        source: preferPackTruth
+            ? {
+                ...(bridge.source ?? {}),
+                activationPackTruth: {
+                    activePackId: packTruth.activePackId,
+                    handledPackId: packTruth.handledPackId,
+                    source: "active_pack_plus_watch_snapshot"
+                }
+            }
+            : bridge.source
     });
 }
 function normalizeLastInterruptionSummary(value) {

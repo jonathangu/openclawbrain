@@ -174,6 +174,17 @@ function writeWatchTeacherSnapshotFixture(activationRoot, notes) {
     mkdirSync(path.dirname(snapshotPath), { recursive: true });
     writeFileSync(snapshotPath, `${JSON.stringify({ notes }, null, 2)}\n`);
 }
+function writeWatchTeacherSnapshotPackTruthFixture(activationRoot, packId) {
+    const snapshotPath = path.join(activationRoot, "watch", "teacher-snapshot.json");
+    mkdirSync(path.dirname(snapshotPath), { recursive: true });
+    writeFileSync(snapshotPath, `${JSON.stringify({
+        lastHandledMaterializationPackId: packId,
+        learning: {
+            lastHandledMaterializationPackId: packId,
+            lastMaterializationPackId: packId
+        }
+    }, null, 2)}\n`);
+}
 
 test("traced-learning bridge round-trips learn counters under activation-root/watch", (t) => {
     const activationRoot = createTempActivationRoot(t);
@@ -896,6 +907,51 @@ test("status surface prefers canonical brain-store truth when the runtime bridge
         assert.match(surface.detail, /source=brain-store/);
         assert.match(surface.detail, /bridge=brain_store_state/);
         assert.match(surface.detail, /runtime=missing/);
+    }
+    finally {
+        db.close();
+    }
+});
+
+test("status surface upgrades false-null pack truth from active-pack plus watch snapshot evidence", (t) => {
+    const activationRoot = createTempActivationRoot(t);
+    const { brainRoot, db } = createBrainStore(t);
+    try {
+        writeActivePackFixture(activationRoot, {
+            packId: "pack-f7ccad30"
+        });
+        writeWatchTeacherSnapshotPackTruthFixture(activationRoot, "pack-f7ccad30");
+        persistBrainStoreTracedLearningBridge({
+            updatedAt: "2026-04-05T16:00:00.000Z",
+            routeTraceCount: 2,
+            supervisionCount: 1,
+            routerUpdateCount: 0,
+            teacherArtifactCount: 1,
+            pgVersionRequested: null,
+            pgVersionUsed: null,
+            decisionLogCount: 0,
+            fallbackReason: null,
+            routerNoOpReason: null,
+            materializedPackId: null,
+            promoted: false,
+            baselinePersisted: false,
+            source: {
+                command: "brain-store"
+            }
+        }, {
+            env: {
+                OPENCLAWBRAIN_ROOT: brainRoot
+            }
+        });
+        const surface = buildTracedLearningStatusSurface(activationRoot, {
+            env: {
+                OPENCLAWBRAIN_ROOT: brainRoot
+            }
+        });
+        assert.equal(surface.materializedPackId, "pack-f7ccad30");
+        assert.equal(surface.promoted, true);
+        assert.equal(surface.source?.activationPackTruth?.activePackId, "pack-f7ccad30");
+        assert.equal(surface.source?.activationPackTruth?.handledPackId, "pack-f7ccad30");
     }
     finally {
         db.close();
