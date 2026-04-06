@@ -28,7 +28,11 @@ function loadFunction(source, startMarker, endMarker, prelude = "") {
 
 globalThis.__testResolveLearningSpineLogPath = resolveLearningSpineLogPath;
 globalThis.__testReadBoundedJsonlTail = readBoundedJsonlTail;
-globalThis.__testLoadOrInitBaseline = () => ({ baseline: true });
+globalThis.__testLoadOrInitBaselineCalls = [];
+globalThis.__testLoadOrInitBaseline = (activationRoot) => {
+    globalThis.__testLoadOrInitBaselineCalls.push(activationRoot);
+    return { baseline: true, activationRoot };
+};
 globalThis.__testReadFileSync = readFileSync;
 
 const resolveServeTimeLearningRuntimeInput = loadFunction(
@@ -105,6 +109,45 @@ test("resolveServeTimeLearningRuntimeInput uses bounded reads for oversized deci
         assert.equal(result.serveTimeDecisions.at(-1)?.recordId, "decision-1199");
         assert.match(result.fallbackReason ?? "", /serve_time_decision_log_/);
     } finally {
+        rmSync(activationRoot, { recursive: true, force: true });
+    }
+});
+
+test("resolveServeTimeLearningRuntimeInput defaults cold-start installs to the learned v2 prior", () => {
+    const activationRoot = makeActivationRoot();
+    try {
+        globalThis.__testLoadOrInitBaselineCalls.length = 0;
+        const result = resolveServeTimeLearningRuntimeInput(activationRoot);
+        assert.equal(result.pgVersion, "v2");
+        assert.equal(result.decisionLogCount, 0);
+        assert.deepEqual(result.baselineState, { baseline: true, activationRoot });
+        assert.deepEqual(globalThis.__testLoadOrInitBaselineCalls, [activationRoot]);
+    }
+    finally {
+        rmSync(activationRoot, { recursive: true, force: true });
+    }
+});
+
+test("resolveServeTimeLearningRuntimeInput preserves upgrade baselines on top of the learned v2 prior", () => {
+    const activationRoot = makeActivationRoot();
+    const logPath = resolveLearningSpineLogPath(activationRoot, "serveTimeRouteDecisions");
+    try {
+        globalThis.__testLoadOrInitBaselineCalls.length = 0;
+        writeFileSync(logPath, JSON.stringify({
+            recordId: "decision-upgrade-1",
+            recordedAt: "2026-04-01T00:00:00.000Z",
+            turnCompileEventId: "evt-upgrade-1",
+            sessionId: "sess-1",
+            channel: "cli",
+            userMessage: "upgrade decision"
+        }) + "\n", "utf8");
+        const result = resolveServeTimeLearningRuntimeInput(activationRoot);
+        assert.equal(result.pgVersion, "v2");
+        assert.equal(result.decisionLogCount, 1);
+        assert.deepEqual(result.baselineState, { baseline: true, activationRoot });
+        assert.deepEqual(globalThis.__testLoadOrInitBaselineCalls, [activationRoot]);
+    }
+    finally {
         rmSync(activationRoot, { recursive: true, force: true });
     }
 });

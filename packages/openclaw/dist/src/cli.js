@@ -4003,13 +4003,13 @@ function resolveServeTimeLearningRuntimeInput(activationRoot, normalizedEventExp
         : readHistoricalServeTimeDecisions(logPath, collectServeTimeDecisionRecoveryTargets(normalizedEventExport));
     const serveTimeDecisions = mergeHistoricalServeTimeDecisions(historicalRecovery.decisions, boundedServeTimeDecisions);
     const decisionLogCount = serveTimeDecisions.length;
-    const pgVersion = decisionLogCount > 0 ? "v2" : "v1";
+    const pgVersion = "v2";
     const resolvedFallbackReason = combineServeTimeLearningFallbackReasons(fallbackReason, historicalRecovery.scanFailed ? "historical_recovery_scan_failed" : null);
     return {
         pgVersion,
         serveTimeDecisions,
         decisionLogCount,
-        baselineState: pgVersion === "v2" ? loadOrInitBaseline(activationRoot) : undefined,
+        baselineState: loadOrInitBaseline(activationRoot),
         fallbackReason: resolvedFallbackReason === null ? null : `serve_time_decision_log_${resolvedFallbackReason}`
     };
 }
