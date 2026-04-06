@@ -3,6 +3,10 @@ import { readFileSync } from "node:fs";
 import path from "node:path";
 import type { RouteDecisionRowV1, RouterArtifactManifestV1 } from "./cold-start-router-contracts.ts";
 import { validateRouterArtifactManifestV1 } from "./cold-start-router-contracts.ts";
+import {
+  COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1,
+  materializeColdStartRouterLivePolicyGraphV1,
+} from "./graph.js";
 import type {
   ColdStartRouterBaseModelV1,
   ColdStartRouterCalibrationV1,
@@ -189,6 +193,7 @@ export function loadColdStartRouterArtifactBundleV1(artifactDir: string): ColdSt
   assert(model.featureNormalizers.contract === COLD_START_ROUTER_FEATURE_NORMALIZERS_CONTRACT_V1, "weights.featureNormalizers must carry the feature normalizer contract");
   assert(model.sourcePriors.contract === COLD_START_ROUTER_SOURCE_PRIORS_CONTRACT_V1, "weights.sourcePriors must carry the source priors contract");
   assert(model.safetyRules.contract === COLD_START_ROUTER_SAFETY_RULES_CONTRACT_V1, "weights.safetyRules must carry the safety rules contract");
+  assert(model.livePolicyInitializer?.contract === COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1, "weights.livePolicyInitializer must carry the live policy initializer contract");
   assert(deepEqualJson(model.calibration, calibration), "weights.calibration must match calibration.json exactly");
   assert(deepEqualJson(model.featureNormalizers, featureNormalizers), "weights.featureNormalizers must match feature-normalizers.json exactly");
   assert(deepEqualJson(model.sourcePriors, sourcePriors), "weights.sourcePriors must match source-priors.json exactly");
@@ -281,12 +286,26 @@ export function selectColdStartRouteCandidateIdsFromArtifactBundleV1(params: {
   row: RouteDecisionRowV1;
 }): ColdStartRouterSelectionResultV1 {
   const scoring = scoreColdStartRouteRowFromArtifactBundleV1(params);
-  const traverseActions = scoring.policyDistribution.actions.filter((entry) => entry.action.type === "traverse");
-  const bestTraverse = traverseActions[0] ?? null;
-  const stopped = bestTraverse === null || scoring.policyDistribution.stopAction.probability >= bestTraverse.probability;
+  const bestTraverse = scoring.rankedCandidates[0] ?? null;
+  const bestTraverseProbability = bestTraverse
+    ? scoring.policyDistribution.actions.find((entry) => (
+      entry.action.type === "traverse" && entry.action.targetNodeId === bestTraverse.candidate.candidate_id
+    ))?.probability ?? 0
+    : 0;
+  const stopped = bestTraverse === null || scoring.policyDistribution.stopAction.probability >= bestTraverseProbability;
   return {
     ...scoring,
-    selectedCandidateIds: stopped ? [] : [bestTraverse.action.candidate.candidate_id],
+    selectedCandidateIds: stopped || bestTraverse === null ? [] : [bestTraverse.candidate.candidate_id],
     stopped,
   };
+}
+
+export function materializeColdStartRouterLivePolicyFromArtifactBundleV1(params: {
+  artifactBundle: ColdStartRouterRuntimeArtifactBundleV1;
+  row: RouteDecisionRowV1;
+}) {
+  return materializeColdStartRouterLivePolicyGraphV1({
+    initializer: params.artifactBundle.model.livePolicyInitializer,
+    row: params.row,
+  });
 }

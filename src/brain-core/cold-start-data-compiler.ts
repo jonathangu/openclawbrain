@@ -148,6 +148,10 @@ export interface ColdStartDocsQaCompilationReportV1 {
     hardNegativeDedupedCount: number;
     confidenceClampCount: number;
   };
+  supervision: {
+    stopLabelCounts: Record<RouteDecisionRowV1["stop_label"], number>;
+    teacherActionKindCounts: Record<RouteDecisionRowV1["teacher_action"]["kind"], number>;
+  };
   rowSummaries: ColdStartRowCleanupSummaryV1[];
   issues: ColdStartCurationIssueV1[];
 }
@@ -184,6 +188,21 @@ function normalizeTrimmedStringArray(values: readonly string[] | undefined): str
     result.push(normalized);
   }
   return result;
+}
+
+function createStopLabelCounts(): Record<RouteDecisionRowV1["stop_label"], number> {
+  return {
+    CONTINUE: 0,
+    STOP_LOCAL: 0,
+    STOP: 0,
+  };
+}
+
+function createTeacherActionKindCounts(): Record<RouteDecisionRowV1["teacher_action"]["kind"], number> {
+  return {
+    traverse: 0,
+    tool: 0,
+  };
 }
 
 function cloneSorted<T>(values: readonly T[], comparator: (left: T, right: T) => number): T[] {
@@ -416,14 +435,47 @@ function normalizeRouteDecisionRow(params: {
   const { candidates, dedupedCount: dedupedCandidateIds, duplicateIssues } = canonicalCandidateSet(params.example.candidate_set);
   rowIssues.push(...duplicateIssues);
 
-  const canonicalTargets = params.example.teacher_action.kind === "traverse"
+  const teacherActionKind = params.example.teacher_action.kind;
+  const toolName = teacherActionKind === "tool"
+    ? normalizeWhitespace(params.example.teacher_action.tool_name)
+    : "";
+  const candidateIds = new Set(candidates.map((candidate) => candidate.candidate_id));
+  const toolCandidateIds = normalizeTrimmedStringArray(
+    teacherActionKind === "tool"
+      ? candidates
+        .filter((candidate) => candidate.candidate_type === "tool")
+        .map((candidate) => candidate.candidate_id)
+      : [],
+  );
+
+  const canonicalTargets = teacherActionKind === "traverse"
     ? normalizeTrimmedStringArray(params.example.teacher_action.target_ids)
-    : [];
+    : toolCandidateIds.filter((candidateId) => candidateId === toolName);
+
+  if (teacherActionKind === "tool" && canonicalTargets.length === 0) {
+    if (toolCandidateIds.length === 1) {
+      canonicalTargets.push(toolCandidateIds[0]!);
+    } else if (toolCandidateIds.length === 0) {
+      rowIssues.push({
+        severity: "error",
+        code: "missing_teacher_tool_candidate",
+        rowId: params.example.row_id,
+        detail: `row ${params.example.row_id} tool action ${toolName} does not have a matching tool candidate in the candidate set`,
+      });
+    } else {
+      rowIssues.push({
+        severity: "error",
+        code: "ambiguous_teacher_tool_candidate",
+        rowId: params.example.row_id,
+        detail: `row ${params.example.row_id} tool action ${toolName} matches multiple tool candidates: ${toolCandidateIds.join(", ")}`,
+      });
+    }
+  }
 
   const hardNegativesFromExample = normalizeTrimmedStringArray(params.example.hard_negatives);
   const hardNegativesDerived = candidates
     .map((candidate) => candidate.candidate_id)
-    .filter((candidateId) => params.example.teacher_action.kind !== "traverse" || !canonicalTargets.includes(candidateId));
+    .filter((candidateId) => !canonicalTargets.includes(candidateId));
   const hardNegatives = cloneSorted([...new Set([...hardNegativesFromExample, ...hardNegativesDerived])], stableCompare);
   const dedupedHardNegatives = hardNegativesFromExample.length + hardNegativesDerived.length - hardNegatives.length;
 
@@ -439,8 +491,7 @@ function normalizeRouteDecisionRow(params: {
   const clampedConfidenceChanged = clampedConfidence !== params.example.teacher_confidence;
   const stopLabel = params.example.stop_label;
 
-  if (params.example.teacher_action.kind === "traverse") {
-    const candidateIds = new Set(candidates.map((candidate) => candidate.candidate_id));
+  if (teacherActionKind === "traverse") {
     const missingTargets = canonicalTargets.filter((targetId) => !candidateIds.has(targetId));
     if (missingTargets.length > 0) {
       rowIssues.push({
@@ -450,22 +501,25 @@ function normalizeRouteDecisionRow(params: {
         detail: `row ${params.example.row_id} target ids are not present in the candidate set: ${missingTargets.join(", ")}`,
       });
     }
-
-    const overlaps = canonicalTargets.filter((targetId) => hardNegatives.includes(targetId));
-    if (overlaps.length > 0) {
+  } else {
+    const missingToolTargets = canonicalTargets.filter((targetId) => !candidateIds.has(targetId));
+    if (missingToolTargets.length > 0) {
       rowIssues.push({
         severity: "error",
-        code: "hard_negative_overlap",
+        code: "missing_teacher_tool_targets",
         rowId: params.example.row_id,
-        detail: `row ${params.example.row_id} hard negatives overlap positive targets: ${overlaps.join(", ")}`,
+        detail: `row ${params.example.row_id} tool action ${toolName} is not present in the candidate set: ${missingToolTargets.join(", ")}`,
       });
     }
-  } else {
+  }
+
+  const overlaps = canonicalTargets.filter((targetId) => hardNegatives.includes(targetId));
+  if (overlaps.length > 0) {
     rowIssues.push({
       severity: "error",
-      code: "unsupported_teacher_action",
+      code: "hard_negative_overlap",
       rowId: params.example.row_id,
-      detail: `row ${params.example.row_id} uses tool actions, but this scaffold currently compiles traverse supervision only`,
+      detail: `row ${params.example.row_id} hard negatives overlap positive targets: ${overlaps.join(", ")}`,
     });
   }
 
@@ -496,7 +550,7 @@ function normalizeRouteDecisionRow(params: {
     candidate_set: candidates,
     teacher_action: params.example.teacher_action.kind === "traverse"
       ? { kind: "traverse", target_ids: canonicalTargets }
-      : { kind: "tool", tool_name: normalizeWhitespace(params.example.teacher_action.tool_name), ...(params.example.teacher_action.tool_args_ref ? { tool_args_ref: normalizeWhitespace(params.example.teacher_action.tool_args_ref) } : {}) },
+      : { kind: "tool", tool_name: toolName, ...(params.example.teacher_action.tool_args_ref ? { tool_args_ref: normalizeWhitespace(params.example.teacher_action.tool_args_ref) } : {}) },
     stop_label: stopLabel,
     evidence_spans: evidenceSpans,
     hard_negatives: hardNegatives,
@@ -519,7 +573,7 @@ function normalizeRouteDecisionRow(params: {
     dataset_id: row.dataset_id,
     row_id: row.row_id,
     best_next_node_ids: canonicalTargets,
-    best_next_tool_name: null,
+    best_next_tool_name: teacherActionKind === "tool" ? toolName : null,
     stop_label: row.stop_label,
     evidence_spans: row.evidence_spans,
     hard_negatives: row.hard_negatives,
@@ -546,6 +600,14 @@ function normalizeRouteDecisionRow(params: {
         summary: "positive target ids exist in the candidate set",
         evidence_refs: canonicalTargets,
       },
+      ...(teacherActionKind === "tool"
+        ? [{
+            check_id: "tool_alignment",
+            status: "pass" as const,
+            summary: `tool action resolves to ${toolName}`,
+            evidence_refs: canonicalTargets.length > 0 ? canonicalTargets : [toolName],
+          }]
+        : []),
       {
         check_id: "hard_negative_disjoint",
         status: "pass",
@@ -685,6 +747,8 @@ export function compileColdStartDocsQaSourceBundleV1(params: {
   const verifiers: VerifierContractV1[] = [];
   const rowSummaries: ColdStartRowCleanupSummaryV1[] = [];
   const issues: ColdStartCurationIssueV1[] = [];
+  const stopLabelCounts = createStopLabelCounts();
+  const teacherActionKindCounts = createTeacherActionKindCounts();
   let queryTrimmedCount = 0;
   let rationaleTrimmedCount = 0;
   let cursorPathSegmentTrimCount = 0;
@@ -727,6 +791,8 @@ export function compileColdStartDocsQaSourceBundleV1(params: {
     acceptedRows.push(compilation.row);
     teacherLabels.push(compilation.teacherLabel);
     verifiers.push(compilation.verifier);
+    stopLabelCounts[compilation.row.stop_label] += 1;
+    teacherActionKindCounts[compilation.row.teacher_action.kind] += 1;
   }
 
   const graphCompiler = buildGraphCompilerContract({
@@ -754,6 +820,10 @@ export function compileColdStartDocsQaSourceBundleV1(params: {
       evidenceSpanDedupedCount,
       hardNegativeDedupedCount,
       confidenceClampCount,
+    },
+    supervision: {
+      stopLabelCounts,
+      teacherActionKindCounts,
     },
     rowSummaries,
     issues,

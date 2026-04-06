@@ -1,0 +1,1764 @@
+{
+  "contract": "cold_start_qa_snapshot_export_candidate.v1",
+  "export_id": "cold-start-qa-snapshot-export-candidate-v1",
+  "generated_at": "2026-04-05T18:10:00Z",
+  "review_status": "under_review",
+  "source_registry_path": "/Users/guclaw/.openclaw/workspace/openclawbrain/data/cold-start/registry.bootstrap.json",
+  "workspace_root": "/Users/guclaw/.openclaw/workspace",
+  "datasets": [
+    {
+      "datasetFamily": "hotpotqa",
+      "datasetId": "hotpotqa_v1",
+      "snapshotRef": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json",
+      "sampleStrategy": "first-example-from-hotpotqa-dev-distractor-snapshot",
+      "sourceDocuments": [
+        {
+          "source_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+          "path": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+          "kind": "qa_source"
+        }
+      ],
+      "rawBundle": {
+        "contract": "cold_start_docs_qa_source_bundle.v1",
+        "bundle_id": "hotpotqa-dev-distractor-export-candidate-v1",
+        "generated_at": "2026-04-05T18:10:00Z",
+        "registry": {
+          "dataset_id": "hotpotqa_v1",
+          "source_family": "qa",
+          "upstream_url": "https://hotpotqa.github.io/#download",
+          "original_creator": "HotpotQA authors (Dai, Chen, and collaborators)",
+          "license": "CC BY-SA 4.0",
+          "commercial_use_status": "allowed",
+          "redistribution_status": "allowed",
+          "pii_risk": "none",
+          "benchmark_split_status": "eval_only",
+          "approval_status": "under_review",
+          "reviewer": "lane-m-qa-snapshots",
+          "immutable_snapshot_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json",
+          "exact_files": [
+            "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+            "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json",
+            "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/SHA256SUMS"
+          ],
+          "allowed_uses": [
+            "approval review",
+            "future split planning",
+            "route supervision after explicit approval"
+          ],
+          "disallowed_uses": [
+            "claiming materialized snapshot",
+            "training ingest before approval",
+            "ignoring share-alike terms"
+          ],
+          "notes": [
+            "official HotpotQA public release page used as provenance anchor",
+            "immutable local snapshot materialized from public release URLs on the official site",
+            "snapshot bytes and hashes are captured in adjacent manifest and SHA256SUMS metadata",
+            "export candidate samples the frozen dev-distractor JSON only and keeps the rest of the snapshot bundle out of the candidate payload"
+          ],
+          "created_at": "2026-04-05T23:40:00Z",
+          "updated_at": "2026-04-06T00:58:50Z"
+        },
+        "source_documents": [
+          {
+            "source_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+            "path": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+            "kind": "qa_source"
+          }
+        ],
+        "examples": [
+          {
+            "row_id": "hotpotqa-dev-distractor-export-candidate-1",
+            "query": "Were Scott Derrickson and Ed Wood of the same nationality?",
+            "cursor_path": [
+              "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+              "5a8b57f25542995d1e6f1371"
+            ],
+            "candidate_set": [
+              {
+                "candidate_id": "hotpotqa_v1:support:ed-wood-film",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 96,
+                "score_hint": 0.2
+              },
+              {
+                "candidate_id": "hotpotqa_v1:support:scott-derrickson",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_supporting_fact",
+                "freshness": "eval_only",
+                "token_cost": 97,
+                "score_hint": 1
+              },
+              {
+                "candidate_id": "hotpotqa_v1:support:woodson-arkansas",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 98,
+                "score_hint": 0.2
+              },
+              {
+                "candidate_id": "hotpotqa_v1:support:tyler-bates",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 99,
+                "score_hint": 0.2
+              },
+              {
+                "candidate_id": "hotpotqa_v1:support:ed-wood",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_supporting_fact",
+                "freshness": "eval_only",
+                "token_cost": 100,
+                "score_hint": 1
+              },
+              {
+                "candidate_id": "hotpotqa_v1:support:deliver-us-from-evil-2014-film",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 101,
+                "score_hint": 0.2
+              },
+              {
+                "candidate_id": "hotpotqa_v1:support:adam-collis",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 102,
+                "score_hint": 0.2
+              },
+              {
+                "candidate_id": "hotpotqa_v1:support:sinister-film",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 103,
+                "score_hint": 0.2
+              },
+              {
+                "candidate_id": "hotpotqa_v1:support:conrad-brooks",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 104,
+                "score_hint": 0.2
+              },
+              {
+                "candidate_id": "hotpotqa_v1:support:doctor-strange-2016-film",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 105,
+                "score_hint": 0.2
+              }
+            ],
+            "teacher_action": {
+              "kind": "traverse",
+              "target_ids": [
+                "hotpotqa_v1:support:scott-derrickson",
+                "hotpotqa_v1:support:ed-wood"
+              ]
+            },
+            "stop_label": "CONTINUE",
+            "evidence_spans": [
+              {
+                "source_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+                "excerpt": "Scott Derrickson"
+              },
+              {
+                "source_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+                "excerpt": "Ed Wood"
+              }
+            ],
+            "hard_negatives": [],
+            "outcome_gain": 1,
+            "teacher_confidence": 0.97,
+            "rationale": "HotpotQA snapshot evidence marks the supporting facts for 5a8b57f25542995d1e6f1371.",
+            "split_tag": "dev_distractor",
+            "created_at": "2026-04-05T18:10:00Z"
+          }
+        ]
+      },
+      "compilation": {
+        "registryEntry": {
+          "dataset_id": "hotpotqa_v1",
+          "source_family": "qa",
+          "upstream_url": "https://hotpotqa.github.io/#download",
+          "original_creator": "HotpotQA authors (Dai, Chen, and collaborators)",
+          "license": "CC BY-SA 4.0",
+          "commercial_use_status": "allowed",
+          "redistribution_status": "allowed",
+          "pii_risk": "none",
+          "benchmark_split_status": "eval_only",
+          "approval_status": "under_review",
+          "reviewer": "lane-m-qa-snapshots",
+          "immutable_snapshot_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json",
+          "exact_files": [
+            "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+            "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json",
+            "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/SHA256SUMS"
+          ],
+          "file_hashes": {
+            "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json": "sha256:4e9ecb5c8d3b719f624d66b60f8d56bf227f03914f5f0753d6fa1b359d7104ea",
+            "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json": "sha256:668eab049bd62adce5e0acb7d550117af0962830a620c8e7f9335407fdeb15c4",
+            "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/SHA256SUMS": "sha256:827ebddd44531d525cc0180724fbcc4971e8ba1f54615bb61a80ec6811a00304"
+          },
+          "allowed_uses": [
+            "approval review",
+            "future split planning",
+            "route supervision after explicit approval"
+          ],
+          "disallowed_uses": [
+            "claiming materialized snapshot",
+            "training ingest before approval",
+            "ignoring share-alike terms"
+          ],
+          "notes": [
+            "official HotpotQA public release page used as provenance anchor",
+            "immutable local snapshot materialized from public release URLs on the official site",
+            "snapshot bytes and hashes are captured in adjacent manifest and SHA256SUMS metadata",
+            "export candidate samples the frozen dev-distractor JSON only and keeps the rest of the snapshot bundle out of the candidate payload"
+          ],
+          "created_at": "2026-04-05T23:40:00Z",
+          "updated_at": "2026-04-06T00:58:50Z"
+        },
+        "graphCompiler": {
+          "compiler_id": "docs-qa-cold-start-compiler-v1",
+          "source_family": "qa",
+          "input_snapshot_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json",
+          "node_schema": [
+            {
+              "node_kind": "doc_chunk",
+              "required_fields": [
+                "path",
+                "content_hash"
+              ],
+              "optional_fields": [
+                "title",
+                "section",
+                "source_ref"
+              ],
+              "notes": [
+                "Doc chunks are curated from approved architecture sources"
+              ]
+            },
+            {
+              "node_kind": "qa_example",
+              "required_fields": [
+                "row_id",
+                "query",
+                "candidate_set"
+              ],
+              "optional_fields": [
+                "hard_negatives",
+                "split_tag"
+              ],
+              "notes": [
+                "QA supervision nodes link the query to the routing target"
+              ]
+            }
+          ],
+          "edge_schema": [
+            {
+              "edge_kind": "cites",
+              "required_fields": [
+                "source_ref",
+                "target_ref"
+              ],
+              "optional_fields": [
+                "excerpt"
+              ],
+              "notes": [
+                "Resolved evidence excerpts create cite edges"
+              ]
+            },
+            {
+              "edge_kind": "supervises",
+              "required_fields": [
+                "row_id",
+                "source_ref"
+              ],
+              "optional_fields": [
+                "excerpt"
+              ],
+              "notes": [
+                "Question rows supervise the linked document neighborhood"
+              ]
+            }
+          ],
+          "provenance_rules": [
+            "approved docs sources only",
+            "evidence excerpts must resolve in checked files",
+            "hard negatives must stay disjoint from positive targets",
+            "duplicate candidate ids are deduped before validation"
+          ],
+          "output_neighborhood_pack": {
+            "pack_id": "docs-qa-neighborhood-pack:hotpotqa-dev-distractor-export-candidate-v1",
+            "artifact_ref": "artifact:docs-qa-pack@sha256:23ce9bd0d150cac6e13f9a99a7f7eec179b4e6105a1cd7000350ec6fdd98d6f7",
+            "graph_ref": "graph:docs-qa@sha256:40735eb64e1fe1c46328b0111046cb323d6567d102a177cb83a397b74723f2d2",
+            "radius_hops": 1,
+            "frontier_limit": 32
+          },
+          "compiler_version": "docs-qa-cold-start-compiler@0.1.0"
+        },
+        "routeRows": [
+          {
+            "row_id": "hotpotqa-dev-distractor-export-candidate-1",
+            "dataset_id": "hotpotqa_v1",
+            "query": "Were Scott Derrickson and Ed Wood of the same nationality?",
+            "cursor_path": [
+              "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+              "5a8b57f25542995d1e6f1371"
+            ],
+            "candidate_set": [
+              {
+                "candidate_id": "hotpotqa_v1:support:ed-wood",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_supporting_fact",
+                "freshness": "eval_only",
+                "token_cost": 100,
+                "score_hint": 1
+              },
+              {
+                "candidate_id": "hotpotqa_v1:support:scott-derrickson",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_supporting_fact",
+                "freshness": "eval_only",
+                "token_cost": 97,
+                "score_hint": 1
+              },
+              {
+                "candidate_id": "hotpotqa_v1:support:adam-collis",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 102,
+                "score_hint": 0.2
+              },
+              {
+                "candidate_id": "hotpotqa_v1:support:conrad-brooks",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 104,
+                "score_hint": 0.2
+              },
+              {
+                "candidate_id": "hotpotqa_v1:support:deliver-us-from-evil-2014-film",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 101,
+                "score_hint": 0.2
+              },
+              {
+                "candidate_id": "hotpotqa_v1:support:doctor-strange-2016-film",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 105,
+                "score_hint": 0.2
+              },
+              {
+                "candidate_id": "hotpotqa_v1:support:ed-wood-film",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 96,
+                "score_hint": 0.2
+              },
+              {
+                "candidate_id": "hotpotqa_v1:support:sinister-film",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 103,
+                "score_hint": 0.2
+              },
+              {
+                "candidate_id": "hotpotqa_v1:support:tyler-bates",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 99,
+                "score_hint": 0.2
+              },
+              {
+                "candidate_id": "hotpotqa_v1:support:woodson-arkansas",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 98,
+                "score_hint": 0.2
+              }
+            ],
+            "teacher_action": {
+              "kind": "traverse",
+              "target_ids": [
+                "hotpotqa_v1:support:scott-derrickson",
+                "hotpotqa_v1:support:ed-wood"
+              ]
+            },
+            "stop_label": "CONTINUE",
+            "evidence_spans": [
+              {
+                "source_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+                "start": 67,
+                "end": 83,
+                "excerpt": "Scott Derrickson"
+              },
+              {
+                "source_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+                "start": 88,
+                "end": 95,
+                "excerpt": "Ed Wood"
+              }
+            ],
+            "hard_negatives": [
+              "hotpotqa_v1:support:adam-collis",
+              "hotpotqa_v1:support:conrad-brooks",
+              "hotpotqa_v1:support:deliver-us-from-evil-2014-film",
+              "hotpotqa_v1:support:doctor-strange-2016-film",
+              "hotpotqa_v1:support:ed-wood-film",
+              "hotpotqa_v1:support:sinister-film",
+              "hotpotqa_v1:support:tyler-bates",
+              "hotpotqa_v1:support:woodson-arkansas"
+            ],
+            "outcome_gain": 1,
+            "provenance": {
+              "dataset": "hotpotqa_v1",
+              "source_license": "CC BY-SA 4.0",
+              "source_family": "qa",
+              "source_snapshot_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json",
+              "recorded_by": "lane-m-qa-snapshots:docs-qa-compiler",
+              "recorded_at": "2026-04-05T18:10:00Z",
+              "review_status": "under_review"
+            },
+            "split_tag": "dev_distractor",
+            "created_at": "2026-04-05T18:10:00Z"
+          }
+        ],
+        "teacherLabels": [
+          {
+            "label_id": "hotpotqa-dev-distractor-export-candidate-1:teacher-label",
+            "dataset_id": "hotpotqa_v1",
+            "row_id": "hotpotqa-dev-distractor-export-candidate-1",
+            "best_next_node_ids": [
+              "hotpotqa_v1:support:scott-derrickson",
+              "hotpotqa_v1:support:ed-wood"
+            ],
+            "best_next_tool_name": null,
+            "stop_label": "CONTINUE",
+            "evidence_spans": [
+              {
+                "source_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+                "start": 67,
+                "end": 83,
+                "excerpt": "Scott Derrickson"
+              },
+              {
+                "source_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+                "start": 88,
+                "end": 95,
+                "excerpt": "Ed Wood"
+              }
+            ],
+            "hard_negatives": [
+              "hotpotqa_v1:support:adam-collis",
+              "hotpotqa_v1:support:conrad-brooks",
+              "hotpotqa_v1:support:deliver-us-from-evil-2014-film",
+              "hotpotqa_v1:support:doctor-strange-2016-film",
+              "hotpotqa_v1:support:ed-wood-film",
+              "hotpotqa_v1:support:sinister-film",
+              "hotpotqa_v1:support:tyler-bates",
+              "hotpotqa_v1:support:woodson-arkansas"
+            ],
+            "confidence": 0.97,
+            "rationale": "HotpotQA snapshot evidence marks the supporting facts for 5a8b57f25542995d1e6f1371.",
+            "created_at": "2026-04-05T18:10:00Z"
+          }
+        ],
+        "verifiers": [
+          {
+            "verifier_id": "hotpotqa-dev-distractor-export-candidate-1:verifier",
+            "label_id": "hotpotqa-dev-distractor-export-candidate-1:teacher-label",
+            "row_id": "hotpotqa-dev-distractor-export-candidate-1",
+            "candidate_set_digest": "sha256:b230cfd864fda9de2bb839820200496c2735fbddd8d55af4a3cbcf221ad15bc4",
+            "checks": [
+              {
+                "check_id": "evidence_reachable",
+                "status": "pass",
+                "summary": "evidence spans resolve against source documents",
+                "evidence_refs": [
+                  "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+                  "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json"
+                ]
+              },
+              {
+                "check_id": "candidate_alignment",
+                "status": "pass",
+                "summary": "positive target ids exist in the candidate set",
+                "evidence_refs": [
+                  "hotpotqa_v1:support:scott-derrickson",
+                  "hotpotqa_v1:support:ed-wood"
+                ]
+              },
+              {
+                "check_id": "hard_negative_disjoint",
+                "status": "pass",
+                "summary": "hard negatives do not overlap positive targets",
+                "evidence_refs": [
+                  "hotpotqa_v1:support:adam-collis",
+                  "hotpotqa_v1:support:conrad-brooks",
+                  "hotpotqa_v1:support:deliver-us-from-evil-2014-film",
+                  "hotpotqa_v1:support:doctor-strange-2016-film",
+                  "hotpotqa_v1:support:ed-wood-film",
+                  "hotpotqa_v1:support:sinister-film",
+                  "hotpotqa_v1:support:tyler-bates",
+                  "hotpotqa_v1:support:woodson-arkansas"
+                ]
+              },
+              {
+                "check_id": "correction_priority",
+                "status": "pass",
+                "summary": "explicit correction priority is preserved by the row",
+                "evidence_refs": [
+                  "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+                  "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json"
+                ]
+              }
+            ],
+            "passed": true,
+            "issues": [],
+            "explicit_correction_priority_honored": true,
+            "created_at": "2026-04-05T18:10:00Z"
+          }
+        ],
+        "report": {
+          "contract": "cold_start_docs_qa_compilation_report.v1",
+          "bundleId": "hotpotqa-dev-distractor-export-candidate-v1",
+          "datasetId": "hotpotqa_v1",
+          "sourceFamily": "qa",
+          "sourceDocumentCount": 1,
+          "rawExampleCount": 1,
+          "acceptedRowCount": 1,
+          "rejectedRowCount": 0,
+          "cleanup": {
+            "queryTrimmedCount": 0,
+            "rationaleTrimmedCount": 0,
+            "cursorPathSegmentTrimCount": 0,
+            "candidateDedupedCount": 0,
+            "evidenceSpanDedupedCount": 0,
+            "hardNegativeDedupedCount": 0,
+            "confidenceClampCount": 0
+          },
+          "rowSummaries": [
+            {
+              "rowId": "hotpotqa-dev-distractor-export-candidate-1",
+              "accepted": true,
+              "queryTrimmed": false,
+              "rationaleTrimmed": false,
+              "cursorPathSegmentsTrimmed": 0,
+              "dedupedCandidateIds": 0,
+              "dedupedEvidenceSpans": 0,
+              "dedupedHardNegatives": 0,
+              "clampedConfidence": false,
+              "issues": []
+            }
+          ],
+          "issues": []
+        }
+      }
+    },
+    {
+      "datasetFamily": "musique",
+      "datasetId": "musique_v1",
+      "snapshotRef": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json",
+      "sampleStrategy": "first-supporting-example-from-musique-dev-snapshot:4hop1__129721_32392_823060_610794",
+      "sourceDocuments": [
+        {
+          "source_ref": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+          "path": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+          "kind": "qa_source"
+        }
+      ],
+      "rawBundle": {
+        "contract": "cold_start_docs_qa_source_bundle.v1",
+        "bundle_id": "musique-dev-export-candidate-v1",
+        "generated_at": "2026-04-05T18:10:00Z",
+        "registry": {
+          "dataset_id": "musique_v1",
+          "source_family": "qa",
+          "upstream_url": "https://github.com/stonybrooknlp/musique",
+          "original_creator": "MuSiQue authors (Trivedi, Balasubramanian, Khot, and Sabharwal)",
+          "license": "CC BY 4.0",
+          "commercial_use_status": "allowed",
+          "redistribution_status": "allowed",
+          "pii_risk": "none",
+          "benchmark_split_status": "eval_only",
+          "approval_status": "under_review",
+          "reviewer": "lane-m-qa-snapshots",
+          "immutable_snapshot_ref": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json",
+          "exact_files": [
+            "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+            "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json",
+            "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/SHA256SUMS"
+          ],
+          "allowed_uses": [
+            "approval review",
+            "future split planning",
+            "route supervision after explicit approval"
+          ],
+          "disallowed_uses": [
+            "claiming materialized snapshot",
+            "training ingest before approval",
+            "assuming the dataset card does not need re-checking"
+          ],
+          "notes": [
+            "official MuSiQue repository README used as provenance anchor",
+            "immutable local snapshot materialized from the public release zip linked by the repo",
+            "snapshot bytes and hashes are captured in adjacent manifest and SHA256SUMS metadata",
+            "export candidate samples the frozen dev JSONL only and keeps the rest of the snapshot bundle out of the candidate payload"
+          ],
+          "created_at": "2026-04-05T23:40:00Z",
+          "updated_at": "2026-04-06T00:58:50Z"
+        },
+        "source_documents": [
+          {
+            "source_ref": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+            "path": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+            "kind": "qa_source"
+          }
+        ],
+        "examples": [
+          {
+            "row_id": "musique-dev-export-candidate-1",
+            "query": "What county is the city that shares a border with the state capital of the state where Zubly Cemetery is located in?",
+            "cursor_path": [
+              "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+              "4hop1__129721_32392_823060_610794"
+            ],
+            "candidate_set": [
+              {
+                "candidate_id": "musique_v1:support:zubly-cemetery",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_supporting_fact",
+                "freshness": "eval_only",
+                "token_cost": 72,
+                "score_hint": 1
+              },
+              {
+                "candidate_id": "musique_v1:support:tallahassee-florida",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 73,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:quipap",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 74,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:mill-city-butte-county-california",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 75,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:list-of-capitals-in-the-united-states",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 76,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:united-states",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 77,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:oklahoma-city",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 78,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:states-of-nigeria",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 79,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:colorado-territory",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 80,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:history-of-mississippi",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 81,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:fort-meade-national-cemetery",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 82,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:mount-franklin-australian-capital-territory",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 83,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:borders-of-china",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 84,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:mulkey-cemetery",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 85,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:rocklea-queensland",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 86,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:springfield-national-cemetery",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 87,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:list-of-burn-centres-in-australia",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 88,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:canhotinho",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 89,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:east-jersey",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 90,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:thirukkanur",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 91,
+                "score_hint": 0.15
+              }
+            ],
+            "teacher_action": {
+              "kind": "traverse",
+              "target_ids": [
+                "musique_v1:support:zubly-cemetery"
+              ]
+            },
+            "stop_label": "CONTINUE",
+            "evidence_spans": [
+              {
+                "source_ref": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+                "excerpt": "The Zubly Cemetery near Beech Island, South Carolina, which is a small community in Aiken County, South Carolina was established around 1790 by Swiss settlers of the nearby New Windsor Township. It illustrates the vernacular burial customs of the period. The town of New Windsor, settled in 1737, eventually became an outpost for Indian traders. Zubly Cemetery was listed on the National Register of Historic Places on January 28, 2002."
+              }
+            ],
+            "hard_negatives": [],
+            "outcome_gain": 1,
+            "teacher_confidence": 0.96,
+            "rationale": "MuSiQue snapshot evidence marks the supporting paragraphs for 4hop1__129721_32392_823060_610794.",
+            "split_tag": "dev",
+            "created_at": "2026-04-05T18:10:00Z"
+          }
+        ]
+      },
+      "compilation": {
+        "registryEntry": {
+          "dataset_id": "musique_v1",
+          "source_family": "qa",
+          "upstream_url": "https://github.com/stonybrooknlp/musique",
+          "original_creator": "MuSiQue authors (Trivedi, Balasubramanian, Khot, and Sabharwal)",
+          "license": "CC BY 4.0",
+          "commercial_use_status": "allowed",
+          "redistribution_status": "allowed",
+          "pii_risk": "none",
+          "benchmark_split_status": "eval_only",
+          "approval_status": "under_review",
+          "reviewer": "lane-m-qa-snapshots",
+          "immutable_snapshot_ref": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json",
+          "exact_files": [
+            "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+            "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json",
+            "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/SHA256SUMS"
+          ],
+          "file_hashes": {
+            "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl": "sha256:8cab31d56a3a1c4ef491b205a8dab3f1ac9c66e472098c6cf1de4e20294f7a4a",
+            "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json": "sha256:e6bcf95dc46fc9295335988200d8dcd40107b535a33f1a3d21c7059ebe6bf509",
+            "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/SHA256SUMS": "sha256:2be9c5a738d5b36f85d0bad46e1939e413656af3844a5507b6ec89c541eea9cd"
+          },
+          "allowed_uses": [
+            "approval review",
+            "future split planning",
+            "route supervision after explicit approval"
+          ],
+          "disallowed_uses": [
+            "claiming materialized snapshot",
+            "training ingest before approval",
+            "assuming the dataset card does not need re-checking"
+          ],
+          "notes": [
+            "official MuSiQue repository README used as provenance anchor",
+            "immutable local snapshot materialized from the public release zip linked by the repo",
+            "snapshot bytes and hashes are captured in adjacent manifest and SHA256SUMS metadata",
+            "export candidate samples the frozen dev JSONL only and keeps the rest of the snapshot bundle out of the candidate payload"
+          ],
+          "created_at": "2026-04-05T23:40:00Z",
+          "updated_at": "2026-04-06T00:58:50Z"
+        },
+        "graphCompiler": {
+          "compiler_id": "docs-qa-cold-start-compiler-v1",
+          "source_family": "qa",
+          "input_snapshot_ref": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json",
+          "node_schema": [
+            {
+              "node_kind": "doc_chunk",
+              "required_fields": [
+                "path",
+                "content_hash"
+              ],
+              "optional_fields": [
+                "title",
+                "section",
+                "source_ref"
+              ],
+              "notes": [
+                "Doc chunks are curated from approved architecture sources"
+              ]
+            },
+            {
+              "node_kind": "qa_example",
+              "required_fields": [
+                "row_id",
+                "query",
+                "candidate_set"
+              ],
+              "optional_fields": [
+                "hard_negatives",
+                "split_tag"
+              ],
+              "notes": [
+                "QA supervision nodes link the query to the routing target"
+              ]
+            }
+          ],
+          "edge_schema": [
+            {
+              "edge_kind": "cites",
+              "required_fields": [
+                "source_ref",
+                "target_ref"
+              ],
+              "optional_fields": [
+                "excerpt"
+              ],
+              "notes": [
+                "Resolved evidence excerpts create cite edges"
+              ]
+            },
+            {
+              "edge_kind": "supervises",
+              "required_fields": [
+                "row_id",
+                "source_ref"
+              ],
+              "optional_fields": [
+                "excerpt"
+              ],
+              "notes": [
+                "Question rows supervise the linked document neighborhood"
+              ]
+            }
+          ],
+          "provenance_rules": [
+            "approved docs sources only",
+            "evidence excerpts must resolve in checked files",
+            "hard negatives must stay disjoint from positive targets",
+            "duplicate candidate ids are deduped before validation"
+          ],
+          "output_neighborhood_pack": {
+            "pack_id": "docs-qa-neighborhood-pack:musique-dev-export-candidate-v1",
+            "artifact_ref": "artifact:docs-qa-pack@sha256:e9549a16209c42055b75cb14a8f884eb7d3a21a17a7b983a48fa8d7d202f60e1",
+            "graph_ref": "graph:docs-qa@sha256:97d11db63cfe83ebcf133ce78180d2efc93ffef40c00930b69811afeff530508",
+            "radius_hops": 1,
+            "frontier_limit": 32
+          },
+          "compiler_version": "docs-qa-cold-start-compiler@0.1.0"
+        },
+        "routeRows": [
+          {
+            "row_id": "musique-dev-export-candidate-1",
+            "dataset_id": "musique_v1",
+            "query": "What county is the city that shares a border with the state capital of the state where Zubly Cemetery is located in?",
+            "cursor_path": [
+              "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+              "4hop1__129721_32392_823060_610794"
+            ],
+            "candidate_set": [
+              {
+                "candidate_id": "musique_v1:support:zubly-cemetery",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_supporting_fact",
+                "freshness": "eval_only",
+                "token_cost": 72,
+                "score_hint": 1
+              },
+              {
+                "candidate_id": "musique_v1:support:borders-of-china",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 84,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:canhotinho",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 89,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:colorado-territory",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 80,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:east-jersey",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 90,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:fort-meade-national-cemetery",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 82,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:history-of-mississippi",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 81,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:list-of-burn-centres-in-australia",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 88,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:list-of-capitals-in-the-united-states",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 76,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:mill-city-butte-county-california",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 75,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:mount-franklin-australian-capital-territory",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 83,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:mulkey-cemetery",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 85,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:oklahoma-city",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 78,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:quipap",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 74,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:rocklea-queensland",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 86,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:springfield-national-cemetery",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 87,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:states-of-nigeria",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 79,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:tallahassee-florida",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 73,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:thirukkanur",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 91,
+                "score_hint": 0.15
+              },
+              {
+                "candidate_id": "musique_v1:support:united-states",
+                "candidate_type": "doc_chunk",
+                "authority": "snapshot_context",
+                "freshness": "eval_only",
+                "token_cost": 77,
+                "score_hint": 0.15
+              }
+            ],
+            "teacher_action": {
+              "kind": "traverse",
+              "target_ids": [
+                "musique_v1:support:zubly-cemetery"
+              ]
+            },
+            "stop_label": "CONTINUE",
+            "evidence_spans": [
+              {
+                "source_ref": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+                "start": 10725,
+                "end": 11161,
+                "excerpt": "The Zubly Cemetery near Beech Island, South Carolina, which is a small community in Aiken County, South Carolina was established around 1790 by Swiss settlers of the nearby New Windsor Township. It illustrates the vernacular burial customs of the period. The town of New Windsor, settled in 1737, eventually became an outpost for Indian traders. Zubly Cemetery was listed on the National Register of Historic Places on January 28, 2002."
+              }
+            ],
+            "hard_negatives": [
+              "musique_v1:support:borders-of-china",
+              "musique_v1:support:canhotinho",
+              "musique_v1:support:colorado-territory",
+              "musique_v1:support:east-jersey",
+              "musique_v1:support:fort-meade-national-cemetery",
+              "musique_v1:support:history-of-mississippi",
+              "musique_v1:support:list-of-burn-centres-in-australia",
+              "musique_v1:support:list-of-capitals-in-the-united-states",
+              "musique_v1:support:mill-city-butte-county-california",
+              "musique_v1:support:mount-franklin-australian-capital-territory",
+              "musique_v1:support:mulkey-cemetery",
+              "musique_v1:support:oklahoma-city",
+              "musique_v1:support:quipap",
+              "musique_v1:support:rocklea-queensland",
+              "musique_v1:support:springfield-national-cemetery",
+              "musique_v1:support:states-of-nigeria",
+              "musique_v1:support:tallahassee-florida",
+              "musique_v1:support:thirukkanur",
+              "musique_v1:support:united-states"
+            ],
+            "outcome_gain": 1,
+            "provenance": {
+              "dataset": "musique_v1",
+              "source_license": "CC BY 4.0",
+              "source_family": "qa",
+              "source_snapshot_ref": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json",
+              "recorded_by": "lane-m-qa-snapshots:docs-qa-compiler",
+              "recorded_at": "2026-04-05T18:10:00Z",
+              "review_status": "under_review"
+            },
+            "split_tag": "dev",
+            "created_at": "2026-04-05T18:10:00Z"
+          }
+        ],
+        "teacherLabels": [
+          {
+            "label_id": "musique-dev-export-candidate-1:teacher-label",
+            "dataset_id": "musique_v1",
+            "row_id": "musique-dev-export-candidate-1",
+            "best_next_node_ids": [
+              "musique_v1:support:zubly-cemetery"
+            ],
+            "best_next_tool_name": null,
+            "stop_label": "CONTINUE",
+            "evidence_spans": [
+              {
+                "source_ref": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+                "start": 10725,
+                "end": 11161,
+                "excerpt": "The Zubly Cemetery near Beech Island, South Carolina, which is a small community in Aiken County, South Carolina was established around 1790 by Swiss settlers of the nearby New Windsor Township. It illustrates the vernacular burial customs of the period. The town of New Windsor, settled in 1737, eventually became an outpost for Indian traders. Zubly Cemetery was listed on the National Register of Historic Places on January 28, 2002."
+              }
+            ],
+            "hard_negatives": [
+              "musique_v1:support:borders-of-china",
+              "musique_v1:support:canhotinho",
+              "musique_v1:support:colorado-territory",
+              "musique_v1:support:east-jersey",
+              "musique_v1:support:fort-meade-national-cemetery",
+              "musique_v1:support:history-of-mississippi",
+              "musique_v1:support:list-of-burn-centres-in-australia",
+              "musique_v1:support:list-of-capitals-in-the-united-states",
+              "musique_v1:support:mill-city-butte-county-california",
+              "musique_v1:support:mount-franklin-australian-capital-territory",
+              "musique_v1:support:mulkey-cemetery",
+              "musique_v1:support:oklahoma-city",
+              "musique_v1:support:quipap",
+              "musique_v1:support:rocklea-queensland",
+              "musique_v1:support:springfield-national-cemetery",
+              "musique_v1:support:states-of-nigeria",
+              "musique_v1:support:tallahassee-florida",
+              "musique_v1:support:thirukkanur",
+              "musique_v1:support:united-states"
+            ],
+            "confidence": 0.96,
+            "rationale": "MuSiQue snapshot evidence marks the supporting paragraphs for 4hop1__129721_32392_823060_610794.",
+            "created_at": "2026-04-05T18:10:00Z"
+          }
+        ],
+        "verifiers": [
+          {
+            "verifier_id": "musique-dev-export-candidate-1:verifier",
+            "label_id": "musique-dev-export-candidate-1:teacher-label",
+            "row_id": "musique-dev-export-candidate-1",
+            "candidate_set_digest": "sha256:6475d44d6de4d971b0e37ba9cf3a2e55ead4b5ec222ac2a62f44fb094387f023",
+            "checks": [
+              {
+                "check_id": "evidence_reachable",
+                "status": "pass",
+                "summary": "evidence spans resolve against source documents",
+                "evidence_refs": [
+                  "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl"
+                ]
+              },
+              {
+                "check_id": "candidate_alignment",
+                "status": "pass",
+                "summary": "positive target ids exist in the candidate set",
+                "evidence_refs": [
+                  "musique_v1:support:zubly-cemetery"
+                ]
+              },
+              {
+                "check_id": "hard_negative_disjoint",
+                "status": "pass",
+                "summary": "hard negatives do not overlap positive targets",
+                "evidence_refs": [
+                  "musique_v1:support:borders-of-china",
+                  "musique_v1:support:canhotinho",
+                  "musique_v1:support:colorado-territory",
+                  "musique_v1:support:east-jersey",
+                  "musique_v1:support:fort-meade-national-cemetery",
+                  "musique_v1:support:history-of-mississippi",
+                  "musique_v1:support:list-of-burn-centres-in-australia",
+                  "musique_v1:support:list-of-capitals-in-the-united-states",
+                  "musique_v1:support:mill-city-butte-county-california",
+                  "musique_v1:support:mount-franklin-australian-capital-territory",
+                  "musique_v1:support:mulkey-cemetery",
+                  "musique_v1:support:oklahoma-city",
+                  "musique_v1:support:quipap",
+                  "musique_v1:support:rocklea-queensland",
+                  "musique_v1:support:springfield-national-cemetery",
+                  "musique_v1:support:states-of-nigeria",
+                  "musique_v1:support:tallahassee-florida",
+                  "musique_v1:support:thirukkanur",
+                  "musique_v1:support:united-states"
+                ]
+              },
+              {
+                "check_id": "correction_priority",
+                "status": "pass",
+                "summary": "explicit correction priority is preserved by the row",
+                "evidence_refs": [
+                  "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl"
+                ]
+              }
+            ],
+            "passed": true,
+            "issues": [],
+            "explicit_correction_priority_honored": true,
+            "created_at": "2026-04-05T18:10:00Z"
+          }
+        ],
+        "report": {
+          "contract": "cold_start_docs_qa_compilation_report.v1",
+          "bundleId": "musique-dev-export-candidate-v1",
+          "datasetId": "musique_v1",
+          "sourceFamily": "qa",
+          "sourceDocumentCount": 1,
+          "rawExampleCount": 1,
+          "acceptedRowCount": 1,
+          "rejectedRowCount": 0,
+          "cleanup": {
+            "queryTrimmedCount": 0,
+            "rationaleTrimmedCount": 0,
+            "cursorPathSegmentTrimCount": 0,
+            "candidateDedupedCount": 0,
+            "evidenceSpanDedupedCount": 0,
+            "hardNegativeDedupedCount": 0,
+            "confidenceClampCount": 0
+          },
+          "rowSummaries": [
+            {
+              "rowId": "musique-dev-export-candidate-1",
+              "accepted": true,
+              "queryTrimmed": false,
+              "rationaleTrimmed": false,
+              "cursorPathSegmentsTrimmed": 0,
+              "dedupedCandidateIds": 0,
+              "dedupedEvidenceSpans": 0,
+              "dedupedHardNegatives": 0,
+              "clampedConfidence": false,
+              "issues": []
+            }
+          ],
+          "issues": []
+        }
+      }
+    }
+  ],
+  "registry_entries": [
+    {
+      "dataset_id": "hotpotqa_v1",
+      "source_family": "qa",
+      "upstream_url": "https://hotpotqa.github.io/#download",
+      "original_creator": "HotpotQA authors (Dai, Chen, and collaborators)",
+      "license": "CC BY-SA 4.0",
+      "commercial_use_status": "allowed",
+      "redistribution_status": "allowed",
+      "pii_risk": "none",
+      "benchmark_split_status": "eval_only",
+      "approval_status": "under_review",
+      "reviewer": "lane-m-qa-snapshots",
+      "immutable_snapshot_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json",
+      "exact_files": [
+        "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+        "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json",
+        "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/SHA256SUMS"
+      ],
+      "file_hashes": {
+        "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json": "sha256:4e9ecb5c8d3b719f624d66b60f8d56bf227f03914f5f0753d6fa1b359d7104ea",
+        "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json": "sha256:668eab049bd62adce5e0acb7d550117af0962830a620c8e7f9335407fdeb15c4",
+        "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/SHA256SUMS": "sha256:827ebddd44531d525cc0180724fbcc4971e8ba1f54615bb61a80ec6811a00304"
+      },
+      "allowed_uses": [
+        "approval review",
+        "future split planning",
+        "route supervision after explicit approval"
+      ],
+      "disallowed_uses": [
+        "claiming materialized snapshot",
+        "training ingest before approval",
+        "ignoring share-alike terms"
+      ],
+      "notes": [
+        "official HotpotQA public release page used as provenance anchor",
+        "immutable local snapshot materialized from public release URLs on the official site",
+        "snapshot bytes and hashes are captured in adjacent manifest and SHA256SUMS metadata",
+        "export candidate samples the frozen dev-distractor JSON only and keeps the rest of the snapshot bundle out of the candidate payload"
+      ],
+      "created_at": "2026-04-05T23:40:00Z",
+      "updated_at": "2026-04-06T00:58:50Z"
+    },
+    {
+      "dataset_id": "musique_v1",
+      "source_family": "qa",
+      "upstream_url": "https://github.com/stonybrooknlp/musique",
+      "original_creator": "MuSiQue authors (Trivedi, Balasubramanian, Khot, and Sabharwal)",
+      "license": "CC BY 4.0",
+      "commercial_use_status": "allowed",
+      "redistribution_status": "allowed",
+      "pii_risk": "none",
+      "benchmark_split_status": "eval_only",
+      "approval_status": "under_review",
+      "reviewer": "lane-m-qa-snapshots",
+      "immutable_snapshot_ref": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json",
+      "exact_files": [
+        "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+        "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json",
+        "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/SHA256SUMS"
+      ],
+      "file_hashes": {
+        "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl": "sha256:8cab31d56a3a1c4ef491b205a8dab3f1ac9c66e472098c6cf1de4e20294f7a4a",
+        "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json": "sha256:e6bcf95dc46fc9295335988200d8dcd40107b535a33f1a3d21c7059ebe6bf509",
+        "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/SHA256SUMS": "sha256:2be9c5a738d5b36f85d0bad46e1939e413656af3844a5507b6ec89c541eea9cd"
+      },
+      "allowed_uses": [
+        "approval review",
+        "future split planning",
+        "route supervision after explicit approval"
+      ],
+      "disallowed_uses": [
+        "claiming materialized snapshot",
+        "training ingest before approval",
+        "assuming the dataset card does not need re-checking"
+      ],
+      "notes": [
+        "official MuSiQue repository README used as provenance anchor",
+        "immutable local snapshot materialized from the public release zip linked by the repo",
+        "snapshot bytes and hashes are captured in adjacent manifest and SHA256SUMS metadata",
+        "export candidate samples the frozen dev JSONL only and keeps the rest of the snapshot bundle out of the candidate payload"
+      ],
+      "created_at": "2026-04-05T23:40:00Z",
+      "updated_at": "2026-04-06T00:58:50Z"
+    }
+  ],
+  "route_rows": [
+    {
+      "row_id": "hotpotqa-dev-distractor-export-candidate-1",
+      "dataset_id": "hotpotqa_v1",
+      "query": "Were Scott Derrickson and Ed Wood of the same nationality?",
+      "cursor_path": [
+        "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+        "5a8b57f25542995d1e6f1371"
+      ],
+      "candidate_set": [
+        {
+          "candidate_id": "hotpotqa_v1:support:ed-wood",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_supporting_fact",
+          "freshness": "eval_only",
+          "token_cost": 100,
+          "score_hint": 1
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:scott-derrickson",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_supporting_fact",
+          "freshness": "eval_only",
+          "token_cost": 97,
+          "score_hint": 1
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:adam-collis",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 102,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:conrad-brooks",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 104,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:deliver-us-from-evil-2014-film",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 101,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:doctor-strange-2016-film",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 105,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:ed-wood-film",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 96,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:sinister-film",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 103,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:tyler-bates",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 99,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:woodson-arkansas",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 98,
+          "score_hint": 0.2
+        }
+      ],
+      "teacher_action": {
+        "kind": "traverse",
+        "target_ids": [
+          "hotpotqa_v1:support:scott-derrickson",
+          "hotpotqa_v1:support:ed-wood"
+        ]
+      },
+      "stop_label": "CONTINUE",
+      "evidence_spans": [
+        {
+          "source_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+          "start": 67,
+          "end": 83,
+          "excerpt": "Scott Derrickson"
+        },
+        {
+          "source_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+          "start": 88,
+          "end": 95,
+          "excerpt": "Ed Wood"
+        }
+      ],
+      "hard_negatives": [
+        "hotpotqa_v1:support:adam-collis",
+        "hotpotqa_v1:support:conrad-brooks",
+        "hotpotqa_v1:support:deliver-us-from-evil-2014-film",
+        "hotpotqa_v1:support:doctor-strange-2016-film",
+        "hotpotqa_v1:support:ed-wood-film",
+        "hotpotqa_v1:support:sinister-film",
+        "hotpotqa_v1:support:tyler-bates",
+        "hotpotqa_v1:support:woodson-arkansas"
+      ],
+      "outcome_gain": 1,
+      "provenance": {
+        "dataset": "hotpotqa_v1",
+        "source_license": "CC BY-SA 4.0",
+        "source_family": "qa",
+        "source_snapshot_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json",
+        "recorded_by": "lane-m-qa-snapshots:docs-qa-compiler",
+        "recorded_at": "2026-04-05T18:10:00Z",
+        "review_status": "under_review"
+      },
+      "split_tag": "dev_distractor",
+      "created_at": "2026-04-05T18:10:00Z"
+    },
+    {
+      "row_id": "musique-dev-export-candidate-1",
+      "dataset_id": "musique_v1",
+      "query": "What county is the city that shares a border with the state capital of the state where Zubly Cemetery is located in?",
+      "cursor_path": [
+        "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+        "4hop1__129721_32392_823060_610794"
+      ],
+      "candidate_set": [
+        {
+          "candidate_id": "musique_v1:support:zubly-cemetery",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_supporting_fact",
+          "freshness": "eval_only",
+          "token_cost": 72,
+          "score_hint": 1
+        },
+        {
+          "candidate_id": "musique_v1:support:borders-of-china",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 84,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:canhotinho",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 89,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:colorado-territory",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 80,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:east-jersey",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 90,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:fort-meade-national-cemetery",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 82,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:history-of-mississippi",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 81,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:list-of-burn-centres-in-australia",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 88,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:list-of-capitals-in-the-united-states",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 76,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:mill-city-butte-county-california",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 75,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:mount-franklin-australian-capital-territory",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 83,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:mulkey-cemetery",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 85,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:oklahoma-city",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 78,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:quipap",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 74,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:rocklea-queensland",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 86,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:springfield-national-cemetery",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 87,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:states-of-nigeria",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 79,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:tallahassee-florida",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 73,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:thirukkanur",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 91,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:united-states",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 77,
+          "score_hint": 0.15
+        }
+      ],
+      "teacher_action": {
+        "kind": "traverse",
+        "target_ids": [
+          "musique_v1:support:zubly-cemetery"
+        ]
+      },
+      "stop_label": "CONTINUE",
+      "evidence_spans": [
+        {
+          "source_ref": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+          "start": 10725,
+          "end": 11161,
+          "excerpt": "The Zubly Cemetery near Beech Island, South Carolina, which is a small community in Aiken County, South Carolina was established around 1790 by Swiss settlers of the nearby New Windsor Township. It illustrates the vernacular burial customs of the period. The town of New Windsor, settled in 1737, eventually became an outpost for Indian traders. Zubly Cemetery was listed on the National Register of Historic Places on January 28, 2002."
+        }
+      ],
+      "hard_negatives": [
+        "musique_v1:support:borders-of-china",
+        "musique_v1:support:canhotinho",
+        "musique_v1:support:colorado-territory",
+        "musique_v1:support:east-jersey",
+        "musique_v1:support:fort-meade-national-cemetery",
+        "musique_v1:support:history-of-mississippi",
+        "musique_v1:support:list-of-burn-centres-in-australia",
+        "musique_v1:support:list-of-capitals-in-the-united-states",
+        "musique_v1:support:mill-city-butte-county-california",
+        "musique_v1:support:mount-franklin-australian-capital-territory",
+        "musique_v1:support:mulkey-cemetery",
+        "musique_v1:support:oklahoma-city",
+        "musique_v1:support:quipap",
+        "musique_v1:support:rocklea-queensland",
+        "musique_v1:support:springfield-national-cemetery",
+        "musique_v1:support:states-of-nigeria",
+        "musique_v1:support:tallahassee-florida",
+        "musique_v1:support:thirukkanur",
+        "musique_v1:support:united-states"
+      ],
+      "outcome_gain": 1,
+      "provenance": {
+        "dataset": "musique_v1",
+        "source_license": "CC BY 4.0",
+        "source_family": "qa",
+        "source_snapshot_ref": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json",
+        "recorded_by": "lane-m-qa-snapshots:docs-qa-compiler",
+        "recorded_at": "2026-04-05T18:10:00Z",
+        "review_status": "under_review"
+      },
+      "split_tag": "dev",
+      "created_at": "2026-04-05T18:10:00Z"
+    }
+  ],
+  "notes": [
+    "This export candidate is snapshot-backed and intentionally under review only.",
+    "It compiles real HotpotQA and MuSiQue snapshot bytes into governed route supervision, but it does not claim approved_train.",
+    "Snapshot integrity is checked against the frozen registry hashes before materialization."
+  ]
+}

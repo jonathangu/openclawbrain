@@ -26,6 +26,7 @@ import {
   type ColdStartRouterSafetyRulesV1,
   type ColdStartRouterSourcePriorsV1,
 } from "./cold-start-router-trainer.ts";
+import { COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1 } from "./graph.js";
 
 export interface ColdStartRouterReplayGateLoadIssueV1 {
   code: string;
@@ -203,6 +204,9 @@ export function loadColdStartRouterArtifactV1(artifactDir: string): {
   }
   if (baseModel.contract !== COLD_START_ROUTER_BASE_MODEL_CONTRACT_V1) {
     recordIssue(issues, "invalid_base_model_contract", `base-model.json contract ${baseModel.contract} != ${COLD_START_ROUTER_BASE_MODEL_CONTRACT_V1}`);
+  }
+  if (model.livePolicyInitializer?.contract !== COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1) {
+    recordIssue(issues, "invalid_live_policy_initializer_contract", `weights.livePolicyInitializer.contract ${model.livePolicyInitializer?.contract ?? "missing"} != ${COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1}`);
   }
 
   const expectedBaseModelDigest = buildLogicalBaseModelDigest(baseModel);

@@ -10,6 +10,12 @@ import type {
   RouterArtifactManifestV1,
 } from "./cold-start-router-contracts.ts";
 import {
+  buildColdStartRouterLivePolicyInitializerV1,
+  materializeColdStartRouterLivePolicyGraphV1,
+  type ColdStartRouterLivePolicyInitializerV1,
+} from "./graph.js";
+import { scoreAction, softmaxPolicy } from "./policy.js";
+import {
   COLD_START_CONTRACT_VERSION_V1,
   COLD_START_STOP_LABELS_V1,
   summarizeRouterArtifactManifestV1,
@@ -17,6 +23,7 @@ import {
   validateRouteDecisionRowV1,
   validateRouterArtifactManifestV1,
 } from "./cold-start-router-contracts.ts";
+import type { TraversalState } from "./types.js";
 
 export const COLD_START_ROUTER_BASE_MODEL_CONTRACT_V1 = "cold_start_router_base_model.v1";
 export const COLD_START_ROUTER_WEIGHTS_CONTRACT_V1 = "cold_start_router_weights.v1";
@@ -147,6 +154,7 @@ export interface ColdStartRouterModelV1 {
   featureNormalizers: ColdStartRouterFeatureNormalizersV1;
   sourcePriors: ColdStartRouterSourcePriorsV1;
   safetyRules: ColdStartRouterSafetyRulesV1;
+  livePolicyInitializer: ColdStartRouterLivePolicyInitializerV1;
 }
 
 export interface ColdStartRouterBaseModelV1 {
@@ -844,6 +852,7 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
   const createdAt = params.createdAt ?? new Date().toISOString();
   const registryByDataset = new Map(params.registryEntries.map((entry) => [entry.dataset_id, entry] as const));
   const usedDatasetIds = new Set<string>();
+  const usedRouteRows: RouteDecisionRowV1[] = [];
   const skippedRows: ColdStartRouterRowSkipV1[] = [];
   const rowStats = new Map<string, { total: number; used: number; skipped: number }>();
   const featureCounts = new Map<string, { positive: number; negative: number; support: number }>();
@@ -880,6 +889,7 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
     usedRows += 1;
     stats.used += 1;
     usedDatasetIds.add(row.dataset_id);
+    usedRouteRows.push(row);
 
     const rowWeight = toRowWeight(row.outcome_gain);
     const positiveIds = resolvePositiveCandidateIds(row);
@@ -929,6 +939,9 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
   const featureNormalizers = buildFeatureNormalizers();
   const sourcePriors = buildSourcePriors(params.registryEntries, rowStats);
   const safetyRules = buildSafetyRules();
+  const livePolicyInitializer = buildColdStartRouterLivePolicyInitializerV1({
+    routeRows: usedRouteRows,
+  });
   const model: ColdStartRouterModelV1 = {
     contract: COLD_START_ROUTER_WEIGHTS_CONTRACT_V1,
     artifactId: params.artifactId,
@@ -945,6 +958,7 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
     featureNormalizers,
     sourcePriors,
     safetyRules,
+    livePolicyInitializer,
   };
 
   if (trainingSummary.usedRows === 0) {
@@ -1091,11 +1105,128 @@ export function predictColdStartStopLabelV1(params: {
   return computeStopPrediction(params.model, params);
 }
 
+function scoreBreakdownToContributions(scoreBreakdown: Record<string, unknown> | undefined): Array<{
+  featureKey: string;
+  featureValue: string;
+  weight: number;
+  support: number;
+  contribution: number;
+}> {
+  if (!scoreBreakdown) {
+    return [];
+  }
+
+  const entries: Array<{
+    featureKey: string;
+    featureValue: string;
+    weight: number;
+    support: number;
+    contribution: number;
+  }> = [];
+
+  const fields: Array<[string, unknown]> = [
+    ["seedPrior", scoreBreakdown.seedPrior],
+    ["learnedSeedWeight", scoreBreakdown.learnedSeedWeight],
+    ["edgeScore", scoreBreakdown.edgeScore],
+    ["relevance", scoreBreakdown.relevance],
+    ["kindBias", scoreBreakdown.kindBias],
+    ["evidenceQualityBonus", scoreBreakdown.evidenceQualityBonus],
+    ["opportunityCostPenalty", scoreBreakdown.opportunityCostPenalty],
+    ["redundancyPenalty", scoreBreakdown.redundancyPenalty],
+    ["learnedStopWeight", scoreBreakdown.learnedStopWeight],
+    ["stopBias", scoreBreakdown.stopBias],
+    ["budgetPressureContribution", scoreBreakdown.budgetPressureContribution],
+    ["hopPressureContribution", scoreBreakdown.hopPressureContribution],
+    ["frontierPressureContribution", scoreBreakdown.frontierPressureContribution],
+  ];
+
+  for (const [featureKey, value] of fields) {
+    if (typeof value !== "number" || !Number.isFinite(value) || Math.abs(value) < 1e-12) {
+      continue;
+    }
+    entries.push({
+      featureKey,
+      featureValue: featureKey,
+      weight: value,
+      support: 1,
+      contribution: value,
+    });
+  }
+
+  return entries.sort((left, right) => Math.abs(right.contribution) - Math.abs(left.contribution));
+}
+
+function buildTraversalStateForRow(row: RouteDecisionRowV1, sourceNodeId: string | null): TraversalState {
+  const visited = new Set<string>();
+  for (const entry of row.cursor_path) {
+    const normalized = entry.trim();
+    if (normalized.length > 0) {
+      visited.add(normalized);
+    }
+  }
+  if (sourceNodeId) {
+    visited.delete(sourceNodeId);
+  }
+
+  return {
+    sourceNodeId,
+    queryEmbedding: new Float32Array(0),
+    frontier: [],
+    visited,
+    fired: [],
+    budgetRemaining: 1000,
+    initialBudget: 1000,
+    reservedTokenCost: 0,
+    expansionCount: Math.max(0, row.cursor_path.length - 1),
+    maxHops: 8,
+  };
+}
+
 export function scoreColdStartRouteRowV1(params: {
   model: ColdStartRouterModelV1;
   row: RouteDecisionRowV1;
 }): ColdStartRouterScoringResultV1 {
-  const rankedCandidates = rankColdStartRouteCandidatesV1({ model: params.model, candidates: params.row.candidate_set });
+  const liveFamily = materializeColdStartRouterLivePolicyGraphV1({
+    initializer: params.model.livePolicyInitializer,
+    row: params.row,
+  });
+  const state = buildTraversalStateForRow(params.row, liveFamily.sourceNodeId);
+  const actions = [
+    ...params.row.candidate_set.map((candidate) => ({
+      type: "traverse" as const,
+      targetNodeId: candidate.candidate_id,
+      seedScore: candidate.score_hint,
+    })),
+    { type: "stop_local" as const },
+  ];
+  const scoredActions = softmaxPolicy(actions, state, liveFamily.graph, liveFamily.policyParams);
+  const stopAction = scoredActions.find((entry) => entry.action.type === "stop_local") ?? {
+    action: { type: "stop_local" as const },
+    score: Number.NEGATIVE_INFINITY,
+    probability: 0,
+  };
+
+  const rankedCandidates = scoredActions
+    .filter((entry) => entry.action.type === "traverse")
+    .map((entry) => {
+      const candidate = params.row.candidate_set.find((item) => item.candidate_id === entry.action.targetNodeId);
+      if (!candidate) {
+        throw new Error(`live policy candidate ${entry.action.targetNodeId} missing from row candidate_set`);
+      }
+      return {
+        candidate,
+        score: entry.score,
+        contributions: scoreBreakdownToContributions(entry.scoreBreakdown),
+      };
+    })
+    .sort((left, right) => {
+      const byScore = right.score - left.score;
+      if (Math.abs(byScore) > 1e-9) {
+        return byScore;
+      }
+      return left.candidate.candidate_id.localeCompare(right.candidate.candidate_id);
+    });
+
   const stopPrediction = predictColdStartStopLabelV1({
     model: params.model,
     candidateCount: params.row.candidate_set.length,
@@ -1104,10 +1235,25 @@ export function scoreColdStartRouteRowV1(params: {
     outcomeGain: params.row.outcome_gain,
   });
 
+  const policyDistribution = {
+    actions: scoredActions.map((entry) => ({
+      action: entry.action,
+      score: entry.score,
+      probability: entry.probability,
+      contributions: scoreBreakdownToContributions(entry.scoreBreakdown),
+    })),
+    stopAction: {
+      action: { type: "stop_local" as const },
+      score: stopAction.score,
+      probability: stopAction.probability,
+      contributions: scoreBreakdownToContributions(stopAction.scoreBreakdown),
+    },
+  };
+
   return {
     rankedCandidates,
     stopPrediction,
-    policyDistribution: buildPolicyDistribution({ rankedCandidates, stopPrediction }),
+    policyDistribution,
   };
 }
 

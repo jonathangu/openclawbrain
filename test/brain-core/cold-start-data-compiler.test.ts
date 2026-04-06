@@ -126,6 +126,66 @@ describe("cold-start docs/QA compilation", () => {
     });
   });
 
+  it("preserves tool-driven STOP_LOCAL supervision as first-class row, label, and verifier evidence", () => {
+    const raw = loadSampleBundle();
+    const toolStopExample: RawDocsQaSourceBundleV1 = {
+      ...raw,
+      bundle_id: "docs-qa-sample-v1-tool-stop-local",
+      examples: [
+        {
+          ...raw.examples[0],
+          row_id: "docs-qa-tool-stop-local",
+          query: "When the proof tool is enough, stop locally.",
+          teacher_action: {
+            kind: "tool",
+            tool_name: "tool:openclawbrain-proof",
+          },
+          stop_label: "STOP_LOCAL",
+          hard_negatives: ["doc:teacher-v3-lints:ci-first"],
+          split_tag: "train",
+          created_at: "2026-04-05T23:03:00Z",
+        },
+      ],
+    };
+
+    const bundle = compileColdStartDocsQaSourceBundleV1({
+      repoRoot,
+      bundle: toolStopExample,
+    });
+
+    expect(bundle.routeRows).toHaveLength(1);
+    expect(bundle.teacherLabels).toHaveLength(1);
+    expect(bundle.verifiers).toHaveLength(1);
+    expect(bundle.routeRows[0]).toMatchObject({
+      row_id: "docs-qa-tool-stop-local",
+      stop_label: "STOP_LOCAL",
+      teacher_action: {
+        kind: "tool",
+        tool_name: "tool:openclawbrain-proof",
+      },
+      hard_negatives: ["doc:routing-prior:conflict-resolution", "doc:teacher-v3-lints:ci-first"],
+    });
+    expect(bundle.teacherLabels[0]).toMatchObject({
+      row_id: "docs-qa-tool-stop-local",
+      stop_label: "STOP_LOCAL",
+      best_next_node_ids: ["tool:openclawbrain-proof"],
+      best_next_tool_name: "tool:openclawbrain-proof",
+    });
+    expect(bundle.verifiers[0]?.checks.some((check) => check.check_id === "tool_alignment")).toBe(true);
+    expect(bundle.report).toMatchObject({
+      acceptedRowCount: 1,
+      rejectedRowCount: 0,
+      supervision: {
+        stopLabelCounts: {
+          STOP_LOCAL: 1,
+        },
+        teacherActionKindCounts: {
+          tool: 1,
+        },
+      },
+    });
+  });
+
   it("rejects rows whose hard negatives overlap positive targets while preserving the accepted rows", () => {
     const raw = loadSampleBundle();
     const broken: RawDocsQaSourceBundleV1 = {

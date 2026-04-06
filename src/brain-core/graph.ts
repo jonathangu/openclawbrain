@@ -11,8 +11,30 @@ import type {
   EdgeKind,
   NodeKind,
   TraversalAction,
-} from "./types.js";
-import { START_NODE_ID } from "./types.js";
+  PolicyParams,
+  TrustLevel,
+} from "./types.ts";
+import type { RouteCandidateV1, RouteDecisionRowV1 } from "./cold-start-router-contracts.ts";
+
+const START_NODE_ID = "__START__";
+const DEFAULT_POLICY_PARAMS: PolicyParams = {
+  temperature: 1.0,
+  stopBias: -2.0,
+  budgetPressure: 3.0,
+  hopPressure: 2.0,
+  frontierPressure: 1.5,
+  branchOpportunityCost: 1.1,
+  localRedundancyPenalty: 0.75,
+  evidenceQualityBias: 0.45,
+  edgeKindBias: {
+    sibling: 0.0,
+    semantic: 0.1,
+    learned: 0.2,
+    seed: 0.15,
+    inhibitory: -10.0,
+    bridge: 0.0,
+  },
+};
 
 /**
  * Cosine similarity between two Float32Arrays.
@@ -348,4 +370,380 @@ export class BrainGraph {
     this.seedWeights.clear();
     this.stopLocalWeights.clear();
   }
+}
+
+export const COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1 =
+  "cold_start_router_live_policy_initializer.v1" as const;
+
+export interface ColdStartRouterLivePolicySeedWeightV1 {
+  nodeId: string;
+  positive: number;
+  negative: number;
+  support: number;
+  weight: number;
+}
+
+export interface ColdStartRouterLivePolicyStopWeightV1 {
+  sourceNodeId: string;
+  positive: number;
+  negative: number;
+  support: number;
+  weight: number;
+}
+
+export interface ColdStartRouterLivePolicyEdgeWeightV1 {
+  sourceNodeId: string;
+  targetNodeId: string;
+  positive: number;
+  negative: number;
+  support: number;
+  prior: number;
+  weight: number;
+}
+
+export interface ColdStartRouterLivePolicyInitializerV1 {
+  contract: typeof COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1;
+  policyParams: PolicyParams;
+  seedWeights: ColdStartRouterLivePolicySeedWeightV1[];
+  stopLocalWeights: ColdStartRouterLivePolicyStopWeightV1[];
+  edgeWeights: ColdStartRouterLivePolicyEdgeWeightV1[];
+  skippedToolRowIds: string[];
+  usedRowCount: number;
+  traverseRowCount: number;
+  toolRowCount: number;
+}
+
+export interface ColdStartRouterLivePolicyMaterializationV1 {
+  graph: BrainGraph;
+  policyParams: PolicyParams;
+  sourceNodeId: string | null;
+}
+
+interface CountBucket {
+  positive: number;
+  negative: number;
+  support: number;
+}
+
+function createCountBucket(): CountBucket {
+  return { positive: 0, negative: 0, support: 0 };
+}
+
+function bumpCountBucket(bucket: CountBucket, isPositive: boolean, weight: number): void {
+  if (isPositive) {
+    bucket.positive += weight;
+  } else {
+    bucket.negative += weight;
+  }
+  bucket.support += weight;
+}
+
+function clampFinite(value: number, lower: number, upper: number): number {
+  if (!Number.isFinite(value)) {
+    return lower;
+  }
+  return Math.min(upper, Math.max(lower, value));
+}
+
+function toRowWeight(outcomeGain: number): number {
+  const magnitude = Math.abs(Number(outcomeGain));
+  if (!Number.isFinite(magnitude) || magnitude === 0) {
+    return 0.25;
+  }
+  return clampFinite(magnitude, 0.25, 2);
+}
+
+function calcLiveWeight(
+  positive: number,
+  negative: number,
+  support: number,
+  smoothing: number,
+  supportDampening: number,
+): number {
+  const odds = Math.log((positive + smoothing) / (negative + smoothing));
+  const supportScale = support / (support + supportDampening);
+  return clampFinite(odds * supportScale, -8, 8);
+}
+
+function normalizeText(value: unknown, fallback = ""): string {
+  if (typeof value !== "string") {
+    return fallback;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : fallback;
+}
+
+function normalizeCursorSourceNodeId(cursorPath: readonly string[]): string {
+  const reversed = [...cursorPath].reverse();
+  for (const entry of reversed) {
+    const normalized = normalizeText(entry);
+    if (normalized.length > 0) {
+      return normalized;
+    }
+  }
+  return START_NODE_ID;
+}
+
+function candidateTrust(candidate: RouteCandidateV1): TrustLevel {
+  switch (normalizeText(candidate.authority, "").toLowerCase()) {
+    case "human":
+      return "human";
+    case "runtime":
+    case "docs":
+    case "policy":
+    case "operator_policy":
+      return "teacher";
+    case "self":
+      return "self";
+    case "scanner":
+      return "scanner";
+    default:
+      return "scanner";
+  }
+}
+
+function candidateNodeKind(candidate: RouteCandidateV1): NodeKind {
+  switch (candidate.candidate_type) {
+    case "tool":
+      return "toolcard";
+    case "graph_node":
+      return "summary_bridge";
+    case "trace":
+      return "episode_anchor";
+    case "issue":
+    case "pr":
+    case "file":
+    case "repo_node":
+      return "workflow";
+    case "memory_node":
+    case "doc_chunk":
+    default:
+      return "chunk";
+  }
+}
+
+function ensureCandidateNode(graph: BrainGraph, candidate: RouteCandidateV1): void {
+  if (graph.getNode(candidate.candidate_id)) {
+    return;
+  }
+
+  const now = Date.now();
+  graph.addNode({
+    id: candidate.candidate_id,
+    kind: candidateNodeKind(candidate),
+    content: candidate.candidate_id,
+    embedding: null,
+    sourceUri: null,
+    trust: candidateTrust(candidate),
+    tags: [
+      `candidate_type:${candidate.candidate_type}`,
+      ...(candidate.authority ? [`authority:${candidate.authority}`] : []),
+      ...(candidate.freshness ? [`freshness:${candidate.freshness}`] : []),
+    ],
+    tokenCount: Number.isFinite(Number(candidate.token_cost ?? 0)) && Number(candidate.token_cost ?? 0) > 0
+      ? Number(candidate.token_cost)
+      : 0,
+    metadata: {
+      candidate_type: candidate.candidate_type,
+      authority: candidate.authority ?? null,
+      freshness: candidate.freshness ?? null,
+      score_hint: candidate.score_hint ?? null,
+      token_cost: candidate.token_cost ?? null,
+    },
+    createdAt: now,
+    updatedAt: now,
+  });
+}
+
+function ensureSourceNode(graph: BrainGraph, sourceNodeId: string): void {
+  if (sourceNodeId === START_NODE_ID || graph.getNode(sourceNodeId)) {
+    return;
+  }
+
+  const now = Date.now();
+  graph.addNode({
+    id: sourceNodeId,
+    kind: "workflow",
+    content: sourceNodeId,
+    embedding: null,
+    sourceUri: null,
+    trust: "scanner",
+    tags: ["source_context"],
+    tokenCount: 0,
+    metadata: {},
+    createdAt: now,
+    updatedAt: now,
+  });
+}
+
+function parsePositiveCandidateIds(row: RouteDecisionRowV1): Set<string> {
+  if (row.teacher_action.kind === "traverse") {
+    return new Set(row.teacher_action.target_ids.map((targetId) => targetId.trim()).filter((targetId) => targetId.length > 0));
+  }
+
+  const explicitToolMatch = row.candidate_set
+    .filter((candidate) => candidate.candidate_type === "tool" && candidate.candidate_id === row.teacher_action.tool_name)
+    .map((candidate) => candidate.candidate_id);
+  if (explicitToolMatch.length > 0) {
+    return new Set(explicitToolMatch);
+  }
+
+  const toolCandidates = row.candidate_set
+    .filter((candidate) => candidate.candidate_type === "tool")
+    .map((candidate) => candidate.candidate_id);
+  return toolCandidates.length === 1 ? new Set(toolCandidates) : new Set();
+}
+
+function sortedCountEntries(counts: Map<string, CountBucket>): Array<{ key: string; bucket: CountBucket }> {
+  return [...counts.entries()]
+    .sort(([left], [right]) => left.localeCompare(right))
+    .map(([key, bucket]) => ({ key, bucket }));
+}
+
+function buildPolicyParams(params: {
+  stopPositive: number;
+  stopNegative: number;
+  stopSupport: number;
+}): PolicyParams {
+  return {
+    ...DEFAULT_POLICY_PARAMS,
+    stopBias: calcLiveWeight(params.stopPositive, params.stopNegative, params.stopSupport, 1, 2),
+  };
+}
+
+export function buildColdStartRouterLivePolicyInitializerV1(params: {
+  routeRows: RouteDecisionRowV1[];
+}): ColdStartRouterLivePolicyInitializerV1 {
+  const seedCounts = new Map<string, CountBucket>();
+  const stopCounts = new Map<string, CountBucket>();
+  const edgeCounts = new Map<string, CountBucket>();
+  const globalStopCounts = createCountBucket();
+  const skippedToolRowIds: string[] = [];
+  let traverseRowCount = 0;
+  let toolRowCount = 0;
+
+  for (const row of params.routeRows) {
+    const rowWeight = toRowWeight(row.outcome_gain);
+    const sourceNodeId = normalizeCursorSourceNodeId(row.cursor_path);
+    const positiveCandidateIds = parsePositiveCandidateIds(row);
+
+    for (const candidate of row.candidate_set) {
+      const bucket = seedCounts.get(candidate.candidate_id) ?? createCountBucket();
+      bumpCountBucket(bucket, positiveCandidateIds.has(candidate.candidate_id), rowWeight);
+      seedCounts.set(candidate.candidate_id, bucket);
+    }
+
+    const stopBucket = stopCounts.get(sourceNodeId) ?? createCountBucket();
+    const stopPositive = row.stop_label === "STOP_LOCAL" || row.stop_label === "STOP";
+    bumpCountBucket(stopBucket, stopPositive, rowWeight);
+    stopCounts.set(sourceNodeId, stopBucket);
+    bumpCountBucket(globalStopCounts, stopPositive, rowWeight);
+
+    if (positiveCandidateIds.size > 0) {
+      for (const candidate of row.candidate_set) {
+        const bucketKey = `${sourceNodeId}→${candidate.candidate_id}`;
+        const edgeBucket = edgeCounts.get(bucketKey) ?? createCountBucket();
+        bumpCountBucket(edgeBucket, positiveCandidateIds.has(candidate.candidate_id), rowWeight);
+        edgeCounts.set(bucketKey, edgeBucket);
+      }
+    }
+
+    if (row.teacher_action.kind === "traverse") {
+      traverseRowCount += 1;
+    } else {
+      toolRowCount += 1;
+      skippedToolRowIds.push(row.row_id);
+    }
+  }
+
+  const policyParams = buildPolicyParams({
+    stopPositive: globalStopCounts.positive,
+    stopNegative: globalStopCounts.negative,
+    stopSupport: globalStopCounts.support,
+  });
+
+  return {
+    contract: COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1,
+    policyParams,
+    seedWeights: sortedCountEntries(seedCounts).map(({ key, bucket }) => ({
+      nodeId: key,
+      positive: bucket.positive,
+      negative: bucket.negative,
+      support: bucket.support,
+      weight: calcLiveWeight(bucket.positive, bucket.negative, bucket.support, 1, 2),
+    })),
+    stopLocalWeights: sortedCountEntries(stopCounts).map(({ key, bucket }) => ({
+      sourceNodeId: key,
+      positive: bucket.positive,
+      negative: bucket.negative,
+      support: bucket.support,
+      weight: calcLiveWeight(bucket.positive, bucket.negative, bucket.support, 1, 2) - policyParams.stopBias,
+    })),
+    edgeWeights: sortedCountEntries(edgeCounts).map(({ key, bucket }) => {
+      const [sourceNodeId, targetNodeId] = key.split("→", 2);
+      return {
+        sourceNodeId: sourceNodeId ?? START_NODE_ID,
+        targetNodeId: targetNodeId ?? "",
+        positive: bucket.positive,
+        negative: bucket.negative,
+        support: bucket.support,
+        prior: 1,
+        weight: calcLiveWeight(bucket.positive, bucket.negative, bucket.support, 1, 2),
+      };
+    }),
+    skippedToolRowIds,
+    usedRowCount: params.routeRows.length,
+    traverseRowCount,
+    toolRowCount,
+  };
+}
+
+export function materializeColdStartRouterLivePolicyGraphV1(params: {
+  initializer: ColdStartRouterLivePolicyInitializerV1;
+  row: RouteDecisionRowV1;
+}): ColdStartRouterLivePolicyMaterializationV1 {
+  const graph = new BrainGraph();
+  const sourceNodeIdRaw = normalizeCursorSourceNodeId(params.row.cursor_path);
+  const sourceNodeId = sourceNodeIdRaw === START_NODE_ID ? null : sourceNodeIdRaw;
+
+  for (const candidate of params.row.candidate_set) {
+    ensureCandidateNode(graph, candidate);
+  }
+  if (sourceNodeId) {
+    ensureSourceNode(graph, sourceNodeId);
+  }
+
+  for (const entry of params.initializer.seedWeights) {
+    if (graph.getNode(entry.nodeId)) {
+      graph.setSeedWeight(entry.nodeId, entry.weight);
+    }
+  }
+  for (const entry of params.initializer.stopLocalWeights) {
+    graph.setStopLocalWeight(entry.sourceNodeId === START_NODE_ID ? null : entry.sourceNodeId, entry.weight);
+  }
+  for (const entry of params.initializer.edgeWeights) {
+    if (!graph.getNode(entry.sourceNodeId) || !graph.getNode(entry.targetNodeId)) {
+      continue;
+    }
+    graph.addEdge({
+      source: entry.sourceNodeId,
+      target: entry.targetNodeId,
+      kind: "learned",
+      weight: entry.weight,
+      prior: entry.prior,
+      metadata: {
+        positive: entry.positive,
+        negative: entry.negative,
+        support: entry.support,
+      },
+      decayedAt: 0,
+      createdAt: Date.now(),
+    });
+  }
+
+  return {
+    graph,
+    policyParams: params.initializer.policyParams,
+    sourceNodeId,
+  };
 }

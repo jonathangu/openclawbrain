@@ -18,9 +18,27 @@ import type {
   TrustLevel,
   TrajectoryCandidateScoreBreakdown,
   TrajectoryPolicyStateSnapshot,
-} from "./types.js";
-import { DEFAULT_POLICY_PARAMS } from "./types.js";
+} from "./types.ts";
 import { BrainGraph, cosineSimilarity } from "./graph.js";
+
+const DEFAULT_POLICY_PARAMS: PolicyParams = {
+  temperature: 1.0,
+  stopBias: -2.0,
+  budgetPressure: 3.0,
+  hopPressure: 2.0,
+  frontierPressure: 1.5,
+  branchOpportunityCost: 1.1,
+  localRedundancyPenalty: 0.75,
+  evidenceQualityBias: 0.45,
+  edgeKindBias: {
+    sibling: 0.0,
+    semantic: 0.1,
+    learned: 0.2,
+    seed: 0.15,
+    inhibitory: -10.0,
+    bridge: 0.0,
+  },
+};
 
 const TRUST_EVIDENCE_SCORE: Record<TrustLevel, number> = {
   human: 1.0,
