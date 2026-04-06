@@ -51,6 +51,14 @@ export interface NormalizedPromptBuildEvent {
     warnings: ExtensionDiagnostic[];
 }
 export declare function isActivationRootPlaceholder(activationRoot: string): boolean;
+export interface ResolvedInstalledActivationRoot {
+    activationRoot: string;
+    recoveredFromPlaceholder: boolean;
+}
+export declare function resolveInstalledActivationRoot(input: {
+    activationRoot: string;
+    extensionEntryPath?: string;
+}): ResolvedInstalledActivationRoot;
 export declare function validateExtensionRegistrationApi(api: unknown): {
     ok: true;
     api: ExtensionRegistrationApi;

@@ -384,11 +384,15 @@ function buildCoverageSnapshot({ attachedSetLine, runtimeLoadProofSnapshot, open
         profiles
     };
 }
-function buildHardeningSnapshot({ attachTruthLine, serveLine, routeFnLine, surfaceLine, verdict, statusSignals }) {
+function buildHardeningSnapshot({ attachTruthLine, serveLine, routeFnLine, surfaceLine, brainLine, routeLine, learningLine, learningPathLine, verdict, statusSignals }) {
     const attachTruth = extractKeyValuePairs(attachTruthLine);
     const serve = extractKeyValuePairs(serveLine);
     const routeFn = extractKeyValuePairs(routeFnLine);
     const surface = extractKeyValuePairs(surfaceLine);
+    const brain = extractKeyValuePairs(brainLine);
+    const route = extractKeyValuePairs(routeLine);
+    const learning = extractKeyValuePairs(learningLine);
+    const learningPath = extractKeyValuePairs(learningPathLine);
     return {
         contract: "openclaw_operator_hardening_snapshot.v1",
         generatedAt: new Date().toISOString(),
@@ -426,6 +430,27 @@ function buildHardeningSnapshot({ attachTruthLine, serveLine, routeFnLine, surfa
         routeFn: {
             available: routeFn.available ?? null,
             freshness: routeFn.freshness ?? null,
+        },
+        routeLayer: {
+            activePackId: brain.pack ?? null,
+            routerIdentity: brain.router ?? route.router ?? null,
+            routeFreshness: brain.routeFreshness ?? null,
+            routeFingerprint: route.freshness ?? null,
+            lastPromotionAt: brain.lastPromotion ?? null,
+            brainState: brain.state ?? null,
+            initMode: brain.init ?? null,
+            serveState: serve.state ?? null,
+            usedLearnedRouteFn: serve.usedRouteFn ?? null,
+            routeFnAvailable: routeFn.available ?? null,
+            routeFnFreshness: routeFn.freshness ?? null,
+            learningState: learning.state ?? null,
+            learningMode: learning.mode ?? null,
+            learningPathSource: learningPath.source ?? null,
+            learningPathPg: learningPath.pg ?? null,
+            learningPathMethod: learningPath.method ?? null,
+            learningPathTarget: learningPath.target ?? null,
+            learningPathConnect: learningPath.connect ?? null,
+            learningPathTrajectories: learningPath.trajectories ?? null,
         },
         verdict: {
             verdict: verdict.verdict,
@@ -576,7 +601,7 @@ function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, brea
     };
 }
 
-function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspectText, statusSignals, breadcrumbs, runtimeLoadProofSnapshot, surfaceLine, surfacesLine, surfaceNoteLine, hotfixLine, guardLine, feedbackLine, attributionLine, attributionCoverageLine, learningPathLine, learningFlowLine, learningHealthLine, coverageSnapshot, hardeningSnapshot }) {
+function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspectText, statusSignals, breadcrumbs, runtimeLoadProofSnapshot, surfaceLine, surfacesLine, surfaceNoteLine, hotfixLine, guardLine, brainLine, routeLine, learningLine, feedbackLine, attributionLine, attributionCoverageLine, learningPathLine, learningFlowLine, learningHealthLine, coverageSnapshot, hardeningSnapshot }) {
     const passed = [];
     const missing = [];
     const warnings = Array.isArray(verdict.warnings) ? verdict.warnings : [];
@@ -659,6 +684,21 @@ function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspec
         ...(guardLine === null
             ? ["- runtime guard line not reported by detailed status"]
             : [`- ${guardLine}`]),
+        "",
+        "## Route Layer Truth",
+        ...(brainLine === null
+            ? ["- brain line not reported by detailed status"]
+            : [`- ${brainLine}`]),
+        ...(routeLine === null
+            ? ["- route line not reported by detailed status"]
+            : [`- ${routeLine}`]),
+        ...(learningLine === null
+            ? ["- learning line not reported by detailed status"]
+            : [`- ${learningLine}`]),
+        ...(learningPathLine === null
+            ? ["- path line not reported by detailed status"]
+            : [`- ${learningPathLine}`]),
+        `- derived: activePack=${hardeningSnapshot.routeLayer.activePackId ?? "none"} router=${hardeningSnapshot.routeLayer.routerIdentity ?? "none"} routeFreshness=${hardeningSnapshot.routeLayer.routeFreshness ?? "none"} routeFingerprint=${hardeningSnapshot.routeLayer.routeFingerprint ?? "none"} usedLearnedRouteFn=${hardeningSnapshot.routeLayer.usedLearnedRouteFn ?? "none"}`,
         "",
         "## Learning Flow",
         ...(learningPathLine === null
@@ -988,6 +1028,9 @@ export function captureOperatorProofBundle(options) {
     const serveLine = extractDetailedStatusLine(statusCapture.stdout, "serve");
     const routeFnLine = extractDetailedStatusLine(statusCapture.stdout, "routeFn");
     const guardLine = extractDetailedStatusLine(statusCapture.stdout, "guard");
+    const brainLine = extractDetailedStatusLine(statusCapture.stdout, "brain");
+    const routeLine = extractDetailedStatusLine(statusCapture.stdout, "route");
+    const learningLine = extractDetailedStatusLine(statusCapture.stdout, "learning");
     const learningFlowLine = extractDetailedStatusLine(statusCapture.stdout, "learnFlow");
     const learningHealthLine = extractDetailedStatusLine(statusCapture.stdout, "health");
     const feedbackLine = extractDetailedStatusLine(statusCapture.stdout, "feedback");
@@ -1024,6 +1067,10 @@ export function captureOperatorProofBundle(options) {
         serveLine,
         routeFnLine,
         surfaceLine,
+        brainLine,
+        routeLine,
+        learningLine,
+        learningPathLine,
         verdict,
         statusSignals,
     });
@@ -1053,6 +1100,9 @@ export function captureOperatorProofBundle(options) {
         surfaceNoteLine,
         hotfixLine,
         guardLine,
+        brainLine,
+        routeLine,
+        learningLine,
         learningFlowLine,
         learningHealthLine,
         feedbackLine,
@@ -1075,6 +1125,9 @@ export function captureOperatorProofBundle(options) {
         surfaceNoteLine,
         hotfixLine,
         guardLine,
+        brainLine,
+        routeLine,
+        learningLine,
         learningFlowLine,
         learningHealthLine,
         feedbackLine,

@@ -1,3 +1,6 @@
+import { existsSync } from "node:fs";
+import path from "node:path";
+
 export interface ExtensionCompileInput {
   activationRoot: string;
   message: string;
@@ -65,6 +68,72 @@ export interface NormalizedPromptBuildEvent {
 
 export function isActivationRootPlaceholder(activationRoot: string): boolean {
   return activationRoot === "__ACTIVATION_" + "ROOT__" || activationRoot.trim().length === 0;
+}
+
+export interface ResolvedInstalledActivationRoot {
+  activationRoot: string;
+  recoveredFromPlaceholder: boolean;
+}
+
+function resolveOpenClawHomeFromExtensionEntryPath(extensionEntryPath: string): string | null {
+  let currentPath = path.resolve(extensionEntryPath);
+
+  while (true) {
+    const parentPath = path.dirname(currentPath);
+
+    if (parentPath === currentPath) {
+      break;
+    }
+
+    if (path.basename(parentPath) === "extensions") {
+      return path.dirname(parentPath);
+    }
+
+    currentPath = parentPath;
+  }
+
+  return null;
+}
+
+function resolveFallbackActivationRootFromExtensionEntryPath(extensionEntryPath: string): string | null {
+  const openclawHome = resolveOpenClawHomeFromExtensionEntryPath(extensionEntryPath);
+
+  if (openclawHome === null) {
+    return null;
+  }
+
+  const candidate = path.resolve(path.join(path.dirname(openclawHome), ".openclawbrain", "activation"));
+  return existsSync(candidate) ? candidate : null;
+}
+
+export function resolveInstalledActivationRoot(input: {
+  activationRoot: string;
+  extensionEntryPath?: string;
+}): ResolvedInstalledActivationRoot {
+  const rawActivationRoot = input.activationRoot;
+
+  if (!isActivationRootPlaceholder(rawActivationRoot)) {
+    return {
+      activationRoot: path.resolve(rawActivationRoot),
+      recoveredFromPlaceholder: false
+    };
+  }
+
+  if (typeof input.extensionEntryPath === "string" && input.extensionEntryPath.trim().length > 0) {
+    const fallbackActivationRoot = resolveFallbackActivationRootFromExtensionEntryPath(input.extensionEntryPath);
+
+    if (fallbackActivationRoot !== null) {
+      return {
+        activationRoot: fallbackActivationRoot,
+        recoveredFromPlaceholder: true
+      };
+    }
+  }
+
+  return {
+    activationRoot: rawActivationRoot,
+    recoveredFromPlaceholder: false
+  };
 }
 
 export function validateExtensionRegistrationApi(api: unknown): { ok: true; api: ExtensionRegistrationApi } | { ok: false; diagnostic: ExtensionDiagnostic } {
@@ -161,8 +230,13 @@ export function createBeforePromptBuildHandler(input: {
   debug?: (message: string) => void;
   extensionEntryPath?: string;
 }): (event: unknown, ctx: unknown) => Promise<Record<string, unknown>> {
+  const resolvedActivationRoot = resolveInstalledActivationRoot({
+    activationRoot: input.activationRoot,
+    extensionEntryPath: input.extensionEntryPath
+  });
+
   return async (event: unknown, _ctx: unknown) => {
-    if (isActivationRootPlaceholder(input.activationRoot)) {
+    if (isActivationRootPlaceholder(resolvedActivationRoot.activationRoot)) {
       await input.reportDiagnostic(shapeDiagnostic({
         key: "activation-root-placeholder",
         once: true,
@@ -190,7 +264,7 @@ export function createBeforePromptBuildHandler(input: {
 
     try {
       const result = input.compileRuntimeContext({
-        activationRoot: input.activationRoot,
+        activationRoot: resolvedActivationRoot.activationRoot,
         message: normalized.event.message,
         ...(normalized.event.maxContextChars !== undefined ? { maxContextChars: normalized.event.maxContextChars } : {}),
         ...(normalized.event.sessionId !== undefined ? { sessionId: normalized.event.sessionId } : {}),
@@ -211,8 +285,8 @@ export function createBeforePromptBuildHandler(input: {
         await input.reportDiagnostic(shapeDiagnostic({
           key: `compile-${mode}`,
           message:
-            `[openclawbrain] ${mode}: ${result.error} ` +
-            `(activationRoot=${input.activationRoot}, sessionId=${normalized.event.sessionId ?? "unknown"}, channel=${normalized.event.channel ?? "unknown"})`
+          `[openclawbrain] ${mode}: ${result.error} ` +
+          `(activationRoot=${resolvedActivationRoot.activationRoot}, sessionId=${normalized.event.sessionId ?? "unknown"}, channel=${normalized.event.channel ?? "unknown"})`
         }));
         return {};
       }
@@ -227,10 +301,10 @@ export function createBeforePromptBuildHandler(input: {
       const detail = error instanceof Error ? error.stack ?? error.message : String(error);
       await input.reportDiagnostic(shapeDiagnostic({
         key: "compile-threw",
-        message:
+          message:
           `[openclawbrain] compile threw: ${detail} ` +
-          `(activationRoot=${input.activationRoot}, sessionId=${normalized.event.sessionId ?? "unknown"}, channel=${normalized.event.channel ?? "unknown"})`
-      }));
+          `(activationRoot=${resolvedActivationRoot.activationRoot}, sessionId=${normalized.event.sessionId ?? "unknown"}, channel=${normalized.event.channel ?? "unknown"})`
+        }));
     }
 
     return {};

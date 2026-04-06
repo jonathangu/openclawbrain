@@ -3,6 +3,7 @@ import { homedir } from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
 import { describeOpenClawBrainInstallLayout, findInstalledOpenClawBrainPlugin } from "./openclaw-plugin-install.js";
+import { inspectOpenClawBrainHookStatus } from "./openclaw-hook-truth.js";
 const REQUIRED_RUNTIME_GUARD_EXPORTS = [
     "createBeforePromptBuildHandler",
     "isActivationRootPlaceholder",
@@ -70,6 +71,10 @@ export function inspectInstalledOpenClawBrainExtension(openclawHome, extensionId
 }
 export async function proveInstalledOpenClawBrainExtensionLoad(openclawHome, extensionId = "openclawbrain") {
     const inspected = inspectInstalledOpenClawBrainExtension(openclawHome, extensionId);
+    const hookStatus = inspectOpenClawBrainHookStatus(openclawHome);
+    if (hookStatus.loadability !== "loadable") {
+        throw new Error(`[shadow-extension-load-proof] Installed hook is not loadable enough to prove its loader: ${hookStatus.detail}`);
+    }
     const runtimeGuardModule = await importWithHelpfulError(inspected.runtimeGuardPath, `runtime-guard.js (${describeOpenClawBrainInstallLayout(inspected.installLayout)})`);
     const runtimeGuardExportNames = Object.keys(runtimeGuardModule).sort((left, right) => left.localeCompare(right));
     const missingRuntimeGuardExports = REQUIRED_RUNTIME_GUARD_EXPORTS.filter((exportName) => !runtimeGuardExportNames.includes(exportName));

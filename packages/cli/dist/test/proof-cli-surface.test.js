@@ -245,6 +245,8 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     assert.match(summary, /## Learning Attribution/);
     assert.match(summary, /## Runtime Guard/);
     assert.match(summary, /guard       severity=none actionability=none action=none summary=profile hook is installed and loadable/);
+    assert.match(summary, /## Route Layer Truth/);
+    assert.match(summary, /- derived: activePack=none router=none routeFreshness=none routeFingerprint=none usedLearnedRouteFn=none/);
     assert.match(summary, /learnFlow   harvested=1 eligible=1 loaded=yes pack=pack-status matched=1 supervised=1 updated=1/);
     assert.match(summary, /health      daemon=healthy-daemon learning=progress-visible detail=matched=1 supervised=1 updated=1/);
     assert.match(summary, /feedback    helpful=1 irrelevant=0 harmful=0 supervisedTraceCount=1 routeTraceCount=1 latest=main/);
@@ -270,6 +272,8 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     assert.equal(coverageSnapshot.profiles[0].coverageState, "covered");
     assert.equal(hardeningSnapshot.statusSignals.runtimeProven, true);
     assert.equal(hardeningSnapshot.statusSignals.surfaceConverged, true);
+    assert.equal(hardeningSnapshot.routeLayer.usedLearnedRouteFn, null);
+    assert.equal(hardeningSnapshot.routeLayer.routeFnAvailable, "yes");
     assert.equal(hardeningSnapshot.verdict.verdict, "success_and_proven");
     assert.equal(verdictPayload.learningFlowLine, "learnFlow   harvested=1 eligible=1 loaded=yes pack=pack-status matched=1 supervised=1 updated=1");
     assert.equal(verdictPayload.learningHealthLine, "health      daemon=healthy-daemon learning=progress-visible detail=matched=1 supervised=1 updated=1");

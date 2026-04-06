@@ -13,7 +13,7 @@
 import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
 import { describeOpenClawHomeInspection, discoverOpenClawHomes, formatOpenClawHomeLayout, inspectOpenClawHome } from "./openclaw-home-layout.js";
-import { findInstalledOpenClawBrainPlugin } from "./openclaw-plugin-install.js";
+import { findInstalledOpenClawBrainPlugin, resolveOpenClawHomeFromExtensionEntryPath } from "./openclaw-plugin-install.js";
 function getHomeDir() {
     return process.env.HOME ?? process.env.USERPROFILE ?? "~";
 }
@@ -30,6 +30,14 @@ function buildInstallGuidance() {
 function buildProfilePinningGuidance() {
     return "Pass --activation-root <path> to pin the brain directly, or --openclaw-home <path> (or OPENCLAW_HOME) to select one installed OpenClaw home.";
 }
+function resolveFallbackActivationRootFromExtensionEntryPath(filePath) {
+    const openclawHome = resolveOpenClawHomeFromExtensionEntryPath(filePath);
+    if (openclawHome === null) {
+        return null;
+    }
+    const candidate = path.resolve(path.join(path.dirname(openclawHome), ".openclawbrain", "activation"));
+    return existsSync(candidate) ? candidate : null;
+}
 function extractActivationRootFromExtension(filePath) {
     try {
         const content = readFileSync(filePath, "utf8");
@@ -44,6 +52,13 @@ function extractActivationRootFromExtension(filePath) {
         const candidate = match[1].trim();
         if (candidate === "__ACTIVATION_ROOT__" ||
             candidate === "__ACTIVATION_" + "ROOT__") {
+            const fallbackActivationRoot = resolveFallbackActivationRootFromExtensionEntryPath(filePath);
+            if (fallbackActivationRoot !== null) {
+                return {
+                    activationRoot: fallbackActivationRoot,
+                    diagnostic: null
+                };
+            }
             return {
                 activationRoot: null,
                 diagnostic: `installed extension ${filePath} still contains the ACTIVATION_ROOT placeholder`

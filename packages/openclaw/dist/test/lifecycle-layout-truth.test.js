@@ -56,6 +56,9 @@ function createShadowInstall(openclawHome, activationRoot) {
 function createNativeInstall(openclawHome, activationRoot, installId = "openclaw") {
     const extensionDir = path.join(openclawHome, "extensions", installId);
     const loaderDir = path.join(extensionDir, "dist", "extension");
+    const loaderPinnedActivationRoot = activationRoot === "__ACTIVATION_ROOT__"
+        ? path.join(path.dirname(openclawHome), ".openclawbrain", "activation")
+        : activationRoot;
     mkdirSync(loaderDir, { recursive: true });
     writeFileSync(path.join(extensionDir, "package.json"), JSON.stringify({
         name: "@openclawbrain/openclaw",
@@ -100,12 +103,19 @@ export function validateExtensionRegistrationApi(api) {
 }
 `);
     writeFileSync(path.join(loaderDir, "index.js"), `
-import { appendFileSync, mkdirSync } from "node:fs";
+import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import { createBeforePromptBuildHandler, validateExtensionRegistrationApi } from "./runtime-guard.js";
 
 const ACTIVATION_ROOT = ${JSON.stringify(activationRoot)};
+const EXTENSION_ENTRY_PATH = fileURLToPath(import.meta.url);
+const RESOLVED_ACTIVATION_ROOT = {
+  activationRoot: ${JSON.stringify(activationRoot === "__ACTIVATION_ROOT__" ? path.join(path.dirname(openclawHome), ".openclawbrain", "activation") : activationRoot)},
+  recoveredFromPlaceholder: ${JSON.stringify(activationRoot === "__ACTIVATION_ROOT__")}
+};
+const ACTIVATION_ROOT_PIN_PATTERN = /const ACTIVATION_ROOT = "__ACTIVATION_ROOT__";/;
 
 async function reportDiagnostic(diagnostic) {
   console.warn(diagnostic.message);
@@ -114,15 +124,37 @@ async function reportDiagnostic(diagnostic) {
   appendFileSync(path.join(logDir, "extension-errors.log"), diagnostic.message + "\\n", "utf8");
 }
 
+function selfHealPinnedActivationRoot() {
+  if (!RESOLVED_ACTIVATION_ROOT.recoveredFromPlaceholder) {
+    return;
+  }
+
+  const loaderSource = readFileSync(EXTENSION_ENTRY_PATH, "utf8");
+  if (!ACTIVATION_ROOT_PIN_PATTERN.test(loaderSource)) {
+    return;
+  }
+
+  const nextLoaderSource = loaderSource.replace(
+    ACTIVATION_ROOT_PIN_PATTERN,
+    ${JSON.stringify(`const ACTIVATION_ROOT = ${JSON.stringify(loaderPinnedActivationRoot)};`)}
+  );
+
+  if (nextLoaderSource !== loaderSource) {
+    writeFileSync(EXTENSION_ENTRY_PATH, nextLoaderSource, "utf8");
+  }
+}
+
 export default function register(api) {
   const registration = validateExtensionRegistrationApi(api);
   if (!registration.ok) {
     return;
   }
+
+  selfHealPinnedActivationRoot();
   registration.api.on(
     "before_prompt_build",
     createBeforePromptBuildHandler({
-      activationRoot: ACTIVATION_ROOT,
+      activationRoot: RESOLVED_ACTIVATION_ROOT.activationRoot,
       compileRuntimeContext: () => ({ ok: true, brainContext: "" }),
       reportDiagnostic
     }),
@@ -288,7 +320,17 @@ test("activation-root pinning still throws when the native package loader no lon
     const activationRoot = path.join(root, ".openclawbrain", "activation");
     mkdirSync(activationRoot, { recursive: true });
     const nativeInstall = createNativeInstall(openclawHome, activationRoot);
-    writeFileSync(nativeInstall.loaderEntryPath, readFileSync(nativeInstall.loaderEntryPath, "utf8").replace("const ACTIVATION_ROOT", "const INSTALLED_ACTIVATION_ROOT"), "utf8");
+    writeFileSync(
+        nativeInstall.loaderEntryPath,
+        readFileSync(nativeInstall.loaderEntryPath, "utf8").replaceAll(
+            `const ACTIVATION_ROOT = ${JSON.stringify(activationRoot)};`,
+            `const INSTALLED_ACTIVATION_ROOT = ${JSON.stringify(activationRoot)};`
+        ).replaceAll(
+            'const ACTIVATION_ROOT = "__ACTIVATION_ROOT__";',
+            'const INSTALLED_ACTIVATION_ROOT = "__ACTIVATION_ROOT__";'
+        ),
+        "utf8"
+    );
     assert.throws(() => pinInstalledOpenClawBrainPluginActivationRoot(nativeInstall.loaderEntryPath, activationRoot), /does not expose a patchable ACTIVATION_ROOT constant/);
 });
 test("installed extension inspection keeps native package layout truth even when a shadow copy also exists", (t) => {
@@ -326,4 +368,43 @@ test("native package plugin load proof succeeds and writes the expected diagnost
     assert.equal(proof.probeResult && Object.keys(proof.probeResult).length, 0);
     assert.match(proof.probeWarning, /before_prompt_build event\.messages is not an array/);
     assert.match(proof.diagnosticLogContents, /before_prompt_build event\.messages is not an array/);
+});
+
+test("native package proof self-heals a placeholder-stranded refresh from the installed extension location", async (t) => {
+    const root = createTempRoot(t);
+    const openclawHome = createOpenClawHome(root);
+    const activationRoot = path.join(root, ".openclawbrain", "activation");
+    mkdirSync(activationRoot, { recursive: true });
+    const nativeInstall = createNativeInstall(openclawHome, "__ACTIVATION_ROOT__");
+    const packageJsonPath = path.join(nativeInstall.extensionDir, "package.json");
+    const pluginManifestPath = path.join(nativeInstall.extensionDir, "openclaw.plugin.json");
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, "utf8"));
+    packageJson.version = "0.3.6";
+    writeFileSync(packageJsonPath, JSON.stringify(packageJson, null, 2));
+    writeFileSync(pluginManifestPath, JSON.stringify({ id: "openclawbrain", version: "0.3.6" }, null, 2));
+
+    const inspection = inspectOpenClawBrainHookStatus(openclawHome);
+    assert.equal(inspection.installLayout, "native_package_plugin");
+    assert.equal(inspection.loadability, "loadable");
+    assert.match(readFileSync(nativeInstall.loaderEntryPath, "utf8"), /const ACTIVATION_ROOT = "__ACTIVATION_ROOT__";/);
+    assert.equal(resolveActivationRoot({ openclawHome }), activationRoot);
+
+    const installTarget = resolveOpenClawBrainInstallTarget(openclawHome);
+    assert.equal(installTarget.writeMode, "pin_native_package");
+    const proof = await proveInstalledOpenClawBrainExtensionLoad(openclawHome);
+    assert.equal(proof.installLayout, "native_package_plugin");
+    assert.equal(proof.registeredEventName, "before_prompt_build");
+    const loaderLines = readFileSync(nativeInstall.loaderEntryPath, "utf8").split(/\r?\n/);
+    const activationRootLine = loaderLines.find((line) => line.startsWith("const ACTIVATION_ROOT = ")) ?? null;
+    assert.ok(activationRootLine);
+    assert.match(activationRootLine, new RegExp(activationRoot.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")));
+    assert.notEqual(activationRootLine, 'const ACTIVATION_ROOT = "__ACTIVATION_ROOT__";');
+
+    pinInstalledOpenClawBrainPluginActivationRoot(installTarget.hookPath, activationRoot);
+    const postPinInspection = inspectOpenClawBrainHookStatus(openclawHome);
+    assert.equal(postPinInspection.loadability, "loadable");
+    assert.equal(resolveActivationRoot({ openclawHome }), activationRoot);
+    const postPinProof = await proveInstalledOpenClawBrainExtensionLoad(openclawHome);
+    assert.equal(postPinProof.installLayout, "native_package_plugin");
+    assert.equal(postPinProof.registeredEventName, "before_prompt_build");
 });

@@ -1,6 +1,6 @@
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
-import { describeOpenClawBrainInstallIdentity, describeOpenClawBrainInstallLayout, findInstalledOpenClawBrainPlugin, getOpenClawBrainAllowedPluginIds } from "./openclaw-plugin-install.js";
+import { describeOpenClawBrainInstallIdentity, describeOpenClawBrainInstallLayout, findInstalledOpenClawBrainPlugin, getOpenClawBrainAllowedPluginIds, resolveOpenClawHomeFromExtensionEntryPath } from "./openclaw-plugin-install.js";
 function toErrorMessage(error) {
     return error instanceof Error ? error.message : String(error);
 }
@@ -65,6 +65,14 @@ function normalizeSurfacePath(filePath) {
     return typeof filePath === "string" && filePath.trim().length > 0
         ? path.resolve(filePath)
         : null;
+}
+function resolveFallbackActivationRootFromExtensionEntryPath(filePath) {
+    const openclawHome = resolveOpenClawHomeFromExtensionEntryPath(filePath);
+    if (openclawHome === null) {
+        return null;
+    }
+    const candidate = path.resolve(path.join(path.dirname(openclawHome), ".openclawbrain", "activation"));
+    return existsSync(candidate) ? candidate : null;
 }
 function classifyRuntimeSurfaceConvergeState(input) {
     const reasons = [];
@@ -139,6 +147,13 @@ function inspectInstalledHookActivationRoot(loaderEntryPath) {
     }
     const activationRoot = match[1].trim();
     if (activationRoot === "__ACTIVATION_ROOT__" || activationRoot === "__ACTIVATION_" + "ROOT__") {
+        const fallbackActivationRoot = resolveFallbackActivationRootFromExtensionEntryPath(loaderEntryPath);
+        if (fallbackActivationRoot !== null) {
+            return {
+                ready: true,
+                detail: `installed loader entry ${shortenPath(loaderEntryPath)} still contains the ACTIVATION_ROOT placeholder, but OpenClawBrain recovered activation root ${shortenPath(fallbackActivationRoot)} from the installed extension location`
+            };
+        }
         return {
             ready: false,
             detail: `installed loader entry ${shortenPath(loaderEntryPath)} still contains the ACTIVATION_ROOT placeholder; rerun openclawbrain install/attach to pin the runtime hook`

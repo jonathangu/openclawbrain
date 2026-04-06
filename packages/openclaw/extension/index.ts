@@ -10,7 +10,7 @@
  *   - Compilation errors → fail-open, never breaks the session
  *   - Missing activation root → fail-open with console.warn
  */
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 
@@ -24,13 +24,19 @@ import {
   createBeforePromptBuildHandler,
   type ExtensionDiagnostic,
   isActivationRootPlaceholder,
+  resolveInstalledActivationRoot,
   validateExtensionRegistrationApi
 } from "./runtime-guard.js";
 
 const ACTIVATION_ROOT = "__ACTIVATION_ROOT__";
 const EXTENSION_ENTRY_PATH = fileURLToPath(import.meta.url);
+const RESOLVED_ACTIVATION_ROOT = resolveInstalledActivationRoot({
+  activationRoot: ACTIVATION_ROOT,
+  extensionEntryPath: EXTENSION_ENTRY_PATH
+});
 const warnedDiagnostics = new Set<string>();
 const RUNTIME_LOAD_PROOFS_CONTRACT = "openclaw_profile_runtime_load_proofs.v1";
+const ACTIVATION_ROOT_PIN_PATTERN = /const ACTIVATION_ROOT = "__ACTIVATION_ROOT__";/;
 
 function warnOnce(key: string, message: string): void {
   if (warnedDiagnostics.has(key)) {
@@ -125,8 +131,9 @@ function repairRuntimeLoadProofsIfUnreadable(activationRoot: string): { repaired
 
 function maybeRegisterRuntimeLoadProofIntegrityService(
   api: { registerService?: (service: { id: string; start: (ctx: unknown) => void | Promise<void> }) => void },
+  activationRoot: string,
 ): void {
-  if (typeof api.registerService !== "function" || isActivationRootPlaceholder(ACTIVATION_ROOT)) {
+  if (typeof api.registerService !== "function" || isActivationRootPlaceholder(activationRoot)) {
     return;
   }
 
@@ -134,7 +141,7 @@ function maybeRegisterRuntimeLoadProofIntegrityService(
     id: "openclawbrain-runtime-load-proof-integrity",
     start: async () => {
       try {
-        const repair = repairRuntimeLoadProofsIfUnreadable(ACTIVATION_ROOT);
+        const repair = repairRuntimeLoadProofsIfUnreadable(activationRoot);
         if (repair.repaired) {
           await reportDiagnostic({
             key: "runtime-load-proof-reset",
@@ -163,7 +170,7 @@ function maybeRegisterRuntimeLoadProofIntegrityService(
 }
 
 function announceStartupBreadcrumb(): void {
-  if (isActivationRootPlaceholder(ACTIVATION_ROOT)) {
+  if (isActivationRootPlaceholder(RESOLVED_ACTIVATION_ROOT.activationRoot)) {
     warnOnce(
       "startup-brain-not-yet-loaded",
       "[openclawbrain] BRAIN NOT YET LOADED: install has not pinned ACTIVATION_ROOT yet. Install OpenClawBrain, then run: openclawbrain install --openclaw-home <path>"
@@ -171,10 +178,49 @@ function announceStartupBreadcrumb(): void {
     return;
   }
 
+  if (RESOLVED_ACTIVATION_ROOT.recoveredFromPlaceholder) {
+    warnOnce(
+      "startup-brain-loaded-recovered",
+      `[openclawbrain] BRAIN LOADED: runtime hook recovered activationRoot=${RESOLVED_ACTIVATION_ROOT.activationRoot} from the installed extension location because the loader file still contains the ACTIVATION_ROOT placeholder`
+    );
+    return;
+  }
+
   warnOnce(
     "startup-brain-loaded",
-    `[openclawbrain] BRAIN LOADED: runtime hook registered for before_prompt_build (activationRoot=${ACTIVATION_ROOT})`
+    `[openclawbrain] BRAIN LOADED: runtime hook registered for before_prompt_build (activationRoot=${RESOLVED_ACTIVATION_ROOT.activationRoot})`
   );
+}
+
+function selfHealPinnedActivationRoot(): void {
+  if (!RESOLVED_ACTIVATION_ROOT.recoveredFromPlaceholder) {
+    return;
+  }
+
+  try {
+    const loaderSource = readFileSync(EXTENSION_ENTRY_PATH, "utf8");
+    if (!ACTIVATION_ROOT_PIN_PATTERN.test(loaderSource)) {
+      return;
+    }
+
+    const nextLoaderSource = loaderSource.replace(
+      ACTIVATION_ROOT_PIN_PATTERN,
+      `const ACTIVATION_ROOT = ${JSON.stringify(RESOLVED_ACTIVATION_ROOT.activationRoot)};`
+    );
+    if (nextLoaderSource !== loaderSource) {
+      writeFileSync(EXTENSION_ENTRY_PATH, nextLoaderSource, "utf8");
+      warnOnce(
+        "startup-brain-self-healed",
+        `[openclawbrain] BRAIN SELF-HEALED: repinned ACTIVATION_ROOT in ${EXTENSION_ENTRY_PATH} to ${RESOLVED_ACTIVATION_ROOT.activationRoot}`
+      );
+    }
+  } catch (error) {
+    const detail = error instanceof Error ? error.message : String(error);
+    warnOnce(
+      `startup-brain-self-heal-failed:${detail}`,
+      `[openclawbrain] failed to self-heal ACTIVATION_ROOT pin in ${EXTENSION_ENTRY_PATH}: ${detail}`
+    );
+  }
 }
 
 function register(api: unknown) {
@@ -185,11 +231,12 @@ function register(api: unknown) {
   }
 
   try {
-    maybeRegisterRuntimeLoadProofIntegrityService(registration.api);
+    selfHealPinnedActivationRoot();
+    maybeRegisterRuntimeLoadProofIntegrityService(registration.api, RESOLVED_ACTIVATION_ROOT.activationRoot);
     registration.api.on(
       "before_prompt_build",
       createBeforePromptBuildHandler({
-        activationRoot: ACTIVATION_ROOT,
+        activationRoot: RESOLVED_ACTIVATION_ROOT.activationRoot,
         extensionEntryPath: EXTENSION_ENTRY_PATH,
         compileRuntimeContext,
         reportDiagnostic,
@@ -197,9 +244,9 @@ function register(api: unknown) {
       }),
       { priority: 5 }
     );
-    if (!isActivationRootPlaceholder(ACTIVATION_ROOT)) {
+    if (!isActivationRootPlaceholder(RESOLVED_ACTIVATION_ROOT.activationRoot)) {
       try {
-        const repair = repairRuntimeLoadProofsIfUnreadable(ACTIVATION_ROOT);
+        const repair = repairRuntimeLoadProofsIfUnreadable(RESOLVED_ACTIVATION_ROOT.activationRoot);
         if (repair.repaired) {
           void reportDiagnostic({
             key: "runtime-load-proof-reset",
@@ -212,7 +259,7 @@ function register(api: unknown) {
           });
         }
         recordOpenClawProfileRuntimeLoadProof({
-          activationRoot: ACTIVATION_ROOT,
+          activationRoot: RESOLVED_ACTIVATION_ROOT.activationRoot,
           extensionEntryPath: EXTENSION_ENTRY_PATH
         });
       } catch (error) {
