@@ -28,7 +28,7 @@ The point is simple: if nothing semantic changed, the operator surfaces should s
 
 ## Install and upgrade story
 
-Fresh homes now default to the cold-start prior. Existing homes rerun the same install lane and keep their earned preferences on top while OpenClawBrain rebases the stronger generic prior underneath.
+Fresh homes now default to the cold-start prior. Existing homes rerun the same install lane and keep their earned preferences on top while OpenClawBrain rebuilds the stronger generic prior underneath.
 
 That is the public promise of this release:
 
