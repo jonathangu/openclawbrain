@@ -1,0 +1,298 @@
+{
+  "contract": "cold_start_router_approved_export.v1",
+  "export_id": "cold-start-router-approved-export-fixture-v1",
+  "generated_at": "2026-04-05T16:10:00Z",
+  "registry_entries": [
+    {
+      "dataset_id": "router_fixture_train_v1",
+      "source_family": "qa",
+      "upstream_url": "https://example.invalid/cold-start-router-fixture",
+      "original_creator": "OpenClaw",
+      "license": "CC BY 4.0",
+      "commercial_use_status": "allowed",
+      "redistribution_status": "allowed",
+      "pii_risk": "none",
+      "benchmark_split_status": "train",
+      "approval_status": "approved_train",
+      "reviewer": "guclaw",
+      "immutable_snapshot_ref": "snapshot:cold-start-router-fixture@sha256:approved0001",
+      "exact_files": [
+        "fixture/approved-router/train.json"
+      ],
+      "file_hashes": {
+        "fixture/approved-router/train.json": "sha256:1111111111111111111111111111111111111111111111111111111111111111"
+      },
+      "allowed_uses": [
+        "smoke training",
+        "route supervision"
+      ],
+      "disallowed_uses": [
+        "external redistribution without review"
+      ],
+      "notes": [
+        "Synthetic checked fixture export",
+        "approved_train here is local fixture state, not external dataset approval"
+      ],
+      "created_at": "2026-04-05T16:00:00Z",
+      "updated_at": "2026-04-05T16:10:00Z"
+    },
+    {
+      "dataset_id": "router_fixture_holdout_v1",
+      "source_family": "qa",
+      "upstream_url": "https://example.invalid/cold-start-router-fixture-holdout",
+      "original_creator": "OpenClaw",
+      "license": "CC BY 4.0",
+      "commercial_use_status": "allowed",
+      "redistribution_status": "allowed",
+      "pii_risk": "none",
+      "benchmark_split_status": "eval_only",
+      "approval_status": "under_review",
+      "reviewer": "pending",
+      "immutable_snapshot_ref": "pending://router_fixture_holdout_v1/source-snapshot",
+      "exact_files": [
+        "pending/router_fixture_holdout_v1/source-snapshot.json"
+      ],
+      "file_hashes": {
+        "pending/router_fixture_holdout_v1/source-snapshot.json": "pending"
+      },
+      "allowed_uses": [
+        "approval review",
+        "future split planning"
+      ],
+      "disallowed_uses": [
+        "claiming a materialized snapshot",
+        "training ingest before approval"
+      ],
+      "notes": [
+        "Synthetic under-review companion row used to prove loader filtering"
+      ],
+      "created_at": "2026-04-05T16:00:00Z",
+      "updated_at": "2026-04-05T16:10:00Z"
+    }
+  ],
+  "route_rows": [
+    {
+      "row_id": "router_fixture_row_001",
+      "dataset_id": "router_fixture_train_v1",
+      "query": "Find the shipping correction memory and update the invoice draft",
+      "cursor_path": [
+        "thread:billing",
+        "mem:user_profile"
+      ],
+      "candidate_set": [
+        {
+          "candidate_id": "mem:shipping_history",
+          "candidate_type": "memory_node",
+          "authority": "human",
+          "freshness": "current",
+          "score_hint": 0.92
+        },
+        {
+          "candidate_id": "doc:invoice_policy",
+          "candidate_type": "doc_chunk",
+          "authority": "operator_policy",
+          "freshness": "stale",
+          "token_cost": 28,
+          "score_hint": 0.18
+        },
+        {
+          "candidate_id": "tool:gmail_search",
+          "candidate_type": "tool",
+          "authority": "runtime",
+          "freshness": "current",
+          "token_cost": 4,
+          "score_hint": 0.51
+        }
+      ],
+      "teacher_action": {
+        "kind": "traverse",
+        "target_ids": [
+          "mem:shipping_history"
+        ]
+      },
+      "stop_label": "CONTINUE",
+      "evidence_spans": [
+        {
+          "source_ref": "message_183",
+          "start": 21,
+          "end": 72
+        },
+        {
+          "source_ref": "memory_entry_77",
+          "start": 0,
+          "end": 44
+        }
+      ],
+      "hard_negatives": [
+        "doc:invoice_policy"
+      ],
+      "outcome_gain": 0.84,
+      "provenance": {
+        "dataset": "router_fixture_train_v1",
+        "source_license": "CC BY 4.0",
+        "source_family": "qa",
+        "source_snapshot_ref": "snapshot:cold-start-router-fixture@sha256:approved0001",
+        "recorded_by": "guclaw",
+        "recorded_at": "2026-04-05T16:11:00Z",
+        "review_status": "approved_train"
+      },
+      "split_tag": "train",
+      "created_at": "2026-04-05T16:12:00Z"
+    },
+    {
+      "row_id": "router_fixture_row_002",
+      "dataset_id": "router_fixture_train_v1",
+      "query": "Stop once the invoice tool is enough",
+      "cursor_path": [
+        "thread:billing"
+      ],
+      "candidate_set": [
+        {
+          "candidate_id": "tool:invoice_draft",
+          "candidate_type": "tool",
+          "authority": "runtime",
+          "freshness": "current",
+          "token_cost": 2,
+          "score_hint": 0.87
+        },
+        {
+          "candidate_id": "mem:shipping_history",
+          "candidate_type": "memory_node",
+          "authority": "human",
+          "freshness": "current",
+          "score_hint": 0.15
+        }
+      ],
+      "teacher_action": {
+        "kind": "tool",
+        "tool_name": "tool:invoice_draft"
+      },
+      "stop_label": "STOP_LOCAL",
+      "evidence_spans": [
+        {
+          "source_ref": "message_184",
+          "start": 0,
+          "end": 30
+        }
+      ],
+      "hard_negatives": [],
+      "outcome_gain": 0.42,
+      "provenance": {
+        "dataset": "router_fixture_train_v1",
+        "source_license": "CC BY 4.0",
+        "source_family": "qa",
+        "source_snapshot_ref": "snapshot:cold-start-router-fixture@sha256:approved0001",
+        "recorded_by": "guclaw",
+        "recorded_at": "2026-04-05T16:13:00Z",
+        "review_status": "approved_train"
+      },
+      "split_tag": "train",
+      "created_at": "2026-04-05T16:14:00Z"
+    },
+    {
+      "row_id": "router_fixture_row_003",
+      "dataset_id": "router_fixture_holdout_v1",
+      "query": "Unapproved dataset row should be filtered out",
+      "cursor_path": [
+        "thread:holdout"
+      ],
+      "candidate_set": [
+        {
+          "candidate_id": "doc:holdout_policy",
+          "candidate_type": "doc_chunk",
+          "authority": "operator_policy",
+          "freshness": "stale",
+          "token_cost": 12,
+          "score_hint": 0.12
+        }
+      ],
+      "teacher_action": {
+        "kind": "traverse",
+        "target_ids": [
+          "doc:holdout_policy"
+        ]
+      },
+      "stop_label": "CONTINUE",
+      "evidence_spans": [
+        {
+          "source_ref": "message_185",
+          "start": 0,
+          "end": 31
+        }
+      ],
+      "hard_negatives": [],
+      "outcome_gain": 0.05,
+      "provenance": {
+        "dataset": "router_fixture_holdout_v1",
+        "source_license": "CC BY 4.0",
+        "source_family": "qa",
+        "source_snapshot_ref": "pending://router_fixture_holdout_v1/source-snapshot",
+        "recorded_by": "guclaw",
+        "recorded_at": "2026-04-05T16:15:00Z",
+        "review_status": "under_review"
+      },
+      "split_tag": "eval_only",
+      "created_at": "2026-04-05T16:16:00Z"
+    },
+    {
+      "row_id": "router_fixture_row_004",
+      "dataset_id": "router_fixture_holdout_v1",
+      "query": "Approved train row but the governed dataset is still blocked",
+      "cursor_path": [
+        "thread:holdout"
+      ],
+      "candidate_set": [
+        {
+          "candidate_id": "doc:blocker_summary",
+          "candidate_type": "doc_chunk",
+          "authority": "operator_policy",
+          "freshness": "current",
+          "token_cost": 6,
+          "score_hint": 0.41
+        },
+        {
+          "candidate_id": "tool:holdout_search",
+          "candidate_type": "tool",
+          "authority": "runtime",
+          "freshness": "current",
+          "token_cost": 3,
+          "score_hint": 0.33
+        }
+      ],
+      "teacher_action": {
+        "kind": "traverse",
+        "target_ids": [
+          "doc:blocker_summary"
+        ]
+      },
+      "stop_label": "STOP_LOCAL",
+      "evidence_spans": [
+        {
+          "source_ref": "message_186",
+          "start": 0,
+          "end": 28
+        }
+      ],
+      "hard_negatives": [
+        "tool:holdout_search"
+      ],
+      "outcome_gain": 0.15,
+      "provenance": {
+        "dataset": "router_fixture_holdout_v1",
+        "source_license": "CC BY 4.0",
+        "source_family": "qa",
+        "source_snapshot_ref": "pending://router_fixture_holdout_v1/source-snapshot",
+        "recorded_by": "guclaw",
+        "recorded_at": "2026-04-05T16:17:00Z",
+        "review_status": "approved_train"
+      },
+      "split_tag": "train",
+      "created_at": "2026-04-05T16:18:00Z"
+    }
+  ],
+  "notes": [
+    "Synthetic checked export for the approved-export loader smoke path.",
+    "Only the approved_train rows from the eligible governed dataset should feed training.",
+    "The companion under-review dataset and row-level filters are present to prove the loader is honest about what it excludes."
+  ]
+}

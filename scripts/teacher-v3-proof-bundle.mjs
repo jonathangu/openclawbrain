@@ -6,6 +6,7 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { captureTeacherV3ReplayOutcomes } from "./teacher-v3-replay-outcomes.mjs";
 import { describeTeacherCanaryActivationGuardV1, describeTeacherCanaryRolloutPlanV1 } from "../src/brain-core/teacher-v3-contracts.js";
+import { summarizeRouterMigrationComparisonV1 } from "../src/brain-core/router-migration.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -316,6 +317,21 @@ function buildTeacherV3ProposalSeed(input) {
     proposalId,
     rollbackKey,
   });
+  const routerMigrationComparison = input.routerMigrationComparison
+    ? summarizeRouterMigrationComparisonV1({
+      ...input.routerMigrationComparison,
+      proofBundleFiles: normalizeArray(input.routerMigrationComparison.proofBundleFiles).length > 0
+        ? normalizeArray(input.routerMigrationComparison.proofBundleFiles)
+        : Object.values(TEACHER_V3_PROOF_BUNDLE_LAYOUT),
+    })
+    : proposalRecord?.migrationComparison
+      ? summarizeRouterMigrationComparisonV1({
+        ...proposalRecord.migrationComparison,
+        proofBundleFiles: normalizeArray(proposalRecord.migrationComparison.proofBundleFiles).length > 0
+          ? normalizeArray(proposalRecord.migrationComparison.proofBundleFiles)
+          : Object.values(TEACHER_V3_PROOF_BUNDLE_LAYOUT),
+      })
+      : null;
   const canaryCandidatePackVersion = proposalRecordReplaySummary?.candidatePackVersion ?? shadowReplaySummary?.candidatePackVersion ?? null;
   const canaryCandidatePackId = proposalRecordReplaySummary?.candidatePackId ?? shadowReplaySummary?.candidatePackId ?? null;
   const baseCanaryPlan = proposalRecord?.canaryRollout
@@ -442,6 +458,7 @@ function buildTeacherV3ProposalSeed(input) {
     runtimeTruth: runtimeStatus,
     proofTruth: operatorProof,
     replaySummary: proposalRecordReplaySummary,
+    routerMigrationComparison,
     canaryRollout,
     canaryActivationGuard,
     shadowReplaySummary,
@@ -455,6 +472,9 @@ function buildSurfaceMap(seed, bundlePaths) {
   const canaryRolloutNote = seed.canaryRollout
     ? `${seed.canaryRollout.surfaceState}/${seed.canaryRollout.rolloutMode}/${seed.canaryRollout.enabled ? "enabled" : "disabled"}; ${seed.canaryRollout.bindingSummary}`
     : "canary rollout unavailable";
+  const migrationComparisonNote = seed.routerMigrationComparison
+    ? `router migration comparison across old_live/base_only/mixed; decision=${seed.routerMigrationComparison.comparison.decision}`
+    : null;
 
   const observedSurfaces = [
     {
@@ -519,14 +539,20 @@ function buildSurfaceMap(seed, bundlePaths) {
       state: "target",
       kind: "proposal_truth",
       source: bundlePaths.proposalReport,
-      note: `machine-readable proposal report with canary rollout surfaced as ${canaryRolloutNote}`,
+      note: [
+        `machine-readable proposal report with canary rollout surfaced as ${canaryRolloutNote}`,
+        migrationComparisonNote,
+      ].filter(Boolean).join("; "),
     },
     {
       id: "teacher-v3-proof-verdict",
       state: "target",
       kind: "proposal_truth",
       source: bundlePaths.verdict,
-      note: `review verdict; canary rollout remains target-only/off/rollback-bound (${canaryRolloutNote})`,
+      note: [
+        `review verdict; canary rollout remains target-only/off/rollback-bound (${canaryRolloutNote})`,
+        migrationComparisonNote,
+      ].filter(Boolean).join("; "),
     },
   ];
 
@@ -591,6 +617,13 @@ function buildProposalReport(seed, surfaceMap, bundlePaths, replayCapture) {
     : seed.shadowReplaySummary?.proposalClass === "forgetting"
       ? "Keep forgetting replay on the retention state machine and preserve the hard-delete guardrail before considering canary activation."
       : "Thread candidate-state replay and rollback binding in the next tranche before considering canary activation.";
+  const migrationRecommendation = seed.routerMigrationComparison
+    ? seed.routerMigrationComparison.comparison.decision === "promote"
+      ? "Mixed router migration passed with explicit correction protection and rollback binding; keep the proof bundle and rollback handle attached to the promoted path."
+      : seed.routerMigrationComparison.explicitCorrectionProtection.blockers.length > 0
+        ? "Hold the existing live policy; the mixed candidate regressed explicit corrections and must not be promoted."
+        : "Hold the existing live policy until the mixed candidate wins the historical replay set and preserves user value."
+    : null;
   const recommendations = normalizeArray(seed.proposalRecord?.recommendations).length > 0
     ? normalizeArray(seed.proposalRecord.recommendations)
     : [
@@ -599,6 +632,7 @@ function buildProposalReport(seed, surfaceMap, bundlePaths, replayCapture) {
         : "Add Gate 1 proposal persistence so the synthetic runtime-capture record can be replaced by a stored proposal row.",
       "Keep the bundle publication-safe and bounded; never spill raw logs into the target-state artifacts.",
       replayRecommendation,
+      ...(migrationRecommendation ? [migrationRecommendation] : []),
     ];
 
   return {
@@ -630,6 +664,7 @@ function buildProposalReport(seed, surfaceMap, bundlePaths, replayCapture) {
           summary: "Keep derived output subordinate to explicit authority.",
           requirements: [
             "Explicit correction memory still outranks teacher synthesis.",
+            "Mixed router migration cannot override preserved explicit corrections.",
             "The live path stays read-only to the proposal.",
             "Evidence refs stay attached to any non-trivial claim.",
           ],
@@ -658,6 +693,7 @@ function buildProposalReport(seed, surfaceMap, bundlePaths, replayCapture) {
           requirements: [
             "RollbackKey identifies the reversible path.",
             "Prior state remains recoverable for replay.",
+            "Rollback retains the prior live router, user value, and proof references.",
             "Rejected or superseded proposals keep lineage.",
           ],
         },
@@ -672,6 +708,7 @@ function buildProposalReport(seed, surfaceMap, bundlePaths, replayCapture) {
     evidenceLinks: seed.evidence,
     counterevidenceLinks: seed.counterevidence,
     replaySummary: seed.replaySummary,
+    routerMigrationComparison: seed.routerMigrationComparison,
     canaryRollout: seed.canaryRollout,
     recommendations,
     gate1Seam: seed.gate1Seam,
@@ -698,6 +735,7 @@ function buildProposalReport(seed, surfaceMap, bundlePaths, replayCapture) {
     },
     replayOutcomes: replayCapture.outcomes,
     replayOutcomeSummary: replayCapture.summary,
+    routerMigrationComparison: seed.routerMigrationComparison,
   };
 }
 
@@ -716,6 +754,7 @@ function buildStatusReport(seed, surfaceMap, proposalReport) {
     docsTruth: proposalReport.docsTruth,
     replayOutcomeSummary: proposalReport.replayOutcomeSummary,
     replaySummary: proposalReport.replaySummary,
+    routerMigrationComparison: proposalReport.routerMigrationComparison,
     canaryRollout: proposalReport.proposal.canaryRollout,
     canaryActivationGuard: proposalReport.proposal.canaryActivationGuard,
     gate1Seam: seed.gate1Seam,
@@ -747,7 +786,9 @@ function buildVerdictReport(seed, statusReport, proposalReport) {
     || statusReport.runtimeTruth.serveState !== null
     || statusReport.runtimeTruth.teacherConfigured !== null;
   const proofReady = proposalReport.proofTruthSummary.runtimeLoadProofExists !== null;
-  const blocking = !runtimeReady || !proofReady;
+  const migrationComparison = proposalReport.routerMigrationComparison;
+  const migrationBlocked = migrationComparison?.comparison.blocked === true;
+  const blocking = !runtimeReady || !proofReady || migrationBlocked;
   const shadowReplay = proposalReport.shadowReplay;
   const shadowReplayVerdict = shadowReplay
     ? {
@@ -768,23 +809,33 @@ function buildVerdictReport(seed, statusReport, proposalReport) {
     verdict: blocking ? "rejected" : "reviewable",
     severity: blocking ? "blocking" : proofSeverity === "blocking" ? "warn" : "info",
     why: blocking
-      ? "runtime or proof truth could not be summarized into a bounded bundle"
+      ? !runtimeReady || !proofReady
+        ? "runtime or proof truth could not be summarized into a bounded bundle"
+        : migrationComparison?.comparison.blockers?.length > 0
+          ? `router migration comparison is blocked: ${migrationComparison.comparison.blockers.join("; ")}`
+          : "router migration comparison could not promote the mixed policy"
       : shadowReplay
         ? seed.gate1Seam.present
           ? `runtime, proof, and docs truth were summarized; ${shadowReplay.proposalClass} replay stayed shadow-only with explicit rollback semantics and the record can still be loaded from storage (${proposalReport.replayOutcomeSummary.summary})`
           : `runtime, proof, and docs truth were summarized; ${shadowReplay.proposalClass} replay stayed shadow-only with explicit rollback semantics and no promotion bypass (${proposalReport.replayOutcomeSummary.summary})`
-        : seed.gate1Seam.present
+        : migrationComparison
+          ? migrationComparison.comparison.decision === "promote"
+            ? `runtime, proof, and docs truth were summarized; mixed router migration replay passed with explicit correction protection and rollback binding (${migrationComparison.comparison.summary})`
+            : `runtime, proof, and docs truth were summarized; mixed router migration remains holdback-only because ${migrationComparison.comparison.summary}`
+          : seed.gate1Seam.present
           ? `runtime, proof, and docs truth were summarized; Gate 1 persistence is already wired so the record can be loaded from storage (${proposalReport.replayOutcomeSummary.summary})`
           : `runtime, proof, and docs truth were summarized; Gate 1 persistence is still pending so the bundle remains a derived review surface (${proposalReport.replayOutcomeSummary.summary})`,
     reviewMode: seed.proposalReviewMode,
     gate1Seam: seed.gate1Seam,
     replayOutcomeSummary: proposalReport.replayOutcomeSummary,
+    routerMigrationComparison: migrationComparison,
     shadowReplay: shadowReplayVerdict,
     canaryRollout: proposalReport.proposal.canaryRollout,
     canaryActivationGuard: proposalReport.proposal.canaryActivationGuard,
     blockers: blocking ? [
       !runtimeReady ? "missing runtime truth summary" : null,
       !proofReady ? "missing proof truth summary" : null,
+      ...(migrationBlocked ? migrationComparison.comparison.blockers : []),
     ].filter(Boolean) : [],
     targetStateOnly: !seed.gate1Seam.present,
     createdAt: seed.createdAt,
@@ -833,6 +884,11 @@ function buildSummaryMarkdown(seed, statusReport, verdictReport, bundlePaths) {
     `- review modes: promotable=${statusReport.replayOutcomeSummary.reviewModeCounts.promotable}, shadow_only=${statusReport.replayOutcomeSummary.reviewModeCounts.shadow_only}`,
     `- sources: proposal_record=${statusReport.replayOutcomeSummary.sourceCounts.proposal_record}, proof_bundle=${statusReport.replayOutcomeSummary.sourceCounts.proof_bundle}, derived=${statusReport.replayOutcomeSummary.sourceCounts.derived}`,
     "",
+    ...(statusReport.routerMigrationComparison ? [
+      "## Router migration comparison",
+      ...routerMigrationMarkdownLines(statusReport.routerMigrationComparison),
+      "",
+    ] : []),
     "## Canary rollout",
     `- rollout mode: ${statusReport.canaryRollout?.rolloutMode ?? "off"}`,
     `- enabled: ${statusReport.canaryRollout?.enabled ? "yes" : "no"}`,
@@ -879,6 +935,25 @@ function proposalReportArtifactsLines(bundlePaths) {
     `- \`${bundlePaths.proposalReport}\` — machine-readable proposal report`,
     `- \`${bundlePaths.verdict}\` — review verdict`,
   ];
+}
+
+function routerMigrationMarkdownLines(migrationComparison) {
+  if (!migrationComparison) {
+    return [];
+  }
+
+  return [
+    `- decision: **${migrationComparison.comparison.decision}**`,
+    `- winner: \`${migrationComparison.comparison.winner}\``,
+    `- support ratios: old_live=${migrationComparison.comparison.supportRatios.old_live?.toFixed?.(3) ?? "n/a"}, base_only=${migrationComparison.comparison.supportRatios.base_only?.toFixed?.(3) ?? "n/a"}, mixed=${migrationComparison.comparison.supportRatios.mixed?.toFixed?.(3) ?? "n/a"}`,
+    `- old_live: ${migrationComparison.variants.old_live.summary}`,
+    `- base_only: ${migrationComparison.variants.base_only.summary}`,
+    `- mixed: ${migrationComparison.variants.mixed.summary}`,
+    `- explicit correction protection: ${migrationComparison.explicitCorrectionProtection.protected ? "yes" : "no"} (${migrationComparison.explicitCorrectionProtection.summary})`,
+    `- rollback: ${migrationComparison.rollback.available ? "available" : "incomplete"}; key=${migrationComparison.rollback.rollbackKey ?? "missing"}`,
+    `- proof bundle expectations: ${migrationComparison.proofBundleExpectations.summary}`,
+    migrationComparison.comparison.blockers.length > 0 ? `- blockers: ${migrationComparison.comparison.blockers.join(", ")}` : null,
+  ].filter(Boolean);
 }
 
 function shadowReplayMarkdownLines(shadowReplay) {

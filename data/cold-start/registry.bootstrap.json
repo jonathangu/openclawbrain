@@ -1,0 +1,442 @@
+{
+  "schema_version": 1,
+  "registry_id": "cold-start-source-intake-bootstrap-v1",
+  "owner": "guclaw",
+  "generated_at": "2026-04-05T23:40:00Z",
+  "approval_policy": {
+    "default_state": "under_review",
+    "rights_review_required": true,
+    "manual_approval_required": true,
+    "destructive_ingest_allowed": false,
+    "snapshot_required": true,
+    "placeholder_text": "awaiting explicit approval before ingest",
+    "review_checks": [
+      "license and upstream provenance verified from a primary source",
+      "immutable snapshot captured",
+      "exact files and hashes recorded",
+      "split plan declared",
+      "human approval recorded"
+    ]
+  },
+  "source_families": [
+    "qa",
+    "tools",
+    "repo",
+    "agent_traces"
+  ],
+  "intake_order": [
+    "hotpotqa_v1",
+    "2wikimultihopqa_v1",
+    "musique_v1",
+    "toolmind_v1",
+    "memgpt_traces_v1",
+    "swe_bench_v1",
+    "repo_bench_v1"
+  ],
+  "cards": [
+    {
+      "priority": 1,
+      "approval_placeholder": "awaiting explicit approval for HotpotQA ingest",
+      "registry_entry": {
+        "dataset_id": "hotpotqa_v1",
+        "source_family": "qa",
+        "upstream_url": "https://hotpotqa.github.io/#download",
+        "original_creator": "HotpotQA authors (Dai, Chen, and collaborators)",
+        "license": "CC BY-SA 4.0",
+        "commercial_use_status": "allowed",
+        "redistribution_status": "allowed",
+        "pii_risk": "none",
+        "benchmark_split_status": "eval_only",
+        "approval_status": "under_review",
+        "reviewer": "lane-m-qa-snapshots",
+        "immutable_snapshot_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json",
+        "exact_files": [
+          "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_train_v1.1.json",
+          "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+          "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_fullwiki_v1.json",
+          "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_test_fullwiki_v1.json",
+          "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json",
+          "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/SHA256SUMS"
+        ],
+        "file_hashes": {
+          "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_train_v1.1.json": "26650cf50234ef5fb2e664ed70bbecdfd87815e6bffc257e068efea5cf7cd316",
+          "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json": "4e9ecb5c8d3b719f624d66b60f8d56bf227f03914f5f0753d6fa1b359d7104ea",
+          "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_fullwiki_v1.json": "2f1f3e594a3066a3084cc57950ca2713c24712adaad03af6ccce18d1846d5618",
+          "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_test_fullwiki_v1.json": "c61a5274b9aa6deca3f7d2dc4d7757684c158fbd2264f759307699fb53801c2b",
+          "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json": "fe9c66afa6a41488c594b77c72e9513eef3f7433a0fe81d06696ecb12adab38c",
+          "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/SHA256SUMS": "6bf8a1940b0d7337d7ff00e6582e268971524b22044164bb4dcfcdf4c06cfd2e"
+        },
+        "allowed_uses": [
+          "approval review",
+          "future split planning",
+          "route supervision after explicit approval"
+        ],
+        "disallowed_uses": [
+          "claiming materialized snapshot",
+          "training ingest before approval",
+          "ignoring share-alike terms"
+        ],
+        "notes": [
+          "official HotpotQA public release page used as provenance anchor",
+          "immutable local snapshot materialized from public release URLs on the official site",
+          "snapshot bytes and hashes are captured in adjacent manifest and SHA256SUMS metadata"
+        ],
+        "created_at": "2026-04-05T23:40:00Z",
+        "updated_at": "2026-04-06T00:58:50Z"
+      },
+      "readiness_notes": [
+        "immutable snapshot bytes are frozen locally",
+        "exact files and hashes are recorded in adjacent manifest metadata",
+        "ready for later approved export compilation, but not approved_train yet"
+      ],
+      "approval_checks": [
+        "license reviewed from primary source",
+        "immutable snapshot captured",
+        "exact files and hashes recorded",
+        "human approval recorded"
+      ],
+      "materialized_snapshot": true
+    },
+    {
+      "priority": 2,
+      "approval_placeholder": "awaiting explicit approval for 2WikiMultihopQA ingest",
+      "registry_entry": {
+        "dataset_id": "2wikimultihopqa_v1",
+        "source_family": "qa",
+        "upstream_url": "https://www.dropbox.com/s/1k3g1-i4hhmzqud/2wikimultihopqa.tar.gz?dl=0",
+        "original_creator": "2WikiMultihopQA authors (Ho, Nguyen, Qu, Ahn, and Im)",
+        "license": "Apache-2.0",
+        "commercial_use_status": "allowed",
+        "redistribution_status": "allowed",
+        "pii_risk": "none",
+        "benchmark_split_status": "eval_only",
+        "approval_status": "under_review",
+        "reviewer": "lane-o-rights-audit",
+        "immutable_snapshot_ref": "pending://2wikimultihopqa_v1/source-snapshot",
+        "exact_files": [
+          "pending/2wikimultihopqa_v1/source-snapshot.json"
+        ],
+        "file_hashes": {
+          "pending/2wikimultihopqa_v1/source-snapshot.json": "pending"
+        },
+        "allowed_uses": [
+          "approval review",
+          "future split planning",
+          "route supervision after explicit approval"
+        ],
+        "disallowed_uses": [
+          "claiming materialized snapshot",
+          "training ingest before approval",
+          "commercial use before rights review"
+        ],
+        "notes": [
+          "official GitHub repo/license confirm Apache-2.0",
+          "public release page still notes test-data contact gating",
+          "snapshot not fetched yet"
+        ],
+        "created_at": "2026-04-05T23:40:00Z",
+        "updated_at": "2026-04-06T00:50:00Z"
+      },
+      "readiness_notes": [
+        "no source bytes have been downloaded yet",
+        "commercial rights need explicit review"
+      ],
+      "approval_checks": [
+        "license reviewed from primary source",
+        "immutable snapshot captured",
+        "exact files and hashes recorded",
+        "human approval recorded"
+      ],
+      "materialized_snapshot": false
+    },
+    {
+      "priority": 3,
+      "approval_placeholder": "awaiting explicit approval for MuSiQue ingest",
+      "registry_entry": {
+        "dataset_id": "musique_v1",
+        "source_family": "qa",
+        "upstream_url": "https://github.com/stonybrooknlp/musique",
+        "original_creator": "MuSiQue authors (Trivedi, Balasubramanian, Khot, and Sabharwal)",
+        "license": "CC BY 4.0",
+        "commercial_use_status": "allowed",
+        "redistribution_status": "allowed",
+        "pii_risk": "none",
+        "benchmark_split_status": "eval_only",
+        "approval_status": "under_review",
+        "reviewer": "lane-m-qa-snapshots",
+        "immutable_snapshot_ref": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json",
+        "exact_files": [
+          "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/dev_test_singlehop_questions_v1.0.json",
+          "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_ans_v1.0_dev.jsonl",
+          "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_ans_v1.0_test.jsonl",
+          "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_ans_v1.0_train.jsonl",
+          "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+          "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_test.jsonl",
+          "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_train.jsonl",
+          "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json",
+          "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/SHA256SUMS"
+        ],
+        "file_hashes": {
+          "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/dev_test_singlehop_questions_v1.0.json": "013be00ab914799891e5ae40de6cdc1baf03aaffd1f3ce4bf0de796020069613",
+          "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_ans_v1.0_dev.jsonl": "15fa63794d18a94ce12411aca6e2327e65b6e83b0b1490efab3f1962e48abf3b",
+          "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_ans_v1.0_test.jsonl": "92ee3067957b8ebce885baa71156a7c0c29f3bc72cca04510aef506911dd768f",
+          "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_ans_v1.0_train.jsonl": "83a75b1e11e4e9bb8f8308e72ac40ca617ae4431b3a0d955b61cab259248490a",
+          "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl": "8cab31d56a3a1c4ef491b205a8dab3f1ac9c66e472098c6cf1de4e20294f7a4a",
+          "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_test.jsonl": "01d7b0f752bdc1fc98856d605560e021a89be903baeb9daff11adeb7fac61328",
+          "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_train.jsonl": "b1cd998f7e0e2838d6fda024e4ad1eb0e7fc3edefdadb0bd9b5b10b0907f2034",
+          "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json": "e6bcf95dc46fc9295335988200d8dcd40107b535a33f1a3d21c7059ebe6bf509",
+          "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/SHA256SUMS": "2be9c5a738d5b36f85d0bad46e1939e413656af3844a5507b6ec89c541eea9cd"
+        },
+        "allowed_uses": [
+          "approval review",
+          "future split planning",
+          "route supervision after explicit approval"
+        ],
+        "disallowed_uses": [
+          "claiming materialized snapshot",
+          "training ingest before approval",
+          "assuming the dataset card does not need re-checking"
+        ],
+        "notes": [
+          "official MuSiQue repository README used as provenance anchor",
+          "immutable local snapshot materialized from the public release zip linked by the repo",
+          "snapshot bytes and hashes are captured in adjacent manifest and SHA256SUMS metadata"
+        ],
+        "created_at": "2026-04-05T23:40:00Z",
+        "updated_at": "2026-04-06T00:58:50Z"
+      },
+      "readiness_notes": [
+        "immutable snapshot bytes are frozen locally",
+        "exact files and hashes are recorded in adjacent manifest metadata",
+        "ready for later approved export compilation, but not approved_train yet"
+      ],
+      "approval_checks": [
+        "license reviewed from primary source",
+        "immutable snapshot captured",
+        "exact files and hashes recorded",
+        "human approval recorded"
+      ],
+      "materialized_snapshot": true
+    },
+    {
+      "priority": 4,
+      "approval_placeholder": "awaiting explicit approval for ToolMind ingest",
+      "registry_entry": {
+        "dataset_id": "toolmind_v1",
+        "source_family": "tools",
+        "upstream_url": "https://huggingface.co/datasets/Nanbeige/ToolMind",
+        "original_creator": "ToolMind authors (Chen Yang, Ran Le, Yun Xing, Zhenwei An, Zongchao Chen, Yang Song, Tao Zhang, and Wayne Xin Zhao)",
+        "license": "Apache-2.0",
+        "commercial_use_status": "allowed",
+        "redistribution_status": "allowed",
+        "pii_risk": "unknown",
+        "benchmark_split_status": "unknown",
+        "approval_status": "under_review",
+        "reviewer": "lane-o-rights-audit",
+        "immutable_snapshot_ref": "pending://toolmind_v1/source-snapshot",
+        "exact_files": [
+          "pending/toolmind_v1/source-snapshot.json"
+        ],
+        "file_hashes": {
+          "pending/toolmind_v1/source-snapshot.json": "pending"
+        },
+        "allowed_uses": [
+          "approval review",
+          "future split planning",
+          "route supervision after explicit approval"
+        ],
+        "disallowed_uses": [
+          "claiming materialized snapshot",
+          "training ingest before approval",
+          "assuming license terms that are not verified"
+        ],
+        "notes": [
+          "Hugging Face dataset card exposes Apache-2.0",
+          "card tags the corpus as synthetic and tool-calling focused",
+          "snapshot not fetched yet"
+        ],
+        "created_at": "2026-04-05T23:40:00Z",
+        "updated_at": "2026-04-06T00:50:00Z"
+      },
+      "readiness_notes": [
+        "provenance is captured but rights are unresolved",
+        "snapshot materialization is blocked until license review"
+      ],
+      "approval_checks": [
+        "license reviewed from primary source",
+        "immutable snapshot captured",
+        "exact files and hashes recorded",
+        "human approval recorded"
+      ],
+      "materialized_snapshot": false
+    },
+    {
+      "priority": 5,
+      "approval_placeholder": "awaiting explicit approval for MemGPT traces ingest",
+      "registry_entry": {
+        "dataset_id": "memgpt_traces_v1",
+        "source_family": "agent_traces",
+        "upstream_url": "https://github.com/cpacker/MemGPT",
+        "original_creator": "MemGPT authors (Charles Packer et al.)",
+        "license": "unverified",
+        "commercial_use_status": "unknown",
+        "redistribution_status": "unknown",
+        "pii_risk": "medium",
+        "benchmark_split_status": "unknown",
+        "approval_status": "proposed",
+        "reviewer": "lane-o-rights-audit",
+        "immutable_snapshot_ref": "pending://memgpt_traces_v1/source-snapshot",
+        "exact_files": [
+          "pending/memgpt_traces_v1/source-snapshot.json"
+        ],
+        "file_hashes": {
+          "pending/memgpt_traces_v1/source-snapshot.json": "pending"
+        },
+        "allowed_uses": [
+          "approval review",
+          "future split planning",
+          "route supervision after explicit approval"
+        ],
+        "disallowed_uses": [
+          "claiming materialized snapshot",
+          "training ingest before approval",
+          "assuming a public trace corpus exists when none has been verified"
+        ],
+        "notes": [
+          "no public trace corpus has been verified; repo issue #103 only promises a future release of paper generations",
+          "verified public artifacts are the MemGPT/Letta codebase and unrelated example SEC-filings docs, not a trace dataset",
+          "rights review remains blocked until an actual corpus and its license are identified"
+        ],
+        "created_at": "2026-04-05T23:40:00Z",
+        "updated_at": "2026-04-06T00:50:00Z"
+      },
+      "readiness_notes": [
+        "trace provenance is unresolved",
+        "snapshot materialization is blocked until a trace corpus is identified"
+      ],
+      "approval_checks": [
+        "license reviewed from primary source",
+        "immutable snapshot captured",
+        "exact files and hashes recorded",
+        "human approval recorded"
+      ],
+      "materialized_snapshot": false
+    },
+    {
+      "priority": 6,
+      "approval_placeholder": "awaiting explicit approval for SWE-bench ingest",
+      "registry_entry": {
+        "dataset_id": "swe_bench_v1",
+        "source_family": "repo",
+        "upstream_url": "https://github.com/SWE-bench/SWE-bench",
+        "original_creator": "SWE-bench authors (Princeton NLP team)",
+        "license": "MIT (repository); upstream issue/repo licenses mixed",
+        "commercial_use_status": "unknown",
+        "redistribution_status": "unknown",
+        "pii_risk": "low",
+        "benchmark_split_status": "holdout",
+        "approval_status": "under_review",
+        "reviewer": "pending",
+        "immutable_snapshot_ref": "openclawbrain/data/cold-start/snapshots/swe_bench_v1/princeton-nlp__SWE-bench__e48e2bd1e9fe/manifest.json",
+        "exact_files": [
+          "openclawbrain/data/cold-start/snapshots/swe_bench_v1/princeton-nlp__SWE-bench__e48e2bd1e9fe/manifest.json",
+          "openclawbrain/data/cold-start/snapshots/swe_bench_v1/princeton-nlp__SWE-bench__e48e2bd1e9fe/SHA256SUMS"
+        ],
+        "file_hashes": {
+          "openclawbrain/data/cold-start/snapshots/swe_bench_v1/princeton-nlp__SWE-bench__e48e2bd1e9fe/manifest.json": "f5aacf660e2e028367887c483a37837fd9fe0db7dfac61a5ce120ee0a044fc18",
+          "openclawbrain/data/cold-start/snapshots/swe_bench_v1/princeton-nlp__SWE-bench__e48e2bd1e9fe/SHA256SUMS": "c8944be90b7236061f168009a23d84e7c3259cbecc09f6b28f988b1773462c11"
+        },
+        "allowed_uses": [
+          "approval review",
+          "future split planning",
+          "route supervision after explicit approval"
+        ],
+        "disallowed_uses": [
+          "claiming materialized snapshot",
+          "training ingest before approval",
+          "assuming mixed upstream licenses are cleared"
+        ],
+        "notes": [
+          "official repo identified",
+          "benchmark tasks originate from real GitHub issues with mixed upstream licenses",
+          "immutable local snapshot captured in snapshots/swe_bench_v1/princeton-nlp__SWE-bench__e48e2bd1e9fe"
+        ],
+        "created_at": "2026-04-05T23:40:00Z",
+        "updated_at": "2026-04-05T23:40:00Z"
+      },
+      "readiness_notes": [
+        "repository provenance is known and the immutable snapshot is frozen locally",
+        "upstream task license mixing still needs review before approval/export"
+      ],
+      "approval_checks": [
+        "license reviewed from primary source",
+        "immutable snapshot captured",
+        "exact files and hashes recorded",
+        "human approval recorded"
+      ],
+      "materialized_snapshot": true
+    },
+    {
+      "priority": 7,
+      "approval_placeholder": "awaiting explicit approval for RepoBench ingest",
+      "registry_entry": {
+        "dataset_id": "repo_bench_v1",
+        "source_family": "repo",
+        "upstream_url": "https://arxiv.org/abs/2306.03091",
+        "original_creator": "RepoBench authors (Tianyang Liu, Canwen Xu, Julian J. McAuley, and collaborators)",
+        "license": "unverified",
+        "commercial_use_status": "unknown",
+        "redistribution_status": "unknown",
+        "pii_risk": "low",
+        "benchmark_split_status": "holdout",
+        "approval_status": "proposed",
+        "reviewer": "pending",
+        "immutable_snapshot_ref": "openclawbrain/data/cold-start/snapshots/index.json",
+        "exact_files": [
+          "openclawbrain/data/cold-start/snapshots/repo_bench_python_v1.1/tianyang__repobench_python_v1.1__8a7cf0c8942c/manifest.json",
+          "openclawbrain/data/cold-start/snapshots/repo_bench_java_v1.1/tianyang__repobench_java_v1.1__0c2b0db49ea3/manifest.json",
+          "openclawbrain/data/cold-start/snapshots/index.json"
+        ],
+        "file_hashes": {
+          "openclawbrain/data/cold-start/snapshots/repo_bench_python_v1.1/tianyang__repobench_python_v1.1__8a7cf0c8942c/manifest.json": "7b4c135d03d8d778e08aee5cbf1b86ab28a77f80561756f96650d2529ef1ad52",
+          "openclawbrain/data/cold-start/snapshots/repo_bench_java_v1.1/tianyang__repobench_java_v1.1__0c2b0db49ea3/manifest.json": "647ff3cd8b24857de9a8a910f8102e5f4081e96030ea1fee39cb01596763f173",
+          "openclawbrain/data/cold-start/snapshots/index.json": "8b61f63b18fbfa52f57568f8ea2a5b3b3cfcedeec4e77b45965c9b9d30035e47"
+        },
+        "allowed_uses": [
+          "approval review",
+          "future split planning",
+          "route supervision after explicit approval"
+        ],
+        "disallowed_uses": [
+          "claiming materialized snapshot",
+          "training ingest before approval",
+          "assuming the benchmark paper is a dataset license"
+        ],
+        "notes": [
+          "paper provenance is captured at arXiv, but canonical dataset licensing is still unresolved here",
+          "immutable local snapshots captured for both public v1.1 language variants (python and java)",
+          "hold as proposed until rights review lands"
+        ],
+        "created_at": "2026-04-05T23:40:00Z",
+        "updated_at": "2026-04-05T23:40:00Z"
+      },
+      "readiness_notes": [
+        "canonical upstream snapshots are now frozen locally",
+        "dataset license remains unresolved pending rights review"
+      ],
+      "approval_checks": [
+        "license reviewed from primary source",
+        "immutable snapshot captured",
+        "exact files and hashes recorded",
+        "human approval recorded"
+      ],
+      "materialized_snapshot": true
+    }
+  ],
+  "notes": [
+    "HotpotQA, MuSiQue, SWE-bench, and RepoBench have immutable local snapshots, but no dataset is approved for training ingest yet.",
+    "Every card uses explicit approval placeholders so later ingest code can distinguish governed candidates from materialized snapshots.",
+    "Destructive ingest is disabled until a human approves a concrete snapshot and the registry row is updated.",
+    "HotpotQA, 2WikiMultihopQA, MuSiQue, ToolMind, MemGPT traces, SWE-bench, and RepoBench are seeded here in intake order for review and later materialization."
+  ]
+}
