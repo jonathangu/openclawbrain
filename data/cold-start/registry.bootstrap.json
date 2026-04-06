@@ -229,10 +229,10 @@
         "license": "Apache-2.0",
         "commercial_use_status": "allowed",
         "redistribution_status": "allowed",
-        "pii_risk": "unknown",
-        "benchmark_split_status": "unknown",
-        "approval_status": "under_review",
-        "reviewer": "lane-o-rights-audit",
+        "pii_risk": "low",
+        "benchmark_split_status": "train",
+        "approval_status": "approved_train",
+        "reviewer": "jon-explicit-approval-2026-04-05",
         "immutable_snapshot_ref": "openclawbrain/data/cold-start/snapshots/toolmind_v1/nanbeige__ToolMind__8020ed1c03c3/manifest.json",
         "exact_files": [
           "openclawbrain/data/cold-start/snapshots/toolmind_v1/nanbeige__ToolMind__8020ed1c03c3/.gitattributes",
@@ -273,33 +273,35 @@
           "openclawbrain/data/cold-start/snapshots/toolmind_v1/nanbeige__ToolMind__8020ed1c03c3/SHA256SUMS": "7899de092a94b50022cd358f73bfc75d89e967aa1bda1e23b76f2e7f5b7db8c0"
         },
         "allowed_uses": [
-          "approval review",
-          "future split planning",
-          "route supervision after explicit approval"
+          "governed training ingest",
+          "route supervision export",
+          "approval audit"
         ],
         "disallowed_uses": [
-          "claiming materialized snapshot",
-          "training ingest before approval",
+          "ungoverned training outside the frozen snapshot",
+          "treating these bytes as eval/holdout benchmark labels",
           "assuming license terms that are not verified"
         ],
         "notes": [
-          "Hugging Face dataset card exposes Apache-2.0",
-          "card tags the corpus as synthetic and tool-calling focused",
-          "immutable local snapshot materialized from the public release bytes"
+          "Hugging Face dataset card exposes Apache-2.0 and tags the corpus as synthetic/tool-calling focused.",
+          "Materialized snapshot contains one synthetic graph corpus plus query-oriented open_datasets files, including tau-train-query.jsonl.",
+          "Spot checks found user-detail-shaped fields only in synthetic/example-style records (for example example.com accounts), so pii_risk is normalized to low rather than none.",
+          "Governed row cleared for second-wave approved_train use; immutable snapshot refs and hashes remain unchanged."
         ],
         "created_at": "2026-04-05T23:40:00Z",
-        "updated_at": "2026-04-06T01:29:09.758324Z",
-        "materialized_snapshot": true
+        "updated_at": "2026-04-06T05:50:19.092Z"
       },
       "readiness_notes": [
         "immutable snapshot bytes are frozen locally",
         "exact files and hashes are recorded in adjacent manifest metadata",
-        "ready for later approved export compilation, but not approved_train yet"
+        "ingest-safety normalized to pii_risk=low and benchmark_split_status=train from snapshot evidence",
+        "eligible for governed second-wave approved-train use"
       ],
       "approval_checks": [
         "license reviewed from primary source",
         "immutable snapshot captured",
         "exact files and hashes recorded",
+        "ingest-safety normalization completed",
         "human approval recorded"
       ],
       "materialized_snapshot": true
