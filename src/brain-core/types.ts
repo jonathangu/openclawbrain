@@ -687,6 +687,81 @@ export interface DecisionTraceInjectedNodeSummary {
   contentPreview: string;
 }
 
+export type DecisionPointActionKindV1 =
+  | "traverse"
+  | "tool"
+  | "stop_local"
+  | "stop";
+
+export interface DecisionPointActionCandidateV1 {
+  actionId: string;
+  actionKind: DecisionPointActionKindV1;
+  nodeId: string | null;
+  toolName: string | null;
+  toolArgsShape: string | null;
+  priorScore: number | null;
+  probability: number | null;
+  retrievalFeatures: Record<string, number | string | boolean> | null;
+}
+
+export interface DecisionPointBudgetContextV1 {
+  budgetRemaining: number;
+  initialBudget: number;
+  reservedTokenCost: number;
+  budgetUsed: number;
+  budgetUsedFraction: number;
+  maxHops: number;
+  maxFrontierSize: number | null;
+  frontierSize: number;
+  visitedCount: number;
+  firedCount: number;
+  pendingSelectionCount: number;
+  pressureLevel: number | null;
+  frontierPressure: number | null;
+  budgetPressure: number | null;
+  budgetFraction: number | null;
+  queryBudgetChars: number | null;
+  maxContextChars: number | null;
+  injectedChars: number | null;
+  droppedChars: number | null;
+  contextClipped: boolean | null;
+  routeSelectionMs: number | null;
+  totalQueryMs: number | null;
+  compileDeadlineMs: number | null;
+  compileDeadlineHit: boolean | null;
+}
+
+export interface DecisionPointSnapshotV1 {
+  schemaVersion: 1;
+  decisionPointId: string;
+  traceId: string;
+  episodeId: string | null;
+  conversationId: number | null;
+  sourceNodeId: string | null;
+  expansionIndex: number;
+  selectionIndex: number;
+  decisionPointKind: "seed" | "local";
+  localActionSet: DecisionPointActionCandidateV1[];
+  chosenActionId: string;
+  chosenActionKind: DecisionPointActionKindV1;
+  chosenNodeId: string | null;
+  chosenToolName: string | null;
+  chosenActionProbability: number;
+  stopProbability: number;
+  stopTruth: TrajectoryStopTruth | null;
+  stopReason: TrajectoryStopReason | null;
+  budgetContext: DecisionPointBudgetContextV1;
+  routeContext: {
+    requestDigest: string | null;
+    activePackId: string | null;
+    routerIdentity: string | null;
+    candidateNodeIds: string[];
+    selectedNodeIds: string[];
+    selectedTraversalNodeIds: string[];
+    selectedSeedNodeIds: string[];
+  };
+}
+
 export type BrainPersistenceMode =
   | "redacted"
   | "redacted_with_operator_audit";
@@ -991,6 +1066,8 @@ export interface DecisionRouteTrace {
     droppedNodeCount?: number | null;
     fittingDropReasons?: Partial<Record<BrainFittingDropReason, number>> | null;
     interruptionAccounting?: InterruptionAccounting | null;
+    decisionPointSnapshots?: DecisionPointSnapshotV1[] | null;
+    decisionPointSummary?: string | null;
     prefetch?: BrainPrefetchDecision | null;
     compileReport?: BrainCompileReportV1 | null;
     compileReportSummary?: string | null;

@@ -26,7 +26,7 @@ import type {
 } from "./types.js";
 import { START_NODE_ID } from "./types.js";
 import type { BrainGraph } from "./graph.js";
-import { isChosenPolicyStopSubstep } from "./trajectory-stop.js";
+import { isChosenPolicyStopSubstep, isForcedStopSubstep } from "./trajectory-stop.js";
 
 export function policyWeightUpdateKey(update: PolicyWeightUpdate): string {
   switch (update.kind) {
@@ -157,13 +157,68 @@ function normalizeTeacherTargetIds(targetIds: string[]): Set<string> {
   );
 }
 
-function isTerminalStopLocalSubstep(episode: Episode, expansionIndex: number, substepIndex: number): boolean {
-  const lastExpansion = episode.trajectory.at(-1);
-  if (!lastExpansion) {
-    return false;
+function normalizeTeacherTargetSequence(targetIds: string[]): string[] {
+  const sequence: string[] = [];
+
+  for (const targetId of targetIds) {
+    const trimmed = targetId.trim();
+    if (trimmed.length === 0) {
+      continue;
+    }
+    if (sequence.at(-1) === trimmed) {
+      continue;
+    }
+    sequence.push(trimmed);
   }
 
-  return lastExpansion.expansionIndex === expansionIndex && substepIndex === lastExpansion.substeps.length - 1;
+  return sequence;
+}
+
+function resolveTeacherPathTarget(
+  sourceNodeId: string,
+  teacherPathNodeIds: string[],
+): { targetNodeId: string | null; terminalStop: boolean } | null {
+  if (teacherPathNodeIds.length === 0) {
+    return null;
+  }
+
+  if (sourceNodeId === START_NODE_ID) {
+    return {
+      targetNodeId: teacherPathNodeIds[0] ?? null,
+      terminalStop: false,
+    };
+  }
+
+  const sourceIndex = teacherPathNodeIds.indexOf(sourceNodeId);
+  if (sourceIndex < 0) {
+    return null;
+  }
+
+  const targetNodeId = teacherPathNodeIds[sourceIndex + 1] ?? null;
+  return {
+    targetNodeId,
+    terminalStop: targetNodeId === null,
+  };
+}
+
+function teacherActionAlignmentMultiplier(
+  substep: { chosenAction: { type: string; targetNodeId?: string } },
+  teacherTargetNodeId: string | null,
+  terminalStop: boolean,
+): number {
+  if (teacherTargetNodeId === null) {
+    return substep.chosenAction.type === "stop_local" ? 1 : 0.85;
+  }
+
+  if (substep.chosenAction.type === "stop_local") {
+    return terminalStop ? 0.85 : 0.75;
+  }
+
+  if (substep.chosenAction.targetNodeId === teacherTargetNodeId) {
+    return 1;
+  }
+
+  return terminalStop ? 0.8 : 0.75;
 }
 
 export function collectTeacherActionDistillContributions(
@@ -177,33 +232,109 @@ export function collectTeacherActionDistillContributions(
     return [];
   }
 
-  if (primary.confidence < 0.5) {
-    return [];
-  }
-
-  const teacherSignal = Math.max(-1, Math.min(1, primary.value)) * Math.max(0, Math.min(1, primary.confidence));
+  const teacherConfidence = Math.max(0, Math.min(1, primary.confidence));
+  const teacherValue = Math.max(-1, Math.min(1, primary.value));
+  const teacherSignal = teacherValue * teacherConfidence;
   if (Math.abs(teacherSignal) < 1e-8) {
     return [];
   }
 
   const directNodeIds = normalizeTeacherTargetIds(primary.traceSelectedNodeIds);
-  const directPathNodeIds = normalizeTeacherTargetIds(primary.traceSelectedPathNodeIds);
-  const hasDirectTargets = directNodeIds.size > 0 || directPathNodeIds.size > 0;
+  const directPathNodeIds = normalizeTeacherTargetSequence(primary.traceSelectedPathNodeIds);
+  const hasOrderedTeacherPath = directPathNodeIds.length > 0;
+  const hasDirectTargets = directNodeIds.size > 0 || hasOrderedTeacherPath;
 
   const contributions: PolicyGradientRouteUpdateContribution[] = [];
   for (const expansion of episode.trajectory) {
-    for (const [substepIndex, substep] of expansion.substeps.entries()) {
+    for (const substep of expansion.substeps) {
       const sourceNodeId = substep.stateSnapshot.sourceNodeId ?? START_NODE_ID;
       const gradLogP = 1 - substep.chosenActionProbability;
+
+      if (substep.chosenAction.type === "stop_local" && isForcedStopSubstep(substep)) {
+        continue;
+      }
+
+      if (hasOrderedTeacherPath) {
+        const teacherTransition = resolveTeacherPathTarget(sourceNodeId, directPathNodeIds);
+        if (teacherTransition) {
+          const alignmentMultiplier = teacherActionAlignmentMultiplier(
+            substep,
+            teacherTransition.targetNodeId,
+            teacherTransition.terminalStop,
+          );
+
+          if (teacherTransition.targetNodeId === null) {
+            const delta = learningRate * teacherSignal * alignmentMultiplier * gradLogP;
+            if (Math.abs(delta) < 1e-12) {
+              continue;
+            }
+
+            contributions.push({
+              updateKey: `stop→${sourceNodeId}`,
+              kind: "stop_local",
+              sourceNodeId,
+              targetNodeId: null,
+              expansionIndex: substep.stateSnapshot.expansionIndex,
+              selectionIndex: substep.stateSnapshot.selectionIndex,
+              chosenActionProbability: substep.chosenActionProbability,
+              delta,
+              stopTruth: substep.stopTruth ?? null,
+              stopReason: substep.stopReason ?? null,
+            });
+            continue;
+          }
+
+          const targetNodeId = teacherTransition.targetNodeId;
+          const targetKind = graph?.getNode(targetNodeId)?.kind ?? null;
+          const delta = learningRate * teacherSignal * alignmentMultiplier * (targetKind === "toolcard" ? 1.25 : 1) * gradLogP;
+          if (Math.abs(delta) < 1e-12) {
+            continue;
+          }
+
+          if (sourceNodeId !== START_NODE_ID && targetKind === "toolcard") {
+            contributions.push({
+              updateKey: `tool→${sourceNodeId}→${targetNodeId}`,
+              kind: "tool_action",
+              sourceNodeId,
+              targetNodeId,
+              expansionIndex: substep.stateSnapshot.expansionIndex,
+              selectionIndex: substep.stateSnapshot.selectionIndex,
+              chosenActionProbability: substep.chosenActionProbability,
+              delta,
+              stopTruth: null,
+              stopReason: null,
+            });
+            continue;
+          }
+
+          const updateKey = sourceNodeId === START_NODE_ID
+            ? `seed→${targetNodeId}`
+            : `${sourceNodeId}→${targetNodeId}`;
+          contributions.push({
+            updateKey,
+            kind: sourceNodeId === START_NODE_ID ? "seed" : "edge",
+            sourceNodeId,
+            targetNodeId,
+            expansionIndex: substep.stateSnapshot.expansionIndex,
+            selectionIndex: substep.stateSnapshot.selectionIndex,
+            chosenActionProbability: substep.chosenActionProbability,
+            delta,
+            stopTruth: null,
+            stopReason: null,
+          });
+          continue;
+        }
+
+        if (directPathNodeIds.length > 1) {
+          continue;
+        }
+      }
 
       if (substep.chosenAction.type === "stop_local") {
         if (!isChosenPolicyStopSubstep(substep)) {
           continue;
         }
-        if (hasDirectTargets && !isTerminalStopLocalSubstep(episode, expansion.expansionIndex, substepIndex)) {
-          continue;
-        }
-        const delta = learningRate * teacherSignal * (hasDirectTargets ? 1.5 : 1) * gradLogP;
+        const delta = learningRate * teacherSignal * gradLogP;
         if (Math.abs(delta) < 1e-12) {
           continue;
         }
@@ -225,15 +356,13 @@ export function collectTeacherActionDistillContributions(
       const targetNodeId = substep.chosenAction.targetNodeId;
       const targetKind = graph?.getNode(targetNodeId)?.kind ?? null;
       const directTargetMatch = hasDirectTargets
-        ? (targetKind === "toolcard"
-            ? directNodeIds.has(targetNodeId)
-            : directPathNodeIds.has(targetNodeId))
+        ? directNodeIds.has(targetNodeId)
         : true;
       if (!directTargetMatch) {
         continue;
       }
 
-      const delta = learningRate * teacherSignal * (hasDirectTargets && targetKind === "toolcard" ? 1.25 : 1) * gradLogP;
+      const delta = learningRate * teacherSignal * (targetKind === "toolcard" ? 1.25 : 1) * gradLogP;
       if (Math.abs(delta) < 1e-12) {
         continue;
       }

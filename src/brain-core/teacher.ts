@@ -16,6 +16,7 @@ import type {
   BrainObservationBindingMode,
   BrainObservationRouteMetadata,
   BrainObservationToolResult,
+  DecisionPointSnapshotV1,
   DecisionTraceInjectedNodeSummary,
 } from "./types.js";
 import { resolveObservationBindingMode } from "./types.js";
@@ -212,6 +213,13 @@ function cloneServedArtifact(
   artifact: BrainObservationRouteMetadata["servedArtifact"],
 ): BrainObservationRouteMetadata["servedArtifact"] {
   return artifact ? JSON.parse(JSON.stringify(artifact)) as BrainObservationRouteMetadata["servedArtifact"] : null;
+}
+
+export function materializeDecisionPointSnapshots(
+  observation: BrainObservation,
+): DecisionPointSnapshotV1[] | null {
+  const snapshots = observation.routeMetadata.selectionMetadata?.decisionPointSnapshots ?? null;
+  return snapshots ? JSON.parse(JSON.stringify(snapshots)) as DecisionPointSnapshotV1[] : null;
 }
 
 export function materializeTeacherLabelInput(observation: BrainObservation): TeacherLabelInputV2 | null {

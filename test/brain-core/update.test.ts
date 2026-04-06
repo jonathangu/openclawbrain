@@ -483,6 +483,183 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
     expect(updates[1]?.delta).toBeGreaterThan(0);
   });
 
+  it("distills teacher-selected paths directly into traverse/tool/STOP_LOCAL updates even when the sampled route disagrees", () => {
+    const graph = new BrainGraph();
+    graph.addNode(makeNode("source"));
+    graph.addNode(makeNode("mid"));
+    graph.addNode(makeToolNode("tool:proof"));
+
+    const episode = makeEpisode([
+      {
+        sourceNodeId: "source",
+        expansionIndex: 0,
+        frontierBefore: ["source"],
+        frontierAfter: ["mid"],
+        budgetBefore: 1000,
+        budgetAfter: 900,
+        substeps: [
+          {
+            stateSnapshot: {
+              sourceNodeId: "source",
+              expansionIndex: 0,
+              selectionIndex: 0,
+              budgetRemaining: 1000,
+              initialBudget: 1000,
+              reservedTokenCost: 0,
+              maxHops: 8,
+              frontierSize: 0,
+              frontierNodeIds: [],
+              visitedCount: 0,
+              firedCount: 0,
+            },
+            candidates: [
+              { action: { type: "traverse", targetNodeId: "mid" }, score: 0.7, probability: 0.6 },
+              { action: { type: "stop_local" }, score: -0.2, probability: 0.4 },
+            ],
+            chosenAction: { type: "traverse", targetNodeId: "mid" },
+            chosenActionProbability: 0.6,
+            stopProbability: 0.4,
+          },
+        ],
+        selectedTargets: ["mid"],
+        acceptedTargets: ["mid"],
+        vetoedTargets: [],
+      },
+      {
+        sourceNodeId: "mid",
+        expansionIndex: 1,
+        frontierBefore: ["mid"],
+        frontierAfter: ["tool:proof"],
+        budgetBefore: 900,
+        budgetAfter: 820,
+        substeps: [
+          {
+            stateSnapshot: {
+              sourceNodeId: "mid",
+              expansionIndex: 1,
+              selectionIndex: 0,
+              budgetRemaining: 900,
+              initialBudget: 1000,
+              reservedTokenCost: 0,
+              maxHops: 8,
+              frontierSize: 0,
+              frontierNodeIds: [],
+              visitedCount: 1,
+              firedCount: 1,
+            },
+            candidates: [
+              { action: { type: "traverse", targetNodeId: "tool:proof" }, score: 0.9, probability: 0.7 },
+              { action: { type: "stop_local" }, score: 0.1, probability: 0.3 },
+            ],
+            chosenAction: { type: "traverse", targetNodeId: "tool:proof" },
+            chosenActionProbability: 0.7,
+            stopProbability: 0.3,
+          },
+        ],
+        selectedTargets: ["tool:proof"],
+        acceptedTargets: ["tool:proof"],
+        vetoedTargets: [],
+      },
+      {
+        sourceNodeId: "tool:proof",
+        expansionIndex: 2,
+        frontierBefore: ["tool:proof"],
+        frontierAfter: [],
+        budgetBefore: 820,
+        budgetAfter: 820,
+        substeps: [
+          {
+            stateSnapshot: {
+              sourceNodeId: "tool:proof",
+              expansionIndex: 2,
+              selectionIndex: 0,
+              budgetRemaining: 820,
+              initialBudget: 1000,
+              reservedTokenCost: 0,
+              maxHops: 8,
+              frontierSize: 0,
+              frontierNodeIds: [],
+              visitedCount: 2,
+              firedCount: 2,
+            },
+            candidates: [
+              { action: { type: "traverse", targetNodeId: "source" }, score: 0.1, probability: 0.2 },
+              { action: { type: "stop_local" }, score: 0.8, probability: 0.8 },
+            ],
+            chosenAction: { type: "stop_local" },
+            chosenActionProbability: 0.8,
+            stopProbability: 0.8,
+          },
+        ],
+        selectedTargets: [],
+        acceptedTargets: [],
+        vetoedTargets: [],
+      },
+    ], 0.5);
+
+    const lowConfidenceSupervision: PolicyGradientSupervisionArtifact[] = [{
+      supervisionId: "sup-low",
+      traceId: "trace-low",
+      source: "teacher",
+      kind: "teacher_review",
+      value: 0.8,
+      confidence: 0.3,
+      reason: "teacher prefers the direct route and stopping once grounded",
+      labelId: "label-low",
+      evidenceId: "evidence-low",
+      observationId: "obs-low",
+      teacherTraceId: "teacher-trace-low",
+      serveDecisionRecordId: null,
+      selectionDigest: null,
+      turnCompileEventId: null,
+      activePackGraphChecksum: null,
+      bindingMode: "exact_decision_id",
+      attributionQuality: "exact",
+      feedbackRichness: "followup_and_tool",
+      traceRequestDigest: null,
+      traceSelectedNodeIds: ["tool:proof"],
+      traceSelectedPathNodeIds: ["source", "tool:proof"],
+    }];
+
+    const highConfidenceSupervision: PolicyGradientSupervisionArtifact[] = [{
+      ...lowConfidenceSupervision[0],
+      supervisionId: "sup-high",
+      traceId: "trace-high",
+      confidence: 0.9,
+    }];
+
+    const lowContributions = collectTeacherActionDistillContributions(episode, 0.1, lowConfidenceSupervision, graph);
+    expect(lowContributions).toHaveLength(2);
+    expect(lowContributions).toEqual([
+      expect.objectContaining({
+        kind: "tool_action",
+        sourceNodeId: "source",
+        targetNodeId: "tool:proof",
+      }),
+      expect.objectContaining({
+        kind: "stop_local",
+        sourceNodeId: "tool:proof",
+      }),
+    ]);
+
+    const highContributions = collectTeacherActionDistillContributions(episode, 0.1, highConfidenceSupervision, graph);
+    expect(highContributions).toHaveLength(2);
+    expect(Math.abs(lowContributions[0]?.delta ?? 0)).toBeLessThan(Math.abs(highContributions[0]?.delta ?? 0));
+
+    const updates = computeTeacherActionUpdates(episode, 0.1, lowConfidenceSupervision, graph);
+    expect(updates).toEqual([
+      expect.objectContaining({
+        kind: "tool_action",
+        sourceNodeId: "source",
+        toolNodeId: "tool:proof",
+      }),
+      expect.objectContaining({
+        kind: "stop_local",
+        sourceNodeId: "tool:proof",
+      }),
+    ]);
+  });
+
   it("zero advantage produces no updates", () => {
     const episode = makeEpisode([makeExpansion("a", "b", 0.5)], 0.5);
     const updates = computeReinforceUpdates(episode, 0.1, 0.5); // baseline = reward

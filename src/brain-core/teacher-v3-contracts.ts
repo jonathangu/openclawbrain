@@ -49,6 +49,49 @@ export type ProposalStatus =
   | "expired"
   | "rolled_back";
 
+/**
+ * Canonical structural proposal kinds from the Teacher vNext lane spec.
+ *
+ * The runtime accepts broader strings for compatibility, but these are the
+ * first-class kinds that should be preferred when a proposal is explicit.
+ */
+export const TEACHER_STRUCTURAL_PROPOSAL_KINDS_V1 = [
+  "compiled_artifact",
+  "duplicate_report",
+  "contradiction_report",
+  "weak_neighborhood_report",
+  "merge_nodes",
+  "split_node",
+  "add_edge",
+  "weaken_edge",
+  "demote_node",
+  "archive_node",
+  "tombstone_node",
+] as const;
+
+export type TeacherStructuralProposalKindV1 = (typeof TEACHER_STRUCTURAL_PROPOSAL_KINDS_V1)[number];
+
+export type TeacherProposalKindV1 = string;
+
+export type TeacherProposalLifecycleStateV1 =
+  | "proposed"
+  | "replayed"
+  | "approved"
+  | "promoted"
+  | "rejected"
+  | "expired";
+
+export const TEACHER_PROPOSAL_LIFECYCLE_STATE_BY_STATUS_V1: Record<ProposalStatus, TeacherProposalLifecycleStateV1> = {
+  proposed: "proposed",
+  validated: "proposed",
+  shadow_scored: "replayed",
+  promotable: "approved",
+  promoted: "promoted",
+  rejected: "rejected",
+  expired: "expired",
+  rolled_back: "promoted",
+};
+
 export interface TeacherProposalProofLinkV1 {
   refId: string;
   kind: string;
@@ -298,6 +341,7 @@ export interface TeacherProposalProofBundleV1 {
   surfaceMap: TeacherV3ProofSurfaceRefV1[];
   evidenceLinks: TeacherProposalProofLinkV1[];
   counterevidenceLinks?: TeacherProposalProofLinkV1[];
+  replayGateMatrix?: TeacherProposalReplayGateMatrixV1;
   summary: string;
   createdAt: string;
   updatedAt?: string;
@@ -319,6 +363,7 @@ export interface TeacherProposalProofBundleSummaryV1 {
   targetSurfaceCount: number;
   evidenceLinkCount: number;
   counterevidenceLinkCount: number;
+  replayGateMatrix?: TeacherProposalReplayGateMatrixV1;
   summary: string;
 }
 
@@ -342,16 +387,22 @@ export function summarizeTeacherProposalProofBundleV1(
     targetSurfaceCount: bundle.surfaceMap.filter((surface) => surface.state === "target").length,
     evidenceLinkCount: bundle.evidenceLinks.length,
     counterevidenceLinkCount: bundle.counterevidenceLinks?.length ?? 0,
+    replayGateMatrix: bundle.replayGateMatrix,
     summary: bundle.summary,
   };
 }
 
 export interface TeacherProposalV1 {
+  schemaVersion?: 1;
   proposalId: string;
   proposalClass: ProposalClass;
+  /** Explicit proposal kind when the lane needs a narrower structural label. */
+  proposalKind?: TeacherProposalKindV1;
   /** Compatibility alias for docs that still spell the outer lane as `lane`. */
   lane?: ProposalClass;
   status: ProposalStatus;
+  /** Target-state lifecycle used by the structural-proposal tranche. */
+  lifecycleState?: TeacherProposalLifecycleStateV1;
   lineage: ProposalLineageV1;
   subjectIds: string[];
   evidence: EvidenceRefV1[];
@@ -360,9 +411,11 @@ export interface TeacherProposalV1 {
   expectedEffect?: ProposalExpectedEffectV1;
   confidence: number;
   replaySuites: string[];
+  replaySuiteIds?: string[];
   rollbackKey: string;
   proofBundle?: TeacherProposalProofBundleV1;
   expiresAt?: string;
+  freshnessTs?: string;
   createdAt: string;
   resolvedAt?: string;
   artifacts?: TeacherProposalArtifactRefV1[];
@@ -470,10 +523,13 @@ export interface TeacherProposalLineageSummaryV1 extends ProposalLineageV1 {
 }
 
 export interface TeacherProposalSummaryV1 {
+  schemaVersion: 1;
   proposalId: string;
   proposalClass: ProposalClass;
+  proposalKind?: TeacherProposalKindV1;
   lane?: ProposalClass;
   status: ProposalStatus;
+  lifecycleState: TeacherProposalLifecycleStateV1;
   lineage: TeacherProposalLineageSummaryV1;
   subjectIds: string[];
   subjectCount: number;
@@ -482,6 +538,7 @@ export interface TeacherProposalSummaryV1 {
   counterevidenceIds: string[];
   counterevidenceCount: number;
   replaySuites: string[];
+  replaySuiteIds: string[];
   replaySuiteCount: number;
   rollbackKey: string;
   hasCanaryRollout: boolean;
@@ -493,6 +550,7 @@ export interface TeacherProposalSummaryV1 {
   proofBundleReplayOutcomeSummary?: TeacherProposalReplayOutcomeSummaryV1;
   hasReplaySummary: boolean;
   replaySummary?: TeacherProposalReplaySummaryV1;
+  freshnessTs: string;
   createdAt: string;
   resolvedAt?: string;
 }
@@ -506,14 +564,19 @@ export interface TeacherProposalDiffV1 {
   leftProposalId: string;
   rightProposalId: string;
   sameProposalClass: boolean;
+  sameProposalKind: boolean;
   sameIdempotencyKey: boolean;
   sameRollbackKey: boolean;
   sameStatus: boolean;
+  sameLifecycleState: boolean;
+  sameSchemaVersion: boolean;
+  sameFreshnessTs: boolean;
   changedFields: string[];
   subjectIds: TeacherProposalDiffListV1;
   evidenceIds: TeacherProposalDiffListV1;
   counterevidenceIds: TeacherProposalDiffListV1;
   replaySuites: TeacherProposalDiffListV1;
+  replaySuiteIds: TeacherProposalDiffListV1;
   summary: string;
 }
 
@@ -547,43 +610,99 @@ function cloneTeacherProposalReplaySummary(
   return replaySummary === undefined ? undefined : JSON.parse(JSON.stringify(replaySummary)) as TeacherProposalReplaySummaryV1;
 }
 
+function normalizeText(value: unknown): string | null {
+  if (typeof value !== "string") {
+    return null;
+  }
+  const trimmed = value.trim();
+  return trimmed.length > 0 ? trimmed : null;
+}
+
+function extractProposalKindFromPayload(payload: unknown): string | undefined {
+  if (!payload || typeof payload !== "object" || Array.isArray(payload)) {
+    return undefined;
+  }
+  const kind = (payload as Record<string, unknown>).kind;
+  if (typeof kind !== "string") {
+    return undefined;
+  }
+  const trimmed = kind.trim();
+  return trimmed.length > 0 ? trimmed : undefined;
+}
+
+function normalizeTeacherProposalReplaySuiteIdsV1(proposal: TeacherProposalV1): string[] {
+  return uniqueStrings([
+    ...(proposal.replaySuites ?? []),
+    ...(proposal.replaySuiteIds ?? []),
+  ]);
+}
+
+function normalizeTeacherProposalLifecycleStateV1(proposal: TeacherProposalV1): TeacherProposalLifecycleStateV1 {
+  return proposal.lifecycleState ?? TEACHER_PROPOSAL_LIFECYCLE_STATE_BY_STATUS_V1[proposal.status];
+}
+
+function normalizeTeacherProposalKindV1(proposal: TeacherProposalV1): TeacherProposalKindV1 | undefined {
+  return proposal.proposalKind ?? extractProposalKindFromPayload(proposal.payload);
+}
+
+export function normalizeTeacherProposalV1(proposal: TeacherProposalV1): TeacherProposalV1 {
+  const replaySuiteIds = normalizeTeacherProposalReplaySuiteIdsV1(proposal);
+  const lifecycleState = normalizeTeacherProposalLifecycleStateV1(proposal);
+  const proposalKind = normalizeTeacherProposalKindV1(proposal);
+  return {
+    ...proposal,
+    schemaVersion: proposal.schemaVersion ?? 1,
+    proposalKind,
+    lifecycleState,
+    replaySuites: replaySuiteIds,
+    replaySuiteIds,
+    freshnessTs: proposal.freshnessTs ?? proposal.resolvedAt ?? proposal.createdAt,
+  };
+}
+
 export function summarizeTeacherProposalV1(
   proposal: TeacherProposalV1,
 ): TeacherProposalSummaryV1 {
-  const evidenceIds = uniqueStrings(proposal.evidence.map(canonicalEvidenceRefId));
-  const counterevidenceIds = uniqueStrings((proposal.counterevidence ?? []).map(canonicalEvidenceRefId));
-  const proofBundle = proposal.proofBundle;
+  const normalizedProposal = normalizeTeacherProposalV1(proposal);
+  const evidenceIds = uniqueStrings(normalizedProposal.evidence.map(canonicalEvidenceRefId));
+  const counterevidenceIds = uniqueStrings((normalizedProposal.counterevidence ?? []).map(canonicalEvidenceRefId));
+  const proofBundle = normalizedProposal.proofBundle;
   const proofBundleReplayOutcomeSummary = proofBundle
     ? proofBundle.replayOutcomeSummary ?? summarizeTeacherProposalReplayOutcomesV1(proofBundle.replayOutcomes ?? [])
     : undefined;
-  const canaryRollout = proposal.canaryRollout ? summarizeTeacherCanaryRolloutPlanV1(proposal.canaryRollout) : undefined;
+  const canaryRollout = normalizedProposal.canaryRollout ? summarizeTeacherCanaryRolloutPlanV1(normalizedProposal.canaryRollout) : undefined;
 
   return {
-    proposalId: proposal.proposalId,
-    proposalClass: proposal.proposalClass,
-    lane: proposal.lane,
-    status: proposal.status,
-    lineage: cloneProposalLineage(proposal.lineage),
-    subjectIds: [...proposal.subjectIds],
-    subjectCount: proposal.subjectIds.length,
+    schemaVersion: normalizedProposal.schemaVersion ?? 1,
+    proposalId: normalizedProposal.proposalId,
+    proposalClass: normalizedProposal.proposalClass,
+    proposalKind: normalizedProposal.proposalKind,
+    lane: normalizedProposal.lane,
+    status: normalizedProposal.status,
+    lifecycleState: normalizedProposal.lifecycleState,
+    lineage: cloneProposalLineage(normalizedProposal.lineage),
+    subjectIds: [...normalizedProposal.subjectIds],
+    subjectCount: normalizedProposal.subjectIds.length,
     evidenceIds,
     evidenceCount: evidenceIds.length,
     counterevidenceIds,
     counterevidenceCount: counterevidenceIds.length,
-    replaySuites: [...proposal.replaySuites],
-    replaySuiteCount: proposal.replaySuites.length,
-    rollbackKey: proposal.rollbackKey,
+    replaySuites: [...normalizedProposal.replaySuites],
+    replaySuiteIds: [...(normalizedProposal.replaySuiteIds ?? normalizedProposal.replaySuites)],
+    replaySuiteCount: normalizedProposal.replaySuites.length,
+    rollbackKey: normalizedProposal.rollbackKey,
     hasCanaryRollout: canaryRollout !== undefined,
     canaryRollout,
-    confidence: proposal.confidence,
+    confidence: normalizedProposal.confidence,
     hasProofBundle: proofBundle !== undefined,
     proofBundleId: proofBundle?.bundleId,
     proofBundleStatus: proofBundle?.status,
     proofBundleReplayOutcomeSummary,
-    hasReplaySummary: proposal.replaySummary !== undefined,
-    replaySummary: cloneTeacherProposalReplaySummary(proposal.replaySummary),
-    createdAt: proposal.createdAt,
-    resolvedAt: proposal.resolvedAt,
+    hasReplaySummary: normalizedProposal.replaySummary !== undefined,
+    replaySummary: cloneTeacherProposalReplaySummary(normalizedProposal.replaySummary),
+    freshnessTs: normalizedProposal.freshnessTs ?? normalizedProposal.createdAt,
+    createdAt: normalizedProposal.createdAt,
+    resolvedAt: normalizedProposal.resolvedAt,
   };
 }
 
@@ -602,17 +721,22 @@ export function diffTeacherProposalV1(
   };
 
   compareField("proposalClass", leftSummary.proposalClass, rightSummary.proposalClass);
+  compareField("proposalKind", leftSummary.proposalKind ?? null, rightSummary.proposalKind ?? null);
   compareField("lane", leftSummary.lane ?? null, rightSummary.lane ?? null);
   compareField("status", leftSummary.status, rightSummary.status);
+  compareField("lifecycleState", leftSummary.lifecycleState, rightSummary.lifecycleState);
+  compareField("schemaVersion", leftSummary.schemaVersion, rightSummary.schemaVersion);
   compareField("confidence", leftSummary.confidence, rightSummary.confidence);
   compareField("rollbackKey", leftSummary.rollbackKey, rightSummary.rollbackKey);
   compareField("replaySuites", leftSummary.replaySuites, rightSummary.replaySuites);
+  compareField("replaySuiteIds", leftSummary.replaySuiteIds, rightSummary.replaySuiteIds);
   compareField("subjectIds", leftSummary.subjectIds, rightSummary.subjectIds);
   compareField("canaryRollout", leftSummary.canaryRollout, rightSummary.canaryRollout);
   compareField("evidenceIds", leftSummary.evidenceIds, rightSummary.evidenceIds);
   compareField("counterevidenceIds", leftSummary.counterevidenceIds, rightSummary.counterevidenceIds);
   compareField("proofBundleId", leftSummary.proofBundleId ?? null, rightSummary.proofBundleId ?? null);
   compareField("proofBundleStatus", leftSummary.proofBundleStatus ?? null, rightSummary.proofBundleStatus ?? null);
+  compareField("freshnessTs", leftSummary.freshnessTs, rightSummary.freshnessTs);
   compareField(
     "proofBundleReplayOutcomeSummary",
     leftSummary.proofBundleReplayOutcomeSummary ?? null,
@@ -644,14 +768,19 @@ export function diffTeacherProposalV1(
     leftProposalId: leftSummary.proposalId,
     rightProposalId: rightSummary.proposalId,
     sameProposalClass: leftSummary.proposalClass === rightSummary.proposalClass,
+    sameProposalKind: (leftSummary.proposalKind ?? null) === (rightSummary.proposalKind ?? null),
     sameIdempotencyKey: leftSummary.lineage.idempotencyKey === rightSummary.lineage.idempotencyKey,
     sameRollbackKey: leftSummary.rollbackKey === rightSummary.rollbackKey,
     sameStatus: leftSummary.status === rightSummary.status,
+    sameLifecycleState: leftSummary.lifecycleState === rightSummary.lifecycleState,
+    sameSchemaVersion: leftSummary.schemaVersion === rightSummary.schemaVersion,
+    sameFreshnessTs: leftSummary.freshnessTs === rightSummary.freshnessTs,
     changedFields,
     subjectIds: diffStringLists(leftSummary.subjectIds, rightSummary.subjectIds),
     evidenceIds: diffStringLists(leftSummary.evidenceIds, rightSummary.evidenceIds),
     counterevidenceIds: diffStringLists(leftSummary.counterevidenceIds, rightSummary.counterevidenceIds),
     replaySuites: diffStringLists(leftSummary.replaySuites, rightSummary.replaySuites),
+    replaySuiteIds: diffStringLists(leftSummary.replaySuiteIds, rightSummary.replaySuiteIds),
     summary: `${leftSummary.proposalClass} ${leftSummary.proposalId} → ${rightSummary.proposalId}: ${
       changedFields.length > 0 ? changedFields.join(", ") : "no material differences"
     }`,
@@ -762,6 +891,301 @@ export function describeTeacherProposalReplayGate(
   proposalClass: ProposalClass,
 ): TeacherProposalReplayGateV1 {
   return TEACHER_PROPOSAL_REPLAY_GATES_V1[proposalClass];
+}
+
+export type TeacherProposalReplayGateMatrixDimensionName =
+  | "truth_invariants"
+  | "replay_non_regression"
+  | "attribution_floor"
+  | "boundedness"
+  | "rollback_proof_linkage";
+
+export type TeacherProposalReplayGateMatrixStatus = "pass" | "warn" | "fail";
+
+export interface TeacherProposalReplayGateMatrixRowV1 {
+  name: TeacherProposalReplayGateMatrixDimensionName;
+  status: TeacherProposalReplayGateMatrixStatus;
+  coverage: TeacherV3ProofSurfaceState | "mixed";
+  summary: string;
+  requirements: string[];
+  evidenceSurfaceIds: string[];
+  proofSurfaceIds: string[];
+  notes: string[];
+}
+
+export interface TeacherProposalReplayGateMatrixV1 {
+  proposalId: string | null;
+  proposalClass: ProposalClass;
+  reviewMode: TeacherProposalReplayGateReviewModeV1;
+  rollbackKey: string | null;
+  proofBundleId: string | null;
+  replaySummaryId: string | null;
+  rows: [
+    TeacherProposalReplayGateMatrixRowV1,
+    TeacherProposalReplayGateMatrixRowV1,
+    TeacherProposalReplayGateMatrixRowV1,
+    TeacherProposalReplayGateMatrixRowV1,
+    TeacherProposalReplayGateMatrixRowV1,
+  ];
+  summary: string;
+}
+
+export interface TeacherProposalReplayGateMatrixInputV1 {
+  proposalId?: string | null;
+  proposalClass: ProposalClass;
+  rollbackKey?: string | null;
+  proofBundleId?: string | null;
+  replaySummaryId?: string | null;
+  replaySummary?: Pick<
+    TeacherProposalReplaySummaryV1,
+    | "status"
+    | "reviewMode"
+    | "beforeScore"
+    | "afterScore"
+    | "scoreDelta"
+    | "candidatePackId"
+    | "candidatePackVersion"
+    | "summary"
+  > | null;
+  replayOutcomeSummary?: TeacherProposalReplayOutcomeSummaryV1 | null;
+  shadowReplay?: TeacherShadowReplaySummaryV1 | null;
+  replaySuites?: string[];
+  surfaceMap?: TeacherV3ProofSurfaceRefV1[];
+  evidenceLinks?: TeacherProposalProofLinkV1[];
+  counterevidenceLinks?: TeacherProposalProofLinkV1[];
+}
+
+function collectTeacherProposalProofSurfaceIds(
+  surfaceMap: TeacherV3ProofSurfaceRefV1[] | undefined,
+  state: TeacherV3ProofSurfaceState,
+  kind?: TeacherV3ProofSurfaceKind,
+): string[] {
+  return uniqueStrings(
+    (surfaceMap ?? [])
+      .filter((surface) => surface.state === state && (kind === undefined || surface.kind === kind))
+      .map((surface) => surface.id),
+  );
+}
+
+function buildTeacherProposalReplayGateMatrixRow(params: {
+  name: TeacherProposalReplayGateMatrixDimensionName;
+  status: TeacherProposalReplayGateMatrixStatus;
+  coverage: TeacherV3ProofSurfaceState | "mixed";
+  summary: string;
+  requirements: string[];
+  evidenceSurfaceIds: string[];
+  proofSurfaceIds: string[];
+  notes: string[];
+}): TeacherProposalReplayGateMatrixRowV1 {
+  return params;
+}
+
+export function describeTeacherProposalReplayGateMatrixV1(
+  input: TeacherProposalReplayGateMatrixInputV1,
+): TeacherProposalReplayGateMatrixV1 {
+  const reviewMode = describeTeacherProposalReplayGateReviewModeV1(input.proposalClass);
+  const surfaceMap = input.surfaceMap ?? [];
+  const shippedTruthSurfaceIds = collectTeacherProposalProofSurfaceIds(surfaceMap, "shipped");
+  const shippedTruthAnchorIds = uniqueStrings(
+    surfaceMap
+      .filter((surface) => surface.state === "shipped" && (
+        surface.kind === "runtime_truth"
+        || surface.kind === "proof_truth"
+        || surface.kind === "docs_truth"
+      ))
+      .map((surface) => surface.id),
+  );
+  const targetProofSurfaceIds = collectTeacherProposalProofSurfaceIds(surfaceMap, "target", "proposal_truth");
+  const evidenceLinkIds = uniqueStrings((input.evidenceLinks ?? []).map((link) => link.refId));
+  const counterevidenceLinkIds = uniqueStrings((input.counterevidenceLinks ?? []).map((link) => link.refId));
+  const replaySuites = uniqueStrings(input.replaySuites ?? input.replayOutcomeSummary?.replaySuites ?? []);
+  const replaySummary = input.replaySummary ?? null;
+  const replayOutcomeSummary = input.replayOutcomeSummary ?? null;
+  const shadowReplay = input.shadowReplay ?? null;
+
+  const truthInvariantsStatus: TeacherProposalReplayGateMatrixStatus = shippedTruthAnchorIds.length >= 3
+    ? "pass"
+    : shippedTruthAnchorIds.length > 0
+      ? "warn"
+      : "fail";
+  const replayNonRegressionStatus: TeacherProposalReplayGateMatrixStatus = replaySummary
+    ? replaySummary.afterScore >= replaySummary.beforeScore
+      ? "pass"
+      : "warn"
+    : shadowReplay
+      ? shadowReplay.rollback?.restored
+        ? "pass"
+        : "fail"
+      : replayOutcomeSummary && replayOutcomeSummary.resultCounts.fail === 0
+        ? "pass"
+        : "warn";
+  const attributionFloorStatus: TeacherProposalReplayGateMatrixStatus = evidenceLinkIds.length > 0
+    && (input.evidenceLinks ?? []).every((link) => normalizeText(link.path) !== null)
+    ? "pass"
+    : evidenceLinkIds.length > 0
+      ? "warn"
+      : "fail";
+  const boundednessStatus: TeacherProposalReplayGateMatrixStatus = surfaceMap.length <= 8
+    && replaySuites.length <= 6
+    && evidenceLinkIds.length <= 8
+    && counterevidenceLinkIds.length <= 4
+    ? "pass"
+    : "warn";
+  const rollbackProofLinkageStatus: TeacherProposalReplayGateMatrixStatus = normalizeText(input.rollbackKey) !== null
+    && normalizeText(input.proofBundleId) !== null
+    && targetProofSurfaceIds.length > 0
+    && (replaySummary !== null || replayOutcomeSummary !== null || shadowReplay !== null)
+    ? "pass"
+    : normalizeText(input.rollbackKey) !== null || normalizeText(input.proofBundleId) !== null
+      ? "warn"
+      : "fail";
+
+  const truthInvariantsRow = buildTeacherProposalReplayGateMatrixRow({
+    name: "truth_invariants",
+    status: truthInvariantsStatus,
+    coverage: "shipped",
+    summary: shippedTruthAnchorIds.length >= 3
+      ? "Explicit correction, runtime truth, proof truth, and docs truth remain the authority layer above teacher inference."
+      : "Truth surfaces are present but not fully anchored across runtime, proof, and docs surfaces.",
+    requirements: [
+      "Explicit correction memory still outranks teacher synthesis.",
+      "The live path stays read-only to the proposal.",
+      "Evidence refs stay attached to any non-trivial claim.",
+    ],
+    evidenceSurfaceIds: shippedTruthAnchorIds,
+    proofSurfaceIds: targetProofSurfaceIds,
+    notes: [
+      `shippedTruthSurfaceCount=${shippedTruthSurfaceIds.length}`,
+      `shippedTruthAnchorCount=${shippedTruthAnchorIds.length}`,
+      `targetProofSurfaceCount=${targetProofSurfaceIds.length}`,
+    ],
+  });
+
+  const replayNonRegressionRow = buildTeacherProposalReplayGateMatrixRow({
+    name: "replay_non_regression",
+    status: replayNonRegressionStatus,
+    coverage: replaySummary ? "target" : shadowReplay ? "target" : "mixed",
+    summary: replaySummary
+      ? `Replay summary stayed non-regressive (${replaySummary.beforeScore.toFixed(3)} → ${replaySummary.afterScore.toFixed(3)}; Δ ${replaySummary.scoreDelta.toFixed(3)}).`
+      : shadowReplay
+        ? `Shadow replay stayed non-regressive with rollback ${shadowReplay.rollback?.restored ? "restored" : "not restored"}.`
+        : replayOutcomeSummary
+          ? `Replay outcomes stayed bounded with ${replayOutcomeSummary.resultCounts.fail} fail result(s) across ${replayOutcomeSummary.replayOutcomeCount} captured outcome(s).`
+          : "Replay non-regression remains inspectable but no replay summary or outcome bundle is attached.",
+    requirements: [
+      "Required replay suites must not regress the target class.",
+      "Improvement or non-regression must be visible in the replay summary or shadow rollback path.",
+      "Claims about a fix should point at the failing bucket it addresses.",
+    ],
+    evidenceSurfaceIds: replaySummary
+      ? [normalizeText(input.replaySummaryId) ?? `${input.proposalClass}:replay-summary`]
+      : replayOutcomeSummary
+        ? replayOutcomeSummary.replaySuites
+        : shadowReplay
+          ? [shadowReplay.summary]
+          : [],
+    proofSurfaceIds: targetProofSurfaceIds,
+    notes: [
+      `replaySuites=${replaySuites.length > 0 ? replaySuites.join(", ") : "none"}`,
+      replaySummary ? `reviewMode=${replaySummary.reviewMode}` : `reviewMode=${reviewMode}`,
+      replaySummary ? `candidate=${replaySummary.candidatePackId ?? replaySummary.candidatePackVersion ?? "unbound"}` : null,
+      shadowReplay ? `shadowReplay=${shadowReplay.proposalClass}/${shadowReplay.replayOutcome}` : null,
+    ].filter(Boolean),
+  });
+
+  const attributionFloorRow = buildTeacherProposalReplayGateMatrixRow({
+    name: "attribution_floor",
+    status: attributionFloorStatus,
+    coverage: "target",
+    summary: evidenceLinkIds.length > 0
+      ? `Attribution stays above floor with ${evidenceLinkIds.length} evidence link(s) and ${counterevidenceLinkIds.length} counterevidence link(s).`
+      : "Attribution floor is not met because the proposal carries no durable evidence links.",
+    requirements: [
+      "Every proposal carries durable evidence refs.",
+      "Source ids must be stable record ids, not display labels.",
+      "Unattributed payload stays out of promotion.",
+    ],
+    evidenceSurfaceIds: evidenceLinkIds,
+    proofSurfaceIds: targetProofSurfaceIds,
+    notes: [
+      `evidenceLinkCount=${evidenceLinkIds.length}`,
+      `counterevidenceLinkCount=${counterevidenceLinkIds.length}`,
+      `proofBundleId=${normalizeText(input.proofBundleId) ?? "none"}`,
+    ],
+  });
+
+  const boundednessRow = buildTeacherProposalReplayGateMatrixRow({
+    name: "boundedness",
+    status: boundednessStatus,
+    coverage: surfaceMap.some((surface) => surface.state === "shipped") && surfaceMap.some((surface) => surface.state === "target")
+      ? "mixed"
+      : surfaceMap.some((surface) => surface.state === "target")
+        ? "target"
+        : "shipped",
+    summary: surfaceMap.length <= 8
+      ? `Bundle stays bounded with ${shippedTruthSurfaceIds.length} shipped truth surface(s) and ${targetProofSurfaceIds.length} target proof surface(s).`
+      : `Bundle surface inventory is growing beyond the compact review target (${surfaceMap.length} surfaces).`,
+    requirements: [
+      "Proposal subject sets stay finite and small.",
+      "Payloads avoid raw corpus dumps and unbounded excerpts.",
+      "Replay fits inside a single review pass.",
+    ],
+    evidenceSurfaceIds: [...shippedTruthSurfaceIds, ...targetProofSurfaceIds],
+    proofSurfaceIds: targetProofSurfaceIds,
+    notes: [
+      `surfaceCount=${surfaceMap.length}`,
+      `replaySuiteCount=${replaySuites.length}`,
+      `evidenceLinkCount=${evidenceLinkIds.length}`,
+      `counterevidenceLinkCount=${counterevidenceLinkIds.length}`,
+    ],
+  });
+
+  const rollbackProofLinkageRow = buildTeacherProposalReplayGateMatrixRow({
+    name: "rollback_proof_linkage",
+    status: rollbackProofLinkageStatus,
+    coverage: "mixed",
+    summary: rollbackProofLinkageStatus === "pass"
+      ? "Rollback identity, proof bundle identity, and replay evidence remain linked for operator review."
+      : "Rollback identity and proof bundle identity are visible but not fully bound.",
+    requirements: [
+      "RollbackKey identifies the reversible path.",
+      "Prior state remains recoverable for replay.",
+      "Rejected or superseded proposals keep lineage.",
+      "Promotion proof stays tied back to the rollback handle and candidate evidence.",
+    ],
+    evidenceSurfaceIds: [
+      ...(normalizeText(input.rollbackKey) ? [normalizeText(input.rollbackKey) as string] : []),
+      ...(normalizeText(input.proofBundleId) ? [normalizeText(input.proofBundleId) as string] : []),
+      ...(replaySummary?.summary ? [replaySummary.summary] : []),
+      ...(shadowReplay?.summary ? [shadowReplay.summary] : []),
+    ],
+    proofSurfaceIds: targetProofSurfaceIds,
+    notes: [
+      `rollbackKey=${normalizeText(input.rollbackKey) ?? "none"}`,
+      `proofBundleId=${normalizeText(input.proofBundleId) ?? "none"}`,
+      replaySummary ? `replaySummaryId=${replaySummary.status}/${replaySummary.reviewMode}` : null,
+      shadowReplay ? `shadowReplayRollback=${shadowReplay.rollbackKey}` : null,
+    ].filter(Boolean),
+  });
+
+  const rows: TeacherProposalReplayGateMatrixV1["rows"] = [
+    truthInvariantsRow,
+    replayNonRegressionRow,
+    attributionFloorRow,
+    boundednessRow,
+    rollbackProofLinkageRow,
+  ];
+
+  return {
+    proposalId: normalizeText(input.proposalId),
+    proposalClass: input.proposalClass,
+    reviewMode,
+    rollbackKey: normalizeText(input.rollbackKey),
+    proofBundleId: normalizeText(input.proofBundleId),
+    replaySummaryId: normalizeText(input.replaySummaryId) ?? (input.replaySummary ? `${input.proposalClass}:replay-summary` : null),
+    rows,
+    summary: `${input.proposalClass} gate matrix: ${rows.map((row) => `${row.name}=${row.status}`).join(", ")}; shipped=${shippedTruthAnchorIds.length} target=${targetProofSurfaceIds.length} evidenceLinks=${evidenceLinkIds.length} replaySuites=${replaySuites.length}.`,
+  };
 }
 
 export function summarizeTeacherProposalReplayOutcomesV1(

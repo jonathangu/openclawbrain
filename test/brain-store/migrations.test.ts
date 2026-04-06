@@ -65,14 +65,23 @@ describe("runBrainMigrations usefulness schema", () => {
     expect(tableInfo.map((column) => column.name)).toEqual(expect.arrayContaining([
       "proposal_id",
       "proposal_class",
+      "proposal_kind",
       "lane",
       "status",
+      "lifecycle_state",
+      "schema_version",
       "idempotency_key",
       "rollback_key",
       "scope",
       "base_pack_version",
       "base_graph_hash",
       "producer_version",
+      "prompt_hash",
+      "template_id",
+      "profile",
+      "source_bundle_id",
+      "replay_suite_ids",
+      "freshness_ts",
       "proposal_json",
       "created_at",
       "updated_at",
@@ -84,6 +93,8 @@ describe("runBrainMigrations usefulness schema", () => {
       .all() as Array<{ name: string }>;
     expect(indexNames.map((row) => row.name)).toEqual(expect.arrayContaining([
       "brain_teacher_proposals_class_status_idx",
+      "brain_teacher_proposals_kind_lifecycle_idx",
+      "brain_teacher_proposals_lifecycle_idx",
       "brain_teacher_proposals_rollback_idx",
       "brain_teacher_proposals_scope_idx",
     ]));

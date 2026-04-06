@@ -18,6 +18,10 @@ import type {
   BrainObservationToolResult,
   BrainObservationBindingMode,
   BrainPrefetchDecision,
+  DecisionPointActionCandidateV1,
+  DecisionPointActionKindV1,
+  DecisionPointBudgetContextV1,
+  DecisionPointSnapshotV1,
   DecisionTraceBranchOutcome,
   DecisionRouteTrace,
   DecisionTrace,
@@ -582,6 +586,261 @@ function countDroppedProposalReasons(traversalResult: TraverseResult): {
     droppedProposalCount,
     droppedProposalReasons: Object.keys(droppedProposalReasons).length > 0 ? droppedProposalReasons : null,
   };
+}
+
+function isNonEmptyString(value: unknown): value is string {
+  return typeof value === "string" && value.trim().length > 0;
+}
+
+function readStringMetadata(metadata: Record<string, unknown>, keys: string[]): string | null {
+  for (const key of keys) {
+    const value = metadata[key];
+    if (isNonEmptyString(value)) {
+      return value.trim();
+    }
+  }
+  return null;
+}
+
+function summarizeToolArgsShape(metadata: Record<string, unknown>): string | null {
+  const ref = readStringMetadata(metadata, ["toolArgsShape", "tool_args_shape", "tool_args_ref"]);
+  if (ref) {
+    return ref;
+  }
+
+  const toolArgs = metadata.toolArgs ?? metadata.tool_args;
+  if (!toolArgs || typeof toolArgs !== "object" || Array.isArray(toolArgs)) {
+    return null;
+  }
+
+  return Object.keys(toolArgs as Record<string, unknown>).sort().join(",");
+}
+
+function sanitizeRetrievalFeatures(
+  features: Record<string, unknown> | null | undefined,
+): Record<string, number | string | boolean> | null {
+  if (!features) {
+    return null;
+  }
+
+  const entries = Object.entries(features).filter(([, value]) => value !== undefined && value !== null);
+  if (entries.length === 0) {
+    return null;
+  }
+
+  return Object.fromEntries(entries) as Record<string, number | string | boolean>;
+}
+
+function classifyActionKind(params: {
+  action: TraverseResult["trajectory"][number]["substeps"][number]["candidates"][number]["action"];
+  sourceNodeId: string | null;
+  lookupNode?: (nodeId: string) => BrainNode | null | undefined;
+}): { actionKind: DecisionPointActionKindV1; node: BrainNode | null } {
+  if (params.action.type === "stop_local") {
+    return { actionKind: "stop_local", node: null };
+  }
+
+  const node = params.lookupNode?.(params.action.targetNodeId) ?? null;
+  if (params.sourceNodeId !== null && node?.kind === "toolcard") {
+    return { actionKind: "tool", node };
+  }
+
+  return { actionKind: "traverse", node };
+}
+
+function buildDecisionPointActionCandidate(params: {
+  candidate: TraverseResult["trajectory"][number]["substeps"][number]["candidates"][number];
+  sourceNodeId: string | null;
+  lookupNode?: (nodeId: string) => BrainNode | null | undefined;
+}): DecisionPointActionCandidateV1 {
+  const { actionKind, node } = classifyActionKind({
+    action: params.candidate.action,
+    sourceNodeId: params.sourceNodeId,
+    lookupNode: params.lookupNode,
+  });
+
+  if (actionKind === "stop_local" || actionKind === "stop") {
+    return {
+      actionId: actionKind,
+      actionKind,
+      nodeId: null,
+      toolName: null,
+      toolArgsShape: null,
+      priorScore: params.candidate.priorScore ?? params.candidate.score,
+      probability: params.candidate.probability,
+      retrievalFeatures: sanitizeRetrievalFeatures(params.candidate.scoreBreakdown as Record<string, unknown> | null | undefined),
+    };
+  }
+
+  const toolName = actionKind === "tool"
+    ? readStringMetadata(node?.metadata ?? {}, ["toolName", "tool_name"]) ?? node?.id ?? params.candidate.action.targetNodeId
+    : null;
+
+  return {
+    actionId: `${actionKind}:${params.candidate.action.targetNodeId}`,
+    actionKind,
+    nodeId: params.candidate.action.targetNodeId,
+    toolName,
+    toolArgsShape: actionKind === "tool" ? summarizeToolArgsShape(node?.metadata ?? {}) : null,
+    priorScore: params.candidate.priorScore ?? params.candidate.score,
+    probability: params.candidate.probability,
+    retrievalFeatures: sanitizeRetrievalFeatures(params.candidate.scoreBreakdown as Record<string, unknown> | null | undefined),
+  };
+}
+
+function buildDecisionPointBudgetContext(params: {
+  stateSnapshot: TraverseResult["trajectory"][number]["substeps"][number]["stateSnapshot"];
+  routeSelectionMs: number | null;
+  totalQueryMs: number | null;
+  maxContextChars: number | null;
+  queryBudgetChars: number | null;
+  injectedChars: number | null;
+  droppedChars: number | null;
+  contextClipped: boolean | null;
+  compileDeadlineMs: number | null;
+  compileDeadlineHit: boolean | null;
+}): DecisionPointBudgetContextV1 {
+  const policyState = params.stateSnapshot.policyState;
+  const budgetUsed = Math.max(0, params.stateSnapshot.initialBudget - params.stateSnapshot.budgetRemaining);
+  const budgetUsedFraction = params.stateSnapshot.initialBudget > 0
+    ? budgetUsed / params.stateSnapshot.initialBudget
+    : 0;
+
+  return {
+    budgetRemaining: params.stateSnapshot.budgetRemaining,
+    initialBudget: params.stateSnapshot.initialBudget,
+    reservedTokenCost: params.stateSnapshot.reservedTokenCost,
+    budgetUsed,
+    budgetUsedFraction,
+    maxHops: params.stateSnapshot.maxHops,
+    maxFrontierSize: params.stateSnapshot.maxFrontierSize ?? null,
+    frontierSize: params.stateSnapshot.frontierSize,
+    visitedCount: params.stateSnapshot.visitedCount,
+    firedCount: params.stateSnapshot.firedCount,
+    pendingSelectionCount: params.stateSnapshot.pendingSelectionCount ?? 0,
+    pressureLevel: policyState?.pressureLevel ?? null,
+    frontierPressure: policyState?.frontierPressure ?? null,
+    budgetPressure: policyState?.budgetUsedFraction ?? null,
+    budgetFraction: null,
+    queryBudgetChars: params.queryBudgetChars,
+    maxContextChars: params.maxContextChars,
+    injectedChars: params.injectedChars,
+    droppedChars: params.droppedChars,
+    contextClipped: params.contextClipped,
+    routeSelectionMs: params.routeSelectionMs,
+    totalQueryMs: params.totalQueryMs,
+    compileDeadlineMs: params.compileDeadlineMs,
+    compileDeadlineHit: params.compileDeadlineHit,
+  };
+}
+
+function buildDecisionPointSnapshots(params: {
+  traceId: string;
+  episodeId: string | null;
+  conversationId: number | null;
+  traversalResult: TraverseResult;
+  requestDigest: string;
+  activePackId: string | null;
+  routerIdentity: string;
+  routeSelectionMs: number | null;
+  totalQueryMs: number | null;
+  maxContextChars: number | null;
+  queryBudgetChars: number | null;
+  injectedChars: number | null;
+  droppedChars: number | null;
+  contextClipped: boolean | null;
+  compileDeadlineMs: number | null;
+  compileDeadlineHit: boolean | null;
+  candidateNodeIds: string[];
+  selectedNodeIds: string[];
+  selectedTraversalNodeIds: string[];
+  selectedSeedNodeIds: string[];
+  lookupNode?: (nodeId: string) => BrainNode | null | undefined;
+}): DecisionPointSnapshotV1[] {
+  const routeContext = {
+    requestDigest: params.requestDigest,
+    activePackId: params.activePackId,
+    routerIdentity: params.routerIdentity,
+    candidateNodeIds: [...params.candidateNodeIds],
+    selectedNodeIds: [...params.selectedNodeIds],
+    selectedTraversalNodeIds: [...params.selectedTraversalNodeIds],
+    selectedSeedNodeIds: [...params.selectedSeedNodeIds],
+  };
+
+  return params.traversalResult.trajectory.flatMap((expansion) => expansion.substeps.map((substep) => {
+    const chosen = buildDecisionPointActionCandidate({
+      candidate: substep.candidates.find((candidate) => {
+        if (substep.chosenAction.type === "stop_local") {
+          return candidate.action.type === "stop_local";
+        }
+        return candidate.action.type === "traverse" && candidate.action.targetNodeId === substep.chosenAction.targetNodeId;
+      }) ?? substep.candidates[0]!,
+      sourceNodeId: substep.stateSnapshot.sourceNodeId,
+      lookupNode: params.lookupNode,
+    });
+
+    return {
+      schemaVersion: 1,
+      decisionPointId: `dp_${hashStableParts([
+        params.traceId,
+        params.episodeId,
+        String(substep.stateSnapshot.expansionIndex),
+        String(substep.stateSnapshot.selectionIndex),
+        substep.stateSnapshot.sourceNodeId ?? "start",
+      ])}`,
+      traceId: params.traceId,
+      episodeId: params.episodeId,
+      conversationId: params.conversationId,
+      sourceNodeId: substep.stateSnapshot.sourceNodeId,
+      expansionIndex: substep.stateSnapshot.expansionIndex,
+      selectionIndex: substep.stateSnapshot.selectionIndex,
+      decisionPointKind: substep.stateSnapshot.sourceNodeId === null ? "seed" : "local",
+      localActionSet: substep.candidates.map((candidate) => buildDecisionPointActionCandidate({
+        candidate,
+        sourceNodeId: substep.stateSnapshot.sourceNodeId,
+        lookupNode: params.lookupNode,
+      })),
+      chosenActionId: chosen.actionId,
+      chosenActionKind: chosen.actionKind,
+      chosenNodeId: chosen.nodeId,
+      chosenToolName: chosen.toolName,
+      chosenActionProbability: substep.chosenActionProbability,
+      stopProbability: substep.stopProbability,
+      stopTruth: substep.stopTruth ?? null,
+      stopReason: substep.stopReason ?? null,
+      budgetContext: buildDecisionPointBudgetContext({
+        stateSnapshot: substep.stateSnapshot,
+        routeSelectionMs: params.routeSelectionMs,
+        totalQueryMs: params.totalQueryMs,
+        maxContextChars: params.maxContextChars,
+        queryBudgetChars: params.queryBudgetChars,
+        injectedChars: params.injectedChars,
+        droppedChars: params.droppedChars,
+        contextClipped: params.contextClipped,
+        compileDeadlineMs: params.compileDeadlineMs,
+        compileDeadlineHit: params.compileDeadlineHit,
+      }),
+      routeContext,
+    };
+  }));
+}
+
+function summarizeDecisionPointSnapshots(snapshots: DecisionPointSnapshotV1[]): string {
+  const counts = {
+    total: snapshots.length,
+    traverse: 0,
+    tool: 0,
+    stop_local: 0,
+    stop: 0,
+  };
+
+  for (const snapshot of snapshots) {
+    for (const candidate of snapshot.localActionSet) {
+      counts[candidate.actionKind] += 1;
+    }
+  }
+
+  return `[brain decision points] total=${counts.total} actions traverse=${counts.traverse} tool=${counts.tool} stop_local=${counts.stop_local} stop=${counts.stop}`;
 }
 
 function formatBranchSource(sourceNodeId: string | null): string {
@@ -1262,6 +1521,8 @@ export function summarizeRecentDecisionTraces(
 }
 
 function buildRouteTrace(params: {
+  traceId: string;
+  episodeId: string | null;
   traversalResult: TraverseResult;
   queryText: string;
   conversationId: number | null;
@@ -1276,6 +1537,7 @@ function buildRouteTrace(params: {
   totalQueryMs: number | null;
   queryEmbeddingSource: "provided" | "runtime";
   selectedNodes: BrainNode[];
+  lookupNode?: (nodeId: string) => BrainNode | null | undefined;
   persistRawSurfaces: boolean;
 }): DecisionRouteTrace {
   const interruption = params.traversalResult.interruption ?? null;
@@ -1294,6 +1556,29 @@ function buildRouteTrace(params: {
     0,
   );
   const injectedNodeSummaries = params.selectedNodes.map((node) => summarizeInjectedNode(node));
+  const decisionPointSnapshots = buildDecisionPointSnapshots({
+    traceId: params.traceId,
+    episodeId: params.episodeId,
+    conversationId: params.conversationId,
+    traversalResult: params.traversalResult,
+    requestDigest: hashQuery(params.queryText),
+    activePackId: params.packVersion === null ? null : `brain-pack-v${params.packVersion}`,
+    routerIdentity: ROUTER_IDENTITY,
+    routeSelectionMs: params.routeSelectionMs,
+    totalQueryMs: params.totalQueryMs,
+    maxContextChars: null,
+    queryBudgetChars: null,
+    injectedChars: null,
+    droppedChars: null,
+    contextClipped: null,
+    compileDeadlineMs: null,
+    compileDeadlineHit: null,
+    candidateNodeIds: candidateIds,
+    selectedNodeIds: selectedIds,
+    selectedTraversalNodeIds: selectedTraversalIds,
+    selectedSeedNodeIds,
+    lookupNode: params.lookupNode,
+  });
 
   const rawRouteTrace: DecisionRouteTrace = {
     persistenceMode: buildPersistenceMode(params.persistRawSurfaces),
@@ -1354,6 +1639,8 @@ function buildRouteTrace(params: {
       interruptionReason: interruption?.reason ?? null,
       servedPartial: interruption?.servedPartial ?? false,
       interruptionAccounting: params.traversalResult.interruptionAccounting ?? null,
+      decisionPointSnapshots,
+      decisionPointSummary: summarizeDecisionPointSnapshots(decisionPointSnapshots),
     },
   };
 
@@ -1378,11 +1665,13 @@ export function recordTrace(params: {
   totalQueryMs: number | null;
   queryEmbeddingSource: "provided" | "runtime";
   selectedNodes: BrainNode[];
+  lookupNode?: (nodeId: string) => BrainNode | null | undefined;
   persistRawSurfaces?: boolean;
 }): DecisionTrace {
   const persistRawSurfaces = params.persistRawSurfaces ?? false;
+  const traceId = `bt_${randomUUID().slice(0, 8)}`;
   return {
-    id: `bt_${randomUUID().slice(0, 8)}`,
+    id: traceId,
     episodeId: params.episodeId,
     packVersion: params.packVersion,
     queryText: persistRawSurfaces
@@ -1394,7 +1683,7 @@ export function recordTrace(params: {
     vetoedNodes: params.traversalResult.vetoedNodes.map((v) => v.nodeId),
     contextChars: params.traversalResult.contextChars,
     footer: params.traversalResult.footer,
-    routeTrace: buildRouteTrace({ ...params, persistRawSurfaces }),
+    routeTrace: buildRouteTrace({ ...params, traceId, persistRawSurfaces }),
     createdAt: Date.now(),
   };
 }

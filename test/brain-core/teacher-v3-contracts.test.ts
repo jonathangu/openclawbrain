@@ -13,6 +13,7 @@ import type {
 import {
   describeTeacherCanaryRolloutPlanV1,
   describeTeacherProposalReplayGate,
+  describeTeacherProposalReplayGateMatrixV1,
   diffTeacherProposalV1,
   isTeacherProposalPromotableClassV1,
   RETENTION_STATE_TRANSITIONS,
@@ -362,6 +363,127 @@ describe("teacher v3 contracts", () => {
       "forgetting",
       "correction",
     ]);
+  });
+
+  it("surfaces a five-part replay/promotion/proof gate matrix with explicit rollback linkage", () => {
+    const proofBundleSummary = summarizeTeacherProposalProofBundleV1(proposal.proofBundle as TeacherProposalProofBundleV1);
+    const gateMatrix = describeTeacherProposalReplayGateMatrixV1({
+      proposalId: proposal.proposalId,
+      proposalClass: proposal.proposalClass,
+      rollbackKey: proposal.rollbackKey,
+      proofBundleId: proposal.proofBundle?.bundleId,
+      replaySummaryId: "treplay_01",
+      replaySummary: {
+        status: "promotable",
+        reviewMode: "promotable",
+        beforeScore: 0.61,
+        afterScore: 0.79,
+        scoreDelta: 0.18,
+        candidatePackId: "candidate_pack_08",
+        candidatePackVersion: 8,
+        summary: "compiler replay accepted on candidate_pack_08; before=0.610 after=0.790 delta=0.180",
+      },
+      replayOutcomeSummary: proofBundleSummary.replayOutcomeSummary,
+      replaySuites: proposal.replaySuites,
+      surfaceMap: [
+        {
+          id: "runtime-truth",
+          state: "shipped",
+          phase: "before",
+          kind: "runtime_truth",
+          source: "openclawbrain status --detailed",
+        },
+        {
+          id: "operator-proof-truth",
+          state: "shipped",
+          phase: "before",
+          kind: "proof_truth",
+          source: "openclawbrain proof --openclaw-home ~/.openclaw",
+        },
+        {
+          id: "docs-truth",
+          state: "shipped",
+          phase: "before",
+          kind: "docs_truth",
+          source: "docs/architecture/teacher-v3-proof.md",
+        },
+        {
+          id: "teacher-v3-proof-summary",
+          state: "target",
+          phase: "after",
+          kind: "proposal_truth",
+          source: "artifacts/teacher-v3-proof/summary.md",
+        },
+        {
+          id: "teacher-v3-proof-status",
+          state: "target",
+          phase: "after",
+          kind: "proposal_truth",
+          source: "artifacts/teacher-v3-proof/status.json",
+        },
+        {
+          id: "teacher-v3-proof-surface-map",
+          state: "target",
+          phase: "after",
+          kind: "proposal_truth",
+          source: "artifacts/teacher-v3-proof/surface-map.json",
+        },
+        {
+          id: "teacher-v3-proof-proposal-report",
+          state: "target",
+          phase: "after",
+          kind: "proposal_truth",
+          source: "artifacts/teacher-v3-proof/proposal-report.json",
+        },
+        {
+          id: "teacher-v3-proof-verdict",
+          state: "target",
+          phase: "after",
+          kind: "proposal_truth",
+          source: "artifacts/teacher-v3-proof/verdict.json",
+        },
+      ],
+      evidenceLinks: proposal.proofBundle?.evidenceLinks ?? [],
+      counterevidenceLinks: proposal.proofBundle?.counterevidenceLinks,
+    });
+
+    expect(gateMatrix.summary).toContain("gate matrix");
+    expect(gateMatrix.rows.map((row) => row.name)).toEqual([
+      "truth_invariants",
+      "replay_non_regression",
+      "attribution_floor",
+      "boundedness",
+      "rollback_proof_linkage",
+    ]);
+    expect(gateMatrix.rows[0]).toMatchObject({
+      status: "pass",
+      coverage: "shipped",
+      evidenceSurfaceIds: ["runtime-truth", "operator-proof-truth", "docs-truth"],
+    });
+    expect(gateMatrix.rows[1]).toMatchObject({
+      status: "pass",
+      coverage: "target",
+    });
+    expect(gateMatrix.rows[1].summary).toContain("non-regressive");
+    expect(gateMatrix.rows[2]).toMatchObject({
+      status: "pass",
+      coverage: "target",
+    });
+    expect(gateMatrix.rows[2].summary).toContain("Attribution stays above floor");
+    expect(gateMatrix.rows[3]).toMatchObject({
+      status: "pass",
+    });
+    expect(gateMatrix.rows[3].notes).toEqual(
+      expect.arrayContaining([
+        "surfaceCount=8",
+        "replaySuiteCount=1",
+      ]),
+    );
+    expect(gateMatrix.rows[4]).toMatchObject({
+      status: "pass",
+      coverage: "mixed",
+    });
+    expect(gateMatrix.rows[4].summary).toContain("Rollback identity");
   });
 
   it("keeps canary rollout plans target-state only and rollback-bound for proposal classes and candidate packs", () => {

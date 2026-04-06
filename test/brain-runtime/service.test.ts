@@ -241,6 +241,8 @@ describe("BrainService", () => {
         }),
       }),
     }));
+    expect(trace?.routeTrace?.selectionMetadata?.decisionPointSnapshots?.length).toBeGreaterThan(0);
+    expect(trace?.routeTrace?.selectionMetadata?.decisionPointSummary).toContain("[brain decision points]");
     expect(trace?.routeTrace?.requestDigest).toMatch(/^[a-f0-9]{16}$/);
     expect(trace?.routeTrace?.candidateNodeIds).toContain(result?.fired[0]?.nodeId ?? "");
     expect(trace?.routeTrace?.sourceSummary.kinds).toMatchObject({ chunk: 1 });

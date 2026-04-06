@@ -69,7 +69,12 @@ import type {
   TeacherProposalReplaySummaryV1,
   TeacherProposalSummaryV1,
 } from "../brain-core/teacher-v3-contracts.js";
-import { describeTeacherCanaryActivationGuardV1, diffTeacherProposalV1, summarizeTeacherProposalV1 } from "../brain-core/teacher-v3-contracts.js";
+import {
+  describeTeacherCanaryActivationGuardV1,
+  diffTeacherProposalV1,
+  normalizeTeacherProposalV1,
+  summarizeTeacherProposalV1,
+} from "../brain-core/teacher-v3-contracts.js";
 import { usefulnessThresholds } from "../brain-core/usefulness.js";
 import { summarizeRecentDecisionTraces, type RecentDecisionTraceSummary } from "../brain-core/trace.js";
 
@@ -2375,8 +2380,11 @@ export class BrainStore {
       INSERT INTO brain_teacher_proposals (
         proposal_id,
         proposal_class,
+        proposal_kind,
         lane,
         status,
+        lifecycle_state,
+        schema_version,
         idempotency_key,
         rollback_key,
         scope,
@@ -2388,16 +2396,21 @@ export class BrainStore {
         template_id,
         profile,
         source_bundle_id,
+        replay_suite_ids,
+        freshness_ts,
         proposal_json,
         created_at,
         updated_at,
         resolved_at
-      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
     `).run(
       record.proposalId,
       record.proposalClass,
+      record.proposalKind,
       record.lane,
       record.status,
+      record.lifecycleState,
+      record.schemaVersion,
       record.idempotencyKey,
       record.rollbackKey,
       record.scope,
@@ -2409,6 +2422,8 @@ export class BrainStore {
       record.templateId,
       record.profile,
       record.sourceBundleId,
+      record.replaySuiteIds,
+      record.freshnessTs,
       record.proposalJson,
       record.createdAt,
       record.updatedAt,
@@ -2436,6 +2451,7 @@ export class BrainStore {
       ...existing,
       status: params.status,
       resolvedAt: resolvedAt ?? undefined,
+      freshnessTs: resolvedAt ?? existing.freshnessTs ?? existing.createdAt,
       proofBundle: params.proofBundle === undefined ? existing.proofBundle : params.proofBundle ?? undefined,
       replayGate: params.replayGate === undefined ? existing.replayGate : params.replayGate ?? undefined,
       canaryRollout: params.canaryRollout === undefined ? existing.canaryRollout : params.canaryRollout ?? undefined,
@@ -2448,8 +2464,11 @@ export class BrainStore {
     this.db.prepare(`
       UPDATE brain_teacher_proposals
       SET proposal_class = ?,
+          proposal_kind = ?,
           lane = ?,
           status = ?,
+          lifecycle_state = ?,
+          schema_version = ?,
           idempotency_key = ?,
           rollback_key = ?,
           scope = ?,
@@ -2461,14 +2480,19 @@ export class BrainStore {
           template_id = ?,
           profile = ?,
           source_bundle_id = ?,
+          replay_suite_ids = ?,
+          freshness_ts = ?,
           proposal_json = ?,
           updated_at = ?,
           resolved_at = ?
       WHERE proposal_id = ?
     `).run(
       record.proposalClass,
+      record.proposalKind,
       record.lane,
       record.status,
+      record.lifecycleState,
+      record.schemaVersion,
       record.idempotencyKey,
       record.rollbackKey,
       record.scope,
@@ -2480,6 +2504,8 @@ export class BrainStore {
       record.templateId,
       record.profile,
       record.sourceBundleId,
+      record.replaySuiteIds,
+      record.freshnessTs,
       record.proposalJson,
       record.updatedAt,
       record.resolvedAt,
@@ -2505,6 +2531,28 @@ export class BrainStore {
       ORDER BY created_at DESC
       LIMIT ?
     `).all(proposalClass, limit) as Record<string, unknown>[];
+    return rows.map((row) => this.toTeacherProposal(row));
+  }
+
+  getTeacherProposalsByKind(proposalKind: string, limit = 50): TeacherProposal[] {
+    const rows = this.db.prepare(`
+      SELECT *
+      FROM brain_teacher_proposals
+      WHERE proposal_kind = ?
+      ORDER BY created_at DESC
+      LIMIT ?
+    `).all(proposalKind, limit) as Record<string, unknown>[];
+    return rows.map((row) => this.toTeacherProposal(row));
+  }
+
+  getTeacherProposalsByLifecycleState(lifecycleState: string, limit = 50): TeacherProposal[] {
+    const rows = this.db.prepare(`
+      SELECT *
+      FROM brain_teacher_proposals
+      WHERE lifecycle_state = ?
+      ORDER BY created_at DESC
+      LIMIT ?
+    `).all(lifecycleState, limit) as Record<string, unknown>[];
     return rows.map((row) => this.toTeacherProposal(row));
   }
 
@@ -2771,7 +2819,7 @@ export class BrainStore {
     if (!proposal) {
       throw new Error(`invalid teacher proposal payload for ${row.proposal_id as string}`);
     }
-    return proposal;
+    return normalizeTeacherProposalV1(proposal);
   }
 
   private toTeacherProposalRow(
@@ -2779,10 +2827,15 @@ export class BrainStore {
     createdAt: number,
     updatedAt: number,
   ): {
+    schemaVersion: 1;
     proposalId: string;
     proposalClass: TeacherProposal["proposalClass"];
+    proposalKind: string | null;
     lane: string | null;
     status: TeacherProposal["status"];
+    lifecycleState: string | null;
+    replaySuiteIds: string;
+    freshnessTs: string | null;
     idempotencyKey: string;
     rollbackKey: string;
     scope: string;
@@ -2809,23 +2862,29 @@ export class BrainStore {
 
     const createdAtValue = toEpochMs(proposal.createdAt) ?? createdAt;
     const resolvedAtValue = toEpochMs(proposal.resolvedAt);
+    const normalizedProposal = normalizeTeacherProposalV1(proposal);
     return {
+      schemaVersion: normalizedProposal.schemaVersion ?? 1,
       proposalId: proposal.proposalId,
       proposalClass: proposal.proposalClass,
-      lane: proposal.lane ?? null,
-      status: proposal.status,
-      idempotencyKey: proposal.lineage.idempotencyKey,
-      rollbackKey: proposal.rollbackKey,
-      scope: proposal.lineage.scope,
-      basePackVersion: proposal.lineage.basePackVersion ?? null,
-      baseGraphHash: proposal.lineage.baseGraphHash ?? null,
-      producerVersion: proposal.lineage.producerVersion,
-      producerBuildId: proposal.lineage.producerBuildId ?? null,
-      promptHash: proposal.lineage.promptHash ?? null,
-      templateId: proposal.lineage.templateId ?? null,
-      profile: proposal.lineage.profile ?? null,
-      sourceBundleId: proposal.lineage.sourceBundleId ?? null,
-      proposalJson: JSON.stringify(proposal),
+      proposalKind: normalizedProposal.proposalKind ?? null,
+      lane: normalizedProposal.lane ?? null,
+      status: normalizedProposal.status,
+      lifecycleState: normalizedProposal.lifecycleState ?? null,
+      replaySuiteIds: JSON.stringify(normalizedProposal.replaySuiteIds),
+      freshnessTs: normalizedProposal.freshnessTs ?? null,
+      idempotencyKey: normalizedProposal.lineage.idempotencyKey,
+      rollbackKey: normalizedProposal.rollbackKey,
+      scope: normalizedProposal.lineage.scope,
+      basePackVersion: normalizedProposal.lineage.basePackVersion ?? null,
+      baseGraphHash: normalizedProposal.lineage.baseGraphHash ?? null,
+      producerVersion: normalizedProposal.lineage.producerVersion,
+      producerBuildId: normalizedProposal.lineage.producerBuildId ?? null,
+      promptHash: normalizedProposal.lineage.promptHash ?? null,
+      templateId: normalizedProposal.lineage.templateId ?? null,
+      profile: normalizedProposal.lineage.profile ?? null,
+      sourceBundleId: normalizedProposal.lineage.sourceBundleId ?? null,
+      proposalJson: JSON.stringify(normalizedProposal),
       createdAt: createdAtValue,
       updatedAt,
       resolvedAt: resolvedAtValue,

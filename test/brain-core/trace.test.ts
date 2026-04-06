@@ -32,6 +32,17 @@ function makeNode(id: string): BrainNode {
   };
 }
 
+function makeToolNode(id: string, toolName: string): BrainNode {
+  return {
+    ...makeNode(id),
+    kind: "toolcard",
+    metadata: {
+      toolName,
+      toolArgsShape: "query,timeout",
+    },
+  };
+}
+
 function makeSeedScore(nodeId: string, selected: boolean, selectionSubstepIndex: number | null): SeedScore {
   return {
     nodeId,
@@ -142,6 +153,124 @@ function makeTrace(
 }
 
 describe("decision trace branch proofs", () => {
+  it("exports decision-point snapshots with traverse, tool, and stop_local action sets", () => {
+    const traversalResult: TraverseResult = {
+      firedNodes: [
+        { nodeId: "tool_1", kind: "toolcard", content: "tool node", tokenCount: 8 },
+      ],
+      vetoedNodes: [],
+      trajectory: [
+        {
+          sourceNodeId: "a",
+          expansionIndex: 0,
+          frontierBefore: [],
+          frontierAfter: ["tool_1"],
+          budgetBefore: 100,
+          budgetAfter: 92,
+          substeps: [
+            {
+              stateSnapshot: makeStateSnapshot("a", 0, 0),
+              candidates: [
+                {
+                  action: { type: "traverse" as const, targetNodeId: "doc_1" },
+                  score: 1.25,
+                  probability: 0.2,
+                  scoreBreakdown: { totalScore: 1.25, seedPrior: 0.25 },
+                },
+                {
+                  action: { type: "traverse" as const, targetNodeId: "tool_1" },
+                  score: 2.5,
+                  probability: 0.65,
+                  scoreBreakdown: { totalScore: 2.5, toolActionPrior: 1.2 },
+                },
+                {
+                  action: { type: "stop_local" as const },
+                  score: 0.1,
+                  probability: 0.15,
+                  scoreBreakdown: { totalScore: 0.1, learnedStopWeight: -0.2 },
+                },
+              ],
+              chosenAction: { type: "traverse" as const, targetNodeId: "tool_1" },
+              chosenActionProbability: 0.65,
+              stopProbability: 0.15,
+            },
+          ],
+          selectedTargets: ["tool_1"],
+          acceptedTargets: ["tool_1"],
+          vetoedTargets: [],
+          proposalOutcomes: [
+            { targetNodeId: "tool_1", outcome: "accepted", reason: "accepted" },
+          ],
+          terminationReason: "policy_stop",
+        },
+      ],
+      seedScores: [makeSeedScore("tool_1", false, null)],
+      contextChars: 8,
+      footer: "Brain · 1 seed candidates · 0 seed picks · 1 expansions · 1 fired · 0 veto · 8 chars",
+      interruption: null,
+      interruptionAccounting: null,
+    };
+
+    const trace = recordTrace({
+      traversalResult,
+      queryText: "find the tool",
+      episodeId: "ep-decision-point-export",
+      conversationId: 12,
+      packVersion: 3,
+      budgetChars: 100,
+      maxHops: 4,
+      maxFanoutPerNode: 4,
+      maxFrontierSize: 8,
+      embeddingMs: 1,
+      routeSelectionMs: 2,
+      totalQueryMs: 3,
+      queryEmbeddingSource: "provided",
+      selectedNodes: [makeToolNode("tool_1", "bash")],
+      lookupNode: (nodeId) => {
+        if (nodeId === "tool_1") {
+          return makeToolNode("tool_1", "bash");
+        }
+        if (nodeId === "doc_1") {
+          return makeNode("doc_1");
+        }
+        return null;
+      },
+      persistRawSurfaces: false,
+    });
+
+    const snapshots = trace.routeTrace?.selectionMetadata.decisionPointSnapshots ?? [];
+    expect(snapshots).toHaveLength(1);
+    expect(trace.routeTrace?.selectionMetadata.decisionPointSummary).toBe(
+      "[brain decision points] total=1 actions traverse=1 tool=1 stop_local=1 stop=0",
+    );
+    expect(snapshots[0]).toMatchObject({
+      schemaVersion: 1,
+      decisionPointKind: "local",
+      sourceNodeId: "a",
+      chosenActionKind: "tool",
+      chosenToolName: "bash",
+      localActionSet: [
+        expect.objectContaining({ actionKind: "traverse", nodeId: "doc_1" }),
+        expect.objectContaining({ actionKind: "tool", nodeId: "tool_1", toolName: "bash" }),
+        expect.objectContaining({ actionKind: "stop_local", nodeId: null }),
+      ],
+      budgetContext: expect.objectContaining({
+        budgetRemaining: 100,
+        initialBudget: 100,
+        budgetUsed: 0,
+        budgetUsedFraction: 0,
+        routeSelectionMs: 2,
+        totalQueryMs: 3,
+      }),
+      routeContext: expect.objectContaining({
+        candidateNodeIds: ["tool_1", "doc_1"],
+        selectedNodeIds: ["tool_1"],
+        selectedTraversalNodeIds: ["tool_1"],
+        selectedSeedNodeIds: [],
+      }),
+    });
+  });
+
   it("records per-branch stop and continue proof lines plus a compact summary", () => {
     const trace = makeTrace([
       {

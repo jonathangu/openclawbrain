@@ -1175,6 +1175,7 @@ export class BrainService {
       totalQueryMs: compileResult.totalQueryMs,
       queryEmbeddingSource: compileResult.queryEmbeddingSource,
       selectedNodes,
+      lookupNode: (nodeId: string) => this.servingGraph.getNode(nodeId) ?? null,
       persistRawSurfaces: this.config.persistRawSurfaces,
     });
 

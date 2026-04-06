@@ -282,8 +282,11 @@ export function runBrainMigrations(db: DatabaseSync): void {
     CREATE TABLE IF NOT EXISTS brain_teacher_proposals (
       proposal_id       TEXT PRIMARY KEY,
       proposal_class    TEXT NOT NULL,
+      proposal_kind     TEXT,
       lane              TEXT,
       status            TEXT NOT NULL,
+      lifecycle_state   TEXT,
+      schema_version    INTEGER NOT NULL DEFAULT 1,
       idempotency_key   TEXT NOT NULL UNIQUE,
       rollback_key      TEXT NOT NULL,
       scope             TEXT NOT NULL,
@@ -295,6 +298,8 @@ export function runBrainMigrations(db: DatabaseSync): void {
       template_id       TEXT,
       profile           TEXT,
       source_bundle_id  TEXT,
+      replay_suite_ids  TEXT NOT NULL DEFAULT '[]',
+      freshness_ts      TEXT,
       proposal_json     TEXT NOT NULL,
       created_at        INTEGER NOT NULL,
       updated_at        INTEGER NOT NULL,
@@ -303,6 +308,10 @@ export function runBrainMigrations(db: DatabaseSync): void {
 
     CREATE INDEX IF NOT EXISTS brain_teacher_proposals_class_status_idx
       ON brain_teacher_proposals(proposal_class, status, created_at DESC);
+    CREATE INDEX IF NOT EXISTS brain_teacher_proposals_kind_lifecycle_idx
+      ON brain_teacher_proposals(proposal_kind, lifecycle_state, created_at DESC);
+    CREATE INDEX IF NOT EXISTS brain_teacher_proposals_lifecycle_idx
+      ON brain_teacher_proposals(lifecycle_state, created_at DESC);
     CREATE INDEX IF NOT EXISTS brain_teacher_proposals_rollback_idx
       ON brain_teacher_proposals(rollback_key, created_at DESC);
     CREATE INDEX IF NOT EXISTS brain_teacher_proposals_scope_idx
@@ -402,11 +411,19 @@ export function runBrainMigrations(db: DatabaseSync): void {
   ensureColumn(db, "brain_observations", "active_pack_router_checksum", "TEXT");
   ensureColumn(db, "brain_observations", "active_pack_built_at", "TEXT");
 
+  ensureColumn(db, "brain_teacher_proposals", "proposal_kind", "TEXT");
+  ensureColumn(db, "brain_teacher_proposals", "lifecycle_state", "TEXT");
+  ensureColumn(db, "brain_teacher_proposals", "schema_version", "INTEGER NOT NULL DEFAULT 1");
+  ensureColumn(db, "brain_teacher_proposals", "replay_suite_ids", "TEXT NOT NULL DEFAULT '[]'");
+  ensureColumn(db, "brain_teacher_proposals", "freshness_ts", "TEXT");
+
   db.exec(`
     CREATE INDEX IF NOT EXISTS brain_observations_binding_mode_idx ON brain_observations(binding_mode);
     CREATE INDEX IF NOT EXISTS brain_observations_decision_record_idx ON brain_observations(serve_decision_record_id);
     CREATE INDEX IF NOT EXISTS brain_observations_selection_digest_idx ON brain_observations(selection_digest);
     CREATE INDEX IF NOT EXISTS brain_observations_turn_compile_event_idx ON brain_observations(turn_compile_event_id);
     CREATE INDEX IF NOT EXISTS brain_observations_pack_digest_idx ON brain_observations(active_pack_graph_checksum, selection_digest);
+    CREATE INDEX IF NOT EXISTS brain_teacher_proposals_kind_lifecycle_idx ON brain_teacher_proposals(proposal_kind, lifecycle_state, created_at DESC);
+    CREATE INDEX IF NOT EXISTS brain_teacher_proposals_lifecycle_idx ON brain_teacher_proposals(lifecycle_state, created_at DESC);
   `);
 }

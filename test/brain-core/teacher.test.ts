@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from "vitest";
 import { BrainGraph } from "../../src/brain-core/graph.js";
-import type { BrainObservation } from "../../src/brain-core/types.js";
-import { BrainTeacher, isTeacherEligibleObservation, materializeTeacherLabelInput } from "../../src/brain-core/teacher.js";
+import type { BrainObservation, DecisionPointSnapshotV1 } from "../../src/brain-core/types.js";
+import {
+  BrainTeacher,
+  isTeacherEligibleObservation,
+  materializeDecisionPointSnapshots,
+  materializeTeacherLabelInput,
+} from "../../src/brain-core/teacher.js";
 
 function makeObservation(overrides: Partial<BrainObservation> = {}): BrainObservation {
   return {
@@ -107,6 +112,75 @@ function makeObservation(overrides: Partial<BrainObservation> = {}): BrainObserv
   };
 }
 
+function makeDecisionPointSnapshot(): DecisionPointSnapshotV1 {
+  return {
+    schemaVersion: 1,
+    decisionPointId: "dp_1",
+    traceId: "bt_1",
+    episodeId: "ep_1",
+    conversationId: 42,
+    sourceNodeId: "node_pr",
+    expansionIndex: 0,
+    selectionIndex: 0,
+    decisionPointKind: "local",
+    localActionSet: [
+      {
+        actionId: "traverse:node_pr",
+        actionKind: "traverse",
+        nodeId: "node_pr",
+        toolName: null,
+        toolArgsShape: null,
+        priorScore: 1,
+        probability: 0.8,
+        retrievalFeatures: null,
+      },
+    ],
+    chosenActionId: "traverse:node_pr",
+    chosenActionKind: "traverse",
+    chosenNodeId: "node_pr",
+    chosenToolName: null,
+    chosenActionProbability: 0.8,
+    stopProbability: 0.2,
+    stopTruth: null,
+    stopReason: null,
+    budgetContext: {
+      budgetRemaining: 100,
+      initialBudget: 100,
+      reservedTokenCost: 0,
+      budgetUsed: 0,
+      budgetUsedFraction: 0,
+      maxHops: 8,
+      maxFrontierSize: 32,
+      frontierSize: 1,
+      visitedCount: 1,
+      firedCount: 1,
+      pendingSelectionCount: 0,
+      pressureLevel: null,
+      frontierPressure: null,
+      budgetPressure: null,
+      budgetFraction: null,
+      queryBudgetChars: 4000,
+      maxContextChars: 240,
+      injectedChars: 180,
+      droppedChars: 72,
+      contextClipped: true,
+      routeSelectionMs: 9,
+      totalQueryMs: 14,
+      compileDeadlineMs: null,
+      compileDeadlineHit: null,
+    },
+    routeContext: {
+      requestDigest: "deadbeefcafebabe",
+      activePackId: "brain-pack-v3",
+      routerIdentity: "brain-graph-traverse.v2",
+      candidateNodeIds: ["node_pr", "node_review"],
+      selectedNodeIds: ["node_pr"],
+      selectedTraversalNodeIds: ["node_pr"],
+      selectedSeedNodeIds: ["node_pr"],
+    },
+  };
+}
+
 describe("teacher observation plumbing", () => {
   it("materializes the persisted observation surface for teacher-v2", () => {
     const input = materializeTeacherLabelInput(makeObservation());
@@ -145,6 +219,27 @@ describe("teacher observation plumbing", () => {
     expect(input?.routeMetadata.selectionMetadata).not.toHaveProperty("maxContextChars");
     expect(input?.routeMetadata.selectionMetadata).not.toHaveProperty("contextClipped");
     expect(isTeacherEligibleObservation(makeObservation())).toBe(true);
+  });
+
+  it("materializes persisted decision-point snapshots for downstream teacher input", () => {
+    const observation = makeObservation({
+      routeMetadata: {
+        ...makeObservation().routeMetadata,
+        selectionMetadata: {
+          ...makeObservation().routeMetadata.selectionMetadata!,
+          decisionPointSnapshots: [makeDecisionPointSnapshot()],
+        },
+      },
+    });
+
+    const snapshots = materializeDecisionPointSnapshots(observation);
+
+    expect(snapshots).toEqual([makeDecisionPointSnapshot()]);
+    expect(snapshots).not.toBe(observation.routeMetadata.selectionMetadata!.decisionPointSnapshots);
+    snapshots![0].localActionSet[0].actionId = "mutated";
+    expect(observation.routeMetadata.selectionMetadata!.decisionPointSnapshots?.[0]?.localActionSet[0]?.actionId).toBe(
+      "traverse:node_pr",
+    );
   });
 
   it("preserves persisted post-injection clip attribution in teacher input", () => {

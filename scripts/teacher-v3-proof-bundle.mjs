@@ -5,7 +5,11 @@ import { existsSync, mkdirSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { fileURLToPath } from "node:url";
 import { captureTeacherV3ReplayOutcomes } from "./teacher-v3-replay-outcomes.mjs";
-import { describeTeacherCanaryActivationGuardV1, describeTeacherCanaryRolloutPlanV1 } from "../src/brain-core/teacher-v3-contracts.js";
+import {
+  describeTeacherCanaryActivationGuardV1,
+  describeTeacherCanaryRolloutPlanV1,
+  describeTeacherProposalReplayGateMatrixV1,
+} from "../src/brain-core/teacher-v3-contracts.js";
 import { summarizeRouterMigrationComparisonV1 } from "../src/brain-core/router-migration.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -136,7 +140,8 @@ function relativeWorkspacePath(value) {
 }
 
 function timestampToken(date = new Date()) {
-  return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z").replace("T", "-");
+  const resolvedDate = date instanceof Date ? date : new Date(date);
+  return resolvedDate.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z").replace("T", "-");
 }
 
 function summarizeRuntimeStatus(runtimeStatus) {
@@ -525,7 +530,7 @@ function buildSurfaceMap(seed, bundlePaths) {
       state: "target",
       kind: "proposal_truth",
       source: bundlePaths.status,
-      note: `thin machine status with canary rollout surfaced as ${canaryRolloutNote}`,
+      note: `thin machine status with canary rollout and gate matrix surfaced as ${canaryRolloutNote}`,
     },
     {
       id: "teacher-v3-proof-surface-map",
@@ -540,7 +545,7 @@ function buildSurfaceMap(seed, bundlePaths) {
       kind: "proposal_truth",
       source: bundlePaths.proposalReport,
       note: [
-        `machine-readable proposal report with canary rollout surfaced as ${canaryRolloutNote}`,
+        `machine-readable proposal report with canary rollout and explicit gate matrix coverage surfaced as ${canaryRolloutNote}`,
         migrationComparisonNote,
       ].filter(Boolean).join("; "),
     },
@@ -635,6 +640,32 @@ function buildProposalReport(seed, surfaceMap, bundlePaths, replayCapture) {
       ...(migrationRecommendation ? [migrationRecommendation] : []),
     ];
 
+  const replayGateMatrix = describeTeacherProposalReplayGateMatrixV1({
+    proposalId: seed.proposalId,
+    proposalClass: seed.proposalClass,
+    rollbackKey: seed.rollbackKey,
+    proofBundleId: seed.bundleId,
+    replaySummaryId: seed.replaySummary?.replayId ?? null,
+    replaySummary: seed.replaySummary
+      ? {
+        status: seed.replaySummary.status,
+        reviewMode: seed.replaySummary.reviewMode,
+        beforeScore: seed.replaySummary.beforeScore,
+        afterScore: seed.replaySummary.afterScore,
+        scoreDelta: seed.replaySummary.scoreDelta,
+        candidatePackId: seed.replaySummary.candidatePackId,
+        candidatePackVersion: seed.replaySummary.candidatePackVersion,
+        summary: seed.replaySummary.summary,
+      }
+      : null,
+    replayOutcomeSummary: replayCapture.summary,
+    shadowReplay: seed.shadowReplaySummary,
+    replaySuites: seed.replaySuites,
+    surfaceMap: surfaceMap.observedSurfaces,
+    evidenceLinks: seed.evidence,
+    counterevidenceLinks: seed.counterevidence,
+  });
+
   return {
     contract: TEACHER_V3_PROPOSAL_REPORT_CONTRACT,
     bundleId: seed.bundleId,
@@ -655,6 +686,7 @@ function buildProposalReport(seed, surfaceMap, bundlePaths, replayCapture) {
       replaySummary: seed.replaySummary,
       canaryActivationGuard: seed.canaryActivationGuard,
     },
+    replayGateMatrix,
     replayGate: {
       proposalClass: seed.proposalClass,
       reviewMode: seed.proposalReviewMode,
@@ -754,6 +786,7 @@ function buildStatusReport(seed, surfaceMap, proposalReport) {
     docsTruth: proposalReport.docsTruth,
     replayOutcomeSummary: proposalReport.replayOutcomeSummary,
     replaySummary: proposalReport.replaySummary,
+    gateMatrix: proposalReport.replayGateMatrix,
     routerMigrationComparison: proposalReport.routerMigrationComparison,
     canaryRollout: proposalReport.proposal.canaryRollout,
     canaryActivationGuard: proposalReport.proposal.canaryActivationGuard,
@@ -884,6 +917,9 @@ function buildSummaryMarkdown(seed, statusReport, verdictReport, bundlePaths) {
     `- review modes: promotable=${statusReport.replayOutcomeSummary.reviewModeCounts.promotable}, shadow_only=${statusReport.replayOutcomeSummary.reviewModeCounts.shadow_only}`,
     `- sources: proposal_record=${statusReport.replayOutcomeSummary.sourceCounts.proposal_record}, proof_bundle=${statusReport.replayOutcomeSummary.sourceCounts.proof_bundle}, derived=${statusReport.replayOutcomeSummary.sourceCounts.derived}`,
     "",
+    "## Gate matrix",
+    ...gateMatrixMarkdownLines(statusReport.gateMatrix),
+    "",
     ...(statusReport.routerMigrationComparison ? [
       "## Router migration comparison",
       ...routerMigrationMarkdownLines(statusReport.routerMigrationComparison),
@@ -932,7 +968,7 @@ function proposalReportArtifactsLines(bundlePaths) {
     `- \`${bundlePaths.summary}\` — bounded human summary`,
     `- \`${bundlePaths.status}\` — thin machine status`,
     `- \`${bundlePaths.surfaceMap}\` — shipped-vs-target inventory`,
-    `- \`${bundlePaths.proposalReport}\` — machine-readable proposal report`,
+    `- \`${bundlePaths.proposalReport}\` — machine-readable proposal report with gate matrix coverage`,
     `- \`${bundlePaths.verdict}\` — review verdict`,
   ];
 }
@@ -989,6 +1025,26 @@ function shadowReplayMarkdownLines(shadowReplay) {
   ].filter(Boolean);
 }
 
+function gateMatrixMarkdownLines(gateMatrix) {
+  if (!gateMatrix) {
+    return [];
+  }
+
+  return [
+    `- proposal class: \`${gateMatrix.proposalClass}\``,
+    `- review mode: **${gateMatrix.reviewMode}**`,
+    `- rollback key: \`${gateMatrix.rollbackKey ?? "missing"}\``,
+    `- proof bundle id: \`${gateMatrix.proofBundleId ?? "missing"}\``,
+    `- replay summary id: \`${gateMatrix.replaySummaryId ?? "missing"}\``,
+    ...gateMatrix.rows.flatMap((row) => [
+      `- ${row.name}: **${row.status}** (${row.coverage}) — ${row.summary}`,
+      `  - evidence: ${row.evidenceSurfaceIds.length > 0 ? row.evidenceSurfaceIds.join(", ") : "none"}`,
+      `  - proof: ${row.proofSurfaceIds.length > 0 ? row.proofSurfaceIds.join(", ") : "none"}`,
+      row.notes.length > 0 ? `  - notes: ${row.notes.join("; ")}` : null,
+    ].filter(Boolean)),
+  ];
+}
+
 export function resolveTeacherV3ProofOutputDir({ outputDir = null, bundleStartedAt = new Date() } = {}) {
   if (typeof outputDir === "string" && outputDir.trim().length > 0) {
     return path.resolve(outputDir);
@@ -1001,7 +1057,9 @@ export function resolveTeacherV3ProofOutputDir({ outputDir = null, bundleStarted
 }
 
 export function buildTeacherV3ProofBundle(input) {
-  const bundleStartedAt = normalizeText(input.bundleStartedAt) ?? new Date().toISOString();
+  const bundleStartedAt = input.bundleStartedAt instanceof Date
+    ? input.bundleStartedAt.toISOString()
+    : normalizeText(input.bundleStartedAt) ?? new Date().toISOString();
   const outputDir = path.resolve(input.outputDir ?? resolveTeacherV3ProofOutputDir({ bundleStartedAt }));
   const bundleId = normalizeText(input.bundleId) ?? path.basename(outputDir);
   const bundlePaths = {

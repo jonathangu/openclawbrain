@@ -306,6 +306,31 @@ describe("teacher v3 proof bundle writer", () => {
       status: "promotable",
       candidatePackId: "candidate_pack_08",
     });
+    expect(bundle.proposalReport.replayGateMatrix).toMatchObject({
+      proposalClass: "compiler",
+      reviewMode: "promotable",
+      rollbackKey: "rollback:teacher-v3:compiler:replay",
+      proofBundleId: "teacher-v3-proof-bundle-test",
+    });
+    expect(bundle.proposalReport.replayGateMatrix?.rows.map((row) => row.name)).toEqual([
+      "truth_invariants",
+      "replay_non_regression",
+      "attribution_floor",
+      "boundedness",
+      "rollback_proof_linkage",
+    ]);
+    expect(bundle.proposalReport.replayGateMatrix?.rows[0]).toMatchObject({
+      status: "pass",
+      coverage: "shipped",
+    });
+    expect(bundle.proposalReport.replayGateMatrix?.rows[1]).toMatchObject({
+      status: "pass",
+      coverage: "target",
+    });
+    expect(bundle.statusReport.gateMatrix).toMatchObject({
+      proposalClass: "compiler",
+      reviewMode: "promotable",
+    });
     expect(bundle.proposalReport.proposal.canaryRollout).toMatchObject({
       proposalClass: "compiler",
       surfaceState: "target",
@@ -356,6 +381,8 @@ describe("teacher v3 proof bundle writer", () => {
     });
     expect(bundle.summaryMarkdown).toContain("Teacher v3 proof bundle");
     expect(bundle.summaryMarkdown).toContain("Canary rollout");
+    expect(bundle.summaryMarkdown).toContain("## Gate matrix");
+    expect(bundle.summaryMarkdown).toContain("truth_invariants");
     expect(bundle.summaryMarkdown).toContain("rollout mode: off");
     expect(bundle.summaryMarkdown).toContain("enabled: no");
     expect(bundle.summaryMarkdown).toContain("rollback-bound to rollback:teacher-v3:compiler:replay");
@@ -379,7 +406,7 @@ describe("teacher v3 proof bundle writer", () => {
 
     expect(readFileSync(summaryPath, "utf8")).toContain("runtime truth");
     expect(readFileSync(statusPath, "utf8")).toContain("teacher_v3_proof_bundle_status.v1");
-    expect(readFileSync(surfaceMapPath, "utf8")).toContain("canary rollout surfaced as target/off/disabled");
+    expect(readFileSync(surfaceMapPath, "utf8")).toContain("canary rollout and gate matrix surfaced as target/off/disabled");
     expect(readFileSync(proposalReportPath, "utf8")).toContain("teacher_v3_proposal_report.v1");
     expect(readFileSync(verdictPath, "utf8")).toContain("reviewable");
   });
@@ -627,9 +654,15 @@ describe("teacher v3 proof bundle writer", () => {
     });
     expect(bundle.verdictReport.why).toContain("mutation replay stayed shadow-only");
     expect(bundle.summaryMarkdown).toContain("## Shadow replay");
+    expect(bundle.summaryMarkdown).toContain("## Gate matrix");
     expect(bundle.summaryMarkdown).toContain("candidate graph");
     expect(bundle.summaryMarkdown).toContain("rollback");
     expect(bundle.statusReport.recommendations[2]).toContain("candidate graph");
+    expect(bundle.statusReport.gateMatrix?.rows[1]).toMatchObject({
+      status: "pass",
+      coverage: "target",
+    });
+    expect(bundle.proposalReport.replayGateMatrix?.rows[4].summary).toContain("Rollback identity");
   });
 
   it("emits a forgetting shadow replay summary with explicit rollback and guardrails", () => {
@@ -713,8 +746,13 @@ describe("teacher v3 proof bundle writer", () => {
     });
     expect(bundle.verdictReport.why).toContain("forgetting replay stayed shadow-only");
     expect(bundle.summaryMarkdown).toContain("## Shadow replay");
+    expect(bundle.summaryMarkdown).toContain("## Gate matrix");
     expect(bundle.summaryMarkdown).toContain("retention state");
     expect(bundle.summaryMarkdown).toContain("rollback");
     expect(bundle.statusReport.recommendations[2]).toContain("retention state machine");
+    expect(bundle.proposalReport.replayGateMatrix?.rows[1]).toMatchObject({
+      status: "pass",
+      coverage: "target",
+    });
   });
 });

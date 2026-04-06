@@ -133,10 +133,13 @@ function makeReplaySummary(proposal: TeacherProposal) {
 
 function makeCompilerProposal(): TeacherProposal {
   return {
+    schemaVersion: 1,
     proposalId: "prop_compiler_01",
     proposalClass: "compiler",
+    proposalKind: "compiled_artifact",
     lane: "compiler",
     status: "proposed",
+    lifecycleState: "promoted",
     lineage: {
       proposalClass: "compiler",
       basePackVersion: 7,
@@ -165,18 +168,23 @@ function makeCompilerProposal(): TeacherProposal {
     },
     confidence: 0.96,
     replaySuites: ["compiler-shape-smoke", "compiler-lineage-smoke"],
+    replaySuiteIds: ["compiler-shape-smoke", "compiler-lineage-smoke"],
     rollbackKey: "rollback:teacher-v3:compiler:persistence",
     replayGate: describeTeacherProposalReplayGate("compiler"),
+    freshnessTs: "2026-04-03T18:26:00Z",
     createdAt: "2026-04-03T18:26:00Z",
   };
 }
 
 function makeLintProposal(): TeacherProposal {
   return {
+    schemaVersion: 1,
     proposalId: "prop_lint_01",
     proposalClass: "lint",
+    proposalKind: "duplicate_report",
     lane: "lint",
     status: "validated",
+    lifecycleState: "replayed",
     lineage: {
       proposalClass: "lint",
       basePackVersion: 7,
@@ -207,8 +215,10 @@ function makeLintProposal(): TeacherProposal {
     },
     confidence: 0.89,
     replaySuites: ["release-drift-smoke"],
+    replaySuiteIds: ["release-drift-smoke"],
     rollbackKey: "rollback:teacher-v3:lint:release-drift",
     replayGate: describeTeacherProposalReplayGate("lint"),
+    freshnessTs: "2026-04-03T18:27:00Z",
     createdAt: "2026-04-03T18:27:00Z",
   };
 }
@@ -299,12 +309,17 @@ describe("BrainStore teacher proposals", () => {
     const loadedCompiler = store.getTeacherProposal(compiler.proposalId);
     expect(loadedCompiler).not.toBeNull();
     expect(loadedCompiler).toMatchObject({
+      schemaVersion: 1,
       proposalId: compiler.proposalId,
       proposalClass: "compiler",
+      proposalKind: "compiled_artifact",
       lane: "compiler",
       status: "promoted",
+      lifecycleState: "promoted",
+      freshnessTs: "2026-04-03T18:31:00Z",
       rollbackKey: compiler.rollbackKey,
       replaySuites: compiler.replaySuites,
+      replaySuiteIds: compiler.replaySuiteIds,
       resolvedAt: "2026-04-03T18:31:00Z",
     });
     expect(loadedCompiler?.proofBundle?.bundleId).toBe("pb_compiler_01");
@@ -337,14 +352,19 @@ describe("BrainStore teacher proposals", () => {
 
     const compilerSummary = store.summarizeTeacherProposal(compiler.proposalId);
     expect(compilerSummary).toMatchObject({
+      schemaVersion: 1,
       proposalId: compiler.proposalId,
       proposalClass: "compiler",
+      proposalKind: "compiled_artifact",
       status: "promoted",
+      lifecycleState: "promoted",
       subjectCount: 2,
       evidenceCount: 1,
       counterevidenceCount: 0,
       replaySuiteCount: 2,
+      replaySuiteIds: compiler.replaySuiteIds,
       rollbackKey: compiler.rollbackKey,
+      freshnessTs: "2026-04-03T18:31:00Z",
       hasProofBundle: true,
       proofBundleId: "pb_compiler_01",
       proofBundleStatus: "promoted",
@@ -379,14 +399,19 @@ describe("BrainStore teacher proposals", () => {
 
     const lintSummary = store.summarizeTeacherProposal(lint.proposalId);
     expect(lintSummary).toMatchObject({
+      schemaVersion: 1,
       proposalId: lint.proposalId,
       proposalClass: "lint",
+      proposalKind: "duplicate_report",
       status: "validated",
+      lifecycleState: "replayed",
       subjectCount: 3,
       evidenceCount: 1,
       counterevidenceCount: 1,
       replaySuiteCount: 1,
+      replaySuiteIds: lint.replaySuiteIds,
       rollbackKey: lint.rollbackKey,
+      freshnessTs: "2026-04-03T18:27:00Z",
       hasProofBundle: false,
       proofBundleId: undefined,
       proofBundleStatus: undefined,
@@ -409,6 +434,14 @@ describe("BrainStore teacher proposals", () => {
     const compilerRows = store.getTeacherProposalsByClass("compiler");
     expect(compilerRows).toHaveLength(1);
     expect(compilerRows[0]?.proposalId).toBe(compiler.proposalId);
+
+    const compilerByKind = store.getTeacherProposalsByKind("compiled_artifact");
+    expect(compilerByKind).toHaveLength(1);
+    expect(compilerByKind[0]?.proposalId).toBe(compiler.proposalId);
+
+    const lintByLifecycle = store.getTeacherProposalsByLifecycleState("replayed");
+    expect(lintByLifecycle).toHaveLength(1);
+    expect(lintByLifecycle[0]?.proposalId).toBe(lint.proposalId);
 
     const diff = store.diffTeacherProposals(compiler.proposalId, lint.proposalId);
     expect(diff).not.toBeNull();
@@ -439,12 +472,15 @@ describe("BrainStore teacher proposals", () => {
     expect(diff?.changedFields).toEqual(
       expect.arrayContaining([
         "proposalClass",
+        "proposalKind",
         "status",
+        "lifecycleState",
         "rollbackKey",
         "subjectIds",
         "evidenceIds",
         "counterevidenceIds",
         "replaySuites",
+        "replaySuiteIds",
         "proofBundleReplayOutcomeSummary",
         "replaySummary",
         "lineage.scope",

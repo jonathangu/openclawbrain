@@ -47,6 +47,7 @@ These are the proposal-reporting surfaces this lane should define, but which are
 | target | `summary.md` | concise operator summary | should explain what the proposal is, what truth surfaces it read, and what changed relative to those surfaces |
 | target | `status.json` | thin machine status | should stay bounded and report counts/state, not dump raw source payloads |
 | target | `proposal-report.json` | machine-readable proposal report | should include proposal lane, proposal class, lineage, status, replay gate dimensions, evidence refs, counterevidence refs, and recommendations |
+| target | `replayGateMatrix` (embedded in `proposal-report.json` and surfaced in `status.json` / `summary.md`) | explicit gate matrix coverage | should name truth invariants, replay non-regression, attribution floor, boundedness, and rollback/proof linkage, with shipped-vs-target evidence links |
 | target | `canary-rollout.json` | bounded canary plan for proposal classes / candidate packs | must stay off by default, carry `surfaceState: "target"`, bind an explicit rollback key, and remain separate from the replay gate and live serve path |
 | target | `surface-map.json` | shipped-vs-target inventory | should make explicit which referenced surfaces are already shipped and which are target-state only |
 | target | `evidence-links.json` | normalized source references | should point back to runtime status, operator proof, proof-cron outputs, and docs truth surfaces |
@@ -232,6 +233,7 @@ At minimum, the human report should answer:
 4. Which surfaces are target-state only?
 5. What is the recommendation?
 6. What follow-on code work should happen next?
+7. What does the explicit gate matrix say about truth invariants, replay non-regression, attribution floor, boundedness, and rollback/proof linkage?
 
 ## Non-goals
 
