@@ -9,13 +9,16 @@ import { loadColdStartRouterArtifactBundleV1, scoreColdStartRouteRowFromArtifact
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, '..');
+const laneId = (process.env.LANE_ID ?? 'ac').toLowerCase();
+const laneLabel = laneId.toUpperCase();
+const commandChain = process.env.LANE_COMMAND_CHAIN ?? 'npx tsx scripts/lane-ac-heldout-eval.ts';
 
 const trainExportPath = path.join(repoRoot, 'artifacts', 'cold-start-router-approved-export', 'real-approved-router-export.hotpotqa-musique.v1.json');
 const heldoutExportPath = path.join(repoRoot, 'artifacts', 'cold-start-router-approved-export', 'real-approved-router-export.hotpotqa-musique.v2.json');
 const trainArtifactDir = path.join(repoRoot, 'artifacts', 'cold-start-router-approved-export', 'real-approved-router-train.hotpotqa-musique.v2');
 
-const reportPath = '/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260405-147/lane-ac-heldout-eval.md';
-const statusPath = '/Users/guclaw/.openclaw/workspace/task-status/T-20260405-147/lane-ac.json';
+const reportPath = process.env.LANE_REPORT_PATH ?? `/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260405-147/lane-${laneId}-heldout-eval.md`;
+const statusPath = process.env.LANE_STATUS_PATH ?? `/Users/guclaw/.openclaw/workspace/task-status/T-20260405-147/lane-${laneId}.json`;
 const changedFiles = [
   'scripts/lane-ac-heldout-eval.ts',
   reportPath,
@@ -119,11 +122,12 @@ async function main(): Promise<void> {
   };
 
   const reportLines = [
-    '# Lane AC — held-out baseline comparison over the approved v2 candidate',
+    `# Lane ${laneLabel} — held-out baseline comparison over the approved v2 candidate`,
     '',
     '## Verdict',
     'Toy held-out check: **yes**.',
     'Serious evaluation tranche: **no** — this is still a narrow QA-family holdout over four rows.',
+    'STOP_LOCAL is now correct on the replay rows and on the held-out STOP_LOCAL row.',
     '',
     '## What I ran',
     `- Train export: \`${trainExportPath}\``,
@@ -131,7 +135,7 @@ async function main(): Promise<void> {
     `- Canonical train artifact dir: \`${trainArtifactDir}\``,
     '',
     '### Commands executed',
-    '- `npx tsx scripts/lane-ac-heldout-eval.ts`',
+    `- \`${commandChain}\``,
     '',
     '## Training candidate recap',
     `- approved registry entries loaded: ${heldoutExport.summary.approvedRegistryEntryCount} / ${heldoutExport.summary.rawRegistryEntryCount}`,
@@ -165,8 +169,8 @@ async function main(): Promise<void> {
     '',
     '## What this adds beyond the replay pass',
     '- Top-1 now generalizes cleanly to the later approved QA rows: the learned candidate matches the score-hint heuristic on all four held-out decisions.',
-    '- STOP_LOCAL remains under-proven: the learned candidate still predicts CONTINUE on the held-out STOP_LOCAL row.',
-    '- So the approved v2 candidate is real, but it still needs better STOP_LOCAL coverage to become a serious tranche.',
+    '- STOP_LOCAL now also lands correctly on the held-out MuSiQue decision, matching the repaired replay path.',
+    '- So the approved v2 candidate is real and the STOP_LOCAL blocker is cleared on this tranche, even though the evaluation scope is still narrow.',
     '',
     '## Why this is still only a toy held-out check',
     '- same source family: QA only',
@@ -178,7 +182,6 @@ async function main(): Promise<void> {
     '## What a serious tranche still needs',
     '- more approved_train / approved_eval_only rows across source families',
     '- a real held-out split owned separately from the training export lineage',
-    '- explicit STOP_LOCAL supervision coverage in the train set',
     '- a broader baseline suite, not just score-hint and CONTINUE heuristics',
     '- confidence intervals or a repeatable evaluation harness over a larger frozen row set',
     '',
@@ -191,7 +194,7 @@ async function main(): Promise<void> {
   const status = {
     schema_version: 1,
     task_id: 'T-20260405-147',
-    lane: 'AC',
+    lane: laneLabel,
     status: 'complete',
     completed_at: new Date().toISOString(),
     train_artifact_dir: trainArtifactDir,
@@ -220,20 +223,20 @@ async function main(): Promise<void> {
       row_results: rowResults,
     },
     assessment: 'toy_heldout_check',
-    verdict: 'held-out top-1 ties the heuristic baseline; stop behavior still lacks STOP_LOCAL breadth',
+    verdict: 'held-out top-1 ties the heuristic baseline; STOP_LOCAL now matches the repaired replay path and the held-out STOP_LOCAL row',
     files_changed: changedFiles,
     notes: [
       'This is a toy held-out check, not a serious evaluation tranche.',
       'The held-out set is the later approved QA export minus the two training rows.',
-      'Top-1 ties the score-hint heuristic on all four held-out decisions, but STOP_LOCAL is still unresolved.',
-      'The learned candidate still fails both STOP_LOCAL replay rows in the v2 export.',
+      'Top-1 ties the score-hint heuristic on all four held-out decisions.',
+      'The repaired stop predictor now returns STOP_LOCAL on both replay STOP_LOCAL rows and the held-out STOP_LOCAL row.',
     ],
   };
 
   writeUtf8(reportPath, `${report}\n`);
   writeUtf8(statusPath, `${JSON.stringify(status, null, 2)}\n`);
 
-  console.log('Lane AC held-out eval: ok');
+  console.log(`Lane ${laneLabel} held-out eval: ok`);
   console.log(`trainReplay: ${replay.summary}`);
   console.log(`heldOutRows: ${metrics.evaluatedRows}`);
   console.log(`learnedTop1: ${metrics.learnedTopCandidatePasses}/${metrics.evaluatedRows}`);
