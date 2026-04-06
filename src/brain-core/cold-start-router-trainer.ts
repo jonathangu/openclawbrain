@@ -580,11 +580,16 @@ function computeStopPrediction(
   ];
 
   for (const entry of bucketMap) {
-    const bucketCounts = model.stopBucketCounts[entry.field][entry.bucket] ?? null;
+    const fieldCounts = model.stopBucketCounts[entry.field];
+    const populatedBucketCount = Object.values(fieldCounts).filter((bucketCounts) => totalLabelCount(bucketCounts) > 0).length;
+    const bucketCounts = fieldCounts[entry.bucket] ?? null;
     const labelScores = bucketCounts
       ? scoreLabelFromCounts(bucketCounts, model.calibration.smoothing, labelOrder)
       : labelCounts();
     contributingBuckets.push({ field: entry.field, bucket: entry.bucket, labelScores });
+    if (populatedBucketCount < 2) {
+      continue;
+    }
     for (const label of labelOrder) {
       scores[label] += labelScores[label];
     }

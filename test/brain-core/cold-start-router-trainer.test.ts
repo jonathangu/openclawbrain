@@ -34,6 +34,15 @@ const repoRoot = path.resolve(__dirname, "..", "..");
 const approvedExportPath = fileURLToPath(
   new URL("../../artifacts/cold-start-router-approved-export/approved-router-export.fixture.v1.json", import.meta.url),
 );
+const approvedExportV2Path = fileURLToPath(
+  new URL("../../artifacts/cold-start-router-approved-export/real-approved-router-export.hotpotqa-musique.v2.json", import.meta.url),
+);
+const approvedTrainV2Dir = path.join(
+  repoRoot,
+  "artifacts",
+  "cold-start-router-approved-export",
+  "real-approved-router-train.hotpotqa-musique.v2",
+);
 
 const tempRoots: string[] = [];
 
@@ -154,6 +163,20 @@ describe("cold-start router trainer", () => {
     const runtimeSelection = selectColdStartRouteCandidateIdsFromArtifactBundleV1({ artifactBundle: runtimeBundle, row: loadedExport.routeRows[0] });
     expect(runtimeSelection.stopped).toBe(false);
     expect(runtimeSelection.selectedCandidateIds).toEqual(["mem:shipping_history"]);
+  });
+
+  it("predicts STOP_LOCAL for the two MuSiQue replay rows that only have a single evidence span", () => {
+    const loadedExport = loadAndFilterColdStartRouterApprovedExportV1(approvedExportV2Path);
+    const runtimeBundle = loadColdStartRouterArtifactBundleV1(approvedTrainV2Dir);
+
+    for (const rowId of ["musique-dev-export-candidate-1", "musique-dev-export-candidate-11"]) {
+      const row = loadedExport.routeRows.find((entry) => entry.row_id === rowId);
+      expect(row).toBeDefined();
+      const scoring = scoreColdStartRouteRowFromArtifactBundleV1({ artifactBundle: runtimeBundle, row: row! });
+      expect(scoring.stopPrediction.label).toBe("STOP_LOCAL");
+      expect(scoring.policyDistribution.stopAction.probability).toBeGreaterThan(0);
+      expect(scoring.rankedCandidates[0]?.candidate.candidate_id).toBe(row!.teacher_action.target_ids[0]);
+    }
   });
 
   it("materializes the live runtime policy families that hot-path PG updates", () => {
