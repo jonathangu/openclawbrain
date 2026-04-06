@@ -1,0 +1,1157 @@
+{
+  "contract": "cold_start_router_approved_export.v1",
+  "export_id": "cold-start-router-approved-export-real-hotpotqa-musique-stoplocal-v2",
+  "generated_at": "2026-04-05T20:10:00Z",
+  "registry_entries": [
+    {
+      "dataset_id": "hotpotqa_v1",
+      "source_family": "qa",
+      "upstream_url": "https://hotpotqa.github.io/#download",
+      "original_creator": "HotpotQA authors (Dai, Chen, and collaborators)",
+      "license": "CC BY-SA 4.0",
+      "commercial_use_status": "allowed",
+      "redistribution_status": "allowed",
+      "pii_risk": "none",
+      "benchmark_split_status": "eval_only",
+      "approval_status": "approved_train",
+      "reviewer": "jon-explicit-approval-2026-04-05",
+      "immutable_snapshot_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json",
+      "exact_files": [
+        "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+        "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json",
+        "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/SHA256SUMS"
+      ],
+      "file_hashes": {
+        "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json": "sha256:4e9ecb5c8d3b719f624d66b60f8d56bf227f03914f5f0753d6fa1b359d7104ea",
+        "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json": "sha256:668eab049bd62adce5e0acb7d550117af0962830a620c8e7f9335407fdeb15c4",
+        "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/SHA256SUMS": "sha256:827ebddd44531d525cc0180724fbcc4971e8ba1f54615bb61a80ec6811a00304"
+      },
+      "allowed_uses": [
+        "approval review",
+        "future split planning",
+        "route supervision after explicit approval"
+      ],
+      "disallowed_uses": [
+        "claiming materialized snapshot",
+        "training ingest before approval",
+        "ignoring share-alike terms"
+      ],
+      "notes": [
+        "official HotpotQA public release page used as provenance anchor",
+        "immutable local snapshot materialized from public release URLs on the official site",
+        "snapshot bytes and hashes are captured in adjacent manifest and SHA256SUMS metadata",
+        "export candidate samples the frozen dev-distractor JSON only and keeps the rest of the snapshot bundle out of the candidate payload"
+      ],
+      "created_at": "2026-04-05T23:40:00Z",
+      "updated_at": "2026-04-06T00:58:50Z"
+    },
+    {
+      "dataset_id": "musique_v1",
+      "source_family": "qa",
+      "upstream_url": "https://github.com/stonybrooknlp/musique",
+      "original_creator": "MuSiQue authors (Trivedi, Balasubramanian, Khot, and Sabharwal)",
+      "license": "CC BY 4.0",
+      "commercial_use_status": "allowed",
+      "redistribution_status": "allowed",
+      "pii_risk": "none",
+      "benchmark_split_status": "eval_only",
+      "approval_status": "approved_train",
+      "reviewer": "jon-explicit-approval-2026-04-05",
+      "immutable_snapshot_ref": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json",
+      "exact_files": [
+        "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+        "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json",
+        "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/SHA256SUMS"
+      ],
+      "file_hashes": {
+        "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl": "sha256:8cab31d56a3a1c4ef491b205a8dab3f1ac9c66e472098c6cf1de4e20294f7a4a",
+        "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json": "sha256:e6bcf95dc46fc9295335988200d8dcd40107b535a33f1a3d21c7059ebe6bf509",
+        "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/SHA256SUMS": "sha256:2be9c5a738d5b36f85d0bad46e1939e413656af3844a5507b6ec89c541eea9cd"
+      },
+      "allowed_uses": [
+        "approval review",
+        "future split planning",
+        "route supervision after explicit approval"
+      ],
+      "disallowed_uses": [
+        "claiming materialized snapshot",
+        "training ingest before approval",
+        "assuming the dataset card does not need re-checking"
+      ],
+      "notes": [
+        "official MuSiQue repository README used as provenance anchor",
+        "immutable local snapshot materialized from the public release zip linked by the repo",
+        "snapshot bytes and hashes are captured in adjacent manifest and SHA256SUMS metadata",
+        "export candidate samples the frozen dev JSONL only and keeps the rest of the snapshot bundle out of the candidate payload"
+      ],
+      "created_at": "2026-04-05T23:40:00Z",
+      "updated_at": "2026-04-06T00:58:50Z"
+    }
+  ],
+  "route_rows": [
+    {
+      "row_id": "hotpotqa-dev-distractor-export-candidate-1",
+      "dataset_id": "hotpotqa_v1",
+      "query": "Were Scott Derrickson and Ed Wood of the same nationality?",
+      "cursor_path": [
+        "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+        "5a8b57f25542995d1e6f1371"
+      ],
+      "candidate_set": [
+        {
+          "candidate_id": "hotpotqa_v1:support:ed-wood",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_supporting_fact",
+          "freshness": "eval_only",
+          "token_cost": 100,
+          "score_hint": 1
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:scott-derrickson",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_supporting_fact",
+          "freshness": "eval_only",
+          "token_cost": 97,
+          "score_hint": 1
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:adam-collis",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 102,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:conrad-brooks",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 104,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:deliver-us-from-evil-2014-film",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 101,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:doctor-strange-2016-film",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 105,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:ed-wood-film",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 96,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:sinister-film",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 103,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:tyler-bates",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 99,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:woodson-arkansas",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 98,
+          "score_hint": 0.2
+        }
+      ],
+      "teacher_action": {
+        "kind": "traverse",
+        "target_ids": [
+          "hotpotqa_v1:support:ed-wood",
+          "hotpotqa_v1:support:scott-derrickson"
+        ]
+      },
+      "stop_label": "CONTINUE",
+      "evidence_spans": [
+        {
+          "source_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+          "start": 67,
+          "end": 83,
+          "excerpt": "Scott Derrickson"
+        },
+        {
+          "source_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+          "start": 88,
+          "end": 95,
+          "excerpt": "Ed Wood"
+        }
+      ],
+      "hard_negatives": [
+        "hotpotqa_v1:support:adam-collis",
+        "hotpotqa_v1:support:conrad-brooks",
+        "hotpotqa_v1:support:deliver-us-from-evil-2014-film",
+        "hotpotqa_v1:support:doctor-strange-2016-film",
+        "hotpotqa_v1:support:ed-wood-film",
+        "hotpotqa_v1:support:sinister-film",
+        "hotpotqa_v1:support:tyler-bates",
+        "hotpotqa_v1:support:woodson-arkansas"
+      ],
+      "outcome_gain": 1,
+      "provenance": {
+        "dataset": "hotpotqa_v1",
+        "source_license": "CC BY-SA 4.0",
+        "source_family": "qa",
+        "source_snapshot_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json",
+        "recorded_by": "jon-explicit-approval-2026-04-05:docs-qa-compiler",
+        "recorded_at": "2026-04-05T20:10:00Z",
+        "review_status": "approved_train"
+      },
+      "split_tag": "dev_distractor",
+      "created_at": "2026-04-05T20:10:00Z"
+    },
+    {
+      "row_id": "hotpotqa-dev-distractor-export-candidate-2",
+      "dataset_id": "hotpotqa_v1",
+      "query": "What government position was held by the woman who portrayed Corliss Archer in the film Kiss and Tell?",
+      "cursor_path": [
+        "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+        "5a8c7595554299585d9e36b6"
+      ],
+      "candidate_set": [
+        {
+          "candidate_id": "hotpotqa_v1:support:kiss-and-tell-1945-film",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_supporting_fact",
+          "freshness": "eval_only",
+          "token_cost": 102,
+          "score_hint": 1
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:shirley-temple",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_supporting_fact",
+          "freshness": "eval_only",
+          "token_cost": 97,
+          "score_hint": 1
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:a-kiss-for-corliss",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 101,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:charles-craft",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 105,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:janet-waldo",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 98,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:lord-high-treasurer",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 100,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:meet-corliss-archer",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 96,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:meet-corliss-archer-tv-series",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 99,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:secretary-of-state-for-constitutional-affairs",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 103,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:village-accountant",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 104,
+          "score_hint": 0.2
+        }
+      ],
+      "teacher_action": {
+        "kind": "traverse",
+        "target_ids": [
+          "hotpotqa_v1:support:kiss-and-tell-1945-film",
+          "hotpotqa_v1:support:shirley-temple"
+        ]
+      },
+      "stop_label": "CONTINUE",
+      "evidence_spans": [
+        {
+          "source_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+          "start": 5260,
+          "end": 5285,
+          "excerpt": "Kiss and Tell (1945 film)"
+        },
+        {
+          "source_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+          "start": 5292,
+          "end": 5306,
+          "excerpt": "Shirley Temple"
+        }
+      ],
+      "hard_negatives": [
+        "hotpotqa_v1:support:a-kiss-for-corliss",
+        "hotpotqa_v1:support:charles-craft",
+        "hotpotqa_v1:support:janet-waldo",
+        "hotpotqa_v1:support:lord-high-treasurer",
+        "hotpotqa_v1:support:meet-corliss-archer",
+        "hotpotqa_v1:support:meet-corliss-archer-tv-series",
+        "hotpotqa_v1:support:secretary-of-state-for-constitutional-affairs",
+        "hotpotqa_v1:support:village-accountant"
+      ],
+      "outcome_gain": 1,
+      "provenance": {
+        "dataset": "hotpotqa_v1",
+        "source_license": "CC BY-SA 4.0",
+        "source_family": "qa",
+        "source_snapshot_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json",
+        "recorded_by": "jon-explicit-approval-2026-04-05:docs-qa-compiler",
+        "recorded_at": "2026-04-05T20:10:00Z",
+        "review_status": "approved_train"
+      },
+      "split_tag": "dev_distractor",
+      "created_at": "2026-04-05T20:10:00Z"
+    },
+    {
+      "row_id": "hotpotqa-dev-distractor-export-candidate-3",
+      "dataset_id": "hotpotqa_v1",
+      "query": "What science fantasy young adult series, told in first person, has a set of companion books narrating the stories of enslaved worlds and alien species?",
+      "cursor_path": [
+        "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+        "5a85ea095542994775f606a8"
+      ],
+      "candidate_set": [
+        {
+          "candidate_id": "hotpotqa_v1:support:animorphs",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_supporting_fact",
+          "freshness": "eval_only",
+          "token_cost": 104,
+          "score_hint": 1
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:the-hork-bajir-chronicles",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_supporting_fact",
+          "freshness": "eval_only",
+          "token_cost": 98,
+          "score_hint": 1
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:andre-norton-award",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 96,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:etiquette-amp-espionage",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 105,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:left-behind-the-kids",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 100,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:list-of-square-enix-companion-books",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 101,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:science-fantasy-magazine",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 103,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:shadowshaper",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 99,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:the-divide-trilogy",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 102,
+          "score_hint": 0.2
+        },
+        {
+          "candidate_id": "hotpotqa_v1:support:victoria-hanley",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 97,
+          "score_hint": 0.2
+        }
+      ],
+      "teacher_action": {
+        "kind": "traverse",
+        "target_ids": [
+          "hotpotqa_v1:support:animorphs",
+          "hotpotqa_v1:support:the-hork-bajir-chronicles"
+        ]
+      },
+      "stop_label": "CONTINUE",
+      "evidence_spans": [
+        {
+          "source_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+          "start": 10642,
+          "end": 10651,
+          "excerpt": "Animorphs"
+        },
+        {
+          "source_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json",
+          "start": 10840,
+          "end": 10865,
+          "excerpt": "The Hork-Bajir Chronicles"
+        }
+      ],
+      "hard_negatives": [
+        "hotpotqa_v1:support:andre-norton-award",
+        "hotpotqa_v1:support:etiquette-amp-espionage",
+        "hotpotqa_v1:support:left-behind-the-kids",
+        "hotpotqa_v1:support:list-of-square-enix-companion-books",
+        "hotpotqa_v1:support:science-fantasy-magazine",
+        "hotpotqa_v1:support:shadowshaper",
+        "hotpotqa_v1:support:the-divide-trilogy",
+        "hotpotqa_v1:support:victoria-hanley"
+      ],
+      "outcome_gain": 1,
+      "provenance": {
+        "dataset": "hotpotqa_v1",
+        "source_license": "CC BY-SA 4.0",
+        "source_family": "qa",
+        "source_snapshot_ref": "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json",
+        "recorded_by": "jon-explicit-approval-2026-04-05:docs-qa-compiler",
+        "recorded_at": "2026-04-05T20:10:00Z",
+        "review_status": "approved_train"
+      },
+      "split_tag": "dev_distractor",
+      "created_at": "2026-04-05T20:10:00Z"
+    },
+    {
+      "row_id": "musique-dev-export-candidate-1",
+      "dataset_id": "musique_v1",
+      "query": "What county is the city that shares a border with the state capital of the state where Zubly Cemetery is located in?",
+      "cursor_path": [
+        "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+        "4hop1__129721_32392_823060_610794"
+      ],
+      "candidate_set": [
+        {
+          "candidate_id": "musique_v1:support:zubly-cemetery",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_supporting_fact",
+          "freshness": "eval_only",
+          "token_cost": 72,
+          "score_hint": 1
+        },
+        {
+          "candidate_id": "musique_v1:support:borders-of-china",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 84,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:canhotinho",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 89,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:colorado-territory",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 80,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:east-jersey",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 90,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:fort-meade-national-cemetery",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 82,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:history-of-mississippi",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 81,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:list-of-burn-centres-in-australia",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 88,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:list-of-capitals-in-the-united-states",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 76,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:mill-city-butte-county-california",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 75,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:mount-franklin-australian-capital-territory",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 83,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:mulkey-cemetery",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 85,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:oklahoma-city",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 78,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:quipap",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 74,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:rocklea-queensland",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 86,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:springfield-national-cemetery",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 87,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:states-of-nigeria",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 79,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:tallahassee-florida",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 73,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:thirukkanur",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 91,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:united-states",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 77,
+          "score_hint": 0.15
+        }
+      ],
+      "teacher_action": {
+        "kind": "traverse",
+        "target_ids": [
+          "musique_v1:support:zubly-cemetery"
+        ]
+      },
+      "stop_label": "STOP_LOCAL",
+      "evidence_spans": [
+        {
+          "source_ref": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+          "start": 10725,
+          "end": 11161,
+          "excerpt": "The Zubly Cemetery near Beech Island, South Carolina, which is a small community in Aiken County, South Carolina was established around 1790 by Swiss settlers of the nearby New Windsor Township. It illustrates the vernacular burial customs of the period. The town of New Windsor, settled in 1737, eventually became an outpost for Indian traders. Zubly Cemetery was listed on the National Register of Historic Places on January 28, 2002."
+        }
+      ],
+      "hard_negatives": [
+        "musique_v1:support:borders-of-china",
+        "musique_v1:support:canhotinho",
+        "musique_v1:support:colorado-territory",
+        "musique_v1:support:east-jersey",
+        "musique_v1:support:fort-meade-national-cemetery",
+        "musique_v1:support:history-of-mississippi",
+        "musique_v1:support:list-of-burn-centres-in-australia",
+        "musique_v1:support:list-of-capitals-in-the-united-states",
+        "musique_v1:support:mill-city-butte-county-california",
+        "musique_v1:support:mount-franklin-australian-capital-territory",
+        "musique_v1:support:mulkey-cemetery",
+        "musique_v1:support:oklahoma-city",
+        "musique_v1:support:quipap",
+        "musique_v1:support:rocklea-queensland",
+        "musique_v1:support:springfield-national-cemetery",
+        "musique_v1:support:states-of-nigeria",
+        "musique_v1:support:tallahassee-florida",
+        "musique_v1:support:thirukkanur",
+        "musique_v1:support:united-states"
+      ],
+      "outcome_gain": 1,
+      "provenance": {
+        "dataset": "musique_v1",
+        "source_license": "CC BY 4.0",
+        "source_family": "qa",
+        "source_snapshot_ref": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json",
+        "recorded_by": "jon-explicit-approval-2026-04-05:docs-qa-compiler",
+        "recorded_at": "2026-04-05T20:10:00Z",
+        "review_status": "approved_train"
+      },
+      "split_tag": "dev",
+      "created_at": "2026-04-05T20:10:00Z"
+    },
+    {
+      "row_id": "musique-dev-export-candidate-7",
+      "dataset_id": "musique_v1",
+      "query": "What does the U.S. believe caused the country where the birthplace of Yaovabha Bongsanid is located, to help Japan?",
+      "cursor_path": [
+        "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+        "3hop1__539312_744503_34754"
+      ],
+      "candidate_set": [
+        {
+          "candidate_id": "musique_v1:support:grand-palace",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_supporting_fact",
+          "freshness": "eval_only",
+          "token_cost": 83,
+          "score_hint": 1
+        },
+        {
+          "candidate_id": "musique_v1:support:yaovabha-bongsanid",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_supporting_fact",
+          "freshness": "eval_only",
+          "token_cost": 79,
+          "score_hint": 1
+        },
+        {
+          "candidate_id": "musique_v1:support:alex-macfarlane",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 88,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:automotive-industry-in-japan",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 86,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:economic-inequality",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 89,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:guam",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 73,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:history-of-condoms",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 82,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:love-is-the-right-place",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 74,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:mary-mother-of-jesus",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 78,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:mid-twentieth-century-baby-boom",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 91,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:military-history-of-the-united-states",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 72,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:military-history-of-the-united-states-during-world-war-ii",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 75,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:natural-born-citizen-clause",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 80,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:paul-jordan-artist",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 85,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:prehn-s-sign",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 77,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:republic-of-the-congo",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 76,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:return-to-japan",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 81,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:thank-god-for-believers-song",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 84,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:you-were-mine",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 90,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:zhejiang",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 87,
+          "score_hint": 0.15
+        }
+      ],
+      "teacher_action": {
+        "kind": "traverse",
+        "target_ids": [
+          "musique_v1:support:grand-palace",
+          "musique_v1:support:yaovabha-bongsanid"
+        ]
+      },
+      "stop_label": "CONTINUE",
+      "evidence_spans": [
+        {
+          "source_ref": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+          "start": 95402,
+          "end": 95509,
+          "excerpt": "Princess Yaovabha Bongsanid died on 13 June 1934 at the Grand Palace, at the age of 49 years and 11 months."
+        },
+        {
+          "source_ref": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+          "start": 97731,
+          "end": 98418,
+          "excerpt": "The Grand Palace (, ) is a complex of buildings at the heart of Bangkok, Thailand. The palace has been the official residence of the Kings of Siam (and later Thailand) since 1782. The king, his court, and his royal government were based on the grounds of the palace until 1925. King Bhumibol Adulyadej (Rama IX), resided at the Chitralada Royal Villa and his successor King Vajiralongkorn (Rama X) at the Amphorn Sathan Residential Hall, both in the Dusit Palace, but the Grand Palace is still used for official events. Several royal ceremonies and state functions are held within the walls of the palace every year. The palace is one of the most popular tourist attractions in Thailand."
+        }
+      ],
+      "hard_negatives": [
+        "musique_v1:support:alex-macfarlane",
+        "musique_v1:support:automotive-industry-in-japan",
+        "musique_v1:support:economic-inequality",
+        "musique_v1:support:guam",
+        "musique_v1:support:history-of-condoms",
+        "musique_v1:support:love-is-the-right-place",
+        "musique_v1:support:mary-mother-of-jesus",
+        "musique_v1:support:mid-twentieth-century-baby-boom",
+        "musique_v1:support:military-history-of-the-united-states",
+        "musique_v1:support:military-history-of-the-united-states-during-world-war-ii",
+        "musique_v1:support:natural-born-citizen-clause",
+        "musique_v1:support:paul-jordan-artist",
+        "musique_v1:support:prehn-s-sign",
+        "musique_v1:support:republic-of-the-congo",
+        "musique_v1:support:return-to-japan",
+        "musique_v1:support:thank-god-for-believers-song",
+        "musique_v1:support:you-were-mine",
+        "musique_v1:support:zhejiang"
+      ],
+      "outcome_gain": 1,
+      "provenance": {
+        "dataset": "musique_v1",
+        "source_license": "CC BY 4.0",
+        "source_family": "qa",
+        "source_snapshot_ref": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json",
+        "recorded_by": "jon-explicit-approval-2026-04-05:docs-qa-compiler",
+        "recorded_at": "2026-04-05T20:10:00Z",
+        "review_status": "approved_train"
+      },
+      "split_tag": "dev",
+      "created_at": "2026-04-05T20:10:00Z"
+    },
+    {
+      "row_id": "musique-dev-export-candidate-11",
+      "dataset_id": "musique_v1",
+      "query": "Who is the child of the actor who is a cast member of Love in Pawn?",
+      "cursor_path": [
+        "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+        "2hop__822965_165304"
+      ],
+      "candidate_set": [
+        {
+          "candidate_id": "musique_v1:support:love-in-pawn",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_supporting_fact",
+          "freshness": "eval_only",
+          "token_cost": 83,
+          "score_hint": 1
+        },
+        {
+          "candidate_id": "musique_v1:support:avalanche-chess",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 74,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:charlotte-ritchie",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 84,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:colleen-ballinger",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 78,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:don-t-wanna-fall-in-love",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 73,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:ex-on-the-beach-british-series-7",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 81,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:ex-on-the-beach-british-tv-series",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 85,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:grant-williams-american-football",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 87,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:i-love-hong-kong-2012",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 88,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:jason-lewis-actor",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 77,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:jerry-maren",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 89,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:ken-marino",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 72,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:list-of-ghost-whisperer-characters",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 90,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:list-of-super-bowl-halftime-shows",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 80,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:list-of-the-young-and-the-restless-cast-members",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 91,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:problem-child-3-junior-in-love",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 82,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:promotion-chess",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 75,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:richard-keith-actor",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 76,
+          "score_hint": 0.15
+        },
+        {
+          "candidate_id": "musique_v1:support:sphere-with-inner-form",
+          "candidate_type": "doc_chunk",
+          "authority": "snapshot_context",
+          "freshness": "eval_only",
+          "token_cost": 79,
+          "score_hint": 0.15
+        }
+      ],
+      "teacher_action": {
+        "kind": "traverse",
+        "target_ids": [
+          "musique_v1:support:love-in-pawn"
+        ]
+      },
+      "stop_label": "STOP_LOCAL",
+      "evidence_spans": [
+        {
+          "source_ref": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl",
+          "start": 150574,
+          "end": 150692,
+          "excerpt": "Love in Pawn is a 1953 British comedy film directed by Charles Saunders and starring Bernard Braden and Barbara Kelly."
+        }
+      ],
+      "hard_negatives": [
+        "musique_v1:support:avalanche-chess",
+        "musique_v1:support:charlotte-ritchie",
+        "musique_v1:support:colleen-ballinger",
+        "musique_v1:support:don-t-wanna-fall-in-love",
+        "musique_v1:support:ex-on-the-beach-british-series-7",
+        "musique_v1:support:ex-on-the-beach-british-tv-series",
+        "musique_v1:support:grant-williams-american-football",
+        "musique_v1:support:i-love-hong-kong-2012",
+        "musique_v1:support:jason-lewis-actor",
+        "musique_v1:support:jerry-maren",
+        "musique_v1:support:ken-marino",
+        "musique_v1:support:list-of-ghost-whisperer-characters",
+        "musique_v1:support:list-of-super-bowl-halftime-shows",
+        "musique_v1:support:list-of-the-young-and-the-restless-cast-members",
+        "musique_v1:support:problem-child-3-junior-in-love",
+        "musique_v1:support:promotion-chess",
+        "musique_v1:support:richard-keith-actor",
+        "musique_v1:support:sphere-with-inner-form"
+      ],
+      "outcome_gain": 1,
+      "provenance": {
+        "dataset": "musique_v1",
+        "source_license": "CC BY 4.0",
+        "source_family": "qa",
+        "source_snapshot_ref": "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json",
+        "recorded_by": "jon-explicit-approval-2026-04-05:docs-qa-compiler",
+        "recorded_at": "2026-04-05T20:10:00Z",
+        "review_status": "approved_train"
+      },
+      "split_tag": "dev",
+      "created_at": "2026-04-05T20:10:00Z"
+    }
+  ],
+  "notes": [
+    "Real governed approved export compiled from the explicitly approved HotpotQA and MuSiQue snapshot-backed QA rows.",
+    "This expansion intentionally adds STOP_LOCAL-rich MuSiQue supervision rows beyond the tiny first approved export run.",
+    "Registry eligibility is preserved exactly as emitted by the governed source-intake registry and snapshot compiler."
+  ]
+}

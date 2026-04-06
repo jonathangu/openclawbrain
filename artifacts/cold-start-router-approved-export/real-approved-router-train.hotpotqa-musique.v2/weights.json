@@ -1,0 +1,1747 @@
+{
+  "contract": "cold_start_router_weights.v1",
+  "artifactId": "router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v2",
+  "artifactVersion": "0.0.2",
+  "packType": "base",
+  "compatibleRuntimeVersion": "openclawbrain-runtime@0.3.8",
+  "routerIdentity": "router:real-approved-export:hotpotqa-musique-stoplocal",
+  "createdAt": "2026-04-05T20:10:00Z",
+  "training": {
+    "totalRows": 6,
+    "eligibleRows": 6,
+    "usedRows": 6,
+    "skippedRows": 0,
+    "candidatePositiveCount": 10,
+    "candidateNegativeCount": 79,
+    "usedDatasetIds": [
+      "hotpotqa_v1",
+      "musique_v1"
+    ],
+    "skippedRowDetails": [],
+    "featureWeightCount": 7,
+    "toolActionPriorCount": 0,
+    "toolActionSetCount": 0
+  },
+  "candidateFeatureWeights": {
+    "authority:snapshot_context": {
+      "positive": 0,
+      "negative": 79,
+      "support": 79,
+      "weight": -4.273828446163415
+    },
+    "authority:snapshot_supporting_fact": {
+      "positive": 10,
+      "negative": 0,
+      "support": 10,
+      "weight": 1.998246060665309
+    },
+    "candidate_type:doc_chunk": {
+      "positive": 10,
+      "negative": 79,
+      "support": 89,
+      "weight": -1.9405240791969283
+    },
+    "freshness:eval_only": {
+      "positive": 10,
+      "negative": 79,
+      "support": 89,
+      "weight": -1.9405240791969283
+    },
+    "score_hint_bucket:0-0.25": {
+      "positive": 0,
+      "negative": 79,
+      "support": 79,
+      "weight": -4.273828446163415
+    },
+    "score_hint_bucket:0.75-1.0": {
+      "positive": 10,
+      "negative": 0,
+      "support": 10,
+      "weight": 1.998246060665309
+    },
+    "token_cost_bucket:33-128": {
+      "positive": 10,
+      "negative": 79,
+      "support": 89,
+      "weight": -1.9405240791969283
+    }
+  },
+  "stopLabelCounts": {
+    "CONTINUE": 4,
+    "STOP_LOCAL": 2,
+    "STOP": 0
+  },
+  "stopBucketCounts": {
+    "candidate_count": {
+      "8+": {
+        "CONTINUE": 4,
+        "STOP_LOCAL": 2,
+        "STOP": 0
+      }
+    },
+    "evidence_span_count": {
+      "1": {
+        "CONTINUE": 0,
+        "STOP_LOCAL": 2,
+        "STOP": 0
+      },
+      "2": {
+        "CONTINUE": 4,
+        "STOP_LOCAL": 0,
+        "STOP": 0
+      }
+    },
+    "hard_negative_count": {
+      "2+": {
+        "CONTINUE": 4,
+        "STOP_LOCAL": 2,
+        "STOP": 0
+      }
+    },
+    "outcome_gain": {
+      "high": {
+        "CONTINUE": 4,
+        "STOP_LOCAL": 2,
+        "STOP": 0
+      }
+    }
+  },
+  "calibration": {
+    "contract": "cold_start_router_calibration.v1",
+    "smoothing": 1,
+    "supportDampening": 2,
+    "labelOrder": [
+      "CONTINUE",
+      "STOP_LOCAL",
+      "STOP"
+    ]
+  },
+  "featureNormalizers": {
+    "contract": "cold_start_router_feature_normalizers.v1",
+    "candidateFeatures": {
+      "categorical": [
+        "candidate_type",
+        "authority",
+        "freshness"
+      ],
+      "tokenCostBuckets": [
+        "0",
+        "1-8",
+        "9-32",
+        "33-128",
+        "129+"
+      ],
+      "scoreHintBuckets": [
+        "missing",
+        "<0",
+        "0-0.25",
+        "0.25-0.5",
+        "0.5-0.75",
+        "0.75-1.0",
+        ">1.0"
+      ]
+    },
+    "stopFeatures": {
+      "candidate_count": [
+        "1",
+        "2-3",
+        "4-7",
+        "8+"
+      ],
+      "evidence_span_count": [
+        "1",
+        "2",
+        "3+"
+      ],
+      "hard_negative_count": [
+        "0",
+        "1",
+        "2+"
+      ],
+      "outcome_gain": [
+        "loss",
+        "low",
+        "medium",
+        "high"
+      ]
+    }
+  },
+  "sourcePriors": {
+    "contract": "cold_start_router_source_priors.v1",
+    "datasetCount": 2,
+    "usedDatasetCount": 2,
+    "datasets": {
+      "hotpotqa_v1": {
+        "datasetId": "hotpotqa_v1",
+        "sourceFamily": "qa",
+        "approvalStatus": "approved_train",
+        "benchmarkSplitStatus": "eval_only",
+        "commercialUseStatus": "allowed",
+        "redistributionStatus": "allowed",
+        "piiRisk": "none",
+        "exactFileCount": 3,
+        "rowCount": 3,
+        "usedRowCount": 3,
+        "skippedRowCount": 0
+      },
+      "musique_v1": {
+        "datasetId": "musique_v1",
+        "sourceFamily": "qa",
+        "approvalStatus": "approved_train",
+        "benchmarkSplitStatus": "eval_only",
+        "commercialUseStatus": "allowed",
+        "redistributionStatus": "allowed",
+        "piiRisk": "none",
+        "exactFileCount": 3,
+        "rowCount": 3,
+        "usedRowCount": 3,
+        "skippedRowCount": 0
+      }
+    },
+    "counts": {
+      "sourceFamily": {
+        "qa": 2
+      },
+      "approvalStatus": {
+        "approved_train": 2
+      },
+      "benchmarkSplitStatus": {
+        "eval_only": 2
+      },
+      "commercialUseStatus": {
+        "allowed": 2
+      },
+      "redistributionStatus": {
+        "allowed": 2
+      },
+      "piiRisk": {
+        "none": 2
+      }
+    }
+  },
+  "safetyRules": {
+    "contract": "cold_start_router_safety_rules.v1",
+    "requireCandidateMembership": true,
+    "preferExplicitCorrections": true,
+    "allowedApprovalStatuses": [
+      "approved_train"
+    ],
+    "allowedCommercialUseStatuses": [
+      "allowed"
+    ],
+    "allowedRedistributionStatuses": [
+      "allowed"
+    ],
+    "allowedPiiRisks": [
+      "none",
+      "low"
+    ],
+    "stopLabelOrder": [
+      "CONTINUE",
+      "STOP_LOCAL",
+      "STOP"
+    ],
+    "skipEvalOnlyDatasets": true
+  },
+  "toolActionPriors": [],
+  "toolActionSets": [],
+  "livePolicyInitializer": {
+    "contract": "cold_start_router_live_policy_initializer.v1",
+    "policyParams": {
+      "temperature": 1,
+      "stopBias": -0.38311921782449304,
+      "budgetPressure": 3,
+      "hopPressure": 2,
+      "frontierPressure": 1.5,
+      "branchOpportunityCost": 1.1,
+      "localRedundancyPenalty": 0.75,
+      "evidenceQualityBias": 0.45,
+      "edgeKindBias": {
+        "sibling": 0,
+        "semantic": 0.1,
+        "learned": 0.2,
+        "seed": 0.15,
+        "inhibitory": -10,
+        "bridge": 0
+      }
+    },
+    "seedWeights": [
+      {
+        "nodeId": "hotpotqa_v1:support:a-kiss-for-corliss",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:adam-collis",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:andre-norton-award",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:animorphs",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "weight": 0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:charles-craft",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:conrad-brooks",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:deliver-us-from-evil-2014-film",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:doctor-strange-2016-film",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:ed-wood",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "weight": 0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:ed-wood-film",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:etiquette-amp-espionage",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:janet-waldo",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:kiss-and-tell-1945-film",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "weight": 0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:left-behind-the-kids",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:list-of-square-enix-companion-books",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:lord-high-treasurer",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:meet-corliss-archer",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:meet-corliss-archer-tv-series",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:science-fantasy-magazine",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:scott-derrickson",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "weight": 0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:secretary-of-state-for-constitutional-affairs",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:shadowshaper",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:shirley-temple",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "weight": 0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:sinister-film",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:the-divide-trilogy",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:the-hork-bajir-chronicles",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "weight": 0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:tyler-bates",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:victoria-hanley",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:village-accountant",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "hotpotqa_v1:support:woodson-arkansas",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:alex-macfarlane",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:automotive-industry-in-japan",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:avalanche-chess",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:borders-of-china",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:canhotinho",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:charlotte-ritchie",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:colleen-ballinger",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:colorado-territory",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:don-t-wanna-fall-in-love",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:east-jersey",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:economic-inequality",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:ex-on-the-beach-british-series-7",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:ex-on-the-beach-british-tv-series",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:fort-meade-national-cemetery",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:grand-palace",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "weight": 0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:grant-williams-american-football",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:guam",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:history-of-condoms",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:history-of-mississippi",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:i-love-hong-kong-2012",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:jason-lewis-actor",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:jerry-maren",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:ken-marino",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:list-of-burn-centres-in-australia",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:list-of-capitals-in-the-united-states",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:list-of-ghost-whisperer-characters",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:list-of-super-bowl-halftime-shows",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:list-of-the-young-and-the-restless-cast-members",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:love-in-pawn",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "weight": 0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:love-is-the-right-place",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:mary-mother-of-jesus",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:mid-twentieth-century-baby-boom",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:military-history-of-the-united-states",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:military-history-of-the-united-states-during-world-war-ii",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:mill-city-butte-county-california",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:mount-franklin-australian-capital-territory",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:mulkey-cemetery",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:natural-born-citizen-clause",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:oklahoma-city",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:paul-jordan-artist",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:prehn-s-sign",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:problem-child-3-junior-in-love",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:promotion-chess",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:quipap",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:republic-of-the-congo",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:return-to-japan",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:richard-keith-actor",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:rocklea-queensland",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:sphere-with-inner-form",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:springfield-national-cemetery",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:states-of-nigeria",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:tallahassee-florida",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:thank-god-for-believers-song",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:thirukkanur",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:united-states",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:yaovabha-bongsanid",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "weight": 0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:you-were-mine",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:zhejiang",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "nodeId": "musique_v1:support:zubly-cemetery",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "weight": 0.23104906018664842
+      }
+    ],
+    "stopLocalWeights": [
+      {
+        "sourceNodeId": "2hop__822965_165304",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "weight": 0.6141682780111415
+      },
+      {
+        "sourceNodeId": "3hop1__539312_744503_34754",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": 0.15207015763784462
+      },
+      {
+        "sourceNodeId": "4hop1__129721_32392_823060_610794",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "weight": 0.6141682780111415
+      },
+      {
+        "sourceNodeId": "5a85ea095542994775f606a8",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": 0.15207015763784462
+      },
+      {
+        "sourceNodeId": "5a8b57f25542995d1e6f1371",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": 0.15207015763784462
+      },
+      {
+        "sourceNodeId": "5a8c7595554299585d9e36b6",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "weight": 0.15207015763784462
+      }
+    ],
+    "edgeWeights": [
+      {
+        "sourceNodeId": "2hop__822965_165304",
+        "targetNodeId": "musique_v1:support:avalanche-chess",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "2hop__822965_165304",
+        "targetNodeId": "musique_v1:support:charlotte-ritchie",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "2hop__822965_165304",
+        "targetNodeId": "musique_v1:support:colleen-ballinger",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "2hop__822965_165304",
+        "targetNodeId": "musique_v1:support:don-t-wanna-fall-in-love",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "2hop__822965_165304",
+        "targetNodeId": "musique_v1:support:ex-on-the-beach-british-series-7",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "2hop__822965_165304",
+        "targetNodeId": "musique_v1:support:ex-on-the-beach-british-tv-series",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "2hop__822965_165304",
+        "targetNodeId": "musique_v1:support:grant-williams-american-football",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "2hop__822965_165304",
+        "targetNodeId": "musique_v1:support:i-love-hong-kong-2012",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "2hop__822965_165304",
+        "targetNodeId": "musique_v1:support:jason-lewis-actor",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "2hop__822965_165304",
+        "targetNodeId": "musique_v1:support:jerry-maren",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "2hop__822965_165304",
+        "targetNodeId": "musique_v1:support:ken-marino",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "2hop__822965_165304",
+        "targetNodeId": "musique_v1:support:list-of-ghost-whisperer-characters",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "2hop__822965_165304",
+        "targetNodeId": "musique_v1:support:list-of-super-bowl-halftime-shows",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "2hop__822965_165304",
+        "targetNodeId": "musique_v1:support:list-of-the-young-and-the-restless-cast-members",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "2hop__822965_165304",
+        "targetNodeId": "musique_v1:support:love-in-pawn",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "prior": 1,
+        "weight": 0.23104906018664842
+      },
+      {
+        "sourceNodeId": "2hop__822965_165304",
+        "targetNodeId": "musique_v1:support:problem-child-3-junior-in-love",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "2hop__822965_165304",
+        "targetNodeId": "musique_v1:support:promotion-chess",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "2hop__822965_165304",
+        "targetNodeId": "musique_v1:support:richard-keith-actor",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "2hop__822965_165304",
+        "targetNodeId": "musique_v1:support:sphere-with-inner-form",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "3hop1__539312_744503_34754",
+        "targetNodeId": "musique_v1:support:alex-macfarlane",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "3hop1__539312_744503_34754",
+        "targetNodeId": "musique_v1:support:automotive-industry-in-japan",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "3hop1__539312_744503_34754",
+        "targetNodeId": "musique_v1:support:economic-inequality",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "3hop1__539312_744503_34754",
+        "targetNodeId": "musique_v1:support:grand-palace",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "prior": 1,
+        "weight": 0.23104906018664842
+      },
+      {
+        "sourceNodeId": "3hop1__539312_744503_34754",
+        "targetNodeId": "musique_v1:support:guam",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "3hop1__539312_744503_34754",
+        "targetNodeId": "musique_v1:support:history-of-condoms",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "3hop1__539312_744503_34754",
+        "targetNodeId": "musique_v1:support:love-is-the-right-place",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "3hop1__539312_744503_34754",
+        "targetNodeId": "musique_v1:support:mary-mother-of-jesus",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "3hop1__539312_744503_34754",
+        "targetNodeId": "musique_v1:support:mid-twentieth-century-baby-boom",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "3hop1__539312_744503_34754",
+        "targetNodeId": "musique_v1:support:military-history-of-the-united-states",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "3hop1__539312_744503_34754",
+        "targetNodeId": "musique_v1:support:military-history-of-the-united-states-during-world-war-ii",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "3hop1__539312_744503_34754",
+        "targetNodeId": "musique_v1:support:natural-born-citizen-clause",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "3hop1__539312_744503_34754",
+        "targetNodeId": "musique_v1:support:paul-jordan-artist",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "3hop1__539312_744503_34754",
+        "targetNodeId": "musique_v1:support:prehn-s-sign",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "3hop1__539312_744503_34754",
+        "targetNodeId": "musique_v1:support:republic-of-the-congo",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "3hop1__539312_744503_34754",
+        "targetNodeId": "musique_v1:support:return-to-japan",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "3hop1__539312_744503_34754",
+        "targetNodeId": "musique_v1:support:thank-god-for-believers-song",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "3hop1__539312_744503_34754",
+        "targetNodeId": "musique_v1:support:yaovabha-bongsanid",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "prior": 1,
+        "weight": 0.23104906018664842
+      },
+      {
+        "sourceNodeId": "3hop1__539312_744503_34754",
+        "targetNodeId": "musique_v1:support:you-were-mine",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "3hop1__539312_744503_34754",
+        "targetNodeId": "musique_v1:support:zhejiang",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "4hop1__129721_32392_823060_610794",
+        "targetNodeId": "musique_v1:support:borders-of-china",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "4hop1__129721_32392_823060_610794",
+        "targetNodeId": "musique_v1:support:canhotinho",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "4hop1__129721_32392_823060_610794",
+        "targetNodeId": "musique_v1:support:colorado-territory",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "4hop1__129721_32392_823060_610794",
+        "targetNodeId": "musique_v1:support:east-jersey",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "4hop1__129721_32392_823060_610794",
+        "targetNodeId": "musique_v1:support:fort-meade-national-cemetery",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "4hop1__129721_32392_823060_610794",
+        "targetNodeId": "musique_v1:support:history-of-mississippi",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "4hop1__129721_32392_823060_610794",
+        "targetNodeId": "musique_v1:support:list-of-burn-centres-in-australia",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "4hop1__129721_32392_823060_610794",
+        "targetNodeId": "musique_v1:support:list-of-capitals-in-the-united-states",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "4hop1__129721_32392_823060_610794",
+        "targetNodeId": "musique_v1:support:mill-city-butte-county-california",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "4hop1__129721_32392_823060_610794",
+        "targetNodeId": "musique_v1:support:mount-franklin-australian-capital-territory",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "4hop1__129721_32392_823060_610794",
+        "targetNodeId": "musique_v1:support:mulkey-cemetery",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "4hop1__129721_32392_823060_610794",
+        "targetNodeId": "musique_v1:support:oklahoma-city",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "4hop1__129721_32392_823060_610794",
+        "targetNodeId": "musique_v1:support:quipap",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "4hop1__129721_32392_823060_610794",
+        "targetNodeId": "musique_v1:support:rocklea-queensland",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "4hop1__129721_32392_823060_610794",
+        "targetNodeId": "musique_v1:support:springfield-national-cemetery",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "4hop1__129721_32392_823060_610794",
+        "targetNodeId": "musique_v1:support:states-of-nigeria",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "4hop1__129721_32392_823060_610794",
+        "targetNodeId": "musique_v1:support:tallahassee-florida",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "4hop1__129721_32392_823060_610794",
+        "targetNodeId": "musique_v1:support:thirukkanur",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "4hop1__129721_32392_823060_610794",
+        "targetNodeId": "musique_v1:support:united-states",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "4hop1__129721_32392_823060_610794",
+        "targetNodeId": "musique_v1:support:zubly-cemetery",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "prior": 1,
+        "weight": 0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a85ea095542994775f606a8",
+        "targetNodeId": "hotpotqa_v1:support:andre-norton-award",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a85ea095542994775f606a8",
+        "targetNodeId": "hotpotqa_v1:support:animorphs",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "prior": 1,
+        "weight": 0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a85ea095542994775f606a8",
+        "targetNodeId": "hotpotqa_v1:support:etiquette-amp-espionage",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a85ea095542994775f606a8",
+        "targetNodeId": "hotpotqa_v1:support:left-behind-the-kids",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a85ea095542994775f606a8",
+        "targetNodeId": "hotpotqa_v1:support:list-of-square-enix-companion-books",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a85ea095542994775f606a8",
+        "targetNodeId": "hotpotqa_v1:support:science-fantasy-magazine",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a85ea095542994775f606a8",
+        "targetNodeId": "hotpotqa_v1:support:shadowshaper",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a85ea095542994775f606a8",
+        "targetNodeId": "hotpotqa_v1:support:the-divide-trilogy",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a85ea095542994775f606a8",
+        "targetNodeId": "hotpotqa_v1:support:the-hork-bajir-chronicles",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "prior": 1,
+        "weight": 0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a85ea095542994775f606a8",
+        "targetNodeId": "hotpotqa_v1:support:victoria-hanley",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a8b57f25542995d1e6f1371",
+        "targetNodeId": "hotpotqa_v1:support:adam-collis",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a8b57f25542995d1e6f1371",
+        "targetNodeId": "hotpotqa_v1:support:conrad-brooks",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a8b57f25542995d1e6f1371",
+        "targetNodeId": "hotpotqa_v1:support:deliver-us-from-evil-2014-film",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a8b57f25542995d1e6f1371",
+        "targetNodeId": "hotpotqa_v1:support:doctor-strange-2016-film",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a8b57f25542995d1e6f1371",
+        "targetNodeId": "hotpotqa_v1:support:ed-wood",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "prior": 1,
+        "weight": 0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a8b57f25542995d1e6f1371",
+        "targetNodeId": "hotpotqa_v1:support:ed-wood-film",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a8b57f25542995d1e6f1371",
+        "targetNodeId": "hotpotqa_v1:support:scott-derrickson",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "prior": 1,
+        "weight": 0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a8b57f25542995d1e6f1371",
+        "targetNodeId": "hotpotqa_v1:support:sinister-film",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a8b57f25542995d1e6f1371",
+        "targetNodeId": "hotpotqa_v1:support:tyler-bates",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a8b57f25542995d1e6f1371",
+        "targetNodeId": "hotpotqa_v1:support:woodson-arkansas",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a8c7595554299585d9e36b6",
+        "targetNodeId": "hotpotqa_v1:support:a-kiss-for-corliss",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a8c7595554299585d9e36b6",
+        "targetNodeId": "hotpotqa_v1:support:charles-craft",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a8c7595554299585d9e36b6",
+        "targetNodeId": "hotpotqa_v1:support:janet-waldo",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a8c7595554299585d9e36b6",
+        "targetNodeId": "hotpotqa_v1:support:kiss-and-tell-1945-film",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "prior": 1,
+        "weight": 0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a8c7595554299585d9e36b6",
+        "targetNodeId": "hotpotqa_v1:support:lord-high-treasurer",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a8c7595554299585d9e36b6",
+        "targetNodeId": "hotpotqa_v1:support:meet-corliss-archer",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a8c7595554299585d9e36b6",
+        "targetNodeId": "hotpotqa_v1:support:meet-corliss-archer-tv-series",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a8c7595554299585d9e36b6",
+        "targetNodeId": "hotpotqa_v1:support:secretary-of-state-for-constitutional-affairs",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a8c7595554299585d9e36b6",
+        "targetNodeId": "hotpotqa_v1:support:shirley-temple",
+        "positive": 1,
+        "negative": 0,
+        "support": 1,
+        "prior": 1,
+        "weight": 0.23104906018664842
+      },
+      {
+        "sourceNodeId": "5a8c7595554299585d9e36b6",
+        "targetNodeId": "hotpotqa_v1:support:village-accountant",
+        "positive": 0,
+        "negative": 1,
+        "support": 1,
+        "prior": 1,
+        "weight": -0.23104906018664842
+      }
+    ],
+    "toolActionPriors": [],
+    "toolActionSets": [],
+    "skippedToolRowIds": [],
+    "usedRowCount": 6,
+    "traverseRowCount": 6,
+    "toolRowCount": 0
+  }
+}
