@@ -616,6 +616,22 @@ function summarizeToolArgsShape(metadata: Record<string, unknown>): string | nul
   return Object.keys(toolArgs as Record<string, unknown>).sort().join(",");
 }
 
+function readToolActionRole(metadata: Record<string, unknown>): "capability" | "instance" | null {
+  const role = readStringMetadata(metadata, ["toolRole", "tool_role", "toolActionRole", "tool_action_role"]);
+  if (!role) {
+    return null;
+  }
+
+  switch (role.toLowerCase()) {
+    case "capability":
+      return "capability";
+    case "instance":
+      return "instance";
+    default:
+      return null;
+  }
+}
+
 function sanitizeRetrievalFeatures(
   features: Record<string, unknown> | null | undefined,
 ): Record<string, number | string | boolean> | null {
@@ -642,7 +658,11 @@ function classifyActionKind(params: {
 
   const node = params.lookupNode?.(params.action.targetNodeId) ?? null;
   if (params.sourceNodeId !== null && node?.kind === "toolcard") {
-    return { actionKind: "tool", node };
+    const toolRole = readToolActionRole(node.metadata);
+    if (toolRole === "instance") {
+      return { actionKind: "tool_instance", node };
+    }
+    return { actionKind: "tool_capability", node };
   }
 
   return { actionKind: "traverse", node };
@@ -665,6 +685,8 @@ function buildDecisionPointActionCandidate(params: {
       actionKind,
       nodeId: null,
       toolName: null,
+      toolCapabilityId: null,
+      toolInstanceId: null,
       toolArgsShape: null,
       priorScore: params.candidate.priorScore ?? params.candidate.score,
       probability: params.candidate.probability,
@@ -672,7 +694,7 @@ function buildDecisionPointActionCandidate(params: {
     };
   }
 
-  const toolName = actionKind === "tool"
+  const toolName = actionKind === "tool_capability" || actionKind === "tool_instance"
     ? readStringMetadata(node?.metadata ?? {}, ["toolName", "tool_name"]) ?? node?.id ?? params.candidate.action.targetNodeId
     : null;
 
@@ -681,7 +703,11 @@ function buildDecisionPointActionCandidate(params: {
     actionKind,
     nodeId: params.candidate.action.targetNodeId,
     toolName,
-    toolArgsShape: actionKind === "tool" ? summarizeToolArgsShape(node?.metadata ?? {}) : null,
+    toolCapabilityId: actionKind === "tool_capability" ? toolName : null,
+    toolInstanceId: actionKind === "tool_instance" ? toolName : null,
+    toolArgsShape: actionKind === "tool_capability" || actionKind === "tool_instance"
+      ? summarizeToolArgsShape(node?.metadata ?? {})
+      : null,
     priorScore: params.candidate.priorScore ?? params.candidate.score,
     probability: params.candidate.probability,
     retrievalFeatures: sanitizeRetrievalFeatures(params.candidate.scoreBreakdown as Record<string, unknown> | null | undefined),
@@ -804,6 +830,8 @@ function buildDecisionPointSnapshots(params: {
       chosenActionKind: chosen.actionKind,
       chosenNodeId: chosen.nodeId,
       chosenToolName: chosen.toolName,
+      chosenToolCapabilityId: chosen.toolCapabilityId,
+      chosenToolInstanceId: chosen.toolInstanceId,
       chosenActionProbability: substep.chosenActionProbability,
       stopProbability: substep.stopProbability,
       stopTruth: substep.stopTruth ?? null,
@@ -826,10 +854,11 @@ function buildDecisionPointSnapshots(params: {
 }
 
 function summarizeDecisionPointSnapshots(snapshots: DecisionPointSnapshotV1[]): string {
-  const counts = {
+  const counts: { total: number } & Record<DecisionPointActionKindV1, number> = {
     total: snapshots.length,
     traverse: 0,
-    tool: 0,
+    tool_capability: 0,
+    tool_instance: 0,
     stop_local: 0,
     stop: 0,
   };
@@ -840,7 +869,7 @@ function summarizeDecisionPointSnapshots(snapshots: DecisionPointSnapshotV1[]): 
     }
   }
 
-  return `[brain decision points] total=${counts.total} actions traverse=${counts.traverse} tool=${counts.tool} stop_local=${counts.stop_local} stop=${counts.stop}`;
+  return `[brain decision points] total=${counts.total} actions traverse=${counts.traverse} tool_capability=${counts.tool_capability} tool_instance=${counts.tool_instance} stop_local=${counts.stop_local} stop=${counts.stop}`;
 }
 
 function formatBranchSource(sourceNodeId: string | null): string {

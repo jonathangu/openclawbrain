@@ -113,7 +113,7 @@ export interface TraversalState {
 /**
  * Action a_t in the MDP.
  * Paper: A(s) ⊂ {a_0, a_1, a_2, ...}
- * Our action set: A(s) = { traverse(neighbor) } ∪ { stop_local }
+ * Our action set: A(s) = { traverse(neighbor) } ∪ { tool_capability, tool_instance } ∪ { stop_local }
  */
 export type TraversalAction =
   | { type: "traverse"; targetNodeId: string; seedScore?: number }
@@ -689,7 +689,8 @@ export interface DecisionTraceInjectedNodeSummary {
 
 export type DecisionPointActionKindV1 =
   | "traverse"
-  | "tool"
+  | "tool_capability"
+  | "tool_instance"
   | "stop_local"
   | "stop";
 
@@ -698,6 +699,8 @@ export interface DecisionPointActionCandidateV1 {
   actionKind: DecisionPointActionKindV1;
   nodeId: string | null;
   toolName: string | null;
+  toolCapabilityId: string | null;
+  toolInstanceId: string | null;
   toolArgsShape: string | null;
   priorScore: number | null;
   probability: number | null;
@@ -746,6 +749,8 @@ export interface DecisionPointSnapshotV1 {
   chosenActionKind: DecisionPointActionKindV1;
   chosenNodeId: string | null;
   chosenToolName: string | null;
+  chosenToolCapabilityId: string | null;
+  chosenToolInstanceId: string | null;
   chosenActionProbability: number;
   stopProbability: number;
   stopTruth: TrajectoryStopTruth | null;

@@ -32,13 +32,14 @@ function makeNode(id: string): BrainNode {
   };
 }
 
-function makeToolNode(id: string, toolName: string): BrainNode {
+function makeToolNode(id: string, toolName: string, role: "capability" | "instance" = "capability"): BrainNode {
   return {
     ...makeNode(id),
     kind: "toolcard",
     metadata: {
       toolName,
       toolArgsShape: "query,timeout",
+      toolRole: role,
     },
   };
 }
@@ -153,10 +154,11 @@ function makeTrace(
 }
 
 describe("decision trace branch proofs", () => {
-  it("exports decision-point snapshots with traverse, tool, and stop_local action sets", () => {
+  it("exports decision-point snapshots with traverse, tool_capability, tool_instance, and stop_local action sets", () => {
     const traversalResult: TraverseResult = {
       firedNodes: [
-        { nodeId: "tool_1", kind: "toolcard", content: "tool node", tokenCount: 8 },
+        { nodeId: "tool_1", kind: "toolcard", content: "tool capability node", tokenCount: 8 },
+        { nodeId: "tool_2", kind: "toolcard", content: "tool instance node", tokenCount: 8 },
       ],
       vetoedNodes: [],
       trajectory: [
@@ -180,8 +182,14 @@ describe("decision trace branch proofs", () => {
                 {
                   action: { type: "traverse" as const, targetNodeId: "tool_1" },
                   score: 2.5,
-                  probability: 0.65,
+                  probability: 0.35,
                   scoreBreakdown: { totalScore: 2.5, toolActionPrior: 1.2 },
+                },
+                {
+                  action: { type: "traverse" as const, targetNodeId: "tool_2" },
+                  score: 2.75,
+                  probability: 0.3,
+                  scoreBreakdown: { totalScore: 2.75, toolActionPrior: 1.35 },
                 },
                 {
                   action: { type: "stop_local" as const },
@@ -190,23 +198,23 @@ describe("decision trace branch proofs", () => {
                   scoreBreakdown: { totalScore: 0.1, learnedStopWeight: -0.2 },
                 },
               ],
-              chosenAction: { type: "traverse" as const, targetNodeId: "tool_1" },
-              chosenActionProbability: 0.65,
+              chosenAction: { type: "traverse" as const, targetNodeId: "tool_2" },
+              chosenActionProbability: 0.3,
               stopProbability: 0.15,
             },
           ],
-          selectedTargets: ["tool_1"],
-          acceptedTargets: ["tool_1"],
+          selectedTargets: ["tool_2"],
+          acceptedTargets: ["tool_2"],
           vetoedTargets: [],
           proposalOutcomes: [
-            { targetNodeId: "tool_1", outcome: "accepted", reason: "accepted" },
+            { targetNodeId: "tool_2", outcome: "accepted", reason: "accepted" },
           ],
           terminationReason: "policy_stop",
         },
       ],
-      seedScores: [makeSeedScore("tool_1", false, null)],
+      seedScores: [makeSeedScore("tool_2", false, null)],
       contextChars: 8,
-      footer: "Brain · 1 seed candidates · 0 seed picks · 1 expansions · 1 fired · 0 veto · 8 chars",
+      footer: "Brain · 1 seed candidates · 0 seed picks · 1 expansions · 2 fired · 0 veto · 8 chars",
       interruption: null,
       interruptionAccounting: null,
     };
@@ -225,10 +233,13 @@ describe("decision trace branch proofs", () => {
       routeSelectionMs: 2,
       totalQueryMs: 3,
       queryEmbeddingSource: "provided",
-      selectedNodes: [makeToolNode("tool_1", "bash")],
+      selectedNodes: [makeToolNode("tool_2", "wttr", "instance")],
       lookupNode: (nodeId) => {
         if (nodeId === "tool_1") {
-          return makeToolNode("tool_1", "bash");
+          return makeToolNode("tool_1", "bash", "capability");
+        }
+        if (nodeId === "tool_2") {
+          return makeToolNode("tool_2", "wttr", "instance");
         }
         if (nodeId === "doc_1") {
           return makeNode("doc_1");
@@ -241,17 +252,20 @@ describe("decision trace branch proofs", () => {
     const snapshots = trace.routeTrace?.selectionMetadata.decisionPointSnapshots ?? [];
     expect(snapshots).toHaveLength(1);
     expect(trace.routeTrace?.selectionMetadata.decisionPointSummary).toBe(
-      "[brain decision points] total=1 actions traverse=1 tool=1 stop_local=1 stop=0",
+      "[brain decision points] total=1 actions traverse=1 tool_capability=1 tool_instance=1 stop_local=1 stop=0",
     );
     expect(snapshots[0]).toMatchObject({
       schemaVersion: 1,
       decisionPointKind: "local",
       sourceNodeId: "a",
-      chosenActionKind: "tool",
-      chosenToolName: "bash",
+      chosenActionKind: "tool_instance",
+      chosenToolName: "wttr",
+      chosenToolCapabilityId: null,
+      chosenToolInstanceId: "wttr",
       localActionSet: [
         expect.objectContaining({ actionKind: "traverse", nodeId: "doc_1" }),
-        expect.objectContaining({ actionKind: "tool", nodeId: "tool_1", toolName: "bash" }),
+        expect.objectContaining({ actionKind: "tool_capability", nodeId: "tool_1", toolName: "bash", toolCapabilityId: "bash", toolInstanceId: null }),
+        expect.objectContaining({ actionKind: "tool_instance", nodeId: "tool_2", toolName: "wttr", toolCapabilityId: null, toolInstanceId: "wttr" }),
         expect.objectContaining({ actionKind: "stop_local", nodeId: null }),
       ],
       budgetContext: expect.objectContaining({
@@ -263,9 +277,9 @@ describe("decision trace branch proofs", () => {
         totalQueryMs: 3,
       }),
       routeContext: expect.objectContaining({
-        candidateNodeIds: ["tool_1", "doc_1"],
-        selectedNodeIds: ["tool_1"],
-        selectedTraversalNodeIds: ["tool_1"],
+        candidateNodeIds: expect.arrayContaining(["doc_1", "tool_1", "tool_2"]),
+        selectedNodeIds: expect.arrayContaining(["tool_1", "tool_2"]),
+        selectedTraversalNodeIds: expect.arrayContaining(["tool_2"]),
         selectedSeedNodeIds: [],
       }),
     });
