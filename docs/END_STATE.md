@@ -65,7 +65,7 @@ These are inherited LCM surfaces and should stay stable unless a failing test fo
 ### Still open
 - Phase 4: mutation bundles — DONE (bundle evaluation, clustering, replay gates)
 - Phase 5: CI proof ladder — DONE (evidence bundles under docs/evidence/, CI runs tests)
-- Phase 6: split-package cleanup — ACTIVE (published split packages and current front-door docs are in place on the 0.4.32 story; manifest/package id alignment and a few packaging seams remain)
+- Phase 6: split-package cleanup — IN PROGRESS (published split packages and current front-door docs are in place on the 0.4.32 story; remaining work is package-id alignment and a few packaging seams)
 
 **Remaining honest gaps:** Split-package cleanup still has follow-on chores, most visibly the cosmetic plugin-id warning plus package-content cleanup.
 
@@ -248,7 +248,7 @@ Primary files:
 Current truth:
 - split packages `@openclawbrain/openclaw@0.4.32` and `@openclawbrain/cli@0.4.32` are published
 - the public front door is `openclawbrain install --openclaw-home <path>`; the underlying manual package lane is still `openclaw plugins install @openclawbrain/openclaw` plus the same CLI lifecycle commands
-- `@jonathangu/openclawbrain@0.3.7` is now a compatibility holdover, not the main operator story
+- historical combined-package releases such as `@jonathangu/openclawbrain@0.3.7` remain archive-only; the main operator story is the split-package lane
 
 Still open:
 - align the plugin manifest/package ids so hosts stop warning about `openclawbrain` vs `openclaw`
