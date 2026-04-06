@@ -28,6 +28,10 @@ import { START_NODE_ID } from "./types.js";
 import type { BrainGraph } from "./graph.js";
 import { isChosenPolicyStopSubstep, isForcedStopSubstep } from "./trajectory-stop.js";
 
+function isToolActionTarget(graph: BrainGraph | undefined, targetNodeId: string): boolean {
+  return graph?.getNode(targetNodeId)?.kind === "toolcard";
+}
+
 export function policyWeightUpdateKey(update: PolicyWeightUpdate): string {
   switch (update.kind) {
     case "seed":
@@ -87,8 +91,7 @@ export function collectReinforceUpdateContributions(
       }
 
       const targetNodeId = substep.chosenAction.targetNodeId;
-      const targetKind = graph?.getNode(targetNodeId)?.kind ?? null;
-      if (sourceNodeId !== START_NODE_ID && targetKind === "toolcard") {
+      if (isToolActionTarget(graph, targetNodeId)) {
         contributions.push({
           updateKey: `tool→${sourceNodeId}→${targetNodeId}`,
           kind: "tool_action",
@@ -291,7 +294,7 @@ export function collectTeacherActionDistillContributions(
             continue;
           }
 
-          if (sourceNodeId !== START_NODE_ID && targetKind === "toolcard") {
+          if (targetKind === "toolcard") {
             contributions.push({
               updateKey: `tool→${sourceNodeId}→${targetNodeId}`,
               kind: "tool_action",
@@ -366,7 +369,7 @@ export function collectTeacherActionDistillContributions(
       if (Math.abs(delta) < 1e-12) {
         continue;
       }
-      if (sourceNodeId !== START_NODE_ID && targetKind === "toolcard") {
+      if (targetKind === "toolcard") {
         contributions.push({
           updateKey: `tool→${sourceNodeId}→${targetNodeId}`,
           kind: "tool_action",

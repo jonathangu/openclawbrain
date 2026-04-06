@@ -208,6 +208,23 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
     expect(updates[0]?.delta).toBeGreaterThan(0);
   });
 
+  it("updates seed-phase tool choices through explicit tool-action priors", () => {
+    const graph = new BrainGraph();
+    graph.addNode(makeToolNode("tool:proof"));
+
+    const episode = makeEpisode([makeExpansion(null, "tool:proof", 0.6)], 1.0);
+    const updates = computeReinforceUpdates(episode, 0.1, 0.0, graph);
+
+    expect(updates).toEqual([
+      expect.objectContaining({
+        kind: "tool_action",
+        sourceNodeId: START_NODE_ID,
+        toolNodeId: "tool:proof",
+      }),
+    ]);
+    expect(updates[0]?.delta).toBeGreaterThan(0);
+  });
+
   it("emits tool-action updates for chosen toolcard traversals when the graph identifies the tool node", () => {
     const graph = new BrainGraph();
     graph.addNode(makeNode("a"));
@@ -321,6 +338,47 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
       sourceNodeId: "source",
       toolNodeId: "tool:proof",
     });
+  });
+
+  it("distills seed-phase tool choices into tool-action priors", () => {
+    const graph = new BrainGraph();
+    graph.addNode(makeToolNode("tool:proof"));
+
+    const episode = makeEpisode([makeExpansion(null, "tool:proof", 0.7)], 0.5);
+    const supervision: PolicyGradientSupervisionArtifact[] = [{
+      supervisionId: "sup-seed-tool",
+      traceId: "trace-seed-tool",
+      source: "teacher",
+      kind: "teacher_review",
+      value: 0.6,
+      confidence: 1.0,
+      reason: "use the tool directly from the seed phase",
+      labelId: "label-seed-tool",
+      evidenceId: "evidence-seed-tool",
+      observationId: "obs-seed-tool",
+      teacherTraceId: "teacher-trace-seed-tool",
+      serveDecisionRecordId: null,
+      selectionDigest: null,
+      turnCompileEventId: null,
+      activePackGraphChecksum: null,
+      bindingMode: "exact_decision_id",
+      attributionQuality: "exact",
+      feedbackRichness: "tool_only",
+      traceRequestDigest: null,
+      traceSelectedNodeIds: ["tool:proof"],
+      traceSelectedPathNodeIds: ["tool:proof"],
+    }];
+
+    const updates = computeTeacherActionUpdates(episode, 0.1, supervision, graph);
+
+    expect(updates).toEqual([
+      expect.objectContaining({
+        kind: "tool_action",
+        sourceNodeId: START_NODE_ID,
+        toolNodeId: "tool:proof",
+      }),
+    ]);
+    expect(updates[0]?.delta).toBeGreaterThan(0);
   });
 
   it("prefers teacher-selected action targets over the rest of the sampled trajectory", () => {
