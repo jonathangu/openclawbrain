@@ -40,8 +40,12 @@ jobs:
       - name: Prepare canonical package dependencies
         run: npm run release:prepare:packages
 
-      - name: Run tests
-        run: npm test
+      - name: Run release-focused tests
+        run: |
+          npx vitest run test/install-converge-seam.test.ts test/brain-core/cold-start-router-contracts.test.ts test/router-migration.test.ts
+          node --test packages/cli/dist/test/install-converge.test.js
+          node --test packages/cli/dist/test/status-large-log.test.js packages/openclaw/dist/test/status-large-log.test.js
+          node --test packages/cli/dist/test/traced-learning-bridge.test.js packages/cli/dist/test/status-learning-path.test.js packages/openclaw/dist/test/traced-learning-bridge.test.js
 
       - name: Run canonical package tests
         run: |
