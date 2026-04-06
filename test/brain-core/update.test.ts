@@ -2,16 +2,28 @@ import { describe, it, expect } from "vitest";
 import {
   applyWeightUpdates,
   collectReinforceUpdateContributions,
+  collectTeacherActionDistillContributions,
   computeReinforceUpdates,
+  computeTeacherActionUpdates,
+  mergePolicyWeightUpdates,
   updateBaseline,
 } from "../../src/brain-core/update.js";
 import { BrainGraph } from "../../src/brain-core/graph.js";
 import { START_NODE_ID } from "../../src/brain-core/types.js";
-import type { Episode, TrajectoryExpansion, TrajectoryStep, BrainNode, BrainEdge } from "../../src/brain-core/types.js";
+import type { Episode, TrajectoryExpansion, TrajectoryStep, BrainNode, BrainEdge, PolicyGradientSupervisionArtifact } from "../../src/brain-core/types.js";
 
 function makeNode(id: string): BrainNode {
   return {
     id, kind: "chunk", content: `content of ${id}`,
+    embedding: new Float32Array([1, 0, 0]), sourceUri: null,
+    trust: "scanner", tags: [], tokenCount: 100, metadata: {},
+    createdAt: Date.now(), updatedAt: Date.now(),
+  };
+}
+
+function makeToolNode(id: string): BrainNode {
+  return {
+    id, kind: "toolcard", content: `tool ${id}`,
     embedding: new Float32Array([1, 0, 0]), sourceUri: null,
     trust: "scanner", tags: [], tokenCount: 100, metadata: {},
     createdAt: Date.now(), updatedAt: Date.now(),
@@ -194,6 +206,281 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
       }),
     ]);
     expect(updates[0]?.delta).toBeGreaterThan(0);
+  });
+
+  it("emits tool-action updates for chosen toolcard traversals when the graph identifies the tool node", () => {
+    const graph = new BrainGraph();
+    graph.addNode(makeNode("a"));
+    graph.addNode(makeToolNode("tool:proof"));
+
+    const toolExpansion: TrajectoryExpansion = {
+      sourceNodeId: "a",
+      expansionIndex: 0,
+      frontierBefore: ["a"],
+      frontierAfter: ["tool:proof"],
+      budgetBefore: 1000,
+      budgetAfter: 900,
+      substeps: [
+        {
+          stateSnapshot: {
+            sourceNodeId: "a",
+            expansionIndex: 0,
+            selectionIndex: 0,
+            budgetRemaining: 1000,
+            initialBudget: 1000,
+            reservedTokenCost: 0,
+            maxHops: 8,
+            frontierSize: 0,
+            frontierNodeIds: [],
+            visitedCount: 0,
+            firedCount: 0,
+          },
+          candidates: [
+            { action: { type: "traverse", targetNodeId: "tool:proof" }, score: 0.9, probability: 0.7 },
+            { action: { type: "stop_local" }, score: 0.1, probability: 0.3 },
+          ],
+          chosenAction: { type: "traverse", targetNodeId: "tool:proof" },
+          chosenActionProbability: 0.7,
+          stopProbability: 0.3,
+        },
+      ],
+      selectedTargets: ["tool:proof"],
+      acceptedTargets: ["tool:proof"],
+      vetoedTargets: [],
+    };
+
+    const updates = computeReinforceUpdates(makeEpisode([toolExpansion], 1.0), 0.1, 0.0, graph);
+    expect(updates).toEqual([
+      expect.objectContaining({
+        kind: "tool_action",
+        sourceNodeId: "a",
+        toolNodeId: "tool:proof",
+      }),
+    ]);
+    expect(updates[0]?.delta).toBeGreaterThan(0);
+  });
+
+  it("direct teacher-action distillation can move tool priors even when reward advantage is flat", () => {
+    const graph = new BrainGraph();
+    graph.addNode(makeNode("source"));
+    graph.addNode(makeToolNode("tool:proof"));
+
+    const episode = makeEpisode([
+      makeExpansion("source", "tool:proof", 0.7),
+    ], 0.5);
+
+    const supervision: PolicyGradientSupervisionArtifact[] = [{
+      supervisionId: "sup-1",
+      traceId: "trace-1",
+      source: "teacher",
+      kind: "teacher_review",
+      value: 0.5,
+      confidence: 1.0,
+      reason: "prefer the tool",
+      labelId: "label-1",
+      evidenceId: "evidence-1",
+      observationId: "obs-1",
+      teacherTraceId: "teacher-trace-1",
+      serveDecisionRecordId: null,
+      selectionDigest: null,
+      turnCompileEventId: null,
+      activePackGraphChecksum: null,
+      bindingMode: "exact_decision_id",
+      attributionQuality: "exact",
+      feedbackRichness: "tool_only",
+      traceRequestDigest: null,
+      traceSelectedNodeIds: ["source", "tool:proof"],
+      traceSelectedPathNodeIds: ["source", "tool:proof"],
+    }];
+
+    const reinforceUpdates = computeReinforceUpdates(episode, 0.1, 0.5, graph);
+    expect(reinforceUpdates).toHaveLength(0);
+
+    const teacherContributions = collectTeacherActionDistillContributions(episode, 0.1, supervision, graph);
+    expect(teacherContributions).toHaveLength(1);
+    expect(teacherContributions[0]).toMatchObject({
+      kind: "tool_action",
+      sourceNodeId: "source",
+      targetNodeId: "tool:proof",
+    });
+
+    const teacherUpdates = computeTeacherActionUpdates(episode, 0.1, supervision, graph);
+    expect(teacherUpdates).toEqual([
+      expect.objectContaining({
+        kind: "tool_action",
+        sourceNodeId: "source",
+        toolNodeId: "tool:proof",
+      }),
+    ]);
+    expect(teacherUpdates[0]?.delta).toBeGreaterThan(0);
+
+    const merged = mergePolicyWeightUpdates([...reinforceUpdates, ...teacherUpdates]);
+    expect(merged).toHaveLength(1);
+    expect(merged[0]).toMatchObject({
+      kind: "tool_action",
+      sourceNodeId: "source",
+      toolNodeId: "tool:proof",
+    });
+  });
+
+  it("prefers teacher-selected action targets over the rest of the sampled trajectory", () => {
+    const graph = new BrainGraph();
+    graph.addNode(makeNode("source"));
+    graph.addNode(makeNode("mid"));
+    graph.addNode(makeToolNode("tool:proof"));
+
+    const episode = makeEpisode([
+      {
+        sourceNodeId: "source",
+        expansionIndex: 0,
+        frontierBefore: ["source"],
+        frontierAfter: ["mid"],
+        budgetBefore: 1000,
+        budgetAfter: 900,
+        substeps: [
+          {
+            stateSnapshot: {
+              sourceNodeId: "source",
+              expansionIndex: 0,
+              selectionIndex: 0,
+              budgetRemaining: 1000,
+              initialBudget: 1000,
+              reservedTokenCost: 0,
+              maxHops: 8,
+              frontierSize: 0,
+              frontierNodeIds: [],
+              visitedCount: 0,
+              firedCount: 0,
+            },
+            candidates: [
+              { action: { type: "traverse", targetNodeId: "mid" }, score: 0.7, probability: 0.6 },
+              { action: { type: "stop_local" }, score: -0.2, probability: 0.4 },
+            ],
+            chosenAction: { type: "traverse", targetNodeId: "mid" },
+            chosenActionProbability: 0.6,
+            stopProbability: 0.4,
+          },
+        ],
+        selectedTargets: ["mid"],
+        acceptedTargets: ["mid"],
+        vetoedTargets: [],
+      },
+      {
+        sourceNodeId: "mid",
+        expansionIndex: 1,
+        frontierBefore: ["mid"],
+        frontierAfter: ["tool:proof"],
+        budgetBefore: 900,
+        budgetAfter: 820,
+        substeps: [
+          {
+            stateSnapshot: {
+              sourceNodeId: "mid",
+              expansionIndex: 1,
+              selectionIndex: 0,
+              budgetRemaining: 900,
+              initialBudget: 1000,
+              reservedTokenCost: 0,
+              maxHops: 8,
+              frontierSize: 0,
+              frontierNodeIds: [],
+              visitedCount: 1,
+              firedCount: 1,
+            },
+            candidates: [
+              { action: { type: "traverse", targetNodeId: "tool:proof" }, score: 0.9, probability: 0.7 },
+              { action: { type: "stop_local" }, score: 0.1, probability: 0.3 },
+            ],
+            chosenAction: { type: "traverse", targetNodeId: "tool:proof" },
+            chosenActionProbability: 0.7,
+            stopProbability: 0.3,
+          },
+        ],
+        selectedTargets: ["tool:proof"],
+        acceptedTargets: ["tool:proof"],
+        vetoedTargets: [],
+      },
+      {
+        sourceNodeId: "tool:proof",
+        expansionIndex: 2,
+        frontierBefore: ["tool:proof"],
+        frontierAfter: [],
+        budgetBefore: 820,
+        budgetAfter: 820,
+        substeps: [
+          {
+            stateSnapshot: {
+              sourceNodeId: "tool:proof",
+              expansionIndex: 2,
+              selectionIndex: 0,
+              budgetRemaining: 820,
+              initialBudget: 1000,
+              reservedTokenCost: 0,
+              maxHops: 8,
+              frontierSize: 0,
+              frontierNodeIds: [],
+              visitedCount: 2,
+              firedCount: 2,
+            },
+            candidates: [
+              { action: { type: "traverse", targetNodeId: "source" }, score: 0.1, probability: 0.2 },
+              { action: { type: "stop_local" }, score: 0.8, probability: 0.8 },
+            ],
+            chosenAction: { type: "stop_local" },
+            chosenActionProbability: 0.8,
+            stopProbability: 0.8,
+          },
+        ],
+        selectedTargets: [],
+        acceptedTargets: [],
+        vetoedTargets: [],
+      },
+    ], 0.5);
+
+    const supervision: PolicyGradientSupervisionArtifact[] = [{
+      supervisionId: "sup-2",
+      traceId: "trace-2",
+      source: "teacher",
+      kind: "teacher_review",
+      value: 0.5,
+      confidence: 1.0,
+      reason: "prefer the tool and stop once the answer is grounded",
+      labelId: "label-2",
+      evidenceId: "evidence-2",
+      observationId: "obs-2",
+      teacherTraceId: "teacher-trace-2",
+      serveDecisionRecordId: null,
+      selectionDigest: null,
+      turnCompileEventId: null,
+      activePackGraphChecksum: null,
+      bindingMode: "exact_decision_id",
+      attributionQuality: "exact",
+      feedbackRichness: "followup_and_tool",
+      traceRequestDigest: null,
+      traceSelectedNodeIds: ["tool:proof"],
+      traceSelectedPathNodeIds: ["tool:proof"],
+    }];
+
+    const contributions = collectTeacherActionDistillContributions(episode, 0.1, supervision, graph);
+    expect(contributions).toHaveLength(2);
+    expect(contributions[0]).toMatchObject({
+      kind: "tool_action",
+      sourceNodeId: "mid",
+      targetNodeId: "tool:proof",
+    });
+    expect(contributions[1]).toMatchObject({
+      kind: "stop_local",
+      sourceNodeId: "tool:proof",
+    });
+
+    const updates = computeTeacherActionUpdates(episode, 0.1, supervision, graph);
+    expect(updates).toHaveLength(2);
+    expect(updates).toEqual([
+      expect.objectContaining({ kind: "tool_action", sourceNodeId: "mid", toolNodeId: "tool:proof" }),
+      expect.objectContaining({ kind: "stop_local", sourceNodeId: "tool:proof" }),
+    ]);
+    expect(updates[0]?.delta).toBeGreaterThan(0);
+    expect(updates[1]?.delta).toBeGreaterThan(0);
   });
 
   it("zero advantage produces no updates", () => {
@@ -473,6 +760,17 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
       applyWeightUpdates(graph, [{ kind: "stop_local", sourceNodeId: "a", delta: 0.2 }]);
 
       expect(graph.getStopLocalWeight("a")).toBeCloseTo(0.7);
+    });
+
+    it("creates valid updates for tool action priors too", () => {
+      const graph = new BrainGraph();
+      graph.addNode(makeNode("a"));
+      graph.addNode(makeToolNode("tool:proof"));
+      graph.setToolActionPrior("a", "tool:proof", 0.5);
+
+      applyWeightUpdates(graph, [{ kind: "tool_action", sourceNodeId: "a", toolNodeId: "tool:proof", delta: 0.2 }]);
+
+      expect(graph.getToolActionPrior("a", "tool:proof")).toBeCloseTo(0.7);
     });
 
     it("clamps weights to [-10, 10]", () => {

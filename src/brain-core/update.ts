@@ -21,6 +21,7 @@
 import type {
   Episode,
   PolicyGradientRouteUpdateContribution,
+  PolicyGradientSupervisionArtifact,
   PolicyWeightUpdate,
 } from "./types.js";
 import { START_NODE_ID } from "./types.js";
@@ -33,6 +34,8 @@ export function policyWeightUpdateKey(update: PolicyWeightUpdate): string {
       return `seed→${update.nodeId}`;
     case "stop_local":
       return `stop→${update.sourceNodeId}`;
+    case "tool_action":
+      return `tool→${update.sourceNodeId}→${update.toolNodeId}`;
     case "edge":
       return `${update.source}→${update.target}`;
   }
@@ -42,6 +45,7 @@ export function collectReinforceUpdateContributions(
   episode: Episode,
   learningRate: number,
   baseline: number,
+  graph?: BrainGraph,
 ): PolicyGradientRouteUpdateContribution[] {
   if (episode.reward === null) {
     return [];
@@ -83,6 +87,172 @@ export function collectReinforceUpdateContributions(
       }
 
       const targetNodeId = substep.chosenAction.targetNodeId;
+      const targetKind = graph?.getNode(targetNodeId)?.kind ?? null;
+      if (sourceNodeId !== START_NODE_ID && targetKind === "toolcard") {
+        contributions.push({
+          updateKey: `tool→${sourceNodeId}→${targetNodeId}`,
+          kind: "tool_action",
+          sourceNodeId,
+          targetNodeId,
+          expansionIndex: substep.stateSnapshot.expansionIndex,
+          selectionIndex: substep.stateSnapshot.selectionIndex,
+          chosenActionProbability: substep.chosenActionProbability,
+          delta,
+          stopTruth: null,
+          stopReason: null,
+        });
+        continue;
+      }
+
+      const updateKey = sourceNodeId === START_NODE_ID
+        ? `seed→${targetNodeId}`
+        : `${sourceNodeId}→${targetNodeId}`;
+      contributions.push({
+        updateKey,
+        kind: sourceNodeId === START_NODE_ID ? "seed" : "edge",
+        sourceNodeId,
+        targetNodeId,
+        expansionIndex: substep.stateSnapshot.expansionIndex,
+        selectionIndex: substep.stateSnapshot.selectionIndex,
+        chosenActionProbability: substep.chosenActionProbability,
+        delta,
+        stopTruth: null,
+        stopReason: null,
+      });
+    }
+  }
+
+  return contributions;
+}
+
+function selectPrimaryTeacherSupervision(
+  episode: Episode,
+  supervision: PolicyGradientSupervisionArtifact[],
+): PolicyGradientSupervisionArtifact | null {
+  const promoted = supervision.filter((entry) => entry.source === "human" || entry.source === "teacher");
+  if (promoted.length === 0) {
+    return null;
+  }
+
+  const byRewardSource = episode.rewardSource
+    ? promoted.find((entry) => entry.source === episode.rewardSource)
+    : null;
+  if (byRewardSource) {
+    return byRewardSource;
+  }
+
+  return promoted.reduce<PolicyGradientSupervisionArtifact | null>((best, entry) => {
+    if (!best) {
+      return entry;
+    }
+    return entry.confidence > best.confidence ? entry : best;
+  }, null);
+}
+
+function normalizeTeacherTargetIds(targetIds: string[]): Set<string> {
+  return new Set(
+    targetIds
+      .map((targetId) => targetId.trim())
+      .filter((targetId) => targetId.length > 0),
+  );
+}
+
+function isTerminalStopLocalSubstep(episode: Episode, expansionIndex: number, substepIndex: number): boolean {
+  const lastExpansion = episode.trajectory.at(-1);
+  if (!lastExpansion) {
+    return false;
+  }
+
+  return lastExpansion.expansionIndex === expansionIndex && substepIndex === lastExpansion.substeps.length - 1;
+}
+
+export function collectTeacherActionDistillContributions(
+  episode: Episode,
+  learningRate: number,
+  supervision: PolicyGradientSupervisionArtifact[],
+  graph?: BrainGraph,
+): PolicyGradientRouteUpdateContribution[] {
+  const primary = selectPrimaryTeacherSupervision(episode, supervision);
+  if (!primary || !Number.isFinite(primary.value) || !Number.isFinite(primary.confidence)) {
+    return [];
+  }
+
+  if (primary.confidence < 0.5) {
+    return [];
+  }
+
+  const teacherSignal = Math.max(-1, Math.min(1, primary.value)) * Math.max(0, Math.min(1, primary.confidence));
+  if (Math.abs(teacherSignal) < 1e-8) {
+    return [];
+  }
+
+  const directNodeIds = normalizeTeacherTargetIds(primary.traceSelectedNodeIds);
+  const directPathNodeIds = normalizeTeacherTargetIds(primary.traceSelectedPathNodeIds);
+  const hasDirectTargets = directNodeIds.size > 0 || directPathNodeIds.size > 0;
+
+  const contributions: PolicyGradientRouteUpdateContribution[] = [];
+  for (const expansion of episode.trajectory) {
+    for (const [substepIndex, substep] of expansion.substeps.entries()) {
+      const sourceNodeId = substep.stateSnapshot.sourceNodeId ?? START_NODE_ID;
+      const gradLogP = 1 - substep.chosenActionProbability;
+
+      if (substep.chosenAction.type === "stop_local") {
+        if (!isChosenPolicyStopSubstep(substep)) {
+          continue;
+        }
+        if (hasDirectTargets && !isTerminalStopLocalSubstep(episode, expansion.expansionIndex, substepIndex)) {
+          continue;
+        }
+        const delta = learningRate * teacherSignal * (hasDirectTargets ? 1.5 : 1) * gradLogP;
+        if (Math.abs(delta) < 1e-12) {
+          continue;
+        }
+        contributions.push({
+          updateKey: `stop→${sourceNodeId}`,
+          kind: "stop_local",
+          sourceNodeId,
+          targetNodeId: null,
+          expansionIndex: substep.stateSnapshot.expansionIndex,
+          selectionIndex: substep.stateSnapshot.selectionIndex,
+          chosenActionProbability: substep.chosenActionProbability,
+          delta,
+          stopTruth: substep.stopTruth ?? null,
+          stopReason: substep.stopReason ?? null,
+        });
+        continue;
+      }
+
+      const targetNodeId = substep.chosenAction.targetNodeId;
+      const targetKind = graph?.getNode(targetNodeId)?.kind ?? null;
+      const directTargetMatch = hasDirectTargets
+        ? (targetKind === "toolcard"
+            ? directNodeIds.has(targetNodeId)
+            : directPathNodeIds.has(targetNodeId))
+        : true;
+      if (!directTargetMatch) {
+        continue;
+      }
+
+      const delta = learningRate * teacherSignal * (hasDirectTargets && targetKind === "toolcard" ? 1.25 : 1) * gradLogP;
+      if (Math.abs(delta) < 1e-12) {
+        continue;
+      }
+      if (sourceNodeId !== START_NODE_ID && targetKind === "toolcard") {
+        contributions.push({
+          updateKey: `tool→${sourceNodeId}→${targetNodeId}`,
+          kind: "tool_action",
+          sourceNodeId,
+          targetNodeId,
+          expansionIndex: substep.stateSnapshot.expansionIndex,
+          selectionIndex: substep.stateSnapshot.selectionIndex,
+          chosenActionProbability: substep.chosenActionProbability,
+          delta,
+          stopTruth: null,
+          stopReason: null,
+        });
+        continue;
+      }
+
       const updateKey = sourceNodeId === START_NODE_ID
         ? `seed→${targetNodeId}`
         : `${sourceNodeId}→${targetNodeId}`;
@@ -114,51 +284,72 @@ export function computeReinforceUpdates(
   episode: Episode,
   learningRate: number,
   baseline: number,
+  graph?: BrainGraph,
 ): PolicyWeightUpdate[] {
-  const updates: Map<string, PolicyWeightUpdate> = new Map();
+  return mergePolicyWeightUpdates(
+    collectReinforceUpdateContributions(episode, learningRate, baseline, graph).map((contribution) => contributionToPolicyUpdate(contribution)),
+  );
+}
 
-  for (const contribution of collectReinforceUpdateContributions(episode, learningRate, baseline)) {
-    const existing = updates.get(contribution.updateKey);
+export function computeTeacherActionUpdates(
+  episode: Episode,
+  learningRate: number,
+  supervision: PolicyGradientSupervisionArtifact[],
+  graph?: BrainGraph,
+): PolicyWeightUpdate[] {
+  return mergePolicyWeightUpdates(
+    collectTeacherActionDistillContributions(episode, learningRate, supervision, graph).map((contribution) => contributionToPolicyUpdate(contribution)),
+  );
+}
 
-    if (contribution.kind === "stop_local") {
-      if (existing && existing.kind === "stop_local") {
-        existing.delta += contribution.delta;
-      } else {
-        updates.set(contribution.updateKey, {
-          kind: "stop_local",
-          sourceNodeId: contribution.sourceNodeId,
-          delta: contribution.delta,
-        });
-      }
+export function mergePolicyWeightUpdates(updates: PolicyWeightUpdate[]): PolicyWeightUpdate[] {
+  const merged: Map<string, PolicyWeightUpdate> = new Map();
+
+  for (const update of updates) {
+    const key = policyWeightUpdateKey(update);
+    const existing = merged.get(key);
+    if (existing && existing.kind === update.kind) {
+      existing.delta += update.delta;
       continue;
     }
-
-    if (contribution.kind === "seed") {
-      if (existing && existing.kind === "seed") {
-        existing.delta += contribution.delta;
-      } else if (contribution.targetNodeId) {
-        updates.set(contribution.updateKey, {
-          kind: "seed",
-          nodeId: contribution.targetNodeId,
-          delta: contribution.delta,
-        });
-      }
-      continue;
-    }
-
-    if (existing && existing.kind === "edge") {
-      existing.delta += contribution.delta;
-    } else if (contribution.targetNodeId) {
-      updates.set(contribution.updateKey, {
-        kind: "edge",
-        source: contribution.sourceNodeId,
-        target: contribution.targetNodeId,
-        delta: contribution.delta,
-      });
-    }
+    merged.set(key, { ...update });
   }
 
-  return [...updates.values()];
+  return [...merged.values()];
+}
+
+function contributionToPolicyUpdate(contribution: PolicyGradientRouteUpdateContribution): PolicyWeightUpdate {
+  if (contribution.kind === "stop_local") {
+    return {
+      kind: "stop_local",
+      sourceNodeId: contribution.sourceNodeId,
+      delta: contribution.delta,
+    };
+  }
+
+  if (contribution.kind === "tool_action") {
+    return {
+      kind: "tool_action",
+      sourceNodeId: contribution.sourceNodeId,
+      toolNodeId: contribution.targetNodeId ?? "",
+      delta: contribution.delta,
+    };
+  }
+
+  if (contribution.kind === "seed") {
+    return {
+      kind: "seed",
+      nodeId: contribution.targetNodeId ?? "",
+      delta: contribution.delta,
+    };
+  }
+
+  return {
+    kind: "edge",
+    source: contribution.sourceNodeId,
+    target: contribution.targetNodeId ?? "",
+    delta: contribution.delta,
+  };
 }
 
 /**
@@ -200,6 +391,15 @@ export function applyWeightUpdates(
         Math.min(10, graph.getStopLocalWeight(update.sourceNodeId) + update.delta),
       );
       graph.setStopLocalWeight(update.sourceNodeId, nextWeight);
+      continue;
+    }
+
+    if (update.kind === "tool_action") {
+      const nextWeight = Math.max(
+        -10,
+        Math.min(10, graph.getToolActionPrior(update.sourceNodeId, update.toolNodeId) + update.delta),
+      );
+      graph.setToolActionPrior(update.sourceNodeId, update.toolNodeId, nextWeight);
       continue;
     }
 
