@@ -175,6 +175,11 @@ function computeNearbyEvidenceQualitySignal(targetNode: BrainNode, graph: BrainG
   return trustSignal * 0.6 + structuralSupportSignal * 0.4;
 }
 
+function getToolBindingKind(targetNode: BrainNode): "tool_capability" | "tool_instance" | null {
+  const actionKind = targetNode.metadata?.action_kind;
+  return actionKind === "tool_capability" || actionKind === "tool_instance" ? actionKind : null;
+}
+
 function explainActionScore(
   action: TraversalAction,
   state: TraversalState,
@@ -217,6 +222,13 @@ function explainActionScore(
     };
   }
 
+  const toolBindingKind = targetNode.kind === "toolcard" ? getToolBindingKind(targetNode) : null;
+  const toolBindingKindBias = toolBindingKind === "tool_instance"
+    ? 0.05
+    : toolBindingKind === "tool_capability"
+      ? 0.01
+      : 0;
+
   if (state.sourceNodeId === null) {
     const seedPrior = action.seedScore ?? 0;
     const learnedSeedWeight = graph.getSeedWeight(action.targetNodeId);
@@ -251,7 +263,7 @@ function explainActionScore(
   const redundancyPressureMultiplier = 0.75 + policyState.pressureLevel;
   const redundancyPenalty =
     params.localRedundancyPenalty * redundancySimilarity * redundancyPressureMultiplier;
-  const score = seedPrior + edgeScore + relevance + kindBias + evidenceQualityBonus + toolActionPrior
+  const score = seedPrior + edgeScore + relevance + kindBias + evidenceQualityBonus + toolActionPrior + toolBindingKindBias
     - opportunityCostPenalty - redundancyPenalty;
 
   return {

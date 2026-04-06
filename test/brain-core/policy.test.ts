@@ -20,14 +20,14 @@ function makeNode(id: string, embedding?: Float32Array): BrainNode {
   };
 }
 
-function makeToolNode(id: string, embedding?: Float32Array): BrainNode {
+function makeToolNode(id: string, embedding?: Float32Array, actionKind: "tool" | "tool_capability" | "tool_instance" = "tool"): BrainNode {
   return {
     ...makeNode(id, embedding),
     kind: "toolcard",
-    tags: ["candidate_type:tool", "action_kind:tool"],
+    tags: ["candidate_type:tool", `action_kind:${actionKind}`],
     metadata: {
       candidate_type: "tool",
-      action_kind: "tool",
+      action_kind: actionKind,
     },
   };
 }
@@ -298,6 +298,21 @@ describe("policy", () => {
       const docScore = scoreAction({ type: "traverse", targetNodeId: "doc:proof" }, state, graph);
 
       expect(toolScore).toBeGreaterThan(docScore);
+    });
+
+    it("gives a small runtime scoring preference to tool_instance bindings over tool_capability nodes", () => {
+      const graph = new BrainGraph();
+      graph.addNode(makeNode("source", new Float32Array([1, 0, 0])));
+      graph.addNode(makeToolNode("tool:weather-capability", new Float32Array([1, 0, 0]), "tool_capability"));
+      graph.addNode(makeToolNode("tool:weather-instance", new Float32Array([1, 0, 0]), "tool_instance"));
+      graph.addEdge(makeEdge("source", "tool:weather-capability", 0.5));
+      graph.addEdge(makeEdge("source", "tool:weather-instance", 0.5));
+
+      const state = makeState("source");
+      const capabilityScore = scoreAction({ type: "traverse", targetNodeId: "tool:weather-capability" }, state, graph);
+      const instanceScore = scoreAction({ type: "traverse", targetNodeId: "tool:weather-instance" }, state, graph);
+
+      expect(instanceScore).toBeGreaterThan(capabilityScore);
     });
   });
 
