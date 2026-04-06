@@ -1738,6 +1738,10 @@ function readInstallRuntimeFingerprint(openclawHome) {
 function runOpenClawBrainConvergePluginStep(openclawHome) {
     const before = readInstallRuntimeFingerprint(openclawHome);
     const plan = planOpenClawBrainConvergePluginAction(before);
+    const pluginManagerEnv = {
+        ...process.env,
+        OPENCLAW_HOME: openclawHome
+    };
     if (plan.action === "noop") {
         return {
             plan,
@@ -1753,7 +1757,7 @@ function runOpenClawBrainConvergePluginStep(openclawHome) {
     }
     let uninstallCapture = null;
     if (plan.action === "install" && shouldReplaceOpenClawBrainInstallBeforeConverge(before)) {
-        uninstallCapture = runCapturedExternalCommand("openclaw", ["plugins", "uninstall", plan.pluginId]);
+        uninstallCapture = runCapturedExternalCommand("openclaw", ["plugins", "uninstall", plan.pluginId], { env: pluginManagerEnv });
         if (uninstallCapture.error !== null || uninstallCapture.exitCode !== 0) {
             throw new Error(`OpenClaw plugin-manager uninstall failed while migrating ${path.resolve(openclawHome)} onto the canonical plugin lane. Tried \`${uninstallCapture.shellCommand}\`. Detail: ${summarizeCapturedCommandFailure(uninstallCapture)}`);
         }
@@ -1761,7 +1765,7 @@ function runOpenClawBrainConvergePluginStep(openclawHome) {
     const commandArgs = plan.action === "install"
         ? ["plugins", "install", plan.packageSpec]
         : ["plugins", "update", plan.pluginId];
-    const capture = runCapturedExternalCommand("openclaw", commandArgs);
+    const capture = runCapturedExternalCommand("openclaw", commandArgs, { env: pluginManagerEnv });
     if (capture.error !== null || capture.exitCode !== 0) {
         const hasAuthoritativeNativePlugin = before.selectedInstall !== null && before.installLayout === "native_package_plugin";
         if (plan.action === "update" && hasAuthoritativeNativePlugin) {
@@ -3375,7 +3379,11 @@ function readOpenClawRuntimePackageMetadata() {
 function buildExtensionIndexTs(activationRoot) {
     const templatePath = resolveExtensionTemplatePath();
     const template = readFileSync(templatePath, "utf8");
-    return template.replace(/const ACTIVATION_ROOT = "__ACTIVATION_ROOT__";/, `const ACTIVATION_ROOT = ${JSON.stringify(activationRoot)};`);
+    const activationRootTemplateLinePattern = /^const ACTIVATION_ROOT = "__ACTIVATION_ROOT__";$/m;
+    if (!activationRootTemplateLinePattern.test(template)) {
+        throw new Error(`Extension template ${templatePath} does not expose a patchable ACTIVATION_ROOT line`);
+    }
+    return template.replace(activationRootTemplateLinePattern, `const ACTIVATION_ROOT = ${JSON.stringify(activationRoot)};`);
 }
 function buildExtensionPackageJson() {
     const packageMetadata = readOpenClawPackageMetadata();

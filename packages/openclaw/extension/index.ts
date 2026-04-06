@@ -36,7 +36,7 @@ const RESOLVED_ACTIVATION_ROOT = resolveInstalledActivationRoot({
 });
 const warnedDiagnostics = new Set<string>();
 const RUNTIME_LOAD_PROOFS_CONTRACT = "openclaw_profile_runtime_load_proofs.v1";
-const ACTIVATION_ROOT_PIN_PATTERN = /const ACTIVATION_ROOT = "__ACTIVATION_ROOT__";/;
+const ACTIVATION_ROOT_PIN_PATTERN = /^const ACTIVATION_ROOT = "__ACTIVATION_ROOT__";$/m;
 
 function warnOnce(key: string, message: string): void {
   if (warnedDiagnostics.has(key)) {

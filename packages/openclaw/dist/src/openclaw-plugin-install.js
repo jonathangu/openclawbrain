@@ -363,7 +363,7 @@ export function resolveOpenClawBrainInstallTarget(openclawHome) {
 }
 export function pinInstalledOpenClawBrainPluginActivationRoot(loaderEntryPath, activationRoot) {
     const loaderSource = readFileSync(loaderEntryPath, "utf8");
-    const activationRootPattern = /const\s+ACTIVATION_ROOT\s*=\s*["'`][^"'`]*["'`];/;
+    const activationRootPattern = /^const\s+ACTIVATION_ROOT\s*=\s*["'`][^"'`]*["'`];$/m;
     const pinnedActivationRoot = `const ACTIVATION_ROOT = ${JSON.stringify(activationRoot)};`;
     const matchedActivationRoot = loaderSource.match(activationRootPattern)?.[0] ?? null;
     if (matchedActivationRoot === null) {

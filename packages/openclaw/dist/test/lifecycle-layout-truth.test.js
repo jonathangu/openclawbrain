@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import { mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
+import { pathToFileURL } from "node:url";
 import { inspectOpenClawBrainHookStatus } from "../src/openclaw-hook-truth.js";
 import { listOpenClawProfileRuntimeLoadProofs, recordOpenClawProfileRuntimeLoadProof } from "../src/attachment-truth.js";
 import { resolveActivationRoot } from "../src/resolve-activation-root.js";
@@ -106,7 +107,7 @@ export function validateExtensionRegistrationApi(api) {
 import { appendFileSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 import { createBeforePromptBuildHandler, validateExtensionRegistrationApi } from "./runtime-guard.js";
 
 const ACTIVATION_ROOT = ${JSON.stringify(activationRoot)};
@@ -115,7 +116,7 @@ const RESOLVED_ACTIVATION_ROOT = {
   activationRoot: ${JSON.stringify(activationRoot === "__ACTIVATION_ROOT__" ? path.join(path.dirname(openclawHome), ".openclawbrain", "activation") : activationRoot)},
   recoveredFromPlaceholder: ${JSON.stringify(activationRoot === "__ACTIVATION_ROOT__")}
 };
-const ACTIVATION_ROOT_PIN_PATTERN = /const ACTIVATION_ROOT = "__ACTIVATION_ROOT__";/;
+const ACTIVATION_ROOT_PIN_PATTERN = /^const ACTIVATION_ROOT = "__ACTIVATION_ROOT__";$/m;
 
 async function reportDiagnostic(diagnostic) {
   console.warn(diagnostic.message);
@@ -407,4 +408,28 @@ test("native package proof self-heals a placeholder-stranded refresh from the in
     const postPinProof = await proveInstalledOpenClawBrainExtensionLoad(openclawHome);
     assert.equal(postPinProof.installLayout, "native_package_plugin");
     assert.equal(postPinProof.registeredEventName, "before_prompt_build");
+});
+
+test("native package self-heal stays idempotent across repeated register calls in one process", async (t) => {
+    const root = createTempRoot(t);
+    const openclawHome = createOpenClawHome(root);
+    const activationRoot = path.join(root, ".openclawbrain", "activation");
+    mkdirSync(activationRoot, { recursive: true });
+    const nativeInstall = createNativeInstall(openclawHome, "__ACTIVATION_ROOT__");
+    const moduleUrl = `${pathToFileURL(nativeInstall.loaderEntryPath).href}?idempotent=${Date.now()}`;
+    const { default: register } = await import(moduleUrl);
+    const registeredEvents = [];
+    const api = {
+        on(eventName, handler, options) {
+            registeredEvents.push({ eventName, handler, options });
+        }
+    };
+    register(api);
+    register(api);
+    assert.equal(registeredEvents.length, 2);
+    const loaderSource = readFileSync(nativeInstall.loaderEntryPath, "utf8");
+    const activationRootLine = loaderSource.split(/\r?\n/).find((line) => line.startsWith("const ACTIVATION_ROOT = ")) ?? null;
+    assert.equal(activationRootLine, `const ACTIVATION_ROOT = ${JSON.stringify(activationRoot)};`);
+    assert.ok(loaderSource.includes('const ACTIVATION_ROOT_PIN_PATTERN = /^const ACTIVATION_ROOT = "__ACTIVATION_ROOT__";$/m;'));
+    await import(`${pathToFileURL(nativeInstall.loaderEntryPath).href}?after-idempotent=${Date.now()}`);
 });

@@ -2933,7 +2933,11 @@ function readOpenClawPackageMetadata() {
 function buildExtensionIndexTs(activationRoot) {
     const templatePath = resolveExtensionTemplatePath();
     const template = readFileSync(templatePath, "utf8");
-    return template.replace(/const ACTIVATION_ROOT = "__ACTIVATION_ROOT__";/, `const ACTIVATION_ROOT = ${JSON.stringify(activationRoot)};`);
+    const activationRootTemplateLinePattern = /^const ACTIVATION_ROOT = "__ACTIVATION_ROOT__";$/m;
+    if (!activationRootTemplateLinePattern.test(template)) {
+        throw new Error(`Extension template ${templatePath} does not expose a patchable ACTIVATION_ROOT line`);
+    }
+    return template.replace(activationRootTemplateLinePattern, `const ACTIVATION_ROOT = ${JSON.stringify(activationRoot)};`);
 }
 function buildExtensionPackageJson() {
     const packageMetadata = readOpenClawPackageMetadata();
