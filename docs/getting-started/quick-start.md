@@ -22,6 +22,8 @@ openclawbrain status --openclaw-home ./openclaw-cormorantai --detailed
 
 `install` is the public front door. It converges the selected home's installed hook/runtime-guard surface and the daemon runtime surface onto one coherent state for that activation root. `status --detailed` is the quick verify surface.
 
+Fresh homes default to the cold-start prior. If you are upgrading an existing home, rerun the same install lane; it rebuilds the stronger generic prior underneath your saved preferences instead of resetting them.
+
 Activation and teacher wiring are separate checks. `BRAIN LOADED` and an attached home prove the brain hook is live for that OpenClaw home. They do **not** by themselves prove that an optional teacher model is wired. Teacher wiring uses the dedicated config fields `brainTeacherEnabled`, `brainTeacherProvider`, and `brainTeacherModel`, and the same `status --detailed` surface should report `teacherConfigured`, `teacherProvider`, `teacherModel`, and `teacherConfigError`.
 
 When you need durable operator evidence today, run:

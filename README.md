@@ -21,6 +21,8 @@ openclawbrain proof --openclaw-home ./openclaw-cormorantai
 
 `install` writes the hook for your chosen OpenClaw home. That can be the default `~/.openclaw`, a profile home like `~/.openclaw-Tern`, or an explicit nonstandard path like `./openclaw-cormorantai`. `status --detailed` verifies the wiring for that same home. `proof` captures a durable evidence bundle you can inspect or keep.
 
+Fresh homes default to the cold-start prior. Existing homes rerun the same install lane and keep their saved preferences on top while OpenClawBrain rebuilds the stronger generic prior underneath them instead of wiping them.
+
 A healthy install reports the profile as attached. After the first promoted pack is available, detailed status reports `serveState=serving_active_pack`.
 
 Next: [Quick start](docs/getting-started/quick-start.md) · [Troubleshooting](docs/operating/troubleshooting.md) · [Lifecycle](docs/lifecycle.md)

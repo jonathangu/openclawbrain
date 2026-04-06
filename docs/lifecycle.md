@@ -16,7 +16,9 @@ openclawbrain status --openclaw-home ./openclaw-cormorantai --detailed
 - the **installed hook/runtime-guard** surface that OpenClaw loads from the selected `--openclaw-home`
 - the **daemon runtime** surface that background watch/learner work runs from for that activation root
 
-`status --detailed` verifies both surfaces for the selected home. If you ever do manual hook or daemon surgery, the safe recovery lane is still the same command:
+`status --detailed` verifies both surfaces for the selected home. Fresh homes default to the cold-start prior. If the selected home already has user history, rerunning install rebuilds the stronger generic prior underneath the saved preferences, corrections, and habits instead of wiping them.
+
+If you ever do manual hook or daemon surgery, the safe recovery lane is still the same command:
 
 ```bash
 openclawbrain install --openclaw-home ./openclaw-cormorantai

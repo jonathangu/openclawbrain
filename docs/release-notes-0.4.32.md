@@ -26,6 +26,16 @@ The live runtime was already healthier than some of the operator surfaces made i
 
 The point is simple: if nothing semantic changed, the operator surfaces should stop acting like something changed.
 
+## Install and upgrade story
+
+Fresh homes now default to the cold-start prior. Existing homes rerun the same install lane and keep their earned preferences on top while OpenClawBrain rebases the stronger generic prior underneath.
+
+That is the public promise of this release:
+
+- new users get a strong default on day one
+- existing users keep their corrections, habits, and personal layer
+- upgrades refresh the generic prior without resetting the user's brain
+
 ## What changed
 
 - makes converge treat an already-authoritative native plugin install as a no-op instead of blindly refreshing plugin-manager state
