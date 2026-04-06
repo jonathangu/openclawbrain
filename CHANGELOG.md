@@ -4,6 +4,27 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.33
+
+`0.4.33` is the cold-start prior default-on release. New homes now start from the learned prior by default, existing homes rebuild that stronger generic prior underneath the user layer they already earned, and the public install / upgrade / proof story now says that plainly.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.33`
+- `@openclawbrain/cli@0.4.33`
+
+**Changes**
+
+- makes the learned serve-time `v2` prior the default path instead of falling back to the older heuristic/v1 seam on fresh installs
+- preserves existing-user baseline state on upgrade so learned preferences, corrections, and recent overlay stay on top of the new base prior
+- ships the broader governed cold-prior tranche and its repaired `STOP_LOCAL` behavior as the default story for new installs
+- aligns the repo docs, site copy, and upgrade language around one clear story: new users start on the cold-start prior; existing users keep their earned preferences on top
+- archives the retired `0.3.8` compatibility release note so it no longer pollutes the active public lane
+
+**Full release note**
+
+- [docs/release-notes-0.4.33.md](docs/release-notes-0.4.33.md)
+
 ## 0.4.32
 
 `0.4.32` is the trust-surfaces hardening release: it removes avoidable no-op churn from converge and traced-learning persistence, and it stops status surfaces from underreporting a clearly serving promoted pack.

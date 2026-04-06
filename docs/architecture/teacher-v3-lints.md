@@ -54,10 +54,10 @@ These checks are appropriate when the question is not just “is this broken?”
 
 The repo now lines up on the current release surface:
 
-- the root `README.md` says `Current version: 0.4.32`
-- `docs/README.md` points the release-history index at `Current release notes (0.4.32)`
-- `docs/END_STATE.md` keeps its current split-package truth on `0.4.32`
-- `docs/release-notes-0.4.32.md` exists and describes `0.4.32`
+- the root `README.md` says `Current version: 0.4.33`
+- `docs/README.md` points the release-history index at `Current release notes (0.4.33)`
+- `docs/END_STATE.md` keeps its current split-package truth on `0.4.33`
+- `docs/release-notes-0.4.33.md` exists and describes `0.4.33`
 
 That is the deterministic release-surface state this lint family is meant to keep enforced, not a semantic judgment call.
 

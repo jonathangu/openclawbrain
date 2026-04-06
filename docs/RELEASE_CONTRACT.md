@@ -5,14 +5,14 @@ This is the sharp truth surface for the repo.
 Use these public labels consistently:
 - **paper-faithful core**
 - **live-path implemented**
-- **operationally validated**
+- **operator-checked**
 
 Current truthful state:
 - **paper-faithful core:** yes
 - **live-path implemented:** yes
-- **operationally validated:** yes — the current public install / attach / `status --detailed` / `proof` lane is proven on the exercised host surface, and detailed status reports real learned-pack metadata plus runtime-guard and load-proof truth.
+- **operator-checked:** yes — the current public install / attach / `status --detailed` / `proof` lane is exercised on the host surface we use, and detailed status reports real learned-pack metadata plus runtime-guard and load-proof truth.
 
-That is the contract. The repo is beyond "foundation only," with a paper-faithful core, a real live runtime path, and an operator-proof lane that now lands durable bundles. The remaining gaps are not basic host proof capture or replay gating anymore; they are narrower truth gaps around attribution, universal citation surfaces, multi-profile boundaries, broader host/profile coverage, and live answer-quality proof.
+That is the contract. The repo is beyond "foundation only," with a paper-faithful core, a real live runtime path, and an operator proof lane. The remaining gaps are not basic host proof capture or replay gating anymore; they are narrower truth gaps around attribution, universal citation surfaces, multi-profile boundaries, broader host/profile coverage, and live answer-quality proof.
 
 ## 1. True in code now
 
@@ -114,4 +114,4 @@ These are still active work and must not be described as complete.
 
 ## Safe public summary
 
-> OpenClawBrain v2 already has a paper-faithful routing core, a real live runtime path, and a frozen operator install/runtime/proof lane. The remaining work is mainly attribution and citation truth, broader host/profile validation, CI-enforced proof reruns, clearer public bundle-evaluation explanations, and a narrower live-gain proof rung.
+> OpenClawBrain v2 already has a paper-faithful routing core, a real live runtime path, and an exercised operator install/runtime/proof lane. The remaining work is mainly attribution and citation truth, broader host/profile validation, CI-enforced proof reruns, clearer public bundle-evaluation explanations, and a narrower live-gain proof rung.

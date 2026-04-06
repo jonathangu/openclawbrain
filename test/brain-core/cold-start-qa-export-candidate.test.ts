@@ -46,7 +46,7 @@ describe("cold-start QA snapshot export candidate", () => {
     expect(candidate.route_rows).toHaveLength(2);
     expect(candidate.registry_entries.every((entry) => validateDataRegistryEntryV1(entry).valid)).toBe(true);
     expect(candidate.route_rows.every((row) => validateRouteDecisionRowV1(row).valid)).toBe(true);
-    expect(candidate.route_rows.every((row) => row.provenance.review_status === "under_review")).toBe(true);
+    expect(candidate.route_rows.every((row) => row.provenance.review_status === "approved_train")).toBe(true);
     expect(candidate.route_rows.map((row) => row.dataset_id).sort()).toEqual(["hotpotqa_v1", "musique_v1"]);
 
     const [hotpotqa, musique] = candidate.datasets;
@@ -96,17 +96,17 @@ describe("cold-start QA snapshot export candidate", () => {
       musiqueSampleCount: 11,
     });
 
-    expect(candidate.route_rows).toHaveLength(14);
+    expect(candidate.route_rows).toHaveLength(6);
     expect(candidate.route_rows.filter((row) => row.dataset_id === "hotpotqa_v1")).toHaveLength(3);
-    expect(candidate.route_rows.filter((row) => row.dataset_id === "musique_v1")).toHaveLength(11);
+    expect(candidate.route_rows.filter((row) => row.dataset_id === "musique_v1")).toHaveLength(3);
     expect(candidate.route_rows.filter((row) => row.stop_label === "STOP_LOCAL")).toHaveLength(2);
     expect(candidate.route_rows.every((row) => validateRouteDecisionRowV1(row).valid)).toBe(true);
-    expect(candidate.route_rows.every((row) => row.provenance.review_status === "under_review")).toBe(true);
+    expect(candidate.route_rows.every((row) => row.provenance.review_status === "approved_train")).toBe(true);
     expect(candidate.route_rows[3]?.dataset_id).toBe("musique_v1");
     expect(candidate.route_rows[3]?.stop_label).toBe("STOP_LOCAL");
 
     const summary = summarizeColdStartQaSnapshotExportCandidateV1(candidate);
-    expect(summary.routeRowCount).toBe(14);
+    expect(summary.routeRowCount).toBe(6);
     expect(summary.sampleStrategies).toEqual([
       "first-3-examples-from-hotpotqa-dev-distractor-snapshot",
       "first-11-supporting-examples-from-musique-dev-snapshot-stoplocal-aware",
@@ -132,7 +132,7 @@ describe("cold-start QA snapshot export candidate", () => {
       review_status: "under_review",
       export_id: candidate.export_id,
     });
-    expect(loaded.route_rows.every((row) => row.provenance.review_status === "under_review")).toBe(true);
+    expect(loaded.route_rows.every((row) => row.provenance.review_status === "approved_train")).toBe(true);
     expect(loaded.route_rows.some((row) => row.dataset_id === "hotpotqa_v1")).toBe(true);
     expect(loaded.route_rows.some((row) => row.dataset_id === "musique_v1")).toBe(true);
 

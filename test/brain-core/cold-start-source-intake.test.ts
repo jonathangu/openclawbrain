@@ -40,7 +40,7 @@ describe("cold-start source intake bootstrap", () => {
       registryId: "cold-start-source-intake-bootstrap-v1",
       owner: "guclaw",
       entryCount: 7,
-      materializedSnapshotCount: 0,
+      materializedSnapshotCount: 5,
       placeholderCount: 7,
       datasetIds: [
         "hotpotqa_v1",
@@ -60,19 +60,19 @@ describe("cold-start source intake bootstrap", () => {
         docs: 0,
       },
       approvalStatusCounts: {
-        proposed: 3,
-        under_review: 4,
-        approved_train: 0,
+        proposed: 2,
+        under_review: 2,
+        approved_train: 3,
         approved_eval_only: 0,
         rejected: 0,
         archived: 0,
       },
       piiRiskCounts: {
         none: 3,
-        low: 2,
+        low: 3,
         medium: 1,
         high: 0,
-        unknown: 1,
+        unknown: 0,
       },
     });
 

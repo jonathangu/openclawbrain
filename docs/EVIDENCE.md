@@ -47,7 +47,7 @@ Not every bundle under `docs/evidence/` is a frozen release proof.
 
 Three categories matter:
 
-### 1. Frozen proof bundles
+### 1. Current proof bundles
 Use these when the repo is claiming a result publicly.
 
 ### 2. Partial proof bundles
@@ -155,7 +155,7 @@ As of the current trunk:
 - **Level 1:** ✅ real — mechanism tests pass
 - **Level 2:** ✅ real — replay gate exists, mutation bundles implemented
 - **Level 3:** ✅ real — shadow mode recorded with episode/trace ids
-- **Level 4:** ✅ frozen — the current public install / attach / `status --detailed` / `proof` lane is frozen on the exercised host surface
+- **Level 4:** ✅ current — the current public install / attach / `status --detailed` / `proof` lane is current on the exercised host surface
 
 **Evidence bundles available:**
 - `docs/evidence/2026-03-16/4ccd71a22418b9170128b8d948f5a95801a10380/` — sterile lane run with all 7 assertions passing:

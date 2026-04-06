@@ -13,7 +13,7 @@ This file defines what OpenClawBrain claims to do today. Items under "Claimed" a
 - Explicit user corrections can be stored as durable memory and used at retrieval time.
 - Dedicated-brain separation across two real profiles is proven.
 - The native V2 metadata surfaced by the current detailed-status surfaces is accurate for real promoted packs.
-- The operator surfaces expose both human-readable and machine-readable status output, plus durable proof bundles for install/runtime reporting.
+- The operator surfaces expose both human-readable and machine-readable status output, plus proof records for install/runtime reporting.
 
 ## Not yet claimed
 

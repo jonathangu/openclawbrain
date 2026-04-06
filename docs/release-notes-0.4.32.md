@@ -28,13 +28,9 @@ The point is simple: if nothing semantic changed, the operator surfaces should s
 
 ## Install and upgrade story
 
-Fresh homes now default to the cold-start prior. Existing homes rerun the same install lane and keep their earned preferences on top while OpenClawBrain rebuilds the stronger generic prior underneath.
+`0.4.32` did not change the public install contract. The canonical install lane stayed the same. The point of this release was to make operator truth less noisy and more trustworthy.
 
-That is the public promise of this release:
-
-- new users get a strong default on day one
-- existing users keep their corrections, habits, and personal layer
-- upgrades refresh the generic prior without resetting the user's brain
+If you want the release where fresh homes default to the cold-start prior and upgrades preserve the user layer on top of the rebuilt base prior, read `0.4.33`.
 
 ## What changed
 
