@@ -4,6 +4,27 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.34
+
+`0.4.34` is the install-hardening release: it fixes the `0.4.33` activation-root self-heal / repin seam that could rewrite the installed hook into invalid JavaScript and break load on the real gateway surface.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.34`
+- `@openclawbrain/cli@0.4.34`
+
+**Changes**
+
+- rewrites only the real `ACTIVATION_ROOT` constant line during activation-root repin / self-heal instead of risking corruption of the helper regex line
+- hardens generated shadow-extension templating so the install lane fails closed if the patchable activation-root line is missing
+- keeps repeated register/self-heal calls from corrupting the installed hook source in one process
+- pins plugin-manager converge actions to the selected `OPENCLAW_HOME` target so install/update operations stop drifting onto the ambient default home
+- closes the real install bug tracked in issue `#19`
+
+**Full release note**
+
+- [docs/release-notes-0.4.34.md](docs/release-notes-0.4.34.md)
+
 ## 0.4.33
 
 `0.4.33` is the cold-start prior default-on release. New homes now start from the learned prior by default, existing homes rebuild that stronger generic prior underneath the user layer they already earned, and the public install / upgrade / proof story now says that plainly.
