@@ -14,15 +14,19 @@ import {
 } from "../../src/brain-core/cold-start-router-approved-export-loader.js";
 import {
   loadColdStartRouterArtifactBundleV1,
+  materializeColdStartRouterLivePolicyFromArtifactBundleV1,
   scoreColdStartRouteRowFromArtifactBundleV1,
   selectColdStartRouteCandidateIdsFromArtifactBundleV1,
 } from "../../src/brain-core/cold-start-router-runtime.js";
+import { scoreAction } from "../../src/brain-core/policy.js";
+import { applyWeightUpdates, computeReinforceUpdates } from "../../src/brain-core/update.js";
 import {
   predictColdStartStopLabelV1,
   rankColdStartRouteCandidatesV1,
   scoreColdStartRouteRowV1,
   trainColdStartRouterArtifactV1,
 } from "../../src/brain-core/cold-start-router-trainer.js";
+import type { Episode, TraversalAction, TraversalState, TrajectoryExpansion, TrajectoryStep } from "../../src/brain-core/types.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -97,6 +101,12 @@ describe("cold-start router trainer", () => {
       usedRowCount: 2,
       skippedRowCount: 0,
     });
+    expect(result.model.livePolicyInitializer).toMatchObject({
+      contract: "cold_start_router_live_policy_initializer.v1",
+      usedRowCount: 2,
+      traverseRowCount: 1,
+      toolRowCount: 1,
+    });
 
     const rowScore = scoreColdStartRouteRowV1({ model: result.model, row: loadedExport.routeRows[0] });
     expect(rowScore.rankedCandidates[0]?.candidate.candidate_id).toBe("mem:shipping_history");
@@ -137,6 +147,218 @@ describe("cold-start router trainer", () => {
     const runtimeSelection = selectColdStartRouteCandidateIdsFromArtifactBundleV1({ artifactBundle: runtimeBundle, row: loadedExport.routeRows[0] });
     expect(runtimeSelection.stopped).toBe(false);
     expect(runtimeSelection.selectedCandidateIds).toEqual(["mem:shipping_history"]);
+  });
+
+  it("materializes the live runtime policy families that hot-path PG updates", () => {
+    const outputDir = createTempRoot("cold-start-router-live-family");
+    const loadedExport = loadAndFilterColdStartRouterApprovedExportV1(approvedExportPath);
+
+    trainColdStartRouterArtifactV1({
+      artifactId: "router-artifact-live-family",
+      artifactVersion: "0.0.1",
+      packType: "base",
+      compatibleRuntimeVersion: "openclawbrain-runtime@0.3.8",
+      registryEntries: loadedExport.registryEntries,
+      routeRows: loadedExport.routeRows,
+      outputDir,
+      routerIdentity: "router:approved-export:live-family",
+      createdAt: "2026-04-05T16:30:00Z",
+      trainingDataRefs: loadedExport.summary.approvedDatasetIds,
+      replayGateRefs: ["replay:approved-export:fixture-v1"],
+    });
+
+    const runtimeBundle = loadColdStartRouterArtifactBundleV1(outputDir);
+    const row = loadedExport.routeRows[0];
+    const materialized = materializeColdStartRouterLivePolicyFromArtifactBundleV1({
+      artifactBundle: runtimeBundle,
+      row,
+    });
+
+    expect(materialized.sourceNodeId).toBe("mem:user_profile");
+
+    const traverseAction: TraversalAction = { type: "traverse", targetNodeId: "mem:shipping_history" };
+    const stopAction: TraversalAction = { type: "stop_local" };
+    const seedState: TraversalState = {
+      sourceNodeId: null,
+      queryEmbedding: new Float32Array(0),
+      frontier: [],
+      visited: new Set(),
+      fired: [],
+      budgetRemaining: 1000,
+      initialBudget: 1000,
+      reservedTokenCost: 0,
+      expansionCount: 0,
+      maxHops: 8,
+    };
+    const localState: TraversalState = {
+      sourceNodeId: materialized.sourceNodeId,
+      queryEmbedding: new Float32Array(0),
+      frontier: [],
+      visited: new Set([materialized.sourceNodeId ?? ""]),
+      fired: [],
+      budgetRemaining: 1000,
+      initialBudget: 1000,
+      reservedTokenCost: 0,
+      expansionCount: 1,
+      maxHops: 8,
+    };
+
+    const beforeSeedWeight = materialized.graph.getSeedWeight("mem:shipping_history");
+    const beforeEdgeWeight = materialized.graph.getEdge("mem:user_profile", "mem:shipping_history")?.weight ?? 0;
+    const beforeStopWeight = materialized.graph.getStopLocalWeight(materialized.sourceNodeId);
+
+    const seedEpisode: Episode = {
+      id: "live-family-seed",
+      conversationId: null,
+      queryText: row.query,
+      queryEmbedding: new Float32Array(0),
+      trajectory: [{
+        sourceNodeId: null,
+        expansionIndex: 0,
+        frontierBefore: [],
+        frontierAfter: ["mem:shipping_history"],
+        budgetBefore: 1000,
+        budgetAfter: 900,
+        substeps: [{
+          stateSnapshot: {
+            sourceNodeId: null,
+            expansionIndex: 0,
+            selectionIndex: 0,
+            budgetRemaining: 1000,
+            initialBudget: 1000,
+            reservedTokenCost: 0,
+            maxHops: 8,
+            frontierSize: 0,
+            frontierNodeIds: [],
+            visitedCount: 0,
+            firedCount: 0,
+          },
+          candidates: [
+            { action: traverseAction, score: scoreAction(traverseAction, seedState, materialized.graph, materialized.policyParams), probability: 0.8 },
+            { action: stopAction, score: scoreAction(stopAction, seedState, materialized.graph, materialized.policyParams), probability: 0.2 },
+          ],
+          chosenAction: traverseAction,
+          chosenActionProbability: 0.8,
+          stopProbability: 0.2,
+        }],
+        selectedTargets: ["mem:shipping_history"],
+        acceptedTargets: ["mem:shipping_history"],
+        vetoedTargets: [],
+      }],
+      firedNodes: ["mem:shipping_history"],
+      vetoedNodes: [],
+      contextChars: 0,
+      reward: 1,
+      rewardSource: "human",
+      packVersion: 1,
+      createdAt: Date.now(),
+    };
+    const seedUpdates = computeReinforceUpdates(seedEpisode, 0.1, 0.0);
+    applyWeightUpdates(materialized.graph, seedUpdates);
+    expect(materialized.graph.getSeedWeight("mem:shipping_history")).toBeGreaterThan(beforeSeedWeight);
+
+    const edgeEpisode: Episode = {
+      id: "live-family-edge",
+      conversationId: null,
+      queryText: row.query,
+      queryEmbedding: new Float32Array(0),
+      trajectory: [{
+        sourceNodeId: materialized.sourceNodeId,
+        expansionIndex: 0,
+        frontierBefore: ["mem:shipping_history"],
+        frontierAfter: ["mem:shipping_history"],
+        budgetBefore: 1000,
+        budgetAfter: 900,
+        substeps: [{
+          stateSnapshot: {
+            sourceNodeId: materialized.sourceNodeId,
+            expansionIndex: 0,
+            selectionIndex: 0,
+            budgetRemaining: 1000,
+            initialBudget: 1000,
+            reservedTokenCost: 0,
+            maxHops: 8,
+            frontierSize: 0,
+            frontierNodeIds: [],
+            visitedCount: 1,
+            firedCount: 0,
+          },
+          candidates: [
+            { action: traverseAction, score: scoreAction(traverseAction, localState, materialized.graph, materialized.policyParams), probability: 0.7 },
+            { action: stopAction, score: scoreAction(stopAction, localState, materialized.graph, materialized.policyParams), probability: 0.3 },
+          ],
+          chosenAction: traverseAction,
+          chosenActionProbability: 0.7,
+          stopProbability: 0.3,
+        }],
+        selectedTargets: ["mem:shipping_history"],
+        acceptedTargets: ["mem:shipping_history"],
+        vetoedTargets: [],
+      }],
+      firedNodes: ["mem:shipping_history"],
+      vetoedNodes: [],
+      contextChars: 0,
+      reward: 1,
+      rewardSource: "human",
+      packVersion: 1,
+      createdAt: Date.now(),
+    };
+    const edgeUpdates = computeReinforceUpdates(edgeEpisode, 0.1, 0.0);
+    applyWeightUpdates(materialized.graph, edgeUpdates);
+    expect(materialized.graph.getEdge("mem:user_profile", "mem:shipping_history")?.weight ?? 0).toBeGreaterThan(beforeEdgeWeight);
+
+    const stopEpisode: Episode = {
+      id: "live-family-stop",
+      conversationId: null,
+      queryText: row.query,
+      queryEmbedding: new Float32Array(0),
+      trajectory: [{
+        sourceNodeId: materialized.sourceNodeId,
+        expansionIndex: 0,
+        frontierBefore: ["mem:shipping_history"],
+        frontierAfter: [],
+        budgetBefore: 1000,
+        budgetAfter: 1000,
+        substeps: [{
+          stateSnapshot: {
+            sourceNodeId: materialized.sourceNodeId,
+            expansionIndex: 0,
+            selectionIndex: 0,
+            budgetRemaining: 1000,
+            initialBudget: 1000,
+            reservedTokenCost: 0,
+            maxHops: 8,
+            frontierSize: 0,
+            frontierNodeIds: [],
+            visitedCount: 1,
+            firedCount: 0,
+          },
+          candidates: [
+            { action: traverseAction, score: scoreAction(traverseAction, localState, materialized.graph, materialized.policyParams), probability: 0.4 },
+            { action: stopAction, score: scoreAction(stopAction, localState, materialized.graph, materialized.policyParams), probability: 0.6 },
+          ],
+          chosenAction: stopAction,
+          chosenActionProbability: 0.6,
+          stopProbability: 0.6,
+          stopTruth: "chosen",
+          stopReason: "policy_stop",
+        }],
+        selectedTargets: [],
+        acceptedTargets: [],
+        vetoedTargets: [],
+        terminationReason: "policy_stop",
+      }],
+      firedNodes: [],
+      vetoedNodes: [],
+      contextChars: 0,
+      reward: 1,
+      rewardSource: "human",
+      packVersion: 1,
+      createdAt: Date.now(),
+    };
+    const stopUpdates = computeReinforceUpdates(stopEpisode, 0.1, 0.0);
+    applyWeightUpdates(materialized.graph, stopUpdates);
+    expect(materialized.graph.getStopLocalWeight(materialized.sourceNodeId)).toBeGreaterThan(beforeStopWeight);
   });
 
   it("exposes a runnable smoke script backed by the approved export fixture", () => {
