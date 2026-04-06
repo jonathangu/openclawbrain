@@ -42,6 +42,13 @@ export interface StopLocalWeightUpdate {
   delta: number;
 }
 
+export interface ToolActionWeightUpdate {
+  kind: "tool_action";
+  sourceNodeId: string;
+  toolNodeId: string;
+  delta: number;
+}
+
 export interface EdgeWeightUpdate {
   kind: "edge";
   source: string;
@@ -49,7 +56,7 @@ export interface EdgeWeightUpdate {
   delta: number;
 }
 
-export type PolicyWeightUpdate = SeedWeightUpdate | StopLocalWeightUpdate | EdgeWeightUpdate;
+export type PolicyWeightUpdate = SeedWeightUpdate | StopLocalWeightUpdate | ToolActionWeightUpdate | EdgeWeightUpdate;
 
 export type TrustLevel = "human" | "scanner" | "teacher" | "self";
 
@@ -185,6 +192,7 @@ export interface TrajectoryCandidateScoreBreakdown {
   seedPrior?: number;
   learnedSeedWeight?: number;
   learnedStopWeight?: number;
+  toolActionPrior?: number;
   stopBias?: number;
   budgetPressureContribution?: number;
   hopPressureContribution?: number;
@@ -406,6 +414,7 @@ export interface PolicyGradientEpisodeUpdateArtifact {
   baselineAfter: number;
   advantage: number;
   routeUpdateCount: number;
+  teacherActionUpdateCount: number;
   seedUpdateCount: number;
   stopLocalUpdateCount: number;
   edgeUpdateCount: number;
@@ -428,6 +437,7 @@ export interface PolicyGradientCandidateUpdateArtifactBase {
   supervisionCount: number;
   teacherLabelCount: number;
   routeUpdateCount: number;
+  teacherActionUpdateCount: number;
   seedUpdateCount: number;
   stopLocalUpdateCount?: number;
   edgeUpdateCount: number;

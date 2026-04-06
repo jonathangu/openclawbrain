@@ -67,6 +67,17 @@ export function runBrainMigrations(db: DatabaseSync): void {
       updated_at     INTEGER NOT NULL
     );
 
+    CREATE TABLE IF NOT EXISTS brain_tool_action_priors (
+      source_node_id TEXT NOT NULL,
+      tool_node_id   TEXT NOT NULL,
+      weight         REAL NOT NULL DEFAULT 0.0,
+      updated_at     INTEGER NOT NULL,
+      PRIMARY KEY (source_node_id, tool_node_id)
+    );
+
+    CREATE INDEX IF NOT EXISTS brain_tool_action_priors_source_idx ON brain_tool_action_priors(source_node_id);
+    CREATE INDEX IF NOT EXISTS brain_tool_action_priors_tool_idx ON brain_tool_action_priors(tool_node_id);
+
     -- ═══════════════════════════════════════════
     -- Episodes (full traversal records)
     -- ═══════════════════════════════════════════

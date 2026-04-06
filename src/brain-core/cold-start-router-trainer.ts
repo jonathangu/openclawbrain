@@ -78,6 +78,8 @@ export interface ColdStartRouterTrainingSummaryV1 {
   usedDatasetIds: string[];
   skippedRowDetails: ColdStartRouterRowSkipV1[];
   featureWeightCount: number;
+  toolActionPriorCount: number;
+  toolActionSetCount: number;
 }
 
 export interface ColdStartRouterCalibrationV1 {
@@ -138,6 +140,25 @@ export interface ColdStartRouterSafetyRulesV1 {
   skipEvalOnlyDatasets: boolean;
 }
 
+export interface ColdStartRouterToolActionPriorV1 {
+  sourceNodeId: string;
+  toolNodeId: string;
+  positive: number;
+  negative: number;
+  support: number;
+  prior: number;
+  weight: number;
+}
+
+export interface ColdStartRouterToolActionSetV1 {
+  sourceNodeId: string;
+  rowIds: string[];
+  teacherToolNodeIds: string[];
+  candidateIds: string[];
+  candidates: RouteCandidateV1[];
+  support: number;
+}
+
 export interface ColdStartRouterModelV1 {
   contract: typeof COLD_START_ROUTER_WEIGHTS_CONTRACT_V1;
   artifactId: string;
@@ -154,6 +175,8 @@ export interface ColdStartRouterModelV1 {
   featureNormalizers: ColdStartRouterFeatureNormalizersV1;
   sourcePriors: ColdStartRouterSourcePriorsV1;
   safetyRules: ColdStartRouterSafetyRulesV1;
+  toolActionPriors: ColdStartRouterToolActionPriorV1[];
+  toolActionSets: ColdStartRouterToolActionSetV1[];
   livePolicyInitializer: ColdStartRouterLivePolicyInitializerV1;
 }
 
@@ -856,6 +879,14 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
   const skippedRows: ColdStartRouterRowSkipV1[] = [];
   const rowStats = new Map<string, { total: number; used: number; skipped: number }>();
   const featureCounts = new Map<string, { positive: number; negative: number; support: number }>();
+  const toolActionCounts = new Map<string, Map<string, { positive: number; negative: number; support: number }>>();
+  const toolActionSets = new Map<string, {
+    rowIds: Set<string>;
+    teacherToolNodeIds: Set<string>;
+    candidateIds: Set<string>;
+    candidates: Map<string, RouteCandidateV1>;
+    support: number;
+  }>();
   const stopLabelCounts = labelCounts();
   const stopBucketCounts = createStopBucketCounts();
   let eligibleRows = 0;
@@ -894,6 +925,51 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
     const rowWeight = toRowWeight(row.outcome_gain);
     const positiveIds = resolvePositiveCandidateIds(row);
     const canTrainRanking = positiveIds.size > 0;
+    const toolCandidates = row.candidate_set.filter((candidate) => candidate.candidate_type === "tool");
+    const toolActionSet = toolCandidates.length > 0
+      ? (toolActionSets.get(normalizeText(row.cursor_path[row.cursor_path.length - 1] ?? "", "__START__")) ?? {
+          rowIds: new Set<string>(),
+          teacherToolNodeIds: new Set<string>(),
+          candidateIds: new Set<string>(),
+          candidates: new Map<string, RouteCandidateV1>(),
+          support: 0,
+        })
+      : null;
+
+    if (toolActionSet) {
+      const sourceNodeId = normalizeText(row.cursor_path[row.cursor_path.length - 1] ?? "", "__START__");
+      toolActionSet.rowIds.add(row.row_id);
+      toolActionSet.support += rowWeight;
+      for (const candidate of toolCandidates) {
+        toolActionSet.candidateIds.add(candidate.candidate_id);
+        if (positiveIds.has(candidate.candidate_id)) {
+          toolActionSet.teacherToolNodeIds.add(candidate.candidate_id);
+        }
+        const existing = toolActionSet.candidates.get(candidate.candidate_id);
+        if (!existing || (candidate.score_hint ?? Number.NEGATIVE_INFINITY) > (existing.score_hint ?? Number.NEGATIVE_INFINITY)) {
+          toolActionSet.candidates.set(candidate.candidate_id, {
+            candidate_id: candidate.candidate_id,
+            candidate_type: candidate.candidate_type,
+            ...(candidate.authority ? { authority: candidate.authority } : {}),
+            ...(candidate.freshness ? { freshness: candidate.freshness } : {}),
+            ...(candidate.token_cost !== undefined ? { token_cost: candidate.token_cost } : {}),
+            ...(candidate.score_hint !== undefined ? { score_hint: candidate.score_hint } : {}),
+          });
+        }
+
+        const sourceMap = toolActionCounts.get(sourceNodeId) ?? new Map<string, { positive: number; negative: number; support: number }>();
+        const bucket = sourceMap.get(candidate.candidate_id) ?? { positive: 0, negative: 0, support: 0 };
+        if (positiveIds.has(candidate.candidate_id)) {
+          bucket.positive += rowWeight;
+        } else {
+          bucket.negative += rowWeight;
+        }
+        bucket.support += rowWeight;
+        sourceMap.set(candidate.candidate_id, bucket);
+        toolActionCounts.set(sourceNodeId, sourceMap);
+      }
+      toolActionSets.set(normalizeText(row.cursor_path[row.cursor_path.length - 1] ?? "", "__START__"), toolActionSet);
+    }
 
     if (canTrainRanking) {
       for (const candidate of row.candidate_set) {
@@ -923,6 +999,33 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
 
   const skippedRowDetails = createSkippedRowDetails(skippedRows);
   const featureWeightMap = normalizeFeatureWeights(featureCounts, 1, 2);
+  const toolActionPriorEntries = [...toolActionCounts.entries()]
+    .flatMap(([sourceNodeId, toolMap]) => [...toolMap.entries()].map(([toolNodeId, bucket]) => ({
+      sourceNodeId,
+      toolNodeId,
+      positive: bucket.positive,
+      negative: bucket.negative,
+      support: bucket.support,
+      prior: bucket.support > 0 ? bucket.positive / bucket.support : 0,
+      weight: calcWeight(bucket.positive, bucket.negative, bucket.support, 1, 2),
+    })))
+    .sort((left, right) => {
+      const bySource = left.sourceNodeId.localeCompare(right.sourceNodeId);
+      if (bySource !== 0) {
+        return bySource;
+      }
+      return left.toolNodeId.localeCompare(right.toolNodeId);
+    });
+  const toolActionSetEntries = [...toolActionSets.entries()]
+    .map(([sourceNodeId, entry]) => ({
+      sourceNodeId,
+      rowIds: [...entry.rowIds].sort(),
+      teacherToolNodeIds: [...entry.teacherToolNodeIds].sort(),
+      candidateIds: [...entry.candidateIds].sort(),
+      candidates: [...entry.candidates.values()].sort((left, right) => left.candidate_id.localeCompare(right.candidate_id)),
+      support: entry.support,
+    }))
+    .sort((left, right) => left.sourceNodeId.localeCompare(right.sourceNodeId));
   const trainingSummary: ColdStartRouterTrainingSummaryV1 = {
     totalRows: params.routeRows.length,
     eligibleRows,
@@ -933,6 +1036,8 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
     usedDatasetIds: [...usedDatasetIds].sort(),
     skippedRowDetails,
     featureWeightCount: Object.keys(featureWeightMap).length,
+    toolActionPriorCount: toolActionPriorEntries.length,
+    toolActionSetCount: toolActionSetEntries.length,
   };
 
   const calibration = buildCalibration();
@@ -958,6 +1063,8 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
     featureNormalizers,
     sourcePriors,
     safetyRules,
+    toolActionPriors: toolActionPriorEntries,
+    toolActionSets: toolActionSetEntries,
     livePolicyInitializer,
   };
 
@@ -1131,6 +1238,7 @@ function scoreBreakdownToContributions(scoreBreakdown: Record<string, unknown> |
     ["relevance", scoreBreakdown.relevance],
     ["kindBias", scoreBreakdown.kindBias],
     ["evidenceQualityBonus", scoreBreakdown.evidenceQualityBonus],
+    ["toolActionPrior", scoreBreakdown.toolActionPrior],
     ["opportunityCostPenalty", scoreBreakdown.opportunityCostPenalty],
     ["redundancyPenalty", scoreBreakdown.redundancyPenalty],
     ["learnedStopWeight", scoreBreakdown.learnedStopWeight],

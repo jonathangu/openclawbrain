@@ -26,12 +26,23 @@ export function flattenStopLocalWeights(graph: BrainGraph): StopLocalWeight[] {
   }));
 }
 
+export function flattenToolActionPriors(graph: BrainGraph): Array<{ sourceNodeId: string; toolNodeId: string; weight: number; updatedAt: number }> {
+  const now = Date.now();
+  return graph.getAllToolActionPriors().map((toolActionPrior) => ({
+    sourceNodeId: toolActionPrior.sourceNodeId,
+    toolNodeId: toolActionPrior.toolNodeId,
+    weight: toolActionPrior.weight,
+    updatedAt: now,
+  }));
+}
+
 export function populateGraph(
   graph: BrainGraph,
   nodes: BrainNode[],
   edges: ReturnType<typeof flattenEdges>,
   seedWeights: SeedWeight[] = [],
   stopLocalWeights: StopLocalWeight[] = [],
+  toolActionPriors: Array<{ sourceNodeId: string; toolNodeId: string; weight: number; updatedAt: number }> = [],
 ): void {
   graph.clear();
   for (const node of nodes) {
@@ -46,6 +57,9 @@ export function populateGraph(
   for (const stopLocalWeight of stopLocalWeights) {
     graph.setStopLocalWeight(stopLocalWeight.sourceNodeId, stopLocalWeight.weight);
   }
+  for (const toolActionPrior of toolActionPriors) {
+    graph.setToolActionPrior(toolActionPrior.sourceNodeId, toolActionPrior.toolNodeId, toolActionPrior.weight);
+  }
 }
 
 export function reloadGraphFromStore(store: BrainStore, graph: BrainGraph): void {
@@ -55,6 +69,7 @@ export function reloadGraphFromStore(store: BrainStore, graph: BrainGraph): void
     store.loadAllEdges(),
     store.loadAllSeedWeights(),
     store.loadAllStopLocalWeights(),
+    store.loadAllToolActionPriors(),
   );
 }
 
@@ -82,6 +97,7 @@ export function promoteGraphSnapshot(params: {
     edges: flattenEdges(params.graph),
     seedWeights: flattenSeedWeights(params.graph),
     stopLocalWeights: flattenStopLocalWeights(params.graph),
+    toolActionPriors: flattenToolActionPriors(params.graph),
     metadata: {
       reason: params.reason,
       ...params.metadata,

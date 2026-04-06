@@ -208,6 +208,12 @@ export function loadColdStartRouterArtifactV1(artifactDir: string): {
   if (model.livePolicyInitializer?.contract !== COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1) {
     recordIssue(issues, "invalid_live_policy_initializer_contract", `weights.livePolicyInitializer.contract ${model.livePolicyInitializer?.contract ?? "missing"} != ${COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1}`);
   }
+  if (!Array.isArray((model as { toolActionPriors?: unknown }).toolActionPriors)) {
+    recordIssue(issues, "missing_tool_action_priors", "weights.toolActionPriors must be an array");
+  }
+  if (!Array.isArray((model as { toolActionSets?: unknown }).toolActionSets)) {
+    recordIssue(issues, "missing_tool_action_sets", "weights.toolActionSets must be an array");
+  }
 
   const expectedBaseModelDigest = buildLogicalBaseModelDigest(baseModel);
 

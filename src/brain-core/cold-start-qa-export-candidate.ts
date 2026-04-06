@@ -252,6 +252,7 @@ function buildHotpotQaRawBundle(params: {
     source_documents: sourceDocuments,
     examples: examples.map((example, index) => {
       const targetTitles = example.supporting_facts.map(([title]) => normalizeWhitespace(title));
+      const stopLabel: RawDocsQaExampleV1["stop_label"] = targetTitles.length === 1 ? "STOP_LOCAL" : "CONTINUE";
       const candidateSet = example.context.map(([title], candidateIndex) => ({
         candidate_id: buildCandidateId(params.card.registry_entry.dataset_id, title),
         candidate_type: "doc_chunk" as const,
@@ -276,7 +277,7 @@ function buildHotpotQaRawBundle(params: {
           kind: "traverse",
           target_ids: targetTitles.map((title) => buildCandidateId(params.card.registry_entry.dataset_id, title)),
         },
-        stop_label: "CONTINUE",
+        stop_label: stopLabel,
         evidence_spans: supportingEvidence,
         hard_negatives: [],
         outcome_gain: 1,
@@ -302,7 +303,7 @@ function buildHotpotQaRawBundle(params: {
     datasetFamily: "hotpotqa",
     datasetId: params.card.registry_entry.dataset_id,
     snapshotRef: params.card.registry_entry.immutable_snapshot_ref,
-    sampleStrategy: "first-example-from-hotpotqa-dev-distractor-snapshot",
+    sampleStrategy: `first-${params.sampleCount}-examples-from-hotpotqa-dev-distractor-snapshot`,
     sourceDocuments,
     rawBundle,
     compilation,
@@ -331,16 +332,15 @@ function buildMuSiQueRawBundle(params: {
       is_supporting: boolean;
     }>;
     question_decomposition?: unknown;
-  }>(sourceFilePath, Math.max(50, params.sampleCount * 100));
+    }>(sourceFilePath, Math.max(50, params.sampleCount * 100));
 
-  const example = sampledExamples.find((candidate) => candidate.paragraphs.some((paragraph) => paragraph.is_supporting));
-  if (!example) {
+  const examples = sampledExamples.filter((candidate) => candidate.paragraphs.some((paragraph) => paragraph.is_supporting)).slice(0, params.sampleCount);
+  if (examples.length === 0) {
     throw new Error(`no supporting MuSiQue examples could be sampled from ${snapshotFile}`);
   }
 
-  const targetTitles = example.paragraphs.filter((paragraph) => paragraph.is_supporting).map((paragraph) => normalizeWhitespace(paragraph.title));
-  if (targetTitles.length === 0) {
-    throw new Error(`MuSiQue sample ${example.id} has no supporting paragraphs`);
+  if (examples.length < params.sampleCount) {
+    throw new Error(`only ${examples.length} supporting MuSiQue examples could be sampled from ${snapshotFile}; requested ${params.sampleCount}`);
   }
 
   const sourceDocuments: RawDocsQaSourceDocumentV1[] = [
@@ -379,35 +379,37 @@ function buildMuSiQueRawBundle(params: {
       ...(params.card.registry_entry.updated_at ? { updated_at: params.card.registry_entry.updated_at } : {}),
     },
     source_documents: sourceDocuments,
-    examples: [
-      {
-        row_id: "musique-dev-export-candidate-1",
+    examples: examples.map((example, index) => {
+      const supportingParagraphs = example.paragraphs.filter((paragraph) => paragraph.is_supporting);
+      const targetTitles = supportingParagraphs.map((paragraph) => normalizeWhitespace(paragraph.title));
+      const stopLabel: RawDocsQaExampleV1["stop_label"] = supportingParagraphs.length === 1 ? "STOP_LOCAL" : "CONTINUE";
+
+      return {
+        row_id: `musique-dev-export-candidate-${index + 1}`,
         query: normalizeWhitespace(example.question),
         cursor_path: [snapshotFile, example.id],
-        candidate_set: example.paragraphs.map((paragraph, index) => ({
+        candidate_set: example.paragraphs.map((paragraph, candidateIndex) => ({
           candidate_id: buildCandidateId(params.card.registry_entry.dataset_id, paragraph.title),
           candidate_type: "doc_chunk" as const,
           authority: paragraph.is_supporting ? "snapshot_supporting_fact" : "snapshot_context",
           freshness: params.card.registry_entry.benchmark_split_status,
-          token_cost: 72 + index,
+          token_cost: 72 + candidateIndex,
           score_hint: paragraph.is_supporting ? 1 : 0.15,
         })),
         teacher_action: {
           kind: "traverse",
           target_ids: targetTitles.map((title) => buildCandidateId(params.card.registry_entry.dataset_id, title)),
         },
-        stop_label: "CONTINUE",
-        evidence_spans: example.paragraphs
-          .filter((paragraph) => paragraph.is_supporting)
-          .map((paragraph) => ({ source_ref: snapshotFile, excerpt: normalizeWhitespace(paragraph.paragraph_text) })),
+        stop_label: stopLabel,
+        evidence_spans: supportingParagraphs.map((paragraph) => ({ source_ref: snapshotFile, excerpt: normalizeWhitespace(paragraph.paragraph_text) })),
         hard_negatives: [],
         outcome_gain: 1,
-        teacher_confidence: 0.96,
+        teacher_confidence: supportingParagraphs.length === 1 ? 0.98 : 0.96,
         rationale: `MuSiQue snapshot evidence marks the supporting paragraphs for ${example.id}.`,
         split_tag: "dev",
         created_at: params.generatedAt,
-      } satisfies RawDocsQaExampleV1,
-    ],
+      } satisfies RawDocsQaExampleV1;
+    }),
   };
 
   const compilation = compileColdStartDocsQaSourceBundleV1({
@@ -424,7 +426,7 @@ function buildMuSiQueRawBundle(params: {
     datasetFamily: "musique",
     datasetId: params.card.registry_entry.dataset_id,
     snapshotRef: params.card.registry_entry.immutable_snapshot_ref,
-    sampleStrategy: `first-supporting-example-from-musique-dev-snapshot:${example.id}`,
+    sampleStrategy: `first-${params.sampleCount}-supporting-examples-from-musique-dev-snapshot-stoplocal-aware`,
     sourceDocuments,
     rawBundle,
     compilation,
@@ -436,9 +438,13 @@ export function buildColdStartQaSnapshotExportCandidateV1(params: {
   workspaceRoot: string;
   generatedAt?: string;
   sampleCount?: number;
+  hotpotSampleCount?: number;
+  musiqueSampleCount?: number;
 }): ColdStartQaSnapshotExportCandidateV1 {
   const generatedAt = params.generatedAt ?? new Date().toISOString();
   const sampleCount = params.sampleCount ?? 1;
+  const hotpotSampleCount = params.hotpotSampleCount ?? sampleCount;
+  const musiqueSampleCount = params.musiqueSampleCount ?? sampleCount;
   const hotpotCard = getRegistryCard(params.registryPath, "hotpotqa_v1");
   const musiqueCard = getRegistryCard(params.registryPath, "musique_v1");
 
@@ -450,13 +456,13 @@ export function buildColdStartQaSnapshotExportCandidateV1(params: {
     workspaceRoot: params.workspaceRoot,
     card: hotpotCard,
     generatedAt,
-    sampleCount,
+    sampleCount: hotpotSampleCount,
   });
   const musique = buildMuSiQueRawBundle({
     workspaceRoot: params.workspaceRoot,
     card: musiqueCard,
     generatedAt,
-    sampleCount,
+    sampleCount: musiqueSampleCount,
   });
 
   const registryEntries = [hotpotqa.compilation.registryEntry, musique.compilation.registryEntry];

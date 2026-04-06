@@ -59,6 +59,7 @@ export class BrainGraph {
   private inEdges: Map<string, BrainEdge[]> = new Map();
   private seedWeights: Map<string, number> = new Map();
   private stopLocalWeights: Map<string, number> = new Map();
+  private toolActionPriors: Map<string, Map<string, number>> = new Map();
 
   addNode(node: BrainNode): void {
     this.nodes.set(node.id, node);
@@ -70,6 +71,13 @@ export class BrainGraph {
     this.nodes.delete(nodeId);
     this.seedWeights.delete(nodeId);
     this.stopLocalWeights.delete(nodeId);
+    this.toolActionPriors.delete(nodeId);
+    for (const [sourceNodeId, priors] of this.toolActionPriors.entries()) {
+      priors.delete(nodeId);
+      if (priors.size === 0) {
+        this.toolActionPriors.delete(sourceNodeId);
+      }
+    }
     // Remove all edges involving this node
     const out = this.outEdges.get(nodeId) ?? [];
     for (const edge of out) {
@@ -196,6 +204,47 @@ export class BrainGraph {
     this.stopLocalWeights.set(key, weight);
   }
 
+  getToolActionPrior(sourceNodeId: string | null, toolNodeId: string): number {
+    const key = sourceNodeId ?? START_NODE_ID;
+    return this.toolActionPriors.get(key)?.get(toolNodeId) ?? 0;
+  }
+
+  setToolActionPrior(sourceNodeId: string | null, toolNodeId: string, weight: number): void {
+    const key = sourceNodeId ?? START_NODE_ID;
+    if (key !== START_NODE_ID && !this.nodes.has(key)) {
+      return;
+    }
+    if (!this.nodes.has(toolNodeId)) {
+      return;
+    }
+    const priors = this.toolActionPriors.get(key) ?? new Map<string, number>();
+    priors.set(toolNodeId, weight);
+    this.toolActionPriors.set(key, priors);
+  }
+
+  getToolActionPriorEntries(sourceNodeId: string | null): Array<{ toolNodeId: string; weight: number }> {
+    const key = sourceNodeId ?? START_NODE_ID;
+    const priors = this.toolActionPriors.get(key);
+    if (!priors) {
+      return [];
+    }
+    return [...priors.entries()]
+      .map(([toolNodeId, weight]) => ({ toolNodeId, weight }))
+      .sort((left, right) => left.toolNodeId.localeCompare(right.toolNodeId));
+  }
+
+  getAllToolActionPriors(): Array<{ sourceNodeId: string; toolNodeId: string; weight: number }> {
+    return [...this.toolActionPriors.entries()]
+      .flatMap(([sourceNodeId, priors]) => [...priors.entries()].map(([toolNodeId, weight]) => ({ sourceNodeId, toolNodeId, weight })))
+      .sort((left, right) => {
+        const bySource = left.sourceNodeId.localeCompare(right.sourceNodeId);
+        if (bySource !== 0) {
+          return bySource;
+        }
+        return left.toolNodeId.localeCompare(right.toolNodeId);
+      });
+  }
+
   getAllSeedWeights(): Array<{ nodeId: string; weight: number }> {
     return [...this.seedWeights.entries()].map(([nodeId, weight]) => ({ nodeId, weight }));
   }
@@ -232,6 +281,9 @@ export class BrainGraph {
     }
     for (const { sourceNodeId, weight } of this.getAllStopLocalWeights()) {
       clone.setStopLocalWeight(sourceNodeId, weight);
+    }
+    for (const { sourceNodeId, toolNodeId, weight } of this.getAllToolActionPriors()) {
+      clone.setToolActionPrior(sourceNodeId, toolNodeId, weight);
     }
     return clone;
   }
@@ -273,31 +325,41 @@ export class BrainGraph {
       excludedTargets?: Set<string>;
     } = {},
   ): TraversalAction[] {
-    const actions: TraversalAction[] = [];
+    const actions = new Map<string, TraversalAction>();
     const excludedTargets = options.excludedTargets ?? new Set<string>();
+    const addTraverseAction = (action: Extract<TraversalAction, { type: "traverse" }>): void => {
+      if (visited.has(action.targetNodeId) || excludedTargets.has(action.targetNodeId)) {
+        return;
+      }
+      if (!this.nodes.has(action.targetNodeId)) {
+        return;
+      }
+      if (!actions.has(action.targetNodeId)) {
+        actions.set(action.targetNodeId, action);
+      }
+    };
 
     if (sourceNodeId === null) {
       // Seed phase: actions are the seed candidates
       if (options.seeds) {
         for (const seed of options.seeds) {
-          if (!visited.has(seed.nodeId) && !excludedTargets.has(seed.nodeId)) {
-            actions.push({ type: "traverse", targetNodeId: seed.nodeId, seedScore: seed.score });
-          }
+          addTraverseAction({ type: "traverse", targetNodeId: seed.nodeId, ...(seed.score !== undefined ? { seedScore: seed.score } : {}) });
         }
       }
     } else {
       // Normal phase: neighbors via outgoing edges
       const neighbors = this.getNeighbors(sourceNodeId).sort();
       for (const neighborId of neighbors) {
-        if (!visited.has(neighborId) && !excludedTargets.has(neighborId)) {
-          actions.push({ type: "traverse", targetNodeId: neighborId });
-        }
+        addTraverseAction({ type: "traverse", targetNodeId: neighborId });
       }
     }
 
+    for (const { toolNodeId } of this.getToolActionPriorEntries(sourceNodeId)) {
+      addTraverseAction({ type: "traverse", targetNodeId: toolNodeId });
+    }
+
     // Local STOP is always available within an expansion.
-    actions.push({ type: "stop_local" });
-    return actions;
+    return [...actions.values(), { type: "stop_local" }];
   }
 
   /**
@@ -369,11 +431,15 @@ export class BrainGraph {
     this.inEdges.clear();
     this.seedWeights.clear();
     this.stopLocalWeights.clear();
+    this.toolActionPriors.clear();
   }
 }
 
 export const COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1 =
   "cold_start_router_live_policy_initializer.v1" as const;
+
+export const COLD_START_ROUTER_TOOL_ACTION_PRIORS_CONTRACT_V1 =
+  "cold_start_router_tool_action_priors.v1" as const;
 
 export interface ColdStartRouterLivePolicySeedWeightV1 {
   nodeId: string;
@@ -401,12 +467,33 @@ export interface ColdStartRouterLivePolicyEdgeWeightV1 {
   weight: number;
 }
 
+export interface ColdStartRouterToolActionPriorV1 {
+  sourceNodeId: string;
+  toolNodeId: string;
+  positive: number;
+  negative: number;
+  support: number;
+  prior: number;
+  weight: number;
+}
+
+export interface ColdStartRouterToolActionSetV1 {
+  sourceNodeId: string;
+  rowIds: string[];
+  teacherToolNodeIds: string[];
+  candidateIds: string[];
+  candidates: RouteCandidateV1[];
+  support: number;
+}
+
 export interface ColdStartRouterLivePolicyInitializerV1 {
   contract: typeof COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1;
   policyParams: PolicyParams;
   seedWeights: ColdStartRouterLivePolicySeedWeightV1[];
   stopLocalWeights: ColdStartRouterLivePolicyStopWeightV1[];
   edgeWeights: ColdStartRouterLivePolicyEdgeWeightV1[];
+  toolActionPriors: ColdStartRouterToolActionPriorV1[];
+  toolActionSets: ColdStartRouterToolActionSetV1[];
   skippedToolRowIds: string[];
   usedRowCount: number;
   traverseRowCount: number;
@@ -537,6 +624,7 @@ function ensureCandidateNode(graph: BrainGraph, candidate: RouteCandidateV1): vo
     trust: candidateTrust(candidate),
     tags: [
       `candidate_type:${candidate.candidate_type}`,
+      ...(candidate.candidate_type === "tool" ? ["action_kind:tool"] : []),
       ...(candidate.authority ? [`authority:${candidate.authority}`] : []),
       ...(candidate.freshness ? [`freshness:${candidate.freshness}`] : []),
     ],
@@ -545,6 +633,7 @@ function ensureCandidateNode(graph: BrainGraph, candidate: RouteCandidateV1): vo
       : 0,
     metadata: {
       candidate_type: candidate.candidate_type,
+      action_kind: candidate.candidate_type === "tool" ? "tool" : "traverse",
       authority: candidate.authority ?? null,
       freshness: candidate.freshness ?? null,
       score_hint: candidate.score_hint ?? null,
@@ -611,12 +700,35 @@ function buildPolicyParams(params: {
   };
 }
 
+function sortRouteCandidates(candidates: readonly RouteCandidateV1[]): RouteCandidateV1[] {
+  return [...candidates].sort((left, right) => left.candidate_id.localeCompare(right.candidate_id));
+}
+
+function cloneRouteCandidate(candidate: RouteCandidateV1): RouteCandidateV1 {
+  return {
+    candidate_id: candidate.candidate_id,
+    candidate_type: candidate.candidate_type,
+    ...(candidate.authority ? { authority: candidate.authority } : {}),
+    ...(candidate.freshness ? { freshness: candidate.freshness } : {}),
+    ...(candidate.token_cost !== undefined ? { token_cost: candidate.token_cost } : {}),
+    ...(candidate.score_hint !== undefined ? { score_hint: candidate.score_hint } : {}),
+  };
+}
+
 export function buildColdStartRouterLivePolicyInitializerV1(params: {
   routeRows: RouteDecisionRowV1[];
 }): ColdStartRouterLivePolicyInitializerV1 {
   const seedCounts = new Map<string, CountBucket>();
   const stopCounts = new Map<string, CountBucket>();
   const edgeCounts = new Map<string, CountBucket>();
+  const toolActionCounts = new Map<string, Map<string, CountBucket>>();
+  const toolActionSets = new Map<string, {
+    rowIds: Set<string>;
+    teacherToolNodeIds: Set<string>;
+    candidateIds: Set<string>;
+    candidates: Map<string, RouteCandidateV1>;
+    support: number;
+  }>();
   const globalStopCounts = createCountBucket();
   const skippedToolRowIds: string[] = [];
   let traverseRowCount = 0;
@@ -626,6 +738,39 @@ export function buildColdStartRouterLivePolicyInitializerV1(params: {
     const rowWeight = toRowWeight(row.outcome_gain);
     const sourceNodeId = normalizeCursorSourceNodeId(row.cursor_path);
     const positiveCandidateIds = parsePositiveCandidateIds(row);
+    const toolCandidates = row.candidate_set.filter((candidate) => candidate.candidate_type === "tool");
+    const teacherToolNodeIds = row.teacher_action.kind === "tool"
+      ? new Set<string>(positiveCandidateIds)
+      : new Set<string>();
+
+    if (toolCandidates.length > 0) {
+      const setEntry = toolActionSets.get(sourceNodeId) ?? {
+        rowIds: new Set<string>(),
+        teacherToolNodeIds: new Set<string>(),
+        candidateIds: new Set<string>(),
+        candidates: new Map<string, RouteCandidateV1>(),
+        support: 0,
+      };
+      setEntry.rowIds.add(row.row_id);
+      setEntry.support += rowWeight;
+      for (const candidate of toolCandidates) {
+        setEntry.candidateIds.add(candidate.candidate_id);
+        if (teacherToolNodeIds.has(candidate.candidate_id)) {
+          setEntry.teacherToolNodeIds.add(candidate.candidate_id);
+        }
+        const existing = setEntry.candidates.get(candidate.candidate_id);
+        if (!existing || (candidate.score_hint ?? Number.NEGATIVE_INFINITY) > (existing.score_hint ?? Number.NEGATIVE_INFINITY)) {
+          setEntry.candidates.set(candidate.candidate_id, cloneRouteCandidate(candidate));
+        }
+
+        const sourceToolMap = toolActionCounts.get(sourceNodeId) ?? new Map<string, CountBucket>();
+        const bucket = sourceToolMap.get(candidate.candidate_id) ?? createCountBucket();
+        bumpCountBucket(bucket, teacherToolNodeIds.has(candidate.candidate_id), rowWeight);
+        sourceToolMap.set(candidate.candidate_id, bucket);
+        toolActionCounts.set(sourceNodeId, sourceToolMap);
+      }
+      toolActionSets.set(sourceNodeId, setEntry);
+    }
 
     for (const candidate of row.candidate_set) {
       const bucket = seedCounts.get(candidate.candidate_id) ?? createCountBucket();
@@ -662,6 +807,35 @@ export function buildColdStartRouterLivePolicyInitializerV1(params: {
     stopSupport: globalStopCounts.support,
   });
 
+  const toolActionPriors = [...toolActionCounts.entries()]
+    .flatMap(([sourceNodeId, toolMap]) => [...toolMap.entries()].map(([toolNodeId, bucket]) => ({
+      sourceNodeId,
+      toolNodeId,
+      positive: bucket.positive,
+      negative: bucket.negative,
+      support: bucket.support,
+      prior: bucket.support > 0 ? bucket.positive / bucket.support : 0,
+      weight: calcLiveWeight(bucket.positive, bucket.negative, bucket.support, 1, 2),
+    })))
+    .sort((left, right) => {
+      const bySource = left.sourceNodeId.localeCompare(right.sourceNodeId);
+      if (bySource !== 0) {
+        return bySource;
+      }
+      return left.toolNodeId.localeCompare(right.toolNodeId);
+    });
+
+  const toolActionSetEntries = [...toolActionSets.entries()]
+    .map(([sourceNodeId, setEntry]) => ({
+      sourceNodeId,
+      rowIds: [...setEntry.rowIds].sort(),
+      teacherToolNodeIds: [...setEntry.teacherToolNodeIds].sort(),
+      candidateIds: [...setEntry.candidateIds].sort(),
+      candidates: sortRouteCandidates([...setEntry.candidates.values()].map(cloneRouteCandidate)),
+      support: setEntry.support,
+    }))
+    .sort((left, right) => left.sourceNodeId.localeCompare(right.sourceNodeId));
+
   return {
     contract: COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1,
     policyParams,
@@ -691,6 +865,8 @@ export function buildColdStartRouterLivePolicyInitializerV1(params: {
         weight: calcLiveWeight(bucket.positive, bucket.negative, bucket.support, 1, 2),
       };
     }),
+    toolActionPriors,
+    toolActionSets: toolActionSetEntries,
     skippedToolRowIds,
     usedRowCount: params.routeRows.length,
     traverseRowCount,
@@ -711,6 +887,15 @@ export function materializeColdStartRouterLivePolicyGraphV1(params: {
   }
   if (sourceNodeId) {
     ensureSourceNode(graph, sourceNodeId);
+  }
+
+  for (const toolActionSet of params.initializer.toolActionSets) {
+    if (toolActionSet.sourceNodeId !== sourceNodeIdRaw) {
+      continue;
+    }
+    for (const candidate of toolActionSet.candidates) {
+      ensureCandidateNode(graph, candidate);
+    }
   }
 
   for (const entry of params.initializer.seedWeights) {
@@ -739,6 +924,13 @@ export function materializeColdStartRouterLivePolicyGraphV1(params: {
       decayedAt: 0,
       createdAt: Date.now(),
     });
+  }
+
+  for (const entry of params.initializer.toolActionPriors) {
+    if (entry.sourceNodeId !== sourceNodeIdRaw) {
+      continue;
+    }
+    graph.setToolActionPrior(entry.sourceNodeId === START_NODE_ID ? null : entry.sourceNodeId, entry.toolNodeId, entry.weight);
   }
 
   return {

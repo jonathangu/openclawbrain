@@ -194,6 +194,8 @@ export function loadColdStartRouterArtifactBundleV1(artifactDir: string): ColdSt
   assert(model.sourcePriors.contract === COLD_START_ROUTER_SOURCE_PRIORS_CONTRACT_V1, "weights.sourcePriors must carry the source priors contract");
   assert(model.safetyRules.contract === COLD_START_ROUTER_SAFETY_RULES_CONTRACT_V1, "weights.safetyRules must carry the safety rules contract");
   assert(model.livePolicyInitializer?.contract === COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1, "weights.livePolicyInitializer must carry the live policy initializer contract");
+  assert(Array.isArray(model.toolActionPriors), "weights.toolActionPriors must be an array");
+  assert(Array.isArray(model.toolActionSets), "weights.toolActionSets must be an array");
   assert(deepEqualJson(model.calibration, calibration), "weights.calibration must match calibration.json exactly");
   assert(deepEqualJson(model.featureNormalizers, featureNormalizers), "weights.featureNormalizers must match feature-normalizers.json exactly");
   assert(deepEqualJson(model.sourcePriors, sourcePriors), "weights.sourcePriors must match source-priors.json exactly");

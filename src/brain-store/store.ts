@@ -568,6 +568,7 @@ export class BrainStore {
 
   clearGraph(): void {
     this.db.exec(`
+      DELETE FROM brain_tool_action_priors;
       DELETE FROM brain_stop_local_weights;
       DELETE FROM brain_seed_weights;
       DELETE FROM brain_edges;
@@ -576,6 +577,7 @@ export class BrainStore {
   }
 
   deleteNode(id: string): void {
+    this.db.prepare(`DELETE FROM brain_tool_action_priors WHERE source_node_id = ? OR tool_node_id = ?`).run(id, id);
     this.db.prepare(`DELETE FROM brain_stop_local_weights WHERE source_node_id = ?`).run(id);
     this.db.prepare(`DELETE FROM brain_seed_weights WHERE node_id = ?`).run(id);
     this.db.prepare(`DELETE FROM brain_edges WHERE source = ? OR target = ?`).run(id, id);
@@ -717,6 +719,41 @@ export class BrainStore {
     const rows = this.db.prepare(`SELECT * FROM brain_stop_local_weights`).all() as Record<string, unknown>[];
     return rows.map((row) => ({
       sourceNodeId: row.source_node_id as string,
+      weight: row.weight as number,
+      updatedAt: row.updated_at as number,
+    }));
+  }
+
+  // ─── Tool Action Priors ───
+
+  setToolActionPrior(sourceNodeId: string, toolNodeId: string, weight: number): void {
+    this.db.prepare(`
+      INSERT INTO brain_tool_action_priors (source_node_id, tool_node_id, weight, updated_at)
+      VALUES (?, ?, ?, ?)
+      ON CONFLICT(source_node_id, tool_node_id) DO UPDATE SET weight = excluded.weight, updated_at = excluded.updated_at
+    `).run(sourceNodeId, toolNodeId, weight, Date.now());
+  }
+
+  getToolActionPrior(sourceNodeId: string, toolNodeId: string): { sourceNodeId: string; toolNodeId: string; weight: number; updatedAt: number } | null {
+    const row = this.db.prepare(`
+      SELECT * FROM brain_tool_action_priors WHERE source_node_id = ? AND tool_node_id = ?
+    `).get(sourceNodeId, toolNodeId) as Record<string, unknown> | undefined;
+    if (!row) {
+      return null;
+    }
+    return {
+      sourceNodeId: row.source_node_id as string,
+      toolNodeId: row.tool_node_id as string,
+      weight: row.weight as number,
+      updatedAt: row.updated_at as number,
+    };
+  }
+
+  getAllToolActionPriors(): Array<{ sourceNodeId: string; toolNodeId: string; weight: number; updatedAt: number }> {
+    const rows = this.db.prepare(`SELECT * FROM brain_tool_action_priors ORDER BY source_node_id, tool_node_id`).all() as Record<string, unknown>[];
+    return rows.map((row) => ({
+      sourceNodeId: row.source_node_id as string,
+      toolNodeId: row.tool_node_id as string,
       weight: row.weight as number,
       updatedAt: row.updated_at as number,
     }));
@@ -2903,6 +2940,10 @@ export class BrainStore {
     return this.getAllStopLocalWeights();
   }
 
+  loadAllToolActionPriors(): Array<{ sourceNodeId: string; toolNodeId: string; weight: number; updatedAt: number }> {
+    return this.getAllToolActionPriors();
+  }
+
   getCurrentPackVersion(): number | null {
     if (!this.options.brainRoot) {
       return null;
@@ -2925,6 +2966,7 @@ export class BrainStore {
     edges: BrainEdge[];
     seedWeights?: SeedWeight[];
     stopLocalWeights?: StopLocalWeight[];
+    toolActionPriors?: Array<{ sourceNodeId: string; toolNodeId: string; weight: number; updatedAt: number }>;
     metadata: Record<string, unknown>;
   }): string {
     if (!this.options.brainRoot) {
@@ -2965,6 +3007,11 @@ export class BrainStore {
       `${(params.stopLocalWeights ?? []).map((stopLocalWeight) => JSON.stringify(stopLocalWeight)).join("\n")}${(params.stopLocalWeights ?? []).length > 0 ? "\n" : ""}`,
       "utf8",
     );
+    writeFileSync(
+      join(packDir, "tool-action-priors.jsonl"),
+      `${(params.toolActionPriors ?? []).map((toolActionPrior) => JSON.stringify(toolActionPrior)).join("\n")}${(params.toolActionPriors ?? []).length > 0 ? "\n" : ""}`,
+      "utf8",
+    );
 
     return packDir;
   }
@@ -2974,6 +3021,7 @@ export class BrainStore {
     edges: BrainEdge[];
     seedWeights: SeedWeight[];
     stopLocalWeights: StopLocalWeight[];
+    toolActionPriors: Array<{ sourceNodeId: string; toolNodeId: string; weight: number; updatedAt: number }>;
     metadata: Record<string, unknown>;
   } | null {
     if (!this.options.brainRoot) {
@@ -2985,6 +3033,7 @@ export class BrainStore {
     const edgesFile = join(packDir, "edges.jsonl");
     const seedWeightsFile = join(packDir, "seed-weights.jsonl");
     const stopLocalWeightsFile = join(packDir, "stop-local-weights.jsonl");
+    const toolActionPriorsFile = join(packDir, "tool-action-priors.jsonl");
     const metadataFile = join(packDir, "metadata.json");
     if (!existsSync(nodesFile) || !existsSync(edgesFile)) {
       return null;
@@ -3018,11 +3067,19 @@ export class BrainStore {
           updatedAt: Number(row.updatedAt ?? 0),
         }))
       : [];
+    const toolActionPriors = existsSync(toolActionPriorsFile)
+      ? parseJsonl(readFileSync(toolActionPriorsFile, "utf8")).map((row) => ({
+          sourceNodeId: row.sourceNodeId as string,
+          toolNodeId: row.toolNodeId as string,
+          weight: Number(row.weight ?? 0),
+          updatedAt: Number(row.updatedAt ?? 0),
+        }))
+      : [];
     const metadata = existsSync(metadataFile)
       ? JSON.parse(readFileSync(metadataFile, "utf8")) as Record<string, unknown>
       : {};
 
-    return { nodes, edges, seedWeights, stopLocalWeights, metadata };
+    return { nodes, edges, seedWeights, stopLocalWeights, toolActionPriors, metadata };
   }
 
   private getPacksDir(): string {

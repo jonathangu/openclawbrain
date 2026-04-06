@@ -604,6 +604,7 @@ export class BrainService {
       this.store.loadAllEdges(),
       this.store.loadAllSeedWeights(),
       this.store.loadAllStopLocalWeights(),
+      this.store.loadAllToolActionPriors(),
     );
     this.reloadServingGraph();
 
@@ -2169,6 +2170,7 @@ export class BrainService {
       snapshot.edges,
       snapshot.seedWeights,
       snapshot.stopLocalWeights,
+      snapshot.toolActionPriors,
     );
     this.initialized = true;
   }

@@ -233,6 +233,10 @@ function explainActionScore(
 
   const edge = graph.getEdge(state.sourceNodeId, action.targetNodeId);
   const edgeScore = edge ? edge.weight * edge.prior : 0;
+  const seedPrior = action.seedScore ?? 0;
+  const toolActionPrior = targetNode.kind === "toolcard"
+    ? graph.getToolActionPrior(state.sourceNodeId, action.targetNodeId)
+    : 0;
 
   let relevance = 0;
   if (targetNode.embedding && state.queryEmbedding.length > 0) {
@@ -247,7 +251,7 @@ function explainActionScore(
   const redundancyPressureMultiplier = 0.75 + policyState.pressureLevel;
   const redundancyPenalty =
     params.localRedundancyPenalty * redundancySimilarity * redundancyPressureMultiplier;
-  const score = edgeScore + relevance + kindBias + evidenceQualityBonus
+  const score = seedPrior + edgeScore + relevance + kindBias + evidenceQualityBonus + toolActionPrior
     - opportunityCostPenalty - redundancyPenalty;
 
   return {
@@ -255,10 +259,12 @@ function explainActionScore(
     scoreBreakdown: {
       totalScore: score,
       pressureLevel: policyState.pressureLevel,
+      seedPrior,
       edgeScore,
       relevance,
       kindBias,
       evidenceQualityBonus,
+      toolActionPrior,
       opportunityCostPenalty,
       tokenCostFraction: branchOpportunity.tokenCostFraction,
       downstreamOpportunityCount: branchOpportunity.downstreamOpportunityCount,

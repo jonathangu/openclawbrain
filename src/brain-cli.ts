@@ -24,6 +24,7 @@ import { resolveLcmConfig } from "./db/config.js";
 import {
   flattenSeedWeights,
   flattenStopLocalWeights,
+  flattenToolActionPriors,
   populateGraph,
 } from "./brain-runtime/graph-io.js";
 import { buildPromotionStory } from "./brain-runtime/promotion-story.js";
@@ -191,6 +192,7 @@ function loadStore() {
     store.loadAllEdges(),
     store.loadAllSeedWeights(),
     store.loadAllStopLocalWeights(),
+    store.loadAllToolActionPriors(),
   );
 
   return { config, brainConfig, store, graph };
@@ -238,6 +240,7 @@ async function commandInit(workspaceArg?: string): Promise<void> {
     edges: flattenEdges(graph),
     seedWeights: flattenSeedWeights(graph),
     stopLocalWeights: flattenStopLocalWeights(graph),
+    toolActionPriors: flattenToolActionPriors(graph),
     metadata: { reason: "cli-init", workspaceRoot, summary: result.summary },
   });
   store.promotePack(pack.version);
@@ -421,6 +424,7 @@ function commandPromote(): void {
     edges: flattenEdges(graph),
     seedWeights: flattenSeedWeights(graph),
     stopLocalWeights: flattenStopLocalWeights(graph),
+    toolActionPriors: flattenToolActionPriors(graph),
     metadata: { reason: "cli-promote" },
   });
   store.promotePack(pack.version);

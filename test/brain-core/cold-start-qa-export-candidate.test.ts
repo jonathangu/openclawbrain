@@ -87,6 +87,32 @@ describe("cold-start QA snapshot export candidate", () => {
     expect(candidate.notes.some((note) => note.includes("approved_train"))).toBe(true);
   });
 
+  it("expands the export with STOP_LOCAL-rich MuSiQue rows when asked for a larger sample set", () => {
+    const candidate = buildColdStartQaSnapshotExportCandidateV1({
+      registryPath,
+      workspaceRoot,
+      generatedAt: "2026-04-05T18:02:00Z",
+      hotpotSampleCount: 3,
+      musiqueSampleCount: 11,
+    });
+
+    expect(candidate.route_rows).toHaveLength(14);
+    expect(candidate.route_rows.filter((row) => row.dataset_id === "hotpotqa_v1")).toHaveLength(3);
+    expect(candidate.route_rows.filter((row) => row.dataset_id === "musique_v1")).toHaveLength(11);
+    expect(candidate.route_rows.filter((row) => row.stop_label === "STOP_LOCAL")).toHaveLength(2);
+    expect(candidate.route_rows.every((row) => validateRouteDecisionRowV1(row).valid)).toBe(true);
+    expect(candidate.route_rows.every((row) => row.provenance.review_status === "under_review")).toBe(true);
+    expect(candidate.route_rows[3]?.dataset_id).toBe("musique_v1");
+    expect(candidate.route_rows[3]?.stop_label).toBe("STOP_LOCAL");
+
+    const summary = summarizeColdStartQaSnapshotExportCandidateV1(candidate);
+    expect(summary.routeRowCount).toBe(14);
+    expect(summary.sampleStrategies).toEqual([
+      "first-3-examples-from-hotpotqa-dev-distractor-snapshot",
+      "first-11-supporting-examples-from-musique-dev-snapshot-stoplocal-aware",
+    ]);
+  });
+
   it("round-trips the export candidate through a file without inventing approved_train state", () => {
     const candidate = buildColdStartQaSnapshotExportCandidateV1({
       registryPath,

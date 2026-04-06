@@ -20,6 +20,18 @@ function makeNode(id: string, embedding?: Float32Array): BrainNode {
   };
 }
 
+function makeToolNode(id: string, embedding?: Float32Array): BrainNode {
+  return {
+    ...makeNode(id, embedding),
+    kind: "toolcard",
+    tags: ["candidate_type:tool", "action_kind:tool"],
+    metadata: {
+      candidate_type: "tool",
+      action_kind: "tool",
+    },
+  };
+}
+
 function makeEdge(source: string, target: string, weight = 0.5): BrainEdge {
   return {
     source,
@@ -258,6 +270,35 @@ describe("policy", () => {
 
       expect(scoreB).toBeGreaterThan(scoreC);
     });
+
+    it("uses traverse seed priors to break otherwise flat candidate ties", () => {
+      const graph = new BrainGraph();
+      graph.addNode(makeNode("source", new Float32Array([1, 0, 0])));
+      graph.addNode(makeNode("high", new Float32Array([1, 0, 0])));
+      graph.addNode(makeNode("low", new Float32Array([1, 0, 0])));
+
+      const state = makeState("source");
+      const highScore = scoreAction({ type: "traverse", targetNodeId: "high", seedScore: 0.9 }, state, graph);
+      const lowScore = scoreAction({ type: "traverse", targetNodeId: "low", seedScore: 0.1 }, state, graph);
+
+      expect(highScore).toBeGreaterThan(lowScore);
+    });
+
+    it("adds graph-visible tool-action priors when scoring toolcard candidates", () => {
+      const graph = new BrainGraph();
+      graph.addNode(makeNode("source", new Float32Array([1, 0, 0])));
+      graph.addNode(makeToolNode("tool:proof", new Float32Array([1, 0, 0])));
+      graph.addNode(makeNode("doc:proof", new Float32Array([1, 0, 0])));
+      graph.addEdge(makeEdge("source", "tool:proof", 0.5));
+      graph.addEdge(makeEdge("source", "doc:proof", 0.5));
+      graph.setToolActionPrior("source", "tool:proof", 1.25);
+
+      const state = makeState("source");
+      const toolScore = scoreAction({ type: "traverse", targetNodeId: "tool:proof" }, state, graph);
+      const docScore = scoreAction({ type: "traverse", targetNodeId: "doc:proof" }, state, graph);
+
+      expect(toolScore).toBeGreaterThan(docScore);
+    });
   });
 
   describe("softmaxPolicy", () => {
@@ -297,6 +338,16 @@ describe("policy", () => {
       const lowTempMax = Math.max(...lowTemp.map((d) => d.probability));
       const highTempMax = Math.max(...highTemp.map((d) => d.probability));
       expect(lowTempMax).toBeGreaterThan(highTempMax);
+    });
+
+    it("includes precomputed tool-action priors in the graph-visible action set", () => {
+      const graph = new BrainGraph();
+      graph.addNode(makeNode("source"));
+      graph.addNode(makeToolNode("tool:proof"));
+      graph.setToolActionPrior("source", "tool:proof", 0.8);
+
+      const actions = graph.getActionSet("source", new Set());
+      expect(actions.some((action) => action.type === "traverse" && action.targetNodeId === "tool:proof")).toBe(true);
     });
   });
 

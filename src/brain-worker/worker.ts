@@ -28,7 +28,10 @@ import type { PackManager } from "../brain-core/pack.js";
 import {
   applyWeightUpdates,
   collectReinforceUpdateContributions,
+  collectTeacherActionDistillContributions,
   computeReinforceUpdates,
+  computeTeacherActionUpdates,
+  mergePolicyWeightUpdates,
   policyWeightUpdateKey,
   updateBaseline,
 } from "../brain-core/update.js";
@@ -254,6 +257,8 @@ function readPolicyWeightBeforeUpdate(
       return graph.getSeedWeight(update.nodeId);
     case "stop_local":
       return graph.getStopLocalWeight(update.sourceNodeId);
+    case "tool_action":
+      return graph.getToolActionPrior(update.sourceNodeId, update.toolNodeId);
     case "edge": {
       const edge = graph.getEdge(update.source, update.target);
       return edge ? edge.weight : null;
@@ -268,13 +273,34 @@ function buildRouteUpdateArtifact(
   contributions: PolicyGradientRouteUpdateContribution[],
 ): PolicyGradientRouteUpdateArtifact {
   const firstContribution = contributions[0] ?? null;
+  const sourceNodeId = firstContribution?.sourceNodeId ?? (() => {
+    switch (update.kind) {
+      case "seed":
+        return START_NODE_ID;
+      case "stop_local":
+      case "tool_action":
+        return update.sourceNodeId;
+      case "edge":
+        return update.source;
+    }
+  })();
+  const targetNodeId = firstContribution?.targetNodeId ?? (() => {
+    switch (update.kind) {
+      case "stop_local":
+        return null;
+      case "seed":
+        return update.nodeId;
+      case "tool_action":
+        return update.toolNodeId;
+      case "edge":
+        return update.target;
+    }
+  })();
   return {
     updateKey: policyWeightUpdateKey(update),
     kind: update.kind,
-    sourceNodeId: firstContribution?.sourceNodeId
-      ?? (update.kind === "seed" ? START_NODE_ID : update.kind === "stop_local" ? update.sourceNodeId : update.source),
-    targetNodeId: firstContribution?.targetNodeId
-      ?? (update.kind === "stop_local" ? null : update.kind === "seed" ? update.nodeId : update.target),
+    sourceNodeId,
+    targetNodeId,
     delta: update.delta,
     previousWeight,
     nextWeight,
@@ -758,6 +784,7 @@ export class BrainWorker {
       baselineBeforeEpisode: number;
       baselineAfterEpisode: number;
       routeUpdateCount: number;
+      teacherActionUpdateCount: number;
       seedUpdateCount: number;
       stopLocalUpdateCount: number;
       edgeUpdateCount: number;
@@ -777,6 +804,7 @@ export class BrainWorker {
     };
 
     let routeUpdateCount = 0;
+    let teacherActionUpdateCount = 0;
     let seedUpdateCount = 0;
     let stopLocalUpdateCount = 0;
     let edgeUpdateCount = 0;
@@ -791,6 +819,7 @@ export class BrainWorker {
       episodeIds.add(entry.episode.id);
       incrementRewardSourceCount(rewardSources, entry.episode.rewardSource);
       routeUpdateCount += entry.routeUpdateCount;
+      teacherActionUpdateCount += entry.teacherActionUpdateCount;
       seedUpdateCount += entry.seedUpdateCount;
       stopLocalUpdateCount += entry.stopLocalUpdateCount;
       edgeUpdateCount += entry.edgeUpdateCount;
@@ -828,6 +857,7 @@ export class BrainWorker {
           baselineAfter: entry.baselineAfterEpisode,
           advantage: entry.episode.reward - entry.baselineBeforeEpisode,
           routeUpdateCount: entry.routeUpdateCount,
+          teacherActionUpdateCount: entry.teacherActionUpdateCount,
           seedUpdateCount: entry.seedUpdateCount,
           stopLocalUpdateCount: entry.stopLocalUpdateCount,
           edgeUpdateCount: entry.edgeUpdateCount,
@@ -869,6 +899,7 @@ export class BrainWorker {
       supervisionCount: supervisionIds.size,
       teacherLabelCount: teacherTraceIds.size,
       routeUpdateCount,
+      teacherActionUpdateCount,
       seedUpdateCount,
       stopLocalUpdateCount,
       edgeUpdateCount,
@@ -896,6 +927,12 @@ export class BrainWorker {
           weight: stopLocalWeight.weight,
           updatedAt: artifact.generatedAt,
         })),
+        toolActionPriors: this.graph.getAllToolActionPriors().map((toolActionPrior) => ({
+          sourceNodeId: toolActionPrior.sourceNodeId,
+          toolNodeId: toolActionPrior.toolNodeId,
+          weight: toolActionPrior.weight,
+          updatedAt: artifact.generatedAt,
+        })),
         metadata: {
           reason: "pg_update_candidate",
           pgCandidateUpdate: artifact,
@@ -920,6 +957,7 @@ export class BrainWorker {
       baselineBeforeEpisode: number;
       baselineAfterEpisode: number;
       routeUpdateCount: number;
+      teacherActionUpdateCount: number;
       seedUpdateCount: number;
       stopLocalUpdateCount: number;
       edgeUpdateCount: number;
@@ -993,12 +1031,22 @@ export class BrainWorker {
       }
 
       const baselineBeforeEpisode = baseline;
-      const contributions = collectReinforceUpdateContributions(
+      const reinforceContributions = collectReinforceUpdateContributions(
         episode,
         this.config.learningRate,
         baselineBeforeEpisode,
+        this.graph,
       );
-      const updates = computeReinforceUpdates(episode, this.config.learningRate, baselineBeforeEpisode);
+      const teacherActionContributions = collectTeacherActionDistillContributions(
+        episode,
+        this.config.learningRate,
+        consumed.supervision,
+        this.graph,
+      );
+      const contributions = [...reinforceContributions, ...teacherActionContributions];
+      const reinforceUpdates = computeReinforceUpdates(episode, this.config.learningRate, baselineBeforeEpisode, this.graph);
+      const teacherActionUpdates = computeTeacherActionUpdates(episode, this.config.learningRate, consumed.supervision, this.graph);
+      const updates = mergePolicyWeightUpdates([...reinforceUpdates, ...teacherActionUpdates]);
       const attributionQuality = combineAttributionQualities(consumed.supervision);
       const feedbackRichness = combineFeedbackRichness(consumed.supervision);
       if (updates.length === 0) {
@@ -1041,6 +1089,7 @@ export class BrainWorker {
       }
       applyWeightUpdates(this.graph, updates);
 
+      let teacherActionUpdateCount = 0;
       let seedUpdateCount = 0;
       let stopLocalUpdateCount = 0;
       let edgeUpdateCount = 0;
@@ -1050,6 +1099,9 @@ export class BrainWorker {
         const previousWeight = previousWeights.get(updateKey) ?? null;
         const updateContributions = contributionsByKey.get(updateKey) ?? [];
         if (update.kind === "seed") {
+          if (updateContributions.some((contribution) => contribution.kind === "seed")) {
+            teacherActionUpdateCount += 1;
+          }
           seedUpdateCount += 1;
           const nextWeight = this.graph.getSeedWeight(update.nodeId);
           this.store.setSeedWeight(update.nodeId, nextWeight);
@@ -1058,6 +1110,9 @@ export class BrainWorker {
         }
 
         if (update.kind === "stop_local") {
+          if (updateContributions.some((contribution) => contribution.kind === "stop_local")) {
+            teacherActionUpdateCount += 1;
+          }
           stopLocalUpdateCount += 1;
           const nextWeight = this.graph.getStopLocalWeight(update.sourceNodeId);
           this.store.setStopLocalWeight(update.sourceNodeId, nextWeight);
@@ -1065,6 +1120,19 @@ export class BrainWorker {
           continue;
         }
 
+        if (update.kind === "tool_action") {
+          if (updateContributions.some((contribution) => contribution.kind === "tool_action")) {
+            teacherActionUpdateCount += 1;
+          }
+          const nextWeight = this.graph.getToolActionPrior(update.sourceNodeId, update.toolNodeId);
+          this.store.setToolActionPrior(update.sourceNodeId, update.toolNodeId, nextWeight);
+          routeUpdates.push(buildRouteUpdateArtifact(update, previousWeight, nextWeight, updateContributions));
+          continue;
+        }
+
+        if (updateContributions.some((contribution) => contribution.kind === "edge")) {
+          teacherActionUpdateCount += 1;
+        }
         edgeUpdateCount += 1;
         const edge = this.graph.getEdge(update.source, update.target);
         if (edge) {
@@ -1095,6 +1163,7 @@ export class BrainWorker {
         baselineBeforeEpisode,
         baselineAfterEpisode,
         routeUpdateCount: updates.length,
+        teacherActionUpdateCount,
         seedUpdateCount,
         stopLocalUpdateCount,
         edgeUpdateCount,

@@ -33,6 +33,22 @@ function makeNode(id: string): BrainNode {
   };
 }
 
+function makeToolNode(id: string): BrainNode {
+  return {
+    id,
+    kind: "toolcard",
+    content: `tool for ${id}`,
+    embedding: new Float32Array([1, 0, 0]),
+    sourceUri: null,
+    trust: "scanner",
+    tags: [],
+    tokenCount: 32,
+    metadata: {},
+    createdAt: Date.now(),
+    updatedAt: Date.now(),
+  };
+}
+
 function makeEdge(source: string, target: string): BrainEdge {
   return {
     source,
@@ -62,7 +78,7 @@ describe("graph-io", () => {
     const now = Date.now();
     store.writePackSnapshot({
       version: 1,
-      nodes: [makeNode("a"), makeNode("b")],
+      nodes: [makeNode("a"), makeNode("b"), makeToolNode("tool:proof")],
       edges: [makeEdge("a", "b")],
       seedWeights: [
         { nodeId: "b", weight: 0.6, updatedAt: now },
@@ -70,6 +86,9 @@ describe("graph-io", () => {
       stopLocalWeights: [
         { sourceNodeId: START_NODE_ID, weight: 0.4, updatedAt: now },
         { sourceNodeId: "a", weight: 1.1, updatedAt: now },
+      ],
+      toolActionPriors: [
+        { sourceNodeId: "a", toolNodeId: "tool:proof", weight: 0.9, updatedAt: now },
       ],
       metadata: { reason: "test" },
     });
@@ -87,10 +106,12 @@ describe("graph-io", () => {
       snapshot?.edges ?? [],
       snapshot?.seedWeights ?? [],
       snapshot?.stopLocalWeights ?? [],
+      snapshot?.toolActionPriors ?? [],
     );
 
     expect(graph.getSeedWeight("b")).toBeCloseTo(0.6);
     expect(graph.getStopLocalWeight(null)).toBeCloseTo(0.4);
     expect(graph.getStopLocalWeight("a")).toBeCloseTo(1.1);
+    expect(graph.getToolActionPrior("a", "tool:proof")).toBeCloseTo(0.9);
   });
 });

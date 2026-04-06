@@ -107,6 +107,13 @@ describe("cold-start router trainer", () => {
       traverseRowCount: 1,
       toolRowCount: 1,
     });
+    expect(result.model.training).toMatchObject({
+      toolActionPriorCount: 2,
+      toolActionSetCount: 2,
+    });
+    expect(result.model.toolActionPriors.length).toBeGreaterThan(0);
+    expect(result.model.toolActionSets.length).toBeGreaterThan(0);
+    expect(result.model.toolActionSets.some((entry) => entry.candidates.some((candidate) => candidate.candidate_type === "tool"))).toBe(true);
 
     const rowScore = scoreColdStartRouteRowV1({ model: result.model, row: loadedExport.routeRows[0] });
     expect(rowScore.rankedCandidates[0]?.candidate.candidate_id).toBe("mem:shipping_history");
@@ -175,6 +182,8 @@ describe("cold-start router trainer", () => {
     });
 
     expect(materialized.sourceNodeId).toBe("mem:user_profile");
+    expect(materialized.graph.getToolActionPrior(materialized.sourceNodeId, "tool:gmail_search")).not.toBe(0);
+    expect(materialized.graph.getActionSet(materialized.sourceNodeId, new Set<string>()).some((action) => action.type === "traverse" && action.targetNodeId === "tool:gmail_search")).toBe(true);
 
     const traverseAction: TraversalAction = { type: "traverse", targetNodeId: "mem:shipping_history" };
     const stopAction: TraversalAction = { type: "stop_local" };
@@ -356,9 +365,60 @@ describe("cold-start router trainer", () => {
       packVersion: 1,
       createdAt: Date.now(),
     };
-    const stopUpdates = computeReinforceUpdates(stopEpisode, 0.1, 0.0);
+    const stopUpdates = computeReinforceUpdates(stopEpisode, 0.1, 0.0, materialized.graph);
     applyWeightUpdates(materialized.graph, stopUpdates);
     expect(materialized.graph.getStopLocalWeight(materialized.sourceNodeId)).toBeGreaterThan(beforeStopWeight);
+
+    const beforeToolWeight = materialized.graph.getToolActionPrior(materialized.sourceNodeId, "tool:gmail_search");
+    const toolEpisode: Episode = {
+      id: "live-family-tool",
+      conversationId: null,
+      queryText: row.query,
+      queryEmbedding: new Float32Array(0),
+      trajectory: [{
+        sourceNodeId: materialized.sourceNodeId,
+        expansionIndex: 1,
+        frontierBefore: ["mem:shipping_history"],
+        frontierAfter: ["tool:gmail_search"],
+        budgetBefore: 1000,
+        budgetAfter: 900,
+        substeps: [{
+          stateSnapshot: {
+            sourceNodeId: materialized.sourceNodeId,
+            expansionIndex: 1,
+            selectionIndex: 0,
+            budgetRemaining: 1000,
+            initialBudget: 1000,
+            reservedTokenCost: 0,
+            maxHops: 8,
+            frontierSize: 0,
+            frontierNodeIds: [],
+            visitedCount: 1,
+            firedCount: 0,
+          },
+          candidates: [
+            { action: { type: "traverse", targetNodeId: "tool:gmail_search" }, score: 0.9, probability: 0.7 },
+            { action: stopAction, score: 0.1, probability: 0.3 },
+          ],
+          chosenAction: { type: "traverse", targetNodeId: "tool:gmail_search" },
+          chosenActionProbability: 0.7,
+          stopProbability: 0.3,
+        }],
+        selectedTargets: ["tool:gmail_search"],
+        acceptedTargets: ["tool:gmail_search"],
+        vetoedTargets: [],
+      }],
+      firedNodes: ["tool:gmail_search"],
+      vetoedNodes: [],
+      contextChars: 0,
+      reward: 1,
+      rewardSource: "human",
+      packVersion: 1,
+      createdAt: Date.now(),
+    };
+    const toolUpdates = computeReinforceUpdates(toolEpisode, 0.1, 0.0, materialized.graph);
+    applyWeightUpdates(materialized.graph, toolUpdates);
+    expect(materialized.graph.getToolActionPrior(materialized.sourceNodeId, "tool:gmail_search")).toBeGreaterThan(beforeToolWeight);
   });
 
   it("exposes a runnable smoke script backed by the approved export fixture", () => {

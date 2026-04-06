@@ -919,6 +919,7 @@ describe("BrainWorker observation reward cutover", () => {
       observationCount: 1,
       supervisionCount: 2,
       teacherLabelCount: 1,
+      teacherActionUpdateCount: 2,
       rewardSources: {
         human: 1,
         teacher: 1,
@@ -944,6 +945,7 @@ describe("BrainWorker observation reward cutover", () => {
       updateReason: "human teach_correction -0.50 (confidence 1.00, without observation attribution, no feedback richness detail) updated 1 route weight(s)",
       baselineBefore: 0,
       routeUpdateCount: 1,
+      teacherActionUpdateCount: 1,
       seedUpdateCount: 1,
       stopLocalUpdateCount: 0,
       edgeUpdateCount: 0,
@@ -965,14 +967,14 @@ describe("BrainWorker observation reward cutover", () => {
           sourceNodeId: "__START__",
           targetNodeId: "node_human",
           previousWeight: 0.2,
-          contributionCount: 1,
+          contributionCount: 2,
         }),
       ],
     });
     expect(humanEpisodeUpdate?.baselineAfter).toBeCloseTo(-0.05, 10);
     expect(humanEpisodeUpdate?.advantage).toBeCloseTo(-0.5, 10);
-    expect(humanEpisodeUpdate?.routeUpdates[0]?.delta).toBeCloseTo(-0.002, 10);
-    expect(humanEpisodeUpdate?.routeUpdates[0]?.nextWeight).toBeCloseTo(0.198, 10);
+    expect(humanEpisodeUpdate?.routeUpdates[0]?.delta).toBeCloseTo(-0.004, 10);
+    expect(humanEpisodeUpdate?.routeUpdates[0]?.nextWeight).toBeCloseTo(0.196, 10);
     expect(humanEpisodeUpdate?.routeUpdates[0]?.contributions[0]).toMatchObject({
       updateKey: "seed→node_human",
       sourceNodeId: "__START__",
@@ -982,6 +984,7 @@ describe("BrainWorker observation reward cutover", () => {
       chosenActionProbability: 0.6,
     });
     expect(humanEpisodeUpdate?.routeUpdates[0]?.contributions[0]?.delta).toBeCloseTo(-0.002, 10);
+    expect(humanEpisodeUpdate?.routeUpdates[0]?.contributions[1]?.delta).toBeCloseTo(-0.002, 10);
 
     expect(teacherEpisodeUpdate).toMatchObject({
       episodeId: "ep_teacher_pg",
@@ -992,6 +995,7 @@ describe("BrainWorker observation reward cutover", () => {
       feedbackRichness: "sparse",
       updateReason: "teacher teacher_review 0.60 (confidence 0.65, exact_decision_id attribution, sparse) updated 1 route weight(s)",
       routeUpdateCount: 1,
+      teacherActionUpdateCount: 1,
       seedUpdateCount: 1,
       stopLocalUpdateCount: 0,
       edgeUpdateCount: 0,
@@ -1019,15 +1023,15 @@ describe("BrainWorker observation reward cutover", () => {
           sourceNodeId: "__START__",
           targetNodeId: "node_teacher",
           previousWeight: 0.1,
-          contributionCount: 1,
+          contributionCount: 2,
         }),
       ],
     });
     expect(teacherEpisodeUpdate?.baselineBefore).toBeCloseTo(-0.05, 10);
     expect(teacherEpisodeUpdate?.baselineAfter).toBeCloseTo(0.015, 10);
     expect(teacherEpisodeUpdate?.advantage).toBeCloseTo(0.65, 10);
-    expect(teacherEpisodeUpdate?.routeUpdates[0]?.delta).toBeCloseTo(0.00195, 10);
-    expect(teacherEpisodeUpdate?.routeUpdates[0]?.nextWeight).toBeCloseTo(0.10195, 10);
+    expect(teacherEpisodeUpdate?.routeUpdates[0]?.delta).toBeCloseTo(0.00312, 10);
+    expect(teacherEpisodeUpdate?.routeUpdates[0]?.nextWeight).toBeCloseTo(0.10312, 10);
     expect(teacherEpisodeUpdate?.routeUpdates[0]?.contributions[0]).toMatchObject({
       updateKey: "seed→node_teacher",
       sourceNodeId: "__START__",
@@ -1037,6 +1041,7 @@ describe("BrainWorker observation reward cutover", () => {
       chosenActionProbability: 0.7,
     });
     expect(teacherEpisodeUpdate?.routeUpdates[0]?.contributions[0]?.delta).toBeCloseTo(0.00195, 10);
+    expect(teacherEpisodeUpdate?.routeUpdates[0]?.contributions[1]?.delta).toBeCloseTo(0.00117, 10);
   });
 });
 
