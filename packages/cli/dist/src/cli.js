@@ -8,6 +8,7 @@ const __dirname = path.dirname(__filename);
 import { DEFAULT_OLLAMA_EMBEDDING_MODEL, createOllamaEmbedder } from "@openclawbrain/compiler";
 import { describeManagedLearnerServiceRuntimeGuard, ensureManagedLearnerServiceForActivationRoot, inspectManagedLearnerService, removeManagedLearnerServiceForActivationRoot, parseDaemonArgs, runDaemonCommand } from "./daemon.js";
 import { exportBrain, exportGraphifyCompiledArtifactsPack, exportGraphifyProjection, exportGraphifySourceBundle, importBrain } from "./import-export.js";
+import { parseGraphifyImportSliceCliArgs, runGraphifyImportSlice } from "./graphify-import-slice.js";
 import { runManagedGraphifyRunner } from "./graphify-runner.js";
 import { parseGraphifyDeterministicLintCliArgs, runGraphifyDeterministicLints } from "./graphify-lints.js";
 import { buildNormalizedEventExport } from "@openclawbrain/contracts";
@@ -562,6 +563,7 @@ function operatorCliHelp() {
         "  openclawbrain graphify-export --activation-root <path> [options]",
         "  openclawbrain graphify-run --source-bundle <path> [--output-root <path>] [options]",
         "  openclawbrain graphify-compiled-artifacts [--bundle-id <id>] [--output-dir <path>] [options]",
+        "  openclawbrain graphify-import-slice --bundle-root <path> [--output-root <path>] [options]",
         "  openclawbrain graphify-lints --bundle-root <path> [--repo-root <path>] [--workspace-root <path>] [--output-root <path>] [--run-id <id>] [--json]",
         proofHelp.usage,
         "  openclawbrain source-bundle --openclaw-home <path> --output-dir <path> [options]",
@@ -620,6 +622,11 @@ function operatorCliHelp() {
         "  --graph-hash <hash>        Graph hash recorded in graphify-compiled-artifacts provenance.",
         "  --config-hash <hash>       Config hash recorded in graphify-compiled-artifacts provenance.",
         "  --labels-hash <hash>       Labels hash recorded in graphify-compiled-artifacts provenance.",
+        "  --bundle-root <path>        Graphify compiled-artifact pack root for graphify-import-slice; graphify-lints also reuses this for bundle inspection.",
+        "  --output-root <path>         Root directory for graphify-import-slice bundles (default: ./artifacts/graphify-imports).",
+        "  --run-id <id>               Run identifier for graphify-import-slice bundle subdirectory (default: timestamp token).",
+        "  --repo-root <path>          Repository root for graphify-import-slice source-reference checks.",
+        "  --workspace-root <path>     Workspace root used to source relative paths for graphify-import-slice.",
         "  --bundle-root <path>        Graphify pre-lint bundle root for graphify-lints.",
         "  --repo-root <path>          Repository root for graphify-lints source-reference checks.",
         "  --workspace-root <path>     Workspace root for graphify-lints release/docs checks.",
@@ -653,6 +660,7 @@ function operatorCliHelp() {
         "  graphify-export  project the canonical machine export into non-authoritative Graphify surfaces",
         "  graphify-run  run the managed off-path Graphify compiler step and emit a reproducible run bundle",
         "  graphify-compiled-artifacts derive a Graphify-shaped compiled-artifact pack from docs/fixture source truth",
+        "  graphify-import-slice conservatively slice EXTRACTED-only Graphify priors from a compiled-artifact pack",
         "  graphify-lints deterministic pre-lint for Graphify/OCB bundles before any semantic lint or graph mutation",
         proofHelp.advanced,
         "  status --teacher-snapshot keeps the current live-first / principal-priority / passive-backfill learner order visible when that snapshot exists",
@@ -671,6 +679,7 @@ function operatorCliHelp() {
         "  graphify-export: 0 on successful projection bundle capture, 1 on input/read failure.",
         "  graphify-run: 0 on successful managed Graphify bundle capture, 1 on input/read failure.",
         "  graphify-compiled-artifacts: 0 on successful pack capture, 1 on input/read failure.",
+        "  graphify-import-slice: 0 on successful EXTRACTED-only slice capture, 1 on input/read failure.",
         "  graphify-lints: 0 on successful pre-lint capture, 1 on input/read failure.",
         "  proof: 0 on successful bundle capture, 1 on input/read failure.",
         "  source-bundle: 0 on successful canonical source export, 1 on input/read failure."
@@ -2502,7 +2511,7 @@ export function parseOperatorCliArgs(argv) {
         args.shift();
         return parseDaemonArgs(args);
     }
-    if (args[0] === "status" || args[0] === "rollback" || args[0] === "scan" || args[0] === "attach" || args[0] === "install" || args[0] === "detach" || args[0] === "uninstall" || args[0] === "context" || args[0] === "history" || args[0] === "learn" || args[0] === "watch" || args[0] === "export" || args[0] === "import" || args[0] === "reset" || args[0] === "proof" || args[0] === "source-bundle" || args[0] === "graphify-export" || args[0] === "graphify-run" || args[0] === "graphify-compiled-artifacts" || args[0] === "graphify-lints") {
+    if (args[0] === "status" || args[0] === "rollback" || args[0] === "scan" || args[0] === "attach" || args[0] === "install" || args[0] === "detach" || args[0] === "uninstall" || args[0] === "context" || args[0] === "history" || args[0] === "learn" || args[0] === "watch" || args[0] === "export" || args[0] === "import" || args[0] === "reset" || args[0] === "proof" || args[0] === "source-bundle" || args[0] === "graphify-export" || args[0] === "graphify-run" || args[0] === "graphify-compiled-artifacts" || args[0] === "graphify-import-slice" || args[0] === "graphify-lints") {
         command = args.shift();
     }
     if (command === "proof") {
@@ -3000,6 +3009,9 @@ export function parseOperatorCliArgs(argv) {
             json,
             help,
         };
+    }
+    if (command === "graphify-import-slice") {
+        return parseGraphifyImportSliceCliArgs(args);
     }
     if (command === "graphify-lints") {
         return parseGraphifyDeterministicLintCliArgs(args);
@@ -7290,6 +7302,29 @@ export function runOperatorCli(argv = process.argv.slice(2)) {
         }
         else {
             console.error(`GRAPHIFY COMPILED ARTIFACTS failed: ${result.error}`);
+        }
+        return result.ok ? 0 : 1;
+    }
+    if (parsed.command === "graphify-import-slice") {
+        if (parsed.help) {
+            console.log(operatorCliHelp());
+            return 0;
+        }
+        const result = runGraphifyImportSlice({
+            bundleRoot: parsed.bundleRoot,
+            repoRoot: parsed.repoRoot,
+            workspaceRoot: parsed.workspaceRoot,
+            outputRoot: parsed.outputRoot ?? undefined,
+            runId: parsed.runId ?? undefined,
+        });
+        if (parsed.json) {
+            console.log(JSON.stringify(result, null, 2));
+        }
+        else if (result.ok) {
+            console.log(result.summary);
+        }
+        else {
+            console.error(`GRAPHIFY IMPORT SLICE failed: ${result.error}`);
         }
         return result.ok ? 0 : 1;
     }

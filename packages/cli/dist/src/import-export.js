@@ -15,6 +15,7 @@ import { resolveActivationRoot } from "./resolve-activation-root.js";
 import { inspectOpenClawBrainHookStatus } from "./openclaw-hook-truth.js";
 import { listOpenClawProfileRuntimeLoadProofs, resolveAttachmentRuntimeLoadProofsPath } from "./attachment-truth.js";
 import { buildGraphifyCompiledArtifactPack, writeGraphifyCompiledArtifactPack } from "./graphify-compiled-artifacts.js";
+import { buildGraphifyImportSlice, resolveGraphifyImportSliceOutputDir, writeGraphifyImportSliceBundle } from "./graphify-import-slice.js";
 
 function hashCanonicalJson(value) {
     return `sha256:${createHash("sha256").update(canonicalJson(value)).digest("hex")}`;
@@ -988,6 +989,53 @@ export function exportGraphifyCompiledArtifactsPack(options = {}) {
         return {
             ok: false,
             outputDir: path.resolve(options.outputDir ?? "."),
+            error: error instanceof Error ? error.message : String(error),
+        };
+    }
+}
+
+/**
+ * Build and write a conservative EXTRACTED-only Graphify import slice.
+ */
+export function exportGraphifyImportSlice(options = {}) {
+    try {
+        const bundle = buildGraphifyImportSlice(options);
+        const writeResult = writeGraphifyImportSliceBundle(bundle.outputDir, bundle);
+        return {
+            ok: true,
+            runId: bundle.runId,
+            sliceId: bundle.sliceId,
+            proposalId: bundle.proposalId,
+            rollbackKey: bundle.rollbackKey,
+            outputRoot: bundle.outputRoot,
+            outputDir: bundle.outputDir,
+            bundleRoot: bundle.bundleRoot,
+            repoRoot: bundle.repoRoot,
+            workspaceRoot: bundle.workspaceRoot,
+            sourceBundleId: bundle.sourceBundleId,
+            sourceBundleHash: bundle.sourceBundleHash,
+            sourceBundleKind: bundle.sourceBundleKind,
+            graphifyRunId: bundle.graphifyRunId,
+            graphifyVersion: bundle.graphifyVersion,
+            graphifyCommand: bundle.graphifyCommand,
+            counts: bundle.counts,
+            truthBoundary: bundle.truthBoundary,
+            importSlice: bundle.importSlice,
+            proposalEnvelope: bundle.proposalEnvelope,
+            replayGate: bundle.replayGate,
+            report: bundle.reportMarkdown,
+            paths: bundle.paths,
+            digest: bundle.digest,
+            writtenFiles: writeResult.writtenFiles,
+            fileCount: writeResult.fileCount,
+        };
+    }
+    catch (error) {
+        return {
+            ok: false,
+            outputRoot: path.resolve(options.outputRoot ?? path.join(process.cwd(), "artifacts", "graphify-imports")),
+            outputDir: resolveGraphifyImportSliceOutputDir(options),
+            bundleRoot: path.resolve(options.bundleRoot ?? options.bundleDir ?? options.bundlePath ?? "."),
             error: error instanceof Error ? error.message : String(error),
         };
     }
