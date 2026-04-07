@@ -660,7 +660,7 @@ function operatorCliHelp() {
         "  graphify-export  project the canonical machine export into non-authoritative Graphify surfaces",
         "  graphify-run  run the managed off-path Graphify compiler step and emit a reproducible run bundle",
         "  graphify-compiled-artifacts derive a Graphify-shaped compiled-artifact pack from docs/fixture source truth",
-        "  graphify-import-slice conservatively slice EXTRACTED-only Graphify priors from a compiled-artifact pack",
+        "  graphify-import-slice conservatively slice EXTRACTED-only Graphify priors into removable candidate-pack input material from a compiled-artifact pack",
         "  graphify-lints deterministic pre-lint for Graphify/OCB bundles before any semantic lint or graph mutation",
         proofHelp.advanced,
         "  status --teacher-snapshot keeps the current live-first / principal-priority / passive-backfill learner order visible when that snapshot exists",

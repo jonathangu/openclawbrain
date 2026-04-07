@@ -989,6 +989,7 @@ export function exportGraphifyCompiledArtifactsPack(options = {}) {
         return {
             ok: false,
             outputDir: path.resolve(options.outputDir ?? "."),
+            candidatePackInput: null,
             error: error instanceof Error ? error.message : String(error),
         };
     }
@@ -1020,6 +1021,7 @@ export function exportGraphifyImportSlice(options = {}) {
             graphifyCommand: bundle.graphifyCommand,
             counts: bundle.counts,
             truthBoundary: bundle.truthBoundary,
+            candidatePackInput: bundle.candidatePackInput,
             importSlice: bundle.importSlice,
             proposalEnvelope: bundle.proposalEnvelope,
             replayGate: bundle.replayGate,

@@ -43,6 +43,7 @@ test("graphify import slice keeps the truth boundary explicit and rollback-safe"
     assert.equal(result.ok, true);
 
     const slice = JSON.parse(readFileSync(result.paths.importSlice, "utf8"));
+    const candidatePackInput = JSON.parse(readFileSync(result.paths.candidatePackInput, "utf8"));
     const envelope = JSON.parse(readFileSync(result.paths.proposalEnvelope, "utf8"));
     const replayGate = JSON.parse(readFileSync(result.paths.replayGate, "utf8"));
 
@@ -50,6 +51,13 @@ test("graphify import slice keeps the truth boundary explicit and rollback-safe"
     assert.equal(slice.truthBoundary.rollbackSafe, true);
     assert.equal(slice.truthBoundary.removable, true);
     assert.equal(slice.truthBoundary.liveEligible, false);
+    assert.equal(candidatePackInput.seedingBoundary.removable, true);
+    assert.equal(candidatePackInput.seedingBoundary.rollbackSafe, true);
+    assert.equal(candidatePackInput.seedingBoundary.liveEligible, false);
+    assert.equal(candidatePackInput.seedingBoundary.currentTruthWrites, false);
+    assert.equal(candidatePackInput.seedingBoundary.correctionMemoryWrites, false);
+    assert.equal(candidatePackInput.seedingBoundary.hotPathDependency, false);
+    assert.equal(candidatePackInput.targetStateOnly, true);
     assert.deepEqual(slice.truthBoundary.blockedTrustClasses, ["INFERRED", "AMBIGUOUS"]);
     assert.deepEqual(replayGate.blockedTrustClasses, ["INFERRED", "AMBIGUOUS"]);
     assert.ok(replayGate.requirements.some((entry) => entry.id === "artifact-first"));

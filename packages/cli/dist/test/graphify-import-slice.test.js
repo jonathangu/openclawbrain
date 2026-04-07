@@ -48,7 +48,7 @@ test("graphify import slice writes a bounded EXTRACTED-only slice from a compile
     assert.equal(result.ok, true);
     assert.equal(result.runId, "import-slice-smoke");
     assert.equal(result.outputDir, path.join(outputRoot, "import-slice-smoke"));
-    assert.equal(result.fileCount, 4);
+    assert.equal(result.fileCount, 5);
     assert.ok(result.digest.bundleHash.startsWith("sha256:"));
     assert.equal(result.counts.hubPriors, 2);
     assert.equal(result.counts.neighborhoodPriors, 1);
@@ -56,11 +56,26 @@ test("graphify import slice writes a bounded EXTRACTED-only slice from a compile
     assert.ok(result.counts.rationalePointers > 0);
 
     const slice = JSON.parse(readFileSync(result.paths.importSlice, "utf8"));
+    const candidatePackInput = JSON.parse(readFileSync(result.paths.candidatePackInput, "utf8"));
     const report = readFileSync(result.paths.importReport, "utf8");
     const envelope = JSON.parse(readFileSync(result.paths.proposalEnvelope, "utf8"));
     const replayGate = JSON.parse(readFileSync(result.paths.replayGate, "utf8"));
 
     assert.equal(slice.contract, "graphify_import_slice.v1");
+    assert.equal(candidatePackInput.contract, "graphify_import_slice_candidate_pack_input.v1");
+    assert.equal(candidatePackInput.targetStateOnly, true);
+    assert.equal(candidatePackInput.reviewMode, "candidate_only");
+    assert.equal(candidatePackInput.seedingBoundary.removable, true);
+    assert.equal(candidatePackInput.seedingBoundary.rollbackSafe, true);
+    assert.equal(candidatePackInput.seedingBoundary.liveEligible, false);
+    assert.equal(candidatePackInput.seedingBoundary.currentTruthWrites, false);
+    assert.equal(candidatePackInput.seedingBoundary.hotPathDependency, false);
+    assert.equal(candidatePackInput.importedPriors.hubPriors.length, 2);
+    assert.equal(candidatePackInput.importedPriors.neighborhoodPriors.length, 1);
+    assert.equal(candidatePackInput.importedPriors.evidencePointers.length, result.counts.evidencePointers);
+    assert.ok(candidatePackInput.importedPriors.hubPriors.every((prior) => prior.trustClass === "EXTRACTED"));
+    assert.ok(candidatePackInput.importedPriors.neighborhoodPriors.every((prior) => prior.trustClass === "EXTRACTED"));
+    assert.ok(candidatePackInput.importedPriors.evidencePointers.every((pointer) => pointer.trustClass === "EXTRACTED"));
     assert.equal(slice.truthBoundary.allowedTrustClasses.join(","), "EXTRACTED");
     assert.deepEqual(slice.truthBoundary.blockedTrustClasses, ["INFERRED", "AMBIGUOUS"]);
     assert.ok(slice.hubPriors.every((prior) => prior.trustClass === "EXTRACTED"));
@@ -130,6 +145,8 @@ test("graphify-import-slice parses and runs through the public CLI surface", (t)
     assert.equal(payload.runId, "cli-run");
     assert.equal(payload.counts.hubPriors, 2);
     assert.equal(payload.counts.neighborhoodPriors, 1);
+    assert.equal(payload.candidatePackInput.contract, "graphify_import_slice_candidate_pack_input.v1");
+    assert.ok(payload.paths.candidatePackInput.endsWith(path.join("cli-run", "candidate-pack-input.json")));
     assert.ok(payload.paths.importSlice.endsWith(path.join("cli-run", "import-slice.json")));
     assert.ok(payload.paths.replayGate.endsWith(path.join("cli-run", "replay-gate.json")));
 });

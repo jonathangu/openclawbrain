@@ -13,10 +13,12 @@ const defaultOutputRoot = path.join(defaultWorkspaceRoot, "artifacts", "graphify
 
 export const GRAPHIFY_IMPORT_SLICE_LAYOUT_V1 = {
     importSlice: "import-slice.json",
+    candidatePackInput: "candidate-pack-input.json",
     importReport: "import-report.md",
     proposalEnvelope: "proposal-envelope.json",
     replayGate: "replay-gate.json",
 };
+export const GRAPHIFY_IMPORT_SLICE_CANDIDATE_PACK_INPUT_CONTRACT_V1 = "graphify_import_slice_candidate_pack_input.v1";
 const TRUST_CLASS_EXTRACTED = "EXTRACTED";
 const BLOCKED_TRUST_CLASSES = ["INFERRED", "AMBIGUOUS"];
 const BLOCKED_EFFECTS = [
@@ -389,6 +391,72 @@ function buildReplayGate(input) {
         ],
     };
 }
+function buildCandidatePackInput(input) {
+    const importedPriors = {
+        hubPriors: input.hubPriors.map((prior) => ({ ...prior })),
+        neighborhoodPriors: input.neighborhoodPriors.map((prior) => ({ ...prior })),
+        evidencePointers: input.evidencePointers.map((pointer) => ({ ...pointer })),
+    };
+    return {
+        contract: GRAPHIFY_IMPORT_SLICE_CANDIDATE_PACK_INPUT_CONTRACT_V1,
+        inputId: `candidate-pack-input:${input.sliceId}`,
+        bundleId: `candidate-pack-input:${input.sliceId}`,
+        sliceId: input.sliceId,
+        proposalId: input.proposalId,
+        candidatePackId: `candidate-pack:${input.sliceId}`,
+        sourceBundleId: input.sourceBundleId,
+        sourceBundleHash: input.sourceBundleHash,
+        sourceBundleKind: input.sourceBundleKind,
+        generatedAt: input.generatedAt,
+        updatedAt: input.generatedAt,
+        reviewMode: "candidate_only",
+        targetStateOnly: true,
+        truthBoundary: input.truthBoundary,
+        seedingBoundary: {
+            liveEligible: false,
+            currentTruthWrites: false,
+            correctionMemoryWrites: false,
+            hotPathDependency: false,
+            removable: true,
+            rollbackSafe: true,
+        },
+        provenance: {
+            producer: "graphify-import-slice",
+            producerVersion: input.graphifyVersion,
+            producerRunId: input.graphifyRunId,
+            graphifyCommand: input.graphifyCommand,
+            scope: "graphify/import-slice/candidate-pack-input",
+            idempotencyKey: sha256Text(stableJson({
+                sliceId: input.sliceId,
+                proposalId: input.proposalId,
+                sourceBundleId: input.sourceBundleId,
+                sourceBundleHash: input.sourceBundleHash,
+                sourceBundleKind: input.sourceBundleKind,
+                graphifyRunId: input.graphifyRunId,
+                graphifyVersion: input.graphifyVersion,
+            })),
+            sourceRoots: Array.isArray(input.sourceBundle.sourceDocs)
+                ? input.sourceBundle.sourceDocs.filter((value) => typeof value === "string")
+                : [],
+            transformChain: [
+                "extract",
+                "candidate_pack_seed",
+                "rollback_bound",
+            ],
+        },
+        importedPriors,
+        counts: {
+            hubPriors: input.hubPriorCount,
+            neighborhoodPriors: input.neighborhoodPriorCount,
+            evidencePointers: input.evidencePointerCount,
+        },
+        notes: [
+            "This candidate-pack input is derived from EXTRACTED-only Graphify priors.",
+            "It is rollback-bound, removable, and never hot-path eligible.",
+            "It seeds later candidate compilation inputs without writing current truth or correction memory.",
+        ],
+    };
+}
 function buildProposalEnvelope(input, sourceBundle) {
     const promptHash = sha256Text(stableJson({
         sliceId: input.sliceId,
@@ -557,6 +625,26 @@ function buildImportReportMarkdown(input) {
         `Evidence pointers: ${input.evidencePointerCount}`,
         `Rationale pointers: ${input.rationalePointerCount}`,
         "",
+        "## Candidate pack input",
+        "",
+        `- candidate pack id: \`${input.candidatePackInput.candidatePackId}\``,
+        `- candidate input id: \`${input.candidatePackInput.inputId}\``,
+        `- target-state only: \`${input.candidatePackInput.targetStateOnly}\``,
+        `- removable: \`${input.candidatePackInput.seedingBoundary.removable}\``,
+        `- rollback safe: \`${input.candidatePackInput.seedingBoundary.rollbackSafe}\``,
+        `- live eligible: \`${input.candidatePackInput.seedingBoundary.liveEligible}\``,
+        `- current truth writes: \`${input.candidatePackInput.seedingBoundary.currentTruthWrites}\``,
+        `- hot-path dependency: \`${input.candidatePackInput.seedingBoundary.hotPathDependency}\``,
+        `- correction memory writes: \`${input.candidatePackInput.seedingBoundary.correctionMemoryWrites}\``,
+        `- source bundle: \`${sourceBundle.packId}\` / \`${input.sourceBundleHash}\``,
+        "",
+        "### Imported prior material",
+        "",
+        `- hub priors: ${input.candidatePackInput.counts.hubPriors}`,
+        `- neighborhood priors: ${input.candidatePackInput.counts.neighborhoodPriors}`,
+        `- evidence pointers: ${input.candidatePackInput.counts.evidencePointers}`,
+        `- candidate input path: \`${input.candidatePackInputPath}\``,
+        "",
         "### Hub priors",
         ...hubLines,
         "",
@@ -626,6 +714,25 @@ export function buildGraphifyImportSlice(options = {}) {
         sourceArtifacts: sourceBundleArtifacts.length,
     };
     const truthBoundary = buildTruthBoundary({ contractId: sourceBundleKind });
+    const candidatePackInput = buildCandidatePackInput({
+        sliceId,
+        proposalId,
+        sourceBundleId,
+        sourceBundleHash,
+        sourceBundleKind,
+        generatedAt,
+        graphifyRunId: sourceBundle.graphifyRun?.runId ?? null,
+        graphifyVersion: sourceBundle.graphifyRun?.graphifyVersion ?? null,
+        graphifyCommand: sourceBundle.graphifyRun?.graphifyCommand ?? null,
+        truthBoundary,
+        hubPriors,
+        neighborhoodPriors,
+        evidencePointers,
+        hubPriorCount: counts.hubPriors,
+        neighborhoodPriorCount: counts.neighborhoodPriors,
+        evidencePointerCount: counts.evidencePointers,
+        sourceBundle,
+    });
     const importSlice = {
         contract: "graphify_import_slice.v1",
         sliceId,
@@ -688,10 +795,13 @@ export function buildGraphifyImportSlice(options = {}) {
         neighborhoodPriorCount: counts.neighborhoodPriors,
         evidencePointerCount: counts.evidencePointers,
         rationalePointerCount: counts.rationalePointers,
+        candidatePackInput,
+        candidatePackInputPath: relativeWorkspacePath(path.join(outputDir, GRAPHIFY_IMPORT_SLICE_LAYOUT_V1.candidatePackInput), workspaceRoot),
         replayGate,
     });
     const files = {
         [GRAPHIFY_IMPORT_SLICE_LAYOUT_V1.importSlice]: stableJson(importSlice),
+        [GRAPHIFY_IMPORT_SLICE_LAYOUT_V1.candidatePackInput]: stableJson(candidatePackInput),
         [GRAPHIFY_IMPORT_SLICE_LAYOUT_V1.importReport]: reportMarkdown,
         [GRAPHIFY_IMPORT_SLICE_LAYOUT_V1.proposalEnvelope]: stableJson(proposalEnvelope),
         [GRAPHIFY_IMPORT_SLICE_LAYOUT_V1.replayGate]: stableJson(replayGate),
@@ -703,6 +813,7 @@ export function buildGraphifyImportSlice(options = {}) {
     };
     const paths = {
         importSlice: path.join(outputDir, GRAPHIFY_IMPORT_SLICE_LAYOUT_V1.importSlice),
+        candidatePackInput: path.join(outputDir, GRAPHIFY_IMPORT_SLICE_LAYOUT_V1.candidatePackInput),
         importReport: path.join(outputDir, GRAPHIFY_IMPORT_SLICE_LAYOUT_V1.importReport),
         proposalEnvelope: path.join(outputDir, GRAPHIFY_IMPORT_SLICE_LAYOUT_V1.proposalEnvelope),
         replayGate: path.join(outputDir, GRAPHIFY_IMPORT_SLICE_LAYOUT_V1.replayGate),
@@ -726,6 +837,7 @@ export function buildGraphifyImportSlice(options = {}) {
         graphifyCommand: sourceBundle.graphifyRun?.graphifyCommand ?? null,
         counts,
         truthBoundary,
+        candidatePackInput,
         importSlice,
         proposalEnvelope,
         replayGate,
@@ -776,6 +888,7 @@ export function exportGraphifyImportSlice(options = {}) {
             graphifyCommand: bundle.graphifyCommand,
             counts: bundle.counts,
             truthBoundary: bundle.truthBoundary,
+            candidatePackInput: bundle.candidatePackInput,
             importSlice: bundle.importSlice,
             proposalEnvelope: bundle.proposalEnvelope,
             replayGate: bundle.replayGate,
@@ -794,6 +907,7 @@ export function exportGraphifyImportSlice(options = {}) {
             outputRoot,
             outputDir: runId === null ? outputRoot : path.join(outputRoot, runId),
             bundleRoot: path.resolve(options.bundleRoot ?? options.bundleDir ?? options.bundlePath ?? "."),
+            candidatePackInput: null,
             error: error instanceof Error ? error.message : String(error),
         };
     }
@@ -809,9 +923,10 @@ function formatGraphifyImportSliceSummary(result) {
         `  Source pack: ${result.sourceBundleId}`,
         `  Source hash: ${result.sourceBundleHash}`,
         `  Hub priors:  ${result.counts.hubPriors}`,
-        `  Neighborhoods:${result.counts.neighborhoodPriors}`,
+        `  Neighborhoods: ${result.counts.neighborhoodPriors}`,
         `  Evidence:    ${result.counts.evidencePointers}`,
         `  Rationale:   ${result.counts.rationalePointers}`,
+        `  Candidate input: ${result.paths.candidatePackInput}`,
         `  Output root: ${result.outputRoot}`,
         `  Output dir:  ${result.outputDir}`,
         `  Import:      ${result.paths.importSlice}`,
@@ -906,6 +1021,7 @@ export function runGraphifyImportSlice(argvOrOptions = {}) {
             ok: true,
             help: true,
             summary: "",
+            candidatePackInput: null,
             importSlice: null,
             proposalEnvelope: null,
             replayGate: null,
@@ -934,6 +1050,7 @@ export function runGraphifyImportSlice(argvOrOptions = {}) {
             ok: false,
             help: false,
             summary: "",
+            candidatePackInput: null,
             importSlice: null,
             proposalEnvelope: null,
             replayGate: null,
@@ -955,6 +1072,7 @@ export function runGraphifyImportSlice(argvOrOptions = {}) {
         ok: true,
         help: false,
         summary: formatGraphifyImportSliceSummary(result),
+        candidatePackInput: result.candidatePackInput,
         importSlice: result.importSlice,
         proposalEnvelope: result.proposalEnvelope,
         replayGate: result.replayGate,
