@@ -1762,5 +1762,6 @@ export * from "./cold-start-source-intake.js";
 export * from "./cold-start-data-compiler.js";
 export * from "./cold-start-router-replay-gate.js";
 export * from "./cold-start-router-approved-export-loader.js";
+export * from "./cold-start-router-periodic-retrain.js";
 export * from "./cold-start-qa-export-candidate.js";
 export * from "./cold-start-repo-export-candidate.js";
