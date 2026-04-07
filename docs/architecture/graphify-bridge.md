@@ -240,5 +240,22 @@ This bridge should stay aligned with the existing docs contract surfaces:
 - [Fail-open design](fail-open.md)
 - [Corrections](corrections.md)
 - [Teacher v3 proposal reporting / proof surfaces](teacher-v3-proof.md)
+- [Graphify training-review bridge](graphify-training-bridge.md)
 
 The key boundary is unchanged: Graphify can help produce derived structure, but current truth still comes from runtime, proof, docs, and explicit corrections.
+
+## 10) Training-review bridge
+
+The Graphify-to-training bridge is a separate review surface.
+
+It may attach EXTRACTED neighborhood context to a canonical route row or to a compatible training-row input, and it may carry review-only hard-negative support notes and provenance-gap hints.
+
+Rules:
+
+- keep the route row canonical
+- keep explicit corrections above Graphify
+- keep provenance-gap hints review-only
+- do not promote INFERRED or AMBIGUOUS context into live-eligible import
+- preserve a bounded review boundary so the bridge remains inspectable
+
+The bridge is useful when it turns Graphify output into bounded reviewable training value without pretending that Graphify is current truth.
