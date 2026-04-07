@@ -6,7 +6,7 @@ OpenClawBrain is a memory layer for [OpenClaw](https://github.com/anthropics/ope
 
 The mechanism: a background pipeline watches agent interactions, binds feedback to past decisions, and builds compact memory packs. Only promoted packs reach the live path. The agent gets continuity without unbounded context growth, and latency stays predictable because the hot path never calls a live LLM. If the memory layer goes down, the agent keeps running.
 
-Current version: **0.4.36** · [Changelog](CHANGELOG.md) · [Claims boundary](CLAIMS.md)
+Current version: **0.4.37** · [Changelog](CHANGELOG.md) · [Claims boundary](CLAIMS.md)
 
 ## Install
 
@@ -76,7 +76,7 @@ If you want the deeper version — graph traversal, route selection, labels, asy
 
 ## The new Graphify bridge
 
-OpenClawBrain `0.4.36` ships a real Graphify bridge.
+OpenClawBrain ships a real Graphify bridge.
 
 The important boundary is simple:
 
@@ -113,6 +113,20 @@ So the honest product story is:
 > Graphify makes OpenClawBrain better as an **offline graph compiler and maintenance lens**, while the live runtime still serves promoted OpenClawBrain packs.
 
 If you want the focused explanation, read **[docs/graphify.md](docs/graphify.md)**.
+
+## Continuous learning is now part of the shipped product
+
+OpenClawBrain `0.4.37` ships the first bounded continuous-learning loop on top of the existing memory and Graphify foundations.
+
+What is now part of the public product:
+
+- route rows that connect traced decisions to reviewable training data
+- direct online supervision updates inside the same-family live `route_fn`
+- Graphify delta/reorg scheduler registry that stays off the live serve path but makes the background loop inspectable
+- periodic same-family retrain with replay-gated promotion
+- operator status/control surfaces for Graphify cadence, retrain state, queue visibility, and pause controls
+
+The install lane does **not** change. The same four commands still install, restart, status-check, and prove the system. What changed is that the ongoing improvement loop and its operator surfaces are now a shipped part of the product instead of only repo substrate.
 
 ## Scope
 

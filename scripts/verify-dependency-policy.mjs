@@ -70,6 +70,14 @@ function isTransientSpec(spec) {
   return TRANSIENT_SPEC_RE.test(spec.trim()) || PATH_SPEC_RE.test(spec.trim());
 }
 
+function isAllowedRepoInternalFileSpec({ manifestPath, manifest, section, name, spec }) {
+  return manifestPath === "package.json"
+    && manifest?.name === "@jonathangu/openclawbrain"
+    && section === "dependencies"
+    && name.startsWith("@openclawbrain/")
+    && /^file:packages\//.test(spec);
+}
+
 function inspectDependencyRecord({ manifestPath, manifest, section, exactRequired, blockers }) {
   const record = manifest?.[section];
   if (!record || typeof record !== "object" || Array.isArray(record)) {
@@ -91,6 +99,9 @@ function inspectDependencyRecord({ manifestPath, manifest, section, exactRequire
 
     const spec = rawSpec.trim();
     if (isTransientSpec(spec)) {
+      if (isAllowedRepoInternalFileSpec({ manifestPath, manifest, section, name, spec })) {
+        continue;
+      }
       blockers.push({
         code: "transient_dependency_spec",
         manifestPath,

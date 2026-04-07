@@ -74,6 +74,32 @@ describe("verifyDependencyPolicy", () => {
     expect(result.blockers).toEqual([]);
   });
 
+  it("allows repo-local internal file dependencies in the retired root compatibility package", () => {
+    const repoRoot = makeTempRepo();
+    writePublishableScaffold(repoRoot);
+    writeJson(repoRoot, "package.json", {
+      name: "@jonathangu/openclawbrain",
+      version: "0.3.8",
+      dependencies: {
+        "@openclawbrain/compiler": "file:packages/compiler",
+        "@openclawbrain/contracts": "file:packages/contracts",
+        "@openclawbrain/event-export": "file:packages/event-export",
+        "@mariozechner/pi-agent-core": "0.53.0",
+        "@mariozechner/pi-ai": "0.53.0",
+        "@sinclair/typebox": "0.34.48",
+        tsx: "4.21.0",
+      },
+      peerDependencies: {
+        openclaw: "*",
+      },
+    });
+
+    const result = verifyDependencyPolicy({ repoRoot });
+
+    expect(result.ok).toBe(true);
+    expect(result.blockers).toEqual([]);
+  });
+
   it("fails when publishable dependency specs are loose or transient", () => {
     const repoRoot = makeTempRepo();
     writePublishableScaffold(repoRoot);

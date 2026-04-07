@@ -4,6 +4,26 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.37
+
+`0.4.37` is the continuous ongoing learning release: the first bounded ongoing-learning loop, its operator controls, and the final replay/eval verification hardening now ship as one public release.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.37`
+- `@openclawbrain/cli@0.4.37`
+
+**Changes**
+
+- ships the first bounded continuous-learning loop: route rows, direct online supervision, Graphify delta/reorg scheduler registry, and periodic same-family retrain
+- adds operator-facing continuous-learning status/control surfaces for Graphify cadence, retrain/promotion visibility, queue visibility, and pause controls
+- hardens the release path so repo-wide `tsc` passes and the recorded-session replay/eval acceptance bundle is green on the shipped path
+- aligns repo docs, release notes, public site, and Jon badge to `0.4.37`
+
+**Full release note**
+
+- [docs/release-notes-0.4.37.md](docs/release-notes-0.4.37.md)
+
 ## 0.4.36
 
 `0.4.36` is the Graphify + hardening follow-up release: Graphify stays off-path, exact pinning stays locked, and the release truth now reflects the final follow-up publish.
