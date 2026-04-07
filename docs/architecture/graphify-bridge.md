@@ -240,6 +240,7 @@ This bridge should stay aligned with the existing docs contract surfaces:
 - [Fail-open design](fail-open.md)
 - [Corrections](corrections.md)
 - [Teacher v3 proposal reporting / proof surfaces](teacher-v3-proof.md)
+- [Graphify scheduler / registry](graphify-scheduler.md)
 - [Graphify training-review bridge](graphify-training-bridge.md)
 
 The key boundary is unchanged: Graphify can help produce derived structure, but current truth still comes from runtime, proof, docs, and explicit corrections.

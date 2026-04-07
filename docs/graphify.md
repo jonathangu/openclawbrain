@@ -27,6 +27,26 @@ The shipped Graphify lane includes:
 - maintenance diff lane
 - final replay / eval proof lane
 
+## What the scheduler tranche adds
+
+The next off-path Graphify tranche is the scheduler / registry layer.
+
+It adds:
+
+- a delta cadence entrypoint for recent material
+- a reorg cadence entrypoint for older / broader material
+- a persistent run registry linked to downstream artifacts
+- a retention rule surface for source bundles, import slices, candidate-pack inputs, and lint / diff outputs
+
+The operator-facing entrypoints are:
+
+```bash
+npm run graphify:delta-cadence
+npm run graphify:reorg-cadence
+```
+
+The registry lives under `artifacts/graphify-scheduler/registry.json`, and each cadence run carries its own retention policy file alongside the run-root summary. The rule surface is documented in `docs/architecture/graphify-scheduler.md`.
+
 ## What we proved
 
 The final proof packet showed:
