@@ -589,7 +589,7 @@ async function main(): Promise<void> {
       commandPromote();
       return;
     case "rollback":
-      commandRollback(arg);
+      commandRollback(arg1);
       return;
     case "disable":
       commandDisable();

@@ -27,6 +27,38 @@ export interface ContinuousLearningOperatorStatusParams {
   now?: number;
 }
 
+export interface ContinuousLearningOperatorStatusV1 {
+  contract: "continuous_learning_operator_status.v1";
+  observedAt: string;
+  workspaceRoot: string | null;
+  controlRoot: string | null;
+  controls: {
+    graphifyImport: ContinuousLearningControlStateV1 | null;
+    retrain: ContinuousLearningControlStateV1 | null;
+    graphifyImportPaused: boolean | null;
+    retrainPaused: boolean | null;
+  };
+  graphify: {
+    registryPath: string | null;
+    delta: JsonRecord | null;
+    reorg: JsonRecord | null;
+    runCount: number | null;
+  };
+  retrain: {
+    reportDir: string | null;
+    lastRetrain: JsonRecord | null;
+    lastPromotionReason: string | null;
+    lastPromotionVerdict: JsonRecord | null;
+    rowsAddedSinceLastRetrain: number | null;
+  };
+  queueVisibility: JsonRecord;
+  operatorSummary: {
+    improved: string[];
+    diagnosticOnly: string[];
+    summary: string;
+  };
+}
+
 function normalizeString(value: unknown): string | null {
   if (typeof value !== "string") {
     return null;
@@ -268,6 +300,7 @@ function summarizeQueueVisibility(params: {
   const teacherQueue = params.store?.getTeacherQueueSummary?.(teacherReadyBefore, 20) ?? null;
   const mutationBacklog = params.store?.countMutationsByStatus?.() ?? null;
   const graphifyRegistryRunCount = normalizeNumber(params.graphifyDelta?.registryRunCount) ?? normalizeNumber(params.graphifyReorg?.registryRunCount) ?? null;
+  const retrainPromotionPackage = isRecord(params.retrain?.promotionPackage) ? params.retrain.promotionPackage : null;
   return {
     teacherQueue,
     mutationBacklog,
@@ -276,13 +309,13 @@ function summarizeQueueVisibility(params: {
     graphifyReorgRunId: normalizeString(params.graphifyReorg?.runId),
     retrainStatus: params.retrain?.status ?? null,
     retrainGatePassed: typeof params.retrain?.gatePassed === "boolean" ? params.retrain.gatePassed : null,
-    retrainDecision: normalizeString(params.retrain?.promotionDecision ?? params.retrain?.promotionPackage?.decision),
+    retrainDecision: normalizeString(params.retrain?.promotionDecision ?? retrainPromotionPackage?.decision),
   };
 }
 
 export function buildContinuousLearningOperatorStatus(
   params: ContinuousLearningOperatorStatusParams,
-): JsonRecord {
+): ContinuousLearningOperatorStatusV1 {
   const workspaceRoot = normalizeString(params.workspaceRoot ?? process.env.OPENCLAWBRAIN_WORKSPACE_ROOT ?? null);
   const controlRoot = normalizeString(params.controlRoot ?? (workspaceRoot ? continuousLearningControlDir(workspaceRoot) : null));
   const now = params.now ?? Date.now();
@@ -292,11 +325,13 @@ export function buildContinuousLearningOperatorStatus(
   const graphifyImportControl = readContinuousLearningControl(workspaceRoot, "graphify-import");
   const retrainControl = readContinuousLearningControl(workspaceRoot, "retrain");
   const rowsAddedSinceLastRetrain = readContinuousLearningRowsAddedSinceLastRetrain(params.store, retrainStatus);
+  const retrainPromotionPackage = isRecord(retrainStatus?.promotionPackage) ? retrainStatus.promotionPackage : null;
+  const storedPromotionVerdict = params.store?.getTrainingStateJson<JsonRecord>("last_promotion_verdict_json") ?? null;
   const lastPromotionReason = normalizeString(params.store?.getTrainingState("last_promotion_reason") ?? null)
-    ?? normalizeString(retrainStatus?.promotionPackage?.summary)
+    ?? normalizeString(retrainPromotionPackage?.summary)
     ?? null;
-  const lastPromotionVerdict = params.store?.getTrainingStateJson("last_promotion_verdict_json")
-    ?? retrainStatus?.promotionPackage
+  const lastPromotionVerdict = storedPromotionVerdict
+    ?? retrainPromotionPackage
     ?? null;
 
   const improved = [
