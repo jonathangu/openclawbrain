@@ -96,7 +96,7 @@ describe("summarizeTeacherLoopTruth", () => {
 
 describe("summarizeAttributionTruth", () => {
   it("marks attribution truth missing when neither evaluation nor queue surfaces are present", () => {
-    expect(summarizeAttributionTruth()).toEqual({
+    expect(summarizeAttributionTruth({})).toEqual({
       contract: "openclawbrain_attribution_truth.v1",
       visible: false,
       primaryState: "missing",

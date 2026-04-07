@@ -1,4 +1,4 @@
-declare module "../scripts/proof-cron.mjs" {
+declare module "*.mjs" {
   export const PROOF_CRON_MANIFEST_LAYOUT: any;
   export const buildHealthSnapshot: any;
   export const buildNightlyAggregate: any;
@@ -12,22 +12,43 @@ declare module "../scripts/proof-cron.mjs" {
   export const summarizeScan: any;
   export const writeHealthOutputs: any;
   export const writeNightlyOutputs: any;
-}
-
-declare module "../scripts/verify-proof-smoke.mjs" {
   export const DEFAULT_MAX_AGE_DAYS: any;
   export const REQUIRED_ASSERTION_KEYS: any;
   export const REQUIRED_PROOF_FILES: any;
   export const verifyProofSmoke: any;
-}
-
-declare module "../scripts/release-plan.mjs" {
+  export const runCli: any;
   export const buildReleasePlan: any;
   export const verifyReleasePlan: any;
-}
-
-declare module "../scripts/verify-release-docs-drift.mjs" {
   export const detectCurrentReleaseVersion: any;
-  export const runCli: any;
   export const verifyReleaseDocsDrift: any;
+  export const DEFAULT_OUTPUT_PARENT: any;
+  export const resolveOutputDir: any;
+  export const resolveTeacherV3ProofOutputDir: any;
+  export const GRAPHIFY_SCHEDULER_CADENCE_ORDER_V1: any;
+  export const GRAPHIFY_SCHEDULER_LAYOUT_V1: any;
+  export const writeGraphifySchedulerRun: any;
+  export const runGraphifySchedulerCli: any;
+  export const GRAPHIFY_FINAL_REPLAY_PROOF_MODE_ORDER_V1: any;
+  export const buildGraphifyFinalReplayProof: any;
+  export const writeGraphifyFinalReplayProof: any;
+  export const TEACHER_V3_PROOF_BUNDLE_LAYOUT: any;
+  export const TEACHER_V3_PROOF_BUNDLE_CONTRACT: any;
+  export const TEACHER_V3_PROOF_STATUS_CONTRACT: any;
+  export const TEACHER_V3_PROOF_SURFACE_MAP_CONTRACT: any;
+  export const TEACHER_V3_PROPOSAL_REPORT_CONTRACT: any;
+  export const TEACHER_V3_PROOF_VERDICT_CONTRACT: any;
+  export const DEFAULT_TEACHER_V3_PROOF_BUNDLE_PARENT: any;
+  export const resolveTeacherV3ProofOutputDir: any;
+  export const buildTeacherV3ProofBundle: any;
+  export const writeTeacherV3ProofBundle: any;
+  export const buildTeacherV3ProofBundleDigest: any;
+  export const buildTeacherV3ReplayOutcomeSummary: any;
+  export const captureTeacherV3ReplayOutcomes: any;
+  export const buildTeacherV3PromotableExamples: any;
+  export const writeTeacherV3PromotableExamples: any;
+  export const verifyDependencyPolicy: any;
+  export const summarizeTeacherLoopTruth: any;
+  export const summarizeOperatorHealth: any;
+  export const isOperatorHealthSummary: any;
+  export const OPERATOR_HEALTH_CONTRACT: any;
 }

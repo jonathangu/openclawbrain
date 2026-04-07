@@ -477,8 +477,16 @@ export interface TeacherLintReplaySummaryV1 {
 }
 
 export interface TeacherShadowReplaySummaryV1 {
-  kind: Exclude<ProposalClass, "compiler" | "lint">;
+  proposalId: string;
+  proposalClass: Exclude<ProposalClass, "compiler" | "lint">;
   reviewMode: TeacherProposalReplayGateReviewModeV1;
+  shadowOnly: true;
+  promotionBypass: false;
+  rollbackKey: string;
+  applied: boolean;
+  reversible: boolean;
+  replayOutcome: "idle" | "applied" | "blocked" | "mixed";
+  kind: Exclude<ProposalClass, "compiler" | "lint">;
   promotionDiscipline: "shadow_only";
   subjectCount: number;
   evidenceCount: number;
@@ -487,6 +495,13 @@ export interface TeacherShadowReplaySummaryV1 {
   candidatePackVersion: number | null;
   candidatePackId: string | null;
   candidateGraphHash: string | null;
+  rollback: {
+    strategy: string;
+    restored: boolean;
+    before: Record<string, unknown>;
+    after: Record<string, unknown>;
+    summary: string;
+  };
   summary: string;
   notes: string[];
 }
@@ -638,7 +653,7 @@ function normalizeTeacherProposalReplaySuiteIdsV1(proposal: TeacherProposalV1): 
 }
 
 function normalizeTeacherProposalLifecycleStateV1(proposal: TeacherProposalV1): TeacherProposalLifecycleStateV1 {
-  return proposal.lifecycleState ?? TEACHER_PROPOSAL_LIFECYCLE_STATE_BY_STATUS_V1[proposal.status];
+  return proposal.lifecycleState ?? TEACHER_PROPOSAL_LIFECYCLE_STATE_BY_STATUS_V1[proposal.status] ?? "proposed";
 }
 
 function normalizeTeacherProposalKindV1(proposal: TeacherProposalV1): TeacherProposalKindV1 | undefined {
@@ -671,6 +686,7 @@ export function summarizeTeacherProposalV1(
     ? proofBundle.replayOutcomeSummary ?? summarizeTeacherProposalReplayOutcomesV1(proofBundle.replayOutcomes ?? [])
     : undefined;
   const canaryRollout = normalizedProposal.canaryRollout ? summarizeTeacherCanaryRolloutPlanV1(normalizedProposal.canaryRollout) : undefined;
+  const lifecycleState = normalizeTeacherProposalLifecycleStateV1(normalizedProposal);
 
   return {
     schemaVersion: normalizedProposal.schemaVersion ?? 1,
@@ -679,7 +695,7 @@ export function summarizeTeacherProposalV1(
     proposalKind: normalizedProposal.proposalKind,
     lane: normalizedProposal.lane,
     status: normalizedProposal.status,
-    lifecycleState: normalizedProposal.lifecycleState,
+    lifecycleState,
     lineage: cloneProposalLineage(normalizedProposal.lineage),
     subjectIds: [...normalizedProposal.subjectIds],
     subjectCount: normalizedProposal.subjectIds.length,
@@ -1090,7 +1106,7 @@ export function describeTeacherProposalReplayGateMatrixV1(
       replaySummary ? `reviewMode=${replaySummary.reviewMode}` : `reviewMode=${reviewMode}`,
       replaySummary ? `candidate=${replaySummary.candidatePackId ?? replaySummary.candidatePackVersion ?? "unbound"}` : null,
       shadowReplay ? `shadowReplay=${shadowReplay.proposalClass}/${shadowReplay.replayOutcome}` : null,
-    ].filter(Boolean),
+    ].filter((note): note is string => Boolean(note)),
   });
 
   const attributionFloorRow = buildTeacherProposalReplayGateMatrixRow({
@@ -1165,7 +1181,7 @@ export function describeTeacherProposalReplayGateMatrixV1(
       `proofBundleId=${normalizeText(input.proofBundleId) ?? "none"}`,
       replaySummary ? `replaySummaryId=${replaySummary.status}/${replaySummary.reviewMode}` : null,
       shadowReplay ? `shadowReplayRollback=${shadowReplay.rollbackKey}` : null,
-    ].filter(Boolean),
+    ].filter((note): note is string => Boolean(note)),
   });
 
   const rows: TeacherProposalReplayGateMatrixV1["rows"] = [

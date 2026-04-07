@@ -2,7 +2,6 @@ import { afterEach, describe, expect, it } from "vitest";
 import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from "node:fs";
 import { tmpdir } from "node:os";
 import path from "node:path";
-// @ts-expect-error runtime script module has no checked-in .d.ts surface yet
 import { buildReleasePlan, verifyReleasePlan } from "../scripts/release-plan.mjs";
 
 const createdDirs: string[] = [];

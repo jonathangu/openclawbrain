@@ -158,6 +158,31 @@ export declare function importBrain(options: ImportOptions): ImportResult;
  */
 export declare function exportGraphifyCompiledArtifactsPack(options: GraphifyCompiledArtifactsExportOptionsV1): GraphifyCompiledArtifactsExportResultV1;
 /**
+ * Export a Graphify import slice from a compiled artifact pack.
+ */
+export interface GraphifyImportSliceExportOptionsV1 {
+    bundleRoot: string;
+    outputRoot?: string | null;
+    runId?: string | null;
+    repoRoot?: string | null;
+    workspaceRoot?: string | null;
+    sourceBundleId?: string | null;
+    sourceBundleHash?: string | null;
+    graphifyRunId?: string | null;
+    graphifyVersion?: string | null;
+    graphifyCommand?: string | null;
+}
+export interface GraphifyImportSliceExportResultV1 {
+    ok: boolean;
+    runId: string;
+    outputDir: string;
+    importSlicePath?: string | null;
+    candidatePackInput?: any;
+    importedPriors?: unknown;
+    error?: string;
+}
+export declare function exportGraphifyImportSlice(options: GraphifyImportSliceExportOptionsV1): GraphifyImportSliceExportResultV1;
+/**
  * Build and write a Graphify maintenance diff bundle.
  */
 export declare function exportGraphifyMaintenanceDiff(options: GraphifyMaintenanceDiffOptionsV1): GraphifyMaintenanceDiffExportResultV1;

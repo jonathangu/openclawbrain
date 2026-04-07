@@ -106,7 +106,7 @@ test("graphify scheduler delta and reorg cadence runs stay off-path and registry
     expect(delta.truthBoundary).toBe("below correction/raw-authority truth");
     expect(delta.sourceBundle.corpusDigest?.startsWith("sha256:")).toBe(true);
     expect(delta.graphifyRun.graph.nodeCount).toBeGreaterThan(0);
-    expect(delta.downstreamArtifacts.map((artifact) => artifact.kind)).toEqual(
+    expect(delta.downstreamArtifacts.map((artifact: { kind: string }) => artifact.kind)).toEqual(
       expect.arrayContaining([
         "source-bundle",
         "graphify-run",

@@ -750,6 +750,7 @@ function buildChecks(
     ? round(graphPriorOnly.estimatedPromptCostUsd * qualityRetention, 6)
     : null;
   const qualityAdjustedPromptSavingsUsd = baselineEquivalentCandidatePromptCostUsd !== null
+    && learnedRoute !== null
     && learnedRoute?.estimatedPromptCostUsd !== null
     && learnedRoute?.estimatedPromptCostUsd !== undefined
     ? round(baselineEquivalentCandidatePromptCostUsd - learnedRoute.estimatedPromptCostUsd, 6)
@@ -757,6 +758,7 @@ function buildChecks(
   const qualityAdjustedPromptSavingsThresholdEnabled = thresholds.minQualityAdjustedPromptSavingsUsd !== null;
   const qualityAdjustedPromptSavingsCheckPass = qualityAdjustedPromptSavingsUsd !== null && (
     !qualityAdjustedPromptSavingsThresholdEnabled
+    || thresholds.minQualityAdjustedPromptSavingsUsd === null
     || qualityAdjustedPromptSavingsUsd >= thresholds.minQualityAdjustedPromptSavingsUsd
   );
 
@@ -934,8 +936,9 @@ function writeReportArtifacts(
   writeText(summaryPath, buildSummary(report));
   let sourceManifestPath: string | null = null;
   if (manifest !== null) {
-    sourceManifestPath = path.join(outputDir, FROZEN_RECORDED_SESSION_EVAL_BUNDLE_LAYOUT.sourceManifest);
-    writeJson(sourceManifestPath, manifest);
+    const nextSourceManifestPath = path.join(outputDir, FROZEN_RECORDED_SESSION_EVAL_BUNDLE_LAYOUT.sourceManifest);
+    writeJson(nextSourceManifestPath, manifest);
+    sourceManifestPath = nextSourceManifestPath;
   }
   return {
     reportPath,

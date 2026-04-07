@@ -312,7 +312,7 @@ describe("teacher v3 proof bundle writer", () => {
       rollbackKey: "rollback:teacher-v3:compiler:replay",
       proofBundleId: "teacher-v3-proof-bundle-test",
     });
-    expect(bundle.proposalReport.replayGateMatrix?.rows.map((row) => row.name)).toEqual([
+    expect(bundle.proposalReport.replayGateMatrix?.rows.map((row: { name: string }) => row.name)).toEqual([
       "truth_invariants",
       "replay_non_regression",
       "attribution_floor",

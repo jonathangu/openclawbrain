@@ -678,6 +678,9 @@ function buildDecisionPointActionCandidate(params: {
     sourceNodeId: params.sourceNodeId,
     lookupNode: params.lookupNode,
   });
+  const targetNodeId = params.candidate.action.type === "traverse"
+    ? params.candidate.action.targetNodeId
+    : node?.id ?? params.sourceNodeId ?? "unknown";
 
   if (actionKind === "stop_local" || actionKind === "stop") {
     return {
@@ -695,13 +698,13 @@ function buildDecisionPointActionCandidate(params: {
   }
 
   const toolName = actionKind === "tool_capability" || actionKind === "tool_instance"
-    ? readStringMetadata(node?.metadata ?? {}, ["toolName", "tool_name"]) ?? node?.id ?? params.candidate.action.targetNodeId
+    ? readStringMetadata(node?.metadata ?? {}, ["toolName", "tool_name"]) ?? node?.id ?? targetNodeId
     : null;
 
   return {
-    actionId: `${actionKind}:${params.candidate.action.targetNodeId}`,
+    actionId: `${actionKind}:${targetNodeId}`,
     actionKind,
-    nodeId: params.candidate.action.targetNodeId,
+    nodeId: targetNodeId,
     toolName,
     toolCapabilityId: actionKind === "tool_capability" ? toolName : null,
     toolInstanceId: actionKind === "tool_instance" ? toolName : null,

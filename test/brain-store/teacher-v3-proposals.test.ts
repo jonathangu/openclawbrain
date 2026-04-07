@@ -495,7 +495,7 @@ describe("BrainStore teacher proposals", () => {
     const compiler = makeCompilerProposal();
     const requestedCanaryRollout = {
       ...describeTeacherCanaryRolloutPlanV1("compiler", 8, "candidate_pack_08"),
-      rolloutMode: "canary",
+      rolloutMode: "canary" as const,
       enabled: true,
     };
 

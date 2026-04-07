@@ -172,10 +172,14 @@ describe("cold-start router trainer", () => {
     for (const rowId of ["musique-dev-export-candidate-1", "musique-dev-export-candidate-11"]) {
       const row = loadedExport.routeRows.find((entry) => entry.row_id === rowId);
       expect(row).toBeDefined();
+      const teacherAction = row!.teacher_action;
+      if (teacherAction.kind !== "traverse") {
+        throw new Error(`expected traverse action for ${rowId}`);
+      }
       const scoring = scoreColdStartRouteRowFromArtifactBundleV1({ artifactBundle: runtimeBundle, row: row! });
       expect(scoring.stopPrediction.label).toBe("STOP_LOCAL");
       expect(scoring.policyDistribution.stopAction.probability).toBeGreaterThan(0);
-      expect(scoring.rankedCandidates[0]?.candidate.candidate_id).toBe(row!.teacher_action.target_ids[0]);
+      expect(scoring.rankedCandidates[0]?.candidate.candidate_id).toBe(teacherAction.target_ids[0]);
     }
   });
 

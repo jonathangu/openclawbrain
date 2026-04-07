@@ -306,6 +306,21 @@ function buildShadowReplaySummary(params: {
   status: ProposalStatus;
 }): TeacherProposalClassReplaySummaryV1 {
   return {
+    proposalId: params.proposal.proposalId,
+    proposalClass: params.proposal.proposalClass as Exclude<ProposalClass, "compiler" | "lint">,
+    shadowOnly: true,
+    promotionBypass: false,
+    rollbackKey: params.proposal.rollbackKey,
+    applied: false,
+    reversible: true,
+    replayOutcome: params.status === "promotable" ? "blocked" : "idle",
+    rollback: {
+      strategy: "shadow_only",
+      restored: false,
+      before: {},
+      after: {},
+      summary: "Shadow-only replay does not mutate live state; rollback remains a logical review artifact.",
+    },
     kind: params.proposal.proposalClass as Exclude<ProposalClass, "compiler" | "lint">,
     reviewMode: "shadow_only",
     promotionDiscipline: "shadow_only",

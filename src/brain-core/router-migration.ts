@@ -146,7 +146,7 @@ function variantTieBreakOrder(variant: RouterMigrationVariantV1): number {
   }
 }
 
-function variantWeight(caseSummary: RouterMigrationReplayCaseSummaryV1): number {
+function variantWeight(caseSummary: RouterMigrationReplayCaseV1): number {
   if (caseSummary.explicitCorrection === true) {
     return 3;
   }
@@ -382,14 +382,7 @@ export function summarizeRouterMigrationComparisonV1(
       base_only: normalizeBoolean(replayCase.preserved.base_only),
       mixed: normalizeBoolean(replayCase.preserved.mixed),
     },
-    weight: variantWeight({
-      ...replayCase,
-      preservedByVariant: {
-        old_live: normalizeBoolean(replayCase.preserved.old_live),
-        base_only: normalizeBoolean(replayCase.preserved.base_only),
-        mixed: normalizeBoolean(replayCase.preserved.mixed),
-      },
-    }),
+    weight: variantWeight(replayCase),
   }));
 
   const variants: Record<RouterMigrationVariantV1, RouterMigrationVariantSummaryV1> = {

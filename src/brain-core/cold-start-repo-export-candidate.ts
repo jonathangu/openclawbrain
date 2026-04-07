@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
-import { readFileSync } from "node:fs";
+import { existsSync, readFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import type {
   DataRegistryEntryV1,
@@ -120,6 +121,10 @@ export interface ColdStartRepoExportCandidateSummaryV1 {
   rightsCaveatCount: number;
 }
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DEFAULT_OPENCLAWBRAIN_REPO_ROOT = path.resolve(__dirname, "..", "..");
+
 function sha256Text(text: string): string {
   return `sha256:${createHash("sha256").update(text, "utf8").digest("hex")}`;
 }
@@ -136,8 +141,37 @@ function readJsonFile<T>(filePath: string): T {
   return JSON.parse(readFileSync(filePath, "utf8")) as T;
 }
 
+function candidateRepoRoots(repoRoot: string): string[] {
+  const resolvedRepoRoot = path.resolve(repoRoot);
+  return [...new Set([
+    resolvedRepoRoot,
+    path.resolve(resolvedRepoRoot, "openclawbrain"),
+    path.resolve(resolvedRepoRoot, "..", "openclawbrain"),
+    path.resolve(resolvedRepoRoot, "..", "..", "openclawbrain"),
+    DEFAULT_OPENCLAWBRAIN_REPO_ROOT,
+    path.resolve(DEFAULT_OPENCLAWBRAIN_REPO_ROOT, "..", "openclawbrain"),
+  ])];
+}
+
+function resolveSnapshotIndexPath(repoRoot: string): { repoRoot: string; snapshotIndexPath: string } {
+  for (const candidateRoot of candidateRepoRoots(repoRoot)) {
+    const candidatePath = path.resolve(candidateRoot, "data/cold-start/snapshots/index.json");
+    if (existsSync(candidatePath)) {
+      return {
+        repoRoot: candidateRoot,
+        snapshotIndexPath: candidatePath,
+      };
+    }
+  }
+
+  return {
+    repoRoot: DEFAULT_OPENCLAWBRAIN_REPO_ROOT,
+    snapshotIndexPath: path.resolve(DEFAULT_OPENCLAWBRAIN_REPO_ROOT, "data/cold-start/snapshots/index.json"),
+  };
+}
+
 function snapshotIndexPathFromRepoRoot(repoRoot: string): string {
-  return path.resolve(repoRoot, "data/cold-start/snapshots/index.json");
+  return resolveSnapshotIndexPath(repoRoot).snapshotIndexPath;
 }
 
 function snapshotRefFromDataset(datasetId: string, manifestSha256: string): string {
@@ -338,8 +372,8 @@ export function compileColdStartRepoSnapshotExportCandidateV1(params: {
   candidateId?: string;
   generatedAt?: string;
 } = {}): ColdStartRepoExportCandidateBundleV1 {
-  const repoRoot = path.resolve(params.repoRoot ?? process.cwd());
-  const snapshotIndexPath = snapshotIndexPathFromRepoRoot(repoRoot);
+  const requestedRepoRoot = path.resolve(params.repoRoot ?? process.cwd());
+  const { repoRoot, snapshotIndexPath } = resolveSnapshotIndexPath(requestedRepoRoot);
   const snapshotIndex = readJsonFile<RepoSnapshotIndexV1>(snapshotIndexPath);
   const repoSnapshots = snapshotIndex.snapshots.filter((snapshot) => isRepoBenchmarkDatasetId(snapshot.dataset_id));
   const repoSnapshotIndex: RepoSnapshotIndexV1 = {

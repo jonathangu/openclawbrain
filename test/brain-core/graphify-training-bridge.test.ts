@@ -18,7 +18,7 @@ import {
 
 function makeRouteRowFixture() {
   return {
-    schema_version: 1,
+    schema_version: 1 as const,
     row_id: "rr_graphify_training_fixture_01",
     trace_id: "trace_graphify_training_fixture_01",
     episode_id: "episode_graphify_training_fixture_01",
@@ -107,15 +107,15 @@ function makeRouteRowFixture() {
     },
     label_provenance: {
       provenance_id: "lp_graphify_training_fixture_01",
-      state: "matched",
-      basis: "trace_id",
+      state: "matched" as const,
+      basis: "trace_id" as const,
       confidence: 0.98,
       detail: "trace row is matched to the review fixture",
-      source: "teacher",
-      kind: "teacher_review",
-      binding_mode: "trace_id",
-      attribution_quality: "exact",
-      feedback_richness: "followup_only",
+      source: "teacher" as const,
+      kind: "teacher_review" as const,
+      binding_mode: "trace_id" as const,
+      attribution_quality: "exact" as const,
+      feedback_richness: "followup_only" as const,
       trace_id: "trace_graphify_training_fixture_01",
       episode_id: "episode_graphify_training_fixture_01",
       decision_point_id: "dp_graphify_training_fixture_01",

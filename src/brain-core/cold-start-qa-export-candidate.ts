@@ -1,5 +1,6 @@
-import { closeSync, openSync, readFileSync, readSync, writeFileSync } from "node:fs";
+import { closeSync, existsSync, openSync, readFileSync, readSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 import { compileColdStartDocsQaSourceBundleV1, type ColdStartDocsQaCompilationBundleV1, type RawDocsQaExampleV1, type RawDocsQaSourceBundleV1, type RawDocsQaSourceDocumentV1 } from "./cold-start-data-compiler.ts";
 import { type DataRegistryEntryV1, type RouteDecisionRowV1, validateDataRegistryEntryV1, validateRouteDecisionRowV1 } from "./cold-start-router-contracts.ts";
@@ -43,6 +44,11 @@ export interface ColdStartQaSnapshotExportCandidateSummaryV1 {
   snapshotRefs: string[];
   sampleStrategies: string[];
 }
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const DEFAULT_OPENCLAWBRAIN_REPO_ROOT = path.resolve(__dirname, "..", "..");
+const DEFAULT_WORKSPACE_ROOT = path.resolve(DEFAULT_OPENCLAWBRAIN_REPO_ROOT, "..");
 
 function normalizeWhitespace(value: string): string {
   return value.replace(/\s+/g, " ").trim();
@@ -182,6 +188,33 @@ function buildCandidateId(datasetId: string, title: string): string {
   return `${datasetId}:support:${slugify(title)}`;
 }
 
+function normalizeRepoRelativePath(value: string): string {
+  return value.replace(/^openclawbrain\//, "");
+}
+
+function candidateWorkspaceRoots(workspaceRoot: string): string[] {
+  const resolvedWorkspaceRoot = path.resolve(workspaceRoot);
+  return [...new Set([
+    resolvedWorkspaceRoot,
+    path.resolve(resolvedWorkspaceRoot, ".."),
+    DEFAULT_WORKSPACE_ROOT,
+    path.resolve(DEFAULT_WORKSPACE_ROOT, ".."),
+  ])];
+}
+
+function resolveSnapshotFilePath(workspaceRoot: string, repoRelativePath: string): { repoRoot: string; filePath: string } {
+  for (const repoRoot of candidateWorkspaceRoots(workspaceRoot)) {
+    const candidatePath = path.resolve(repoRoot, repoRelativePath);
+    if (existsSync(candidatePath)) {
+      return { repoRoot, filePath: candidatePath };
+    }
+  }
+  return {
+    repoRoot: DEFAULT_WORKSPACE_ROOT,
+    filePath: path.resolve(DEFAULT_WORKSPACE_ROOT, repoRelativePath),
+  };
+}
+
 function getRegistryCard(registryPath: string, datasetId: string): ColdStartSourceIntakeCardV1 {
   const loaded = loadColdStartSourceIntakeRegistryV1(registryPath);
   const card = loaded.cards.find((entry) => entry.registry_entry.dataset_id === datasetId);
@@ -200,7 +233,7 @@ function buildHotpotQaRawBundle(params: {
   const snapshotFile = "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/hotpot_dev_distractor_v1.json";
   const manifestFile = "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/manifest.json";
   const sumsFile = "openclawbrain/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405/SHA256SUMS";
-  const sourceFilePath = path.resolve(params.workspaceRoot, snapshotFile);
+  const { repoRoot, filePath: sourceFilePath } = resolveSnapshotFilePath(params.workspaceRoot, snapshotFile);
   const examples = sampleFirstJsonArrayObjects<{
     _id?: string;
     question: string;
@@ -228,7 +261,7 @@ function buildHotpotQaRawBundle(params: {
     generated_at: params.generatedAt,
     registry: {
       dataset_id: params.card.registry_entry.dataset_id,
-      source_family: params.card.registry_entry.source_family,
+      source_family: "qa",
       upstream_url: params.card.registry_entry.upstream_url,
       original_creator: params.card.registry_entry.original_creator,
       license: params.card.registry_entry.license,
@@ -290,7 +323,7 @@ function buildHotpotQaRawBundle(params: {
   };
 
   const compilation = compileColdStartDocsQaSourceBundleV1({
-    repoRoot: params.workspaceRoot,
+    repoRoot,
     bundle: rawBundle,
   });
 
@@ -319,7 +352,7 @@ function buildMuSiQueRawBundle(params: {
   const snapshotFile = "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/data/musique_full_v1.0_dev.jsonl";
   const manifestFile = "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/manifest.json";
   const sumsFile = "openclawbrain/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2/SHA256SUMS";
-  const sourceFilePath = path.resolve(params.workspaceRoot, snapshotFile);
+  const { repoRoot, filePath: sourceFilePath } = resolveSnapshotFilePath(params.workspaceRoot, snapshotFile);
   const sampledExamples = sampleFirstJsonlObjects<{
     id: string;
     question: string;
@@ -357,7 +390,7 @@ function buildMuSiQueRawBundle(params: {
     generated_at: params.generatedAt,
     registry: {
       dataset_id: params.card.registry_entry.dataset_id,
-      source_family: params.card.registry_entry.source_family,
+      source_family: "qa",
       upstream_url: params.card.registry_entry.upstream_url,
       original_creator: params.card.registry_entry.original_creator,
       license: params.card.registry_entry.license,
@@ -413,7 +446,7 @@ function buildMuSiQueRawBundle(params: {
   };
 
   const compilation = compileColdStartDocsQaSourceBundleV1({
-    repoRoot: params.workspaceRoot,
+    repoRoot,
     bundle: rawBundle,
   });
 

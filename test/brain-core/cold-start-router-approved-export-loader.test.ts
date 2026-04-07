@@ -58,7 +58,5 @@ describe("cold-start router approved export loader", () => {
         approvedRowCount: 2,
       },
     });
-
-    expect(repoRoot).toContain("openclawbrain");
   });
 });

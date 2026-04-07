@@ -1,0 +1,18 @@
+export declare function buildNormalizedEventDedupId(event?: any): string;
+export declare function createExplicitEventRange(events?: any[]): any;
+export declare function createDefaultLearningSurface(): any;
+export declare function createEventExportCursor(input?: any): any;
+export declare function buildNormalizedEventExport(input?: any): any;
+export declare function buildNormalizedEventExportBridge(input?: any): any;
+export declare function validateNormalizedEventExport(value?: any): any;
+export declare function validateNormalizedEventExportSlice(value?: any): any;
+export declare function validateNormalizedEventExportBridge(value?: any): any;
+export declare function describeNormalizedEventExportObservability(normalizedEventExport?: any): any;
+export declare function classifyFeedbackSignalContent(content?: any): any;
+export declare function extractFeedbackEventsFromInteractionRecords(input?: any): any;
+export declare function isSystemMessage(record?: any): boolean;
+export type EventExportCursorV1 = any;
+export type EventExportLaneV1 = any;
+export type NormalizedEventExportBridgeV1 = any;
+export type NormalizedEventExportSliceV1 = any;
+export type FeedbackEventExtractionResultV1 = any;

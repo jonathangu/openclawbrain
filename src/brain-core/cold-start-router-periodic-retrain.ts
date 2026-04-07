@@ -6,10 +6,10 @@ import type {
   ColdStartApprovalStatusV1,
   ColdStartStopLabelV1,
   ColdStartPackTypeV1,
-  ColdStartRouterApprovedExportV1,
   DataRegistryEntryV1,
   RouteDecisionRowV1,
 } from "./cold-start-router-contracts.ts";
+import type { ColdStartRouterApprovedExportV1 } from "./cold-start-router-approved-export-loader.ts";
 import {
   loadColdStartRouterApprovedExportV1,
 } from "./cold-start-router-approved-export-loader.ts";
@@ -89,8 +89,8 @@ export interface ColdStartRouterPeriodicRetrainEvalReportV1 {
   priorBaseArtifactDir: string;
   candidateManifestSummary: ReturnType<typeof summarizeRouterArtifactManifestV1>;
   priorBaseManifestSummary: ReturnType<typeof summarizeRouterArtifactManifestV1>;
-  train: ColdStartRouterPeriodicRetrainReplaySummaryV1;
-  eval: ColdStartRouterPeriodicRetrainReplaySummaryV1;
+  trainReplay: ColdStartRouterPeriodicRetrainReplaySummaryV1;
+  evalReplay: ColdStartRouterPeriodicRetrainReplaySummaryV1;
   gatePassed: boolean;
   summary: string;
 }

@@ -450,17 +450,21 @@ function collectProvenanceGapHints(params: {
 
   const hints: GraphifyProvenanceGapHintV1[] = [];
   for (const artifact of provenanceArtifacts) {
-    const artifactId = normalizeString(typeof artifact.artifactId === "string" ? artifact.artifactId : null) ?? `provenance-gap-${hashStableParts([params.sourceBundleId, params.sourceBundleHash, artifact.title ?? artifact.summary])}`;
+    const artifactTitle = normalizeString(typeof artifact.title === "string" ? artifact.title : null);
+    const artifactSummary = normalizeString(typeof artifact.summary === "string" ? artifact.summary : null);
+    const artifactId = normalizeString(typeof artifact.artifactId === "string" ? artifact.artifactId : null) ?? `provenance-gap-${hashStableParts([params.sourceBundleId, params.sourceBundleHash, artifactTitle ?? artifactSummary ?? "provenance-gap"])}`;
     const sourceArtifactKind = normalizeString(typeof artifact.kind === "string" ? artifact.kind : null) ?? "provenance_gap_report";
-    const title = normalizeString(typeof artifact.title === "string" ? artifact.title : null) ?? "Graphify provenance gap report";
+    const title = artifactTitle ?? "Graphify provenance gap report";
     const artifactEvidenceIds = normalizeStringArray(Array.isArray(artifact.evidence) ? artifact.evidence.map((evidence) => typeof evidence === "object" && evidence !== null ? (evidence as { evidenceId?: string }).evidenceId ?? null : null) : []);
-    const claims = Array.isArray(artifact.claims) ? artifact.claims : [];
+    const claims = Array.isArray(artifact.claims)
+      ? artifact.claims.filter((claim): claim is Record<string, unknown> => typeof claim === "object" && claim !== null)
+      : [];
     for (const claim of claims) {
       if (hints.length >= params.limit) {
         break;
       }
-      const claimId = normalizeString(typeof claim === "object" && claim !== null ? (claim as { claimId?: string }).claimId ?? null : null) ?? `claim-${hashStableParts([artifactId, claim?.text ?? claim?.summary ?? JSON.stringify(claim)])}`;
-      const claimText = normalizeString(typeof claim === "object" && claim !== null ? (claim as { text?: string; summary?: string }).text ?? (claim as { text?: string; summary?: string }).summary ?? null : null) ?? title;
+      const claimText = normalizeString(typeof claim.text === "string" ? claim.text : typeof claim.summary === "string" ? claim.summary : null) ?? title;
+      const claimId = normalizeString(typeof claim.claimId === "string" ? claim.claimId : null) ?? `claim-${hashStableParts([artifactId, claimText, JSON.stringify(claim)])}`;
       const evidenceIds = normalizeStringArray(Array.isArray((claim as { evidenceIds?: string[] }).evidenceIds) ? (claim as { evidenceIds?: string[] }).evidenceIds : artifactEvidenceIds);
       hints.push({
         hint_id: `gap-${hashStableParts([params.sourceBundleId, params.sourceBundleHash, artifactId, claimId])}`,

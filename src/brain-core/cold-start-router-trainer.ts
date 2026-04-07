@@ -23,7 +23,7 @@ import {
   validateRouteDecisionRowV1,
   validateRouterArtifactManifestV1,
 } from "./cold-start-router-contracts.ts";
-import type { TraversalState } from "./types.js";
+import type { TrajectoryCandidateScoreBreakdown, TraversalState } from "./types.js";
 
 export const COLD_START_ROUTER_BASE_MODEL_CONTRACT_V1 = "cold_start_router_base_model.v1";
 export const COLD_START_ROUTER_WEIGHTS_CONTRACT_V1 = "cold_start_router_weights.v1";
@@ -220,7 +220,8 @@ export interface ColdStartRouterStopPredictionV1 {
 
 export interface ColdStartRouterPolicyTraverseActionV1 {
   type: "traverse";
-  candidate: RouteCandidateV1;
+  targetNodeId?: string;
+  candidate?: RouteCandidateV1;
 }
 
 export interface ColdStartRouterPolicyStopActionV1 {
@@ -556,7 +557,7 @@ function softmaxScores<T extends { score: number }>(items: T[]): Array<T & { pro
   return expScores.map(({ expScore, ...item }) => ({
     ...item,
     probability: sumExp > 0 ? expScore / sumExp : 1 / items.length,
-  })) as Array<T & { probability: number }>;
+  })) as unknown as Array<T & { probability: number }>;
 }
 
 function computeStopPrediction(
@@ -1217,7 +1218,7 @@ export function predictColdStartStopLabelV1(params: {
   return computeStopPrediction(params.model, params);
 }
 
-function scoreBreakdownToContributions(scoreBreakdown: Record<string, unknown> | undefined): Array<{
+function scoreBreakdownToContributions(scoreBreakdown: Partial<TrajectoryCandidateScoreBreakdown> | undefined): Array<{
   featureKey: string;
   featureValue: string;
   weight: number;
@@ -1305,8 +1306,9 @@ export function scoreColdStartRouteRowV1(params: {
   });
   const state = buildTraversalStateForRow(params.row, liveFamily.sourceNodeId);
   const actions = [
-    ...params.row.candidate_set.map((candidate) => ({
+    ...params.row.candidate_set.map((candidate: RouteCandidateV1) => ({
       type: "traverse" as const,
+      candidate,
       targetNodeId: candidate.candidate_id,
       seedScore: candidate.score_hint,
     })),
@@ -1320,9 +1322,9 @@ export function scoreColdStartRouteRowV1(params: {
   };
 
   const rankedCandidates = scoredActions
-    .filter((entry) => entry.action.type === "traverse")
+    .filter((entry): entry is typeof entry & { action: { type: "traverse"; targetNodeId: string } } => entry.action.type === "traverse")
     .map((entry) => {
-      const candidate = params.row.candidate_set.find((item) => item.candidate_id === entry.action.targetNodeId);
+      const candidate = params.row.candidate_set.find((item: RouteCandidateV1) => item.candidate_id === entry.action.targetNodeId);
       if (!candidate) {
         throw new Error(`live policy candidate ${entry.action.targetNodeId} missing from row candidate_set`);
       }

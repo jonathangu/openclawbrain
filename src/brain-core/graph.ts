@@ -666,20 +666,22 @@ function ensureSourceNode(graph: BrainGraph, sourceNodeId: string): void {
 }
 
 function parsePositiveCandidateIds(row: RouteDecisionRowV1): Set<string> {
-  if (row.teacher_action.kind === "traverse") {
-    return new Set(row.teacher_action.target_ids.map((targetId) => targetId.trim()).filter((targetId) => targetId.length > 0));
+  const teacherAction = row.teacher_action;
+  if (teacherAction.kind === "traverse") {
+    return new Set(teacherAction.target_ids.map((targetId: string) => targetId.trim()).filter((targetId: string) => targetId.length > 0));
   }
 
+  const toolTeacherAction = teacherAction.kind === "tool" ? teacherAction : null;
   const explicitToolMatch = row.candidate_set
-    .filter((candidate) => candidate.candidate_type === "tool" && candidate.candidate_id === row.teacher_action.tool_name)
-    .map((candidate) => candidate.candidate_id);
+    .filter((candidate: RouteCandidateV1) => candidate.candidate_type === "tool" && candidate.candidate_id === toolTeacherAction?.tool_name)
+    .map((candidate: RouteCandidateV1) => candidate.candidate_id);
   if (explicitToolMatch.length > 0) {
     return new Set(explicitToolMatch);
   }
 
   const toolCandidates = row.candidate_set
-    .filter((candidate) => candidate.candidate_type === "tool")
-    .map((candidate) => candidate.candidate_id);
+    .filter((candidate: RouteCandidateV1) => candidate.candidate_type === "tool")
+    .map((candidate: RouteCandidateV1) => candidate.candidate_id);
   return toolCandidates.length === 1 ? new Set(toolCandidates) : new Set();
 }
 

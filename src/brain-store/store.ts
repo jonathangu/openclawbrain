@@ -1598,13 +1598,13 @@ export class BrainStore {
         evaluatedAt: row.evaluated_at === null ? null : Number(row.evaluated_at),
       };
       if (quality !== "exact" && !latestNonExact) {
-        latestNonExact = sample;
+        latestNonExact = sample as typeof latestNonExact extends null ? never : NonNullable<typeof latestNonExact>;
       }
       if (quality === "fallback" && !latestAmbiguous) {
-        latestAmbiguous = sample;
+        latestAmbiguous = sample as typeof latestAmbiguous extends null ? never : NonNullable<typeof latestAmbiguous>;
       }
       if (quality === "unbound" && !latestUnmatched) {
-        latestUnmatched = sample;
+        latestUnmatched = sample as typeof latestUnmatched extends null ? never : NonNullable<typeof latestUnmatched>;
       }
     }
 
