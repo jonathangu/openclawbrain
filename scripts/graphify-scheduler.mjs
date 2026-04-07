@@ -73,6 +73,26 @@ function loadJsonIfExists(filePath) {
   return JSON.parse(readFileSync(filePath, "utf8"));
 }
 
+function controlRootForWorkspace(workspaceRoot) {
+  return path.join(workspaceRoot, "artifacts", "continuous-learning-controls");
+}
+
+function readControlState(workspaceRoot, scope) {
+  const roots = [
+    workspaceRoot,
+    path.resolve(workspaceRoot, ".."),
+    path.join(workspaceRoot, "openclawbrain"),
+  ];
+  for (const root of roots) {
+    const controlPath = path.join(controlRootForWorkspace(root), `${scope}.json`);
+    const control = loadJsonIfExists(controlPath);
+    if (control && typeof control === "object") {
+      return control;
+    }
+  }
+  return null;
+}
+
 function sha256Text(text) {
   return `sha256:${createHash("sha256").update(String(text ?? ""), "utf8").digest("hex")}`;
 }
@@ -474,6 +494,32 @@ export function writeGraphifySchedulerRun(options = {}) {
   const outputRoot = path.resolve(options.outputRoot ?? path.join(workspaceRoot, "artifacts", "graphify-scheduler"));
   const generatedAt = normalizeText(options.generatedAt) ?? new Date().toISOString();
   const runId = normalizeText(options.runId) ?? `${cadence}-${timestampToken(generatedAt)}`;
+  const graphifyImportControl = readControlState(workspaceRoot, "graphify-import");
+  if (graphifyImportControl?.paused) {
+    return {
+      contract: CONTRACT,
+      schedulerVersion: SCHEDULER_VERSION,
+      cadence,
+      runId,
+      generatedAt,
+      status: "paused",
+      paused: true,
+      offPath: true,
+      inspectable: false,
+      replayable: false,
+      truthBoundary: "below correction/raw-authority truth",
+      control: graphifyImportControl,
+      runRoot: path.join(outputRoot, cadence, runId),
+      outputRoot,
+      registryPath: path.join(outputRoot, GRAPHIFY_SCHEDULER_LAYOUT_V1.registry),
+      summaryPath: null,
+      statusPath: null,
+      registryEntryPath: null,
+      retentionPolicyPath: null,
+      retentionPolicyMarkdownPath: null,
+      downstreamArtifacts: [],
+    };
+  }
   const cadenceRoot = path.join(outputRoot, cadence);
   const runRoot = path.join(cadenceRoot, runId);
   const registryPath = path.join(outputRoot, GRAPHIFY_SCHEDULER_LAYOUT_V1.registry);
@@ -759,9 +805,11 @@ export function runGraphifySchedulerCli(defaultCadence = null, argv = process.ar
       runId: result.runId,
       generatedAt: result.generatedAt,
       status: result.status,
+      paused: result.paused ?? false,
       offPath: result.offPath,
       inspectable: result.inspectable,
       replayable: result.replayable,
+      control: result.control ?? null,
       registryPath: result.registryPath,
       registryEntryPath: result.registryEntryPath,
       retentionPolicyPath: result.retentionPolicyPath,
@@ -771,13 +819,22 @@ export function runGraphifySchedulerCli(defaultCadence = null, argv = process.ar
     }, null, 2)}\n`);
   }
   else {
-    process.stdout.write([
-      `Graphify scheduler ${result.cadence} cadence completed`,
-      `summary: ${result.summaryPath}`,
-      `status: ${result.statusPath}`,
-      `registry: ${result.registryPath}`,
-      `retention: ${result.retentionPolicyPath}`,
-    ].join("\n") + "\n");
+    if (result.status === "paused") {
+      process.stdout.write([
+        `Graphify scheduler ${result.cadence} cadence paused`,
+        `registry: ${result.registryPath}`,
+        `control: ${result.control ? JSON.stringify(result.control) : "unavailable"}`,
+      ].join("\n") + "\n");
+    }
+    else {
+      process.stdout.write([
+        `Graphify scheduler ${result.cadence} cadence completed`,
+        `summary: ${result.summaryPath}`,
+        `status: ${result.statusPath}`,
+        `registry: ${result.registryPath}`,
+        `retention: ${result.retentionPolicyPath}`,
+      ].join("\n") + "\n");
+    }
   }
   return 0;
 }

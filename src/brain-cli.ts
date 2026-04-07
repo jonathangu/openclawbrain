@@ -27,6 +27,12 @@ import {
   flattenToolActionPriors,
   populateGraph,
 } from "./brain-runtime/graph-io.js";
+import {
+  buildContinuousLearningOperatorStatus,
+  clearContinuousLearningControl,
+  continuousLearningControlDir,
+  writeContinuousLearningControl,
+} from "./brain-runtime/continuous-learning-status.js";
 import { buildPromotionStory } from "./brain-runtime/promotion-story.js";
 import { readWorkerRuntimeState } from "./brain-runtime/worker-state.js";
 import { buildContextManagementModel } from "./context-management-model.js";
@@ -165,7 +171,7 @@ function buildInitLog(): { info: (msg: string) => void; warn: (msg: string) => v
 
 function usage(): never {
   process.stderr.write(
-    "Usage: openclawbrain <init|status|trace|replay|promote|rollback|disable|enable|doctor> [args]\n",
+    "Usage: openclawbrain <init|status|trace|replay|promote|rollback|disable|enable|doctor|control> [args]\n",
   );
   process.exit(1);
 }
@@ -255,6 +261,7 @@ async function commandInit(workspaceArg?: string): Promise<void> {
 
 function commandStatus(): void {
   const { config, store, graph, brainConfig } = loadStore();
+  const workspaceRoot = resolve(process.env.OPENCLAWBRAIN_WORKSPACE_ROOT ?? process.cwd());
   const recentEpisodes = store.getRecentEpisodes(100);
   const currentPack = store.getCurrentPackVersion();
   const health = computeHealth(graph, recentEpisodes, currentPack ?? 0);
@@ -290,6 +297,13 @@ function commandStatus(): void {
     contextUsefulness,
     recentMutationBundles,
     lastReplayGateVerdict,
+  });
+  const continuousLearning = buildContinuousLearningOperatorStatus({
+    store,
+    workspaceRoot,
+    brainRoot: brainConfig.root,
+    controlRoot: continuousLearningControlDir(workspaceRoot),
+    now: Date.now(),
   });
   const recentPrefetchDecisions = store.getTrainingStateJson<BrainPrefetchDecision[]>("recent_prefetch_decisions_json") ?? [];
   const recentPrefetchSummary = summarizeRecentPrefetchDecisions(recentPrefetchDecisions, 25);
@@ -344,6 +358,7 @@ function commandStatus(): void {
     contextFeedback,
     contextUsefulness,
     learningHealth,
+    continuousLearning,
     pendingLabels: store.getPendingLabels().length,
     pendingLabelsBySource: store.countPendingLabelsBySource(),
     mutationBacklog: store.countMutationsByStatus(),
@@ -471,6 +486,60 @@ function commandEnable(): void {
   });
 }
 
+function commandControl(scopeArg?: string, actionArg?: string, reasonArg?: string): void {
+  const { brainConfig } = loadStore();
+  const workspaceRoot = resolve(process.env.OPENCLAWBRAIN_WORKSPACE_ROOT ?? process.cwd());
+  const scope = scopeArg === "graphify-import" || scopeArg === "retrain" ? scopeArg : null;
+  const action = actionArg === "status" || actionArg === "pause" || actionArg === "resume" ? actionArg : null;
+
+  if (!scope || !action) {
+    usage();
+  }
+
+  const controlRoot = continuousLearningControlDir(workspaceRoot);
+  if (action === "status") {
+    printJson({
+      command: "control",
+      brainRoot: brainConfig.root,
+      workspaceRoot,
+      controlRoot,
+      scope,
+      control: buildContinuousLearningOperatorStatus({
+        store: null,
+        workspaceRoot,
+        brainRoot: brainConfig.root,
+        controlRoot,
+        now: Date.now(),
+      }).controls,
+    });
+    return;
+  }
+
+  if (action === "pause") {
+    const control = writeContinuousLearningControl(workspaceRoot, scope, true, reasonArg ?? null, "openclawbrain control");
+    printJson({
+      command: "control",
+      brainRoot: brainConfig.root,
+      workspaceRoot,
+      controlRoot,
+      scope,
+      control,
+    });
+    return;
+  }
+
+  clearContinuousLearningControl(workspaceRoot, scope);
+  const control = writeContinuousLearningControl(workspaceRoot, scope, false, null, "openclawbrain control");
+  printJson({
+    command: "control",
+    brainRoot: brainConfig.root,
+    workspaceRoot,
+    controlRoot,
+    scope,
+    control,
+  });
+}
+
 function commandDoctor(): void {
   const { brainConfig, store, graph } = loadStore();
   const currentPackVersion = store.getCurrentPackVersion();
@@ -502,16 +571,16 @@ function commandDoctor(): void {
 }
 
 async function main(): Promise<void> {
-  const [command, arg] = process.argv.slice(2);
+  const [command, arg1, arg2, arg3] = process.argv.slice(2);
   switch (command) {
     case "init":
-      await commandInit(arg);
+      await commandInit(arg1);
       return;
     case "status":
       commandStatus();
       return;
     case "trace":
-      commandTrace(arg);
+      commandTrace(arg1);
       return;
     case "replay":
       commandReplay();
@@ -530,6 +599,9 @@ async function main(): Promise<void> {
       return;
     case "doctor":
       commandDoctor();
+      return;
+    case "control":
+      commandControl(arg1, arg2, arg3);
       return;
     default:
       usage();

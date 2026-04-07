@@ -58,6 +58,7 @@ import { readWorkerRuntimeState } from "./worker-state.js";
 import { WorkerSupervisor } from "./worker-supervisor.js";
 import { isSystemMessage } from "../brain-harvest/system-filter.js";
 import { buildContextManagementModel } from "../context-management-model.js";
+import { buildContinuousLearningOperatorStatus, continuousLearningControlDir } from "./continuous-learning-status.js";
 import { summarizeAttributionTruth, summarizeOperatorHealth } from "../live-runtime-audit.js";
 import {
   proposeUserCorrectionFast,
@@ -2002,6 +2003,14 @@ export class BrainService {
       recentMutationBundles,
       lastReplayGateVerdict,
     });
+    const workspaceRoot = process.env.OPENCLAWBRAIN_WORKSPACE_ROOT?.trim() ?? null;
+    const continuousLearning = buildContinuousLearningOperatorStatus({
+      store: this.store,
+      workspaceRoot,
+      brainRoot: this.config.root,
+      controlRoot: workspaceRoot ? continuousLearningControlDir(workspaceRoot) : null,
+      now: Date.now(),
+    });
     const lastCompileReportSummary = lastAssemblyDecision?.compileReportSummary
       ?? (lastAssemblyDecision?.servedArtifact as { compileReportSummary?: string | null } | null | undefined)?.compileReportSummary
       ?? recentTraces[0]?.routeTrace?.selectionMetadata?.compileReportSummary
@@ -2063,6 +2072,7 @@ export class BrainService {
       contextFeedback,
       contextUsefulness,
       learningHealth,
+      continuousLearning,
       ...workerState,
       pendingLabels: this.store.getPendingLabels().length,
       pendingLabelsBySource: this.store.countPendingLabelsBySource(),

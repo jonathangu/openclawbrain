@@ -4,10 +4,12 @@ import path from "node:path";
 import { fileURLToPath } from "node:url";
 
 import { runColdStartRouterPeriodicRetrainV1 } from "../src/brain-core/cold-start-router-periodic-retrain.ts";
+import { readContinuousLearningControl } from "../src/brain-runtime/continuous-learning-status.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const repoRoot = path.resolve(__dirname, "..");
+const workspaceRoot = path.resolve(repoRoot, "..");
 
 const trainExportPath = process.env.COLD_START_TRAIN_EXPORT_PATH ?? path.join(
   repoRoot,
@@ -41,6 +43,22 @@ const reportDir = process.env.COLD_START_REPORT_DIR ?? path.join(
 );
 
 async function main(): Promise<void> {
+  const retrainControl = readContinuousLearningControl(workspaceRoot, "retrain");
+  if (retrainControl?.paused) {
+    console.log(JSON.stringify({
+      generatedAt: new Date().toISOString(),
+      status: "paused",
+      control: retrainControl,
+      workspaceRoot,
+      reportDir,
+      candidateArtifactDir,
+      trainExportPath,
+      evalExportPath,
+      priorBaseArtifactDir,
+    }, null, 2));
+    return;
+  }
+
   const result = runColdStartRouterPeriodicRetrainV1({
     trainExportPath,
     evalExportPath,
