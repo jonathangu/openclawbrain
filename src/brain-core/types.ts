@@ -405,7 +405,7 @@ export interface PolicyGradientEpisodeUpdateArtifact {
   observationIds: string[];
   traceIds: string[];
   supervisionIds: string[];
-  reward: number;
+  reward: number | null;
   rewardSource: RewardSource | null;
   attributionQuality: ObservationBindingQuality | "mixed" | null;
   feedbackRichness: TeacherFeedbackRichness | "mixed" | null;

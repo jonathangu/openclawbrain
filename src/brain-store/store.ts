@@ -803,7 +803,20 @@ export class BrainStore {
 
   getEpisodesForUpdate(limit: number): Episode[] {
     const rows = this.db.prepare(`
-      SELECT * FROM brain_episodes WHERE reward IS NOT NULL AND updated = 0 ORDER BY created_at ASC LIMIT ?
+      SELECT *
+      FROM brain_episodes
+      WHERE updated = 0
+        AND (
+          reward IS NOT NULL
+          OR EXISTS (
+            SELECT 1
+            FROM brain_trace_supervision
+            WHERE brain_trace_supervision.episode_id = brain_episodes.id
+              AND brain_trace_supervision.resolution = 'promoted_to_label'
+          )
+        )
+      ORDER BY created_at ASC
+      LIMIT ?
     `).all(limit) as Record<string, unknown>[];
     return rows.map((r) => this.toEpisode(r));
   }

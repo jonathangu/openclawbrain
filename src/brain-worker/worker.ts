@@ -838,33 +838,31 @@ export class BrainWorker {
       }
       const attributionQuality = combineAttributionQualities(consumed.supervision);
       const feedbackRichness = combineFeedbackRichness(consumed.supervision);
-      if (entry.episode.reward !== null) {
-        episodeUpdates.push({
-          episodeId: entry.episode.id,
-          observationIds: consumed.observationIds,
-          traceIds: consumed.traceIds,
-          supervisionIds: consumed.supervisionIds,
-          reward: entry.episode.reward,
-          rewardSource: entry.episode.rewardSource,
-          attributionQuality,
-          feedbackRichness,
-          updateReason: buildEpisodeUpdateReason({
-            episode: entry.episode,
-            supervision: consumed.supervision,
-            routeUpdateCount: entry.routeUpdateCount,
-          }),
-          baselineBefore: entry.baselineBeforeEpisode,
-          baselineAfter: entry.baselineAfterEpisode,
-          advantage: entry.episode.reward - entry.baselineBeforeEpisode,
-          routeUpdateCount: entry.routeUpdateCount,
-          teacherActionUpdateCount: entry.teacherActionUpdateCount,
-          seedUpdateCount: entry.seedUpdateCount,
-          stopLocalUpdateCount: entry.stopLocalUpdateCount,
-          edgeUpdateCount: entry.edgeUpdateCount,
+      episodeUpdates.push({
+        episodeId: entry.episode.id,
+        observationIds: consumed.observationIds,
+        traceIds: consumed.traceIds,
+        supervisionIds: consumed.supervisionIds,
+        reward: entry.episode.reward,
+        rewardSource: entry.episode.rewardSource,
+        attributionQuality,
+        feedbackRichness,
+        updateReason: buildEpisodeUpdateReason({
+          episode: entry.episode,
           supervision: consumed.supervision,
-          routeUpdates: entry.routeUpdates,
-        });
-      }
+          routeUpdateCount: entry.routeUpdateCount,
+        }),
+        baselineBefore: entry.baselineBeforeEpisode,
+        baselineAfter: entry.baselineAfterEpisode,
+        advantage: entry.episode.reward === null ? 0 : entry.episode.reward - entry.baselineBeforeEpisode,
+        routeUpdateCount: entry.routeUpdateCount,
+        teacherActionUpdateCount: entry.teacherActionUpdateCount,
+        seedUpdateCount: entry.seedUpdateCount,
+        stopLocalUpdateCount: entry.stopLocalUpdateCount,
+        edgeUpdateCount: entry.edgeUpdateCount,
+        supervision: consumed.supervision,
+        routeUpdates: entry.routeUpdates,
+      });
     }
 
     if (episodeIds.size === 0 || supervisionIds.size === 0 || routeUpdateCount === 0) {
@@ -987,13 +985,14 @@ export class BrainWorker {
     let skippedEpisodeCount = 0;
 
     for (const episode of episodes) {
-      if (episode.reward === null) {
+      const consumed = this.collectPolicyGradientSupervision(episode);
+      if (episode.reward === null && !consumed) {
         skippedEpisodeCount += 1;
         skippedReasons.missing_reward += 1;
         decisions.push({
           episodeId: episode.id,
           status: "skipped",
-          reason: "episode has no reward yet",
+          reason: "episode has no reward yet and no promoted supervision is bound to the route",
           reward: null,
           rewardSource: episode.rewardSource,
           observationIds: [],
@@ -1008,8 +1007,7 @@ export class BrainWorker {
         continue;
       }
 
-      const consumed = this.collectPolicyGradientSupervision(episode);
-      if (!consumed) {
+      if (episode.reward !== null && !consumed) {
         skippedEpisodeCount += 1;
         skippedReasons.missing_supervision += 1;
         decisions.push({
@@ -1030,27 +1028,38 @@ export class BrainWorker {
         continue;
       }
 
+      const supervision = consumed;
+      if (!supervision) {
+        continue;
+      }
+
       const baselineBeforeEpisode = baseline;
-      const reinforceContributions = collectReinforceUpdateContributions(
-        episode,
-        this.config.learningRate,
-        baselineBeforeEpisode,
-        this.graph,
-      );
+      const reinforceContributions = episode.reward === null
+        ? []
+        : collectReinforceUpdateContributions(
+            episode,
+            this.config.learningRate,
+            baselineBeforeEpisode,
+            this.graph,
+          );
       const teacherActionContributions = collectTeacherActionDistillContributions(
         episode,
         this.config.learningRate,
-        consumed.supervision,
+        supervision.supervision,
         this.graph,
       );
       const contributions = [...reinforceContributions, ...teacherActionContributions];
-      const reinforceUpdates = computeReinforceUpdates(episode, this.config.learningRate, baselineBeforeEpisode, this.graph);
-      const teacherActionUpdates = computeTeacherActionUpdates(episode, this.config.learningRate, consumed.supervision, this.graph);
+      const reinforceUpdates = episode.reward === null
+        ? []
+        : computeReinforceUpdates(episode, this.config.learningRate, baselineBeforeEpisode, this.graph);
+      const teacherActionUpdates = computeTeacherActionUpdates(episode, this.config.learningRate, supervision.supervision, this.graph);
       const updates = mergePolicyWeightUpdates([...reinforceUpdates, ...teacherActionUpdates]);
-      const attributionQuality = combineAttributionQualities(consumed.supervision);
-      const feedbackRichness = combineFeedbackRichness(consumed.supervision);
+      const attributionQuality = combineAttributionQualities(supervision.supervision);
+      const feedbackRichness = combineFeedbackRichness(supervision.supervision);
       if (updates.length === 0) {
-        const baselineAfterEpisode = updateBaseline(baseline, episode.reward, this.config.baselineAlpha);
+        const baselineAfterEpisode = episode.reward === null
+          ? baseline
+          : updateBaseline(baseline, episode.reward, this.config.baselineAlpha);
         this.store.markEpisodeUpdated(episode.id);
         baseline = baselineAfterEpisode;
         skippedEpisodeCount += 1;
@@ -1059,13 +1068,15 @@ export class BrainWorker {
           episodeId: episode.id,
           status: "skipped",
           reason: contributions.length === 0
-            ? "reward matched the running baseline, so no policy delta was emitted"
+            ? (episode.reward === null
+              ? "direct supervision matched the current live delta, so no policy delta was emitted"
+              : "reward matched the running baseline, so no policy delta was emitted")
             : "no policy updates were materialized from the routed trajectory",
           reward: episode.reward,
           rewardSource: episode.rewardSource,
-          observationIds: consumed.observationIds,
-          supervisionIds: consumed.supervisionIds,
-          traceIds: consumed.traceIds,
+          observationIds: supervision.observationIds,
+          supervisionIds: supervision.supervisionIds,
+          traceIds: supervision.traceIds,
           attributionQuality,
           feedbackRichness,
           routeUpdateCount: 0,
@@ -1157,7 +1168,9 @@ export class BrainWorker {
         routeUpdates.push(buildRouteUpdateArtifact(update, previousWeight, createdEdge.weight, updateContributions));
       }
 
-      const baselineAfterEpisode = updateBaseline(baseline, episode.reward, this.config.baselineAlpha);
+      const baselineAfterEpisode = episode.reward === null
+        ? baseline
+        : updateBaseline(baseline, episode.reward, this.config.baselineAlpha);
       updatedEpisodes.push({
         episode,
         baselineBeforeEpisode,
@@ -1175,14 +1188,14 @@ export class BrainWorker {
         status: "applied",
         reason: buildEpisodeUpdateReason({
           episode,
-          supervision: consumed.supervision,
+          supervision: supervision.supervision,
           routeUpdateCount: updates.length,
         }),
         reward: episode.reward,
         rewardSource: episode.rewardSource,
-        observationIds: consumed.observationIds,
-        supervisionIds: consumed.supervisionIds,
-        traceIds: consumed.traceIds,
+        observationIds: supervision.observationIds,
+        supervisionIds: supervision.supervisionIds,
+        traceIds: supervision.traceIds,
         attributionQuality,
         feedbackRichness,
         routeUpdateCount: updates.length,

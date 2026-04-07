@@ -21,11 +21,11 @@ function makeNode(id: string): BrainNode {
   };
 }
 
-function makeToolNode(id: string): BrainNode {
+function makeToolNode(id: string, metadata: Record<string, unknown> = {}): BrainNode {
   return {
     id, kind: "toolcard", content: `tool ${id}`,
     embedding: new Float32Array([1, 0, 0]), sourceUri: null,
-    trust: "scanner", tags: [], tokenCount: 100, metadata: {},
+    trust: "scanner", tags: [], tokenCount: 100, metadata,
     createdAt: Date.now(), updatedAt: Date.now(),
   };
 }
@@ -338,6 +338,111 @@ describe("update (REINFORCE, Lemma 6.1)", () => {
       sourceNodeId: "source",
       toolNodeId: "tool:proof",
     });
+  });
+
+  it("weights high-authority labels more strongly and anchors direct updates to the current live weight", () => {
+    const graph = new BrainGraph();
+    graph.addNode(makeNode("source"));
+    graph.addNode(makeToolNode("tool:proof"));
+
+    const episode = makeEpisode([makeExpansion("source", "tool:proof", 0.2)], 0.5);
+    const teacherOnly: PolicyGradientSupervisionArtifact[] = [{
+      supervisionId: "sup-teacher-only",
+      traceId: "trace-teacher-only",
+      source: "teacher",
+      kind: "teacher_review",
+      value: 1,
+      confidence: 0.5,
+      reason: "teacher wants the tool path",
+      labelId: "label-teacher-only",
+      evidenceId: "evidence-teacher-only",
+      observationId: null,
+      teacherTraceId: null,
+      serveDecisionRecordId: null,
+      selectionDigest: null,
+      turnCompileEventId: null,
+      activePackGraphChecksum: null,
+      bindingMode: "exact_decision_id",
+      attributionQuality: "exact",
+      feedbackRichness: "tool_only",
+      traceRequestDigest: null,
+      traceSelectedNodeIds: ["source", "tool:proof"],
+      traceSelectedPathNodeIds: ["source", "tool:proof"],
+    }];
+    const humanAndTeacher: PolicyGradientSupervisionArtifact[] = [
+      teacherOnly[0],
+      {
+        ...teacherOnly[0],
+        supervisionId: "sup-human",
+        traceId: "trace-human",
+        source: "human",
+        confidence: 0.5,
+      },
+    ];
+
+    const teacherOnlyUpdates = computeTeacherActionUpdates(episode, 0.5, teacherOnly, graph);
+    const humanAndTeacherUpdates = computeTeacherActionUpdates(episode, 0.5, humanAndTeacher, graph);
+
+    expect(teacherOnlyUpdates).toHaveLength(1);
+    expect(humanAndTeacherUpdates).toHaveLength(1);
+    expect(Math.abs(humanAndTeacherUpdates[0]?.delta ?? 0)).toBeGreaterThan(Math.abs(teacherOnlyUpdates[0]?.delta ?? 0));
+
+    graph.setToolActionPrior("source", "tool:proof", 6);
+    const anchoredUpdates = computeTeacherActionUpdates(episode, 0.5, humanAndTeacher, graph);
+    expect(anchoredUpdates).toHaveLength(1);
+    expect(Math.abs(anchoredUpdates[0]?.delta ?? 0)).toBeLessThan(Math.abs(humanAndTeacherUpdates[0]?.delta ?? 0));
+    expect(Math.abs(anchoredUpdates[0]?.delta ?? 0)).toBeLessThanOrEqual(0.18);
+  });
+
+  it("mirrors linked tool-instance supervision onto the corresponding capability prior", () => {
+    const graph = new BrainGraph();
+    graph.addNode(makeNode("source"));
+    graph.addNode(makeToolNode("tool:weather"));
+    graph.addNode(makeToolNode("tool:weather:openmeteo", {
+      toolRole: "instance",
+      action_kind: "tool_instance",
+      toolCapabilityId: "tool:weather",
+    }));
+
+    const episode = makeEpisode([makeExpansion("source", "tool:weather:openmeteo", 0.4)], 0.5);
+    const supervision: PolicyGradientSupervisionArtifact[] = [{
+      supervisionId: "sup-instance",
+      traceId: "trace-instance",
+      source: "teacher",
+      kind: "teacher_review",
+      value: 1,
+      confidence: 1,
+      reason: "bind to the available weather instance",
+      labelId: "label-instance",
+      evidenceId: "evidence-instance",
+      observationId: null,
+      teacherTraceId: null,
+      serveDecisionRecordId: null,
+      selectionDigest: null,
+      turnCompileEventId: null,
+      activePackGraphChecksum: null,
+      bindingMode: "exact_decision_id",
+      attributionQuality: "exact",
+      feedbackRichness: "tool_only",
+      traceRequestDigest: null,
+      traceSelectedNodeIds: ["source", "tool:weather:openmeteo"],
+      traceSelectedPathNodeIds: ["source", "tool:weather:openmeteo"],
+    }];
+
+    const updates = computeTeacherActionUpdates(episode, 0.5, supervision, graph);
+    expect(updates).toHaveLength(2);
+
+    const instanceUpdate = updates.find(
+      (update): update is Extract<(typeof updates)[number], { kind: "tool_action" }> => update.kind === "tool_action" && update.toolNodeId === "tool:weather:openmeteo",
+    );
+    const capabilityUpdate = updates.find(
+      (update): update is Extract<(typeof updates)[number], { kind: "tool_action" }> => update.kind === "tool_action" && update.toolNodeId === "tool:weather",
+    );
+    expect(instanceUpdate).toBeDefined();
+    expect(capabilityUpdate).toBeDefined();
+    expect(instanceUpdate?.delta).toBeGreaterThan(0);
+    expect(capabilityUpdate?.delta).toBeGreaterThan(0);
+    expect(Math.abs(capabilityUpdate?.delta ?? 0)).toBeLessThan(Math.abs(instanceUpdate?.delta ?? 0));
   });
 
   it("distills seed-phase tool choices into tool-action priors", () => {
