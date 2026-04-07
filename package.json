@@ -32,7 +32,8 @@
     "release:prepare:openclaw": "npm --prefix packages/openclaw install --package-lock=false --no-save --ignore-scripts --fund=false --audit=false",
     "release:prepare:cli": "npm --prefix packages/cli install --package-lock=false --no-save --ignore-scripts --fund=false --audit=false",
     "release:prepare:packages": "npm run release:prepare:openclaw && npm run release:prepare:cli",
-    "release:verify": "npm test && npm run release:verify:proof && npm pack --dry-run && npm run release:verify:openclaw && npm run release:verify:cli",
+    "release:verify": "npm run release:verify:dependency-policy && npm test && npm run release:verify:proof && npm pack --dry-run && npm run release:verify:openclaw && npm run release:verify:cli",
+    "release:verify:dependency-policy": "node scripts/verify-dependency-policy.mjs",
     "release:verify:proof": "node scripts/verify-proof-smoke.mjs",
     "release:verify:docs-drift": "node scripts/verify-release-docs-drift.mjs",
     "release:verify:cli": "npm run release:prepare:cli && npm --prefix packages/cli run release:verify",
@@ -46,15 +47,25 @@
     "version-packages": "changeset version"
   },
   "dependencies": {
-    "@mariozechner/pi-agent-core": "*",
-    "@mariozechner/pi-ai": "*",
+    "@mariozechner/pi-agent-core": "0.53.0",
+    "@mariozechner/pi-ai": "0.53.0",
     "@sinclair/typebox": "0.34.48",
-    "tsx": "^4.20.6"
+    "tsx": "4.21.0"
   },
   "devDependencies": {
     "@changesets/cli": "^2.30.0",
     "typescript": "^5.7.0",
     "vitest": "^3.0.0"
+  },
+  "overrides": {
+    "basic-ftp": "5.2.0",
+    "hono": "4.12.7",
+    "@hono/node-server": "1.19.10",
+    "undici": "7.24.0",
+    "yaml": "2.8.3",
+    "fast-xml-parser": "5.5.10",
+    "minimatch": "10.2.3",
+    "brace-expansion": "5.0.5"
   },
   "peerDependencies": {
     "openclaw": "*"

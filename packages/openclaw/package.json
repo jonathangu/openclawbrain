@@ -54,9 +54,9 @@
   },
   "dependencies": {
     "@openclawbrain/compiler": "0.3.5",
-    "@openclawbrain/contracts": "^0.3.5",
-    "@openclawbrain/learner": "^0.3.4",
-    "@openclawbrain/pack-format": "^0.3.4"
+    "@openclawbrain/contracts": "0.3.5",
+    "@openclawbrain/learner": "0.3.4",
+    "@openclawbrain/pack-format": "0.3.4"
   },
   "openclaw": {
     "extensions": [
@@ -67,7 +67,7 @@
     "build": "tsc -p tsconfig.extension.json",
     "clean": "rm -rf dist/extension",
     "prepublishOnly": "npm run release:verify",
-    "release:verify": "npm test && node ../../scripts/verify-openclaw-package-tarball.mjs",
+    "release:verify": "cd ../.. && node scripts/verify-dependency-policy.mjs && node --test packages/openclaw/dist/test/*.test.js && node scripts/verify-openclaw-package-tarball.mjs",
     "test": "node --test dist/test/*.test.js"
   }
 }

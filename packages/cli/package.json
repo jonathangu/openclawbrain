@@ -46,13 +46,13 @@
   },
   "dependencies": {
     "@openclawbrain/compiler": "0.3.5",
-    "@openclawbrain/contracts": "^0.3.5",
-    "@openclawbrain/events": "^0.3.4",
-    "@openclawbrain/event-export": "^0.3.4",
-    "@openclawbrain/learner": "^0.3.4",
-    "@openclawbrain/pack-format": "^0.3.4",
-    "@openclawbrain/provenance": "^0.3.4",
-    "@openclawbrain/workspace-metadata": "^0.3.4"
+    "@openclawbrain/contracts": "0.3.5",
+    "@openclawbrain/events": "0.3.4",
+    "@openclawbrain/event-export": "0.3.4",
+    "@openclawbrain/learner": "0.3.4",
+    "@openclawbrain/pack-format": "0.3.4",
+    "@openclawbrain/provenance": "0.3.4",
+    "@openclawbrain/workspace-metadata": "0.3.4"
   },
   "bin": {
     "openclawbrain": "dist/src/cli.js",
@@ -60,7 +60,7 @@
   },
   "scripts": {
     "prepublishOnly": "npm run release:verify",
-    "release:verify": "npm test && node ../../scripts/verify-openclaw-cli-package-tarball.mjs",
+    "release:verify": "cd ../.. && node scripts/verify-dependency-policy.mjs && node --test packages/cli/dist/test/*.test.js && node scripts/verify-openclaw-cli-package-tarball.mjs",
     "test": "node --test dist/test/*.test.js"
   }
 }
