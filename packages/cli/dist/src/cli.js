@@ -1780,6 +1780,7 @@ function readInstallRuntimeFingerprint(openclawHome) {
                 manifestId: selectedInstall.manifestId,
                 installId: selectedInstall.installId,
                 packageName: selectedInstall.packageName,
+                packageVersion: selectedInstall.packageVersion ?? null,
                 installLayout: selectedInstall.installLayout
             },
         installLayout: hook.installLayout,
@@ -1810,7 +1811,7 @@ function runOpenClawBrainConvergePluginStep(openclawHome) {
             command: null,
             changed: false,
             changeReasons: [],
-            detail: "Skipped the OpenClaw plugin manager because the authoritative split-package plugin is already present and a no-op refresh would only churn volatile install metadata.",
+            detail: "Skipped the OpenClaw plugin manager because the authoritative split-package plugin already matches the daemon/runtime version and a no-op refresh would only churn volatile install metadata.",
             warning: null,
             capture: null,
             before,

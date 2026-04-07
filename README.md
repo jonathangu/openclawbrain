@@ -6,7 +6,7 @@ OpenClawBrain is a memory layer for [OpenClaw](https://github.com/anthropics/ope
 
 The mechanism: a background pipeline watches agent interactions, binds feedback to past decisions, and builds compact memory packs. Only promoted packs reach the live path. The agent gets continuity without unbounded context growth, and latency stays predictable because the hot path never calls a live LLM. If the memory layer goes down, the agent keeps running.
 
-Current version: **0.4.38** · [Changelog](CHANGELOG.md) · [Claims boundary](CLAIMS.md)
+Current version: **0.4.39** · [Changelog](CHANGELOG.md) · [Claims boundary](CLAIMS.md)
 
 ## Install
 
@@ -19,11 +19,11 @@ openclawbrain status --openclaw-home ./openclaw-cormorantai --detailed
 openclawbrain proof --openclaw-home ./openclaw-cormorantai
 ```
 
-`install` writes the hook for your chosen OpenClaw home. That can be the default `~/.openclaw`, a profile home like `~/.openclaw-Tern`, or an explicit nonstandard path like `./openclaw-cormorantai`. `status --detailed` verifies the wiring for that same home. `proof` captures a durable evidence bundle you can inspect or keep.
+`install` writes or refreshes the hook for your chosen OpenClaw home. That can be the default `~/.openclaw`, a profile home like `~/.openclaw-Tern`, or an explicit nonstandard path like `./openclaw-cormorantai`. When the daemon/runtime surface has already moved ahead of the installed hook package, `install` now refreshes that stale installed plugin state for the same home instead of silently preserving the skew. `status --detailed` verifies the wiring for that same home. `proof` captures a durable evidence bundle you can inspect or keep.
 
 Fresh homes default to the cold-start prior. Existing homes rerun the same install lane and keep their saved preferences on top while OpenClawBrain rebuilds the stronger generic prior underneath them instead of wiping them.
 
-A healthy install reports the profile as attached. After the first promoted pack is available, detailed status reports `serveState=serving_active_pack`.
+A healthy install reports the profile as attached and the detailed `surface` line as `converge=converged`. After the first promoted pack is available, detailed status reports `serveState=serving_active_pack`.
 
 Next: [Quick start](docs/getting-started/quick-start.md) · [Troubleshooting](docs/operating/troubleshooting.md) · [Lifecycle](docs/lifecycle.md)
 
@@ -116,7 +116,7 @@ If you want the focused explanation, read **[docs/graphify.md](docs/graphify.md)
 
 ## Continuous learning is now part of the shipped product
 
-OpenClawBrain `0.4.38` keeps the first bounded continuous-learning loop on top of the existing memory and Graphify foundations and fixes the public CLI install seam that affected `0.4.37`.
+OpenClawBrain `0.4.39` keeps the first bounded continuous-learning loop on top of the existing memory and Graphify foundations and fixes the stale-installed-hook upgrade seam that could still leave a real host half-converged even after rerunning the public install lane.
 
 What is now part of the public product:
 
@@ -126,7 +126,7 @@ What is now part of the public product:
 - periodic same-family retrain with replay-gated promotion
 - operator status/control surfaces for Graphify cadence, retrain state, queue visibility, and pause controls
 
-The install lane does **not** change. The same four commands still install, restart, status-check, and prove the system. What changed is that the ongoing improvement loop and its operator surfaces are now a shipped part of the product instead of only repo substrate.
+The install lane does **not** change. The same four commands still install, restart, status-check, and prove the system. What changed is that `install` now refreshes a stale installed hook when the daemon/runtime side has already moved ahead, and the ongoing improvement loop plus its operator surfaces are now a shipped part of the product instead of only repo substrate.
 
 ## Scope
 

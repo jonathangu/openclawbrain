@@ -16,6 +16,8 @@ openclawbrain status --openclaw-home ./openclaw-cormorantai --detailed
 - the **installed hook/runtime-guard** surface that OpenClaw loads from the selected `--openclaw-home`
 - the **daemon runtime** surface that background watch/learner work runs from for that activation root
 
+If the daemon/runtime surface has already moved to a newer OpenClawBrain version than the installed hook package, `install` refreshes that stale installed plugin state for the same selected home instead of silently treating the native plugin record as good enough.
+
 `status --detailed` verifies both surfaces for the selected home. Fresh homes default to the cold-start prior. If the selected home already has user history, rerunning install rebuilds the stronger generic prior underneath the saved preferences, corrections, and habits instead of wiping them.
 
 If you ever do manual hook or daemon surgery, the safe recovery lane is still the same command:
@@ -53,7 +55,7 @@ Look for these checkpoints in `status --detailed`:
 - `attachTruth ... runtime=proven`
 - `surface ... converge=converged`
 
-If `surface ... converge=half_converged` appears, treat that as a failed converge. One side of the split runtime moved without the other. Refresh the daemon-side CLI/runtime surface if needed, then rerun `openclawbrain install --openclaw-home <path>` for the same selected home before trusting the host again.
+If `surface ... converge=half_converged` appears, treat that as a failed converge. One side of the split runtime moved without the other. First rerun the same four-command lane for the same selected home; the shipped install path now refreshes a stale installed hook when the daemon/runtime side is newer. If the host still does not return to `converge=converged`, finish refreshing the daemon-side CLI/runtime surface and verify again before trusting the host.
 
 When you need a durable bundle, run the `proof` command above after install/restart or rerun it later with `--skip-install --skip-restart` to capture the current operator state without replaying lifecycle steps. When your installed proof surface still expects the explicit replay guards, use those flags there. The public story stays on the same selected `--openclaw-home`.
 

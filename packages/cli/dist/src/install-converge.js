@@ -78,6 +78,8 @@ export function shouldReplaceOpenClawBrainInstallBeforeConverge(fingerprint) {
 
 export function planOpenClawBrainConvergePluginAction(fingerprint) {
   const selectedInstall = fingerprint?.selectedInstall ?? null;
+  const installedPackageVersion = selectedInstall?.packageVersion ?? null;
+  const daemonRuntimePackageVersion = fingerprint?.daemonRuntimePackageVersion ?? null;
   if (selectedInstall === null) {
     return {
       action: "install",
@@ -102,11 +104,21 @@ export function planOpenClawBrainConvergePluginAction(fingerprint) {
       reason: "the authoritative install is still a generated shadow extension, so converge must install the split-package plugin lane",
     };
   }
+  if (daemonRuntimePackageVersion !== null && installedPackageVersion !== daemonRuntimePackageVersion) {
+    return {
+      action: "update",
+      packageSpec: "@openclawbrain/openclaw",
+      pluginId: "openclawbrain",
+      reason: installedPackageVersion === null
+        ? `the authoritative split-package plugin is installed, but its package version is unverified while the daemon/runtime surface is ${daemonRuntimePackageVersion}, so converge must refresh the installed plugin state`
+        : `the authoritative split-package plugin is still at ${installedPackageVersion} while the daemon/runtime surface is ${daemonRuntimePackageVersion}, so converge must refresh the installed plugin state`,
+    };
+  }
   return {
     action: "noop",
     packageSpec: "@openclawbrain/openclaw",
     pluginId: "openclawbrain",
-    reason: "the authoritative split-package plugin is already installed, so converge should preserve the current plugin-manager record instead of rewriting volatile install metadata",
+    reason: "the authoritative split-package plugin is already installed at the same version as the daemon/runtime surface, so converge should preserve the current plugin-manager record instead of rewriting volatile install metadata",
   };
 }
 

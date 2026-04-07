@@ -35,17 +35,48 @@ test("converge knows when an existing non-native install must be replaced before
     }), true);
 });
 
-test("converge treats an already-authoritative native plugin as a no-op", () => {
+test("converge treats an already-authoritative native plugin as a no-op when it matches the daemon/runtime version", () => {
     const plan = planOpenClawBrainConvergePluginAction({
         selectedInstall: {
             packageName: "@openclawbrain/openclaw",
+            packageVersion: "1.2.3",
             installLayout: "native_package_plugin"
-        }
+        },
+        daemonRuntimePackageVersion: "1.2.3"
     });
     assert.equal(plan.action, "noop");
     assert.equal(plan.packageSpec, "@openclawbrain/openclaw");
-    assert.match(plan.reason, /already installed/);
+    assert.match(plan.reason, /same version/);
     assert.match(plan.reason, /volatile install metadata/);
+});
+
+test("converge refreshes the authoritative native plugin when its installed package version lags the daemon/runtime version", () => {
+    const plan = planOpenClawBrainConvergePluginAction({
+        selectedInstall: {
+            packageName: "@openclawbrain/openclaw",
+            packageVersion: "1.2.2",
+            installLayout: "native_package_plugin"
+        },
+        daemonRuntimePackageVersion: "1.2.3"
+    });
+    assert.equal(plan.action, "update");
+    assert.equal(plan.packageSpec, "@openclawbrain/openclaw");
+    assert.match(plan.reason, /still at 1.2.2/);
+    assert.match(plan.reason, /daemon\/runtime surface is 1.2.3/);
+});
+
+test("converge refreshes the authoritative native plugin when its installed package version is unverified but the daemon/runtime version is known", () => {
+    const plan = planOpenClawBrainConvergePluginAction({
+        selectedInstall: {
+            packageName: "@openclawbrain/openclaw",
+            packageVersion: null,
+            installLayout: "native_package_plugin"
+        },
+        daemonRuntimePackageVersion: "1.2.3"
+    });
+    assert.equal(plan.action, "update");
+    assert.match(plan.reason, /package version is unverified/);
+    assert.match(plan.reason, /daemon\/runtime surface is 1.2.3/);
 });
 
 test("converge diff and restart plan skip restart when no runtime-affecting install state changed", () => {

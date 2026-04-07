@@ -4,6 +4,26 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.39
+
+`0.4.39` is the install-convergence release: it keeps the shipped continuous-learning/operator story from `0.4.38`, but it fixes the real upgrade seam where `install` could preserve a stale installed hook/plugin record even though the daemon/runtime side had already moved ahead.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.39`
+- `@openclawbrain/cli@0.4.39`
+
+**Changes**
+
+- makes `openclawbrain install --openclaw-home ...` refresh the authoritative native plugin state when the installed hook package version lags the daemon/runtime surface for that same home
+- keeps half-converged daemon-vs-installed-hook states as explicit blocking truth instead of a fake-success install story
+- updates README/docs/site install language so the public repair story says plainly that the same four-command lane now repairs stale-hook skew too
+- aligns repo docs and public version surfaces to `0.4.39`
+
+**Full release note**
+
+- [docs/release-notes-0.4.39.md](docs/release-notes-0.4.39.md)
+
 ## 0.4.38
 
 `0.4.38` is the install-hotfix follow-up to the ongoing-learning release: it keeps the shipped continuous-learning/operator story from `0.4.37` and fixes the published CLI packaging seam so the public install lane works on a real host.

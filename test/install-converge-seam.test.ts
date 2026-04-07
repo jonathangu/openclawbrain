@@ -42,18 +42,38 @@ describe("planOpenClawBrainConvergePluginAction — compat-package upgrade", () 
     expect(plan.reason).toContain(LEGACY_COMPAT_PACKAGE_NAME);
   });
 
-  it("treats the canonical native package plugin as a no-op", () => {
+  it("treats the canonical native package plugin as a no-op when it matches the daemon/runtime version", () => {
     const plan = planOpenClawBrainConvergePluginAction({
       selectedInstall: {
         extensionDir: "/tmp/openclaw/extensions/@openclawbrain/openclaw",
         manifestId: "openclawbrain",
         installId: "openclaw",
         packageName: "@openclawbrain/openclaw",
+        packageVersion: "1.2.3",
         installLayout: "native_package_plugin",
       },
+      daemonRuntimePackageVersion: "1.2.3",
     });
 
     expect(plan.action).toBe("noop");
+  });
+
+  it("refreshes the canonical native package plugin when the installed hook version lags the daemon/runtime version", () => {
+    const plan = planOpenClawBrainConvergePluginAction({
+      selectedInstall: {
+        extensionDir: "/tmp/openclaw/extensions/@openclawbrain/openclaw",
+        manifestId: "openclawbrain",
+        installId: "openclaw",
+        packageName: "@openclawbrain/openclaw",
+        packageVersion: "1.2.2",
+        installLayout: "native_package_plugin",
+      },
+      daemonRuntimePackageVersion: "1.2.3",
+    });
+
+    expect(plan.action).toBe("update");
+    expect(plan.reason).toContain("1.2.2");
+    expect(plan.reason).toContain("1.2.3");
   });
 });
 

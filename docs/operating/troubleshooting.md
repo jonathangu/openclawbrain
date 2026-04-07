@@ -37,7 +37,7 @@ The two live runtime surfaces drifted apart:
 - the selected home's installed hook/runtime-guard moved one way
 - the daemon runtime used for background watch/learner work moved another way
 
-This is the main operator seam during upgrades or hotfixes.
+This is the main operator seam during upgrades or hotfixes. A common real-world case was the daemon/runtime side moving ahead while the installed hook package for the selected home stayed old.
 
 Fix:
 
@@ -47,7 +47,7 @@ openclaw gateway restart
 openclawbrain status --openclaw-home ./openclaw-cormorantai --detailed
 ```
 
-Do not treat one-sided daemon or hook edits as converged just because the other surface still loads.
+The shipped `install` path now refreshes a stale installed hook for that same home when the daemon/runtime version is already newer. Do not treat one-sided daemon or hook edits as converged just because the other surface still loads. If rerunning the lane still leaves `converge=half_converged`, finish refreshing the daemon-side CLI/runtime surface and verify again.
 
 ## `status --detailed` does not show the selected home as attached
 

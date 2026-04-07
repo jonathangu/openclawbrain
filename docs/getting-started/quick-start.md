@@ -20,7 +20,7 @@ openclaw gateway restart
 openclawbrain status --openclaw-home ./openclaw-cormorantai --detailed
 ```
 
-`install` is the public front door. It converges the selected home's installed hook/runtime-guard surface and the daemon runtime surface onto one coherent state for that activation root. `status --detailed` is the quick verify surface.
+`install` is the public front door. It converges the selected home's installed hook/runtime-guard surface and the daemon runtime surface onto one coherent state for that activation root. If the daemon/runtime surface is already newer than the installed hook package, `install` refreshes that stale installed plugin state for the same `--openclaw-home` before you verify. `status --detailed` is the quick verify surface.
 
 Fresh homes default to the cold-start prior. If you are upgrading an existing home, rerun the same install lane; it rebuilds the stronger generic prior underneath your saved preferences instead of resetting them.
 
@@ -36,7 +36,7 @@ The intended canonical lane is `openclawbrain install --openclaw-home <your-home
 
 If you manually change plugin files anyway, treat that as maintainer-only surgery and rerun `openclawbrain install --openclaw-home ./openclaw-cormorantai` (or whatever exact home you are operating on) before trusting the host again.
 
-In the detailed status output, look for `surface ... converge=converged`. If it says `converge=half_converged`, the daemon runtime and installed hook/runtime-guard drifted apart and the safe lane is to rerun install for that same `--openclaw-home`.
+In the detailed status output, look for `surface ... converge=converged`. If it says `converge=half_converged`, the daemon runtime and installed hook/runtime-guard drifted apart. First rerun the same four-command lane for that same `--openclaw-home`; `install` now refreshes a stale installed hook when the daemon side has already moved ahead. If the surface still does not return to `converge=converged`, treat the host as failed and continue with troubleshooting.
 
 ## What success looks like
 
