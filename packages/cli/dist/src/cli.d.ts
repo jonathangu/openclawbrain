@@ -131,7 +131,64 @@ interface ParsedProofCliArgs {
     json: boolean;
     help: boolean;
 }
-type ParsedOperatorCliArgs = ParsedStatusRollbackCliArgs | ParsedAttachCliArgs | ParsedScanCliArgs | ParsedInstallCliArgs | ParsedDetachCliArgs | ParsedUninstallCliArgs | ParsedContextCliArgs | ParsedHistoryCliArgs | ParsedLearnCliArgs | ParsedWatchCliArgs | DaemonCliArgs | ParsedExportCliArgs | ParsedImportCliArgs | ParsedResetCliArgs | ParsedProofCliArgs;
+interface ParsedGraphifyExportCliArgs {
+    command: "graphify-export";
+    activationRoot: string;
+    outputRoot: string | null;
+    runId: string | null;
+    repoRoot: string | null;
+    workspaceRoot: string | null;
+    sessionKey: string | null;
+    sessionSourcePath: string | null;
+    proofSummarySourcePath: string | null;
+    docsRoot: string | null;
+    codeRoot: string | null;
+    generatedAt: string | null;
+    json: boolean;
+    help: boolean;
+}
+interface ParsedGraphifyRunCliArgs {
+    command: "graphify-run";
+    sourceBundlePath: string;
+    outputRoot: string | null;
+    runId: string | null;
+    graphifyVersion: string | null;
+    graphifyMode: string | null;
+    graphifyCommand: string | null;
+    graphifyArgs: string[];
+    graphifyFlags: string[];
+    graphifyConfig: Record<string, unknown>;
+    labels: string[];
+    json: boolean;
+    help: boolean;
+}
+interface ParsedGraphifyCompiledArtifactsCliArgs {
+    command: "graphify-compiled-artifacts";
+    bundleId: string | null;
+    outputDir: string | null;
+    bundleStartedAt: string | null;
+    graphifyRunId: string | null;
+    graphifyVersion: string | null;
+    graphifyCommand: string | null;
+    sourceBundleId: string | null;
+    sourceBundleHash: string | null;
+    graphHash: string | null;
+    configHash: string | null;
+    labelsHash: string | null;
+    json: boolean;
+    help: boolean;
+}
+interface ParsedGraphifyDeterministicLintCliArgs {
+    command: "graphify-lints";
+    bundleRoot: string | null;
+    repoRoot: string;
+    workspaceRoot: string;
+    outputRoot: string | null;
+    runId: string | null;
+    json: boolean;
+    help: boolean;
+}
+type ParsedOperatorCliArgs = ParsedStatusRollbackCliArgs | ParsedAttachCliArgs | ParsedScanCliArgs | ParsedInstallCliArgs | ParsedDetachCliArgs | ParsedUninstallCliArgs | ParsedContextCliArgs | ParsedHistoryCliArgs | ParsedLearnCliArgs | ParsedWatchCliArgs | DaemonCliArgs | ParsedExportCliArgs | ParsedImportCliArgs | ParsedResetCliArgs | ParsedProofCliArgs | ParsedGraphifyExportCliArgs | ParsedGraphifyRunCliArgs | ParsedGraphifyCompiledArtifactsCliArgs | ParsedGraphifyDeterministicLintCliArgs;
 export declare function parseOperatorCliArgs(argv: readonly string[]): ParsedOperatorCliArgs;
 export interface WatchCommandRuntimeV1 {
     activationRoot: string;

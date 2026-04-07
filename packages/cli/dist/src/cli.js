@@ -7,7 +7,9 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import { DEFAULT_OLLAMA_EMBEDDING_MODEL, createOllamaEmbedder } from "@openclawbrain/compiler";
 import { describeManagedLearnerServiceRuntimeGuard, ensureManagedLearnerServiceForActivationRoot, inspectManagedLearnerService, removeManagedLearnerServiceForActivationRoot, parseDaemonArgs, runDaemonCommand } from "./daemon.js";
-import { exportBrain, exportGraphifySourceBundle, importBrain } from "./import-export.js";
+import { exportBrain, exportGraphifyCompiledArtifactsPack, exportGraphifyProjection, exportGraphifySourceBundle, importBrain } from "./import-export.js";
+import { runManagedGraphifyRunner } from "./graphify-runner.js";
+import { parseGraphifyDeterministicLintCliArgs, runGraphifyDeterministicLints } from "./graphify-lints.js";
 import { buildNormalizedEventExport } from "@openclawbrain/contracts";
 import { buildTeacherSupervisionArtifactsFromNormalizedEventExport, createAlwaysOnLearningRuntimeState, describeAlwaysOnLearningRuntimeState, drainAlwaysOnLearningRuntime, loadOrInitBaseline, materializeAlwaysOnLearningCandidatePack, persistBaseline } from "./local-learner.js";
 import { inspectActivationState, loadPackFromActivation, promoteCandidatePack, resolveLearningSpineLogPath, stageCandidatePack } from "@openclawbrain/pack-format";
@@ -557,6 +559,10 @@ function operatorCliHelp() {
         "  openclawbrain scan --session <trace.json> --root <path> [options]",
         "  openclawbrain scan --live <event-export-path> --workspace <workspace.json> [options]",
         "  openclawbrain learn [--activation-root <path>|--openclaw-home <path>] [--json]",
+        "  openclawbrain graphify-export --activation-root <path> [options]",
+        "  openclawbrain graphify-run --source-bundle <path> [--output-root <path>] [options]",
+        "  openclawbrain graphify-compiled-artifacts [--bundle-id <id>] [--output-dir <path>] [options]",
+        "  openclawbrain graphify-lints --bundle-root <path> [--repo-root <path>] [--workspace-root <path>] [--output-root <path>] [--run-id <id>] [--json]",
         proofHelp.usage,
         "  openclawbrain source-bundle --openclaw-home <path> --output-dir <path> [options]",
         "  openclawbrain-ops <status|rollback> [--activation-root <path>|--openclaw-home <path>] [options]  # compatibility alias",
@@ -587,8 +593,38 @@ function operatorCliHelp() {
         "  --limit <N>                 Maximum number of history entries to show (default: 20, history only).",
         "  --scan-root <path>          Event-export scan root for watch mode (defaults to <activation-root>/event-exports).",
         "  --interval <seconds>        Polling interval for watch mode (default: 30).",
-        ...proofHelp.optionLines,
+        "  --output-root <dir>         Root directory for graphify-export bundles (default: ./artifacts/graphify-source-bundles).",
+        "  --run-id <id>               Run identifier for graphify-export bundle subdirectory (default: timestamp token).",
+        "  --repo-root <path>          Repository root used for the docs/code mirror tree in graphify-export.",
+        "  --workspace-root <path>     Workspace root used to source MEMORY.md and TASKS.md in graphify-export.",
+        "  --session-key <key>         Session key used for graphify-export session projection path (default: current-session).",
+        "  --session-source <path>     Optional session source markdown/json/text to project into graphify-export sessions/.",
+        "  --proof-summary-source <path>  Optional proof summary source markdown/text to project into graphify-export proof/summary.md.",
+        "  --docs-root <path>          Docs directory to mirror or symlink for graphify-export (default: <repo-root>/docs).",
+        "  --code-root <path>          Code directory to mirror or symlink for graphify-export (default: <repo-root>/packages/cli/dist/src).",
+        "  --generated-at <iso>        Override the graphify-export bundle timestamp used in markdown provenance.",
+        "  --source-bundle <path>      Source bundle root or bundle file for graphify-run.",
+        "  --graphify-version <text>   Recorded Graphify version string (probed from --graphify-command when omitted).",
+        "  --graphify-mode <mode>      Recorded Graphify mode label (default: managed-off-path).",
+        "  --graphify-command <cmd>    Optional executable to invoke under managed Graphify execution.",
+        "  --graphify-arg <value>      Repeatable Graphify command arg. Passed through when --graphify-command is set.",
+        "  --graphify-flag <value>     Repeatable Graphify flag label recorded in bundle metadata.",
+        "  --graphify-config-json <json>  Graphify config payload serialized into bundle metadata.",
+        "  --label <value>             Repeatable bundle label recorded in labels.json.",
+        "  --bundle-id <id>            Graphify compiled-artifact bundle id seed (graphify-compiled-artifacts only).",
+        "  --output-dir <path>         Output directory for graphify-compiled-artifacts (defaults under artifacts/teacher-v3-proof).",
+        "  --bundle-started-at <iso>   Timestamp used as the bundle start time for graphify-compiled-artifacts.",
+        "  --graphify-run-id <id>     Graphify managed-run id that feeds compiled-artifact bundle provenance.",
+        "  --source-bundle-id <id>    Source bundle id carried into graphify-compiled-artifacts provenance.",
+        "  --source-bundle-hash <hash>  Source bundle hash carried into graphify-compiled-artifacts provenance.",
+        "  --graph-hash <hash>        Graph hash recorded in graphify-compiled-artifacts provenance.",
+        "  --config-hash <hash>       Config hash recorded in graphify-compiled-artifacts provenance.",
+        "  --labels-hash <hash>       Labels hash recorded in graphify-compiled-artifacts provenance.",
+        "  --bundle-root <path>        Graphify pre-lint bundle root for graphify-lints.",
+        "  --repo-root <path>          Repository root for graphify-lints source-reference checks.",
+        "  --workspace-root <path>     Workspace root for graphify-lints release/docs checks.",
         "  --json                      Emit machine-readable JSON instead of text.",
+        ...proofHelp.optionLines,
         "  --help                      Show this help.",
         "",
         "Lifecycle flow:",
@@ -614,6 +650,10 @@ function operatorCliHelp() {
         "  scan         inspect one recorded session or live event export without claiming a daemon is running",
         "  learn        one-shot local-session learning pass against the resolved activation root",
         "  source-bundle canonical Graphify source-bundle export with runtime-status and proof snapshots",
+        "  graphify-export  project the canonical machine export into non-authoritative Graphify surfaces",
+        "  graphify-run  run the managed off-path Graphify compiler step and emit a reproducible run bundle",
+        "  graphify-compiled-artifacts derive a Graphify-shaped compiled-artifact pack from docs/fixture source truth",
+        "  graphify-lints deterministic pre-lint for Graphify/OCB bundles before any semantic lint or graph mutation",
         proofHelp.advanced,
         "  status --teacher-snapshot keeps the current live-first / principal-priority / passive-backfill learner order visible when that snapshot exists",
         "  native package installs still need the openclawbrain CLI available because install/attach pin the activation root for that package copy",
@@ -628,6 +668,10 @@ function operatorCliHelp() {
         "  detach: 0 on successful unhook, 1 on input/read failure.",
         "  uninstall: 0 on successful unhook/cleanup, 1 on input/read failure.",
         "  scan: 0 on successful replay/scan, 1 on input/read failure.",
+        "  graphify-export: 0 on successful projection bundle capture, 1 on input/read failure.",
+        "  graphify-run: 0 on successful managed Graphify bundle capture, 1 on input/read failure.",
+        "  graphify-compiled-artifacts: 0 on successful pack capture, 1 on input/read failure.",
+        "  graphify-lints: 0 on successful pre-lint capture, 1 on input/read failure.",
         "  proof: 0 on successful bundle capture, 1 on input/read failure.",
         "  source-bundle: 0 on successful canonical source export, 1 on input/read failure."
     ].join("\n");
@@ -2458,11 +2502,507 @@ export function parseOperatorCliArgs(argv) {
         args.shift();
         return parseDaemonArgs(args);
     }
-    if (args[0] === "status" || args[0] === "rollback" || args[0] === "scan" || args[0] === "attach" || args[0] === "install" || args[0] === "detach" || args[0] === "uninstall" || args[0] === "context" || args[0] === "history" || args[0] === "learn" || args[0] === "watch" || args[0] === "export" || args[0] === "import" || args[0] === "reset" || args[0] === "proof" || args[0] === "source-bundle") {
+    if (args[0] === "status" || args[0] === "rollback" || args[0] === "scan" || args[0] === "attach" || args[0] === "install" || args[0] === "detach" || args[0] === "uninstall" || args[0] === "context" || args[0] === "history" || args[0] === "learn" || args[0] === "watch" || args[0] === "export" || args[0] === "import" || args[0] === "reset" || args[0] === "proof" || args[0] === "source-bundle" || args[0] === "graphify-export" || args[0] === "graphify-run" || args[0] === "graphify-compiled-artifacts" || args[0] === "graphify-lints") {
         command = args.shift();
     }
     if (command === "proof") {
         return parseProofCliArgs(args);
+    }
+    if (command === "graphify-export") {
+        let outputRoot = null;
+        let runId = null;
+        let repoRoot = null;
+        let workspaceRoot = null;
+        let sessionKey = null;
+        let sessionSourcePath = null;
+        let proofSummarySourcePath = null;
+        let docsRoot = null;
+        let codeRoot = null;
+        let generatedAt = null;
+        for (let index = 0; index < args.length; index += 1) {
+            const arg = args[index];
+            if (arg === "--help" || arg === "-h") {
+                help = true;
+                continue;
+            }
+            if (arg === "--json") {
+                json = true;
+                continue;
+            }
+            if (arg === "--activation-root") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--activation-root requires a value");
+                }
+                activationRoot = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--openclaw-home") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--openclaw-home requires a value");
+                }
+                openclawHome = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--output-root") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--output-root requires a value");
+                }
+                outputRoot = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--run-id") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--run-id requires a value");
+                }
+                runId = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--repo-root") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--repo-root requires a value");
+                }
+                repoRoot = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--workspace-root") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--workspace-root requires a value");
+                }
+                workspaceRoot = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--session-key") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--session-key requires a value");
+                }
+                sessionKey = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--session-source") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--session-source requires a value");
+                }
+                sessionSourcePath = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--proof-summary-source") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--proof-summary-source requires a value");
+                }
+                proofSummarySourcePath = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--docs-root") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--docs-root requires a value");
+                }
+                docsRoot = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--code-root") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--code-root requires a value");
+                }
+                codeRoot = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--generated-at") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--generated-at requires a value");
+                }
+                generatedAt = next;
+                index += 1;
+                continue;
+            }
+            if (arg.startsWith("--")) {
+                throw new Error(`unknown argument for graphify-export: ${arg}`);
+            }
+        }
+        if (help) {
+            return {
+                command,
+                activationRoot: "",
+                outputRoot: "",
+                runId: "",
+                repoRoot: "",
+                workspaceRoot: "",
+                sessionKey: "",
+                sessionSourcePath: null,
+                proofSummarySourcePath: null,
+                docsRoot: "",
+                codeRoot: "",
+                generatedAt: null,
+                json,
+                help
+            };
+        }
+        return {
+            command,
+            activationRoot: resolveCliActivationRoot(activationRoot, openclawHome),
+            outputRoot: normalizeOptionalCliString(outputRoot) === null ? null : path.resolve(normalizeOptionalCliString(outputRoot)),
+            runId: normalizeOptionalCliString(runId),
+            repoRoot: normalizeOptionalCliString(repoRoot) === null ? null : path.resolve(normalizeOptionalCliString(repoRoot)),
+            workspaceRoot: normalizeOptionalCliString(workspaceRoot) === null ? null : path.resolve(normalizeOptionalCliString(workspaceRoot)),
+            sessionKey: normalizeOptionalCliString(sessionKey),
+            sessionSourcePath: normalizeOptionalCliString(sessionSourcePath) === null ? null : path.resolve(normalizeOptionalCliString(sessionSourcePath)),
+            proofSummarySourcePath: normalizeOptionalCliString(proofSummarySourcePath) === null ? null : path.resolve(normalizeOptionalCliString(proofSummarySourcePath)),
+            docsRoot: normalizeOptionalCliString(docsRoot) === null ? null : path.resolve(normalizeOptionalCliString(docsRoot)),
+            codeRoot: normalizeOptionalCliString(codeRoot) === null ? null : path.resolve(normalizeOptionalCliString(codeRoot)),
+            generatedAt: normalizeOptionalCliString(generatedAt),
+            json,
+            help
+        };
+    }
+    if (command === "graphify-run") {
+        let sourceBundlePath = null;
+        let outputRoot = null;
+        let runId = null;
+        let graphifyVersion = null;
+        let graphifyMode = null;
+        let graphifyCommand = null;
+        const graphifyArgs = [];
+        const graphifyFlags = [];
+        let graphifyConfigJson = null;
+        const graphifyLabels = [];
+        for (let index = 0; index < args.length; index += 1) {
+            const arg = args[index];
+            if (arg === "--help" || arg === "-h") {
+                help = true;
+                continue;
+            }
+            if (arg === "--json") {
+                json = true;
+                continue;
+            }
+            if (arg === "--source-bundle") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--source-bundle requires a value");
+                }
+                sourceBundlePath = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--output-root") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--output-root requires a value");
+                }
+                outputRoot = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--run-id") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--run-id requires a value");
+                }
+                runId = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--graphify-version") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--graphify-version requires a value");
+                }
+                graphifyVersion = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--graphify-mode") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--graphify-mode requires a value");
+                }
+                graphifyMode = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--graphify-command") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--graphify-command requires a value");
+                }
+                graphifyCommand = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--graphify-arg") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--graphify-arg requires a value");
+                }
+                graphifyArgs.push(next);
+                index += 1;
+                continue;
+            }
+            if (arg === "--graphify-flag") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--graphify-flag requires a value");
+                }
+                graphifyFlags.push(next);
+                index += 1;
+                continue;
+            }
+            if (arg === "--graphify-config-json") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--graphify-config-json requires a value");
+                }
+                graphifyConfigJson = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--label") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--label requires a value");
+                }
+                graphifyLabels.push(next);
+                index += 1;
+                continue;
+            }
+            if (arg.startsWith("--")) {
+                throw new Error(`unknown argument for graphify-run: ${arg}`);
+            }
+        }
+        if (help) {
+            return {
+                command,
+                sourceBundlePath: "",
+                outputRoot: "",
+                runId: null,
+                graphifyVersion: null,
+                graphifyMode: null,
+                graphifyCommand: null,
+                graphifyArgs: [],
+                graphifyFlags: [],
+                graphifyConfig: {},
+                labels: [],
+                json,
+                help,
+            };
+        }
+        if (sourceBundlePath === null) {
+            throw new Error("--source-bundle is required for graphify-run");
+        }
+        let graphifyConfig = {};
+        if (graphifyConfigJson !== null) {
+            try {
+                graphifyConfig = JSON.parse(graphifyConfigJson);
+            }
+            catch (error) {
+                throw new Error(`--graphify-config-json must be valid JSON: ${error instanceof Error ? error.message : String(error)}`);
+            }
+        }
+        return {
+            command,
+            sourceBundlePath: path.resolve(sourceBundlePath),
+            outputRoot: outputRoot === null ? null : path.resolve(outputRoot),
+            runId,
+            graphifyVersion,
+            graphifyMode,
+            graphifyCommand,
+            graphifyArgs,
+            graphifyFlags,
+            graphifyConfig,
+            labels: graphifyLabels,
+            json,
+            help,
+        };
+    }
+    if (command === "graphify-compiled-artifacts") {
+        let bundleId = null;
+        let outputDir = null;
+        let bundleStartedAt = null;
+        let graphifyRunId = null;
+        let graphifyVersion = null;
+        let graphifyCommand = null;
+        let sourceBundleId = null;
+        let sourceBundleHash = null;
+        let graphHash = null;
+        let configHash = null;
+        let labelsHash = null;
+        for (let index = 0; index < args.length; index += 1) {
+            const arg = args[index];
+            if (arg === "--help" || arg === "-h") {
+                help = true;
+                continue;
+            }
+            if (arg === "--json") {
+                json = true;
+                continue;
+            }
+            if (arg === "--bundle-id") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--bundle-id requires a value");
+                }
+                bundleId = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--output-dir") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--output-dir requires a value");
+                }
+                outputDir = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--bundle-started-at") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--bundle-started-at requires a value");
+                }
+                bundleStartedAt = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--graphify-run-id") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--graphify-run-id requires a value");
+                }
+                graphifyRunId = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--graphify-version") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--graphify-version requires a value");
+                }
+                graphifyVersion = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--graphify-command") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--graphify-command requires a value");
+                }
+                graphifyCommand = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--source-bundle-id") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--source-bundle-id requires a value");
+                }
+                sourceBundleId = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--source-bundle-hash") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--source-bundle-hash requires a value");
+                }
+                sourceBundleHash = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--graph-hash") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--graph-hash requires a value");
+                }
+                graphHash = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--config-hash") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--config-hash requires a value");
+                }
+                configHash = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--labels-hash") {
+                const next = args[index + 1];
+                if (next === undefined) {
+                    throw new Error("--labels-hash requires a value");
+                }
+                labelsHash = next;
+                index += 1;
+                continue;
+            }
+            if (arg.startsWith("--")) {
+                throw new Error(`unknown argument for graphify-compiled-artifacts: ${arg}`);
+            }
+            if (bundleId === null) {
+                bundleId = arg;
+                continue;
+            }
+            throw new Error(`unexpected positional argument: ${arg}`);
+        }
+        if (help) {
+            return {
+                command,
+                bundleId: "",
+                outputDir: "",
+                bundleStartedAt: "",
+                graphifyRunId: "",
+                graphifyVersion: "",
+                graphifyCommand: "",
+                sourceBundleId: "",
+                sourceBundleHash: "",
+                graphHash: "",
+                configHash: "",
+                labelsHash: "",
+                json,
+                help,
+            };
+        }
+        return {
+            command,
+            bundleId,
+            outputDir: outputDir === null ? null : path.resolve(outputDir),
+            bundleStartedAt,
+            graphifyRunId,
+            graphifyVersion,
+            graphifyCommand,
+            sourceBundleId,
+            sourceBundleHash,
+            graphHash,
+            configHash,
+            labelsHash,
+            json,
+            help,
+        };
+    }
+    if (command === "graphify-lints") {
+        return parseGraphifyDeterministicLintCliArgs(args);
     }
     if (command === "learn") {
         for (let index = 0; index < args.length; index += 1) {
@@ -6637,6 +7177,133 @@ export function runOperatorCli(argv = process.argv.slice(2)) {
         }
         else {
             console.error(`SOURCE BUNDLE failed: ${result.error}`);
+        }
+        return result.ok ? 0 : 1;
+    }
+    if (parsed.command === "graphify-export") {
+        if (parsed.help) {
+            console.log(operatorCliHelp());
+            return 0;
+        }
+        const result = exportGraphifyProjection({
+            activationRoot: parsed.activationRoot,
+            outputRoot: parsed.outputRoot ?? undefined,
+            runId: parsed.runId ?? undefined,
+            repoRoot: parsed.repoRoot ?? undefined,
+            workspaceRoot: parsed.workspaceRoot ?? undefined,
+            sessionKey: parsed.sessionKey ?? undefined,
+            sessionTimestamp: parsed.generatedAt ?? undefined,
+            sessionSourcePath: parsed.sessionSourcePath ?? undefined,
+            proofSummarySourcePath: parsed.proofSummarySourcePath ?? undefined,
+            docsRoot: parsed.docsRoot ?? undefined,
+            codeRoot: parsed.codeRoot ?? undefined,
+            generatedAt: parsed.generatedAt ?? undefined,
+        });
+        if (parsed.json) {
+            console.log(JSON.stringify(result, null, 2));
+        }
+        else if (result.ok) {
+            console.log([
+                "GRAPHIFY EXPORT ok",
+                `bundle      ${result.bundleRoot}`,
+                `runId       ${result.runId}`,
+                `sourceHash  ${result.sourceBundleHash ?? "none"}`,
+                `archive     ${result.canonicalArchivePath}`,
+                `session     ${result.sessionProjectionPath ?? "none"}`,
+                `workspace   MEMORY=${result.workspaceMemoryPath ?? "none"} TASKS=${result.workspaceTasksPath ?? "none"}`,
+                `proof       ${result.proofSummaryPath ?? "none"}`,
+                `mirrors     docs=${result.docsMirrorRoot ?? "none"} code=${result.codeMirrorRoot ?? "none"}`,
+                `manifest    ${result.manifestPath ?? "none"}`,
+                `warnings    ${(result.warnings ?? []).length === 0 ? "none" : result.warnings.join("; ")}`,
+            ].join("\n"));
+        }
+        else {
+            console.error(`GRAPHIFY EXPORT failed: ${result.error}`);
+        }
+        return result.ok ? 0 : 1;
+    }
+    if (parsed.command === "graphify-run") {
+        if (parsed.help) {
+            console.log(operatorCliHelp());
+            return 0;
+        }
+        const result = runManagedGraphifyRunner({
+            sourceBundlePath: parsed.sourceBundlePath,
+            outputRoot: parsed.outputRoot ?? undefined,
+            runId: parsed.runId ?? undefined,
+            graphifyVersion: parsed.graphifyVersion ?? undefined,
+            graphifyMode: parsed.graphifyMode ?? undefined,
+            graphifyCommand: parsed.graphifyCommand ?? undefined,
+            graphifyArgs: parsed.graphifyArgs,
+            graphifyFlags: parsed.graphifyFlags,
+            graphifyConfig: parsed.graphifyConfig,
+            labels: parsed.labels,
+        });
+        if (parsed.json) {
+            console.log(JSON.stringify(result, null, 2));
+        }
+        else {
+            console.log(`GRAPHIFY RUN ok`);
+            console.log(`  Run id:              ${result.runId}`);
+            console.log(`  Source bundle:       ${result.sourceBundlePath}`);
+            console.log(`  Source hash:         ${result.sourceBundleHash}`);
+            console.log(`  Graphify version:    ${result.graphifyVersion}`);
+            console.log(`  Graphify mode:       ${result.graphifyMode}`);
+            console.log(`  Output root:         ${result.outputRoot}`);
+            console.log(`  Run dir:             ${result.runDir}`);
+            console.log(`  Graph nodes/edges:   ${result.graph.nodeCount}/${result.graph.edgeCount}`);
+            console.log(`  Execution state:     ${result.execution.state}`);
+            if (result.execution.failure !== null) {
+                console.log(`  Execution failure:   ${result.execution.failure}`);
+            }
+        }
+        return 0;
+    }
+    if (parsed.command === "graphify-compiled-artifacts") {
+        if (parsed.help) {
+            console.log(operatorCliHelp());
+            return 0;
+        }
+        const result = exportGraphifyCompiledArtifactsPack({
+            bundleId: parsed.bundleId,
+            outputDir: parsed.outputDir,
+            bundleStartedAt: parsed.bundleStartedAt,
+            graphifyRunId: parsed.graphifyRunId,
+            graphifyVersion: parsed.graphifyVersion,
+            graphifyCommand: parsed.graphifyCommand,
+            sourceBundleId: parsed.sourceBundleId,
+            sourceBundleHash: parsed.sourceBundleHash,
+            graphHash: parsed.graphHash,
+            configHash: parsed.configHash,
+            labelsHash: parsed.labelsHash,
+        });
+        if (parsed.json) {
+            console.log(JSON.stringify(result, null, 2));
+        }
+        else if (result.ok) {
+            console.log(`GRAPHIFY COMPILED ARTIFACTS ok`);
+            console.log(`  Pack:     ${result.packId}`);
+            console.log(`  Proposal: ${result.proposalId}`);
+            console.log(`  Output:   ${result.outputDir}`);
+            console.log(`  Artifacts:${result.artifactCount}`);
+            console.log(`  Verdict:  ${result.validation?.ok ? "valid" : "invalid"}`);
+        }
+        else {
+            console.error(`GRAPHIFY COMPILED ARTIFACTS failed: ${result.error}`);
+        }
+        return result.ok ? 0 : 1;
+    }
+    if (parsed.command === "graphify-lints") {
+        const result = runGraphifyDeterministicLints(parsed);
+        if (result.help) {
+            console.log(operatorCliHelp());
+            return 0;
+        }
+        if (result.json) {
+            console.log(JSON.stringify({ ok: result.ok, report: result.report, verdict: result.verdict, proposalEnvelope: result.proposalEnvelope, paths: result.paths }, null, 2));
+        }
+        else {
+            console.log(result.summary);
         }
         return result.ok ? 0 : 1;
     }

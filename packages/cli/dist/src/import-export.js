@@ -6,7 +6,7 @@
  */
 import { createHash } from "node:crypto";
 import { execSync } from "node:child_process";
-import { existsSync, mkdirSync, readdirSync, statSync, writeFileSync } from "node:fs";
+import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, readlinkSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import { canonicalJson } from "@openclawbrain/contracts";
 import { buildOpenClawSessionCorpusSnapshot } from "./session-tail.js";
@@ -14,6 +14,7 @@ import { discoverOpenClawHomes, inspectOpenClawHome } from "./openclaw-home-layo
 import { resolveActivationRoot } from "./resolve-activation-root.js";
 import { inspectOpenClawBrainHookStatus } from "./openclaw-hook-truth.js";
 import { listOpenClawProfileRuntimeLoadProofs, resolveAttachmentRuntimeLoadProofsPath } from "./attachment-truth.js";
+import { buildGraphifyCompiledArtifactPack, writeGraphifyCompiledArtifactPack } from "./graphify-compiled-artifacts.js";
 
 function hashCanonicalJson(value) {
     return `sha256:${createHash("sha256").update(canonicalJson(value)).digest("hex")}`;
@@ -63,6 +64,169 @@ function activationRootHasData(activationRoot) {
     catch {
         return false;
     }
+}
+function normalizeOptionalString(value) {
+    return typeof value === "string" && value.trim().length > 0 ? value : null;
+}
+function timestampToken(value = new Date().toISOString()) {
+    return String(value).replace(/[:]/g, "-");
+}
+function sha256Text(text) {
+    return `sha256:${createHash("sha256").update(text, "utf8").digest("hex")}`;
+}
+function stableJson(value) {
+    return canonicalJson(value);
+}
+function writeTextFile(filePath, text) {
+    mkdirSync(path.dirname(filePath), { recursive: true });
+    writeFileSync(filePath, text, "utf8");
+    return filePath;
+}
+function readTextIfExists(filePath) {
+    return existsSync(filePath) ? readFileSync(filePath, "utf8") : null;
+}
+function normalizeStableRelativePath(rootPath, candidatePath) {
+    const relativePath = path.relative(rootPath, candidatePath);
+    if (relativePath.length === 0) {
+        return "";
+    }
+    return relativePath.split(path.sep).join(path.posix.sep);
+}
+function hashStablePathTreeEntry(digest, entry) {
+    digest.update(`${entry.kind}\u0000${entry.path}\u0000`);
+    if (entry.kind === "file") {
+        digest.update(`${entry.size}\u0000${entry.hash}\n`);
+        return;
+    }
+    if (entry.kind === "symlink") {
+        digest.update(`${entry.target}\n`);
+        return;
+    }
+    digest.update("\n");
+}
+function walkStablePathTree(inputPath, rootPath, entries, digest, totals) {
+    const dirents = readdirSync(inputPath, { withFileTypes: true })
+        .slice()
+        .sort((left, right) => left.name.localeCompare(right.name));
+    for (const dirent of dirents) {
+        const absolutePath = path.join(inputPath, dirent.name);
+        const relativePath = normalizeStableRelativePath(rootPath, absolutePath);
+        const fileStat = lstatSync(absolutePath);
+        if (fileStat.isSymbolicLink()) {
+            const target = readlinkSync(absolutePath);
+            const entry = { kind: "symlink", path: relativePath, target };
+            entries.push(entry);
+            totals.symlinkCount += 1;
+            hashStablePathTreeEntry(digest, entry);
+            continue;
+        }
+        if (fileStat.isDirectory()) {
+            const entry = { kind: "directory", path: relativePath };
+            entries.push(entry);
+            totals.directoryCount += 1;
+            hashStablePathTreeEntry(digest, entry);
+            walkStablePathTree(absolutePath, rootPath, entries, digest, totals);
+            continue;
+        }
+        if (fileStat.isFile()) {
+            const fileBuffer = readFileSync(absolutePath);
+            const fileHash = createHash("sha256").update(fileBuffer).digest("hex");
+            const entry = { kind: "file", path: relativePath, size: fileStat.size, hash: fileHash };
+            entries.push(entry);
+            totals.fileCount += 1;
+            totals.totalBytes += fileStat.size;
+            hashStablePathTreeEntry(digest, entry);
+        }
+    }
+}
+/**
+ * Describe a file tree using stable relative paths and a deterministic SHA-256 hash.
+ *
+ * The hash only depends on relative paths, file contents, and symlink targets.
+ */
+export function describeStablePathTree(inputPath) {
+    const resolvedPath = path.resolve(inputPath);
+    if (!existsSync(resolvedPath)) {
+        throw new Error(`Path does not exist: ${resolvedPath}`);
+    }
+    const digest = createHash("sha256");
+    const entries = [];
+    const totals = {
+        fileCount: 0,
+        directoryCount: 0,
+        symlinkCount: 0,
+        totalBytes: 0,
+    };
+    const stats = lstatSync(resolvedPath);
+    if (stats.isSymbolicLink()) {
+        const target = readlinkSync(resolvedPath);
+        const entry = { kind: "symlink", path: path.basename(resolvedPath), target };
+        entries.push(entry);
+        totals.symlinkCount += 1;
+        hashStablePathTreeEntry(digest, entry);
+    }
+    else if (stats.isFile()) {
+        const fileBuffer = readFileSync(resolvedPath);
+        const fileHash = createHash("sha256").update(fileBuffer).digest("hex");
+        const entry = { kind: "file", path: path.basename(resolvedPath), size: stats.size, hash: fileHash };
+        entries.push(entry);
+        totals.fileCount += 1;
+        totals.totalBytes += stats.size;
+        hashStablePathTreeEntry(digest, entry);
+    }
+    else {
+        const entry = { kind: "directory", path: "." };
+        entries.push(entry);
+        totals.directoryCount += 1;
+        hashStablePathTreeEntry(digest, entry);
+        walkStablePathTree(resolvedPath, resolvedPath, entries, digest, totals);
+    }
+    return {
+        path: resolvedPath,
+        kind: stats.isDirectory() ? "directory" : stats.isFile() ? "file" : "symlink",
+        hash: digest.digest("hex"),
+        entries,
+        ...totals,
+    };
+}
+function ensureDir(dirPath) {
+    mkdirSync(dirPath, { recursive: true });
+}
+function tryMirrorTree(sourceRoot, destinationRoot) {
+    rmSync(destinationRoot, { recursive: true, force: true });
+    try {
+        symlinkSync(sourceRoot, destinationRoot, "dir");
+        return { path: destinationRoot, mode: "symlink" };
+    }
+    catch {
+        cpSync(sourceRoot, destinationRoot, { recursive: true });
+        return { path: destinationRoot, mode: "copy" };
+    }
+}
+function buildProjectionMarkdown(options) {
+    const extraDetails = Array.isArray(options.extraDetails) ? options.extraDetails.filter((line) => typeof line === "string" && line.trim().length > 0) : [];
+    const body = [
+        `# ${options.title}`,
+        "",
+        "Projection-only surface; non-authoritative by design.",
+        "",
+        `- kind: ${options.kind}`,
+        `- bundle root: \`${path.resolve(options.bundleRoot)}\``,
+        `- source bundle hash: \`${options.sourceBundleHash}\``,
+        `- canonical archive: \`${path.relative(options.bundleRoot, options.canonicalArchivePath)}\``,
+        `- generated at: \`${options.generatedAt}\``,
+        `- source path: \`${options.sourcePath}\``,
+        ...extraDetails.map((line) => `- ${line}`),
+        "",
+        "## Source projection",
+        "",
+        options.sourceText === null ? "_Source unavailable._" : options.sourceText.replace(/\n?$/u, ""),
+        ""
+    ];
+    return body.join("\n");
+}
+function writeProjectionSurface(filePath, text) {
+    return writeTextFile(filePath, text);
 }
 function resolveGraphifySourceBundleOpenClawHome(options = {}) {
     const explicitOpenClawHome = typeof options.openclawHome === "string" && options.openclawHome.trim().length > 0
@@ -467,6 +631,263 @@ export function exportGraphifySourceBundle(options) {
 }
 
 /**
+ * Project the canonical machine export into Graphify-friendly markdown and
+ * filesystem surfaces while keeping the projection explicitly non-authoritative.
+ */
+export function exportGraphifyProjection(options) {
+    const resolvedActivationRoot = path.resolve(options.activationRoot);
+    const resolvedRepoRoot = path.resolve(options.repoRoot ?? process.cwd());
+    const resolvedWorkspaceRoot = path.resolve(options.workspaceRoot ?? resolvedRepoRoot);
+    const resolvedOutputRoot = path.resolve(options.outputRoot ?? path.join(process.cwd(), "artifacts", "graphify-source-bundles"));
+    const runId = normalizeOptionalString(options.runId) ?? timestampToken(new Date().toISOString());
+    const bundleRoot = path.join(resolvedOutputRoot, runId);
+    const generatedAt = normalizeOptionalString(options.generatedAt) ?? new Date().toISOString();
+    const sessionTimestamp = normalizeOptionalString(options.sessionTimestamp) ?? generatedAt;
+    const sessionKey = normalizeOptionalString(options.sessionKey) ?? "current-session";
+    const resolvedSessionSourcePath = normalizeOptionalString(options.sessionSourcePath);
+    const resolvedProofSummarySourcePath = normalizeOptionalString(options.proofSummarySourcePath);
+    const resolvedDocsRoot = path.resolve(options.docsRoot ?? path.join(resolvedRepoRoot, "docs"));
+    const resolvedCodeRoot = path.resolve(options.codeRoot ?? path.join(resolvedRepoRoot, "packages", "cli", "dist", "src"));
+    rmSync(bundleRoot, { recursive: true, force: true });
+    ensureDir(path.join(bundleRoot, "canonical"));
+    ensureDir(path.join(bundleRoot, "workspace"));
+    ensureDir(path.join(bundleRoot, "proof"));
+    ensureDir(path.join(bundleRoot, "sessions", sessionKey));
+    const canonicalArchivePath = path.join(bundleRoot, "canonical", "machine-export.tar.gz");
+    const exportResult = exportBrain({
+        activationRoot: resolvedActivationRoot,
+        outputPath: canonicalArchivePath,
+    });
+    if (!exportResult.ok) {
+        return {
+            ok: false,
+            runId,
+            bundleRoot,
+            sourceBundleHash: null,
+            canonicalArchivePath,
+            canonicalArchiveSha256: null,
+            manifestPath: null,
+            sessionProjectionPath: null,
+            workspaceMemoryPath: null,
+            workspaceTasksPath: null,
+            proofSummaryPath: null,
+            docsMirrorRoot: null,
+            codeMirrorRoot: null,
+            error: exportResult.error ?? "canonical machine export failed",
+            warnings: [],
+        };
+    }
+    const canonicalArchiveText = readFileSync(canonicalArchivePath);
+    const canonicalArchiveSha256 = createHash("sha256").update(canonicalArchiveText).digest("hex");
+    const canonicalArchiveResultPath = path.join(bundleRoot, "canonical", "machine-export.json");
+    writeTextFile(canonicalArchiveResultPath, JSON.stringify({
+        ok: exportResult.ok,
+        activationRoot: exportResult.activationRoot,
+        outputPath: exportResult.outputPath,
+        archiveSha256: canonicalArchiveSha256,
+        archiveBytes: statSync(canonicalArchivePath).size,
+    }, null, 2));
+    const memorySourcePath = path.join(resolvedWorkspaceRoot, "MEMORY.md");
+    const tasksSourcePath = path.join(resolvedWorkspaceRoot, "TASKS.md");
+    const memoryText = readTextIfExists(memorySourcePath);
+    const tasksText = readTextIfExists(tasksSourcePath);
+    const sessionSourceText = resolvedSessionSourcePath === null ? null : readTextIfExists(resolvedSessionSourcePath);
+    const proofSummarySourceText = resolvedProofSummarySourcePath === null ? null : readTextIfExists(resolvedProofSummarySourcePath);
+    const docsMirror = existsSync(resolvedDocsRoot) ? tryMirrorTree(resolvedDocsRoot, path.join(bundleRoot, "docs")) : { path: path.join(bundleRoot, "docs"), mode: "copy" };
+    const codeMirror = existsSync(resolvedCodeRoot) ? tryMirrorTree(resolvedCodeRoot, path.join(bundleRoot, "code")) : { path: path.join(bundleRoot, "code"), mode: "copy" };
+    if (!existsSync(docsMirror.path)) {
+        ensureDir(docsMirror.path);
+    }
+    if (!existsSync(codeMirror.path)) {
+        ensureDir(codeMirror.path);
+    }
+    const sourceBundleHash = createHash("sha256").update(stableJson({
+        contract: "graphify_source_bundle.v1",
+        runId,
+        activationRoot: resolvedActivationRoot,
+        repoRoot: resolvedRepoRoot,
+        workspaceRoot: resolvedWorkspaceRoot,
+        generatedAt,
+        sessionKey,
+        sessionTimestamp,
+        sessionSourcePath: resolvedSessionSourcePath,
+        proofSummarySourcePath: resolvedProofSummarySourcePath,
+        canonicalArchiveSha256,
+        memorySha256: memoryText === null ? null : sha256Text(memoryText),
+        tasksSha256: tasksText === null ? null : sha256Text(tasksText),
+        sessionSourceSha256: sessionSourceText === null ? null : sha256Text(sessionSourceText),
+        proofSummarySourceSha256: proofSummarySourceText === null ? null : sha256Text(proofSummarySourceText),
+        docsMirrorMode: docsMirror.mode,
+        codeMirrorMode: codeMirror.mode,
+    })).digest("hex");
+    const sessionProjectionPath = path.join(bundleRoot, "sessions", sessionKey, `${timestampToken(sessionTimestamp)}.md`);
+    const workspaceMemoryPath = path.join(bundleRoot, "workspace", "MEMORY.md");
+    const workspaceTasksPath = path.join(bundleRoot, "workspace", "TASKS.md");
+    const proofSummaryPath = path.join(bundleRoot, "proof", "summary.md");
+    const manifestPath = path.join(bundleRoot, "corpus-manifest.json");
+    const readmePath = path.join(bundleRoot, "README.md");
+    const sessionMarkdown = buildProjectionMarkdown({
+        title: "Graphify session projection",
+        kind: "session_projection",
+        bundleRoot,
+        sourceBundleHash,
+        canonicalArchivePath,
+        sourcePath: resolvedSessionSourcePath ?? path.join(resolvedWorkspaceRoot, "agents", "main", "sessions"),
+        generatedAt,
+        sourceText: sessionSourceText,
+        extraDetails: [
+            `session key: \`${sessionKey}\``,
+            `session timestamp: \`${sessionTimestamp}\``,
+            `source bundle linkage: \`${path.relative(bundleRoot, canonicalArchivePath)}\``,
+        ],
+    });
+    const memoryMarkdown = buildProjectionMarkdown({
+        title: "Graphify workspace MEMORY projection",
+        kind: "workspace_memory_projection",
+        bundleRoot,
+        sourceBundleHash,
+        canonicalArchivePath,
+        sourcePath: memorySourcePath,
+        generatedAt,
+        sourceText: memoryText,
+        extraDetails: [
+            `workspace root: \`${resolvedWorkspaceRoot}\``,
+            `source bundle linkage: \`${path.relative(bundleRoot, canonicalArchivePath)}\``,
+        ],
+    });
+    const tasksMarkdown = buildProjectionMarkdown({
+        title: "Graphify workspace TASKS projection",
+        kind: "workspace_tasks_projection",
+        bundleRoot,
+        sourceBundleHash,
+        canonicalArchivePath,
+        sourcePath: tasksSourcePath,
+        generatedAt,
+        sourceText: tasksText,
+        extraDetails: [
+            `workspace root: \`${resolvedWorkspaceRoot}\``,
+            `source bundle linkage: \`${path.relative(bundleRoot, canonicalArchivePath)}\``,
+        ],
+    });
+    const proofMarkdown = buildProjectionMarkdown({
+        title: "Graphify proof summary projection",
+        kind: "proof_summary_projection",
+        bundleRoot,
+        sourceBundleHash,
+        canonicalArchivePath,
+        sourcePath: resolvedProofSummarySourcePath ?? path.join(bundleRoot, "proof", "summary.source.md"),
+        generatedAt,
+        sourceText: proofSummarySourceText,
+        extraDetails: [
+            `source bundle linkage: \`${path.relative(bundleRoot, canonicalArchivePath)}\``,
+            `workspace root: \`${resolvedWorkspaceRoot}\``,
+        ],
+    });
+    writeTextFile(readmePath, [
+        "# Graphify projection bundle",
+        "",
+        "Projection-only surface; non-authoritative by design.",
+        "",
+        `- bundle root: \`${bundleRoot}\``,
+        `- run id: \`${runId}\``,
+        `- source bundle hash: \`${sourceBundleHash}\``,
+        `- canonical archive: \`${path.relative(bundleRoot, canonicalArchivePath)}\``,
+        "",
+        "This bundle mirrors canonical machine export data into Graphify-friendly surfaces for review only.",
+        ""
+    ].join("\n"));
+    writeProjectionSurface(sessionProjectionPath, sessionMarkdown);
+    writeProjectionSurface(workspaceMemoryPath, memoryMarkdown);
+    writeProjectionSurface(workspaceTasksPath, tasksMarkdown);
+    writeProjectionSurface(proofSummaryPath, proofMarkdown);
+    const manifest = {
+        contract: "graphify_source_bundle.v1",
+        sourceKind: "canonical_ocb_source_bundle",
+        generatedAt,
+        runId,
+        authoritative: false,
+        projectionTruth: "projection_only",
+        sourceBundleHash,
+        canonicalMachineExport: {
+            path: path.relative(bundleRoot, canonicalArchivePath),
+            sha256: canonicalArchiveSha256,
+            bytes: statSync(canonicalArchivePath).size,
+            activationRoot: resolvedActivationRoot,
+        },
+        provenance: {
+            repoRoot: resolvedRepoRoot,
+            workspaceRoot: resolvedWorkspaceRoot,
+            sessionKey,
+            sessionTimestamp,
+            sessionSourcePath: resolvedSessionSourcePath,
+            proofSummarySourcePath: resolvedProofSummarySourcePath,
+            docsMirrorRoot: resolvedDocsRoot,
+            codeMirrorRoot: resolvedCodeRoot,
+        },
+        outputs: {
+            bundleRoot: ".",
+            canonicalArchive: path.relative(bundleRoot, canonicalArchivePath),
+            canonicalArchiveResult: path.relative(bundleRoot, canonicalArchiveResultPath),
+            corpusManifest: path.relative(bundleRoot, manifestPath),
+            readme: path.relative(bundleRoot, readmePath),
+            sessionProjection: path.relative(bundleRoot, sessionProjectionPath),
+            workspaceMemory: path.relative(bundleRoot, workspaceMemoryPath),
+            workspaceTasks: path.relative(bundleRoot, workspaceTasksPath),
+            proofSummary: path.relative(bundleRoot, proofSummaryPath),
+            docsMirror: path.relative(bundleRoot, path.join(bundleRoot, "docs")),
+            codeMirror: path.relative(bundleRoot, path.join(bundleRoot, "code")),
+        },
+        mirrorModes: {
+            docs: docsMirror.mode,
+            code: codeMirror.mode,
+        },
+        sourceHashes: {
+            canonicalArchiveSha256,
+            memorySha256: memoryText === null ? null : sha256Text(memoryText),
+            tasksSha256: tasksText === null ? null : sha256Text(tasksText),
+            sessionSourceSha256: sessionSourceText === null ? null : sha256Text(sessionSourceText),
+            proofSummarySourceSha256: proofSummarySourceText === null ? null : sha256Text(proofSummarySourceText),
+        },
+        notes: [
+            "This bundle is projection-only and non-authoritative.",
+            "Canonical machine export linkage remains explicit.",
+            "Docs/code mirrors are curated Graphify-friendly surfaces only.",
+        ],
+    };
+    writeTextFile(manifestPath, `${JSON.stringify(manifest, null, 2)}\n`);
+    return {
+        ok: true,
+        runId,
+        bundleRoot,
+        sourceBundleHash,
+        canonicalArchivePath,
+        canonicalArchiveSha256,
+        manifestPath,
+        sessionProjectionPath,
+        workspaceMemoryPath,
+        workspaceTasksPath,
+        proofSummaryPath,
+        docsMirrorRoot: docsMirror.path,
+        codeMirrorRoot: codeMirror.path,
+        warnings: docsMirror.mode === "copy" || codeMirror.mode === "copy"
+            ? [docsMirror.mode === "copy" ? "docs mirror was copied because symlink creation failed" : null, codeMirror.mode === "copy" ? "code mirror was copied because symlink creation failed" : null].filter((warning) => warning !== null)
+            : [],
+        outputPaths: {
+            canonicalArchive: canonicalArchivePath,
+            canonicalArchiveResult: canonicalArchiveResultPath,
+            corpusManifest: manifestPath,
+            readme: readmePath,
+            sessionProjection: sessionProjectionPath,
+            workspaceMemory: workspaceMemoryPath,
+            workspaceTasks: workspaceTasksPath,
+            proofSummary: proofSummaryPath,
+            docsMirror: docsMirror.path,
+            codeMirror: codeMirror.path,
+        },
+    };
+}
+
+/**
  * Import (restore) a tar.gz archive into the activation root.
  */
 export function importBrain(options) {
@@ -534,6 +955,40 @@ export function importBrain(options) {
             activationRoot: resolvedRoot,
             archivePath: resolvedArchive,
             error: err instanceof Error ? err.message : String(err),
+        };
+    }
+}
+
+/**
+ * Build and write a Graphify-derived compiled artifact pack.
+ */
+export function exportGraphifyCompiledArtifactsPack(options = {}) {
+    try {
+        const bundle = buildGraphifyCompiledArtifactPack(options);
+        const writeResult = writeGraphifyCompiledArtifactPack(bundle.outputDir, bundle);
+        return {
+            ok: true,
+            bundleId: bundle.bundleId,
+            packId: bundle.packId,
+            proposalId: bundle.proposalId,
+            outputDir: bundle.outputDir,
+            manifestPath: bundle.bundlePaths.manifest,
+            compilerProposalPath: bundle.bundlePaths.compilerProposal,
+            surfaceMapPath: bundle.bundlePaths.surfaceMap,
+            proposalReportPath: bundle.bundlePaths.proposalReport,
+            verdictPath: bundle.bundlePaths.verdict,
+            artifactCount: bundle.artifactEntries.length,
+            validation: bundle.validation,
+            digest: bundle.digest,
+            writtenFiles: writeResult.writtenFiles,
+            fileCount: writeResult.fileCount,
+        };
+    }
+    catch (error) {
+        return {
+            ok: false,
+            outputDir: path.resolve(options.outputDir ?? "."),
+            error: error instanceof Error ? error.message : String(error),
         };
     }
 }
