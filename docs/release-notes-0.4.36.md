@@ -20,6 +20,19 @@ Internal published packages:
 
 Graphify remains intentionally off the live serve path. The bridge belongs in the artifact-first compiler / diagnostic lane, not as current-truth authority and not as a hot-path dependency. This release packages the follow-up publish after the Graphify integration and release hardening work landed.
 
+The short public story is:
+
+- Graphify is now part of the shipped product
+- it helps OpenClawBrain most at **cold start** and in **maintenance diagnostics**
+- it does **not** replace the live OpenClawBrain serve path
+- it does **not** become current-truth authority
+
+The proof-backed product verdict stays:
+
+- `graphify_artifacts_only` won cold start in the follow-up proof packet
+- `graphify_import + learned_route` beat learned-route without Graphify import
+- maintenance diff and deterministic lints are useful, but diagnostic-only
+
 ## What changed
 
 - keeps the Graphify bridge lanes off-path and preserves the cold-start / maintenance-diagnostics boundary

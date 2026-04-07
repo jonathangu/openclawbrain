@@ -74,6 +74,46 @@ If you want the deeper version — graph traversal, route selection, labels, asy
 
 **[How OpenClawBrain works →](https://openclawbrain.ai/how-it-works/)**
 
+## The new Graphify bridge
+
+OpenClawBrain `0.4.36` ships a real Graphify bridge.
+
+The important boundary is simple:
+
+- **Graphify is in the product now**
+- **Graphify is not the live serve path**
+
+The shipped Graphify lane is an **off-path compiler / diagnostics surface**.
+
+It helps in two places:
+
+1. **cold start** — stronger initial graph structure before a home has much learned personal history
+2. **maintenance diagnostics** — bounded operator surfaces for drift, provenance gaps, and graph-vs-OCB review
+
+What shipped includes:
+
+- source-bundle export
+- Graphify projection export
+- managed Graphify runs
+- compiled-artifact bridge
+- deterministic lints
+- conservative EXTRACTED-only import slice
+- candidate-pack input bridge
+- maintenance diff lane
+- replay/eval proof lane
+
+What we proved:
+
+- `graphify_artifacts_only` won cold start in the proof packet
+- `graphify_import + learned_route` beat learned-route without Graphify import
+- deterministic lints and maintenance diff are useful, but **diagnostic-only**
+
+So the honest product story is:
+
+> Graphify makes OpenClawBrain better as an **offline graph compiler and maintenance lens**, while the live runtime still serves promoted OpenClawBrain packs.
+
+If you want the focused explanation, read **[docs/graphify.md](docs/graphify.md)**.
+
 ## Scope
 
 OpenClawBrain is the memory layer. It does not own the gateway.

@@ -18,6 +18,7 @@ Public operator front door: `openclawbrain install --openclaw-home <path>` for o
 
 ## Architecture
 
+- [Graphify bridge](graphify.md) for the shipped Graphify story: what it helps, what stayed off-path, and how to explain the boundary clearly
 - [Overview](architecture/overview.md) for the high-level system design
 - [Learning pipeline](architecture/learning-pipeline.md) for export, candidate packs, promotion, and rollback
 - [Lint families](architecture/teacher-v3-lints.md) for deterministic CI-first vs teacher-assisted audits
