@@ -47,4 +47,5 @@ The previous promoted pack stays available for rollback.
 
 - [learning-pipeline.md](learning-pipeline.md)
 - [fail-open.md](fail-open.md)
+- [graphify-bridge.md](graphify-bridge.md)
 - [deep-dive.md](deep-dive.md)

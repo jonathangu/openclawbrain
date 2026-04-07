@@ -13,6 +13,7 @@ Related docs:
 - [Architecture overview](overview.md)
 - [Learning pipeline](learning-pipeline.md)
 - [Corrections](corrections.md)
+- [Graphify bridge contract](graphify-bridge.md)
 
 ## Core rules
 
