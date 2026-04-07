@@ -188,7 +188,18 @@ interface ParsedGraphifyDeterministicLintCliArgs {
     json: boolean;
     help: boolean;
 }
-type ParsedOperatorCliArgs = ParsedStatusRollbackCliArgs | ParsedAttachCliArgs | ParsedScanCliArgs | ParsedInstallCliArgs | ParsedDetachCliArgs | ParsedUninstallCliArgs | ParsedContextCliArgs | ParsedHistoryCliArgs | ParsedLearnCliArgs | ParsedWatchCliArgs | DaemonCliArgs | ParsedExportCliArgs | ParsedImportCliArgs | ParsedResetCliArgs | ParsedProofCliArgs | ParsedGraphifyExportCliArgs | ParsedGraphifyRunCliArgs | ParsedGraphifyCompiledArtifactsCliArgs | ParsedGraphifyDeterministicLintCliArgs;
+interface ParsedGraphifyMaintenanceDiffCliArgs {
+    command: "graphify-maintenance-diff";
+    graphifyRoot: string;
+    ocbRoot: string;
+    repoRoot: string;
+    workspaceRoot: string;
+    outputRoot: string | null;
+    runId: string | null;
+    json: boolean;
+    help: boolean;
+}
+type ParsedOperatorCliArgs = ParsedStatusRollbackCliArgs | ParsedAttachCliArgs | ParsedScanCliArgs | ParsedInstallCliArgs | ParsedDetachCliArgs | ParsedUninstallCliArgs | ParsedContextCliArgs | ParsedHistoryCliArgs | ParsedLearnCliArgs | ParsedWatchCliArgs | DaemonCliArgs | ParsedExportCliArgs | ParsedImportCliArgs | ParsedResetCliArgs | ParsedProofCliArgs | ParsedGraphifyExportCliArgs | ParsedGraphifyRunCliArgs | ParsedGraphifyCompiledArtifactsCliArgs | ParsedGraphifyDeterministicLintCliArgs | ParsedGraphifyMaintenanceDiffCliArgs;
 export declare function parseOperatorCliArgs(argv: readonly string[]): ParsedOperatorCliArgs;
 export interface WatchCommandRuntimeV1 {
     activationRoot: string;

@@ -16,6 +16,7 @@ import { inspectOpenClawBrainHookStatus } from "./openclaw-hook-truth.js";
 import { listOpenClawProfileRuntimeLoadProofs, resolveAttachmentRuntimeLoadProofsPath } from "./attachment-truth.js";
 import { buildGraphifyCompiledArtifactPack, writeGraphifyCompiledArtifactPack } from "./graphify-compiled-artifacts.js";
 import { buildGraphifyImportSlice, resolveGraphifyImportSliceOutputDir, writeGraphifyImportSliceBundle } from "./graphify-import-slice.js";
+import { buildGraphifyMaintenanceDiffBundle, writeGraphifyMaintenanceDiffBundle } from "./graphify-maintenance-diff.js";
 
 function hashCanonicalJson(value) {
     return `sha256:${createHash("sha256").update(canonicalJson(value)).digest("hex")}`;
@@ -1038,6 +1039,44 @@ export function exportGraphifyImportSlice(options = {}) {
             outputRoot: path.resolve(options.outputRoot ?? path.join(process.cwd(), "artifacts", "graphify-imports")),
             outputDir: resolveGraphifyImportSliceOutputDir(options),
             bundleRoot: path.resolve(options.bundleRoot ?? options.bundleDir ?? options.bundlePath ?? "."),
+            error: error instanceof Error ? error.message : String(error),
+        };
+    }
+}
+
+/**
+ * Build and write a Graphify maintenance diff bundle.
+ */
+export function exportGraphifyMaintenanceDiff(options = {}) {
+    try {
+        const bundle = buildGraphifyMaintenanceDiffBundle(options);
+        const writeResult = writeGraphifyMaintenanceDiffBundle(bundle.outputDir, bundle);
+        return {
+            ok: true,
+            runId: bundle.runId,
+            diffId: bundle.diffId,
+            proposalId: bundle.proposalId,
+            rollbackKey: bundle.rollbackKey,
+            repoRoot: bundle.repoRoot,
+            workspaceRoot: bundle.workspaceRoot,
+            graphifyRoot: bundle.graphifyRoot,
+            ocbRoot: bundle.ocbRoot,
+            outputRoot: bundle.outputRoot,
+            outputDir: bundle.outputDir,
+            report: bundle.report,
+            proposalSuggestion: bundle.proposalSuggestion,
+            verdict: bundle.verdict,
+            paths: bundle.paths,
+            digest: bundle.digest,
+            writtenFiles: writeResult.writtenFiles,
+            fileCount: writeResult.fileCount,
+        };
+    }
+    catch (error) {
+        return {
+            ok: false,
+            outputRoot: path.resolve(options.outputRoot ?? path.join(process.cwd(), "artifacts", "graphify-maintenance-diff")),
+            outputDir: path.join(path.resolve(options.outputRoot ?? path.join(process.cwd(), "artifacts", "graphify-maintenance-diff")), options.runId ?? `graphify-maintenance-diff-${Date.now()}`),
             error: error instanceof Error ? error.message : String(error),
         };
     }

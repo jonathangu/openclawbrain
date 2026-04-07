@@ -136,6 +136,7 @@ export interface GraphifyCompiledArtifactsExportResultV1 {
     fileCount?: number;
     error?: string;
 }
+import type { GraphifyMaintenanceDiffBundleV1, GraphifyMaintenanceDiffOptionsV1, GraphifyMaintenanceDiffExportResultV1 } from "./graphify-maintenance-diff.js";
 /**
  * Export (backup) the activation root to a tar.gz archive.
  */
@@ -156,3 +157,7 @@ export declare function importBrain(options: ImportOptions): ImportResult;
  * Build and write a Graphify-derived compiled artifact pack.
  */
 export declare function exportGraphifyCompiledArtifactsPack(options: GraphifyCompiledArtifactsExportOptionsV1): GraphifyCompiledArtifactsExportResultV1;
+/**
+ * Build and write a Graphify maintenance diff bundle.
+ */
+export declare function exportGraphifyMaintenanceDiff(options: GraphifyMaintenanceDiffOptionsV1): GraphifyMaintenanceDiffExportResultV1;
