@@ -56,7 +56,7 @@ These are inherited LCM surfaces and should stay stable unless a failing test fo
 - paper-faithful routing core exists
 - live runtime decisioning exists
 - child-worker serving boundary is real
-- split packages `@openclawbrain/openclaw@0.4.35` and `@openclawbrain/cli@0.4.35` are published
+- split packages `@openclawbrain/openclaw@0.4.36` and `@openclawbrain/cli@0.4.36` are published
 - the current front-door install / status / proof lane has already passed on `redogfood`
 - deterministic session-bound `brain_teach` proof exists
 - deterministic runtime proof for teach retrieval and serve-from-last-promoted-pack exists
@@ -65,7 +65,7 @@ These are inherited LCM surfaces and should stay stable unless a failing test fo
 ### Still open
 - Phase 4: mutation bundles — DONE (bundle evaluation, clustering, replay gates)
 - Phase 5: CI proof ladder — DONE (evidence bundles under docs/evidence/, CI runs tests)
-- Phase 6: split-package cleanup — IN PROGRESS (published split packages and current front-door docs are in place on the 0.4.35 story; remaining work is package-id alignment and a few packaging seams)
+- Phase 6: split-package cleanup — IN PROGRESS (published split packages and current front-door docs are in place on the 0.4.36 story; remaining work is package-id alignment and a few packaging seams)
 
 **Remaining honest gaps:** Split-package cleanup still has follow-on chores, most visibly the cosmetic plugin-id warning plus package-content cleanup.
 
@@ -246,7 +246,7 @@ Primary files:
 - `CHANGELOG.md`
 
 Current truth:
-- split packages `@openclawbrain/openclaw@0.4.35` and `@openclawbrain/cli@0.4.35` are published
+- split packages `@openclawbrain/openclaw@0.4.36` and `@openclawbrain/cli@0.4.36` are published
 - the public front door is `openclawbrain install --openclaw-home <path>`; the underlying manual package lane is still `openclaw plugins install @openclawbrain/openclaw` plus the same CLI lifecycle commands
 - historical combined-package releases such as `@jonathangu/openclawbrain@0.3.7` remain archive-only; the main operator story is the split-package lane
 

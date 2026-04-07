@@ -4,6 +4,26 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.36
+
+`0.4.36` is the Graphify + hardening follow-up release: Graphify stays off-path, exact pinning stays locked, and the release truth now reflects the final follow-up publish.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.36`
+- `@openclawbrain/cli@0.4.36`
+
+**Changes**
+
+- keeps Graphify as an artifact-first compiler / diagnostic lane instead of a hot-path dependency
+- preserves the hardened dependency-policy guard and exact pinning posture for the split packages
+- aligns repo docs, release notes, public site, and jon badge to `0.4.36`
+- repins the OpenClaw peer to `2026.4.5` in the release follow-up lane
+
+**Full release note**
+
+- [docs/release-notes-0.4.36.md](docs/release-notes-0.4.36.md)
+
 ## 0.4.35
 
 `0.4.35` is the tool-action symmetry release: trace, learning, and runtime scoring now distinguish generic tool capabilities from concrete tool-instance bindings so the router can learn and serve the actual tool action it took.

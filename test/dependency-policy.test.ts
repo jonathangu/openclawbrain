@@ -44,7 +44,7 @@ function writePublishableScaffold(root: string): void {
   });
   writeJson(root, "packages/cli/package.json", {
     name: "@openclawbrain/cli",
-    version: "0.4.35",
+    version: "0.4.36",
     dependencies: {
       "@openclawbrain/compiler": "0.3.5",
       "@openclawbrain/contracts": "0.3.5",
@@ -53,7 +53,7 @@ function writePublishableScaffold(root: string): void {
   });
   writeJson(root, "packages/openclaw/package.json", {
     name: "@openclawbrain/openclaw",
-    version: "0.4.35",
+    version: "0.4.36",
     dependencies: {
       "@openclawbrain/compiler": "0.3.5",
       "@openclawbrain/contracts": "0.3.5",
@@ -79,7 +79,7 @@ describe("verifyDependencyPolicy", () => {
     writePublishableScaffold(repoRoot);
     writeJson(repoRoot, "packages/cli/package.json", {
       name: "@openclawbrain/cli",
-      version: "0.4.35",
+      version: "0.4.36",
       dependencies: {
         "@openclawbrain/compiler": "^0.3.5",
         "@openclawbrain/contracts": "0.3.5",
