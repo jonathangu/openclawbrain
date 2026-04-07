@@ -7,7 +7,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 import { DEFAULT_OLLAMA_EMBEDDING_MODEL, createOllamaEmbedder } from "@openclawbrain/compiler";
 import { describeManagedLearnerServiceRuntimeGuard, ensureManagedLearnerServiceForActivationRoot, inspectManagedLearnerService, removeManagedLearnerServiceForActivationRoot, parseDaemonArgs, runDaemonCommand } from "./daemon.js";
-import { exportBrain, importBrain } from "./import-export.js";
+import { exportBrain, exportGraphifySourceBundle, importBrain } from "./import-export.js";
 import { buildNormalizedEventExport } from "@openclawbrain/contracts";
 import { buildTeacherSupervisionArtifactsFromNormalizedEventExport, createAlwaysOnLearningRuntimeState, describeAlwaysOnLearningRuntimeState, drainAlwaysOnLearningRuntime, loadOrInitBaseline, materializeAlwaysOnLearningCandidatePack, persistBaseline } from "./local-learner.js";
 import { inspectActivationState, loadPackFromActivation, promoteCandidatePack, resolveLearningSpineLogPath, stageCandidatePack } from "@openclawbrain/pack-format";
@@ -558,6 +558,7 @@ function operatorCliHelp() {
         "  openclawbrain scan --live <event-export-path> --workspace <workspace.json> [options]",
         "  openclawbrain learn [--activation-root <path>|--openclaw-home <path>] [--json]",
         proofHelp.usage,
+        "  openclawbrain source-bundle --openclaw-home <path> --output-dir <path> [options]",
         "  openclawbrain-ops <status|rollback> [--activation-root <path>|--openclaw-home <path>] [options]  # compatibility alias",
         "  openclawbrain-ops scan --session <trace.json> --root <path> [options]    # compatibility alias",
         "",
@@ -612,6 +613,7 @@ function operatorCliHelp() {
         "  rollback     preview or apply active <- previous, active -> candidate pointer movement",
         "  scan         inspect one recorded session or live event export without claiming a daemon is running",
         "  learn        one-shot local-session learning pass against the resolved activation root",
+        "  source-bundle canonical Graphify source-bundle export with runtime-status and proof snapshots",
         proofHelp.advanced,
         "  status --teacher-snapshot keeps the current live-first / principal-priority / passive-backfill learner order visible when that snapshot exists",
         "  native package installs still need the openclawbrain CLI available because install/attach pin the activation root for that package copy",
@@ -626,7 +628,8 @@ function operatorCliHelp() {
         "  detach: 0 on successful unhook, 1 on input/read failure.",
         "  uninstall: 0 on successful unhook/cleanup, 1 on input/read failure.",
         "  scan: 0 on successful replay/scan, 1 on input/read failure.",
-        "  proof: 0 on successful bundle capture, 1 on input/read failure."
+        "  proof: 0 on successful bundle capture, 1 on input/read failure.",
+        "  source-bundle: 0 on successful canonical source export, 1 on input/read failure."
     ].join("\n");
 }
 function yesNo(value) {
@@ -2455,7 +2458,7 @@ export function parseOperatorCliArgs(argv) {
         args.shift();
         return parseDaemonArgs(args);
     }
-    if (args[0] === "status" || args[0] === "rollback" || args[0] === "scan" || args[0] === "attach" || args[0] === "install" || args[0] === "detach" || args[0] === "uninstall" || args[0] === "context" || args[0] === "history" || args[0] === "learn" || args[0] === "watch" || args[0] === "export" || args[0] === "import" || args[0] === "reset" || args[0] === "proof") {
+    if (args[0] === "status" || args[0] === "rollback" || args[0] === "scan" || args[0] === "attach" || args[0] === "install" || args[0] === "detach" || args[0] === "uninstall" || args[0] === "context" || args[0] === "history" || args[0] === "learn" || args[0] === "watch" || args[0] === "export" || args[0] === "import" || args[0] === "reset" || args[0] === "proof" || args[0] === "source-bundle") {
         command = args.shift();
     }
     if (command === "proof") {
@@ -2776,6 +2779,69 @@ export function parseOperatorCliArgs(argv) {
             archivePath: path.resolve(archivePath),
             activationRoot: resolveCliActivationRoot(activationRoot, openclawHome),
             force,
+            json,
+            help,
+        };
+    }
+    if (command === "source-bundle") {
+        let outputDir = null;
+        let homeDir = null;
+        for (let index = 0; index < args.length; index += 1) {
+            const arg = args[index];
+            if (arg === "--help" || arg === "-h") {
+                help = true;
+                continue;
+            }
+            if (arg === "--json") {
+                json = true;
+                continue;
+            }
+            if (arg === "--activation-root") {
+                const next = args[index + 1];
+                if (next === undefined)
+                    throw new Error("--activation-root requires a value");
+                activationRoot = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--openclaw-home") {
+                const next = args[index + 1];
+                if (next === undefined)
+                    throw new Error("--openclaw-home requires a value");
+                openclawHome = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "--home-dir") {
+                const next = args[index + 1];
+                if (next === undefined)
+                    throw new Error("--home-dir requires a value");
+                homeDir = next;
+                index += 1;
+                continue;
+            }
+            if (arg === "-o" || arg === "--output-dir") {
+                const next = args[index + 1];
+                if (next === undefined)
+                    throw new Error("-o / --output-dir requires a value");
+                outputDir = next;
+                index += 1;
+                continue;
+            }
+            if (arg.startsWith("--"))
+                throw new Error(`unknown argument for source-bundle: ${arg}`);
+            throw new Error(`unexpected positional argument: ${arg}`);
+        }
+        if (help)
+            return { command, openclawHome: "", activationRoot: "", outputDir: "", homeDir: "", json, help };
+        if (outputDir === null)
+            throw new Error("source-bundle requires --output-dir <path>");
+        return {
+            command,
+            openclawHome: openclawHome === null ? null : path.resolve(openclawHome),
+            activationRoot: activationRoot === null ? null : path.resolve(activationRoot),
+            outputDir: path.resolve(outputDir),
+            homeDir: homeDir === null ? null : path.resolve(homeDir),
             json,
             help,
         };
@@ -6551,6 +6617,28 @@ export function runOperatorCli(argv = process.argv.slice(2)) {
     }
     if (parsed.command === "proof") {
         return runProofCommand(parsed);
+    }
+    if (parsed.command === "source-bundle") {
+        const result = exportGraphifySourceBundle({
+            openclawHome: parsed.openclawHome ?? undefined,
+            activationRoot: parsed.activationRoot ?? undefined,
+            outputDir: parsed.outputDir,
+            homeDir: parsed.homeDir ?? undefined,
+        });
+        if (parsed.json) {
+            console.log(JSON.stringify(result, null, 2));
+        }
+        else if (result.ok) {
+            console.log(`SOURCE BUNDLE ok`);
+            console.log(`  Bundle: ${result.bundleDir}`);
+            console.log(`  Bundle id: ${result.bundleId}`);
+            console.log(`  Corpus id: ${result.corpusId}`);
+            console.log(`  Corpus digest: ${result.corpusDigest}`);
+        }
+        else {
+            console.error(`SOURCE BUNDLE failed: ${result.error}`);
+        }
+        return result.ok ? 0 : 1;
     }
     if (parsed.help) {
         console.log(operatorCliHelp());

@@ -1,10 +1,10 @@
 import { createHash } from "node:crypto";
 import { existsSync } from "node:fs";
 import path from "node:path";
-import { CONTRACT_IDS, createInteractionEvent, sortNormalizedEvents } from "@openclawbrain/contracts";
+import { CONTRACT_IDS, buildNormalizedEventExport, createInteractionEvent, sortNormalizedEvents } from "@openclawbrain/contracts";
 import { scanSession } from "@openclawbrain/events";
 import { extractFeedbackEventsFromInteractionRecords } from "@openclawbrain/event-export";
-import { discoverOpenClawSessionStores, loadOpenClawSessionIndex, readOpenClawSessionFile } from "./session-store.js";
+import { hashOpenClawStableJson, summarizeOpenClawSessionFile, summarizeOpenClawSessionIndex, discoverOpenClawSessionStores, loadOpenClawSessionIndex, readOpenClawSessionFile } from "./session-store.js";
 import { inspectOpenClawHome } from "./openclaw-home-layout.js";
 const DEFAULT_SCANNER_ID = "openclaw-local-session-tail";
 const DEFAULT_SCANNER_LANE = "local_session_tail";
@@ -262,6 +262,115 @@ function buildBridgeableEvents(scannedSession, observedAt) {
 function isInteractionEvent(event) {
     return event.contract === CONTRACT_IDS.interactionEvents;
 }
+
+function hashSessionSnapshotSeed(seed) {
+    return hashOpenClawStableJson(seed);
+}
+
+function summarizeCorpusSource(change, sessionIndexDigest, sessionFileDigest) {
+    const scannedEventExport = change.scannedEventExport;
+    const interactionEvents = scannedEventExport?.interactionEvents ?? [];
+    const feedbackEvents = scannedEventExport?.feedbackEvents ?? [];
+    const eventDigest = interactionEvents.length + feedbackEvents.length === 0
+        ? null
+        : hashSessionSnapshotSeed({
+            interactionEvents,
+            feedbackEvents
+        });
+    const sourceSeed = {
+        sourceIndexPath: change.source.indexPath,
+        sessionKey: change.sessionKey,
+        sessionId: change.sessionId,
+        sessionFile: change.sessionFile,
+        sessionIndexDigest,
+        sessionFileDigest,
+        changeKind: change.changeKind,
+        rawRecordCount: change.rawRecordCount,
+        bridgedEventCount: change.bridgedEventCount,
+        eventDigest,
+        scannerDigest: scannedEventExport?.scanner?.sourceManifestDigest ?? null
+    };
+    return {
+        sourceId: `graphify-session-source:${hashSessionSnapshotSeed(sourceSeed).slice(0, 32)}`,
+        profileRoot: change.source.profileRoot,
+        agentId: change.source.agentId,
+        sessionsDir: change.source.sessionsDir,
+        sourceIndexPath: change.source.indexPath,
+        sessionKey: change.sessionKey,
+        sessionId: change.sessionId,
+        sessionFile: change.sessionFile,
+        sessionIndexDigest,
+        sessionFileDigest,
+        changeKind: change.changeKind,
+        rawRecordCount: change.rawRecordCount,
+        bridgedEventCount: change.bridgedEventCount,
+        eventDigest,
+        sourceManifestDigest: scannedEventExport?.scanner?.sourceManifestDigest ?? null,
+        scanner: scannedEventExport?.scanner ?? null,
+        warnings: [...(change.warnings ?? [])],
+        eventCounts: {
+            interaction: interactionEvents.length,
+            feedback: feedbackEvents.length,
+            total: interactionEvents.length + feedbackEvents.length
+        }
+    };
+}
+
+export function buildOpenClawSessionCorpusSnapshot(input = {}) {
+    const observedAt = normalizeIsoTimestamp(input.observedAt, new Date().toISOString());
+    const tail = createOpenClawLocalSessionTail({
+        ...(input.homeDir === undefined ? {} : { homeDir: input.homeDir }),
+        ...(input.profileRoots === undefined ? {} : { profileRoots: input.profileRoots }),
+        ...(input.cursor === undefined ? {} : { cursor: input.cursor }),
+        emitExistingOnFirstPoll: input.emitExistingOnFirstPoll !== false
+    });
+    const poll = tail.pollOnce({ observedAt });
+    const sourceSummaries = [];
+    const interactionEvents = [];
+    const feedbackEvents = [];
+    for (const change of poll.changes) {
+        const index = loadOpenClawSessionIndex(change.source.indexPath);
+        const sessionIndexDigest = summarizeOpenClawSessionIndex(index).digest;
+        const sessionFileDigest = change.sessionFile === null
+            ? null
+            : summarizeOpenClawSessionFile(readOpenClawSessionFile(change.sessionFile)).digest;
+        sourceSummaries.push(summarizeCorpusSource(change, sessionIndexDigest, sessionFileDigest));
+        if (change.scannedEventExport !== null) {
+            interactionEvents.push(...change.scannedEventExport.interactionEvents);
+            feedbackEvents.push(...change.scannedEventExport.feedbackEvents);
+        }
+    }
+    const sortedEvents = sortNormalizedEvents([...interactionEvents, ...feedbackEvents]);
+    const sortedInteractionEvents = sortedEvents.filter(isInteractionEvent);
+    const sortedFeedbackEvents = sortedEvents.filter((event) => !isInteractionEvent(event));
+    const normalizedEventExport = sortedEvents.length === 0
+        ? null
+        : buildNormalizedEventExport({
+            interactionEvents: sortedInteractionEvents,
+            feedbackEvents: sortedFeedbackEvents
+        });
+    const corpusDigest = hashSessionSnapshotSeed({
+        lane: poll.lane,
+        observedAt,
+        noopReason: poll.noopReason,
+        warnings: poll.warnings,
+        sourceSummaries,
+        normalizedEventExportDigest: normalizedEventExport?.provenance.exportDigest ?? null
+    });
+    return {
+        runtimeOwner: "openclaw",
+        lane: poll.lane,
+        observedAt,
+        poll,
+        sourceSummaries,
+        interactionEvents: sortedInteractionEvents,
+        feedbackEvents: sortedFeedbackEvents,
+        normalizedEventExport,
+        corpusDigest,
+        corpusId: `graphify-source-corpus:${corpusDigest.slice(0, 32)}`
+    };
+}
+
 function buildScannerManifest(input) {
     const sourceManifestDigest = createHash("sha256")
         .update(JSON.stringify({

@@ -8108,10 +8108,11 @@ export { CONTRACT_IDS, buildNormalizedEventExport, createFeedbackEvent, createIn
 export { describeNormalizedEventExportObservability } from "@openclawbrain/event-export";
 export { describeCompileFallbackUsage } from "@openclawbrain/compiler";
 export { describeActivationObservability, inspectActivationState, rollbackActivePack } from "@openclawbrain/pack-format";
-export { createOpenClawLocalSessionTail, OpenClawLocalSessionTail } from "./session-tail.js";
-export { discoverOpenClawMainSessionStores, discoverOpenClawSessionStores, loadOpenClawSessionIndex, readOpenClawAcpStreamFile, readOpenClawSessionFile } from "./session-store.js";
+export { buildOpenClawSessionCorpusSnapshot, createOpenClawLocalSessionTail, OpenClawLocalSessionTail } from "./session-tail.js";
+export { discoverOpenClawMainSessionStores, discoverOpenClawSessionStores, hashOpenClawStableJson, loadOpenClawSessionIndex, readOpenClawAcpStreamFile, readOpenClawSessionFile, summarizeOpenClawSessionFile, summarizeOpenClawSessionIndex } from "./session-store.js";
 export { buildPassiveLearningSessionExportFromOpenClawSessionStore, buildPassiveLearningStoreExportFromOpenClawSessionIndex } from "./local-session-passive-learning.js";
 export { DEFAULT_OLLAMA_BASE_URL, DEFAULT_OLLAMA_TIMEOUT_MS, OllamaClient, OllamaClientError, createOllamaClient } from "./ollama-client.js";
 export { resolveActivationRoot } from "./resolve-activation-root.js";
 export { runDaemonCommand, parseDaemonArgs } from "./daemon.js";
+export { exportGraphifySourceBundle } from "./import-export.js";
 //# sourceMappingURL=index.js.map

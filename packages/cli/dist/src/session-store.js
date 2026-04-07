@@ -1,7 +1,30 @@
+import { createHash } from "node:crypto";
 import { existsSync, readFileSync, readdirSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
 import { discoverOpenClawHomes } from "./openclaw-home-layout.js";
+
+function stableJsonValue(value) {
+    if (value === null || typeof value !== "object") {
+        return value;
+    }
+    if (Array.isArray(value)) {
+        return value.map((entry) => stableJsonValue(entry));
+    }
+    const sorted = {};
+    for (const key of Object.keys(value).sort((left, right) => left.localeCompare(right))) {
+        sorted[key] = stableJsonValue(value[key]);
+    }
+    return sorted;
+}
+
+function stableJsonText(value) {
+    return JSON.stringify(stableJsonValue(value));
+}
+
+export function hashOpenClawStableJson(value) {
+    return `sha256:${createHash("sha256").update(stableJsonText(value)).digest("hex")}`;
+}
 export function loadOpenClawSessionIndex(indexFilePath) {
     return parseJsonFile(indexFilePath);
 }
@@ -10,6 +33,20 @@ export function readOpenClawSessionFile(sessionFilePath) {
 }
 export function readOpenClawAcpStreamFile(streamFilePath) {
     return readJsonlFile(streamFilePath, parseOpenClawAcpStreamRecord);
+}
+
+export function summarizeOpenClawSessionIndex(index) {
+    return {
+        digest: hashOpenClawStableJson(index),
+        sessionCount: Object.keys(index).length,
+    };
+}
+
+export function summarizeOpenClawSessionFile(records) {
+    return {
+        digest: hashOpenClawStableJson(records),
+        recordCount: records.length,
+    };
 }
 export function discoverOpenClawMainSessionStores(options = {}) {
     const candidateRoots = options.profileRoots !== undefined
