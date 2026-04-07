@@ -6,7 +6,7 @@ OpenClawBrain is a memory layer for [OpenClaw](https://github.com/anthropics/ope
 
 The mechanism: a background pipeline watches agent interactions, binds feedback to past decisions, and builds compact memory packs. Only promoted packs reach the live path. The agent gets continuity without unbounded context growth, and latency stays predictable because the hot path never calls a live LLM. If the memory layer goes down, the agent keeps running.
 
-Current version: **0.4.34** · [Changelog](CHANGELOG.md) · [Claims boundary](CLAIMS.md)
+Current version: **0.4.35** · [Changelog](CHANGELOG.md) · [Claims boundary](CLAIMS.md)
 
 ## Install
 

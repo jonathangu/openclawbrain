@@ -27,11 +27,12 @@ function writeText(root: string, relativePath: string, contents: string): void {
 
 function writeReleaseScaffold(
   root: string,
-  options?: { readmeVersion?: string; docsIndexVersion?: string; endStateVersion?: string },
+  options?: { readmeVersion?: string; docsIndexVersion?: string; endStateVersion?: string; teacherV3LintVersion?: string },
 ) {
   const readmeVersion = options?.readmeVersion ?? CURRENT_VERSION;
   const docsIndexVersion = options?.docsIndexVersion ?? CURRENT_VERSION;
   const endStateVersion = options?.endStateVersion ?? CURRENT_VERSION;
+  const teacherV3LintVersion = options?.teacherV3LintVersion ?? CURRENT_VERSION;
 
   writeText(
     root,
@@ -90,6 +91,24 @@ function writeReleaseScaffold(
       `- split packages \`@openclawbrain/openclaw@${endStateVersion}\` and \`@openclawbrain/cli@${endStateVersion}\` are published`,
     ].join("\n"),
   );
+  writeText(
+    root,
+    "docs/architecture/teacher-v3-lints.md",
+    [
+      "# Teacher v3 lint families",
+      "",
+      "## 3) Release-drift motivating case",
+      "",
+      "The repo now lines up on the current release surface:",
+      "",
+      `- the root \`README.md\` says \`Current version: ${teacherV3LintVersion}\``,
+      `- \`docs/README.md\` points the release-history index at \`Current release notes (${teacherV3LintVersion})\``,
+      `- \`docs/END_STATE.md\` keeps its current split-package truth on \`${teacherV3LintVersion}\``,
+      `- \`docs/release-notes-${teacherV3LintVersion}.md\` exists and describes \`${teacherV3LintVersion}\``,
+      "",
+      "## 4) Placeholder checklist for an eventual runner",
+    ].join("\n"),
+  );
 }
 
 describe("verifyReleaseDocsDrift", () => {
@@ -108,6 +127,13 @@ describe("verifyReleaseDocsDrift", () => {
       [CURRENT_VERSION, CURRENT_VERSION],
       [CURRENT_VERSION, CURRENT_VERSION],
     ]);
+    expect(result.teacherV3LintsReleaseSurfaceVersions).toEqual([
+      CURRENT_VERSION,
+      CURRENT_VERSION,
+      CURRENT_VERSION,
+      CURRENT_VERSION,
+      CURRENT_VERSION,
+    ]);
     expect(result.blockers).toEqual([]);
   });
 
@@ -117,6 +143,7 @@ describe("verifyReleaseDocsDrift", () => {
       readmeVersion: "0.4.26",
       docsIndexVersion: "0.4.24",
       endStateVersion: "0.4.24",
+      teacherV3LintVersion: "0.4.24",
     });
 
     const result = verifyReleaseDocsDrift({ repoRoot });
@@ -129,8 +156,18 @@ describe("verifyReleaseDocsDrift", () => {
     expect(result.docsIndexVersion).toBe("0.4.24");
     expect(result.docsIndexTargetVersion).toBe("0.4.24");
     expect(result.endStateVersions).toEqual([["0.4.24", "0.4.24"], ["0.4.24", "0.4.24"]]);
+    expect(result.teacherV3LintsReleaseSurfaceVersions).toEqual([
+      "0.4.24",
+      "0.4.24",
+      "0.4.24",
+      "0.4.24",
+      "0.4.24",
+    ]);
     expect(result.blockers).toEqual(
-      expect.arrayContaining([expect.objectContaining({ code: "end_state_split_package_version_mismatch" })]),
+      expect.arrayContaining([
+        expect.objectContaining({ code: "end_state_split_package_version_mismatch" }),
+        expect.objectContaining({ code: "teacher_v3_lints_release_surface_mismatch" }),
+      ]),
     );
   });
 });

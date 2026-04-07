@@ -16,7 +16,8 @@ function usage() {
       "  --help               Show this help",
       "",
       "This deterministic lint compares the current release version in CHANGELOG.md",
-      "against public release-surfaces in README.md, docs/README.md, and docs/END_STATE.md.",
+      "against public release-surfaces in README.md, docs/README.md, docs/END_STATE.md,",
+      "and the release-drift architecture example in docs/architecture/teacher-v3-lints.md.",
     ].join("\n") + "\n",
   );
 }
@@ -80,6 +81,15 @@ function readAllMatches(text, pattern) {
   return [...text.matchAll(pattern)].map((match) => match.slice(1));
 }
 
+function readReleaseDriftSectionVersions(text) {
+  const sectionMatch = text.match(/##\s+3\)\s+Release-drift motivating case[\s\S]*?(?=\n##\s+\d+\)|\s*$)/);
+  if (!sectionMatch) {
+    return null;
+  }
+
+  return [...sectionMatch[0].matchAll(/((?:0|[1-9]\d*)\.(?:0|[1-9]\d*)\.(?:0|[1-9]\d*))/g)].map((match) => match[1]);
+}
+
 export function verifyReleaseDocsDrift(options = {}) {
   const repoRoot = path.resolve(options.repoRoot ?? process.cwd());
   const blockers = [];
@@ -138,6 +148,7 @@ export function verifyReleaseDocsDrift(options = {}) {
   }
 
   const endStatePath = path.join(repoRoot, "docs", "END_STATE.md");
+  const teacherV3LintsPath = path.join(repoRoot, "docs", "architecture", "teacher-v3-lints.md");
 
   let readmeVersion = null;
   if (currentVersion !== null && existsSync(readmePath)) {
@@ -229,6 +240,21 @@ export function verifyReleaseDocsDrift(options = {}) {
     }
   }
 
+  let teacherV3LintsReleaseSurfaceVersions = null;
+  if (currentVersion !== null && existsSync(teacherV3LintsPath)) {
+    const teacherV3LintsText = readText(teacherV3LintsPath);
+    teacherV3LintsReleaseSurfaceVersions = readReleaseDriftSectionVersions(teacherV3LintsText);
+
+    if (teacherV3LintsReleaseSurfaceVersions !== null && teacherV3LintsReleaseSurfaceVersions.length > 0) {
+      if (teacherV3LintsReleaseSurfaceVersions.some((version) => version !== currentVersion)) {
+        blockers.push({
+          code: "teacher_v3_lints_release_surface_mismatch",
+          detail: `docs/architecture/teacher-v3-lints.md still references ${teacherV3LintsReleaseSurfaceVersions.join(", ")} instead of ${currentVersion}`,
+        });
+      }
+    }
+  }
+
   return {
     ok: blockers.length === 0,
     repoRoot,
@@ -237,6 +263,7 @@ export function verifyReleaseDocsDrift(options = {}) {
     docsIndexVersion,
     docsIndexTargetVersion,
     endStateVersions,
+    teacherV3LintsReleaseSurfaceVersions,
     releaseNotesFile,
     blockers,
     message:
@@ -259,6 +286,13 @@ function formatResult(result) {
       result.endStateVersions === null
         ? "missing"
         : result.endStateVersions.map(([openclawVersion, cliVersion]) => `${openclawVersion} -> ${cliVersion}`).join(", ")
+    }`,
+  );
+  lines.push(
+    `docs/architecture/teacher-v3-lints.md release-surface versions: ${
+      result.teacherV3LintsReleaseSurfaceVersions === null
+        ? "missing"
+        : result.teacherV3LintsReleaseSurfaceVersions.join(", ")
     }`,
   );
 

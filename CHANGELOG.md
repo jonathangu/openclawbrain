@@ -4,6 +4,26 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.35
+
+`0.4.35` is the tool-action symmetry release: trace, learning, and runtime scoring now distinguish generic tool capabilities from concrete tool-instance bindings so the router can learn and serve the actual tool action it took.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.35`
+- `@openclawbrain/cli@0.4.35`
+
+**Changes**
+
+- splits tool capability vs bound tool-instance decision traces so replay/debug surfaces can tell the abstract action family from the concrete tool that was actually chosen
+- updates seed-phase learning to write tool-action priors from chosen toolcard traversals instead of leaving concrete tool-action reinforcement lagging behind the traced decision
+- scores explicit tool-instance bindings above generic capability matches when both are present so runtime retrieval prefers the real bound tool action
+- keeps the route-function action family more coherent across trace, learn, and serve surfaces without changing the public install lane
+
+**Full release note**
+
+- [docs/release-notes-0.4.35.md](docs/release-notes-0.4.35.md)
+
 ## 0.4.34
 
 `0.4.34` is the install-hardening release: it fixes the `0.4.33` activation-root self-heal / repin seam that could rewrite the installed hook into invalid JavaScript and break load on the real gateway surface.
