@@ -2,11 +2,11 @@
 
 import assert from "node:assert/strict";
 import { execFileSync } from "node:child_process";
-import { mkdtempSync, rmSync } from "node:fs";
+import { mkdirSync, mkdtempSync, rmSync } from "node:fs";
 import { tmpdir } from "node:os";
 import { dirname, join, resolve } from "node:path";
 import process from "node:process";
-import { fileURLToPath } from "node:url";
+import { fileURLToPath, pathToFileURL } from "node:url";
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const repoRoot = resolve(__dirname, "..");
@@ -56,6 +56,7 @@ try {
     "dist/src/cli.js",
     "dist/src/daemon.js",
     "dist/src/import-export.js",
+    "dist/src/openclawbrain-contracts.js",
     "dist/src/attachment-policy-truth.js",
     "dist/src/attachment-truth.d.ts",
     "dist/src/attachment-truth.js",
@@ -86,6 +87,15 @@ try {
     assert(!tarballFiles.has(forbiddenFile), `cli tarball must not include ${forbiddenFile}`);
   }
 
+  const installRoot = join(tempDir, "install-root");
+  mkdirSync(installRoot, { recursive: true });
+  execFileSync("npm", ["install", "--ignore-scripts", "--no-package-lock", tarballPath], {
+    cwd: installRoot,
+    encoding: "utf8",
+    env: npmPackEnv,
+  });
+  await import(pathToFileURL(join(installRoot, "node_modules", "@openclawbrain", "cli", "dist", "src", "import-export.js")).href);
+
   console.log(
     JSON.stringify(
       {
@@ -99,6 +109,7 @@ try {
             "dist/src/cli.js",
             "dist/src/daemon.js",
             "dist/src/import-export.js",
+            "dist/src/openclawbrain-contracts.js",
             "dist/src/attachment-policy-truth.js",
             "dist/src/attachment-truth.d.ts",
             "dist/src/attachment-truth.js",

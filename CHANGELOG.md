@@ -4,6 +4,26 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.38
+
+`0.4.38` is the install-hotfix follow-up to the ongoing-learning release: it keeps the shipped continuous-learning/operator story from `0.4.37` and fixes the published CLI packaging seam so the public install lane works on a real host.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.38`
+- `@openclawbrain/cli@0.4.38`
+
+**Changes**
+
+- fixes the published `@openclawbrain/cli` package so Graphify/import-export surfaces no longer reach outside the installed package for `openclawbrain-contracts.js`
+- hardens the CLI tarball verify step by importing the packed `dist/src/import-export.js` surface directly from the tarball extraction path
+- keeps the `0.4.37` continuous-learning loop, operator controls, replay/eval hardening, and public product story intact while restoring the real host install lane
+- aligns repo docs and public version surfaces to `0.4.38`
+
+**Full release note**
+
+- [docs/release-notes-0.4.38.md](docs/release-notes-0.4.38.md)
+
 ## 0.4.37
 
 `0.4.37` is the continuous ongoing learning release: the first bounded ongoing-learning loop, its operator controls, and the final replay/eval verification hardening now ship as one public release.

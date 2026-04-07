@@ -6,7 +6,7 @@ OpenClawBrain is a memory layer for [OpenClaw](https://github.com/anthropics/ope
 
 The mechanism: a background pipeline watches agent interactions, binds feedback to past decisions, and builds compact memory packs. Only promoted packs reach the live path. The agent gets continuity without unbounded context growth, and latency stays predictable because the hot path never calls a live LLM. If the memory layer goes down, the agent keeps running.
 
-Current version: **0.4.37** · [Changelog](CHANGELOG.md) · [Claims boundary](CLAIMS.md)
+Current version: **0.4.38** · [Changelog](CHANGELOG.md) · [Claims boundary](CLAIMS.md)
 
 ## Install
 
@@ -116,7 +116,7 @@ If you want the focused explanation, read **[docs/graphify.md](docs/graphify.md)
 
 ## Continuous learning is now part of the shipped product
 
-OpenClawBrain `0.4.37` ships the first bounded continuous-learning loop on top of the existing memory and Graphify foundations.
+OpenClawBrain `0.4.38` keeps the first bounded continuous-learning loop on top of the existing memory and Graphify foundations and fixes the public CLI install seam that affected `0.4.37`.
 
 What is now part of the public product:
 

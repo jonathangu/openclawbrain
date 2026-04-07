@@ -8,7 +8,7 @@ import { createHash } from "node:crypto";
 import { execSync } from "node:child_process";
 import { cpSync, existsSync, lstatSync, mkdirSync, readdirSync, readFileSync, readlinkSync, rmSync, statSync, symlinkSync, writeFileSync } from "node:fs";
 import path from "node:path";
-import { canonicalJson } from "../../../../src/openclawbrain-contracts.js";
+import { canonicalJson } from "./openclawbrain-contracts.js";
 import { buildOpenClawSessionCorpusSnapshot } from "./session-tail.js";
 import { discoverOpenClawHomes, inspectOpenClawHome } from "./openclaw-home-layout.js";
 import { resolveActivationRoot } from "./resolve-activation-root.js";
