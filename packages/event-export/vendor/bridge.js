@@ -1,0 +1,504 @@
+import { CONTRACT_IDS, buildNormalizedEventExport, checksumJsonPayload, sortNormalizedEvents, validateFeedbackEvent, validateInteractionEvent, validateNormalizedEventExport } from "@openclawbrain/contracts";
+export const DEFAULT_EVENT_EXPORT_LIVE_SLICE_SIZE = 64;
+export const DEFAULT_EVENT_EXPORT_BACKFILL_SLICE_SIZE = 64;
+function isIsoDate(value) {
+    return !Number.isNaN(Date.parse(value));
+}
+function uniqueInOrder(values) {
+    const seen = new Set();
+    const result = [];
+    for (const value of values) {
+        if (seen.has(value)) {
+            continue;
+        }
+        seen.add(value);
+        result.push(value);
+    }
+    return result;
+}
+function sortEvents(events) {
+    return [...events].sort((left, right) => compareEventKeys(left, right));
+}
+function isChecksum(value) {
+    return value.startsWith("sha256-") && value.length > "sha256-".length;
+}
+function toSortedInteractionEvents(events) {
+    return sortEvents(events.filter((event) => event.contract === CONTRACT_IDS.interactionEvents));
+}
+function toSortedFeedbackEvents(events) {
+    return sortEvents(events.filter((event) => event.contract === CONTRACT_IDS.feedbackEvents));
+}
+function eventComparisonKey(value) {
+    return [value.sequence, value.createdAt, value.contract, value.eventId];
+}
+function compareEventKeys(left, right) {
+    const leftKey = eventComparisonKey(left);
+    const rightKey = eventComparisonKey(right);
+    if (leftKey[0] !== rightKey[0]) {
+        return leftKey[0] - rightKey[0];
+    }
+    if (leftKey[1] !== rightKey[1]) {
+        return leftKey[1].localeCompare(rightKey[1]);
+    }
+    if (leftKey[2] !== rightKey[2]) {
+        return leftKey[2].localeCompare(rightKey[2]);
+    }
+    return leftKey[3].localeCompare(rightKey[3]);
+}
+function cloneCursor(value) {
+    return {
+        runtimeOwner: value.runtimeOwner,
+        live: {
+            after: value.live.after === null ? null : { ...value.live.after },
+            exhausted: value.live.exhausted
+        },
+        backfill: {
+            before: value.backfill.before === null ? null : { ...value.backfill.before },
+            exhausted: value.backfill.exhausted
+        }
+    };
+}
+function chunkEvents(events, size) {
+    const chunks = [];
+    for (let index = 0; index < events.length; index += size) {
+        chunks.push(events.slice(index, index + size));
+    }
+    return chunks;
+}
+function lastOf(values) {
+    return values.length === 0 ? null : (values[values.length - 1] ?? null);
+}
+function firstOf(values) {
+    return values.length === 0 ? null : (values[0] ?? null);
+}
+export function buildNormalizedEventDedupId(event) {
+    return checksumJsonPayload({
+        contract: event.contract,
+        eventId: event.eventId,
+        agentId: event.agentId,
+        sessionId: event.sessionId,
+        channel: event.channel,
+        sequence: event.sequence,
+        kind: event.kind,
+        createdAt: event.createdAt,
+        source: event.source,
+        packId: "packId" in event ? event.packId ?? null : null,
+        content: "content" in event ? event.content : null,
+        messageId: event.messageId ?? null,
+        relatedInteractionId: "relatedInteractionId" in event ? event.relatedInteractionId ?? null : null
+    });
+}
+export function buildEventExportWatermark(event) {
+    return {
+        runtimeOwner: event.source.runtimeOwner,
+        contract: event.contract,
+        eventId: event.eventId,
+        sequence: event.sequence,
+        createdAt: event.createdAt,
+        dedupId: buildNormalizedEventDedupId(event)
+    };
+}
+export function createEventExportCursor() {
+    return {
+        runtimeOwner: "openclaw",
+        live: {
+            after: null,
+            exhausted: false
+        },
+        backfill: {
+            before: null,
+            exhausted: false
+        }
+    };
+}
+function materializeCursorState(events, cursor) {
+    const nextCursor = cloneCursor(cursor);
+    if (nextCursor.backfill.before === null && nextCursor.live.after !== null) {
+        nextCursor.backfill.before = { ...nextCursor.live.after };
+    }
+    nextCursor.live.exhausted =
+        nextCursor.live.after === null
+            ? events.length === 0
+            : events.every((event) => compareEventKeys(event, nextCursor.live.after) <= 0);
+    nextCursor.backfill.exhausted =
+        nextCursor.backfill.before === null
+            ? events.length === 0
+            : events.every((event) => compareEventKeys(event, nextCursor.backfill.before) >= 0);
+    return nextCursor;
+}
+function dedupeNormalizedEvents(events) {
+    const deduped = [];
+    const identities = new Set();
+    let duplicateIdentityCount = 0;
+    for (const event of sortNormalizedEvents(events)) {
+        const identity = buildNormalizedEventDedupId(event);
+        if (identities.has(identity)) {
+            duplicateIdentityCount += 1;
+            continue;
+        }
+        identities.add(identity);
+        deduped.push(event);
+    }
+    return {
+        events: deduped,
+        duplicateIdentityCount
+    };
+}
+function validateInputEvents(input) {
+    const errors = [
+        ...input.interactionEvents.flatMap((event, index) => validateInteractionEvent(event).map((message) => `interactionEvents[${index}] ${message}`)),
+        ...input.feedbackEvents.flatMap((event, index) => validateFeedbackEvent(event).map((message) => `feedbackEvents[${index}] ${message}`))
+    ];
+    if (errors.length > 0) {
+        throw new Error(`Invalid event export bridge input: ${errors.join("; ")}`);
+    }
+}
+function validateSliceSize(label, value) {
+    if (!Number.isInteger(value) || value <= 0) {
+        throw new Error(`${label} must be a positive integer`);
+    }
+}
+function buildRawSlicePlans(events, cursor, liveSliceSize, backfillSliceSize) {
+    const plans = [];
+    const workingCursor = cloneCursor(cursor);
+    if (events.length === 0) {
+        return plans;
+    }
+    if (workingCursor.live.after === null) {
+        const liveEvents = events.slice(Math.max(events.length - liveSliceSize, 0));
+        const firstLiveEvent = firstOf(liveEvents);
+        const lastLiveEvent = lastOf(liveEvents);
+        if (firstLiveEvent !== null && lastLiveEvent !== null) {
+            workingCursor.live.after = buildEventExportWatermark(lastLiveEvent);
+            if (workingCursor.backfill.before === null) {
+                workingCursor.backfill.before = buildEventExportWatermark(firstLiveEvent);
+            }
+            plans.push({
+                lane: "live",
+                events: [...liveEvents],
+                nextCursor: materializeCursorState(events, workingCursor)
+            });
+        }
+    }
+    else {
+        const liveEligible = events.filter((event) => compareEventKeys(event, workingCursor.live.after) > 0);
+        for (const liveChunk of chunkEvents(liveEligible, liveSliceSize)) {
+            const lastLiveEvent = lastOf(liveChunk);
+            if (lastLiveEvent === null) {
+                continue;
+            }
+            workingCursor.live.after = buildEventExportWatermark(lastLiveEvent);
+            plans.push({
+                lane: "live",
+                events: [...liveChunk],
+                nextCursor: materializeCursorState(events, workingCursor)
+            });
+        }
+    }
+    if (workingCursor.backfill.before === null && workingCursor.live.after !== null) {
+        workingCursor.backfill.before = { ...workingCursor.live.after };
+    }
+    if (workingCursor.backfill.before !== null) {
+        const backfillEligible = events.filter((event) => compareEventKeys(event, workingCursor.backfill.before) < 0);
+        const backfillEvents = backfillEligible.slice(Math.max(backfillEligible.length - backfillSliceSize, 0));
+        const firstBackfillEvent = firstOf(backfillEvents);
+        if (firstBackfillEvent !== null) {
+            workingCursor.backfill.before = buildEventExportWatermark(firstBackfillEvent);
+            plans.push({
+                lane: "backfill",
+                events: [...backfillEvents],
+                nextCursor: materializeCursorState(events, workingCursor)
+            });
+        }
+    }
+    return plans;
+}
+function buildSliceFromPlan(plan, bridgeDigest, duplicateIdentityCount, dedupedInputCount) {
+    const eventExport = buildNormalizedEventExport({
+        interactionEvents: toSortedInteractionEvents(plan.events),
+        feedbackEvents: toSortedFeedbackEvents(plan.events)
+    });
+    const eventIdentities = plan.events.map((event) => buildNormalizedEventDedupId(event));
+    const firstEvent = firstOf(plan.events);
+    const lastEvent = lastOf(plan.events);
+    const sourceStreams = uniqueInOrder(plan.events.map((event) => event.source.stream));
+    const contracts = uniqueInOrder(plan.events.map((event) => event.contract));
+    const sliceId = checksumJsonPayload({
+        lane: plan.lane,
+        eventIdentities,
+        nextCursor: plan.nextCursor,
+        bridgeDigest
+    });
+    return {
+        lane: plan.lane,
+        sliceId,
+        export: eventExport,
+        eventIdentities,
+        dedupedEventCount: eventIdentities.length,
+        duplicateIdentityCount,
+        watermark: {
+            first: firstEvent === null ? null : buildEventExportWatermark(firstEvent),
+            last: lastEvent === null ? null : buildEventExportWatermark(lastEvent)
+        },
+        nextCursor: cloneCursor(plan.nextCursor),
+        provenance: {
+            runtimeOwner: "openclaw",
+            lane: plan.lane,
+            sliceDigest: sliceId,
+            bridgeDigest,
+            sourceStreams,
+            contracts,
+            dedupedEventCount: eventIdentities.length,
+            duplicateIdentityCount
+        }
+    };
+}
+export function buildNormalizedEventExportBridge(input) {
+    validateInputEvents(input);
+    const liveSliceSize = input.liveSliceSize ?? DEFAULT_EVENT_EXPORT_LIVE_SLICE_SIZE;
+    const backfillSliceSize = input.backfillSliceSize ?? DEFAULT_EVENT_EXPORT_BACKFILL_SLICE_SIZE;
+    validateSliceSize("liveSliceSize", liveSliceSize);
+    validateSliceSize("backfillSliceSize", backfillSliceSize);
+    const cursor = cloneCursor(input.cursor ?? createEventExportCursor());
+    const cursorErrors = validateEventExportCursor(cursor);
+    if (cursorErrors.length > 0) {
+        throw new Error(`Invalid event export bridge cursor: ${cursorErrors.join("; ")}`);
+    }
+    const deduped = dedupeNormalizedEvents([...input.interactionEvents, ...input.feedbackEvents]);
+    const rawSlicePlans = buildRawSlicePlans(deduped.events, cursor, liveSliceSize, backfillSliceSize);
+    const finalCursor = rawSlicePlans.length === 0 ? materializeCursorState(deduped.events, cursor) : cloneCursor(rawSlicePlans[rawSlicePlans.length - 1]?.nextCursor ?? cursor);
+    const bridgeDigest = checksumJsonPayload({
+        runtimeOwner: "openclaw",
+        cursor: finalCursor,
+        slicePlan: rawSlicePlans.map((plan) => ({
+            lane: plan.lane,
+            eventIdentities: plan.events.map((event) => buildNormalizedEventDedupId(event)),
+            nextCursor: plan.nextCursor
+        })),
+        dedupedInputCount: deduped.events.length,
+        duplicateIdentityCount: deduped.duplicateIdentityCount
+    });
+    const slices = rawSlicePlans.map((plan) => buildSliceFromPlan(plan, bridgeDigest, deduped.duplicateIdentityCount, deduped.events.length));
+    const bridge = {
+        runtimeOwner: "openclaw",
+        slices,
+        cursor: finalCursor,
+        dedupedInputCount: deduped.events.length,
+        duplicateIdentityCount: deduped.duplicateIdentityCount,
+        bridgeDigest
+    };
+    const errors = validateNormalizedEventExportBridge(bridge);
+    if (errors.length > 0) {
+        throw new Error(`Invalid normalized event export bridge: ${errors.join("; ")}`);
+    }
+    return bridge;
+}
+export function buildNormalizedEventExportBundleFromEvents(input) {
+    return buildNormalizedEventExportBundle(buildNormalizedEventExportBridge(input));
+}
+export function buildNormalizedEventExportBundle(bridge) {
+    const errors = validateNormalizedEventExportBridge(bridge);
+    if (errors.length > 0) {
+        throw new Error(`Invalid normalized event export bridge: ${errors.join("; ")}`);
+    }
+    const entries = bridge.slices.map((slice) => ({
+        lane: slice.lane,
+        sliceId: slice.sliceId,
+        export: slice.export,
+        eventIdentities: [...slice.eventIdentities],
+        watermark: {
+            first: slice.watermark.first === null ? null : { ...slice.watermark.first },
+            last: slice.watermark.last === null ? null : { ...slice.watermark.last }
+        },
+        nextCursor: cloneCursor(slice.nextCursor)
+    }));
+    const bundleDigest = checksumJsonPayload({
+        runtimeOwner: bridge.runtimeOwner,
+        bridgeDigest: bridge.bridgeDigest,
+        cursor: bridge.cursor,
+        entries: entries.map((entry) => ({
+            lane: entry.lane,
+            sliceId: entry.sliceId,
+            exportDigest: entry.export.provenance.exportDigest,
+            eventIdentities: entry.eventIdentities,
+            nextCursor: entry.nextCursor
+        })),
+        dedupedInputCount: bridge.dedupedInputCount,
+        duplicateIdentityCount: bridge.duplicateIdentityCount
+    });
+    return {
+        runtimeOwner: bridge.runtimeOwner,
+        bridgeDigest: bridge.bridgeDigest,
+        bundleDigest,
+        cursor: cloneCursor(bridge.cursor),
+        dedupedInputCount: bridge.dedupedInputCount,
+        duplicateIdentityCount: bridge.duplicateIdentityCount,
+        entries
+    };
+}
+export function validateEventExportWatermark(value) {
+    const errors = [];
+    if (value.runtimeOwner !== "openclaw") {
+        errors.push("event export watermark runtimeOwner must be openclaw");
+    }
+    if (value.contract !== CONTRACT_IDS.interactionEvents && value.contract !== CONTRACT_IDS.feedbackEvents) {
+        errors.push("event export watermark contract must reference a normalized event contract");
+    }
+    if (value.eventId.length === 0) {
+        errors.push("event export watermark eventId is required");
+    }
+    if (value.sequence < 0) {
+        errors.push("event export watermark sequence must be non-negative");
+    }
+    if (!isIsoDate(value.createdAt)) {
+        errors.push("event export watermark createdAt must be an ISO timestamp");
+    }
+    if (!isChecksum(value.dedupId)) {
+        errors.push("event export watermark dedupId must be a sha256 digest");
+    }
+    return errors;
+}
+export function validateEventExportCursor(value) {
+    const errors = [];
+    if (value.runtimeOwner !== "openclaw") {
+        errors.push("event export cursor runtimeOwner must be openclaw");
+    }
+    if (value.live.after !== null) {
+        errors.push(...validateEventExportWatermark(value.live.after));
+    }
+    if (value.backfill.before !== null) {
+        errors.push(...validateEventExportWatermark(value.backfill.before));
+    }
+    if (value.live.after !== null && value.backfill.before !== null && compareEventKeys(value.backfill.before, value.live.after) > 0) {
+        errors.push("event export cursor backfill.before must not sort after live.after");
+    }
+    return errors;
+}
+export function validateNormalizedEventExportSlice(value) {
+    const errors = [];
+    if (value.lane !== "live" && value.lane !== "backfill") {
+        errors.push("normalized event export slice lane must be live or backfill");
+    }
+    if (!isChecksum(value.sliceId)) {
+        errors.push("normalized event export sliceId must be a sha256 digest");
+    }
+    if (!isChecksum(value.provenance.sliceDigest)) {
+        errors.push("normalized event export slice provenance sliceDigest must be a sha256 digest");
+    }
+    if (!isChecksum(value.provenance.bridgeDigest)) {
+        errors.push("normalized event export slice provenance bridgeDigest must be a sha256 digest");
+    }
+    if (value.sliceId !== value.provenance.sliceDigest) {
+        errors.push("normalized event export sliceId must match provenance.sliceDigest");
+    }
+    if (value.provenance.runtimeOwner !== "openclaw") {
+        errors.push("normalized event export slice provenance runtimeOwner must be openclaw");
+    }
+    if (value.provenance.lane !== value.lane) {
+        errors.push("normalized event export slice provenance lane must match slice lane");
+    }
+    if (value.eventIdentities.length !== value.export.range.count) {
+        errors.push("normalized event export slice eventIdentities must match export range count");
+    }
+    if (new Set(value.eventIdentities).size !== value.eventIdentities.length) {
+        errors.push("normalized event export slice eventIdentities must be unique");
+    }
+    if (value.dedupedEventCount !== value.eventIdentities.length) {
+        errors.push("normalized event export slice dedupedEventCount must match eventIdentities length");
+    }
+    if (value.dedupedEventCount < 0) {
+        errors.push("normalized event export slice dedupedEventCount must be non-negative");
+    }
+    if (value.duplicateIdentityCount < 0) {
+        errors.push("normalized event export slice duplicateIdentityCount must be non-negative");
+    }
+    if (value.provenance.dedupedEventCount !== value.dedupedEventCount) {
+        errors.push("normalized event export slice provenance dedupedEventCount must match slice dedupedEventCount");
+    }
+    if (value.provenance.duplicateIdentityCount !== value.duplicateIdentityCount) {
+        errors.push("normalized event export slice provenance duplicateIdentityCount must match slice duplicateIdentityCount");
+    }
+    errors.push(...validateNormalizedEventExport(value.export));
+    errors.push(...validateEventExportCursor(value.nextCursor));
+    if (value.watermark.first !== null) {
+        errors.push(...validateEventExportWatermark(value.watermark.first));
+    }
+    if (value.watermark.last !== null) {
+        errors.push(...validateEventExportWatermark(value.watermark.last));
+    }
+    if (value.watermark.first?.eventId !== value.export.range.firstEventId) {
+        errors.push("normalized event export slice first watermark must match export firstEventId");
+    }
+    if (value.watermark.last?.eventId !== value.export.range.lastEventId) {
+        errors.push("normalized event export slice last watermark must match export lastEventId");
+    }
+    if (value.provenance.dedupedEventCount !== value.export.range.count) {
+        errors.push("normalized event export slice provenance dedupedEventCount must match export range count");
+    }
+    if (checksumJsonPayload(value.provenance.sourceStreams) !== checksumJsonPayload(value.export.provenance.sourceStreams)) {
+        errors.push("normalized event export slice provenance sourceStreams must match export provenance sourceStreams");
+    }
+    if (checksumJsonPayload(value.provenance.contracts) !== checksumJsonPayload(value.export.provenance.contracts)) {
+        errors.push("normalized event export slice provenance contracts must match export provenance contracts");
+    }
+    if (value.lane === "live" && value.watermark.last?.eventId !== value.nextCursor.live.after?.eventId) {
+        errors.push("live slice nextCursor.live.after must match the slice last watermark");
+    }
+    if (value.lane === "backfill" && value.watermark.first?.eventId !== value.nextCursor.backfill.before?.eventId) {
+        errors.push("backfill slice nextCursor.backfill.before must match the slice first watermark");
+    }
+    return errors;
+}
+export function validateNormalizedEventExportBridge(value) {
+    const errors = [];
+    const seenEventIdentities = new Set();
+    let backfillSeen = false;
+    let emittedEventCount = 0;
+    if (value.runtimeOwner !== "openclaw") {
+        errors.push("normalized event export bridge runtimeOwner must be openclaw");
+    }
+    if (!isChecksum(value.bridgeDigest)) {
+        errors.push("normalized event export bridgeDigest must be a sha256 digest");
+    }
+    if (value.dedupedInputCount < 0) {
+        errors.push("normalized event export bridge dedupedInputCount must be non-negative");
+    }
+    if (value.duplicateIdentityCount < 0) {
+        errors.push("normalized event export bridge duplicateIdentityCount must be non-negative");
+    }
+    errors.push(...validateEventExportCursor(value.cursor));
+    for (const [index, slice] of value.slices.entries()) {
+        errors.push(...validateNormalizedEventExportSlice(slice).map((message) => `slices[${index}] ${message}`));
+        if (slice.provenance.bridgeDigest !== value.bridgeDigest) {
+            errors.push(`slices[${index}] provenance bridgeDigest must match bridge bridgeDigest`);
+        }
+        if (slice.duplicateIdentityCount !== value.duplicateIdentityCount) {
+            errors.push(`slices[${index}] duplicateIdentityCount must match bridge duplicateIdentityCount`);
+        }
+        if (slice.lane === "backfill") {
+            backfillSeen = true;
+        }
+        if (backfillSeen && slice.lane === "live") {
+            errors.push(`slices[${index}] live slices must precede backfill slices`);
+        }
+        for (const identity of slice.eventIdentities) {
+            if (seenEventIdentities.has(identity)) {
+                errors.push(`slices[${index}] duplicate event identity across slices: ${identity}`);
+                continue;
+            }
+            seenEventIdentities.add(identity);
+        }
+        emittedEventCount += slice.dedupedEventCount;
+    }
+    if (emittedEventCount > value.dedupedInputCount) {
+        errors.push("normalized event export bridge dedupedInputCount must be >= emitted slice event count");
+    }
+    if (value.slices.length > 0) {
+        const lastSlice = value.slices[value.slices.length - 1];
+        if (checksumJsonPayload(value.cursor) !== checksumJsonPayload(lastSlice.nextCursor)) {
+            errors.push("normalized event export bridge cursor must match the final slice nextCursor");
+        }
+    }
+    return errors;
+}
+//# sourceMappingURL=bridge.js.map

@@ -1,1 +1,1 @@
-export declare function buildArtifactProvenance(input?: any): any;
+export * from "./vendor/index.d.ts";

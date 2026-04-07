@@ -1,5 +1,1 @@
-export function createWorkspaceMetadata(input = {}) {
-  return {
-    ...input,
-  };
-}
+export * from "./vendor/index.js";

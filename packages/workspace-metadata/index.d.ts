@@ -1,2 +1,1 @@
-export declare function createWorkspaceMetadata(input?: any): any;
-export type WorkspaceMetadataInput = any;
+export * from "./vendor/index.d.ts";

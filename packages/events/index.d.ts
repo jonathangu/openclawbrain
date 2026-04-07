@@ -1,1 +1,1 @@
-export declare function scanSession(rawSession: any, options?: any): any;
+export * from "./vendor/index.d.ts";
