@@ -6,6 +6,7 @@ import { homedir } from "node:os";
 import path from "node:path";
 import process from "node:process";
 import { fileURLToPath, pathToFileURL } from "node:url";
+import { buildProvenanceAuditChainV1, renderProvenanceAuditChainMarkdownV1 } from "../src/brain-runtime/provenance-audit-chain.js";
 import { buildTeacherV3ProofBundle, resolveTeacherV3ProofOutputDir, writeTeacherV3ProofBundle } from "./teacher-v3-proof-bundle.mjs";
 
 export { resolveTeacherV3ProofOutputDir } from "./teacher-v3-proof-bundle.mjs";
@@ -41,6 +42,7 @@ function usage() {
       "- runtime-load-proof snapshot",
       "- summary.md, steps.json, and verdict.json",
       "- Teacher v3 proof bundle: summary.md, status.json, surface-map.json, proposal-report.json, verdict.json",
+      "- provenance audit chain: provenance-audit-chain.md and provenance-audit-chain.json",
     ].join("\n") + "\n",
   );
 }
@@ -386,7 +388,19 @@ function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, brea
   };
 }
 
-function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspectText, statusSignals, breadcrumbs, runtimeLoadProofPath }) {
+function buildSummary({
+  options,
+  steps,
+  verdict,
+  gatewayStatusText,
+  pluginInspectText,
+  statusSignals,
+  breadcrumbs,
+  runtimeLoadProofPath,
+  provenanceAuditChain,
+  provenanceAuditChainMdPath,
+  provenanceAuditChainJsonPath,
+}) {
   const passed = [];
   const missing = [];
 
@@ -401,6 +415,11 @@ function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspec
   }
   if (/Status:\s+loaded/m.test(pluginInspectText)) {
     passed.push("plugin inspect showed OpenClawBrain loaded");
+  }
+  if (provenanceAuditChain) {
+    passed.push(
+      `provenance audit chain captured (${provenanceAuditChain.serveDecision.routeRowCount} route row(s), attribution=${provenanceAuditChain.attributionTruth.primaryState ?? "unknown"}, proof=${provenanceAuditChain.promotionProofTruth.proofTruth?.verdict ?? "unknown"})`,
+    );
   }
   if (statusSignals.statusOk) {
     passed.push("detailed status returned STATUS ok");
@@ -442,6 +461,17 @@ function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspec
 
   if (runtimeLoadProofPath) {
     lines.push("", "## Runtime proof file", `- ${runtimeLoadProofPath}`);
+  }
+
+  if (provenanceAuditChainMdPath || provenanceAuditChainJsonPath) {
+    lines.push("");
+    lines.push("## Provenance audit chain");
+    if (provenanceAuditChainMdPath) {
+      lines.push(`- markdown: ${provenanceAuditChainMdPath}`);
+    }
+    if (provenanceAuditChainJsonPath) {
+      lines.push(`- json: ${provenanceAuditChainJsonPath}`);
+    }
   }
 
   return `${lines.join("\n")}\n`;
@@ -559,6 +589,59 @@ function main() {
   const gatewayLogText = readTextIfExists(gatewayLogPath);
   const breadcrumbs = extractStartupBreadcrumbs(gatewayLogText, bundleStartedAt);
   const statusSignals = extractStatusSignals(statusCapture.stdout);
+  const verdict = buildVerdict({
+    steps,
+    gatewayStatus: gatewayStatusCapture.stdout,
+    pluginInspect: pluginInspectCapture.stdout,
+    statusSignals,
+    breadcrumbs,
+    runtimeLoadProof,
+    openclawHome: path.resolve(options.openclawHome),
+  });
+  const preliminarySummaryText = buildSummary({
+    options,
+    steps,
+    verdict,
+    gatewayStatusText: gatewayStatusCapture.stdout,
+    pluginInspectText: pluginInspectCapture.stdout,
+    statusSignals,
+    breadcrumbs,
+    runtimeLoadProofPath,
+  });
+  const provenanceAuditChain = buildProvenanceAuditChainV1({
+    bundleId: path.basename(bundleDir),
+    generatedAt: bundleStartedAt,
+    runtimeStatus: statusCapture.parsed,
+    proofTruth: {
+      bundleDir,
+      command: `openclawbrain proof --openclaw-home ${path.resolve(options.openclawHome)}`,
+      summary: preliminarySummaryText,
+      verdict,
+      runtimeLoadProofPath,
+      runtimeLoadProofExists: runtimeLoadProof !== null,
+      stepCount: steps.length,
+      postBundleCount: breadcrumbs.afterBundleStart.length,
+    },
+  });
+  const provenanceAuditChainMdPath = path.join(bundleDir, "provenance-audit-chain.md");
+  const provenanceAuditChainJsonPath = path.join(bundleDir, "provenance-audit-chain.json");
+  const summaryText = buildSummary({
+    options,
+    steps,
+    verdict,
+    gatewayStatusText: gatewayStatusCapture.stdout,
+    pluginInspectText: pluginInspectCapture.stdout,
+    statusSignals,
+    breadcrumbs,
+    runtimeLoadProofPath,
+    provenanceAuditChain,
+    provenanceAuditChainMdPath,
+    provenanceAuditChainJsonPath,
+  });
+
+  if (provenanceAuditChain.promotionProofTruth.proofTruth) {
+    provenanceAuditChain.promotionProofTruth.proofTruth.summary = summaryText;
+  }
 
   writeText(
     path.join(bundleDir, "extracted-startup-breadcrumbs.log"),
@@ -570,26 +653,6 @@ function main() {
     path: runtimeLoadProofPath,
     exists: runtimeLoadProof !== null,
     value: runtimeLoadProof,
-  });
-
-  const verdict = buildVerdict({
-    steps,
-    gatewayStatus: gatewayStatusCapture.stdout,
-    pluginInspect: pluginInspectCapture.stdout,
-    statusSignals,
-    breadcrumbs,
-    runtimeLoadProof,
-    openclawHome: path.resolve(options.openclawHome),
-  });
-  const summaryText = buildSummary({
-    options,
-    steps,
-    verdict,
-    gatewayStatusText: gatewayStatusCapture.stdout,
-    pluginInspectText: pluginInspectCapture.stdout,
-    statusSignals,
-    breadcrumbs,
-    runtimeLoadProofPath,
   });
 
   writeJson(path.join(bundleDir, "steps.json"), {
@@ -612,6 +675,8 @@ function main() {
     runtimeLoadProofPath,
   });
   writeText(path.join(bundleDir, "summary.md"), summaryText);
+  writeJson(provenanceAuditChainJsonPath, provenanceAuditChain);
+  writeText(provenanceAuditChainMdPath, renderProvenanceAuditChainMarkdownV1(provenanceAuditChain));
 
   const teacherV3OutputDir = resolveTeacherV3ProofOutputDir({
     outputDir: options.teacherV3OutputDir,
