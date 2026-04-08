@@ -11,6 +11,7 @@ import {
   describeTeacherProposalReplayGateMatrixV1,
 } from "../src/brain-core/teacher-v3-contracts.js";
 import { summarizeRouterMigrationComparisonV1 } from "../src/brain-core/router-migration.js";
+import { buildRouteQualitySummaryV1, normalizeRouteQualitySummaryV1 } from "../src/brain-runtime/route-quality-summary.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -216,6 +217,29 @@ function summarizeRuntimeStatus(runtimeStatus) {
       verdict: normalizeText(lastReplayGateVerdict?.verdict),
       summary: normalizeText(lastReplayGateVerdict?.summary),
     },
+    routeQuality: normalizeRouteQualitySummaryV1(runtimeStatus?.routeQuality)
+      ?? buildRouteQualitySummaryV1({
+        surface: "status",
+        activePackVersion: normalizeNumber(runtimeStatus?.currentPackVersion),
+        activePackId: normalizeText(runtimeStatus?.activePackId),
+        routerIdentity: normalizeText(runtimeStatus?.routerIdentity),
+        replayVerdict: {
+          passed: normalizeBoolean(lastReplayGateVerdict?.passed),
+          verdict: normalizeBoolean(lastReplayGateVerdict?.passed) === true
+            ? "pass"
+            : normalizeBoolean(lastReplayGateVerdict?.passed) === false
+              ? "fail"
+              : "unknown",
+          summary: normalizeText(lastReplayGateVerdict?.summary),
+        },
+        stopLocalWeights: [],
+        toolActionPriors: [],
+        disabled: normalizeBoolean(runtimeStatus?.disabled),
+        shadowMode: normalizeBoolean(runtimeStatus?.shadowMode),
+        rolledBack: normalizeBoolean(currentPackMetadata?.rolledBack),
+        rollbackKey: null,
+        proofBundleId: null,
+      }),
   };
 }
 
@@ -244,6 +268,37 @@ function summarizeDocsTruth(docsTruth) {
     title: normalizeText(docsTruth?.title),
     state: "shipped",
     summary: normalizeText(docsTruth?.summary),
+  };
+}
+
+function buildProofRouteQuality(runtimeRouteQuality, seed) {
+  const normalized = normalizeRouteQualitySummaryV1(runtimeRouteQuality);
+  if (!normalized) {
+    return null;
+  }
+
+  const rollbackKey = normalizeText(seed.rollbackKey) ?? normalized.rollbackLinkage.rollbackKey;
+  const proofBundleId = normalizeText(seed.bundleId) ?? normalized.rollbackLinkage.proofBundleId;
+  const bound = rollbackKey !== null && (normalized.activePackId !== null || normalized.activePackVersion !== null || normalized.routerIdentity !== null);
+  const linkageBits = [
+    rollbackKey ? `rollback key ${rollbackKey}` : "rollback key missing",
+    normalized.activePackId ?? (normalized.activePackVersion !== null ? `pack v${normalized.activePackVersion}` : "pack unbound"),
+    normalized.routerIdentity ?? "router unbound",
+    proofBundleId ? `proof bundle ${proofBundleId}` : null,
+  ].filter(Boolean);
+
+  return {
+    ...normalized,
+    surface: "proof",
+    rollbackLinkage: {
+      ...normalized.rollbackLinkage,
+      rollbackKey,
+      proofBundleId,
+      bound,
+      summary: `${linkageBits.join(" · ")}${bound ? " (bound)" : " (not fully bound)"}`,
+    },
+    explainability: `${normalized.explainability} Proof bundle ${proofBundleId ?? "unbound"} keeps rollback linkage ${bound ? "bound" : "partial"}.`,
+    summary: `proof route quality: pack ${normalized.activePackId ?? "unbound"} / router ${normalized.routerIdentity ?? "unbound"}; replay ${normalized.replayVerdict.verdict}; STOP_LOCAL ${normalized.stopLocalHealth.status}; toolActionPriors ${normalized.toolActionPriorsHealth.status}; posture ${normalized.posture}.`,
   };
 }
 
@@ -665,6 +720,7 @@ function buildProposalReport(seed, surfaceMap, bundlePaths, replayCapture) {
     evidenceLinks: seed.evidence,
     counterevidenceLinks: seed.counterevidence,
   });
+  const routeQuality = buildProofRouteQuality(runtimeTruth.routeQuality, seed);
 
   return {
     contract: TEACHER_V3_PROPOSAL_REPORT_CONTRACT,
@@ -758,6 +814,7 @@ function buildProposalReport(seed, surfaceMap, bundlePaths, replayCapture) {
       lastReplayGateVerdict: runtimeTruth.lastReplayGateVerdict.verdict,
       lastPromotionVerdict: runtimeTruth.lastPromotionVerdict.verdict,
     },
+    routeQuality,
     proofTruthSummary: {
       verdict: proofTruth.verdict,
       severity: proofTruth.severity,
@@ -782,6 +839,7 @@ function buildStatusReport(seed, surfaceMap, proposalReport) {
     reviewMode: seed.proposalReviewMode,
     surfaceCounts: surfaceMap.counts,
     runtimeTruth: proposalReport.runtimeTruthSummary,
+    routeQuality: proposalReport.routeQuality,
     proofTruth: proposalReport.proofTruthSummary,
     docsTruth: proposalReport.docsTruth,
     replayOutcomeSummary: proposalReport.replayOutcomeSummary,
@@ -860,6 +918,7 @@ function buildVerdictReport(seed, statusReport, proposalReport) {
           : `runtime, proof, and docs truth were summarized; Gate 1 persistence is still pending so the bundle remains a derived review surface (${proposalReport.replayOutcomeSummary.summary})`,
     reviewMode: seed.proposalReviewMode,
     gate1Seam: seed.gate1Seam,
+    routeQuality: statusReport.routeQuality,
     replayOutcomeSummary: proposalReport.replayOutcomeSummary,
     routerMigrationComparison: migrationComparison,
     shadowReplay: shadowReplayVerdict,
@@ -894,6 +953,19 @@ function buildSummaryMarkdown(seed, statusReport, verdictReport, bundlePaths) {
     `- proof truth: \`${seed.operatorProofCommand}\``,
     `- docs truth: \`${seed.docsTruth.path}\``,
     "",
+    ...(statusReport.routeQuality ? [
+      "## Route quality",
+      `- active pack: ${statusReport.routeQuality.activePackId ?? statusReport.routeQuality.activePackVersion ?? "unbound"}`,
+      `- router version: ${statusReport.routeQuality.routerIdentity ?? "unbound"}`,
+      `- replay verdict: ${statusReport.routeQuality.replayVerdict.verdict}${statusReport.routeQuality.replayVerdict.summary ? ` — ${statusReport.routeQuality.replayVerdict.summary}` : ""}`,
+      `- STOP_LOCAL health: ${statusReport.routeQuality.stopLocalHealth.summary}`,
+      `- toolActionPriors health: ${statusReport.routeQuality.toolActionPriorsHealth.summary}`,
+      `- control state: ${statusReport.routeQuality.controlState.summary}`,
+      `- posture: **${statusReport.routeQuality.posture}**`,
+      statusReport.routeQuality.rollbackLinkage.summary ? `- rollback linkage: ${statusReport.routeQuality.rollbackLinkage.summary}` : null,
+      statusReport.routeQuality.explainability ? `- explainability: ${statusReport.routeQuality.explainability}` : null,
+      "",
+    ].filter(Boolean) : []),
     "## Canary rollout",
     `- surface state: ${statusReport.canaryRollout?.surfaceState ?? "target"}`,
     `- rollout mode: ${statusReport.canaryRollout?.rolloutMode ?? "off"}`,

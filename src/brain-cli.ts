@@ -34,6 +34,7 @@ import {
   writeContinuousLearningControl,
 } from "./brain-runtime/continuous-learning-status.js";
 import { buildPromotionStory } from "./brain-runtime/promotion-story.js";
+import { buildRouteQualitySummaryV1 } from "./brain-runtime/route-quality-summary.js";
 import { readWorkerRuntimeState } from "./brain-runtime/worker-state.js";
 import { buildContextManagementModel } from "./context-management-model.js";
 import { summarizeAttributionTruth, summarizeOperatorHealth } from "./live-runtime-audit.js";
@@ -327,6 +328,28 @@ function commandStatus(): void {
     configuredCompileDeadlineMs: brainConfig.maxCompileMs,
   });
   const lastPrefetchDecision = store.getTrainingStateJson<BrainPrefetchDecision>("last_prefetch_decision_json");
+  const routeQuality = buildRouteQualitySummaryV1({
+    surface: "status",
+    activePackVersion: currentPack,
+    activePackId: recentTrace?.routeTrace?.activePackId ?? null,
+    routerIdentity: recentTrace?.routeTrace?.routerIdentity ?? null,
+    replayVerdict: {
+      passed: lastReplayGateVerdict?.passed ?? null,
+      verdict: lastReplayGateVerdict?.passed === true
+        ? "pass"
+        : lastReplayGateVerdict?.passed === false
+          ? "fail"
+          : "unknown",
+      summary: lastReplayGateVerdict?.reason?.summary ?? null,
+    },
+    stopLocalWeights: graph.getAllStopLocalWeights(),
+    toolActionPriors: graph.getAllToolActionPriors(),
+    disabled: existsSync(join(brainConfig.root, "DISABLED")),
+    shadowMode: brainConfig.shadowMode,
+    rolledBack: promotionStory.currentPack?.rolledBack ?? false,
+    rollbackKey: null,
+    proofBundleId: null,
+  });
   const contextManagement = buildContextManagementModel({
     lcmConfig: config,
     brainConfig,
@@ -364,6 +387,7 @@ function commandStatus(): void {
     contextFeedback,
     contextUsefulness,
     learningHealth,
+    routeQuality,
     continuousLearning,
     pendingLabels: store.getPendingLabels().length,
     pendingLabelsBySource: store.countPendingLabelsBySource(),

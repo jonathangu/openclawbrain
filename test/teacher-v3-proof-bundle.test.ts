@@ -13,6 +13,7 @@ import {
   TEACHER_V3_PROOF_BUNDLE_LAYOUT,
   writeTeacherV3ProofBundle,
 } from "../scripts/teacher-v3-proof-bundle.mjs";
+import { buildRouteQualitySummaryV1 } from "../src/brain-runtime/route-quality-summary.js";
 
 const runtimeStatus = {
   serveState: "serving_active_pack",
@@ -57,6 +58,28 @@ const runtimeStatus = {
     verdict: "pass",
     summary: "replay gate passed",
   },
+  routeQuality: buildRouteQualitySummaryV1({
+    surface: "status",
+    activePackVersion: 7,
+    activePackId: "brain-pack-v7",
+    routerIdentity: "route_fn.v1",
+    replayVerdict: {
+      passed: true,
+      summary: "replay gate passed",
+    },
+    stopLocalWeights: [
+      { sourceNodeId: "episode_anchor", weight: 0.82 },
+    ],
+    toolActionPriors: [
+      { sourceNodeId: "episode_anchor", toolNodeId: "search_tool", weight: 0.91 },
+      { sourceNodeId: "workflow_root", toolNodeId: "rerank_tool", weight: 0.76 },
+    ],
+    disabled: false,
+    shadowMode: false,
+    rolledBack: false,
+    rollbackKey: null,
+    proofBundleId: null,
+  }),
 };
 
 const operatorProof = {
@@ -359,6 +382,26 @@ describe("teacher v3 proof bundle writer", () => {
     });
     expect(bundle.summaryMarkdown).toContain("Canary rollout");
     expect(bundle.summaryMarkdown).toContain("off by default");
+    expect(bundle.summaryMarkdown).toContain("## Route quality");
+    expect(bundle.summaryMarkdown).toContain("posture: **promotable**");
+    expect(bundle.statusReport.routeQuality).toMatchObject({
+      activePackVersion: 7,
+      activePackId: "brain-pack-v7",
+      routerIdentity: "route_fn.v1",
+      posture: "promotable",
+      controlState: {
+        summary: "controls: live",
+      },
+    });
+    expect(bundle.proposalReport.routeQuality).toMatchObject({
+      surface: "proof",
+      rollbackLinkage: {
+        rollbackKey: "rollback:teacher-v3:compiler:replay",
+        proofBundleId: bundle.bundleId,
+        bound: true,
+      },
+      posture: "promotable",
+    });
     expect(bundle.proposalReport.gate1Seam).toMatchObject({
       present: false,
       recordSource: "runtime-capture",
