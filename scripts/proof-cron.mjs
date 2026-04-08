@@ -7,6 +7,14 @@ import process from "node:process";
 import { fileURLToPath } from "node:url";
 import { isOperatorHealthSummary, summarizeOperatorHealth } from "./operator-health-contract.mjs";
 import {
+  ECONOMICS_SCORECARD_CONTRACT,
+  ECONOMICS_SCORECARD_JSON_FILE,
+  ECONOMICS_SCORECARD_MARKDOWN_FILE,
+  buildEconomicsScorecardFromHealthSnapshot,
+  buildEconomicsScorecardFromNightlyAggregate,
+  buildEconomicsScorecardMarkdown,
+} from "./economics-scorecard.mjs";
+import {
   PROOF_CRON_MANIFEST_LAYOUT,
   buildProofManifestSkeleton,
   buildProofManifestSmoke,
@@ -2253,6 +2261,11 @@ function formatHealthMarkdown(snapshot) {
     }
   }
   lines.push("");
+  lines.push("## Economics scorecard");
+  lines.push(`- contract: ${ECONOMICS_SCORECARD_CONTRACT}`);
+  lines.push(`- artifacts: ${ECONOMICS_SCORECARD_JSON_FILE}, ${ECONOMICS_SCORECARD_MARKDOWN_FILE}`);
+  lines.push(`- labels: measured / derived / proxy`);
+  lines.push("");
   lines.push("## What to watch");
   if (snapshot.status.decisionSummary?.sampleSize === 0) {
     lines.push("- no recent traced decisions were found; this is a quiet surface, not a proof failure");
@@ -2390,6 +2403,11 @@ function formatNightlyMarkdown(aggregate) {
   lines.push(`- bundle count: ${aggregate.costProxy.bundleCount}`);
   lines.push(`- validation count: ${aggregate.costProxy.validationCount}`);
   lines.push("");
+  lines.push("## Economics scorecard");
+  lines.push(`- contract: ${ECONOMICS_SCORECARD_CONTRACT}`);
+  lines.push(`- artifacts: ${ECONOMICS_SCORECARD_JSON_FILE}, ${ECONOMICS_SCORECARD_MARKDOWN_FILE}`);
+  lines.push(`- labels: measured / derived / proxy`);
+  lines.push("");
   lines.push("## Latest bundle surface");
   for (const [key, bundle] of Object.entries(aggregate.latestBundles)) {
     if (!bundle) {
@@ -2449,6 +2467,9 @@ function writeHealthOutputsWithManifests(outputDir, snapshot, statusProbe, bundl
   const statusText = renderJson(statusProbe);
   const snapshotText = renderJson(snapshot);
   const summaryText = formatHealthMarkdown(snapshot);
+  const economicsScorecard = buildEconomicsScorecardFromHealthSnapshot(snapshot);
+  const economicsText = renderJson(economicsScorecard);
+  const economicsMarkdownText = buildEconomicsScorecardMarkdown(economicsScorecard);
   const replayManifestSet = buildReplayManifestSkeletonSet(bundles);
   const replayManifestsText = renderJson(replayManifestSet);
   const outputRelativePath = buildOutputRelativePath(outputDir, currentWorkspaceRoot);
@@ -2470,6 +2491,18 @@ function writeHealthOutputsWithManifests(outputDir, snapshot, statusProbe, bundl
       path: "summary.md",
       digest: sha256Text(summaryText),
       contract: null,
+    },
+    {
+      role: "economics-scorecard",
+      path: ECONOMICS_SCORECARD_JSON_FILE,
+      digest: sha256Text(economicsText),
+      contract: ECONOMICS_SCORECARD_CONTRACT,
+    },
+    {
+      role: "economics-scorecard-summary",
+      path: ECONOMICS_SCORECARD_MARKDOWN_FILE,
+      digest: sha256Text(economicsMarkdownText),
+      contract: ECONOMICS_SCORECARD_CONTRACT,
     },
   ];
   const bundleInventory = buildBundleInventoryFromSnapshot(snapshot);
@@ -2499,6 +2532,8 @@ function writeHealthOutputsWithManifests(outputDir, snapshot, statusProbe, bundl
   saveText(path.join(outputDir, "status.json"), statusText);
   saveText(path.join(outputDir, "snapshot.json"), snapshotText);
   saveText(path.join(outputDir, "summary.md"), summaryText);
+  saveText(path.join(outputDir, ECONOMICS_SCORECARD_JSON_FILE), economicsText);
+  saveText(path.join(outputDir, ECONOMICS_SCORECARD_MARKDOWN_FILE), economicsMarkdownText);
   saveText(path.join(outputDir, PROOF_CRON_MANIFEST_LAYOUT.replayManifests), replayManifestsText);
   saveText(path.join(outputDir, PROOF_CRON_MANIFEST_LAYOUT.manifest), manifestText);
   saveText(path.join(outputDir, PROOF_CRON_MANIFEST_LAYOUT.smoke), renderJson(smoke));
@@ -2509,6 +2544,9 @@ function writeNightlyOutputsWithManifests(outputDir, aggregate, bundles, current
   const aggregateText = renderJson(aggregate);
   const bundleIndexText = renderJson(bundles);
   const summaryText = formatNightlyMarkdown(aggregate);
+  const economicsScorecard = buildEconomicsScorecardFromNightlyAggregate(aggregate);
+  const economicsText = renderJson(economicsScorecard);
+  const economicsMarkdownText = buildEconomicsScorecardMarkdown(economicsScorecard);
   const replayManifestSet = buildReplayManifestSkeletonSet(bundles);
   const replayManifestsText = renderJson(replayManifestSet);
   const outputRelativePath = buildOutputRelativePath(outputDir, currentWorkspaceRoot);
@@ -2530,6 +2568,18 @@ function writeNightlyOutputsWithManifests(outputDir, aggregate, bundles, current
       path: "summary.md",
       digest: sha256Text(summaryText),
       contract: null,
+    },
+    {
+      role: "economics-scorecard",
+      path: ECONOMICS_SCORECARD_JSON_FILE,
+      digest: sha256Text(economicsText),
+      contract: ECONOMICS_SCORECARD_CONTRACT,
+    },
+    {
+      role: "economics-scorecard-summary",
+      path: ECONOMICS_SCORECARD_MARKDOWN_FILE,
+      digest: sha256Text(economicsMarkdownText),
+      contract: ECONOMICS_SCORECARD_CONTRACT,
     },
   ];
   const bundleInventory = buildBundleInventoryFromAggregate(aggregate);
@@ -2559,6 +2609,8 @@ function writeNightlyOutputsWithManifests(outputDir, aggregate, bundles, current
   saveText(path.join(outputDir, "aggregate.json"), aggregateText);
   saveText(path.join(outputDir, "bundle-index.json"), bundleIndexText);
   saveText(path.join(outputDir, "summary.md"), summaryText);
+  saveText(path.join(outputDir, ECONOMICS_SCORECARD_JSON_FILE), economicsText);
+  saveText(path.join(outputDir, ECONOMICS_SCORECARD_MARKDOWN_FILE), economicsMarkdownText);
   saveText(path.join(outputDir, PROOF_CRON_MANIFEST_LAYOUT.replayManifests), replayManifestsText);
   saveText(path.join(outputDir, PROOF_CRON_MANIFEST_LAYOUT.manifest), manifestText);
   saveText(path.join(outputDir, PROOF_CRON_MANIFEST_LAYOUT.smoke), renderJson(smoke));
