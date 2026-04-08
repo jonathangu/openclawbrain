@@ -2,6 +2,8 @@ import { describe, expect, it } from "vitest";
 import {
   buildBrainCompileReport,
   createAttributionTruthRecord,
+  summarizeBoundedAnytimeDecision,
+  summarizeBoundedAnytimeStatus,
   recordTrace,
   summarizeRecentDecisionTraces,
   toAttributionTruthId,
@@ -9,6 +11,7 @@ import {
 } from "../../src/brain-core/trace.js";
 import type {
   BrainNode,
+  DecisionRouteTrace,
   SeedScore,
   TrajectoryExpansion,
   TrajectoryStopReason,
@@ -549,6 +552,152 @@ describe("decision trace branch proofs", () => {
       },
       detail: "1/3 recent branches continued; stop truths forced=2, chosen=1; reasons no_traversable_candidates=1, policy_stop=1, frontier_cap=1",
     });
+  });
+
+  it("summarizes the bounded-anytime posture matrix with compact deadline and interruption truth", () => {
+    const fullTrace = makeTrace([], [], []);
+    const clippedTrace = makeTrace([], [], []);
+    const partialTrace = makeTrace([], [], []);
+    const failOpenTrace = makeTrace([], [], []);
+
+    const fullMetadata = fullTrace.routeTrace?.selectionMetadata as DecisionRouteTrace["selectionMetadata"];
+    const clippedMetadata = clippedTrace.routeTrace?.selectionMetadata as DecisionRouteTrace["selectionMetadata"];
+    const partialMetadata = partialTrace.routeTrace?.selectionMetadata as DecisionRouteTrace["selectionMetadata"];
+    const failOpenMetadata = failOpenTrace.routeTrace?.selectionMetadata as DecisionRouteTrace["selectionMetadata"];
+
+    Object.assign(fullMetadata, {
+      contextClipped: false,
+      queryInterrupted: false,
+      servedPartial: false,
+      compileDeadlineHit: false,
+      interruptionStage: null,
+      interruptionReason: null,
+    });
+    Object.assign(clippedMetadata, {
+      contextClipped: true,
+      brainDropReason: "injection_cap_clipped",
+      fitStrategy: "structured_node_budget",
+      queryInterrupted: false,
+      servedPartial: false,
+      compileDeadlineHit: false,
+      interruptionStage: null,
+      interruptionReason: null,
+    });
+    Object.assign(partialMetadata, {
+      contextClipped: true,
+      brainDropReason: "deadline_after_query",
+      fitStrategy: "structured_node_budget",
+      queryInterrupted: true,
+      servedPartial: true,
+      compileDeadlineMs: 25,
+      compileDeadlineHit: true,
+      interruptionStage: "query",
+      interruptionReason: "deadline_after_query",
+    });
+    Object.assign(failOpenMetadata, {
+      contextClipped: false,
+      brainDropReason: "deadline_before_injection",
+      fitStrategy: "legacy_raw_clip",
+      queryInterrupted: true,
+      servedPartial: false,
+      compileDeadlineMs: 25,
+      compileDeadlineHit: true,
+      interruptionStage: "injection",
+      interruptionReason: "deadline_before_injection",
+    });
+
+    const cases = [
+      {
+        name: "full",
+        metadata: fullMetadata,
+        deadlineMs: null,
+        expected: {
+          posture: "full",
+          clipped: false,
+          deadline: { posture: "off_by_default", hit: false },
+          interruption: { interrupted: false, stage: null, reason: null, servedPartial: false },
+        },
+      },
+      {
+        name: "clipped",
+        metadata: clippedMetadata,
+        deadlineMs: null,
+        expected: {
+          posture: "full",
+          clipped: true,
+          deadline: { posture: "off_by_default", hit: false },
+          interruption: { interrupted: false, stage: null, reason: null, servedPartial: false },
+        },
+      },
+      {
+        name: "partial-fail-open",
+        metadata: partialMetadata,
+        deadlineMs: 25,
+        expected: {
+          posture: "partial",
+          clipped: true,
+          deadline: { posture: "bounded", hit: true },
+          interruption: { interrupted: true, stage: "query", reason: "deadline_after_query", servedPartial: true },
+        },
+      },
+      {
+        name: "fail-open",
+        metadata: failOpenMetadata,
+        deadlineMs: 25,
+        expected: {
+          posture: "fail_open",
+          clipped: false,
+          deadline: { posture: "bounded", hit: true },
+          interruption: { interrupted: true, stage: "injection", reason: "deadline_before_injection", servedPartial: false },
+        },
+      },
+    ] as const;
+
+    for (const testCase of cases) {
+      const summary = summarizeBoundedAnytimeDecision(testCase.metadata, testCase.deadlineMs);
+      expect(summary).toMatchObject({
+        posture: testCase.expected.posture,
+        clipped: testCase.expected.clipped,
+        deadline: testCase.expected.deadline,
+        interruption: testCase.expected.interruption,
+      });
+      expect(summary.detail).toContain(testCase.expected.posture.replaceAll("_", "-"));
+      expect(summary.detail).toContain(testCase.expected.deadline.posture === "bounded" ? `${testCase.deadlineMs}ms` : "off-by-default");
+    }
+
+    const recentSummary = summarizeRecentDecisionTraces([fullTrace, clippedTrace, partialTrace, failOpenTrace], 10);
+    const boundedSummary = summarizeBoundedAnytimeStatus({
+      recentDecisionSummary: recentSummary,
+      latestSelectionMetadata: failOpenMetadata,
+      configuredCompileDeadlineMs: 25,
+    });
+
+    expect(boundedSummary).toMatchObject({
+      defaultDeadlinePosture: "bounded",
+      configuredCompileDeadlineMs: 25,
+      latest: expect.objectContaining({
+        posture: "fail_open",
+        clipped: false,
+        deadline: expect.objectContaining({
+          configuredMs: 25,
+          posture: "bounded",
+          hit: true,
+        }),
+      }),
+      recent: expect.objectContaining({
+        sampleSize: 4,
+        clipRate: {
+          count: 2,
+          rate: 0.5,
+        },
+        failOpenRate: {
+          count: 2,
+          rate: 0.5,
+        },
+      }),
+    });
+    expect(boundedSummary.detail).toContain("deadline=25ms");
+    expect(boundedSummary.detail).toContain("recent 2/4 clipped and 2/4 fail-open or interrupted across the recent decision window");
   });
 
   it("adds pressure visibility to branch proofs when policy-state trace data is present", () => {

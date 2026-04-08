@@ -36,7 +36,7 @@ import { BrainGraph } from "../brain-core/graph.js";
 import { traverse } from "../brain-core/traverse.js";
 import type { TraverseResult } from "../brain-core/traverse.js";
 import { recordEpisode } from "../brain-core/episode.js";
-import { buildBrainCompileReport, recordTrace, redactDecisionTrace, redactInjectedNodeSummary, redactRouteTrace, redactTextSurface, redactToolResult, rewriteBrainCompileReportSummary, summarizeRecentPrefetchDecisions } from "../brain-core/trace.js";
+import { buildBrainCompileReport, recordTrace, redactDecisionTrace, redactInjectedNodeSummary, redactRouteTrace, redactTextSurface, redactToolResult, rewriteBrainCompileReportSummary, summarizeBoundedAnytimeStatus, summarizeRecentPrefetchDecisions } from "../brain-core/trace.js";
 import { computeHealth } from "../brain-core/health.js";
 import { BrainTeacher } from "../brain-core/teacher.js";
 import { BrainMutator } from "../brain-core/mutator.js";
@@ -2016,6 +2016,11 @@ export class BrainService {
       ?? recentTraces[0]?.routeTrace?.selectionMetadata?.compileReportSummary
       ?? recentTraces[0]?.routeTrace?.selectionMetadata?.compileReport?.summary
       ?? null;
+    const boundedAnytimeSummary = summarizeBoundedAnytimeStatus({
+      recentDecisionSummary,
+      latestSelectionMetadata: recentTraces[0]?.routeTrace?.selectionMetadata ?? null,
+      configuredCompileDeadlineMs: this.config.maxCompileMs,
+    });
 
     const embeddingConfig = describeEmbeddingConfig(this.config);
     const contextManagement = buildContextManagementModel({
@@ -2087,6 +2092,7 @@ export class BrainService {
       lastPgCandidateUpdate,
       recentTraceCount: recentTraces.length,
       recentDecisionSummary,
+      boundedAnytimeSummary,
       recentPrefetchSummary,
       lastTraceFooter: recentTraces[0]?.footer ?? null,
       lastTraceContextChars: recentTraces[0]?.contextChars ?? null,

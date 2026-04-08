@@ -1147,6 +1147,7 @@ function summarizeHostBundle(bundlePath, workspaceRoot) {
   const promotionSummary = status?.promotionStory?.summary ?? null;
   const feedbackTruth = buildThinFeedbackTruthFromStatusPayload(status, "latest_host_evidence");
   const attributionCoverageTruth = buildThinAttributionCoverageTruthFromStatusPayload(status, "latest_host_evidence");
+  const boundedAnytimeSummary = status?.boundedAnytimeSummary ?? null;
 
   return {
     kind: "host-evidence",
@@ -1178,6 +1179,10 @@ function summarizeHostBundle(bundlePath, workspaceRoot) {
           decisionSampleSize: status.recentDecisionSummary?.sampleSize ?? null,
           clipRate: status.recentDecisionSummary?.clipRate?.rate ?? null,
           failOpenRate: status.recentDecisionSummary?.failOpenRate?.rate ?? null,
+          boundedAnytimePosture: boundedAnytimeSummary?.latest?.posture ?? null,
+          boundedAnytimeDeadlinePosture: boundedAnytimeSummary?.defaultDeadlinePosture ?? null,
+          boundedAnytimeDeadlineMs: boundedAnytimeSummary?.configuredCompileDeadlineMs ?? null,
+          boundedAnytimeDetail: boundedAnytimeSummary?.detail ?? null,
           operatorHealth,
           feedbackTruth,
           attributionCoverageTruth,
@@ -1196,6 +1201,9 @@ function summarizeHostBundle(bundlePath, workspaceRoot) {
       clipRate: decisionSummary?.clipRate?.rate ?? null,
       failOpenRate: decisionSummary?.failOpenRate?.rate ?? null,
       decisionSampleSize: decisionSummary?.sampleSize ?? null,
+      boundedAnytimePosture: boundedAnytimeSummary?.latest?.posture ?? null,
+      boundedAnytimeDeadlinePosture: boundedAnytimeSummary?.defaultDeadlinePosture ?? null,
+      boundedAnytimeDeadlineMs: boundedAnytimeSummary?.configuredCompileDeadlineMs ?? null,
       currentPackVersion: promotionSummary?.currentPackVersion ?? null,
       operatorHealthStatus: operatorHealth.status,
     },
@@ -2181,6 +2189,11 @@ function formatHealthMarkdown(snapshot) {
   lines.push(`- recent traced decisions: ${snapshot.status.decisionSummary?.sampleSize ?? 0}`);
   lines.push(`- clip rate: ${snapshot.status.decisionSummary?.clipRate?.rate ?? "n/a"}`);
   lines.push(`- fail-open rate: ${snapshot.status.decisionSummary?.failOpenRate?.rate ?? "n/a"}`);
+  lines.push(`- bounded-anytime posture: ${snapshot.status.boundedAnytimeSummary?.latest?.posture ?? "n/a"}`);
+  lines.push(`- bounded-anytime clip: ${snapshot.status.boundedAnytimeSummary?.latest?.clipped === true ? snapshot.status.boundedAnytimeSummary.latest.clipReason ?? "yes" : "none"}`);
+  lines.push(`- bounded-anytime deadline posture: ${snapshot.status.boundedAnytimeSummary?.defaultDeadlinePosture ?? "n/a"}`);
+  lines.push(`- bounded-anytime deadline ms: ${snapshot.status.boundedAnytimeSummary?.configuredCompileDeadlineMs ?? "n/a"}`);
+  lines.push(`- bounded-anytime detail: ${snapshot.status.boundedAnytimeSummary?.detail ?? "n/a"}`);
   lines.push(`- security critical findings: ${snapshot.status.securityAudit?.critical ?? 0}`);
   lines.push("");
   lines.push("## Thin readout");

@@ -37,6 +37,7 @@ import { buildPromotionStory } from "./brain-runtime/promotion-story.js";
 import { readWorkerRuntimeState } from "./brain-runtime/worker-state.js";
 import { buildContextManagementModel } from "./context-management-model.js";
 import { summarizeAttributionTruth, summarizeOperatorHealth } from "./live-runtime-audit.js";
+import { summarizeBoundedAnytimeStatus } from "./brain-core/trace.js";
 
 function printJson(payload: unknown): void {
   process.stdout.write(`${JSON.stringify(payload, null, 2)}\n`);
@@ -320,6 +321,11 @@ function commandStatus(): void {
     ?? recentTrace?.routeTrace?.selectionMetadata?.compileReportSummary
     ?? recentTrace?.routeTrace?.selectionMetadata?.compileReport?.summary
     ?? null;
+  const boundedAnytimeSummary = summarizeBoundedAnytimeStatus({
+    recentDecisionSummary,
+    latestSelectionMetadata: recentTrace?.routeTrace?.selectionMetadata ?? null,
+    configuredCompileDeadlineMs: brainConfig.maxCompileMs,
+  });
   const lastPrefetchDecision = store.getTrainingStateJson<BrainPrefetchDecision>("last_prefetch_decision_json");
   const contextManagement = buildContextManagementModel({
     lcmConfig: config,
@@ -369,6 +375,7 @@ function commandStatus(): void {
     lastReplayGateVerdict,
     promotionStory,
     recentDecisionSummary,
+    boundedAnytimeSummary,
     recentPrefetchSummary,
     lastTraceSelectionMetadata: recentTrace?.routeTrace?.selectionMetadata ?? null,
     lastCompileReportSummary,

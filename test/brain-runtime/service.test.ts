@@ -385,6 +385,31 @@ describe("BrainService", () => {
         detail: expect.stringContaining("recent branches continued"),
       }),
     }));
+    expect(status.boundedAnytimeSummary).toEqual(expect.objectContaining({
+      defaultDeadlinePosture: "off_by_default",
+      configuredCompileDeadlineMs: null,
+      latest: expect.objectContaining({
+        deadline: expect.objectContaining({
+          configuredMs: null,
+          posture: "off_by_default",
+          hit: false,
+        }),
+      }),
+      recent: expect.objectContaining({
+        sampleSize: 3,
+        clipRate: expect.objectContaining({
+          count: 1,
+          rate: 1 / 3,
+        }),
+        failOpenRate: expect.objectContaining({
+          count: 1,
+          rate: 1 / 3,
+        }),
+      }),
+    }));
+    expect(["full", "partial", "fail_open"]).toContain(status.boundedAnytimeSummary.latest?.posture ?? null);
+    expect(status.boundedAnytimeSummary.detail).toContain("deadline=off-by-default");
+    expect(status.boundedAnytimeSummary.detail).toContain("recent 1/3 clipped and 1/3 fail-open or interrupted across the recent decision window");
   });
 
   it("persists trace-v3 dropped proposal reasons from traversal into stored traces", async () => {

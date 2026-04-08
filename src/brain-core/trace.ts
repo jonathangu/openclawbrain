@@ -1355,6 +1355,41 @@ export interface RecentDecisionTraceSummary {
   detail: string;
 }
 
+export type BoundedAnytimePosture = "full" | "partial" | "fail_open";
+
+export interface BoundedAnytimeDecisionSummary {
+  posture: BoundedAnytimePosture;
+  clipped: boolean;
+  clipReason: string | null;
+  deadline: {
+    configuredMs: number | null;
+    posture: "off_by_default" | "bounded";
+    hit: boolean;
+    reason: string | null;
+  };
+  interruption: {
+    interrupted: boolean;
+    stage: BrainInterruptionStage | null;
+    reason: string | null;
+    servedPartial: boolean | null;
+  };
+  detail: string;
+}
+
+export interface BoundedAnytimeSummary {
+  defaultDeadlinePosture: "off_by_default" | "bounded";
+  configuredCompileDeadlineMs: number | null;
+  latest: BoundedAnytimeDecisionSummary | null;
+  recent: {
+    windowSize: number;
+    sampleSize: number;
+    clipRate: RecentDecisionRateSummary;
+    failOpenRate: RecentDecisionRateSummary;
+    detail: string;
+  };
+  detail: string;
+}
+
 function emptyPrefetchStateHistogram(): Record<BrainPrefetchDecision["state"], number> {
   return {
     scheduled: 0,
@@ -1470,6 +1505,100 @@ function buildRateSummary(count: number, sampleSize: number): RecentDecisionRate
   return {
     count,
     rate: sampleSize > 0 ? count / sampleSize : null,
+  };
+}
+
+function compactBoundedAnytimeReason(selectionMetadata: DecisionRouteTrace["selectionMetadata"] | null | undefined): string | null {
+  if (!selectionMetadata) {
+    return null;
+  }
+  return selectionMetadata.interruptionReason
+    ?? selectionMetadata.brainDropReason
+    ?? (selectionMetadata.contextClipped === true ? "injection_cap_clipped" : null);
+}
+
+function classifyBoundedAnytimePosture(
+  selectionMetadata: DecisionRouteTrace["selectionMetadata"] | null | undefined,
+): BoundedAnytimePosture {
+  if (selectionMetadata?.servedPartial === true) {
+    return "partial";
+  }
+  if (selectionMetadata?.queryInterrupted === true || isFailOpenDecision(selectionMetadata)) {
+    return "fail_open";
+  }
+  return "full";
+}
+
+export function summarizeBoundedAnytimeDecision(
+  selectionMetadata: DecisionRouteTrace["selectionMetadata"] | null | undefined,
+  configuredCompileDeadlineMs: number | null,
+): BoundedAnytimeDecisionSummary {
+  const posture = classifyBoundedAnytimePosture(selectionMetadata);
+  const clipped = isClippedDecision(selectionMetadata);
+  const deadlineConfigured = configuredCompileDeadlineMs !== null;
+  const deadlineHit = deadlineConfigured && (
+    selectionMetadata?.compileDeadlineHit === true
+    || (selectionMetadata?.brainDropReason?.startsWith("deadline_") ?? false)
+    || selectionMetadata?.queryInterrupted === true
+  );
+  const deadlineReason = deadlineHit
+    ? compactBoundedAnytimeReason(selectionMetadata)
+    : null;
+  const interruptionReason = selectionMetadata?.interruptionReason
+    ?? (selectionMetadata?.queryInterrupted === true ? selectionMetadata?.brainDropReason ?? null : null)
+    ?? null;
+  const detailParts = [
+    posture.replaceAll("_", "-"),
+    `clip=${clipped ? compactBoundedAnytimeReason(selectionMetadata) ?? "yes" : "none"}`,
+    `deadline=${deadlineConfigured ? `${configuredCompileDeadlineMs}ms` : "off-by-default"}${deadlineHit ? "/hit" : ""}`,
+    `interrupt=${selectionMetadata?.queryInterrupted === true || selectionMetadata?.servedPartial === true || selectionMetadata?.interruptionStage ? `${selectionMetadata.interruptionStage ?? "n/a"}:${interruptionReason ?? "n/a"}` : "none"}`,
+  ];
+
+  return {
+    posture,
+    clipped,
+    clipReason: clipped ? compactBoundedAnytimeReason(selectionMetadata) : null,
+    deadline: {
+      configuredMs: configuredCompileDeadlineMs,
+      posture: deadlineConfigured ? "bounded" : "off_by_default",
+      hit: deadlineHit,
+      reason: deadlineReason,
+    },
+    interruption: {
+      interrupted: selectionMetadata?.queryInterrupted === true || selectionMetadata?.servedPartial === true || selectionMetadata?.interruptionStage != null || selectionMetadata?.interruptionReason != null,
+      stage: selectionMetadata?.interruptionStage ?? null,
+      reason: interruptionReason,
+      servedPartial: selectionMetadata?.servedPartial ?? null,
+    },
+    detail: detailParts.join("; "),
+  };
+}
+
+export function summarizeBoundedAnytimeStatus(params: {
+  recentDecisionSummary: RecentDecisionTraceSummary;
+  latestSelectionMetadata?: DecisionRouteTrace["selectionMetadata"] | null;
+  configuredCompileDeadlineMs: number | null;
+}): BoundedAnytimeSummary {
+  const latest = summarizeBoundedAnytimeDecision(params.latestSelectionMetadata ?? null, params.configuredCompileDeadlineMs);
+  const defaultDeadlinePosture: BoundedAnytimeSummary["defaultDeadlinePosture"] = params.configuredCompileDeadlineMs === null
+    ? "off_by_default"
+    : "bounded";
+  const detail = params.recentDecisionSummary.sampleSize === 0
+    ? `${latest.detail}; deadline=${defaultDeadlinePosture === "off_by_default" ? "off-by-default" : `${params.configuredCompileDeadlineMs}ms`}; no recent traced decisions`
+    : `${latest.detail}; deadline=${defaultDeadlinePosture === "off_by_default" ? "off-by-default" : `${params.configuredCompileDeadlineMs}ms`}; recent ${params.recentDecisionSummary.detail}`;
+
+  return {
+    defaultDeadlinePosture,
+    configuredCompileDeadlineMs: params.configuredCompileDeadlineMs,
+    latest,
+    recent: {
+      windowSize: params.recentDecisionSummary.windowSize,
+      sampleSize: params.recentDecisionSummary.sampleSize,
+      clipRate: params.recentDecisionSummary.clipRate,
+      failOpenRate: params.recentDecisionSummary.failOpenRate,
+      detail: params.recentDecisionSummary.detail,
+    },
+    detail,
   };
 }
 
