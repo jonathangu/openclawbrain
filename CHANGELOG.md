@@ -4,6 +4,26 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.40
+
+`0.4.40` is the unified operator-truth / proof release: it keeps the `0.4.39` install-convergence lane, and it packages the just-landed bounded-anytime, economics, route-quality, and provenance surfaces into the public split-package release.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.40`
+- `@openclawbrain/cli@0.4.40`
+
+**Changes**
+
+- makes `status --detailed` surface the bounded-anytime summary and route-quality summary as first-class operator truth
+- makes proof-cron health/nightly outputs publish bounded economics scorecards with explicit measured / derived / proxy labels
+- makes `openclawbrain proof --openclaw-home ...` capture the provenance audit chain alongside the existing proof bundle
+- aligns README, docs, release notes, and split-package version surfaces to `0.4.40`
+
+**Full release note**
+
+- [docs/release-notes-0.4.40.md](docs/release-notes-0.4.40.md)
+
 ## 0.4.39
 
 `0.4.39` is the install-convergence release: it keeps the shipped continuous-learning/operator story from `0.4.38`, but it fixes the real upgrade seam where `install` could preserve a stale installed hook/plugin record even though the daemon/runtime side had already moved ahead.

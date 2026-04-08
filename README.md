@@ -6,7 +6,7 @@ OpenClawBrain is a memory layer for [OpenClaw](https://github.com/anthropics/ope
 
 The mechanism: a background pipeline watches agent interactions, binds feedback to past decisions, and builds compact memory packs. Only promoted packs reach the live path. The agent gets continuity without unbounded context growth, and latency stays predictable because the hot path never calls a live LLM. If the memory layer goes down, the agent keeps running.
 
-Current version: **0.4.39** · [Changelog](CHANGELOG.md) · [Claims boundary](CLAIMS.md)
+Current version: **0.4.40** · [Changelog](CHANGELOG.md) · [Claims boundary](CLAIMS.md)
 
 ## Install
 
@@ -114,19 +114,22 @@ So the honest product story is:
 
 If you want the focused explanation, read **[docs/graphify.md](docs/graphify.md)**.
 
-## Continuous learning is now part of the shipped product
+## Unified operator truth / proof surfaces are now part of the shipped product
 
-OpenClawBrain `0.4.39` keeps the first bounded continuous-learning loop on top of the existing memory and Graphify foundations and fixes the stale-installed-hook upgrade seam that could still leave a real host half-converged even after rerunning the public install lane.
+OpenClawBrain `0.4.40` keeps the `0.4.39` install-convergence and bounded continuous-learning story, and it carries the just-landed unified operator/proof tranche into the public split-package release.
 
 What is now part of the public product:
 
-- route rows that connect traced decisions to reviewable training data
-- direct online supervision updates inside the same-family live `route_fn`
-- Graphify delta/reorg scheduler registry that stays off the live serve path but makes the background loop inspectable
-- periodic same-family retrain with replay-gated promotion
-- operator status/control surfaces for Graphify cadence, retrain state, queue visibility, and pause controls
+- `status --detailed` reports a bounded-anytime summary with deadline posture, clip / fail-open rates, and recent branch behavior
+- `status --detailed` also reports a route-quality summary with replay verdict, `STOP_LOCAL` health, tool-action-priors health, and control posture
+- proof-cron health/nightly outputs now publish an economics scorecard with explicit measured / derived / proxy labels so cost and performance evidence stay reviewable without reading raw bundles
+- `openclawbrain proof --openclaw-home ...` now carries a provenance audit chain (`provenance-audit-chain.md` / `.json`) that links serve-decision rows, attribution truth, learning-update truth, and promotion/proof truth
 
-The install lane does **not** change. The same four commands still install, restart, status-check, and prove the system. What changed is that `install` now refreshes a stale installed hook when the daemon/runtime side has already moved ahead, and the ongoing improvement loop plus its operator surfaces are now a shipped part of the product instead of only repo substrate.
+What does **not** change:
+
+- the install lane is still the same four commands
+- the live serve path is still promoted OpenClawBrain packs, not Graphify or a new proof-side dependency
+- these are operator/proof surfaces for inspection and proof, not a change to the hot-path contract
 
 ## Scope
 

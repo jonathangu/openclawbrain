@@ -14,8 +14,9 @@ It is a map, not a claim: **shipped** surfaces are current truth, **target** sur
 
 | State | Surface | What it shows | Notes |
 | --- | --- | --- | --- |
-| shipped | `openclawbrain status --openclaw-home <path> --detailed` | live runtime truth | canonical runtime snapshot for that exact OpenClaw home, including explicit nonstandard homes like `./openclaw-cormorantai` |
-| shipped | `openclawbrain proof --openclaw-home <path>` | host-anchored operator proof bundle | durable bundle with `summary.md`, `steps.json`, `verdict.json`, and runtime-load-proof truth for that exact OpenClaw home |
+| shipped | `openclawbrain status --openclaw-home <path> --detailed` | live runtime truth | canonical runtime snapshot for that exact OpenClaw home, including explicit nonstandard homes like `./openclaw-cormorantai`, plus the bounded-anytime summary and route-quality summary |
+| shipped | `openclawbrain proof --openclaw-home <path>` | host-anchored operator proof bundle | durable bundle with `summary.md`, `steps.json`, `verdict.json`, runtime-load-proof truth, and `provenance-audit-chain.{md,json}` for that exact OpenClaw home |
+| shipped | `scripts/proof-cron.mjs health` and `scripts/proof-cron.mjs nightly` | proof-health snapshots, bounded-anytime rollups, and economics scorecards | writes health/nightly bundles with bounded summaries plus `economics-scorecard.{json,md}` so cost/performance evidence stays reviewable |
 | shipped | `docs/evidence/YYYY-MM-DD/<git-sha>/` | frozen proof bundle snapshots | checked-in evidence tree; see `docs/evidence/README.md` |
 | shipped | `scripts/verify-proof-smoke.mjs` | proof freshness gate | only enforces when the repo still advertises frozen proof claims |
 | shipped | `docs/internal/recorded-session-replay.md` | replay proof bundle layout | shows the stable proof-bundle contract and worked-trace lane |

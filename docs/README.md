@@ -4,6 +4,8 @@ Use this index to find the shortest path for your role.
 
 Public operator front door: `openclawbrain install --openclaw-home <path>` for one OpenClaw home. That path can be the default `~/.openclaw`, a profile-specific home, or an explicit nonstandard directory like `./openclaw-cormorantai`. Fresh homes default to the cold-start prior. Existing homes rerun the same lane and keep their learned preferences on top while the stronger generic prior gets rebuilt underneath. When the daemon-side CLI/runtime surface has already moved ahead, `install` now refreshes the stale installed hook/plugin state for that same home before you verify. `status --detailed` is the quick check, and it reports the daemon-side CLI surface separately from the installed hook/runtime-guard surface so skew is explicit. Durable proof remains a separate command today.
 
+Current `0.4.40` operator/proof surfaces make four bounded summaries first-class in the repo story: the detailed-status bounded-anytime summary, the detailed-status route-quality summary, the proof-cron economics scorecard, and the operator-proof provenance audit chain. The install lane does not change; these surfaces make the same lane more inspectable and more honest.
+
 ## Getting started
 
 - [Quick start](getting-started/quick-start.md) for the one-command install, verify, and optional proof flow
@@ -32,7 +34,7 @@ Public operator front door: `openclawbrain install --openclaw-home <path>` for o
 
 ## Release history
 
-- [Current release notes (0.4.39)](release-notes-0.4.39.md)
+- [Current release notes (0.4.40)](release-notes-0.4.40.md)
 - [Full changelog](../CHANGELOG.md)
 
 ## Project notes
