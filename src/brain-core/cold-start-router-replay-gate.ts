@@ -244,6 +244,8 @@ export function loadColdStartRouterArtifactV1(artifactDir: string): {
     compatible_runtime_version: manifest.compatible_runtime_version,
     training_data_refs: manifest.training_data_refs,
     replay_gate_refs: manifest.replay_gate_refs,
+    ...(manifest.prior_base_artifact_id !== undefined ? { prior_base_artifact_id: manifest.prior_base_artifact_id } : {}),
+    ...(manifest.prior_base_artifact_checksum !== undefined ? { prior_base_artifact_checksum: manifest.prior_base_artifact_checksum } : {}),
     created_at: manifest.created_at,
     router_identity: manifest.router_identity,
     trainingSummary: model.training,

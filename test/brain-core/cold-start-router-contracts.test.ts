@@ -180,6 +180,8 @@ const routerArtifactManifest: RouterArtifactManifestV1 = {
   compatible_runtime_version: "openclawbrain-runtime@0.3.8",
   training_data_refs: ["dataset_hotpotqa_v1", "dataset_repos_v1"],
   replay_gate_refs: ["replay:gate:001"],
+  prior_base_artifact_id: "router-artifact-prior-000",
+  prior_base_artifact_checksum: "sha256:router-artifact-prior-000",
   artifact_checksum: "sha256:router-artifact-001",
   created_at: "2026-04-05T16:08:00Z",
   router_identity: "router:gen1:mixed",
@@ -349,6 +351,8 @@ describe("cold-start router contracts", () => {
       packType: "mixed",
       trainingDataRefCount: 2,
       replayGateRefCount: 1,
+      priorBaseArtifactId: "router-artifact-prior-000",
+      priorBaseArtifactChecksum: "sha256:router-artifact-prior-000",
       checksum: "sha256:router-artifact-001",
     });
     expect(summarizeMigrationSnapshotV1(migrationSnapshot)).toMatchObject({
@@ -405,6 +409,15 @@ describe("cold-start router contracts", () => {
         missingRequiredFiles: [],
       },
     });
+  });
+
+  it("rejects a router manifest when only one prior-lineage field is present", () => {
+    const missingChecksumManifest = { ...routerArtifactManifest } as Record<string, unknown>;
+    delete missingChecksumManifest.prior_base_artifact_checksum;
+
+    const validation = validateRouterArtifactManifestV1(missingChecksumManifest);
+    expect(validation.valid).toBe(false);
+    expect(validation.issues.join(" ")).toContain("prior_base_artifact_id and prior_base_artifact_checksum must be provided together");
   });
 
   it("fails semantic validation when a row routes to a missing target, a registry row carries an extra hash, and a proof bundle omits a required file", () => {

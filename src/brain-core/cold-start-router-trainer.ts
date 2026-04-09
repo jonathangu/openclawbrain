@@ -263,6 +263,8 @@ export interface ColdStartRouterTrainingInputV1 {
   trainingDataRefs?: string[];
   replayGateRefs?: string[];
   baseModelRef?: string;
+  priorBaseArtifactId?: string;
+  priorBaseArtifactChecksum?: string;
 }
 
 export interface ColdStartRouterTrainingResultV1 {
@@ -701,6 +703,12 @@ function validateTrainingInputs(params: ColdStartRouterTrainingInputV1): void {
     throw new Error("routeRows must not be empty");
   }
 
+  const hasPriorBaseArtifactId = params.priorBaseArtifactId?.trim().length ?? 0;
+  const hasPriorBaseArtifactChecksum = params.priorBaseArtifactChecksum?.trim().length ?? 0;
+  if ((hasPriorBaseArtifactId > 0) !== (hasPriorBaseArtifactChecksum > 0)) {
+    throw new Error("priorBaseArtifactId and priorBaseArtifactChecksum must be provided together");
+  }
+
   for (const entry of params.registryEntries) {
     const validation = validateDataRegistryEntryV1(entry);
     if (!validation.valid) {
@@ -1125,6 +1133,8 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
     compatible_runtime_version: params.compatibleRuntimeVersion,
     training_data_refs: trainingDataRefs,
     replay_gate_refs: replayGateRefs,
+    ...(params.priorBaseArtifactId?.trim().length ? { prior_base_artifact_id: params.priorBaseArtifactId.trim() } : {}),
+    ...(params.priorBaseArtifactChecksum?.trim().length ? { prior_base_artifact_checksum: params.priorBaseArtifactChecksum.trim() } : {}),
     created_at: createdAt,
     router_identity: params.routerIdentity ?? undefined,
   };

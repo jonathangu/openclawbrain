@@ -423,6 +423,8 @@ export const RouterArtifactManifestSchemaV1 = Type.Object(
     compatible_runtime_version: Type.String({ minLength: 1 }),
     training_data_refs: Type.Array(Type.String({ minLength: 1 }), { minItems: 1 }),
     replay_gate_refs: Type.Array(Type.String({ minLength: 1 })),
+    prior_base_artifact_id: Type.Optional(Type.String({ minLength: 1 })),
+    prior_base_artifact_checksum: Type.Optional(Type.String({ minLength: 1 })),
     artifact_checksum: Type.String({ minLength: 1 }),
     created_at: Type.String({ minLength: 1 }),
     router_identity: Type.Optional(Type.String({ minLength: 1 })),
@@ -711,7 +713,27 @@ export function validateGraphCompilerContractV1(value: unknown): ContractValidat
 }
 
 export function validateRouterArtifactManifestV1(value: unknown): ContractValidationResultV1 {
-  return validateSchema("cold_start_router_artifact_manifest.v1", RouterArtifactManifestSchemaV1, value);
+  const contract = "cold_start_router_artifact_manifest.v1";
+  const base = validateSchema(contract, RouterArtifactManifestSchemaV1, value);
+  if (!base.valid) {
+    return base;
+  }
+
+  const manifest = value as RouterArtifactManifestV1;
+  const hasPriorBaseArtifactId = manifest.prior_base_artifact_id !== undefined;
+  const hasPriorBaseArtifactChecksum = manifest.prior_base_artifact_checksum !== undefined;
+  if (hasPriorBaseArtifactId !== hasPriorBaseArtifactChecksum) {
+    return {
+      contract,
+      valid: false,
+      issues: [
+        ...base.issues,
+        `${contract}/prior_base_artifact_id and prior_base_artifact_checksum must be provided together`,
+      ],
+    };
+  }
+
+  return base;
 }
 
 export function validateMigrationSnapshotV1(value: unknown): ContractValidationResultV1 {
@@ -893,6 +915,8 @@ export interface RouterArtifactManifestSummaryV1 {
   packType: ColdStartPackTypeV1;
   trainingDataRefCount: number;
   replayGateRefCount: number;
+  priorBaseArtifactId: string | null;
+  priorBaseArtifactChecksum: string | null;
   checksum: string;
   runtimeVersion: string;
 }
@@ -905,6 +929,8 @@ export function summarizeRouterArtifactManifestV1(
     packType: manifest.pack_type,
     trainingDataRefCount: manifest.training_data_refs.length,
     replayGateRefCount: manifest.replay_gate_refs.length,
+    priorBaseArtifactId: manifest.prior_base_artifact_id ?? null,
+    priorBaseArtifactChecksum: manifest.prior_base_artifact_checksum ?? null,
     checksum: manifest.artifact_checksum,
     runtimeVersion: manifest.compatible_runtime_version,
   };

@@ -358,6 +358,8 @@ export function runColdStartRouterPeriodicRetrainV1(params: ColdStartRouterPerio
     createdAt: generatedAt,
     trainingDataRefs,
     replayGateRefs,
+    priorBaseArtifactId: params.previousBaseArtifactId,
+    priorBaseArtifactChecksum: priorBase.bundle.manifest.artifact_checksum,
   });
 
   const candidateBundle = loadRuntimeArtifactBundleV1(params.candidateArtifactDir);
@@ -370,6 +372,16 @@ export function runColdStartRouterPeriodicRetrainV1(params: ColdStartRouterPerio
   const evalReplay = summarizeReplayVerdict(replayColdStartRouterArtifactV1({ artifactDir: params.candidateArtifactDir, routeRows: evalRows }));
 
   const blockers = [
+    ...(candidate.manifest.prior_base_artifact_id === undefined
+      ? ["candidate manifest is missing prior_base_artifact_id lineage"]
+      : candidate.manifest.prior_base_artifact_id === params.previousBaseArtifactId
+        ? []
+        : [`candidate manifest prior_base_artifact_id ${candidate.manifest.prior_base_artifact_id} does not match approved prior base ${params.previousBaseArtifactId}`]),
+    ...(candidate.manifest.prior_base_artifact_checksum === undefined
+      ? ["candidate manifest is missing prior_base_artifact_checksum lineage"]
+      : candidate.manifest.prior_base_artifact_checksum === priorBase.bundle.manifest.artifact_checksum
+        ? []
+        : [`candidate manifest prior_base_artifact_checksum ${candidate.manifest.prior_base_artifact_checksum} does not match approved prior base checksum ${priorBase.bundle.manifest.artifact_checksum}`]),
     ...(splitRegistry.overlapRowIds.length > 0 ? [`split registry overlaps on ${splitRegistry.overlapRowIds.join(", ")}`] : []),
     ...(trainReplay.passed ? [] : [`train replay gate failed: ${trainReplay.summary}`]),
     ...(evalReplay.passed ? [] : [`eval replay gate failed: ${evalReplay.summary}`]),

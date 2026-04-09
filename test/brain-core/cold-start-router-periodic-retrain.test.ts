@@ -85,6 +85,8 @@ describe("cold-start router periodic retrain", () => {
     expect(result.candidate.model.training.usedRows).toBe(44);
     expect(result.candidate.manifest.training_data_refs).toContain("train:hotpotqa-musique:v3");
     expect(result.candidate.manifest.replay_gate_refs).toContain("replay:hotpotqa-musique:eval-only-v1");
+    expect(result.candidate.manifest.prior_base_artifact_id).toBe("router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3");
+    expect(result.candidate.manifest.prior_base_artifact_checksum).toBe(result.priorBaseManifestSummary.checksum);
     expect(result.trainReplay).toMatchObject({ passed: true, verdict: "pass" });
     expect(result.evalReplay).toMatchObject({ passed: true, verdict: "pass" });
     expect(result.report.gatePassed).toBe(true);
