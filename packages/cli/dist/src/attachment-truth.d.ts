@@ -12,6 +12,10 @@ export interface OpenClawProfileRuntimeLoadProofRecordV1 {
   profileSource: OpenClawHomeProfileSource;
   loadedAt: string;
   extensionEntryPath: string;
+  packageJsonPath: string | null;
+  packageName: string | null;
+  packageVersion: string | null;
+  packageIdentity: string | null;
 }
 
 export interface OpenClawProfileRuntimeLoadProofsV1 {

@@ -23,6 +23,55 @@ function normalizeOptionalString(value) {
   return typeof value === "string" && value.trim().length > 0 ? value.trim() : null;
 }
 
+function formatPackageIdentity(packageName, packageVersion) {
+  if (packageName !== null && packageVersion !== null) {
+    return `${packageName}@${packageVersion}`;
+  }
+
+  return packageName ?? packageVersion ?? null;
+}
+
+function readPackageIdentityFromExtensionEntryPath(extensionEntryPath) {
+  let currentDirectory = path.dirname(path.resolve(extensionEntryPath));
+
+  while (true) {
+    const packageJsonPath = path.join(currentDirectory, "package.json");
+    if (existsSync(packageJsonPath)) {
+      try {
+        const parsed = readRecord(JSON.parse(readFileSync(packageJsonPath, "utf8")));
+        const packageName = typeof parsed?.name === "string" && parsed.name.trim().length > 0 ? parsed.name.trim() : null;
+        const packageVersion = typeof parsed?.version === "string" && parsed.version.trim().length > 0 ? parsed.version.trim() : null;
+
+        return {
+          packageJsonPath: canonicalizeFilesystemPath(packageJsonPath),
+          packageName,
+          packageVersion,
+          packageIdentity: formatPackageIdentity(packageName, packageVersion)
+        };
+      } catch {
+        return {
+          packageJsonPath: canonicalizeFilesystemPath(packageJsonPath),
+          packageName: null,
+          packageVersion: null,
+          packageIdentity: null
+        };
+      }
+    }
+
+    const parentDirectory = path.dirname(currentDirectory);
+    if (parentDirectory === currentDirectory) {
+      return {
+        packageJsonPath: null,
+        packageName: null,
+        packageVersion: null,
+        packageIdentity: null
+      };
+    }
+
+    currentDirectory = parentDirectory;
+  }
+}
+
 function normalizeIsoTimestamp(value, fieldName, fallbackValue) {
   const candidate = value ?? fallbackValue;
 
@@ -165,6 +214,22 @@ function validateRuntimeLoadProofRecord(value, index) {
     typeof record.loadedAt === "string" && record.loadedAt.trim().length > 0
       ? normalizeIsoTimestamp(record.loadedAt, `profiles[${index}].loadedAt`)
       : null;
+  const packageJsonPath =
+    typeof record.packageJsonPath === "string" && record.packageJsonPath.trim().length > 0
+      ? canonicalizeFilesystemPath(record.packageJsonPath)
+      : null;
+  const packageName =
+    typeof record.packageName === "string" && record.packageName.trim().length > 0
+      ? record.packageName.trim()
+      : null;
+  const packageVersion =
+    typeof record.packageVersion === "string" && record.packageVersion.trim().length > 0
+      ? record.packageVersion.trim()
+      : null;
+  const packageIdentity =
+    typeof record.packageIdentity === "string" && record.packageIdentity.trim().length > 0
+      ? record.packageIdentity.trim()
+      : null;
 
   if (openclawHome === null) {
     throw new Error(`profiles[${index}].openclawHome must be a non-empty string`);
@@ -192,6 +257,10 @@ function validateRuntimeLoadProofRecord(value, index) {
     profileSource,
     extensionEntryPath,
     loadedAt,
+    packageJsonPath,
+    packageName,
+    packageVersion,
+    packageIdentity,
   };
 }
 
@@ -309,6 +378,7 @@ export function recordOpenClawProfileRuntimeLoadProof(input) {
   const extensionEntryPath = canonicalizeFilesystemPath(input.extensionEntryPath);
   const openclawHome = deriveOpenClawHomeFromExtensionEntryPath(extensionEntryPath);
   const inspection = inspectOpenClawHome(openclawHome);
+  const packageIdentity = readPackageIdentityFromExtensionEntryPath(extensionEntryPath);
   const loadedProofs = listOpenClawProfileRuntimeLoadProofs(activationRoot);
 
   if (loadedProofs.error !== null) {
@@ -321,6 +391,10 @@ export function recordOpenClawProfileRuntimeLoadProof(input) {
     profileSource: inspection.profileSource,
     loadedAt,
     extensionEntryPath,
+    packageJsonPath: packageIdentity.packageJsonPath,
+    packageName: packageIdentity.packageName,
+    packageVersion: packageIdentity.packageVersion,
+    packageIdentity: packageIdentity.packageIdentity,
   };
   const nextProofs =
     loadedProofs.proofs === null

@@ -384,6 +384,40 @@ function buildCoverageSnapshot({ attachedSetLine, runtimeLoadProofSnapshot, open
         profiles
     };
 }
+
+function summarizeRuntimeLoadProofPackageIdentity(profile) {
+    if (typeof profile?.packageIdentity === "string" && profile.packageIdentity.trim().length > 0) {
+        return profile.packageIdentity.trim();
+    }
+
+    const packageName = typeof profile?.packageName === "string" && profile.packageName.trim().length > 0 ? profile.packageName.trim() : null;
+    const packageVersion = typeof profile?.packageVersion === "string" && profile.packageVersion.trim().length > 0 ? profile.packageVersion.trim() : null;
+
+    if (packageName !== null && packageVersion !== null) {
+        return `${packageName}@${packageVersion}`;
+    }
+
+    return packageName ?? packageVersion ?? null;
+}
+
+function summarizeRuntimeLoadProofLineage(profile) {
+    const openclawHome = canonicalizeExistingProofPath(profile?.openclawHome ?? "");
+    const packageIdentity = summarizeRuntimeLoadProofPackageIdentity(profile) ?? "package lineage unavailable";
+    const packageJsonPath = typeof profile?.packageJsonPath === "string" && profile.packageJsonPath.trim().length > 0
+        ? canonicalizeExistingProofPath(profile.packageJsonPath)
+        : null;
+    const extensionEntryPath = typeof profile?.extensionEntryPath === "string" && profile.extensionEntryPath.trim().length > 0
+        ? canonicalizeExistingProofPath(profile.extensionEntryPath)
+        : null;
+    const parts = [`openclawHome=${openclawHome}`, `package=${packageIdentity}`];
+    if (packageJsonPath !== null) {
+        parts.push(`packageJson=${packageJsonPath}`);
+    }
+    if (extensionEntryPath !== null) {
+        parts.push(`entry=${extensionEntryPath}`);
+    }
+    return parts.join(" ");
+}
 function buildHardeningSnapshot({ attachTruthLine, serveLine, routeFnLine, surfaceLine, brainLine, routeLine, learningLine, learningPathLine, verdict, statusSignals }) {
     const attachTruth = extractKeyValuePairs(attachTruthLine);
     const serve = extractKeyValuePairs(serveLine);
@@ -480,6 +514,10 @@ function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, brea
     const breadcrumbLoaded = breadcrumbs.afterBundleStart.some((entry) => entry.kind === "loaded");
     const runtimeProofMatched = Array.isArray(runtimeLoadProofSnapshot?.value?.profiles)
         && runtimeLoadProofSnapshot.value.profiles.some((profile) => canonicalizeExistingProofPath(profile?.openclawHome ?? "") === canonicalizeExistingProofPath(openclawHome));
+    const runtimeLoadProofProfiles = Array.isArray(runtimeLoadProofSnapshot?.value?.profiles)
+        ? runtimeLoadProofSnapshot.value.profiles
+        : [];
+    const runtimeLoadProofLineageMissing = runtimeLoadProofProfiles.some((profile) => summarizeRuntimeLoadProofPackageIdentity(profile) === null);
     const runtimeTruthGaps = [];
     const currentCoverageEntry = Array.isArray(coverageSnapshot?.profiles)
         ? coverageSnapshot.profiles.find((entry) => entry.current)
@@ -541,6 +579,10 @@ function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, brea
             : runtimeLoadProofSnapshot.exists
                 ? "runtime-load-proof snapshot did not include the current openclaw home"
                 : "runtime-load-proof snapshot was missing");
+    }
+    if (runtimeLoadProofLineageMissing) {
+        warningCodes.push("runtime_load_proof_lineage");
+        warnings.push("runtime-load-proof snapshot is missing package lineage metadata for one or more loaded profiles");
     }
     if (surfaceHalfConverged) {
         warningCodes.push(`surface_half_converged:${statusSignals.surfaceSkew ?? "unknown"}`);
@@ -649,6 +691,12 @@ function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspec
         missing.push("runtime-load-proof path could not be resolved");
     if (runtimeLoadProofSnapshot.error !== null)
         missing.push(`runtime-load-proof snapshot was unreadable: ${runtimeLoadProofSnapshot.error}`);
+    const runtimeLoadProofProfiles = Array.isArray(runtimeLoadProofSnapshot?.value?.profiles)
+        ? runtimeLoadProofSnapshot.value.profiles
+        : [];
+    if (runtimeLoadProofProfiles.length > 0 && runtimeLoadProofProfiles.some((profile) => summarizeRuntimeLoadProofPackageIdentity(profile) === null)) {
+        missing.push("runtime-load-proof snapshot is missing package lineage metadata");
+    }
     const lines = [
         "# OpenClawBrain operator proof summary",
         "",
@@ -684,6 +732,11 @@ function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspec
         ...(guardLine === null
             ? ["- runtime guard line not reported by detailed status"]
             : [`- ${guardLine}`]),
+        "",
+        "## Runtime Load Proof Lineage",
+        ...(runtimeLoadProofProfiles.length === 0
+            ? ["- none"]
+            : runtimeLoadProofProfiles.map((profile) => `- ${summarizeRuntimeLoadProofLineage(profile)}`)),
         "",
         "## Route Layer Truth",
         ...(brainLine === null

@@ -59,7 +59,11 @@ function createProofFixture(t, options = {}) {
             profiles: [
                 {
                     openclawHome: path.resolve(openclawHome),
-                    loadedAt: "2026-03-23T01:00:05.000Z"
+                    loadedAt: "2026-03-23T01:00:05.000Z",
+                    packageJsonPath: path.join(root, "packages", "openclaw", "package.json"),
+                    packageName: "@openclawbrain/openclaw",
+                    packageVersion: "0.4.30",
+                    packageIdentity: "@openclawbrain/openclaw@0.4.30"
                 }
             ]
         }, null, 2)}\n`, "utf8");
@@ -244,6 +248,8 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     assert.match(summary, /## Learning Flow/);
     assert.match(summary, /## Learning Attribution/);
     assert.match(summary, /## Runtime Guard/);
+    assert.match(summary, /## Runtime Load Proof Lineage/);
+    assert.match(summary, /package=@openclawbrain\/openclaw@0\.4\.30/);
     assert.match(summary, /guard       severity=none actionability=none action=none summary=profile hook is installed and loadable/);
     assert.match(summary, /## Route Layer Truth/);
     assert.match(summary, /- derived: activePack=none router=none routeFreshness=none routeFingerprint=none usedLearnedRouteFn=none/);
@@ -267,6 +273,7 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     assert.match(breadcrumbsLog, /BRAIN LOADED/);
     assert.equal(runtimeProofSnapshot.exists, true);
     assert.equal(runtimeProofSnapshot.path, fixture.runtimeLoadProofPath);
+    assert.equal(runtimeProofSnapshot.value.profiles[0].packageIdentity, "@openclawbrain/openclaw@0.4.30");
     assert.equal(coverageSnapshot.runtimeProvenCount, 1);
     assert.equal(coverageSnapshot.coverageRate, 1);
     assert.equal(coverageSnapshot.profiles[0].coverageState, "covered");
