@@ -24,6 +24,8 @@ function usage(): void {
       "                             Minimum candidate trace tie-or-better rate versus the baseline.",
       "  --max-candidate-mean-quality-regression <n>",
       "                             Maximum allowed mean quality regression for the candidate versus the baseline.",
+      "  --max-candidate-tie-promotion-delta <n>",
+      "                             Maximum tie-trace promotion churn allowed for the candidate versus the baseline.",
       "  --min-baseline-mean-quality-gain-vs-floor <n>",
       "                             Minimum mean quality gain the baseline must hold over the floor mode.",
       "  --help                     Show this help.",
@@ -93,6 +95,7 @@ function parseArgs(argv: string[]): RunComparativeEvalInput {
     maxFailedTraceCount?: number;
     minCandidateTraceTieOrBetterRateVsBaseline?: number;
     maxCandidateMeanQualityRegressionVsBaseline?: number;
+    maxCandidateTiePromotionDeltaVsBaseline?: number;
     minBaselineMeanQualityGainVsFloor?: number;
   } = {};
   for (let index = 0; index < argv.length; index += 1) {
@@ -135,6 +138,13 @@ function parseArgs(argv: string[]): RunComparativeEvalInput {
         );
         index += 1;
         break;
+      case "--max-candidate-tie-promotion-delta":
+        parsed.maxCandidateTiePromotionDeltaVsBaseline = parseNumericArg(
+          normalizeCliString(argv[index + 1]),
+          "--max-candidate-tie-promotion-delta",
+        );
+        index += 1;
+        break;
       case "--min-baseline-mean-quality-gain-vs-floor":
         parsed.minBaselineMeanQualityGainVsFloor = parseNumericArg(
           normalizeCliString(argv[index + 1]),
@@ -164,6 +174,9 @@ function parseArgs(argv: string[]): RunComparativeEvalInput {
       ...(parsed.maxCandidateMeanQualityRegressionVsBaseline === undefined
         ? {}
         : { maxCandidateMeanQualityRegressionVsBaseline: parsed.maxCandidateMeanQualityRegressionVsBaseline }),
+      ...(parsed.maxCandidateTiePromotionDeltaVsBaseline === undefined
+        ? {}
+        : { maxCandidateTiePromotionDeltaVsBaseline: parsed.maxCandidateTiePromotionDeltaVsBaseline }),
       ...(parsed.minBaselineMeanQualityGainVsFloor === undefined
         ? {}
         : { minBaselineMeanQualityGainVsFloor: parsed.minBaselineMeanQualityGainVsFloor }),

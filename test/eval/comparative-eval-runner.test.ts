@@ -234,6 +234,9 @@ describe("comparative eval runner", () => {
       outputDir,
       scratchRootDir: rootDir,
       workedTraceLimit: 1,
+      policy: {
+        maxCandidateTiePromotionDeltaVsBaseline: 2,
+      },
     });
 
     expect(descriptor.report.contract).toBe(COMPARATIVE_EVAL_RUNNER_REPORT_CONTRACT);
@@ -254,6 +257,7 @@ describe("comparative eval runner", () => {
     expect(descriptor.report.notes.some((note) => note.includes("truth boundary"))).toBe(true);
     expect(descriptor.scorecard.policy.status).toBe("pass");
     expect(descriptor.scorecard.policy.checks.find((check) => check.id === "candidate_trace_tie_or_better_vs_baseline")?.status).toBe("pass");
+    expect(descriptor.scorecard.policy.checks.find((check) => check.id === "candidate_tie_promotion_delta_vs_baseline")?.status).toBe("pass");
     expect(
       descriptor.scorecard.pairwise.find(
         (row) => row.leftMode === "graph_prior_only" && row.rightMode === "learned_route",
@@ -298,6 +302,30 @@ describe("comparative eval runner", () => {
     );
   });
 
+  it("fails the gate when learned routing adds promotion churn on tie traces", () => {
+    const rootDir = createTempRoot("comparative-eval-runner-tie-promotion");
+    const outputDir = path.join(rootDir, "output");
+    const comparativeTrace = writeTrace(rootDir, buildComparativeTrace(rootDir, "tie-a"));
+    const trainFreezeTrace = writeTrace(rootDir, buildTrainFreezeTrace(rootDir, "tie-b"));
+    const manifestPath = writeCanonicalManifest(rootDir, "tie-promotion-eval", [comparativeTrace, trainFreezeTrace]);
+
+    const descriptor = runComparativeEval({
+      manifestPath,
+      outputDir,
+      scratchRootDir: rootDir,
+      policy: {
+        maxCandidateTiePromotionDeltaVsBaseline: -1_000_000,
+      },
+    });
+
+    expect(descriptor.report.status).toBe("ok");
+    expect(descriptor.report.gateStatus).toBe("fail");
+    expect(descriptor.report.gateDecisive).toBe(true);
+    expect(descriptor.report.gateFailedCheckIds).toContain("candidate_tie_promotion_delta_vs_baseline");
+    expect(descriptor.scorecard.policy.status).toBe("fail");
+    expect(descriptor.scorecard.policy.reasons.some((reason) => reason.includes("candidate_tie_promotion_delta_vs_baseline"))).toBe(true);
+  });
+
   it("marks the gate as partial when only a subset of traces validate", () => {
     const rootDir = createTempRoot("comparative-eval-runner-partial");
     const outputDir = path.join(rootDir, "output");
@@ -330,6 +358,9 @@ describe("comparative eval runner", () => {
       manifestPath: validManifestPath,
       outputDir: path.join(validRoot, "output"),
       scratchRootDir: validRoot,
+      policy: {
+        maxCandidateTiePromotionDeltaVsBaseline: 2,
+      },
     });
 
     expect(validDescriptor.report.status).toBe("ok");
@@ -373,6 +404,8 @@ describe("comparative eval runner", () => {
         outputDir,
         "--scratch-root-dir",
         rootDir,
+        "--max-candidate-tie-promotion-delta",
+        "2",
       ],
       {
         cwd: repoRoot,
@@ -383,6 +416,7 @@ describe("comparative eval runner", () => {
     expect(stdout).toContain("Comparative eval runner: ok");
     expect(stdout).toContain("Comparative eval gate: pass");
     expect(stdout).toContain("candidate_trace_tie_or_better_vs_baseline: pass");
+    expect(stdout).toContain("candidate_tie_promotion_delta_vs_baseline: pass");
     expect(stdout).toContain(`outputDir: ${outputDir}`);
     expect(existsSync(path.join(outputDir, "report.json"))).toBe(true);
 

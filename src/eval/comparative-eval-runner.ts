@@ -183,6 +183,7 @@ export interface ComparativeEvalPairwiseScorecardRowV1 {
     compileOkDeltaLeftMinusRightSum: number;
     phraseHitDeltaLeftMinusRightSum: number;
     promotionDeltaLeftMinusRightSum: number;
+    tiePromotionDeltaLeftMinusRightSum: number;
   };
 }
 
@@ -194,6 +195,7 @@ export interface ComparativeEvalPolicyThresholdsV1 {
   minCandidateTraceTieOrBetterRateVsBaseline: number;
   maxCandidateMeanQualityRegressionVsBaseline: number;
   minBaselineMeanQualityGainVsFloor: number;
+  maxCandidateTiePromotionDeltaVsBaseline: number;
 }
 
 export interface ComparativeEvalPolicyCheckV1 {
@@ -218,6 +220,8 @@ export interface ComparativeEvalPolicyObservedV1 {
   candidateTraceTieOrBetterRateVsBaseline: number | null;
   candidateTurnTieOrBetterCountVsBaseline: number | null;
   candidateTurnTieOrBetterRateVsBaseline: number | null;
+  candidateTieTraceCountVsBaseline: number | null;
+  candidateTiePromotionDeltaVsBaseline: number | null;
   candidateMeanQualityRegressionVsBaseline: number | null;
   baselineMeanQualityGainVsFloor: number | null;
 }
@@ -314,6 +318,7 @@ const DEFAULT_COMPARATIVE_EVAL_POLICY_THRESHOLDS: ComparativeEvalPolicyThreshold
   minCandidateTraceTieOrBetterRateVsBaseline: 1,
   maxCandidateMeanQualityRegressionVsBaseline: 5,
   minBaselineMeanQualityGainVsFloor: 5,
+  maxCandidateTiePromotionDeltaVsBaseline: 0,
 };
 
 function normalizeCliString(value: string | undefined): string | null {
@@ -687,6 +692,9 @@ function mergePolicyThresholds(
   if (!Number.isFinite(merged.minBaselineMeanQualityGainVsFloor)) {
     throw new Error("policy.minBaselineMeanQualityGainVsFloor must be finite");
   }
+  if (!Number.isFinite(merged.maxCandidateTiePromotionDeltaVsBaseline)) {
+    throw new Error("policy.maxCandidateTiePromotionDeltaVsBaseline must be finite");
+  }
   return merged;
 }
 
@@ -897,6 +905,7 @@ function buildPairwiseScorecardRows(params: {
       let compileOkDeltaLeftMinusRightSum = 0;
       let phraseHitDeltaLeftMinusRightSum = 0;
       let promotionDeltaLeftMinusRightSum = 0;
+      let tiePromotionDeltaLeftMinusRightSum = 0;
 
       for (const trace of traceRows) {
         const left = trace.modes.find((candidate) => candidate.mode === leftMode);
@@ -911,10 +920,15 @@ function buildPairwiseScorecardRows(params: {
         } else {
           traceTies += 1;
         }
-        qualityScoreDeltaLeftMinusRightSum += left.qualityScore - right.qualityScore;
+        const qualityScoreDeltaLeftMinusRight = left.qualityScore - right.qualityScore;
+        qualityScoreDeltaLeftMinusRightSum += qualityScoreDeltaLeftMinusRight;
         compileOkDeltaLeftMinusRightSum += left.compileOkCount - right.compileOkCount;
         phraseHitDeltaLeftMinusRightSum += left.phraseHitCount - right.phraseHitCount;
-        promotionDeltaLeftMinusRightSum += left.promotionCount - right.promotionCount;
+        const promotionDeltaLeftMinusRight = left.promotionCount - right.promotionCount;
+        promotionDeltaLeftMinusRightSum += promotionDeltaLeftMinusRight;
+        if (qualityScoreDeltaLeftMinusRight === 0) {
+          tiePromotionDeltaLeftMinusRightSum += promotionDeltaLeftMinusRight;
+        }
       }
 
       for (const turn of turnRows) {
@@ -949,6 +963,7 @@ function buildPairwiseScorecardRows(params: {
           compileOkDeltaLeftMinusRightSum,
           phraseHitDeltaLeftMinusRightSum,
           promotionDeltaLeftMinusRightSum,
+          tiePromotionDeltaLeftMinusRightSum,
         },
       });
     }
@@ -981,6 +996,10 @@ function buildPolicy(params: {
     && floor?.meanQualityScore !== null && floor?.meanQualityScore !== undefined
     ? round(baseline.meanQualityScore - floor.meanQualityScore, 6)
     : null;
+  const candidateTieTraceCountVsBaseline = baselineVsCandidate?.traceWins.ties ?? 0;
+  const candidateTiePromotionDeltaVsBaseline = baselineVsCandidate
+    ? -baselineVsCandidate.aggregateDeltas.tiePromotionDeltaLeftMinusRightSum
+    : 0;
   const observed: ComparativeEvalPolicyObservedV1 = {
     requestedTraceCount: params.requestedTraceCount,
     successfulTraceCount: params.successfulTraceCount,
@@ -994,6 +1013,8 @@ function buildPolicy(params: {
     candidateTraceTieOrBetterRateVsBaseline: baselineVsCandidate?.traceTieOrBetter.rightRate ?? null,
     candidateTurnTieOrBetterCountVsBaseline: baselineVsCandidate?.turnTieOrBetter.right ?? null,
     candidateTurnTieOrBetterRateVsBaseline: baselineVsCandidate?.turnTieOrBetter.rightRate ?? null,
+    candidateTieTraceCountVsBaseline,
+    candidateTiePromotionDeltaVsBaseline,
     candidateMeanQualityRegressionVsBaseline,
     baselineMeanQualityGainVsFloor,
   };
@@ -1059,6 +1080,25 @@ function buildPolicy(params: {
       },
       threshold: {
         minCandidateTraceTieOrBetterRateVsBaseline: params.thresholds.minCandidateTraceTieOrBetterRateVsBaseline,
+      },
+    },
+    {
+      id: "candidate_tie_promotion_delta_vs_baseline",
+      status: observed.candidateTiePromotionDeltaVsBaseline <= params.thresholds.maxCandidateTiePromotionDeltaVsBaseline
+        ? "pass"
+        : "fail",
+      summary: observed.candidateTiePromotionDeltaVsBaseline <= params.thresholds.maxCandidateTiePromotionDeltaVsBaseline
+        ? "candidate did not add promotion churn on tie traces"
+        : "candidate added promotion churn on tie traces",
+      detail: `${params.thresholds.candidateMode} tie traces=${observed.candidateTieTraceCountVsBaseline} promotion_delta_vs_${params.thresholds.baselineMode}=${observed.candidateTiePromotionDeltaVsBaseline}`,
+      observed: {
+        candidateMode: params.thresholds.candidateMode,
+        baselineMode: params.thresholds.baselineMode,
+        candidateTieTraceCountVsBaseline: observed.candidateTieTraceCountVsBaseline,
+        candidateTiePromotionDeltaVsBaseline: observed.candidateTiePromotionDeltaVsBaseline,
+      },
+      threshold: {
+        maxCandidateTiePromotionDeltaVsBaseline: params.thresholds.maxCandidateTiePromotionDeltaVsBaseline,
       },
     },
     {
