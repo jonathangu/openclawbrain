@@ -260,6 +260,46 @@ function normalizePromotionVerdict(value: unknown): { verdict: string | null; su
   };
 }
 
+function normalizeRetrainLineage(value: unknown): {
+  priorBaseArtifactId: string | null;
+  priorBaseArtifactVersion: string | null;
+  priorBaseArtifactChecksum: string | null;
+  candidateArtifactId: string | null;
+  candidateArtifactVersion: string | null;
+  candidateArtifactChecksum: string | null;
+  priorRooted: boolean | null;
+  promotionValid: boolean | null;
+  residualUpdateCount: number | null;
+  summary: string | null;
+} | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+  const record = value as Record<string, unknown>;
+  const priorBaseArtifactId = normalizeText(record.priorBaseArtifactId);
+  const priorBaseArtifactVersion = normalizeText(record.priorBaseArtifactVersion);
+  const priorBaseArtifactChecksum = normalizeText(record.priorBaseArtifactChecksum);
+  const candidateArtifactId = normalizeText(record.candidateArtifactId);
+  const candidateArtifactVersion = normalizeText(record.candidateArtifactVersion);
+  const candidateArtifactChecksum = normalizeText(record.candidateArtifactChecksum);
+  const priorRooted = normalizeBoolean(record.priorRooted);
+  const promotionValid = normalizeBoolean(record.promotionValid);
+  const residualUpdateCount = normalizeNumber(record.residualUpdateCount);
+
+  return {
+    priorBaseArtifactId,
+    priorBaseArtifactVersion,
+    priorBaseArtifactChecksum,
+    candidateArtifactId,
+    candidateArtifactVersion,
+    candidateArtifactChecksum,
+    priorRooted,
+    promotionValid,
+    residualUpdateCount,
+    summary: truncateText(normalizeText(record.summary), PROVENANCE_AUDIT_CHAIN_MAX_TEXT_CHARS),
+  };
+}
+
 function normalizeProofTruth(value: unknown): {
   bundleDir: string | null;
   command: string | null;
@@ -408,12 +448,14 @@ function summarizePromotionAndProofTruth(params: {
   lastPromotionReason: unknown;
   lastPromotionVerdict: unknown;
   lastReplayGateVerdict: unknown;
+  retrainLineage: unknown;
   proofTruth: unknown;
 }): {
   currentPackVersion: number | null;
   lastPromotionReason: string | null;
   lastPromotionVerdict: { verdict: string | null; summary: string | null } | null;
   lastReplayGateVerdict: { verdict: string | null; summary: string | null } | null;
+  retrainLineage: ReturnType<typeof normalizeRetrainLineage>;
   proofTruth: ReturnType<typeof normalizeProofTruth>;
   summary: string;
 } {
@@ -425,12 +467,14 @@ function summarizePromotionAndProofTruth(params: {
     : null);
   const lastPromotionVerdict = normalizePromotionVerdict(params.lastPromotionVerdict);
   const lastReplayGateVerdict = normalizePromotionVerdict(params.lastReplayGateVerdict);
+  const retrainLineage = normalizeRetrainLineage(params.retrainLineage);
   const proofTruth = normalizeProofTruth(params.proofTruth);
   const lastPromotionReason = truncateText(normalizeText(params.lastPromotionReason), PROVENANCE_AUDIT_CHAIN_MAX_TEXT_CHARS);
   const summary = truncateText(
     [
       lastPromotionVerdict?.verdict ? `promotion=${lastPromotionVerdict.verdict}` : null,
       lastReplayGateVerdict?.verdict ? `replay_gate=${lastReplayGateVerdict.verdict}` : null,
+      retrainLineage?.summary ? `lineage=${retrainLineage.summary}` : null,
       proofTruth?.verdict ? `proof=${proofTruth.verdict}` : null,
     ].filter(Boolean).join("; "),
     PROVENANCE_AUDIT_CHAIN_MAX_TEXT_CHARS,
@@ -441,6 +485,7 @@ function summarizePromotionAndProofTruth(params: {
     lastPromotionReason,
     lastPromotionVerdict,
     lastReplayGateVerdict,
+    retrainLineage,
     proofTruth,
     summary,
   };
@@ -522,12 +567,19 @@ export function buildProvenanceAuditChainV1(input: ProvenanceAuditChainInputV1):
     ? runtimeStatus.teacherTruth as Record<string, unknown>
     : null;
   const promotionStory = runtimeStatus.promotionStory ?? null;
+  const continuousLearning = runtimeStatus.continuousLearning && typeof runtimeStatus.continuousLearning === "object"
+    ? runtimeStatus.continuousLearning as Record<string, unknown>
+    : null;
+  const retrain = continuousLearning?.retrain && typeof continuousLearning.retrain === "object"
+    ? continuousLearning.retrain as Record<string, unknown>
+    : null;
   const lastUpdateCycle = normalizeTeacherUpdateCycle(teacherTruth?.lastUpdateCycle);
   const promotionProofTruth = summarizePromotionAndProofTruth({
     promotionStory,
     lastPromotionReason: runtimeStatus.lastPromotionReason,
     lastPromotionVerdict: runtimeStatus.lastPromotionVerdict,
     lastReplayGateVerdict: runtimeStatus.lastReplayGateVerdict,
+    retrainLineage: retrain?.lineage ?? null,
     proofTruth: input.proofTruth,
   });
   const routeRows = summarizeRouteDecisionRows(lastTraceSelectionMetadata, input.bundleId);
@@ -725,6 +777,14 @@ export function renderProvenanceAuditChainMarkdownV1(chain: ProvenanceAuditChain
     chain.promotionProofTruth.lastPromotionVerdict?.summary ? `- promotion summary: ${chain.promotionProofTruth.lastPromotionVerdict.summary}` : null,
     `- last replay gate verdict: ${chain.promotionProofTruth.lastReplayGateVerdict?.verdict ?? "unknown"}`,
     chain.promotionProofTruth.lastReplayGateVerdict?.summary ? `- replay gate summary: ${chain.promotionProofTruth.lastReplayGateVerdict.summary}` : null,
+    chain.promotionProofTruth.retrainLineage?.summary ? `- retrain lineage: ${chain.promotionProofTruth.retrainLineage.summary}` : null,
+    chain.promotionProofTruth.retrainLineage?.priorBaseArtifactId ? `- prior base artifact: ${chain.promotionProofTruth.retrainLineage.priorBaseArtifactId}${chain.promotionProofTruth.retrainLineage.priorBaseArtifactVersion ? `@${chain.promotionProofTruth.retrainLineage.priorBaseArtifactVersion}` : ""}` : null,
+    chain.promotionProofTruth.retrainLineage?.priorBaseArtifactChecksum ? `- prior base checksum: ${chain.promotionProofTruth.retrainLineage.priorBaseArtifactChecksum}` : null,
+    chain.promotionProofTruth.retrainLineage?.candidateArtifactId ? `- candidate artifact: ${chain.promotionProofTruth.retrainLineage.candidateArtifactId}${chain.promotionProofTruth.retrainLineage.candidateArtifactVersion ? `@${chain.promotionProofTruth.retrainLineage.candidateArtifactVersion}` : ""}` : null,
+    chain.promotionProofTruth.retrainLineage?.candidateArtifactChecksum ? `- current router checksum: ${chain.promotionProofTruth.retrainLineage.candidateArtifactChecksum}` : null,
+    typeof chain.promotionProofTruth.retrainLineage?.priorRooted === "boolean" ? `- prior-rooted: ${chain.promotionProofTruth.retrainLineage.priorRooted ? "yes" : "no"}` : null,
+    typeof chain.promotionProofTruth.retrainLineage?.promotionValid === "boolean" ? `- promotion-valid: ${chain.promotionProofTruth.retrainLineage.promotionValid ? "yes" : "no"}` : null,
+    chain.promotionProofTruth.retrainLineage?.residualUpdateCount !== null && chain.promotionProofTruth.retrainLineage?.residualUpdateCount !== undefined ? `- residual updates: ${chain.promotionProofTruth.retrainLineage.residualUpdateCount}` : null,
     `- proof verdict: ${chain.promotionProofTruth.proofTruth?.verdict ?? "unknown"}`,
     chain.promotionProofTruth.proofTruth?.summary ? `- proof summary: ${chain.promotionProofTruth.proofTruth.summary}` : null,
     chain.promotionProofTruth.proofTruth?.why ? `- proof why: ${chain.promotionProofTruth.proofTruth.why}` : null,

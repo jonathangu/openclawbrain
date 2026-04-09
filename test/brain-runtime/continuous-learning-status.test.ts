@@ -156,9 +156,23 @@ describe("continuous learning operator status", () => {
       packageId: "cold-start-router-periodic-retrain-v1:router-artifact-periodic-retrain-v1",
       generatedAt: "2026-04-07T12:30:00.000Z",
       gatePassed: true,
+      registryId: "cold-start-router-periodic-retrain-v1",
+      candidateArtifactId: "router-artifact-periodic-retrain-v1",
+      candidateArtifactVersion: "v1",
+      candidateArtifactDir: join(retrainReportDir, "candidate"),
+      candidateArtifactChecksum: "sha256:candidate-router-checksum",
+      priorBaseArtifactId: "router-base-prior-v0",
+      priorBaseArtifactVersion: "v0",
+      priorBaseArtifactDir: join(retrainReportDir, "prior-base"),
+      priorBaseArtifactChecksum: "sha256:prior-base-router-checksum",
+      rollbackKey: "rollback-key-123",
       decision: "promote",
       summary: "bounded periodic retrain package is promotable: route rows are split into 2 train rows and 1 replay-gated eval row.",
       blockers: [],
+      splitRegistryPath: join(retrainReportDir, "route-split-registry.v1.json"),
+      replayReportPath: join(retrainReportDir, "replay-eval-report.v1.json"),
+      trainingDataRefs: ["training-data-ref"],
+      replayGateRefs: ["replay-gate-ref"],
     });
 
     writeContinuousLearningControl(workspaceRoot, "graphify-import", true, "operator pause", "test");
@@ -169,7 +183,15 @@ describe("continuous learning operator status", () => {
       controlRoot: join(workspaceRoot, "artifacts", "continuous-learning-controls"),
       now: Date.UTC(2026, 3, 7, 12, 45, 0),
       store: {
-        getTrainingState: (key: string) => (key === "last_promotion_reason" ? "promote" : null),
+        getTrainingState: (key: string) => {
+          if (key === "last_promotion_reason") {
+            return "promote";
+          }
+          if (key === "continuous_learning_rows_added_since_last_retrain") {
+            return "7";
+          }
+          return null;
+        },
         getTrainingStateJson: <T>(key: string): T | null => {
           if (key === "last_promotion_verdict_json") {
             return {
@@ -195,20 +217,31 @@ describe("continuous learning operator status", () => {
     expect(status.retrain.lastRetrain?.promotionDecision).toBe("promote");
     expect(status.retrain.lastPromotionReason).toBe("promote");
     expect(status.retrain.lastPromotionVerdict).toMatchObject({ decision: "promote", gatePassed: true });
-    expect(status.retrain.rowsAddedSinceLastRetrain).toBeNull();
+    expect(status.retrain.rowsAddedSinceLastRetrain).toBe(7);
+    expect(status.retrain.lineage).toMatchObject({
+      priorBaseArtifactId: "router-base-prior-v0",
+      priorBaseArtifactChecksum: "sha256:prior-base-router-checksum",
+      candidateArtifactId: "router-artifact-periodic-retrain-v1",
+      candidateArtifactChecksum: "sha256:candidate-router-checksum",
+      priorRooted: true,
+      promotionValid: true,
+      residualUpdateCount: 7,
+    });
+    expect(status.retrain.lineage?.summary).toContain("prior-rooted=yes");
+    expect(status.retrain.lineage?.summary).toContain("promotion-valid=yes");
+    expect(status.retrain.lineage?.summary).toContain("residual updates=7");
     expect(status.queueVisibility.teacherQueue).toMatchObject({ pendingCount: 1 });
     expect(status.queueVisibility.mutationBacklog).toEqual({ pending: 1, promoted: 2 });
     expect(status.operatorSummary.improved).toEqual(expect.arrayContaining([
       "last Graphify delta run is surfaced",
       "last Graphify reorg run is surfaced",
       "last retrain and promotion result are surfaced",
+      "cold-start prior lineage and residual update truth are surfaced",
       "graphify-import pause control is surfaced",
       "retraining pause control is surfaced",
       "teacher and mutation queue visibility is surfaced",
     ]));
-    expect(status.operatorSummary.diagnosticOnly).toEqual(expect.arrayContaining([
-      "rows-added-since-last-retrain remains diagnostic-only until a durable counter is recorded",
-    ]));
+    expect(status.operatorSummary.diagnosticOnly).toEqual([]);
 
     expect(readContinuousLearningControl(workspaceRoot, "graphify-import")).toMatchObject({
       paused: true,

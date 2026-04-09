@@ -14,6 +14,19 @@ export interface ContinuousLearningControlStateV1 {
   source: string;
 }
 
+export interface ContinuousLearningRetrainLineageV1 {
+  priorBaseArtifactId: string | null;
+  priorBaseArtifactVersion: string | null;
+  priorBaseArtifactChecksum: string | null;
+  candidateArtifactId: string | null;
+  candidateArtifactVersion: string | null;
+  candidateArtifactChecksum: string | null;
+  priorRooted: boolean;
+  promotionValid: boolean;
+  residualUpdateCount: number | null;
+  summary: string;
+}
+
 export interface ContinuousLearningOperatorStatusParams {
   store?: {
     getTrainingState(key: string): string | null;
@@ -50,6 +63,7 @@ export interface ContinuousLearningOperatorStatusV1 {
     lastPromotionReason: string | null;
     lastPromotionVerdict: JsonRecord | null;
     rowsAddedSinceLastRetrain: number | null;
+    lineage: ContinuousLearningRetrainLineageV1 | null;
   };
   queueVisibility: JsonRecord;
   operatorSummary: {
@@ -289,6 +303,49 @@ function readContinuousLearningRowsAddedSinceLastRetrain(
   return retrainRows;
 }
 
+function summarizeRetrainLineage(params: {
+  retrainStatus: JsonRecord | null;
+  rowsAddedSinceLastRetrain: number | null;
+}): ContinuousLearningRetrainLineageV1 | null {
+  const promotionPackage = isRecord(params.retrainStatus?.promotionPackage)
+    ? params.retrainStatus.promotionPackage
+    : null;
+  if (!promotionPackage) {
+    return null;
+  }
+
+  const priorBaseArtifactId = normalizeString(promotionPackage.priorBaseArtifactId);
+  const priorBaseArtifactVersion = normalizeString(promotionPackage.priorBaseArtifactVersion);
+  const priorBaseArtifactChecksum = normalizeString(promotionPackage.priorBaseArtifactChecksum);
+  const candidateArtifactId = normalizeString(promotionPackage.candidateArtifactId);
+  const candidateArtifactVersion = normalizeString(promotionPackage.candidateArtifactVersion);
+  const candidateArtifactChecksum = normalizeString(promotionPackage.candidateArtifactChecksum);
+  const priorRooted = priorBaseArtifactId !== null && priorBaseArtifactChecksum !== null;
+  const promotionValid = params.retrainStatus?.gatePassed === true && normalizeString(promotionPackage.decision) === "promote";
+  const residualUpdateCount = params.rowsAddedSinceLastRetrain;
+
+  return {
+    priorBaseArtifactId,
+    priorBaseArtifactVersion,
+    priorBaseArtifactChecksum,
+    candidateArtifactId,
+    candidateArtifactVersion,
+    candidateArtifactChecksum,
+    priorRooted,
+    promotionValid,
+    residualUpdateCount,
+    summary: [
+      `seeded by ${priorBaseArtifactId ?? "unknown prior"}@${priorBaseArtifactVersion ?? "unknown version"}`,
+      `seed checksum=${priorBaseArtifactChecksum ?? "unknown checksum"}`,
+      `current router=${candidateArtifactId ?? "unknown candidate"}@${candidateArtifactVersion ?? "unknown version"}`,
+      `router checksum=${candidateArtifactChecksum ?? "unknown checksum"}`,
+      `prior-rooted=${priorRooted ? "yes" : "no"}`,
+      `promotion-valid=${promotionValid ? "yes" : "no"}`,
+      `residual updates=${residualUpdateCount ?? "unknown"}`,
+    ].join("; "),
+  };
+}
+
 function summarizeQueueVisibility(params: {
   store?: ContinuousLearningOperatorStatusParams["store"] | null;
   now: number;
@@ -325,6 +382,7 @@ export function buildContinuousLearningOperatorStatus(
   const graphifyImportControl = readContinuousLearningControl(workspaceRoot, "graphify-import");
   const retrainControl = readContinuousLearningControl(workspaceRoot, "retrain");
   const rowsAddedSinceLastRetrain = readContinuousLearningRowsAddedSinceLastRetrain(params.store, retrainStatus);
+  const retrainLineage = summarizeRetrainLineage({ retrainStatus, rowsAddedSinceLastRetrain });
   const retrainPromotionPackage = isRecord(retrainStatus?.promotionPackage) ? retrainStatus.promotionPackage : null;
   const storedPromotionVerdict = params.store?.getTrainingStateJson<JsonRecord>("last_promotion_verdict_json") ?? null;
   const lastPromotionReason = normalizeString(params.store?.getTrainingState("last_promotion_reason") ?? null)
@@ -338,6 +396,7 @@ export function buildContinuousLearningOperatorStatus(
     graphifyDelta ? "last Graphify delta run is surfaced" : null,
     graphifyReorg ? "last Graphify reorg run is surfaced" : null,
     retrainStatus ? "last retrain and promotion result are surfaced" : null,
+    retrainLineage ? "cold-start prior lineage and residual update truth are surfaced" : null,
     graphifyImportControl ? "graphify-import pause control is surfaced" : null,
     retrainControl ? "retraining pause control is surfaced" : null,
     params.store ? "teacher and mutation queue visibility is surfaced" : null,
@@ -374,6 +433,7 @@ export function buildContinuousLearningOperatorStatus(
       lastPromotionReason,
       lastPromotionVerdict,
       rowsAddedSinceLastRetrain,
+      lineage: retrainLineage,
     },
     queueVisibility: summarizeQueueVisibility({
       store: params.store,

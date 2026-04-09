@@ -377,6 +377,22 @@ function buildRuntimeStatus(traceId: string, snapshotCount: number, updateDecisi
       status: "healthy",
       detail: "learning updates are audit-stubbed only",
     },
+    continuousLearning: {
+      retrain: {
+        lineage: {
+          priorBaseArtifactId: "router-base-prior-v0",
+          priorBaseArtifactVersion: "v0",
+          priorBaseArtifactChecksum: "sha256:prior-base-router-checksum",
+          candidateArtifactId: "router-artifact-periodic-retrain-v1",
+          candidateArtifactVersion: "v1",
+          candidateArtifactChecksum: "sha256:candidate-router-checksum",
+          priorRooted: true,
+          promotionValid: true,
+          residualUpdateCount: 7,
+          summary: "seeded by router-base-prior-v0@v0; seed checksum=sha256:prior-base-router-checksum; current router=router-artifact-periodic-retrain-v1@v1; router checksum=sha256:candidate-router-checksum; prior-rooted=yes; promotion-valid=yes; residual updates=7",
+        },
+      },
+    },
     promotionStory: {
       summary: {
         currentPackVersion: 42,
@@ -474,6 +490,15 @@ describe("provenance audit chain", () => {
     expect(chain.learningUpdate.summary).toContain("learning update decision");
     expect(chain.learningUpdate.precedenceLabel).toBe(chain.precedence.label);
     expect(chain.promotionProofTruth.proofTruth?.verdict).toBe("success_and_proven");
+    expect(chain.promotionProofTruth.retrainLineage).toMatchObject({
+      priorBaseArtifactId: "router-base-prior-v0",
+      priorBaseArtifactChecksum: "sha256:prior-base-router-checksum",
+      candidateArtifactId: "router-artifact-periodic-retrain-v1",
+      candidateArtifactChecksum: "sha256:candidate-router-checksum",
+      priorRooted: true,
+      promotionValid: true,
+      residualUpdateCount: 7,
+    });
     expect(chain.linkages.restartSafe).toBe(true);
 
     const markdown = renderProvenanceAuditChainMarkdownV1(chain);
@@ -482,6 +507,8 @@ describe("provenance audit chain", () => {
     expect(markdown).toContain("## Attribution truth");
     expect(markdown).toContain("## Learning update");
     expect(markdown).toContain("## Promotion / proof truth");
+    expect(markdown).toContain("retrain lineage");
+    expect(markdown).toContain("current router checksum: sha256:candidate-router-checksum");
     expect(markdown).toContain(chain.precedence.label);
     expect(markdown.length).toBeLessThan(14_000);
   });
