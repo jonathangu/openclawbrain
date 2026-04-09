@@ -1324,6 +1324,182 @@ describe("proof cron metric surfaces", () => {
     expect(markdown).toContain("harmful verdicts");
   });
 
+  it("falls back to traced-learning feedback and attribution surfaces when legacy fields are absent", () => {
+    const health = buildHealthSnapshot({
+      config: {
+        healthFreshnessDays: 7,
+        freshnessThresholdDays: 21,
+      },
+      now: new Date("2026-04-09T07:05:28.638Z"),
+      scanDurationMs: 42,
+      bundles: buildThinReadoutBundles(),
+      statusProbe: {
+        command: "node packages/cli/dist/src/cli.js status --openclaw-home ~/.openclaw --json",
+        startedAt: "2026-04-09T07:05:17.018Z",
+        endedAt: "2026-04-09T07:05:28.638Z",
+        durationMs: 11620,
+        exitCode: 0,
+        signal: null,
+        stdout: "{}",
+        stderr: "",
+        parsed: {
+          brain: {
+            activePackId: "pack-live",
+            routeFreshness: "updated",
+          },
+          brainStatus: {
+            status: "ok",
+            serveState: "serving_active_pack",
+            usedLearnedRouteFn: true,
+          },
+          hook: {
+            loadProof: "status_probe_ready",
+          },
+          passiveLearning: {
+            watch: {
+              state: "watching",
+              lastHeartbeatAt: "2026-04-09T07:04:52.461Z",
+              intervalSeconds: 30,
+              proofState: "self_proving",
+              teacherArtifactCount: 282,
+            },
+          },
+          learningAttribution: {
+            quality: "unavailable",
+            nonZeroObservationCount: 0,
+            exactMatchCount: 0,
+            heuristicMatchCount: 0,
+            unmatchedCount: 0,
+            ambiguousCount: 0,
+          },
+          tracedLearning: {
+            feedbackSummary: {
+              visible: true,
+              helpfulCount: 32,
+              irrelevantCount: 0,
+              harmfulCount: 0,
+              supervisedTraceCount: 32,
+              routeTraceCount: 177,
+              latestAgentIdentity: null,
+            },
+            attributionCoverage: {
+              visible: true,
+              gatingVisible: true,
+              completedWithoutEvaluationCount: 0,
+              readyCount: 59,
+              delayedCount: 0,
+              budgetDeferredCount: 27,
+            },
+          },
+        },
+      },
+    });
+
+    expect(health.feedbackTruth).toMatchObject({
+      visible: true,
+      helpfulCount: 32,
+      routeTraceCount: 177,
+    });
+    expect(health.attributionCoverageTruth).toMatchObject({
+      visible: true,
+      readyCount: 59,
+      budgetDeferredCount: 27,
+    });
+
+    const markdown = formatHealthMarkdown(health);
+    expect(markdown).toContain("feedback: helpful=32 irrelevant=0 harmful=0 coverage=32/177");
+    expect(markdown).toContain("attribution coverage: evaluated=59/86 completedWithoutEval=0 ready=59 delayed=0 budgetDeferred=27");
+  });
+
+  it("uses live status thin-truth surfaces in nightly aggregate when available", () => {
+    const aggregate = buildNightlyAggregate({
+      config: {
+        healthFreshnessDays: 7,
+        freshnessThresholdDays: 21,
+      },
+      now: new Date("2026-04-09T07:05:28.638Z"),
+      scanDurationMs: 42,
+      bundles: buildThinReadoutBundles(),
+      statusProbe: {
+        command: "node packages/cli/dist/src/cli.js status --openclaw-home ~/.openclaw --json",
+        startedAt: "2026-04-09T07:05:17.018Z",
+        endedAt: "2026-04-09T07:05:28.638Z",
+        durationMs: 11620,
+        exitCode: 0,
+        signal: null,
+        stdout: "{}",
+        stderr: "",
+        parsed: {
+          brain: {
+            activePackId: "pack-live",
+            routeFreshness: "updated",
+          },
+          brainStatus: {
+            status: "ok",
+            serveState: "serving_active_pack",
+            usedLearnedRouteFn: true,
+          },
+          hook: {
+            loadProof: "status_probe_ready",
+          },
+          passiveLearning: {
+            watch: {
+              state: "watching",
+              lastHeartbeatAt: "2026-04-09T07:04:52.461Z",
+              intervalSeconds: 30,
+              proofState: "self_proving",
+              teacherArtifactCount: 282,
+            },
+          },
+          learningAttribution: {
+            quality: "unavailable",
+            nonZeroObservationCount: 0,
+            exactMatchCount: 0,
+            heuristicMatchCount: 0,
+            unmatchedCount: 0,
+            ambiguousCount: 0,
+          },
+          tracedLearning: {
+            feedbackSummary: {
+              visible: true,
+              helpfulCount: 32,
+              irrelevantCount: 0,
+              harmfulCount: 0,
+              supervisedTraceCount: 32,
+              routeTraceCount: 177,
+              latestAgentIdentity: null,
+            },
+            attributionCoverage: {
+              visible: true,
+              gatingVisible: true,
+              completedWithoutEvaluationCount: 0,
+              readyCount: 59,
+              delayedCount: 0,
+              budgetDeferredCount: 27,
+            },
+          },
+        },
+      },
+    });
+
+    expect(aggregate.feedbackTruth).toMatchObject({
+      visible: true,
+      helpfulCount: 32,
+      routeTraceCount: 177,
+      source: "live_status",
+    });
+    expect(aggregate.attributionCoverageTruth).toMatchObject({
+      visible: true,
+      readyCount: 59,
+      budgetDeferredCount: 27,
+      source: "live_status",
+    });
+
+    const markdown = formatNightlyMarkdown(aggregate);
+    expect(markdown).toContain("feedback: helpful=32 irrelevant=0 harmful=0 coverage=32/177 (source=live_status)");
+    expect(markdown).toContain("attribution coverage: evaluated=59/86 completedWithoutEval=0 ready=59 delayed=0 budgetDeferred=27 (source=live_status)");
+  });
+
   it("carries latest operator-health truth into the nightly markdown", () => {
     const now = new Date("2026-03-31T13:00:00.000Z");
     const config = {
