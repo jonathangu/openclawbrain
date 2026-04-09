@@ -29,7 +29,7 @@ export const ALWAYS_ON_STRUCTURAL_PLASTICITY_MIN_FEEDBACK = 1;
 const CONNECT_PAIR_SCORE_THRESHOLD = 2;
 const MAX_CARRY_FORWARD_SEED_BLOCKS = 12;
 export const DEFAULT_SPARSE_FEEDBACK_POLICY = {
-    teacherBudget: 32,
+    teacherBudget: 64,
     teacherDelayMs: 0,
     feedbackMask: {
         correction: true,
@@ -214,7 +214,92 @@ function createSparseFeedbackRuntimeDiagnostics(policy, overrides = {}) {
         maskedFeedbackCount: overrides.maskedFeedbackCount ?? 0,
         delayedFeedbackCount: overrides.delayedFeedbackCount ?? 0,
         budgetedOutFeedbackCount: overrides.budgetedOutFeedbackCount ?? 0,
-        amplifiedBackgroundLabelCount: overrides.amplifiedBackgroundLabelCount ?? 0
+        amplifiedBackgroundLabelCount: overrides.amplifiedBackgroundLabelCount ?? 0,
+        retainedFeedbackCount: overrides.retainedFeedbackCount ?? 0,
+        selectionCursor: normalizeSparseFeedbackSelectionCursor(overrides.selectionCursor),
+        processedFeedbackEventIds: normalizeSparseFeedbackProcessedEventIds(overrides.processedFeedbackEventIds, overrides.knownEventIds)
+    };
+}
+const MAX_SPARSE_FEEDBACK_PROCESSED_EVENT_IDS = 4096;
+function normalizeSparseFeedbackSelectionCursor(value) {
+    return Number.isInteger(value) && value >= 0 ? value : 0;
+}
+function normalizeSparseFeedbackProcessedEventIds(value, knownEventIds) {
+    const allowed = Array.isArray(knownEventIds) ? new Set(knownEventIds) : null;
+    const normalized = [];
+    const seen = new Set();
+    for (const candidate of Array.isArray(value) ? value : []) {
+        if (typeof candidate !== "string") {
+            continue;
+        }
+        const trimmed = candidate.trim();
+        if (trimmed.length === 0 || seen.has(trimmed)) {
+            continue;
+        }
+        if (allowed !== null && !allowed.has(trimmed)) {
+            continue;
+        }
+        seen.add(trimmed);
+        normalized.push(trimmed);
+        if (normalized.length >= MAX_SPARSE_FEEDBACK_PROCESSED_EVENT_IDS) {
+            break;
+        }
+    }
+    return normalized;
+}
+function mergeSparseFeedbackState(current, overrides) {
+    const merged = {
+        ...(current && typeof current === "object" ? current : {}),
+        ...(overrides && typeof overrides === "object" ? overrides : {})
+    };
+    const policy = normalizeSparseFeedbackPolicy(merged);
+    return {
+        ...merged,
+        ...policy,
+        selectionCursor: normalizeSparseFeedbackSelectionCursor(merged.selectionCursor),
+        processedFeedbackEventIds: normalizeSparseFeedbackProcessedEventIds(merged.processedFeedbackEventIds)
+    };
+}
+function selectSparseFeedbackEvents(events, teacherBudget, cursor) {
+    if (events.length === 0 || teacherBudget <= 0) {
+        return {
+            selected: [],
+            nextCursor: events.length === 0 ? 0 : normalizeSparseFeedbackSelectionCursor(cursor) % events.length
+        };
+    }
+    const start = normalizeSparseFeedbackSelectionCursor(cursor) % events.length;
+    const selectionCount = Math.min(teacherBudget, events.length);
+    const selectedIndexes = [];
+    for (let offset = 0; offset < selectionCount; offset += 1) {
+        selectedIndexes.push((start + offset) % events.length);
+    }
+    const selectedIndexSet = new Set(selectedIndexes);
+    const selected = selectedIndexes.map((index) => events[index]);
+    const remainingCount = events.length - selected.length;
+    if (remainingCount <= 0) {
+        return {
+            selected,
+            nextCursor: 0
+        };
+    }
+    const lastSelectedIndex = selectedIndexes[selectedIndexes.length - 1] ?? start;
+    let nextOriginalIndex = 0;
+    for (let offset = 1; offset <= events.length; offset += 1) {
+        const candidate = (lastSelectedIndex + offset) % events.length;
+        if (!selectedIndexSet.has(candidate)) {
+            nextOriginalIndex = candidate;
+            break;
+        }
+    }
+    let nextCursor = 0;
+    for (let index = 0; index < nextOriginalIndex; index += 1) {
+        if (!selectedIndexSet.has(index)) {
+            nextCursor += 1;
+        }
+    }
+    return {
+        selected,
+        nextCursor
     };
 }
 function normalizeAlwaysOnStructuralOps(requested, normalizedEventExport) {
@@ -982,7 +1067,7 @@ function buildAlwaysOnLearningMaterializationJob(input, current, selectedSlices,
         ...(input.offlineArtifacts !== undefined ? { offlineArtifacts: input.offlineArtifacts } : {}),
         structuralOps,
         ...(runtimeGraph !== null ? { runtimeGraph } : {}),
-        ...(input.sparseFeedback !== undefined ? { sparseFeedback: input.sparseFeedback } : {}),
+        sparseFeedback: mergeSparseFeedbackState(current.sparseFeedback, input.sparseFeedback),
         principalBacklog,
         ...(input.pgVersion !== undefined ? { pgVersion: input.pgVersion } : {}),
         ...(input.serveTimeDecisions !== undefined ? { serveTimeDecisions: normalizeServeTimeDecisionsForLearner(input.serveTimeDecisions) } : {}),
@@ -1008,7 +1093,8 @@ export function advanceAlwaysOnLearningRuntime(input) {
     const cadence = normalizeAlwaysOnLearningCadence(input.cadence);
     const current = cloneAlwaysOnLearningRuntimeState(input.state ?? createAlwaysOnLearningRuntimeState());
     const structuralController = resolveAlwaysOnLearningStructuralController(current.structuralController, input);
-    const sparseFeedback = normalizeSparseFeedbackPolicy(input.sparseFeedback ?? current.sparseFeedback);
+    const sparseFeedbackState = mergeSparseFeedbackState(current.sparseFeedback, input.sparseFeedback);
+    const sparseFeedback = normalizeSparseFeedbackPolicy(sparseFeedbackState);
     const bridge = buildNormalizedEventExportBridge({
         interactionEvents: [...input.interactionEvents],
         feedbackEvents: [...input.feedbackEvents],
@@ -1032,10 +1118,13 @@ export function advanceAlwaysOnLearningRuntime(input) {
     const runtimeGraph = runtimeGraphSnapshot?.graph ?? current.runtimeGraph;
     const runtimePlasticity = runtimeGraphSnapshot?.plasticity ?? current.runtimePlasticity;
     const sparseFeedbackObservedAt = input.builtAt ?? learnedEventExport?.range.lastCreatedAt ?? learnedEventExport?.range.firstCreatedAt ?? current.lastMaterializedAt ?? "1970-01-01T00:00:00.000Z";
-    const sparseFeedbackDiagnostics = createSparseFeedbackRuntimeDiagnostics(sparseFeedback);
+    const sparseFeedbackDiagnostics = createSparseFeedbackRuntimeDiagnostics(sparseFeedback, {
+        selectionCursor: sparseFeedbackState.selectionCursor,
+        processedFeedbackEventIds: sparseFeedbackState.processedFeedbackEventIds
+    });
     const nextSparseFeedback = learnedEventExport === null
         ? sparseFeedbackDiagnostics
-        : evaluateSparseFeedback(learnedEventExport.feedbackEvents, sparseFeedbackObservedAt, sparseFeedback).diagnostics;
+        : evaluateSparseFeedback(learnedEventExport.feedbackEvents, sparseFeedbackObservedAt, sparseFeedbackState).diagnostics;
     const materialization = learnedEventExport === null || selectedSlices.length === 0
         ? null
         : buildAlwaysOnLearningMaterializationJob(input, current, selectedSlices, learnedEventExport, runtimeGraph, structuralController, schedule.selectedBucket === "none" ? "live" : schedule.selectedBucket, summarizePrincipalBacklog({
@@ -2323,6 +2412,7 @@ function evaluateSparseFeedback(feedbackEvents, observedAt, sparseFeedback) {
         }
         eligible.push(feedbackEvent);
     }
+    const eligibleEventIds = eligible.map((event) => event.eventId);
     eligible.sort((left, right) => {
         const priorityDelta = feedbackPriority(right) - feedbackPriority(left);
         if (priorityDelta !== 0) {
@@ -2334,21 +2424,33 @@ function evaluateSparseFeedback(feedbackEvents, observedAt, sparseFeedback) {
         }
         return right.sequence - left.sequence;
     });
-    const selected = eligible.slice(0, policy.teacherBudget);
+    const retainedProcessedFeedbackEventIds = normalizeSparseFeedbackProcessedEventIds(sparseFeedback?.processedFeedbackEventIds, eligibleEventIds);
+    const retainedProcessedFeedbackIdSet = new Set(retainedProcessedFeedbackEventIds);
+    const unprocessedEligible = eligible.filter((event) => !retainedProcessedFeedbackIdSet.has(event.eventId));
+    const selection = selectSparseFeedbackEvents(unprocessedEligible, policy.teacherBudget, sparseFeedback?.selectionCursor);
+    const selected = selection.selected;
     const selectedEventIds = new Set(selected.map((event) => event.eventId));
+    const routedFeedbackEventIds = new Set([...retainedProcessedFeedbackEventIds, ...selected.map((event) => event.eventId)]);
+    const nextProcessedFeedbackEventIds = normalizeSparseFeedbackProcessedEventIds([...retainedProcessedFeedbackEventIds, ...selected.map((event) => event.eventId)], eligibleEventIds);
     const amplifiedBackgroundLabelCount = Math.max(0, Math.round(selected.filter((event) => event.kind !== "suppression").length * Math.max(0, policy.backgroundLabelAmplification - 1)));
     return {
         selectedEventIds,
+        routedFeedbackEventIds,
         diagnostics: createSparseFeedbackRuntimeDiagnostics(policy, {
             eligibleFeedbackCount: eligible.length,
             maskedFeedbackCount,
             delayedFeedbackCount,
-            budgetedOutFeedbackCount: Math.max(0, eligible.length - selected.length),
-            amplifiedBackgroundLabelCount
+            budgetedOutFeedbackCount: Math.max(0, unprocessedEligible.length - selected.length),
+            amplifiedBackgroundLabelCount,
+            retainedFeedbackCount: retainedProcessedFeedbackEventIds.length,
+            selectionCursor: selection.nextCursor,
+            processedFeedbackEventIds: nextProcessedFeedbackEventIds,
+            knownEventIds: eligibleEventIds
         })
     };
 }
 export function describeSparseFeedbackEventDispositions(feedbackEvents, observedAt, sparseFeedback) {
+    const sparseFeedbackEvaluation = evaluateSparseFeedback(feedbackEvents, observedAt, sparseFeedback);
     const policy = normalizeSparseFeedbackPolicy(sparseFeedback);
     const eligible = [];
     const reasonByEventId = new Map();
@@ -2375,7 +2477,7 @@ export function describeSparseFeedbackEventDispositions(feedbackEvents, observed
         }
         return right.sequence - left.sequence;
     });
-    const selectedEventIds = new Set(eligible.slice(0, policy.teacherBudget).map((event) => event.eventId));
+    const selectedEventIds = sparseFeedbackEvaluation.routedFeedbackEventIds;
     for (const event of eligible) {
         if (!selectedEventIds.has(event.eventId)) {
             reasonByEventId.set(event.eventId, "budgeted_out");
@@ -3919,14 +4021,14 @@ function summarizeVisibleLearnedDelta(router) {
 }
 function createRouterArtifact(packId, builtAt, graph, vectors, eventExport, sparseFeedback, principalBacklog) {
     const sparseFeedbackEvaluation = eventExport === null ? null : evaluateSparseFeedback(eventExport.feedbackEvents, builtAt, sparseFeedback);
-    const selectedFeedbackIds = sparseFeedbackEvaluation?.selectedEventIds ?? new Set();
+    const routedFeedbackEventIds = sparseFeedbackEvaluation?.routedFeedbackEventIds ?? new Set();
     const traces = eventExport === null
         ? []
         : (() => {
             const deduped = new Map();
             for (const trace of sortNormalizedEvents([
                 ...eventExport.interactionEvents,
-                ...eventExport.feedbackEvents.filter((event) => selectedFeedbackIds.has(event.eventId))
+                ...eventExport.feedbackEvents.filter((event) => routedFeedbackEventIds.has(event.eventId))
             ]).map((event) => buildRouterTrace(packId, event, principalBacklog))) {
                 if (!deduped.has(trace.traceId)) {
                     deduped.set(trace.traceId, trace);
@@ -4771,12 +4873,20 @@ function computeTrajectoryPolicyGradientV2(trajectory, adjacency, graph, vectors
 function createRouterArtifactV2(packId, builtAt, graph, vectors, eventExport, serveTimeDecisions, baselineState, sparseFeedback, principalBacklog, teacherObservationOutcomes = []) {
     const tau = DEFAULT_TAU;
     const pgScale = 8;
+    const sparseFeedbackEvaluation = eventExport === null ? null : evaluateSparseFeedback(eventExport.feedbackEvents, builtAt, sparseFeedback);
+    const routedFeedbackEventIds = sparseFeedbackEvaluation?.routedFeedbackEventIds ?? new Set();
+    const routedEventExport = eventExport === null
+        ? null
+        : {
+            ...eventExport,
+            feedbackEvents: eventExport.feedbackEvents.filter((event) => routedFeedbackEventIds.has(event.eventId))
+        };
     // 1. Build adjacency map from graph
     const adjacency = buildAdjacencyMap(graph);
     const resolveBlockId = buildGraphBlockIdResolver(graph);
     const remappedServeTimeDecisions = (serveTimeDecisions ?? []).map((decision) => remapServeTimeDecisionToGraph(decision, resolveBlockId));
     // 2. Join serve-time decisions with explicit feedback first, then let teacher-v2 observations override when available.
-    const outcomeMap = joinDecisionsWithFeedback(remappedServeTimeDecisions, eventExport);
+    const outcomeMap = joinDecisionsWithFeedback(remappedServeTimeDecisions, routedEventExport);
     const teacherObservationBindings = joinDecisionsWithTeacherObservationOutcomes(remappedServeTimeDecisions, teacherObservationOutcomes);
     for (const [decisionId, reward] of teacherObservationBindings.outcomes.entries()) {
         if (reward !== 0) {
@@ -4840,7 +4950,7 @@ function createRouterArtifactV2(packId, builtAt, graph, vectors, eventExport, se
         right.evidenceCount - left.evidenceCount ||
         left.blockId.localeCompare(right.blockId));
     const supervisedTrajectoryCount = trajectories.filter((t) => t.outcome !== 0).length;
-    if (policyUpdates.length === 0 && supervisedTrajectoryCount > 0 && eventExport !== null) {
+    if (policyUpdates.length === 0 && supervisedTrajectoryCount > 0 && routedEventExport !== null) {
         const fallback = createRouterArtifact(packId, builtAt, graph, vectors, eventExport, sparseFeedback, principalBacklog);
         if (fallback.policyUpdates.length > 0) {
             return {

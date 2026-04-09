@@ -213,6 +213,7 @@ test("advanceAlwaysOnLearningRuntime does not rebuild the runtime graph on empty
       function createAlwaysOnLearningRuntimeState() { return JSON.parse(JSON.stringify(__harness.initialState)); }
       function resolveAlwaysOnLearningStructuralController(current) { return current ?? { structuralOps: [] }; }
       function normalizeSparseFeedbackPolicy(value) { return value ?? { mode: "default" }; }
+      function mergeSparseFeedbackState(current, overrides) { return overrides ?? current ?? { mode: "default" }; }
       function buildNormalizedEventExportBridge() { return { cursor: { watermark: 1 }, slices: [] }; }
       function mergePendingSlices(current) { return current; }
       function selectScheduledSlices() { return { selected: [], remaining: { live: [], backfill: [] }, selectedBucket: "none" }; }

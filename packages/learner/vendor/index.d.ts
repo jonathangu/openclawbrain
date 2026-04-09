@@ -204,6 +204,9 @@ export interface SparseFeedbackRuntimeDiagnosticsV1 extends SparseFeedbackPolicy
     delayedFeedbackCount: number;
     budgetedOutFeedbackCount: number;
     amplifiedBackgroundLabelCount: number;
+    retainedFeedbackCount?: number;
+    selectionCursor?: number;
+    processedFeedbackEventIds?: string[];
 }
 export type SparseFeedbackEventDispositionReasonV1 = "masked" | "delayed" | "budgeted_out";
 export interface SparseFeedbackEventDispositionV1 {
