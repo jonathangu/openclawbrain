@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { formatOperatorAttributionCoverageSummary, formatOperatorFeedbackSummary, formatOperatorLearningAttributionSummary, formatOperatorLearningFlowSummary, formatOperatorLearningHealthSummary, formatOperatorLearningPathSummary } from "../src/status-learning-path.js";
+import { formatOperatorAttributionCoverageSummary, formatOperatorFeedbackSummary, formatOperatorLearningAttributionSummary, formatOperatorLearningFlowSummary, formatOperatorLearningHealthSummary, formatOperatorLearningPathSummary, formatOperatorRetrainLineageSummary } from "../src/status-learning-path.js";
 
 const baseLearningPath = {
     source: "active_pack",
@@ -108,6 +108,23 @@ test("feedback and attribution coverage summaries stay thin and conservative", (
     };
     assert.equal(formatOperatorFeedbackSummary({ tracedLearning }), "helpful=1 irrelevant=1 harmful=0 supervisedTraceCount=2 routeTraceCount=3 latest=main:subagent");
     assert.equal(formatOperatorAttributionCoverageSummary({ tracedLearning }), "completedWithoutEvaluation=1 ready=2 delayed=1 budgetDeferred=1");
+});
+
+test("retrain lineage summary surfaces prior-rooted promotion truth without flattening it into learn-flow", () => {
+    const tracedLearning = {
+        retrainLineage: {
+            priorBaseArtifactId: "router-base-prior-v0",
+            priorBaseArtifactVersion: "v0",
+            priorBaseArtifactChecksum: "sha256:prior",
+            candidateArtifactId: "router-artifact-periodic-retrain-v1",
+            candidateArtifactVersion: "v1",
+            candidateArtifactChecksum: "sha256:candidate",
+            priorRooted: true,
+            promotionValid: true,
+            residualUpdateCount: 7
+        }
+    };
+    assert.equal(formatOperatorRetrainLineageSummary({ tracedLearning }), "status=visible prior=router-base-prior-v0@v0 seedChecksum=sha256:prior candidate=router-artifact-periodic-retrain-v1@v1 routerChecksum=sha256:candidate priorRooted=yes promotionValid=yes residualUpdates=7");
 });
 
 test("learning flow summary separates harvested through updated stages without flattening them", () => {

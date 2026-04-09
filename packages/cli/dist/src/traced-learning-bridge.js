@@ -29,6 +29,12 @@ function parseJsonValue(value, fallback) {
 function normalizeUnitInterval(value) {
     return Number.isFinite(value) ? Math.max(0, Math.min(1, Number(value))) : 0;
 }
+function normalizeOptionalBoolean(value) {
+    return typeof value === "boolean" ? value : null;
+}
+function normalizeNullableCount(value) {
+    return Number.isFinite(value) && value >= 0 ? Math.trunc(value) : null;
+}
 function normalizeSource(value) {
     return value !== null && typeof value === "object" && !Array.isArray(value) ? value : null;
 }
@@ -106,6 +112,57 @@ function normalizeAttributionCoverage(value) {
         budgetDeferredCount: normalizeCount(value.budgetDeferredCount),
         detail: normalizeOptionalString(value.detail)
             ?? "teacher gating truth is not visible in the current status surface"
+    };
+}
+function normalizeRetrainLineage(value) {
+    if (value === null || typeof value !== "object" || Array.isArray(value)) {
+        return null;
+    }
+    const priorBaseArtifactId = normalizeOptionalString(value.priorBaseArtifactId);
+    const priorBaseArtifactVersion = normalizeOptionalString(value.priorBaseArtifactVersion);
+    const priorBaseArtifactChecksum = normalizeOptionalString(value.priorBaseArtifactChecksum);
+    const candidateArtifactId = normalizeOptionalString(value.candidateArtifactId);
+    const candidateArtifactVersion = normalizeOptionalString(value.candidateArtifactVersion);
+    const candidateArtifactChecksum = normalizeOptionalString(value.candidateArtifactChecksum);
+    const inferredPriorRooted = priorBaseArtifactId !== null && priorBaseArtifactChecksum !== null;
+    const priorRooted = normalizeOptionalBoolean(value.priorRooted)
+        ?? (priorBaseArtifactId !== null || priorBaseArtifactChecksum !== null ? inferredPriorRooted : null);
+    const promotionValid = normalizeOptionalBoolean(value.promotionValid);
+    const residualUpdateCount = normalizeNullableCount(value.residualUpdateCount);
+    const suppliedSummary = normalizeOptionalString(value.summary);
+    const hasSignal = suppliedSummary !== null
+        || priorBaseArtifactId !== null
+        || priorBaseArtifactVersion !== null
+        || priorBaseArtifactChecksum !== null
+        || candidateArtifactId !== null
+        || candidateArtifactVersion !== null
+        || candidateArtifactChecksum !== null
+        || priorRooted !== null
+        || promotionValid !== null
+        || residualUpdateCount !== null;
+    if (!hasSignal) {
+        return null;
+    }
+    const summary = suppliedSummary ?? [
+        `seeded by ${priorBaseArtifactId ?? "unknown prior"}@${priorBaseArtifactVersion ?? "unknown version"}`,
+        `seed checksum=${priorBaseArtifactChecksum ?? "unknown checksum"}`,
+        `current router=${candidateArtifactId ?? "unknown candidate"}@${candidateArtifactVersion ?? "unknown version"}`,
+        `router checksum=${candidateArtifactChecksum ?? "unknown checksum"}`,
+        `prior-rooted=${priorRooted === null ? "unknown" : priorRooted ? "yes" : "no"}`,
+        `promotion-valid=${promotionValid === null ? "unknown" : promotionValid ? "yes" : "no"}`,
+        `residual updates=${residualUpdateCount ?? "unknown"}`
+    ].join("; ");
+    return {
+        priorBaseArtifactId,
+        priorBaseArtifactVersion,
+        priorBaseArtifactChecksum,
+        candidateArtifactId,
+        candidateArtifactVersion,
+        candidateArtifactChecksum,
+        priorRooted,
+        promotionValid,
+        residualUpdateCount,
+        summary
     };
 }
 function hasNonEmptyToolResults(value) {
@@ -563,6 +620,7 @@ function normalizeBridgePayload(payload) {
         materializedPackId: normalizeOptionalString(payload.materializedPackId),
         promoted: payload.promoted === true,
         baselinePersisted: payload.baselinePersisted === true,
+        retrainLineage: normalizeRetrainLineage(payload.retrainLineage),
         lastInterruptionSummary: normalizeLastInterruptionSummary(payload.lastInterruptionSummary),
         feedbackSummary: normalizeFeedbackSummary(payload.feedbackSummary, {
             routeTraceCount,
@@ -597,6 +655,7 @@ function normalizePersistedStatusSurface(payload) {
         materializedPackId: normalizeOptionalString(payload.materializedPackId),
         promoted: payload.promoted === true,
         baselinePersisted: payload.baselinePersisted === true,
+        retrainLineage: normalizeRetrainLineage(payload.retrainLineage),
         lastInterruptionSummary: normalizeLastInterruptionSummary(payload.lastInterruptionSummary),
         feedbackSummary: normalizeFeedbackSummary(payload.feedbackSummary, {
             routeTraceCount,
@@ -621,6 +680,7 @@ function defaultSurface(pathname, detail, error = null) {
         materializedPackId: null,
         promoted: false,
         baselinePersisted: false,
+        retrainLineage: null,
         lastInterruptionSummary: null,
         feedbackSummary: defaultFeedbackSummary(),
         attributionCoverage: defaultAttributionCoverage(),
@@ -718,6 +778,7 @@ export function buildTracedLearningBridgePayloadFromRuntime(input) {
         materializedPackId: input?.materializedPackId ?? lastMaterialization?.candidate?.summary?.packId ?? null,
         promoted: input?.promoted === true,
         baselinePersisted: input?.baselinePersisted === true,
+        retrainLineage: input?.retrainLineage ?? lastMaterialization?.candidate?.summary?.retrainLineage ?? null,
         lastInterruptionSummary: input?.lastInterruptionSummary ?? null,
         source: input?.source
     });
@@ -744,6 +805,7 @@ function buildPersistedStatusSurfaceBridge(summary, context) {
         materializedPackId: summary.materializedPackId,
         promoted: summary.promoted,
         baselinePersisted: summary.baselinePersisted,
+        retrainLineage: summary.retrainLineage,
         lastInterruptionSummary: summary.lastInterruptionSummary,
         feedbackSummary: summary.feedbackSummary,
         attributionCoverage: summary.attributionCoverage,
@@ -818,6 +880,7 @@ function buildDerivedBrainStoreBridge(db, context, lastInterruptionSummary = nul
         materializedPackId: null,
         promoted: false,
         baselinePersisted: false,
+        retrainLineage: null,
         lastInterruptionSummary,
         feedbackSummary,
         attributionCoverage,
@@ -840,6 +903,7 @@ function hasMeaningfulTracedLearningSignal(bridge) {
         bridge.materializedPackId !== null ||
         bridge.promoted ||
         bridge.baselinePersisted ||
+        bridge.retrainLineage !== null ||
         bridge.lastInterruptionSummary !== null ||
         bridge.pgVersionRequested !== null ||
         bridge.pgVersionUsed !== null ||
@@ -1067,6 +1131,11 @@ function buildStatusSurface(pathname, bridge, options = {}) {
     if (bridge.routerNoOpReason !== null) {
         detailParts.push(`noOp=${bridge.routerNoOpReason}`);
     }
+    if (bridge.retrainLineage !== null) {
+        detailParts.push(`priorRooted=${bridge.retrainLineage.priorRooted === null ? "unknown" : bridge.retrainLineage.priorRooted ? "yes" : "no"}`);
+        detailParts.push(`promotionValid=${bridge.retrainLineage.promotionValid === null ? "unknown" : bridge.retrainLineage.promotionValid ? "yes" : "no"}`);
+        detailParts.push(`residualUpdates=${bridge.retrainLineage.residualUpdateCount ?? "unknown"}`);
+    }
     const interruptionDetail = formatLastInterruptionDetail(bridge.lastInterruptionSummary);
     if (interruptionDetail !== null) {
         detailParts.push(interruptionDetail);
@@ -1085,6 +1154,7 @@ function buildStatusSurface(pathname, bridge, options = {}) {
         materializedPackId: bridge.materializedPackId,
         promoted: bridge.promoted,
         baselinePersisted: bridge.baselinePersisted,
+        retrainLineage: bridge.retrainLineage,
         lastInterruptionSummary: bridge.lastInterruptionSummary,
         feedbackSummary: bridge.feedbackSummary,
         attributionCoverage: bridge.attributionCoverage,
@@ -1110,6 +1180,7 @@ function buildRuntimeMaterializationMetadata(loaded) {
         materializedPackId: loaded.bridge.materializedPackId,
         promoted: loaded.bridge.promoted,
         baselinePersisted: loaded.bridge.baselinePersisted,
+        retrainLineage: loaded.bridge.retrainLineage,
         lastInterruptionSummary: loaded.bridge.lastInterruptionSummary,
         fallbackReason: loaded.bridge.fallbackReason,
         routerNoOpReason: loaded.bridge.routerNoOpReason,
@@ -1133,6 +1204,7 @@ function mergeCanonicalStatusBridge(canonicalBridge, runtimeLoaded) {
             materializedPackId: canonicalBridge.materializedPackId,
             promoted: canonicalBridge.promoted,
             baselinePersisted: canonicalBridge.baselinePersisted,
+            retrainLineage: canonicalBridge.retrainLineage ?? runtimeBridge?.retrainLineage ?? null,
             lastInterruptionSummary: canonicalBridge.lastInterruptionSummary ?? runtimeBridge?.lastInterruptionSummary ?? null,
             feedbackSummary: canonicalBridge.feedbackSummary,
             attributionCoverage: canonicalBridge.attributionCoverage,
@@ -1158,6 +1230,7 @@ function mergeCanonicalStatusBridge(canonicalBridge, runtimeLoaded) {
         materializedPackId: runtimeBridge?.materializedPackId ?? canonicalBridge.materializedPackId ?? null,
         promoted: runtimeBridge?.promoted ?? canonicalBridge.promoted,
         baselinePersisted: runtimeBridge?.baselinePersisted ?? canonicalBridge.baselinePersisted,
+        retrainLineage: runtimeBridge?.retrainLineage ?? canonicalBridge.retrainLineage ?? null,
         lastInterruptionSummary: canonicalBridge.lastInterruptionSummary ?? runtimeBridge?.lastInterruptionSummary ?? null,
         feedbackSummary: canonicalBridge.feedbackSummary,
         attributionCoverage: canonicalBridge.attributionCoverage,
@@ -1181,6 +1254,7 @@ export function mergeTracedLearningBridgePayload(payload, persisted) {
     const supervisionCount = Math.max(current.supervisionCount, persistedBridge.supervisionCount);
     const routerUpdateCount = Math.max(current.routerUpdateCount, persistedBridge.routerUpdateCount);
     const teacherArtifactCount = Math.max(current.teacherArtifactCount, persistedBridge.teacherArtifactCount);
+    const retrainLineage = current.retrainLineage ?? persistedBridge.retrainLineage ?? null;
     const lastInterruptionSummary = current.lastInterruptionSummary ?? persistedBridge.lastInterruptionSummary ?? null;
     const feedbackSummary = current.feedbackSummary.visible ? current.feedbackSummary : persistedBridge.feedbackSummary;
     const attributionCoverage = current.attributionCoverage.visible ? current.attributionCoverage : persistedBridge.attributionCoverage;
@@ -1188,6 +1262,7 @@ export function mergeTracedLearningBridgePayload(payload, persisted) {
         supervisionCount !== current.supervisionCount ||
         routerUpdateCount !== current.routerUpdateCount ||
         teacherArtifactCount !== current.teacherArtifactCount ||
+        retrainLineage !== current.retrainLineage ||
         lastInterruptionSummary !== current.lastInterruptionSummary ||
         feedbackSummary.visible !== current.feedbackSummary.visible ||
         attributionCoverage.visible !== current.attributionCoverage.visible ||
@@ -1201,6 +1276,7 @@ export function mergeTracedLearningBridgePayload(payload, persisted) {
         supervisionCount,
         routerUpdateCount,
         teacherArtifactCount,
+        retrainLineage,
         lastInterruptionSummary,
         feedbackSummary,
         attributionCoverage,

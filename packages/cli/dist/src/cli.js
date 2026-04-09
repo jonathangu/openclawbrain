@@ -29,7 +29,7 @@ import { summarizePackVectorEmbeddingState } from "./embedding-status.js";
 import { buildTracedLearningBridgePayloadFromRuntime, buildTracedLearningStatusSurface, persistTracedLearningBridgeState } from "./traced-learning-bridge.js";
 import { discoverOpenClawSessionStores, loadOpenClawSessionIndex, readOpenClawSessionFile } from "./session-store.js";
 import { readOpenClawBrainProviderDefaults, readOpenClawBrainProviderConfig, readOpenClawBrainProviderConfigFromSources, resolveOpenClawBrainProviderDefaultsPath } from "./provider-config.js";
-import { formatOperatorAttributionCoverageSummary, formatOperatorFeedbackSummary, formatOperatorLearningAttributionSummary, formatOperatorLearningFlowSummary, formatOperatorLearningHealthSummary, formatOperatorLearningPathSummary } from "./status-learning-path.js";
+import { formatOperatorAttributionCoverageSummary, formatOperatorFeedbackSummary, formatOperatorLearningAttributionSummary, formatOperatorLearningFlowSummary, formatOperatorLearningHealthSummary, formatOperatorLearningPathSummary, formatOperatorRetrainLineageSummary } from "./status-learning-path.js";
 import { buildProofCommandForOpenClawHome, buildProofCommandHelpSection, captureOperatorProofBundle, formatOperatorProofResult, parseProofCliArgs } from "./proof-command.js";
 const OPENCLAWBRAIN_EMBEDDER_BASE_URL_ENV = "OPENCLAWBRAIN_EMBEDDER_BASE_URL";
 const OPENCLAWBRAIN_EMBEDDER_PROVIDER_ENV = "OPENCLAWBRAIN_EMBEDDER_PROVIDER";
@@ -1592,6 +1592,7 @@ function buildCompactStatusHeader(status, report, options) {
         `explain     ${status.brain.summary}`,
         `graph       blocks=${report.graph.blockCount ?? "none"} strongest=${report.graph.strongestBlockId ?? "none"} latest=${report.graph.latestMaterialization.packId ?? "none"} latestChanged=${yesNo(report.graph.latestMaterialization.changed)} connect=${formatCompactGraphConnectDiagnostics(report.graph.latestMaterialization.connectDiagnostics ?? report.graph.connectDiagnostics)}`,
         `attribution ${formatOperatorLearningAttributionSummary({ status })}`,
+        `lineage     ${formatOperatorRetrainLineageSummary({ tracedLearning })}`,
         `learnFlow   ${formatOperatorLearningFlowSummary({ tracedLearning })}`,
         `health      ${formatOperatorLearningHealthSummary({ tracedLearning, teacher })}`,
         `teacher     model=${teacher.model} enabled=${yesNo(teacher.enabled)} healthy=${yesNo(teacher.healthy)} stale=${yesNo(teacher.stale)} idle=${yesNo(teacher.idle)} cycle=${teacher.latestCycle} why=${teacher.detail}`,
@@ -1655,6 +1656,7 @@ function formatCurrentProfileStatusSummary(status, report, targetInspection, opt
             learningPath: report.learningPath,
             tracedLearning
         })}`,
+        `lineage     ${formatOperatorRetrainLineageSummary({ tracedLearning })}`,
         `learnFlow   ${formatOperatorLearningFlowSummary({ tracedLearning })}`,
         `health      ${formatOperatorLearningHealthSummary({ tracedLearning, teacher })}`,
         `feedback    ${formatOperatorFeedbackSummary({ tracedLearning })}`,

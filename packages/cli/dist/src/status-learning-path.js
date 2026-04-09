@@ -10,6 +10,20 @@ function normalizeOptionalString(value) {
 function normalizeCount(value) {
     return Number.isFinite(value) && value >= 0 ? Math.trunc(value) : 0;
 }
+function formatOptionalBoolean(value) {
+    return typeof value === "boolean" ? (value ? "yes" : "no") : "unknown";
+}
+function formatOptionalCount(value) {
+    return Number.isFinite(value) && value >= 0 ? String(Math.trunc(value)) : "unknown";
+}
+function formatArtifactLabel(id, version) {
+    const artifactId = normalizeOptionalString(id);
+    const artifactVersion = normalizeOptionalString(version);
+    if (artifactId === null) {
+        return "none";
+    }
+    return artifactVersion === null ? artifactId : `${artifactId}@${artifactVersion}`;
+}
 function formatOptionalFeedbackLatest(tracedLearning) {
     const latestLabel = normalizeOptionalString(tracedLearning?.feedbackSummary?.latestLabel);
     return latestLabel === null ? "" : ` latest=${latestLabel}`;
@@ -219,6 +233,22 @@ export function formatOperatorLearningFlowSummary({ tracedLearning }) {
         `supervised=${formatKnownOperatorValue(flow.supervised)}`,
         `updated=${formatKnownOperatorValue(flow.updated)}`,
         `materialized=${flow.materialized ?? "none"}`
+    ].join(" ");
+}
+export function formatOperatorRetrainLineageSummary({ tracedLearning }) {
+    const lineage = tracedLearning?.retrainLineage ?? null;
+    if (lineage === null || typeof lineage !== "object") {
+        return "status=unknown detail=retrain_lineage_not_visible";
+    }
+    return [
+        "status=visible",
+        `prior=${formatArtifactLabel(lineage.priorBaseArtifactId, lineage.priorBaseArtifactVersion)}`,
+        `seedChecksum=${normalizeOptionalString(lineage.priorBaseArtifactChecksum) ?? "none"}`,
+        `candidate=${formatArtifactLabel(lineage.candidateArtifactId, lineage.candidateArtifactVersion)}`,
+        `routerChecksum=${normalizeOptionalString(lineage.candidateArtifactChecksum) ?? "none"}`,
+        `priorRooted=${formatOptionalBoolean(lineage.priorRooted)}`,
+        `promotionValid=${formatOptionalBoolean(lineage.promotionValid)}`,
+        `residualUpdates=${formatOptionalCount(lineage.residualUpdateCount)}`
     ].join(" ");
 }
 export function formatOperatorLearningHealthSummary({ tracedLearning, teacher }) {

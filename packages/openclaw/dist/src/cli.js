@@ -25,7 +25,7 @@ import { summarizePackVectorEmbeddingState } from "./embedding-status.js";
 import { buildTracedLearningStatusSurface, loadBrainStoreTracedLearningBridge, mergeTracedLearningBridgePayload, persistBrainStoreTracedLearningBridge, writeTracedLearningBridge } from "./traced-learning-bridge.js";
 import { discoverOpenClawSessionStores, loadOpenClawSessionIndex, readOpenClawSessionFile } from "./session-store.js";
 import { readOpenClawBrainProviderDefaults, readOpenClawBrainProviderConfig, readOpenClawBrainProviderConfigFromSources, resolveOpenClawBrainProviderDefaultsPath } from "./provider-config.js";
-import { formatOperatorLearningPathSummary } from "./status-learning-path.js";
+import { formatOperatorLearningPathSummary, formatOperatorRetrainLineageSummary } from "./status-learning-path.js";
 const OPENCLAWBRAIN_EMBEDDER_BASE_URL_ENV = "OPENCLAWBRAIN_EMBEDDER_BASE_URL";
 const OPENCLAWBRAIN_EMBEDDER_PROVIDER_ENV = "OPENCLAWBRAIN_EMBEDDER_PROVIDER";
 const OPENCLAWBRAIN_EMBEDDER_MODEL_ENV = "OPENCLAWBRAIN_EMBEDDER_MODEL";
@@ -1436,6 +1436,7 @@ function formatCurrentProfileStatusSummary(status, report, targetInspection, opt
             learningPath: report.learningPath,
             tracedLearning
         })}`,
+        `lineage     ${formatOperatorRetrainLineageSummary({ tracedLearning })}`,
         `learning    state=${report.learning.backlogState} bootstrapped=${yesNo(report.learning.bootstrapped)} mode=${report.learning.mode} next=${report.learning.nextPriorityLane} priority=${report.learning.nextPriorityBucket} pending=${report.learning.pendingLive ?? "none"}/${report.learning.pendingBackfill ?? "none"} buckets=${formatLearningBuckets(report)} warn=${formatLearningWarnings(report)} lastPack=${report.learning.lastMaterializedPackId ?? "none"} detail=${report.learning.detail}`,
         `traced      ${formatTracedLearningSurface(tracedLearning)}`,
         `teacherProof ${formatTeacherLoopSummary(report)}`,

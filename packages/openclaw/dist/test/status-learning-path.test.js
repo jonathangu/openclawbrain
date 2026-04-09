@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { formatOperatorLearningPathSummary } from "../src/status-learning-path.js";
+import { formatOperatorLearningPathSummary, formatOperatorRetrainLineageSummary } from "../src/status-learning-path.js";
 
 const baseLearningPath = {
     source: "active_pack",
@@ -30,6 +30,25 @@ test("seed state awaiting first promotion hides mixed v1 metadata on the path li
     assert.match(summary, /tracedPg=v2/);
     assert.doesNotMatch(summary, /pg=v1/);
     assert.doesNotMatch(summary, /method=policy_gradient_v1/);
+});
+
+test("retrain lineage summary surfaces prior-rooted promotion truth", () => {
+    const summary = formatOperatorRetrainLineageSummary({
+        tracedLearning: {
+            retrainLineage: {
+                priorBaseArtifactId: "router-base-prior-v0",
+                priorBaseArtifactVersion: "v0",
+                priorBaseArtifactChecksum: "sha256:prior",
+                candidateArtifactId: "router-artifact-periodic-retrain-v1",
+                candidateArtifactVersion: "v1",
+                candidateArtifactChecksum: "sha256:candidate",
+                priorRooted: true,
+                promotionValid: true,
+                residualUpdateCount: 7
+            }
+        }
+    });
+    assert.equal(summary, "status=visible prior=router-base-prior-v0@v0 seedChecksum=sha256:prior candidate=router-artifact-periodic-retrain-v1@v1 routerChecksum=sha256:candidate priorRooted=yes promotionValid=yes residualUpdates=7");
 });
 
 test("non-seed states preserve the raw learning-path summary", () => {

@@ -643,7 +643,7 @@ function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, brea
     };
 }
 
-function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspectText, statusSignals, breadcrumbs, runtimeLoadProofSnapshot, surfaceLine, surfacesLine, surfaceNoteLine, hotfixLine, guardLine, brainLine, routeLine, learningLine, feedbackLine, attributionLine, attributionCoverageLine, learningPathLine, learningFlowLine, learningHealthLine, coverageSnapshot, hardeningSnapshot }) {
+function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspectText, statusSignals, breadcrumbs, runtimeLoadProofSnapshot, surfaceLine, surfacesLine, surfaceNoteLine, hotfixLine, guardLine, brainLine, routeLine, learningLine, feedbackLine, attributionLine, attributionCoverageLine, learningPathLine, lineageLine, learningFlowLine, learningHealthLine, coverageSnapshot, hardeningSnapshot }) {
     const passed = [];
     const missing = [];
     const warnings = Array.isArray(verdict.warnings) ? verdict.warnings : [];
@@ -757,6 +757,9 @@ function buildSummary({ options, steps, verdict, gatewayStatusText, pluginInspec
         ...(learningPathLine === null
             ? ["- learning path line not reported by detailed status"]
             : [`- ${learningPathLine}`]),
+        ...(lineageLine === null
+            ? ["- retrain lineage line not reported by detailed status"]
+            : [`- ${lineageLine}`]),
         ...(learningFlowLine === null
             ? ["- learning flow line not reported by detailed status"]
             : [`- ${learningFlowLine}`]),
@@ -1084,6 +1087,7 @@ export function captureOperatorProofBundle(options) {
     const brainLine = extractDetailedStatusLine(statusCapture.stdout, "brain");
     const routeLine = extractDetailedStatusLine(statusCapture.stdout, "route");
     const learningLine = extractDetailedStatusLine(statusCapture.stdout, "learning");
+    const lineageLine = extractDetailedStatusLine(statusCapture.stdout, "lineage");
     const learningFlowLine = extractDetailedStatusLine(statusCapture.stdout, "learnFlow");
     const learningHealthLine = extractDetailedStatusLine(statusCapture.stdout, "health");
     const feedbackLine = extractDetailedStatusLine(statusCapture.stdout, "feedback");
@@ -1156,6 +1160,7 @@ export function captureOperatorProofBundle(options) {
         brainLine,
         routeLine,
         learningLine,
+        lineageLine,
         learningFlowLine,
         learningHealthLine,
         feedbackLine,
@@ -1181,6 +1186,7 @@ export function captureOperatorProofBundle(options) {
         brainLine,
         routeLine,
         learningLine,
+        lineageLine,
         learningFlowLine,
         learningHealthLine,
         feedbackLine,
@@ -1208,6 +1214,7 @@ export function captureOperatorProofBundle(options) {
         surfaceNoteLine,
         hotfixLine,
         guardLine,
+        lineageLine,
         learningFlowLine,
         learningHealthLine,
         feedbackLine,

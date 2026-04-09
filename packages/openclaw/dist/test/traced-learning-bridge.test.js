@@ -107,6 +107,17 @@ test("brain-store traced-learning surface persists surfaced learn truth", (t) =>
             materializedPackId: "pack-ed1142ba",
             promoted: true,
             baselinePersisted: true,
+            retrainLineage: {
+                priorBaseArtifactId: "router-base-prior-v0",
+                priorBaseArtifactVersion: "v0",
+                priorBaseArtifactChecksum: "sha256:prior",
+                candidateArtifactId: "router-artifact-periodic-retrain-v1",
+                candidateArtifactVersion: "v1",
+                candidateArtifactChecksum: "sha256:candidate",
+                priorRooted: true,
+                promotionValid: true,
+                residualUpdateCount: 7
+            },
             source: {
                 command: "learn",
                 exportDigest: "digest-264"
@@ -123,6 +134,7 @@ test("brain-store traced-learning surface persists surfaced learn truth", (t) =>
         assert.equal(raw?.contract, "openclawbrain.traced-learning-status-surface.v1");
         assert.equal(raw?.routeTraceCount, 264);
         assert.equal(raw?.teacherArtifactCount, 32);
+        assert.equal(raw?.retrainLineage?.priorBaseArtifactId, "router-base-prior-v0");
         const loaded = loadBrainStoreTracedLearningBridge({
             env: {
                 OPENCLAWBRAIN_ROOT: brainRoot
@@ -134,6 +146,7 @@ test("brain-store traced-learning surface persists surfaced learn truth", (t) =>
         assert.equal(loaded.bridge?.routerUpdateCount, 7);
         assert.equal(loaded.bridge?.teacherArtifactCount, 32);
         assert.equal(loaded.bridge?.materializedPackId, "pack-ed1142ba");
+        assert.equal(loaded.bridge?.retrainLineage?.priorRooted, true);
         assert.equal(loaded.bridge?.source?.command, "brain-store");
         assert.equal(loaded.bridge?.source?.bridge, "brain_store_traced_learning_status_surface");
         assert.equal(loaded.bridge?.source?.surfacedFrom?.command, "learn");
@@ -148,8 +161,10 @@ test("brain-store traced-learning surface persists surfaced learn truth", (t) =>
         assert.equal(surface.routerUpdateCount, 7);
         assert.equal(surface.teacherArtifactCount, 32);
         assert.equal(surface.materializedPackId, "pack-ed1142ba");
+        assert.equal(surface.retrainLineage?.promotionValid, true);
         assert.equal(surface.promoted, true);
         assert.match(surface.detail, /source=brain-store/);
+        assert.match(surface.detail, /priorRooted=yes/);
         assert.match(surface.detail, /bridge=brain_store_traced_learning_status_surface/);
         assert.match(surface.detail, /runtime=missing/);
     }

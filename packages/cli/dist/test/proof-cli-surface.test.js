@@ -92,6 +92,7 @@ function createDetailedStatusText(fixture, overrides = {}) {
         `serve       state=${overrides.serveState ?? "serving_active_pack"}`,
         `routeFn     available=${overrides.routeFnAvailable ?? "yes"}`,
         overrides.pathLine ?? "path        source=materialized_candidate pg=v2 method=policy_gradient_v2 target=trajectory_reconstruction connect=4 trajectories=12 bindingQuality=exact_only",
+        overrides.lineageLine ?? "lineage     status=visible prior=router-base-prior-v0@v0 seedChecksum=sha256:prior candidate=router-artifact-periodic-retrain-v1@v1 routerChecksum=sha256:candidate priorRooted=yes promotionValid=yes residualUpdates=7",
         overrides.learningFlowLine ?? "learnFlow   harvested=1 eligible=1 selected=1 budgetDeferred=0 supervised=1 updated=1 materialized=pack-status",
         overrides.learningHealthLine ?? "health      daemon=healthy-daemon learning=progress-visible detail=selected=1 budgetDeferred=0 supervised=1 updated=1 materialized=pack-status",
         overrides.feedbackLine ?? "feedback    helpful=1 irrelevant=0 harmful=0 supervisedTraceCount=1 routeTraceCount=1 latest=main",
@@ -253,6 +254,7 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     assert.match(summary, /guard       severity=none actionability=none action=none summary=profile hook is installed and loadable/);
     assert.match(summary, /## Route Layer Truth/);
     assert.match(summary, /- derived: activePack=none router=none routeFreshness=none routeFingerprint=none usedLearnedRouteFn=none/);
+    assert.match(summary, /lineage     status=visible prior=router-base-prior-v0@v0 seedChecksum=sha256:prior candidate=router-artifact-periodic-retrain-v1@v1 routerChecksum=sha256:candidate priorRooted=yes promotionValid=yes residualUpdates=7/);
     assert.match(summary, /learnFlow   harvested=1 eligible=1 selected=1 budgetDeferred=0 supervised=1 updated=1 materialized=pack-status/);
     assert.match(summary, /health      daemon=healthy-daemon learning=progress-visible detail=selected=1 budgetDeferred=0 supervised=1 updated=1 materialized=pack-status/);
     assert.match(summary, /feedback    helpful=1 irrelevant=0 harmful=0 supervisedTraceCount=1 routeTraceCount=1 latest=main/);
@@ -282,6 +284,7 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     assert.equal(hardeningSnapshot.routeLayer.usedLearnedRouteFn, null);
     assert.equal(hardeningSnapshot.routeLayer.routeFnAvailable, "yes");
     assert.equal(hardeningSnapshot.verdict.verdict, "success_and_proven");
+    assert.equal(verdictPayload.lineageLine, "lineage     status=visible prior=router-base-prior-v0@v0 seedChecksum=sha256:prior candidate=router-artifact-periodic-retrain-v1@v1 routerChecksum=sha256:candidate priorRooted=yes promotionValid=yes residualUpdates=7");
     assert.equal(verdictPayload.learningFlowLine, "learnFlow   harvested=1 eligible=1 selected=1 budgetDeferred=0 supervised=1 updated=1 materialized=pack-status");
     assert.equal(verdictPayload.learningHealthLine, "health      daemon=healthy-daemon learning=progress-visible detail=selected=1 budgetDeferred=0 supervised=1 updated=1 materialized=pack-status");
     assert.equal(verdictPayload.feedbackLine, "feedback    helpful=1 irrelevant=0 harmful=0 supervisedTraceCount=1 routeTraceCount=1 latest=main");
@@ -493,6 +496,7 @@ test("proof capture accepts generated shadow hook sources and ignores unrelated 
         "serve       state=serving_active_pack",
         "routeFn     available=yes",
         "path        source=materialized_candidate pg=v2 method=policy_gradient_v2 target=trajectory_reconstruction connect=4 trajectories=12 bindingQuality=exact_only",
+        "lineage     status=visible prior=router-base-prior-v0@v0 seedChecksum=sha256:prior candidate=router-artifact-periodic-retrain-v1@v1 routerChecksum=sha256:candidate priorRooted=yes promotionValid=yes residualUpdates=7",
         "learnFlow   harvested=1 eligible=1 selected=1 budgetDeferred=0 supervised=1 updated=1 materialized=pack-status",
         "health      daemon=healthy-daemon learning=progress-visible detail=selected=1 budgetDeferred=0 supervised=1 updated=1 materialized=pack-status",
         "attribution quality=exact_only source=latest_materialization/watch_snapshot nonZero=1 exact=1 heuristic=0 unmatched=0 ambiguous=0 modes=decision:1|digest:0|compile:0|heuristic:0",

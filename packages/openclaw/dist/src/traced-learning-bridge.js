@@ -15,8 +15,55 @@ function normalizeCount(value) {
 function normalizeOptionalString(value) {
     return typeof value === "string" && value.trim().length > 0 ? value : null;
 }
+function normalizeOptionalBoolean(value) {
+    return typeof value === "boolean" ? value : null;
+}
+function normalizeNullableCount(value) {
+    return Number.isFinite(value) && value >= 0 ? Math.trunc(value) : null;
+}
 function normalizeSource(value) {
     return value !== null && typeof value === "object" && !Array.isArray(value) ? value : null;
+}
+function normalizeRetrainLineage(value) {
+    if (value === null || typeof value !== "object" || Array.isArray(value)) {
+        return null;
+    }
+    const priorBaseArtifactId = normalizeOptionalString(value.priorBaseArtifactId);
+    const priorBaseArtifactVersion = normalizeOptionalString(value.priorBaseArtifactVersion);
+    const priorBaseArtifactChecksum = normalizeOptionalString(value.priorBaseArtifactChecksum);
+    const candidateArtifactId = normalizeOptionalString(value.candidateArtifactId);
+    const candidateArtifactVersion = normalizeOptionalString(value.candidateArtifactVersion);
+    const candidateArtifactChecksum = normalizeOptionalString(value.candidateArtifactChecksum);
+    const inferredPriorRooted = priorBaseArtifactId !== null && priorBaseArtifactChecksum !== null;
+    const priorRooted = normalizeOptionalBoolean(value.priorRooted)
+        ?? (priorBaseArtifactId !== null || priorBaseArtifactChecksum !== null ? inferredPriorRooted : null);
+    const promotionValid = normalizeOptionalBoolean(value.promotionValid);
+    const residualUpdateCount = normalizeNullableCount(value.residualUpdateCount);
+    const suppliedSummary = normalizeOptionalString(value.summary);
+    const hasSignal = suppliedSummary !== null || priorBaseArtifactId !== null || priorBaseArtifactChecksum !== null || candidateArtifactId !== null || candidateArtifactChecksum !== null || priorRooted !== null || promotionValid !== null || residualUpdateCount !== null;
+    if (!hasSignal) {
+        return null;
+    }
+    return {
+        priorBaseArtifactId,
+        priorBaseArtifactVersion,
+        priorBaseArtifactChecksum,
+        candidateArtifactId,
+        candidateArtifactVersion,
+        candidateArtifactChecksum,
+        priorRooted,
+        promotionValid,
+        residualUpdateCount,
+        summary: suppliedSummary ?? [
+            `seeded by ${priorBaseArtifactId ?? "unknown prior"}@${priorBaseArtifactVersion ?? "unknown version"}`,
+            `seed checksum=${priorBaseArtifactChecksum ?? "unknown checksum"}`,
+            `current router=${candidateArtifactId ?? "unknown candidate"}@${candidateArtifactVersion ?? "unknown version"}`,
+            `router checksum=${candidateArtifactChecksum ?? "unknown checksum"}`,
+            `prior-rooted=${priorRooted === null ? "unknown" : priorRooted ? "yes" : "no"}`,
+            `promotion-valid=${promotionValid === null ? "unknown" : promotionValid ? "yes" : "no"}`,
+            `residual updates=${residualUpdateCount ?? "unknown"}`
+        ].join("; ")
+    };
 }
 function normalizeBridgePayload(payload) {
     if (payload === null || typeof payload !== "object" || Array.isArray(payload)) {
@@ -37,6 +84,7 @@ function normalizeBridgePayload(payload) {
         materializedPackId: normalizeOptionalString(payload.materializedPackId),
         promoted: payload.promoted === true,
         baselinePersisted: payload.baselinePersisted === true,
+        retrainLineage: normalizeRetrainLineage(payload.retrainLineage),
         source: normalizeSource(payload.source)
     };
 }
@@ -63,6 +111,7 @@ function normalizePersistedStatusSurface(payload) {
         materializedPackId: normalizeOptionalString(payload.materializedPackId),
         promoted: payload.promoted === true,
         baselinePersisted: payload.baselinePersisted === true,
+        retrainLineage: normalizeRetrainLineage(payload.retrainLineage),
         source
     };
 }
@@ -81,6 +130,7 @@ function defaultSurface(pathname, detail, error = null) {
         materializedPackId: null,
         promoted: false,
         baselinePersisted: false,
+        retrainLineage: null,
         source: null,
         detail,
         error
@@ -154,6 +204,7 @@ function buildPersistedStatusSurfaceBridge(summary, context) {
         materializedPackId: summary.materializedPackId,
         promoted: summary.promoted,
         baselinePersisted: summary.baselinePersisted,
+        retrainLineage: summary.retrainLineage,
         source: {
             command: "brain-store",
             bridge: TRACED_LEARNING_STATUS_SURFACE_BRIDGE,
@@ -211,6 +262,7 @@ function buildDerivedBrainStoreBridge(db, context) {
         materializedPackId: null,
         promoted: false,
         baselinePersisted: false,
+        retrainLineage: null,
         source: {
             command: "brain-store",
             bridge: "brain_store_state",
@@ -230,6 +282,7 @@ function hasMeaningfulTracedLearningSignal(bridge) {
         bridge.materializedPackId !== null ||
         bridge.promoted ||
         bridge.baselinePersisted ||
+        bridge.retrainLineage !== null ||
         bridge.pgVersionRequested !== null ||
         bridge.pgVersionUsed !== null ||
         bridge.fallbackReason !== null ||
@@ -407,6 +460,11 @@ function buildStatusSurface(pathname, bridge, options = {}) {
     if (bridge.routerNoOpReason !== null) {
         detailParts.push(`noOp=${bridge.routerNoOpReason}`);
     }
+    if (bridge.retrainLineage !== null) {
+        detailParts.push(`priorRooted=${bridge.retrainLineage.priorRooted === null ? "unknown" : bridge.retrainLineage.priorRooted ? "yes" : "no"}`);
+        detailParts.push(`promotionValid=${bridge.retrainLineage.promotionValid === null ? "unknown" : bridge.retrainLineage.promotionValid ? "yes" : "no"}`);
+        detailParts.push(`residualUpdates=${bridge.retrainLineage.residualUpdateCount ?? "unknown"}`);
+    }
     return {
         path: pathname,
         present: true,
@@ -421,6 +479,7 @@ function buildStatusSurface(pathname, bridge, options = {}) {
         materializedPackId: bridge.materializedPackId,
         promoted: bridge.promoted,
         baselinePersisted: bridge.baselinePersisted,
+        retrainLineage: bridge.retrainLineage,
         source: bridge.source,
         detail: detailParts.join(" "),
         error: options.error ?? null
@@ -443,6 +502,7 @@ function buildRuntimeMaterializationMetadata(loaded) {
         materializedPackId: loaded.bridge.materializedPackId,
         promoted: loaded.bridge.promoted,
         baselinePersisted: loaded.bridge.baselinePersisted,
+        retrainLineage: loaded.bridge.retrainLineage,
         fallbackReason: loaded.bridge.fallbackReason,
         routerNoOpReason: loaded.bridge.routerNoOpReason,
         source: loaded.bridge.source
@@ -465,6 +525,7 @@ function mergeCanonicalStatusBridge(canonicalBridge, runtimeLoaded) {
             materializedPackId: canonicalBridge.materializedPackId,
             promoted: canonicalBridge.promoted,
             baselinePersisted: canonicalBridge.baselinePersisted,
+            retrainLineage: canonicalBridge.retrainLineage ?? runtimeBridge?.retrainLineage ?? null,
             fallbackReason: canonicalBridge.fallbackReason,
             routerNoOpReason: canonicalBridge.routerNoOpReason,
             source: runtimeMaterialized === null
@@ -487,6 +548,7 @@ function mergeCanonicalStatusBridge(canonicalBridge, runtimeLoaded) {
         materializedPackId: runtimeBridge?.materializedPackId ?? canonicalBridge.materializedPackId ?? null,
         promoted: runtimeBridge?.promoted ?? canonicalBridge.promoted,
         baselinePersisted: runtimeBridge?.baselinePersisted ?? canonicalBridge.baselinePersisted,
+        retrainLineage: runtimeBridge?.retrainLineage ?? canonicalBridge.retrainLineage ?? null,
         fallbackReason: runtimeBridge?.fallbackReason ?? canonicalBridge.fallbackReason ?? null,
         routerNoOpReason: runtimeBridge?.routerNoOpReason ?? canonicalBridge.routerNoOpReason ?? null,
         source: runtimeMaterialized === null
@@ -507,10 +569,12 @@ export function mergeTracedLearningBridgePayload(payload, persisted) {
     const supervisionCount = Math.max(current.supervisionCount, persistedBridge.supervisionCount);
     const routerUpdateCount = Math.max(current.routerUpdateCount, persistedBridge.routerUpdateCount);
     const teacherArtifactCount = Math.max(current.teacherArtifactCount, persistedBridge.teacherArtifactCount);
+    const retrainLineage = current.retrainLineage ?? persistedBridge.retrainLineage ?? null;
     const usedBridge = routeTraceCount !== current.routeTraceCount ||
         supervisionCount !== current.supervisionCount ||
         routerUpdateCount !== current.routerUpdateCount ||
-        teacherArtifactCount !== current.teacherArtifactCount;
+        teacherArtifactCount !== current.teacherArtifactCount ||
+        retrainLineage !== current.retrainLineage;
     if (!usedBridge) {
         return current;
     }
@@ -520,6 +584,7 @@ export function mergeTracedLearningBridgePayload(payload, persisted) {
         supervisionCount,
         routerUpdateCount,
         teacherArtifactCount,
+        retrainLineage,
         routerNoOpReason: supervisionCount > 0 || routerUpdateCount > 0 ? null : current.routerNoOpReason,
         source: {
             ...(current.source ?? {}),
