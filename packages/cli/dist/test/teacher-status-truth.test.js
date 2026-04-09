@@ -168,7 +168,7 @@ test("status truth shows stalled-learning separately from a healthy daemon", () 
             }
         }
     });
-    assert.equal(health, "daemon=healthy-daemon learning=stalled-learning detail=harvested artifacts and eligible feedback are visible, but no matched routes, supervision, or router updates are visible");
+    assert.equal(health, "daemon=healthy-daemon learning=stalled-learning detail=harvested artifacts and eligible feedback are visible, but no selected routes, supervision, or router updates are visible");
 });
 
 test("learning warnings separate no-artifact no-ops from genuinely stale teacher labels", () => {

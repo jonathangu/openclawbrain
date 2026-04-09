@@ -28,14 +28,16 @@ function hasKnownAttributionCoverage(coverage) {
             Number.isFinite(coverage.delayedCount) ||
             Number.isFinite(coverage.budgetDeferredCount));
 }
-function readSupervisedTraceCount(tracedLearning) {
-    return normalizeCount(tracedLearning?.feedbackSummary?.supervisedTraceCount ?? tracedLearning?.supervisionCount);
+function readSelectedTraceCount(tracedLearning) {
+    return normalizeCount(tracedLearning?.routeTraceCount);
 }
-function hasLoadedLearningSignal(tracedLearning) {
-    return normalizeOptionalString(tracedLearning?.materializedPackId) !== null ||
-        normalizeCount(tracedLearning?.routeTraceCount) > 0 ||
-        readSupervisedTraceCount(tracedLearning) > 0 ||
-        normalizeCount(tracedLearning?.routerUpdateCount) > 0;
+function readBudgetDeferredCount(tracedLearning) {
+    return hasKnownAttributionCoverage(tracedLearning?.attributionCoverage)
+        ? normalizeCount(tracedLearning?.attributionCoverage?.budgetDeferredCount)
+        : null;
+}
+function readMaterializedPackId(tracedLearning) {
+    return normalizeOptionalString(tracedLearning?.materializedPackId);
 }
 function summarizeOperatorLearningFlow(tracedLearning) {
     const surfaceVisible = isLearningSurfaceVisible(tracedLearning);
@@ -44,11 +46,11 @@ function summarizeOperatorLearningFlow(tracedLearning) {
         eligible: hasKnownAttributionCoverage(tracedLearning?.attributionCoverage)
             ? normalizeCount(tracedLearning?.attributionCoverage?.readyCount)
             : null,
-        loaded: surfaceVisible ? hasLoadedLearningSignal(tracedLearning) : null,
-        pack: surfaceVisible ? normalizeOptionalString(tracedLearning?.materializedPackId) ?? "none" : null,
-        matched: surfaceVisible ? normalizeCount(tracedLearning?.routeTraceCount) : null,
-        supervised: surfaceVisible ? readSupervisedTraceCount(tracedLearning) : null,
-        updated: surfaceVisible ? normalizeCount(tracedLearning?.routerUpdateCount) : null
+        selected: surfaceVisible ? readSelectedTraceCount(tracedLearning) : null,
+        budgetDeferred: readBudgetDeferredCount(tracedLearning),
+        supervised: surfaceVisible ? normalizeCount(tracedLearning?.supervisionCount) : null,
+        updated: surfaceVisible ? normalizeCount(tracedLearning?.routerUpdateCount) : null,
+        materialized: surfaceVisible ? readMaterializedPackId(tracedLearning) : null
     };
 }
 function formatKnownOperatorValue(value) {
@@ -57,30 +59,46 @@ function formatKnownOperatorValue(value) {
 function summarizeOperatorLearningState(flow) {
     if (flow.harvested === null &&
         flow.eligible === null &&
-        flow.loaded === null &&
-        flow.matched === null &&
+        flow.selected === null &&
+        flow.budgetDeferred === null &&
         flow.supervised === null &&
-        flow.updated === null) {
+        flow.updated === null &&
+        flow.materialized === null) {
         return {
             state: "learning-unknown",
             detail: "learning stage truth is not visible in the current status surface"
         };
     }
+    if ((flow.selected ?? 0) > 0 ||
+        (flow.supervised ?? 0) > 0 ||
+        (flow.updated ?? 0) > 0 ||
+        flow.materialized !== null) {
+        return {
+            state: "progress-visible",
+            detail: `selected=${flow.selected ?? 0} budgetDeferred=${flow.budgetDeferred ?? 0} supervised=${flow.supervised ?? 0} updated=${flow.updated ?? 0} materialized=${flow.materialized ?? "none"}`
+        };
+    }
     if (flow.harvested > 0 &&
         flow.eligible !== null &&
         flow.eligible > 0 &&
-        flow.matched === 0 &&
-        flow.supervised === 0 &&
-        flow.updated === 0) {
+        (flow.budgetDeferred ?? 0) > 0 &&
+        (flow.selected ?? 0) === 0 &&
+        (flow.supervised ?? 0) === 0 &&
+        (flow.updated ?? 0) === 0) {
         return {
-            state: "stalled-learning",
-            detail: "harvested artifacts and eligible feedback are visible, but no matched routes, supervision, or router updates are visible"
+            state: "budget-deferred-learning",
+            detail: "harvested artifacts and eligible feedback are visible, but ready items are budget-deferred before any selected routes, supervision, or router updates are visible"
         };
     }
-    if ((flow.matched ?? 0) > 0 || (flow.supervised ?? 0) > 0 || (flow.updated ?? 0) > 0) {
+    if (flow.harvested > 0 &&
+        flow.eligible !== null &&
+        flow.eligible > 0 &&
+        (flow.selected ?? 0) === 0 &&
+        (flow.supervised ?? 0) === 0 &&
+        (flow.updated ?? 0) === 0) {
         return {
-            state: "progress-visible",
-            detail: `matched=${flow.matched ?? 0} supervised=${flow.supervised ?? 0} updated=${flow.updated ?? 0}`
+            state: "stalled-learning",
+            detail: "harvested artifacts and eligible feedback are visible, but no selected routes, supervision, or router updates are visible"
         };
     }
     if (flow.harvested > 0 && flow.eligible === 0) {
@@ -196,11 +214,11 @@ export function formatOperatorLearningFlowSummary({ tracedLearning }) {
     return [
         `harvested=${formatKnownOperatorValue(flow.harvested)}`,
         `eligible=${formatKnownOperatorValue(flow.eligible)}`,
-        `loaded=${flow.loaded === null ? "unknown" : flow.loaded ? "yes" : "no"}`,
-        `pack=${flow.pack ?? "unknown"}`,
-        `matched=${formatKnownOperatorValue(flow.matched)}`,
+        `selected=${formatKnownOperatorValue(flow.selected)}`,
+        `budgetDeferred=${formatKnownOperatorValue(flow.budgetDeferred)}`,
         `supervised=${formatKnownOperatorValue(flow.supervised)}`,
-        `updated=${formatKnownOperatorValue(flow.updated)}`
+        `updated=${formatKnownOperatorValue(flow.updated)}`,
+        `materialized=${flow.materialized ?? "none"}`
     ].join(" ");
 }
 export function formatOperatorLearningHealthSummary({ tracedLearning, teacher }) {

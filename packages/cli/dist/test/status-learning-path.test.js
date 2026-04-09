@@ -114,6 +114,24 @@ test("learning flow summary separates harvested through updated stages without f
     const tracedLearning = {
         present: true,
         teacherArtifactCount: 4,
+        materializedPackId: "pack-status",
+        routeTraceCount: 7,
+        supervisionCount: 2,
+        routerUpdateCount: 3,
+        attributionCoverage: {
+            visible: true,
+            readyCount: 2,
+            delayedCount: 1,
+            budgetDeferredCount: 1
+        }
+    };
+    assert.equal(formatOperatorLearningFlowSummary({ tracedLearning }), "harvested=4 eligible=2 selected=7 budgetDeferred=1 supervised=2 updated=3 materialized=pack-status");
+});
+
+test("learning health summary calls out budget-deferred learning before calling it stalled", () => {
+    const tracedLearning = {
+        present: true,
+        teacherArtifactCount: 4,
         materializedPackId: null,
         routeTraceCount: 0,
         supervisionCount: 0,
@@ -125,7 +143,11 @@ test("learning flow summary separates harvested through updated stages without f
             budgetDeferredCount: 1
         }
     };
-    assert.equal(formatOperatorLearningFlowSummary({ tracedLearning }), "harvested=4 eligible=2 loaded=no pack=none matched=0 supervised=0 updated=0");
+    const teacher = {
+        enabled: true,
+        healthy: true
+    };
+    assert.equal(formatOperatorLearningHealthSummary({ tracedLearning, teacher }), "daemon=healthy-daemon learning=budget-deferred-learning detail=harvested artifacts and eligible feedback are visible, but ready items are budget-deferred before any selected routes, supervision, or router updates are visible");
 });
 
 test("learning health summary distinguishes a healthy daemon from stalled learning", () => {
@@ -138,12 +160,13 @@ test("learning health summary distinguishes a healthy daemon from stalled learni
         routerUpdateCount: 0,
         attributionCoverage: {
             visible: true,
-            readyCount: 2
+            readyCount: 2,
+            budgetDeferredCount: 0
         }
     };
     const teacher = {
         enabled: true,
         healthy: true
     };
-    assert.equal(formatOperatorLearningHealthSummary({ tracedLearning, teacher }), "daemon=healthy-daemon learning=stalled-learning detail=harvested artifacts and eligible feedback are visible, but no matched routes, supervision, or router updates are visible");
+    assert.equal(formatOperatorLearningHealthSummary({ tracedLearning, teacher }), "daemon=healthy-daemon learning=stalled-learning detail=harvested artifacts and eligible feedback are visible, but no selected routes, supervision, or router updates are visible");
 });
