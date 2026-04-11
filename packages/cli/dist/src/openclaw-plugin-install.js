@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, readdirSync, renameSync, writeFileSync } from "node:fs";
 import path from "node:path";
 export const OPENCLAWBRAIN_PLUGIN_ID = "openclawbrain";
 export const OPENCLAWBRAIN_SHADOW_PACKAGE_NAME = "openclawbrain";
@@ -103,6 +103,20 @@ function listCandidateExtensionDirs(extensionsDir) {
         }
     }
     return candidates.sort((left, right) => left.localeCompare(right));
+}
+function inspectOpenClawBrainPluginInstallsForExtensionsDir(openclawHome, extensionsDir, pluginId) {
+    if (!existsSync(extensionsDir)) {
+        return [];
+    }
+    return listCandidateExtensionDirs(extensionsDir)
+        .map((extensionDir) => inspectOpenClawBrainPluginInstall(extensionDir, pluginId))
+        .filter((install) => install !== null)
+        .map((install) => ({
+        ...install,
+        openclawHome,
+        extensionsDir
+    }))
+        .sort(compareInstalledPluginPriority);
 }
 function inferInstallLayout(input) {
     if (input.packageName === OPENCLAWBRAIN_NATIVE_PACKAGE_NAME) {
@@ -314,29 +328,40 @@ export function describeOpenClawBrainInstallIdentity(install) {
 export function findInstalledOpenClawBrainPlugin(openclawHome, pluginId = OPENCLAWBRAIN_PLUGIN_ID) {
     const resolvedOpenclawHome = path.resolve(openclawHome);
     const extensionsDir = path.join(resolvedOpenclawHome, "extensions");
-    if (!existsSync(extensionsDir)) {
-        return {
-            openclawHome: resolvedOpenclawHome,
-            extensionsDir,
-            selectedInstall: null,
-            additionalInstalls: []
-        };
-    }
-    const installs = listCandidateExtensionDirs(extensionsDir)
-        .map((extensionDir) => inspectOpenClawBrainPluginInstall(extensionDir, pluginId))
-        .filter((install) => install !== null)
-        .map((install) => ({
-        ...install,
-        openclawHome: resolvedOpenclawHome,
-        extensionsDir
-    }))
-        .sort(compareInstalledPluginPriority);
+    const installs = inspectOpenClawBrainPluginInstallsForExtensionsDir(resolvedOpenclawHome, extensionsDir, pluginId);
     return {
         openclawHome: resolvedOpenclawHome,
         extensionsDir,
         selectedInstall: installs[0] ?? null,
         additionalInstalls: installs.slice(1)
     };
+}
+export function findOpenClawBrainNestedDuplicateInstalls(openclawHome, pluginId = OPENCLAWBRAIN_PLUGIN_ID) {
+    const resolvedOpenclawHome = path.resolve(openclawHome);
+    const nestedOpenclawHome = path.join(resolvedOpenclawHome, ".openclaw");
+    const extensionsDir = path.join(nestedOpenclawHome, "extensions");
+    return inspectOpenClawBrainPluginInstallsForExtensionsDir(nestedOpenclawHome, extensionsDir, pluginId);
+}
+function formatQuarantineTimestamp(date = new Date()) {
+    return date.toISOString().replace(/[-:]/g, "").replace(/\.\d{3}Z$/, "Z");
+}
+export function quarantineOpenClawBrainNestedDuplicateInstalls(openclawHome, options = {}) {
+    const nestedInstalls = findOpenClawBrainNestedDuplicateInstalls(openclawHome, options.pluginId);
+    if (nestedInstalls.length === 0) {
+        return [];
+    }
+    const resolvedOpenclawHome = path.resolve(openclawHome);
+    const quarantineRoot = path.resolve(options.quarantineRoot ?? path.join(path.dirname(resolvedOpenclawHome), ".openclawbrain", "quarantine"));
+    mkdirSync(quarantineRoot, { recursive: true });
+    const timestampToken = options.timestampToken ?? formatQuarantineTimestamp(options.now);
+    return nestedInstalls.map((install, index) => {
+        const targetPath = path.join(quarantineRoot, `${OPENCLAWBRAIN_PLUGIN_ID}-nested-duplicate-${timestampToken}${index === 0 ? "" : `-${index + 1}`}`);
+        renameSync(install.extensionDir, targetPath);
+        return {
+            install,
+            quarantinedPath: targetPath
+        };
+    });
 }
 export function resolveOpenClawBrainInstallTarget(openclawHome) {
     const installedPlugin = findInstalledOpenClawBrainPlugin(openclawHome);

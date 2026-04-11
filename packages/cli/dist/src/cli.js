@@ -18,7 +18,7 @@ import { inspectActivationState, loadPackFromActivation, promoteCandidatePack, r
 import { resolveActivationRoot } from "./resolve-activation-root.js";
 import { describeOpenClawHomeInspection, discoverOpenClawHomes, formatOpenClawHomeLayout, formatOpenClawHomeProfileSource, inspectOpenClawHome } from "./openclaw-home-layout.js";
 import { describeOpenClawBrainHotfixBoundary, inspectOpenClawBrainHookStatus, inspectOpenClawBrainPluginAllowlist } from "./openclaw-hook-truth.js";
-import { describeOpenClawBrainInstallIdentity, describeOpenClawBrainInstallLayout, findInstalledOpenClawBrainPlugin, getOpenClawBrainKnownPluginIds, normalizeOpenClawBrainPluginsConfig, pinInstalledOpenClawBrainPluginActivationRoot, resolveOpenClawBrainInstallTarget } from "./openclaw-plugin-install.js";
+import { describeOpenClawBrainInstallIdentity, describeOpenClawBrainInstallLayout, findInstalledOpenClawBrainPlugin, getOpenClawBrainKnownPluginIds, normalizeOpenClawBrainPluginsConfig, pinInstalledOpenClawBrainPluginActivationRoot, quarantineOpenClawBrainNestedDuplicateInstalls, resolveOpenClawBrainInstallTarget } from "./openclaw-plugin-install.js";
 import { buildOpenClawBrainConvergeRestartPlan, classifyOpenClawBrainConvergeVerification, describeOpenClawBrainConvergeChangeReasons, diffOpenClawBrainConvergeRuntimeFingerprint, finalizeOpenClawBrainConvergeResult, planOpenClawBrainConvergePluginAction, shouldReplaceOpenClawBrainInstallBeforeConverge } from "./install-converge.js";
 import { loadAttachmentPolicyDeclaration, resolveEffectiveAttachmentPolicyTruth, writeAttachmentPolicyDeclaration } from "./attachment-policy-truth.js";
 import { DEFAULT_WATCH_POLL_INTERVAL_SECONDS, buildNormalizedEventExportFromScannedEvents, bootstrapRuntimeAttach, clearOpenClawProfileRuntimeLoadProof, compileRuntimeContext, createAsyncTeacherLiveLoop, createOpenClawLocalSessionTail, createRuntimeEventExportScanner, describeCurrentProfileBrainStatusWithReport, formatOperatorRollbackReport, listOpenClawProfileRuntimeLoadProofs, loadRuntimeEventExportBundle, loadWatchTeacherSnapshotState, persistWatchTeacherSnapshot, rollbackRuntimeAttach, resolveAttachmentRuntimeLoadProofsPath, resolveOperatorTeacherSnapshotPath, resolveAsyncTeacherLiveLoopSnapshotPath, resolveWatchSessionTailCursorPath, resolveWatchStateRoot, resolveWatchTeacherSnapshotPath, scanLiveEventExport, scanRecordedSession, summarizeLearningPathFromMaterialization, summarizeNormalizedEventExportLabelFlow, summarizeTeacherNoArtifactCycle, writeScannedEventExportBundle } from "./index.js";
@@ -1801,6 +1801,7 @@ function readInstallRuntimeFingerprint(openclawHome) {
     };
 }
 function runOpenClawBrainConvergePluginStep(openclawHome) {
+    const quarantinedNestedDuplicates = quarantineOpenClawBrainNestedDuplicateInstalls(openclawHome);
     const before = readInstallRuntimeFingerprint(openclawHome);
     const plan = planOpenClawBrainConvergePluginAction(before);
     const pluginManagerEnv = {
@@ -1813,7 +1814,9 @@ function runOpenClawBrainConvergePluginStep(openclawHome) {
             command: null,
             changed: false,
             changeReasons: [],
-            detail: "Skipped the OpenClaw plugin manager because the authoritative split-package plugin already matches the daemon/runtime version and a no-op refresh would only churn volatile install metadata.",
+            detail: `${quarantinedNestedDuplicates.length > 0
+                ? `Quarantined ${quarantinedNestedDuplicates.length} stale nested duplicate plugin install${quarantinedNestedDuplicates.length === 1 ? "" : "s"} before converge. `
+                : ""}Skipped the OpenClaw plugin manager because the authoritative split-package plugin already matches the daemon/runtime version and a no-op refresh would only churn volatile install metadata.`,
             warning: null,
             capture: null,
             before,
@@ -1856,9 +1859,11 @@ function runOpenClawBrainConvergePluginStep(openclawHome) {
         command: capture.shellCommand,
         changed: diff.changed,
         changeReasons: diff.reasons,
-        detail: diff.changed
+        detail: `${quarantinedNestedDuplicates.length > 0
+            ? `Quarantined ${quarantinedNestedDuplicates.length} stale nested duplicate plugin install${quarantinedNestedDuplicates.length === 1 ? "" : "s"} before converge. `
+            : ""}${diff.changed
             ? `${uninstallCapture !== null ? "Replaced legacy/plugin-shadow install and " : ""}${plan.action === "install" ? "installed" : "refreshed"} plugin-manager state: ${describeOpenClawBrainConvergeChangeReasons(diff.reasons)}`
-            : `${plan.action === "install" ? "Ran install" : "Ran update"} through the OpenClaw plugin manager, but no runtime-affecting plugin delta was detected`,
+            : `${plan.action === "install" ? "Ran install" : "Ran update"} through the OpenClaw plugin manager, but no runtime-affecting plugin delta was detected`}`,
         warning: null,
         capture,
         before,

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
+import { existsSync, mkdtempSync, mkdirSync, readFileSync, realpathSync, rmSync, writeFileSync } from "node:fs";
 import os from "node:os";
 import path from "node:path";
 import { pathToFileURL } from "node:url";
@@ -8,7 +8,7 @@ import { inspectOpenClawBrainHookStatus } from "../src/openclaw-hook-truth.js";
 import { listOpenClawProfileRuntimeLoadProofs, recordOpenClawProfileRuntimeLoadProof } from "../src/attachment-truth.js";
 import { resolveActivationRoot } from "../src/resolve-activation-root.js";
 import { inspectInstalledOpenClawBrainExtension, proveInstalledOpenClawBrainExtensionLoad } from "../src/shadow-extension-proof.js";
-import { findInstalledOpenClawBrainPlugin, normalizeOpenClawBrainPluginsConfig, pinInstalledOpenClawBrainPluginActivationRoot, resolveOpenClawBrainInstallTarget } from "../src/openclaw-plugin-install.js";
+import { findInstalledOpenClawBrainPlugin, findOpenClawBrainNestedDuplicateInstalls, normalizeOpenClawBrainPluginsConfig, pinInstalledOpenClawBrainPluginActivationRoot, quarantineOpenClawBrainNestedDuplicateInstalls, resolveOpenClawBrainInstallTarget } from "../src/openclaw-plugin-install.js";
 function canonicalizePath(filePath) {
     try {
         return realpathSync(filePath);
@@ -179,6 +179,26 @@ test("hook truth recognizes generated shadow installs", (t) => {
     assert.equal(inspection.loadability, "loadable");
     assert.equal(inspection.installLayout, "generated_shadow_extension");
     assert.equal(inspection.hookPath, path.join(openclawHome, "extensions", "openclawbrain", "index.ts"));
+});
+test("nested duplicate detection and quarantine repair stale inner OpenClawBrain installs", (t) => {
+    const root = createTempRoot(t);
+    const openclawHome = createOpenClawHome(root);
+    const nestedOpenclawHome = createOpenClawHome(openclawHome);
+    const activationRoot = path.join(root, ".openclawbrain", "activation");
+    mkdirSync(activationRoot, { recursive: true });
+    const nestedExtensionDir = createShadowInstall(nestedOpenclawHome, activationRoot);
+    const detected = findOpenClawBrainNestedDuplicateInstalls(openclawHome);
+    assert.equal(detected.length, 1);
+    assert.equal(detected[0]?.extensionDir, nestedExtensionDir);
+    const quarantineRoot = path.join(root, "quarantine");
+    const quarantined = quarantineOpenClawBrainNestedDuplicateInstalls(openclawHome, {
+        quarantineRoot,
+        timestampToken: "20260411T125016Z"
+    });
+    assert.equal(quarantined.length, 1);
+    assert.equal(existsSync(nestedExtensionDir), false);
+    assert.equal(existsSync(quarantined[0]?.quarantinedPath ?? path.join(quarantineRoot, "missing")), true);
+    assert.equal(findOpenClawBrainNestedDuplicateInstalls(openclawHome).length, 0);
 });
 test("hook truth, runtime proofs, and activation-root discovery recognize native package installs", (t) => {
     const root = createTempRoot(t);

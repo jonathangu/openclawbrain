@@ -27,6 +27,10 @@ export interface OpenClawBrainInstalledPluginLookup {
     selectedInstall: OpenClawBrainInstalledPlugin | null;
     additionalInstalls: OpenClawBrainInstalledPlugin[];
 }
+export interface OpenClawBrainQuarantinedNestedDuplicateInstall {
+    install: OpenClawBrainInstalledPlugin;
+    quarantinedPath: string;
+}
 export declare const OPENCLAWBRAIN_PLUGIN_ID = "openclawbrain";
 export declare const OPENCLAWBRAIN_SHADOW_PACKAGE_NAME = "openclawbrain";
 export declare const OPENCLAWBRAIN_NATIVE_PACKAGE_NAME = "@openclawbrain/openclaw";
@@ -43,6 +47,13 @@ export declare function normalizeOpenClawBrainPluginsConfig(pluginsConfig: Recor
 };
 export declare function describeOpenClawBrainInstallIdentity(install: OpenClawBrainInstalledPlugin): string;
 export declare function findInstalledOpenClawBrainPlugin(openclawHome: string, pluginId?: string): OpenClawBrainInstalledPluginLookup;
+export declare function findOpenClawBrainNestedDuplicateInstalls(openclawHome: string, pluginId?: string): OpenClawBrainInstalledPlugin[];
+export declare function quarantineOpenClawBrainNestedDuplicateInstalls(openclawHome: string, options?: {
+    pluginId?: string;
+    quarantineRoot?: string;
+    timestampToken?: string;
+    now?: Date;
+}): OpenClawBrainQuarantinedNestedDuplicateInstall[];
 export declare function resolveOpenClawBrainInstallTarget(openclawHome: string): OpenClawBrainInstallTarget;
 export declare function pinInstalledOpenClawBrainPluginActivationRoot(loaderEntryPath: string, activationRoot: string): void;
 export declare function resolveOpenClawHomeFromExtensionEntryPath(extensionEntryPath: string): string | null;
