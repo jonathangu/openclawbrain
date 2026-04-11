@@ -4,6 +4,26 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.41
+
+`0.4.41` is the cold-start lineage visibility release: it keeps the `0.4.40` install-convergence and operator/proof lane, and it makes the learned-route inheritance from the approved cold-start prior visible again on the shipped status/proof surfaces.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.41`
+- `@openclawbrain/cli@0.4.41`
+
+**Changes**
+
+- makes the packaged traced-learning bridge derive `retrainLineage` from durable promotion truth when the persisted status surface is thin
+- makes `status --detailed` and `proof` report visible learned-route lineage for the active pack instead of falling back to `retrain_lineage_not_visible`
+- keeps fresh homes on the stronger cold-start prior and keeps retrains rooted in the same live `route_fn` family while making that inheritance legible to operators
+- aligns README, docs, release notes, and split-package version surfaces to `0.4.41`
+
+**Full release note**
+
+- [docs/release-notes-0.4.41.md](docs/release-notes-0.4.41.md)
+
 ## 0.4.40
 
 `0.4.40` is the unified operator-truth / proof release: it keeps the `0.4.39` install-convergence lane, and it packages the just-landed bounded-anytime, economics, route-quality, and provenance surfaces into the public split-package release.
