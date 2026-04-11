@@ -152,6 +152,24 @@ function resolvePathSpec(spec, context) {
   return path.resolve(baseRoot, resolveToken(normalized.path, context));
 }
 
+function mergeCanonicalScanRoots(scanRoots, defaults) {
+  const merged = Array.isArray(scanRoots) ? [...scanRoots] : [];
+  for (const required of defaults) {
+    const normalizedRequired = normalizePathSpec(required);
+    const present = merged.some((candidate) => {
+      const normalizedCandidate = normalizePathSpec(candidate);
+      return normalizedCandidate
+        && normalizedRequired
+        && normalizedCandidate.base === normalizedRequired.base
+        && normalizedCandidate.path === normalizedRequired.path;
+    });
+    if (!present) {
+      merged.push(required);
+    }
+  }
+  return merged;
+}
+
 function defaultConfig(context) {
   return {
     contract: CONTRACT,
@@ -160,6 +178,7 @@ function defaultConfig(context) {
     freshnessThresholdDays: 21,
     scanRoots: [
       { base: "workspace", path: "artifacts" },
+      { base: "repo", path: "artifacts" },
       { base: "repo", path: "docs/evidence" },
     ],
     excludeRoots: [
@@ -198,7 +217,9 @@ function loadConfig(configPath, context) {
       ...defaults,
       ...parsed,
       openclawHome: typeof parsed.openclawHome === "string" ? parsed.openclawHome : defaults.openclawHome,
-      scanRoots: Array.isArray(parsed.scanRoots) && parsed.scanRoots.length > 0 ? parsed.scanRoots : defaults.scanRoots,
+      scanRoots: Array.isArray(parsed.scanRoots) && parsed.scanRoots.length > 0
+        ? mergeCanonicalScanRoots(parsed.scanRoots, defaults.scanRoots)
+        : defaults.scanRoots,
       excludeRoots: Array.isArray(parsed.excludeRoots) ? parsed.excludeRoots : defaults.excludeRoots,
       statusCommand,
     };
@@ -2175,7 +2196,7 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs, statusPro
     feedbackTruth,
     attributionCoverageTruth,
     replayFreshnessTruth,
-    latestOperatorHealth: latestHost?.operatorHealth ?? null,
+    latestOperatorHealth: status?.operatorHealth ?? latestHost?.operatorHealth ?? null,
     performance: {
       scanMs: scanDurationMs,
       replayBundleCount: replayBundles.length,
