@@ -4,7 +4,7 @@ Use this index to find the shortest path for your role.
 
 Public operator front door: `openclawbrain install --openclaw-home <path>` for one OpenClaw home. That path can be the default `~/.openclaw`, a profile-specific home, or an explicit nonstandard directory like `./openclaw-cormorantai`. Fresh homes default to the cold-start prior. Existing homes rerun the same lane and keep their learned preferences on top while the stronger generic prior gets rebuilt underneath. When the daemon-side CLI/runtime surface has already moved ahead, `install` now refreshes the stale installed hook/plugin state for that same home before you verify. `status --detailed` is the quick check, and it reports the daemon-side CLI surface separately from the installed hook/runtime-guard surface so skew is explicit. Durable proof remains a separate command today.
 
-Current `0.4.41` operator/proof surfaces keep the bounded-anytime, route-quality, economics-scorecard, and provenance-audit story from `0.4.40`, and add the missing cold-start lineage truth: detailed status and proof now show what the learned route inherited from when durable promotion truth exists. The install lane does not change; the same lane is now more inspectable and more honest about inherited routing state.
+Current `0.4.42` operator/proof surfaces keep the bounded-anytime, route-quality, economics-scorecard, provenance-audit, and cold-start-lineage story from `0.4.41`, and add install self-heal for stale nested duplicate OpenClawBrain surfaces. The install lane does not change; the same lane now repairs that duplicate-surface class before you verify.
 
 ## Getting started
 
@@ -34,7 +34,7 @@ Current `0.4.41` operator/proof surfaces keep the bounded-anytime, route-quality
 
 ## Release history
 
-- [Current release notes (0.4.41)](release-notes-0.4.41.md)
+- [Current release notes (0.4.42)](release-notes-0.4.42.md)
 - [Full changelog](../CHANGELOG.md)
 
 ## Project notes

@@ -4,6 +4,26 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.42
+
+`0.4.42` is the install self-heal release: it keeps the `0.4.41` cold-start lineage visibility and operator/proof lane, and it fixes the remaining stale nested-duplicate install seam where a real home could fail converge because a second extension copy lived under a nested OpenClaw home.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.42`
+- `@openclawbrain/cli@0.4.42`
+
+**Changes**
+
+- auto-detects and quarantines stale nested duplicate OpenClawBrain installs before plugin-manager converge
+- lets the canonical `install -> gateway restart -> status --detailed -> proof` lane repair that duplicate-surface class instead of failing halfway through
+- keeps the `0.4.41` cold-start lineage visibility and operator/proof story intact
+- aligns README, docs, release notes, and split-package version surfaces to `0.4.42`
+
+**Full release note**
+
+- [docs/release-notes-0.4.42.md](docs/release-notes-0.4.42.md)
+
 ## 0.4.41
 
 `0.4.41` is the cold-start lineage visibility release: it keeps the `0.4.40` install-convergence and operator/proof lane, and it makes the learned-route inheritance from the approved cold-start prior visible again on the shipped status/proof surfaces.
