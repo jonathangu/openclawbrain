@@ -32,7 +32,7 @@ function makeCapture(command, args, overrides = {}) {
 
 function createProofFixture(t, options = {}) {
     const root = createTempRoot(t);
-    const openclawHome = options.openclawHome ?? path.join(root, ".openclaw-Tern");
+    const openclawHome = options.openclawHome ?? path.join(root, ".openclaw-example");
     const activationRoot = path.join(root, ".openclawbrain", "activation");
     const bundleDir = path.join(root, "artifacts", "proof-bundle");
     const gatewayLogPath = path.join(root, "gateway.log");
@@ -40,7 +40,7 @@ function createProofFixture(t, options = {}) {
     mkdirSync(openclawHome, { recursive: true });
     if (options.profileName !== null) {
         writeFileSync(path.join(openclawHome, "openclaw.json"), JSON.stringify({
-            profile: options.profileName ?? "Tern"
+            profile: options.profileName ?? "ExampleProfile"
         }, null, 2));
     }
     if (options.gatewayLogText !== null) {
@@ -172,7 +172,7 @@ function captureProofScenario(fixture, labelOutputs, overrides = {}) {
 
 test("proof parser resolves paths and command strings for the public operator lane", (t) => {
     const root = createTempRoot(t);
-    const openclawHome = path.join(root, ".openclaw Tern");
+    const openclawHome = path.join(root, ".openclaw example");
     mkdirSync(openclawHome, { recursive: true });
     const parsed = parseProofCliArgs([
         "--openclaw-home",
@@ -224,7 +224,7 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     const fixture = createProofFixture(t);
     const { result, captures } = captureProofScenario(fixture, createHealthyLabelOutputs(fixture));
     assert.equal(result.verdict.verdict, "success_and_proven");
-    assert.equal(result.gatewayProfile, "Tern");
+    assert.equal(result.gatewayProfile, "ExampleProfile");
     assert.equal(result.runtimeLoadProofPath, fixture.runtimeLoadProofPath);
     assert.ok(existsSync(path.join(fixture.bundleDir, "summary.md")));
     assert.ok(existsSync(path.join(fixture.bundleDir, "steps.json")));
@@ -242,7 +242,7 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     const runtimeProofSnapshot = JSON.parse(readFileSync(path.join(fixture.bundleDir, "runtime-load-proof.json"), "utf8"));
     const coverageSnapshot = JSON.parse(readFileSync(path.join(fixture.bundleDir, "coverage-snapshot.json"), "utf8"));
     const hardeningSnapshot = JSON.parse(readFileSync(path.join(fixture.bundleDir, "hardening-snapshot.json"), "utf8"));
-    assert.equal(stepsPayload.gatewayProfile, "Tern");
+    assert.equal(stepsPayload.gatewayProfile, "ExampleProfile");
     assert.equal(stepsPayload.steps.length, 5);
     assert.equal(verdictPayload.verdict.verdict, "success_and_proven");
     assert.match(summary, /bundle verdict: \*\*success_and_proven\*\*/);
@@ -292,8 +292,8 @@ test("proof capture writes one durable bundle with proof artifacts and profile-s
     assert.equal(verdictPayload.attributionCoverageLine, "attrCover   completedWithoutEvaluation=0 ready=1 delayed=0 budgetDeferred=0");
     assert.equal(verdictPayload.learningPathLine, "path        source=materialized_candidate pg=v2 method=policy_gradient_v2 target=trajectory_reconstruction connect=4 trajectories=12 bindingQuality=exact_only");
     assert.deepEqual(captures[0]?.args, ["install", "--openclaw-home", fixture.openclawHome, "--json"]);
-    assert.deepEqual(captures[1]?.args, ["gateway", "restart", "--profile", "Tern"]);
-    assert.deepEqual(captures[2]?.args, ["gateway", "status", "--profile", "Tern"]);
+    assert.deepEqual(captures[1]?.args, ["gateway", "restart", "--profile", "ExampleProfile"]);
+    assert.deepEqual(captures[2]?.args, ["gateway", "status", "--profile", "ExampleProfile"]);
 });
 
 test("proof capture forwards explicit gateway probe overrides to gateway status", (t) => {
@@ -306,7 +306,7 @@ test("proof capture forwards explicit gateway probe overrides to gateway status"
         "gateway",
         "status",
         "--profile",
-        "Tern",
+        "ExampleProfile",
         "--url",
         "ws://127.0.0.1:19081",
         "--token",

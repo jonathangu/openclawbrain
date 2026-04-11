@@ -3185,15 +3185,15 @@ export const FIXTURE_CURRENT_PROFILE_BRAIN_STATUS = {
     hook: {
         noun: "Hook",
         scope: "exact_openclaw_home",
-        openclawHome: "/Users/example/.openclaw-Tern",
-        hookPath: "/Users/example/.openclaw-Tern/extensions/openclawbrain/index.ts",
-        runtimeGuardPath: "/Users/example/.openclaw-Tern/extensions/openclawbrain/runtime-guard.js",
-        manifestPath: "/Users/example/.openclaw-Tern/extensions/openclawbrain/openclaw.plugin.json",
+        openclawHome: "/Users/example/.openclaw-example",
+        hookPath: "/Users/example/.openclaw-example/extensions/openclawbrain/index.ts",
+        runtimeGuardPath: "/Users/example/.openclaw-example/extensions/openclawbrain/runtime-guard.js",
+        manifestPath: "/Users/example/.openclaw-example/extensions/openclawbrain/openclaw.plugin.json",
         installState: "installed",
         loadability: "loadable",
         loadProof: "status_probe_ready",
         desynced: false,
-        detail: "profile hook is installed at ~/.openclaw-Tern/extensions/openclawbrain"
+        detail: "profile hook is installed at ~/.openclaw-example/extensions/openclawbrain"
     },
     attachment: {
         noun: "Attachment",

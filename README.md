@@ -19,7 +19,7 @@ openclawbrain status --openclaw-home ./openclaw-cormorantai --detailed
 openclawbrain proof --openclaw-home ./openclaw-cormorantai
 ```
 
-`install` writes or refreshes the hook for your chosen OpenClaw home. That can be the default `~/.openclaw`, a profile home like `~/.openclaw-Tern`, or an explicit nonstandard path like `./openclaw-cormorantai`. When the daemon/runtime surface has already moved ahead of the installed hook package, `install` now refreshes that stale installed plugin state for the same home instead of silently preserving the skew. `status --detailed` verifies the wiring for that same home. `proof` captures a durable evidence bundle you can inspect or keep.
+`install` writes or refreshes the hook for your chosen OpenClaw home. That can be the default `~/.openclaw`, a profile home like `~/.openclaw-example`, or an explicit nonstandard path like `./openclaw-cormorantai`. When the daemon/runtime surface has already moved ahead of the installed hook package, `install` now refreshes that stale installed plugin state for the same home instead of silently preserving the skew. `status --detailed` verifies the wiring for that same home. `proof` captures a durable evidence bundle you can inspect or keep.
 
 Fresh homes default to the cold-start prior. Existing homes rerun the same install lane and keep their saved preferences on top while OpenClawBrain rebuilds the stronger generic prior underneath them instead of wiping them.
 

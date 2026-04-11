@@ -34,7 +34,7 @@ This release keeps that version identity all the way through detailed status and
 Use the same exact `--openclaw-home` path through install, status, proof, rollback, and troubleshooting. That path can be:
 
 - the default `~/.openclaw`
-- a profile-specific home like `~/.openclaw-Tern`
+- a profile-specific home like `~/.openclaw-example`
 - an explicit nonstandard path like `./openclaw-cormorantai`
 
 The important thing is not the shape of the path; it is pinning the same chosen home consistently.

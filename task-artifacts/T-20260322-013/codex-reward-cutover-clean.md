@@ -26,7 +26,7 @@
 
 ## Environment Note
 - `npm ci --offline`
-  Result: failed with `EPERM` on `/Users/guclaw/.npm/_cacache` because the cache contains root-owned files, so a local `vitest` install could not be materialized in this sandbox.
+  Result: failed with `EPERM` on `/Users/example/.npm/_cacache` because the cache contains root-owned files, so a local `vitest` install could not be materialized in this sandbox.
 
 ## Residual Risks
 - The cutover was executed with direct Node TS-transform verification instead of the repo's `vitest` runner because the local dependency install is blocked by the npm cache ownership issue above.
@@ -34,9 +34,9 @@
 - Evidence tables remain in place for teacher evidence/tracing and historical compatibility, even though the old message-harvest reward path was removed.
 
 ## Artifact Note
-- Writing the requested files directly under `/Users/guclaw/.openclaw/workspace/task-artifacts/...` and `/Users/guclaw/.openclaw/workspace/task-status/...` was blocked by sandbox permissions, so fallback copies were written inside this worktree.
+- Writing the requested files directly under `/Users/example/.openclaw/workspace/task-artifacts/...` and `/Users/example/.openclaw/workspace/task-status/...` was blocked by sandbox permissions, so fallback copies were written inside this worktree.
 
 ## Commit Note
 - `git commit -m "Cut over brain rewards to observations and teacher-v2"`
-  Result: failed with `fatal: Unable to create '/Users/guclaw/.openclaw/workspace/openclawbrain/.git/worktrees/T-20260322-013-reward-cutover-clean/index.lock': Operation not permitted`
+  Result: failed with `fatal: Unable to create '/Users/example/.openclaw/workspace/openclawbrain/.git/worktrees/T-20260322-013-reward-cutover-clean/index.lock': Operation not permitted`
   Reason: the worktree's shared git metadata directory is outside the writable sandbox.

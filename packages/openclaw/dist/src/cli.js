@@ -486,7 +486,7 @@ function operatorCliHelp() {
         "  openclawbrain-ops scan --session <trace.json> --root <path> [options]    # compatibility alias",
         "",
         "Options:",
-        "  --openclaw-home <path>      OpenClaw home dir for install/attach/detach/uninstall (e.g. ~/.openclaw-Tern or ~/.openclaw). Also pins status/rollback/context/history/learn to that installed target when applicable.",
+        "  --openclaw-home <path>      OpenClaw home dir for install/attach/detach/uninstall (e.g. ~/.openclaw-example or ~/.openclaw). Also pins status/rollback/context/history/learn to that installed target when applicable.",
         "  --shared                    Set brain-attachment-policy to shared instead of dedicated (install/attach only).",
         `  --skip-embedder-provision  Skip the default Ollama ${DEFAULT_OLLAMA_EMBEDDING_MODEL} pull before install/attach bootstrap. Use only when intentionally deferring embedder setup. Also supports ${OPENCLAWBRAIN_INSTALL_SKIP_EMBEDDER_PROVISION_ENV}=1.`,
         "  --activation-root <path>    Explicit activation root for attach/watch/daemon and other stateful commands; install/attach default to sibling .openclawbrain/activation next to the selected OpenClaw home.",

@@ -18,8 +18,8 @@ const heldoutExportPath = process.env.LANE_HELDOUT_EXPORT_PATH ?? path.join(repo
 const trainArtifactDir = process.env.LANE_TRAIN_ARTIFACT_DIR ?? path.join(repoRoot, 'artifacts', 'cold-start-router-approved-export', 'real-approved-router-train.hotpotqa-musique.v2');
 const candidateLabel = process.env.LANE_CANDIDATE_LABEL ?? 'approved v2 candidate';
 
-const reportPath = process.env.LANE_REPORT_PATH ?? `/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260405-147/lane-${laneId}-heldout-eval.md`;
-const statusPath = process.env.LANE_STATUS_PATH ?? `/Users/guclaw/.openclaw/workspace/task-status/T-20260405-147/lane-${laneId}.json`;
+const reportPath = process.env.LANE_REPORT_PATH ?? `/Users/example/.openclaw/workspace/task-artifacts/T-20260405-147/lane-${laneId}-heldout-eval.md`;
+const statusPath = process.env.LANE_STATUS_PATH ?? `/Users/example/.openclaw/workspace/task-status/T-20260405-147/lane-${laneId}.json`;
 const changedFiles = [
   'scripts/lane-ac-heldout-eval.ts',
   reportPath,

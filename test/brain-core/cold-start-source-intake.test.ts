@@ -38,7 +38,7 @@ describe("cold-start source intake bootstrap", () => {
 
     expect(summary).toMatchObject({
       registryId: "cold-start-source-intake-bootstrap-v1",
-      owner: "guclaw",
+      owner: "operator",
       entryCount: 7,
       materializedSnapshotCount: 5,
       placeholderCount: 7,

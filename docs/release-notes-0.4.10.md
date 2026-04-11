@@ -31,7 +31,7 @@ This release is the capstone of the native V2 policy-gradient work:
 ## Verification
 
 ```bash
-npx @openclawbrain/cli@0.4.10 learn --activation-root /Users/guclaw/.openclawbrain/activation --json materialized/promoted pack-d099f991
+npx @openclawbrain/cli@0.4.10 learn --activation-root /Users/example/.openclawbrain/activation --json materialized/promoted pack-d099f991
 ```
 
 Live detailed status output confirms:

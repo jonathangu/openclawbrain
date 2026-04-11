@@ -135,7 +135,7 @@ describe("classifyOpenClawBrainConvergeVerification — compat-package blocking"
       surfaceBoundary: "split_surfaces",
       surfaceSkew: "split_path_version_skew",
       surfaceConvergeState: "half_converged",
-      selectedOpenClawHome: "/tmp/.openclaw-Tern",
+      selectedOpenClawHome: "/tmp/.openclaw-example",
       daemonPackage: "@openclawbrain/cli@1.2.2",
       hookPackage: "@openclawbrain/openclaw@1.2.3",
     });
@@ -268,7 +268,7 @@ describe("classifyOpenClawBrainConvergeVerification — proof promotion", () => 
       surfaceSkew: "split_path_version_skew",
       daemonPackage: "@openclawbrain/cli@0.4.30",
       hookPackage: "@openclawbrain/openclaw@0.4.28",
-      selectedOpenClawHome: "/tmp/.openclaw-Tern",
+      selectedOpenClawHome: "/tmp/.openclaw-example",
       restartRequired: false,
       restartPerformed: false,
     });

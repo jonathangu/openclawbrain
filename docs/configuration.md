@@ -6,7 +6,7 @@ OpenClawBrain works with either the default install path or an explicit nonstand
 
 Keep the same `--openclaw-home` value through the whole operator flow. The public lane stays pinned to one OpenClaw home.
 
-That home can be `~/.openclaw`, a profile-specific path like `~/.openclaw-Tern`, or a repo-local/custom path like `./openclaw-cormorantai`.
+That home can be `~/.openclaw`, a profile-specific path like `~/.openclaw-example`, or a repo-local/custom path like `./openclaw-cormorantai`.
 
 ```bash
 openclawbrain install --openclaw-home ./openclaw-cormorantai

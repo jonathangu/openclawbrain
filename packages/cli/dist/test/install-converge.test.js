@@ -105,7 +105,7 @@ test("converge diff and restart plan skip restart when no runtime-affecting inst
         ...before
     });
     const restart = buildOpenClawBrainConvergeRestartPlan({
-        profileName: "Tern",
+        profileName: "ExampleProfile",
         changeReasons: diff.reasons
     });
     assert.equal(diff.changed, false);
@@ -142,7 +142,7 @@ test("converge diff tracks daemon runtime changes without forcing a gateway rest
         daemonRuntimePackageVersion: "1.2.3"
     });
     const restart = buildOpenClawBrainConvergeRestartPlan({
-        profileName: "Tern",
+        profileName: "ExampleProfile",
         changeReasons: diff.reasons
     });
     assert.equal(diff.changed, true);
@@ -190,7 +190,7 @@ test("converge classifies manual-action and warning outcomes truthfully from sta
         surfaceBoundary: "split_surfaces",
         surfaceSkew: "split_path_version_skew",
         surfaceConvergeState: "half_converged",
-        selectedOpenClawHome: "/tmp/.openclaw-Tern",
+        selectedOpenClawHome: "/tmp/.openclaw-example",
         daemonPackage: "@openclawbrain/cli@1.2.2",
         hookPackage: "@openclawbrain/openclaw@1.2.3"
     });
@@ -305,7 +305,7 @@ test("converge fails loudly when daemon and installed hook surfaces are half-con
         surfaceSkew: "split_path_version_skew",
         daemonPackage: "@openclawbrain/cli@0.4.30",
         hookPackage: "@openclawbrain/openclaw@0.4.28",
-        selectedOpenClawHome: "/tmp/.openclaw-Tern",
+        selectedOpenClawHome: "/tmp/.openclaw-example",
         restartRequired: false,
         restartPerformed: false
     });

@@ -25,7 +25,7 @@ function createTempRoot(t) {
     return root;
 }
 function createOpenClawHome(rootDir, name = ".openclaw", config = {
-    profile: "Tern",
+    profile: "ExampleProfile",
     plugins: {
         allow: ["openclawbrain"]
     }
@@ -182,8 +182,8 @@ test("hook truth recognizes generated shadow installs", (t) => {
 });
 test("hook truth, runtime proofs, and activation-root discovery recognize native package installs", (t) => {
     const root = createTempRoot(t);
-    const openclawHome = createOpenClawHome(root, ".openclaw-Tern", {
-        profile: "Tern",
+    const openclawHome = createOpenClawHome(root, ".openclaw-example", {
+        profile: "ExampleProfile",
         plugins: {
             allow: ["openclawbrain"]
         }
@@ -214,8 +214,8 @@ test("hook truth, runtime proofs, and activation-root discovery recognize native
 });
 test("allowlist truth rejects the native package install hint as a loadable plugin id", (t) => {
     const root = createTempRoot(t);
-    const openclawHome = createOpenClawHome(root, ".openclaw-Tern", {
-        profile: "Tern",
+    const openclawHome = createOpenClawHome(root, ".openclaw-example", {
+        profile: "ExampleProfile",
         plugins: {
             allow: ["openclaw"]
         }
@@ -231,8 +231,8 @@ test("allowlist truth rejects the native package install hint as a loadable plug
 });
 test("plugin config normalization repairs split-package allowlist and entry-hint drift", (t) => {
     const root = createTempRoot(t);
-    const openclawHome = createOpenClawHome(root, ".openclaw-Tern", {
-        profile: "Tern",
+    const openclawHome = createOpenClawHome(root, ".openclaw-example", {
+        profile: "ExampleProfile",
         plugins: {
             allow: ["openclaw"],
             entries: {
@@ -280,7 +280,7 @@ test("plugin config normalization repairs split-package allowlist and entry-hint
 test("install target selection and activation-root pinning keep native package plugins authoritative", (t) => {
     const root = createTempRoot(t);
     const openclawHome = createOpenClawHome(root, ".openclaw", {
-        profile: "Tern",
+        profile: "ExampleProfile",
         plugins: {
             allow: ["openclawbrain"]
         }

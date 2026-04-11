@@ -437,7 +437,7 @@ const normalizedSeedCarryForwardEvalDedup = buildTrace({
   ],
 });
 
-const exactTernRecordedSessionProof = buildTrace({
+const exactExampleProfileRecordedSessionProof = buildTrace({
   traceId: "tern-recorded-session-proof",
   recordedAt: "2026-03-25T00:00:00.000Z",
   bundleBuiltAt: "2026-03-25T00:30:00.000Z",
@@ -1116,7 +1116,7 @@ const definitions = [
     sourcePaths: ["packages/cli/dist/test/recorded-session-replay-proof-bundle.test.js"],
     tags: ["correction", "restart-order", "follow-up"],
     notes: ["Exactly transcribed from the checked-in proof-bundle writer test fixture."],
-    trace: exactTernRecordedSessionProof,
+    trace: exactExampleProfileRecordedSessionProof,
   },
   {
     slotId: "correction-follow-up-02",
