@@ -73,6 +73,23 @@ function createBrainStore(t) {
     `);
     return { brainRoot, db, dbPath };
 }
+function writePeriodicRetrainPromotionPackage(workspaceRoot, overrides = {}) {
+    const reportDir = path.join(workspaceRoot, "scratch", "cold-start-router-periodic-retrain", "report.v1");
+    mkdirSync(reportDir, { recursive: true });
+    writeFileSync(path.join(reportDir, "promotion-package.v1.json"), `${JSON.stringify({
+        contract: "cold_start_router_promotion_package.v1",
+        candidateArtifactId: "router-artifact-periodic-retrain-v1",
+        candidateArtifactVersion: "v1",
+        candidateArtifactChecksum: "sha256:candidate",
+        priorBaseArtifactId: "router-base-prior-v0",
+        priorBaseArtifactVersion: "v0",
+        priorBaseArtifactChecksum: "sha256:prior",
+        decision: "promote",
+        gatePassed: true,
+        summary: "periodic retrain is promotable",
+        ...overrides
+    }, null, 2)}\n`);
+}
 function readPersistedStatusSurface(db) {
     const row = db.prepare(`SELECT value FROM brain_training_state WHERE key = ?`).get("traced_learning_status_surface_json");
     if (row === undefined || typeof row.value !== "string") {
@@ -475,6 +492,61 @@ test("brain-store traced-learning surface derives live feedback and attribution 
             budgetDeferredCount: 1,
             detail: "completed_without_evaluation=1; ready=2, delayed=1, budget_deferred=1"
         });
+    }
+    finally {
+        db.close();
+    }
+});
+
+test("brain-store traced-learning surface derives retrain lineage from periodic retrain workspace truth when persisted surface is thin", (t) => {
+    const activationRoot = createTempActivationRoot(t);
+    const workspaceRoot = createTempRoot(t);
+    const { brainRoot, db } = createBrainStore(t);
+    try {
+        writePeriodicRetrainPromotionPackage(workspaceRoot);
+        const persisted = persistBrainStoreTracedLearningBridge({
+            updatedAt: "2026-04-11T10:18:20.146Z",
+            routeTraceCount: 0,
+            supervisionCount: 0,
+            routerUpdateCount: 0,
+            teacherArtifactCount: 299,
+            pgVersionRequested: "v2",
+            pgVersionUsed: "v2",
+            decisionLogCount: 0,
+            fallbackReason: null,
+            routerNoOpReason: null,
+            materializedPackId: null,
+            promoted: false,
+            baselinePersisted: false,
+            retrainLineage: null,
+            source: {
+                command: "watch"
+            }
+        }, {
+            env: {
+                OPENCLAWBRAIN_ROOT: brainRoot,
+                OPENCLAWBRAIN_WORKSPACE_ROOT: workspaceRoot
+            }
+        });
+        assert.equal(persisted.error, null);
+        const loaded = loadBrainStoreTracedLearningBridge({
+            env: {
+                OPENCLAWBRAIN_ROOT: brainRoot,
+                OPENCLAWBRAIN_WORKSPACE_ROOT: workspaceRoot
+            }
+        });
+        assert.equal(loaded.bridge?.retrainLineage?.priorBaseArtifactId, "router-base-prior-v0");
+        assert.equal(loaded.bridge?.retrainLineage?.candidateArtifactId, "router-artifact-periodic-retrain-v1");
+        assert.equal(loaded.bridge?.retrainLineage?.promotionValid, true);
+        const surface = buildTracedLearningStatusSurface(activationRoot, {
+            env: {
+                OPENCLAWBRAIN_ROOT: brainRoot,
+                OPENCLAWBRAIN_WORKSPACE_ROOT: workspaceRoot
+            }
+        });
+        assert.equal(surface.retrainLineage?.priorRooted, true);
+        assert.equal(surface.retrainLineage?.promotionValid, true);
+        assert.match(surface.detail, /priorRooted=yes/);
     }
     finally {
         db.close();
@@ -1063,6 +1135,7 @@ test("status surface keeps runtime materialization metadata but canonical counts
 
 test("status surface falls back to runtime materialization when canonical brain-store has no traced-learning signal", (t) => {
     const activationRoot = createTempActivationRoot(t);
+    const workspaceRoot = createTempRoot(t);
     const { brainRoot, db } = createBrainStore(t);
     try {
         const runtimePath = writeTracedLearningBridge(activationRoot, {
@@ -1086,7 +1159,8 @@ test("status surface falls back to runtime materialization when canonical brain-
         });
         const surface = buildTracedLearningStatusSurface(activationRoot, {
             env: {
-                OPENCLAWBRAIN_ROOT: brainRoot
+                OPENCLAWBRAIN_ROOT: brainRoot,
+                OPENCLAWBRAIN_WORKSPACE_ROOT: workspaceRoot
             }
         });
         assert.equal(surface.path, runtimePath);
@@ -1105,6 +1179,7 @@ test("status surface falls back to runtime materialization when canonical brain-
 
 test("status surface fails open to runtime materialization when the canonical summary is malformed", (t) => {
     const activationRoot = createTempActivationRoot(t);
+    const workspaceRoot = createTempRoot(t);
     const { brainRoot, db } = createBrainStore(t);
     try {
         db.prepare(`INSERT INTO brain_training_state (key, value) VALUES (?, ?)`).run(
@@ -1132,7 +1207,8 @@ test("status surface fails open to runtime materialization when the canonical su
         });
         const surface = buildTracedLearningStatusSurface(activationRoot, {
             env: {
-                OPENCLAWBRAIN_ROOT: brainRoot
+                OPENCLAWBRAIN_ROOT: brainRoot,
+                OPENCLAWBRAIN_WORKSPACE_ROOT: workspaceRoot
             }
         });
         assert.equal(surface.path, runtimePath);
@@ -1147,6 +1223,7 @@ test("status surface fails open to runtime materialization when the canonical su
 
 test("status surface fails open to runtime materialization when the canonical summary is structurally malformed", (t) => {
     const activationRoot = createTempActivationRoot(t);
+    const workspaceRoot = createTempRoot(t);
     const { brainRoot, db } = createBrainStore(t);
     try {
         db.prepare(`INSERT INTO brain_training_state (key, value) VALUES (?, ?)`).run(
@@ -1174,7 +1251,8 @@ test("status surface fails open to runtime materialization when the canonical su
         });
         const surface = buildTracedLearningStatusSurface(activationRoot, {
             env: {
-                OPENCLAWBRAIN_ROOT: brainRoot
+                OPENCLAWBRAIN_ROOT: brainRoot,
+                OPENCLAWBRAIN_WORKSPACE_ROOT: workspaceRoot
             }
         });
         assert.equal(surface.path, runtimePath);

@@ -1,6 +1,7 @@
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const TRACED_LEARNING_BRIDGE_CONTRACT = "openclawbrain.traced-learning-bridge.v1";
 const TRACED_LEARNING_BRIDGE_FILENAME = "traced-learning-state.json";
@@ -700,6 +701,92 @@ function resolveBrainRoot(env = process.env) {
     }
     return path.join(homedir(), ".openclaw", "openclawbrain");
 }
+function readJsonFileIfExists(filePath) {
+    if (!existsSync(filePath)) {
+        return null;
+    }
+    try {
+        return JSON.parse(readFileSync(filePath, "utf8"));
+    }
+    catch {
+        return null;
+    }
+}
+function isRecord(value) {
+    return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+function resolveWorkspaceRoot(env = process.env) {
+    const explicit = normalizeOptionalString(env.OPENCLAWBRAIN_WORKSPACE_ROOT);
+    if (explicit !== null) {
+        return path.resolve(explicit);
+    }
+    const moduleWorkspaceRoot = path.resolve(fileURLToPath(new URL("../../../../", import.meta.url)));
+    const cwdWorkspaceRoot = path.resolve(process.cwd());
+    const candidates = [moduleWorkspaceRoot, cwdWorkspaceRoot]
+        .filter((candidate) => typeof candidate === "string" && candidate.trim().length > 0)
+        .map((candidate) => path.resolve(candidate));
+    for (const candidate of candidates) {
+        if (existsSync(path.join(candidate, "scratch", "cold-start-router-periodic-retrain", "report.v1", "promotion-package.v1.json")) ||
+            existsSync(path.join(candidate, "scratch", "cold-start-router-periodic-retrain", "report.v1", "status.json"))) {
+            return candidate;
+        }
+    }
+    return existsSync(path.join(moduleWorkspaceRoot, "package.json")) ? moduleWorkspaceRoot : null;
+}
+function summarizeStoredRetrainLineage(promotionPackage, gatePassed, rowsAddedSinceLastRetrain) {
+    if (!isRecord(promotionPackage)) {
+        return null;
+    }
+    const priorBaseArtifactId = normalizeOptionalString(promotionPackage.priorBaseArtifactId);
+    const priorBaseArtifactVersion = normalizeOptionalString(promotionPackage.priorBaseArtifactVersion);
+    const priorBaseArtifactChecksum = normalizeOptionalString(promotionPackage.priorBaseArtifactChecksum);
+    const candidateArtifactId = normalizeOptionalString(promotionPackage.candidateArtifactId);
+    const candidateArtifactVersion = normalizeOptionalString(promotionPackage.candidateArtifactVersion);
+    const candidateArtifactChecksum = normalizeOptionalString(promotionPackage.candidateArtifactChecksum);
+    const priorRooted = priorBaseArtifactId !== null && priorBaseArtifactChecksum !== null;
+    const promotionValid = gatePassed === true && normalizeOptionalString(promotionPackage.decision) === "promote";
+    return normalizeRetrainLineage({
+        priorBaseArtifactId,
+        priorBaseArtifactVersion,
+        priorBaseArtifactChecksum,
+        candidateArtifactId,
+        candidateArtifactVersion,
+        candidateArtifactChecksum,
+        priorRooted,
+        promotionValid,
+        residualUpdateCount: rowsAddedSinceLastRetrain,
+        summary: normalizeOptionalString(promotionPackage.summary)
+            ?? [
+                `seeded by ${priorBaseArtifactId ?? "unknown prior"}@${priorBaseArtifactVersion ?? "unknown version"}`,
+                `seed checksum=${priorBaseArtifactChecksum ?? "unknown checksum"}`,
+                `current router=${candidateArtifactId ?? "unknown candidate"}@${candidateArtifactVersion ?? "unknown version"}`,
+                `router checksum=${candidateArtifactChecksum ?? "unknown checksum"}`,
+                `prior-rooted=${priorRooted ? "yes" : "no"}`,
+                `promotion-valid=${promotionValid ? "yes" : "no"}`,
+                `residual updates=${rowsAddedSinceLastRetrain ?? "unknown"}`
+            ].join("; ")
+    });
+}
+function loadDerivedRetrainLineage(db, context) {
+    const rowsAddedSinceLastRetrain = normalizeNullableCount(loadTrainingStateValue(db, "continuous_learning_rows_added_since_last_retrain"));
+    const storedPromotionVerdict = loadTrainingStateJson(db, "last_promotion_verdict_json");
+    const storedLineage = summarizeStoredRetrainLineage(isRecord(storedPromotionVerdict.value) ? storedPromotionVerdict.value : null, normalizeOptionalBoolean(storedPromotionVerdict.value?.gatePassed), rowsAddedSinceLastRetrain);
+    if (storedLineage !== null) {
+        return storedLineage;
+    }
+    const workspaceRoot = normalizeOptionalString(context?.workspaceRoot) ?? resolveWorkspaceRoot();
+    if (workspaceRoot === null) {
+        return null;
+    }
+    const reportDir = path.join(workspaceRoot, "scratch", "cold-start-router-periodic-retrain", "report.v1");
+    const status = readJsonFileIfExists(path.join(reportDir, "status.json"));
+    const statusLineage = summarizeStoredRetrainLineage(isRecord(status?.promotionPackage) ? status.promotionPackage : null, normalizeOptionalBoolean(status?.gatePassed), rowsAddedSinceLastRetrain ?? normalizeNullableCount(status?.rowsAddedSinceLastRetrain));
+    if (statusLineage !== null) {
+        return statusLineage;
+    }
+    const promotionPackage = readJsonFileIfExists(path.join(reportDir, "promotion-package.v1.json"));
+    return summarizeStoredRetrainLineage(isRecord(promotionPackage) ? promotionPackage : null, normalizeOptionalBoolean(promotionPackage?.gatePassed), rowsAddedSinceLastRetrain);
+}
 function loadTrainingStateValue(db, key) {
     const row = db.prepare(`SELECT value FROM brain_training_state WHERE key = ?`).get(key);
     return row !== undefined && typeof row.value === "string" ? row.value : null;
@@ -852,6 +939,7 @@ function buildDerivedBrainStoreBridge(db, context, lastInterruptionSummary = nul
         ? null
         : JSON.parse(candidateUpdateRaw);
     const candidatePackVersion = Number.parseInt(candidatePackVersionRaw ?? "", 10);
+    const retrainLineage = loadDerivedRetrainLineage(db, context);
     let feedbackSummary = defaultFeedbackSummary(routeTraceCount, supervisionCount);
     try {
         feedbackSummary = buildDerivedFeedbackSummary(db, routeTraceCount, supervisionCount);
@@ -880,7 +968,7 @@ function buildDerivedBrainStoreBridge(db, context, lastInterruptionSummary = nul
         materializedPackId: null,
         promoted: false,
         baselinePersisted: false,
-        retrainLineage: null,
+        retrainLineage,
         lastInterruptionSummary,
         feedbackSummary,
         attributionCoverage,
@@ -889,6 +977,7 @@ function buildDerivedBrainStoreBridge(db, context, lastInterruptionSummary = nul
             bridge: "brain_store_state",
             brainRoot: context.brainRoot,
             stateDbPath: context.dbPath,
+            workspaceRoot: context.workspaceRoot ?? null,
             candidatePackVersion: Number.isFinite(candidatePackVersion) ? candidatePackVersion : null,
             candidateUpdateCount: normalizeCount(candidateUpdate?.updateCount)
         }
@@ -1027,7 +1116,9 @@ export function persistTracedLearningBridgeState(activationRoot, payload, option
     return bridge;
 }
 export function loadBrainStoreTracedLearningBridge(options = {}) {
-    const brainRoot = resolveBrainRoot(options.env ?? process.env);
+    const env = options.env ?? process.env;
+    const brainRoot = resolveBrainRoot(env);
+    const workspaceRoot = resolveWorkspaceRoot(env);
     const dbPath = path.join(brainRoot, "state.db");
     if (!existsSync(dbPath)) {
         return {
@@ -1054,7 +1145,8 @@ export function loadBrainStoreTracedLearningBridge(options = {}) {
         try {
             derived = buildDerivedBrainStoreBridge(db, {
                 brainRoot,
-                dbPath
+                dbPath,
+                workspaceRoot
             }, lastInterruptionSummary);
         }
         catch {
@@ -1067,9 +1159,16 @@ export function loadBrainStoreTracedLearningBridge(options = {}) {
         if (persisted.bridge !== null) {
             const bridge = normalizeBridgePayload({
                 ...persisted.bridge,
+                retrainLineage: persisted.bridge.retrainLineage ?? derived?.retrainLineage ?? null,
                 lastInterruptionSummary: lastInterruptionSummary ?? persisted.bridge.lastInterruptionSummary,
                 feedbackSummary: derived?.feedbackSummary ?? persisted.bridge.feedbackSummary,
-                attributionCoverage: derived?.attributionCoverage ?? persisted.bridge.attributionCoverage
+                attributionCoverage: derived?.attributionCoverage ?? persisted.bridge.attributionCoverage,
+                source: derived?.source?.workspaceRoot !== null && derived?.source?.workspaceRoot !== undefined
+                    ? {
+                        ...(persisted.bridge.source ?? {}),
+                        workspaceRoot: derived.source.workspaceRoot
+                    }
+                    : persisted.bridge.source
             });
             return {
                 path: dbPath,
