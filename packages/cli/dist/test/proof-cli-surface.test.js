@@ -32,7 +32,7 @@ function makeCapture(command, args, overrides = {}) {
 
 function createProofFixture(t, options = {}) {
     const root = createTempRoot(t);
-    const openclawHome = path.join(root, ".openclaw-Tern");
+    const openclawHome = options.openclawHome ?? path.join(root, ".openclaw-Tern");
     const activationRoot = path.join(root, ".openclawbrain", "activation");
     const bundleDir = path.join(root, "artifacts", "proof-bundle");
     const gatewayLogPath = path.join(root, "gateway.log");
@@ -427,6 +427,49 @@ test("proof capture treats ambiguous plugin inspection as a proof warning when s
     assert.ok(result.verdict.missingProofs.includes("packaged_hook_path"));
     assert.ok(result.verdict.warnings.includes("plugin inspect did not confirm the packaged hook source"));
     assert.ok(!result.verdict.missingProofs.includes("runtime_proven"));
+});
+
+test("proof capture accepts generated shadow hook source paths reported with tilde-home expansion", (t) => {
+    const homeDir = os.homedir();
+    const openclawHome = path.join(homeDir, ".openclaw");
+    const fixture = createProofFixture(t, {
+        openclawHome,
+    });
+    const generatedShadowHookPath = path.join(openclawHome, "extensions", "openclawbrain", "index.ts");
+    const { result } = captureProofScenario(fixture, createHealthyLabelOutputs(fixture, {
+        "plugin inspect": {
+            stdout: `Status: loaded\nSource: ~/.openclaw/extensions/openclawbrain/index.ts\n`,
+        },
+        "detailed status": {
+            stdout: createDetailedStatusText(fixture, {
+                attachTruthLine: `attachTruth current=current_profile hook=present config=allows_load runtime=proven watcher=alive attachedSet=*current_profile@~/.openclaw[hook=present config=allows_load runtime=proven loadedAt=2026-04-09T18:21:51.973Z] proofPath=~/.openclawbrain/activation/attachment-truth/runtime-load-proofs.json proofError=none`,
+                targetLine: `target activation=${fixture.activationRoot} home=~/.openclaw layout=single ~/.openclaw home profile=current_profile hook=~/.openclaw/extensions/openclawbrain/index.ts`,
+            }),
+        },
+        "runtime-load-proof": {
+            value: {
+                contract: "openclaw_profile_runtime_load_proofs.v1",
+                runtimeOwner: "openclaw",
+                activationRoot: fixture.activationRoot,
+                updatedAt: "2026-04-09T18:21:51.973Z",
+                profiles: [
+                    {
+                        openclawHome,
+                        profileId: null,
+                        profileSource: "none",
+                        loadedAt: "2026-04-09T18:21:51.973Z",
+                        extensionEntryPath: generatedShadowHookPath,
+                        packageJsonPath: path.join(openclawHome, "extensions", "openclawbrain", "package.json"),
+                        packageName: "openclawbrain",
+                        packageVersion: "0.4.40",
+                        packageIdentity: "openclawbrain@0.4.40",
+                    },
+                ],
+            },
+        },
+    }));
+    assert.ok(!result.verdict.missingProofs.includes("packaged_hook_path"));
+    assert.ok(!result.verdict.warnings.includes("plugin inspect did not confirm the packaged hook source"));
 });
 
 test("proof capture treats partial detailed-status proof failures as warnings when stdout still proves runtime truth", (t) => {

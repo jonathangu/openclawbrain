@@ -139,6 +139,36 @@ function writeJson(filePath, value) {
   writeText(filePath, `${JSON.stringify(value, null, 2)}\n`);
 }
 
+function normalizeReportedProofPath(filePath) {
+  if (typeof filePath !== "string") {
+    return null;
+  }
+  const trimmed = filePath.trim();
+  if (trimmed.length === 0) {
+    return null;
+  }
+  if (trimmed === "~") {
+    return homedir();
+  }
+  if (trimmed.startsWith("~/")) {
+    return path.join(homedir(), trimmed.slice(2));
+  }
+  return path.isAbsolute(trimmed) ? trimmed : path.resolve(trimmed);
+}
+
+function canonicalizeExistingProofPath(filePath) {
+  const normalizedPath = normalizeReportedProofPath(filePath);
+  if (normalizedPath === null) {
+    return "";
+  }
+  const resolvedPath = path.resolve(normalizedPath);
+  try {
+    return realpathSync(resolvedPath);
+  } catch {
+    return resolvedPath;
+  }
+}
+
 function readJsonObject(value) {
   if (value === null || typeof value !== "object" || Array.isArray(value)) {
     return null;
@@ -345,7 +375,11 @@ function buildVerdict({ steps, gatewayStatus, pluginInspect, statusSignals, brea
 
   const gatewayHealthy = /Runtime:\s+running/m.test(gatewayStatus) && /RPC probe:\s+ok/m.test(gatewayStatus);
   const pluginLoaded = /Status:\s+loaded/m.test(pluginInspect);
-  const packagedHookPath = /Source:\s+.*openclawbrain\/dist\/extension\/index\.js/m.test(pluginInspect);
+  const generatedShadowHookPath = canonicalizeExistingProofPath(path.join(openclawHome, "extensions", "openclawbrain", "index.ts"));
+  const sourceMatch = pluginInspect.match(/^Source:\s+(.+)$/m);
+  const reportedSourcePath = canonicalizeExistingProofPath(sourceMatch?.[1] ?? "");
+  const packagedHookPath = /Source:\s+.*(?:@openclawbrain[\\/]+openclaw|openclawbrain)[\\/]+dist[\\/]+extension[\\/]+index\.js/m.test(pluginInspect)
+    || reportedSourcePath === generatedShadowHookPath;
   const breadcrumbLoaded = breadcrumbs.afterBundleStart.some((entry) => entry.kind === "loaded");
   const runtimeProofMatched = Boolean(runtimeLoadProof?.profiles?.some((profile) => profile?.openclawHome === openclawHome));
 

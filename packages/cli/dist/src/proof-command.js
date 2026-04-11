@@ -36,7 +36,11 @@ function normalizeReportedProofPath(filePath) {
 }
 
 function canonicalizeExistingProofPath(filePath) {
-    const resolvedPath = path.resolve(filePath);
+    const normalizedPath = normalizeReportedProofPath(filePath);
+    if (normalizedPath === null) {
+        return "";
+    }
+    const resolvedPath = path.resolve(normalizedPath);
     try {
         return realpathSync(resolvedPath);
     }
