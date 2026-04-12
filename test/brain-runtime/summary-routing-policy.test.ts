@@ -54,4 +54,21 @@ describe("summary routing policy", () => {
     expect(decision.mode).toBe("prefer_typed_memory");
     expect(decision.reason).toContain("current-truth");
   });
+
+  it("expands to source for current-truth queries over branch-heavy compacted history", () => {
+    const decision = decideSummaryRouting({
+      queryText: "what changed now?",
+      summaryMetadata: makeSummaryMetadata({
+        branchCount: 3,
+        snapshotCount: 1,
+        typedMemoryRefCount: 0,
+        freshnessStateCounts: { fresh: 1, superseded: 1 },
+        hasNonFreshSummaries: true,
+        hasTruthConflict: true,
+      }),
+    });
+
+    expect(decision.mode).toBe("expand_to_source");
+    expect(decision.reason).toContain("branch-heavy compacted history");
+  });
 });

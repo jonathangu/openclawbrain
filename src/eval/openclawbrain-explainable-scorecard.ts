@@ -104,6 +104,22 @@ export interface OpenClawBrainExplainableEvalTraceInputV1 {
   modes: OpenClawBrainExplainableEvalTraceModeInputV1[];
 }
 
+export interface OpenClawBrainExplainableEvalCompactHealthInputV1 {
+  summaryRoutingCount: number;
+  expandToSourceCount: number;
+  branchHeavySummaryRoutingCount: number;
+  branchHeavyExpandToSourceCount: number;
+  summaryCount: number;
+  nonFreshSummaryCount: number;
+  snapshotCount: number;
+  condensedCount: number;
+  compactionPassCount: number;
+  snapshotPassCount: number;
+  condensePassCount: number;
+  tokensBefore: number;
+  tokensAfter: number;
+}
+
 export interface OpenClawBrainExplainableEvalWinRateInputV1 {
   left: number;
   right: number;
@@ -150,6 +166,7 @@ export interface BuildOpenClawBrainExplainableEvalScorecardInputV1 {
   modes: OpenClawBrainExplainableEvalModeInputV1[];
   pairwise: OpenClawBrainExplainableEvalPairwiseInputV1[];
   traces: OpenClawBrainExplainableEvalTraceInputV1[];
+  compactHealth?: OpenClawBrainExplainableEvalCompactHealthInputV1 | null;
   notes?: readonly string[] | null;
 }
 
@@ -276,6 +293,7 @@ export function buildOpenClawBrainExplainableEvalScorecard(
   const candidateSuccessProxyCount = successfulTraceProxyCount(validatedTraces, candidateMode);
   const baselineSuccessProxyCount = successfulTraceProxyCount(validatedTraces, baselineMode);
   const floorSuccessProxyCount = successfulTraceProxyCount(validatedTraces, floorMode);
+  const compactHealth = input.compactHealth ?? null;
 
   let compileRegressionTraceCount = 0;
   let requiredContextRegressionTraceCount = 0;
@@ -805,6 +823,211 @@ export function buildOpenClawBrainExplainableEvalScorecard(
       ],
     }),
     metric({
+      id: "expand_before_assert_rate",
+      label: "Expand-before-assert rate",
+      category: "diagnostic",
+      audience: "public_operator",
+      availability: compactHealth ? "proxy" : "not_available",
+      kind: "rate",
+      unit: "rate",
+      value: compactHealth ? toRate(compactHealth.expandToSourceCount, compactHealth.summaryRoutingCount) : null,
+      leftMode: candidateMode,
+      rightMode: null,
+      formula: {
+        expression: "expandToSourceCount / summaryRoutingCount",
+        components: [
+          {
+            id: "expand_to_source_count",
+            label: "Summary-routing decisions that expanded to source",
+            role: "numerator",
+            value: compactHealth?.expandToSourceCount ?? null,
+            unit: "count",
+          },
+          {
+            id: "summary_routing_count",
+            label: "Summary-routing decisions with compacted history",
+            role: "denominator",
+            value: compactHealth?.summaryRoutingCount ?? null,
+            unit: "count",
+          },
+        ],
+      },
+      language: compactHealth
+        ? `expand_to_source was chosen on ${compactHealth.expandToSourceCount}/${compactHealth.summaryRoutingCount} summary-routing decisions.`
+        : "Summary-routing telemetry for expand-before-assert is not available in this bundle.",
+      notes: [
+        "This is the first compact-health proxy for expand-before-assert guidance.",
+      ],
+    }),
+    metric({
+      id: "branch_heavy_expand_to_source_rate",
+      label: "Branch-heavy expand-to-source rate",
+      category: "diagnostic",
+      audience: "public_operator",
+      availability: compactHealth ? "proxy" : "not_available",
+      kind: "rate",
+      unit: "rate",
+      value: compactHealth ? toRate(compactHealth.branchHeavyExpandToSourceCount, compactHealth.branchHeavySummaryRoutingCount) : null,
+      leftMode: candidateMode,
+      rightMode: null,
+      formula: {
+        expression: "branchHeavyExpandToSourceCount / branchHeavySummaryRoutingCount",
+        components: [
+          {
+            id: "branch_heavy_expand_to_source_count",
+            label: "Branch-heavy summary-routing decisions that expanded to source",
+            role: "numerator",
+            value: compactHealth?.branchHeavyExpandToSourceCount ?? null,
+            unit: "count",
+          },
+          {
+            id: "branch_heavy_summary_routing_count",
+            label: "Branch-heavy summary-routing decisions",
+            role: "denominator",
+            value: compactHealth?.branchHeavySummaryRoutingCount ?? null,
+            unit: "count",
+          },
+        ],
+      },
+      language: compactHealth
+        ? `branch-heavy compacted history expanded to source on ${compactHealth.branchHeavyExpandToSourceCount}/${compactHealth.branchHeavySummaryRoutingCount} summary-routing decisions.`
+        : "Branch-heavy compact-history telemetry is not available in this bundle.",
+      notes: [
+        "Branch-heavy turns are the clearest compact-history precision risk.",
+      ],
+    }),
+    metric({
+      id: "non_fresh_summary_prevalence",
+      label: "Non-fresh summary prevalence",
+      category: "diagnostic",
+      audience: "public_operator",
+      availability: compactHealth ? "proxy" : "not_available",
+      kind: "rate",
+      unit: "rate",
+      value: compactHealth ? toRate(compactHealth.nonFreshSummaryCount, compactHealth.summaryCount) : null,
+      leftMode: candidateMode,
+      rightMode: null,
+      formula: {
+        expression: "nonFreshSummaryCount / summaryCount",
+        components: [
+          {
+            id: "non_fresh_summary_count",
+            label: "Non-fresh summary items",
+            role: "numerator",
+            value: compactHealth?.nonFreshSummaryCount ?? null,
+            unit: "count",
+          },
+          {
+            id: "summary_count",
+            label: "Assembled summary items",
+            role: "denominator",
+            value: compactHealth?.summaryCount ?? null,
+            unit: "count",
+          },
+        ],
+      },
+      language: compactHealth
+        ? `${compactHealth.nonFreshSummaryCount}/${compactHealth.summaryCount} assembled summary items are stale or superseded.`
+        : "Non-fresh summary telemetry is not available in this bundle.",
+      notes: [
+        "Non-fresh summaries should trigger expand-before-assert behavior in the runtime guidance layer.",
+      ],
+    }),
+    metric({
+      id: "snapshot_vs_condense_share",
+      label: "Snapshot vs condense share",
+      category: "diagnostic",
+      audience: "public_operator",
+      availability: compactHealth ? "proxy" : "not_available",
+      kind: "rate",
+      unit: "rate",
+      value: compactHealth ? toRate(compactHealth.snapshotPassCount, compactHealth.compactionPassCount) : null,
+      leftMode: candidateMode,
+      rightMode: null,
+      formula: {
+        expression: "snapshotPassCount / compactionPassCount",
+        components: [
+          {
+            id: "snapshot_pass_count",
+            label: "Compaction passes that produced snapshots",
+            role: "numerator",
+            value: compactHealth?.snapshotPassCount ?? null,
+            unit: "count",
+          },
+          {
+            id: "compaction_pass_count",
+            label: "Total compaction passes",
+            role: "denominator",
+            value: compactHealth?.compactionPassCount ?? null,
+            unit: "count",
+          },
+          {
+            id: "condense_pass_count",
+            label: "Compaction passes that condensed summaries",
+            role: "input",
+            value: compactHealth?.condensePassCount ?? null,
+            unit: "count",
+          },
+        ],
+      },
+      language: compactHealth
+        ? (compactHealth.compactionPassCount > 0
+          ? `${compactHealth.snapshotPassCount}/${compactHealth.compactionPassCount} compaction passes produced snapshots instead of condensed summaries.`
+          : "Snapshot-versus-condense telemetry is present, but no compaction passes were counted.")
+        : "Snapshot-versus-condense telemetry is not available in this bundle.",
+      notes: [
+        "This is a compact-health proxy for branch snapshot prevalence.",
+      ],
+    }),
+    metric({
+      id: "token_reduction_per_compaction_pass",
+      label: "Token reduction per compaction pass",
+      category: "economics",
+      audience: "public_operator",
+      availability: compactHealth ? "proxy" : "not_available",
+      kind: "delta",
+      unit: "tokens",
+      value: compactHealth && compactHealth.compactionPassCount > 0
+        ? round((compactHealth.tokensBefore - compactHealth.tokensAfter) / compactHealth.compactionPassCount, 6)
+        : null,
+      leftMode: candidateMode,
+      rightMode: null,
+      formula: {
+        expression: "(tokensBefore - tokensAfter) / compactionPassCount",
+        components: [
+          {
+            id: "tokens_before",
+            label: "Tokens before compaction",
+            role: "input",
+            value: compactHealth?.tokensBefore ?? null,
+            unit: "tokens",
+          },
+          {
+            id: "tokens_after",
+            label: "Tokens after compaction",
+            role: "input",
+            value: compactHealth?.tokensAfter ?? null,
+            unit: "tokens",
+          },
+          {
+            id: "compaction_pass_count",
+            label: "Compaction passes",
+            role: "denominator",
+            value: compactHealth?.compactionPassCount ?? null,
+            unit: "count",
+          },
+        ],
+      },
+      language: compactHealth
+        ? (compactHealth.compactionPassCount > 0
+          ? `compaction reduced prompt tokens by ${round((compactHealth.tokensBefore - compactHealth.tokensAfter) / compactHealth.compactionPassCount, 6)} tokens per pass on average.`
+          : "Compaction token-reduction telemetry is present, but no compaction passes were counted.")
+        : "Compaction token-reduction telemetry is not available in this bundle.",
+      notes: [
+        "This is the first compact-efficiency proxy, not a full token-economics model.",
+      ],
+    }),
+    metric({
       id: "safe_fallback_rate",
       label: "Safe fallback rate",
       category: "fail_open",
@@ -1001,17 +1224,20 @@ export function buildOpenClawBrainExplainableEvalScorecard(
   const tieOrBetterMetric = publicOperatorMetrics.find((entry) => entry.id === "tie_or_better_rate_vs_prior");
   const requiredContextMetric = publicOperatorMetrics.find((entry) => entry.id === "required_context_recall");
   const promptCostMetric = publicOperatorMetrics.find((entry) => entry.id === "estimated_prompt_cost_per_successful_trace_delta_vs_prior");
+  const compactHealthMetric = publicOperatorMetrics.find((entry) => entry.id === "expand_before_assert_rate");
   const headline = [
     regressionMetric?.language ?? "Regression versus the approved prior was not computed.",
     tieOrBetterMetric?.language ?? "Tie-or-better versus the approved prior was not computed.",
     requiredContextMetric?.language ?? "Required-context recall was not computed.",
     promptCostMetric?.language ?? "Success-adjusted economics deltas were not computed.",
+    compactHealthMetric?.language ?? "Compact-health telemetry was not computed.",
   ];
   const failOpenLanguage = `Comparative replay does not prove live safe-fallback or worker-down serving. It does expose a no_brain floor anchor: ${floorSuccessProxyCount}/${validatedTraces.length} validated traces met the replay success proxy under no_brain.`;
   const diagnosticLanguage = "qualityScore and winnerMode are preserved only as internal deterministic replay diagnostics; they are not the public/operator definition of success.";
   const notes = [
     "Validated replay trace success proxy means every replay turn compiled and no required context phrase was missed on that trace.",
     "Success-adjusted economics in this artifact use prompt-token and prompt-cost proxies derived from replay context selection, not full API/tool/latency telemetry.",
+    "Compact-health metrics in this artifact are first-pass proxies derived from summary-routing and compaction telemetry, not a full dashboard.",
     "Live fail-open-safe rates require runtime instrumentation and are intentionally left unavailable in comparative replay outputs.",
     ...(input.notes ?? []),
   ];

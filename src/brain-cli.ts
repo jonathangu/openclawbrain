@@ -34,7 +34,8 @@ import {
   writeContinuousLearningControl,
 } from "./brain-runtime/continuous-learning-status.js";
 import { buildPromotionStory } from "./brain-runtime/promotion-story.js";
-import { buildRouteQualitySummaryV1 } from "./brain-runtime/route-quality-summary.js";
+import { buildRouteQualitySummaryV1, type RouteQualitySummaryRoutingModeV1 } from "./brain-runtime/route-quality-summary.js";
+import type { AssembledSummaryMetadata } from "./assembler.js";
 import { readWorkerRuntimeState } from "./brain-runtime/worker-state.js";
 import { buildContextManagementModel } from "./context-management-model.js";
 import { summarizeAttributionTruth, summarizeOperatorHealth } from "./live-runtime-audit.js";
@@ -334,6 +335,8 @@ function commandStatus(): void {
     activePackVersion: currentPack,
     activePackId: recentTrace?.routeTrace?.activePackId ?? null,
     routerIdentity: recentTrace?.routeTrace?.routerIdentity ?? null,
+    summaryRoutingMode: (lastAssemblyDecision?.summaryRoutingMode as RouteQualitySummaryRoutingModeV1 | null | undefined) ?? null,
+    summaryMetadata: (lastAssemblyDecision?.summaryMetadata as AssembledSummaryMetadata | null | undefined) ?? null,
     replayVerdict: {
       passed: lastReplayGateVerdict?.passed ?? null,
       verdict: lastReplayGateVerdict?.passed === true

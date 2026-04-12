@@ -2,6 +2,7 @@ import { createHash, randomUUID } from "node:crypto";
 import { existsSync, mkdirSync } from "node:fs";
 import { join } from "node:path";
 import { DatabaseSync } from "node:sqlite";
+import type { AssembledSummaryMetadata } from "../assembler.js";
 import type { OpenClawBrainRuntimeConfig } from "../db/config.js";
 import type {
   BrainAgentIdentity,
@@ -59,6 +60,7 @@ import { WorkerSupervisor } from "./worker-supervisor.js";
 import { isSystemMessage } from "../brain-harvest/system-filter.js";
 import { buildContextManagementModel } from "../context-management-model.js";
 import { buildContinuousLearningOperatorStatus, continuousLearningControlDir } from "./continuous-learning-status.js";
+import { buildRouteQualitySummaryV1, type RouteQualitySummaryRoutingModeV1 } from "./route-quality-summary.js";
 import { summarizeAttributionTruth, summarizeOperatorHealth } from "../live-runtime-audit.js";
 import {
   proposeUserCorrectionFast,
@@ -173,6 +175,8 @@ type BrainAssemblyDecisionSnapshot = {
   activePackRouterChecksum?: string | null;
   activePackBuiltAt?: string | null;
   prefetch?: BrainPrefetchDecision | null;
+  summaryRoutingMode?: RouteQualitySummaryRoutingModeV1 | null;
+  summaryMetadata?: AssembledSummaryMetadata | null;
   servedArtifact?: BrainObservationRouteMetadata["servedArtifact"];
   compileReport?: BrainCompileReportV1 | null;
   compileReportSummary?: string | null;
@@ -2024,6 +2028,30 @@ export class BrainService {
       latestSelectionMetadata: recentTraces[0]?.routeTrace?.selectionMetadata ?? null,
       configuredCompileDeadlineMs: this.config.maxCompileMs,
     });
+    const routeQuality = buildRouteQualitySummaryV1({
+      surface: "status",
+      activePackVersion: currentPack?.version ?? this.store.getCurrentPackVersion(),
+      activePackId: currentPack ? `brain-pack-v${currentPack.version}` : null,
+      routerIdentity: recentTraces[0]?.routeTrace?.routerIdentity ?? null,
+      summaryRoutingMode: lastAssemblyDecision?.summaryRoutingMode ?? null,
+      summaryMetadata: lastAssemblyDecision?.summaryMetadata ?? null,
+      replayVerdict: {
+        passed: lastReplayGateVerdict?.passed ?? null,
+        verdict: lastReplayGateVerdict?.passed === true
+          ? "pass"
+          : lastReplayGateVerdict?.passed === false
+            ? "fail"
+            : "unknown",
+        summary: lastReplayGateVerdict?.reason?.summary ?? null,
+      },
+      stopLocalWeights: this.mutableGraph.getAllStopLocalWeights(),
+      toolActionPriors: this.mutableGraph.getAllToolActionPriors(),
+      disabled: this.isEnabled() === false,
+      shadowMode: this.config.shadowMode,
+      rolledBack: currentPack?.rolledBack ?? false,
+      rollbackKey: null,
+      proofBundleId: null,
+    });
 
     const embeddingConfig = describeEmbeddingConfig(this.config);
     const contextManagement = buildContextManagementModel({
@@ -2110,6 +2138,7 @@ export class BrainService {
       lastReplayFailureReason: this.store.getTrainingState("last_replay_failure_reason"),
       lastReplayGateVerdict,
       promotionStory,
+      routeQuality,
       brainRoot: this.config.root,
       ...health,
     };

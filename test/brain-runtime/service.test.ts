@@ -563,6 +563,21 @@ describe("BrainService", () => {
       fittingDropReasons: {
         omitted_for_max_context_chars: 1,
       },
+      summaryRoutingMode: "expand_to_source",
+      summaryMetadata: {
+        totalCount: 3,
+        maxDepth: 2,
+        condensedCount: 1,
+        episodeCount: 1,
+        snapshotCount: 1,
+        branchCount: 2,
+        typedMemoryRefCount: 1,
+        freshnessStateCounts: { fresh: 2, superseded: 1 },
+        hasNonFreshSummaries: true,
+        hasTruthConflict: true,
+        latestRole: "support",
+        items: [],
+      },
     });
 
     const status = await service.status();
@@ -587,6 +602,23 @@ describe("BrainService", () => {
       droppedNodeCount: 1,
       fittingDropReasons: {
         omitted_for_max_context_chars: 1,
+      },
+      summaryRoutingMode: "expand_to_source",
+      summaryMetadata: expect.objectContaining({
+        totalCount: 3,
+        branchCount: 2,
+        snapshotCount: 1,
+        hasNonFreshSummaries: true,
+      }),
+    });
+    expect(status.routeQuality).toMatchObject({
+      summaryRoutingMode: "expand_to_source",
+      compactHealth: {
+        status: "healthy",
+        count: 3,
+        nonFreshCount: 1,
+        branchCount: 2,
+        snapshotCount: 1,
       },
     });
   });

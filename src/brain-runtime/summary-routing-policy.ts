@@ -9,6 +9,23 @@ function normalize(text: string): string {
   return text.trim().toLowerCase();
 }
 
+function describeSummaryPressure(summaryMetadata?: AssembledSummaryMetadata): string | null {
+  if (!summaryMetadata || summaryMetadata.totalCount === 0) {
+    return null;
+  }
+
+  const staleSummaryCount = Object.entries(summaryMetadata.freshnessStateCounts ?? {})
+    .filter(([freshnessState]) => freshnessState !== "fresh")
+    .reduce((count, [, value]) => count + (value ?? 0), 0);
+  const bits = [
+    `${summaryMetadata.totalCount} summary item(s)`,
+    summaryMetadata.branchCount > 1 ? `${summaryMetadata.branchCount} branches` : null,
+    summaryMetadata.snapshotCount > 0 ? `${summaryMetadata.snapshotCount} snapshots` : null,
+    staleSummaryCount > 0 ? `${staleSummaryCount} stale or superseded` : null,
+  ].filter((bit): bit is string => bit !== null);
+  return bits.join(", ");
+}
+
 export function decideSummaryRouting(params: {
   queryText: string;
   summaryMetadata?: AssembledSummaryMetadata;
@@ -29,6 +46,9 @@ export function decideSummaryRouting(params: {
   const staleSummaryCount = Object.entries(summaryMetadata.freshnessStateCounts ?? {})
     .filter(([freshnessState]) => freshnessState !== "fresh")
     .reduce((count, [, value]) => count + (value ?? 0), 0);
+  const summaryPressure = branchHeavy || staleSummaryCount > 0
+    ? describeSummaryPressure(summaryMetadata)
+    : null;
 
   const preferTypedMemory = [
     /\bcurrent\b/i,
@@ -95,7 +115,9 @@ export function decideSummaryRouting(params: {
   if (precisionSensitive) {
     return {
       mode: "expand_to_source",
-      reason: "precision-sensitive query should expand beyond summaries before asserting specifics",
+      reason: summaryPressure
+        ? `precision-sensitive query over ${summaryPressure} should expand beyond summaries before asserting specifics`
+        : "precision-sensitive query should expand beyond summaries before asserting specifics",
     };
   }
 

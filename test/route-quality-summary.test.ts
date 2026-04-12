@@ -9,6 +9,15 @@ describe("buildRouteQualitySummaryV1", () => {
       activePackVersion: 7,
       activePackId: "brain-pack-v7",
       routerIdentity: "route_fn.v1",
+      summaryRoutingMode: "expand_to_source",
+      summaryMetadata: {
+        totalCount: 3,
+        condensedCount: 1,
+        snapshotCount: 1,
+        branchCount: 2,
+        freshnessStateCounts: { fresh: 2, superseded: 1 },
+        hasNonFreshSummaries: true,
+      },
       replayVerdict: {
         passed: true,
         summary: "replay gate passed",
@@ -31,12 +40,24 @@ describe("buildRouteQualitySummaryV1", () => {
       activePackVersion: 7,
       activePackId: "brain-pack-v7",
       routerIdentity: "route_fn.v1",
+      summaryRoutingMode: "expand_to_source",
       controlState: {
         summary: "controls: live",
       },
       stopLocalHealth: {
         status: "healthy",
         count: 1,
+      },
+      compactHealth: {
+        status: "healthy",
+        count: 3,
+        freshCount: 2,
+        nonFreshCount: 1,
+        branchCount: 2,
+        snapshotCount: 1,
+        condensedCount: 1,
+        nonFreshPrevalence: 1 / 3,
+        snapshotShare: 1 / 2,
       },
       toolActionPriorsHealth: {
         status: "healthy",
@@ -51,7 +72,9 @@ describe("buildRouteQualitySummaryV1", () => {
       },
     });
     expect(summary.summary).toContain("posture promotable");
+    expect(summary.summary).toContain("summary routing expand_to_source");
     expect(summary.explainability).toContain("replay passed");
+    expect(summary.explainability).toContain("compact health: 3 summary item(s)");
     expect(summary.explainability).toContain("controls: live");
   });
 

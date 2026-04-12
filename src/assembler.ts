@@ -80,6 +80,23 @@ function estimateTokens(text: string): number {
 
 type SummaryPromptSignal = Pick<SummaryRecord, "kind" | "depth" | "descendantCount">;
 
+function describeSummaryPressure(summaryMetadata?: AssembledSummaryMetadata): string | null {
+  if (!summaryMetadata || summaryMetadata.totalCount === 0) {
+    return null;
+  }
+
+  const staleSummaryCount = Object.entries(summaryMetadata.freshnessStateCounts ?? {})
+    .filter(([freshnessState]) => freshnessState !== "fresh")
+    .reduce((count, [, value]) => count + (value ?? 0), 0);
+  const bits = [
+    `${summaryMetadata.totalCount} summary item(s)`,
+    summaryMetadata.branchCount > 1 ? `${summaryMetadata.branchCount} branches` : null,
+    summaryMetadata.snapshotCount > 0 ? `${summaryMetadata.snapshotCount} snapshots` : null,
+    staleSummaryCount > 0 ? `${staleSummaryCount} stale or superseded` : null,
+  ].filter((bit): bit is string => bit !== null);
+  return bits.join(", ");
+}
+
 /**
  * Build LCM usage guidance for the runtime system prompt.
  *
@@ -98,6 +115,10 @@ function buildSystemPromptAddition(
   const condensedCount = summarySignals.filter((signal) => signal.kind === "condensed").length;
   const heavilyCompacted = maxDepth >= 2 || condensedCount >= 2;
   const hasNonFreshSummaries = Boolean(summaryMetadata?.hasNonFreshSummaries);
+  const summaryPressure = (heavilyCompacted || hasNonFreshSummaries || (summaryMetadata?.branchCount ?? 0) > 1 || (summaryMetadata?.snapshotCount ?? 0) > 0)
+    ? describeSummaryPressure(summaryMetadata)
+    : null;
+  const pressureSentence = summaryPressure ? ` Compaction pressure: ${summaryPressure}.` : "";
 
   const sections: string[] = [];
 
@@ -140,17 +161,17 @@ function buildSystemPromptAddition(
       "",
       "If yes to any \u2192 expand first.",
       "",
-      "**Do not guess** exact commands, SHAs, file paths, timestamps, config values, or causal claims from condensed summaries. Expand first or state that you need to expand.",
+      `**Do not guess** exact commands, SHAs, file paths, timestamps, config values, or causal claims from condensed summaries.${pressureSentence} Expand first or state that you need to expand.`,
     );
   } else if (hasNonFreshSummaries) {
     sections.push(
       "",
-      "**Some summaries are stale or superseded.** Treat them as maps, not proof; expand to source before making exact claims or quoting details.",
+      `**Some summaries are stale or superseded.**${pressureSentence} Treat them as maps, not proof; expand to source before making exact claims or quoting details.`,
     );
   } else {
     sections.push(
       "",
-      "**For precision/evidence questions** (exact commands, SHAs, paths, timestamps, config values, root-cause chains): expand before answering.",
+      `**For precision/evidence questions** (exact commands, SHAs, paths, timestamps, config values, root-cause chains).${pressureSentence} Expand before answering.`,
       "Do not guess from condensed summaries — expand first or state uncertainty.",
     );
   }

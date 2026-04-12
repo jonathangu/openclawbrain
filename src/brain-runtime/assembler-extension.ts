@@ -115,7 +115,27 @@ type CompileCheckpoint = {
 
 type AssemblyDecisionDetails = BudgetDecisionDetails & CompileDecisionDetails & InterruptionDecisionDetails & TraceCarryoverDecisionDetails & {
   prefetch?: BrainPrefetchDecision | null;
+  summaryRoutingMode?: ReturnType<typeof decideSummaryRouting>["mode"] | null;
+  summaryMetadata?: AssembledSummaryMetadata | null;
 };
+
+function summarizeSummaryPressure(summaryMetadata?: AssembledSummaryMetadata | null): string | null {
+  if (!summaryMetadata || summaryMetadata.totalCount === 0) {
+    return null;
+  }
+
+  const staleSummaryCount = Object.entries(summaryMetadata.freshnessStateCounts ?? {})
+    .filter(([freshnessState]) => freshnessState !== "fresh")
+    .reduce((count, [, value]) => count + (value ?? 0), 0);
+  const pressureBits = [
+    `${summaryMetadata.totalCount} summary item(s)`,
+    summaryMetadata.branchCount > 1 ? `${summaryMetadata.branchCount} branches` : null,
+    summaryMetadata.snapshotCount > 0 ? `${summaryMetadata.snapshotCount} snapshots` : null,
+    summaryMetadata.condensedCount > 0 ? `${summaryMetadata.condensedCount} condensed summaries` : null,
+    staleSummaryCount > 0 ? `${staleSummaryCount} stale or superseded` : null,
+  ].filter((bit): bit is string => bit !== null);
+  return pressureBits.join(", ");
+}
 
 function decisionFooter(mode: BrainAssemblyOutcomeMode): string {
   switch (mode) {
@@ -434,19 +454,22 @@ function buildSummaryRoutingPrompt(
   const staleSummaryCount = Object.entries(summaryMetadata?.freshnessStateCounts ?? {})
     .filter(([freshnessState]) => freshnessState !== "fresh")
     .reduce((count, [, value]) => count + (value ?? 0), 0);
+  const summaryPressure = summarizeSummaryPressure(summaryMetadata);
+  const pressureTail = summaryPressure ? ` (${summaryPressure})` : "";
+  const pressureSentence = summaryPressure ? ` Compaction pressure: ${summaryPressure}.` : "";
 
   switch (mode) {
     case "summary_suffices":
       return branchHeavy
-        ? `This turn looks like a broad recap over branch-heavy compacted history${staleSummaryCount > 0 ? ` with ${staleSummaryCount} stale or superseded summary(s).` : "."} Summary-level context is a reasonable starting point, but expand toward source before making exact claims or resolving current-truth conflicts.`
+        ? `This turn looks like a broad recap over branch-heavy compacted history${pressureTail}. Summary-level context is a reasonable starting point, but expand toward source before making exact claims or resolving current-truth conflicts.${pressureSentence}`
         : "This turn looks like a broad recap. Summary-level context is a reasonable starting point unless the user asks for exact proof or current-truth conflict resolution.";
     case "prefer_typed_memory":
       return branchHeavy
-        ? `This turn looks current-truth or conflict-sensitive${staleSummaryCount > 0 ? `, and ${staleSummaryCount} summary(s) are stale or superseded.` : "."} Prefer explicit correction cards and typed memory over summary recap; if typed memory is missing or the branch history is forked/snapshotted, expand toward source before asserting specifics.`
+        ? `This turn looks current-truth or conflict-sensitive${pressureTail ? `${pressureTail}.` : "."} Prefer explicit correction cards and typed memory over summary recap; if typed memory is missing or the branch history is forked/snapshotted, expand toward source before asserting specifics.${pressureSentence}`
         : "This turn looks current-truth or conflict-sensitive. Prefer explicit correction cards and typed memory over summary recap; if typed memory is missing, expand toward source before asserting specifics.";
     case "expand_to_source":
       return branchHeavy
-        ? `This turn looks precision-sensitive against branch-heavy compacted history${staleSummaryCount > 0 ? ` with ${staleSummaryCount} stale or superseded summary(s).` : "."} Use summaries only to locate the region, then expand toward source material and snapshots before asserting exact details.`
+        ? `This turn looks precision-sensitive against branch-heavy compacted history${pressureTail}. Use summaries only to locate the region, then expand toward source material and snapshots before asserting exact details.${pressureSentence}`
         : "This turn looks precision-sensitive against compacted history. Use summaries only to locate the region, then expand toward source material before asserting exact details.";
     default:
       return undefined;
@@ -636,6 +659,8 @@ function assemblyDecisionDetails(params: {
   interruptionStage?: InterruptionStage | null;
   interruptionReason?: string | null;
   servedPartial?: boolean | null;
+  summaryRoutingMode?: ReturnType<typeof decideSummaryRouting>["mode"] | null;
+  summaryMetadata?: AssembledSummaryMetadata | null;
 }): AssemblyDecisionDetails {
   return {
     ...params.checkpoint,
@@ -652,6 +677,8 @@ function assemblyDecisionDetails(params: {
       queryBudgetChars: params.queryBudgetChars,
       budgetedBrainContext: params.budgetedBrainContext,
     }),
+    summaryRoutingMode: params.summaryRoutingMode ?? null,
+    summaryMetadata: params.summaryMetadata ?? null,
   };
 }
 
@@ -661,6 +688,7 @@ function withCompileReport(
   mode: BrainAssemblyOutcomeMode | BrainAssemblyRouteMode,
 ): AssemblyDecisionDetails & { compileReport?: BrainCompileReportV1 | null; compileReportSummary?: string | null; prefetch?: BrainPrefetchDecision | null } {
   const inheritedTraceDetails = traceCarryoverDecisionDetails(trace);
+  const { summaryMetadata: _summaryMetadata, summaryRoutingMode: _summaryRoutingMode, ...selectionMetadataForCompile } = selectionMetadata;
   if (!trace?.routeTrace?.selectionMetadata) {
     return {
       ...inheritedTraceDetails,
@@ -672,7 +700,7 @@ function withCompileReport(
       ...trace.routeTrace,
       selectionMetadata: {
         ...trace.routeTrace.selectionMetadata,
-        ...selectionMetadata,
+        ...selectionMetadataForCompile,
       },
     },
     decision: {
@@ -899,6 +927,8 @@ export class BrainAssemblerExtension {
     const summaryRoutingPrompt = buildSummaryRoutingPrompt(summaryRouting.mode, params.assembled.summaryMetadata);
     if (decision.mode !== "use_brain" && decision.mode !== "shadow") {
       const metadata = assemblyDecisionDetails({
+        summaryRoutingMode: summaryRouting.mode,
+        summaryMetadata: params.assembled.summaryMetadata ?? null,
         checkpoint: captureCompileCheckpoint(compileStartedAt, compileDeadlineMs),
         brainDropReason: decision.mode,
         brainDropStage: "decision",
@@ -935,6 +965,8 @@ export class BrainAssemblerExtension {
     if (beforeQueryCheckpoint.compileDeadlineHit) {
       const mode: BrainAssemblyOutcomeMode = "skip_deadline_before_query";
       const metadata = assemblyDecisionDetails({
+        summaryRoutingMode: summaryRouting.mode,
+        summaryMetadata: params.assembled.summaryMetadata ?? null,
         checkpoint: beforeQueryCheckpoint,
         brainDropReason: "deadline_before_query",
         brainDropStage: "decision",
@@ -993,6 +1025,8 @@ export class BrainAssemblerExtension {
     if (!result && !queryInterruption) {
       const mode: BrainAssemblyOutcomeMode = "skip_query_returned_no_nodes";
       const metadata = assemblyDecisionDetails({
+        summaryRoutingMode: summaryRouting.mode,
+        summaryMetadata: params.assembled.summaryMetadata ?? null,
         checkpoint: afterQueryCheckpoint,
         brainDropReason: "query_returned_no_nodes",
         brainDropStage: "query",
@@ -1025,6 +1059,8 @@ export class BrainAssemblerExtension {
       if (afterQueryInterruption) {
         const mode: BrainAssemblyOutcomeMode = "skip_deadline_after_query";
         const traceSelectionMetadata = assemblyDecisionDetails({
+        summaryRoutingMode: summaryRouting.mode,
+        summaryMetadata: params.assembled.summaryMetadata ?? null,
           checkpoint: afterQueryCheckpoint,
           brainDropReason: "deadline_after_query",
           brainDropStage: "query",
@@ -1060,6 +1096,8 @@ export class BrainAssemblerExtension {
       }
       const mode: BrainAssemblyOutcomeMode = "skip_query_returned_no_nodes";
       const metadata = assemblyDecisionDetails({
+        summaryRoutingMode: summaryRouting.mode,
+        summaryMetadata: params.assembled.summaryMetadata ?? null,
         checkpoint: afterQueryCheckpoint,
         brainDropReason: "query_returned_no_nodes",
         brainDropStage: "query",
@@ -1096,6 +1134,8 @@ export class BrainAssemblerExtension {
       );
       const mode: BrainAssemblyOutcomeMode = "partial_deadline_after_query";
       const traceSelectionMetadata = withCompileReport(result.trace, assemblyDecisionDetails({
+        summaryRoutingMode: summaryRouting.mode,
+        summaryMetadata: params.assembled.summaryMetadata ?? null,
         checkpoint: afterQueryCheckpoint,
         brainDropReason: "deadline_after_query",
         brainDropStage: "query",
@@ -1158,6 +1198,8 @@ export class BrainAssemblerExtension {
         );
         const mode: BrainAssemblyOutcomeMode = "partial_query_interruption";
         const traceSelectionMetadata = withCompileReport(result.trace, assemblyDecisionDetails({
+        summaryRoutingMode: summaryRouting.mode,
+        summaryMetadata: params.assembled.summaryMetadata ?? null,
           checkpoint: afterQueryCheckpoint,
           brainDropReason: "deadline_after_query",
           brainDropStage: "query",
@@ -1207,6 +1249,8 @@ export class BrainAssemblerExtension {
       }
       const mode: BrainAssemblyOutcomeMode = "skip_deadline_after_query";
       const traceSelectionMetadata = withCompileReport(result.trace, assemblyDecisionDetails({
+        summaryRoutingMode: summaryRouting.mode,
+        summaryMetadata: params.assembled.summaryMetadata ?? null,
         checkpoint: afterQueryCheckpoint,
         brainDropReason: "deadline_after_query",
         brainDropStage: "query",
@@ -1256,6 +1300,8 @@ export class BrainAssemblerExtension {
         );
         const mode: BrainAssemblyOutcomeMode = "partial_deadline_before_injection";
         const traceSelectionMetadata = withCompileReport(result.trace, assemblyDecisionDetails({
+        summaryRoutingMode: summaryRouting.mode,
+        summaryMetadata: params.assembled.summaryMetadata ?? null,
           checkpoint: beforeInjectionCheckpoint,
           brainDropReason: "deadline_before_injection",
           brainDropStage: "injection",
@@ -1312,6 +1358,8 @@ export class BrainAssemblerExtension {
 
       const mode: BrainAssemblyOutcomeMode = "skip_deadline_before_injection";
       const traceSelectionMetadata = withCompileReport(result.trace, assemblyDecisionDetails({
+        summaryRoutingMode: summaryRouting.mode,
+        summaryMetadata: params.assembled.summaryMetadata ?? null,
         checkpoint: beforeInjectionCheckpoint,
         brainDropReason: "deadline_before_injection",
         brainDropStage: "injection",
@@ -1353,6 +1401,8 @@ export class BrainAssemblerExtension {
     }
 
     const traceSelectionMetadata = withCompileReport(result.trace, assemblyDecisionDetails({
+        summaryRoutingMode: summaryRouting.mode,
+        summaryMetadata: params.assembled.summaryMetadata ?? null,
       checkpoint: beforeInjectionCheckpoint,
       brainDropReason: decision.mode === "shadow"
         ? "shadow_mode"

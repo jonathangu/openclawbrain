@@ -325,6 +325,21 @@ describe("openclawbrain explainable eval scorecard", () => {
           ],
         },
       ],
+      compactHealth: {
+        summaryRoutingCount: 10,
+        expandToSourceCount: 7,
+        branchHeavySummaryRoutingCount: 4,
+        branchHeavyExpandToSourceCount: 3,
+        summaryCount: 5,
+        nonFreshSummaryCount: 2,
+        snapshotCount: 1,
+        condensedCount: 4,
+        compactionPassCount: 6,
+        snapshotPassCount: 2,
+        condensePassCount: 4,
+        tokensBefore: 1200,
+        tokensAfter: 900,
+      },
       notes: ["qualityScore is a deterministic replay proxy"],
     });
 
@@ -362,6 +377,23 @@ describe("openclawbrain explainable eval scorecard", () => {
     );
     expect(brainDisabledMetric?.availability).toBe("proxy");
     expect(brainDisabledMetric?.value).toBe(0.5);
+
+    const expandMetric = scorecard.publicOperatorMetrics.find((metric) => metric.id === "expand_before_assert_rate");
+    expect(expandMetric?.availability).toBe("proxy");
+    expect(expandMetric?.value).toBe(0.7);
+
+    const branchMetric = scorecard.publicOperatorMetrics.find((metric) => metric.id === "branch_heavy_expand_to_source_rate");
+    expect(branchMetric?.value).toBe(0.75);
+
+    const prevalenceMetric = scorecard.publicOperatorMetrics.find((metric) => metric.id === "non_fresh_summary_prevalence");
+    expect(prevalenceMetric?.value).toBe(0.4);
+
+    const snapshotShareMetric = scorecard.publicOperatorMetrics.find((metric) => metric.id === "snapshot_vs_condense_share");
+    expect(snapshotShareMetric?.value).toBeCloseTo(1 / 3, 6);
+
+    const tokenReductionMetric = scorecard.publicOperatorMetrics.find((metric) => metric.id === "token_reduction_per_compaction_pass");
+    expect(tokenReductionMetric?.value).toBe(50);
+    expect(scorecard.headline[4]).toContain("expand_to_source was chosen");
 
     const qualityMetric = scorecard.internalMetrics.find((metric) => metric.id === "diagnostic_quality_score_mean_by_mode");
     expect(qualityMetric?.audience).toBe("internal");

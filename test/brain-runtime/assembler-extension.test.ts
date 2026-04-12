@@ -883,6 +883,7 @@ describe("BrainAssemblerExtension", () => {
 
     expect(result.brainDecision?.mode).toBe("use_brain");
     expect(result.systemPromptAddition).toContain("stale or superseded");
+    expect(result.systemPromptAddition).toContain("Compaction pressure: 1 summary item(s), 1 stale or superseded");
     expect(brain.noteAssemblyDecision).toHaveBeenCalledWith(expect.objectContaining({
       mode: "use_brain",
     }));
