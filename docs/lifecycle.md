@@ -1,111 +1,75 @@
 # Lifecycle
 
-This guide covers the supported install, verify, proof, rollback, detach, and uninstall flow for OpenClawBrain.
+This guide covers install, verify, rollback, detach, and uninstall.
 
 ## Install or refresh one OpenClaw home
 
-Keep the same `--openclaw-home` value through the whole lifecycle. The public lane stays pinned to one OpenClaw home.
+Use the same home path through the whole flow.
 
 ```bash
-openclawbrain install --openclaw-home ./openclaw-cormorantai
-openclawbrain status --openclaw-home ./openclaw-cormorantai --detailed
+npx @openclawbrain/cli@0.4.43 openclawbrain install --openclaw-home ~/.openclaw
+openclaw gateway restart
+npx @openclawbrain/cli@0.4.43 openclawbrain status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.43 openclawbrain proof --openclaw-home ~/.openclaw
 ```
 
-`install` is the public front door for the selected home. It repairs the installed hook/runtime-guard surface for that home and re-checks it against the separate daemon runtime surface for the same activation root:
+That same command path is used for:
+- first install
+- upgrade
+- repair
 
-- the **installed hook/runtime-guard** surface that OpenClaw loads from the selected `--openclaw-home`
-- the **daemon runtime** surface that background watch/learner work runs from for that activation root
+## Verify
 
-If the daemon/runtime surface has already moved to a newer OpenClawBrain version than the installed hook package, `install` refreshes that stale installed plugin state for the same selected home instead of silently treating the native plugin record as good enough.
+Use `status --detailed` for the fast check.
+Use `proof` when you want a saved bundle.
 
-`status --detailed` verifies both surfaces for the selected home. Fresh homes default to the cold-start prior. If the selected home already has user history, rerunning install rebuilds the stronger generic prior underneath the saved preferences, corrections, and habits instead of wiping them.
-
-If you ever do manual hook or daemon surgery, the safe recovery lane is still the same command:
-
-```bash
-openclawbrain install --openclaw-home ./openclaw-cormorantai
-```
-
-The selected home can be the default `~/.openclaw`, a profile-specific home, or an explicit nonstandard path like `./openclaw-cormorantai`. The important part is that install, status, rollback, detach, uninstall, and proof all stay pinned to the same exact `--openclaw-home` value.
-
-Safe converge lane for upgrades or hotfixes:
-
-1. Update the global packages that own the daemon/runtime surface.
-2. If this activation root runs the managed background daemon, restart that daemon-side surface.
-3. Run `openclawbrain install --openclaw-home <path>` to reconverge the selected hook/runtime-guard surface.
-4. Run `openclawbrain status --openclaw-home <path> --detailed` and confirm the `surface` line reports `converge=converged`.
-5. Run `openclawbrain proof --openclaw-home <path>` when you need a durable bundle that captures the same surface truth.
-
-When you need durable operator evidence today, run:
-
-```bash
-openclawbrain proof --openclaw-home ./openclaw-cormorantai
-```
-
-The intended canonical lane is the same install command with optional `--proof`. Until that flag lands cleanly across the operator surfaces, proof stays a separate follow-up command.
-
-If you do manual plugin surgery anyway, rerun `openclawbrain install --openclaw-home ./openclaw-cormorantai` (or the exact home you are operating on) before trusting the host again. The public story remains one install lane.
-
-## Verify and prove
-
-Look for these checkpoints in `status --detailed`:
-
+Healthy installs should show:
 - `STATUS ok`
 - `loadProof=status_probe_ready`
-- `attachTruth ... runtime=proven`
 - `surface ... converge=converged`
-
-If `surface ... converge=half_converged` appears, treat that as a failed converge. One side of the split runtime moved without the other. First rerun the same four-command lane for the same selected home; the shipped install path now refreshes a stale installed hook when the daemon/runtime side is newer. If the host still does not return to `converge=converged`, finish refreshing the daemon-side CLI/runtime surface and verify again before trusting the host.
-
-When you need a durable bundle, run the `proof` command above after install/restart or rerun it later with `--skip-install --skip-restart` to capture the current operator state without replaying lifecycle steps. When your installed proof surface still expects the explicit replay guards, use those flags there. The public story stays on the same selected `--openclaw-home`.
 
 ## Roll back
 
-Preview the rollback first:
+Preview first:
 
 ```bash
-openclawbrain rollback --openclaw-home ./openclaw-cormorantai --dry-run
+npx @openclawbrain/cli@0.4.43 openclawbrain rollback --openclaw-home ~/.openclaw --dry-run
 ```
 
-Apply the rollback only after the preview looks correct:
+Apply the rollback:
 
 ```bash
-openclawbrain rollback --openclaw-home ./openclaw-cormorantai
+npx @openclawbrain/cli@0.4.43 openclawbrain rollback --openclaw-home ~/.openclaw
 ```
-
-Rollback moves the serve path back to the previous promoted pack when one is available.
 
 ## Detach and keep data
 
-`detach` removes the OpenClaw profile hook and keeps OpenClawBrain data in place.
-
 ```bash
-openclawbrain detach --openclaw-home ./openclaw-cormorantai
+npx @openclawbrain/cli@0.4.43 openclawbrain detach --openclaw-home ~/.openclaw
 openclaw gateway restart
 ```
 
 ## Uninstall and keep data
 
 ```bash
-openclawbrain uninstall --openclaw-home ./openclaw-cormorantai --keep-data
+npx @openclawbrain/cli@0.4.43 openclawbrain uninstall --openclaw-home ~/.openclaw --keep-data
 openclaw gateway restart
 ```
 
 ## Uninstall and purge data
 
 ```bash
-openclawbrain uninstall --openclaw-home ./openclaw-cormorantai --purge-data
+npx @openclawbrain/cli@0.4.43 openclawbrain uninstall --openclaw-home ~/.openclaw --purge-data
 openclaw gateway restart
 ```
 
 ## Notes
 
-- Restart the gateway after install, detach, or uninstall so the running profile picks up the new hook state.
-- `rollback`, `status`, and `learn` do not need a gateway restart.
-- The plugin package itself is managed by OpenClaw's plugin manager. Removing the hook does not remove the installed package files.
-- If the running gateway still behaves like nothing changed, restart it first before assuming the hook edit failed.
+- keep the same `--openclaw-home` value through install, verify, rollback, detach, and uninstall
+- restart the gateway after install, detach, or uninstall
+- if something looks wrong, rerun install first, then recheck status
 
-Next docs:
+## Next
 
 - [Quick start](getting-started/quick-start.md)
 - [Troubleshooting](operating/troubleshooting.md)

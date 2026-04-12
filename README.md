@@ -1,169 +1,71 @@
 # OpenClawBrain
 
-**Better agent performance. Lower cost pressure.**
+OpenClawBrain gives OpenClaw a useful memory.
 
-OpenClawBrain is a memory layer for [OpenClaw](https://github.com/anthropics/openclaw) agents. It remembers what worked, learns from corrections, and injects bounded, useful context before every prompt — so your agent stops repeating the same mistakes and starts getting better over time.
+It helps your agent carry forward corrections, preferences, and successful past work without stuffing the whole transcript back into every prompt.
 
-The mechanism: a background pipeline watches agent interactions, binds feedback to past decisions, and builds compact memory packs. Only promoted packs reach the live path. The agent gets continuity without unbounded context growth, and latency stays predictable because the hot path never calls a live LLM. If the memory layer goes down, the agent keeps running.
+Current version: **0.4.43** · [Changelog](CHANGELOG.md)
 
-Current version: **0.4.43** · [Changelog](CHANGELOG.md) · [Claims boundary](CLAIMS.md)
+## What it does
 
-## Install
+- remembers what worked
+- carries forward explicit corrections
+- keeps prompts smaller and more focused
+- keeps running even if the memory layer is unavailable
+- lets you inspect whether it is actually loaded and working
 
-Prerequisites: a working OpenClaw installation, Node.js 20+, npm.
+## First-time install
+
+If you already have OpenClaw and Node.js 20+, this is the simplest path:
 
 ```bash
-openclawbrain install --openclaw-home ./openclaw-cormorantai
+npx @openclawbrain/cli@0.4.43 openclawbrain install --openclaw-home ~/.openclaw
 openclaw gateway restart
-openclawbrain status --openclaw-home ./openclaw-cormorantai --detailed
-openclawbrain proof --openclaw-home ./openclaw-cormorantai
+npx @openclawbrain/cli@0.4.43 openclawbrain status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.43 openclawbrain proof --openclaw-home ~/.openclaw
 ```
 
-`install` writes or refreshes the hook for your chosen OpenClaw home. That can be the default `~/.openclaw`, a profile home like `~/.openclaw-example`, or an explicit nonstandard path like `./openclaw-cormorantai`. When the daemon/runtime surface has already moved ahead of the installed hook package, `install` now refreshes that stale installed plugin state for the same home instead of silently preserving the skew. `status --detailed` verifies the wiring for that same home. `proof` captures a durable evidence bundle you can inspect or keep.
-
-Fresh homes default to the cold-start prior. Existing homes rerun the same install lane and keep their saved preferences on top while OpenClawBrain rebuilds the stronger generic prior underneath them instead of wiping them.
-
-A healthy install reports the profile as attached and the detailed `surface` line as `converge=converged`. After the first promoted pack is available, detailed status reports `serveState=serving_active_pack`.
-
-Next: [Quick start](docs/getting-started/quick-start.md) · [Troubleshooting](docs/operating/troubleshooting.md) · [Lifecycle](docs/lifecycle.md)
+Use the same four commands later for upgrades and repairs.
 
 ## How it works
 
-OpenClawBrain is not a bigger transcript buffer. It is a graph memory system with a learned routing policy.
+In plain English:
 
-The short version:
+1. OpenClawBrain records useful past work, corrections, and outcomes.
+2. It learns in the background which memories actually help.
+3. It prepares a small memory pack that is safe to serve live.
+4. At runtime, OpenClaw gets only the small slice that is likely to help now.
 
-1. **Store the raw material.** Transcripts, corrections, tool traces, status facts, and examples become durable memory.
-2. **Turn memory into a graph.** Nodes hold useful facts and artifacts. Edges start simple, then become meaningful: override, evidence, belongs-with, likely-next-step.
-3. **Traverse with a learned route function.** At runtime, a small local `route_fn` decides which branches to expand, which memories to pull forward, and when to stop.
-4. **Learn off the hot path.** Replay, human feedback, self-learning, harvester signals, and an async teacher label route decisions in the background.
-5. **Promote, then serve.** Candidate packs have to survive replay and health checks. Only promoted packs reach the live runtime.
+That means the agent gets continuity without turning every prompt into a giant history dump.
 
-### What makes it different
+## What is different from simple retrieval
 
-Most retrieval systems ask, “what past text looks similar?” OpenClawBrain asks a harder question: “what path through memory will help this answer?”
+A basic archive can store the past.
+A basic search system can find similar text.
 
-That is the difference.
+OpenClawBrain tries to answer a harder question:
 
-- **Graph, not flat recall.** Memory has structure, not just similarity scores.
-- **Learned traversal, not static top-k.** The runtime can branch, stop, and choose better next hops.
-- **Bounded runtime, not prompt sprawl.** The live path serves a small useful slice, not the whole past.
-- **Background learning, not hot-path latency.** The async teacher and dreaming loop improve the system without slowing the current turn.
-- **Promoted packs, not half-written state.** Learning stays off to the side until the result passes replay.
-- **Fails open.** If memory is unavailable, the agent still runs.
+> What small piece of past context will actually help with this run?
 
-### Mental model
+That is the whole point.
 
-Think of OpenClawBrain as four layers working together:
+## Start here
 
-- **Graph memory** stores corrections, examples, traces, docs, and evidence as nodes and edges.
-- **`route_fn`** is the fast runtime policy that decides what to retrieve now.
-- **Teacher + labels** provide dense background supervision. Human correction stays the highest-trust signal.
-- **Replay + promotion** decide what is safe enough to serve live.
+- [Quick start](docs/getting-started/quick-start.md)
+- [Docs index](docs/README.md)
+- [Install / lifecycle](docs/lifecycle.md)
+- [Troubleshooting](docs/operating/troubleshooting.md)
+- [How it works](https://openclawbrain.ai/how-it-works/)
 
-The cool part is the loop:
+## For maintainers
 
-1. The agent does work.
-2. The system records the result.
-3. Feedback gets attached to the earlier route decisions.
-4. Replay and the async teacher produce better labels.
-5. The route policy improves.
-6. A promoted pack serves a better small slice next time.
+The deep architecture and release docs still exist, but they are not the first stop for a newcomer.
 
-If you want the deeper version — graph traversal, route selection, labels, async teacher, dreaming, and promotion — read the full page:
-
-**[How OpenClawBrain works →](https://openclawbrain.ai/how-it-works/)**
-
-## The new Graphify bridge
-
-OpenClawBrain ships a real Graphify bridge.
-
-The important boundary is simple:
-
-- **Graphify is in the product now**
-- **Graphify is not the live serve path**
-
-The shipped Graphify lane is an **off-path compiler / diagnostics surface**.
-
-It helps in two places:
-
-1. **cold start** — stronger initial graph structure before a home has much learned personal history
-2. **maintenance diagnostics** — bounded operator surfaces for drift, provenance gaps, and graph-vs-OCB review
-
-What shipped includes:
-
-- source-bundle export
-- Graphify projection export
-- managed Graphify runs
-- compiled-artifact bridge
-- deterministic lints
-- conservative EXTRACTED-only import slice
-- candidate-pack input bridge
-- maintenance diff lane
-- replay/eval proof lane
-
-What we proved:
-
-- `graphify_artifacts_only` won cold start in the proof packet
-- `graphify_import + learned_route` beat learned-route without Graphify import
-- deterministic lints and maintenance diff are useful, but **diagnostic-only**
-
-So the honest product story is:
-
-> Graphify makes OpenClawBrain better as an **offline graph compiler and maintenance lens**, while the live runtime still serves promoted OpenClawBrain packs.
-
-If you want the focused explanation, read **[docs/graphify.md](docs/graphify.md)**.
-
-## Unified operator truth / proof surfaces are now part of the shipped product
-
-OpenClawBrain `0.4.43` packages the new cold-start continuation, explainable eval, budgeted routing, compact-health, and retry-identity work into the public OCB lane while keeping the existing operator/proof install flow intact.
-
-What is now part of the public product:
-
-- `status --detailed` reports a bounded-anytime summary with deadline posture, clip / fail-open rates, and recent branch behavior
-- `status --detailed` also reports a route-quality summary with replay verdict, `STOP_LOCAL` health, tool-action-priors health, and control posture
-- proof-cron health/nightly outputs now publish an economics scorecard with explicit measured / derived / proxy labels so cost and performance evidence stay reviewable without reading raw bundles
-- `openclawbrain proof --openclaw-home ...` now carries a provenance audit chain (`provenance-audit-chain.md` / `.json`) that links serve-decision rows, attribution truth, learning-update truth, and promotion/proof truth
-
-What does **not** change:
-
-- the install lane is still the same four commands
-- the live serve path is still promoted OpenClawBrain packs, not Graphify or a new proof-side dependency
-- these are operator/proof surfaces for inspection and proof, not a change to the hot-path contract
-
-## Scope
-
-OpenClawBrain is the memory layer. It does not own the gateway.
-
-**Does:**
-- Install, repair, and manage the memory hook for a selected OpenClaw home
-- Store sessions and corrections as durable memory
-- Build and promote memory packs in the background
-- Keep the live path bounded and latency predictable
-- Expose status, rollback, detach, uninstall, and learning inspection
-- Fail open when memory compilation cannot safely add context
-
-**Does not:**
-- Start, stop, or reconfigure the OpenClaw gateway
-- Edit LaunchAgent or gateway environment files
-- Claim multi-profile attachment or shared-root concurrent writes as proven
-
-## Documentation
-
-Start at [docs/README.md](docs/README.md).
-
-| Topic | Link |
-| --- | --- |
-| Quick start | [docs/getting-started/quick-start.md](docs/getting-started/quick-start.md) |
-| Troubleshooting | [docs/operating/troubleshooting.md](docs/operating/troubleshooting.md) |
-| Architecture | [docs/architecture/overview.md](docs/architecture/overview.md) |
-| Learning pipeline | [docs/architecture/learning-pipeline.md](docs/architecture/learning-pipeline.md) |
-| Fail-open design | [docs/architecture/fail-open.md](docs/architecture/fail-open.md) |
-| Deep dive | [docs/architecture/deep-dive.md](docs/architecture/deep-dive.md) |
+- [Architecture overview](docs/architecture/overview.md)
+- [Claims boundary](CLAIMS.md)
+- [Release contract](docs/RELEASE_CONTRACT.md)
 
 ## Contributing
-
-Start with [CONTRIBUTING.md](CONTRIBUTING.md), then read the [architecture overview](docs/architecture/overview.md) and [claims boundary](CLAIMS.md).
 
 ```bash
 npm install
@@ -171,4 +73,4 @@ npm test
 npm run release:verify
 ```
 
-If you change the public story, update the README, docs index, changelog, and claims boundary in the same pass.
+If you change the public story, update the README, docs index, and site pages in the same pass.

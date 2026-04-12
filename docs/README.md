@@ -1,47 +1,48 @@
-# OpenClawBrain documentation
+# OpenClawBrain docs
 
-Use this index to find the shortest path for your role.
+This page is the shortest path for a new user.
 
-Public operator front door: `openclawbrain install --openclaw-home <path>` for one OpenClaw home. That path can be the default `~/.openclaw`, a profile-specific home, or an explicit nonstandard directory like `./openclaw-cormorantai`. Fresh homes default to the cold-start prior. Existing homes rerun the same lane and keep their learned preferences on top while the stronger generic prior gets rebuilt underneath. When the daemon-side CLI/runtime surface has already moved ahead, `install` now refreshes the stale installed hook/plugin state for that same home before you verify. `status --detailed` is the quick check, and it reports the daemon-side CLI surface separately from the installed hook/runtime-guard surface so skew is explicit. Durable proof remains a separate command today.
+## Start here
 
-Current `0.4.43` operator/proof surfaces keep the bounded-anytime and install/proof lane intact, and add the new cold-start continuation, explainable eval, budgeted routing, compact-health, and retry-identity improvements to the shipped OCB surface.
+If you want to try OpenClawBrain for the first time, use this command path:
 
-## Getting started
+```bash
+npx @openclawbrain/cli@0.4.43 openclawbrain install --openclaw-home ~/.openclaw
+openclaw gateway restart
+npx @openclawbrain/cli@0.4.43 openclawbrain status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.43 openclawbrain proof --openclaw-home ~/.openclaw
+```
 
-- [Quick start](getting-started/quick-start.md) for the one-command install, verify, and optional proof flow
-- [Lifecycle](lifecycle.md) for install, proof, rollback, detach, and uninstall
-- [Configuration guide](configuration.md) for embeddings, worker mode, operator controls, and the canonical context-management model
+That same path is also the upgrade and repair path.
 
-## Operating
+## New users
 
-- [Troubleshooting](operating/troubleshooting.md) for common install and serve-path issues
-- [Lifecycle](lifecycle.md) for removal and rollback
-- [Configuration guide](configuration.md) for advanced operator commands and context-management truth
+- [Quick start](getting-started/quick-start.md)
+- [Lifecycle](lifecycle.md)
+- [Troubleshooting](operating/troubleshooting.md)
+- [Current release notes](release-notes-0.4.43.md)
 
-## Architecture
+## What OpenClawBrain is
 
-- [Graphify bridge](graphify.md) for the shipped Graphify story: what it helps, what stayed off-path, and how to explain the boundary clearly
-- [Graphify scheduler](architecture/graphify-scheduler.md) for the delta/reorg cadences, registry links, and retention rules that keep Graphify inspectable and replayable
-- [Overview](architecture/overview.md) for the high-level system design
-- [Learning pipeline](architecture/learning-pipeline.md) for export, candidate packs, promotion, and rollback
-- [Lint families](architecture/teacher-v3-lints.md) for deterministic CI-first vs teacher-assisted audits
-- [Fail-open design](architecture/fail-open.md) for fallback behavior and recovery
-- [Deep dive](architecture/deep-dive.md) for the existing architecture notes
-- [Routing prior](architecture/routing-prior.md) for summary-aware retrieval
-- [Corrections](architecture/corrections.md) for the explicit user-correction path
-- [Teacher v3 proof surfaces](architecture/teacher-v3-proof.md) for the proposal-reporting / proof-bundle design and its shipped-vs-target-state mapping
-- [Proof packaging](proof/README.md) for the shipped operator proof lane, the target-state Teacher v3 bundle, and the worked examples that keep the boundary honest
+OpenClawBrain is a memory layer for OpenClaw.
 
-## Release history
+It helps the agent:
+- remember corrections
+- carry forward preferences
+- reuse successful past work
+- keep the live prompt small and focused
 
-- [Current release notes (0.4.43)](release-notes-0.4.43.md)
-- [Full changelog](../CHANGELOG.md)
+## If you want the deeper explanation
 
-## Project notes
+- [How it works](https://openclawbrain.ai/how-it-works/)
+- [Architecture overview](architecture/overview.md)
+- [Proof docs](proof/README.md)
 
-These files are useful for maintainers, not for a first-time operator:
+## Maintainer notes
+
+These are useful, but not the first stop for a newcomer:
 
 - [Claims boundary](../CLAIMS.md)
 - [Release contract](RELEASE_CONTRACT.md)
-- [Evidence notes](EVIDENCE.md)
 - [End state notes](END_STATE.md)
+- [Evidence notes](EVIDENCE.md)

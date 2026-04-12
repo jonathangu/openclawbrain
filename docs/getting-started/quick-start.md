@@ -10,45 +10,34 @@ This is the shortest supported path from a working OpenClaw install to a verifie
 
 ## Install and verify
 
-Keep the same `--openclaw-home` value through install, restart, status, and proof. The public operator story is one command front door for one OpenClaw home.
-
-That home does **not** have to be `~/.openclaw`. Explicit nonstandard homes like `./openclaw-cormorantai` are first-class as long as you keep the same path pinned through the whole flow.
+Keep the same `--openclaw-home` value through the whole flow.
 
 ```bash
-openclawbrain install --openclaw-home ./openclaw-cormorantai
+npx @openclawbrain/cli@0.4.43 openclawbrain install --openclaw-home ~/.openclaw
 openclaw gateway restart
-openclawbrain status --openclaw-home ./openclaw-cormorantai --detailed
+npx @openclawbrain/cli@0.4.43 openclawbrain status --openclaw-home ~/.openclaw --detailed
+npx @openclawbrain/cli@0.4.43 openclawbrain proof --openclaw-home ~/.openclaw
 ```
 
-`install` is the public front door. It converges the selected home's installed hook/runtime-guard surface and the daemon runtime surface onto one coherent state for that activation root. If the daemon/runtime surface is already newer than the installed hook package, `install` refreshes that stale installed plugin state for the same `--openclaw-home` before you verify. `status --detailed` is the quick verify surface.
+What these commands do:
 
-Fresh homes default to the cold-start prior. If you are upgrading an existing home, rerun the same install lane; it rebuilds the stronger generic prior underneath your saved preferences instead of resetting them.
-
-Activation and teacher wiring are separate checks. `BRAIN LOADED` and an attached home prove the brain hook is live for that OpenClaw home. They do **not** by themselves prove that an optional teacher model is wired. Teacher wiring uses the dedicated config fields `brainTeacherEnabled`, `brainTeacherProvider`, and `brainTeacherModel`, and the same `status --detailed` surface should report `teacherConfigured`, `teacherProvider`, `teacherModel`, and `teacherConfigError`.
-
-When you need durable operator evidence today, run:
-
-```bash
-openclawbrain proof --openclaw-home ./openclaw-cormorantai
-```
-
-The intended canonical lane is `openclawbrain install --openclaw-home <your-home> --proof`. Until that flag lands cleanly across the operator surfaces, proof stays a separate follow-up command. `proof` writes `summary.md`, `steps.json`, `verdict.json`, raw step logs, and proof pointers under one bundle directory.
-
-If you manually change plugin files anyway, treat that as maintainer-only surgery and rerun `openclawbrain install --openclaw-home ./openclaw-cormorantai` (or whatever exact home you are operating on) before trusting the host again.
-
-In the detailed status output, look for `surface ... converge=converged`. If it says `converge=half_converged`, the daemon runtime and installed hook/runtime-guard drifted apart. First rerun the same four-command lane for that same `--openclaw-home`; `install` now refreshes a stale installed hook when the daemon side has already moved ahead. If the surface still does not return to `converge=converged`, treat the host as failed and continue with troubleshooting.
+1. attach OpenClawBrain to one OpenClaw home
+2. restart the gateway so the runtime reloads
+3. check detailed status
+4. save a proof bundle if you want a durable record
 
 ## What success looks like
 
-- `status --detailed` reports the selected OpenClaw home as attached
+Look for these signals in `status --detailed`:
+
+- `STATUS ok`
 - `loadProof=status_probe_ready`
-- after the first promoted pack exists, detailed status also reports `serveState=serving_active_pack`
-- if you configured a teacher, detailed status reports `teacherConfigured=true`, the expected `teacherProvider` and `teacherModel`, and `teacherConfigError=null`
+- `surface ... converge=converged`
 
 If the install does not look healthy yet, go straight to [Troubleshooting](../operating/troubleshooting.md).
 
-## What to read next
+## Next
 
-- [Lifecycle](../lifecycle.md) for rollback, detach, and uninstall
-- [Configuration guide](../configuration.md) for embeddings and advanced operator commands
-- [Architecture overview](../architecture/overview.md) if you want the system design before reading code
+- [Lifecycle](../lifecycle.md)
+- [Troubleshooting](../operating/troubleshooting.md)
+- [Configuration guide](../configuration.md)
