@@ -29,6 +29,7 @@ import type {
   NodeKind,
   RecentPrefetchSummary,
   TrustLevel,
+  TraceRetryIdentityV1,
 } from "./types.js";
 import type { TraverseResult } from "./traverse.js";
 import { resolveStopTruth } from "./trajectory-stop.js";
@@ -77,6 +78,57 @@ function normalizeConfidence(value: number | null | undefined): number | null {
 
 function hashStableParts(parts: Array<string | null | undefined>): string {
   return hashValue(parts.map((part) => part ?? "").join("\u001f"));
+}
+
+function buildTurnRetryId(params: {
+  episodeId: string | null;
+  conversationId: number | null;
+  queryText: string;
+  packVersion: number | null;
+}): string {
+  return `turn_${hashStableParts([
+    "v1",
+    params.episodeId,
+    params.conversationId === null ? null : String(params.conversationId),
+    hashQuery(params.queryText),
+    params.packVersion === null ? null : String(params.packVersion),
+  ])}`;
+}
+
+function buildTraceRetryIdentity(params: {
+  turnId: string;
+  requestDigest: string;
+  decisionPointSnapshots: DecisionPointSnapshotV1[];
+  selectedNodeIds: string[];
+  selectedTraversalNodeIds: string[];
+  selectedSeedNodeIds: string[];
+  firedNodeIds: string[];
+  vetoedNodeIds: string[];
+}): TraceRetryIdentityV1 {
+  return {
+    turnId: params.turnId,
+    traceId: `rt_${hashStableParts([
+      "v1",
+      params.turnId,
+      params.requestDigest,
+      params.selectedNodeIds.join(","),
+      params.selectedTraversalNodeIds.join(","),
+      params.selectedSeedNodeIds.join(","),
+      params.firedNodeIds.join(","),
+      params.vetoedNodeIds.join(","),
+      params.decisionPointSnapshots.map((snapshot) => [
+        snapshot.decisionPointId,
+        snapshot.expansionIndex,
+        snapshot.selectionIndex,
+        snapshot.chosenActionId,
+        snapshot.chosenActionKind,
+      ].join(":")),
+    ])}`,
+  };
+}
+
+export function getTraceRetryIdentity(trace: DecisionTrace | null | undefined): TraceRetryIdentityV1 | null {
+  return trace?.routeTrace?.selectionMetadata?.retryIdentity ?? null;
 }
 
 function truncatePreview(content: string): string {
@@ -764,7 +816,7 @@ function buildDecisionPointBudgetContext(params: {
 }
 
 function buildDecisionPointSnapshots(params: {
-  traceId: string;
+  turnRetryId: string;
   episodeId: string | null;
   conversationId: number | null;
   traversalResult: TraverseResult;
@@ -811,7 +863,7 @@ function buildDecisionPointSnapshots(params: {
     return {
       schemaVersion: 1,
       decisionPointId: `dp_${hashStableParts([
-        params.traceId,
+        params.turnRetryId,
         params.episodeId,
         String(substep.stateSnapshot.expansionIndex),
         String(substep.stateSnapshot.selectionIndex),
@@ -1717,8 +1769,14 @@ function buildRouteTrace(params: {
     0,
   );
   const injectedNodeSummaries = params.selectedNodes.map((node) => summarizeInjectedNode(node));
+  const turnRetryId = buildTurnRetryId({
+    episodeId: params.episodeId,
+    conversationId: params.conversationId,
+    queryText: params.queryText,
+    packVersion: params.packVersion,
+  });
   const decisionPointSnapshots = buildDecisionPointSnapshots({
-    traceId: params.traceId,
+    turnRetryId,
     episodeId: params.episodeId,
     conversationId: params.conversationId,
     traversalResult: params.traversalResult,
@@ -1739,6 +1797,16 @@ function buildRouteTrace(params: {
     selectedTraversalNodeIds: selectedTraversalIds,
     selectedSeedNodeIds,
     lookupNode: params.lookupNode,
+  });
+  const retryIdentity = buildTraceRetryIdentity({
+    turnId: turnRetryId,
+    requestDigest: hashQuery(params.queryText),
+    decisionPointSnapshots,
+    selectedNodeIds: selectedIds,
+    selectedTraversalNodeIds: selectedTraversalIds,
+    selectedSeedNodeIds,
+    firedNodeIds: params.traversalResult.firedNodes.map((node) => node.nodeId),
+    vetoedNodeIds: params.traversalResult.vetoedNodes.map((node) => node.nodeId),
   });
 
   const rawRouteTrace: DecisionRouteTrace = {
@@ -1802,6 +1870,7 @@ function buildRouteTrace(params: {
       interruptionAccounting: params.traversalResult.interruptionAccounting ?? null,
       decisionPointSnapshots,
       decisionPointSummary: summarizeDecisionPointSnapshots(decisionPointSnapshots),
+      retryIdentity,
     },
   };
 

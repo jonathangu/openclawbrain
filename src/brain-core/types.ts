@@ -944,6 +944,11 @@ export type DecisionTraceSelectionMetadataV4 = DecisionRouteTrace["selectionMeta
   compileReportSummary?: string | null;
 };
 
+export interface TraceRetryIdentityV1 {
+  turnId: string;
+  traceId: string;
+}
+
 export type BrainInterruptionStage =
   | "embedding"
   | "query"
@@ -1076,6 +1081,7 @@ export interface DecisionRouteTrace {
     prefetch?: BrainPrefetchDecision | null;
     compileReport?: BrainCompileReportV1 | null;
     compileReportSummary?: string | null;
+    retryIdentity?: TraceRetryIdentityV1 | null;
   };
 }
 
@@ -1205,6 +1211,7 @@ export interface BrainObservationRouteMetadata {
   activePackGraphChecksum: string | null;
   activePackRouterChecksum: string | null;
   activePackBuiltAt: string | null;
+  retryIdentity?: TraceRetryIdentityV1 | null;
   servedArtifact: BrainObservationServedArtifact | null;
   candidateNodeIds: string[];
   selectedNodeIds: string[];

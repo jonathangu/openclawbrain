@@ -249,6 +249,7 @@ export function materializeTeacherLabelInput(observation: BrainObservation): Tea
       activePackGraphChecksum: observation.routeMetadata.activePackGraphChecksum,
       activePackRouterChecksum: observation.routeMetadata.activePackRouterChecksum,
       activePackBuiltAt: observation.routeMetadata.activePackBuiltAt,
+      retryIdentity: observation.routeMetadata.retryIdentity ?? null,
       servedArtifact: cloneServedArtifact(observation.routeMetadata.servedArtifact),
       candidateNodeIds: [...observation.routeMetadata.candidateNodeIds],
       selectedNodeIds: [...observation.routeMetadata.selectedNodeIds],

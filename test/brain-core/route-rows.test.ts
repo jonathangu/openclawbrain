@@ -243,7 +243,8 @@ describe("route rows", () => {
       throw new Error("expected a decision point snapshot");
     }
 
-    const provenance = makeTraceLabelProvenance(trace.id, snapshot.decisionPointId);
+    const retryTraceId = trace.routeTrace?.selectionMetadata.retryIdentity?.traceId ?? trace.id;
+    const provenance = makeTraceLabelProvenance(retryTraceId, snapshot.decisionPointId);
     const rows = materializeRouteDecisionRowsFromTraceV1({
       trace,
       provenanceByDecisionPointId: {
@@ -274,13 +275,13 @@ describe("route rows", () => {
       binding_mode: "trace_id",
       attribution_quality: "exact",
       feedback_richness: "followup_and_tool",
-      trace_id: trace.id,
+      trace_id: retryTraceId,
       decision_point_id: snapshot.decisionPointId,
     });
     expect(row.hard_negatives).toEqual(["doc_1", "tool_1"]);
     expect(row.evidence_spans[0]?.source_ref).toMatch(/^(?:req_route_row_bridge|prov_|[a-z0-9:_-]+)$/i);
     expect(summarizeRouteDecisionRowV1(row)).toMatchObject({
-      traceId: trace.id,
+      traceId: retryTraceId,
       decisionPointId: snapshot.decisionPointId,
       chosenActionKind: "tool_instance",
       stopLabel: "CONTINUE",
@@ -288,5 +289,92 @@ describe("route rows", () => {
       hardNegativeCount: 2,
       provenanceState: "matched",
     });
+  });
+
+  it("keeps row ids and trace ids stable across repeated materialization of the same logical trace", () => {
+    const firstTrace = makeTrace([
+      {
+        sourceNodeId: "a",
+        expansionIndex: 0,
+        frontierBefore: ["a"],
+        frontierAfter: [],
+        budgetBefore: 100,
+        budgetAfter: 92,
+        substeps: [
+          {
+            stateSnapshot: makeStateSnapshot("a", 0, 0),
+            candidates: [
+              { action: { type: "traverse" as const, targetNodeId: "doc_1" }, score: 1.25, probability: 0.2 },
+              { action: { type: "traverse" as const, targetNodeId: "tool_2" }, score: 2.75, probability: 0.3 },
+              { action: { type: "stop_local" as const }, score: 0.1, probability: 0.15 },
+            ],
+            chosenAction: { type: "traverse" as const, targetNodeId: "tool_2" },
+            chosenActionProbability: 0.3,
+            stopProbability: 0.15,
+          },
+        ],
+        selectedTargets: ["tool_2"],
+        acceptedTargets: ["tool_2"],
+        vetoedTargets: [],
+        proposalOutcomes: [{ targetNodeId: "tool_2", outcome: "accepted", reason: "accepted" }],
+        terminationReason: "policy_stop",
+      },
+    ] as TrajectoryExpansion[], ["tool_2"], [makeToolNode("tool_2", "wttr", "instance")]);
+    const secondTrace = makeTrace([
+      {
+        sourceNodeId: "a",
+        expansionIndex: 0,
+        frontierBefore: ["a"],
+        frontierAfter: [],
+        budgetBefore: 100,
+        budgetAfter: 92,
+        substeps: [
+          {
+            stateSnapshot: makeStateSnapshot("a", 0, 0),
+            candidates: [
+              { action: { type: "traverse" as const, targetNodeId: "doc_1" }, score: 1.25, probability: 0.2 },
+              { action: { type: "traverse" as const, targetNodeId: "tool_2" }, score: 2.75, probability: 0.3 },
+              { action: { type: "stop_local" as const }, score: 0.1, probability: 0.15 },
+            ],
+            chosenAction: { type: "traverse" as const, targetNodeId: "tool_2" },
+            chosenActionProbability: 0.3,
+            stopProbability: 0.15,
+          },
+        ],
+        selectedTargets: ["tool_2"],
+        acceptedTargets: ["tool_2"],
+        vetoedTargets: [],
+        proposalOutcomes: [{ targetNodeId: "tool_2", outcome: "accepted", reason: "accepted" }],
+        terminationReason: "policy_stop",
+      },
+    ] as TrajectoryExpansion[], ["tool_2"], [makeToolNode("tool_2", "wttr", "instance")]);
+
+    const firstSnapshot = firstTrace.routeTrace?.selectionMetadata.decisionPointSnapshots?.[0];
+    const secondSnapshot = secondTrace.routeTrace?.selectionMetadata.decisionPointSnapshots?.[0];
+    if (!firstSnapshot || !secondSnapshot) {
+      throw new Error("expected decision point snapshots");
+    }
+
+    const firstRetryTraceId = firstTrace.routeTrace?.selectionMetadata.retryIdentity?.traceId ?? firstTrace.id;
+    const secondRetryTraceId = secondTrace.routeTrace?.selectionMetadata.retryIdentity?.traceId ?? secondTrace.id;
+    const firstRow = materializeRouteDecisionRowsFromTraceV1({
+      trace: firstTrace,
+      provenanceByDecisionPointId: {
+        [firstSnapshot.decisionPointId]: makeTraceLabelProvenance(firstRetryTraceId, firstSnapshot.decisionPointId),
+      },
+    })[0]!;
+    const secondRow = materializeRouteDecisionRowsFromTraceV1({
+      trace: secondTrace,
+      provenanceByDecisionPointId: {
+        [secondSnapshot.decisionPointId]: makeTraceLabelProvenance(secondRetryTraceId, secondSnapshot.decisionPointId),
+      },
+    })[0]!;
+
+    expect(firstRow.row_id).toBe(secondRow.row_id);
+    expect(firstRow.trace_id).toBe(secondRow.trace_id);
+    expect(firstRow.label_provenance.trace_id).toBe(secondRow.label_provenance.trace_id);
+    expect(firstRow.decision_point_id).toBe(secondRow.decision_point_id);
+    expect(firstRow.chosen_action_id).toBe(secondRow.chosen_action_id);
+    expect(firstRow.row_id).toMatch(/^rr_[a-f0-9]{16}$/);
   });
 });

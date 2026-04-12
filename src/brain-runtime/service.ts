@@ -37,7 +37,7 @@ import { BrainGraph } from "../brain-core/graph.js";
 import { traverse } from "../brain-core/traverse.js";
 import type { TraverseResult } from "../brain-core/traverse.js";
 import { recordEpisode } from "../brain-core/episode.js";
-import { buildBrainCompileReport, recordTrace, redactDecisionTrace, redactInjectedNodeSummary, redactRouteTrace, redactTextSurface, redactToolResult, rewriteBrainCompileReportSummary, summarizeBoundedAnytimeStatus, summarizeRecentPrefetchDecisions } from "../brain-core/trace.js";
+import { buildBrainCompileReport, getTraceRetryIdentity, recordTrace, redactDecisionTrace, redactInjectedNodeSummary, redactRouteTrace, redactTextSurface, redactToolResult, rewriteBrainCompileReportSummary, summarizeBoundedAnytimeStatus, summarizeRecentPrefetchDecisions } from "../brain-core/trace.js";
 import { computeHealth } from "../brain-core/health.js";
 import { BrainTeacher } from "../brain-core/teacher.js";
 import { BrainMutator } from "../brain-core/mutator.js";
@@ -771,13 +771,14 @@ export class BrainService {
     assemblyDecision: NonNullable<BrainService["lastAssemblyDecision"]> | null = null,
   ): BrainObservationRouteMetadata {
     const routeTrace = trace.routeTrace ?? null;
+    const retryIdentity = getTraceRetryIdentity(trace);
     const bindingMode = resolveObservationBindingMode({
       bindingMode: assemblyDecision?.bindingMode,
       serveDecisionRecordId: assemblyDecision?.serveDecisionRecordId,
       selectionDigest: assemblyDecision?.selectionDigest,
       activePackGraphChecksum: assemblyDecision?.activePackGraphChecksum,
       turnCompileEventId: assemblyDecision?.turnCompileEventId,
-      traceId: trace.id,
+      traceId: retryIdentity?.traceId ?? trace.id,
     });
     return {
       requestDigest: routeTrace?.requestDigest ?? null,
@@ -794,6 +795,7 @@ export class BrainService {
       activePackGraphChecksum: assemblyDecision?.activePackGraphChecksum ?? null,
       activePackRouterChecksum: assemblyDecision?.activePackRouterChecksum ?? null,
       activePackBuiltAt: assemblyDecision?.activePackBuiltAt ?? null,
+      retryIdentity,
       servedArtifact: cloneObservationServedArtifact(assemblyDecision?.servedArtifact),
       candidateNodeIds: [...(routeTrace?.candidateNodeIds ?? [])],
       selectedNodeIds: [...(routeTrace?.selectedNodeIds ?? trace.firedNodes)],
@@ -976,7 +978,7 @@ export class BrainService {
         ?? ((this.lastAssemblyDecision?.traceId === trace.id ? this.lastAssemblyDecision.bindingMode : null) ?? null)
         ?? trace.routeTrace.selectionMetadata.compileReport?.bindingMode
         ?? null,
-      traceId: trace.id,
+      traceId: getTraceRetryIdentity(trace)?.traceId ?? trace.id,
       episodeId: trace.episodeId,
     };
     const compileReport = buildBrainCompileReport({
@@ -1187,7 +1189,7 @@ export class BrainService {
     const compileReport = buildBrainCompileReport({
       routeTrace: redactRouteTrace(trace.routeTrace, params.queryText, false) ?? trace.routeTrace,
       decision: {
-        traceId: trace.id,
+        traceId: getTraceRetryIdentity(trace)?.traceId ?? trace.id,
         episodeId: episode.id,
       },
       lookupNode: (nodeId: string) => this.servingGraph.getNode(nodeId) ?? null,
@@ -1594,6 +1596,7 @@ export class BrainService {
     if (!episode || !trace) {
       return;
     }
+    const retryTraceId = getTraceRetryIdentity(trace)?.traceId ?? trace.id;
     const assemblyDecision =
       this.lastAssemblyDecision
       && this.lastAssemblyDecision.traceId === trace.id
@@ -1604,7 +1607,7 @@ export class BrainService {
     this.store.insertObservation({
       episodeId: episode.id,
       conversationId: episode.conversationId,
-      traceId: trace.id,
+      traceId: retryTraceId,
       queryText: this.config.persistRawSurfaces
         ? episode.queryText
         : (redactTextSurface("query", episode.queryText) ?? ""),

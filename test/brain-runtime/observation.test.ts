@@ -166,7 +166,7 @@ describe("BrainService observations", () => {
     ).store.getObservationForEpisode(result?.episode.id ?? "");
 
     expect(observation).toMatchObject({
-      traceId: result?.trace.id,
+      traceId: expect.stringMatching(/^rt_[a-f0-9]{16}$/),
       queryText: expect.stringContaining("[redacted query chars="),
       assistantResponse: expect.stringContaining("[redacted assistant_response chars="),
       toolResults: [
@@ -340,7 +340,12 @@ describe("BrainService observations", () => {
         kind: "runtime_compile_v1",
         traceId: result?.trace.id,
       },
+      retryIdentity: expect.objectContaining({
+        turnId: expect.stringMatching(/^turn_[a-f0-9]{16}$/),
+        traceId: expect.stringMatching(/^rt_[a-f0-9]{16}$/),
+      }),
     });
+    expect(observation?.traceId).toBe(observation?.routeMetadata.retryIdentity?.traceId ?? null);
 
     const teacherInput = materializeTeacherLabelInput(observation!);
     expect(teacherInput?.routeMetadata).toMatchObject({
@@ -353,6 +358,10 @@ describe("BrainService observations", () => {
         kind: "runtime_compile_v1",
         traceId: result?.trace.id,
       },
+      retryIdentity: expect.objectContaining({
+        turnId: expect.stringMatching(/^turn_[a-f0-9]{16}$/),
+        traceId: expect.stringMatching(/^rt_[a-f0-9]{16}$/),
+      }),
     });
   });
 

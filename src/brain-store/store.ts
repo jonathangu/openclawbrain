@@ -131,6 +131,18 @@ function toObservationBindingMode(value: unknown): BrainObservationBindingMode |
   }
 }
 
+function normalizeRetryIdentity(
+  value: unknown,
+): NonNullable<BrainObservationRouteMetadata["retryIdentity"]> | null {
+  const record = toRecord(value);
+  const turnId = toOptionalString(record?.turnId);
+  const traceId = toOptionalString(record?.traceId);
+  if (!turnId || !traceId) {
+    return null;
+  }
+  return { turnId, traceId };
+}
+
 function toStringArray(value: unknown): string[] {
   return Array.isArray(value)
     ? value.filter((entry): entry is string => typeof entry === "string")
@@ -279,6 +291,7 @@ function normalizeObservationRouteMetadata(
     sourceSummary: normalizeObservationSourceSummary(record.sourceSummary),
     operatorAudit: cloneJsonRecord(record.operatorAudit) as BrainObservationRouteMetadata["operatorAudit"],
     selectionMetadata: normalizeObservationSelectionMetadata(record.selectionMetadata),
+    retryIdentity: normalizeRetryIdentity(record.retryIdentity),
   };
 }
 

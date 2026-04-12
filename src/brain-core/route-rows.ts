@@ -13,7 +13,9 @@ import type {
   DecisionTraceInjectedNodeSummary,
   ObservationBindingQuality,
   TeacherFeedbackRichness,
+  TraceRetryIdentityV1,
 } from "./types.js";
+import { getTraceRetryIdentity } from "./trace.js";
 
 export const ROUTE_DECISION_ROW_VERSION_V1 = 1 as const;
 export const LABEL_PROVENANCE_VERSION_V1 = 1 as const;
@@ -456,12 +458,14 @@ function normalizeAttributionRecordCandidate(
 
 function syntheticLabelProvenanceFromSnapshot(params: {
   trace: DecisionTrace;
+  retryIdentity: TraceRetryIdentityV1 | null;
   snapshot: DecisionPointSnapshotV1;
   routeContext: RouteContextV1;
 }): LabelProvenanceV1 {
   const candidateIds = normalizeStringArray(params.snapshot.localActionSet.map((candidate) => candidate.nodeId ?? candidate.toolName ?? candidate.actionId));
+  const traceId = params.retryIdentity?.traceId ?? params.trace.id;
   const provenanceId = `lp_${hashStableParts([
-    params.trace.id,
+    traceId,
     params.snapshot.decisionPointId,
     params.snapshot.chosenActionId,
     params.snapshot.chosenActionKind,
@@ -477,7 +481,7 @@ function syntheticLabelProvenanceFromSnapshot(params: {
     binding_mode: null,
     attribution_quality: null,
     feedback_richness: null,
-    trace_id: params.trace.id,
+    trace_id: traceId,
     episode_id: params.trace.episodeId,
     decision_point_id: params.snapshot.decisionPointId,
     observation_id: null,
@@ -485,8 +489,8 @@ function syntheticLabelProvenanceFromSnapshot(params: {
     update_id: null,
     candidate_ids: candidateIds,
     provenance_ref: `prov_${provenanceId}`,
-    content_hash: hashValue(JSON.stringify({ traceId: params.trace.id, decisionPointId: params.snapshot.decisionPointId, chosenActionId: params.snapshot.chosenActionId })),
-    lineage_hash: hashValue(JSON.stringify({ traceId: params.trace.id, decisionPointId: params.snapshot.decisionPointId, routeContext: params.routeContext })),
+    content_hash: hashValue(JSON.stringify({ traceId, decisionPointId: params.snapshot.decisionPointId, chosenActionId: params.snapshot.chosenActionId })),
+    lineage_hash: hashValue(JSON.stringify({ traceId, decisionPointId: params.snapshot.decisionPointId, routeContext: params.routeContext })),
     created_at: Date.now(),
   };
 }
@@ -501,6 +505,7 @@ export function materializeLabelProvenanceV1(params: {
   }
   return syntheticLabelProvenanceFromSnapshot({
     trace: params.trace,
+    retryIdentity: getTraceRetryIdentity(params.trace),
     snapshot: params.snapshot,
     routeContext: routeContextFromTrace(params.trace),
   });
@@ -513,6 +518,8 @@ export function materializeRouteDecisionRowFromSnapshotV1(params: {
   provenance?: AttributionTruthRecord | LabelProvenanceV1 | null;
 }): RouteDecisionRowV1 {
   const routeContext = routeContextFromTrace(params.trace);
+  const retryIdentity = getTraceRetryIdentity(params.trace);
+  const traceId = retryIdentity?.traceId ?? params.trace.id;
   const labelProvenance = materializeLabelProvenanceV1({
     trace: params.trace,
     snapshot: params.snapshot,
@@ -531,13 +538,13 @@ export function materializeRouteDecisionRowFromSnapshotV1(params: {
   return {
     schema_version: ROUTE_DECISION_ROW_VERSION_V1,
     row_id: `rr_${hashStableParts([
-      params.trace.id,
+      traceId,
       params.snapshot.decisionPointId,
       labelProvenance.provenance_id,
       chosen.action_id,
       params.snapshot.chosenActionKind,
     ])}`,
-    trace_id: params.trace.id,
+    trace_id: traceId,
     episode_id: params.trace.episodeId,
     conversation_id: params.trace.routeTrace?.conversationId ?? null,
     route_fn_version: normalizeString(params.routeFnVersion) ?? normalizeString(params.trace.routeTrace?.routerIdentity) ?? "route_fn.v1",

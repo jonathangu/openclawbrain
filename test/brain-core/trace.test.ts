@@ -288,6 +288,68 @@ describe("decision trace branch proofs", () => {
     });
   });
 
+  it("keeps retry-visible turn, trace, and action ids stable across repeated recordTrace calls", () => {
+    const trajectory: TrajectoryExpansion[] = [
+      {
+        sourceNodeId: "a",
+        expansionIndex: 0,
+        frontierBefore: ["a"],
+        frontierAfter: [],
+        budgetBefore: 100,
+        budgetAfter: 92,
+        substeps: [
+          {
+            stateSnapshot: makeStateSnapshot("a", 0, 0),
+            candidates: [
+              {
+                action: { type: "traverse" as const, targetNodeId: "doc_1" },
+                score: 1.25,
+                probability: 0.2,
+              },
+              {
+                action: { type: "traverse" as const, targetNodeId: "tool_2" },
+                score: 2.75,
+                probability: 0.3,
+              },
+              {
+                action: { type: "stop_local" as const },
+                score: 0.1,
+                probability: 0.15,
+              },
+            ],
+            chosenAction: { type: "traverse" as const, targetNodeId: "tool_2" },
+            chosenActionProbability: 0.3,
+            stopProbability: 0.15,
+          },
+        ],
+        selectedTargets: ["tool_2"],
+        acceptedTargets: ["tool_2"],
+        vetoedTargets: [],
+        proposalOutcomes: [{ targetNodeId: "tool_2", outcome: "accepted", reason: "accepted" }],
+        terminationReason: "policy_stop",
+      },
+    ];
+
+    const first = makeTrace(trajectory, ["tool_2"], [makeToolNode("tool_2", "wttr", "instance")]);
+    const second = makeTrace(trajectory, ["tool_2"], [makeToolNode("tool_2", "wttr", "instance")]);
+
+    const firstSnapshots = first.routeTrace?.selectionMetadata.decisionPointSnapshots ?? [];
+    const secondSnapshots = second.routeTrace?.selectionMetadata.decisionPointSnapshots ?? [];
+
+    expect(first.routeTrace?.selectionMetadata.retryIdentity).toEqual(second.routeTrace?.selectionMetadata.retryIdentity);
+    expect(firstSnapshots.map((snapshot) => snapshot.decisionPointId)).toEqual(
+      secondSnapshots.map((snapshot) => snapshot.decisionPointId),
+    );
+    expect(firstSnapshots.map((snapshot) => snapshot.chosenActionId)).toEqual(
+      secondSnapshots.map((snapshot) => snapshot.chosenActionId),
+    );
+    expect(firstSnapshots.map((snapshot) => snapshot.chosenActionKind)).toEqual(
+      secondSnapshots.map((snapshot) => snapshot.chosenActionKind),
+    );
+    expect(first.routeTrace?.selectionMetadata.retryIdentity?.turnId).toMatch(/^turn_[a-f0-9]{16}$/);
+    expect(first.routeTrace?.selectionMetadata.retryIdentity?.traceId).toMatch(/^rt_[a-f0-9]{16}$/);
+  });
+
   it("records per-branch stop and continue proof lines plus a compact summary", () => {
     const trace = makeTrace([
       {

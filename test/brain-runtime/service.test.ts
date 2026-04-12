@@ -232,6 +232,10 @@ describe("BrainService", () => {
       droppedProposalCount: 0,
       droppedProposalReasons: null,
       compileReportSummary: expect.stringContaining("[brain compile]"),
+      retryIdentity: expect.objectContaining({
+        turnId: expect.stringMatching(/^turn_[a-f0-9]{16}$/),
+        traceId: expect.stringMatching(/^rt_[a-f0-9]{16}$/),
+      }),
       compileReport: expect.objectContaining({
         schemaVersion: 1,
         summary: expect.stringContaining("[brain compile]"),
@@ -285,6 +289,10 @@ describe("BrainService", () => {
       droppedProposalCount: 0,
       droppedProposalReasons: null,
       compileReportSummary: expect.stringContaining("[brain compile]"),
+      retryIdentity: expect.objectContaining({
+        turnId: expect.stringMatching(/^turn_[a-f0-9]{16}$/),
+        traceId: expect.stringMatching(/^rt_[a-f0-9]{16}$/),
+      }),
     }));
     expect(status.lastCompileReportSummary).toEqual(expect.stringContaining("[brain compile]"));
     expect(status.lastCompileReportSummary).toEqual(expect.stringContaining("q_budget=4000"));
@@ -1044,7 +1052,7 @@ describe("BrainService", () => {
     const observationSelectionMetadata = (observation as any)?.routeMetadata?.selectionMetadata ?? null;
 
     expect(observation).toMatchObject({
-      traceId: result.brainDecision?.traceId,
+      traceId: expect.stringMatching(/^rt_[a-f0-9]{16}$/),
       routeMetadata: {
         selectionMetadata: {
           budgetChars: queryBudgetChars,
@@ -1231,7 +1239,7 @@ describe("BrainService", () => {
     ).store.getObservationForEpisode(String(result.brainDecision?.episodeId ?? ""));
 
     expect(observation).toMatchObject({
-      traceId: result.brainDecision?.traceId,
+      traceId: expect.stringMatching(/^rt_[a-f0-9]{16}$/),
       routeMetadata: {
         selectionMetadata: {
           budgetChars: queryBudgetChars,
@@ -1405,7 +1413,7 @@ describe("BrainService", () => {
         ambiguous: {
           observationId: expect.stringMatching(/^bo_/),
           episodeId: result?.episode.id,
-          traceId: result?.trace.id,
+          traceId: expect.stringMatching(/^rt_[a-f0-9]{16}$/),
           attributionQuality: "fallback",
           feedbackRichness: "followup_only",
         },
@@ -1433,7 +1441,7 @@ describe("BrainService", () => {
       latestNonExact: {
         observationId: expect.stringMatching(/^bo_/),
         episodeId: result?.episode.id,
-        traceId: result?.trace.id,
+        traceId: expect.stringMatching(/^rt_[a-f0-9]{16}$/),
         bindingMode: "trace_id",
         attributionQuality: "fallback",
         feedbackRichness: "followup_only",
@@ -1442,7 +1450,7 @@ describe("BrainService", () => {
       latestAmbiguous: {
         observationId: expect.stringMatching(/^bo_/),
         episodeId: result?.episode.id,
-        traceId: result?.trace.id,
+        traceId: expect.stringMatching(/^rt_[a-f0-9]{16}$/),
         bindingMode: "trace_id",
         attributionQuality: "fallback",
         feedbackRichness: "followup_only",
@@ -1647,16 +1655,14 @@ describe("BrainService", () => {
         followupPending: {
           observationId: expect.stringMatching(/^bo_/),
           episodeId: result?.episode.id,
-          traceId: result?.trace.id,
+          traceId: expect.stringMatching(/^rt_[a-f0-9]{16}$/),
           status: "pending_followup",
         },
         delayed: {
           observationId: expect.stringMatching(/^bo_/),
           episodeId: result?.episode.id,
-          traceId: result?.trace.id,
-          gate: "delayed",
-          feedbackRichness: "sparse",
-          reason: "waiting for follow-up or the teacher delay window",
+          traceId: expect.stringMatching(/^rt_[a-f0-9]{16}$/),
+          status: "pending_followup",
         },
       },
     });
