@@ -1,18 +1,18 @@
 # OpenClawBrain
 
-OpenClawBrain gives OpenClaw a useful memory.
+Stop reteaching your agent the same things.
 
-It helps your agent carry forward corrections, preferences, and successful past work without stuffing the whole transcript back into every prompt.
+OpenClawBrain gives OpenClaw a useful memory. It carries forward corrections, preferences, and successful past work so your agent can improve over time without turning every prompt into a giant transcript dump.
 
 Current version: **0.4.43** · [Changelog](CHANGELOG.md)
 
-## What it does
+## Why people use it
 
-- remembers what worked
-- carries forward explicit corrections
-- keeps prompts smaller and more focused
-- keeps running even if the memory layer is unavailable
-- lets you inspect whether it is actually loaded and working
+- fixes and preferences stick
+- the agent stops starting from zero every session
+- prompts stay smaller and more focused
+- you can check whether it is really loaded and working
+- if the memory layer is unavailable, the agent still runs
 
 ## First-time install
 

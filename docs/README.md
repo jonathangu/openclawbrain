@@ -1,6 +1,6 @@
 # OpenClawBrain docs
 
-This page is the shortest path for a new user.
+Start here.
 
 ## Start here
 
