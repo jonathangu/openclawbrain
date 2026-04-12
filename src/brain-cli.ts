@@ -302,6 +302,7 @@ function commandStatus(): void {
   });
   const continuousLearning = buildContinuousLearningOperatorStatus({
     store,
+    graph,
     workspaceRoot,
     brainRoot: brainConfig.root,
     controlRoot: continuousLearningControlDir(workspaceRoot),

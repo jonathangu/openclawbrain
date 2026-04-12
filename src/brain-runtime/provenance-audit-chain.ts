@@ -300,6 +300,54 @@ function normalizeRetrainLineage(value: unknown): {
   };
 }
 
+function normalizeRuntimeTruth(value: unknown): {
+  baseArtifactId: string | null;
+  baseArtifactVersion: string | null;
+  baseArtifactChecksum: string | null;
+  baseArtifactSource: string | null;
+  basePackType: string | null;
+  mixedPackFromBaseArtifactId: string | null;
+  liveDeltaUpdateCount: number | null;
+  liveDeltaWeightCount: number | null;
+  liveDeltaMagnitudeSummary: string | null;
+  summary: string | null;
+} | null {
+  if (!value || typeof value !== "object") {
+    return null;
+  }
+
+  const record = value as Record<string, unknown>;
+  const liveDeltaMagnitudeSummary = record.liveDeltaMagnitudeSummary && typeof record.liveDeltaMagnitudeSummary === "object"
+    ? truncateText(normalizeText((record.liveDeltaMagnitudeSummary as Record<string, unknown>).summary), PROVENANCE_AUDIT_CHAIN_MAX_TEXT_CHARS)
+    : null;
+  const summary = truncateText(normalizeText(record.summary), PROVENANCE_AUDIT_CHAIN_MAX_TEXT_CHARS);
+  const hasSignal = summary !== null
+    || normalizeText(record.baseArtifactId) !== null
+    || normalizeText(record.baseArtifactChecksum) !== null
+    || normalizeText(record.baseArtifactSource) !== null
+    || normalizeText(record.basePackType) !== null
+    || normalizeText(record.mixedPackFromBaseArtifactId) !== null
+    || normalizeNumber(record.liveDeltaUpdateCount) !== null
+    || normalizeNumber(record.liveDeltaWeightCount) !== null
+    || liveDeltaMagnitudeSummary !== null;
+  if (!hasSignal) {
+    return null;
+  }
+
+  return {
+    baseArtifactId: normalizeText(record.baseArtifactId),
+    baseArtifactVersion: normalizeText(record.baseArtifactVersion),
+    baseArtifactChecksum: normalizeText(record.baseArtifactChecksum),
+    baseArtifactSource: normalizeText(record.baseArtifactSource),
+    basePackType: normalizeText(record.basePackType),
+    mixedPackFromBaseArtifactId: normalizeText(record.mixedPackFromBaseArtifactId),
+    liveDeltaUpdateCount: normalizeNumber(record.liveDeltaUpdateCount),
+    liveDeltaWeightCount: normalizeNumber(record.liveDeltaWeightCount),
+    liveDeltaMagnitudeSummary,
+    summary,
+  };
+}
+
 function normalizeProofTruth(value: unknown): {
   bundleDir: string | null;
   command: string | null;
@@ -448,6 +496,7 @@ function summarizePromotionAndProofTruth(params: {
   lastPromotionReason: unknown;
   lastPromotionVerdict: unknown;
   lastReplayGateVerdict: unknown;
+  runtimeTruth: unknown;
   retrainLineage: unknown;
   proofTruth: unknown;
 }): {
@@ -455,6 +504,7 @@ function summarizePromotionAndProofTruth(params: {
   lastPromotionReason: string | null;
   lastPromotionVerdict: { verdict: string | null; summary: string | null } | null;
   lastReplayGateVerdict: { verdict: string | null; summary: string | null } | null;
+  runtimeTruth: ReturnType<typeof normalizeRuntimeTruth>;
   retrainLineage: ReturnType<typeof normalizeRetrainLineage>;
   proofTruth: ReturnType<typeof normalizeProofTruth>;
   summary: string;
@@ -467,6 +517,7 @@ function summarizePromotionAndProofTruth(params: {
     : null);
   const lastPromotionVerdict = normalizePromotionVerdict(params.lastPromotionVerdict);
   const lastReplayGateVerdict = normalizePromotionVerdict(params.lastReplayGateVerdict);
+  const runtimeTruth = normalizeRuntimeTruth(params.runtimeTruth);
   const retrainLineage = normalizeRetrainLineage(params.retrainLineage);
   const proofTruth = normalizeProofTruth(params.proofTruth);
   const lastPromotionReason = truncateText(normalizeText(params.lastPromotionReason), PROVENANCE_AUDIT_CHAIN_MAX_TEXT_CHARS);
@@ -474,6 +525,7 @@ function summarizePromotionAndProofTruth(params: {
     [
       lastPromotionVerdict?.verdict ? `promotion=${lastPromotionVerdict.verdict}` : null,
       lastReplayGateVerdict?.verdict ? `replay_gate=${lastReplayGateVerdict.verdict}` : null,
+      runtimeTruth?.summary ? `runtime=${runtimeTruth.summary}` : null,
       retrainLineage?.summary ? `lineage=${retrainLineage.summary}` : null,
       proofTruth?.verdict ? `proof=${proofTruth.verdict}` : null,
     ].filter(Boolean).join("; "),
@@ -485,6 +537,7 @@ function summarizePromotionAndProofTruth(params: {
     lastPromotionReason,
     lastPromotionVerdict,
     lastReplayGateVerdict,
+    runtimeTruth,
     retrainLineage,
     proofTruth,
     summary,
@@ -579,6 +632,7 @@ export function buildProvenanceAuditChainV1(input: ProvenanceAuditChainInputV1):
     lastPromotionReason: runtimeStatus.lastPromotionReason,
     lastPromotionVerdict: runtimeStatus.lastPromotionVerdict,
     lastReplayGateVerdict: runtimeStatus.lastReplayGateVerdict,
+    runtimeTruth: continuousLearning?.runtimeTruth ?? null,
     retrainLineage: retrain?.lineage ?? null,
     proofTruth: input.proofTruth,
   });
@@ -777,6 +831,15 @@ export function renderProvenanceAuditChainMarkdownV1(chain: ProvenanceAuditChain
     chain.promotionProofTruth.lastPromotionVerdict?.summary ? `- promotion summary: ${chain.promotionProofTruth.lastPromotionVerdict.summary}` : null,
     `- last replay gate verdict: ${chain.promotionProofTruth.lastReplayGateVerdict?.verdict ?? "unknown"}`,
     chain.promotionProofTruth.lastReplayGateVerdict?.summary ? `- replay gate summary: ${chain.promotionProofTruth.lastReplayGateVerdict.summary}` : null,
+    chain.promotionProofTruth.runtimeTruth?.summary ? `- runtime truth: ${chain.promotionProofTruth.runtimeTruth.summary}` : null,
+    chain.promotionProofTruth.runtimeTruth?.baseArtifactId ? `- approved base artifact: ${chain.promotionProofTruth.runtimeTruth.baseArtifactId}${chain.promotionProofTruth.runtimeTruth.baseArtifactVersion ? `@${chain.promotionProofTruth.runtimeTruth.baseArtifactVersion}` : ""}` : null,
+    chain.promotionProofTruth.runtimeTruth?.baseArtifactChecksum ? `- approved base checksum: ${chain.promotionProofTruth.runtimeTruth.baseArtifactChecksum}` : null,
+    chain.promotionProofTruth.runtimeTruth?.baseArtifactSource ? `- approved base source: ${chain.promotionProofTruth.runtimeTruth.baseArtifactSource}` : null,
+    chain.promotionProofTruth.runtimeTruth?.basePackType ? `- approved base pack type: ${chain.promotionProofTruth.runtimeTruth.basePackType}` : null,
+    chain.promotionProofTruth.runtimeTruth?.mixedPackFromBaseArtifactId ? `- mixed pack from base artifact: ${chain.promotionProofTruth.runtimeTruth.mixedPackFromBaseArtifactId}` : null,
+    chain.promotionProofTruth.runtimeTruth?.liveDeltaUpdateCount !== null && chain.promotionProofTruth.runtimeTruth?.liveDeltaUpdateCount !== undefined ? `- live delta updates: ${chain.promotionProofTruth.runtimeTruth.liveDeltaUpdateCount}` : null,
+    chain.promotionProofTruth.runtimeTruth?.liveDeltaWeightCount !== null && chain.promotionProofTruth.runtimeTruth?.liveDeltaWeightCount !== undefined ? `- live delta changed weights: ${chain.promotionProofTruth.runtimeTruth.liveDeltaWeightCount}` : null,
+    chain.promotionProofTruth.runtimeTruth?.liveDeltaMagnitudeSummary ? `- live delta magnitude: ${chain.promotionProofTruth.runtimeTruth.liveDeltaMagnitudeSummary}` : null,
     chain.promotionProofTruth.retrainLineage?.summary ? `- retrain lineage: ${chain.promotionProofTruth.retrainLineage.summary}` : null,
     chain.promotionProofTruth.retrainLineage?.priorBaseArtifactId ? `- prior base artifact: ${chain.promotionProofTruth.retrainLineage.priorBaseArtifactId}${chain.promotionProofTruth.retrainLineage.priorBaseArtifactVersion ? `@${chain.promotionProofTruth.retrainLineage.priorBaseArtifactVersion}` : ""}` : null,
     chain.promotionProofTruth.retrainLineage?.priorBaseArtifactChecksum ? `- prior base checksum: ${chain.promotionProofTruth.retrainLineage.priorBaseArtifactChecksum}` : null,

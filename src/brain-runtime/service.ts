@@ -2006,6 +2006,7 @@ export class BrainService {
     const workspaceRoot = process.env.OPENCLAWBRAIN_WORKSPACE_ROOT?.trim() ?? null;
     const continuousLearning = buildContinuousLearningOperatorStatus({
       store: this.store,
+      graph: this.mutableGraph,
       workspaceRoot,
       brainRoot: this.config.root,
       controlRoot: workspaceRoot ? continuousLearningControlDir(workspaceRoot) : null,

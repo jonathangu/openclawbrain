@@ -1,7 +1,7 @@
 import { createHash } from "node:crypto";
 import { readFileSync } from "node:fs";
 import path from "node:path";
-import type { RouteDecisionRowV1, RouterArtifactManifestV1 } from "./cold-start-router-contracts.ts";
+import type { ColdStartPackTypeV1, RouteDecisionRowV1, RouterArtifactManifestV1 } from "./cold-start-router-contracts.ts";
 import { validateRouterArtifactManifestV1 } from "./cold-start-router-contracts.ts";
 import {
   COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1,
@@ -128,6 +128,52 @@ export interface ColdStartRouterRuntimeArtifactBundleV1 {
 export interface ColdStartRouterSelectionResultV1 extends ColdStartRouterScoringResultV1 {
   selectedCandidateIds: string[];
   stopped: boolean;
+}
+
+export interface ColdStartRouterArtifactRuntimeTruthV1 {
+  artifactId: string;
+  artifactVersion: string;
+  artifactChecksum: string;
+  packType: ColdStartPackTypeV1;
+  routerIdentity: string | null;
+  priorBaseArtifactId: string | null;
+  priorBaseArtifactChecksum: string | null;
+  mixedPackFromBaseArtifactId: string | null;
+  summary: string;
+}
+
+export function summarizeColdStartRouterArtifactManifestRuntimeTruthV1(
+  manifest: RouterArtifactManifestV1,
+): ColdStartRouterArtifactRuntimeTruthV1 {
+  const priorBaseArtifactId = manifest.prior_base_artifact_id ?? null;
+  const priorBaseArtifactChecksum = manifest.prior_base_artifact_checksum ?? null;
+  const mixedPackFromBaseArtifactId = manifest.pack_type === "mixed"
+    ? priorBaseArtifactId
+    : null;
+
+  return {
+    artifactId: manifest.artifact_id,
+    artifactVersion: manifest.artifact_version,
+    artifactChecksum: manifest.artifact_checksum,
+    packType: manifest.pack_type,
+    routerIdentity: manifest.router_identity ?? null,
+    priorBaseArtifactId,
+    priorBaseArtifactChecksum,
+    mixedPackFromBaseArtifactId,
+    summary: [
+      `artifact=${manifest.artifact_id}@${manifest.artifact_version}`,
+      `pack=${manifest.pack_type}`,
+      `checksum=${manifest.artifact_checksum}`,
+      `prior=${priorBaseArtifactId ?? "none"}`,
+      `mixedFrom=${mixedPackFromBaseArtifactId ?? "none"}`,
+    ].join("; "),
+  };
+}
+
+export function summarizeColdStartRouterArtifactBundleRuntimeTruthV1(
+  artifactBundle: ColdStartRouterRuntimeArtifactBundleV1,
+): ColdStartRouterArtifactRuntimeTruthV1 {
+  return summarizeColdStartRouterArtifactManifestRuntimeTruthV1(artifactBundle.manifest);
 }
 
 export function loadColdStartRouterArtifactBundleV1(artifactDir: string): ColdStartRouterRuntimeArtifactBundleV1 {

@@ -378,6 +378,21 @@ function buildRuntimeStatus(traceId: string, snapshotCount: number, updateDecisi
       detail: "learning updates are audit-stubbed only",
     },
     continuousLearning: {
+      runtimeTruth: {
+        baseArtifactId: "router-artifact-periodic-retrain-v1",
+        baseArtifactVersion: "v1",
+        baseArtifactChecksum: "sha256:candidate-router-checksum",
+        baseArtifactSource: "candidate",
+        basePackType: "base",
+        mixedPackFromBaseArtifactId: null,
+        liveDeltaUpdateCount: 2,
+        liveDeltaWeightCount: 4,
+        liveDeltaMagnitudeSummary: {
+          changedWeightCount: 4,
+          summary: "4 changed weight(s); total|delta|=0.800; max|delta|=0.250; mean|delta|=0.200; seed=1; stop_local=1; tool_action=1; edge=1",
+        },
+        summary: "approved base prior=router-artifact-periodic-retrain-v1@v1; source=candidate; pack=base; checksum=sha256:candidate-router-checksum; live delta updates=2; live delta weights=4",
+      },
       retrain: {
         lineage: {
           priorBaseArtifactId: "router-base-prior-v0",
@@ -490,6 +505,16 @@ describe("provenance audit chain", () => {
     expect(chain.learningUpdate.summary).toContain("learning update decision");
     expect(chain.learningUpdate.precedenceLabel).toBe(chain.precedence.label);
     expect(chain.promotionProofTruth.proofTruth?.verdict).toBe("success_and_proven");
+    expect(chain.promotionProofTruth.runtimeTruth).toMatchObject({
+      baseArtifactId: "router-artifact-periodic-retrain-v1",
+      baseArtifactVersion: "v1",
+      baseArtifactChecksum: "sha256:candidate-router-checksum",
+      baseArtifactSource: "candidate",
+      basePackType: "base",
+      liveDeltaUpdateCount: 2,
+      liveDeltaWeightCount: 4,
+      liveDeltaMagnitudeSummary: "4 changed weight(s); total|delta|=0.800; max|delta|=0.250; mean|delta|=0.200; seed=1; stop_local=1; tool_action=1; edge=1",
+    });
     expect(chain.promotionProofTruth.retrainLineage).toMatchObject({
       priorBaseArtifactId: "router-base-prior-v0",
       priorBaseArtifactChecksum: "sha256:prior-base-router-checksum",
@@ -507,6 +532,13 @@ describe("provenance audit chain", () => {
     expect(markdown).toContain("## Attribution truth");
     expect(markdown).toContain("## Learning update");
     expect(markdown).toContain("## Promotion / proof truth");
+    expect(markdown).toContain("approved base artifact: router-artifact-periodic-retrain-v1@v1");
+    expect(markdown).toContain("approved base checksum: sha256:candidate-router-checksum");
+    expect(markdown).toContain("approved base source: candidate");
+    expect(markdown).toContain("approved base pack type: base");
+    expect(markdown).toContain("live delta updates: 2");
+    expect(markdown).toContain("live delta changed weights: 4");
+    expect(markdown).toContain("live delta magnitude: 4 changed weight(s); total|delta|=0.800; max|delta|=0.250; mean|delta|=0.200; seed=1; stop_local=1; tool_action=1; edge=1");
     expect(markdown).toContain("retrain lineage");
     expect(markdown).toContain("current router checksum: sha256:candidate-router-checksum");
     expect(markdown).toContain(chain.precedence.label);
