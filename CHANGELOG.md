@@ -4,6 +4,26 @@ Release history for the published OpenClawBrain releases. The README and operato
 
 ## Unreleased
 
+## 0.4.43
+
+`0.4.43` is the OCB continuation + compaction release: it ships the cold-start continuation and explainable eval tranche, then layers in budgeted routing, compact-health metrics, and retry-visible identity handoff for compaction-safe downstream behavior.
+
+**Internal published packages**
+
+- `@openclawbrain/openclaw@0.4.43`
+- `@openclawbrain/cli@0.4.43`
+
+**Changes**
+
+- ships the cold-start continuation runtime truth: same-family warm-start retrain, clearer base-vs-delta status/proof surfaces, and the converged explainable eval/reporting lane
+- adds budgeted routing fit metrics plus compact-health scorecard metrics so compaction pressure and retrieval quality become visible instead of implicit
+- hardens retry-visible identity handoff through trace, route-row, and observation surfaces so downstream OpenClaw-side dedupe has stable material to bind against
+- aligns README, docs, release notes, and split-package version surfaces to `0.4.43`
+
+**Full release note**
+
+- [docs/release-notes-0.4.43.md](docs/release-notes-0.4.43.md)
+
 ## 0.4.42
 
 `0.4.42` is the install self-heal release: it keeps the `0.4.41` cold-start lineage visibility and operator/proof lane, and it fixes the remaining stale nested-duplicate install seam where a real home could fail converge because a second extension copy lived under a nested OpenClaw home.

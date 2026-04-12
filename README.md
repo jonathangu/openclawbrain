@@ -6,7 +6,7 @@ OpenClawBrain is a memory layer for [OpenClaw](https://github.com/anthropics/ope
 
 The mechanism: a background pipeline watches agent interactions, binds feedback to past decisions, and builds compact memory packs. Only promoted packs reach the live path. The agent gets continuity without unbounded context growth, and latency stays predictable because the hot path never calls a live LLM. If the memory layer goes down, the agent keeps running.
 
-Current version: **0.4.42** · [Changelog](CHANGELOG.md) · [Claims boundary](CLAIMS.md)
+Current version: **0.4.43** · [Changelog](CHANGELOG.md) · [Claims boundary](CLAIMS.md)
 
 ## Install
 
@@ -116,7 +116,7 @@ If you want the focused explanation, read **[docs/graphify.md](docs/graphify.md)
 
 ## Unified operator truth / proof surfaces are now part of the shipped product
 
-OpenClawBrain `0.4.42` keeps the `0.4.41` cold-start-lineage and operator/proof story, and it also self-heals the stale nested-duplicate install seam so the canonical install lane repairs that class of real host skew instead of failing converge halfway through.
+OpenClawBrain `0.4.43` packages the new cold-start continuation, explainable eval, budgeted routing, compact-health, and retry-identity work into the public OCB lane while keeping the existing operator/proof install flow intact.
 
 What is now part of the public product:
 
