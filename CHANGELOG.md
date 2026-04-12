@@ -220,7 +220,7 @@ Release history for the published OpenClawBrain releases. The README and operato
 - preserves existing-user baseline state on upgrade so learned preferences, corrections, and recent overlay stay on top of the new base prior
 - ships the broader governed cold-prior tranche and its repaired `STOP_LOCAL` behavior as the default story for new installs
 - aligns the repo docs, site copy, and upgrade language around one clear story: new users start on the cold-start prior; existing users keep their earned preferences on top
-- archives the retired `0.3.8` compatibility release note so it no longer pollutes the active public lane
+- removes the old compatibility-note detour from the active public lane
 
 **Full release note**
 

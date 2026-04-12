@@ -16,7 +16,7 @@ test("compatibility-package openclawbrain binary fails closed with the canonical
   });
 
   expect(result.status).toBe(1);
-  expect(result.stderr).toContain("retired compatibility package @jonathangu/openclawbrain");
+  expect(result.stderr).toContain("repo-root compatibility shim");
   expect(result.stderr).toContain("openclawbrain install --openclaw-home <path>");
   expect(result.stderr).toContain("openclawbrain proof --openclaw-home <path>");
 });

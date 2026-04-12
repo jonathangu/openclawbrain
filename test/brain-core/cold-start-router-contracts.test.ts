@@ -177,7 +177,7 @@ const routerArtifactManifest: RouterArtifactManifestV1 = {
   feature_normalizers_ref: "normalizers@sha256:n001",
   source_priors_ref: "priors@sha256:p001",
   safety_rules_ref: "safety@sha256:s001",
-  compatible_runtime_version: "openclawbrain-runtime@0.3.8",
+  compatible_runtime_version: "openclawbrain-runtime@0.4.43",
   training_data_refs: ["dataset_hotpotqa_v1", "dataset_repos_v1"],
   replay_gate_refs: ["replay:gate:001"],
   prior_base_artifact_id: "router-artifact-prior-000",

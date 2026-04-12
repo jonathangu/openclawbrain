@@ -59,7 +59,7 @@ describe("cold-start router periodic retrain", () => {
       candidateArtifactId: "router-artifact-periodic-retrain-smoke",
       candidateArtifactVersion: "0.0.1",
       candidateRouterIdentity: "router:periodic-retrain:smoke",
-      compatibleRuntimeVersion: "openclawbrain-runtime@0.3.8",
+      compatibleRuntimeVersion: "openclawbrain-runtime@0.4.43",
       packType: "base",
       registryId: "cold-start-router-periodic-retrain-smoke",
       previousBaseArtifactDir: priorBaseArtifactDir,

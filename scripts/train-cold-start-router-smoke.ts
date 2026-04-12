@@ -45,7 +45,7 @@ async function main(): Promise<void> {
     artifactId: "router-artifact-approved-export-smoke",
     artifactVersion: "0.0.1",
     packType: "base",
-    compatibleRuntimeVersion: "openclawbrain-runtime@0.3.8",
+    compatibleRuntimeVersion: "openclawbrain-runtime@0.4.43",
     registryEntries: loadedExport.registryEntries,
     routeRows: loadedExport.routeRows,
     outputDir,

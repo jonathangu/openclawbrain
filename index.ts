@@ -1,5 +1,5 @@
 /**
- * @jonathangu/openclawbrain — OpenClawBrain v2 for OpenClaw
+ * OpenClawBrain monorepo workspace — OpenClawBrain v2 for OpenClaw
  *
  * Lossless transcript memory plus the learned routing/runtime layer:
  * LCM compaction/recall, brain assembly decisions, and `brain_*` tools.

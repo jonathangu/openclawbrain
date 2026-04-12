@@ -12,7 +12,7 @@ function readTruthyEnvFlag(name) {
 
 function buildCompatibilityGuardMessage() {
   return [
-    "[openclawbrain] STOP: this binary comes from the retired compatibility package @jonathangu/openclawbrain.",
+    "[openclawbrain] STOP: this binary comes from the repo-root compatibility shim, not the canonical public install lane.",
     "Do not use it for modern install/repair/status flows.",
     "",
     "Canonical OpenClawBrain path:",
@@ -21,8 +21,8 @@ function buildCompatibilityGuardMessage() {
     "  openclawbrain status --openclaw-home <path> --detailed",
     "  openclawbrain proof --openclaw-home <path>",
     "",
-    "If your shell still resolves `openclawbrain` to this compatibility package, remove the old global package/binary from PATH first.",
-    "Maintainer-only escape hatch: set OPENCLAWBRAIN_COMPAT_ALLOW_LEGACY_CLI=1 to run the legacy compatibility CLI intentionally.",
+    "If your shell still resolves `openclawbrain` to this shim, remove the old global package/binary from PATH first.",
+    "Maintainer-only escape hatch: set OPENCLAWBRAIN_COMPAT_ALLOW_LEGACY_CLI=1 to run the legacy shim intentionally.",
   ].join("\n");
 }
 

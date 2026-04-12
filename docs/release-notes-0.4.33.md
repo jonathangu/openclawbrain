@@ -48,7 +48,7 @@ The rule is simple:
 - carries the same-family route function story through runtime learning: `STOP_LOCAL` and tool actions remain first-class actions, online `toolActionPriors` update in the same family, and direct teacher-action distillation is in place
 - clears ToolMind for governed second-wave use and verifies a minimal export/training/runtime smoke end to end
 - aligns the public site and repo docs around one install / upgrade story
-- archives the retired `0.3.8` compatibility release note so it no longer reads like the active lane
+- removes the old compatibility-note detour so it no longer reads like the active lane
 
 ## Operator truth
 

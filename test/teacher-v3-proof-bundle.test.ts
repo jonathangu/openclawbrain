@@ -204,7 +204,7 @@ describe("teacher v3 proof bundle writer", () => {
       operatorProofCommand: "openclawbrain proof --openclaw-home ~/.openclaw",
       operatorProof,
       docsTruth,
-      producerVersion: "openclawbrain@0.3.8",
+      producerVersion: "openclawbrain@0.4.43",
       proposalClass: "compiler",
       proposalLane: "compiler",
       proposalStatus: "promotable",
@@ -467,7 +467,7 @@ describe("teacher v3 proof bundle writer", () => {
       operatorProofCommand: "openclawbrain proof --openclaw-home ~/.openclaw",
       operatorProof,
       docsTruth,
-      producerVersion: "openclawbrain@0.3.8",
+      producerVersion: "openclawbrain@0.4.43",
       proposalClass: "compiler",
       proposalLane: "compiler",
       proposalStatus: "promotable",
@@ -578,7 +578,7 @@ describe("teacher v3 proof bundle writer", () => {
       operatorProofCommand: "openclawbrain proof --openclaw-home ~/.openclaw",
       operatorProof,
       docsTruth,
-      producerVersion: "openclawbrain@0.3.8",
+      producerVersion: "openclawbrain@0.4.43",
     });
 
     expect(bundle.proposalReport.proposal).toMatchObject({
@@ -666,7 +666,7 @@ describe("teacher v3 proof bundle writer", () => {
         updatedAt: "2026-04-03T18:32:30Z",
       },
       shadowReplay,
-      producerVersion: "openclawbrain@0.3.8",
+      producerVersion: "openclawbrain@0.4.43",
     });
 
     expect(bundle.proposalReport.proposal).toMatchObject({
@@ -758,7 +758,7 @@ describe("teacher v3 proof bundle writer", () => {
         updatedAt: "2026-04-03T18:33:30Z",
       },
       shadowReplay,
-      producerVersion: "openclawbrain@0.3.8",
+      producerVersion: "openclawbrain@0.4.43",
     });
 
     expect(bundle.proposalReport.proposal).toMatchObject({

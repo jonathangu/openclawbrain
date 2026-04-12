@@ -15,7 +15,7 @@ describe("cold-start router runtime truth", () => {
       feature_normalizers_ref: "feature-normalizers.json#sha256:n001",
       source_priors_ref: "source-priors.json#sha256:p001",
       safety_rules_ref: "safety-rules.json#sha256:s001",
-      compatible_runtime_version: "openclawbrain-runtime@0.3.8",
+      compatible_runtime_version: "openclawbrain-runtime@0.4.43",
       training_data_refs: ["dataset_hotpotqa_v1"],
       replay_gate_refs: ["replay:gate:001"],
       prior_base_artifact_id: "router-artifact-base-000",

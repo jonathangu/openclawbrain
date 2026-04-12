@@ -72,7 +72,6 @@ function isTransientSpec(spec) {
 
 function isAllowedRepoInternalFileSpec({ manifestPath, manifest, section, name, spec }) {
   return manifestPath === "package.json"
-    && manifest?.name === "@jonathangu/openclawbrain"
     && section === "dependencies"
     && name.startsWith("@openclawbrain/")
     && /^file:packages\//.test(spec);
