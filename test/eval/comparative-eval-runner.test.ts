@@ -14,6 +14,7 @@ import {
   type CanonicalRecordedSessionTraceSetManifestV1,
   type FrozenRecordedSessionEvalManifestV1,
 } from "../../src/eval/comparative-eval-runner.js";
+import { OPENCLAWBRAIN_EXPLAINABLE_EVAL_SCORECARD_CONTRACT } from "../../src/eval/openclawbrain-explainable-scorecard.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -271,9 +272,35 @@ describe("comparative eval runner", () => {
     expect(existsSync(descriptor.sourceManifestPath!)).toBe(true);
     expect(existsSync(descriptor.reportPath)).toBe(true);
     expect(existsSync(descriptor.scorecardPath)).toBe(true);
+    expect(existsSync(descriptor.explainableScorecardPath)).toBe(true);
     expect(existsSync(descriptor.summaryPath)).toBe(true);
     expect(existsSync(path.join(outputDir, "traces", "_lane", "index.json"))).toBe(true);
     expect(existsSync(path.join(outputDir, "traces", "_lane", "worked-traces.md"))).toBe(true);
+
+    const explainableScorecard = JSON.parse(readFileSync(descriptor.explainableScorecardPath, "utf8")) as {
+      contract: string;
+      publicOperatorMetrics: Array<{ id: string; availability: string }>;
+      internalMetrics: Array<{ id: string }>;
+    };
+    expect(explainableScorecard.contract).toBe(OPENCLAWBRAIN_EXPLAINABLE_EVAL_SCORECARD_CONTRACT);
+    expect(explainableScorecard.publicOperatorMetrics.map((metric) => metric.id)).toEqual(expect.arrayContaining([
+      "brain_on_regression_rate_vs_prior",
+      "tie_or_better_rate_vs_prior",
+      "estimated_prompt_cost_per_successful_trace_delta_vs_prior",
+      "safe_fallback_rate",
+      "worker_down_safe_serve_rate",
+    ]));
+    expect(explainableScorecard.publicOperatorMetrics.find((metric) => metric.id === "safe_fallback_rate")?.availability).toBe("not_available");
+    expect(explainableScorecard.internalMetrics.map((metric) => metric.id)).toEqual(expect.arrayContaining([
+      "diagnostic_quality_score_mean_by_mode",
+      "diagnostic_ranked_winner_count_by_mode",
+    ]));
+
+    const summary = readFileSync(descriptor.summaryPath, "utf8");
+    expect(summary).toContain("## Public / Operator Metrics");
+    expect(summary).toContain("brain_on_regression_rate_vs_prior");
+    expect(summary).toContain("## Fail-Open Language");
+    expect(summary).toContain("qualityScore and winnerMode are preserved only as internal deterministic replay diagnostics");
   });
 
   it("marks the gate as fail when the explicit policy thresholds are not met", () => {
@@ -418,7 +445,9 @@ describe("comparative eval runner", () => {
     expect(stdout).toContain("candidate_trace_tie_or_better_vs_baseline: pass");
     expect(stdout).toContain("candidate_tie_promotion_delta_vs_baseline: pass");
     expect(stdout).toContain(`outputDir: ${outputDir}`);
+    expect(stdout).toContain("explainableScorecard:");
     expect(existsSync(path.join(outputDir, "report.json"))).toBe(true);
+    expect(existsSync(path.join(outputDir, "explainable-scorecard.json"))).toBe(true);
 
     const scorecard = JSON.parse(readFileSync(path.join(outputDir, "scorecard.json"), "utf8")) as {
       contract: string;
@@ -426,5 +455,10 @@ describe("comparative eval runner", () => {
     };
     expect(scorecard.contract).toBe(COMPARATIVE_EVAL_SCORECARD_CONTRACT);
     expect(scorecard.successfulTraceCount).toBe(1);
+
+    const explainableScorecard = JSON.parse(readFileSync(path.join(outputDir, "explainable-scorecard.json"), "utf8")) as {
+      contract: string;
+    };
+    expect(explainableScorecard.contract).toBe(OPENCLAWBRAIN_EXPLAINABLE_EVAL_SCORECARD_CONTRACT);
   });
 });

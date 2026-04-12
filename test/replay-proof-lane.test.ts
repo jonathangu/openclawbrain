@@ -226,10 +226,12 @@ describe("recorded session replay proof lane", () => {
     expect(versusGraph?.tieRate).toBe(0.5);
 
     const laneRoot = path.join(artifactRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.laneDir);
-    expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.readme)).toMatch(/Pairwise Deltas/);
+    expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.readme)).toMatch(/Diagnostic Pairwise Deltas/);
+    expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.readme)).toMatch(/internal deterministic replay diagnostics/);
     expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.workedTraces)).toMatch(/trace-score-resolution/);
     expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.workedTraces)).toMatch(/Please do this entire plan end to end/);
     expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.workedTraces)).toMatch(/trace-comparative-replay/);
+    expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.workedTraces)).toMatch(/diagnostic winner/);
   });
 
   it("keeps the core _lane artifacts reproducible across different output roots", () => {

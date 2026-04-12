@@ -890,6 +890,7 @@ function buildWorkedTracesMarkdown(
     "",
     `- traces included: ${selected.length}/${sorted.length}`,
     `- selection rule: highest bundle score spread first, then trace id; turns ordered by per-turn score spread`,
+    "- note: qualityScore and winnerMode are internal deterministic replay diagnostics, not the public/operator scorecard.",
   ];
   if (sourceManifest.manifestId !== null || sourceManifest.manifestDigest !== null) {
     lines.push(
@@ -909,11 +910,11 @@ function buildWorkedTracesMarkdown(
     lines.push(`## ${analysis.traceId}`);
     lines.push("");
     lines.push(`- bundle dir: \`${analysis.bundleDir}\``);
-    lines.push(`- ranked winner: \`${analysis.descriptor.bundle.summary.winnerMode ?? "none"}\``);
+    lines.push(`- diagnostic winner: \`${analysis.descriptor.bundle.summary.winnerMode ?? "none"}\``);
     lines.push(`- top score modes: \`${analysis.topScoreModes.join("`, `")}\``);
     lines.push(`- score spread: ${analysis.scoreSpread}`);
     lines.push("");
-    lines.push("| mode | quality | compile ok | phrase hits | promotions | warnings |");
+    lines.push("| mode | diagnostic quality | compile ok | phrase hits | promotions | warnings |");
     lines.push("| --- | ---: | ---: | ---: | ---: | ---: |");
     for (const row of rankedModes) {
       lines.push(
@@ -964,6 +965,7 @@ function buildLaneReadme(
     `- successful traces: ${summaryTables.successfulTraceCount}`,
     `- failed traces: ${summaryTables.failedTraceCount}`,
     `- mode order: \`${summaryTables.modeOrder.join("`, `")}\``,
+    "- note: these lane aggregates are internal deterministic replay diagnostics; use the explainable eval scorecard for public/operator reporting.",
   ];
   if (index.sourceManifest.manifestId !== null || index.sourceManifest.manifestDigest !== null) {
     lines.push(
@@ -977,8 +979,8 @@ function buildLaneReadme(
     lines.push(`- failed trace ids: ${index.failedTraceIds.map((traceId) => `\`${traceId}\``).join(", ")}`);
   }
   lines.push("");
-  lines.push("## Mode Summary");
-  lines.push("| mode | traces | ranked winners | shared top score | mean quality | compile ok | phrase hits | promotions | warnings |");
+  lines.push("## Diagnostic Mode Summary");
+  lines.push("| mode | traces | diagnostic winners | shared top score | mean quality | compile ok | phrase hits | promotions | warnings |");
   lines.push("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |");
   for (const row of summaryTables.modes) {
     lines.push(
@@ -986,8 +988,8 @@ function buildLaneReadme(
     );
   }
   lines.push("");
-  lines.push("## Pairwise Deltas");
-  lines.push("| pair | trace record | turn record | mean quality delta | compile delta sum | phrase-hit delta sum | promotion delta sum |");
+  lines.push("## Diagnostic Pairwise Deltas");
+  lines.push("| pair | trace record | turn record | mean diagnostic quality delta | compile delta sum | phrase-hit delta sum | promotion delta sum |");
   lines.push("| --- | --- | --- | ---: | ---: | ---: | ---: |");
   for (const pair of pairwiseDeltas.pairs) {
     lines.push(
@@ -1075,6 +1077,7 @@ function buildLaneSummary(
     `- requested traces: ${closeout.requestedTraceCount}`,
     `- successful traces: ${closeout.successfulTraceCount}`,
     `- failed traces: ${closeout.failedTraceCount}`,
+    "- note: winner counts below are internal replay diagnostics only.",
   ];
   if (closeout.sourceManifest.manifestId !== null || closeout.sourceManifest.manifestDigest !== null) {
     lines.push(
@@ -1085,15 +1088,15 @@ function buildLaneSummary(
     lines.push(`- failed trace ids: ${closeout.failedTraceIds.map((traceId) => `\`${traceId}\``).join(", ")}`);
   }
   lines.push("");
-  lines.push("## Winner Counts");
-  lines.push("| mode | ranked winners | shared top score traces |");
+  lines.push("## Diagnostic Winner Counts");
+  lines.push("| mode | diagnostic winners | shared top score traces |");
   lines.push("| --- | ---: | ---: |");
   for (const row of closeout.winnerModeCounts) {
     lines.push(`| ${row.mode} | ${row.rankedWinnerCount} | ${row.sharedTopScoreTraceCount} |`);
   }
   lines.push("");
   lines.push("## Trace Hashes");
-  lines.push("| trace | winner | spread | bundle hash | score hash |");
+  lines.push("| trace | diagnostic winner | spread | bundle hash | score hash |");
   lines.push("| --- | --- | ---: | --- | --- |");
   for (const trace of closeout.traceHashes) {
     lines.push(

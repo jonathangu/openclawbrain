@@ -9,6 +9,10 @@ import type {
   RecordedSessionTraceV1,
 } from "../../packages/cli/dist/src/index.js";
 import {
+  buildOpenClawBrainExplainableEvalScorecard,
+  type OpenClawBrainExplainableEvalScorecardV1,
+} from "./openclawbrain-explainable-scorecard.ts";
+import {
   RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER,
   writeRecordedSessionReplayProofLane,
   type RecordedSessionReplayProofLaneDescriptorV1,
@@ -34,6 +38,7 @@ export const COMPARATIVE_EVAL_RUNNER_LAYOUT = {
   sourceManifest: "source-manifest.json",
   report: "report.json",
   scorecard: "scorecard.json",
+  explainableScorecard: "explainable-scorecard.json",
   summary: "summary.md",
   traceDir: "traces",
 } as const;
@@ -272,6 +277,7 @@ export interface ComparativeEvalRunnerReportV1 {
   issues: string[];
   pricingTable: PricingTable;
   scorecardHash: string;
+  explainableScorecardHash: string;
   gateStatus: ComparativeEvalGateStatus;
   gateDecisive: boolean;
   gateFailedCheckIds: string[];
@@ -279,6 +285,7 @@ export interface ComparativeEvalRunnerReportV1 {
     sourceManifest: string | null;
     report: string;
     scorecard: string;
+    explainableScorecard: string;
     summary: string;
     traceDir: string;
     laneDir: string | null;
@@ -297,9 +304,11 @@ export interface ComparativeEvalRunnerDescriptor {
   sourceManifestPath: string | null;
   reportPath: string;
   scorecardPath: string;
+  explainableScorecardPath: string;
   summaryPath: string;
   report: ComparativeEvalRunnerReportV1;
   scorecard: ComparativeEvalScorecardV1;
+  explainableScorecard: OpenClawBrainExplainableEvalScorecardV1;
 }
 
 export interface RunComparativeEvalInput {
@@ -1229,7 +1238,41 @@ function buildScorecard(params: {
   };
 }
 
-function buildSummary(report: ComparativeEvalRunnerReportV1, scorecard: ComparativeEvalScorecardV1): string {
+function buildExplainableScorecard(params: {
+  generatedAt: string;
+  scorecard: ComparativeEvalScorecardV1;
+}): OpenClawBrainExplainableEvalScorecardV1 {
+  return buildOpenClawBrainExplainableEvalScorecard({
+    generatedAt: params.generatedAt,
+    manifestId: params.scorecard.manifestId,
+    manifestContract: params.scorecard.manifestContract,
+    modeOrder: [...params.scorecard.modeOrder],
+    requestedTraceCount: params.scorecard.requestedTraceCount,
+    successfulTraceCount: params.scorecard.successfulTraceCount,
+    failedTraceCount: params.scorecard.failedTraceCount,
+    modes: params.scorecard.modes,
+    pairwise: params.scorecard.pairwise,
+    traces: params.scorecard.traces,
+    notes: params.scorecard.scoringProxyNotes,
+  });
+}
+
+function formatExplainableMetricValue(value: number | null, unit: string): string {
+  if (value === null) {
+    return "null";
+  }
+  return unit === "rate"
+    ? String(value)
+    : unit === "usd"
+      ? `$${value}`
+      : String(value);
+}
+
+function buildSummary(
+  report: ComparativeEvalRunnerReportV1,
+  scorecard: ComparativeEvalScorecardV1,
+  explainableScorecard: OpenClawBrainExplainableEvalScorecardV1,
+): string {
   const checkRows = scorecard.policy.checks.map((check) => {
     const observedText = Object.entries(check.observed)
       .map(([key, value]) => `${key}=${value === null ? "null" : String(value)}`)
@@ -1239,11 +1282,11 @@ function buildSummary(report: ComparativeEvalRunnerReportV1, scorecard: Comparat
       .join(", ");
     return `| ${check.id} | ${check.status} | ${observedText} | ${thresholdText} |`;
   });
-  const modeRows = scorecard.modes.map((mode) =>
-    `| ${mode.mode} | ${mode.traceCount} | ${mode.rankedWinnerCount} | ${mode.meanQualityScore ?? "null"} | ${mode.compileOkRate ?? "null"} | ${mode.phraseHitRate ?? "null"} | ${mode.estimatedPromptTokens} | ${mode.estimatedPromptCostUsd ?? "null"} |`,
+  const publicMetricRows = explainableScorecard.publicOperatorMetrics.map((metric) =>
+    `| ${metric.id} | ${metric.availability} | ${formatExplainableMetricValue(metric.value, metric.unit)} | ${metric.formula.expression} | ${metric.language} |`,
   );
-  const pairwiseRows = scorecard.pairwise.map((pair) =>
-    `| ${pair.leftMode} vs ${pair.rightMode} | ${pair.comparableTraceCount} | ${pair.traceWins.left}-${pair.traceWins.right}-${pair.traceWins.ties} | ${pair.traceTieOrBetter.leftRate ?? "null"} | ${pair.traceTieOrBetter.rightRate ?? "null"} | ${pair.aggregateDeltas.qualityScoreDeltaLeftMinusRightMean ?? "null"} |`,
+  const internalMetricRows = explainableScorecard.internalMetrics.map((metric) =>
+    `| ${metric.id} | ${formatExplainableMetricValue(metric.value, metric.unit)} | ${metric.language} |`,
   );
   const traceRows = scorecard.traces.map((trace) =>
     `| ${trace.traceId} | ${trace.status} | ${trace.validationOk ?? "null"} | ${trace.winnerMode ?? "null"} | ${trace.scoreSpread ?? "null"} | ${trace.error ?? "none"} |`,
@@ -1260,11 +1303,18 @@ function buildSummary(report: ComparativeEvalRunnerReportV1, scorecard: Comparat
     `- git sha: \`${report.gitSha}\``,
     `- traces: ${report.successfulTraceCount}/${report.requestedTraceCount}`,
     `- scorecard hash: \`${report.scorecardHash}\``,
+    `- explainable scorecard hash: \`${report.explainableScorecardHash}\``,
     "",
-    "## Modes",
-    "| mode | traces | ranked winners | mean quality | compile ok rate | phrase hit rate | prompt tokens | prompt cost usd |",
-    "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
-    ...(modeRows.length > 0 ? modeRows : ["| none | 0 | 0 | null | null | null | 0 | null |"]),
+    "## Public / Operator Headline",
+    ...explainableScorecard.headline.map((line) => `- ${line}`),
+    "",
+    "## Public / Operator Metrics",
+    "| metric | availability | value | formula | language |",
+    "| --- | --- | ---: | --- | --- |",
+    ...(publicMetricRows.length > 0 ? publicMetricRows : ["| none | not_available | null | none | no public metrics were computed |"]),
+    "",
+    "## Fail-Open Language",
+    `- ${explainableScorecard.failOpenLanguage}`,
     "",
     "## Policy",
     `- candidate mode: \`${scorecard.policy.thresholds.candidateMode}\``,
@@ -1277,13 +1327,14 @@ function buildSummary(report: ComparativeEvalRunnerReportV1, scorecard: Comparat
     "| --- | --- | --- | --- |",
     ...(checkRows.length > 0 ? checkRows : ["| none | blocked | none | none |"]),
     "",
-    "## Pairwise",
-    "| pair | traces | left-right-ties | left tie-or-better rate | right tie-or-better rate | mean quality delta |",
-    "| --- | ---: | --- | ---: | ---: | ---: |",
-    ...(pairwiseRows.length > 0 ? pairwiseRows : ["| none | 0 | 0-0-0 | null | null | null |"]),
+    "## Internal Diagnostics",
+    `- ${explainableScorecard.diagnosticLanguage}`,
+    "| metric | value | language |",
+    "| --- | ---: | --- |",
+    ...(internalMetricRows.length > 0 ? internalMetricRows : ["| none | null | no internal diagnostics were computed |"]),
     "",
-    "## Traces",
-    "| trace | status | validation ok | winner | score spread | error |",
+    "## Trace Coverage",
+    "| trace | status | validation ok | diagnostic winnerMode | score spread | error |",
     "| --- | --- | --- | --- | ---: | --- |",
     ...(traceRows.length > 0 ? traceRows : ["| none | blocked | null | null | null | none |"]),
     "",
@@ -1310,6 +1361,7 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
   const manifestPath = path.resolve(input.manifestPath ?? DEFAULT_COMPARATIVE_EVAL_MANIFEST_PATH);
   const outputDir = path.resolve(input.outputDir ?? defaultOutputDir(manifestPath));
   const traceRoot = path.join(outputDir, COMPARATIVE_EVAL_RUNNER_LAYOUT.traceDir);
+  const generatedAt = new Date().toISOString();
   const manifestLoad = loadManifestInputs(manifestPath);
   const pricingTable = loadPricingTable();
   const policyThresholds = mergePolicyThresholds(input.policy);
@@ -1372,17 +1424,22 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
     policyThresholds,
     issues,
   });
+  const explainableScorecard = buildExplainableScorecard({
+    generatedAt,
+    scorecard,
+  });
 
   const sourceManifestPath = manifestLoad.manifest === null
     ? null
     : path.join(outputDir, COMPARATIVE_EVAL_RUNNER_LAYOUT.sourceManifest);
   const reportPath = path.join(outputDir, COMPARATIVE_EVAL_RUNNER_LAYOUT.report);
   const scorecardPath = path.join(outputDir, COMPARATIVE_EVAL_RUNNER_LAYOUT.scorecard);
+  const explainableScorecardPath = path.join(outputDir, COMPARATIVE_EVAL_RUNNER_LAYOUT.explainableScorecard);
   const summaryPath = path.join(outputDir, COMPARATIVE_EVAL_RUNNER_LAYOUT.summary);
   const report: ComparativeEvalRunnerReportV1 = {
     contract: COMPARATIVE_EVAL_RUNNER_REPORT_CONTRACT,
     status,
-    generatedAt: new Date().toISOString(),
+    generatedAt,
     repoRoot,
     gitSha: gitShaOrUnknown(),
     manifestPath,
@@ -1399,6 +1456,7 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
     issues,
     pricingTable,
     scorecardHash: scorecard.scorecardHash,
+    explainableScorecardHash: explainableScorecard.scorecardHash,
     gateStatus: scorecard.policy.status,
     gateDecisive: scorecard.policy.decisive,
     gateFailedCheckIds: scorecard.policy.checks.filter((check) => check.status === "fail").map((check) => check.id),
@@ -1406,6 +1464,7 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
       sourceManifest: sourceManifestPath === null ? null : COMPARATIVE_EVAL_RUNNER_LAYOUT.sourceManifest,
       report: COMPARATIVE_EVAL_RUNNER_LAYOUT.report,
       scorecard: COMPARATIVE_EVAL_RUNNER_LAYOUT.scorecard,
+      explainableScorecard: COMPARATIVE_EVAL_RUNNER_LAYOUT.explainableScorecard,
       summary: COMPARATIVE_EVAL_RUNNER_LAYOUT.summary,
       traceDir: COMPARATIVE_EVAL_RUNNER_LAYOUT.traceDir,
       laneDir: laneDescriptor ? portableRelativePath(outputDir, laneDescriptor.laneDir) : null,
@@ -1423,7 +1482,8 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
   }
   writeJson(reportPath, report);
   writeJson(scorecardPath, scorecard);
-  writeText(summaryPath, buildSummary(report, scorecard));
+  writeJson(explainableScorecardPath, explainableScorecard);
+  writeText(summaryPath, buildSummary(report, scorecard, explainableScorecard));
 
   return {
     outputDir,
@@ -1431,8 +1491,10 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
     sourceManifestPath,
     reportPath,
     scorecardPath,
+    explainableScorecardPath,
     summaryPath,
     report,
     scorecard,
+    explainableScorecard,
   };
 }
