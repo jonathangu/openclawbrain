@@ -259,6 +259,14 @@ describe("comparative eval runner", () => {
     expect(descriptor.scorecard.policy.status).toBe("pass");
     expect(descriptor.scorecard.policy.checks.find((check) => check.id === "candidate_trace_tie_or_better_vs_baseline")?.status).toBe("pass");
     expect(descriptor.scorecard.policy.checks.find((check) => check.id === "candidate_tie_promotion_delta_vs_baseline")?.status).toBe("pass");
+    expect(descriptor.scorecard.explainableScorecard.traceTieOrBetterVsBaseline).toMatchObject({
+      count: 2,
+      rate: 1,
+      totalCount: 2,
+    });
+    expect(descriptor.scorecard.scoringProxyNotes).toContain(
+      "winnerMode is a tie-break diagnostic only; explainableScorecard leads with regression, tie-or-better, recall, and economics surfaces",
+    );
     expect(
       descriptor.scorecard.pairwise.find(
         (row) => row.leftMode === "graph_prior_only" && row.rightMode === "learned_route",
@@ -274,6 +282,8 @@ describe("comparative eval runner", () => {
     expect(existsSync(descriptor.scorecardPath)).toBe(true);
     expect(existsSync(descriptor.explainableScorecardPath)).toBe(true);
     expect(existsSync(descriptor.summaryPath)).toBe(true);
+    expect(readFileSync(descriptor.summaryPath, "utf8")).toContain("## Explainable Scorecard");
+    expect(readFileSync(descriptor.summaryPath, "utf8")).toContain("diagnostic top mode");
     expect(existsSync(path.join(outputDir, "traces", "_lane", "index.json"))).toBe(true);
     expect(existsSync(path.join(outputDir, "traces", "_lane", "worked-traces.md"))).toBe(true);
 

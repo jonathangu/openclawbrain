@@ -208,6 +208,16 @@ describe("recorded session replay proof lane", () => {
     expect(learnedMode?.sharedTopScoreTraceCount).toBe(2);
     expect(graphMode?.rankedWinnerCount).toBe(1);
     expect(graphMode?.sharedTopScoreTraceCount).toBe(1);
+    expect(descriptor.summaryTables.scorecard.traceTieOrBetterVsBaseline).toMatchObject({
+      count: 2,
+      rate: 1,
+      totalCount: 2,
+    });
+    expect(descriptor.summaryTables.scorecard.regressionVsFloor).toMatchObject({
+      count: 0,
+      rate: 0,
+      totalCount: 2,
+    });
 
     const learnedVsGraph = descriptor.pairwiseDeltas.pairs.find(
       (row) => row.leftMode === "graph_prior_only" && row.rightMode === "learned_route",
@@ -226,9 +236,12 @@ describe("recorded session replay proof lane", () => {
     expect(versusGraph?.tieRate).toBe(0.5);
 
     const laneRoot = path.join(artifactRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.laneDir);
+    expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.readme)).toMatch(/Explainable Scorecard/);
+    expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.readme)).toMatch(/diagnostic top-rank/);
     expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.readme)).toMatch(/Diagnostic Pairwise Deltas/);
     expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.readme)).toMatch(/internal deterministic replay diagnostics/);
     expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.workedTraces)).toMatch(/trace-score-resolution/);
+    expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.workedTraces)).toMatch(/learned_route vs approved prior/);
     expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.workedTraces)).toMatch(/Please do this entire plan end to end/);
     expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.workedTraces)).toMatch(/trace-comparative-replay/);
     expect(readText(laneRoot, RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.workedTraces)).toMatch(/diagnostic winner/);

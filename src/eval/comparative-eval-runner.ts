@@ -46,6 +46,7 @@ export const COMPARATIVE_EVAL_RUNNER_LAYOUT = {
 type ComparativeEvalMode = (typeof RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER)[number];
 type ComparativeEvalStatus = "ok" | "partial" | "blocked";
 type ComparativeEvalGateStatus = "pass" | "fail" | "partial" | "blocked";
+type ComparativeEvalRelation = "better" | "tied" | "worse";
 
 interface PricingTable {
   version: string | null;
@@ -132,6 +133,11 @@ export interface ComparativeEvalTraceScorecardRowV1 {
   winnerMode: ComparativeEvalMode | null;
   topScoreModes: ComparativeEvalMode[];
   scoreSpread: number | null;
+  candidateRelationVsBaseline: ComparativeEvalRelation | null;
+  candidateRelationVsFloor: ComparativeEvalRelation | null;
+  candidateTieOrBetterVsBaseline: boolean | null;
+  candidateRegressionVsBaseline: boolean | null;
+  candidateRegressionVsFloor: boolean | null;
   error: string | null;
   modes: ComparativeEvalTraceModeScorecardRowV1[];
 }
@@ -189,6 +195,96 @@ export interface ComparativeEvalPairwiseScorecardRowV1 {
     phraseHitDeltaLeftMinusRightSum: number;
     promotionDeltaLeftMinusRightSum: number;
     tiePromotionDeltaLeftMinusRightSum: number;
+  };
+}
+
+export interface ComparativeEvalCountRateV1 {
+  count: number;
+  rate: number | null;
+  totalCount: number;
+}
+
+export interface ComparativeEvalOutcomeBreakdownV1 {
+  betterCount: number;
+  tiedCount: number;
+  worseCount: number;
+  betterRate: number | null;
+  tieRate: number | null;
+  worseRate: number | null;
+  totalCount: number;
+}
+
+export interface ComparativeEvalRequiredContextRecallV1 {
+  available: boolean;
+  candidateMode: ComparativeEvalMode;
+  baselineMode: ComparativeEvalMode;
+  candidatePhraseHitCount: number | null;
+  candidatePhraseCount: number | null;
+  candidateRate: number | null;
+  baselinePhraseHitCount: number | null;
+  baselinePhraseCount: number | null;
+  baselineRate: number | null;
+  delta: number | null;
+  summary: string;
+}
+
+export interface ComparativeEvalCorrectionAbsorptionV1 {
+  available: boolean;
+  observedFeedbackTurnCount: number;
+  observedNonApprovalFeedbackTurnCount: number;
+  summary: string;
+}
+
+export interface ComparativeEvalSuccessAdjustedEconomicsV1 {
+  available: boolean;
+  successUnit: "validated_trace" | null;
+  candidateMode: ComparativeEvalMode;
+  baselineMode: ComparativeEvalMode;
+  successCount: number;
+  candidateEstimatedPromptTokensPerSuccess: number | null;
+  baselineEstimatedPromptTokensPerSuccess: number | null;
+  candidateEstimatedPromptCostUsdPerSuccess: number | null;
+  baselineEstimatedPromptCostUsdPerSuccess: number | null;
+  promptTokenDeltaCandidateMinusBaseline: number | null;
+  promptCostUsdDeltaCandidateMinusBaseline: number | null;
+  summary: string;
+  limitations: string[];
+}
+
+export interface ComparativeEvalFailOpenV1 {
+  available: boolean;
+  failOpenRate: number | null;
+  summary: string;
+}
+
+export interface ComparativeEvalExplainableScorecardV1 {
+  candidateMode: ComparativeEvalMode;
+  baselineMode: ComparativeEvalMode;
+  floorMode: ComparativeEvalMode;
+  comparableTraceCount: number;
+  comparableTurnCount: number;
+  traceOutcomeVsBaseline: ComparativeEvalOutcomeBreakdownV1;
+  turnOutcomeVsBaseline: ComparativeEvalOutcomeBreakdownV1;
+  traceTieOrBetterVsBaseline: ComparativeEvalCountRateV1;
+  turnTieOrBetterVsBaseline: ComparativeEvalCountRateV1;
+  regressionVsBaseline: ComparativeEvalCountRateV1;
+  regressionVsFloor: ComparativeEvalCountRateV1;
+  criticalRegressionCount: number;
+  requiredContextRecall: ComparativeEvalRequiredContextRecallV1;
+  correctionAbsorption: ComparativeEvalCorrectionAbsorptionV1;
+  successAdjustedEconomics: ComparativeEvalSuccessAdjustedEconomicsV1;
+  failOpen: ComparativeEvalFailOpenV1;
+  diagnostics: {
+    candidateMeanQualityScore: number | null;
+    baselineMeanQualityScore: number | null;
+    floorMeanQualityScore: number | null;
+    candidateMinusBaselineMeanQualityScore: number | null;
+    candidateMinusFloorMeanQualityScore: number | null;
+    winnerModeCounts: Array<{
+      mode: ComparativeEvalMode;
+      rankedWinnerCount: number;
+      sharedTopScoreTraceCount: number;
+    }>;
   };
 }
 
@@ -254,6 +350,7 @@ export interface ComparativeEvalScorecardV1 {
   modes: ComparativeEvalModeScorecardRowV1[];
   pairwise: ComparativeEvalPairwiseScorecardRowV1[];
   policy: ComparativeEvalPolicyV1;
+  explainableScorecard: ComparativeEvalExplainableScorecardV1;
   traces: ComparativeEvalTraceScorecardRowV1[];
 }
 
@@ -678,6 +775,58 @@ function toRate(numerator: number, denominator: number): number | null {
   return denominator > 0 ? round(numerator / denominator, 6) : null;
 }
 
+function relationFromScores(left: number, right: number): ComparativeEvalRelation {
+  if (left > right) {
+    return "better";
+  }
+  if (left < right) {
+    return "worse";
+  }
+  return "tied";
+}
+
+function buildCountRate(count: number, totalCount: number): ComparativeEvalCountRateV1 {
+  return {
+    count,
+    rate: toRate(count, totalCount),
+    totalCount,
+  };
+}
+
+function buildOutcomeBreakdownFromCounts(params: {
+  betterCount: number;
+  tiedCount: number;
+  worseCount: number;
+  totalCount: number;
+}): ComparativeEvalOutcomeBreakdownV1 {
+  return {
+    betterCount: params.betterCount,
+    tiedCount: params.tiedCount,
+    worseCount: params.worseCount,
+    betterRate: toRate(params.betterCount, params.totalCount),
+    tieRate: toRate(params.tiedCount, params.totalCount),
+    worseRate: toRate(params.worseCount, params.totalCount),
+    totalCount: params.totalCount,
+  };
+}
+
+function buildOutcomeBreakdown(relations: ComparativeEvalRelation[]): ComparativeEvalOutcomeBreakdownV1 {
+  return buildOutcomeBreakdownFromCounts({
+    betterCount: relations.filter((relation) => relation === "better").length,
+    tiedCount: relations.filter((relation) => relation === "tied").length,
+    worseCount: relations.filter((relation) => relation === "worse").length,
+    totalCount: relations.length,
+  });
+}
+
+function formatCountRate(value: ComparativeEvalCountRateV1): string {
+  return `${value.count}/${value.totalCount}${value.rate === null ? "" : ` (${value.rate})`}`;
+}
+
+function formatOutcomeBreakdown(value: ComparativeEvalOutcomeBreakdownV1): string {
+  return `${value.betterCount} better, ${value.tiedCount} tied, ${value.worseCount} worse`;
+}
+
 function mergePolicyThresholds(
   overrides: Partial<ComparativeEvalPolicyThresholdsV1> | undefined,
 ): ComparativeEvalPolicyThresholdsV1 {
@@ -763,6 +912,7 @@ function buildTraceScorecardRows(params: {
   manifestTraces: LoadedTraceInput[];
   laneDescriptor: RecordedSessionReplayProofLaneDescriptorV1 | null;
   pricingTable: PricingTable;
+  policyThresholds: ComparativeEvalPolicyThresholdsV1;
 }): ComparativeEvalTraceScorecardRowV1[] {
   const descriptorByTraceId = new Map<string, RecordedSessionReplayProofBundleDescriptorV1>(
     (params.laneDescriptor?.successfulBundles ?? []).map((descriptor) => [descriptor.bundle.traceId, descriptor]),
@@ -786,6 +936,11 @@ function buildTraceScorecardRows(params: {
           winnerMode: null,
           topScoreModes: [],
           scoreSpread: null,
+          candidateRelationVsBaseline: null,
+          candidateRelationVsFloor: null,
+          candidateTieOrBetterVsBaseline: null,
+          candidateRegressionVsBaseline: null,
+          candidateRegressionVsFloor: null,
           error: generationEntry?.error ?? "trace bundle was not generated",
           modes: [],
         };
@@ -798,6 +953,9 @@ function buildTraceScorecardRows(params: {
         }
         return buildTraceModeRow(modeReport, params.pricingTable);
       });
+      const candidateRow = modeRows.find((row) => row.mode === params.policyThresholds.candidateMode) ?? null;
+      const baselineRow = modeRows.find((row) => row.mode === params.policyThresholds.baselineMode) ?? null;
+      const floorRow = modeRows.find((row) => row.mode === params.policyThresholds.floorMode) ?? null;
       return {
         traceId: traceInput.traceId,
         tracePath: traceInput.tracePath,
@@ -808,6 +966,21 @@ function buildTraceScorecardRows(params: {
         winnerMode: descriptor.bundle.summary.winnerMode as ComparativeEvalMode | null,
         topScoreModes: topScoreModes(modeRows),
         scoreSpread: scoreSpread(modeRows),
+        candidateRelationVsBaseline: candidateRow && baselineRow
+          ? relationFromScores(candidateRow.qualityScore, baselineRow.qualityScore)
+          : null,
+        candidateRelationVsFloor: candidateRow && floorRow
+          ? relationFromScores(candidateRow.qualityScore, floorRow.qualityScore)
+          : null,
+        candidateTieOrBetterVsBaseline: candidateRow && baselineRow
+          ? candidateRow.qualityScore >= baselineRow.qualityScore
+          : null,
+        candidateRegressionVsBaseline: candidateRow && baselineRow
+          ? candidateRow.qualityScore < baselineRow.qualityScore
+          : null,
+        candidateRegressionVsFloor: candidateRow && floorRow
+          ? candidateRow.qualityScore < floorRow.qualityScore
+          : null,
         error: generationEntry.error,
         modes: modeRows,
       };
@@ -979,6 +1152,171 @@ function buildPairwiseScorecardRows(params: {
   }
 
   return pairwiseRows;
+}
+
+function buildExplainableScorecard(params: {
+  modeRows: ComparativeEvalModeScorecardRowV1[];
+  pairwiseRows: ComparativeEvalPairwiseScorecardRowV1[];
+  traceRows: ComparativeEvalTraceScorecardRowV1[];
+  thresholds: ComparativeEvalPolicyThresholdsV1;
+  laneDescriptor: RecordedSessionReplayProofLaneDescriptorV1 | null;
+}): ComparativeEvalExplainableScorecardV1 {
+  const candidateMode = params.thresholds.candidateMode;
+  const baselineMode = params.thresholds.baselineMode;
+  const floorMode = params.thresholds.floorMode;
+  const comparableTraceRows = params.traceRows.filter((trace) => trace.status === "ok" && trace.validationOk === true);
+  const baselineVsCandidate = params.pairwiseRows.find((row) =>
+    row.leftMode === baselineMode && row.rightMode === candidateMode
+  ) ?? null;
+  const candidateRow = params.modeRows.find((row) => row.mode === candidateMode) ?? null;
+  const baselineRow = params.modeRows.find((row) => row.mode === baselineMode) ?? null;
+  const floorRow = params.modeRows.find((row) => row.mode === floorMode) ?? null;
+  const comparableTraceIds = new Set(comparableTraceRows.map((trace) => trace.traceId));
+  const comparableTurns = (params.laneDescriptor?.summaryTables.turns ?? []).filter((turn) => comparableTraceIds.has(turn.traceId));
+  const traceRelationsVsBaseline = comparableTraceRows
+    .map((trace) => trace.candidateRelationVsBaseline)
+    .filter((relation): relation is ComparativeEvalRelation => relation !== null);
+  const traceOutcomeVsBaseline = buildOutcomeBreakdown(traceRelationsVsBaseline);
+  const turnOutcomeVsBaseline = baselineVsCandidate === null
+    ? buildOutcomeBreakdown([])
+    : buildOutcomeBreakdownFromCounts({
+        betterCount: baselineVsCandidate.turnWins.right,
+        tiedCount: baselineVsCandidate.turnWins.ties,
+        worseCount: baselineVsCandidate.turnWins.left,
+        totalCount: baselineVsCandidate.comparableTurnCount,
+      });
+  const traceTieOrBetterVsBaseline = buildCountRate(
+    comparableTraceRows.filter((trace) => trace.candidateTieOrBetterVsBaseline === true).length,
+    comparableTraceRows.length,
+  );
+  const turnTieOrBetterVsBaseline = baselineVsCandidate === null
+    ? buildCountRate(0, 0)
+    : buildCountRate(
+        baselineVsCandidate.turnTieOrBetter.right,
+        baselineVsCandidate.comparableTurnCount,
+      );
+  const regressionVsBaseline = buildCountRate(
+    comparableTraceRows.filter((trace) => trace.candidateRegressionVsBaseline === true).length,
+    comparableTraceRows.length,
+  );
+  const regressionVsFloor = buildCountRate(
+    comparableTraceRows.filter((trace) => trace.candidateRegressionVsFloor === true).length,
+    comparableTraceRows.length,
+  );
+  const candidateRate = candidateRow ? toRate(candidateRow.totalPhraseHitCount, candidateRow.totalPhraseCount) : null;
+  const baselineRate = baselineRow ? toRate(baselineRow.totalPhraseHitCount, baselineRow.totalPhraseCount) : null;
+  const successCount = comparableTraceRows.length;
+  const candidateEstimatedPromptTokensPerSuccess = candidateRow && successCount > 0
+    ? round(candidateRow.estimatedPromptTokens / successCount, 6)
+    : null;
+  const baselineEstimatedPromptTokensPerSuccess = baselineRow && successCount > 0
+    ? round(baselineRow.estimatedPromptTokens / successCount, 6)
+    : null;
+  const candidateEstimatedPromptCostUsdPerSuccess = candidateRow?.estimatedPromptCostUsd !== null
+    && candidateRow?.estimatedPromptCostUsd !== undefined
+    && successCount > 0
+    ? round(candidateRow.estimatedPromptCostUsd / successCount, 6)
+    : null;
+  const baselineEstimatedPromptCostUsdPerSuccess = baselineRow?.estimatedPromptCostUsd !== null
+    && baselineRow?.estimatedPromptCostUsd !== undefined
+    && successCount > 0
+    ? round(baselineRow.estimatedPromptCostUsd / successCount, 6)
+    : null;
+  const observedFeedbackTurnCount = comparableTurns.filter((turn) => turn.feedbackKinds.length > 0).length;
+  const observedNonApprovalFeedbackTurnCount = comparableTurns.filter((turn) =>
+    turn.feedbackKinds.some((kind) => kind !== "approval")
+  ).length;
+
+  return {
+    candidateMode,
+    baselineMode,
+    floorMode,
+    comparableTraceCount: comparableTraceRows.length,
+    comparableTurnCount: baselineVsCandidate?.comparableTurnCount ?? 0,
+    traceOutcomeVsBaseline,
+    turnOutcomeVsBaseline,
+    traceTieOrBetterVsBaseline,
+    turnTieOrBetterVsBaseline,
+    regressionVsBaseline,
+    regressionVsFloor,
+    criticalRegressionCount: regressionVsFloor.count,
+    requiredContextRecall: {
+      available: (candidateRow?.totalPhraseCount ?? 0) > 0 || (baselineRow?.totalPhraseCount ?? 0) > 0,
+      candidateMode,
+      baselineMode,
+      candidatePhraseHitCount: candidateRow?.totalPhraseHitCount ?? null,
+      candidatePhraseCount: candidateRow?.totalPhraseCount ?? null,
+      candidateRate,
+      baselinePhraseHitCount: baselineRow?.totalPhraseHitCount ?? null,
+      baselinePhraseCount: baselineRow?.totalPhraseCount ?? null,
+      baselineRate,
+      delta: candidateRate !== null && baselineRate !== null ? round(candidateRate - baselineRate, 6) : null,
+      summary: (candidateRow?.totalPhraseCount ?? 0) > 0 || (baselineRow?.totalPhraseCount ?? 0) > 0
+        ? `${candidateMode} recalled ${candidateRow?.totalPhraseHitCount ?? 0}/${candidateRow?.totalPhraseCount ?? 0} required-context phrases vs ${baselineMode} ${baselineRow?.totalPhraseHitCount ?? 0}/${baselineRow?.totalPhraseCount ?? 0}`
+        : "required-context recall is unavailable because no expected-context phrases were recorded",
+    },
+    correctionAbsorption: {
+      available: false,
+      observedFeedbackTurnCount,
+      observedNonApprovalFeedbackTurnCount,
+      summary: observedFeedbackTurnCount > 0
+        ? `observed ${observedFeedbackTurnCount} feedback-bearing turns (${observedNonApprovalFeedbackTurnCount} non-approval), but comparative eval does not yet measure recurrence after correction`
+        : "correction absorption is unavailable in comparative eval because no feedback-bearing turns were recorded in the validated set",
+    },
+    successAdjustedEconomics: {
+      available: candidateRow !== null && baselineRow !== null && successCount > 0,
+      successUnit: candidateRow !== null && baselineRow !== null && successCount > 0 ? "validated_trace" : null,
+      candidateMode,
+      baselineMode,
+      successCount,
+      candidateEstimatedPromptTokensPerSuccess,
+      baselineEstimatedPromptTokensPerSuccess,
+      candidateEstimatedPromptCostUsdPerSuccess,
+      baselineEstimatedPromptCostUsdPerSuccess,
+      promptTokenDeltaCandidateMinusBaseline: candidateEstimatedPromptTokensPerSuccess !== null
+        && baselineEstimatedPromptTokensPerSuccess !== null
+        ? round(candidateEstimatedPromptTokensPerSuccess - baselineEstimatedPromptTokensPerSuccess, 6)
+        : null,
+      promptCostUsdDeltaCandidateMinusBaseline: candidateEstimatedPromptCostUsdPerSuccess !== null
+        && baselineEstimatedPromptCostUsdPerSuccess !== null
+        ? round(candidateEstimatedPromptCostUsdPerSuccess - baselineEstimatedPromptCostUsdPerSuccess, 6)
+        : null,
+      summary: candidateRow !== null && baselineRow !== null && successCount > 0
+        ? `${candidateMode} estimated prompt cost per validated trace = ${candidateEstimatedPromptCostUsdPerSuccess ?? "null"} vs ${baselineMode} ${baselineEstimatedPromptCostUsdPerSuccess ?? "null"}`
+        : "success-adjusted economics are unavailable because the comparative eval did not produce a complete validated comparison set",
+      limitations: [
+        "prompt-cost surfaces are deterministic proxies derived from selected context chars",
+        "comparative eval does not model live completion cost, retries, or task-level latency",
+      ],
+    },
+    failOpen: {
+      available: false,
+      failOpenRate: null,
+      summary: "fail-open posture is not modeled in comparative eval replay bundles; use proof-cron health surfaces for degraded-serve reporting",
+    },
+    diagnostics: {
+      candidateMeanQualityScore: candidateRow?.meanQualityScore ?? null,
+      baselineMeanQualityScore: baselineRow?.meanQualityScore ?? null,
+      floorMeanQualityScore: floorRow?.meanQualityScore ?? null,
+      candidateMinusBaselineMeanQualityScore: candidateRow?.meanQualityScore !== null
+        && candidateRow?.meanQualityScore !== undefined
+        && baselineRow?.meanQualityScore !== null
+        && baselineRow?.meanQualityScore !== undefined
+        ? round(candidateRow.meanQualityScore - baselineRow.meanQualityScore, 6)
+        : null,
+      candidateMinusFloorMeanQualityScore: candidateRow?.meanQualityScore !== null
+        && candidateRow?.meanQualityScore !== undefined
+        && floorRow?.meanQualityScore !== null
+        && floorRow?.meanQualityScore !== undefined
+        ? round(candidateRow.meanQualityScore - floorRow.meanQualityScore, 6)
+        : null,
+      winnerModeCounts: params.modeRows.map((row) => ({
+        mode: row.mode,
+        rankedWinnerCount: row.rankedWinnerCount,
+        sharedTopScoreTraceCount: row.sharedTopScoreTraceCount,
+      })),
+    },
+  };
 }
 
 function buildPolicy(params: {
@@ -1211,6 +1549,13 @@ function buildScorecard(params: {
     thresholds: params.policyThresholds,
     issues: params.issues,
   });
+  const explainableScorecard = buildExplainableScorecard({
+    modeRows: modes,
+    pairwiseRows: pairwise,
+    traceRows: params.traceRows,
+    thresholds: params.policyThresholds,
+    laneDescriptor: params.laneDescriptor,
+  });
   const base: Omit<ComparativeEvalScorecardV1, "scorecardHash"> = {
     contract: COMPARATIVE_EVAL_SCORECARD_CONTRACT,
     manifestId: params.manifestId,
@@ -1221,15 +1566,18 @@ function buildScorecard(params: {
     failedTraceCount,
     pricingTable: params.pricingTable,
     scoringProxyNotes: [
-      "qualityScore comes from the deterministic replay proof bundle scoring surface",
+      "qualityScore remains a deterministic replay diagnostic, not the public definition of victory",
       "estimatedPromptTokens is ceil(selectedContextChars / charsPerToken)",
       "estimatedPromptCostUsd uses promptPriceUsdPer1mTokens from scripts/pricing-table.v1.json",
+      "winnerMode is a tie-break diagnostic only; explainableScorecard leads with regression, tie-or-better, recall, and economics surfaces",
       "pairwise tie-or-better rates compare deterministic qualityScore outcomes across the same validated traces and turns",
+      "correction absorption and fail-open remain placeholder surfaces unless a richer proof surface is wired in",
       "the scorecard is observational scaffold output; it does not claim long-run task or API economics",
     ],
     modes,
     pairwise,
     policy,
+    explainableScorecard,
     traces: params.traceRows,
   };
   return {
@@ -1238,7 +1586,7 @@ function buildScorecard(params: {
   };
 }
 
-function buildExplainableScorecard(params: {
+function buildExplainableScorecardArtifact(params: {
   generatedAt: string;
   scorecard: ComparativeEvalScorecardV1;
 }): OpenClawBrainExplainableEvalScorecardV1 {
@@ -1273,6 +1621,7 @@ function buildSummary(
   scorecard: ComparativeEvalScorecardV1,
   explainableScorecard: OpenClawBrainExplainableEvalScorecardV1,
 ): string {
+  const scorecardExplainable = scorecard.explainableScorecard;
   const checkRows = scorecard.policy.checks.map((check) => {
     const observedText = Object.entries(check.observed)
       .map(([key, value]) => `${key}=${value === null ? "null" : String(value)}`)
@@ -1288,8 +1637,11 @@ function buildSummary(
   const internalMetricRows = explainableScorecard.internalMetrics.map((metric) =>
     `| ${metric.id} | ${formatExplainableMetricValue(metric.value, metric.unit)} | ${metric.language} |`,
   );
+  const pairwiseRows = scorecard.pairwise.map((pair) =>
+    `| ${pair.leftMode} vs ${pair.rightMode} | ${pair.comparableTraceCount} | ${pair.traceWins.left}-${pair.traceWins.right}-${pair.traceWins.ties} | ${pair.traceTieOrBetter.leftRate ?? "null"} | ${pair.traceTieOrBetter.rightRate ?? "null"} | ${pair.aggregateDeltas.qualityScoreDeltaLeftMinusRightMean ?? "null"} |`,
+  );
   const traceRows = scorecard.traces.map((trace) =>
-    `| ${trace.traceId} | ${trace.status} | ${trace.validationOk ?? "null"} | ${trace.winnerMode ?? "null"} | ${trace.scoreSpread ?? "null"} | ${trace.error ?? "none"} |`,
+    `| ${trace.traceId} | ${trace.status} | ${trace.validationOk ?? "null"} | ${trace.candidateRelationVsBaseline ?? "null"} | ${trace.candidateRelationVsFloor ?? "null"} | ${trace.winnerMode ?? "null"} | ${trace.scoreSpread ?? "null"} | ${trace.error ?? "none"} |`,
   );
   return [
     "# Comparative Eval Runner",
@@ -1305,10 +1657,21 @@ function buildSummary(
     `- scorecard hash: \`${report.scorecardHash}\``,
     `- explainable scorecard hash: \`${report.explainableScorecardHash}\``,
     "",
-    "## Public / Operator Headline",
+    "## Explainable Scorecard",
     ...explainableScorecard.headline.map((line) => `- ${line}`),
+    `- ${scorecardExplainable.candidateMode} tie-or-better vs ${scorecardExplainable.baselineMode} (traces): ${formatCountRate(scorecardExplainable.traceTieOrBetterVsBaseline)}`,
+    `- ${scorecardExplainable.candidateMode} vs ${scorecardExplainable.baselineMode} (traces): ${formatOutcomeBreakdown(scorecardExplainable.traceOutcomeVsBaseline)}`,
+    `- ${scorecardExplainable.candidateMode} tie-or-better vs ${scorecardExplainable.baselineMode} (turns): ${formatCountRate(scorecardExplainable.turnTieOrBetterVsBaseline)}`,
+    `- ${scorecardExplainable.candidateMode} vs ${scorecardExplainable.baselineMode} (turns): ${formatOutcomeBreakdown(scorecardExplainable.turnOutcomeVsBaseline)}`,
+    `- regressions vs ${scorecardExplainable.baselineMode}: ${formatCountRate(scorecardExplainable.regressionVsBaseline)}`,
+    `- regressions vs ${scorecardExplainable.floorMode}: ${formatCountRate(scorecardExplainable.regressionVsFloor)} (critical regressions: ${scorecardExplainable.criticalRegressionCount})`,
+    `- required-context recall: ${scorecardExplainable.requiredContextRecall.summary}`,
+    `- correction absorption: ${scorecardExplainable.correctionAbsorption.summary}`,
+    `- success-adjusted economics: ${scorecardExplainable.successAdjustedEconomics.summary}`,
+    `- fail-open: ${scorecardExplainable.failOpen.summary}`,
     "",
     "## Public / Operator Metrics",
+    ...explainableScorecard.headline.map((line) => `- ${line}`),
     "| metric | availability | value | formula | language |",
     "| --- | --- | ---: | --- | --- |",
     ...(publicMetricRows.length > 0 ? publicMetricRows : ["| none | not_available | null | none | no public metrics were computed |"]),
@@ -1333,10 +1696,15 @@ function buildSummary(
     "| --- | ---: | --- |",
     ...(internalMetricRows.length > 0 ? internalMetricRows : ["| none | null | no internal diagnostics were computed |"]),
     "",
+    "## Diagnostic Pairwise",
+    "| pair | traces | left/right/tied | left tie-or-better rate | right tie-or-better rate | mean quality delta |",
+    "| --- | ---: | --- | ---: | ---: | ---: |",
+    ...(pairwiseRows.length > 0 ? pairwiseRows : ["| none | 0 | 0-0-0 | null | null | null |"]),
+    "",
     "## Trace Coverage",
-    "| trace | status | validation ok | diagnostic winnerMode | score spread | error |",
-    "| --- | --- | --- | --- | ---: | --- |",
-    ...(traceRows.length > 0 ? traceRows : ["| none | blocked | null | null | null | none |"]),
+    "| trace | status | validation ok | candidate vs prior | candidate vs floor | diagnostic top mode | score spread | error |",
+    "| --- | --- | --- | --- | --- | --- | ---: | --- |",
+    ...(traceRows.length > 0 ? traceRows : ["| none | blocked | null | null | null | null | null | none |"]),
     "",
     "## Policy Reasons",
     ...(scorecard.policy.reasons.length > 0 ? scorecard.policy.reasons.map((reason) => `- ${reason}`) : ["- none"]),
@@ -1412,6 +1780,7 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
     manifestTraces: manifestLoad.traces,
     laneDescriptor,
     pricingTable,
+    policyThresholds,
   });
   const scorecard = buildScorecard({
     manifestContract: manifestLoad.manifestContract,
@@ -1424,7 +1793,7 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
     policyThresholds,
     issues,
   });
-  const explainableScorecard = buildExplainableScorecard({
+  const explainableScorecard = buildExplainableScorecardArtifact({
     generatedAt,
     scorecard,
   });

@@ -44,6 +44,7 @@ const RECORDED_SESSION_REPLAY_PROOF_LANE_INDEX_CONTRACT = "recorded_session_repl
 const RECORDED_SESSION_REPLAY_PROOF_LANE_GENERATION_REPORT_CONTRACT = "recorded_session_replay_proof_lane_generation_report.v1";
 
 type ReplayLaneMode = (typeof RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER)[number];
+type ReplayLaneRelation = "better" | "tied" | "worse";
 
 export interface RecordedSessionReplayProofLaneSourceManifestV1 {
   contract: typeof RECORDED_SESSION_REPLAY_PROOF_LANE_SOURCE_MANIFEST_CONTRACT;
@@ -104,6 +105,11 @@ interface RecordedSessionReplayProofLaneTurnSummaryRowV1 {
   feedbackKinds: string[];
   scoreSpread: number;
   topModes: ReplayLaneMode[];
+  candidateRelationVsBaseline: ReplayLaneRelation | null;
+  candidateRelationVsFloor: ReplayLaneRelation | null;
+  candidateTieOrBetterVsBaseline: boolean | null;
+  candidateRegressionVsBaseline: boolean | null;
+  candidateRegressionVsFloor: boolean | null;
   ranking: Array<{
     mode: ReplayLaneMode;
     qualityScore: number;
@@ -118,6 +124,11 @@ interface RecordedSessionReplayProofLaneTraceSummaryRowV1 {
   topScoreModes: ReplayLaneMode[];
   scoreSpread: number;
   validationOk: boolean;
+  candidateRelationVsBaseline: ReplayLaneRelation | null;
+  candidateRelationVsFloor: ReplayLaneRelation | null;
+  candidateTieOrBetterVsBaseline: boolean | null;
+  candidateRegressionVsBaseline: boolean | null;
+  candidateRegressionVsFloor: boolean | null;
   bundleHash: string;
   scoreHash: string;
   modes: RecordedSessionReplayProofLaneModeTraceRowV1[];
@@ -138,6 +149,97 @@ interface RecordedSessionReplayProofLaneModeSummaryRowV1 {
   totalWarningCount: number;
 }
 
+export interface RecordedSessionReplayProofLaneCountRateV1 {
+  count: number;
+  rate: number | null;
+  totalCount: number;
+}
+
+export interface RecordedSessionReplayProofLaneOutcomeBreakdownV1 {
+  betterCount: number;
+  tiedCount: number;
+  worseCount: number;
+  betterRate: number | null;
+  tieRate: number | null;
+  worseRate: number | null;
+  totalCount: number;
+}
+
+export interface RecordedSessionReplayProofLaneRequiredContextRecallV1 {
+  available: boolean;
+  candidateMode: ReplayLaneMode;
+  baselineMode: ReplayLaneMode;
+  candidatePhraseHitCount: number | null;
+  candidatePhraseCount: number | null;
+  candidateRate: number | null;
+  baselinePhraseHitCount: number | null;
+  baselinePhraseCount: number | null;
+  baselineRate: number | null;
+  delta: number | null;
+  summary: string;
+}
+
+export interface RecordedSessionReplayProofLaneCorrectionAbsorptionV1 {
+  available: boolean;
+  observedFeedbackTurnCount: number;
+  observedNonApprovalFeedbackTurnCount: number;
+  summary: string;
+}
+
+export interface RecordedSessionReplayProofLaneSuccessAdjustedEconomicsV1 {
+  available: boolean;
+  successUnit: "validated_trace" | null;
+  candidateMode: ReplayLaneMode;
+  baselineMode: ReplayLaneMode;
+  successCount: number;
+  candidateEstimatedPromptTokensPerSuccess: number | null;
+  baselineEstimatedPromptTokensPerSuccess: number | null;
+  candidateEstimatedPromptCostUsdPerSuccess: number | null;
+  baselineEstimatedPromptCostUsdPerSuccess: number | null;
+  promptTokenDeltaCandidateMinusBaseline: number | null;
+  promptCostUsdDeltaCandidateMinusBaseline: number | null;
+  summary: string;
+  limitations: string[];
+}
+
+export interface RecordedSessionReplayProofLaneFailOpenV1 {
+  available: boolean;
+  clipRate: number | null;
+  failOpenRate: number | null;
+  summary: string;
+}
+
+export interface RecordedSessionReplayProofLaneExplainableScorecardV1 {
+  candidateMode: "learned_route";
+  baselineMode: "graph_prior_only";
+  floorMode: "no_brain";
+  comparableTraceCount: number;
+  comparableTurnCount: number;
+  traceOutcomeVsBaseline: RecordedSessionReplayProofLaneOutcomeBreakdownV1;
+  turnOutcomeVsBaseline: RecordedSessionReplayProofLaneOutcomeBreakdownV1;
+  traceTieOrBetterVsBaseline: RecordedSessionReplayProofLaneCountRateV1;
+  turnTieOrBetterVsBaseline: RecordedSessionReplayProofLaneCountRateV1;
+  regressionVsBaseline: RecordedSessionReplayProofLaneCountRateV1;
+  regressionVsFloor: RecordedSessionReplayProofLaneCountRateV1;
+  criticalRegressionCount: number;
+  requiredContextRecall: RecordedSessionReplayProofLaneRequiredContextRecallV1;
+  correctionAbsorption: RecordedSessionReplayProofLaneCorrectionAbsorptionV1;
+  successAdjustedEconomics: RecordedSessionReplayProofLaneSuccessAdjustedEconomicsV1;
+  failOpen: RecordedSessionReplayProofLaneFailOpenV1;
+  diagnostics: {
+    candidateMeanQualityScore: number | null;
+    baselineMeanQualityScore: number | null;
+    floorMeanQualityScore: number | null;
+    candidateMinusBaselineMeanQualityScore: number | null;
+    candidateMinusFloorMeanQualityScore: number | null;
+    winnerModeCounts: Array<{
+      mode: ReplayLaneMode;
+      rankedWinnerCount: number;
+      sharedTopScoreTraceCount: number;
+    }>;
+  };
+}
+
 export interface RecordedSessionReplayProofLaneSummaryTablesV1 {
   contract: typeof RECORDED_SESSION_REPLAY_PROOF_LANE_SUMMARY_TABLES_CONTRACT;
   sourceManifest: RecordedSessionReplayProofLaneSourceManifestV1;
@@ -145,6 +247,7 @@ export interface RecordedSessionReplayProofLaneSummaryTablesV1 {
   requestedTraceCount: number;
   successfulTraceCount: number;
   failedTraceCount: number;
+  scorecard: RecordedSessionReplayProofLaneExplainableScorecardV1;
   modes: RecordedSessionReplayProofLaneModeSummaryRowV1[];
   traces: RecordedSessionReplayProofLaneTraceSummaryRowV1[];
   turns: RecordedSessionReplayProofLaneTurnSummaryRowV1[];
@@ -246,6 +349,11 @@ interface RecordedSessionReplayProofLaneBundleIndexRowV1 {
   winnerMode: ReplayLaneMode | null;
   topScoreModes: ReplayLaneMode[];
   scoreSpread: number;
+  candidateRelationVsBaseline: ReplayLaneRelation | null;
+  candidateRelationVsFloor: ReplayLaneRelation | null;
+  candidateTieOrBetterVsBaseline: boolean | null;
+  candidateRegressionVsBaseline: boolean | null;
+  candidateRegressionVsFloor: boolean | null;
   bundleHash: string;
   scoreHash: string;
 }
@@ -319,6 +427,7 @@ export interface RecordedSessionReplayProofLaneCloseoutV1 {
   failedTraceCount: number;
   failedTraceIds: string[];
   modeOrder: ReplayLaneMode[];
+  scorecard: RecordedSessionReplayProofLaneExplainableScorecardV1;
   winnerModeCounts: Array<{
     mode: ReplayLaneMode;
     rankedWinnerCount: number;
@@ -330,6 +439,8 @@ export interface RecordedSessionReplayProofLaneCloseoutV1 {
     scoreHash: string;
     winnerMode: ReplayLaneMode | null;
     scoreSpread: number;
+    candidateRelationVsBaseline: ReplayLaneRelation | null;
+    candidateRelationVsFloor: ReplayLaneRelation | null;
   }>;
   files: RecordedSessionReplayProofLaneCloseoutArtifactV1[];
 }
@@ -469,6 +580,11 @@ function roundRate(numerator: number, denominator: number): number | null {
   return denominator > 0 ? Number((numerator / denominator).toFixed(6)) : null;
 }
 
+function roundValue(value: number, places = 6): number {
+  const factor = 10 ** places;
+  return Math.round(value * factor) / factor;
+}
+
 function previewText(value: string | null | undefined, maxLength = 96): string | null {
   const normalized = String(value ?? "").replace(/\s+/g, " ").trim();
   if (normalized.length === 0) {
@@ -485,6 +601,175 @@ function shortDigest(value: string | null): string {
     return "none";
   }
   return value.startsWith("sha256-") ? value.slice(7, 19) : value.slice(0, 12);
+}
+
+function relationFromScores(left: number, right: number): ReplayLaneRelation {
+  if (left > right) {
+    return "better";
+  }
+  if (left < right) {
+    return "worse";
+  }
+  return "tied";
+}
+
+function buildCountRate(count: number, totalCount: number): RecordedSessionReplayProofLaneCountRateV1 {
+  return {
+    count,
+    rate: roundRate(count, totalCount),
+    totalCount,
+  };
+}
+
+function buildOutcomeBreakdown(relations: ReplayLaneRelation[]): RecordedSessionReplayProofLaneOutcomeBreakdownV1 {
+  const betterCount = relations.filter((relation) => relation === "better").length;
+  const tiedCount = relations.filter((relation) => relation === "tied").length;
+  const worseCount = relations.filter((relation) => relation === "worse").length;
+  return {
+    betterCount,
+    tiedCount,
+    worseCount,
+    betterRate: roundRate(betterCount, relations.length),
+    tieRate: roundRate(tiedCount, relations.length),
+    worseRate: roundRate(worseCount, relations.length),
+    totalCount: relations.length,
+  };
+}
+
+function formatCountRate(value: RecordedSessionReplayProofLaneCountRateV1): string {
+  return `${value.count}/${value.totalCount}${value.rate === null ? "" : ` (${value.rate})`}`;
+}
+
+function formatOutcomeBreakdown(value: RecordedSessionReplayProofLaneOutcomeBreakdownV1): string {
+  return `${value.betterCount} better, ${value.tiedCount} tied, ${value.worseCount} worse`;
+}
+
+function buildExplainableScorecard(
+  params: {
+    modes: RecordedSessionReplayProofLaneModeSummaryRowV1[];
+    traces: RecordedSessionReplayProofLaneTraceSummaryRowV1[];
+    turns: RecordedSessionReplayProofLaneTurnSummaryRowV1[];
+  },
+): RecordedSessionReplayProofLaneExplainableScorecardV1 {
+  const candidateMode = "learned_route";
+  const baselineMode = "graph_prior_only";
+  const floorMode = "no_brain";
+  const traceRelationsVsBaseline = params.traces
+    .map((trace) => trace.candidateRelationVsBaseline)
+    .filter((relation): relation is ReplayLaneRelation => relation !== null);
+  const turnRelationsVsBaseline = params.turns
+    .map((turn) => turn.candidateRelationVsBaseline)
+    .filter((relation): relation is ReplayLaneRelation => relation !== null);
+  const traceOutcomeVsBaseline = buildOutcomeBreakdown(traceRelationsVsBaseline);
+  const turnOutcomeVsBaseline = buildOutcomeBreakdown(turnRelationsVsBaseline);
+  const regressionVsBaseline = buildCountRate(
+    params.traces.filter((trace) => trace.candidateRegressionVsBaseline === true).length,
+    params.traces.length,
+  );
+  const regressionVsFloor = buildCountRate(
+    params.traces.filter((trace) => trace.candidateRegressionVsFloor === true).length,
+    params.traces.length,
+  );
+  const traceTieOrBetterVsBaseline = buildCountRate(
+    params.traces.filter((trace) => trace.candidateTieOrBetterVsBaseline === true).length,
+    params.traces.length,
+  );
+  const turnTieOrBetterVsBaseline = buildCountRate(
+    params.turns.filter((turn) => turn.candidateTieOrBetterVsBaseline === true).length,
+    params.turns.length,
+  );
+  const candidateRow = params.modes.find((row) => row.mode === candidateMode) ?? null;
+  const baselineRow = params.modes.find((row) => row.mode === baselineMode) ?? null;
+  const floorRow = params.modes.find((row) => row.mode === floorMode) ?? null;
+  const candidateRate = candidateRow ? roundRate(candidateRow.totalPhraseHitCount, candidateRow.totalPhraseCount) : null;
+  const baselineRate = baselineRow ? roundRate(baselineRow.totalPhraseHitCount, baselineRow.totalPhraseCount) : null;
+  const correctionFeedbackTurnCount = params.turns.filter((turn) => turn.feedbackKinds.length > 0).length;
+  const correctionNonApprovalTurnCount = params.turns.filter((turn) =>
+    turn.feedbackKinds.some((kind) => kind !== "approval")
+  ).length;
+
+  return {
+    candidateMode,
+    baselineMode,
+    floorMode,
+    comparableTraceCount: params.traces.length,
+    comparableTurnCount: params.turns.length,
+    traceOutcomeVsBaseline,
+    turnOutcomeVsBaseline,
+    traceTieOrBetterVsBaseline,
+    turnTieOrBetterVsBaseline,
+    regressionVsBaseline,
+    regressionVsFloor,
+    criticalRegressionCount: regressionVsFloor.count,
+    requiredContextRecall: {
+      available: (candidateRow?.totalPhraseCount ?? 0) > 0 || (baselineRow?.totalPhraseCount ?? 0) > 0,
+      candidateMode,
+      baselineMode,
+      candidatePhraseHitCount: candidateRow?.totalPhraseHitCount ?? null,
+      candidatePhraseCount: candidateRow?.totalPhraseCount ?? null,
+      candidateRate,
+      baselinePhraseHitCount: baselineRow?.totalPhraseHitCount ?? null,
+      baselinePhraseCount: baselineRow?.totalPhraseCount ?? null,
+      baselineRate,
+      delta: candidateRate !== null && baselineRate !== null ? roundValue(candidateRate - baselineRate) : null,
+      summary: (candidateRow?.totalPhraseCount ?? 0) > 0 || (baselineRow?.totalPhraseCount ?? 0) > 0
+        ? `${candidateMode} recalled ${candidateRow?.totalPhraseHitCount ?? 0}/${candidateRow?.totalPhraseCount ?? 0} required-context phrases vs ${baselineMode} ${baselineRow?.totalPhraseHitCount ?? 0}/${baselineRow?.totalPhraseCount ?? 0}`
+        : "required-context recall is unavailable because no expected-context phrases were recorded",
+    },
+    correctionAbsorption: {
+      available: false,
+      observedFeedbackTurnCount: correctionFeedbackTurnCount,
+      observedNonApprovalFeedbackTurnCount: correctionNonApprovalTurnCount,
+      summary: correctionFeedbackTurnCount > 0
+        ? `observed ${correctionFeedbackTurnCount} feedback-bearing turns (${correctionNonApprovalTurnCount} non-approval), but replay-lane outputs do not yet measure recurrence after correction`
+        : "correction absorption is unavailable in replay-lane outputs because no feedback-bearing turns were recorded here",
+    },
+    successAdjustedEconomics: {
+      available: false,
+      successUnit: null,
+      candidateMode,
+      baselineMode,
+      successCount: params.traces.length,
+      candidateEstimatedPromptTokensPerSuccess: null,
+      baselineEstimatedPromptTokensPerSuccess: null,
+      candidateEstimatedPromptCostUsdPerSuccess: null,
+      baselineEstimatedPromptCostUsdPerSuccess: null,
+      promptTokenDeltaCandidateMinusBaseline: null,
+      promptCostUsdDeltaCandidateMinusBaseline: null,
+      summary: "success-adjusted economics are not computed in replay-lane aggregates; use comparative eval or proof-cron for prompt-cost proxy surfaces",
+      limitations: [
+        "replay-lane aggregates do not currently load pricing tables or prompt-cost proxies",
+      ],
+    },
+    failOpen: {
+      available: false,
+      clipRate: null,
+      failOpenRate: null,
+      summary: "fail-open posture is not modeled in recorded-session replay lane aggregates; use proof-cron health surfaces for degraded-serve reporting",
+    },
+    diagnostics: {
+      candidateMeanQualityScore: candidateRow?.meanQualityScore ?? null,
+      baselineMeanQualityScore: baselineRow?.meanQualityScore ?? null,
+      floorMeanQualityScore: floorRow?.meanQualityScore ?? null,
+      candidateMinusBaselineMeanQualityScore: candidateRow?.meanQualityScore !== null
+        && candidateRow?.meanQualityScore !== undefined
+        && baselineRow?.meanQualityScore !== null
+        && baselineRow?.meanQualityScore !== undefined
+        ? roundValue(candidateRow.meanQualityScore - baselineRow.meanQualityScore)
+        : null,
+      candidateMinusFloorMeanQualityScore: candidateRow?.meanQualityScore !== null
+        && candidateRow?.meanQualityScore !== undefined
+        && floorRow?.meanQualityScore !== null
+        && floorRow?.meanQualityScore !== undefined
+        ? roundValue(candidateRow.meanQualityScore - floorRow.meanQualityScore)
+        : null,
+      winnerModeCounts: params.modes.map((row) => ({
+        mode: row.mode,
+        rankedWinnerCount: row.rankedWinnerCount,
+        sharedTopScoreTraceCount: row.sharedTopScoreTraceCount,
+      })),
+    },
+  };
 }
 
 function buildCloseoutArtifact(
@@ -595,6 +880,9 @@ function buildTraceAnalysis(
         qualityScore: row.qualityScore,
       }))
       .sort(compareQualityRows);
+    const candidateTurn = turnModes.find((row) => row.mode === "learned_route");
+    const baselineTurn = turnModes.find((row) => row.mode === "graph_prior_only");
+    const floorTurn = turnModes.find((row) => row.mode === "no_brain");
     return {
       traceId: descriptor.bundle.traceId,
       bundleDir,
@@ -604,6 +892,21 @@ function buildTraceAnalysis(
       feedbackKinds: traceFeedbackKinds(traceTurn),
       scoreSpread: scoreSpread(turnModes),
       topModes: buildTopScoreModes(turnModes),
+      candidateRelationVsBaseline: candidateTurn && baselineTurn
+        ? relationFromScores(candidateTurn.qualityScore, baselineTurn.qualityScore)
+        : null,
+      candidateRelationVsFloor: candidateTurn && floorTurn
+        ? relationFromScores(candidateTurn.qualityScore, floorTurn.qualityScore)
+        : null,
+      candidateTieOrBetterVsBaseline: candidateTurn && baselineTurn
+        ? candidateTurn.qualityScore >= baselineTurn.qualityScore
+        : null,
+      candidateRegressionVsBaseline: candidateTurn && baselineTurn
+        ? candidateTurn.qualityScore < baselineTurn.qualityScore
+        : null,
+      candidateRegressionVsFloor: candidateTurn && floorTurn
+        ? candidateTurn.qualityScore < floorTurn.qualityScore
+        : null,
       ranking,
       modes: turnModes,
     };
@@ -626,6 +929,69 @@ function buildSummaryTables(
   requestedTraceCount: number,
   failedTraceCount: number,
 ): RecordedSessionReplayProofLaneSummaryTablesV1 {
+  const modes = RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER.map((mode) => {
+    const rows = analyses.map((analysis) => analysis.modes.find((candidate) => candidate.mode === mode)).filter(Boolean) as RecordedSessionReplayProofLaneModeTraceRowV1[];
+    return {
+      mode,
+      traceCount: rows.length,
+      rankedWinnerCount: analyses.filter((analysis) => analysis.descriptor.bundle.summary.winnerMode === mode).length,
+      sharedTopScoreTraceCount: analyses.filter((analysis) => analysis.topScoreModes.includes(mode)).length,
+      meanQualityScore: roundRate(
+        rows.reduce((sum, row) => sum + row.qualityScore, 0),
+        rows.length,
+      ),
+      totalCompileOkCount: rows.reduce((sum, row) => sum + row.compileOkCount, 0),
+      totalTurnCount: rows.reduce((sum, row) => sum + row.turnCount, 0),
+      totalPhraseHitCount: rows.reduce((sum, row) => sum + row.phraseHitCount, 0),
+      totalPhraseCount: rows.reduce((sum, row) => sum + row.phraseCount, 0),
+      totalPromotionCount: rows.reduce((sum, row) => sum + row.promotionCount, 0),
+      totalUsedLearnedRouteTurnCount: rows.reduce((sum, row) => sum + row.usedLearnedRouteTurnCount, 0),
+      totalWarningCount: rows.reduce((sum, row) => sum + row.warningCount, 0),
+    };
+  });
+  const traces = analyses
+    .map((analysis) => {
+      const candidateRow = analysis.modes.find((row) => row.mode === "learned_route");
+      const baselineRow = analysis.modes.find((row) => row.mode === "graph_prior_only");
+      const floorRow = analysis.modes.find((row) => row.mode === "no_brain");
+      return {
+        traceId: analysis.traceId,
+        bundleDir: analysis.bundleDir,
+        winnerMode: analysis.descriptor.bundle.summary.winnerMode as ReplayLaneMode | null,
+        topScoreModes: [...analysis.topScoreModes],
+        scoreSpread: analysis.scoreSpread,
+        validationOk: analysis.validation.ok,
+        candidateRelationVsBaseline: candidateRow && baselineRow
+          ? relationFromScores(candidateRow.qualityScore, baselineRow.qualityScore)
+          : null,
+        candidateRelationVsFloor: candidateRow && floorRow
+          ? relationFromScores(candidateRow.qualityScore, floorRow.qualityScore)
+          : null,
+        candidateTieOrBetterVsBaseline: candidateRow && baselineRow
+          ? candidateRow.qualityScore >= baselineRow.qualityScore
+          : null,
+        candidateRegressionVsBaseline: candidateRow && baselineRow
+          ? candidateRow.qualityScore < baselineRow.qualityScore
+          : null,
+        candidateRegressionVsFloor: candidateRow && floorRow
+          ? candidateRow.qualityScore < floorRow.qualityScore
+          : null,
+        bundleHash: analysis.descriptor.bundle.bundleHash,
+        scoreHash: analysis.descriptor.bundle.scoreHash,
+        modes: analysis.modes.map((row) => ({ ...row })),
+      };
+    })
+    .sort((left, right) => left.traceId.localeCompare(right.traceId));
+  const turns = analyses
+    .flatMap((analysis) => analysis.turns.map((turn) => ({
+      ...turn,
+      expectedContextPhrases: [...turn.expectedContextPhrases],
+      feedbackKinds: [...turn.feedbackKinds],
+      topModes: [...turn.topModes],
+      ranking: turn.ranking.map((row) => ({ ...row })),
+      modes: turn.modes.map((row) => ({ ...row })),
+    })))
+    .sort((left, right) => left.traceId.localeCompare(right.traceId) || left.turnId.localeCompare(right.turnId));
   return {
     contract: RECORDED_SESSION_REPLAY_PROOF_LANE_SUMMARY_TABLES_CONTRACT,
     sourceManifest: cloneSourceManifest(sourceManifest),
@@ -633,49 +999,10 @@ function buildSummaryTables(
     requestedTraceCount,
     successfulTraceCount: analyses.length,
     failedTraceCount,
-    modes: RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER.map((mode) => {
-      const rows = analyses.map((analysis) => analysis.modes.find((candidate) => candidate.mode === mode)).filter(Boolean) as RecordedSessionReplayProofLaneModeTraceRowV1[];
-      return {
-        mode,
-        traceCount: rows.length,
-        rankedWinnerCount: analyses.filter((analysis) => analysis.descriptor.bundle.summary.winnerMode === mode).length,
-        sharedTopScoreTraceCount: analyses.filter((analysis) => analysis.topScoreModes.includes(mode)).length,
-        meanQualityScore: roundRate(
-          rows.reduce((sum, row) => sum + row.qualityScore, 0),
-          rows.length,
-        ),
-        totalCompileOkCount: rows.reduce((sum, row) => sum + row.compileOkCount, 0),
-        totalTurnCount: rows.reduce((sum, row) => sum + row.turnCount, 0),
-        totalPhraseHitCount: rows.reduce((sum, row) => sum + row.phraseHitCount, 0),
-        totalPhraseCount: rows.reduce((sum, row) => sum + row.phraseCount, 0),
-        totalPromotionCount: rows.reduce((sum, row) => sum + row.promotionCount, 0),
-        totalUsedLearnedRouteTurnCount: rows.reduce((sum, row) => sum + row.usedLearnedRouteTurnCount, 0),
-        totalWarningCount: rows.reduce((sum, row) => sum + row.warningCount, 0),
-      };
-    }),
-    traces: analyses
-      .map((analysis) => ({
-        traceId: analysis.traceId,
-        bundleDir: analysis.bundleDir,
-        winnerMode: analysis.descriptor.bundle.summary.winnerMode as ReplayLaneMode | null,
-        topScoreModes: [...analysis.topScoreModes],
-        scoreSpread: analysis.scoreSpread,
-        validationOk: analysis.validation.ok,
-        bundleHash: analysis.descriptor.bundle.bundleHash,
-        scoreHash: analysis.descriptor.bundle.scoreHash,
-        modes: analysis.modes.map((row) => ({ ...row })),
-      }))
-      .sort((left, right) => left.traceId.localeCompare(right.traceId)),
-    turns: analyses
-      .flatMap((analysis) => analysis.turns.map((turn) => ({
-        ...turn,
-        expectedContextPhrases: [...turn.expectedContextPhrases],
-        feedbackKinds: [...turn.feedbackKinds],
-        topModes: [...turn.topModes],
-        ranking: turn.ranking.map((row) => ({ ...row })),
-        modes: turn.modes.map((row) => ({ ...row })),
-      })))
-      .sort((left, right) => left.traceId.localeCompare(right.traceId) || left.turnId.localeCompare(right.turnId)),
+    scorecard: buildExplainableScorecard({ modes, traces, turns }),
+    modes,
+    traces,
+    turns,
   };
 }
 
@@ -907,14 +1234,19 @@ function buildWorkedTracesMarkdown(
   }
   for (const analysis of selected) {
     const rankedModes = [...analysis.modes].sort(compareQualityRows);
+    const candidateTrace = analysis.modes.find((row) => row.mode === "learned_route");
+    const baselineTrace = analysis.modes.find((row) => row.mode === "graph_prior_only");
+    const floorTrace = analysis.modes.find((row) => row.mode === "no_brain");
     lines.push(`## ${analysis.traceId}`);
     lines.push("");
     lines.push(`- bundle dir: \`${analysis.bundleDir}\``);
+    lines.push(`- learned_route vs approved prior: \`${candidateTrace && baselineTrace ? relationFromScores(candidateTrace.qualityScore, baselineTrace.qualityScore) : "unknown"}\``);
+    lines.push(`- learned_route vs no_brain floor: \`${candidateTrace && floorTrace ? relationFromScores(candidateTrace.qualityScore, floorTrace.qualityScore) : "unknown"}\``);
     lines.push(`- diagnostic winner: \`${analysis.descriptor.bundle.summary.winnerMode ?? "none"}\``);
-    lines.push(`- top score modes: \`${analysis.topScoreModes.join("`, `")}\``);
+    lines.push(`- diagnostic top score modes: \`${analysis.topScoreModes.join("`, `")}\``);
     lines.push(`- score spread: ${analysis.scoreSpread}`);
     lines.push("");
-    lines.push("| mode | diagnostic quality | compile ok | phrase hits | promotions | warnings |");
+    lines.push("| mode | diagnostic quality | compile ok | required-context recall | promotions | warnings |");
     lines.push("| --- | ---: | ---: | ---: | ---: | ---: |");
     for (const row of rankedModes) {
       lines.push(
@@ -938,9 +1270,10 @@ function buildWorkedTracesMarkdown(
         `- expected phrases: ${turn.expectedContextPhrases.length > 0 ? turn.expectedContextPhrases.map((phrase) => `\`${phrase}\``).join(", ") : "none"}`,
       );
       lines.push(`- feedback kinds: ${turn.feedbackKinds.length > 0 ? turn.feedbackKinds.map((kind) => `\`${kind}\``).join(", ") : "none"}`);
-      lines.push(`- top modes: ${turn.topModes.map((mode) => `\`${mode}\``).join(", ")} (spread ${turn.scoreSpread})`);
+      lines.push(`- learned_route vs approved prior: \`${turn.candidateRelationVsBaseline ?? "unknown"}\``);
+      lines.push(`- diagnostic top modes: ${turn.topModes.map((mode) => `\`${mode}\``).join(", ")} (spread ${turn.scoreSpread})`);
       lines.push("");
-      lines.push("| mode | phase | quality | compile | phrase hits | learned route | promoted | selection | context preview |");
+      lines.push("| mode | phase | diagnostic quality | compile | required-context recall | learned route | promoted | selection | context preview |");
       lines.push("| --- | --- | ---: | --- | ---: | --- | --- | --- | --- |");
       for (const row of [...turn.modes].sort(compareQualityRows)) {
         lines.push(
@@ -958,6 +1291,7 @@ function buildLaneReadme(
   pairwiseDeltas: RecordedSessionReplayProofLanePairwiseDeltasV1,
   index: RecordedSessionReplayProofLaneIndexV1,
 ): string {
+  const scorecard = summaryTables.scorecard;
   const lines: string[] = [
     "# Recorded Session Replay Proof Lane",
     "",
@@ -979,8 +1313,20 @@ function buildLaneReadme(
     lines.push(`- failed trace ids: ${index.failedTraceIds.map((traceId) => `\`${traceId}\``).join(", ")}`);
   }
   lines.push("");
+  lines.push("## Explainable Scorecard");
+  lines.push(`- learned_route tie-or-better vs graph_prior_only (traces): ${formatCountRate(scorecard.traceTieOrBetterVsBaseline)}`);
+  lines.push(`- learned_route vs graph_prior_only (traces): ${formatOutcomeBreakdown(scorecard.traceOutcomeVsBaseline)}`);
+  lines.push(`- learned_route tie-or-better vs graph_prior_only (turns): ${formatCountRate(scorecard.turnTieOrBetterVsBaseline)}`);
+  lines.push(`- learned_route vs graph_prior_only (turns): ${formatOutcomeBreakdown(scorecard.turnOutcomeVsBaseline)}`);
+  lines.push(`- regressions vs graph_prior_only: ${formatCountRate(scorecard.regressionVsBaseline)}`);
+  lines.push(`- regressions vs no_brain floor: ${formatCountRate(scorecard.regressionVsFloor)} (critical regressions: ${scorecard.criticalRegressionCount})`);
+  lines.push(`- required-context recall: ${scorecard.requiredContextRecall.summary}`);
+  lines.push(`- correction absorption: ${scorecard.correctionAbsorption.summary}`);
+  lines.push(`- success-adjusted economics: ${scorecard.successAdjustedEconomics.summary}`);
+  lines.push(`- fail-open: ${scorecard.failOpen.summary}`);
+  lines.push("");
   lines.push("## Diagnostic Mode Summary");
-  lines.push("| mode | traces | diagnostic winners | shared top score | mean quality | compile ok | phrase hits | promotions | warnings |");
+  lines.push("| mode | traces | diagnostic top-rank | shared top score | mean quality | compile ok | required-context recall | promotions | warnings |");
   lines.push("| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: | ---: |");
   for (const row of summaryTables.modes) {
     lines.push(
@@ -989,12 +1335,12 @@ function buildLaneReadme(
   }
   lines.push("");
   lines.push("## Diagnostic Pairwise Deltas");
-  lines.push("| pair | trace record | turn record | mean diagnostic quality delta | compile delta sum | phrase-hit delta sum | promotion delta sum |");
+  lines.push("| pair | trace outcomes (left/right/tied) | turn outcomes (left/right/tied) | mean quality delta | compile delta sum | required-context delta sum | promotion delta sum |");
   lines.push("| --- | --- | --- | ---: | ---: | ---: | ---: |");
   for (const pair of pairwiseDeltas.pairs) {
     lines.push(
       `| ${pair.leftMode} - ${pair.rightMode} | ${pair.traceWins.left}-${pair.traceWins.right}-${pair.traceWins.ties} | ${pair.turnWins.left}-${pair.turnWins.right}-${pair.turnWins.ties} | ${pair.aggregateDeltas.qualityScoreDeltaLeftMinusRightMean ?? "none"} | ${pair.aggregateDeltas.compileOkDeltaLeftMinusRightSum} | ${pair.aggregateDeltas.phraseHitDeltaLeftMinusRightSum} | ${pair.aggregateDeltas.promotionDeltaLeftMinusRightSum} |`,
-    );
+      );
   }
   lines.push("");
   lines.push("## Artifacts");
@@ -1048,6 +1394,7 @@ function buildLaneCloseout(
     failedTraceCount: summaryTables.failedTraceCount,
     failedTraceIds,
     modeOrder: [...summaryTables.modeOrder],
+    scorecard: summaryTables.scorecard,
     winnerModeCounts: summaryTables.modes.map((row) => ({
       mode: row.mode,
       rankedWinnerCount: row.rankedWinnerCount,
@@ -1059,6 +1406,8 @@ function buildLaneCloseout(
       scoreHash: trace.scoreHash,
       winnerMode: trace.winnerMode,
       scoreSpread: trace.scoreSpread,
+      candidateRelationVsBaseline: trace.candidateRelationVsBaseline,
+      candidateRelationVsFloor: trace.candidateRelationVsFloor,
     })),
     files: artifacts.map((artifact) => ({ ...artifact })),
   };
@@ -1068,6 +1417,7 @@ function buildLaneSummary(
   closeout: RecordedSessionReplayProofLaneCloseoutV1,
   artifacts: RecordedSessionReplayProofLaneCloseoutArtifactV1[],
 ): string {
+  const scorecard = closeout.scorecard;
   const lines: string[] = [
     "# Recorded Session Replay Proof Lane Closeout",
     "",
@@ -1088,19 +1438,31 @@ function buildLaneSummary(
     lines.push(`- failed trace ids: ${closeout.failedTraceIds.map((traceId) => `\`${traceId}\``).join(", ")}`);
   }
   lines.push("");
-  lines.push("## Diagnostic Winner Counts");
-  lines.push("| mode | diagnostic winners | shared top score traces |");
+  lines.push("## Explainable Scorecard");
+  lines.push(`- learned_route tie-or-better vs graph_prior_only (traces): ${formatCountRate(scorecard.traceTieOrBetterVsBaseline)}`);
+  lines.push(`- learned_route vs graph_prior_only (traces): ${formatOutcomeBreakdown(scorecard.traceOutcomeVsBaseline)}`);
+  lines.push(`- learned_route tie-or-better vs graph_prior_only (turns): ${formatCountRate(scorecard.turnTieOrBetterVsBaseline)}`);
+  lines.push(`- learned_route vs graph_prior_only (turns): ${formatOutcomeBreakdown(scorecard.turnOutcomeVsBaseline)}`);
+  lines.push(`- regressions vs graph_prior_only: ${formatCountRate(scorecard.regressionVsBaseline)}`);
+  lines.push(`- regressions vs no_brain floor: ${formatCountRate(scorecard.regressionVsFloor)} (critical regressions: ${scorecard.criticalRegressionCount})`);
+  lines.push(`- required-context recall: ${scorecard.requiredContextRecall.summary}`);
+  lines.push(`- correction absorption: ${scorecard.correctionAbsorption.summary}`);
+  lines.push(`- success-adjusted economics: ${scorecard.successAdjustedEconomics.summary}`);
+  lines.push(`- fail-open: ${scorecard.failOpen.summary}`);
+  lines.push("");
+  lines.push("## Diagnostic Tie-Break Counts");
+  lines.push("| mode | diagnostic top-rank | shared top score traces |");
   lines.push("| --- | ---: | ---: |");
   for (const row of closeout.winnerModeCounts) {
     lines.push(`| ${row.mode} | ${row.rankedWinnerCount} | ${row.sharedTopScoreTraceCount} |`);
   }
   lines.push("");
   lines.push("## Trace Hashes");
-  lines.push("| trace | diagnostic winner | spread | bundle hash | score hash |");
-  lines.push("| --- | --- | ---: | --- | --- |");
+  lines.push("| trace | learned_route vs prior | learned_route vs floor | diagnostic top mode | spread | bundle hash | score hash |");
+  lines.push("| --- | --- | --- | --- | ---: | --- | --- |");
   for (const trace of closeout.traceHashes) {
     lines.push(
-      `| ${trace.traceId} | ${trace.winnerMode ?? "none"} | ${trace.scoreSpread} | ${shortDigest(trace.bundleHash)} | ${shortDigest(trace.scoreHash)} |`,
+      `| ${trace.traceId} | ${trace.candidateRelationVsBaseline ?? "unknown"} | ${trace.candidateRelationVsFloor ?? "unknown"} | ${trace.winnerMode ?? "none"} | ${trace.scoreSpread} | ${shortDigest(trace.bundleHash)} | ${shortDigest(trace.scoreHash)} |`,
     );
   }
   lines.push("");
@@ -1193,6 +1555,28 @@ export function writeRecordedSessionReplayProofLane(
     },
     traceBundles: traceAnalyses
       .map((analysis) => ({
+        ...(() => {
+          const candidateRow = analysis.modes.find((row) => row.mode === "learned_route");
+          const baselineRow = analysis.modes.find((row) => row.mode === "graph_prior_only");
+          const floorRow = analysis.modes.find((row) => row.mode === "no_brain");
+          return {
+            candidateRelationVsBaseline: candidateRow && baselineRow
+              ? relationFromScores(candidateRow.qualityScore, baselineRow.qualityScore)
+              : null,
+            candidateRelationVsFloor: candidateRow && floorRow
+              ? relationFromScores(candidateRow.qualityScore, floorRow.qualityScore)
+              : null,
+            candidateTieOrBetterVsBaseline: candidateRow && baselineRow
+              ? candidateRow.qualityScore >= baselineRow.qualityScore
+              : null,
+            candidateRegressionVsBaseline: candidateRow && baselineRow
+              ? candidateRow.qualityScore < baselineRow.qualityScore
+              : null,
+            candidateRegressionVsFloor: candidateRow && floorRow
+              ? candidateRow.qualityScore < floorRow.qualityScore
+              : null,
+          };
+        })(),
         traceId: analysis.traceId,
         bundleDir: analysis.bundleDir,
         validationOk: analysis.validation.ok,

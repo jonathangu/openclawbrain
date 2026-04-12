@@ -1191,6 +1191,7 @@ describe("proof cron metric surfaces", () => {
     expect(formatHealthMarkdown(health)).toContain("replay context chars total");
     expect(formatHealthMarkdown(health)).toContain("replay completion chars total");
     expect(formatHealthMarkdown(health)).toContain("replay estimated completion tokens total");
+    expect(formatHealthMarkdown(health)).toContain("replay diagnostic top score mean");
     expect(formatHealthMarkdown(health)).toContain("pricing table version: v1");
     expect(formatHealthMarkdown(health)).toContain("learned_route: 11 prompt chars, 11 completion chars, 1 blocks, 3 estimated prompt tokens, 3 estimated completion tokens, $0.000004 prompt cost, $0.000015 completion cost, $0.000019 total cost");
     expect(formatHealthMarkdown(health)).toContain("proof minutes proxy");
@@ -1221,7 +1222,9 @@ describe("proof cron metric surfaces", () => {
     expect(aggregate.replayMetrics.savingsByMode[3].retrievalToolHopCount).toBe(3);
     expect(aggregate.operatorMetrics.stepMsTotal).toBe(1500);
     expect(aggregate.costProxy.bundleCount).toBe(3);
-    expect(formatNightlyMarkdown(aggregate)).toContain("winner modes");
+    expect(formatNightlyMarkdown(aggregate)).toContain("## Replay proof diagnostics");
+    expect(formatNightlyMarkdown(aggregate)).toContain("diagnostic top-rank modes");
+    expect(formatNightlyMarkdown(aggregate)).toContain("mean diagnostic top score");
     expect(formatNightlyMarkdown(aggregate)).toContain("replay estimated completion tokens total: 10");
     expect(formatNightlyMarkdown(aggregate)).toContain("pricing table version: v1");
     expect(formatNightlyMarkdown(aggregate)).toContain("| learned_route | 11 | 11 | 1 | 3 | 3 | $0.000004 | $0.000015 | $0.000019 | 3 | 1 | 1 | 1 | 1 |");
@@ -1267,12 +1270,12 @@ describe("proof cron metric surfaces", () => {
     expect(health.effectivenessReadout.where).toEqual(expect.arrayContaining([
       "serve-path pack=pack-live",
       "latest feedback lane=operator-readout/t107",
-      "replay bundle=trace-live winner=learned_route",
+      "replay bundle=trace-live diagnosticTopMode=learned_route",
     ]));
     expect(health.effectivenessReadout.why).toEqual(expect.arrayContaining([
       expect.stringContaining("feedback helpful=2 irrelevant=0 harmful=0 coverage=2/3"),
       expect.stringContaining("attribution quality=exact_only"),
-      expect.stringContaining("replay winner=learned_route"),
+      expect.stringContaining("replay diagnosticTopMode=learned_route"),
       expect.stringContaining("route freshness=updated"),
     ]));
     expect(health.effectivenessReadout.staleOrMissing).toEqual([

@@ -324,9 +324,17 @@ describe("runFrozenRecordedSessionEvalGate", () => {
     expect(descriptor.report.checks.find((check: { id: string }) => check.id === "quality_adjusted_prompt_savings_reported")?.status).toBe("pass");
     expect(descriptor.report.traceResults).toHaveLength(1);
     expect(descriptor.report.traceResults[0]?.validationOk).toBe(true);
+    expect(descriptor.report.traceResults[0]?.candidateRelationVsBaseline).toBe("better");
+    expect(descriptor.report.scorecard.traceTieOrBetterVsBaseline).toMatchObject({
+      count: 1,
+      rate: 1,
+      totalCount: 1,
+    });
     expect(descriptor.report.qualityAdjustedPromptSavings.qualityAdjustedPromptSavingsUsd).not.toBeNull();
     expect((descriptor.report.qualityAdjustedPromptSavings.qualityAdjustedPromptSavingsUsd ?? 0) > 0).toBe(true);
     expect(readFileSync(descriptor.reportPath, "utf8")).toContain('"status": "pass"');
+    expect(readFileSync(descriptor.summaryPath, "utf8")).toContain("## Explainable Scorecard");
+    expect(readFileSync(descriptor.summaryPath, "utf8")).toContain("diagnostic top mode");
     expect(readFileSync(descriptor.summaryPath, "utf8")).toContain("quality-adjusted prompt savings usd");
   });
 

@@ -1855,7 +1855,7 @@ function summarizeEffectivenessReadout({
     where.push(`latest feedback lane=${contextFeedback.latest.agentIdentity.agentId}/${contextFeedback.latest.agentIdentity.lane}`);
   }
   if (latestReplay) {
-    where.push(`replay bundle=${latestReplay.bundleId} winner=${latestReplay.metrics?.winnerMode ?? "unknown"}`);
+    where.push(`replay bundle=${latestReplay.bundleId} diagnosticTopMode=${latestReplay.metrics?.winnerMode ?? "unknown"}`);
   }
 
   const why = [];
@@ -1877,7 +1877,7 @@ function summarizeEffectivenessReadout({
   }
   if (latestReplay?.metrics) {
     why.push(
-      `replay winner=${latestReplay.metrics.winnerMode ?? "unknown"}`
+      `replay diagnosticTopMode=${latestReplay.metrics.winnerMode ?? "unknown"}`
       + ` compileOkRate=${latestReplay.metrics.compileOkRate ?? "n/a"}`
       + ` phraseHitRate=${latestReplay.metrics.phraseHitRate ?? "n/a"}`,
     );
@@ -2321,7 +2321,7 @@ function formatHealthMarkdown(snapshot) {
   lines.push(`- status probe ms: ${snapshot.performance.statusProbeMs}`);
   lines.push(`- scan ms: ${snapshot.performance.scanMs}`);
   lines.push(`- operator step ms total: ${round(snapshot.performance.operatorStepMsTotal ?? 0, 2)}`);
-  lines.push(`- replay winner score mean: ${snapshot.performance.replayWinnerScoreMean ?? "n/a"}`);
+  lines.push(`- replay diagnostic top score mean: ${snapshot.performance.replayWinnerScoreMean ?? "n/a"}`);
   lines.push(`- replay context chars total: ${snapshot.performance.replayContextCharsTotal ?? "n/a"}`);
   lines.push(`- replay selected context blocks total: ${snapshot.performance.replaySelectedContextBlocksTotal ?? "n/a"}`);
   lines.push(`- replay estimated prompt tokens total: ${snapshot.performance.replayEstimatedPromptTokensTotal ?? "n/a"}`);
@@ -2390,9 +2390,9 @@ function formatNightlyMarkdown(aggregate) {
   lines.push(`- attribution coverage: ${aggregate.attributionCoverageTruth?.line ?? "unavailable"}${aggregate.attributionCoverageTruth?.source ? ` (source=${aggregate.attributionCoverageTruth.source})` : ""}`);
   lines.push(`- replay freshness: ${aggregate.replayFreshnessTruth?.line ?? "unavailable"}`);
   lines.push("");
-  lines.push("## Replay proof metrics");
-  lines.push(`- winner modes: ${JSON.stringify(aggregate.replayMetrics.winnerModeCounts)}`);
-  lines.push(`- mean winner score: ${aggregate.replayMetrics.winnerScoreMean ?? "n/a"}`);
+  lines.push("## Replay proof diagnostics");
+  lines.push(`- diagnostic top-rank modes: ${JSON.stringify(aggregate.replayMetrics.winnerModeCounts)}`);
+  lines.push(`- mean diagnostic top score: ${aggregate.replayMetrics.winnerScoreMean ?? "n/a"}`);
   lines.push(`- mean compile rate: ${aggregate.replayMetrics.compileRateMean ?? "n/a"}`);
   lines.push(`- mean phrase-hit rate: ${aggregate.replayMetrics.phraseRateMean ?? "n/a"}`);
   lines.push(`- mean learned-route rate: ${aggregate.replayMetrics.learnedRouteRateMean ?? "n/a"}`);

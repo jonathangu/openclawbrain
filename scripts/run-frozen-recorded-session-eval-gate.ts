@@ -45,6 +45,7 @@ const DEFAULT_THRESHOLDS = {
 type GateStatus = "pass" | "fail" | "blocked";
 type GateCheckStatus = "pass" | "fail";
 type ModeName = (typeof MODE_ORDER)[number];
+type GateRelation = "better" | "tied" | "worse";
 
 export interface FrozenRecordedSessionEvalThresholds {
   maxQualityRegression: number;
@@ -134,8 +135,97 @@ export interface FrozenRecordedSessionEvalTraceResult {
   validationOk: boolean | null;
   validationErrors: string[];
   winnerMode: string | null;
+  candidateRelationVsBaseline: GateRelation | null;
+  candidateRelationVsFloor: GateRelation | null;
+  candidateTieOrBetterVsBaseline: boolean | null;
+  candidateRegressionVsBaseline: boolean | null;
+  candidateRegressionVsFloor: boolean | null;
   modeSummaries: FrozenRecordedSessionEvalTraceModeSummary[];
   error: string | null;
+}
+
+export interface FrozenRecordedSessionEvalCountRateV1 {
+  count: number;
+  rate: number | null;
+  totalCount: number;
+}
+
+export interface FrozenRecordedSessionEvalOutcomeBreakdownV1 {
+  betterCount: number;
+  tiedCount: number;
+  worseCount: number;
+  betterRate: number | null;
+  tieRate: number | null;
+  worseRate: number | null;
+  totalCount: number;
+}
+
+export interface FrozenRecordedSessionEvalRequiredContextRecallV1 {
+  available: boolean;
+  candidateMode: "learned_route";
+  baselineMode: "graph_prior_only";
+  candidatePhraseHitCount: number | null;
+  candidatePhraseCount: number | null;
+  candidateRate: number | null;
+  baselinePhraseHitCount: number | null;
+  baselinePhraseCount: number | null;
+  baselineRate: number | null;
+  delta: number | null;
+  summary: string;
+}
+
+export interface FrozenRecordedSessionEvalCorrectionAbsorptionV1 {
+  available: boolean;
+  observedFeedbackTurnCount: number;
+  observedNonApprovalFeedbackTurnCount: number;
+  summary: string;
+}
+
+export interface FrozenRecordedSessionEvalSuccessAdjustedEconomicsV1 {
+  available: boolean;
+  successUnit: "validated_trace" | null;
+  candidateMode: "learned_route";
+  baselineMode: "graph_prior_only";
+  successCount: number;
+  candidateEstimatedPromptTokensPerSuccess: number | null;
+  baselineEstimatedPromptTokensPerSuccess: number | null;
+  candidateEstimatedPromptCostUsdPerSuccess: number | null;
+  baselineEstimatedPromptCostUsdPerSuccess: number | null;
+  promptTokenDeltaCandidateMinusBaseline: number | null;
+  promptCostUsdDeltaCandidateMinusBaseline: number | null;
+  qualityAdjustedPromptSavingsUsd: number | null;
+  summary: string;
+  limitations: string[];
+}
+
+export interface FrozenRecordedSessionEvalFailOpenV1 {
+  available: boolean;
+  failOpenRate: number | null;
+  summary: string;
+}
+
+export interface FrozenRecordedSessionEvalExplainableScorecardV1 {
+  candidateMode: "learned_route";
+  baselineMode: "graph_prior_only";
+  floorMode: "no_brain";
+  comparableTraceCount: number;
+  traceOutcomeVsBaseline: FrozenRecordedSessionEvalOutcomeBreakdownV1;
+  traceTieOrBetterVsBaseline: FrozenRecordedSessionEvalCountRateV1;
+  regressionVsBaseline: FrozenRecordedSessionEvalCountRateV1;
+  regressionVsFloor: FrozenRecordedSessionEvalCountRateV1;
+  criticalRegressionCount: number;
+  requiredContextRecall: FrozenRecordedSessionEvalRequiredContextRecallV1;
+  correctionAbsorption: FrozenRecordedSessionEvalCorrectionAbsorptionV1;
+  successAdjustedEconomics: FrozenRecordedSessionEvalSuccessAdjustedEconomicsV1;
+  failOpen: FrozenRecordedSessionEvalFailOpenV1;
+  diagnostics: {
+    candidateQualityScore: number | null;
+    baselineQualityScore: number | null;
+    floorQualityScore: number | null;
+    candidateMinusBaselineQualityScore: number | null;
+    candidateMinusFloorQualityScore: number | null;
+    winnerModeCounts: Record<string, number>;
+  };
 }
 
 export interface FrozenRecordedSessionEvalGateReportV1 {
@@ -161,6 +251,7 @@ export interface FrozenRecordedSessionEvalGateReportV1 {
   issues: string[];
   checks: FrozenRecordedSessionEvalGateCheck[];
   modeSummaries: FrozenRecordedSessionEvalModeSummary[];
+  scorecard: FrozenRecordedSessionEvalExplainableScorecardV1;
   qualityAdjustedPromptSavings: {
     baselineMode: "graph_prior_only";
     candidateMode: "learned_route";
@@ -298,6 +389,51 @@ function buildQualityScore(turnCount: number, compileOkCount: number, phraseHitC
   const compileScore = (compileOkCount / turnCount) * 40;
   const phraseScore = phraseCount === 0 ? 60 : (phraseHitCount / phraseCount) * 60;
   return round(Math.min(100, compileScore + phraseScore), 4);
+}
+
+function relationFromScores(left: number, right: number): GateRelation {
+  if (left > right) {
+    return "better";
+  }
+  if (left < right) {
+    return "worse";
+  }
+  return "tied";
+}
+
+function toRate(numerator: number, denominator: number): number | null {
+  return denominator > 0 ? round(numerator / denominator, 6) : null;
+}
+
+function buildCountRate(count: number, totalCount: number): FrozenRecordedSessionEvalCountRateV1 {
+  return {
+    count,
+    rate: toRate(count, totalCount),
+    totalCount,
+  };
+}
+
+function buildOutcomeBreakdown(relations: GateRelation[]): FrozenRecordedSessionEvalOutcomeBreakdownV1 {
+  const betterCount = relations.filter((relation) => relation === "better").length;
+  const tiedCount = relations.filter((relation) => relation === "tied").length;
+  const worseCount = relations.filter((relation) => relation === "worse").length;
+  return {
+    betterCount,
+    tiedCount,
+    worseCount,
+    betterRate: toRate(betterCount, relations.length),
+    tieRate: toRate(tiedCount, relations.length),
+    worseRate: toRate(worseCount, relations.length),
+    totalCount: relations.length,
+  };
+}
+
+function formatCountRate(value: FrozenRecordedSessionEvalCountRateV1): string {
+  return `${value.count}/${value.totalCount}${value.rate === null ? "" : ` (${value.rate})`}`;
+}
+
+function formatOutcomeBreakdown(value: FrozenRecordedSessionEvalOutcomeBreakdownV1): string {
+  return `${value.betterCount} better, ${value.tiedCount} tied, ${value.worseCount} worse`;
 }
 
 function gitShaOrUnknown(): string {
@@ -870,7 +1006,150 @@ function buildChecks(
   };
 }
 
+function buildExplainableScorecard(params: {
+  modeSummaries: FrozenRecordedSessionEvalModeSummary[];
+  traceResults: FrozenRecordedSessionEvalTraceResult[];
+  traceInputs: LoadedTraceInput[];
+  qualityAdjustedPromptSavings: FrozenRecordedSessionEvalGateReportV1["qualityAdjustedPromptSavings"];
+}): FrozenRecordedSessionEvalExplainableScorecardV1 {
+  const comparableTraceResults = params.traceResults.filter((trace) => trace.status === "pass" && trace.validationOk === true);
+  const traceRelationsVsBaseline = comparableTraceResults
+    .map((trace) => trace.candidateRelationVsBaseline)
+    .filter((relation): relation is GateRelation => relation !== null);
+  const traceOutcomeVsBaseline = buildOutcomeBreakdown(traceRelationsVsBaseline);
+  const traceTieOrBetterVsBaseline = buildCountRate(
+    comparableTraceResults.filter((trace) => trace.candidateTieOrBetterVsBaseline === true).length,
+    comparableTraceResults.length,
+  );
+  const regressionVsBaseline = buildCountRate(
+    comparableTraceResults.filter((trace) => trace.candidateRegressionVsBaseline === true).length,
+    comparableTraceResults.length,
+  );
+  const regressionVsFloor = buildCountRate(
+    comparableTraceResults.filter((trace) => trace.candidateRegressionVsFloor === true).length,
+    comparableTraceResults.length,
+  );
+  const candidateModeSummary = params.modeSummaries.find((mode) => mode.mode === "learned_route") ?? null;
+  const baselineModeSummary = params.modeSummaries.find((mode) => mode.mode === "graph_prior_only") ?? null;
+  const floorModeSummary = params.modeSummaries.find((mode) => mode.mode === "no_brain") ?? null;
+  const candidateRate = candidateModeSummary ? toRate(candidateModeSummary.phraseHitCount, candidateModeSummary.phraseCount) : null;
+  const baselineRate = baselineModeSummary ? toRate(baselineModeSummary.phraseHitCount, baselineModeSummary.phraseCount) : null;
+  const successCount = comparableTraceResults.length;
+  const candidateEstimatedPromptTokensPerSuccess = candidateModeSummary && successCount > 0
+    ? round(candidateModeSummary.estimatedPromptTokens / successCount, 6)
+    : null;
+  const baselineEstimatedPromptTokensPerSuccess = baselineModeSummary && successCount > 0
+    ? round(baselineModeSummary.estimatedPromptTokens / successCount, 6)
+    : null;
+  const candidateEstimatedPromptCostUsdPerSuccess = candidateModeSummary?.estimatedPromptCostUsd !== null
+    && candidateModeSummary?.estimatedPromptCostUsd !== undefined
+    && successCount > 0
+    ? round(candidateModeSummary.estimatedPromptCostUsd / successCount, 6)
+    : null;
+  const baselineEstimatedPromptCostUsdPerSuccess = baselineModeSummary?.estimatedPromptCostUsd !== null
+    && baselineModeSummary?.estimatedPromptCostUsd !== undefined
+    && successCount > 0
+    ? round(baselineModeSummary.estimatedPromptCostUsd / successCount, 6)
+    : null;
+  const observedFeedbackTurnCount = params.traceInputs.reduce((total, traceInput) =>
+    total + traceInput.trace.turns.filter((turn) => Array.isArray(turn.feedback) && turn.feedback.length > 0).length,
+  0);
+  const observedNonApprovalFeedbackTurnCount = params.traceInputs.reduce((total, traceInput) =>
+    total + traceInput.trace.turns.filter((turn) =>
+      Array.isArray(turn.feedback) && turn.feedback.some((feedback) => String(feedback.kind ?? "") !== "approval")
+    ).length,
+  0);
+  const winnerModeCounts: Record<string, number> = Object.fromEntries(MODE_ORDER.map((mode) => [mode, 0]));
+  winnerModeCounts.unknown = 0;
+  for (const trace of comparableTraceResults) {
+    const key = typeof trace.winnerMode === "string" ? trace.winnerMode : "unknown";
+    winnerModeCounts[key] = (winnerModeCounts[key] ?? 0) + 1;
+  }
+
+  return {
+    candidateMode: "learned_route",
+    baselineMode: "graph_prior_only",
+    floorMode: "no_brain",
+    comparableTraceCount: comparableTraceResults.length,
+    traceOutcomeVsBaseline,
+    traceTieOrBetterVsBaseline,
+    regressionVsBaseline,
+    regressionVsFloor,
+    criticalRegressionCount: regressionVsFloor.count,
+    requiredContextRecall: {
+      available: (candidateModeSummary?.phraseCount ?? 0) > 0 || (baselineModeSummary?.phraseCount ?? 0) > 0,
+      candidateMode: "learned_route",
+      baselineMode: "graph_prior_only",
+      candidatePhraseHitCount: candidateModeSummary?.phraseHitCount ?? null,
+      candidatePhraseCount: candidateModeSummary?.phraseCount ?? null,
+      candidateRate,
+      baselinePhraseHitCount: baselineModeSummary?.phraseHitCount ?? null,
+      baselinePhraseCount: baselineModeSummary?.phraseCount ?? null,
+      baselineRate,
+      delta: candidateRate !== null && baselineRate !== null ? round(candidateRate - baselineRate, 6) : null,
+      summary: (candidateModeSummary?.phraseCount ?? 0) > 0 || (baselineModeSummary?.phraseCount ?? 0) > 0
+        ? `learned_route recalled ${candidateModeSummary?.phraseHitCount ?? 0}/${candidateModeSummary?.phraseCount ?? 0} required-context phrases vs graph_prior_only ${baselineModeSummary?.phraseHitCount ?? 0}/${baselineModeSummary?.phraseCount ?? 0}`
+        : "required-context recall is unavailable because no expected-context phrases were recorded",
+    },
+    correctionAbsorption: {
+      available: false,
+      observedFeedbackTurnCount,
+      observedNonApprovalFeedbackTurnCount,
+      summary: observedFeedbackTurnCount > 0
+        ? `observed ${observedFeedbackTurnCount} feedback-bearing turns (${observedNonApprovalFeedbackTurnCount} non-approval), but the frozen replay gate does not yet measure recurrence after correction`
+        : "correction absorption is unavailable because the frozen replay gate saw no feedback-bearing turns in this manifest",
+    },
+    successAdjustedEconomics: {
+      available: candidateModeSummary !== null && baselineModeSummary !== null && successCount > 0,
+      successUnit: candidateModeSummary !== null && baselineModeSummary !== null && successCount > 0 ? "validated_trace" : null,
+      candidateMode: "learned_route",
+      baselineMode: "graph_prior_only",
+      successCount,
+      candidateEstimatedPromptTokensPerSuccess,
+      baselineEstimatedPromptTokensPerSuccess,
+      candidateEstimatedPromptCostUsdPerSuccess,
+      baselineEstimatedPromptCostUsdPerSuccess,
+      promptTokenDeltaCandidateMinusBaseline: candidateEstimatedPromptTokensPerSuccess !== null
+        && baselineEstimatedPromptTokensPerSuccess !== null
+        ? round(candidateEstimatedPromptTokensPerSuccess - baselineEstimatedPromptTokensPerSuccess, 6)
+        : null,
+      promptCostUsdDeltaCandidateMinusBaseline: candidateEstimatedPromptCostUsdPerSuccess !== null
+        && baselineEstimatedPromptCostUsdPerSuccess !== null
+        ? round(candidateEstimatedPromptCostUsdPerSuccess - baselineEstimatedPromptCostUsdPerSuccess, 6)
+        : null,
+      qualityAdjustedPromptSavingsUsd: params.qualityAdjustedPromptSavings.qualityAdjustedPromptSavingsUsd,
+      summary: candidateModeSummary !== null && baselineModeSummary !== null && successCount > 0
+        ? `learned_route estimated prompt cost per validated trace = ${candidateEstimatedPromptCostUsdPerSuccess ?? "null"} vs graph_prior_only ${baselineEstimatedPromptCostUsdPerSuccess ?? "null"}; quality-adjusted prompt savings = ${params.qualityAdjustedPromptSavings.qualityAdjustedPromptSavingsUsd ?? "null"}`
+        : "success-adjusted economics are unavailable because the frozen replay gate did not produce validated trace comparisons",
+      limitations: [
+        "prompt-cost surfaces are deterministic proxies derived from selected context chars",
+        "the frozen replay gate does not model live completion cost, retries, or task-level latency",
+      ],
+    },
+    failOpen: {
+      available: false,
+      failOpenRate: null,
+      summary: "fail-open posture is not modeled in the frozen replay gate; use proof-cron health surfaces for degraded-serve reporting",
+    },
+    diagnostics: {
+      candidateQualityScore: candidateModeSummary?.qualityScore ?? null,
+      baselineQualityScore: baselineModeSummary?.qualityScore ?? null,
+      floorQualityScore: floorModeSummary?.qualityScore ?? null,
+      candidateMinusBaselineQualityScore: candidateModeSummary !== null
+        && baselineModeSummary !== null
+        ? round(candidateModeSummary.qualityScore - baselineModeSummary.qualityScore, 6)
+        : null,
+      candidateMinusFloorQualityScore: candidateModeSummary !== null
+        && floorModeSummary !== null
+        ? round(candidateModeSummary.qualityScore - floorModeSummary.qualityScore, 6)
+        : null,
+      winnerModeCounts,
+    },
+  };
+}
+
 function buildSummary(report: FrozenRecordedSessionEvalGateReportV1): string {
+  const scorecard = report.scorecard;
   const checkRows = report.checks.map((check) => {
     const observedText = Object.entries(check.observed)
       .map(([key, value]) => `${key}=${value === null ? "null" : String(value)}`)
@@ -881,7 +1160,7 @@ function buildSummary(report: FrozenRecordedSessionEvalGateReportV1): string {
     return `| ${check.id} | ${check.status} | ${observedText} | ${thresholdText} |`;
   });
   const modeRows = report.modeSummaries.map((mode) => `| ${mode.mode} | ${mode.traceCount} | ${mode.turnCount} | ${mode.qualityScore} | ${mode.compileOkRate ?? "null"} | ${mode.phraseHitRate ?? "null"} | ${mode.estimatedPromptTokens} | ${mode.estimatedPromptCostUsd ?? "null"} |`);
-  const traceRows = report.traceResults.map((trace) => `| ${trace.traceId} | ${trace.status} | ${trace.validationOk ?? "null"} | ${trace.winnerMode ?? "null"} | ${trace.error ?? "none"} |`);
+  const traceRows = report.traceResults.map((trace) => `| ${trace.traceId} | ${trace.status} | ${trace.validationOk ?? "null"} | ${trace.candidateRelationVsBaseline ?? "null"} | ${trace.candidateRelationVsFloor ?? "null"} | ${trace.winnerMode ?? "null"} | ${trace.error ?? "none"} |`);
   return [
     "# Frozen Recorded Session Eval Gate",
     "",
@@ -893,20 +1172,30 @@ function buildSummary(report: FrozenRecordedSessionEvalGateReportV1): string {
     `- pricing table: \`${report.pricingTable.version ?? "null"}\` from \`${report.pricingTable.path}\``,
     `- quality-adjusted prompt savings usd: ${report.qualityAdjustedPromptSavings.qualityAdjustedPromptSavingsUsd ?? "null"}`,
     "",
-    "## Checks",
+    "## Explainable Scorecard",
+    `- learned_route tie-or-better vs graph_prior_only: ${formatCountRate(scorecard.traceTieOrBetterVsBaseline)}`,
+    `- learned_route vs graph_prior_only: ${formatOutcomeBreakdown(scorecard.traceOutcomeVsBaseline)}`,
+    `- regressions vs graph_prior_only: ${formatCountRate(scorecard.regressionVsBaseline)}`,
+    `- regressions vs no_brain floor: ${formatCountRate(scorecard.regressionVsFloor)} (critical regressions: ${scorecard.criticalRegressionCount})`,
+    `- required-context recall: ${scorecard.requiredContextRecall.summary}`,
+    `- correction absorption: ${scorecard.correctionAbsorption.summary}`,
+    `- success-adjusted economics: ${scorecard.successAdjustedEconomics.summary}`,
+    `- fail-open: ${scorecard.failOpen.summary}`,
+    "",
+    "## Gate Checks",
     "| check | status | observed | threshold |",
     "| --- | --- | --- | --- |",
     ...(checkRows.length > 0 ? checkRows : ["| none | fail | none | none |"]),
     "",
-    "## Modes",
-    "| mode | traces | turns | quality | compile ok rate | phrase hit rate | prompt tokens | prompt cost usd |",
+    "## Diagnostics",
+    "| mode | traces | turns | diagnostic quality | compile ok rate | required-context recall | prompt tokens | prompt cost usd |",
     "| --- | ---: | ---: | ---: | ---: | ---: | ---: | ---: |",
     ...(modeRows.length > 0 ? modeRows : ["| none | 0 | 0 | 0 | null | null | 0 | null |"]),
     "",
     "## Traces",
-    "| trace | status | validation ok | winner | error |",
-    "| --- | --- | --- | --- | --- |",
-    ...(traceRows.length > 0 ? traceRows : ["| none | blocked | null | null | none |"]),
+    "| trace | status | validation ok | candidate vs prior | candidate vs floor | diagnostic top mode | error |",
+    "| --- | --- | --- | --- | --- | --- | --- |",
+    ...(traceRows.length > 0 ? traceRows : ["| none | blocked | null | null | null | null | none |"]),
     "",
     "## Notes",
     ...report.notes.map((note) => `- ${note}`),
@@ -1009,6 +1298,41 @@ export function runFrozenRecordedSessionEvalGate(
         estimatedPromptTokens: 0,
         estimatedPromptCostUsd: null,
       })),
+      scorecard: buildExplainableScorecard({
+        modeSummaries: MODE_ORDER.map((mode) => ({
+          mode,
+          traceCount: 0,
+          turnCount: 0,
+          compileOkCount: 0,
+          compileOkRate: null,
+          phraseHitCount: 0,
+          phraseCount: 0,
+          phraseHitRate: null,
+          qualityScore: 0,
+          qualityScoreMean: null,
+          selectedContextBlockCount: 0,
+          selectedContextChars: 0,
+          estimatedPromptTokens: 0,
+          estimatedPromptCostUsd: null,
+        })),
+        traceResults: [],
+        traceInputs: manifestLoad.traces,
+        qualityAdjustedPromptSavings: {
+          baselineMode: "graph_prior_only",
+          candidateMode: "learned_route",
+          baselineQualityScore: null,
+          candidateQualityScore: null,
+          noBrainQualityScore: null,
+          baselineQualityGain: null,
+          candidateQualityGain: null,
+          baselinePromptCostUsd: null,
+          candidatePromptCostUsd: null,
+          rawPromptSavingsUsd: null,
+          qualityRetention: null,
+          baselineEquivalentCandidatePromptCostUsd: null,
+          qualityAdjustedPromptSavingsUsd: null,
+        },
+      }),
       qualityAdjustedPromptSavings: {
         baselineMode: "graph_prior_only",
         candidateMode: "learned_route",
@@ -1040,6 +1364,10 @@ export function runFrozenRecordedSessionEvalGate(
         ...(input.scratchRootDir ? { scratchRootDir: path.resolve(input.scratchRootDir) } : {}),
       });
       const validation = validateRecordedSessionReplayProofBundle(traceOutputDir);
+      const modeSummaries = descriptor.bundle.modes.map((mode) => summarizeTraceMode(mode, pricingTable));
+      const candidateModeSummary = modeSummaries.find((mode) => mode.mode === "learned_route") ?? null;
+      const baselineModeSummary = modeSummaries.find((mode) => mode.mode === "graph_prior_only") ?? null;
+      const floorModeSummary = modeSummaries.find((mode) => mode.mode === "no_brain") ?? null;
       traceResults.push({
         traceId: traceInput.traceId,
         traceHash: traceInput.traceHash,
@@ -1050,7 +1378,22 @@ export function runFrozenRecordedSessionEvalGate(
         validationOk: validation.ok,
         validationErrors: [...validation.errors],
         winnerMode: descriptor.bundle.summary.winnerMode,
-        modeSummaries: descriptor.bundle.modes.map((mode) => summarizeTraceMode(mode, pricingTable)),
+        candidateRelationVsBaseline: candidateModeSummary && baselineModeSummary
+          ? relationFromScores(candidateModeSummary.qualityScore, baselineModeSummary.qualityScore)
+          : null,
+        candidateRelationVsFloor: candidateModeSummary && floorModeSummary
+          ? relationFromScores(candidateModeSummary.qualityScore, floorModeSummary.qualityScore)
+          : null,
+        candidateTieOrBetterVsBaseline: candidateModeSummary && baselineModeSummary
+          ? candidateModeSummary.qualityScore >= baselineModeSummary.qualityScore
+          : null,
+        candidateRegressionVsBaseline: candidateModeSummary && baselineModeSummary
+          ? candidateModeSummary.qualityScore < baselineModeSummary.qualityScore
+          : null,
+        candidateRegressionVsFloor: candidateModeSummary && floorModeSummary
+          ? candidateModeSummary.qualityScore < floorModeSummary.qualityScore
+          : null,
+        modeSummaries,
         error: null,
       });
     } catch (error) {
@@ -1064,6 +1407,11 @@ export function runFrozenRecordedSessionEvalGate(
         validationOk: null,
         validationErrors: [],
         winnerMode: null,
+        candidateRelationVsBaseline: null,
+        candidateRelationVsFloor: null,
+        candidateTieOrBetterVsBaseline: null,
+        candidateRegressionVsBaseline: null,
+        candidateRegressionVsFloor: null,
         modeSummaries: [],
         error: toErrorMessage(error),
       });
@@ -1072,6 +1420,12 @@ export function runFrozenRecordedSessionEvalGate(
 
   const modeSummaries = buildModeSummaries(traceResults);
   const { checks, qualityAdjustedPromptSavings } = buildChecks(modeSummaries, traceResults, thresholds);
+  const scorecard = buildExplainableScorecard({
+    modeSummaries,
+    traceResults,
+    traceInputs: manifestLoad.traces,
+    qualityAdjustedPromptSavings,
+  });
   const issues = traceResults
     .filter((traceResult) => traceResult.status !== "pass")
     .flatMap((traceResult) => {
@@ -1097,6 +1451,7 @@ export function runFrozenRecordedSessionEvalGate(
     issues,
     checks,
     modeSummaries,
+    scorecard,
     qualityAdjustedPromptSavings,
     traceResults,
   };
