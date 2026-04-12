@@ -833,6 +833,72 @@ describe("BrainService", () => {
     expect(lastPrefetchDecision?.invalidatedReason ?? null).toMatch(/pack_version_changed|prefetch_key_mismatch|budget_class_changed|summary_routing_changed/);
   });
 
+  it("invalidates prefetched traversals explicitly when budget class or summary routing changes", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-prefetch-route-change-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-prefetch-route-change-state-");
+    writeFileSync(
+      join(workspaceRoot, "PLAYBOOK.md"),
+      "# Pull Requests\n\nUse gh pr create for pull request workflows.\n",
+      "utf8",
+    );
+
+    const service = new BrainService({
+      deps: createDeps(brainRoot),
+    });
+    await service.init({
+      workspaceRoot,
+      embedFn: async (text) => embed(text),
+    });
+
+    await service.schedulePrefetch({
+      conversationId: 7,
+      queryText: "How do I open a pull request?",
+      budgetChars: 4000,
+      summaryRoutingMode: "ignore",
+      queryEmbedding: embed("gh pr create pull request"),
+    });
+
+    await service.query({
+      conversationId: 7,
+      queryText: "How do I open a pull request?",
+      budgetChars: 400,
+      summaryRoutingMode: "ignore",
+      queryEmbedding: embed("gh pr create pull request"),
+    });
+
+    expect(await service.status()).toEqual(expect.objectContaining({
+      lastPrefetchDecision: expect.objectContaining({
+        state: expect.stringMatching(/^(stale|invalidated)$/),
+        invalidatedReason: "budget_class_changed",
+        summaryRoutingMode: "ignore",
+      }),
+    }));
+
+    await service.schedulePrefetch({
+      conversationId: 7,
+      queryText: "How do I open a pull request?",
+      budgetChars: 400,
+      summaryRoutingMode: "ignore",
+      queryEmbedding: embed("gh pr create pull request"),
+    });
+
+    await service.query({
+      conversationId: 7,
+      queryText: "How do I open a pull request?",
+      budgetChars: 400,
+      summaryRoutingMode: "prefer_typed_memory",
+      queryEmbedding: embed("gh pr create pull request"),
+    });
+
+    expect(await service.status()).toEqual(expect.objectContaining({
+      lastPrefetchDecision: expect.objectContaining({
+        state: expect.stringMatching(/^(stale|invalidated)$/),
+        invalidatedReason: "summary_routing_changed",
+        summaryRoutingMode: "ignore",
+      }),
+    }));
+  });
+
   it("persists post-injection clip attribution through trace and observation metadata", async () => {
     const queryBudgetChars = deriveExpectedQueryBudgetChars(4096);
     const workspaceRoot = makeTempDir("openclawbrain-attribution-workspace-");

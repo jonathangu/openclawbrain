@@ -704,21 +704,25 @@ function applyStructuredNodeBudget(params: {
   dropReason: BrainFittingDropReason;
 }): BudgetedBrainContext {
   const fullText = params.buildFullContext();
+  const retrievedNodeCount = params.routeTrace.injectedNodeSummaries.length;
+  const baseDetails = {
+    fitStrategy: "structured_node_budget" as const,
+    retrievedNodeCount,
+  };
   if (typeof params.maxContextChars !== "number" || !Number.isFinite(params.maxContextChars)) {
     return {
       brainContext: fullText,
       injectedChars: fullText.length,
       droppedChars: 0,
       contextClipped: false,
+      ...baseDetails,
+      fittedNodeCount: retrievedNodeCount,
+      droppedNodeCount: 0,
+      fittingDropReasons: null,
     };
   }
 
   const limit = Math.max(0, Math.floor(params.maxContextChars));
-  const retrievedNodeCount = params.routeTrace.injectedNodeSummaries.length;
-  const baseDetails = {
-    fitStrategy: "structured_node_budget" as const,
-    retrievedNodeCount,
-  };
   if (fullText.length <= limit) {
     return {
       brainContext: fullText,

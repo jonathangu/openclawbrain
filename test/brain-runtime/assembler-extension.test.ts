@@ -727,6 +727,80 @@ describe("BrainAssemblerExtension", () => {
     }));
   });
 
+  it("keeps correction cards first when a tight structured budget clips later evidence", async () => {
+    const brain = createBrainStub({
+      query: vi.fn(async () => makeStructuredTraversalResult()),
+    });
+    const extension = new BrainAssemblerExtension(brain as never);
+
+    const result = await extension.augmentAssembly({
+      conversationId: 42,
+      tokenBudget: 4096,
+      maxContextChars: 130,
+      assembled: {
+        messages: [{ role: "user", content: "live tail" }],
+        estimatedTokens: 2,
+        stats: {
+          rawMessageCount: 1,
+          summaryCount: 0,
+          totalContextItems: 1,
+        },
+      },
+      liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
+    });
+
+    const injected = String(result.messages[0]?.content ?? "");
+    expect(injected).toContain("[brain]");
+    expect(injected).toContain("Use gh pr create for pull requests, keep the flow operator-auditable");
+    expect(injected).not.toContain("Deployment evidence tail-marker-never-rendered");
+    expect(injected).not.toContain("Check CI, inspect logs, then retry tail-marker-never-rendered");
+    expect(result.brainDecision).toEqual(expect.objectContaining({
+      mode: "use_brain",
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: 3,
+      fittedNodeCount: 1,
+      droppedNodeCount: 2,
+      fittingDropReasons: {
+        omitted_for_max_context_chars: 2,
+      },
+      contextClipped: true,
+      brainDropReason: "injection_cap_clipped",
+      brainDropStage: "injection",
+    }));
+  });
+
+  it("reports structured fit metrics even when the structured block is not clipped", async () => {
+    const brain = createBrainStub({
+      query: vi.fn(async () => makeStructuredTraversalResult()),
+    });
+    const extension = new BrainAssemblerExtension(brain as never);
+
+    const result = await extension.augmentAssembly({
+      conversationId: 42,
+      tokenBudget: 4096,
+      assembled: {
+        messages: [{ role: "user", content: "live tail" }],
+        estimatedTokens: 2,
+        stats: {
+          rawMessageCount: 1,
+          summaryCount: 0,
+          totalContextItems: 1,
+        },
+      },
+      liveMessages: [{ role: "user", content: "How do I open a pull request?" }],
+    });
+
+    expect(result.brainDecision).toEqual(expect.objectContaining({
+      mode: "use_brain",
+      fitStrategy: "structured_node_budget",
+      retrievedNodeCount: 3,
+      fittedNodeCount: 3,
+      droppedNodeCount: 0,
+      fittingDropReasons: null,
+      contextClipped: false,
+    }));
+  });
+
   it("derives retrieval budget from the live brain budget fraction", async () => {
     const query = vi.fn(async () => makeTraversalResult());
     const brain = createBrainStub({

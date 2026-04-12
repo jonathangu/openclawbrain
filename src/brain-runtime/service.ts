@@ -1306,13 +1306,15 @@ export class BrainService {
         ? "invalidated"
         : "stale";
       knownPrefetchState = prefetchState;
-      knownPrefetchReason = knownEntry?.activePackVersion !== currentPackVersion
-        ? "pack_version_changed"
-        : knownEntry?.budgetClass !== budgetClass
-          ? "budget_class_changed"
-          : knownEntry?.summaryRoutingMode !== summaryRoutingMode
-            ? "summary_routing_changed"
-            : "prefetch_key_mismatch";
+      knownPrefetchReason = knownEntry
+        ? knownEntry.activePackVersion !== currentPackVersion
+          ? "pack_version_changed"
+          : knownEntry.budgetClass !== budgetClass
+            ? "budget_class_changed"
+            : knownEntry.summaryRoutingMode !== summaryRoutingMode
+              ? "summary_routing_changed"
+              : "prefetch_key_mismatch"
+        : "prefetch_key_mismatch";
       if (knownEntry) {
         const now = Date.now();
         knownEntry.state = knownPrefetchState;
