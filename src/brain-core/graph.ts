@@ -14,7 +14,11 @@ import type {
   PolicyParams,
   TrustLevel,
 } from "./types.ts";
-import type { RouteCandidateV1, RouteDecisionRowV1 } from "./cold-start-router-contracts.ts";
+import type {
+  ColdStartStopLabelV1,
+  RouteCandidateV1,
+  RouteDecisionRowV1,
+} from "./cold-start-router-contracts.ts";
 
 const START_NODE_ID = "__START__";
 const DEFAULT_POLICY_PARAMS: PolicyParams = {
@@ -691,13 +695,95 @@ function sortedCountEntries(counts: Map<string, CountBucket>): Array<{ key: stri
     .map(([key, bucket]) => ({ key, bucket }));
 }
 
+function countBucketFromEntry(entry: {
+  positive: number;
+  negative: number;
+  support: number;
+}): CountBucket {
+  return {
+    positive: entry.positive,
+    negative: entry.negative,
+    support: entry.support,
+  };
+}
+
+function seedCountMapFromEntries<T extends {
+  positive: number;
+  negative: number;
+  support: number;
+}>(entries: readonly T[], getKey: (entry: T) => string): Map<string, CountBucket> {
+  const counts = new Map<string, CountBucket>();
+  for (const entry of entries) {
+    counts.set(getKey(entry), countBucketFromEntry(entry));
+  }
+  return counts;
+}
+
+function seedToolActionCountsFromInitializer(
+  initializer: ColdStartRouterLivePolicyInitializerV1 | undefined,
+): Map<string, Map<string, CountBucket>> {
+  const counts = new Map<string, Map<string, CountBucket>>();
+  for (const entry of initializer?.toolActionPriors ?? []) {
+    const toolMap = counts.get(entry.sourceNodeId) ?? new Map<string, CountBucket>();
+    toolMap.set(entry.toolNodeId, countBucketFromEntry(entry));
+    counts.set(entry.sourceNodeId, toolMap);
+  }
+  return counts;
+}
+
+function seedToolActionSetsFromInitializer(
+  initializer: ColdStartRouterLivePolicyInitializerV1 | undefined,
+): Map<string, {
+  rowIds: Set<string>;
+  teacherToolNodeIds: Set<string>;
+  candidateIds: Set<string>;
+  candidates: Map<string, RouteCandidateV1>;
+  support: number;
+}> {
+  const sets = new Map<string, {
+    rowIds: Set<string>;
+    teacherToolNodeIds: Set<string>;
+    candidateIds: Set<string>;
+    candidates: Map<string, RouteCandidateV1>;
+    support: number;
+  }>();
+
+  for (const entry of initializer?.toolActionSets ?? []) {
+    sets.set(entry.sourceNodeId, {
+      rowIds: new Set(entry.rowIds),
+      teacherToolNodeIds: new Set(entry.teacherToolNodeIds),
+      candidateIds: new Set(entry.candidateIds),
+      candidates: new Map(entry.candidates.map((candidate) => [candidate.candidate_id, cloneRouteCandidate(candidate)])),
+      support: entry.support,
+    });
+  }
+
+  return sets;
+}
+
+function seedGlobalStopCounts(
+  stopLabelCounts: Record<ColdStartStopLabelV1, number> | undefined,
+): CountBucket {
+  if (!stopLabelCounts) {
+    return createCountBucket();
+  }
+  const positive = (stopLabelCounts.STOP_LOCAL ?? 0) + (stopLabelCounts.STOP ?? 0);
+  const negative = stopLabelCounts.CONTINUE ?? 0;
+  return {
+    positive,
+    negative,
+    support: positive + negative,
+  };
+}
+
 function buildPolicyParams(params: {
   stopPositive: number;
   stopNegative: number;
   stopSupport: number;
+  basePolicyParams?: PolicyParams;
 }): PolicyParams {
   return {
-    ...DEFAULT_POLICY_PARAMS,
+    ...(params.basePolicyParams ?? DEFAULT_POLICY_PARAMS),
     stopBias: calcLiveWeight(params.stopPositive, params.stopNegative, params.stopSupport, 1, 2),
   };
 }
@@ -719,22 +805,22 @@ function cloneRouteCandidate(candidate: RouteCandidateV1): RouteCandidateV1 {
 
 export function buildColdStartRouterLivePolicyInitializerV1(params: {
   routeRows: RouteDecisionRowV1[];
+  warmStartInitializer?: ColdStartRouterLivePolicyInitializerV1;
+  warmStartStopLabelCounts?: Record<ColdStartStopLabelV1, number>;
 }): ColdStartRouterLivePolicyInitializerV1 {
-  const seedCounts = new Map<string, CountBucket>();
-  const stopCounts = new Map<string, CountBucket>();
-  const edgeCounts = new Map<string, CountBucket>();
-  const toolActionCounts = new Map<string, Map<string, CountBucket>>();
-  const toolActionSets = new Map<string, {
-    rowIds: Set<string>;
-    teacherToolNodeIds: Set<string>;
-    candidateIds: Set<string>;
-    candidates: Map<string, RouteCandidateV1>;
-    support: number;
-  }>();
-  const globalStopCounts = createCountBucket();
-  const skippedToolRowIds: string[] = [];
-  let traverseRowCount = 0;
-  let toolRowCount = 0;
+  const seedCounts = seedCountMapFromEntries(params.warmStartInitializer?.seedWeights ?? [], (entry) => entry.nodeId);
+  const stopCounts = seedCountMapFromEntries(params.warmStartInitializer?.stopLocalWeights ?? [], (entry) => entry.sourceNodeId);
+  const edgeCounts = seedCountMapFromEntries(
+    params.warmStartInitializer?.edgeWeights ?? [],
+    (entry) => `${entry.sourceNodeId}→${entry.targetNodeId}`,
+  );
+  const toolActionCounts = seedToolActionCountsFromInitializer(params.warmStartInitializer);
+  const toolActionSets = seedToolActionSetsFromInitializer(params.warmStartInitializer);
+  const globalStopCounts = seedGlobalStopCounts(params.warmStartStopLabelCounts);
+  const skippedToolRowIds = [...(params.warmStartInitializer?.skippedToolRowIds ?? [])];
+  const priorUsedRowCount = params.warmStartInitializer?.usedRowCount ?? 0;
+  let traverseRowCount = params.warmStartInitializer?.traverseRowCount ?? 0;
+  let toolRowCount = params.warmStartInitializer?.toolRowCount ?? 0;
 
   for (const row of params.routeRows) {
     const rowWeight = toRowWeight(row.outcome_gain);
@@ -807,6 +893,7 @@ export function buildColdStartRouterLivePolicyInitializerV1(params: {
     stopPositive: globalStopCounts.positive,
     stopNegative: globalStopCounts.negative,
     stopSupport: globalStopCounts.support,
+    basePolicyParams: params.warmStartInitializer?.policyParams,
   });
 
   const toolActionPriors = [...toolActionCounts.entries()]
@@ -870,7 +957,7 @@ export function buildColdStartRouterLivePolicyInitializerV1(params: {
     toolActionPriors,
     toolActionSets: toolActionSetEntries,
     skippedToolRowIds,
-    usedRowCount: params.routeRows.length,
+    usedRowCount: priorUsedRowCount + params.routeRows.length,
     traverseRowCount,
     toolRowCount,
   };

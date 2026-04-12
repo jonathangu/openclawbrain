@@ -81,12 +81,23 @@ export interface ColdStartRouterPeriodicRetrainReplaySummaryV1 {
   rowResults: ReturnType<typeof replayColdStartRouterArtifactV1>["rowResults"];
 }
 
+export interface ColdStartRouterPeriodicRetrainWarmStartV1 {
+  applied: boolean;
+  fromArtifactId: string;
+  fromArtifactChecksum: string;
+  priorUsedRowCount: number;
+  accumulatedTrainRowCount: number;
+  continuationRowCount: number;
+  summary: string;
+}
+
 export interface ColdStartRouterPeriodicRetrainEvalReportV1 {
   contract: typeof COLD_START_ROUTER_REPLAY_EVAL_REPORT_CONTRACT_V1;
   generatedAt: string;
   registryId: string;
   candidateArtifactDir: string;
   priorBaseArtifactDir: string;
+  warmStart: ColdStartRouterPeriodicRetrainWarmStartV1;
   candidateManifestSummary: ReturnType<typeof summarizeRouterArtifactManifestV1>;
   priorBaseManifestSummary: ReturnType<typeof summarizeRouterArtifactManifestV1>;
   trainReplay: ColdStartRouterPeriodicRetrainReplaySummaryV1;
@@ -108,6 +119,7 @@ export interface ColdStartRouterPeriodicRetrainPromotionPackageV1 {
   priorBaseArtifactVersion: string;
   priorBaseArtifactDir: string;
   priorBaseArtifactChecksum: string;
+  warmStart: ColdStartRouterPeriodicRetrainWarmStartV1;
   rollbackKey: string;
   decision: "promote" | "hold" | "rollback";
   gatePassed: boolean;
@@ -271,6 +283,26 @@ function loadPriorBaseArtifactSummary(priorBaseArtifactDir: string) {
   };
 }
 
+function buildWarmStartSummary(params: {
+  priorBaseArtifactId: string;
+  priorBaseArtifactChecksum: string;
+  priorUsedRowCount: number;
+  accumulatedTrainRowCount: number;
+}): ColdStartRouterPeriodicRetrainWarmStartV1 {
+  const continuationRowCount = Math.max(0, params.accumulatedTrainRowCount - params.priorUsedRowCount);
+  return {
+    applied: true,
+    fromArtifactId: params.priorBaseArtifactId,
+    fromArtifactChecksum: params.priorBaseArtifactChecksum,
+    priorUsedRowCount: params.priorUsedRowCount,
+    accumulatedTrainRowCount: params.accumulatedTrainRowCount,
+    continuationRowCount,
+    summary: continuationRowCount > 0
+      ? `warm-start continuation from ${params.priorBaseArtifactId}: ${continuationRowCount} continuation row${continuationRowCount === 1 ? "" : "s"} layered onto ${params.priorUsedRowCount} prior used row${params.priorUsedRowCount === 1 ? "" : "s"}`
+      : `warm-start continuation from ${params.priorBaseArtifactId}: no new continuation rows beyond the ${params.priorUsedRowCount} prior used row${params.priorUsedRowCount === 1 ? "" : "s"}`,
+  };
+}
+
 export function buildColdStartRouterPeriodicRetrainSplitRegistryV1(params: {
   registryId: string;
   generatedAt?: string;
@@ -331,8 +363,28 @@ export function runColdStartRouterPeriodicRetrainV1(params: ColdStartRouterPerio
   mkdirSync(params.reportDir, { recursive: true });
 
   const priorBase = loadPriorBaseArtifactSummary(params.previousBaseArtifactDir);
-  const trainRows = splitRegistry.trainRows.map((row) => trainExport.route_rows.find((candidate) => candidate.row_id === row.rowId)).filter((row): row is RouteDecisionRowV1 => row !== undefined);
+  if (priorBase.bundle.manifest.artifact_id !== params.previousBaseArtifactId) {
+    throw new Error(
+      `previousBaseArtifactId ${params.previousBaseArtifactId} does not match loaded prior base artifact ${priorBase.bundle.manifest.artifact_id}`,
+    );
+  }
+  const accumulatedTrainRows = splitRegistry.trainRows
+    .map((row) => trainExport.route_rows.find((candidate) => candidate.row_id === row.rowId))
+    .filter((row): row is RouteDecisionRowV1 => row !== undefined);
   const evalRows = splitRegistry.evalRows.map((row) => evalExport.route_rows.find((candidate) => candidate.row_id === row.rowId)).filter((row): row is RouteDecisionRowV1 => row !== undefined);
+  const priorUsedRowCount = priorBase.bundle.model.training.usedRows;
+  if (accumulatedTrainRows.length < priorUsedRowCount) {
+    throw new Error(
+      `accumulated train export has ${accumulatedTrainRows.length} rows but prior base expects at least ${priorUsedRowCount} used rows for continuation`,
+    );
+  }
+  const continuationTrainRows = accumulatedTrainRows.slice(priorUsedRowCount);
+  const warmStart = buildWarmStartSummary({
+    priorBaseArtifactId: params.previousBaseArtifactId,
+    priorBaseArtifactChecksum: priorBase.bundle.manifest.artifact_checksum,
+    priorUsedRowCount,
+    accumulatedTrainRowCount: accumulatedTrainRows.length,
+  });
 
   const trainingDataRefs = uniqueStrings([
     params.registryId,
@@ -352,12 +404,20 @@ export function runColdStartRouterPeriodicRetrainV1(params: ColdStartRouterPerio
     packType: params.packType,
     compatibleRuntimeVersion: params.compatibleRuntimeVersion,
     registryEntries: trainExport.registry_entries,
-    routeRows: trainRows,
+    routeRows: continuationTrainRows,
     outputDir: params.candidateArtifactDir,
     routerIdentity: params.candidateRouterIdentity,
     createdAt: generatedAt,
     trainingDataRefs,
     replayGateRefs,
+    warmStartArtifactDir: params.previousBaseArtifactDir,
+    warmStartArtifactBundle: {
+      artifactDir: priorBase.bundle.artifactDir,
+      manifest: priorBase.bundle.manifest,
+      model: priorBase.bundle.model,
+    },
+    warmStartMode: "strict",
+    warmStartRef: params.previousBaseArtifactDir,
     priorBaseArtifactId: params.previousBaseArtifactId,
     priorBaseArtifactChecksum: priorBase.bundle.manifest.artifact_checksum,
   });
@@ -368,7 +428,7 @@ export function runColdStartRouterPeriodicRetrainV1(params: ColdStartRouterPerio
       `candidate bundle checksum mismatch: manifest=${candidate.manifest.artifact_checksum} runtime=${candidateBundle.manifest.artifact_checksum}`,
     );
   }
-  const trainReplay = summarizeReplayVerdict(replayColdStartRouterArtifactV1({ artifactDir: params.candidateArtifactDir, routeRows: trainRows }));
+  const trainReplay = summarizeReplayVerdict(replayColdStartRouterArtifactV1({ artifactDir: params.candidateArtifactDir, routeRows: accumulatedTrainRows }));
   const evalReplay = summarizeReplayVerdict(replayColdStartRouterArtifactV1({ artifactDir: params.candidateArtifactDir, routeRows: evalRows }));
 
   const blockers = [
@@ -382,6 +442,19 @@ export function runColdStartRouterPeriodicRetrainV1(params: ColdStartRouterPerio
       : candidate.manifest.prior_base_artifact_checksum === priorBase.bundle.manifest.artifact_checksum
         ? []
         : [`candidate manifest prior_base_artifact_checksum ${candidate.manifest.prior_base_artifact_checksum} does not match approved prior base checksum ${priorBase.bundle.manifest.artifact_checksum}`]),
+    ...(candidate.manifest.warm_start_applied === true
+      ? []
+      : ["candidate manifest is missing warm_start_applied=true metadata"]),
+    ...(candidate.manifest.warm_start_from_artifact_id === undefined
+      ? ["candidate manifest is missing warm_start_from_artifact_id metadata"]
+      : candidate.manifest.warm_start_from_artifact_id === params.previousBaseArtifactId
+        ? []
+        : [`candidate manifest warm_start_from_artifact_id ${candidate.manifest.warm_start_from_artifact_id} does not match approved prior base ${params.previousBaseArtifactId}`]),
+    ...(candidate.manifest.warm_start_from_artifact_checksum === undefined
+      ? ["candidate manifest is missing warm_start_from_artifact_checksum metadata"]
+      : candidate.manifest.warm_start_from_artifact_checksum === priorBase.bundle.manifest.artifact_checksum
+        ? []
+        : [`candidate manifest warm_start_from_artifact_checksum ${candidate.manifest.warm_start_from_artifact_checksum} does not match approved prior base checksum ${priorBase.bundle.manifest.artifact_checksum}`]),
     ...(splitRegistry.overlapRowIds.length > 0 ? [`split registry overlaps on ${splitRegistry.overlapRowIds.join(", ")}`] : []),
     ...(trainReplay.passed ? [] : [`train replay gate failed: ${trainReplay.summary}`]),
     ...(evalReplay.passed ? [] : [`eval replay gate failed: ${evalReplay.summary}`]),
@@ -399,6 +472,7 @@ export function runColdStartRouterPeriodicRetrainV1(params: ColdStartRouterPerio
     registryId: params.registryId,
     candidateArtifactDir: params.candidateArtifactDir,
     priorBaseArtifactDir: params.previousBaseArtifactDir,
+    warmStart,
     candidateManifestSummary: summarizeRouterArtifactManifestV1(candidate.manifest),
     priorBaseManifestSummary: priorBase.summary,
     trainReplay,
@@ -422,6 +496,7 @@ export function runColdStartRouterPeriodicRetrainV1(params: ColdStartRouterPerio
     priorBaseArtifactVersion: priorBase.bundle.manifest.artifact_version,
     priorBaseArtifactDir: params.previousBaseArtifactDir,
     priorBaseArtifactChecksum: priorBase.bundle.manifest.artifact_checksum,
+    warmStart,
     rollbackKey: `rollback:${params.previousBaseArtifactId}:${priorBase.bundle.manifest.artifact_version}`,
     decision,
     gatePassed,

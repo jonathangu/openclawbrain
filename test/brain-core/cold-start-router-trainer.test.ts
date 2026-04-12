@@ -183,6 +183,70 @@ describe("cold-start router trainer", () => {
     }
   });
 
+  it("continues from a warm-start bundle and matches a full retrain on the accumulated rows", () => {
+    const loadedExport = loadAndFilterColdStartRouterApprovedExportV1(approvedExportPath);
+    const priorOutputDir = createTempRoot("cold-start-router-warm-start-prior");
+    const fullOutputDir = createTempRoot("cold-start-router-warm-start-full");
+    const warmOutputDir = createTempRoot("cold-start-router-warm-start-continuation");
+
+    trainColdStartRouterArtifactV1({
+      artifactId: "router-artifact-warm-start-prior",
+      artifactVersion: "0.0.1",
+      packType: "base",
+      compatibleRuntimeVersion: "openclawbrain-runtime@0.3.8",
+      registryEntries: loadedExport.registryEntries,
+      routeRows: loadedExport.routeRows.slice(0, 1),
+      outputDir: priorOutputDir,
+      routerIdentity: "router:warm-start:prior",
+      createdAt: "2026-04-05T16:22:00Z",
+      trainingDataRefs: loadedExport.summary.approvedDatasetIds,
+      replayGateRefs: ["replay:approved-export:fixture-v1"],
+    });
+
+    const priorBundle = loadColdStartRouterArtifactBundleV1(priorOutputDir);
+    const full = trainColdStartRouterArtifactV1({
+      artifactId: "router-artifact-warm-start-target",
+      artifactVersion: "0.0.2",
+      packType: "base",
+      compatibleRuntimeVersion: "openclawbrain-runtime@0.3.8",
+      registryEntries: loadedExport.registryEntries,
+      routeRows: loadedExport.routeRows,
+      outputDir: fullOutputDir,
+      routerIdentity: "router:warm-start:target",
+      createdAt: "2026-04-05T16:25:00Z",
+      trainingDataRefs: loadedExport.summary.approvedDatasetIds,
+      replayGateRefs: ["replay:approved-export:fixture-v1"],
+    });
+    const warm = trainColdStartRouterArtifactV1({
+      artifactId: "router-artifact-warm-start-target",
+      artifactVersion: "0.0.2",
+      packType: "base",
+      compatibleRuntimeVersion: "openclawbrain-runtime@0.3.8",
+      registryEntries: loadedExport.registryEntries,
+      routeRows: loadedExport.routeRows.slice(1),
+      outputDir: warmOutputDir,
+      routerIdentity: "router:warm-start:target",
+      createdAt: "2026-04-05T16:25:00Z",
+      trainingDataRefs: loadedExport.summary.approvedDatasetIds,
+      replayGateRefs: ["replay:approved-export:fixture-v1"],
+      warmStartArtifactBundle: {
+        artifactDir: priorBundle.artifactDir,
+        manifest: priorBundle.manifest,
+        model: priorBundle.model,
+      },
+      warmStartMode: "strict",
+    });
+
+    expect(warm.model).toEqual(full.model);
+    expect(warm.manifest.warm_start_applied).toBe(true);
+    expect(warm.manifest.warm_start_from_artifact_id).toBe(priorBundle.manifest.artifact_id);
+    expect(warm.manifest.warm_start_from_artifact_checksum).toBe(priorBundle.manifest.artifact_checksum);
+    expect(warm.manifest.prior_base_artifact_id).toBe(priorBundle.manifest.artifact_id);
+    expect(warm.manifest.prior_base_artifact_checksum).toBe(priorBundle.manifest.artifact_checksum);
+    expect(warm.manifest.warm_start_summary).toContain("warm-start continuation");
+    expect(loadColdStartRouterArtifactBundleV1(warmOutputDir).manifest.warm_start_applied).toBe(true);
+  });
+
   it("materializes the live runtime policy families that hot-path PG updates", () => {
     const outputDir = createTempRoot("cold-start-router-live-family");
     const loadedExport = loadAndFilterColdStartRouterApprovedExportV1(approvedExportPath);

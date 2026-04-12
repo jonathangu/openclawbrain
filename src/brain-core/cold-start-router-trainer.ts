@@ -1,5 +1,5 @@
 import { createHash } from "node:crypto";
-import { mkdirSync, writeFileSync } from "node:fs";
+import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import type {
   ColdStartPackTypeV1,
@@ -11,6 +11,7 @@ import type {
 } from "./cold-start-router-contracts.ts";
 import {
   buildColdStartRouterLivePolicyInitializerV1,
+  COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1,
   materializeColdStartRouterLivePolicyGraphV1,
   type ColdStartRouterLivePolicyInitializerV1,
 } from "./graph.js";
@@ -250,6 +251,14 @@ export interface ColdStartRouterScoringResultV1 {
   policyDistribution: ColdStartRouterPolicyDistributionV1;
 }
 
+export type ColdStartRouterWarmStartModeV1 = "strict" | "best_effort";
+
+export interface ColdStartRouterWarmStartBundleV1 {
+  artifactDir?: string;
+  manifest: RouterArtifactManifestV1;
+  model: ColdStartRouterModelV1;
+}
+
 export interface ColdStartRouterTrainingInputV1 {
   artifactId: string;
   artifactVersion: string;
@@ -262,6 +271,10 @@ export interface ColdStartRouterTrainingInputV1 {
   createdAt?: string;
   trainingDataRefs?: string[];
   replayGateRefs?: string[];
+  warmStartArtifactDir?: string;
+  warmStartArtifactBundle?: ColdStartRouterWarmStartBundleV1;
+  warmStartMode?: ColdStartRouterWarmStartModeV1;
+  warmStartRef?: string;
   baseModelRef?: string;
   priorBaseArtifactId?: string;
   priorBaseArtifactChecksum?: string;
@@ -426,6 +439,17 @@ function candidateFeatureKeys(candidate: RouteCandidateV1): string[] {
   ];
 }
 
+function cloneRouteCandidate(candidate: RouteCandidateV1): RouteCandidateV1 {
+  return {
+    candidate_id: candidate.candidate_id,
+    candidate_type: candidate.candidate_type,
+    ...(candidate.authority ? { authority: candidate.authority } : {}),
+    ...(candidate.freshness ? { freshness: candidate.freshness } : {}),
+    ...(candidate.token_cost !== undefined ? { token_cost: candidate.token_cost } : {}),
+    ...(candidate.score_hint !== undefined ? { score_hint: candidate.score_hint } : {}),
+  };
+}
+
 function resolvePositiveCandidateIds(row: RouteDecisionRowV1): Set<string> {
   const teacherAction = row.teacher_action;
   if (teacherAction.kind === "traverse") {
@@ -478,6 +502,29 @@ function createStopBucketCounts(): Record<ColdStartRouterStopBucketFieldV1, Reco
     hard_negative_count: {},
     outcome_gain: {},
   };
+}
+
+function cloneStopLabelCounts(
+  counts: Record<ColdStartStopLabelV1, number> | undefined,
+): Record<ColdStartStopLabelV1, number> {
+  return {
+    CONTINUE: counts?.CONTINUE ?? 0,
+    STOP_LOCAL: counts?.STOP_LOCAL ?? 0,
+    STOP: counts?.STOP ?? 0,
+  };
+}
+
+function cloneStopBucketCounts(
+  stopBucketCounts: Record<ColdStartRouterStopBucketFieldV1, Record<string, Record<ColdStartStopLabelV1, number>>> | undefined,
+): Record<ColdStartRouterStopBucketFieldV1, Record<string, Record<ColdStartStopLabelV1, number>>> {
+  const result = createStopBucketCounts();
+  for (const field of COLD_START_ROUTER_STOP_BUCKET_FIELDS_V1) {
+    const sourceBuckets = stopBucketCounts?.[field] ?? {};
+    for (const [bucket, labelCountsForBucket] of Object.entries(sourceBuckets)) {
+      result[field][bucket] = cloneStopLabelCounts(labelCountsForBucket);
+    }
+  }
+  return result;
 }
 
 function bumpStopBucket(
@@ -699,7 +746,9 @@ function validateTrainingInputs(params: ColdStartRouterTrainingInputV1): void {
   if (params.registryEntries.length === 0) {
     throw new Error("registryEntries must not be empty");
   }
-  if (params.routeRows.length === 0) {
+  const requestedWarmStart = params.warmStartArtifactBundle !== undefined
+    || (params.warmStartArtifactDir?.trim().length ?? 0) > 0;
+  if (params.routeRows.length === 0 && !requestedWarmStart) {
     throw new Error("routeRows must not be empty");
   }
 
@@ -726,7 +775,14 @@ function validateTrainingInputs(params: ColdStartRouterTrainingInputV1): void {
 function buildSourcePriors(
   registryEntries: DataRegistryEntryV1[],
   rowStats: Map<string, { total: number; used: number; skipped: number }>,
+  warmStartSourcePriors?: ColdStartRouterSourcePriorsV1,
 ): ColdStartRouterSourcePriorsV1 {
+  const datasets: Record<string, ColdStartRouterSourceDatasetPriorV1> = Object.fromEntries(
+    Object.entries(warmStartSourcePriors?.datasets ?? {}).map(([datasetId, dataset]) => [
+      datasetId,
+      { ...dataset },
+    ]),
+  );
   const counts = {
     sourceFamily: {} as Record<string, number>,
     approvalStatus: {} as Record<string, number>,
@@ -736,16 +792,9 @@ function buildSourcePriors(
     piiRisk: {} as Record<string, number>,
   };
 
-  const datasets: Record<string, ColdStartRouterSourceDatasetPriorV1> = {};
   for (const entry of registryEntries) {
-    counts.sourceFamily[entry.source_family] = (counts.sourceFamily[entry.source_family] ?? 0) + 1;
-    counts.approvalStatus[entry.approval_status] = (counts.approvalStatus[entry.approval_status] ?? 0) + 1;
-    counts.benchmarkSplitStatus[entry.benchmark_split_status] = (counts.benchmarkSplitStatus[entry.benchmark_split_status] ?? 0) + 1;
-    counts.commercialUseStatus[entry.commercial_use_status] = (counts.commercialUseStatus[entry.commercial_use_status] ?? 0) + 1;
-    counts.redistributionStatus[entry.redistribution_status] = (counts.redistributionStatus[entry.redistribution_status] ?? 0) + 1;
-    counts.piiRisk[entry.pii_risk] = (counts.piiRisk[entry.pii_risk] ?? 0) + 1;
-
     const stats = rowStats.get(entry.dataset_id) ?? { total: 0, used: 0, skipped: 0 };
+    const priorDataset = datasets[entry.dataset_id];
     datasets[entry.dataset_id] = {
       datasetId: entry.dataset_id,
       sourceFamily: entry.source_family,
@@ -755,15 +804,24 @@ function buildSourcePriors(
       redistributionStatus: entry.redistribution_status,
       piiRisk: entry.pii_risk,
       exactFileCount: entry.exact_files.length,
-      rowCount: stats.total,
-      usedRowCount: stats.used,
-      skippedRowCount: stats.skipped,
+      rowCount: (priorDataset?.rowCount ?? 0) + stats.total,
+      usedRowCount: (priorDataset?.usedRowCount ?? 0) + stats.used,
+      skippedRowCount: (priorDataset?.skippedRowCount ?? 0) + stats.skipped,
     };
+  }
+
+  for (const dataset of Object.values(datasets)) {
+    counts.sourceFamily[dataset.sourceFamily] = (counts.sourceFamily[dataset.sourceFamily] ?? 0) + 1;
+    counts.approvalStatus[dataset.approvalStatus] = (counts.approvalStatus[dataset.approvalStatus] ?? 0) + 1;
+    counts.benchmarkSplitStatus[dataset.benchmarkSplitStatus] = (counts.benchmarkSplitStatus[dataset.benchmarkSplitStatus] ?? 0) + 1;
+    counts.commercialUseStatus[dataset.commercialUseStatus] = (counts.commercialUseStatus[dataset.commercialUseStatus] ?? 0) + 1;
+    counts.redistributionStatus[dataset.redistributionStatus] = (counts.redistributionStatus[dataset.redistributionStatus] ?? 0) + 1;
+    counts.piiRisk[dataset.piiRisk] = (counts.piiRisk[dataset.piiRisk] ?? 0) + 1;
   }
 
   return {
     contract: COLD_START_ROUTER_SOURCE_PRIORS_CONTRACT_V1,
-    datasetCount: registryEntries.length,
+    datasetCount: Object.keys(datasets).length,
     usedDatasetCount: Object.values(datasets).filter((dataset) => dataset.usedRowCount > 0).length,
     datasets: sortedRecord(datasets),
     counts: {
@@ -883,30 +941,195 @@ function uniqueSortedStrings(values: readonly string[]): string[] {
   return [...new Set(values.map((value) => value.trim()).filter((value) => value.length > 0))].sort();
 }
 
-export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingInputV1): ColdStartRouterTrainingResultV1 {
-  validateTrainingInputs(params);
+function readJsonArtifact<T>(filePath: string): T {
+  return JSON.parse(readFileSync(filePath, "utf8")) as T;
+}
 
-  const createdAt = params.createdAt ?? new Date().toISOString();
-  const registryByDataset = new Map(params.registryEntries.map((entry) => [entry.dataset_id, entry] as const));
-  const usedDatasetIds = new Set<string>();
-  const usedRouteRows: RouteDecisionRowV1[] = [];
-  const skippedRows: ColdStartRouterRowSkipV1[] = [];
-  const rowStats = new Map<string, { total: number; used: number; skipped: number }>();
-  const featureCounts = new Map<string, { positive: number; negative: number; support: number }>();
-  const toolActionCounts = new Map<string, Map<string, { positive: number; negative: number; support: number }>>();
-  const toolActionSets = new Map<string, {
+function seedFeatureCounts(
+  featureWeights: Record<string, ColdStartRouterFeatureWeightV1> | undefined,
+): Map<string, { positive: number; negative: number; support: number }> {
+  const counts = new Map<string, { positive: number; negative: number; support: number }>();
+  for (const [featureKey, entry] of Object.entries(featureWeights ?? {})) {
+    counts.set(featureKey, {
+      positive: entry.positive,
+      negative: entry.negative,
+      support: entry.support,
+    });
+  }
+  return counts;
+}
+
+function seedToolActionCounts(
+  toolActionPriors: readonly ColdStartRouterToolActionPriorV1[] | undefined,
+): Map<string, Map<string, { positive: number; negative: number; support: number }>> {
+  const counts = new Map<string, Map<string, { positive: number; negative: number; support: number }>>();
+  for (const entry of toolActionPriors ?? []) {
+    const sourceMap = counts.get(entry.sourceNodeId) ?? new Map<string, { positive: number; negative: number; support: number }>();
+    sourceMap.set(entry.toolNodeId, {
+      positive: entry.positive,
+      negative: entry.negative,
+      support: entry.support,
+    });
+    counts.set(entry.sourceNodeId, sourceMap);
+  }
+  return counts;
+}
+
+function seedToolActionSets(
+  toolActionSets: readonly ColdStartRouterToolActionSetV1[] | undefined,
+): Map<string, {
+  rowIds: Set<string>;
+  teacherToolNodeIds: Set<string>;
+  candidateIds: Set<string>;
+  candidates: Map<string, RouteCandidateV1>;
+  support: number;
+}> {
+  const sets = new Map<string, {
     rowIds: Set<string>;
     teacherToolNodeIds: Set<string>;
     candidateIds: Set<string>;
     candidates: Map<string, RouteCandidateV1>;
     support: number;
   }>();
-  const stopLabelCounts = labelCounts();
-  const stopBucketCounts = createStopBucketCounts();
-  let eligibleRows = 0;
-  let usedRows = 0;
-  let positiveCandidateCount = 0;
-  let negativeCandidateCount = 0;
+
+  for (const entry of toolActionSets ?? []) {
+    sets.set(entry.sourceNodeId, {
+      rowIds: new Set(entry.rowIds),
+      teacherToolNodeIds: new Set(entry.teacherToolNodeIds),
+      candidateIds: new Set(entry.candidateIds),
+      candidates: new Map(entry.candidates.map((candidate) => [candidate.candidate_id, cloneRouteCandidate(candidate)])),
+      support: entry.support,
+    });
+  }
+
+  return sets;
+}
+
+function loadWarmStartBundleFromDir(artifactDir: string): ColdStartRouterWarmStartBundleV1 {
+  const resolvedArtifactDir = path.resolve(artifactDir);
+  return {
+    artifactDir: resolvedArtifactDir,
+    manifest: readJsonArtifact<RouterArtifactManifestV1>(
+      path.join(resolvedArtifactDir, COLD_START_ROUTER_ARTIFACT_LAYOUT_V1.manifest),
+    ),
+    model: readJsonArtifact<ColdStartRouterModelV1>(
+      path.join(resolvedArtifactDir, COLD_START_ROUTER_ARTIFACT_LAYOUT_V1.weights),
+    ),
+  };
+}
+
+function validateWarmStartBundle(bundle: ColdStartRouterWarmStartBundleV1): void {
+  const manifestValidation = validateRouterArtifactManifestV1(bundle.manifest);
+  if (!manifestValidation.valid) {
+    throw new Error(`warm-start manifest failed validation: ${manifestValidation.issues.join("; ")}`);
+  }
+  if (bundle.model.contract !== COLD_START_ROUTER_WEIGHTS_CONTRACT_V1) {
+    throw new Error(`warm-start weights contract must be ${COLD_START_ROUTER_WEIGHTS_CONTRACT_V1}, got ${bundle.model.contract}`);
+  }
+  if (bundle.model.livePolicyInitializer?.contract !== COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1) {
+    throw new Error(`warm-start livePolicyInitializer.contract must be ${COLD_START_ROUTER_LIVE_POLICY_INITIALIZER_CONTRACT_V1}`);
+  }
+  if (bundle.model.artifactId !== bundle.manifest.artifact_id) {
+    throw new Error(`warm-start weights artifactId ${bundle.model.artifactId} does not match manifest artifact_id ${bundle.manifest.artifact_id}`);
+  }
+  if (bundle.model.artifactVersion !== bundle.manifest.artifact_version) {
+    throw new Error(`warm-start weights artifactVersion ${bundle.model.artifactVersion} does not match manifest artifact_version ${bundle.manifest.artifact_version}`);
+  }
+  if (bundle.model.packType !== bundle.manifest.pack_type) {
+    throw new Error(`warm-start weights packType ${bundle.model.packType} does not match manifest pack_type ${bundle.manifest.pack_type}`);
+  }
+  if (bundle.model.compatibleRuntimeVersion !== bundle.manifest.compatible_runtime_version) {
+    throw new Error(
+      `warm-start runtime version ${bundle.model.compatibleRuntimeVersion} does not match manifest compatible_runtime_version ${bundle.manifest.compatible_runtime_version}`,
+    );
+  }
+}
+
+function resolveWarmStartBundle(
+  params: ColdStartRouterTrainingInputV1,
+): {
+  bundle: ColdStartRouterWarmStartBundleV1;
+  ref: string | null;
+} | null {
+  const requestedArtifactDir = normalizeText(params.warmStartArtifactDir);
+  const requestedBundle = params.warmStartArtifactBundle;
+  if (!requestedBundle && requestedArtifactDir.length === 0) {
+    return null;
+  }
+
+  const mode = params.warmStartMode ?? "strict";
+  try {
+    const bundle = requestedBundle
+      ? {
+          ...requestedBundle,
+          ...(requestedBundle.artifactDir
+            ? { artifactDir: path.resolve(requestedBundle.artifactDir) }
+            : requestedArtifactDir.length > 0
+              ? { artifactDir: path.resolve(requestedArtifactDir) }
+              : {}),
+        }
+      : loadWarmStartBundleFromDir(requestedArtifactDir);
+    validateWarmStartBundle(bundle);
+    return {
+      bundle,
+      ref: normalizeText(params.warmStartRef, normalizeText(bundle.artifactDir, "")) || null,
+    };
+  } catch (error) {
+    if (mode === "best_effort") {
+      return null;
+    }
+    throw error;
+  }
+}
+
+export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingInputV1): ColdStartRouterTrainingResultV1 {
+  validateTrainingInputs(params);
+
+  const warmStart = resolveWarmStartBundle(params);
+  if (!warmStart && params.routeRows.length === 0) {
+    throw new Error("routeRows must not be empty when warm-start resolution did not yield a prior artifact");
+  }
+
+  const requestedPriorBaseArtifactId = normalizeText(params.priorBaseArtifactId);
+  const requestedPriorBaseArtifactChecksum = normalizeText(params.priorBaseArtifactChecksum);
+  if (warmStart && requestedPriorBaseArtifactId.length > 0 && requestedPriorBaseArtifactId !== warmStart.bundle.manifest.artifact_id) {
+    throw new Error(
+      `priorBaseArtifactId ${requestedPriorBaseArtifactId} does not match warm-start artifact ${warmStart.bundle.manifest.artifact_id}`,
+    );
+  }
+  if (
+    warmStart
+    && requestedPriorBaseArtifactChecksum.length > 0
+    && requestedPriorBaseArtifactChecksum !== warmStart.bundle.manifest.artifact_checksum
+  ) {
+    throw new Error(
+      `priorBaseArtifactChecksum ${requestedPriorBaseArtifactChecksum} does not match warm-start checksum ${warmStart.bundle.manifest.artifact_checksum}`,
+    );
+  }
+
+  const priorBaseArtifactId = requestedPriorBaseArtifactId.length > 0
+    ? requestedPriorBaseArtifactId
+    : warmStart?.bundle.manifest.artifact_id;
+  const priorBaseArtifactChecksum = requestedPriorBaseArtifactChecksum.length > 0
+    ? requestedPriorBaseArtifactChecksum
+    : warmStart?.bundle.manifest.artifact_checksum;
+  const createdAt = params.createdAt ?? new Date().toISOString();
+  const registryByDataset = new Map(params.registryEntries.map((entry) => [entry.dataset_id, entry] as const));
+  const usedDatasetIds = new Set<string>(warmStart?.bundle.model.training.usedDatasetIds ?? []);
+  const usedRouteRows: RouteDecisionRowV1[] = [];
+  const skippedRows: ColdStartRouterRowSkipV1[] = [
+    ...(warmStart?.bundle.model.training.skippedRowDetails ?? []).map((row) => ({ ...row })),
+  ];
+  const rowStats = new Map<string, { total: number; used: number; skipped: number }>();
+  const featureCounts = seedFeatureCounts(warmStart?.bundle.model.candidateFeatureWeights);
+  const toolActionCounts = seedToolActionCounts(warmStart?.bundle.model.toolActionPriors);
+  const toolActionSets = seedToolActionSets(warmStart?.bundle.model.toolActionSets);
+  const stopLabelCounts = cloneStopLabelCounts(warmStart?.bundle.model.stopLabelCounts);
+  const stopBucketCounts = cloneStopBucketCounts(warmStart?.bundle.model.stopBucketCounts);
+  let eligibleRows = warmStart?.bundle.model.training.eligibleRows ?? 0;
+  let usedRows = warmStart?.bundle.model.training.usedRows ?? 0;
+  let positiveCandidateCount = warmStart?.bundle.model.training.candidatePositiveCount ?? 0;
+  let negativeCandidateCount = warmStart?.bundle.model.training.candidateNegativeCount ?? 0;
 
   for (const row of params.routeRows) {
     const registryEntry = registryByDataset.get(row.dataset_id) ?? null;
@@ -961,14 +1184,7 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
         }
         const existing = toolActionSet.candidates.get(candidate.candidate_id);
         if (!existing || (candidate.score_hint ?? Number.NEGATIVE_INFINITY) > (existing.score_hint ?? Number.NEGATIVE_INFINITY)) {
-          toolActionSet.candidates.set(candidate.candidate_id, {
-            candidate_id: candidate.candidate_id,
-            candidate_type: candidate.candidate_type,
-            ...(candidate.authority ? { authority: candidate.authority } : {}),
-            ...(candidate.freshness ? { freshness: candidate.freshness } : {}),
-            ...(candidate.token_cost !== undefined ? { token_cost: candidate.token_cost } : {}),
-            ...(candidate.score_hint !== undefined ? { score_hint: candidate.score_hint } : {}),
-          });
+          toolActionSet.candidates.set(candidate.candidate_id, cloneRouteCandidate(candidate));
         }
 
         const sourceMap = toolActionCounts.get(sourceNodeId) ?? new Map<string, { positive: number; negative: number; support: number }>();
@@ -1012,7 +1228,12 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
   }
 
   const skippedRowDetails = createSkippedRowDetails(skippedRows);
-  const featureWeightMap = normalizeFeatureWeights(featureCounts, 1, 2);
+  const calibration = warmStart?.bundle.model.calibration ?? buildCalibration();
+  const featureWeightMap = normalizeFeatureWeights(
+    featureCounts,
+    calibration.smoothing,
+    calibration.supportDampening,
+  );
   const toolActionPriorEntries = [...toolActionCounts.entries()]
     .flatMap(([sourceNodeId, toolMap]) => [...toolMap.entries()].map(([toolNodeId, bucket]) => ({
       sourceNodeId,
@@ -1021,7 +1242,13 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
       negative: bucket.negative,
       support: bucket.support,
       prior: bucket.support > 0 ? bucket.positive / bucket.support : 0,
-      weight: calcWeight(bucket.positive, bucket.negative, bucket.support, 1, 2),
+      weight: calcWeight(
+        bucket.positive,
+        bucket.negative,
+        bucket.support,
+        calibration.smoothing,
+        calibration.supportDampening,
+      ),
     })))
     .sort((left, right) => {
       const bySource = left.sourceNodeId.localeCompare(right.sourceNodeId);
@@ -1041,10 +1268,10 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
     }))
     .sort((left, right) => left.sourceNodeId.localeCompare(right.sourceNodeId));
   const trainingSummary: ColdStartRouterTrainingSummaryV1 = {
-    totalRows: params.routeRows.length,
+    totalRows: (warmStart?.bundle.model.training.totalRows ?? 0) + params.routeRows.length,
     eligibleRows,
     usedRows,
-    skippedRows: params.routeRows.length - usedRows,
+    skippedRows: skippedRowDetails.length,
     candidatePositiveCount: positiveCandidateCount,
     candidateNegativeCount: negativeCandidateCount,
     usedDatasetIds: [...usedDatasetIds].sort(),
@@ -1054,12 +1281,17 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
     toolActionSetCount: toolActionSetEntries.length,
   };
 
-  const calibration = buildCalibration();
-  const featureNormalizers = buildFeatureNormalizers();
-  const sourcePriors = buildSourcePriors(params.registryEntries, rowStats);
-  const safetyRules = buildSafetyRules();
+  const featureNormalizers = warmStart?.bundle.model.featureNormalizers ?? buildFeatureNormalizers();
+  const sourcePriors = buildSourcePriors(
+    params.registryEntries,
+    rowStats,
+    warmStart?.bundle.model.sourcePriors,
+  );
+  const safetyRules = warmStart?.bundle.model.safetyRules ?? buildSafetyRules();
   const livePolicyInitializer = buildColdStartRouterLivePolicyInitializerV1({
     routeRows: usedRouteRows,
+    warmStartInitializer: warmStart?.bundle.model.livePolicyInitializer,
+    warmStartStopLabelCounts: warmStart?.bundle.model.stopLabelCounts,
   });
   const model: ColdStartRouterModelV1 = {
     contract: COLD_START_ROUTER_WEIGHTS_CONTRACT_V1,
@@ -1101,10 +1333,26 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
   const sourcePriorsFile = writeJsonArtifact(sourcePriorsPath, sourcePriors);
   const safetyRulesFile = writeJsonArtifact(safetyRulesPath, safetyRules);
 
-  const trainingDataRefs = (params.trainingDataRefs?.length ?? 0) > 0
-    ? uniqueSortedStrings(params.trainingDataRefs ?? [])
-    : [...usedDatasetIds].sort();
-  const replayGateRefs = uniqueSortedStrings(params.replayGateRefs ?? []);
+  const trainingDataRefs = warmStart
+    ? uniqueSortedStrings([
+        ...warmStart.bundle.manifest.training_data_refs,
+        ...((params.trainingDataRefs?.length ?? 0) > 0 ? params.trainingDataRefs ?? [] : [...usedDatasetIds]),
+      ])
+    : (params.trainingDataRefs?.length ?? 0) > 0
+      ? uniqueSortedStrings(params.trainingDataRefs ?? [])
+      : [...usedDatasetIds].sort();
+  const replayGateRefs = warmStart
+    ? uniqueSortedStrings([
+        ...warmStart.bundle.manifest.replay_gate_refs,
+        ...(params.replayGateRefs ?? []),
+      ])
+    : uniqueSortedStrings(params.replayGateRefs ?? []);
+  const continuationUsedRowCount = usedRouteRows.length;
+  const warmStartSummary = warmStart
+    ? continuationUsedRowCount > 0
+      ? `warm-start continuation from ${warmStart.bundle.manifest.artifact_id} applied ${continuationUsedRowCount} continuation row${continuationUsedRowCount === 1 ? "" : "s"} on top of ${warmStart.bundle.model.training.usedRows} prior used row${warmStart.bundle.model.training.usedRows === 1 ? "" : "s"}`
+      : `warm-start continuation from ${warmStart.bundle.manifest.artifact_id} reused prior weights with no new continuation rows`
+    : null;
   const logicalBaseModelDigest = sha256Text(JSON.stringify({
     contract: COLD_START_ROUTER_BASE_MODEL_CONTRACT_V1,
     artifactId: params.artifactId,
@@ -1133,8 +1381,16 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
     compatible_runtime_version: params.compatibleRuntimeVersion,
     training_data_refs: trainingDataRefs,
     replay_gate_refs: replayGateRefs,
-    ...(params.priorBaseArtifactId?.trim().length ? { prior_base_artifact_id: params.priorBaseArtifactId.trim() } : {}),
-    ...(params.priorBaseArtifactChecksum?.trim().length ? { prior_base_artifact_checksum: params.priorBaseArtifactChecksum.trim() } : {}),
+    ...(priorBaseArtifactId?.length ? { prior_base_artifact_id: priorBaseArtifactId } : {}),
+    ...(priorBaseArtifactChecksum?.length ? { prior_base_artifact_checksum: priorBaseArtifactChecksum } : {}),
+    warm_start_applied: warmStart !== null,
+    ...(warmStart
+      ? {
+          warm_start_from_artifact_id: warmStart.bundle.manifest.artifact_id,
+          warm_start_from_artifact_checksum: warmStart.bundle.manifest.artifact_checksum,
+          warm_start_summary: warmStartSummary!,
+        }
+      : {}),
     created_at: createdAt,
     router_identity: params.routerIdentity ?? undefined,
   };

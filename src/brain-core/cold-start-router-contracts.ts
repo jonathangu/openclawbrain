@@ -425,6 +425,10 @@ export const RouterArtifactManifestSchemaV1 = Type.Object(
     replay_gate_refs: Type.Array(Type.String({ minLength: 1 })),
     prior_base_artifact_id: Type.Optional(Type.String({ minLength: 1 })),
     prior_base_artifact_checksum: Type.Optional(Type.String({ minLength: 1 })),
+    warm_start_applied: Type.Optional(Type.Boolean()),
+    warm_start_from_artifact_id: Type.Optional(Type.String({ minLength: 1 })),
+    warm_start_from_artifact_checksum: Type.Optional(Type.String({ minLength: 1 })),
+    warm_start_summary: Type.Optional(Type.String({ minLength: 1 })),
     artifact_checksum: Type.String({ minLength: 1 }),
     created_at: Type.String({ minLength: 1 }),
     router_identity: Type.Optional(Type.String({ minLength: 1 })),
@@ -722,6 +726,9 @@ export function validateRouterArtifactManifestV1(value: unknown): ContractValida
   const manifest = value as RouterArtifactManifestV1;
   const hasPriorBaseArtifactId = manifest.prior_base_artifact_id !== undefined;
   const hasPriorBaseArtifactChecksum = manifest.prior_base_artifact_checksum !== undefined;
+  const hasWarmStartFromArtifactId = manifest.warm_start_from_artifact_id !== undefined;
+  const hasWarmStartFromArtifactChecksum = manifest.warm_start_from_artifact_checksum !== undefined;
+  const hasWarmStartSummary = manifest.warm_start_summary !== undefined;
   if (hasPriorBaseArtifactId !== hasPriorBaseArtifactChecksum) {
     return {
       contract,
@@ -730,6 +737,30 @@ export function validateRouterArtifactManifestV1(value: unknown): ContractValida
         ...base.issues,
         `${contract}/prior_base_artifact_id and prior_base_artifact_checksum must be provided together`,
       ],
+    };
+  }
+
+  const warmStartIssues: string[] = [];
+  if (hasWarmStartFromArtifactId !== hasWarmStartFromArtifactChecksum) {
+    warmStartIssues.push(`${contract}/warm_start_from_artifact_id and warm_start_from_artifact_checksum must be provided together`);
+  }
+  if (manifest.warm_start_applied === true) {
+    if (!hasWarmStartFromArtifactId || !hasWarmStartFromArtifactChecksum || !hasWarmStartSummary) {
+      warmStartIssues.push(`${contract}/warm_start_applied=true requires warm_start_from_artifact_id, warm_start_from_artifact_checksum, and warm_start_summary`);
+    }
+  } else if (manifest.warm_start_applied === false) {
+    if (hasWarmStartFromArtifactId || hasWarmStartFromArtifactChecksum || hasWarmStartSummary) {
+      warmStartIssues.push(`${contract}/warm_start_applied=false cannot carry warm_start_from_artifact_* or warm_start_summary`);
+    }
+  } else if (hasWarmStartFromArtifactId || hasWarmStartFromArtifactChecksum || hasWarmStartSummary) {
+    warmStartIssues.push(`${contract}/warm_start_applied must be provided when warm-start metadata is present`);
+  }
+
+  if (warmStartIssues.length > 0) {
+    return {
+      contract,
+      valid: false,
+      issues: [...base.issues, ...warmStartIssues],
     };
   }
 
@@ -917,6 +948,10 @@ export interface RouterArtifactManifestSummaryV1 {
   replayGateRefCount: number;
   priorBaseArtifactId: string | null;
   priorBaseArtifactChecksum: string | null;
+  warmStartApplied: boolean;
+  warmStartFromArtifactId: string | null;
+  warmStartFromArtifactChecksum: string | null;
+  warmStartSummary: string | null;
   checksum: string;
   runtimeVersion: string;
 }
@@ -931,6 +966,10 @@ export function summarizeRouterArtifactManifestV1(
     replayGateRefCount: manifest.replay_gate_refs.length,
     priorBaseArtifactId: manifest.prior_base_artifact_id ?? null,
     priorBaseArtifactChecksum: manifest.prior_base_artifact_checksum ?? null,
+    warmStartApplied: manifest.warm_start_applied ?? false,
+    warmStartFromArtifactId: manifest.warm_start_from_artifact_id ?? null,
+    warmStartFromArtifactChecksum: manifest.warm_start_from_artifact_checksum ?? null,
+    warmStartSummary: manifest.warm_start_summary ?? null,
     checksum: manifest.artifact_checksum,
     runtimeVersion: manifest.compatible_runtime_version,
   };

@@ -353,6 +353,10 @@ describe("cold-start router contracts", () => {
       replayGateRefCount: 1,
       priorBaseArtifactId: "router-artifact-prior-000",
       priorBaseArtifactChecksum: "sha256:router-artifact-prior-000",
+      warmStartApplied: false,
+      warmStartFromArtifactId: null,
+      warmStartFromArtifactChecksum: null,
+      warmStartSummary: null,
       checksum: "sha256:router-artifact-001",
     });
     expect(summarizeMigrationSnapshotV1(migrationSnapshot)).toMatchObject({
@@ -418,6 +422,19 @@ describe("cold-start router contracts", () => {
     const validation = validateRouterArtifactManifestV1(missingChecksumManifest);
     expect(validation.valid).toBe(false);
     expect(validation.issues.join(" ")).toContain("prior_base_artifact_id and prior_base_artifact_checksum must be provided together");
+  });
+
+  it("rejects a router manifest when warm-start metadata is incomplete", () => {
+    const invalidWarmStartManifest = {
+      ...routerArtifactManifest,
+      warm_start_applied: true,
+      warm_start_from_artifact_id: "router-artifact-prior-000",
+      warm_start_from_artifact_checksum: "sha256:router-artifact-prior-000",
+    } as Record<string, unknown>;
+
+    const validation = validateRouterArtifactManifestV1(invalidWarmStartManifest);
+    expect(validation.valid).toBe(false);
+    expect(validation.issues.join(" ")).toContain("warm_start_applied=true requires warm_start_from_artifact_id, warm_start_from_artifact_checksum, and warm_start_summary");
   });
 
   it("fails semantic validation when a row routes to a missing target, a registry row carries an extra hash, and a proof bundle omits a required file", () => {

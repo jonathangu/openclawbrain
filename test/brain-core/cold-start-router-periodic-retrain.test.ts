@@ -6,6 +6,7 @@ import { fileURLToPath } from "node:url";
 import { afterEach, describe, expect, it } from "vitest";
 
 import { runColdStartRouterPeriodicRetrainV1 } from "../../src/brain-core/cold-start-router-periodic-retrain.js";
+import { loadColdStartRouterArtifactBundleV1 } from "../../src/brain-core/cold-start-router-runtime.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -48,6 +49,7 @@ describe("cold-start router periodic retrain", () => {
   it("builds a bounded split registry and replay-gated promotion package from accumulated route rows", () => {
     const candidateArtifactDir = createTempRoot("cold-start-router-periodic-retrain-candidate");
     const reportDir = createTempRoot("cold-start-router-periodic-retrain-report");
+    const priorBundle = loadColdStartRouterArtifactBundleV1(priorBaseArtifactDir);
 
     const result = runColdStartRouterPeriodicRetrainV1({
       trainExportPath,
@@ -87,14 +89,30 @@ describe("cold-start router periodic retrain", () => {
     expect(result.candidate.manifest.replay_gate_refs).toContain("replay:hotpotqa-musique:eval-only-v1");
     expect(result.candidate.manifest.prior_base_artifact_id).toBe("router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3");
     expect(result.candidate.manifest.prior_base_artifact_checksum).toBe(result.priorBaseManifestSummary.checksum);
+    expect(result.candidate.manifest.warm_start_applied).toBe(true);
+    expect(result.candidate.manifest.warm_start_from_artifact_id).toBe("router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3");
+    expect(result.candidate.manifest.warm_start_from_artifact_checksum).toBe(result.priorBaseManifestSummary.checksum);
+    expect(result.candidate.manifest.warm_start_summary).toContain("no new continuation rows");
+    expect(result.candidate.model.training).toEqual(priorBundle.model.training);
+    expect(result.candidate.model.candidateFeatureWeights).toEqual(priorBundle.model.candidateFeatureWeights);
+    expect(result.candidate.model.livePolicyInitializer).toEqual(priorBundle.model.livePolicyInitializer);
     expect(result.trainReplay).toMatchObject({ passed: true, verdict: "pass" });
     expect(result.evalReplay).toMatchObject({ passed: true, verdict: "pass" });
     expect(result.report.gatePassed).toBe(true);
     expect(result.report.summary).toContain("both replay-gated the next same-family base prior");
+    expect(result.report.warmStart).toMatchObject({
+      applied: true,
+      fromArtifactId: "router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3",
+      priorUsedRowCount: 44,
+      accumulatedTrainRowCount: 44,
+      continuationRowCount: 0,
+    });
+    expect(result.report.warmStart.summary).toContain("no new continuation rows");
     expect(result.promotionPackage.decision).toBe("promote");
     expect(result.promotionPackage.rollbackKey).toBe("rollback:router-artifact-real-approved-export-hotpotqa-musique-stoplocal-v3:0.0.3");
     expect(result.promotionPackage.gatePassed).toBe(true);
     expect(result.promotionPackage.blockers).toEqual([]);
+    expect(result.promotionPackage.warmStart.continuationRowCount).toBe(0);
 
     expect(existsSync(result.paths.splitRegistryPath)).toBe(true);
     expect(existsSync(result.paths.replayReportPath)).toBe(true);
