@@ -14,7 +14,7 @@ Current version: **0.4.43** · [Changelog](CHANGELOG.md)
 - you can check whether it is really loaded and working
 - if the memory layer is unavailable, the agent still runs
 
-## First-time install
+## Start here
 
 If you already have OpenClaw and Node.js 20+, this is the simplest path:
 
