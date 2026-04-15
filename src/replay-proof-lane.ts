@@ -78,6 +78,10 @@ interface RecordedSessionReplayProofLaneModeTraceRowV1 {
   phraseCount: number;
   promotionCount: number;
   usedLearnedRouteTurnCount: number;
+  selectedContextBlockCount: number;
+  selectedContextCharCount: number;
+  fallbackToStaticContextTurnCount: number;
+  hardRequirementViolatedTurnCount: number;
   warningCount: number;
   scoreHash: string;
 }
@@ -91,8 +95,14 @@ interface RecordedSessionReplayProofLaneTurnModeRowV1 {
   phraseCount: number;
   usedLearnedRouteFn: boolean;
   promoted: boolean;
+  modeEffective: string | null;
   activePackId: string | null;
+  routerIdentity: string | null;
   selectionDigest: string | null;
+  fallbackToStaticContext: boolean;
+  hardRequirementViolated: boolean;
+  selectedContextBlockCount: number;
+  selectedContextCharCount: number;
   selectedContextPreview: string | null;
 }
 
@@ -146,6 +156,10 @@ interface RecordedSessionReplayProofLaneModeSummaryRowV1 {
   totalPhraseCount: number;
   totalPromotionCount: number;
   totalUsedLearnedRouteTurnCount: number;
+  totalSelectedContextBlockCount: number;
+  totalSelectedContextCharCount: number;
+  totalFallbackToStaticContextTurnCount: number;
+  totalHardRequirementViolatedTurnCount: number;
   totalWarningCount: number;
 }
 
@@ -186,6 +200,16 @@ export interface RecordedSessionReplayProofLaneCorrectionAbsorptionV1 {
   summary: string;
 }
 
+export interface RecordedSessionReplayProofLaneActivationPrecisionProxyV1 {
+  available: boolean;
+  activationCount: number;
+  beneficialActivationCount: number;
+  precision: number | null;
+  activationDefinition: string;
+  summary: string;
+  limitations: string[];
+}
+
 export interface RecordedSessionReplayProofLaneSuccessAdjustedEconomicsV1 {
   available: boolean;
   successUnit: "validated_trace" | null;
@@ -204,6 +228,12 @@ export interface RecordedSessionReplayProofLaneSuccessAdjustedEconomicsV1 {
 
 export interface RecordedSessionReplayProofLaneFailOpenV1 {
   available: boolean;
+  degradedTurnCount: number;
+  acceptableDegradedTurnCount: number;
+  catastrophicDegradedTurnCount: number;
+  degradedTurnRate: number | null;
+  acceptableDegradedTurnRate: number | null;
+  catastrophicDegradedTurnRate: number | null;
   clipRate: number | null;
   failOpenRate: number | null;
   summary: string;
@@ -224,6 +254,7 @@ export interface RecordedSessionReplayProofLaneExplainableScorecardV1 {
   criticalRegressionCount: number;
   requiredContextRecall: RecordedSessionReplayProofLaneRequiredContextRecallV1;
   correctionAbsorption: RecordedSessionReplayProofLaneCorrectionAbsorptionV1;
+  activationPrecisionProxy: RecordedSessionReplayProofLaneActivationPrecisionProxyV1;
   successAdjustedEconomics: RecordedSessionReplayProofLaneSuccessAdjustedEconomicsV1;
   failOpen: RecordedSessionReplayProofLaneFailOpenV1;
   diagnostics: {
@@ -687,6 +718,54 @@ function buildExplainableScorecard(
   const correctionNonApprovalTurnCount = params.turns.filter((turn) =>
     turn.feedbackKinds.some((kind) => kind !== "approval")
   ).length;
+  const proxyActivationTurns = params.turns.filter((turn) => {
+    const candidateTurn = turn.modes.find((row) => row.mode === candidateMode);
+    const baselineTurn = turn.modes.find((row) => row.mode === baselineMode);
+    if (!candidateTurn || !baselineTurn) {
+      return false;
+    }
+    return candidateTurn.usedLearnedRouteFn
+      || candidateTurn.selectionDigest !== baselineTurn.selectionDigest
+      || candidateTurn.activePackId !== baselineTurn.activePackId;
+  });
+  const beneficialProxyActivationCount = proxyActivationTurns.filter((turn) => turn.candidateRelationVsBaseline === "better").length;
+  const candidateTurnRows = params.turns
+    .map((turn) => turn.modes.find((row) => row.mode === candidateMode) ?? null)
+    .filter((row): row is RecordedSessionReplayProofLaneTurnModeRowV1 => row !== null);
+  const degradedCandidateTurnRows = candidateTurnRows.filter((row) =>
+    row.compileOk === false || row.fallbackToStaticContext || row.hardRequirementViolated
+  );
+  const catastrophicDegradedTurnCount = params.turns.filter((turn) => {
+    const candidateTurn = turn.modes.find((row) => row.mode === candidateMode);
+    if (!candidateTurn) {
+      return false;
+    }
+    const degraded = candidateTurn.compileOk === false || candidateTurn.fallbackToStaticContext || candidateTurn.hardRequirementViolated;
+    return degraded && turn.candidateRegressionVsFloor === true;
+  }).length;
+  const acceptableDegradedTurnCount = params.turns.filter((turn) => {
+    const candidateTurn = turn.modes.find((row) => row.mode === candidateMode);
+    if (!candidateTurn) {
+      return false;
+    }
+    const degraded = candidateTurn.compileOk === false || candidateTurn.fallbackToStaticContext || candidateTurn.hardRequirementViolated;
+    return degraded && turn.candidateRegressionVsFloor === false;
+  }).length;
+  const winTraces = params.traces.filter((trace) => trace.candidateRelationVsBaseline === "better");
+  const candidateSelectedContextCharsOnWins = winTraces.reduce((sum, trace) => {
+    const row = trace.modes.find((modeRow) => modeRow.mode === candidateMode);
+    return sum + (row?.selectedContextCharCount ?? 0);
+  }, 0);
+  const baselineSelectedContextCharsOnWins = winTraces.reduce((sum, trace) => {
+    const row = trace.modes.find((modeRow) => modeRow.mode === baselineMode);
+    return sum + (row?.selectedContextCharCount ?? 0);
+  }, 0);
+  const candidatePromptTokensPerSuccess = winTraces.length > 0
+    ? roundRate(estimateTokensFromChars(candidateSelectedContextCharsOnWins) ?? 0, winTraces.length)
+    : null;
+  const baselinePromptTokensPerSuccess = winTraces.length > 0
+    ? roundRate(estimateTokensFromChars(baselineSelectedContextCharsOnWins) ?? 0, winTraces.length)
+    : null;
 
   return {
     candidateMode,
@@ -724,28 +803,55 @@ function buildExplainableScorecard(
         ? `observed ${correctionFeedbackTurnCount} feedback-bearing turns (${correctionNonApprovalTurnCount} non-approval), but replay-lane outputs do not yet measure recurrence after correction`
         : "correction absorption is unavailable in replay-lane outputs because no feedback-bearing turns were recorded here",
     },
+    activationPrecisionProxy: {
+      available: proxyActivationTurns.length > 0,
+      activationCount: proxyActivationTurns.length,
+      beneficialActivationCount: beneficialProxyActivationCount,
+      precision: roundRate(beneficialProxyActivationCount, proxyActivationTurns.length),
+      activationDefinition: "usedLearnedRouteFn OR selectionDigest changed vs graph_prior_only OR activePackId changed vs graph_prior_only",
+      summary: proxyActivationTurns.length > 0
+        ? `selection-divergence proxy activation precision is ${beneficialProxyActivationCount}/${proxyActivationTurns.length} against graph_prior_only`
+        : "no proxy activations were observed against graph_prior_only in this replay lane",
+      limitations: [
+        "this is a proxy for nontrivial activation, not a true emitted router activation event",
+        "selectionDigest divergence can overcount activation when learned_route mode never used a learned route function",
+      ],
+    },
     successAdjustedEconomics: {
-      available: false,
-      successUnit: null,
+      available: winTraces.length > 0,
+      successUnit: winTraces.length > 0 ? "validated_trace" : null,
       candidateMode,
       baselineMode,
-      successCount: params.traces.length,
-      candidateEstimatedPromptTokensPerSuccess: null,
-      baselineEstimatedPromptTokensPerSuccess: null,
+      successCount: winTraces.length,
+      candidateEstimatedPromptTokensPerSuccess: candidatePromptTokensPerSuccess,
+      baselineEstimatedPromptTokensPerSuccess: baselinePromptTokensPerSuccess,
       candidateEstimatedPromptCostUsdPerSuccess: null,
       baselineEstimatedPromptCostUsdPerSuccess: null,
-      promptTokenDeltaCandidateMinusBaseline: null,
+      promptTokenDeltaCandidateMinusBaseline: candidatePromptTokensPerSuccess !== null && baselinePromptTokensPerSuccess !== null
+        ? roundValue(candidatePromptTokensPerSuccess - baselinePromptTokensPerSuccess)
+        : null,
       promptCostUsdDeltaCandidateMinusBaseline: null,
-      summary: "success-adjusted economics are not computed in replay-lane aggregates; use comparative eval or proof-cron for prompt-cost proxy surfaces",
+      summary: winTraces.length > 0
+        ? `${candidateMode} used ${candidatePromptTokensPerSuccess ?? "n/a"} estimated prompt tokens per incremental win vs ${baselineMode} ${baselinePromptTokensPerSuccess ?? "n/a"} on the same winning traces`
+        : "success-adjusted economics are unavailable because learned_route produced no incremental wins vs graph_prior_only in this replay lane",
       limitations: [
-        "replay-lane aggregates do not currently load pricing tables or prompt-cost proxies",
+        "prompt-token values are estimated from selected-context chars using the default 4 chars/token proxy",
+        "pricing tables are not loaded in replay-lane aggregates, so usd cost fields remain unavailable here",
       ],
     },
     failOpen: {
-      available: false,
-      clipRate: null,
-      failOpenRate: null,
-      summary: "fail-open posture is not modeled in recorded-session replay lane aggregates; use proof-cron health surfaces for degraded-serve reporting",
+      available: candidateTurnRows.length > 0,
+      degradedTurnCount: degradedCandidateTurnRows.length,
+      acceptableDegradedTurnCount,
+      catastrophicDegradedTurnCount,
+      degradedTurnRate: roundRate(degradedCandidateTurnRows.length, candidateTurnRows.length),
+      acceptableDegradedTurnRate: roundRate(acceptableDegradedTurnCount, candidateTurnRows.length),
+      catastrophicDegradedTurnRate: roundRate(catastrophicDegradedTurnCount, candidateTurnRows.length),
+      clipRate: roundRate(catastrophicDegradedTurnCount, candidateTurnRows.length),
+      failOpenRate: roundRate(degradedCandidateTurnRows.length, candidateTurnRows.length),
+      summary: degradedCandidateTurnRows.length > 0
+        ? `observed ${degradedCandidateTurnRows.length}/${candidateTurnRows.length} degraded learned_route turns, with ${acceptableDegradedTurnCount} acceptable and ${catastrophicDegradedTurnCount} catastrophic vs the no_brain floor`
+        : `observed 0/${candidateTurnRows.length} degraded learned_route turns in this replay lane`,
     },
     diagnostics: {
       candidateMeanQualityScore: candidateRow?.meanQualityScore ?? null,
@@ -831,6 +937,20 @@ function traceFeedbackKinds(turn: RecordedSessionTraceTurnV1): string[] {
   );
 }
 
+function countStringChars(values: unknown): number {
+  if (!Array.isArray(values)) {
+    return 0;
+  }
+  return values.reduce((total, value) => total + (typeof value === "string" ? value.length : 0), 0);
+}
+
+function estimateTokensFromChars(chars: number, charsPerToken = 4): number | null {
+  if (!Number.isFinite(chars) || !Number.isFinite(charsPerToken) || charsPerToken <= 0) {
+    return null;
+  }
+  return Math.ceil(chars / charsPerToken);
+}
+
 function buildTraceAnalysis(
   artifactRoot: string,
   descriptor: RecordedSessionReplayProofBundleDescriptorV1,
@@ -839,6 +959,11 @@ function buildTraceAnalysis(
   const bundleDir = portableRelativePath(artifactRoot, descriptor.rootDir);
   const modes = RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER.map((mode) => {
     const report = findModeReport(descriptor, mode);
+    const selectedContextBlockCount = report.turns.reduce(
+      (sum, turn) => sum + (Array.isArray(turn.selectedContextIds) ? turn.selectedContextIds.length : turn.selectedContextTexts.length),
+      0,
+    );
+    const selectedContextCharCount = report.turns.reduce((sum, turn) => sum + countStringChars(turn.selectedContextTexts), 0);
     return {
       mode,
       qualityScore: report.summary.qualityScore,
@@ -848,6 +973,10 @@ function buildTraceAnalysis(
       phraseCount: report.summary.phraseCount,
       promotionCount: report.summary.promotionCount,
       usedLearnedRouteTurnCount: report.summary.usedLearnedRouteTurnCount,
+      selectedContextBlockCount,
+      selectedContextCharCount,
+      fallbackToStaticContextTurnCount: report.turns.filter((turn) => turn.fallbackToStaticContext === true).length,
+      hardRequirementViolatedTurnCount: report.turns.filter((turn) => turn.hardRequirementViolated === true).length,
       warningCount: report.summary.scannerEvidence.warnings.length,
       scoreHash: report.summary.scoreHash,
     };
@@ -869,8 +998,14 @@ function buildTraceAnalysis(
         phraseCount: turn.expectedContextPhrases.length,
         usedLearnedRouteFn: turn.usedLearnedRouteFn,
         promoted: turn.promoted,
+        modeEffective: typeof turn.modeEffective === "string" ? turn.modeEffective : null,
         activePackId: turn.activePackId,
+        routerIdentity: typeof turn.routerIdentity === "string" ? turn.routerIdentity : null,
         selectionDigest: turn.selectionDigest,
+        fallbackToStaticContext: turn.fallbackToStaticContext === true,
+        hardRequirementViolated: turn.hardRequirementViolated === true,
+        selectedContextBlockCount: Array.isArray(turn.selectedContextIds) ? turn.selectedContextIds.length : turn.selectedContextTexts.length,
+        selectedContextCharCount: countStringChars(turn.selectedContextTexts),
         selectedContextPreview: previewText(turn.selectedContextTexts.join(" || "), 140),
       };
     });
@@ -946,6 +1081,10 @@ function buildSummaryTables(
       totalPhraseCount: rows.reduce((sum, row) => sum + row.phraseCount, 0),
       totalPromotionCount: rows.reduce((sum, row) => sum + row.promotionCount, 0),
       totalUsedLearnedRouteTurnCount: rows.reduce((sum, row) => sum + row.usedLearnedRouteTurnCount, 0),
+      totalSelectedContextBlockCount: rows.reduce((sum, row) => sum + row.selectedContextBlockCount, 0),
+      totalSelectedContextCharCount: rows.reduce((sum, row) => sum + row.selectedContextCharCount, 0),
+      totalFallbackToStaticContextTurnCount: rows.reduce((sum, row) => sum + row.fallbackToStaticContextTurnCount, 0),
+      totalHardRequirementViolatedTurnCount: rows.reduce((sum, row) => sum + row.hardRequirementViolatedTurnCount, 0),
       totalWarningCount: rows.reduce((sum, row) => sum + row.warningCount, 0),
     };
   });
@@ -1322,6 +1461,7 @@ function buildLaneReadme(
   lines.push(`- regressions vs no_brain floor: ${formatCountRate(scorecard.regressionVsFloor)} (critical regressions: ${scorecard.criticalRegressionCount})`);
   lines.push(`- required-context recall: ${scorecard.requiredContextRecall.summary}`);
   lines.push(`- correction absorption: ${scorecard.correctionAbsorption.summary}`);
+  lines.push(`- activation precision proxy: ${scorecard.activationPrecisionProxy.summary}`);
   lines.push(`- success-adjusted economics: ${scorecard.successAdjustedEconomics.summary}`);
   lines.push(`- fail-open: ${scorecard.failOpen.summary}`);
   lines.push("");
@@ -1447,6 +1587,7 @@ function buildLaneSummary(
   lines.push(`- regressions vs no_brain floor: ${formatCountRate(scorecard.regressionVsFloor)} (critical regressions: ${scorecard.criticalRegressionCount})`);
   lines.push(`- required-context recall: ${scorecard.requiredContextRecall.summary}`);
   lines.push(`- correction absorption: ${scorecard.correctionAbsorption.summary}`);
+  lines.push(`- activation precision proxy: ${scorecard.activationPrecisionProxy.summary}`);
   lines.push(`- success-adjusted economics: ${scorecard.successAdjustedEconomics.summary}`);
   lines.push(`- fail-open: ${scorecard.failOpen.summary}`);
   lines.push("");

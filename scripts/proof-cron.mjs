@@ -1263,6 +1263,9 @@ function summarizeReplayLaneBundle(bundlePath, workspaceRoot) {
   const regressionVsBaseline = scorecard?.regressionVsBaseline ?? null;
   const regressionVsFloor = scorecard?.regressionVsFloor ?? null;
   const requiredContextRecall = scorecard?.requiredContextRecall ?? null;
+  const activationPrecisionProxy = scorecard?.activationPrecisionProxy ?? null;
+  const successAdjustedEconomics = scorecard?.successAdjustedEconomics ?? null;
+  const failOpen = scorecard?.failOpen ?? null;
   const requestedTraceCount = closeout?.requestedTraceCount ?? index?.requestedTraceCount ?? summaryTables?.requestedTraceCount ?? generationReport?.requestedTraceCount ?? null;
   const successfulTraceCount = closeout?.successfulTraceCount ?? index?.successfulTraceCount ?? summaryTables?.successfulTraceCount ?? generationReport?.successfulTraceCount ?? null;
   const failedTraceCount = closeout?.failedTraceCount ?? index?.failedTraceCount ?? summaryTables?.failedTraceCount ?? generationReport?.failedTraceCount ?? null;
@@ -1325,6 +1328,20 @@ function summarizeReplayLaneBundle(bundlePath, workspaceRoot) {
       requiredContextRecallCandidateHits: Number(requiredContextRecall?.candidatePhraseHitCount ?? 0),
       requiredContextRecallBaselineHits: Number(requiredContextRecall?.baselinePhraseHitCount ?? 0),
       requiredContextRecallPhraseCount: Number(requiredContextRecall?.candidatePhraseCount ?? requiredContextRecall?.baselinePhraseCount ?? 0),
+      activationProxyCount: Number(activationPrecisionProxy?.activationCount ?? 0),
+      beneficialActivationProxyCount: Number(activationPrecisionProxy?.beneficialActivationCount ?? 0),
+      activationPrecisionProxy: Number(activationPrecisionProxy?.precision ?? Number.NaN),
+      activationPrecisionProxySummary: typeof activationPrecisionProxy?.summary === "string" ? activationPrecisionProxy.summary : null,
+      incrementalWinTraceCount: Number(successAdjustedEconomics?.successCount ?? 0),
+      candidateEstimatedPromptTokensPerIncrementalWin: Number(successAdjustedEconomics?.candidateEstimatedPromptTokensPerSuccess ?? Number.NaN),
+      baselineEstimatedPromptTokensPerIncrementalWin: Number(successAdjustedEconomics?.baselineEstimatedPromptTokensPerSuccess ?? Number.NaN),
+      promptTokenDeltaPerIncrementalWin: Number(successAdjustedEconomics?.promptTokenDeltaCandidateMinusBaseline ?? Number.NaN),
+      failOpenDegradedTurnCount: Number(failOpen?.degradedTurnCount ?? 0),
+      failOpenAcceptableDegradedTurnCount: Number(failOpen?.acceptableDegradedTurnCount ?? 0),
+      failOpenCatastrophicDegradedTurnCount: Number(failOpen?.catastrophicDegradedTurnCount ?? 0),
+      failOpenDegradedTurnRate: Number(failOpen?.degradedTurnRate ?? Number.NaN),
+      failOpenCatastrophicTurnRate: Number(failOpen?.catastrophicDegradedTurnRate ?? Number.NaN),
+      failOpenSummary: typeof failOpen?.summary === "string" ? failOpen.summary : null,
       summaryDigest,
       closeoutDigest,
       summaryTablesDigest,
@@ -2352,6 +2369,44 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs, statusPro
             requiredContextRecallPhraseCount: Number.isFinite(replayFocusMetrics?.requiredContextRecallPhraseCount)
               ? Number(replayFocusMetrics.requiredContextRecallPhraseCount)
               : null,
+            activationProxyCount: Number.isFinite(replayFocusMetrics?.activationProxyCount)
+              ? Number(replayFocusMetrics.activationProxyCount)
+              : null,
+            beneficialActivationProxyCount: Number.isFinite(replayFocusMetrics?.beneficialActivationProxyCount)
+              ? Number(replayFocusMetrics.beneficialActivationProxyCount)
+              : null,
+            activationPrecisionProxy: Number.isFinite(replayFocusMetrics?.activationPrecisionProxy)
+              ? Number(replayFocusMetrics.activationPrecisionProxy)
+              : null,
+            activationPrecisionProxySummary: replayFocusMetrics?.activationPrecisionProxySummary ?? null,
+            incrementalWinTraceCount: Number.isFinite(replayFocusMetrics?.incrementalWinTraceCount)
+              ? Number(replayFocusMetrics.incrementalWinTraceCount)
+              : null,
+            candidateEstimatedPromptTokensPerIncrementalWin: Number.isFinite(replayFocusMetrics?.candidateEstimatedPromptTokensPerIncrementalWin)
+              ? Number(replayFocusMetrics.candidateEstimatedPromptTokensPerIncrementalWin)
+              : null,
+            baselineEstimatedPromptTokensPerIncrementalWin: Number.isFinite(replayFocusMetrics?.baselineEstimatedPromptTokensPerIncrementalWin)
+              ? Number(replayFocusMetrics.baselineEstimatedPromptTokensPerIncrementalWin)
+              : null,
+            promptTokenDeltaPerIncrementalWin: Number.isFinite(replayFocusMetrics?.promptTokenDeltaPerIncrementalWin)
+              ? Number(replayFocusMetrics.promptTokenDeltaPerIncrementalWin)
+              : null,
+            failOpenDegradedTurnCount: Number.isFinite(replayFocusMetrics?.failOpenDegradedTurnCount)
+              ? Number(replayFocusMetrics.failOpenDegradedTurnCount)
+              : null,
+            failOpenAcceptableDegradedTurnCount: Number.isFinite(replayFocusMetrics?.failOpenAcceptableDegradedTurnCount)
+              ? Number(replayFocusMetrics.failOpenAcceptableDegradedTurnCount)
+              : null,
+            failOpenCatastrophicDegradedTurnCount: Number.isFinite(replayFocusMetrics?.failOpenCatastrophicDegradedTurnCount)
+              ? Number(replayFocusMetrics.failOpenCatastrophicDegradedTurnCount)
+              : null,
+            failOpenDegradedTurnRate: Number.isFinite(replayFocusMetrics?.failOpenDegradedTurnRate)
+              ? Number(replayFocusMetrics.failOpenDegradedTurnRate)
+              : null,
+            failOpenCatastrophicTurnRate: Number.isFinite(replayFocusMetrics?.failOpenCatastrophicTurnRate)
+              ? Number(replayFocusMetrics.failOpenCatastrophicTurnRate)
+              : null,
+            failOpenSummary: replayFocusMetrics?.failOpenSummary ?? null,
           }
         : null,
       winnerModeCounts,
@@ -2633,6 +2688,10 @@ function formatNightlyMarkdown(aggregate) {
   lines.push(`- optimize-over regression rate: ${replayFocus?.regressionRate ?? "n/a"}`);
   lines.push(`- optimize-over required-context recall: ${replayFocus?.requiredContextRecallSummary ?? "unavailable"}`);
   lines.push(`- optimize-over recall delta: ${replayFocus?.requiredContextRecallDelta ?? "n/a"}`);
+  lines.push(`- activation precision proxy: ${replayFocus?.activationPrecisionProxySummary ?? "unavailable"}`);
+  lines.push(`- activation precision proxy rate: ${replayFocus?.activationPrecisionProxy ?? "n/a"}`);
+  lines.push(`- prompt-token delta per incremental win: ${replayFocus?.promptTokenDeltaPerIncrementalWin ?? "n/a"}`);
+  lines.push(`- fail-open proxy: ${replayFocus?.failOpenSummary ?? "unavailable"}`);
   lines.push(`- purpose-aligned unique utility leaders: ${JSON.stringify(aggregate.replayMetrics.utilityWinnerModeCounts)}`);
   lines.push(`- purpose-aligned utility-tied bundles: ${aggregate.replayMetrics.utilityTiedTopBundleCount ?? 0}`);
   lines.push("");
