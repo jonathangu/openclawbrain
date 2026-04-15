@@ -105,13 +105,16 @@ function buildSourcesFromSnapshot(snapshot) {
 function buildSourcesFromAggregate(aggregate) {
   const latestOperatorProof = aggregate?.latestBundles?.operatorProof ?? null;
   const latestReplayProof = aggregate?.latestBundles?.recordedSessionReplay ?? null;
+  const latestReplayLane = aggregate?.latestBundles?.recordedSessionReplayLane ?? null;
   const latestHostEvidence = aggregate?.latestBundles?.hostEvidence ?? null;
   return {
     surface: "proof-cron",
     runKind: "nightly",
     statusProbeCommand: null,
     latestOperatorProofPath: normalizeText(latestOperatorProof?.relativePath),
+    latestReplayLanePath: normalizeText(latestReplayLane?.relativePath),
     latestReplayProofPath: normalizeText(latestReplayProof?.relativePath),
+    replayFocusManifestId: normalizeText(aggregate?.replayMetrics?.focus?.sourceManifestId),
     latestHostEvidencePath: normalizeText(latestHostEvidence?.relativePath),
     replayPricingTableVersion: normalizeText(aggregate?.replayMetrics?.pricingTableVersion),
     replayPricingTablePath: normalizeText(aggregate?.replayMetrics?.pricingTablePath),
@@ -415,12 +418,60 @@ export function buildEconomicsScorecardFromNightlyAggregate(aggregate) {
     ),
     buildEntry(
       "derived",
-      "replay_winner_score_mean",
-      "replay winner score mean",
-      normalizeNumber(aggregate?.replayMetrics?.winnerScoreMean),
-      "score",
-      "aggregate.replayMetrics.winnerScoreMean",
-      "Mean winner score across replay bundles.",
+      "replay_focus_trace_count",
+      "replay focus trace count",
+      normalizeNumber(
+        aggregate?.replayMetrics?.focus?.successfulTraceCount
+          ?? aggregate?.replayMetrics?.focus?.requestedTraceCount,
+      ),
+      "count",
+      "aggregate.replayMetrics.focus.successfulTraceCount",
+      "Trace count for the replay focus surface that reporting should optimize over.",
+    ),
+    buildEntry(
+      "derived",
+      "replay_focus_better_count",
+      "replay focus better count",
+      normalizeNumber(aggregate?.replayMetrics?.focus?.candidateUtilityVsBaselineCounts?.better),
+      "count",
+      "aggregate.replayMetrics.focus.candidateUtilityVsBaselineCounts.better",
+      "How often learned_route beats graph_prior_only on the replay focus surface.",
+    ),
+    buildEntry(
+      "derived",
+      "replay_focus_worse_count",
+      "replay focus worse count",
+      normalizeNumber(aggregate?.replayMetrics?.focus?.candidateUtilityVsBaselineCounts?.worse),
+      "count",
+      "aggregate.replayMetrics.focus.candidateUtilityVsBaselineCounts.worse",
+      "How often learned_route loses to graph_prior_only on the replay focus surface.",
+    ),
+    buildEntry(
+      "derived",
+      "replay_focus_tie_or_better_rate",
+      "replay focus tie-or-better rate",
+      normalizeNumber(aggregate?.replayMetrics?.focus?.tieOrBetterRate),
+      "ratio",
+      "aggregate.replayMetrics.focus.tieOrBetterRate",
+      "Primary optimize-over rate on the replay focus surface.",
+    ),
+    buildEntry(
+      "derived",
+      "replay_focus_regression_rate",
+      "replay focus regression rate",
+      normalizeNumber(aggregate?.replayMetrics?.focus?.regressionRate),
+      "ratio",
+      "aggregate.replayMetrics.focus.regressionRate",
+      "Guardrail rate for learned_route losses on the replay focus surface.",
+    ),
+    buildEntry(
+      "derived",
+      "replay_focus_required_context_recall_delta",
+      "replay focus required-context recall delta",
+      normalizeNumber(aggregate?.replayMetrics?.focus?.requiredContextRecallDelta),
+      "ratio",
+      "aggregate.replayMetrics.focus.requiredContextRecallDelta",
+      "Recall delta between learned_route and graph_prior_only on the replay focus surface.",
     ),
     buildEntry(
       "derived",
@@ -429,7 +480,7 @@ export function buildEconomicsScorecardFromNightlyAggregate(aggregate) {
       normalizeNumber(aggregate?.replayMetrics?.selectedContextCharsTotal),
       "chars",
       "aggregate.replayMetrics.selectedContextCharsTotal",
-      "Selected replay context chars summed across modes.",
+      "Selected replay context chars summed across replay bundles.",
     ),
     buildEntry(
       "derived",
@@ -439,15 +490,6 @@ export function buildEconomicsScorecardFromNightlyAggregate(aggregate) {
       "tokens",
       "aggregate.replayMetrics.estimatedPromptTokensTotal",
       "Estimated prompt tokens summed across replay bundles.",
-    ),
-    buildEntry(
-      "derived",
-      "replay_retrieval_tool_hop_count_total",
-      "replay retrieval/tool-hop count total",
-      normalizeNumber(aggregate?.replayMetrics?.retrievalToolHopCountTotal),
-      "count",
-      "aggregate.replayMetrics.retrievalToolHopCountTotal",
-      "Retrieval/tool-hop proxy count summed across replay bundles.",
     ),
   ]);
 
@@ -524,7 +566,9 @@ function renderSourcesMarkdown(sources) {
     `- run kind: \`${sources.runKind ?? "n/a"}\``,
     `- status probe command: ${sources.statusProbeCommand ? `\`${sources.statusProbeCommand}\`` : "n/a"}`,
     `- latest operator proof path: ${sources.latestOperatorProofPath ?? "n/a"}`,
+    `- latest replay lane path: ${sources.latestReplayLanePath ?? "n/a"}`,
     `- latest replay proof path: ${sources.latestReplayProofPath ?? "n/a"}`,
+    `- replay focus manifest id: ${sources.replayFocusManifestId ?? "n/a"}`,
     `- latest host evidence path: ${sources.latestHostEvidencePath ?? "n/a"}`,
     `- replay pricing table version: ${sources.replayPricingTableVersion ?? "n/a"}`,
     `- replay pricing table path: ${sources.replayPricingTablePath ?? "n/a"}`,

@@ -1222,6 +1222,8 @@ describe("proof cron metric surfaces", () => {
     expect(aggregate.replayMetrics.feedbackEventCountTotal).toBe(2);
     expect(aggregate.replayMetrics.nonApprovalFeedbackEventCountTotal).toBe(1);
     expect(aggregate.replayMetrics.turnsWithNonApprovalFeedbackCountTotal).toBe(1);
+    expect(aggregate.replayMetrics.focus.kind).toBe("recorded-session-replay");
+    expect(aggregate.replayMetrics.focus.candidateUtilityVsBaselineCounts.better).toBe(1);
     expect(aggregate.replayMetrics.savingsByMode[3].mode).toBe("learned_route");
     expect(aggregate.replayMetrics.savingsByMode[3].estimatedPromptTokens).toBe(3);
     expect(aggregate.replayMetrics.savingsByMode[3].estimatedCompletionTokens).toBe(3);
@@ -1229,8 +1231,9 @@ describe("proof cron metric surfaces", () => {
     expect(aggregate.replayMetrics.savingsByMode[3].retrievalToolHopCount).toBe(3);
     expect(aggregate.operatorMetrics.stepMsTotal).toBe(1500);
     expect(aggregate.costProxy.bundleCount).toBe(3);
-    expect(formatNightlyMarkdown(aggregate)).toContain("## Replay proof diagnostics");
-    expect(formatNightlyMarkdown(aggregate)).toContain("purpose-aligned learned_route vs graph_prior_only: better=1 tied=0 worse=0");
+    expect(formatNightlyMarkdown(aggregate)).toContain("## Replay optimize-over metrics");
+    expect(formatNightlyMarkdown(aggregate)).toContain("optimize-over learned_route vs graph_prior_only: better=1 tied=0 worse=0");
+    expect(formatNightlyMarkdown(aggregate)).toContain("optimize-over regression rate: 0");
     expect(formatNightlyMarkdown(aggregate)).toContain("diagnostic unique top-rank modes");
     expect(formatNightlyMarkdown(aggregate)).toContain("mean diagnostic top score");
     expect(formatNightlyMarkdown(aggregate)).toContain("replay estimated completion tokens total: 10");

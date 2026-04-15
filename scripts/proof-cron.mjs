@@ -176,6 +176,7 @@ function defaultConfig(context) {
     openclawHome: "{{openclawHome}}",
     healthFreshnessDays: 7,
     freshnessThresholdDays: 21,
+    replayTraceManifestPath: null,
     scanRoots: [
       { base: "workspace", path: "artifacts" },
       { base: "repo", path: "artifacts" },
@@ -291,8 +292,20 @@ function runStatusProbe(config, context) {
   };
 }
 
-function runReplayLaneProducer() {
-  const [commandName, ...commandArgs] = DEFAULT_REPLAY_LANE_COMMAND;
+function buildReplayLaneCommand(config, context) {
+  const baseCommand = Array.isArray(config?.replayLaneCommand) && config.replayLaneCommand.length > 0
+    ? config.replayLaneCommand
+    : DEFAULT_REPLAY_LANE_COMMAND;
+  const command = baseCommand.map((part) => resolveToken(String(part), context));
+  const replayTraceManifestPath = resolvePathSpec(config?.replayTraceManifestPath ?? null, context);
+  if (replayTraceManifestPath) {
+    command.push("--trace-manifest", replayTraceManifestPath);
+  }
+  return command;
+}
+
+function runReplayLaneProducer(config, context) {
+  const [commandName, ...commandArgs] = buildReplayLaneCommand(config, context);
   const result = spawnSync(commandName, commandArgs, {
     cwd: repoRoot,
     encoding: "utf8",
@@ -1244,6 +1257,12 @@ function summarizeReplayLaneBundle(bundlePath, workspaceRoot) {
     : Array.isArray(summaryTables?.traces)
       ? summaryTables.traces
       : [];
+  const scorecard = summaryTables?.scorecard ?? null;
+  const traceOutcomeVsBaseline = scorecard?.traceOutcomeVsBaseline ?? null;
+  const traceTieOrBetterVsBaseline = scorecard?.traceTieOrBetterVsBaseline ?? null;
+  const regressionVsBaseline = scorecard?.regressionVsBaseline ?? null;
+  const regressionVsFloor = scorecard?.regressionVsFloor ?? null;
+  const requiredContextRecall = scorecard?.requiredContextRecall ?? null;
   const requestedTraceCount = closeout?.requestedTraceCount ?? index?.requestedTraceCount ?? summaryTables?.requestedTraceCount ?? generationReport?.requestedTraceCount ?? null;
   const successfulTraceCount = closeout?.successfulTraceCount ?? index?.successfulTraceCount ?? summaryTables?.successfulTraceCount ?? generationReport?.successfulTraceCount ?? null;
   const failedTraceCount = closeout?.failedTraceCount ?? index?.failedTraceCount ?? summaryTables?.failedTraceCount ?? generationReport?.failedTraceCount ?? null;
@@ -1287,6 +1306,25 @@ function summarizeReplayLaneBundle(bundlePath, workspaceRoot) {
       requestedTraceCount,
       successfulTraceCount,
       failedTraceCount,
+      candidateUtilityVsBaselineCounts: traceOutcomeVsBaseline
+        ? {
+            better: Number(traceOutcomeVsBaseline.betterCount ?? 0),
+            tied: Number(traceOutcomeVsBaseline.tiedCount ?? 0),
+            worse: Number(traceOutcomeVsBaseline.worseCount ?? 0),
+            total: Number(traceOutcomeVsBaseline.totalCount ?? requestedTraceCount ?? successfulTraceCount ?? 0),
+          }
+        : null,
+      candidateTieOrBetterVsBaselineCount: Number(traceTieOrBetterVsBaseline?.count ?? 0),
+      candidateTieOrBetterVsBaselineRate: Number(traceTieOrBetterVsBaseline?.rate ?? Number.NaN),
+      regressionVsBaselineCount: Number(regressionVsBaseline?.count ?? 0),
+      regressionVsBaselineRate: Number(regressionVsBaseline?.rate ?? Number.NaN),
+      regressionVsFloorCount: Number(regressionVsFloor?.count ?? 0),
+      regressionVsFloorRate: Number(regressionVsFloor?.rate ?? Number.NaN),
+      requiredContextRecallSummary: typeof requiredContextRecall?.summary === "string" ? requiredContextRecall.summary : null,
+      requiredContextRecallDelta: Number(requiredContextRecall?.delta ?? Number.NaN),
+      requiredContextRecallCandidateHits: Number(requiredContextRecall?.candidatePhraseHitCount ?? 0),
+      requiredContextRecallBaselineHits: Number(requiredContextRecall?.baselinePhraseHitCount ?? 0),
+      requiredContextRecallPhraseCount: Number(requiredContextRecall?.candidatePhraseCount ?? requiredContextRecall?.baselinePhraseCount ?? 0),
       summaryDigest,
       closeoutDigest,
       summaryTablesDigest,
@@ -2162,6 +2200,7 @@ function buildHealthSnapshot({ config, statusProbe, bundles, now, scanDurationMs
 function buildNightlyAggregate({ config, bundles, now, scanDurationMs, statusProbe = null }) {
   const operatorBundles = bundles.filter((bundle) => bundle.kind === "operator-proof");
   const replayBundles = bundles.filter((bundle) => bundle.kind === "recorded-session-replay");
+  const replayLaneBundles = bundles.filter((bundle) => bundle.kind === "recorded-session-replay-lane");
   const hostBundles = bundles.filter((bundle) => bundle.kind === "host-evidence");
   const genericBundles = bundles.filter((bundle) => bundle.kind === "generic-proof");
   const healthFreshnessDays = Number(config.healthFreshnessDays ?? 7);
@@ -2231,6 +2270,26 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs, statusPro
   }
 
   const latestReplay = latestBundlesByKind(replayBundles)["recorded-session-replay"] ?? null;
+  const latestReplayLane = latestBundlesByKind(replayLaneBundles)["recorded-session-replay-lane"] ?? null;
+  const replayFocus = latestReplayLane ?? latestReplay ?? null;
+  const replayFocusMetrics = replayFocus?.metrics ?? null;
+  const replayFocusCounts = replayFocusMetrics?.candidateUtilityVsBaselineCounts ?? candidateUtilityVsBaselineCounts;
+  const replayFocusTotal = Number(
+    replayFocusCounts?.total
+      ?? replayFocusMetrics?.successfulTraceCount
+      ?? replayFocusMetrics?.requestedTraceCount
+      ?? (replayBundles.length > 0 ? replayBundles.length : 0),
+  );
+  const replayFocusTieOrBetterRate = Number.isFinite(replayFocusMetrics?.candidateTieOrBetterVsBaselineRate)
+    ? Number(replayFocusMetrics.candidateTieOrBetterVsBaselineRate)
+    : replayFocusTotal > 0
+      ? round((Number(replayFocusCounts?.better ?? 0) + Number(replayFocusCounts?.tied ?? 0)) / replayFocusTotal, 6)
+      : null;
+  const replayFocusRegressionRate = Number.isFinite(replayFocusMetrics?.regressionVsBaselineRate)
+    ? Number(replayFocusMetrics.regressionVsBaselineRate)
+    : replayFocusTotal > 0
+      ? round(Number(replayFocusCounts?.worse ?? 0) / replayFocusTotal, 6)
+      : null;
   const latestOperator = latestBundlesByKind(operatorBundles)["operator-proof"] ?? null;
   const latestHost = latestBundlesByKind(hostBundles)["host-evidence"] ?? null;
   const gatewayReachable = summarizeBooleanBundleMetric(hostBundles, (bundle) => bundle.metrics?.gatewayReachable ?? null);
@@ -2268,6 +2327,33 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs, statusPro
     freshnessCounts,
     validationCounts,
     replayMetrics: {
+      focus: replayFocus
+        ? {
+            kind: replayFocus.kind,
+            bundleId: replayFocus.bundleId,
+            relativePath: replayFocus.relativePath,
+            sourceManifestId: replayFocusMetrics?.sourceManifestId ?? null,
+            requestedTraceCount: replayFocusMetrics?.requestedTraceCount ?? null,
+            successfulTraceCount: replayFocusMetrics?.successfulTraceCount ?? null,
+            failedTraceCount: replayFocusMetrics?.failedTraceCount ?? null,
+            candidateUtilityVsBaselineCounts: replayFocusCounts,
+            tieOrBetterRate: replayFocusTieOrBetterRate,
+            regressionRate: replayFocusRegressionRate,
+            requiredContextRecallSummary: replayFocusMetrics?.requiredContextRecallSummary ?? null,
+            requiredContextRecallDelta: Number.isFinite(replayFocusMetrics?.requiredContextRecallDelta)
+              ? Number(replayFocusMetrics.requiredContextRecallDelta)
+              : null,
+            requiredContextRecallCandidateHits: Number.isFinite(replayFocusMetrics?.requiredContextRecallCandidateHits)
+              ? Number(replayFocusMetrics.requiredContextRecallCandidateHits)
+              : null,
+            requiredContextRecallBaselineHits: Number.isFinite(replayFocusMetrics?.requiredContextRecallBaselineHits)
+              ? Number(replayFocusMetrics.requiredContextRecallBaselineHits)
+              : null,
+            requiredContextRecallPhraseCount: Number.isFinite(replayFocusMetrics?.requiredContextRecallPhraseCount)
+              ? Number(replayFocusMetrics.requiredContextRecallPhraseCount)
+              : null,
+          }
+        : null,
       winnerModeCounts,
       tiedTopBundleCount,
       utilityWinnerModeCounts,
@@ -2332,6 +2418,7 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs, statusPro
     },
     latestBundles: {
       operatorProof: latestOperator,
+      recordedSessionReplayLane: latestReplayLane,
       recordedSessionReplay: latestReplay,
       hostEvidence: latestHost,
     },
@@ -2532,10 +2619,24 @@ function formatNightlyMarkdown(aggregate) {
   lines.push(`- attribution coverage: ${aggregate.attributionCoverageTruth?.line ?? "unavailable"}${aggregate.attributionCoverageTruth?.source ? ` (source=${aggregate.attributionCoverageTruth.source})` : ""}`);
   lines.push(`- replay freshness: ${aggregate.replayFreshnessTruth?.line ?? "unavailable"}`);
   lines.push("");
-  lines.push("## Replay proof diagnostics");
-  lines.push(`- purpose-aligned learned_route vs graph_prior_only: better=${aggregate.replayMetrics.candidateUtilityVsBaselineCounts?.better ?? 0} tied=${aggregate.replayMetrics.candidateUtilityVsBaselineCounts?.tied ?? 0} worse=${aggregate.replayMetrics.candidateUtilityVsBaselineCounts?.worse ?? 0}`);
+  const replayFocus = aggregate.replayMetrics.focus ?? null;
+  const replayFocusCounts = replayFocus?.candidateUtilityVsBaselineCounts ?? aggregate.replayMetrics.candidateUtilityVsBaselineCounts ?? {};
+  lines.push("## Replay optimize-over metrics");
+  lines.push("- reporting lead: optimize-over metrics on the current replay focus surface; diagnostics stay below and should not be treated as the product objective");
+  lines.push(`- replay focus surface: ${replayFocus?.kind ?? "recorded-session-replay"}` + (replayFocus?.sourceManifestId ? ` manifest=${replayFocus.sourceManifestId}` : ""));
+  lines.push(`- replay focus path: ${replayFocus?.relativePath ?? aggregate.latestBundles.recordedSessionReplay?.relativePath ?? "n/a"}`);
+  if (Number.isFinite(replayFocus?.successfulTraceCount) || Number.isFinite(replayFocus?.requestedTraceCount)) {
+    lines.push(`- replay focus traces: ${replayFocus?.successfulTraceCount ?? "n/a"}/${replayFocus?.requestedTraceCount ?? "n/a"} succeeded`);
+  }
+  lines.push(`- optimize-over learned_route vs graph_prior_only: better=${replayFocusCounts?.better ?? 0} tied=${replayFocusCounts?.tied ?? 0} worse=${replayFocusCounts?.worse ?? 0}`);
+  lines.push(`- optimize-over tie-or-better rate: ${replayFocus?.tieOrBetterRate ?? "n/a"}`);
+  lines.push(`- optimize-over regression rate: ${replayFocus?.regressionRate ?? "n/a"}`);
+  lines.push(`- optimize-over required-context recall: ${replayFocus?.requiredContextRecallSummary ?? "unavailable"}`);
+  lines.push(`- optimize-over recall delta: ${replayFocus?.requiredContextRecallDelta ?? "n/a"}`);
   lines.push(`- purpose-aligned unique utility leaders: ${JSON.stringify(aggregate.replayMetrics.utilityWinnerModeCounts)}`);
   lines.push(`- purpose-aligned utility-tied bundles: ${aggregate.replayMetrics.utilityTiedTopBundleCount ?? 0}`);
+  lines.push("");
+  lines.push("## Replay diagnostics and cost proxies");
   lines.push(`- diagnostic unique top-rank modes: ${JSON.stringify(aggregate.replayMetrics.winnerModeCounts)}`);
   lines.push(`- diagnostic tied-top bundles: ${aggregate.replayMetrics.tiedTopBundleCount ?? 0}`);
   lines.push(`- mean diagnostic top score: ${aggregate.replayMetrics.winnerScoreMean ?? "n/a"}`);
@@ -2902,7 +3003,7 @@ function main() {
     return;
   }
 
-  runReplayLaneProducer();
+  runReplayLaneProducer(config, context);
   const statusProbe = runStatusProbe(config, context);
   const scanStart = Date.now();
   const bundles = summarizeScan(
