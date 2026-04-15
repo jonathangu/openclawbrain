@@ -1,0 +1,78 @@
+{
+  "contract": "recorded_session_trace.v1",
+  "traceId": "trace-direct-answer-proof-bundle-layout",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T01:00:00.000Z",
+  "bundleBuiltAt": "2026-04-01T01:10:00.000Z",
+  "sessionId": "session-direct-answer-proof-bundle-layout",
+  "channel": "cli",
+  "sourceStream": "openclaw/runtime/cli",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from docs/internal/recorded-session-replay.md"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-trace-direct-answer-proof-bundle-layout",
+    "snapshotId": "snapshot-trace-direct-answer-proof-bundle-layout",
+    "capturedAt": "2026-04-01T00:59:00.000Z",
+    "rootDir": "/tmp/openclawbrain-canonical-frozen-20/trace-direct-answer-proof-bundle-layout",
+    "branch": "main",
+    "revision": "rev-trace-direct-answer-proof-bundle-layout",
+    "labels": [
+      "canonical-frozen-20"
+    ]
+  },
+  "evalTurnCount": 1,
+  "seedBuiltAt": "2026-04-01T01:01:00.000Z",
+  "seedActivatedAt": "2026-04-01T01:02:00.000Z",
+  "seedCues": [
+    {
+      "cueId": "cue-layout",
+      "createdAt": "2026-04-01T00:58:30.000Z",
+      "content": "A recorded-session replay proof bundle uses a fixed layout including manifest.json, trace.json, fixture.json, bundle.json, environment.json, summary.md, summary-tables.json, coverage-snapshot.json, hardening-snapshot.json, hashes.json, and per-mode JSON files.",
+      "kind": "teaching"
+    }
+  ],
+  "turns": [
+    {
+      "turnId": "bundle-layout-turn-1",
+      "createdAt": "2026-04-01T01:03:00.000Z",
+      "deliveredAt": "2026-04-01T01:03:30.000Z",
+      "userMessage": "Which files are always in the recorded-session replay proof bundle?",
+      "runtimeHints": [
+        "proof",
+        "layout"
+      ],
+      "feedback": [
+        {
+          "createdAt": "2026-04-01T01:03:45.000Z",
+          "content": "Keep the answer concrete: mention manifest.json, bundle.json, and a per-mode file.",
+          "kind": "teaching"
+        }
+      ],
+      "expectedContextPhrases": [
+        "manifest.json",
+        "bundle.json"
+      ]
+    },
+    {
+      "turnId": "bundle-layout-turn-2",
+      "createdAt": "2026-04-01T01:05:00.000Z",
+      "deliveredAt": "2026-04-01T01:05:20.000Z",
+      "userMessage": "Name the replay proof bundle files again.",
+      "runtimeHints": [
+        "proof",
+        "layout",
+        "again"
+      ],
+      "expectedContextPhrases": [
+        "manifest.json",
+        "bundle.json",
+        "modes/learned_route.json"
+      ],
+      "minimumPhraseHits": 2
+    }
+  ]
+}

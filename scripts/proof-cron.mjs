@@ -605,6 +605,92 @@ function estimateUsdFromTokens(tokens, pricePer1mTokens) {
   return round((tokens / 1_000_000) * pricePer1mTokens, 6);
 }
 
+function buildReplayUtilityModeRow(modeSummary, savingsSummary) {
+  return {
+    mode: typeof modeSummary?.mode === "string" ? modeSummary.mode : null,
+    qualityScore: Number(modeSummary?.qualityScore ?? 0),
+    compileOkCount: Number(modeSummary?.compileOkCount ?? 0),
+    turnCount: Number(modeSummary?.turnCount ?? 0),
+    phraseHitCount: Number(modeSummary?.phraseHitCount ?? 0),
+    phraseCount: Number(modeSummary?.phraseCount ?? 0),
+    promotionCount: Number(modeSummary?.promotionCount ?? 0),
+    warningCount: Number(modeSummary?.warningCount ?? modeSummary?.scannerEvidence?.warnings?.length ?? 0),
+    selectedContextChars: Number(savingsSummary?.selectedContextChars ?? 0),
+    estimatedPromptTokens: Number(savingsSummary?.estimatedPromptTokens ?? 0),
+  };
+}
+
+function replayUtilitySuccess(modeRow) {
+  if (!modeRow || !Number.isFinite(modeRow.turnCount) || modeRow.turnCount <= 0) {
+    return false;
+  }
+  return modeRow.compileOkCount >= modeRow.turnCount && modeRow.phraseHitCount >= modeRow.phraseCount;
+}
+
+function compareReplayUtilityValue(left, right) {
+  if (!left || !right) {
+    return 0;
+  }
+  const leftSuccess = replayUtilitySuccess(left);
+  const rightSuccess = replayUtilitySuccess(right);
+  if (leftSuccess !== rightSuccess) {
+    return leftSuccess ? -1 : 1;
+  }
+  const leftPhraseMisses = Math.max(0, left.phraseCount - left.phraseHitCount);
+  const rightPhraseMisses = Math.max(0, right.phraseCount - right.phraseHitCount);
+  if (leftPhraseMisses !== rightPhraseMisses) {
+    return leftPhraseMisses - rightPhraseMisses;
+  }
+  const leftCompileMisses = Math.max(0, left.turnCount - left.compileOkCount);
+  const rightCompileMisses = Math.max(0, right.turnCount - right.compileOkCount);
+  if (leftCompileMisses !== rightCompileMisses) {
+    return leftCompileMisses - rightCompileMisses;
+  }
+  if (left.qualityScore !== right.qualityScore) {
+    return right.qualityScore - left.qualityScore;
+  }
+  if (left.warningCount !== right.warningCount) {
+    return left.warningCount - right.warningCount;
+  }
+  if (left.selectedContextChars !== right.selectedContextChars) {
+    return left.selectedContextChars - right.selectedContextChars;
+  }
+  if (left.estimatedPromptTokens !== right.estimatedPromptTokens) {
+    return left.estimatedPromptTokens - right.estimatedPromptTokens;
+  }
+  return 0;
+}
+
+function compareReplayUtilityRows(left, right) {
+  return compareReplayUtilityValue(left, right) || String(left?.mode ?? "").localeCompare(String(right?.mode ?? ""));
+}
+
+function buildReplayUtilityTopModes(rows) {
+  if (!Array.isArray(rows) || rows.length === 0) {
+    return [];
+  }
+  const sorted = [...rows].sort(compareReplayUtilityRows);
+  const best = sorted[0];
+  return rows
+    .filter((row) => compareReplayUtilityValue(row, best) === 0)
+    .map((row) => row.mode)
+    .filter((mode) => typeof mode === "string" && mode.length > 0);
+}
+
+function replayUtilityRelation(left, right) {
+  if (!left || !right) {
+    return null;
+  }
+  const comparison = compareReplayUtilityValue(left, right);
+  if (comparison < 0) {
+    return "better";
+  }
+  if (comparison > 0) {
+    return "worse";
+  }
+  return "tied";
+}
+
 function summarizeTurnCompletionChars(turn) {
   const fields = ["assistantTexts", "completionTexts", "outputTexts", "assistantText", "completionText", "responseText"];
   for (const field of fields) {
@@ -977,6 +1063,22 @@ function summarizeReplayBundle(bundlePath, workspaceRoot) {
   const qualityScores = ranking.map((row) => Number(row.qualityScore ?? 0)).filter(Number.isFinite);
   const modeNames = modes.map((mode) => mode.mode).filter(Boolean);
   const savingsByMode = modes.map((mode) => summarizeReplayModeSavings(mode, traceTurnById, pricingTable));
+  const savingsByModeMap = new Map(savingsByMode.map((mode) => [mode.mode, mode]));
+  const replayUtilitySourceRows = Array.isArray(summaryTables?.modes)
+    ? summaryTables.modes
+    : Array.isArray(bundle?.modes)
+      ? bundle.modes.map((mode) => ({ mode: mode?.mode, ...(mode?.summary ?? {}) }))
+      : [];
+  const replayUtilityRows = Array.isArray(replayUtilitySourceRows)
+    ? replayUtilitySourceRows
+      .map((modeSummary) => buildReplayUtilityModeRow(modeSummary, savingsByModeMap.get(modeSummary?.mode ?? null)))
+      .filter((row) => typeof row.mode === "string" && row.mode.length > 0)
+    : [];
+  const utilityTopModes = buildReplayUtilityTopModes(replayUtilityRows);
+  const utilityWinnerMode = utilityTopModes.length === 1 ? utilityTopModes[0] : utilityTopModes.length > 1 ? "tie" : null;
+  const candidateUtilityRow = replayUtilityRows.find((row) => row.mode === "learned_route") ?? null;
+  const baselineUtilityRow = replayUtilityRows.find((row) => row.mode === "graph_prior_only") ?? null;
+  const floorUtilityRow = replayUtilityRows.find((row) => row.mode === "no_brain") ?? null;
   const selectedContextChars = sum(savingsByMode.map((mode) => mode.selectedContextChars));
   const selectedContextBlockCount = sum(savingsByMode.map((mode) => mode.selectedContextBlockCount));
   const estimatedPromptTokens = savingsByMode.length > 0 ? sum(savingsByMode.map((mode) => mode.estimatedPromptTokens)) : null;
@@ -1066,6 +1168,11 @@ function summarizeReplayBundle(bundlePath, workspaceRoot) {
       resolvedWinnerMode,
       topModes,
       topTieCount,
+      utilityWinnerMode,
+      utilityTopModes,
+      utilityTieCount: utilityTopModes.length,
+      candidateUtilityRelationVsBaseline: replayUtilityRelation(candidateUtilityRow, baselineUtilityRow),
+      candidateUtilityRelationVsFloor: replayUtilityRelation(candidateUtilityRow, floorUtilityRow),
       winnerScore,
       qualityScoreMean: mean(qualityScores),
       qualityScoreMedian: median(qualityScores),
@@ -2101,13 +2208,26 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs, statusPro
 
   const winnerModeCounts = {};
   let tiedTopBundleCount = 0;
+  const utilityWinnerModeCounts = {};
+  let utilityTiedTopBundleCount = 0;
+  const candidateUtilityVsBaselineCounts = { better: 0, tied: 0, worse: 0 };
   for (const bundle of replayBundles) {
     const winnerMode = bundle.metrics?.winnerMode ?? "unknown";
     if (winnerMode === "tie") {
       tiedTopBundleCount += 1;
-      continue;
+    } else {
+      winnerModeCounts[winnerMode] = (winnerModeCounts[winnerMode] ?? 0) + 1;
     }
-    winnerModeCounts[winnerMode] = (winnerModeCounts[winnerMode] ?? 0) + 1;
+    const utilityWinnerMode = bundle.metrics?.utilityWinnerMode ?? null;
+    if (utilityWinnerMode === "tie") {
+      utilityTiedTopBundleCount += 1;
+    } else if (typeof utilityWinnerMode === "string" && utilityWinnerMode.length > 0) {
+      utilityWinnerModeCounts[utilityWinnerMode] = (utilityWinnerModeCounts[utilityWinnerMode] ?? 0) + 1;
+    }
+    const candidateUtilityRelationVsBaseline = bundle.metrics?.candidateUtilityRelationVsBaseline ?? null;
+    if (candidateUtilityRelationVsBaseline && Object.prototype.hasOwnProperty.call(candidateUtilityVsBaselineCounts, candidateUtilityRelationVsBaseline)) {
+      candidateUtilityVsBaselineCounts[candidateUtilityRelationVsBaseline] += 1;
+    }
   }
 
   const latestReplay = latestBundlesByKind(replayBundles)["recorded-session-replay"] ?? null;
@@ -2150,6 +2270,9 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs, statusPro
     replayMetrics: {
       winnerModeCounts,
       tiedTopBundleCount,
+      utilityWinnerModeCounts,
+      utilityTiedTopBundleCount,
+      candidateUtilityVsBaselineCounts,
       winnerScoreMean: mean(replayScores),
       winnerScoreMedian: median(replayScores),
       compileRateMean: mean(replayCompileRates),
@@ -2410,6 +2533,9 @@ function formatNightlyMarkdown(aggregate) {
   lines.push(`- replay freshness: ${aggregate.replayFreshnessTruth?.line ?? "unavailable"}`);
   lines.push("");
   lines.push("## Replay proof diagnostics");
+  lines.push(`- purpose-aligned learned_route vs graph_prior_only: better=${aggregate.replayMetrics.candidateUtilityVsBaselineCounts?.better ?? 0} tied=${aggregate.replayMetrics.candidateUtilityVsBaselineCounts?.tied ?? 0} worse=${aggregate.replayMetrics.candidateUtilityVsBaselineCounts?.worse ?? 0}`);
+  lines.push(`- purpose-aligned unique utility leaders: ${JSON.stringify(aggregate.replayMetrics.utilityWinnerModeCounts)}`);
+  lines.push(`- purpose-aligned utility-tied bundles: ${aggregate.replayMetrics.utilityTiedTopBundleCount ?? 0}`);
   lines.push(`- diagnostic unique top-rank modes: ${JSON.stringify(aggregate.replayMetrics.winnerModeCounts)}`);
   lines.push(`- diagnostic tied-top bundles: ${aggregate.replayMetrics.tiedTopBundleCount ?? 0}`);
   lines.push(`- mean diagnostic top score: ${aggregate.replayMetrics.winnerScoreMean ?? "n/a"}`);

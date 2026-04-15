@@ -1,0 +1,155 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 100,
+    "compileOkCount": 2,
+    "phraseHitCount": 4,
+    "phraseCount": 4,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-eef0ddee"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 2,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 2,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 3,
+      "scanSurfaces": [
+        "openclaw/runtime/cli:memory_compiled",
+        "openclaw/runtime/cli:message_delivered",
+        "openclaw/runtime/cli:teaching"
+      ],
+      "humanLabelCount": 1,
+      "selfLabelCount": 2,
+      "totalEventCount": 5,
+      "attributedEventCount": 5,
+      "attributedTurnCount": 2,
+      "selectionDigestCount": 5,
+      "selectionDigestTurnCount": 2,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "openclaw/runtime/cli",
+      "freshestCreatedAt": "2026-04-01T01:24:50.000Z",
+      "warnings": []
+    },
+    "scoreHash": "sha256-1dd6b13c3852776c70bf1a161d2a08150b4a788bc4f0cee8e4c2583f5eb7c010"
+  },
+  "turns": [
+    {
+      "turnId": "reproduce-command-turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-eef0ddee",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-ca2f4ae25d6195ce1f112bef9078fc151bc7e81370eb8b1c426de21552be8af6",
+      "selectedContextIds": [
+        "pack-eef0ddee:event:session-direct-answer-reproduce-eval-command-seed:cue-command:feedback",
+        "pack-eef0ddee:event:session-direct-answer-reproduce-eval-command-seed:cue-command:interaction",
+        "pack-eef0ddee:workspace"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on cli session session-direct-answer-reproduce-eval-command-seed: Run tsx scripts/validate-recorded-session-replay.ts --trace path/to/recorded-trace.json to regenerate a recorded-session replay proof bundle.. Related interaction: session-direct-answer-reproduce-eval-command-seed:cue-command:interaction.",
+        "Interaction operator_override on cli session session-direct-answer-reproduce-eval-command-seed. Message: cue-command-seed-message.",
+        "Workspace snapshot snapshot-trace-direct-answer-reproduce-eval-command for ws-trace-direct-answer-reproduce-eval-command captured at 2026-04-01T01:19:00.000Z with revision rev-trace-direct-answer-reproduce-eval-command."
+      ],
+      "eventExportDigest": "sha256-55768d2da4154b4950368275cadb4e98c5ef859ec16eba76630e0ea2fb9613cf",
+      "expectedContextPhrases": [
+        "tsx scripts/validate-recorded-session-replay.ts",
+        "--trace"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "tsx scripts/validate-recorded-session-replay.ts",
+        "--trace"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "openclaw/runtime/cli:memory_compiled",
+          "openclaw/runtime/cli:message_delivered",
+          "openclaw/runtime/cli:teaching"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "openclaw/runtime/cli",
+        "freshestCreatedAt": "2026-04-01T01:23:35.000Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "reproduce-command-turn-2",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-eef0ddee",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-d3b99af7edd3c54430d0ac4f0d6f29de1fa62d80bbaa795a33c6cca65c224ce7",
+      "selectedContextIds": [
+        "pack-eef0ddee:event:session-direct-answer-reproduce-eval-command-seed:cue-command:feedback",
+        "pack-eef0ddee:event:session-direct-answer-reproduce-eval-command-seed:cue-command:interaction",
+        "pack-eef0ddee:human-label-harvest"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on cli session session-direct-answer-reproduce-eval-command-seed: Run tsx scripts/validate-recorded-session-replay.ts --trace path/to/recorded-trace.json to regenerate a recorded-session replay proof bundle.. Related interaction: session-direct-answer-reproduce-eval-command-seed:cue-command:interaction.",
+        "Interaction operator_override on cli session session-direct-answer-reproduce-eval-command-seed. Message: cue-command-seed-message.",
+        "Human label harvest is first-class with 2 labels sourced from openclaw/runtime/cli/seed:operator_override, openclaw/runtime/cli/seed:teaching."
+      ],
+      "eventExportDigest": "sha256-e3a888a4c076eb35e337fa9a26b863384937b161859c72fbdbab1c7666938801",
+      "expectedContextPhrases": [
+        "tsx scripts/validate-recorded-session-replay.ts",
+        "--trace"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "tsx scripts/validate-recorded-session-replay.ts",
+        "--trace"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "openclaw/runtime/cli:memory_compiled",
+          "openclaw/runtime/cli:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "openclaw/runtime/cli",
+        "freshestCreatedAt": "2026-04-01T01:24:50.000Z"
+      },
+      "warnings": []
+    }
+  ]
+}

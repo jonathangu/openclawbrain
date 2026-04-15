@@ -1,0 +1,212 @@
+{
+  "contract": "recorded_session_replay_fixture.v1",
+  "traceId": "trace-direct-answer-release-verify",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T01:40:00.000Z",
+  "bundleBuiltAt": "2026-04-01T01:50:00.000Z",
+  "traceHash": "sha256-01b84ada8d6846964137ff080684902a4e4cc0e43a8cefb78c04b2a1e32acc17",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from package.json release scripts"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-trace-direct-answer-release-verify",
+    "snapshotId": "snapshot-trace-direct-answer-release-verify",
+    "capturedAt": "2026-04-01T01:39:00.000Z",
+    "rootDir": "/tmp/openclawbrain-canonical-frozen-20/trace-direct-answer-release-verify",
+    "branch": "main",
+    "revision": "rev-trace-direct-answer-release-verify",
+    "labels": [
+      "canonical-frozen-20"
+    ]
+  },
+  "evalTurnCount": 1,
+  "seedBuiltAt": "2026-04-01T01:41:00.000Z",
+  "seedActivatedAt": "2026-04-01T01:42:00.000Z",
+  "seedExport": {
+    "interactionEvents": [
+      {
+        "contract": "interaction_events.v1",
+        "eventId": "session-direct-answer-release-verify-seed:cue-release-verify:interaction",
+        "agentId": "openclaw-runtime",
+        "sessionId": "session-direct-answer-release-verify-seed",
+        "channel": "cli",
+        "sequence": 1,
+        "kind": "operator_override",
+        "createdAt": "2026-04-01T01:38:30.000Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "openclaw/runtime/cli/seed"
+        },
+        "semantic": {
+          "semanticType": "control_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "messageId": "cue-release-verify-seed-message"
+      }
+    ],
+    "feedbackEvents": [
+      {
+        "contract": "feedback_events.v1",
+        "eventId": "session-direct-answer-release-verify-seed:cue-release-verify:feedback",
+        "agentId": "openclaw-runtime",
+        "sessionId": "session-direct-answer-release-verify-seed",
+        "channel": "cli",
+        "sequence": 2,
+        "kind": "teaching",
+        "createdAt": "2026-04-01T01:39:30.000Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "openclaw/runtime/cli/seed"
+        },
+        "content": "The root release verification entrypoint is npm run release:verify. It starts with npm test before proof and package verification.",
+        "semantic": {
+          "semanticType": "teacher_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "relatedInteractionId": "session-direct-answer-release-verify-seed:cue-release-verify:interaction"
+      }
+    ],
+    "range": {
+      "start": 1,
+      "end": 2,
+      "count": 2,
+      "firstEventId": "session-direct-answer-release-verify-seed:cue-release-verify:interaction",
+      "lastEventId": "session-direct-answer-release-verify-seed:cue-release-verify:feedback",
+      "firstCreatedAt": "2026-04-01T01:38:30.000Z",
+      "lastCreatedAt": "2026-04-01T01:39:30.000Z"
+    },
+    "provenance": {
+      "runtimeOwner": "openclaw",
+      "sessionId": "session-direct-answer-release-verify-seed",
+      "channel": "cli",
+      "interactionCount": 1,
+      "feedbackCount": 1,
+      "sourceStreams": [
+        "openclaw/runtime/cli/seed"
+      ],
+      "contracts": [
+        "interaction_events.v1",
+        "feedback_events.v1"
+      ],
+      "exportDigest": "sha256-515357e9a35c3b2edc98580d2f627cd61261210a53f254b39ffbd5808b15580d",
+      "semanticSurface": {
+        "semanticTypes": [
+          "control_signal",
+          "teacher_signal"
+        ],
+        "sourceKinds": [
+          "recorded_session_seed"
+        ],
+        "diagnosticIntents": []
+      },
+      "learningSurface": {
+        "bootProfile": "fast_boot_defaults",
+        "learningCadence": "passive_background",
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "openclaw/runtime/cli/seed:operator_override",
+          "openclaw/runtime/cli/seed:teaching"
+        ],
+        "labelSources": {
+          "human": [
+            "openclaw/runtime/cli/seed:operator_override",
+            "openclaw/runtime/cli/seed:teaching"
+          ],
+          "self": []
+        },
+        "labelHarvest": {
+          "humanLabels": 2,
+          "selfLabels": 0,
+          "corrections": 0,
+          "teachings": 1,
+          "approvals": 0,
+          "suppressions": 0,
+          "operatorOverrideLabels": 1,
+          "memoryCompileLabels": 0
+        },
+        "principalSummary": {
+          "teacherIdentities": [],
+          "teacherRoles": [],
+          "teacherAuthorities": [],
+          "priorityClasses": [],
+          "scopedEventCount": 0,
+          "supersedingEventCount": 0
+        }
+      }
+    }
+  },
+  "turns": [
+    {
+      "turnId": "release-verify-turn-1",
+      "turn": {
+        "sessionId": "session-direct-answer-release-verify",
+        "channel": "cli",
+        "sourceStream": "openclaw/runtime/cli",
+        "userMessage": "What root command runs release verification?",
+        "createdAt": "2026-04-01T01:43:00.000Z",
+        "sequenceStart": 1000,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "compile": {
+          "createdAt": "2026-04-01T01:43:00.000Z",
+          "sequence": 1000
+        },
+        "delivery": {
+          "createdAt": "2026-04-01T01:43:20.000Z",
+          "sequence": 1001,
+          "messageId": "msg-release-verify-turn-1"
+        },
+        "feedback": [
+          {
+            "createdAt": "2026-04-01T01:43:35.000Z",
+            "content": "Use npm run release:verify; it begins with npm test.",
+            "sequence": 1002,
+            "kind": "teaching"
+          }
+        ]
+      },
+      "expectedContextPhrases": [
+        "npm run release:verify",
+        "npm test"
+      ],
+      "minimumPhraseHits": 1
+    },
+    {
+      "turnId": "release-verify-turn-2",
+      "turn": {
+        "sessionId": "session-direct-answer-release-verify",
+        "channel": "cli",
+        "sourceStream": "openclaw/runtime/cli",
+        "userMessage": "Which command is it again?",
+        "createdAt": "2026-04-01T01:44:30.000Z",
+        "sequenceStart": 1010,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "runtimeHints": [
+          "release",
+          "command",
+          "again"
+        ],
+        "compile": {
+          "createdAt": "2026-04-01T01:44:30.000Z",
+          "sequence": 1010
+        },
+        "delivery": {
+          "createdAt": "2026-04-01T01:44:50.000Z",
+          "sequence": 1011,
+          "messageId": "msg-release-verify-turn-2"
+        },
+        "feedback": []
+      },
+      "expectedContextPhrases": [
+        "npm run release:verify",
+        "npm test"
+      ],
+      "minimumPhraseHits": 1
+    }
+  ],
+  "fixtureHash": "sha256-aa503d9d77de4a0a7cad9548aae31476d1a1a5a96b73a44dedefa1b9a484712b"
+}

@@ -1,0 +1,204 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 100,
+    "compileOkCount": 3,
+    "phraseHitCount": 3,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 2,
+    "promotionCount": 1,
+    "packIds": [
+      "pack-feba6168",
+      "pack-9380a825"
+    ],
+    "trainTurnCount": 1,
+    "evalTurnCount": 2,
+    "frozenEvalPackId": "pack-9380a825",
+    "frozenEvalRouterIdentity": "pack-9380a825:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 3,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 3,
+      "scanSurfaces": [
+        "recorded/session:memory_compiled",
+        "recorded/session:message_delivered",
+        "recorded/session:approval"
+      ],
+      "humanLabelCount": 1,
+      "selfLabelCount": 3,
+      "totalEventCount": 7,
+      "attributedEventCount": 7,
+      "attributedTurnCount": 3,
+      "selectionDigestCount": 7,
+      "selectionDigestTurnCount": 3,
+      "activePackChangeCount": 1,
+      "freshestSourceStream": "recorded/session",
+      "freshestCreatedAt": "2026-03-25T10:10:30.000Z",
+      "warnings": []
+    },
+    "scoreHash": "sha256-9456347adfd7c0498055a80d55ccc5816d8cf831a79cfb397e9dd7817f36a599"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "train",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-feba6168",
+      "modeRequested": "learned",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-63b66a9676b9754721badfc10593da2c3b30b5647bb4b30e2ca07ec9f0eb5728",
+      "selectedContextIds": [
+        "pack-feba6168:event:session-openclaw-replay-freeze-identity-seed:cue-1:feedback",
+        "pack-feba6168:event:session-openclaw-replay-freeze-identity-seed:cue-1:interaction",
+        "pack-feba6168:offline:2ad90343"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on chat session session-openclaw-replay-freeze-identity-seed: Always read README before editing code.. Related interaction: session-openclaw-replay-freeze-identity-seed:cue-1:interaction.",
+        "Interaction operator_override on chat session session-openclaw-replay-freeze-identity-seed. Message: cue-1-seed-message.",
+        "Deterministic init seed from recorded-session-replay-seed stays heuristic-only for boot route priors before PG-authoritative handoff."
+      ],
+      "eventExportDigest": "sha256-c34b3da8af50ac3d533fdd98788fc019d9cc787153632a83c191452554c62132",
+      "expectedContextPhrases": [
+        "readme before editing"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "readme before editing"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": true,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "recorded/session:memory_compiled",
+          "recorded/session:message_delivered",
+          "recorded/session:approval"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "recorded/session",
+        "freshestCreatedAt": "2026-03-25T10:01:45.000Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "turn-2",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-9380a825",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "routerIdentity": "pack-9380a825:route_fn",
+      "selectionDigest": "sha256-fa4608a1d25a420bedb7103692a4208af11aa761995037ba3b55cfc4c0e4b40c",
+      "selectedContextIds": [
+        "pack-feba6168:event:session-openclaw-replay-freeze-identity-seed:cue-1:feedback",
+        "pack-feba6168:human-label-harvest",
+        "runtime-graph-2fd1592c:event:evt-2af3cde8f6b3778c"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on chat session session-openclaw-replay-freeze-identity-seed: Always read README before editing code.. Related interaction: session-openclaw-replay-freeze-identity-seed:cue-1:interaction.",
+        "Human label harvest is first-class with 2 labels sourced from recorded/session/seed:operator_override, recorded/session/seed:teaching.",
+        "Approval feedback on chat session session-openclaw-replay-freeze-identity: Correct: read README before editing code.. Related interaction: evt-9be6b50e7a0fad75."
+      ],
+      "eventExportDigest": "sha256-d8405f6cc2c87ee61c599b969389df41f9745f796974e196e6323fd06bacfac9",
+      "expectedContextPhrases": [
+        "readme before editing"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "readme before editing"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 2,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "recorded/session:memory_compiled",
+          "recorded/session:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "recorded/session",
+        "freshestCreatedAt": "2026-03-25T10:05:30.000Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "turn-3",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-9380a825",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "routerIdentity": "pack-9380a825:route_fn",
+      "selectionDigest": "sha256-3b8d309e75d2b2fe9396fe3257ef5445a1d2ee744eff4e26324acb8bec8010e7",
+      "selectedContextIds": [
+        "pack-feba6168:event:session-openclaw-replay-freeze-identity-seed:cue-1:feedback",
+        "runtime-graph-2fd1592c:event:evt-2af3cde8f6b3778c",
+        "runtime-graph-2fd1592c:workspace"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on chat session session-openclaw-replay-freeze-identity-seed: Always read README before editing code.. Related interaction: session-openclaw-replay-freeze-identity-seed:cue-1:interaction.",
+        "Approval feedback on chat session session-openclaw-replay-freeze-identity: Correct: read README before editing code.. Related interaction: evt-9be6b50e7a0fad75.",
+        "Workspace snapshot snapshot-openclaw-replay-freeze-identity for workspace-openclaw-replay-freeze-identity captured at 2026-03-25T09:55:00.000Z with revision rev-openclaw-replay-freeze-identity."
+      ],
+      "eventExportDigest": "sha256-d70fb6858a461766674e44b9cef3399a7a5b38769cffc905e3630c8124097319",
+      "expectedContextPhrases": [
+        "readme before editing"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "readme before editing"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 2,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "recorded/session:memory_compiled",
+          "recorded/session:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "recorded/session",
+        "freshestCreatedAt": "2026-03-25T10:10:30.000Z"
+      },
+      "warnings": []
+    }
+  ]
+}

@@ -1001,6 +1001,11 @@ describe("proof cron metric surfaces", () => {
         validationOk: true,
       metrics: {
         winnerMode: "learned_route",
+        utilityWinnerMode: "learned_route",
+        utilityTopModes: ["learned_route"],
+        utilityTieCount: 1,
+        candidateUtilityRelationVsBaseline: "better",
+        candidateUtilityRelationVsFloor: "better",
         winnerScore: 90,
         compileOkRate: 0.75,
         phraseHitRate: 0.75,
@@ -1201,6 +1206,8 @@ describe("proof cron metric surfaces", () => {
     expect(aggregate.bundleTypeCounts.recordedSessionReplay).toBe(1);
     expect(aggregate.bundleTypeCounts.hostEvidence).toBe(1);
     expect(aggregate.replayMetrics.winnerModeCounts.learned_route).toBe(1);
+    expect(aggregate.replayMetrics.utilityWinnerModeCounts.learned_route).toBe(1);
+    expect(aggregate.replayMetrics.candidateUtilityVsBaselineCounts.better).toBe(1);
     expect(aggregate.replayMetrics.selectedContextCharsTotal).toBe(30);
     expect(aggregate.replayMetrics.selectedContextBlocksTotal).toBe(4);
     expect(aggregate.replayMetrics.estimatedPromptTokensTotal).toBe(10);
@@ -1223,7 +1230,8 @@ describe("proof cron metric surfaces", () => {
     expect(aggregate.operatorMetrics.stepMsTotal).toBe(1500);
     expect(aggregate.costProxy.bundleCount).toBe(3);
     expect(formatNightlyMarkdown(aggregate)).toContain("## Replay proof diagnostics");
-    expect(formatNightlyMarkdown(aggregate)).toContain("diagnostic top-rank modes");
+    expect(formatNightlyMarkdown(aggregate)).toContain("purpose-aligned learned_route vs graph_prior_only: better=1 tied=0 worse=0");
+    expect(formatNightlyMarkdown(aggregate)).toContain("diagnostic unique top-rank modes");
     expect(formatNightlyMarkdown(aggregate)).toContain("mean diagnostic top score");
     expect(formatNightlyMarkdown(aggregate)).toContain("replay estimated completion tokens total: 10");
     expect(formatNightlyMarkdown(aggregate)).toContain("pricing table version: v1");

@@ -1,0 +1,258 @@
+{
+  "contract": "recorded_session_replay_fixture.v1",
+  "traceId": "trace-seed-carry-forward-eval-dedup",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-03-29T00:00:00.000Z",
+  "bundleBuiltAt": "2026-03-29T00:10:00.000Z",
+  "traceHash": "sha256-afe79e684511872cd52b734532e20cfb688f02de0364132f171ad94e390921db",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "normalized dynamic test fixture from packages/cli/dist/test/learned-route-seed-carry-forward.test.js"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-trace-seed-carry-forward-eval-dedup",
+    "snapshotId": "snapshot-trace-seed-carry-forward-eval-dedup",
+    "capturedAt": "2026-03-29T00:00:00.000Z",
+    "rootDir": "/tmp/openclawbrain-canonical-frozen-20/trace-seed-carry-forward-eval-dedup",
+    "branch": "main",
+    "revision": "rev-trace-seed-carry-forward-eval-dedup",
+    "labels": [
+      "real"
+    ]
+  },
+  "evalTurnCount": 1,
+  "seedBuiltAt": "2026-03-29T00:01:00.000Z",
+  "seedActivatedAt": "2026-03-29T00:02:00.000Z",
+  "seedExport": {
+    "interactionEvents": [
+      {
+        "contract": "interaction_events.v1",
+        "eventId": "session-seed-carry-forward-eval-seed:cue-empty-memory-scaffold:interaction",
+        "agentId": "agent",
+        "sessionId": "session-seed-carry-forward-eval-seed",
+        "channel": "telegram",
+        "sequence": 1,
+        "kind": "operator_override",
+        "createdAt": "2026-03-29T00:00:30.000Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "telegram/direct/live-proof-story/seed"
+        },
+        "semantic": {
+          "semanticType": "control_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "messageId": "cue-empty-memory-scaffold-seed-message"
+      }
+    ],
+    "feedbackEvents": [
+      {
+        "contract": "feedback_events.v1",
+        "eventId": "session-seed-carry-forward-eval-seed:cue-empty-memory-scaffold:feedback",
+        "agentId": "agent",
+        "sessionId": "session-seed-carry-forward-eval-seed",
+        "channel": "telegram",
+        "sequence": 2,
+        "kind": "teaching",
+        "createdAt": "2026-03-29T00:01:30.000Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "telegram/direct/live-proof-story/seed"
+        },
+        "content": "OpenClawBrain starts as a correctly attached but mostly empty memory scaffold.",
+        "semantic": {
+          "semanticType": "teacher_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "relatedInteractionId": "session-seed-carry-forward-eval-seed:cue-empty-memory-scaffold:interaction"
+      }
+    ],
+    "range": {
+      "start": 1,
+      "end": 2,
+      "count": 2,
+      "firstEventId": "session-seed-carry-forward-eval-seed:cue-empty-memory-scaffold:interaction",
+      "lastEventId": "session-seed-carry-forward-eval-seed:cue-empty-memory-scaffold:feedback",
+      "firstCreatedAt": "2026-03-29T00:00:30.000Z",
+      "lastCreatedAt": "2026-03-29T00:01:30.000Z"
+    },
+    "provenance": {
+      "runtimeOwner": "openclaw",
+      "sessionId": "session-seed-carry-forward-eval-seed",
+      "channel": "telegram",
+      "interactionCount": 1,
+      "feedbackCount": 1,
+      "sourceStreams": [
+        "telegram/direct/live-proof-story/seed"
+      ],
+      "contracts": [
+        "interaction_events.v1",
+        "feedback_events.v1"
+      ],
+      "exportDigest": "sha256-06226171f534b257ab818883f96edbcf085d8fdf35981444cf3dbdae9486850d",
+      "semanticSurface": {
+        "semanticTypes": [
+          "control_signal",
+          "teacher_signal"
+        ],
+        "sourceKinds": [
+          "recorded_session_seed"
+        ],
+        "diagnosticIntents": []
+      },
+      "learningSurface": {
+        "bootProfile": "fast_boot_defaults",
+        "learningCadence": "passive_background",
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "telegram/direct/live-proof-story/seed:operator_override",
+          "telegram/direct/live-proof-story/seed:teaching"
+        ],
+        "labelSources": {
+          "human": [
+            "telegram/direct/live-proof-story/seed:operator_override",
+            "telegram/direct/live-proof-story/seed:teaching"
+          ],
+          "self": []
+        },
+        "labelHarvest": {
+          "humanLabels": 2,
+          "selfLabels": 0,
+          "corrections": 0,
+          "teachings": 1,
+          "approvals": 0,
+          "suppressions": 0,
+          "operatorOverrideLabels": 1,
+          "memoryCompileLabels": 0
+        },
+        "principalSummary": {
+          "teacherIdentities": [],
+          "teacherRoles": [],
+          "teacherAuthorities": [],
+          "priorityClasses": [],
+          "scopedEventCount": 0,
+          "supersedingEventCount": 0
+        }
+      }
+    }
+  },
+  "turns": [
+    {
+      "turnId": "story-turn-1",
+      "turn": {
+        "agentId": "agent",
+        "sessionId": "session-seed-carry-forward-eval",
+        "channel": "telegram",
+        "sourceStream": "telegram/direct/live-proof-story",
+        "userMessage": "Use our current brain install to make it concrete.",
+        "createdAt": "2026-03-29T00:03:00.000Z",
+        "sequenceStart": 1000,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "runtimeHints": [
+          "install",
+          "story",
+          "proof"
+        ],
+        "compile": {
+          "createdAt": "2026-03-29T00:03:00.000Z",
+          "sequence": 1000
+        },
+        "delivery": {
+          "createdAt": "2026-03-29T00:03:30.000Z",
+          "sequence": 1001,
+          "messageId": "msg-story-turn-1"
+        },
+        "feedback": [
+          {
+            "createdAt": "2026-03-29T00:03:45.000Z",
+            "content": "Use the current shared ~/.openclaw install as the canonical example.",
+            "sequence": 1002,
+            "kind": "teaching"
+          }
+        ]
+      },
+      "expectedContextPhrases": [
+        "memory scaffold"
+      ],
+      "minimumPhraseHits": 1
+    },
+    {
+      "turnId": "story-turn-2",
+      "turn": {
+        "agentId": "agent",
+        "sessionId": "session-seed-carry-forward-eval",
+        "channel": "telegram",
+        "sourceStream": "telegram/direct/live-proof-story",
+        "userMessage": "This is not good enough. Please make a deep detailed plan.",
+        "createdAt": "2026-03-29T00:05:00.000Z",
+        "sequenceStart": 1010,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "runtimeHints": [
+          "rewrite",
+          "proof-signals",
+          "detail"
+        ],
+        "compile": {
+          "createdAt": "2026-03-29T00:05:00.000Z",
+          "sequence": 1010
+        },
+        "delivery": {
+          "createdAt": "2026-03-29T00:05:30.000Z",
+          "sequence": 1011,
+          "messageId": "msg-story-turn-2"
+        },
+        "feedback": [
+          {
+            "createdAt": "2026-03-29T00:05:45.000Z",
+            "content": "Ground the story in real host proof signals: BRAIN LOADED, loadProof=status_probe_ready, serveState=serving_active_pack, routeFn available=yes.",
+            "sequence": 1012,
+            "kind": "teaching"
+          }
+        ]
+      },
+      "expectedContextPhrases": [
+        "memory scaffold"
+      ],
+      "minimumPhraseHits": 1
+    },
+    {
+      "turnId": "story-turn-3",
+      "turn": {
+        "agentId": "agent",
+        "sessionId": "session-seed-carry-forward-eval",
+        "channel": "telegram",
+        "sourceStream": "telegram/direct/live-proof-story",
+        "userMessage": "Make it good and push it live now!",
+        "createdAt": "2026-03-29T00:07:00.000Z",
+        "sequenceStart": 1020,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "runtimeHints": [
+          "publish",
+          "live",
+          "proof"
+        ],
+        "compile": {
+          "createdAt": "2026-03-29T00:07:00.000Z",
+          "sequence": 1020
+        },
+        "delivery": {
+          "createdAt": "2026-03-29T00:07:30.000Z",
+          "sequence": 1021,
+          "messageId": "msg-story-turn-3"
+        },
+        "feedback": []
+      },
+      "expectedContextPhrases": [
+        "BRAIN LOADED",
+        "routeFn available=yes"
+      ],
+      "minimumPhraseHits": 2
+    }
+  ],
+  "fixtureHash": "sha256-884b77f64eaa55d9f2a409b7b1218f0bf4d168526afc66b534b49f49d5f4b795"
+}

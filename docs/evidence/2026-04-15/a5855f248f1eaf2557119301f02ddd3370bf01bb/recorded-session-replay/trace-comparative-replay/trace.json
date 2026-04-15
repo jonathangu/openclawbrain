@@ -1,0 +1,81 @@
+{
+  "contract": "recorded_session_trace.v1",
+  "traceId": "trace-comparative-replay",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-03-25T00:00:00.000Z",
+  "bundleBuiltAt": "2026-03-25T00:10:00.000Z",
+  "agentId": "agent",
+  "sessionId": "session-comparative-replay",
+  "channel": "cli",
+  "sourceStream": "recorded/session",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "test fixture"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-comparative-replay",
+    "snapshotId": "snapshot-comparative-replay",
+    "capturedAt": "2026-03-25T00:00:00.000Z",
+    "rootDir": "/tmp/workspace-comparative-replay",
+    "branch": "main",
+    "revision": "rev-comparative-replay",
+    "labels": [
+      "test"
+    ]
+  },
+  "seedBuiltAt": "2026-03-25T00:01:00.000Z",
+  "seedActivatedAt": "2026-03-25T00:02:00.000Z",
+  "seedCues": [
+    {
+      "cueId": "cue-routing-guide",
+      "createdAt": "2026-03-25T00:00:30.000Z",
+      "content": "The routing guide lives here.",
+      "kind": "teaching"
+    }
+  ],
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "createdAt": "2026-03-25T00:03:00.000Z",
+      "deliveredAt": "2026-03-25T00:03:30.000Z",
+      "userMessage": "show the routing guide",
+      "runtimeHints": [
+        "routing",
+        "guide"
+      ],
+      "feedback": [
+        {
+          "createdAt": "2026-03-25T00:03:45.000Z",
+          "content": "Keep the routing guide easy to find.",
+          "kind": "teaching"
+        }
+      ],
+      "expectedContextPhrases": [
+        "routing guide"
+      ]
+    },
+    {
+      "turnId": "turn-2",
+      "createdAt": "2026-03-25T00:05:00.000Z",
+      "deliveredAt": "2026-03-25T00:05:30.000Z",
+      "userMessage": "show the routing guide again",
+      "runtimeHints": [
+        "routing",
+        "guide",
+        "again"
+      ],
+      "feedback": [
+        {
+          "createdAt": "2026-03-25T00:05:45.000Z",
+          "content": "The routing guide is still the right answer.",
+          "kind": "approval"
+        }
+      ],
+      "expectedContextPhrases": [
+        "routing guide"
+      ]
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+{
+  "contract": "recorded_session_trace.v1",
+  "traceId": "trace-correction-mode-paths-explicit",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T05:00:00.000Z",
+  "bundleBuiltAt": "2026-04-01T05:10:00.000Z",
+  "sessionId": "session-correction-mode-paths-explicit",
+  "channel": "cli",
+  "sourceStream": "openclaw/runtime/cli",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from docs/internal/recorded-session-replay.md"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-trace-correction-mode-paths-explicit",
+    "snapshotId": "snapshot-trace-correction-mode-paths-explicit",
+    "capturedAt": "2026-04-01T04:59:00.000Z",
+    "rootDir": "/tmp/openclawbrain-canonical-frozen-20/trace-correction-mode-paths-explicit",
+    "branch": "main",
+    "revision": "rev-trace-correction-mode-paths-explicit",
+    "labels": [
+      "canonical-frozen-20"
+    ]
+  },
+  "evalTurnCount": 1,
+  "seedBuiltAt": "2026-04-01T05:01:00.000Z",
+  "seedActivatedAt": "2026-04-01T05:02:00.000Z",
+  "seedCues": [
+    {
+      "cueId": "cue-mode-paths",
+      "createdAt": "2026-04-01T04:58:30.000Z",
+      "content": "The proof bundle writes per-mode outputs at modes/no_brain.json, modes/vector_only.json, modes/graph_prior_only.json, and modes/learned_route.json.",
+      "kind": "teaching"
+    }
+  ],
+  "turns": [
+    {
+      "turnId": "mode-paths-turn-1",
+      "createdAt": "2026-04-01T05:03:00.000Z",
+      "deliveredAt": "2026-04-01T05:03:20.000Z",
+      "userMessage": "Summarize the per-mode outputs.",
+      "feedback": [
+        {
+          "createdAt": "2026-04-01T05:03:35.000Z",
+          "content": "Keep the file paths explicit: modes/no_brain.json and modes/learned_route.json.",
+          "kind": "correction"
+        }
+      ],
+      "expectedContextPhrases": [
+        "modes/no_brain.json"
+      ]
+    },
+    {
+      "turnId": "mode-paths-turn-2",
+      "createdAt": "2026-04-01T05:04:30.000Z",
+      "deliveredAt": "2026-04-01T05:04:50.000Z",
+      "userMessage": "Say it again without dropping the concrete file names.",
+      "runtimeHints": [
+        "paths",
+        "explicit"
+      ],
+      "expectedContextPhrases": [
+        "modes/no_brain.json",
+        "modes/learned_route.json"
+      ],
+      "minimumPhraseHits": 2
+    }
+  ]
+}

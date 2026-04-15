@@ -1,0 +1,210 @@
+{
+  "contract": "recorded_session_replay_fixture.v1",
+  "traceId": "trace-correction-answer-paths-explicit",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T04:00:00.000Z",
+  "bundleBuiltAt": "2026-04-01T04:10:00.000Z",
+  "traceHash": "sha256-7675563cf859465dbd888bb06d4b86fedbd83e541945091d1e8df5ee12e84c1d",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from the recorded-session proof bundle fixture"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-trace-correction-answer-paths-explicit",
+    "snapshotId": "snapshot-trace-correction-answer-paths-explicit",
+    "capturedAt": "2026-04-01T03:59:00.000Z",
+    "rootDir": "/tmp/openclawbrain-canonical-frozen-20/trace-correction-answer-paths-explicit",
+    "branch": "main",
+    "revision": "rev-trace-correction-answer-paths-explicit",
+    "labels": [
+      "canonical-frozen-20"
+    ]
+  },
+  "evalTurnCount": 1,
+  "seedBuiltAt": "2026-04-01T04:01:00.000Z",
+  "seedActivatedAt": "2026-04-01T04:02:00.000Z",
+  "seedExport": {
+    "interactionEvents": [
+      {
+        "contract": "interaction_events.v1",
+        "eventId": "session-correction-answer-paths-explicit-seed:cue-explicit-archive:interaction",
+        "agentId": "openclaw-runtime",
+        "sessionId": "session-correction-answer-paths-explicit-seed",
+        "channel": "cli",
+        "sequence": 1,
+        "kind": "operator_override",
+        "createdAt": "2026-04-01T03:58:30.000Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "openclaw/runtime/cli/seed"
+        },
+        "semantic": {
+          "semanticType": "control_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "messageId": "cue-explicit-archive-seed-message"
+      }
+    ],
+    "feedbackEvents": [
+      {
+        "contract": "feedback_events.v1",
+        "eventId": "session-correction-answer-paths-explicit-seed:cue-explicit-archive:feedback",
+        "agentId": "openclaw-runtime",
+        "sessionId": "session-correction-answer-paths-explicit-seed",
+        "channel": "cli",
+        "sequence": 2,
+        "kind": "teaching",
+        "createdAt": "2026-04-01T03:59:30.000Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "openclaw/runtime/cli/seed"
+        },
+        "content": "When answering archive and incident-tag questions, keep the concrete path docs/evidence and the label postmortem IDs explicit.",
+        "semantic": {
+          "semanticType": "teacher_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "relatedInteractionId": "session-correction-answer-paths-explicit-seed:cue-explicit-archive:interaction"
+      }
+    ],
+    "range": {
+      "start": 1,
+      "end": 2,
+      "count": 2,
+      "firstEventId": "session-correction-answer-paths-explicit-seed:cue-explicit-archive:interaction",
+      "lastEventId": "session-correction-answer-paths-explicit-seed:cue-explicit-archive:feedback",
+      "firstCreatedAt": "2026-04-01T03:58:30.000Z",
+      "lastCreatedAt": "2026-04-01T03:59:30.000Z"
+    },
+    "provenance": {
+      "runtimeOwner": "openclaw",
+      "sessionId": "session-correction-answer-paths-explicit-seed",
+      "channel": "cli",
+      "interactionCount": 1,
+      "feedbackCount": 1,
+      "sourceStreams": [
+        "openclaw/runtime/cli/seed"
+      ],
+      "contracts": [
+        "interaction_events.v1",
+        "feedback_events.v1"
+      ],
+      "exportDigest": "sha256-5903ac40634071743df1bad734b7de14eab05f64680ec24e68b2ebeb0df0e75b",
+      "semanticSurface": {
+        "semanticTypes": [
+          "control_signal",
+          "teacher_signal"
+        ],
+        "sourceKinds": [
+          "recorded_session_seed"
+        ],
+        "diagnosticIntents": []
+      },
+      "learningSurface": {
+        "bootProfile": "fast_boot_defaults",
+        "learningCadence": "passive_background",
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "openclaw/runtime/cli/seed:operator_override",
+          "openclaw/runtime/cli/seed:teaching"
+        ],
+        "labelSources": {
+          "human": [
+            "openclaw/runtime/cli/seed:operator_override",
+            "openclaw/runtime/cli/seed:teaching"
+          ],
+          "self": []
+        },
+        "labelHarvest": {
+          "humanLabels": 2,
+          "selfLabels": 0,
+          "corrections": 0,
+          "teachings": 1,
+          "approvals": 0,
+          "suppressions": 0,
+          "operatorOverrideLabels": 1,
+          "memoryCompileLabels": 0
+        },
+        "principalSummary": {
+          "teacherIdentities": [],
+          "teacherRoles": [],
+          "teacherAuthorities": [],
+          "priorityClasses": [],
+          "scopedEventCount": 0,
+          "supersedingEventCount": 0
+        }
+      }
+    }
+  },
+  "turns": [
+    {
+      "turnId": "explicit-paths-turn-1",
+      "turn": {
+        "sessionId": "session-correction-answer-paths-explicit",
+        "channel": "cli",
+        "sourceStream": "openclaw/runtime/cli",
+        "userMessage": "Where is the archive again?",
+        "createdAt": "2026-04-01T04:03:00.000Z",
+        "sequenceStart": 1000,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "compile": {
+          "createdAt": "2026-04-01T04:03:00.000Z",
+          "sequence": 1000
+        },
+        "delivery": {
+          "createdAt": "2026-04-01T04:03:20.000Z",
+          "sequence": 1001,
+          "messageId": "msg-explicit-paths-turn-1"
+        },
+        "feedback": [
+          {
+            "createdAt": "2026-04-01T04:03:35.000Z",
+            "content": "That is still too vague. Answer with docs/evidence and postmortem IDs.",
+            "sequence": 1002,
+            "kind": "correction"
+          }
+        ]
+      },
+      "expectedContextPhrases": [
+        "docs/evidence"
+      ],
+      "minimumPhraseHits": 1
+    },
+    {
+      "turnId": "explicit-paths-turn-2",
+      "turn": {
+        "sessionId": "session-correction-answer-paths-explicit",
+        "channel": "cli",
+        "sourceStream": "openclaw/runtime/cli",
+        "userMessage": "Say it again without dropping the concrete path or incident tag.",
+        "createdAt": "2026-04-01T04:04:30.000Z",
+        "sequenceStart": 1010,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "runtimeHints": [
+          "correction",
+          "explicit"
+        ],
+        "compile": {
+          "createdAt": "2026-04-01T04:04:30.000Z",
+          "sequence": 1010
+        },
+        "delivery": {
+          "createdAt": "2026-04-01T04:04:50.000Z",
+          "sequence": 1011,
+          "messageId": "msg-explicit-paths-turn-2"
+        },
+        "feedback": []
+      },
+      "expectedContextPhrases": [
+        "docs/evidence",
+        "postmortem IDs"
+      ],
+      "minimumPhraseHits": 2
+    }
+  ],
+  "fixtureHash": "sha256-57a7a6e1a6991f696a856f4fea90684928d5f3ee0f026ea6b5951d4fc10cf426"
+}
