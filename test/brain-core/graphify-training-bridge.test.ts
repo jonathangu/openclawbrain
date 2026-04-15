@@ -205,6 +205,7 @@ describe("graphify training bridge", () => {
 
       expect(row.route_row_summary.rowId).toBe(routeRow.row_id);
       expect(row.route_row_core.row_id).toBe(routeRow.row_id);
+      expect(row.route_objective_hint).toBeNull();
       expect(row.graphify_neighborhood_context.trust_class).toBe("EXTRACTED");
       expect(row.graphify_neighborhood_context.review_boundary.live_eligible).toBe(false);
       expect(row.graphify_neighborhood_context.neighborhoods[0]?.source_artifact_kind).toBe("neighborhood_summary");
@@ -229,6 +230,73 @@ describe("graphify training bridge", () => {
         hardNegativeSupportCount: 2,
         routeRowIds: [routeRow.row_id],
       });
+    }
+    finally {
+      rmSync(tempRoot, { recursive: true, force: true });
+    }
+  });
+
+  it("attaches trace-level route-objective hints for stop-aware utility scaffolding without pretending row-level teacher truth", () => {
+    const routeRow = makeRouteRowFixture();
+    const tempRoot = mkdtempSync(path.join(os.tmpdir(), "openclawbrain-graphify-objective-"));
+    try {
+      const fixturePackRoot = path.join(tempRoot, "graphify-pack");
+      const packBundle = buildGraphifyCompiledArtifactPack({
+        bundleId: "graphify-training-objective-fixture",
+        bundleStartedAt: "2026-04-06T22:30:00.000Z",
+        outputDir: fixturePackRoot,
+        graphifyRunId: "graphify-run-training-objective-fixture",
+        graphifyVersion: "graphify-test@1.2.3",
+        graphifyCommand: "graphify compile compiled-artifacts --fixture",
+        sourceBundleId: "compiled-artifacts-target-state-scaffold",
+        sourceBundleHash: "sha256:source-bundle-hash",
+        graphHash: "sha256:graph-hash",
+        configHash: "sha256:config-hash",
+        labelsHash: "sha256:labels-hash",
+      });
+      writeGraphifyCompiledArtifactPack(packBundle.outputDir, packBundle);
+
+      const importSliceResult = exportGraphifyImportSlice({
+        bundleRoot: packBundle.outputDir,
+        outputRoot: path.join(tempRoot, "artifacts", "graphify-imports"),
+        runId: "graphify-training-objective-fixture",
+      });
+
+      const bundle = materializeGraphifyTrainingReviewBundleV1({
+        routeRows: [routeRow],
+        graphifyImportSlice: importSliceResult,
+        compiledArtifactPackRoot: packBundle.outputDir,
+        routeObjectiveLabelsByTraceId: {
+          [routeRow.trace_id]: {
+            focusLane: "hard_memory",
+            strictHardMemoryEligible: true,
+            oracleBestMode: "graph_prior_only",
+            netUtilityDelta: -0.42,
+            costSensitive: "high",
+          },
+        },
+        generatedAt: "2026-04-07T12:00:00.000Z",
+      });
+
+      expect(validateGraphifyTrainingReviewBundleV1(bundle)).toMatchObject({ valid: true });
+      const row = bundle.rows[0];
+      expect(row?.route_objective_hint).not.toBeNull();
+      expect(row?.route_objective_hint).toMatchObject({
+        focus_lane: "hard_memory",
+        strict_hard_memory_eligible: true,
+        oracle_best_mode: "graph_prior_only",
+        pairwise_preference: "graph_prior_only_over_learned_route",
+        activation_preference: "stop_local",
+        preference_weight: 1.42,
+        utility_delta_vs_graph_prior_only: -0.42,
+        cost_sensitivity: "high",
+        projection_status: "trace_only",
+        hard_negative_mining_mode: "mine_abstention_negatives",
+      });
+      expect(row?.route_objective_hint?.positive_action_ids).toEqual(["action_stop_local"]);
+      expect(row?.route_objective_hint?.negative_action_ids).toEqual(["action_traverse_doc_1", "doc_2", "tool_1"]);
+      expect(row?.route_objective_hint?.notes.join(" ")).toMatch(/trace-level route-objective hint only/i);
+      expect(row?.review_notes.join(" ")).toMatch(/do not replace decision-point teacher labels/i);
     }
     finally {
       rmSync(tempRoot, { recursive: true, force: true });

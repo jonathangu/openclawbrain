@@ -26,6 +26,17 @@ const REVIEW_CORRECTION_PRECEDENCE = [
   "raw proof/runtime evidence",
   "frozen docs truth",
 ] as const;
+const ROUTE_OBJECTIVE_ORACLE_BEST_MODES = ["learned_route", "graph_prior_only", "tie", "unclear"] as const;
+const ROUTE_OBJECTIVE_ACTIVATION_PREFERENCES = ["activate", "stop_local", "unclear"] as const;
+const ROUTE_OBJECTIVE_PAIRWISE_PREFERENCES = [
+  "learned_route_over_graph_prior_only",
+  "graph_prior_only_over_learned_route",
+  "tie",
+  "unclear",
+] as const;
+const ROUTE_OBJECTIVE_PROJECTION_STATUSES = ["trace_only", "decision_point_review_required"] as const;
+const ROUTE_OBJECTIVE_HARD_NEGATIVE_MODES = ["mine_decoy_actions", "mine_abstention_negatives", "review_only"] as const;
+const ROUTE_OBJECTIVE_COST_SENSITIVITIES = ["low", "medium", "high"] as const;
 
 function normalizeString(value: string | null | undefined): string | null {
   if (typeof value !== "string") {
@@ -173,6 +184,44 @@ export const GraphifyProvenanceGapHintSchemaV1 = Type.Object(
 
 export type GraphifyProvenanceGapHintV1 = Static<typeof GraphifyProvenanceGapHintSchemaV1>;
 
+export const GraphifyRouteObjectiveHintSchemaV1 = Type.Object(
+  {
+    focus_lane: Type.Union([Type.String({ minLength: 1 }), Type.Null()]),
+    strict_hard_memory_eligible: Type.Boolean(),
+    oracle_best_mode: Type.Union([
+      ...ROUTE_OBJECTIVE_ORACLE_BEST_MODES.map((value) => Type.Literal(value)),
+      Type.Null(),
+    ]),
+    pairwise_preference: Type.Union(ROUTE_OBJECTIVE_PAIRWISE_PREFERENCES.map((value) => Type.Literal(value))),
+    activation_preference: Type.Union(ROUTE_OBJECTIVE_ACTIVATION_PREFERENCES.map((value) => Type.Literal(value))),
+    preference_weight: Type.Number({ minimum: 0 }),
+    utility_delta_vs_graph_prior_only: Type.Union([Type.Number(), Type.Null()]),
+    cost_sensitivity: Type.Union([
+      ...ROUTE_OBJECTIVE_COST_SENSITIVITIES.map((value) => Type.Literal(value)),
+      Type.Null(),
+    ]),
+    projection_status: Type.Union(ROUTE_OBJECTIVE_PROJECTION_STATUSES.map((value) => Type.Literal(value))),
+    positive_action_ids: Type.Array(Type.String({ minLength: 1 })),
+    negative_action_ids: Type.Array(Type.String({ minLength: 1 })),
+    hard_negative_mining_mode: Type.Union(ROUTE_OBJECTIVE_HARD_NEGATIVE_MODES.map((value) => Type.Literal(value))),
+    notes: Type.Array(Type.String({ minLength: 1 })),
+  },
+  { additionalProperties: false },
+);
+
+export type GraphifyRouteObjectiveHintV1 = Static<typeof GraphifyRouteObjectiveHintSchemaV1>;
+
+export interface GraphifyRouteObjectiveTraceLabelLikeV1 {
+  traceId?: string | null;
+  focusLane?: string | null;
+  strictHardMemoryEligible?: boolean | null;
+  oracleBestMode?: "learned_route" | "graph_prior_only" | "tie" | "unclear" | null;
+  utilityDeltaVsBaseline?: number | null;
+  utilityDelta?: number | null;
+  netUtilityDelta?: number | null;
+  costSensitive?: "low" | "medium" | "high" | null;
+}
+
 const RouteRowCoreSchemaV1 = Type.Object(
   {
     row_id: Type.String({ minLength: 1 }),
@@ -242,6 +291,7 @@ const GraphifyTrainingReviewRowSchemaV1 = Type.Object(
       { additionalProperties: false },
     ),
     route_row_core: RouteRowCoreSchemaV1,
+    route_objective_hint: Type.Union([GraphifyRouteObjectiveHintSchemaV1, Type.Null()]),
     graphify_neighborhood_context: GraphifyNeighborhoodContextSchemaV1,
     hard_negative_supports: Type.Array(GraphifyHardNegativeSupportSchemaV1),
     provenance_gap_hint_ids: Type.Array(Type.String({ minLength: 1 })),
@@ -510,10 +560,141 @@ function buildHardNegativeSupports(params: {
   }));
 }
 
+function normalizeCostSensitivity(value: string | null | undefined): "low" | "medium" | "high" | null {
+  if (value === "low" || value === "medium" || value === "high") {
+    return value;
+  }
+  return null;
+}
+
+function normalizeOracleBestMode(value: string | null | undefined): "learned_route" | "graph_prior_only" | "tie" | "unclear" | null {
+  if (value === "learned_route" || value === "graph_prior_only" || value === "tie" || value === "unclear") {
+    return value;
+  }
+  return null;
+}
+
+function firstFiniteNumber(...values: Array<number | null | undefined>): number | null {
+  for (const value of values) {
+    if (typeof value === "number" && Number.isFinite(value)) {
+      return value;
+    }
+  }
+  return null;
+}
+
+function pairwisePreferenceFromOracleBestMode(oracleBestMode: "learned_route" | "graph_prior_only" | "tie" | "unclear" | null): GraphifyRouteObjectiveHintV1["pairwise_preference"] {
+  if (oracleBestMode === "learned_route") {
+    return "learned_route_over_graph_prior_only";
+  }
+  if (oracleBestMode === "graph_prior_only") {
+    return "graph_prior_only_over_learned_route";
+  }
+  if (oracleBestMode === "tie") {
+    return "tie";
+  }
+  return "unclear";
+}
+
+function activationPreferenceFromOracleBestMode(oracleBestMode: "learned_route" | "graph_prior_only" | "tie" | "unclear" | null): GraphifyRouteObjectiveHintV1["activation_preference"] {
+  if (oracleBestMode === "learned_route") {
+    return "activate";
+  }
+  if (oracleBestMode === "graph_prior_only" || oracleBestMode === "tie") {
+    return "stop_local";
+  }
+  return "unclear";
+}
+
+function weightFromTraceObjective(input: {
+  utilityDelta: number | null;
+  costSensitivity: "low" | "medium" | "high" | null;
+}): number {
+  if (input.utilityDelta !== null) {
+    return Number((1 + Math.abs(input.utilityDelta)).toFixed(6));
+  }
+  if (input.costSensitivity === "high") {
+    return 2;
+  }
+  if (input.costSensitivity === "medium") {
+    return 1.5;
+  }
+  return 1;
+}
+
+export function buildGraphifyRouteObjectiveHintV1(params: {
+  routeRow: RouteDecisionRowV1;
+  traceLabel: GraphifyRouteObjectiveTraceLabelLikeV1 | null | undefined;
+}): GraphifyRouteObjectiveHintV1 | null {
+  const traceLabel = params.traceLabel ?? null;
+  if (!traceLabel) {
+    return null;
+  }
+
+  const oracleBestMode = normalizeOracleBestMode(traceLabel.oracleBestMode ?? null);
+  const activationPreference = activationPreferenceFromOracleBestMode(oracleBestMode);
+  const pairwisePreference = pairwisePreferenceFromOracleBestMode(oracleBestMode);
+  const costSensitivity = normalizeCostSensitivity(traceLabel.costSensitive ?? null);
+  const utilityDelta = firstFiniteNumber(
+    traceLabel.netUtilityDelta,
+    traceLabel.utilityDeltaVsBaseline,
+    traceLabel.utilityDelta,
+  );
+  const stopActionIds = params.routeRow.local_action_set
+    .filter((candidate) => candidate.action_kind === "stop_local" || candidate.action_kind === "stop")
+    .map((candidate) => candidate.action_id);
+  const nonStopActionIds = params.routeRow.local_action_set
+    .filter((candidate) => candidate.action_kind !== "stop_local" && candidate.action_kind !== "stop")
+    .map((candidate) => candidate.action_id);
+
+  const positiveActionIds = activationPreference === "activate"
+    ? (params.routeRow.chosen_action_kind === "stop_local" || params.routeRow.chosen_action_kind === "stop"
+        ? []
+        : [params.routeRow.chosen_action_id])
+    : activationPreference === "stop_local"
+      ? stopActionIds
+      : [];
+
+  const negativeActionIds = activationPreference === "activate"
+    ? normalizeStringArray([...stopActionIds, ...params.routeRow.hard_negatives])
+    : activationPreference === "stop_local"
+      ? normalizeStringArray([...nonStopActionIds, ...params.routeRow.hard_negatives])
+      : normalizeStringArray(params.routeRow.hard_negatives);
+
+  return {
+    focus_lane: normalizeString(traceLabel.focusLane) ?? null,
+    strict_hard_memory_eligible: traceLabel.strictHardMemoryEligible === true,
+    oracle_best_mode: oracleBestMode,
+    pairwise_preference: pairwisePreference,
+    activation_preference: activationPreference,
+    preference_weight: weightFromTraceObjective({ utilityDelta, costSensitivity }),
+    utility_delta_vs_graph_prior_only: utilityDelta,
+    cost_sensitivity: costSensitivity,
+    projection_status: "trace_only",
+    positive_action_ids: normalizeStringArray(positiveActionIds),
+    negative_action_ids: negativeActionIds,
+    hard_negative_mining_mode: activationPreference === "activate"
+      ? "mine_decoy_actions"
+      : activationPreference === "stop_local"
+        ? "mine_abstention_negatives"
+        : "review_only",
+    notes: [
+      "Trace-level route-objective hint only; decision-point projection still needs explicit review or stronger evidence.",
+      "Preference weight is magnitude-based when utility delta is known, otherwise it falls back to cost sensitivity.",
+      activationPreference === "activate"
+        ? "Chosen non-stop action is exposed as a positive seed action because learned_route was judged oracle-best for the trace."
+        : activationPreference === "stop_local"
+          ? "STOP_LOCAL is exposed as the preferred abstention family because graph_prior_only or tie-cheaper was judged oracle-best for the trace."
+          : "Oracle-best-mode is unclear, so this row remains review-only for route-objective use.",
+    ],
+  };
+}
+
 export function materializeGraphifyTrainingReviewBundleV1(params: {
   routeRows: RouteDecisionRowV1[];
   graphifyImportSlice: GraphifyImportSliceLikeV1;
   compiledArtifactPackRoot: string;
+  routeObjectiveLabelsByTraceId?: Record<string, GraphifyRouteObjectiveTraceLabelLikeV1 | null | undefined>;
   maxRows?: number;
   maxProvenanceGapHints?: number;
   maxHardNegativeSupportsPerRow?: number;
@@ -547,6 +728,10 @@ export function materializeGraphifyTrainingReviewBundleV1(params: {
       neighborhoodContext,
       limit: hardNegativeLimit,
     });
+    const routeObjectiveHint = buildGraphifyRouteObjectiveHintV1({
+      routeRow,
+      traceLabel: params.routeObjectiveLabelsByTraceId?.[routeRow.trace_id] ?? null,
+    });
     const rowCore = {
       row_id: routeRow.row_id,
       trace_id: routeRow.trace_id,
@@ -573,20 +758,22 @@ export function materializeGraphifyTrainingReviewBundleV1(params: {
       },
     };
 
-    return {
-      row_id: routeRow.row_id,
-      route_row_id: routeRow.row_id,
-      route_row_summary: routeRowSummary,
-      route_row_core: rowCore,
-      graphify_neighborhood_context: neighborhoodContext,
-      hard_negative_supports: hardNegativeSupports,
-      provenance_gap_hint_ids: [...provenanceGapHintIds],
-      review_notes: [
-        "Graphify is review-only here and never outranks the canonical route row.",
-        "Only EXTRACTED neighborhood context may contribute to candidate training input.",
-        "Provenance-gap hints remain blocked from live-eligible import and stay on the review side.",
-      ],
-    };
+      return {
+        row_id: routeRow.row_id,
+        route_row_id: routeRow.row_id,
+        route_row_summary: routeRowSummary,
+        route_row_core: rowCore,
+        route_objective_hint: routeObjectiveHint,
+        graphify_neighborhood_context: neighborhoodContext,
+        hard_negative_supports: hardNegativeSupports,
+        provenance_gap_hint_ids: [...provenanceGapHintIds],
+        review_notes: [
+          "Graphify is review-only here and never outranks the canonical route row.",
+          "Only EXTRACTED neighborhood context may contribute to candidate training input.",
+          "Provenance-gap hints remain blocked from live-eligible import and stay on the review side.",
+          ...(routeObjectiveHint ? ["Route-objective hints are trace-level scaffolds only and do not replace decision-point teacher labels."] : []),
+        ],
+      };
   });
 
   const sourceBundleId = normalizeString(params.graphifyImportSlice.sourceBundleId) ?? neighborhoodContext.source_bundle_id;
