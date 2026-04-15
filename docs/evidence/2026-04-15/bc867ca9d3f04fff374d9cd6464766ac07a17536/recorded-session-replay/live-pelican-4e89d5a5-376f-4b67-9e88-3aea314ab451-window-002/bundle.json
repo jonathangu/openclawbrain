@@ -1,0 +1,446 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-pelican-4e89d5a5-376f-4b67-9e88-3aea314ab451-window-002",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-13T05:14:58.885Z",
+  "generatedAt": "2026-04-13T05:16:04.894Z",
+  "traceHash": "sha256-11f89d0770e58c74a32e0ac08329b409440ac220cb647ec446567aadc15cbdd6",
+  "fixtureHash": "sha256-7793c2d77fac055a1c7c47c9d026a76a01511a45ccb17bbe5db49943de3d0ea4",
+  "scoreHash": "sha256-654fa5dccbafe4d9db4d9163ed65244c1dc173153eb78ebff88804e0fb80c062",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/pelican/sessions/4e89d5a5-376f-4b67-9e88-3aea314ab451.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-13T05:16:04.894Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-3297dca5d83084645cc80493377a366cf545c5142415159b972c4f8430720ab7"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-b35b7b4eefdcc0b1c33a5f5ffeb3f726bd94876b9c16b787302a38051b093cbf",
+          "expectedContextPhrases": [
+            "yep",
+            "here.",
+            "pelican"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "yep",
+            "here.",
+            "pelican"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-13T05:16:04.894Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 60,
+        "compileOkCount": 1,
+        "phraseHitCount": 1,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-3702bdfa"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-13T05:16:04.894Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-82c33d9a7d317adc2edfa01414b94ea122fbfeb5de13431190d2208bbe87a115"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-3702bdfa",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-7a50e80d50526557aedc5a2124b16847c4915cee2f0949563add6ec9b24f5008",
+          "selectedContextIds": [
+            "pack-3702bdfa:event:4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-4:feedback",
+            "pack-3702bdfa:event:4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-5:feedback",
+            "pack-3702bdfa:pointer-aware-init"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed: assistant: /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/session-startup-ready-2026-04-12.md\"}. Related interaction: 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-4:interaction.",
+            "Teaching feedback on live-session session 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed: assistant: /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/retrain-runtime-gate-swarm-2026-04-12.md\"} ; /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/weekly-retrain-launch-proof-2026-04-12.md\"}. Related interaction: 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-5:interaction.",
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
+          ],
+          "eventExportDigest": "sha256-04187b7dfbed7f871e4a0969cff54ebc91e9494540188c338d7e8d86a9e5c54f",
+          "expectedContextPhrases": [
+            "yep",
+            "here.",
+            "pelican"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [
+            "pelican"
+          ],
+          "missedPhrases": [
+            "yep",
+            "here."
+          ],
+          "qualityScore": 60,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-13T05:16:04.894Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 60,
+        "compileOkCount": 1,
+        "phraseHitCount": 1,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-3702bdfa"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-13T05:16:04.894Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-7a44ddad5f52e31b271192a260bbc775a1686ff57d7c354df134ac19ee8c8220"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-3702bdfa",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-257a8b6eced5622b83ecff1455a5d6f95d48f44bb4dd7fdb9846dd6848bcb3d1",
+          "selectedContextIds": [
+            "pack-3702bdfa:event:4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-4:feedback",
+            "pack-3702bdfa:event:4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-4:interaction",
+            "pack-3702bdfa:event:4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-5:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed: assistant: /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/session-startup-ready-2026-04-12.md\"}. Related interaction: 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-4:interaction.",
+            "Interaction operator_override on live-session session 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed. Message: cue-4-seed-message.",
+            "Teaching feedback on live-session session 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed: assistant: /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/retrain-runtime-gate-swarm-2026-04-12.md\"} ; /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/weekly-retrain-launch-proof-2026-04-12.md\"}. Related interaction: 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-5:interaction."
+          ],
+          "eventExportDigest": "sha256-d5a98b162ec86712c1af5903b21bb32ed35312513eb85f2aaef4d7ab3ca643ef",
+          "expectedContextPhrases": [
+            "yep",
+            "here.",
+            "pelican"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [
+            "pelican"
+          ],
+          "missedPhrases": [
+            "yep",
+            "here."
+          ],
+          "qualityScore": 60,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-13T05:16:04.894Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 60,
+        "compileOkCount": 1,
+        "phraseHitCount": 1,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-3702bdfa"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-3702bdfa",
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-13T05:16:04.894Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-419448cb5993a0c1da321b55202979ffd66c3f786af85a7d7b9e06895f8b1151"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-3702bdfa",
+          "modeRequested": "learned",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-7a50e80d50526557aedc5a2124b16847c4915cee2f0949563add6ec9b24f5008",
+          "selectedContextIds": [
+            "pack-3702bdfa:event:4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-4:feedback",
+            "pack-3702bdfa:event:4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-5:feedback",
+            "pack-3702bdfa:pointer-aware-init"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed: assistant: /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/session-startup-ready-2026-04-12.md\"}. Related interaction: 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-4:interaction.",
+            "Teaching feedback on live-session session 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed: assistant: /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/retrain-runtime-gate-swarm-2026-04-12.md\"} ; /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/weekly-retrain-launch-proof-2026-04-12.md\"}. Related interaction: 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-5:interaction.",
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
+          ],
+          "eventExportDigest": "sha256-04187b7dfbed7f871e4a0969cff54ebc91e9494540188c338d7e8d86a9e5c54f",
+          "expectedContextPhrases": [
+            "yep",
+            "here.",
+            "pelican"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [
+            "pelican"
+          ],
+          "missedPhrases": [
+            "yep",
+            "here."
+          ],
+          "qualityScore": 60,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-13T05:16:04.894Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 60
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 60
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 60
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-dfb8fe997809abff59067ff96b4be50c57865a8d5b71626cfcecd0e914e1d449"
+}

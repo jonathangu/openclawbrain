@@ -1,0 +1,99 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-433c03c5"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-04-11T22:23:33.751Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-b08e0b94baba324a297f49b5e3781e5549889b6b62ea4f593c11ed41d3b66b0f"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-433c03c5",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-e0bfb524f15e19b2b12484eaeeeafed5c0c8810ec347a284cdb8d664ce737140",
+      "selectedContextIds": [
+        "pack-433c03c5:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:feedback",
+        "pack-433c03c5:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:feedback",
+        "pack-433c03c5:event:c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-4:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: user: Important contract clarification from Jon for the multi-horizon training lane. Use this three-surface model explicitly: 1. snapshot features = facts known at snapshot time and shared across horizons 2. labels = realized future outcomes 3. known-future horizon-attached features = values that are deterministic once you choose the target horizon / attached label row, e.g. target_dte and horizon-relative event semantics like time-until-earnings/FOMC/CPI/NFP and crossing flags Critical rule: - do .... Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-3:interaction.",
+        "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-B training-contract multi-horizon lane in /Users/guclaw/worktrees/quant-research/202-mh1b-training. Goal: - make GBM/TFT consume multi-horizon rows explicitly - ensure target_dte is active in training/panel paths and artifact/reporting surfaces - keep actual_exp_dte and dte_gap_abs out of model feature inputs - run focused tests for retrai.... Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session c848fc28-bf10-4fd5-83a4-31e1b3048349-seed: assistant: I’m tightening the contract wording in code now so the three surfaces are explicit, not just implied by exclusion rules. ToolCall exec {\"command\": \"grep -Rni \\\"known_future\\\\|snapshot features\\\\|horizon-attached\\\\|three-surface\\\\|surface\\\" /Users/guclaw/worktrees/quant-research/202-mh1b-training/*.py /Users/guclaw/worktrees/quant-research/202-mh1b-train. Related interaction: c848fc28-bf10-4fd5-83a4-31e1b3048349-seed:cue-4:interaction."
+      ],
+      "eventExportDigest": "sha256-bfd8b79bb111749b11164ad5ef259df2b23d3bf2decd1c64ba2e4345bf0a47fd",
+      "expectedContextPhrases": [
+        "/openclaw/skills/coding-agent/SKILL.md\"}"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/openclaw/skills/coding-agent/SKILL.md\"}"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-04-11T22:23:33.751Z"
+      },
+      "warnings": []
+    }
+  ]
+}

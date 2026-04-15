@@ -1,0 +1,103 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-8c57a1dd"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-03-02T01:07:00.447Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-68ed27b8dc8c7b6a66e11f28c47e1ddcfd13f92e8070c76cd46f0c52c3dbbd5d"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-8c57a1dd",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-3058fc82fe63ff9263d0886cdd17a124e383b2b850d11f3b95e9121f079fd3da",
+      "selectedContextIds": [
+        "pack-8c57a1dd:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:feedback",
+        "pack-8c57a1dd:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:feedback",
+        "pack-8c57a1dd:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Not fully “all good” yet — trading-path looks green, but one of our safety verifiers (validate_model.py) is currently not trustworthy, and I’m fixing that now.\\n\\n✅ What I’ve re-checked and it’s OK\\n\\n• S3 snapshots are clean: latest key data/2026/02/27/16-00-49.json downloads fine (~15MB), collection_errors empty, and recent.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:interaction.",
+        "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: System: [2026-03-01 16:45:19 PST] Exec completed (ember-em, code 1) :: on_gbm_v5_20260228.pkl -t models/ensemble_production_tft_v5_20260228.pkl and ensure output is valid JSON only. - Also run without --json to ensure human output still prints. Make … Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"Jonathan\", \"body\": \"Okay double check that the data collector works. The data gets to s3 clean.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:interaction.",
+        "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: System: [2026-03-01 14:30:14 PST] Exec failed (tidal-gu, signal SIGTERM) Okay double check that the data collector works. The data gets to s3 clean. The listener works everything at inference time works. Double check that we made good labels and good features with no data leakage. Trained good models with good data. What else to check?. Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:interaction."
+      ],
+      "eventExportDigest": "sha256-c3db5196b7c167c17bd2ef5c2fe97c6819feebea4e75c8e07c24d2da8ccd1e17",
+      "expectedContextPhrases": [
+        "/NO-GO",
+        "c81f6fc",
+        "--max-rows"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/NO-GO",
+        "c81f6fc",
+        "--max-rows"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-03-02T01:07:00.447Z"
+      },
+      "warnings": []
+    }
+  ]
+}

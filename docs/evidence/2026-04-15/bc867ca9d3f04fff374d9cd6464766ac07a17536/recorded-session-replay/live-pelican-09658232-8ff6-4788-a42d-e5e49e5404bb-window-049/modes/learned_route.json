@@ -1,0 +1,104 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-f8c090c7"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-f8c090c7",
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-02-28T01:43:34.481Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-c1751a5bdbdaab2e872875f55e6a32c5661e5de6c954e1cd45329a15c97f1987"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-f8c090c7",
+      "modeRequested": "learned",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-47aa8d5e1c50ba1e2493c0c74568475d9c180d1d3638bf77497e2880cf6437de",
+      "selectedContextIds": [
+        "pack-f8c090c7:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback",
+        "pack-f8c090c7:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback",
+        "pack-f8c090c7:pointer-aware-init"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: Note: The previous agent run was aborted by the user. Resume carefully or ask for clarification. Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Now let me check on the chunked upload that's still running for the training instance:\" } ``` I killed this. See my message about the AWS region. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction.",
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:41:51 PST] Exec completed (mellow-f, code 0) :: Instance: i-0af7b932f7a25ef30 IP: 16.148.140.84 ok Small files uploaded Note: The previous agent run was aborted by the user. Resume carefully or ask for clarification. for hyperparam_tuning.py remove the upper ranges. they are not in our consideration set.. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction.",
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, memory/2026-04-11.md, AGENTS_ACTIVE.md, +2 more, and passive expansion task-artifacts/T-20260407-175/worktree-cleanup/audit.md, artifacts/openclaw-config-guard/ai.openclaw.config-guard.plist, scripts/guard_openclaw_profile_stub.py, scripts/openclawbrain_replay_aggregate.py, +8 more from the MEMORY index graph."
+      ],
+      "eventExportDigest": "sha256-e970257e6d6e5a17cb3153e95ee4ba083b1f7bdb85324831e3a7e90c514cfec6",
+      "expectedContextPhrases": [
+        "us-west-1 g4dn.xlarge gpu let",
+        "available us-west-1 g4dn.xlarge gpu",
+        "g4dn.xlarge gpu let check"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "us-west-1 g4dn.xlarge gpu let",
+        "available us-west-1 g4dn.xlarge gpu",
+        "g4dn.xlarge gpu let check"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-02-28T01:43:34.481Z"
+      },
+      "warnings": []
+    }
+  ]
+}

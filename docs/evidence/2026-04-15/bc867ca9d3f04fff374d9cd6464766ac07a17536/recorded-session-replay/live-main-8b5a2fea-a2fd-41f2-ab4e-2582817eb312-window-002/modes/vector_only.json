@@ -1,0 +1,104 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 80,
+    "compileOkCount": 1,
+    "phraseHitCount": 2,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-c26d71a4"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-04T05:00:16.959Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-10c236fa923a3252b60db0b8595c68b919ef14b72a23419cbbae8123f9a4e3f2"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-c26d71a4",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-d60693b3543b6acac084e9c5a2cb02bb2d26e51de8f08cc39dd09a56519c4c13",
+      "selectedContextIds": [
+        "pack-c26d71a4:pointer-aware-init",
+        "pack-c26d71a4:event:8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed:cue-1:feedback",
+        "pack-c26d71a4:event:8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed:cue-6:feedback"
+      ],
+      "selectedContextTexts": [
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-04-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, memory/2026-04-11.md, AGENTS_ACTIVE.md, +2 more, and passive expansion task-artifacts/T-20260407-175/worktree-cleanup/audit.md, artifacts/openclaw-config-guard/ai.openclaw.config-guard.plist, scripts/guard_openclaw_profile_stub.py, scripts/openclawbrain_replay_aggregate.py, +8 more from the MEMORY index graph.",
+        "Teaching feedback on live-session session 8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Gate 3 lane B for task T-20260403-129 in the OpenClawBrain repo. Work in /tmp/ocb-t129-gate3b on branch t129-gate3b-replay-shadow. Mission: implement replay over real candidate state for shadow-only Teacher v3 proposal classes: mutation and forgetting. Build the narrowest real replay path and class-specific replay summaries that keep mutation/forgetting sha.... Related interaction: 8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session 8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed: assistant: Done. Implemented the Gate 3 shadow-replay path for mutation and forgetting: - Added reusable real replay summaries for: - mutation candidate graphs via shadow candidate state replay + rollback reset - forgetting retention transitions via actual retention evaluation + rollback semantics - Extended the Teacher v3 proof-bundle writer with a `shadowReplay` seam and class-specific shadow-only rendering - Added focused tests covering: - real mutation candidate replay - forgetting replay - user_exp.... Related interaction: 8b5a2fea-a2fd-41f2-ab4e-2582817eb312-seed:cue-6:interaction."
+      ],
+      "eventExportDigest": "sha256-6f6ea1f6d91ad7090c4d8485de051e7f68964f742d29ae6a53ef4f0eb7223946",
+      "expectedContextPhrases": [
+        "T-20260403-129",
+        "/T-20260403-129/lane-gate3b-replay-shadow.md",
+        "/forgetting"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [
+        "T-20260403-129",
+        "/forgetting"
+      ],
+      "missedPhrases": [
+        "/T-20260403-129/lane-gate3b-replay-shadow.md"
+      ],
+      "qualityScore": 80,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-04T05:00:16.959Z"
+      },
+      "warnings": []
+    }
+  ]
+}

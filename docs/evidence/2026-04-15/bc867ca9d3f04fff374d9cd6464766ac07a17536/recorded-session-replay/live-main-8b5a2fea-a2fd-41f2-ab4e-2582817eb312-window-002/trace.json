@@ -1,0 +1,93 @@
+{
+  "contract": "recorded_session_trace.v1",
+  "traceId": "live-main-8b5a2fea-a2fd-41f2-ab4e-2582817eb312-window-002",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-04T04:24:00.033Z",
+  "bundleBuiltAt": "2026-04-04T05:00:16.959Z",
+  "agentId": "main",
+  "sessionId": "8b5a2fea-a2fd-41f2-ab4e-2582817eb312",
+  "channel": "live-session",
+  "sourceStream": "live/main/session-window",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/main/sessions/8b5a2fea-a2fd-41f2-ab4e-2582817eb312.jsonl"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-main",
+    "snapshotId": "session-8b5a2fea-a2fd-41f2-ab4e-2582817eb312",
+    "capturedAt": "2026-04-04T04:24:00.033Z",
+    "rootDir": "/Users/guclaw/.openclaw/workspace",
+    "revision": "8b5a2fea-a2fd-41f2-ab4e-2582817eb312",
+    "labels": [
+      "live-history",
+      "main",
+      "interactive",
+      "meaningful-assistant-text"
+    ]
+  },
+  "seedBuiltAt": "2026-04-04T04:24:01.270Z",
+  "seedActivatedAt": "2026-04-04T04:35:34.570Z",
+  "seedCues": [
+    {
+      "cueId": "cue-1",
+      "createdAt": "2026-04-04T04:24:01.270Z",
+      "content": "user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Gate 3 lane B for task T-20260403-129 in the OpenClawBrain repo. Work in /tmp/ocb-t129-gate3b on branch t129-gate3b-replay-shadow. Mission: implement replay over real candidate state for shadow-only Teacher v3 proposal classes: mutation and forgetting. Build the narrowest real replay path and class-specific replay summaries that keep mutation/forgetting sha...",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-2",
+      "createdAt": "2026-04-04T04:35:11.057Z",
+      "content": "assistant: /tmp/ocb-t129-gate3b\"}",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-3",
+      "createdAt": "2026-04-04T04:35:16.315Z",
+      "content": "assistant: /teacher-v3-proof-bundle.mjs ; /teacher-v3-proof-bundle.test.ts ; /brain-core/teacher-v3-shadow-replay.ts ; /brain-core/teacher-v3-shadow-replay.test.ts",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-4",
+      "createdAt": "2026-04-04T04:35:20.751Z",
+      "content": "assistant: /tmp/ocb-t129-gate3b\"}",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-5",
+      "createdAt": "2026-04-04T04:35:29.499Z",
+      "content": "assistant: T-20260403-129 ; 20260403",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-6",
+      "createdAt": "2026-04-04T04:35:34.570Z",
+      "content": "assistant: Done. Implemented the Gate 3 shadow-replay path for mutation and forgetting: - Added reusable real replay summaries for: - mutation candidate graphs via shadow candidate state replay + rollback reset - forgetting retention transitions via actual retention evaluation + rollback semantics - Extended the Teacher v3 proof-bundle writer with a `shadowReplay` seam and class-specific shadow-only rendering - Added focused tests covering: - real mutation candidate replay - forgetting replay - user_exp...",
+      "kind": "teaching"
+    }
+  ],
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "createdAt": "2026-04-04T05:00:12.097Z",
+      "deliveredAt": "2026-04-04T05:00:16.959Z",
+      "userMessage": "Exec denied (gateway id=d0d0dc78-bd12-4c99-9c39-e9f4c4d76ea2, approval-timeout (obfuscation-detected)): python - <<'PY' from pathlib import Path path = Path('/tmp/ocb-t129-gate3b/scripts/teacher-v3-proof-bundle.mjs') text = path.read_text() def replace_once(old, new): global text if old not in text: raise SystemExit(f'missing snippet: {old[:80]!r}') if text.count(old) != 1: raise SystemExit(f'non-unique snippet count={text.count(old)}: {old[:80]!r}') text = text.replace(old, new, 1) old = '''function normalizeArray(value) { return Array.isArray(value) ? value.filter((item) => item !== null && item !== undefined) : []; } ''' new = '''function normalizeArray(value) { return Array.isArray(value) ? value.filter((item) => item !== null && item !== undefined) : []; } function normalizeShadowReplaySummary(value, fallback = {}) { if (!value || typeof value !== \"object\") { return null; } const proposalClass = normalizeText(value.proposalClass); if (proposalClass !== \"mutation\" && proposalClass !== \"forgetting\") { return null; } const reviewMode = normalizeText(value.reviewMode) ?? \"shadow_only\"; const rollback = value.rollback && typeof value.rollback === \"object\" ? { strategy: normalizeText(value.rollback.strategy), restored: normalizeBoolean(value.rollback.restored), summary: normalizeText(value.rollback.summary), before: value.rollback.before ?? null, after: value.rollback.after ?? null, } : null; return { proposalId: normalizeText(value.proposalId) ?? normalizeText(fallback.proposalId), proposalClass, reviewMode, shadowOnly: normalizeBoolean(value.shadowOnly) ?? reviewMode === \"shadow_only\", promotionBypass: normalizeBoolean(value.promotionBypass) ?? false, rollbackKey: normalizeText(value.rollbackKey) ?? normalizeText(fallback.rollbackKey), applied: normalizeBoolean(value.applied), reversible: normalizeBoolean(value.reversible), replayOutcome: normalizeText(value.replayOutcome), summary: normalizeText(value.summary), candidateStateKind: normalizeText(value.candidateStateKind), before: value.before ?? null, after: value.after ?? null, rollback, target: value.target ?? null, decision: value.decision ?? null, guardrail: normalizeText(value.guardrail), reason: normalizeText(value.reason), requestedTransition: normalizeText(value.requestedTransition), applications: Array.isArray(value.applications) ? value.applications.map((application) => ({ index: normalizeNumber(application?.index), proposalId: normalizeText(application?.proposalId), proposalKind: normalizeText(application?.proposalKind), applied: normalizeBoolean(application?.applied), reversible: normalizeBoolean(application?.reversible), reason: normalizeText(application?.reason), before: application?.before ?? null, after: application?.after ?? null, operationKinds: normalizeArray(application?.operationKinds).map((operationKind) => normalizeText(operationKind)).filter(Boolean), })) : undefined, }; } ''' replace_once(old, new) old = ''' const proposalClass = normalizeText(input.proposalClass) ?? \"lint\"; const proposalLane = normalizeText(input.proposalLane) ?? proposalClass; const producerVersion = normalizeText(input.producerVersion) ?? \"openclawbrain-proof-capture\"; const proposalId = normalizeText(input.proposalId) ?? bundleId; const sourceBundleId = operatorProof.bundleDir ?? normalizeText(input.operatorProof?.bundleDir) ?? null; const proposalRecord = input.proposalRecord ?? null; const proposalRecordEvidence = normalizeArray(proposalRecord?.evidence); const proposalRecordCounterevidence = normalizeArray(proposalRecord?.counterevidence); const proposalRecordReplaySuites = normalizeArray(proposalRecord?.replaySuites); const idempotencyKey = sha256Text(JSON.stringify({ ''' new = ''' const proposalClass = normalizeText(input.proposalClass) ?? \"lint\"; const proposalLane = normalizeText(input.proposalLane) ?? proposalClass; const producerVersion = normalizeText(input.producerVersion) ?? \"openclawbrain-proof-capture\"; const proposalId = normalizeText(input.proposalId) ?? bundleId; const sourceBundleId = operatorProof.bundleDir ?? normalizeText(input.operatorProof?.bundleDir) ?? null; const proposalRecord = input.proposalRecord ?? null; const proposalRecordEvidence = normalizeArray(proposalRecord?.evidence); const proposalRecordCounterevidence = normalizeArray(proposalRecord?.counterevidence); const proposalRecordReplaySuites = normalizeArray(proposalRecord?.replaySuites); const rollbackKey = normalizeText(input.proposalRecord?.rollbackKey) ?? `rollback:teacher-v3-proof-bundle:${bundleId}`; const shadowReplaySummary = normalizeShadowReplaySummary(input.shadowReplay ?? proposalRecord?.shadowReplay ?? null, { proposalId, rollbackKey, }); const idempotencyKey = sha256Text(JSON.stringify({ ''' replace_once(old, new) old = ''' replaySuites: proposalRecordReplaySuites.length > 0 ? proposalRecordReplaySuites : [ \"runtime-status-surface\", \"operator-proof-surface\", \"teacher-v3-docs-truth\", ], rollbackKey: normalizeText(input.proposalRecord?.rollbackKey) ?? `rollback:teacher-v3-proof-bundle:${bundleId}`, createdAt: normalizeText(input.proposalRecord?.createdAt) ?? input.bundleStartedAt, ''' new = ''' replaySuites: proposalRecordReplaySuites.length > 0 ? proposalRecordReplaySuites : [ \"runtime-status-surface\", \"operator-proof-surface\", \"teacher-v3-docs-truth\", ], rollbackKey, createdAt: normalizeText(input.proposalRecord?.createdAt) ?? input.bundleStartedAt, ''' replace_once(old, new) old = ''' docsTruth, runtimeTruth: runtimeStatus, proofTruth: operatorProof, proposalReviewMode: proposalClass === \"mutation\" || proposalClass === \"forgetting\" || proposalClass === \"correction\" ? \"shadow_only\" : \"promotable\", }; } ''' new = ''' docsTruth, runtimeTruth: runtimeStatus, proofTruth: operatorProof, shadowReplaySummary, proposalReviewMode: proposalClass === \"mutation\" || proposalClass === \"forgetting\" || proposalClass === \"correction\" ? \"shadow_only\" : \"promotable\", }; } ''' replace_once(old, new) old = ''' runtimeTruth, proofTruth, docsTruth, surfaceMap: surfaceMap.observedSurfaces, ''' new = ''' runtimeTruth, proofTruth, docsTruth, shadowReplay: seed.shadowReplaySummary, surfaceMap: surfaceMap.observedSurfaces, ''' replace_once(old, new) old = ''' proofTruthSummary: { verdict: proofTruth.verdict, severity: proofTruth.severity, runtimeLoadProofExists: proofTruth.runtimeLoadProofExists, postBundleCount: proofTruth.postBundleCount, stepCount: proofTruth.stepCount, }, }; } ''' new = ''' proofTruthSummary: { verdict: proofTruth.verdict, severity: proofTruth.severity, runtimeLoadProofExists: proofTruth.runtimeLoadProofExists, postBundleCount: proofTruth.postBundleCount, stepCount: proofTruth.stepCount, }, shadowReplay: seed.shadowReplaySummary ? { proposalClass: seed.shadowReplaySummary.proposalClass, reviewMode: seed.shadowReplaySummary.reviewMode, shadowOnly: seed.shadowReplaySummary.shadowOnly, rollbackKey: seed.shadowReplaySummary.rollbackKey, summary: seed.shadowReplaySummary.summary, } : null, }; } ''' replace_once(old, new) old = ''' docsTruth: proposalReport.docsTruth, gate1Seam: seed.gate1Seam, recommendations: proposalReport.recommendations, ''' new = ''' docsTruth: proposalReport.docsTruth, gate1Seam: seed.gate1Seam, shadowReplay: proposalReport.shadowReplay ? { proposalClass: proposalReport.shadowReplay.proposalClass, reviewMode: proposalReport.shadowReplay.reviewMode, shadowOnly: proposalReport.shadowReplay.shadowOnly, rollbackKey: proposalReport.shadowReplay.rollbackKey, summary: proposalReport.shadowReplay.summary, } : null, recommendations: proposalReport.recommendations, ''' replace_once(old, new) old = ''' const proofReady = proposalReport.proofTruthSummary.runtimeLoadProofExists !== null; const blocking = !runtimeReady || !proofReady; return { ''' new = ''' const proofReady = proposalReport.proofTruthSummary.runtimeLoadProofExists !== null; const blocking = !runtimeReady || !proofReady; const shadowReplay = proposalReport.shadowReplay; const shadowReplayVerdict = shadowReplay ? { proposalClass: shadowReplay.",
+      "runtimeHints": [
+        "/tmp/ocb-t129-gate3b/scripts/teacher-v3-proof-bundle.mjs')",
+        "/a\"}",
+        "d0d0dc78",
+        "e9f4c4d76ea2",
+        "rollback:teacher-v3-proof-bundle:${bundleId}",
+        "runtime, proof, and docs truth were summarized; ${shadowReplay.proposalClass} replay stayed shadow-only with explicit rollback semantics and the record can still be loaded from storage"
+      ],
+      "expectedContextPhrases": [
+        "T-20260403-129",
+        "/T-20260403-129/lane-gate3b-replay-shadow.md",
+        "/forgetting"
+      ]
+    }
+  ]
+}

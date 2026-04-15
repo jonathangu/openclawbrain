@@ -1,0 +1,99 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-ab19168b"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-11T09:16:03.981Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-0655fb96ef4e81c7ba34b17281e28faa2426e7d4cab85fc85ce757a716e7801b"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-ab19168b",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-a9827c42e35003ba66ddeeb422426a7ede90fbc218bb9ef10096b89c263b6ef1",
+      "selectedContextIds": [
+        "pack-ab19168b:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:feedback",
+        "pack-ab19168b:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-3:feedback",
+        "pack-ab19168b:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-5:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Deep-dive correction lane for T-20260407-173. This is the actual remaining blocker. Worktree baseline: - branch: t173-lane-f-comparative-correction (from t173-lane-c-verification) - npm install already completed in this worktree - repo-wide tsc is supposed to pass on this branch You must fix the real comparative replay/eval behavior, not just make local assertions .... Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: assistant: I’m loading the requested artifacts/tests first, then I’ll reproduce the failures and fix the real behavior on this branch. ToolCall read {\"path\": \"/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260407-173/final-replay-eval-swarm-board.md\"}. Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-3:interaction.",
+        "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: assistant: I found the real regression: this branch’s clean-install path resolves `@openclawbrain/*` to the lightweight local bridge packages added in Lane C, while the passing `main` checkout was still picking up richer nested package installs under `packages/cli/node_modules`. The bridge versions are too weak for replay/eval runtime use. I’m tightening the local `contracts` and `event-export` bridges so clean installs behave like the real packages instead of degrading to partial/blocked. ToolCall edit.... Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-5:interaction."
+      ],
+      "eventExportDigest": "sha256-22fed742f56e0f3b5f434a7d62c5cfcb8a2ffa387db27a30a0a4a8e7acfcd99e",
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/workspace/worktrees/t173-lane-f-comparative-correction\","
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace/worktrees/t173-lane-f-comparative-correction\","
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-11T09:16:03.981Z"
+      },
+      "warnings": []
+    }
+  ]
+}

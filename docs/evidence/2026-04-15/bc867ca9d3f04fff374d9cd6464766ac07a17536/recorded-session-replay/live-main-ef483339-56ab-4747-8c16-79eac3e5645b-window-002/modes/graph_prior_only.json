@@ -1,0 +1,104 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 60,
+    "compileOkCount": 1,
+    "phraseHitCount": 1,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-9f57c758"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-04T05:23:16.710Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-ba1b8d05a330be8e9384bf6135d0d6bb975e3e339083a3a9eb43926f46eb1e2e"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-9f57c758",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-3a6dbb76d4a03fda801e749b48f951d712c87697939b3bd7cbe6075029f15c8d",
+      "selectedContextIds": [
+        "pack-9f57c758:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-6:feedback",
+        "pack-9f57c758:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-6:interaction",
+        "pack-9f57c758:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-1:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session ef483339-56ab-4747-8c16-79eac3e5645b-seed: assistant: Done. - Implemented the Teacher v3 canary contract as an explicit, bounded, rollback-bound target-state object. - Canary plans now require an explicit `rollbackKey`, stay `surfaceState: \"target\"`, `rolloutMode: \"off\"`, and `enabled: false`. - Added proposal-summary and diff surfacing for `canaryRollout` so the plan is inspectable in higher-level contract summaries. - Updated focused tests for the new shape and rollback-bound behavior. - Refreshed related docs to reflect the explicit rollback-.... Related interaction: ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-6:interaction.",
+        "Interaction operator_override on live-session session ef483339-56ab-4747-8c16-79eac3e5645b-seed. Message: cue-6-seed-message.",
+        "Teaching feedback on live-session session ef483339-56ab-4747-8c16-79eac3e5645b-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Gate 4 lane A for task T-20260403-129 in the OpenClawBrain repo. Work in /tmp/ocb-t129-gate4a on branch t129-gate4a-canary-contracts. Mission: implement the explicit bounded canary plan objects for Teacher v3. Land the narrowest real contract/config surface for canary plans that is inspectable, off by default, and rollback-bound. This lane should own the ca.... Related interaction: ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-1:interaction."
+      ],
+      "eventExportDigest": "sha256-2413d6aab19f1c3ada2aa613361c7f9b980f1c26e9e9eb9aa121e787c77784ce",
+      "expectedContextPhrases": [
+        "T-20260403-129",
+        "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-129/lane-gate4a-canary-contracts.md",
+        "/brain-core/teacher-v3-contracts.test.ts"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [
+        "T-20260403-129"
+      ],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-129/lane-gate4a-canary-contracts.md",
+        "/brain-core/teacher-v3-contracts.test.ts"
+      ],
+      "qualityScore": 60,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-04T05:23:16.710Z"
+      },
+      "warnings": []
+    }
+  ]
+}

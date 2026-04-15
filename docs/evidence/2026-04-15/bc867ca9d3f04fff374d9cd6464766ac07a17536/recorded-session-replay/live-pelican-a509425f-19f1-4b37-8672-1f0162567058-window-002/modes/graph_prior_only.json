@@ -1,0 +1,103 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-b4029aee"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-04-14T20:22:16.715Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-9bf9b56206827f4e9836f36770de90a2abb5cc1f62e021253a800d888b90c23f"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-b4029aee",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-e15cfd5245da18dfa4373fb15bb900c41d3881215ce0c69fac8e2d54287007d1",
+      "selectedContextIds": [
+        "pack-b4029aee:event:a509425f-19f1-4b37-8672-1f0162567058-seed:cue-1:feedback",
+        "pack-b4029aee:event:a509425f-19f1-4b37-8672-1f0162567058-seed:cue-1:interaction",
+        "pack-b4029aee:event:a509425f-19f1-4b37-8672-1f0162567058-seed:cue-2:interaction"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session a509425f-19f1-4b37-8672-1f0162567058-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Monday, April 13th, 2026 - 1:21 PM (America/Los_Angeles) / 2026-04-13 20:21 UTC. Related interaction: a509425f-19f1-4b37-8672-1f0162567058-seed:cue-1:interaction.",
+        "Interaction operator_override on live-session session a509425f-19f1-4b37-8672-1f0162567058-seed. Message: cue-1-seed-message.",
+        "Interaction operator_override on live-session session a509425f-19f1-4b37-8672-1f0162567058-seed. Message: cue-2-seed-message."
+      ],
+      "eventExportDigest": "sha256-b4d7b82be14fc74a892b14b5ae3ebf018bfb5c636fc4734a3eab6b4214b9f469",
+      "expectedContextPhrases": [
+        "toolcall",
+        "read",
+        "path"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "toolcall",
+        "read",
+        "path"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-04-14T20:22:16.715Z"
+      },
+      "warnings": []
+    }
+  ]
+}

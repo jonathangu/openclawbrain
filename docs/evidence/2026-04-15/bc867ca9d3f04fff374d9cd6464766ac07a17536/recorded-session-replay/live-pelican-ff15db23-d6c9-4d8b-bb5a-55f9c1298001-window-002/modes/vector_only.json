@@ -1,0 +1,101 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 2,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-a2730122"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-02-26T17:21:33.153Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-51da5d1deacdd35f9a94f6e4d310ac45cadb93cb0e486ec23424f36955eb7d78"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-a2730122",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-9558ba8f3aaac6f4629d52f792d9476225d7a7b0ce7e1707853ecea4b7a5ed8f",
+      "selectedContextIds": [
+        "pack-a2730122:pointer-aware-init",
+        "pack-a2730122:event:ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed:cue-2:feedback",
+        "pack-a2730122:workspace-init:51972c8c"
+      ],
+      "selectedContextTexts": [
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-26-crabpath-eval.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
+        "Teaching feedback on live-session session ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed: assistant: Bootstrap worked. 214 nodes, 1214 edges from 47 files. Now let me try `install-hook` to wire it into my workspace, then test a query. ToolCall exec {\"command\": \"source ~/.crabpath/venv/bin/activate && source /Users/guclaw/.openclaw/workspace/quant-research/.env 2>/dev/null; export OPENAI_API_KEY; crabpath install-hook --help 2>&1\", \"timeout\": 10}. Related interaction: ff15db23-d6c9-4d8b-bb5a-55f9c1298001-seed:cue-2:interaction.",
+        "Top-priority boot input memory/2026-02-26-crabpath-eval.md selected by pointer-aware init (inbound=0, outbound=2). CrabPath Installation & Evaluation — 2026-02-26 What Is It Graph-based memory architecture for agents. Documents = nodes, weighted edges, LLM activation function. Claims to learn retrieval paths via policy gradients and inhibitory edges. Installation - **Package:** crabpath v1.0.7 from PyPI - **Venv:** ~/.crabpath/ven…"
+      ],
+      "eventExportDigest": "sha256-01ccb49e97628e47294c0d5211c76366c885fb1c4eca99140c16257b0376db35",
+      "expectedContextPhrases": [
+        "hey",
+        "jon."
+      ],
+      "minimumPhraseHits": 2,
+      "phraseHits": [],
+      "missedPhrases": [
+        "hey",
+        "jon."
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-02-26T17:21:33.153Z"
+      },
+      "warnings": []
+    }
+  ]
+}

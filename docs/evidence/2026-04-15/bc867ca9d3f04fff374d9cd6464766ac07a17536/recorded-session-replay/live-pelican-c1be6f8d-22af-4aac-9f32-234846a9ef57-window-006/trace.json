@@ -1,0 +1,90 @@
+{
+  "contract": "recorded_session_trace.v1",
+  "traceId": "live-pelican-c1be6f8d-22af-4aac-9f32-234846a9ef57-window-006",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-11T22:14:10.575Z",
+  "bundleBuiltAt": "2026-04-11T22:50:46.873Z",
+  "agentId": "pelican",
+  "sessionId": "c1be6f8d-22af-4aac-9f32-234846a9ef57",
+  "channel": "live-session",
+  "sourceStream": "live/pelican/session-window",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/pelican/sessions/c1be6f8d-22af-4aac-9f32-234846a9ef57.jsonl"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-pelican",
+    "snapshotId": "session-c1be6f8d-22af-4aac-9f32-234846a9ef57",
+    "capturedAt": "2026-04-11T22:14:10.575Z",
+    "rootDir": "/Users/guclaw/.openclaw/pelican/ops",
+    "revision": "c1be6f8d-22af-4aac-9f32-234846a9ef57",
+    "labels": [
+      "live-history",
+      "pelican",
+      "interactive",
+      "tool-using-assistant"
+    ]
+  },
+  "seedBuiltAt": "2026-04-11T22:14:31.513Z",
+  "seedActivatedAt": "2026-04-11T22:50:21.144Z",
+  "seedCues": [
+    {
+      "cueId": "cue-1",
+      "createdAt": "2026-04-11T22:14:31.513Z",
+      "content": "user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-C readiness/proof/launcher multi-horizon lane in /Users/guclaw/worktrees/quant-research/203-mh1c-proof. Goal: - make readiness/freshness/promotion/launch proof respect multi-horizon labels and horizon-aware known-future attached features - ensure trainability truth and proof surfaces distinguish shared snapshot features from horizon-attach...",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-2",
+      "createdAt": "2026-04-11T22:26:59.001Z",
+      "content": "user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-C readiness/proof/launcher multi-horizon lane in /Users/guclaw/worktrees/quant-research/203-mh1c-proof. Goal: - make readiness/freshness/promotion/launch proof respect multi-horizon labels and horizon-aware known-future attached features - ensure trainability truth and proof surfaces distinguish shared snapshot features from horizon-attach...",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-3",
+      "createdAt": "2026-04-11T22:35:34.975Z",
+      "content": "user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Finish and commit the MH1-C readiness/proof/launcher multi-horizon lane in /Users/guclaw/worktrees/quant-research/203-mh1c-proof. Goal: - make readiness/freshness/promotion/launch proof respect multi-horizon labels and horizon-aware known-future attached features - ensure trainability truth and proof surfaces distinguish shared snapshot features from horizon-attach...",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-4",
+      "createdAt": "2026-04-11T22:40:37.784Z",
+      "content": "user: Jon clarified the implementation rule further: For ambiguous horizon-dependent fields, the right fix is to prune them out of the shared snapshot-feature class and re-add them only as explicit horizon-attached known-future fields keyed on (ticker, snapshot_ts, target_dte). So please implement/prove against this split: 1. snapshot-known features stay on the base snapshot row 2. realized future outcomes stay as labels 3. horizon-dependent known-future semantics become their own explicit class at...",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-5",
+      "createdAt": "2026-04-11T22:42:21.847Z",
+      "content": "user: Jon clarified the implementation rule further: For ambiguous horizon-dependent fields, the right fix is to prune them out of the shared snapshot-feature class and re-add them only as explicit horizon-attached known-future fields keyed on (ticker, snapshot_ts, target_dte). So please implement/prove against this split: 1. snapshot-known features stay on the base snapshot row 2. realized future outcomes stay as labels 3. horizon-dependent known-future semantics become their own explicit class at...",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-6",
+      "createdAt": "2026-04-11T22:50:21.144Z",
+      "content": "assistant: Done. Commit: `3923195` (`pelican: split snapshot and horizon contracts`) What changed: - split base snapshot features vs horizon-attached known-future contract - added explicit `snapshot_feature_contract` and `horizon_attached_known_future_contract` - carried the split through readiness, promotion proof, pipeline health, and launcher summary - updated TFT validation so it no longer treats the horizon field as base snapshot truth Files touched: - `training_input_feature_contract.py` - `traini...",
+      "kind": "teaching"
+    }
+  ],
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "createdAt": "2026-04-11T22:50:35.311Z",
+      "deliveredAt": "2026-04-11T22:50:46.873Z",
+      "userMessage": "Agent-to-agent announce step.",
+      "runtimeHints": [
+        "agent-to-agent",
+        "announce",
+        "step."
+      ],
+      "expectedContextPhrases": [
+        "3923195",
+        "pel-087-mh1c-proof",
+        "pelican: split snapshot and horizon contracts"
+      ]
+    }
+  ]
+}
