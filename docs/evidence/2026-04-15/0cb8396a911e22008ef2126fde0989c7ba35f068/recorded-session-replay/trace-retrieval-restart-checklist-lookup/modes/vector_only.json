@@ -1,0 +1,153 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 100,
+    "compileOkCount": 2,
+    "phraseHitCount": 3,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-83ea263d"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 2,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 2,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 3,
+      "scanSurfaces": [
+        "openclaw/runtime/cli:memory_compiled",
+        "openclaw/runtime/cli:message_delivered",
+        "openclaw/runtime/cli:teaching"
+      ],
+      "humanLabelCount": 1,
+      "selfLabelCount": 2,
+      "totalEventCount": 5,
+      "attributedEventCount": 5,
+      "attributedTurnCount": 2,
+      "selectionDigestCount": 5,
+      "selectionDigestTurnCount": 2,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "openclaw/runtime/cli",
+      "freshestCreatedAt": "2026-04-01T03:44:50.000Z",
+      "warnings": []
+    },
+    "scoreHash": "sha256-e2d8c9f774eb27c82abef8fbb45fe90866602243771f1a3275caa70d17003858"
+  },
+  "turns": [
+    {
+      "turnId": "restart-checklist-turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-83ea263d",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-b66b5a0d85c95a815f4eb21c09860ad80d4e78415f0292d62a2101fb45e11e02",
+      "selectedContextIds": [
+        "pack-83ea263d:event:session-retrieval-restart-checklist-lookup-seed:cue-restart-checklist:feedback",
+        "pack-83ea263d:event:session-retrieval-restart-checklist-lookup-seed:cue-restart-checklist:interaction",
+        "pack-83ea263d:workspace"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on cli session session-retrieval-restart-checklist-lookup-seed: The operator lane restart checklist is archived in docs/evidence and incidents are tagged with postmortem IDs.. Related interaction: session-retrieval-restart-checklist-lookup-seed:cue-restart-checklist:interaction.",
+        "Interaction operator_override on cli session session-retrieval-restart-checklist-lookup-seed. Message: cue-restart-checklist-seed-message.",
+        "Workspace snapshot snapshot-trace-retrieval-restart-checklist-lookup for ws-trace-retrieval-restart-checklist-lookup captured at 2026-04-01T03:39:00.000Z with revision rev-trace-retrieval-restart-checklist-lookup."
+      ],
+      "eventExportDigest": "sha256-1a604461e31014ce3a2d229c056595f6bb02ac9c2e6bbdf00283611e1149a6bb",
+      "expectedContextPhrases": [
+        "docs/evidence"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "docs/evidence"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "openclaw/runtime/cli:memory_compiled",
+          "openclaw/runtime/cli:message_delivered",
+          "openclaw/runtime/cli:teaching"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "openclaw/runtime/cli",
+        "freshestCreatedAt": "2026-04-01T03:43:35.000Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "restart-checklist-turn-2",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-83ea263d",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-b6a5758d54f00fa563a6b25550676ef2ba3685a52f6a04713dff8a0fec755504",
+      "selectedContextIds": [
+        "pack-83ea263d:event:session-retrieval-restart-checklist-lookup-seed:cue-restart-checklist:feedback",
+        "pack-83ea263d:event:session-retrieval-restart-checklist-lookup-seed:cue-restart-checklist:interaction",
+        "pack-83ea263d:human-label-harvest"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on cli session session-retrieval-restart-checklist-lookup-seed: The operator lane restart checklist is archived in docs/evidence and incidents are tagged with postmortem IDs.. Related interaction: session-retrieval-restart-checklist-lookup-seed:cue-restart-checklist:interaction.",
+        "Interaction operator_override on cli session session-retrieval-restart-checklist-lookup-seed. Message: cue-restart-checklist-seed-message.",
+        "Human label harvest is first-class with 2 labels sourced from openclaw/runtime/cli/seed:operator_override, openclaw/runtime/cli/seed:teaching."
+      ],
+      "eventExportDigest": "sha256-b70c80c516589f75f3e554dda9a13354830092fcb40f5b5ec514eb4484d471f1",
+      "expectedContextPhrases": [
+        "docs/evidence",
+        "postmortem IDs"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "docs/evidence",
+        "postmortem IDs"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "openclaw/runtime/cli:memory_compiled",
+          "openclaw/runtime/cli:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "openclaw/runtime/cli",
+        "freshestCreatedAt": "2026-04-01T03:44:50.000Z"
+      },
+      "warnings": []
+    }
+  ]
+}

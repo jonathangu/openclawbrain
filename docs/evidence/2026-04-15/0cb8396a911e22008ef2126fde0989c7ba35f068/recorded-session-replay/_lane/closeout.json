@@ -1,0 +1,398 @@
+{
+  "contract": "recorded_session_replay_proof_lane_closeout.v1",
+  "hashAlgorithm": "sha256",
+  "laneDir": "_lane",
+  "sourceManifest": {
+    "contract": "recorded_session_replay_proof_lane_source_manifest.v1",
+    "provided": true,
+    "manifestId": "canonical-frozen-20",
+    "manifestContract": "canonical_recorded_session_trace_set_manifest.v1",
+    "manifestDigest": "sha256-952aff638de8127852221d1fe0e378fdf63456e972fb004f395b0d72c3a8197a"
+  },
+  "verdict": {
+    "verdict": "success_and_proven",
+    "severity": "none",
+    "why": "20/20 replay proof bundles generated successfully and produced deterministic aggregate outputs."
+  },
+  "requestedTraceCount": 20,
+  "successfulTraceCount": 20,
+  "failedTraceCount": 0,
+  "failedTraceIds": [],
+  "modeOrder": [
+    "no_brain",
+    "vector_only",
+    "graph_prior_only",
+    "learned_route"
+  ],
+  "scorecard": {
+    "candidateMode": "learned_route",
+    "baselineMode": "graph_prior_only",
+    "floorMode": "no_brain",
+    "comparableTraceCount": 20,
+    "comparableTurnCount": 45,
+    "traceOutcomeVsBaseline": {
+      "betterCount": 3,
+      "tiedCount": 17,
+      "worseCount": 0,
+      "betterRate": 0.15,
+      "tieRate": 0.85,
+      "worseRate": 0,
+      "totalCount": 20
+    },
+    "turnOutcomeVsBaseline": {
+      "betterCount": 3,
+      "tiedCount": 42,
+      "worseCount": 0,
+      "betterRate": 0.066667,
+      "tieRate": 0.933333,
+      "worseRate": 0,
+      "totalCount": 45
+    },
+    "traceTieOrBetterVsBaseline": {
+      "count": 20,
+      "rate": 1,
+      "totalCount": 20
+    },
+    "turnTieOrBetterVsBaseline": {
+      "count": 45,
+      "rate": 1,
+      "totalCount": 45
+    },
+    "regressionVsBaseline": {
+      "count": 0,
+      "rate": 0,
+      "totalCount": 20
+    },
+    "regressionVsFloor": {
+      "count": 0,
+      "rate": 0,
+      "totalCount": 20
+    },
+    "criticalRegressionCount": 0,
+    "requiredContextRecall": {
+      "available": true,
+      "candidateMode": "learned_route",
+      "baselineMode": "graph_prior_only",
+      "candidatePhraseHitCount": 71,
+      "candidatePhraseCount": 74,
+      "candidateRate": 0.959459,
+      "baselinePhraseHitCount": 65,
+      "baselinePhraseCount": 74,
+      "baselineRate": 0.878378,
+      "delta": 0.081081,
+      "summary": "learned_route recalled 71/74 required-context phrases vs graph_prior_only 65/74"
+    },
+    "correctionAbsorption": {
+      "available": false,
+      "observedFeedbackTurnCount": 25,
+      "observedNonApprovalFeedbackTurnCount": 22,
+      "summary": "observed 25 feedback-bearing turns (22 non-approval), but replay-lane outputs do not yet measure recurrence after correction"
+    },
+    "successAdjustedEconomics": {
+      "available": false,
+      "successUnit": null,
+      "candidateMode": "learned_route",
+      "baselineMode": "graph_prior_only",
+      "successCount": 20,
+      "candidateEstimatedPromptTokensPerSuccess": null,
+      "baselineEstimatedPromptTokensPerSuccess": null,
+      "candidateEstimatedPromptCostUsdPerSuccess": null,
+      "baselineEstimatedPromptCostUsdPerSuccess": null,
+      "promptTokenDeltaCandidateMinusBaseline": null,
+      "promptCostUsdDeltaCandidateMinusBaseline": null,
+      "summary": "success-adjusted economics are not computed in replay-lane aggregates; use comparative eval or proof-cron for prompt-cost proxy surfaces",
+      "limitations": [
+        "replay-lane aggregates do not currently load pricing tables or prompt-cost proxies"
+      ]
+    },
+    "failOpen": {
+      "available": false,
+      "clipRate": null,
+      "failOpenRate": null,
+      "summary": "fail-open posture is not modeled in recorded-session replay lane aggregates; use proof-cron health surfaces for degraded-serve reporting"
+    },
+    "diagnostics": {
+      "candidateMeanQualityScore": 97.3,
+      "baselineMeanQualityScore": 92.8,
+      "floorMeanQualityScore": 0,
+      "candidateMinusBaselineMeanQualityScore": 4.5,
+      "candidateMinusFloorMeanQualityScore": 97.3,
+      "winnerModeCounts": [
+        {
+          "mode": "no_brain",
+          "rankedWinnerCount": 0,
+          "sharedTopScoreTraceCount": 0
+        },
+        {
+          "mode": "vector_only",
+          "rankedWinnerCount": 0,
+          "sharedTopScoreTraceCount": 17
+        },
+        {
+          "mode": "graph_prior_only",
+          "rankedWinnerCount": 17,
+          "sharedTopScoreTraceCount": 17
+        },
+        {
+          "mode": "learned_route",
+          "rankedWinnerCount": 3,
+          "sharedTopScoreTraceCount": 20
+        }
+      ]
+    }
+  },
+  "winnerModeCounts": [
+    {
+      "mode": "no_brain",
+      "rankedWinnerCount": 0,
+      "sharedTopScoreTraceCount": 0
+    },
+    {
+      "mode": "vector_only",
+      "rankedWinnerCount": 0,
+      "sharedTopScoreTraceCount": 17
+    },
+    {
+      "mode": "graph_prior_only",
+      "rankedWinnerCount": 17,
+      "sharedTopScoreTraceCount": 17
+    },
+    {
+      "mode": "learned_route",
+      "rankedWinnerCount": 3,
+      "sharedTopScoreTraceCount": 20
+    }
+  ],
+  "traceHashes": [
+    {
+      "traceId": "tern-recorded-session-proof",
+      "bundleHash": "sha256-545759a1f367f1a420be9630ef812f9fb28f751b3c6e9dbf9a38a9a38e89dc93",
+      "scoreHash": "sha256-a7453179760d6730c4cb8a8f78165410e432147308627d2864232ac3848066c1",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "trace-comparative-replay",
+      "bundleHash": "sha256-3e58e5403b322ba24ea7c4e9b2d1082255c388b5f926c0537508a8d877d290d0",
+      "scoreHash": "sha256-97413340d5b8b24429991c8cea4e5dc72cdf1cda321f80aa4d43151d07a555ae",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "trace-correction-answer-paths-explicit",
+      "bundleHash": "sha256-d41ffad1ab6aa7928acd4c969a780bf1cb05eb985a2ec0bfdcd287a3dbde1aa2",
+      "scoreHash": "sha256-76e39b8d10d22257e3caadc56360dc3e33587ac6fc3ce7a05beb5cceaaef6114",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "trace-correction-deeper-proof-story",
+      "bundleHash": "sha256-911b4ed41f123d4f8179f270de4c80b93294e8dcae8aeff50f44cb1c622dfb87",
+      "scoreHash": "sha256-485e6b66de6f63ddd40d0a216eb227d7deb80a7733be90100e326d586ad3090e",
+      "winnerMode": "learned_route",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "better",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "trace-correction-mode-paths-explicit",
+      "bundleHash": "sha256-d887e4564f499ce966c25da635bef8a540c2f2653d59a4a70767f332e70d3c7f",
+      "scoreHash": "sha256-a9276fe5945f71057087bde65ea5634c3c3e3de1f2d98ea398f3414974e8ffd3",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "trace-correction-rollout-verdict",
+      "bundleHash": "sha256-f92acff724f3616c2cb2dcab71c7755b27b835c807957b05dee6ce5a001abf5c",
+      "scoreHash": "sha256-99dc27aefe2ecbdb02563457f7032329cbb9d72957484d9beaf4fed7fe5f931a",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 70,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "trace-direct-answer-proof-bundle-layout",
+      "bundleHash": "sha256-2565d2a61498d864cba5a074e766b17f0aa4c119191761d60fb2e2ffaa84134c",
+      "scoreHash": "sha256-8118d2f44f248692a5a5b03f07247c8e357738ebb8f7e02d81ae98aeff1760cb",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 88,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "trace-direct-answer-release-verify",
+      "bundleHash": "sha256-bac0e0dc9ddcca6cbf71e260d700e3f52aa46b31680e80dba11a6037e8c8063c",
+      "scoreHash": "sha256-2b79d5f8a8fe889b8d548f79ae169559744fd0b095061af143b5a6abb31b9800",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "trace-direct-answer-reproduce-eval-command",
+      "bundleHash": "sha256-a2f5cd523399986ae6d5829ee9ebcca8dbbe9070709abe8315edde9659efabf7",
+      "scoreHash": "sha256-1d3eef9d904f9393e4377d4ee6ab694a221a3840182dfc5769b4319014606585",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "trace-openclaw-replay-freeze-identity",
+      "bundleHash": "sha256-1bb21b8fb62b87dc1275d0bd4d3a0f270f1fb6bbb443f57bd44c5637354a3bbf",
+      "scoreHash": "sha256-b20e541eacdeb72c9b549f163911cac3c1a9dc5ffc39dc7cb8f2a00fdb9e100a",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "trace-plan-lane-handoff",
+      "bundleHash": "sha256-6916f60c8bb3a7d149847a95a232f33dfb04323f04be3c861365041327355ab1",
+      "scoreHash": "sha256-64127b61e6d0f47a002f4191837b0dbcc480e1196a1c5a56c56883fe38b47465",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "trace-plan-proof-artifact-triage",
+      "bundleHash": "sha256-7a2ce481ef191d29e43e1deb6c039e5bec305be9682ea90986b45145a36d8ecd",
+      "scoreHash": "sha256-82afa5918c639a74824fea5f8f860e704e13b9499dc3e8a562e5fc54eeb94ee5",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "trace-plan-regression-workflow",
+      "bundleHash": "sha256-7d7f09e4cb648c89dc31ce7eecc203b69a276716366567a59835b8153c788181",
+      "scoreHash": "sha256-f523ec89a8c02c755e2c80823530274a74179d47f768d4edccb89c3b145a2570",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 88,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "trace-retrieval-proof-hashes",
+      "bundleHash": "sha256-4f72fc56b2388f1f90654b877e7c72df1326203f388aad0bc79e06205608e224",
+      "scoreHash": "sha256-4e9fe403b4a638d72e2cafaa2b6e4a0edebed70c891271782da1112d487758d1",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "trace-retrieval-restart-checklist-lookup",
+      "bundleHash": "sha256-9fe2290407bf848483ff28aafc903f735d4e94905561b8e6d3d1a69a1efeb16c",
+      "scoreHash": "sha256-0fc01587af55950c910cdd07e471c83c56df7f9e85115e0222b4f69990284a9c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "trace-retrieval-routing-prior-doc",
+      "bundleHash": "sha256-620c29751e10aa5984d4844e22483008ceaf9073c5c58537ed741e0a5caebdf7",
+      "scoreHash": "sha256-750d3084eb45cbe04978ace42223446c0d2ba799bcabb9eb23015ad019a82ed5",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "trace-score-resolution",
+      "bundleHash": "sha256-59b200ffa3484dc22b6db1783284b1feba0ef67da8ee3de7b251e6a51585ee7a",
+      "scoreHash": "sha256-70e1e890ae54d5440109b8ef75576c5cefd731b5cc96717ed21dbfc872989afc",
+      "winnerMode": "learned_route",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "better",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "trace-seed-carry-forward",
+      "bundleHash": "sha256-fc5f1064e38f8325da75454cde6c36021a21289b08915de378e54582bded8524",
+      "scoreHash": "sha256-c149412e84dea6b6ecae1c977cf7441f71107737b032b00479c613e3a782366c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "trace-seed-carry-forward-eval-dedup",
+      "bundleHash": "sha256-e192687dbafedc8e0f1d7b61d0bfba9f4849ba7ddd422d72d4e7a8eea0bfd7aa",
+      "scoreHash": "sha256-bf14b161e80c956a6e83c34dabcd099b025c084700d613ba1eb00da315053c4b",
+      "winnerMode": "learned_route",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "better",
+      "candidateRelationVsFloor": "better"
+    },
+    {
+      "traceId": "trace-train-freeze-eval",
+      "bundleHash": "sha256-58ba7b8463aee580543d2261b70036a9c18c766b22758afe5f4ff3bb8271e248",
+      "scoreHash": "sha256-327801c8d40cf248a5253c64c8a99d6c24d3b2f56b44bac64c95cf52d40854c8",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100,
+      "candidateRelationVsBaseline": "tied",
+      "candidateRelationVsFloor": "better"
+    }
+  ],
+  "files": [
+    {
+      "role": "readme",
+      "path": "README.md",
+      "digest": "sha256-62397f0ca78c87fcf1911f796713801a4be00053b7c5f2783b07135cdd9e705b",
+      "contract": null
+    },
+    {
+      "role": "index",
+      "path": "index.json",
+      "digest": "sha256-ccfbee730ddb226c2c49f4ef760c3bff7d99cde222c4af4689432c61b9800122",
+      "contract": "recorded_session_replay_proof_lane_index.v1"
+    },
+    {
+      "role": "summary-tables",
+      "path": "summary-tables.json",
+      "digest": "sha256-f3c485cdcfaafeeb8ccc5ec688e2126bf4dcca5b2932d23c338f58fa39de90cc",
+      "contract": "recorded_session_replay_proof_lane_summary_tables.v1"
+    },
+    {
+      "role": "pairwise-deltas",
+      "path": "pairwise-deltas.json",
+      "digest": "sha256-e24e00710191964db795104ce747ecfd07a3e96f13cb0539c8002a3c8793742f",
+      "contract": "recorded_session_replay_proof_lane_pairwise_deltas.v1"
+    },
+    {
+      "role": "win-rate-matrix",
+      "path": "win-rate-matrix.json",
+      "digest": "sha256-3574b30fed5f9a8bd6168b3c9db31f38dc949c61b142cdd3ea75cc2d2f6ef62a",
+      "contract": "recorded_session_replay_proof_lane_win_rate_matrix.v1"
+    },
+    {
+      "role": "worked-traces",
+      "path": "worked-traces.md",
+      "digest": "sha256-60ef05ea199f818aebcf2625dfea2dcba63013c9f76d10941a0fecb7bbe1ddcb",
+      "contract": null
+    },
+    {
+      "role": "generation-report",
+      "path": "generation-report.json",
+      "digest": "sha256-3aac813c581093d28b27ab03f05d99b502cd22f1f81795af01673a151b02b8ee",
+      "contract": "recorded_session_replay_proof_lane_generation_report.v1"
+    },
+    {
+      "role": "summary",
+      "path": "summary.md",
+      "digest": "sha256-2319942429dc9b96e63b79738fdcdfedcce9bc62a7d5ba5bd6fb4db6ea570b61",
+      "contract": null
+    }
+  ]
+}

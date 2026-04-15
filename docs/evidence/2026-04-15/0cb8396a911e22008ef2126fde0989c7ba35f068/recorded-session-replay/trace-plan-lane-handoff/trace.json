@@ -1,0 +1,74 @@
+{
+  "contract": "recorded_session_trace.v1",
+  "traceId": "trace-plan-lane-handoff",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T02:40:00.000Z",
+  "bundleBuiltAt": "2026-04-01T02:50:00.000Z",
+  "sessionId": "session-plan-lane-handoff",
+  "channel": "cli",
+  "sourceStream": "openclaw/runtime/cli",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from checked-in task-artifacts and task-status examples"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-trace-plan-lane-handoff",
+    "snapshotId": "snapshot-trace-plan-lane-handoff",
+    "capturedAt": "2026-04-01T02:39:00.000Z",
+    "rootDir": "/tmp/openclawbrain-canonical-frozen-20/trace-plan-lane-handoff",
+    "branch": "main",
+    "revision": "rev-trace-plan-lane-handoff",
+    "labels": [
+      "canonical-frozen-20"
+    ]
+  },
+  "evalTurnCount": 1,
+  "seedBuiltAt": "2026-04-01T02:41:00.000Z",
+  "seedActivatedAt": "2026-04-01T02:42:00.000Z",
+  "seedCues": [
+    {
+      "cueId": "cue-handoff",
+      "createdAt": "2026-04-01T02:38:30.000Z",
+      "content": "A lane handoff in this repo writes a concise task-artifacts markdown report, a machine-readable task-status JSON, records the checks that were run, and commits the branch state.",
+      "kind": "teaching"
+    }
+  ],
+  "turns": [
+    {
+      "turnId": "lane-handoff-turn-1",
+      "createdAt": "2026-04-01T02:43:00.000Z",
+      "deliveredAt": "2026-04-01T02:43:20.000Z",
+      "userMessage": "What are the handoff steps for this lane?",
+      "feedback": [
+        {
+          "createdAt": "2026-04-01T02:43:35.000Z",
+          "content": "Commit the branch, write the markdown report, write the machine-readable status, and record the checks.",
+          "kind": "teaching"
+        }
+      ],
+      "expectedContextPhrases": [
+        "task-artifacts",
+        "task-status"
+      ],
+      "minimumPhraseHits": 1
+    },
+    {
+      "turnId": "lane-handoff-turn-2",
+      "createdAt": "2026-04-01T02:44:30.000Z",
+      "deliveredAt": "2026-04-01T02:44:50.000Z",
+      "userMessage": "Give me the execution checklist again.",
+      "runtimeHints": [
+        "handoff",
+        "checklist"
+      ],
+      "expectedContextPhrases": [
+        "task-artifacts",
+        "task-status",
+        "commit"
+      ],
+      "minimumPhraseHits": 2
+    }
+  ]
+}

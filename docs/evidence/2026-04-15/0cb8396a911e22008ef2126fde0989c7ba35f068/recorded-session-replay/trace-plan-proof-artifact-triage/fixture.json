@@ -1,0 +1,217 @@
+{
+  "contract": "recorded_session_replay_fixture.v1",
+  "traceId": "trace-plan-proof-artifact-triage",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T02:20:00.000Z",
+  "bundleBuiltAt": "2026-04-01T02:30:00.000Z",
+  "traceHash": "sha256-0cf8cb60e9ada33f76aa46557e599749091e81d486af58269182793f5706eb5b",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from docs/reproduce-eval.md"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-trace-plan-proof-artifact-triage",
+    "snapshotId": "snapshot-trace-plan-proof-artifact-triage",
+    "capturedAt": "2026-04-01T02:19:00.000Z",
+    "rootDir": "/tmp/openclawbrain-canonical-frozen-20/trace-plan-proof-artifact-triage",
+    "branch": "main",
+    "revision": "rev-trace-plan-proof-artifact-triage",
+    "labels": [
+      "canonical-frozen-20"
+    ]
+  },
+  "evalTurnCount": 1,
+  "seedBuiltAt": "2026-04-01T02:21:00.000Z",
+  "seedActivatedAt": "2026-04-01T02:22:00.000Z",
+  "seedExport": {
+    "interactionEvents": [
+      {
+        "contract": "interaction_events.v1",
+        "eventId": "session-plan-proof-artifact-triage-seed:cue-artifact-order:interaction",
+        "agentId": "openclaw-runtime",
+        "sessionId": "session-plan-proof-artifact-triage-seed",
+        "channel": "cli",
+        "sequence": 1,
+        "kind": "operator_override",
+        "createdAt": "2026-04-01T02:18:30.000Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "openclaw/runtime/cli/seed"
+        },
+        "semantic": {
+          "semanticType": "control_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "messageId": "cue-artifact-order-seed-message"
+      }
+    ],
+    "feedbackEvents": [
+      {
+        "contract": "feedback_events.v1",
+        "eventId": "session-plan-proof-artifact-triage-seed:cue-artifact-order:feedback",
+        "agentId": "openclaw-runtime",
+        "sessionId": "session-plan-proof-artifact-triage-seed",
+        "channel": "cli",
+        "sequence": 2,
+        "kind": "teaching",
+        "createdAt": "2026-04-01T02:19:30.000Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "openclaw/runtime/cli/seed"
+        },
+        "content": "Start replay proof triage with summary.md, validation-report.json, hashes.json, coverage-snapshot.json, and hardening-snapshot.json before diving into bundle.json or the per-mode files.",
+        "semantic": {
+          "semanticType": "teacher_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "relatedInteractionId": "session-plan-proof-artifact-triage-seed:cue-artifact-order:interaction"
+      }
+    ],
+    "range": {
+      "start": 1,
+      "end": 2,
+      "count": 2,
+      "firstEventId": "session-plan-proof-artifact-triage-seed:cue-artifact-order:interaction",
+      "lastEventId": "session-plan-proof-artifact-triage-seed:cue-artifact-order:feedback",
+      "firstCreatedAt": "2026-04-01T02:18:30.000Z",
+      "lastCreatedAt": "2026-04-01T02:19:30.000Z"
+    },
+    "provenance": {
+      "runtimeOwner": "openclaw",
+      "sessionId": "session-plan-proof-artifact-triage-seed",
+      "channel": "cli",
+      "interactionCount": 1,
+      "feedbackCount": 1,
+      "sourceStreams": [
+        "openclaw/runtime/cli/seed"
+      ],
+      "contracts": [
+        "interaction_events.v1",
+        "feedback_events.v1"
+      ],
+      "exportDigest": "sha256-e9fe62d5e9013b9046466cf927f3b36e5d1c99b5487d98a71139cab835798f39",
+      "semanticSurface": {
+        "semanticTypes": [
+          "control_signal",
+          "teacher_signal"
+        ],
+        "sourceKinds": [
+          "recorded_session_seed"
+        ],
+        "diagnosticIntents": []
+      },
+      "learningSurface": {
+        "bootProfile": "fast_boot_defaults",
+        "learningCadence": "passive_background",
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "openclaw/runtime/cli/seed:operator_override",
+          "openclaw/runtime/cli/seed:teaching"
+        ],
+        "labelSources": {
+          "human": [
+            "openclaw/runtime/cli/seed:operator_override",
+            "openclaw/runtime/cli/seed:teaching"
+          ],
+          "self": []
+        },
+        "labelHarvest": {
+          "humanLabels": 2,
+          "selfLabels": 0,
+          "corrections": 0,
+          "teachings": 1,
+          "approvals": 0,
+          "suppressions": 0,
+          "operatorOverrideLabels": 1,
+          "memoryCompileLabels": 0
+        },
+        "principalSummary": {
+          "teacherIdentities": [],
+          "teacherRoles": [],
+          "teacherAuthorities": [],
+          "priorityClasses": [],
+          "scopedEventCount": 0,
+          "supersedingEventCount": 0
+        }
+      }
+    }
+  },
+  "turns": [
+    {
+      "turnId": "artifact-triage-turn-1",
+      "turn": {
+        "sessionId": "session-plan-proof-artifact-triage",
+        "channel": "cli",
+        "sourceStream": "openclaw/runtime/cli",
+        "userMessage": "I reran a proof bundle. What should I inspect first?",
+        "createdAt": "2026-04-01T02:23:00.000Z",
+        "sequenceStart": 1000,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "runtimeHints": [
+          "triage",
+          "artifacts"
+        ],
+        "compile": {
+          "createdAt": "2026-04-01T02:23:00.000Z",
+          "sequence": 1000
+        },
+        "delivery": {
+          "createdAt": "2026-04-01T02:23:20.000Z",
+          "sequence": 1001,
+          "messageId": "msg-artifact-triage-turn-1"
+        },
+        "feedback": [
+          {
+            "createdAt": "2026-04-01T02:23:35.000Z",
+            "content": "Start with summary.md, validation-report.json, and hashes.json.",
+            "sequence": 1002,
+            "kind": "teaching"
+          }
+        ]
+      },
+      "expectedContextPhrases": [
+        "summary.md",
+        "validation-report.json",
+        "hashes.json"
+      ],
+      "minimumPhraseHits": 1
+    },
+    {
+      "turnId": "artifact-triage-turn-2",
+      "turn": {
+        "sessionId": "session-plan-proof-artifact-triage",
+        "channel": "cli",
+        "sourceStream": "openclaw/runtime/cli",
+        "userMessage": "Convert that into an execution checklist.",
+        "createdAt": "2026-04-01T02:24:40.000Z",
+        "sequenceStart": 1010,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "runtimeHints": [
+          "checklist",
+          "execution"
+        ],
+        "compile": {
+          "createdAt": "2026-04-01T02:24:40.000Z",
+          "sequence": 1010
+        },
+        "delivery": {
+          "createdAt": "2026-04-01T02:25:00.000Z",
+          "sequence": 1011,
+          "messageId": "msg-artifact-triage-turn-2"
+        },
+        "feedback": []
+      },
+      "expectedContextPhrases": [
+        "summary.md",
+        "validation-report.json",
+        "hashes.json"
+      ],
+      "minimumPhraseHits": 2
+    }
+  ],
+  "fixtureHash": "sha256-d2de95f47483d717328b536c37387d67416a65c6ef4706bb5e261a3f2a08590e"
+}

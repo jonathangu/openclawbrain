@@ -1,0 +1,152 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 70,
+    "compileOkCount": 2,
+    "phraseHitCount": 1,
+    "phraseCount": 2,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 1,
+    "packIds": [
+      "pack-45e9f087",
+      "pack-e3c94101"
+    ],
+    "trainTurnCount": 1,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-e3c94101",
+    "frozenEvalRouterIdentity": "pack-e3c94101:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 2,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 3,
+      "scanSurfaces": [
+        "telegram/direct/proof-plan:memory_compiled",
+        "telegram/direct/proof-plan:message_delivered",
+        "telegram/direct/proof-plan:correction"
+      ],
+      "humanLabelCount": 1,
+      "selfLabelCount": 2,
+      "totalEventCount": 5,
+      "attributedEventCount": 5,
+      "attributedTurnCount": 2,
+      "selectionDigestCount": 5,
+      "selectionDigestTurnCount": 2,
+      "activePackChangeCount": 1,
+      "freshestSourceStream": "telegram/direct/proof-plan",
+      "freshestCreatedAt": "2026-04-01T04:25:00.000Z",
+      "warnings": []
+    },
+    "scoreHash": "sha256-f85f91536d09cbd68429a9d5284aa9c6eae17960007211743977ff92e1b849dd"
+  },
+  "turns": [
+    {
+      "turnId": "rollout-verdict-turn-1",
+      "replayMode": "learned_route",
+      "phase": "train",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-45e9f087",
+      "modeRequested": "learned",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-c26b96714c167ae4af69e9a3b7589f0a2d79be1543c0c50945e23ccaf42d5863",
+      "selectedContextIds": [
+        "pack-45e9f087:event:session-correction-rollout-verdict-seed:cue-rollout-verdict:feedback",
+        "pack-45e9f087:event:session-correction-rollout-verdict-seed:cue-rollout-verdict:interaction",
+        "pack-45e9f087:workspace"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on telegram session session-correction-rollout-verdict-seed: A master rollout plan ends with a verdict: ready, limited, or blocked.. Related interaction: session-correction-rollout-verdict-seed:cue-rollout-verdict:interaction.",
+        "Interaction operator_override on telegram session session-correction-rollout-verdict-seed. Message: cue-rollout-verdict-seed-message.",
+        "Workspace snapshot snapshot-trace-correction-rollout-verdict for ws-trace-correction-rollout-verdict captured at 2026-04-01T04:19:00.000Z with revision rev-trace-correction-rollout-verdict."
+      ],
+      "eventExportDigest": "sha256-3f9eeee7b0ca866a2d460da2784574ad588197c48dfc6daf99d681b5faa83a3b",
+      "expectedContextPhrases": [
+        "master plan"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "master plan"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": true,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "telegram/direct/proof-plan:memory_compiled",
+          "telegram/direct/proof-plan:message_delivered",
+          "telegram/direct/proof-plan:correction"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "telegram/direct/proof-plan",
+        "freshestCreatedAt": "2026-04-01T04:23:35.000Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "rollout-verdict-turn-2",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-e3c94101",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "routerIdentity": "pack-e3c94101:route_fn",
+      "selectionDigest": "sha256-66e0481578d5cdd6f07921d16ed31cdb6c0bd1d87fb4864a91de24ca3e9dcff2",
+      "selectedContextIds": [
+        "runtime-graph-d82ea31a:event:evt-729efb6b62ab25bd:split:1",
+        "pack-45e9f087:event:session-correction-rollout-verdict-seed:cue-rollout-verdict:feedback",
+        "runtime-graph-d82ea31a:workspace"
+      ],
+      "selectedContextTexts": [
+        "Focused memory on correction, telegram, direct, proof: Correction feedback on telegram session session-correction-rollout-verdict: The plan is incomplete unless it ends with a rollout verdict: ready, limited, or blocked.",
+        "Teaching feedback on telegram session session-correction-rollout-verdict-seed: A master rollout plan ends with a verdict: ready, limited, or blocked.. Related interaction: session-correction-rollout-verdict-seed:cue-rollout-verdict:interaction.",
+        "Workspace snapshot snapshot-trace-correction-rollout-verdict for ws-trace-correction-rollout-verdict captured at 2026-04-01T04:19:00.000Z with revision rev-trace-correction-rollout-verdict."
+      ],
+      "eventExportDigest": "sha256-746e7b6d70cf282990a831fbc12ea6a60a25c7f0d7e288ef743bb024b62b208e",
+      "expectedContextPhrases": [
+        "ready, limited, or blocked"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "ready, limited, or blocked"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 2,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "telegram/direct/proof-plan:memory_compiled",
+          "telegram/direct/proof-plan:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "telegram/direct/proof-plan",
+        "freshestCreatedAt": "2026-04-01T04:25:00.000Z"
+      },
+      "warnings": []
+    }
+  ]
+}

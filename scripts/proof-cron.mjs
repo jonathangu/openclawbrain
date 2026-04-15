@@ -962,9 +962,18 @@ function summarizeReplayBundle(bundlePath, workspaceRoot) {
   const pricingTable = loadPricingTable();
 
   const modes = Array.isArray(bundle?.modes) ? bundle.modes : [];
-  const winnerMode = summaryTables?.winnerMode ?? bundle?.summary?.winnerMode ?? null;
   const ranking = Array.isArray(summaryTables?.ranking) ? summaryTables.ranking : [];
+  const reportedWinnerMode = summaryTables?.winnerMode ?? bundle?.summary?.winnerMode ?? null;
   const winnerScore = ranking.length > 0 ? Number(ranking[0]?.qualityScore ?? 0) : null;
+  const topModes = ranking.length > 0
+    ? ranking
+        .filter((row) => Number(row?.qualityScore ?? Number.NaN) === winnerScore)
+        .map((row) => row?.mode)
+        .filter((value) => typeof value === "string" && value.length > 0)
+    : [];
+  const topTieCount = topModes.length;
+  const resolvedWinnerMode = topTieCount === 1 ? topModes[0] : null;
+  const winnerMode = resolvedWinnerMode ?? (topTieCount > 1 ? "tie" : reportedWinnerMode);
   const qualityScores = ranking.map((row) => Number(row.qualityScore ?? 0)).filter(Number.isFinite);
   const modeNames = modes.map((mode) => mode.mode).filter(Boolean);
   const savingsByMode = modes.map((mode) => summarizeReplayModeSavings(mode, traceTurnById, pricingTable));
@@ -1053,6 +1062,10 @@ function summarizeReplayBundle(bundlePath, workspaceRoot) {
       traceId: bundle?.traceId ?? trace?.traceId ?? null,
       modeCount: modes.length,
       winnerMode,
+      reportedWinnerMode,
+      resolvedWinnerMode,
+      topModes,
+      topTieCount,
       winnerScore,
       qualityScoreMean: mean(qualityScores),
       qualityScoreMedian: median(qualityScores),
@@ -2087,8 +2100,13 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs, statusPro
   };
 
   const winnerModeCounts = {};
+  let tiedTopBundleCount = 0;
   for (const bundle of replayBundles) {
     const winnerMode = bundle.metrics?.winnerMode ?? "unknown";
+    if (winnerMode === "tie") {
+      tiedTopBundleCount += 1;
+      continue;
+    }
     winnerModeCounts[winnerMode] = (winnerModeCounts[winnerMode] ?? 0) + 1;
   }
 
@@ -2131,6 +2149,7 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs, statusPro
     validationCounts,
     replayMetrics: {
       winnerModeCounts,
+      tiedTopBundleCount,
       winnerScoreMean: mean(replayScores),
       winnerScoreMedian: median(replayScores),
       compileRateMean: mean(replayCompileRates),
@@ -2391,7 +2410,8 @@ function formatNightlyMarkdown(aggregate) {
   lines.push(`- replay freshness: ${aggregate.replayFreshnessTruth?.line ?? "unavailable"}`);
   lines.push("");
   lines.push("## Replay proof diagnostics");
-  lines.push(`- diagnostic top-rank modes: ${JSON.stringify(aggregate.replayMetrics.winnerModeCounts)}`);
+  lines.push(`- diagnostic unique top-rank modes: ${JSON.stringify(aggregate.replayMetrics.winnerModeCounts)}`);
+  lines.push(`- diagnostic tied-top bundles: ${aggregate.replayMetrics.tiedTopBundleCount ?? 0}`);
   lines.push(`- mean diagnostic top score: ${aggregate.replayMetrics.winnerScoreMean ?? "n/a"}`);
   lines.push(`- mean compile rate: ${aggregate.replayMetrics.compileRateMean ?? "n/a"}`);
   lines.push(`- mean phrase-hit rate: ${aggregate.replayMetrics.phraseRateMean ?? "n/a"}`);
