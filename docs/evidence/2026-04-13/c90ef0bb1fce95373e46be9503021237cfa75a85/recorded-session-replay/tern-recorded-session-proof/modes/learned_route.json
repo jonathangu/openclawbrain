@@ -1,0 +1,158 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 100,
+    "compileOkCount": 2,
+    "phraseHitCount": 4,
+    "phraseCount": 4,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 1,
+    "packIds": [
+      "pack-5f82debe",
+      "pack-ba1ef19a"
+    ],
+    "trainTurnCount": 1,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-ba1ef19a",
+    "frozenEvalRouterIdentity": "pack-ba1ef19a:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 2,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 4,
+      "scanSurfaces": [
+        "openclaw/runtime/cli:memory_compiled",
+        "openclaw/runtime/cli:message_delivered",
+        "openclaw/runtime/cli:correction",
+        "openclaw/runtime/cli:teaching"
+      ],
+      "humanLabelCount": 2,
+      "selfLabelCount": 2,
+      "totalEventCount": 6,
+      "attributedEventCount": 6,
+      "attributedTurnCount": 2,
+      "selectionDigestCount": 6,
+      "selectionDigestTurnCount": 2,
+      "activePackChangeCount": 1,
+      "freshestSourceStream": "openclaw/runtime/cli",
+      "freshestCreatedAt": "2026-03-25T00:21:00.000Z",
+      "warnings": []
+    },
+    "scoreHash": "sha256-80e8acd84d67a5d4285809395fbed470955174736d369a346484bffa50b5c8e2"
+  },
+  "turns": [
+    {
+      "turnId": "turn-alpha",
+      "replayMode": "learned_route",
+      "phase": "train",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-5f82debe",
+      "modeRequested": "learned",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-fdcb73b2e2cb04b4a682d14b649e74b9d3b5b1fae9f7dacdbd5efb8f3994be60",
+      "selectedContextIds": [
+        "pack-5f82debe:event:session-tern-proof-seed:cue-deploy-journal:feedback",
+        "pack-5f82debe:event:session-tern-proof-seed:cue-restart-order:interaction",
+        "pack-5f82debe:event:session-tern-proof-seed:cue-deploy-journal:interaction"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on cli session session-tern-proof-seed: The operator lane restart checklist is archived in docs/evidence and incidents are tagged with postmortem IDs.. Related interaction: session-tern-proof-seed:cue-deploy-journal:interaction.",
+        "Interaction operator_override on cli session session-tern-proof-seed. Message: cue-restart-order-seed-message.",
+        "Interaction operator_override on cli session session-tern-proof-seed. Message: cue-deploy-journal-seed-message."
+      ],
+      "eventExportDigest": "sha256-7449b9e69dbdbdae52193d2711dcc7edc91e411029dc25763fd6aeff804d8ca2",
+      "expectedContextPhrases": [
+        "docs/evidence",
+        "postmortem IDs"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "docs/evidence",
+        "postmortem IDs"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": true,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "openclaw/runtime/cli:memory_compiled",
+          "openclaw/runtime/cli:message_delivered",
+          "openclaw/runtime/cli:correction"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "openclaw/runtime/cli",
+        "freshestCreatedAt": "2026-03-25T00:11:00.000Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "turn-beta",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-ba1ef19a",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "routerIdentity": "pack-ba1ef19a:route_fn",
+      "selectionDigest": "sha256-fd5b88c3b35153143d3eb703210c4312e3dac22854e046955565f40bfd931f94",
+      "selectedContextIds": [
+        "pack-5f82debe:event:session-tern-proof-seed:cue-restart-order:feedback",
+        "pack-5f82debe:event:session-tern-proof-seed:cue-deploy-journal:feedback",
+        "runtime-graph-33cab07c:event:evt-8a95c43aef16a2e9"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on cli session session-tern-proof-seed: Keep the operator lane restart order explicit when proving a recorded session replay.. Related interaction: session-tern-proof-seed:cue-restart-order:interaction.",
+        "Teaching feedback on cli session session-tern-proof-seed: The operator lane restart checklist is archived in docs/evidence and incidents are tagged with postmortem IDs.. Related interaction: session-tern-proof-seed:cue-deploy-journal:interaction.",
+        "Correction feedback on cli session session-tern-proof: Answer with docs/evidence and postmortem IDs.. Related interaction: evt-4f0aef30d2fed68b."
+      ],
+      "eventExportDigest": "sha256-9c9bf9d965f3bdac0387bf2b94c861589c5193c9c56723be98f8e10e691121f3",
+      "expectedContextPhrases": [
+        "operator lane",
+        "restart order"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "operator lane",
+        "restart order"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 2,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "openclaw/runtime/cli:memory_compiled",
+          "openclaw/runtime/cli:message_delivered",
+          "openclaw/runtime/cli:teaching"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "openclaw/runtime/cli",
+        "freshestCreatedAt": "2026-03-25T00:21:00.000Z"
+      },
+      "warnings": []
+    }
+  ]
+}

@@ -1,0 +1,216 @@
+{
+  "contract": "recorded_session_replay_fixture.v1",
+  "traceId": "trace-plan-regression-workflow",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T02:00:00.000Z",
+  "bundleBuiltAt": "2026-04-01T02:10:00.000Z",
+  "traceHash": "sha256-d6c19595e20ace6fabb5b7541429491ac83c38d9e852f37f0b5ee0bf60e6ed38",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from docs/reproduce-eval.md"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-trace-plan-regression-workflow",
+    "snapshotId": "snapshot-trace-plan-regression-workflow",
+    "capturedAt": "2026-04-01T01:59:00.000Z",
+    "rootDir": "/tmp/openclawbrain-canonical-frozen-20/trace-plan-regression-workflow",
+    "branch": "main",
+    "revision": "rev-trace-plan-regression-workflow",
+    "labels": [
+      "canonical-frozen-20"
+    ]
+  },
+  "evalTurnCount": 1,
+  "seedBuiltAt": "2026-04-01T02:01:00.000Z",
+  "seedActivatedAt": "2026-04-01T02:02:00.000Z",
+  "seedExport": {
+    "interactionEvents": [
+      {
+        "contract": "interaction_events.v1",
+        "eventId": "session-plan-regression-workflow-seed:cue-regression:interaction",
+        "agentId": "openclaw-runtime",
+        "sessionId": "session-plan-regression-workflow-seed",
+        "channel": "cli",
+        "sequence": 1,
+        "kind": "operator_override",
+        "createdAt": "2026-04-01T01:58:30.000Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "openclaw/runtime/cli/seed"
+        },
+        "semantic": {
+          "semanticType": "control_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "messageId": "cue-regression-seed-message"
+      }
+    ],
+    "feedbackEvents": [
+      {
+        "contract": "feedback_events.v1",
+        "eventId": "session-plan-regression-workflow-seed:cue-regression:feedback",
+        "agentId": "openclaw-runtime",
+        "sessionId": "session-plan-regression-workflow-seed",
+        "channel": "cli",
+        "sequence": 2,
+        "kind": "teaching",
+        "createdAt": "2026-04-01T01:59:30.000Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "openclaw/runtime/cli/seed"
+        },
+        "content": "If a replay rerun changes semantic hashes, compare hashes.json, summary-tables.json, coverage-snapshot.json, and hardening-snapshot.json, then inspect bundle.json and the per-mode outputs before claiming contract drift.",
+        "semantic": {
+          "semanticType": "teacher_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "relatedInteractionId": "session-plan-regression-workflow-seed:cue-regression:interaction"
+      }
+    ],
+    "range": {
+      "start": 1,
+      "end": 2,
+      "count": 2,
+      "firstEventId": "session-plan-regression-workflow-seed:cue-regression:interaction",
+      "lastEventId": "session-plan-regression-workflow-seed:cue-regression:feedback",
+      "firstCreatedAt": "2026-04-01T01:58:30.000Z",
+      "lastCreatedAt": "2026-04-01T01:59:30.000Z"
+    },
+    "provenance": {
+      "runtimeOwner": "openclaw",
+      "sessionId": "session-plan-regression-workflow-seed",
+      "channel": "cli",
+      "interactionCount": 1,
+      "feedbackCount": 1,
+      "sourceStreams": [
+        "openclaw/runtime/cli/seed"
+      ],
+      "contracts": [
+        "interaction_events.v1",
+        "feedback_events.v1"
+      ],
+      "exportDigest": "sha256-b6d43a729069ddade2e0f32a3734dcaceefc3c8c6ebd7564c0cc62fcd18edc99",
+      "semanticSurface": {
+        "semanticTypes": [
+          "control_signal",
+          "teacher_signal"
+        ],
+        "sourceKinds": [
+          "recorded_session_seed"
+        ],
+        "diagnosticIntents": []
+      },
+      "learningSurface": {
+        "bootProfile": "fast_boot_defaults",
+        "learningCadence": "passive_background",
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "openclaw/runtime/cli/seed:operator_override",
+          "openclaw/runtime/cli/seed:teaching"
+        ],
+        "labelSources": {
+          "human": [
+            "openclaw/runtime/cli/seed:operator_override",
+            "openclaw/runtime/cli/seed:teaching"
+          ],
+          "self": []
+        },
+        "labelHarvest": {
+          "humanLabels": 2,
+          "selfLabels": 0,
+          "corrections": 0,
+          "teachings": 1,
+          "approvals": 0,
+          "suppressions": 0,
+          "operatorOverrideLabels": 1,
+          "memoryCompileLabels": 0
+        },
+        "principalSummary": {
+          "teacherIdentities": [],
+          "teacherRoles": [],
+          "teacherAuthorities": [],
+          "priorityClasses": [],
+          "scopedEventCount": 0,
+          "supersedingEventCount": 0
+        }
+      }
+    }
+  },
+  "turns": [
+    {
+      "turnId": "regression-workflow-turn-1",
+      "turn": {
+        "sessionId": "session-plan-regression-workflow",
+        "channel": "cli",
+        "sourceStream": "openclaw/runtime/cli",
+        "userMessage": "Semantic hashes changed on rerun. What do we do next?",
+        "createdAt": "2026-04-01T02:03:00.000Z",
+        "sequenceStart": 1000,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "runtimeHints": [
+          "regression",
+          "hashes"
+        ],
+        "compile": {
+          "createdAt": "2026-04-01T02:03:00.000Z",
+          "sequence": 1000
+        },
+        "delivery": {
+          "createdAt": "2026-04-01T02:03:20.000Z",
+          "sequence": 1001,
+          "messageId": "msg-regression-workflow-turn-1"
+        },
+        "feedback": [
+          {
+            "createdAt": "2026-04-01T02:03:35.000Z",
+            "content": "Compare hashes.json, summary-tables.json, coverage-snapshot.json, and hardening-snapshot.json before you inspect bundle.json and modes/learned_route.json.",
+            "sequence": 1002,
+            "kind": "teaching"
+          }
+        ]
+      },
+      "expectedContextPhrases": [
+        "hashes.json",
+        "bundle.json"
+      ],
+      "minimumPhraseHits": 1
+    },
+    {
+      "turnId": "regression-workflow-turn-2",
+      "turn": {
+        "sessionId": "session-plan-regression-workflow",
+        "channel": "cli",
+        "sourceStream": "openclaw/runtime/cli",
+        "userMessage": "Turn that into an end-to-end regression workflow.",
+        "createdAt": "2026-04-01T02:05:00.000Z",
+        "sequenceStart": 1010,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "runtimeHints": [
+          "workflow",
+          "end-to-end"
+        ],
+        "compile": {
+          "createdAt": "2026-04-01T02:05:00.000Z",
+          "sequence": 1010
+        },
+        "delivery": {
+          "createdAt": "2026-04-01T02:05:20.000Z",
+          "sequence": 1011,
+          "messageId": "msg-regression-workflow-turn-2"
+        },
+        "feedback": []
+      },
+      "expectedContextPhrases": [
+        "hashes.json",
+        "summary-tables.json",
+        "modes/learned_route.json"
+      ],
+      "minimumPhraseHits": 2
+    }
+  ],
+  "fixtureHash": "sha256-398d90b9686a4dc952239f413c84c29595706a3f11e555898846a0d70de73153"
+}

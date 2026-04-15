@@ -1,0 +1,154 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 100,
+    "compileOkCount": 2,
+    "phraseHitCount": 3,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 1,
+    "packIds": [
+      "pack-0b86adf3",
+      "pack-41435f1f"
+    ],
+    "trainTurnCount": 1,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-41435f1f",
+    "frozenEvalRouterIdentity": "pack-41435f1f:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 2,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 3,
+      "scanSurfaces": [
+        "openclaw/runtime/cli:memory_compiled",
+        "openclaw/runtime/cli:message_delivered",
+        "openclaw/runtime/cli:correction"
+      ],
+      "humanLabelCount": 1,
+      "selfLabelCount": 2,
+      "totalEventCount": 5,
+      "attributedEventCount": 5,
+      "attributedTurnCount": 2,
+      "selectionDigestCount": 5,
+      "selectionDigestTurnCount": 2,
+      "activePackChangeCount": 1,
+      "freshestSourceStream": "openclaw/runtime/cli",
+      "freshestCreatedAt": "2026-04-01T05:04:50.000Z",
+      "warnings": []
+    },
+    "scoreHash": "sha256-b56530fa46ce2f0d3b73b1a1a183f82e908d13a54682bae34a5274d7342b735d"
+  },
+  "turns": [
+    {
+      "turnId": "mode-paths-turn-1",
+      "replayMode": "learned_route",
+      "phase": "train",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-0b86adf3",
+      "modeRequested": "learned",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-fdc6921ed1b31871d4f2776200d2f057cd0a5645e33eeb4c775b801aabfe5e07",
+      "selectedContextIds": [
+        "pack-0b86adf3:event:session-correction-mode-paths-explicit-seed:cue-mode-paths:feedback",
+        "pack-0b86adf3:event:session-correction-mode-paths-explicit-seed:cue-mode-paths:interaction",
+        "pack-0b86adf3:workspace"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on cli session session-correction-mode-paths-explicit-seed: The proof bundle writes per-mode outputs at modes/no_brain.json, modes/vector_only.json, modes/graph_prior_only.json, and modes/learned_route.json.. Related interaction: session-correction-mode-paths-explicit-seed:cue-mode-paths:interaction.",
+        "Interaction operator_override on cli session session-correction-mode-paths-explicit-seed. Message: cue-mode-paths-seed-message.",
+        "Workspace snapshot snapshot-trace-correction-mode-paths-explicit for ws-trace-correction-mode-paths-explicit captured at 2026-04-01T04:59:00.000Z with revision rev-trace-correction-mode-paths-explicit."
+      ],
+      "eventExportDigest": "sha256-751f962690cce97e770d6475830b3bce4b2e04067266755f6c52312845d6da62",
+      "expectedContextPhrases": [
+        "modes/no_brain.json"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "modes/no_brain.json"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": true,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "openclaw/runtime/cli:memory_compiled",
+          "openclaw/runtime/cli:message_delivered",
+          "openclaw/runtime/cli:correction"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "openclaw/runtime/cli",
+        "freshestCreatedAt": "2026-04-01T05:03:35.000Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "mode-paths-turn-2",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-41435f1f",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "routerIdentity": "pack-41435f1f:route_fn",
+      "selectionDigest": "sha256-cfb70f4e92bfe49a72a314425e02e54153b1338d50496ae92169af561a2eef9a",
+      "selectedContextIds": [
+        "runtime-graph-fb481c5a:event:evt-e131db3bb6ff8ce2",
+        "pack-0b86adf3:event:session-correction-mode-paths-explicit-seed:cue-mode-paths:feedback",
+        "runtime-graph-fb481c5a:workspace"
+      ],
+      "selectedContextTexts": [
+        "Correction feedback on cli session session-correction-mode-paths-explicit: Keep the file paths explicit: modes/no_brain.json and modes/learned_route.json.. Related interaction: evt-4e47a403b2ef65b8.",
+        "Teaching feedback on cli session session-correction-mode-paths-explicit-seed: The proof bundle writes per-mode outputs at modes/no_brain.json, modes/vector_only.json, modes/graph_prior_only.json, and modes/learned_route.json.. Related interaction: session-correction-mode-paths-explicit-seed:cue-mode-paths:interaction.",
+        "Workspace snapshot snapshot-trace-correction-mode-paths-explicit for ws-trace-correction-mode-paths-explicit captured at 2026-04-01T04:59:00.000Z with revision rev-trace-correction-mode-paths-explicit."
+      ],
+      "eventExportDigest": "sha256-e50d21b08fda677de8c047ac30b478ba1c728a4996576d821203a6ba8bfda588",
+      "expectedContextPhrases": [
+        "modes/no_brain.json",
+        "modes/learned_route.json"
+      ],
+      "minimumPhraseHits": 2,
+      "phraseHits": [
+        "modes/no_brain.json",
+        "modes/learned_route.json"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 2,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "openclaw/runtime/cli:memory_compiled",
+          "openclaw/runtime/cli:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "openclaw/runtime/cli",
+        "freshestCreatedAt": "2026-04-01T05:04:50.000Z"
+      },
+      "warnings": []
+    }
+  ]
+}

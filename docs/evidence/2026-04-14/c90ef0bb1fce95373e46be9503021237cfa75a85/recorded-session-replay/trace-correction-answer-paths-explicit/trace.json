@@ -1,0 +1,71 @@
+{
+  "contract": "recorded_session_trace.v1",
+  "traceId": "trace-correction-answer-paths-explicit",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T04:00:00.000Z",
+  "bundleBuiltAt": "2026-04-01T04:10:00.000Z",
+  "sessionId": "session-correction-answer-paths-explicit",
+  "channel": "cli",
+  "sourceStream": "openclaw/runtime/cli",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from the recorded-session proof bundle fixture"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-trace-correction-answer-paths-explicit",
+    "snapshotId": "snapshot-trace-correction-answer-paths-explicit",
+    "capturedAt": "2026-04-01T03:59:00.000Z",
+    "rootDir": "/tmp/openclawbrain-canonical-frozen-20/trace-correction-answer-paths-explicit",
+    "branch": "main",
+    "revision": "rev-trace-correction-answer-paths-explicit",
+    "labels": [
+      "canonical-frozen-20"
+    ]
+  },
+  "evalTurnCount": 1,
+  "seedBuiltAt": "2026-04-01T04:01:00.000Z",
+  "seedActivatedAt": "2026-04-01T04:02:00.000Z",
+  "seedCues": [
+    {
+      "cueId": "cue-explicit-archive",
+      "createdAt": "2026-04-01T03:58:30.000Z",
+      "content": "When answering archive and incident-tag questions, keep the concrete path docs/evidence and the label postmortem IDs explicit.",
+      "kind": "teaching"
+    }
+  ],
+  "turns": [
+    {
+      "turnId": "explicit-paths-turn-1",
+      "createdAt": "2026-04-01T04:03:00.000Z",
+      "deliveredAt": "2026-04-01T04:03:20.000Z",
+      "userMessage": "Where is the archive again?",
+      "feedback": [
+        {
+          "createdAt": "2026-04-01T04:03:35.000Z",
+          "content": "That is still too vague. Answer with docs/evidence and postmortem IDs.",
+          "kind": "correction"
+        }
+      ],
+      "expectedContextPhrases": [
+        "docs/evidence"
+      ]
+    },
+    {
+      "turnId": "explicit-paths-turn-2",
+      "createdAt": "2026-04-01T04:04:30.000Z",
+      "deliveredAt": "2026-04-01T04:04:50.000Z",
+      "userMessage": "Say it again without dropping the concrete path or incident tag.",
+      "runtimeHints": [
+        "correction",
+        "explicit"
+      ],
+      "expectedContextPhrases": [
+        "docs/evidence",
+        "postmortem IDs"
+      ],
+      "minimumPhraseHits": 2
+    }
+  ]
+}

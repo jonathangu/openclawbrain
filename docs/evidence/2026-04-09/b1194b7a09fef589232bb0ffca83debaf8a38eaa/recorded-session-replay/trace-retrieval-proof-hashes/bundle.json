@@ -1,0 +1,648 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "trace-retrieval-proof-hashes",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T03:00:00.000Z",
+  "generatedAt": "2026-04-01T03:10:00.000Z",
+  "traceHash": "sha256-0459c0fc86792c696bf9cc08f781d4cda302256c62e036040b83468b7f5434aa",
+  "fixtureHash": "sha256-037ab45cee260e72054bca957f17ffcf09f42052b826c8be6335ab9bf5a8cb0a",
+  "scoreHash": "sha256-0dd1aebace8e7519ab083e55aec8f6c21dc93108dd95314bb3b3545e42108f12",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from docs/internal/recorded-session-replay.md"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 5,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 2,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 0,
+          "totalEventCount": 3,
+          "attributedEventCount": 3,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T03:04:50.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-92b6e3cbb25607cbcf4bbb960bff7a027b61da7359fed6908c38ec8cdeaca5c0"
+      },
+      "turns": [
+        {
+          "turnId": "proof-hashes-turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-31e186d3879daae7ea851f180e38d203fb0ac43a2cb6b88f7b5c443b5bc61f9b",
+          "expectedContextPhrases": [
+            "traceHash",
+            "bundleHash"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "traceHash",
+            "bundleHash"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 0,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T03:03:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "proof-hashes-turn-2",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-eebb0e06bac54da541978de6dcdac82ce67be1f82104f7cc4fa45a4ddccbdf34",
+          "expectedContextPhrases": [
+            "traceHash",
+            "fixtureHash",
+            "bundleHash"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "traceHash",
+            "fixtureHash",
+            "bundleHash"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T03:04:50.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 100,
+        "compileOkCount": 2,
+        "phraseHitCount": 5,
+        "phraseCount": 5,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-0e280e72"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 2,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 3,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:memory_compiled",
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 2,
+          "totalEventCount": 5,
+          "attributedEventCount": 5,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 5,
+          "selectionDigestTurnCount": 2,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T03:04:50.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-b358e9f86119a0b28c9d1a927db583ff3b74da094c2cc2df652c309c45cd4441"
+      },
+      "turns": [
+        {
+          "turnId": "proof-hashes-turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-0e280e72",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-cfeff7fb40cb75760660d4bbf0532273bff2580d6e11a55af79b61932be39ee9",
+          "selectedContextIds": [
+            "pack-0e280e72:event:session-retrieval-proof-hashes-seed:cue-semantic-hashes:feedback",
+            "pack-0e280e72:event:session-retrieval-proof-hashes-seed:cue-semantic-hashes:interaction",
+            "pack-0e280e72:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-retrieval-proof-hashes-seed: Recorded session replay computes semantic hashes named traceHash, fixtureHash, scoreHash, and bundleHash.. Related interaction: session-retrieval-proof-hashes-seed:cue-semantic-hashes:interaction.",
+            "Interaction operator_override on cli session session-retrieval-proof-hashes-seed. Message: cue-semantic-hashes-seed-message.",
+            "Workspace snapshot snapshot-trace-retrieval-proof-hashes for ws-trace-retrieval-proof-hashes captured at 2026-04-01T02:59:00.000Z with revision rev-trace-retrieval-proof-hashes."
+          ],
+          "eventExportDigest": "sha256-8dda1a4e283d9f5585346ed154d60441002e225cd4ae00f7d590994927c702f9",
+          "expectedContextPhrases": [
+            "traceHash",
+            "bundleHash"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [
+            "traceHash",
+            "bundleHash"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 1,
+            "totalEventCount": 3,
+            "attributedEventCount": 3,
+            "selectionDigestCount": 3,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T03:03:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "proof-hashes-turn-2",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-0e280e72",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-cfeff7fb40cb75760660d4bbf0532273bff2580d6e11a55af79b61932be39ee9",
+          "selectedContextIds": [
+            "pack-0e280e72:event:session-retrieval-proof-hashes-seed:cue-semantic-hashes:feedback",
+            "pack-0e280e72:event:session-retrieval-proof-hashes-seed:cue-semantic-hashes:interaction",
+            "pack-0e280e72:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-retrieval-proof-hashes-seed: Recorded session replay computes semantic hashes named traceHash, fixtureHash, scoreHash, and bundleHash.. Related interaction: session-retrieval-proof-hashes-seed:cue-semantic-hashes:interaction.",
+            "Interaction operator_override on cli session session-retrieval-proof-hashes-seed. Message: cue-semantic-hashes-seed-message.",
+            "Workspace snapshot snapshot-trace-retrieval-proof-hashes for ws-trace-retrieval-proof-hashes captured at 2026-04-01T02:59:00.000Z with revision rev-trace-retrieval-proof-hashes."
+          ],
+          "eventExportDigest": "sha256-dd8ff6ef58279e150e408aed00112bf8d9ff599ec720cc4eaed475ea55d4ccbf",
+          "expectedContextPhrases": [
+            "traceHash",
+            "fixtureHash",
+            "bundleHash"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "traceHash",
+            "fixtureHash",
+            "bundleHash"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T03:04:50.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 100,
+        "compileOkCount": 2,
+        "phraseHitCount": 5,
+        "phraseCount": 5,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-0e280e72"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 2,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 3,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:memory_compiled",
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 2,
+          "totalEventCount": 5,
+          "attributedEventCount": 5,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 5,
+          "selectionDigestTurnCount": 2,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T03:04:50.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-1286390e33d6b579a7ce35bce914eb7364fb7f16adf70fbd9a163a58fbd06482"
+      },
+      "turns": [
+        {
+          "turnId": "proof-hashes-turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-0e280e72",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-cfeff7fb40cb75760660d4bbf0532273bff2580d6e11a55af79b61932be39ee9",
+          "selectedContextIds": [
+            "pack-0e280e72:event:session-retrieval-proof-hashes-seed:cue-semantic-hashes:feedback",
+            "pack-0e280e72:event:session-retrieval-proof-hashes-seed:cue-semantic-hashes:interaction",
+            "pack-0e280e72:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-retrieval-proof-hashes-seed: Recorded session replay computes semantic hashes named traceHash, fixtureHash, scoreHash, and bundleHash.. Related interaction: session-retrieval-proof-hashes-seed:cue-semantic-hashes:interaction.",
+            "Interaction operator_override on cli session session-retrieval-proof-hashes-seed. Message: cue-semantic-hashes-seed-message.",
+            "Workspace snapshot snapshot-trace-retrieval-proof-hashes for ws-trace-retrieval-proof-hashes captured at 2026-04-01T02:59:00.000Z with revision rev-trace-retrieval-proof-hashes."
+          ],
+          "eventExportDigest": "sha256-8dda1a4e283d9f5585346ed154d60441002e225cd4ae00f7d590994927c702f9",
+          "expectedContextPhrases": [
+            "traceHash",
+            "bundleHash"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [
+            "traceHash",
+            "bundleHash"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 1,
+            "totalEventCount": 3,
+            "attributedEventCount": 3,
+            "selectionDigestCount": 3,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T03:03:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "proof-hashes-turn-2",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-0e280e72",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-cfeff7fb40cb75760660d4bbf0532273bff2580d6e11a55af79b61932be39ee9",
+          "selectedContextIds": [
+            "pack-0e280e72:event:session-retrieval-proof-hashes-seed:cue-semantic-hashes:feedback",
+            "pack-0e280e72:event:session-retrieval-proof-hashes-seed:cue-semantic-hashes:interaction",
+            "pack-0e280e72:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-retrieval-proof-hashes-seed: Recorded session replay computes semantic hashes named traceHash, fixtureHash, scoreHash, and bundleHash.. Related interaction: session-retrieval-proof-hashes-seed:cue-semantic-hashes:interaction.",
+            "Interaction operator_override on cli session session-retrieval-proof-hashes-seed. Message: cue-semantic-hashes-seed-message.",
+            "Workspace snapshot snapshot-trace-retrieval-proof-hashes for ws-trace-retrieval-proof-hashes captured at 2026-04-01T02:59:00.000Z with revision rev-trace-retrieval-proof-hashes."
+          ],
+          "eventExportDigest": "sha256-dd8ff6ef58279e150e408aed00112bf8d9ff599ec720cc4eaed475ea55d4ccbf",
+          "expectedContextPhrases": [
+            "traceHash",
+            "fixtureHash",
+            "bundleHash"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "traceHash",
+            "fixtureHash",
+            "bundleHash"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T03:04:50.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 100,
+        "compileOkCount": 2,
+        "phraseHitCount": 5,
+        "phraseCount": 5,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 1,
+        "packIds": [
+          "pack-0e280e72",
+          "pack-faee9a58"
+        ],
+        "trainTurnCount": 1,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-faee9a58",
+        "frozenEvalRouterIdentity": "pack-faee9a58:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 3,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:memory_compiled",
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 2,
+          "totalEventCount": 5,
+          "attributedEventCount": 5,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 5,
+          "selectionDigestTurnCount": 2,
+          "activePackChangeCount": 1,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T03:04:50.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-a7947c5efe444c9ff6d355b3f62d98886f57b16676e8657bd6286bbae453584f"
+      },
+      "turns": [
+        {
+          "turnId": "proof-hashes-turn-1",
+          "replayMode": "learned_route",
+          "phase": "train",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-0e280e72",
+          "modeRequested": "learned",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-cfeff7fb40cb75760660d4bbf0532273bff2580d6e11a55af79b61932be39ee9",
+          "selectedContextIds": [
+            "pack-0e280e72:event:session-retrieval-proof-hashes-seed:cue-semantic-hashes:feedback",
+            "pack-0e280e72:event:session-retrieval-proof-hashes-seed:cue-semantic-hashes:interaction",
+            "pack-0e280e72:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-retrieval-proof-hashes-seed: Recorded session replay computes semantic hashes named traceHash, fixtureHash, scoreHash, and bundleHash.. Related interaction: session-retrieval-proof-hashes-seed:cue-semantic-hashes:interaction.",
+            "Interaction operator_override on cli session session-retrieval-proof-hashes-seed. Message: cue-semantic-hashes-seed-message.",
+            "Workspace snapshot snapshot-trace-retrieval-proof-hashes for ws-trace-retrieval-proof-hashes captured at 2026-04-01T02:59:00.000Z with revision rev-trace-retrieval-proof-hashes."
+          ],
+          "eventExportDigest": "sha256-8dda1a4e283d9f5585346ed154d60441002e225cd4ae00f7d590994927c702f9",
+          "expectedContextPhrases": [
+            "traceHash",
+            "bundleHash"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [
+            "traceHash",
+            "bundleHash"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": true,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 1,
+            "totalEventCount": 3,
+            "attributedEventCount": 3,
+            "selectionDigestCount": 3,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T03:03:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "proof-hashes-turn-2",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-faee9a58",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "routerIdentity": "pack-faee9a58:route_fn",
+          "selectionDigest": "sha256-93668334f942bfe19d761890b21abd360602374d3014a9aa486d63753745a31b",
+          "selectedContextIds": [
+            "runtime-graph-59aae2b2:event:evt-958c07592bceffb5",
+            "pack-0e280e72:event:session-retrieval-proof-hashes-seed:cue-semantic-hashes:feedback",
+            "runtime-graph-59aae2b2:event:evt-289f118623c0b228"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-retrieval-proof-hashes: Name the semantic hashes directly: traceHash, fixtureHash, scoreHash, and bundleHash.. Related interaction: evt-289f118623c0b228.",
+            "Teaching feedback on cli session session-retrieval-proof-hashes-seed: Recorded session replay computes semantic hashes named traceHash, fixtureHash, scoreHash, and bundleHash.. Related interaction: session-retrieval-proof-hashes-seed:cue-semantic-hashes:interaction.",
+            "Interaction memory_compiled on cli session session-retrieval-proof-hashes. Pack: pack-0e280e72."
+          ],
+          "eventExportDigest": "sha256-b5ce93ae6c4ddc8fd506e2dec9516bb24780be65fb676429f2fbab1262f29a79",
+          "expectedContextPhrases": [
+            "traceHash",
+            "fixtureHash",
+            "bundleHash"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "traceHash",
+            "fixtureHash",
+            "bundleHash"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 2,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T03:04:50.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 100
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 100
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 100
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-9e8e59fd0c8d5dea2b3fa97e22eb2147e084a9e9c0b8fe99d148f063d6356799"
+}

@@ -1,0 +1,212 @@
+{
+  "contract": "recorded_session_replay_fixture.v1",
+  "traceId": "trace-plan-lane-handoff",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T02:40:00.000Z",
+  "bundleBuiltAt": "2026-04-01T02:50:00.000Z",
+  "traceHash": "sha256-fb2dfcc53391da243d2eb309363317b16592b228eb91cec9df07b31f719e0068",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from checked-in task-artifacts and task-status examples"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-trace-plan-lane-handoff",
+    "snapshotId": "snapshot-trace-plan-lane-handoff",
+    "capturedAt": "2026-04-01T02:39:00.000Z",
+    "rootDir": "/tmp/openclawbrain-canonical-frozen-20/trace-plan-lane-handoff",
+    "branch": "main",
+    "revision": "rev-trace-plan-lane-handoff",
+    "labels": [
+      "canonical-frozen-20"
+    ]
+  },
+  "evalTurnCount": 1,
+  "seedBuiltAt": "2026-04-01T02:41:00.000Z",
+  "seedActivatedAt": "2026-04-01T02:42:00.000Z",
+  "seedExport": {
+    "interactionEvents": [
+      {
+        "contract": "interaction_events.v1",
+        "eventId": "session-plan-lane-handoff-seed:cue-handoff:interaction",
+        "agentId": "openclaw-runtime",
+        "sessionId": "session-plan-lane-handoff-seed",
+        "channel": "cli",
+        "sequence": 1,
+        "kind": "operator_override",
+        "createdAt": "2026-04-01T02:38:30.000Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "openclaw/runtime/cli/seed"
+        },
+        "semantic": {
+          "semanticType": "control_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "messageId": "cue-handoff-seed-message"
+      }
+    ],
+    "feedbackEvents": [
+      {
+        "contract": "feedback_events.v1",
+        "eventId": "session-plan-lane-handoff-seed:cue-handoff:feedback",
+        "agentId": "openclaw-runtime",
+        "sessionId": "session-plan-lane-handoff-seed",
+        "channel": "cli",
+        "sequence": 2,
+        "kind": "teaching",
+        "createdAt": "2026-04-01T02:39:30.000Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "openclaw/runtime/cli/seed"
+        },
+        "content": "A lane handoff in this repo writes a concise task-artifacts markdown report, a machine-readable task-status JSON, records the checks that were run, and commits the branch state.",
+        "semantic": {
+          "semanticType": "teacher_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "relatedInteractionId": "session-plan-lane-handoff-seed:cue-handoff:interaction"
+      }
+    ],
+    "range": {
+      "start": 1,
+      "end": 2,
+      "count": 2,
+      "firstEventId": "session-plan-lane-handoff-seed:cue-handoff:interaction",
+      "lastEventId": "session-plan-lane-handoff-seed:cue-handoff:feedback",
+      "firstCreatedAt": "2026-04-01T02:38:30.000Z",
+      "lastCreatedAt": "2026-04-01T02:39:30.000Z"
+    },
+    "provenance": {
+      "runtimeOwner": "openclaw",
+      "sessionId": "session-plan-lane-handoff-seed",
+      "channel": "cli",
+      "interactionCount": 1,
+      "feedbackCount": 1,
+      "sourceStreams": [
+        "openclaw/runtime/cli/seed"
+      ],
+      "contracts": [
+        "interaction_events.v1",
+        "feedback_events.v1"
+      ],
+      "exportDigest": "sha256-994ad22fd1b72f2f07edfba18ebbfa6e16e7fdb4dbb27aba77e28c96dbcfc12a",
+      "semanticSurface": {
+        "semanticTypes": [
+          "control_signal",
+          "teacher_signal"
+        ],
+        "sourceKinds": [
+          "recorded_session_seed"
+        ],
+        "diagnosticIntents": []
+      },
+      "learningSurface": {
+        "bootProfile": "fast_boot_defaults",
+        "learningCadence": "passive_background",
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "openclaw/runtime/cli/seed:operator_override",
+          "openclaw/runtime/cli/seed:teaching"
+        ],
+        "labelSources": {
+          "human": [
+            "openclaw/runtime/cli/seed:operator_override",
+            "openclaw/runtime/cli/seed:teaching"
+          ],
+          "self": []
+        },
+        "labelHarvest": {
+          "humanLabels": 2,
+          "selfLabels": 0,
+          "corrections": 0,
+          "teachings": 1,
+          "approvals": 0,
+          "suppressions": 0,
+          "operatorOverrideLabels": 1,
+          "memoryCompileLabels": 0
+        },
+        "principalSummary": {
+          "teacherIdentities": [],
+          "teacherRoles": [],
+          "teacherAuthorities": [],
+          "priorityClasses": [],
+          "scopedEventCount": 0,
+          "supersedingEventCount": 0
+        }
+      }
+    }
+  },
+  "turns": [
+    {
+      "turnId": "lane-handoff-turn-1",
+      "turn": {
+        "sessionId": "session-plan-lane-handoff",
+        "channel": "cli",
+        "sourceStream": "openclaw/runtime/cli",
+        "userMessage": "What are the handoff steps for this lane?",
+        "createdAt": "2026-04-01T02:43:00.000Z",
+        "sequenceStart": 1000,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "compile": {
+          "createdAt": "2026-04-01T02:43:00.000Z",
+          "sequence": 1000
+        },
+        "delivery": {
+          "createdAt": "2026-04-01T02:43:20.000Z",
+          "sequence": 1001,
+          "messageId": "msg-lane-handoff-turn-1"
+        },
+        "feedback": [
+          {
+            "createdAt": "2026-04-01T02:43:35.000Z",
+            "content": "Commit the branch, write the markdown report, write the machine-readable status, and record the checks.",
+            "sequence": 1002,
+            "kind": "teaching"
+          }
+        ]
+      },
+      "expectedContextPhrases": [
+        "task-artifacts",
+        "task-status"
+      ],
+      "minimumPhraseHits": 1
+    },
+    {
+      "turnId": "lane-handoff-turn-2",
+      "turn": {
+        "sessionId": "session-plan-lane-handoff",
+        "channel": "cli",
+        "sourceStream": "openclaw/runtime/cli",
+        "userMessage": "Give me the execution checklist again.",
+        "createdAt": "2026-04-01T02:44:30.000Z",
+        "sequenceStart": 1010,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "runtimeHints": [
+          "handoff",
+          "checklist"
+        ],
+        "compile": {
+          "createdAt": "2026-04-01T02:44:30.000Z",
+          "sequence": 1010
+        },
+        "delivery": {
+          "createdAt": "2026-04-01T02:44:50.000Z",
+          "sequence": 1011,
+          "messageId": "msg-lane-handoff-turn-2"
+        },
+        "feedback": []
+      },
+      "expectedContextPhrases": [
+        "task-artifacts",
+        "task-status",
+        "commit"
+      ],
+      "minimumPhraseHits": 2
+    }
+  ],
+  "fixtureHash": "sha256-f1ba04aa90e022e7a4283505f4deef91fe6f05bb8b561d462b99f13bd3455652"
+}

@@ -1,0 +1,151 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 70,
+    "compileOkCount": 2,
+    "phraseHitCount": 1,
+    "phraseCount": 2,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-c4cc9128"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 2,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 2,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 3,
+      "scanSurfaces": [
+        "telegram/direct/proof-plan:memory_compiled",
+        "telegram/direct/proof-plan:message_delivered",
+        "telegram/direct/proof-plan:correction"
+      ],
+      "humanLabelCount": 1,
+      "selfLabelCount": 2,
+      "totalEventCount": 5,
+      "attributedEventCount": 5,
+      "attributedTurnCount": 2,
+      "selectionDigestCount": 5,
+      "selectionDigestTurnCount": 2,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "telegram/direct/proof-plan",
+      "freshestCreatedAt": "2026-04-01T04:25:00.000Z",
+      "warnings": []
+    },
+    "scoreHash": "sha256-cb93443e4de7f676d1b2f184b3a5680470b6d56a457d4d3abf0343bb6db5ca77"
+  },
+  "turns": [
+    {
+      "turnId": "rollout-verdict-turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-c4cc9128",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-1180aab7b0dc8a11c518ca48d596be8d6acd864b71fcad2c56eb2a89d4d12d7a",
+      "selectedContextIds": [
+        "pack-c4cc9128:event:session-correction-rollout-verdict-seed:cue-rollout-verdict:feedback",
+        "pack-c4cc9128:event:session-correction-rollout-verdict-seed:cue-rollout-verdict:interaction",
+        "pack-c4cc9128:workspace"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on telegram session session-correction-rollout-verdict-seed: A master rollout plan ends with a verdict: ready, limited, or blocked.. Related interaction: session-correction-rollout-verdict-seed:cue-rollout-verdict:interaction.",
+        "Interaction operator_override on telegram session session-correction-rollout-verdict-seed. Message: cue-rollout-verdict-seed-message.",
+        "Workspace snapshot snapshot-trace-correction-rollout-verdict for ws-trace-correction-rollout-verdict captured at 2026-04-01T04:19:00.000Z with revision rev-trace-correction-rollout-verdict."
+      ],
+      "eventExportDigest": "sha256-906ca441f1edcbd2389fc25ba1d84f0601ec781cb0b8c97a727408e025301e2a",
+      "expectedContextPhrases": [
+        "master plan"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "master plan"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "telegram/direct/proof-plan:memory_compiled",
+          "telegram/direct/proof-plan:message_delivered",
+          "telegram/direct/proof-plan:correction"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "telegram/direct/proof-plan",
+        "freshestCreatedAt": "2026-04-01T04:23:35.000Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "rollout-verdict-turn-2",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-c4cc9128",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-1180aab7b0dc8a11c518ca48d596be8d6acd864b71fcad2c56eb2a89d4d12d7a",
+      "selectedContextIds": [
+        "pack-c4cc9128:event:session-correction-rollout-verdict-seed:cue-rollout-verdict:feedback",
+        "pack-c4cc9128:event:session-correction-rollout-verdict-seed:cue-rollout-verdict:interaction",
+        "pack-c4cc9128:workspace"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on telegram session session-correction-rollout-verdict-seed: A master rollout plan ends with a verdict: ready, limited, or blocked.. Related interaction: session-correction-rollout-verdict-seed:cue-rollout-verdict:interaction.",
+        "Interaction operator_override on telegram session session-correction-rollout-verdict-seed. Message: cue-rollout-verdict-seed-message.",
+        "Workspace snapshot snapshot-trace-correction-rollout-verdict for ws-trace-correction-rollout-verdict captured at 2026-04-01T04:19:00.000Z with revision rev-trace-correction-rollout-verdict."
+      ],
+      "eventExportDigest": "sha256-41ecbc4f3dd19505924481621cd67aa3a00672cc39df37037f0e6c42ce233322",
+      "expectedContextPhrases": [
+        "ready, limited, or blocked"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "ready, limited, or blocked"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "telegram/direct/proof-plan:memory_compiled",
+          "telegram/direct/proof-plan:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "telegram/direct/proof-plan",
+        "freshestCreatedAt": "2026-04-01T04:25:00.000Z"
+      },
+      "warnings": []
+    }
+  ]
+}

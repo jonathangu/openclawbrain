@@ -1,0 +1,209 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 100,
+    "compileOkCount": 3,
+    "phraseHitCount": 4,
+    "phraseCount": 4,
+    "usedLearnedRouteTurnCount": 2,
+    "promotionCount": 2,
+    "packIds": [
+      "pack-5ac3de9a",
+      "pack-57f6dff0",
+      "pack-9e4984cb"
+    ],
+    "trainTurnCount": 2,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-9e4984cb",
+    "frozenEvalRouterIdentity": "pack-9e4984cb:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 3,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 4,
+      "scanSurfaces": [
+        "telegram/direct/live-proof-story:memory_compiled",
+        "telegram/direct/live-proof-story:message_delivered",
+        "telegram/direct/live-proof-story:teaching",
+        "telegram/direct/live-proof-story:correction"
+      ],
+      "humanLabelCount": 2,
+      "selfLabelCount": 3,
+      "totalEventCount": 8,
+      "attributedEventCount": 8,
+      "attributedTurnCount": 3,
+      "selectionDigestCount": 8,
+      "selectionDigestTurnCount": 3,
+      "activePackChangeCount": 2,
+      "freshestSourceStream": "telegram/direct/live-proof-story",
+      "freshestCreatedAt": "2026-04-01T04:46:50.000Z",
+      "warnings": []
+    },
+    "scoreHash": "sha256-d75ca0361714b9a4396b02ee0a5da369d6344789571fcebd343aeea39c9b90a8"
+  },
+  "turns": [
+    {
+      "turnId": "deeper-story-turn-1",
+      "replayMode": "learned_route",
+      "phase": "train",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-5ac3de9a",
+      "modeRequested": "learned",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-dfb9dc2a53f4ed8d5675642018b1624c04a96cc875020d1b0c482b6e99c8777d",
+      "selectedContextIds": [
+        "pack-5ac3de9a:event:session-correction-deeper-proof-story-seed:cue-proof-story:feedback",
+        "pack-5ac3de9a:workspace",
+        "pack-5ac3de9a:event:session-correction-deeper-proof-story-seed:cue-proof-story:interaction"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on telegram session session-correction-deeper-proof-story-seed: OpenClawBrain starts as a correctly attached but mostly empty memory scaffold until host proof signals confirm the live state.. Related interaction: session-correction-deeper-proof-story-seed:cue-proof-story:interaction.",
+        "Workspace snapshot snapshot-trace-correction-deeper-proof-story for ws-trace-correction-deeper-proof-story captured at 2026-04-01T04:39:00.000Z with revision rev-trace-correction-deeper-proof-story.",
+        "Interaction operator_override on telegram session session-correction-deeper-proof-story-seed. Message: cue-proof-story-seed-message."
+      ],
+      "eventExportDigest": "sha256-74d3ab235949a26cd7347a4b64412cdcd19acdf69008c8b173d99b6b278f1989",
+      "expectedContextPhrases": [
+        "memory scaffold"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "memory scaffold"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": true,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "telegram/direct/live-proof-story:memory_compiled",
+          "telegram/direct/live-proof-story:message_delivered",
+          "telegram/direct/live-proof-story:teaching"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "telegram/direct/live-proof-story",
+        "freshestCreatedAt": "2026-04-01T04:43:35.000Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "deeper-story-turn-2",
+      "replayMode": "learned_route",
+      "phase": "train",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-57f6dff0",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "routerIdentity": "pack-57f6dff0:route_fn",
+      "selectionDigest": "sha256-788e7aa930b15747d3fc8d2d8cabf40f87b728aa6fd05aa44e1781f9fe048d76",
+      "selectedContextIds": [
+        "runtime-graph-ba59bce5:passive-background-learning",
+        "runtime-graph-ba59bce5:event:evt-01371e2521b0832f:split:1",
+        "pack-5ac3de9a:event:session-correction-deeper-proof-story-seed:cue-proof-story:feedback"
+      ],
+      "selectedContextTexts": [
+        "Learning cadence is passive_background with always_on scans across telegram/direct/live-proof-story:memory_compiled, telegram/direct/live-proof-story:message_delivered, telegram/direct/live-proof-story:teaching; sparse teacher gating budget=32, delayMs=0, background_amplification=1, amplified_labels=0.",
+        "Focused memory on teaching, telegram, direct, live: Teaching feedback on telegram session session-correction-deeper-proof-story: Use the current shared ~/.",
+        "Teaching feedback on telegram session session-correction-deeper-proof-story-seed: OpenClawBrain starts as a correctly attached but mostly empty memory scaffold until host proof signals confirm the live state.. Related interaction: session-correction-deeper-proof-story-seed:cue-proof-story:interaction."
+      ],
+      "eventExportDigest": "sha256-55e9399d92b86d8e12393d30af4774ff1c32b4c9c67af207f58c8c77c2bdf1e0",
+      "expectedContextPhrases": [
+        "memory scaffold"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "memory scaffold"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 2,
+      "promoted": true,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "telegram/direct/live-proof-story:memory_compiled",
+          "telegram/direct/live-proof-story:message_delivered",
+          "telegram/direct/live-proof-story:correction"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "telegram/direct/live-proof-story",
+        "freshestCreatedAt": "2026-04-01T04:45:05.000Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "deeper-story-turn-3",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-9e4984cb",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "routerIdentity": "pack-9e4984cb:route_fn",
+      "selectionDigest": "sha256-f969ef8dcb45686edc79a50109c0a657b6591b1dd1f1f11ff35ffc5478e7f52e",
+      "selectedContextIds": [
+        "pack-5ac3de9a:event:session-correction-deeper-proof-story-seed:cue-proof-story:feedback",
+        "runtime-graph-42f51726:event:evt-d326931732540bbf",
+        "runtime-graph-42f51726:event:evt-01371e2521b0832f:split:1"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on telegram session session-correction-deeper-proof-story-seed: OpenClawBrain starts as a correctly attached but mostly empty memory scaffold until host proof signals confirm the live state.. Related interaction: session-correction-deeper-proof-story-seed:cue-proof-story:interaction.",
+        "Correction feedback on telegram session session-correction-deeper-proof-story: Ground the rewrite in real host proof signals: BRAIN LOADED, loadProof=status_probe_ready, serveState=serving_active_pack, routeFn available=yes.. Related interaction: evt-184095e332ee4990.",
+        "Focused memory on teaching, telegram, direct, live: Teaching feedback on telegram session session-correction-deeper-proof-story: Use the current shared ~/."
+      ],
+      "eventExportDigest": "sha256-ee780bfad4da31fb048e175798003daf1e7f2f9d3d5b64a42dbfaa00097e14f0",
+      "expectedContextPhrases": [
+        "BRAIN LOADED",
+        "routeFn available=yes"
+      ],
+      "minimumPhraseHits": 2,
+      "phraseHits": [
+        "BRAIN LOADED",
+        "routeFn available=yes"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 3,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "telegram/direct/live-proof-story:memory_compiled",
+          "telegram/direct/live-proof-story:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "telegram/direct/live-proof-story",
+        "freshestCreatedAt": "2026-04-01T04:46:50.000Z"
+      },
+      "warnings": []
+    }
+  ]
+}

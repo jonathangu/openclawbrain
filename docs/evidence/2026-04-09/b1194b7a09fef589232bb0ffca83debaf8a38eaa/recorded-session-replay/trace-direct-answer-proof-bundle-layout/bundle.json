@@ -1,0 +1,651 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "trace-direct-answer-proof-bundle-layout",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T01:00:00.000Z",
+  "generatedAt": "2026-04-01T01:10:00.000Z",
+  "traceHash": "sha256-54052d000bc2de2ee0ee13e66c958eb9a0908be2b39a2b95467eadc464a02dd8",
+  "fixtureHash": "sha256-ee85abc4e14b2b91215595b14426e9eacc4b89e75df8b01c0a46744b81127aae",
+  "scoreHash": "sha256-8dacf4ff6aec6d444933ba68386eac14027fb737e309991af8c285645a65ff24",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from docs/internal/recorded-session-replay.md"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 5,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 2,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 0,
+          "totalEventCount": 3,
+          "attributedEventCount": 3,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T01:05:20.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-07e23608e09214276f8ae4f5271602de4245cc9330c6f83aafcab4e29dab8b2c"
+      },
+      "turns": [
+        {
+          "turnId": "bundle-layout-turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-c3d9307f4946ecea4681799a95c7ffc3d1f2418c304b8044de3d314f75adf1db",
+          "expectedContextPhrases": [
+            "manifest.json",
+            "bundle.json"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "manifest.json",
+            "bundle.json"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 0,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T01:03:45.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "bundle-layout-turn-2",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-9051295b3c2532e7c4078d335c55a5842c29484ef4aa3dc3a1b9b88006282432",
+          "expectedContextPhrases": [
+            "manifest.json",
+            "bundle.json",
+            "modes/learned_route.json"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "manifest.json",
+            "bundle.json",
+            "modes/learned_route.json"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T01:05:20.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 88,
+        "compileOkCount": 2,
+        "phraseHitCount": 4,
+        "phraseCount": 5,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-3d2a187f"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 2,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 3,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:memory_compiled",
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 2,
+          "totalEventCount": 5,
+          "attributedEventCount": 5,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 5,
+          "selectionDigestTurnCount": 2,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T01:05:20.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-b4c99343b23a8e97b3c027345a0042624177b2131d688bc3fdded51ea90fc792"
+      },
+      "turns": [
+        {
+          "turnId": "bundle-layout-turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-3d2a187f",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-dfeba50a7ed731e9a3681e91c489111c427c7be2b8c40e1c8e9bcaa8ea2aa0f6",
+          "selectedContextIds": [
+            "pack-3d2a187f:event:session-direct-answer-proof-bundle-layout-seed:cue-layout:feedback",
+            "pack-3d2a187f:event:session-direct-answer-proof-bundle-layout-seed:cue-layout:interaction",
+            "pack-3d2a187f:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-direct-answer-proof-bundle-layout-seed: A recorded-session replay proof bundle uses a fixed layout including manifest.json, trace.json, fixture.json, bundle.json, environment.json, summary.md, summary-tables.json, coverage-snapshot.json, hardening-snapshot.json, hashes.json, and per-mode JSON files.. Related interaction: session-direct-answer-proof-bundle-layout-seed:cue-layout:interaction.",
+            "Interaction operator_override on cli session session-direct-answer-proof-bundle-layout-seed. Message: cue-layout-seed-message.",
+            "Workspace snapshot snapshot-trace-direct-answer-proof-bundle-layout for ws-trace-direct-answer-proof-bundle-layout captured at 2026-04-01T00:59:00.000Z with revision rev-trace-direct-answer-proof-bundle-layout."
+          ],
+          "eventExportDigest": "sha256-c11ff2a22eada64fada5d9e16eb81e66af401ba19fd620ce638c808d13539d4a",
+          "expectedContextPhrases": [
+            "manifest.json",
+            "bundle.json"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "manifest.json",
+            "bundle.json"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 1,
+            "totalEventCount": 3,
+            "attributedEventCount": 3,
+            "selectionDigestCount": 3,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T01:03:45.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "bundle-layout-turn-2",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-3d2a187f",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-dfeba50a7ed731e9a3681e91c489111c427c7be2b8c40e1c8e9bcaa8ea2aa0f6",
+          "selectedContextIds": [
+            "pack-3d2a187f:event:session-direct-answer-proof-bundle-layout-seed:cue-layout:feedback",
+            "pack-3d2a187f:event:session-direct-answer-proof-bundle-layout-seed:cue-layout:interaction",
+            "pack-3d2a187f:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-direct-answer-proof-bundle-layout-seed: A recorded-session replay proof bundle uses a fixed layout including manifest.json, trace.json, fixture.json, bundle.json, environment.json, summary.md, summary-tables.json, coverage-snapshot.json, hardening-snapshot.json, hashes.json, and per-mode JSON files.. Related interaction: session-direct-answer-proof-bundle-layout-seed:cue-layout:interaction.",
+            "Interaction operator_override on cli session session-direct-answer-proof-bundle-layout-seed. Message: cue-layout-seed-message.",
+            "Workspace snapshot snapshot-trace-direct-answer-proof-bundle-layout for ws-trace-direct-answer-proof-bundle-layout captured at 2026-04-01T00:59:00.000Z with revision rev-trace-direct-answer-proof-bundle-layout."
+          ],
+          "eventExportDigest": "sha256-3a16d2dba5ef20e3d3e85100de1272cb2c9a3afb1653a0e592d501156232a809",
+          "expectedContextPhrases": [
+            "manifest.json",
+            "bundle.json",
+            "modes/learned_route.json"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "manifest.json",
+            "bundle.json"
+          ],
+          "missedPhrases": [
+            "modes/learned_route.json"
+          ],
+          "qualityScore": 80,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T01:05:20.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 88,
+        "compileOkCount": 2,
+        "phraseHitCount": 4,
+        "phraseCount": 5,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-3d2a187f"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 2,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 3,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:memory_compiled",
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 2,
+          "totalEventCount": 5,
+          "attributedEventCount": 5,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 5,
+          "selectionDigestTurnCount": 2,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T01:05:20.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-07bf933d4378ba38ecea714461d19b7959b36cea8d834937bd4ea5d28efd0e29"
+      },
+      "turns": [
+        {
+          "turnId": "bundle-layout-turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-3d2a187f",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-dfeba50a7ed731e9a3681e91c489111c427c7be2b8c40e1c8e9bcaa8ea2aa0f6",
+          "selectedContextIds": [
+            "pack-3d2a187f:event:session-direct-answer-proof-bundle-layout-seed:cue-layout:feedback",
+            "pack-3d2a187f:event:session-direct-answer-proof-bundle-layout-seed:cue-layout:interaction",
+            "pack-3d2a187f:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-direct-answer-proof-bundle-layout-seed: A recorded-session replay proof bundle uses a fixed layout including manifest.json, trace.json, fixture.json, bundle.json, environment.json, summary.md, summary-tables.json, coverage-snapshot.json, hardening-snapshot.json, hashes.json, and per-mode JSON files.. Related interaction: session-direct-answer-proof-bundle-layout-seed:cue-layout:interaction.",
+            "Interaction operator_override on cli session session-direct-answer-proof-bundle-layout-seed. Message: cue-layout-seed-message.",
+            "Workspace snapshot snapshot-trace-direct-answer-proof-bundle-layout for ws-trace-direct-answer-proof-bundle-layout captured at 2026-04-01T00:59:00.000Z with revision rev-trace-direct-answer-proof-bundle-layout."
+          ],
+          "eventExportDigest": "sha256-c11ff2a22eada64fada5d9e16eb81e66af401ba19fd620ce638c808d13539d4a",
+          "expectedContextPhrases": [
+            "manifest.json",
+            "bundle.json"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "manifest.json",
+            "bundle.json"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 1,
+            "totalEventCount": 3,
+            "attributedEventCount": 3,
+            "selectionDigestCount": 3,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T01:03:45.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "bundle-layout-turn-2",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-3d2a187f",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-dfeba50a7ed731e9a3681e91c489111c427c7be2b8c40e1c8e9bcaa8ea2aa0f6",
+          "selectedContextIds": [
+            "pack-3d2a187f:event:session-direct-answer-proof-bundle-layout-seed:cue-layout:feedback",
+            "pack-3d2a187f:event:session-direct-answer-proof-bundle-layout-seed:cue-layout:interaction",
+            "pack-3d2a187f:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-direct-answer-proof-bundle-layout-seed: A recorded-session replay proof bundle uses a fixed layout including manifest.json, trace.json, fixture.json, bundle.json, environment.json, summary.md, summary-tables.json, coverage-snapshot.json, hardening-snapshot.json, hashes.json, and per-mode JSON files.. Related interaction: session-direct-answer-proof-bundle-layout-seed:cue-layout:interaction.",
+            "Interaction operator_override on cli session session-direct-answer-proof-bundle-layout-seed. Message: cue-layout-seed-message.",
+            "Workspace snapshot snapshot-trace-direct-answer-proof-bundle-layout for ws-trace-direct-answer-proof-bundle-layout captured at 2026-04-01T00:59:00.000Z with revision rev-trace-direct-answer-proof-bundle-layout."
+          ],
+          "eventExportDigest": "sha256-3a16d2dba5ef20e3d3e85100de1272cb2c9a3afb1653a0e592d501156232a809",
+          "expectedContextPhrases": [
+            "manifest.json",
+            "bundle.json",
+            "modes/learned_route.json"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "manifest.json",
+            "bundle.json"
+          ],
+          "missedPhrases": [
+            "modes/learned_route.json"
+          ],
+          "qualityScore": 80,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T01:05:20.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 88,
+        "compileOkCount": 2,
+        "phraseHitCount": 4,
+        "phraseCount": 5,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 1,
+        "packIds": [
+          "pack-3d2a187f",
+          "pack-547312c1"
+        ],
+        "trainTurnCount": 1,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-547312c1",
+        "frozenEvalRouterIdentity": "pack-547312c1:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 3,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:memory_compiled",
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 2,
+          "totalEventCount": 5,
+          "attributedEventCount": 5,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 5,
+          "selectionDigestTurnCount": 2,
+          "activePackChangeCount": 1,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T01:05:20.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-4217a5ccfbb4badc668b62efb96cfa3d978bc0f798f07114ae2a0fed225365ed"
+      },
+      "turns": [
+        {
+          "turnId": "bundle-layout-turn-1",
+          "replayMode": "learned_route",
+          "phase": "train",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-3d2a187f",
+          "modeRequested": "learned",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-dfeba50a7ed731e9a3681e91c489111c427c7be2b8c40e1c8e9bcaa8ea2aa0f6",
+          "selectedContextIds": [
+            "pack-3d2a187f:event:session-direct-answer-proof-bundle-layout-seed:cue-layout:feedback",
+            "pack-3d2a187f:event:session-direct-answer-proof-bundle-layout-seed:cue-layout:interaction",
+            "pack-3d2a187f:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-direct-answer-proof-bundle-layout-seed: A recorded-session replay proof bundle uses a fixed layout including manifest.json, trace.json, fixture.json, bundle.json, environment.json, summary.md, summary-tables.json, coverage-snapshot.json, hardening-snapshot.json, hashes.json, and per-mode JSON files.. Related interaction: session-direct-answer-proof-bundle-layout-seed:cue-layout:interaction.",
+            "Interaction operator_override on cli session session-direct-answer-proof-bundle-layout-seed. Message: cue-layout-seed-message.",
+            "Workspace snapshot snapshot-trace-direct-answer-proof-bundle-layout for ws-trace-direct-answer-proof-bundle-layout captured at 2026-04-01T00:59:00.000Z with revision rev-trace-direct-answer-proof-bundle-layout."
+          ],
+          "eventExportDigest": "sha256-c11ff2a22eada64fada5d9e16eb81e66af401ba19fd620ce638c808d13539d4a",
+          "expectedContextPhrases": [
+            "manifest.json",
+            "bundle.json"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "manifest.json",
+            "bundle.json"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": true,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 1,
+            "totalEventCount": 3,
+            "attributedEventCount": 3,
+            "selectionDigestCount": 3,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T01:03:45.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "bundle-layout-turn-2",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-547312c1",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "routerIdentity": "pack-547312c1:route_fn",
+          "selectionDigest": "sha256-94ad6d75847c3e179941cb2111d53e59656f62efa68be99599493da6eb1af933",
+          "selectedContextIds": [
+            "pack-3d2a187f:event:session-direct-answer-proof-bundle-layout-seed:cue-layout:feedback",
+            "runtime-graph-f1652500:event:evt-e1fcaea88adaa09b",
+            "runtime-graph-f1652500:event:evt-f1a0681f3b81e851"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-direct-answer-proof-bundle-layout-seed: A recorded-session replay proof bundle uses a fixed layout including manifest.json, trace.json, fixture.json, bundle.json, environment.json, summary.md, summary-tables.json, coverage-snapshot.json, hardening-snapshot.json, hashes.json, and per-mode JSON files.. Related interaction: session-direct-answer-proof-bundle-layout-seed:cue-layout:interaction.",
+            "Teaching feedback on cli session session-direct-answer-proof-bundle-layout: Keep the answer concrete: mention manifest.json, bundle.json, and a per-mode file.. Related interaction: evt-f1a0681f3b81e851.",
+            "Interaction memory_compiled on cli session session-direct-answer-proof-bundle-layout. Pack: pack-3d2a187f."
+          ],
+          "eventExportDigest": "sha256-7d693be3a896702394373c2ca26b6535e6e08aa4ba6376bba573b14e2cfba258",
+          "expectedContextPhrases": [
+            "manifest.json",
+            "bundle.json",
+            "modes/learned_route.json"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "manifest.json",
+            "bundle.json"
+          ],
+          "missedPhrases": [
+            "modes/learned_route.json"
+          ],
+          "qualityScore": 80,
+          "compileActiveVersion": 2,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T01:05:20.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 88
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 88
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 88
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-e84b53d5f935d350542943dc4f1a91973e121743e43214313a823bc5e1b1f677"
+}

@@ -1,0 +1,204 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 100,
+    "compileOkCount": 3,
+    "phraseHitCount": 3,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 2,
+    "promotionCount": 1,
+    "packIds": [
+      "pack-e519d7dc",
+      "pack-8a7e18b0"
+    ],
+    "trainTurnCount": 1,
+    "evalTurnCount": 2,
+    "frozenEvalPackId": "pack-8a7e18b0",
+    "frozenEvalRouterIdentity": "pack-8a7e18b0:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 3,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 3,
+      "scanSurfaces": [
+        "recorded/session:memory_compiled",
+        "recorded/session:message_delivered",
+        "recorded/session:approval"
+      ],
+      "humanLabelCount": 1,
+      "selfLabelCount": 3,
+      "totalEventCount": 7,
+      "attributedEventCount": 7,
+      "attributedTurnCount": 3,
+      "selectionDigestCount": 7,
+      "selectionDigestTurnCount": 3,
+      "activePackChangeCount": 1,
+      "freshestSourceStream": "recorded/session",
+      "freshestCreatedAt": "2026-03-25T10:10:30.000Z",
+      "warnings": []
+    },
+    "scoreHash": "sha256-42fef7a338af042793f1651750bc763c1e9547e1e6e80cdbd1e7a7e616edd9ee"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "train",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-e519d7dc",
+      "modeRequested": "learned",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-80c4c5d184dd90c5eefde8626b0dd3009e20e2e04f71bad8d370264944ead3d1",
+      "selectedContextIds": [
+        "pack-e519d7dc:event:session-train-freeze-eval-seed:cue-1:feedback",
+        "pack-e519d7dc:event:session-train-freeze-eval-seed:cue-1:interaction",
+        "pack-e519d7dc:offline:2ad90343"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on chat session session-train-freeze-eval-seed: Always read README before editing code.. Related interaction: session-train-freeze-eval-seed:cue-1:interaction.",
+        "Interaction operator_override on chat session session-train-freeze-eval-seed. Message: cue-1-seed-message.",
+        "Deterministic init seed from recorded-session-replay-seed stays heuristic-only for boot route priors before PG-authoritative handoff."
+      ],
+      "eventExportDigest": "sha256-7e696dfa7ddc4961917ed19d62a3fd12a97a06959db2f8283d1e335497a668fd",
+      "expectedContextPhrases": [
+        "readme before editing"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "readme before editing"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": true,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "recorded/session:memory_compiled",
+          "recorded/session:message_delivered",
+          "recorded/session:approval"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "recorded/session",
+        "freshestCreatedAt": "2026-03-25T10:01:45.000Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "turn-2",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-8a7e18b0",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "routerIdentity": "pack-8a7e18b0:route_fn",
+      "selectionDigest": "sha256-b0837c2b50e3854aa0747d05e61325e95e1aae376a3916c6f8284edf821e52be",
+      "selectedContextIds": [
+        "pack-e519d7dc:event:session-train-freeze-eval-seed:cue-1:feedback",
+        "pack-e519d7dc:human-label-harvest",
+        "runtime-graph-9793ccd1:event:evt-bb7c2a087c0bd1c5"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on chat session session-train-freeze-eval-seed: Always read README before editing code.. Related interaction: session-train-freeze-eval-seed:cue-1:interaction.",
+        "Human label harvest is first-class with 2 labels sourced from recorded/session/seed:operator_override, recorded/session/seed:teaching.",
+        "Approval feedback on chat session session-train-freeze-eval: Correct: read README before editing code.. Related interaction: evt-1e5df9af7dcacd28."
+      ],
+      "eventExportDigest": "sha256-40aa18d3618d275fd7d5ac0ae3173d4210a3cf8021567c1f722ede08772fb699",
+      "expectedContextPhrases": [
+        "readme before editing"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "readme before editing"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 2,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "recorded/session:memory_compiled",
+          "recorded/session:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "recorded/session",
+        "freshestCreatedAt": "2026-03-25T10:05:30.000Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "turn-3",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-8a7e18b0",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "routerIdentity": "pack-8a7e18b0:route_fn",
+      "selectionDigest": "sha256-fd54b93d10bd329f8dd29e26c5b26cc30c19c77013df7ba6dc43bedf22d28055",
+      "selectedContextIds": [
+        "pack-e519d7dc:event:session-train-freeze-eval-seed:cue-1:feedback",
+        "runtime-graph-9793ccd1:event:evt-bb7c2a087c0bd1c5",
+        "runtime-graph-9793ccd1:workspace"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on chat session session-train-freeze-eval-seed: Always read README before editing code.. Related interaction: session-train-freeze-eval-seed:cue-1:interaction.",
+        "Approval feedback on chat session session-train-freeze-eval: Correct: read README before editing code.. Related interaction: evt-1e5df9af7dcacd28.",
+        "Workspace snapshot snapshot-train-freeze-eval for workspace-train-freeze-eval captured at 2026-03-25T09:55:00.000Z with revision rev-train-freeze-eval."
+      ],
+      "eventExportDigest": "sha256-49c095c5b257dcd26c1f5fd5d53caddf386a40fdd44fa60932d075c8d825e944",
+      "expectedContextPhrases": [
+        "readme before editing"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "readme before editing"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 2,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "recorded/session:memory_compiled",
+          "recorded/session:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "recorded/session",
+        "freshestCreatedAt": "2026-03-25T10:10:30.000Z"
+      },
+      "warnings": []
+    }
+  ]
+}

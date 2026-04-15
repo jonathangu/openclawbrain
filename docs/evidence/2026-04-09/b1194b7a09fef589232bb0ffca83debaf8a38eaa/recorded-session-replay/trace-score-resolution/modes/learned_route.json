@@ -1,0 +1,208 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 100,
+    "compileOkCount": 3,
+    "phraseHitCount": 4,
+    "phraseCount": 4,
+    "usedLearnedRouteTurnCount": 2,
+    "promotionCount": 2,
+    "packIds": [
+      "pack-3a5807c2",
+      "pack-0557437d",
+      "pack-8ab1b269"
+    ],
+    "trainTurnCount": 2,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-8ab1b269",
+    "frozenEvalRouterIdentity": "pack-8ab1b269:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 3,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 3,
+      "scanSurfaces": [
+        "telegram/direct/proof-plan:memory_compiled",
+        "telegram/direct/proof-plan:message_delivered",
+        "telegram/direct/proof-plan:teaching"
+      ],
+      "humanLabelCount": 2,
+      "selfLabelCount": 3,
+      "totalEventCount": 8,
+      "attributedEventCount": 8,
+      "attributedTurnCount": 3,
+      "selectionDigestCount": 8,
+      "selectionDigestTurnCount": 3,
+      "activePackChangeCount": 2,
+      "freshestSourceStream": "telegram/direct/proof-plan",
+      "freshestCreatedAt": "2026-03-28T20:01:41.227Z",
+      "warnings": []
+    },
+    "scoreHash": "sha256-658fda7bb2b0f2ba01e84d25ccaef74c16ec03e2917c4851df896401a9a54a56"
+  },
+  "turns": [
+    {
+      "turnId": "plan-turn-1",
+      "replayMode": "learned_route",
+      "phase": "train",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-3a5807c2",
+      "modeRequested": "learned",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-0ca721bd5cc18828c36cd2c6f95557869b3d6cf28507ed6b0cf41cba32dcd4e5",
+      "selectedContextIds": [
+        "pack-3a5807c2:event:sanitized-session-score-resolution-seed:cue-proof-run:feedback",
+        "pack-3a5807c2:event:sanitized-session-score-resolution-seed:cue-proof-run:interaction",
+        "pack-3a5807c2:passive-background-learning"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on telegram session sanitized-session-score-resolution-seed: T-20260328-040 is the real-trace learned-route proof run for OpenClawBrain.. Related interaction: sanitized-session-score-resolution-seed:cue-proof-run:interaction.",
+        "Interaction operator_override on telegram session sanitized-session-score-resolution-seed. Message: cue-proof-run-seed-message.",
+        "Learning cadence is passive_background with always_on scans across telegram/direct/proof-plan/seed:operator_override, telegram/direct/proof-plan/seed:teaching; sparse teacher gating budget=32, delayMs=0, background_amplification=1, amplified_labels=0."
+      ],
+      "eventExportDigest": "sha256-78fee51336cf6f52b1e7507d37c2f40d1c4d378703c5506ad1e0db802c67a92d",
+      "expectedContextPhrases": [
+        "learned-route proof run"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "learned-route proof run"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": true,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "telegram/direct/proof-plan:memory_compiled",
+          "telegram/direct/proof-plan:message_delivered",
+          "telegram/direct/proof-plan:teaching"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "telegram/direct/proof-plan",
+        "freshestCreatedAt": "2026-03-28T19:54:57.546Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "plan-turn-2",
+      "replayMode": "learned_route",
+      "phase": "train",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-0557437d",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "routerIdentity": "pack-0557437d:route_fn",
+      "selectionDigest": "sha256-99c5f98b42ced79e5008d7f6ec8ab6dfae7bf35b8945817db55e200124a57ba2",
+      "selectedContextIds": [
+        "pack-3a5807c2:event:sanitized-session-score-resolution-seed:cue-proof-run:feedback",
+        "runtime-graph-fce6926c:workspace",
+        "runtime-graph-fce6926c:event:evt-f9e640279ca670a6"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on telegram session sanitized-session-score-resolution-seed: T-20260328-040 is the real-trace learned-route proof run for OpenClawBrain.. Related interaction: sanitized-session-score-resolution-seed:cue-proof-run:interaction.",
+        "Workspace snapshot snapshot-trace-score-resolution for ws-trace-score-resolution captured at 2026-03-28T17:26:18.111Z with revision rev-trace-score-resolution.",
+        "Teaching feedback on telegram session sanitized-session-score-resolution: Next steps: commit the rollout-evaluator scaffold, export a sanitized non-test real-trace replay corpus, and rerun the rollout evaluator.. Related interaction: evt-6e33923f4f4100bb."
+      ],
+      "eventExportDigest": "sha256-29b57ed3fccbe6536250a57fb0133872eacbde18503903df33aaedb6474f47e6",
+      "expectedContextPhrases": [
+        "real-trace learned-route proof run"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "real-trace learned-route proof run"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 2,
+      "promoted": true,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "telegram/direct/proof-plan:memory_compiled",
+          "telegram/direct/proof-plan:message_delivered",
+          "telegram/direct/proof-plan:teaching"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "telegram/direct/proof-plan",
+        "freshestCreatedAt": "2026-03-28T19:58:48.383Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "plan-turn-3",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-8ab1b269",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "routerIdentity": "pack-8ab1b269:route_fn",
+      "selectionDigest": "sha256-b57d155b7814d4a672b71ac7c5ab6cac55ec68006753577f93bb3156cdae79a8",
+      "selectedContextIds": [
+        "runtime-graph-d6bddde3:event:evt-c9dd3ce2126e8203:split:1",
+        "pack-3a5807c2:event:sanitized-session-score-resolution-seed:cue-proof-run:feedback",
+        "runtime-graph-d6bddde3:event:evt-f9e640279ca670a6"
+      ],
+      "selectedContextTexts": [
+        "Focused memory on teaching, telegram, direct, proof: Teaching feedback on telegram session sanitized-session-score-resolution: The master plan ends with a rollout verdict: ready, limited, or blocked.",
+        "Teaching feedback on telegram session sanitized-session-score-resolution-seed: T-20260328-040 is the real-trace learned-route proof run for OpenClawBrain.. Related interaction: sanitized-session-score-resolution-seed:cue-proof-run:interaction.",
+        "Teaching feedback on telegram session sanitized-session-score-resolution: Next steps: commit the rollout-evaluator scaffold, export a sanitized non-test real-trace replay corpus, and rerun the rollout evaluator.. Related interaction: evt-6e33923f4f4100bb."
+      ],
+      "eventExportDigest": "sha256-117e9baf3b60cc610bcf8adee8cc1d25940c23e5c76539de033774bef6b74be7",
+      "expectedContextPhrases": [
+        "sanitized non-test real-trace replay corpus",
+        "ready, limited, or blocked"
+      ],
+      "minimumPhraseHits": 2,
+      "phraseHits": [
+        "sanitized non-test real-trace replay corpus",
+        "ready, limited, or blocked"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 3,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "telegram/direct/proof-plan:memory_compiled",
+          "telegram/direct/proof-plan:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "telegram/direct/proof-plan",
+        "freshestCreatedAt": "2026-03-28T20:01:41.227Z"
+      },
+      "warnings": []
+    }
+  ]
+}

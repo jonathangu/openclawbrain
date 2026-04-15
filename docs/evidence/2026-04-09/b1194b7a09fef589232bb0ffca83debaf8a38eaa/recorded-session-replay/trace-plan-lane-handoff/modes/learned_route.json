@@ -1,0 +1,158 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 100,
+    "compileOkCount": 2,
+    "phraseHitCount": 5,
+    "phraseCount": 5,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 1,
+    "packIds": [
+      "pack-cd0948c8",
+      "pack-252cb251"
+    ],
+    "trainTurnCount": 1,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-252cb251",
+    "frozenEvalRouterIdentity": "pack-252cb251:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 2,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 3,
+      "scanSurfaces": [
+        "openclaw/runtime/cli:memory_compiled",
+        "openclaw/runtime/cli:message_delivered",
+        "openclaw/runtime/cli:teaching"
+      ],
+      "humanLabelCount": 1,
+      "selfLabelCount": 2,
+      "totalEventCount": 5,
+      "attributedEventCount": 5,
+      "attributedTurnCount": 2,
+      "selectionDigestCount": 5,
+      "selectionDigestTurnCount": 2,
+      "activePackChangeCount": 1,
+      "freshestSourceStream": "openclaw/runtime/cli",
+      "freshestCreatedAt": "2026-04-01T02:44:50.000Z",
+      "warnings": []
+    },
+    "scoreHash": "sha256-6d3282f127b3f7d3ed2c2a31c526868f525266473f9dc2bd57beed8f843dcc48"
+  },
+  "turns": [
+    {
+      "turnId": "lane-handoff-turn-1",
+      "replayMode": "learned_route",
+      "phase": "train",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-cd0948c8",
+      "modeRequested": "learned",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-99782b96c0ec35bf8deefda910ba61966ccd923a4eb3ff157d1c3788366e06c9",
+      "selectedContextIds": [
+        "pack-cd0948c8:event:session-plan-lane-handoff-seed:cue-handoff:feedback",
+        "pack-cd0948c8:event:session-plan-lane-handoff-seed:cue-handoff:interaction",
+        "pack-cd0948c8:workspace"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on cli session session-plan-lane-handoff-seed: A lane handoff in this repo writes a concise task-artifacts markdown report, a machine-readable task-status JSON, records the checks that were run, and commits the branch state.. Related interaction: session-plan-lane-handoff-seed:cue-handoff:interaction.",
+        "Interaction operator_override on cli session session-plan-lane-handoff-seed. Message: cue-handoff-seed-message.",
+        "Workspace snapshot snapshot-trace-plan-lane-handoff for ws-trace-plan-lane-handoff captured at 2026-04-01T02:39:00.000Z with revision rev-trace-plan-lane-handoff."
+      ],
+      "eventExportDigest": "sha256-e1f9f160183d61989172c15c626e75820b097e1c0bc5bfec062bd7450b708a29",
+      "expectedContextPhrases": [
+        "task-artifacts",
+        "task-status"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "task-artifacts",
+        "task-status"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": true,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "openclaw/runtime/cli:memory_compiled",
+          "openclaw/runtime/cli:message_delivered",
+          "openclaw/runtime/cli:teaching"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "openclaw/runtime/cli",
+        "freshestCreatedAt": "2026-04-01T02:43:35.000Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "lane-handoff-turn-2",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-252cb251",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "routerIdentity": "pack-252cb251:route_fn",
+      "selectionDigest": "sha256-3f51eacc08f92d486af36252f8d0e18fb7fc1aa7cd211597ebbd1cfd3794372f",
+      "selectedContextIds": [
+        "runtime-graph-f50cefa7:event:evt-b7db22ff00e6d1c3:split:1",
+        "pack-cd0948c8:event:session-plan-lane-handoff-seed:cue-handoff:feedback",
+        "runtime-graph-f50cefa7:workspace"
+      ],
+      "selectedContextTexts": [
+        "Focused memory on teaching, cli, plan, lane: Teaching feedback on cli session session-plan-lane-handoff: Commit the branch, write the markdown report, write the machine-readable status, and record the checks.",
+        "Teaching feedback on cli session session-plan-lane-handoff-seed: A lane handoff in this repo writes a concise task-artifacts markdown report, a machine-readable task-status JSON, records the checks that were run, and commits the branch state.. Related interaction: session-plan-lane-handoff-seed:cue-handoff:interaction.",
+        "Workspace snapshot snapshot-trace-plan-lane-handoff for ws-trace-plan-lane-handoff captured at 2026-04-01T02:39:00.000Z with revision rev-trace-plan-lane-handoff."
+      ],
+      "eventExportDigest": "sha256-47a2ec24a9a04029ae0011cc2cf079ccebb8d5d53ec7484558031b77d9c355ad",
+      "expectedContextPhrases": [
+        "task-artifacts",
+        "task-status",
+        "commit"
+      ],
+      "minimumPhraseHits": 2,
+      "phraseHits": [
+        "task-artifacts",
+        "task-status",
+        "commit"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 2,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "openclaw/runtime/cli:memory_compiled",
+          "openclaw/runtime/cli:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "openclaw/runtime/cli",
+        "freshestCreatedAt": "2026-04-01T02:44:50.000Z"
+      },
+      "warnings": []
+    }
+  ]
+}

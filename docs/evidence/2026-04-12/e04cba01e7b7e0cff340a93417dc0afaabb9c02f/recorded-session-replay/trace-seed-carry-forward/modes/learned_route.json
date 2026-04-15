@@ -1,0 +1,152 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 100,
+    "compileOkCount": 2,
+    "phraseHitCount": 2,
+    "phraseCount": 2,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 1,
+    "packIds": [
+      "pack-b3e86883",
+      "pack-6335373b"
+    ],
+    "trainTurnCount": 1,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-6335373b",
+    "frozenEvalRouterIdentity": "pack-6335373b:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 2,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 3,
+      "scanSurfaces": [
+        "recorded/session:memory_compiled",
+        "recorded/session:message_delivered",
+        "recorded/session:teaching"
+      ],
+      "humanLabelCount": 1,
+      "selfLabelCount": 2,
+      "totalEventCount": 5,
+      "attributedEventCount": 5,
+      "attributedTurnCount": 2,
+      "selectionDigestCount": 5,
+      "selectionDigestTurnCount": 2,
+      "activePackChangeCount": 1,
+      "freshestSourceStream": "recorded/session",
+      "freshestCreatedAt": "2026-03-29T00:05:30.000Z",
+      "warnings": []
+    },
+    "scoreHash": "sha256-898edb2d1e62f7f1edfdb532886132275840f643e25249ac0d9e83784e03d2fb"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "train",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-b3e86883",
+      "modeRequested": "learned",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-7a222b5a883e72cd9e13da76a8005d7627af4364849e25b3d6b7c3e5084a0300",
+      "selectedContextIds": [
+        "pack-b3e86883:event:session-seed-carry-forward-seed:cue-proof-run:feedback",
+        "pack-b3e86883:event:session-seed-carry-forward-seed:cue-proof-run:interaction",
+        "pack-b3e86883:offline:2ad90343"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on cli session session-seed-carry-forward-seed: T-20260329-048 is the real-trace learned-route proof run for OpenClawBrain.. Related interaction: session-seed-carry-forward-seed:cue-proof-run:interaction.",
+        "Interaction operator_override on cli session session-seed-carry-forward-seed. Message: cue-proof-run-seed-message.",
+        "Deterministic init seed from recorded-session-replay-seed stays heuristic-only for boot route priors before PG-authoritative handoff."
+      ],
+      "eventExportDigest": "sha256-1d8966c9516abb4278eeebe9457506a302bef49afa890c30d544e00414921565",
+      "expectedContextPhrases": [
+        "learned-route proof run"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "learned-route proof run"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": true,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "recorded/session:memory_compiled",
+          "recorded/session:message_delivered",
+          "recorded/session:teaching"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "recorded/session",
+        "freshestCreatedAt": "2026-03-29T00:03:45.000Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "turn-2",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-6335373b",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "routerIdentity": "pack-6335373b:route_fn",
+      "selectionDigest": "sha256-5791699e1c73553bb97dc72a7c607c9cd7c104b558b9c14fecdab3f177a365c1",
+      "selectedContextIds": [
+        "pack-b3e86883:event:session-seed-carry-forward-seed:cue-proof-run:feedback",
+        "runtime-graph-28dd5b4f:workspace",
+        "runtime-graph-28dd5b4f:event:evt-c073a34efe0816a6"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on cli session session-seed-carry-forward-seed: T-20260329-048 is the real-trace learned-route proof run for OpenClawBrain.. Related interaction: session-seed-carry-forward-seed:cue-proof-run:interaction.",
+        "Workspace snapshot snapshot-trace-seed-carry-forward for ws-trace-seed-carry-forward captured at 2026-03-29T00:00:00.000Z with revision rev-trace-seed-carry-forward.",
+        "Teaching feedback on cli session session-seed-carry-forward: Next steps: commit the rollout evaluator scaffold and rerun the rollout evaluator.. Related interaction: evt-079096384a29f8a4."
+      ],
+      "eventExportDigest": "sha256-5f684b38cef0bad9dc4f586c8ece8f4d174096512af88ad7fc02466913dc6f99",
+      "expectedContextPhrases": [
+        "real-trace learned-route proof run"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "real-trace learned-route proof run"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 2,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "recorded/session:memory_compiled",
+          "recorded/session:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "recorded/session",
+        "freshestCreatedAt": "2026-03-29T00:05:30.000Z"
+      },
+      "warnings": []
+    }
+  ]
+}

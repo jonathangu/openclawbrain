@@ -1,0 +1,215 @@
+{
+  "contract": "recorded_session_replay_fixture.v1",
+  "traceId": "trace-seed-carry-forward",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-03-29T00:00:00.000Z",
+  "bundleBuiltAt": "2026-03-29T00:10:00.000Z",
+  "traceHash": "sha256-21ed33015f7a51ad5fc95030cd8188dbc6655b191e53b59bec58141493db1904",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "normalized dynamic test fixture from packages/cli/dist/test/learned-route-seed-carry-forward.test.js"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-trace-seed-carry-forward",
+    "snapshotId": "snapshot-trace-seed-carry-forward",
+    "capturedAt": "2026-03-29T00:00:00.000Z",
+    "rootDir": "/tmp/openclawbrain-canonical-frozen-20/trace-seed-carry-forward",
+    "branch": "main",
+    "revision": "rev-trace-seed-carry-forward",
+    "labels": [
+      "real"
+    ]
+  },
+  "seedBuiltAt": "2026-03-29T00:01:00.000Z",
+  "seedActivatedAt": "2026-03-29T00:02:00.000Z",
+  "seedExport": {
+    "interactionEvents": [
+      {
+        "contract": "interaction_events.v1",
+        "eventId": "session-seed-carry-forward-seed:cue-proof-run:interaction",
+        "agentId": "agent",
+        "sessionId": "session-seed-carry-forward-seed",
+        "channel": "cli",
+        "sequence": 1,
+        "kind": "operator_override",
+        "createdAt": "2026-03-29T00:00:30.000Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "recorded/session/seed"
+        },
+        "semantic": {
+          "semanticType": "control_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "messageId": "cue-proof-run-seed-message"
+      }
+    ],
+    "feedbackEvents": [
+      {
+        "contract": "feedback_events.v1",
+        "eventId": "session-seed-carry-forward-seed:cue-proof-run:feedback",
+        "agentId": "agent",
+        "sessionId": "session-seed-carry-forward-seed",
+        "channel": "cli",
+        "sequence": 2,
+        "kind": "teaching",
+        "createdAt": "2026-03-29T00:01:30.000Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "recorded/session/seed"
+        },
+        "content": "T-20260329-048 is the real-trace learned-route proof run for OpenClawBrain.",
+        "semantic": {
+          "semanticType": "teacher_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "relatedInteractionId": "session-seed-carry-forward-seed:cue-proof-run:interaction"
+      }
+    ],
+    "range": {
+      "start": 1,
+      "end": 2,
+      "count": 2,
+      "firstEventId": "session-seed-carry-forward-seed:cue-proof-run:interaction",
+      "lastEventId": "session-seed-carry-forward-seed:cue-proof-run:feedback",
+      "firstCreatedAt": "2026-03-29T00:00:30.000Z",
+      "lastCreatedAt": "2026-03-29T00:01:30.000Z"
+    },
+    "provenance": {
+      "runtimeOwner": "openclaw",
+      "sessionId": "session-seed-carry-forward-seed",
+      "channel": "cli",
+      "interactionCount": 1,
+      "feedbackCount": 1,
+      "sourceStreams": [
+        "recorded/session/seed"
+      ],
+      "contracts": [
+        "interaction_events.v1",
+        "feedback_events.v1"
+      ],
+      "exportDigest": "sha256-eb5f0d86445e8627970e301b9e936698c80ce35d42049bb8a5d3d0a20709b0ba",
+      "semanticSurface": {
+        "semanticTypes": [
+          "control_signal",
+          "teacher_signal"
+        ],
+        "sourceKinds": [
+          "recorded_session_seed"
+        ],
+        "diagnosticIntents": []
+      },
+      "learningSurface": {
+        "bootProfile": "fast_boot_defaults",
+        "learningCadence": "passive_background",
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "recorded/session/seed:operator_override",
+          "recorded/session/seed:teaching"
+        ],
+        "labelSources": {
+          "human": [
+            "recorded/session/seed:operator_override",
+            "recorded/session/seed:teaching"
+          ],
+          "self": []
+        },
+        "labelHarvest": {
+          "humanLabels": 2,
+          "selfLabels": 0,
+          "corrections": 0,
+          "teachings": 1,
+          "approvals": 0,
+          "suppressions": 0,
+          "operatorOverrideLabels": 1,
+          "memoryCompileLabels": 0
+        },
+        "principalSummary": {
+          "teacherIdentities": [],
+          "teacherRoles": [],
+          "teacherAuthorities": [],
+          "priorityClasses": [],
+          "scopedEventCount": 0,
+          "supersedingEventCount": 0
+        }
+      }
+    }
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "turn": {
+        "agentId": "agent",
+        "sessionId": "session-seed-carry-forward",
+        "channel": "cli",
+        "sourceStream": "recorded/session",
+        "userMessage": "start the learned-route proof run",
+        "createdAt": "2026-03-29T00:03:00.000Z",
+        "sequenceStart": 1000,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "runtimeHints": [
+          "proof",
+          "run"
+        ],
+        "compile": {
+          "createdAt": "2026-03-29T00:03:00.000Z",
+          "sequence": 1000
+        },
+        "delivery": {
+          "createdAt": "2026-03-29T00:03:30.000Z",
+          "sequence": 1001,
+          "messageId": "msg-turn-1"
+        },
+        "feedback": [
+          {
+            "createdAt": "2026-03-29T00:03:45.000Z",
+            "content": "Next steps: commit the rollout evaluator scaffold and rerun the rollout evaluator.",
+            "sequence": 1002,
+            "kind": "teaching"
+          }
+        ]
+      },
+      "expectedContextPhrases": [
+        "learned-route proof run"
+      ],
+      "minimumPhraseHits": 1
+    },
+    {
+      "turnId": "turn-2",
+      "turn": {
+        "agentId": "agent",
+        "sessionId": "session-seed-carry-forward",
+        "channel": "cli",
+        "sourceStream": "recorded/session",
+        "userMessage": "what is the real-trace learned-route proof run?",
+        "createdAt": "2026-03-29T00:05:00.000Z",
+        "sequenceStart": 1010,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "runtimeHints": [
+          "real-trace",
+          "proof",
+          "run"
+        ],
+        "compile": {
+          "createdAt": "2026-03-29T00:05:00.000Z",
+          "sequence": 1010
+        },
+        "delivery": {
+          "createdAt": "2026-03-29T00:05:30.000Z",
+          "sequence": 1011,
+          "messageId": "msg-turn-2"
+        },
+        "feedback": []
+      },
+      "expectedContextPhrases": [
+        "real-trace learned-route proof run"
+      ],
+      "minimumPhraseHits": 1
+    }
+  ],
+  "fixtureHash": "sha256-912c47fa6e90f710951f9473e5540907d6ccf58746703d4574c6d5fb9a0dd66b"
+}

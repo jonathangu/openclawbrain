@@ -1,0 +1,632 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "trace-retrieval-routing-prior-doc",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T03:20:00.000Z",
+  "generatedAt": "2026-04-01T03:30:00.000Z",
+  "traceHash": "sha256-f541ef591a3fdeca44ec33d94d63586bddb7736c330abf7d4032054bf4d0e239",
+  "fixtureHash": "sha256-10d2f6679e370351117cc6864a5d47c336bab40268450d59ff126a9b849b1bc2",
+  "scoreHash": "sha256-750d3084eb45cbe04978ace42223446c0d2ba799bcabb9eb23015ad019a82ed5",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from the comparative replay routing fixture and docs/architecture/routing-prior.md"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 2,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "recorded/session:message_delivered",
+            "recorded/session:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 0,
+          "totalEventCount": 3,
+          "attributedEventCount": 3,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "recorded/session",
+          "freshestCreatedAt": "2026-04-01T03:24:50.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-05be127f6e13c4988ff9e6455aa8abdfef90f76ab4fa10fd101198d4fa2025d5"
+      },
+      "turns": [
+        {
+          "turnId": "routing-docs-turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-5f04d197647f2f36f8c2a058a12c7f05f3f0bd33ffea9377476a2e49dd20c60d",
+          "expectedContextPhrases": [
+            "routing guide"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "routing guide"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "recorded/session:message_delivered",
+              "recorded/session:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 0,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "recorded/session",
+            "freshestCreatedAt": "2026-04-01T03:23:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "routing-docs-turn-2",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-462aecef6549c306cb3317a6cdf647d814bac44ec6b41ececfb8fa7b689d60b2",
+          "expectedContextPhrases": [
+            "routing guide",
+            "routing-prior.md"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "routing guide",
+            "routing-prior.md"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "recorded/session:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "recorded/session",
+            "freshestCreatedAt": "2026-04-01T03:24:50.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 100,
+        "compileOkCount": 2,
+        "phraseHitCount": 3,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-39c270ec"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 2,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 3,
+          "scanSurfaces": [
+            "recorded/session:memory_compiled",
+            "recorded/session:message_delivered",
+            "recorded/session:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 2,
+          "totalEventCount": 5,
+          "attributedEventCount": 5,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 5,
+          "selectionDigestTurnCount": 2,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "recorded/session",
+          "freshestCreatedAt": "2026-04-01T03:24:50.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-34547a0bc90ff9a7ce9ce0a8873c3fabcc07f7bef965c00b6430be3ded80a2f8"
+      },
+      "turns": [
+        {
+          "turnId": "routing-docs-turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-39c270ec",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-54774982757b73e99fb2dc8736acab225b689e7dc89ac408230d5974d984047c",
+          "selectedContextIds": [
+            "pack-39c270ec:event:session-retrieval-routing-prior-doc-seed:cue-routing-docs:feedback",
+            "pack-39c270ec:event:session-retrieval-routing-prior-doc-seed:cue-routing-docs:interaction",
+            "pack-39c270ec:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-retrieval-routing-prior-doc-seed: The routing guide lives here, and the routing prior architecture note is checked in at docs/architecture/routing-prior.md.. Related interaction: session-retrieval-routing-prior-doc-seed:cue-routing-docs:interaction.",
+            "Interaction operator_override on cli session session-retrieval-routing-prior-doc-seed. Message: cue-routing-docs-seed-message.",
+            "Workspace snapshot snapshot-trace-retrieval-routing-prior-doc for ws-trace-retrieval-routing-prior-doc captured at 2026-04-01T03:19:00.000Z with revision rev-trace-retrieval-routing-prior-doc."
+          ],
+          "eventExportDigest": "sha256-d6453c8fe61b77763afb55ccdb7c769813dcb45c8a380ee86be8bcb2f8781510",
+          "expectedContextPhrases": [
+            "routing guide"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [
+            "routing guide"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "recorded/session:memory_compiled",
+              "recorded/session:message_delivered",
+              "recorded/session:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 1,
+            "totalEventCount": 3,
+            "attributedEventCount": 3,
+            "selectionDigestCount": 3,
+            "freshestSourceStream": "recorded/session",
+            "freshestCreatedAt": "2026-04-01T03:23:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "routing-docs-turn-2",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-39c270ec",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-54774982757b73e99fb2dc8736acab225b689e7dc89ac408230d5974d984047c",
+          "selectedContextIds": [
+            "pack-39c270ec:event:session-retrieval-routing-prior-doc-seed:cue-routing-docs:feedback",
+            "pack-39c270ec:event:session-retrieval-routing-prior-doc-seed:cue-routing-docs:interaction",
+            "pack-39c270ec:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-retrieval-routing-prior-doc-seed: The routing guide lives here, and the routing prior architecture note is checked in at docs/architecture/routing-prior.md.. Related interaction: session-retrieval-routing-prior-doc-seed:cue-routing-docs:interaction.",
+            "Interaction operator_override on cli session session-retrieval-routing-prior-doc-seed. Message: cue-routing-docs-seed-message.",
+            "Workspace snapshot snapshot-trace-retrieval-routing-prior-doc for ws-trace-retrieval-routing-prior-doc captured at 2026-04-01T03:19:00.000Z with revision rev-trace-retrieval-routing-prior-doc."
+          ],
+          "eventExportDigest": "sha256-e0bcade30fd24602a897ad17d5d0266755c792d468838a8a9c2efac5b26e1610",
+          "expectedContextPhrases": [
+            "routing guide",
+            "routing-prior.md"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "routing guide",
+            "routing-prior.md"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "recorded/session:memory_compiled",
+              "recorded/session:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "recorded/session",
+            "freshestCreatedAt": "2026-04-01T03:24:50.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 100,
+        "compileOkCount": 2,
+        "phraseHitCount": 3,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-39c270ec"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 2,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 3,
+          "scanSurfaces": [
+            "recorded/session:memory_compiled",
+            "recorded/session:message_delivered",
+            "recorded/session:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 2,
+          "totalEventCount": 5,
+          "attributedEventCount": 5,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 5,
+          "selectionDigestTurnCount": 2,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "recorded/session",
+          "freshestCreatedAt": "2026-04-01T03:24:50.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-37753b81b95bd405108c8d46b23f4416ec0cedea0fccf31357e8fec4a5c7f919"
+      },
+      "turns": [
+        {
+          "turnId": "routing-docs-turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-39c270ec",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-54774982757b73e99fb2dc8736acab225b689e7dc89ac408230d5974d984047c",
+          "selectedContextIds": [
+            "pack-39c270ec:event:session-retrieval-routing-prior-doc-seed:cue-routing-docs:feedback",
+            "pack-39c270ec:event:session-retrieval-routing-prior-doc-seed:cue-routing-docs:interaction",
+            "pack-39c270ec:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-retrieval-routing-prior-doc-seed: The routing guide lives here, and the routing prior architecture note is checked in at docs/architecture/routing-prior.md.. Related interaction: session-retrieval-routing-prior-doc-seed:cue-routing-docs:interaction.",
+            "Interaction operator_override on cli session session-retrieval-routing-prior-doc-seed. Message: cue-routing-docs-seed-message.",
+            "Workspace snapshot snapshot-trace-retrieval-routing-prior-doc for ws-trace-retrieval-routing-prior-doc captured at 2026-04-01T03:19:00.000Z with revision rev-trace-retrieval-routing-prior-doc."
+          ],
+          "eventExportDigest": "sha256-d6453c8fe61b77763afb55ccdb7c769813dcb45c8a380ee86be8bcb2f8781510",
+          "expectedContextPhrases": [
+            "routing guide"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [
+            "routing guide"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "recorded/session:memory_compiled",
+              "recorded/session:message_delivered",
+              "recorded/session:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 1,
+            "totalEventCount": 3,
+            "attributedEventCount": 3,
+            "selectionDigestCount": 3,
+            "freshestSourceStream": "recorded/session",
+            "freshestCreatedAt": "2026-04-01T03:23:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "routing-docs-turn-2",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-39c270ec",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-54774982757b73e99fb2dc8736acab225b689e7dc89ac408230d5974d984047c",
+          "selectedContextIds": [
+            "pack-39c270ec:event:session-retrieval-routing-prior-doc-seed:cue-routing-docs:feedback",
+            "pack-39c270ec:event:session-retrieval-routing-prior-doc-seed:cue-routing-docs:interaction",
+            "pack-39c270ec:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-retrieval-routing-prior-doc-seed: The routing guide lives here, and the routing prior architecture note is checked in at docs/architecture/routing-prior.md.. Related interaction: session-retrieval-routing-prior-doc-seed:cue-routing-docs:interaction.",
+            "Interaction operator_override on cli session session-retrieval-routing-prior-doc-seed. Message: cue-routing-docs-seed-message.",
+            "Workspace snapshot snapshot-trace-retrieval-routing-prior-doc for ws-trace-retrieval-routing-prior-doc captured at 2026-04-01T03:19:00.000Z with revision rev-trace-retrieval-routing-prior-doc."
+          ],
+          "eventExportDigest": "sha256-e0bcade30fd24602a897ad17d5d0266755c792d468838a8a9c2efac5b26e1610",
+          "expectedContextPhrases": [
+            "routing guide",
+            "routing-prior.md"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "routing guide",
+            "routing-prior.md"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "recorded/session:memory_compiled",
+              "recorded/session:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "recorded/session",
+            "freshestCreatedAt": "2026-04-01T03:24:50.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 100,
+        "compileOkCount": 2,
+        "phraseHitCount": 3,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 1,
+        "packIds": [
+          "pack-39c270ec",
+          "pack-c2b8067a"
+        ],
+        "trainTurnCount": 1,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-c2b8067a",
+        "frozenEvalRouterIdentity": "pack-c2b8067a:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 3,
+          "scanSurfaces": [
+            "recorded/session:memory_compiled",
+            "recorded/session:message_delivered",
+            "recorded/session:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 2,
+          "totalEventCount": 5,
+          "attributedEventCount": 5,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 5,
+          "selectionDigestTurnCount": 2,
+          "activePackChangeCount": 1,
+          "freshestSourceStream": "recorded/session",
+          "freshestCreatedAt": "2026-04-01T03:24:50.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-3ba1994b936fb45c8a1b0f728a1acdb96c2e0530ae93033584b3acb349fb6bf7"
+      },
+      "turns": [
+        {
+          "turnId": "routing-docs-turn-1",
+          "replayMode": "learned_route",
+          "phase": "train",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-39c270ec",
+          "modeRequested": "learned",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-54774982757b73e99fb2dc8736acab225b689e7dc89ac408230d5974d984047c",
+          "selectedContextIds": [
+            "pack-39c270ec:event:session-retrieval-routing-prior-doc-seed:cue-routing-docs:feedback",
+            "pack-39c270ec:event:session-retrieval-routing-prior-doc-seed:cue-routing-docs:interaction",
+            "pack-39c270ec:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-retrieval-routing-prior-doc-seed: The routing guide lives here, and the routing prior architecture note is checked in at docs/architecture/routing-prior.md.. Related interaction: session-retrieval-routing-prior-doc-seed:cue-routing-docs:interaction.",
+            "Interaction operator_override on cli session session-retrieval-routing-prior-doc-seed. Message: cue-routing-docs-seed-message.",
+            "Workspace snapshot snapshot-trace-retrieval-routing-prior-doc for ws-trace-retrieval-routing-prior-doc captured at 2026-04-01T03:19:00.000Z with revision rev-trace-retrieval-routing-prior-doc."
+          ],
+          "eventExportDigest": "sha256-d6453c8fe61b77763afb55ccdb7c769813dcb45c8a380ee86be8bcb2f8781510",
+          "expectedContextPhrases": [
+            "routing guide"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [
+            "routing guide"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": true,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "recorded/session:memory_compiled",
+              "recorded/session:message_delivered",
+              "recorded/session:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 1,
+            "totalEventCount": 3,
+            "attributedEventCount": 3,
+            "selectionDigestCount": 3,
+            "freshestSourceStream": "recorded/session",
+            "freshestCreatedAt": "2026-04-01T03:23:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "routing-docs-turn-2",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-c2b8067a",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "routerIdentity": "pack-c2b8067a:route_fn",
+          "selectionDigest": "sha256-051f7dd3505dc20e03a64dad71dbeae029538bd258338811a009770a2a4778a0",
+          "selectedContextIds": [
+            "pack-39c270ec:event:session-retrieval-routing-prior-doc-seed:cue-routing-docs:feedback",
+            "runtime-graph-73aea8f9:event:evt-49c35012a1f3e4ac",
+            "runtime-graph-73aea8f9:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-retrieval-routing-prior-doc-seed: The routing guide lives here, and the routing prior architecture note is checked in at docs/architecture/routing-prior.md.. Related interaction: session-retrieval-routing-prior-doc-seed:cue-routing-docs:interaction.",
+            "Teaching feedback on cli session session-retrieval-routing-prior-doc: Keep the routing guide easy to find and mention the routing-prior doc when asked for the architecture note.. Related interaction: evt-106d958465986538.",
+            "Workspace snapshot snapshot-trace-retrieval-routing-prior-doc for ws-trace-retrieval-routing-prior-doc captured at 2026-04-01T03:19:00.000Z with revision rev-trace-retrieval-routing-prior-doc."
+          ],
+          "eventExportDigest": "sha256-c0046b8b08d828ff1bdd02ea3ce522a0b83e3130cc5adc4aa988c13b1ed25bfd",
+          "expectedContextPhrases": [
+            "routing guide",
+            "routing-prior.md"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "routing guide",
+            "routing-prior.md"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 2,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "recorded/session:memory_compiled",
+              "recorded/session:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "recorded/session",
+            "freshestCreatedAt": "2026-04-01T03:24:50.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 100
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 100
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 100
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-620c29751e10aa5984d4844e22483008ceaf9073c5c58537ed741e0a5caebdf7"
+}

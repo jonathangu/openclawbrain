@@ -1,0 +1,78 @@
+{
+  "contract": "recorded_session_trace.v1",
+  "traceId": "trace-retrieval-proof-hashes",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T03:00:00.000Z",
+  "bundleBuiltAt": "2026-04-01T03:10:00.000Z",
+  "sessionId": "session-retrieval-proof-hashes",
+  "channel": "cli",
+  "sourceStream": "openclaw/runtime/cli",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from docs/internal/recorded-session-replay.md"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-trace-retrieval-proof-hashes",
+    "snapshotId": "snapshot-trace-retrieval-proof-hashes",
+    "capturedAt": "2026-04-01T02:59:00.000Z",
+    "rootDir": "/tmp/openclawbrain-canonical-frozen-20/trace-retrieval-proof-hashes",
+    "branch": "main",
+    "revision": "rev-trace-retrieval-proof-hashes",
+    "labels": [
+      "canonical-frozen-20"
+    ]
+  },
+  "evalTurnCount": 1,
+  "seedBuiltAt": "2026-04-01T03:01:00.000Z",
+  "seedActivatedAt": "2026-04-01T03:02:00.000Z",
+  "seedCues": [
+    {
+      "cueId": "cue-semantic-hashes",
+      "createdAt": "2026-04-01T02:58:30.000Z",
+      "content": "Recorded session replay computes semantic hashes named traceHash, fixtureHash, scoreHash, and bundleHash.",
+      "kind": "teaching"
+    }
+  ],
+  "turns": [
+    {
+      "turnId": "proof-hashes-turn-1",
+      "createdAt": "2026-04-01T03:03:00.000Z",
+      "deliveredAt": "2026-04-01T03:03:20.000Z",
+      "userMessage": "Which semantic hashes does replay compute?",
+      "runtimeHints": [
+        "hashes",
+        "semantic"
+      ],
+      "feedback": [
+        {
+          "createdAt": "2026-04-01T03:03:35.000Z",
+          "content": "Name the semantic hashes directly: traceHash, fixtureHash, scoreHash, and bundleHash.",
+          "kind": "teaching"
+        }
+      ],
+      "expectedContextPhrases": [
+        "traceHash",
+        "bundleHash"
+      ],
+      "minimumPhraseHits": 1
+    },
+    {
+      "turnId": "proof-hashes-turn-2",
+      "createdAt": "2026-04-01T03:04:30.000Z",
+      "deliveredAt": "2026-04-01T03:04:50.000Z",
+      "userMessage": "Name those replay hashes again.",
+      "runtimeHints": [
+        "hashes",
+        "again"
+      ],
+      "expectedContextPhrases": [
+        "traceHash",
+        "fixtureHash",
+        "bundleHash"
+      ],
+      "minimumPhraseHits": 2
+    }
+  ]
+}

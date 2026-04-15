@@ -1,0 +1,154 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 100,
+    "compileOkCount": 2,
+    "phraseHitCount": 2,
+    "phraseCount": 2,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 1,
+    "packIds": [
+      "pack-5d048fb2",
+      "pack-3d31386d"
+    ],
+    "trainTurnCount": 1,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-3d31386d",
+    "frozenEvalRouterIdentity": "pack-3d31386d:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 2,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 4,
+      "scanSurfaces": [
+        "recorded/session:memory_compiled",
+        "recorded/session:message_delivered",
+        "recorded/session:teaching",
+        "recorded/session:approval"
+      ],
+      "humanLabelCount": 2,
+      "selfLabelCount": 2,
+      "totalEventCount": 6,
+      "attributedEventCount": 6,
+      "attributedTurnCount": 2,
+      "selectionDigestCount": 6,
+      "selectionDigestTurnCount": 2,
+      "activePackChangeCount": 1,
+      "freshestSourceStream": "recorded/session",
+      "freshestCreatedAt": "2026-03-25T00:05:45.000Z",
+      "warnings": []
+    },
+    "scoreHash": "sha256-6d9c8c21ec3ccbdabd2a4812a7f67419b68a5d464ef4d2323e76e62178765ba5"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "train",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-5d048fb2",
+      "modeRequested": "learned",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-1059460d130da3ed0ff23cb4dc1327d7c26d5017ddc765ffe88f5a2979bf087d",
+      "selectedContextIds": [
+        "pack-5d048fb2:event:session-comparative-replay-seed:cue-routing-guide:feedback",
+        "pack-5d048fb2:event:session-comparative-replay-seed:cue-routing-guide:interaction",
+        "pack-5d048fb2:human-label-harvest"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on cli session session-comparative-replay-seed: The routing guide lives here.. Related interaction: session-comparative-replay-seed:cue-routing-guide:interaction.",
+        "Interaction operator_override on cli session session-comparative-replay-seed. Message: cue-routing-guide-seed-message.",
+        "Human label harvest is first-class with 2 labels sourced from recorded/session/seed:operator_override, recorded/session/seed:teaching."
+      ],
+      "eventExportDigest": "sha256-e05aeab2635e4dedcc293e268d5db1e5a0a4252ab39538ab7af55294c87a5a33",
+      "expectedContextPhrases": [
+        "routing guide"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "routing guide"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": true,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "recorded/session:memory_compiled",
+          "recorded/session:message_delivered",
+          "recorded/session:teaching"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "recorded/session",
+        "freshestCreatedAt": "2026-03-25T00:03:45.000Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "turn-2",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-3d31386d",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "routerIdentity": "pack-3d31386d:route_fn",
+      "selectionDigest": "sha256-bccb4f2d723a77d6bde9203fa1c227642bf15bded08b508365f4ebaa354fbc1e",
+      "selectedContextIds": [
+        "pack-5d048fb2:event:session-comparative-replay-seed:cue-routing-guide:feedback",
+        "runtime-graph-78aec15f:event:evt-b1ef0b3e74c9e764",
+        "pack-5d048fb2:human-label-harvest"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on cli session session-comparative-replay-seed: The routing guide lives here.. Related interaction: session-comparative-replay-seed:cue-routing-guide:interaction.",
+        "Teaching feedback on cli session session-comparative-replay: Keep the routing guide easy to find.. Related interaction: evt-dc54cb4092de3f53.",
+        "Human label harvest is first-class with 2 labels sourced from recorded/session/seed:operator_override, recorded/session/seed:teaching."
+      ],
+      "eventExportDigest": "sha256-033bf382d1f817d39edd17cf2f60b5af88689927a8ef01368e403cc21c05e470",
+      "expectedContextPhrases": [
+        "routing guide"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "routing guide"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 2,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "recorded/session:memory_compiled",
+          "recorded/session:message_delivered",
+          "recorded/session:approval"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "recorded/session",
+        "freshestCreatedAt": "2026-03-25T00:05:45.000Z"
+      },
+      "warnings": []
+    }
+  ]
+}

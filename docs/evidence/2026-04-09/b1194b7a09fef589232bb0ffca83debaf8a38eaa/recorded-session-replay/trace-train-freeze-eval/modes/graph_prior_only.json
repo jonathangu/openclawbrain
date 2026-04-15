@@ -1,0 +1,203 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 100,
+    "compileOkCount": 3,
+    "phraseHitCount": 3,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-5a3a6d7d"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 3,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 3,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 3,
+      "scanSurfaces": [
+        "recorded/session:memory_compiled",
+        "recorded/session:message_delivered",
+        "recorded/session:approval"
+      ],
+      "humanLabelCount": 1,
+      "selfLabelCount": 3,
+      "totalEventCount": 7,
+      "attributedEventCount": 7,
+      "attributedTurnCount": 3,
+      "selectionDigestCount": 7,
+      "selectionDigestTurnCount": 3,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "recorded/session",
+      "freshestCreatedAt": "2026-03-25T10:10:30.000Z",
+      "warnings": []
+    },
+    "scoreHash": "sha256-212c4e7dda6b227f4dcd808d1d36a7119dcaf0673f0911819dddd045e8c8c791"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-5a3a6d7d",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-97df62244330b9ff46cdbaa327544021b62c7f819a4f5bcee3dbb779a0c66db9",
+      "selectedContextIds": [
+        "pack-5a3a6d7d:event:session-train-freeze-eval-seed:cue-1:feedback",
+        "pack-5a3a6d7d:event:session-train-freeze-eval-seed:cue-1:interaction",
+        "pack-5a3a6d7d:offline:2ad90343"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on chat session session-train-freeze-eval-seed: Always read README before editing code.. Related interaction: session-train-freeze-eval-seed:cue-1:interaction.",
+        "Interaction operator_override on chat session session-train-freeze-eval-seed. Message: cue-1-seed-message.",
+        "Deterministic init seed from recorded-session-replay-seed stays heuristic-only for boot route priors before PG-authoritative handoff."
+      ],
+      "eventExportDigest": "sha256-d17518ba8b90296bf5c0fce9e4763e3b832c374cf422fe850b4f0e940f4d45e6",
+      "expectedContextPhrases": [
+        "readme before editing"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "readme before editing"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "recorded/session:memory_compiled",
+          "recorded/session:message_delivered",
+          "recorded/session:approval"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "recorded/session",
+        "freshestCreatedAt": "2026-03-25T10:01:45.000Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "turn-2",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-5a3a6d7d",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-7fc7a101f19fd8e71cd3511e6e09f1d53ba416f6b9924e33ac14ff509be913d9",
+      "selectedContextIds": [
+        "pack-5a3a6d7d:event:session-train-freeze-eval-seed:cue-1:feedback",
+        "pack-5a3a6d7d:event:session-train-freeze-eval-seed:cue-1:interaction",
+        "pack-5a3a6d7d:human-label-harvest"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on chat session session-train-freeze-eval-seed: Always read README before editing code.. Related interaction: session-train-freeze-eval-seed:cue-1:interaction.",
+        "Interaction operator_override on chat session session-train-freeze-eval-seed. Message: cue-1-seed-message.",
+        "Human label harvest is first-class with 2 labels sourced from recorded/session/seed:operator_override, recorded/session/seed:teaching."
+      ],
+      "eventExportDigest": "sha256-cf1406810b7f705a96ca9e19250c6f28bd07190c23a16f7baced633281e4a185",
+      "expectedContextPhrases": [
+        "readme before editing"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "readme before editing"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "recorded/session:memory_compiled",
+          "recorded/session:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "recorded/session",
+        "freshestCreatedAt": "2026-03-25T10:05:30.000Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "turn-3",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-5a3a6d7d",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-97df62244330b9ff46cdbaa327544021b62c7f819a4f5bcee3dbb779a0c66db9",
+      "selectedContextIds": [
+        "pack-5a3a6d7d:event:session-train-freeze-eval-seed:cue-1:feedback",
+        "pack-5a3a6d7d:event:session-train-freeze-eval-seed:cue-1:interaction",
+        "pack-5a3a6d7d:offline:2ad90343"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on chat session session-train-freeze-eval-seed: Always read README before editing code.. Related interaction: session-train-freeze-eval-seed:cue-1:interaction.",
+        "Interaction operator_override on chat session session-train-freeze-eval-seed. Message: cue-1-seed-message.",
+        "Deterministic init seed from recorded-session-replay-seed stays heuristic-only for boot route priors before PG-authoritative handoff."
+      ],
+      "eventExportDigest": "sha256-6010054e1439064335014f05cb39b6c394f27e516dc8f241469f7617ad39f799",
+      "expectedContextPhrases": [
+        "readme before editing"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "readme before editing"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "recorded/session:memory_compiled",
+          "recorded/session:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "recorded/session",
+        "freshestCreatedAt": "2026-03-25T10:10:30.000Z"
+      },
+      "warnings": []
+    }
+  ]
+}

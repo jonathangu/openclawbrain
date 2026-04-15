@@ -1,0 +1,78 @@
+{
+  "contract": "recorded_session_trace.v1",
+  "traceId": "trace-plan-regression-workflow",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T02:00:00.000Z",
+  "bundleBuiltAt": "2026-04-01T02:10:00.000Z",
+  "sessionId": "session-plan-regression-workflow",
+  "channel": "cli",
+  "sourceStream": "openclaw/runtime/cli",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from docs/reproduce-eval.md"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-trace-plan-regression-workflow",
+    "snapshotId": "snapshot-trace-plan-regression-workflow",
+    "capturedAt": "2026-04-01T01:59:00.000Z",
+    "rootDir": "/tmp/openclawbrain-canonical-frozen-20/trace-plan-regression-workflow",
+    "branch": "main",
+    "revision": "rev-trace-plan-regression-workflow",
+    "labels": [
+      "canonical-frozen-20"
+    ]
+  },
+  "evalTurnCount": 1,
+  "seedBuiltAt": "2026-04-01T02:01:00.000Z",
+  "seedActivatedAt": "2026-04-01T02:02:00.000Z",
+  "seedCues": [
+    {
+      "cueId": "cue-regression",
+      "createdAt": "2026-04-01T01:58:30.000Z",
+      "content": "If a replay rerun changes semantic hashes, compare hashes.json, summary-tables.json, coverage-snapshot.json, and hardening-snapshot.json, then inspect bundle.json and the per-mode outputs before claiming contract drift.",
+      "kind": "teaching"
+    }
+  ],
+  "turns": [
+    {
+      "turnId": "regression-workflow-turn-1",
+      "createdAt": "2026-04-01T02:03:00.000Z",
+      "deliveredAt": "2026-04-01T02:03:20.000Z",
+      "userMessage": "Semantic hashes changed on rerun. What do we do next?",
+      "runtimeHints": [
+        "regression",
+        "hashes"
+      ],
+      "feedback": [
+        {
+          "createdAt": "2026-04-01T02:03:35.000Z",
+          "content": "Compare hashes.json, summary-tables.json, coverage-snapshot.json, and hardening-snapshot.json before you inspect bundle.json and modes/learned_route.json.",
+          "kind": "teaching"
+        }
+      ],
+      "expectedContextPhrases": [
+        "hashes.json",
+        "bundle.json"
+      ],
+      "minimumPhraseHits": 1
+    },
+    {
+      "turnId": "regression-workflow-turn-2",
+      "createdAt": "2026-04-01T02:05:00.000Z",
+      "deliveredAt": "2026-04-01T02:05:20.000Z",
+      "userMessage": "Turn that into an end-to-end regression workflow.",
+      "runtimeHints": [
+        "workflow",
+        "end-to-end"
+      ],
+      "expectedContextPhrases": [
+        "hashes.json",
+        "summary-tables.json",
+        "modes/learned_route.json"
+      ],
+      "minimumPhraseHits": 2
+    }
+  ]
+}

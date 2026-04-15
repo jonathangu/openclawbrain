@@ -1,0 +1,632 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "trace-correction-answer-paths-explicit",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T04:00:00.000Z",
+  "generatedAt": "2026-04-01T04:10:00.000Z",
+  "traceHash": "sha256-7675563cf859465dbd888bb06d4b86fedbd83e541945091d1e8df5ee12e84c1d",
+  "fixtureHash": "sha256-57a7a6e1a6991f696a856f4fea90684928d5f3ee0f026ea6b5951d4fc10cf426",
+  "scoreHash": "sha256-9bfe2a23f653e51394d996a48de7422e433e33eacead19db6384b3403b8d21df",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from the recorded-session proof bundle fixture"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 2,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:correction"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 0,
+          "totalEventCount": 3,
+          "attributedEventCount": 3,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T04:04:50.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-2042863833d6ce7ab296d4ac789fc38e8c68b0974c203443b4c7c040ba9c0cb6"
+      },
+      "turns": [
+        {
+          "turnId": "explicit-paths-turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-34caf511580ee8e1fc2aced6127674bf5c31419fa15c87762cd4e9a987efc454",
+          "expectedContextPhrases": [
+            "docs/evidence"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "docs/evidence"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:correction"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 0,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T04:03:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "explicit-paths-turn-2",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-432f44c342826ce5f429d563b4a1c958c2f677e5d2557c1e0811810c684c6845",
+          "expectedContextPhrases": [
+            "docs/evidence",
+            "postmortem IDs"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "docs/evidence",
+            "postmortem IDs"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T04:04:50.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 100,
+        "compileOkCount": 2,
+        "phraseHitCount": 3,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-8b7a5bdb"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 2,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 3,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:memory_compiled",
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:correction"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 2,
+          "totalEventCount": 5,
+          "attributedEventCount": 5,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 5,
+          "selectionDigestTurnCount": 2,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T04:04:50.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-3c7cd0479949e8157100ccfd51c389ec05a6af3f195737c300aae1d64d56e3d2"
+      },
+      "turns": [
+        {
+          "turnId": "explicit-paths-turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-8b7a5bdb",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-fbc68c6466f5fe03f312a105f32adf1050b4c72bd119d93b5324bdd771e343c7",
+          "selectedContextIds": [
+            "pack-8b7a5bdb:event:session-correction-answer-paths-explicit-seed:cue-explicit-archive:feedback",
+            "pack-8b7a5bdb:event:session-correction-answer-paths-explicit-seed:cue-explicit-archive:interaction",
+            "pack-8b7a5bdb:human-label-harvest"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-correction-answer-paths-explicit-seed: When answering archive and incident-tag questions, keep the concrete path docs/evidence and the label postmortem IDs explicit.. Related interaction: session-correction-answer-paths-explicit-seed:cue-explicit-archive:interaction.",
+            "Interaction operator_override on cli session session-correction-answer-paths-explicit-seed. Message: cue-explicit-archive-seed-message.",
+            "Human label harvest is first-class with 2 labels sourced from openclaw/runtime/cli/seed:operator_override, openclaw/runtime/cli/seed:teaching."
+          ],
+          "eventExportDigest": "sha256-cf8b068404788b59d03384e803b22ce08e3d40eb7bf6e2c715d05163ed8910b9",
+          "expectedContextPhrases": [
+            "docs/evidence"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [
+            "docs/evidence"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:correction"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 1,
+            "totalEventCount": 3,
+            "attributedEventCount": 3,
+            "selectionDigestCount": 3,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T04:03:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "explicit-paths-turn-2",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-8b7a5bdb",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-fbc68c6466f5fe03f312a105f32adf1050b4c72bd119d93b5324bdd771e343c7",
+          "selectedContextIds": [
+            "pack-8b7a5bdb:event:session-correction-answer-paths-explicit-seed:cue-explicit-archive:feedback",
+            "pack-8b7a5bdb:event:session-correction-answer-paths-explicit-seed:cue-explicit-archive:interaction",
+            "pack-8b7a5bdb:human-label-harvest"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-correction-answer-paths-explicit-seed: When answering archive and incident-tag questions, keep the concrete path docs/evidence and the label postmortem IDs explicit.. Related interaction: session-correction-answer-paths-explicit-seed:cue-explicit-archive:interaction.",
+            "Interaction operator_override on cli session session-correction-answer-paths-explicit-seed. Message: cue-explicit-archive-seed-message.",
+            "Human label harvest is first-class with 2 labels sourced from openclaw/runtime/cli/seed:operator_override, openclaw/runtime/cli/seed:teaching."
+          ],
+          "eventExportDigest": "sha256-e00d4a4dc6fba60fffe6b6ffb05ed72cf92c07279489e35ce7818340a60fbc08",
+          "expectedContextPhrases": [
+            "docs/evidence",
+            "postmortem IDs"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "docs/evidence",
+            "postmortem IDs"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T04:04:50.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 100,
+        "compileOkCount": 2,
+        "phraseHitCount": 3,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-8b7a5bdb"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 2,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 3,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:memory_compiled",
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:correction"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 2,
+          "totalEventCount": 5,
+          "attributedEventCount": 5,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 5,
+          "selectionDigestTurnCount": 2,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T04:04:50.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-d8d9de3bed36180b3e7fe83c21a574d9e7c5c78216d0b05894ca8f76dfad4df2"
+      },
+      "turns": [
+        {
+          "turnId": "explicit-paths-turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-8b7a5bdb",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-fbc68c6466f5fe03f312a105f32adf1050b4c72bd119d93b5324bdd771e343c7",
+          "selectedContextIds": [
+            "pack-8b7a5bdb:event:session-correction-answer-paths-explicit-seed:cue-explicit-archive:feedback",
+            "pack-8b7a5bdb:event:session-correction-answer-paths-explicit-seed:cue-explicit-archive:interaction",
+            "pack-8b7a5bdb:human-label-harvest"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-correction-answer-paths-explicit-seed: When answering archive and incident-tag questions, keep the concrete path docs/evidence and the label postmortem IDs explicit.. Related interaction: session-correction-answer-paths-explicit-seed:cue-explicit-archive:interaction.",
+            "Interaction operator_override on cli session session-correction-answer-paths-explicit-seed. Message: cue-explicit-archive-seed-message.",
+            "Human label harvest is first-class with 2 labels sourced from openclaw/runtime/cli/seed:operator_override, openclaw/runtime/cli/seed:teaching."
+          ],
+          "eventExportDigest": "sha256-cf8b068404788b59d03384e803b22ce08e3d40eb7bf6e2c715d05163ed8910b9",
+          "expectedContextPhrases": [
+            "docs/evidence"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [
+            "docs/evidence"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:correction"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 1,
+            "totalEventCount": 3,
+            "attributedEventCount": 3,
+            "selectionDigestCount": 3,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T04:03:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "explicit-paths-turn-2",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-8b7a5bdb",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-fbc68c6466f5fe03f312a105f32adf1050b4c72bd119d93b5324bdd771e343c7",
+          "selectedContextIds": [
+            "pack-8b7a5bdb:event:session-correction-answer-paths-explicit-seed:cue-explicit-archive:feedback",
+            "pack-8b7a5bdb:event:session-correction-answer-paths-explicit-seed:cue-explicit-archive:interaction",
+            "pack-8b7a5bdb:human-label-harvest"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-correction-answer-paths-explicit-seed: When answering archive and incident-tag questions, keep the concrete path docs/evidence and the label postmortem IDs explicit.. Related interaction: session-correction-answer-paths-explicit-seed:cue-explicit-archive:interaction.",
+            "Interaction operator_override on cli session session-correction-answer-paths-explicit-seed. Message: cue-explicit-archive-seed-message.",
+            "Human label harvest is first-class with 2 labels sourced from openclaw/runtime/cli/seed:operator_override, openclaw/runtime/cli/seed:teaching."
+          ],
+          "eventExportDigest": "sha256-e00d4a4dc6fba60fffe6b6ffb05ed72cf92c07279489e35ce7818340a60fbc08",
+          "expectedContextPhrases": [
+            "docs/evidence",
+            "postmortem IDs"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "docs/evidence",
+            "postmortem IDs"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T04:04:50.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 100,
+        "compileOkCount": 2,
+        "phraseHitCount": 3,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 1,
+        "packIds": [
+          "pack-8b7a5bdb",
+          "pack-4a1a7f90"
+        ],
+        "trainTurnCount": 1,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-4a1a7f90",
+        "frozenEvalRouterIdentity": "pack-4a1a7f90:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 3,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:memory_compiled",
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:correction"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 2,
+          "totalEventCount": 5,
+          "attributedEventCount": 5,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 5,
+          "selectionDigestTurnCount": 2,
+          "activePackChangeCount": 1,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T04:04:50.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-5d2455dec45b9f078af37ebf43c84877011799aa93ec398f74f67063cfe40920"
+      },
+      "turns": [
+        {
+          "turnId": "explicit-paths-turn-1",
+          "replayMode": "learned_route",
+          "phase": "train",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-8b7a5bdb",
+          "modeRequested": "learned",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-fbc68c6466f5fe03f312a105f32adf1050b4c72bd119d93b5324bdd771e343c7",
+          "selectedContextIds": [
+            "pack-8b7a5bdb:event:session-correction-answer-paths-explicit-seed:cue-explicit-archive:feedback",
+            "pack-8b7a5bdb:event:session-correction-answer-paths-explicit-seed:cue-explicit-archive:interaction",
+            "pack-8b7a5bdb:human-label-harvest"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-correction-answer-paths-explicit-seed: When answering archive and incident-tag questions, keep the concrete path docs/evidence and the label postmortem IDs explicit.. Related interaction: session-correction-answer-paths-explicit-seed:cue-explicit-archive:interaction.",
+            "Interaction operator_override on cli session session-correction-answer-paths-explicit-seed. Message: cue-explicit-archive-seed-message.",
+            "Human label harvest is first-class with 2 labels sourced from openclaw/runtime/cli/seed:operator_override, openclaw/runtime/cli/seed:teaching."
+          ],
+          "eventExportDigest": "sha256-cf8b068404788b59d03384e803b22ce08e3d40eb7bf6e2c715d05163ed8910b9",
+          "expectedContextPhrases": [
+            "docs/evidence"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [
+            "docs/evidence"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": true,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:correction"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 1,
+            "totalEventCount": 3,
+            "attributedEventCount": 3,
+            "selectionDigestCount": 3,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T04:03:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "explicit-paths-turn-2",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-4a1a7f90",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "routerIdentity": "pack-4a1a7f90:route_fn",
+          "selectionDigest": "sha256-ec78ef07f14ef5a198cb756a2d12c5f5e265b2f08d46810550207a24fdcacd54",
+          "selectedContextIds": [
+            "pack-8b7a5bdb:event:session-correction-answer-paths-explicit-seed:cue-explicit-archive:feedback",
+            "runtime-graph-1fff87ec:event:evt-9a195aa5b614e55a:split:1",
+            "pack-8b7a5bdb:human-label-harvest"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-correction-answer-paths-explicit-seed: When answering archive and incident-tag questions, keep the concrete path docs/evidence and the label postmortem IDs explicit.. Related interaction: session-correction-answer-paths-explicit-seed:cue-explicit-archive:interaction.",
+            "Focused memory on correction, cli, answer, paths: Correction feedback on cli session session-correction-answer-paths-explicit: That is still too vague.",
+            "Human label harvest is first-class with 2 labels sourced from openclaw/runtime/cli/seed:operator_override, openclaw/runtime/cli/seed:teaching."
+          ],
+          "eventExportDigest": "sha256-8dc521a8b03a366678ec2c3a03501d36c658ef62b43efa8788aff6cf37989f5a",
+          "expectedContextPhrases": [
+            "docs/evidence",
+            "postmortem IDs"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "docs/evidence",
+            "postmortem IDs"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 2,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T04:04:50.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 100
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 100
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 100
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-c6b5d0a8e8d1079739fcd64d9c82a4bd9b1a533d6a22bea47a3ed7a700b06906"
+}

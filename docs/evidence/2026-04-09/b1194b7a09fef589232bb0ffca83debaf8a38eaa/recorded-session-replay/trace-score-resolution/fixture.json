@@ -1,0 +1,258 @@
+{
+  "contract": "recorded_session_replay_fixture.v1",
+  "traceId": "trace-score-resolution",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-03-28T17:26:18.111Z",
+  "bundleBuiltAt": "2026-03-28T20:02:41.227Z",
+  "traceHash": "sha256-574a64bf53c3d6173d64b044723abb88b3517de393d177eab13af71fafd23432",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "normalized dynamic test fixture from packages/cli/dist/test/replay-score-resolution.test.js"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-trace-score-resolution",
+    "snapshotId": "snapshot-trace-score-resolution",
+    "capturedAt": "2026-03-28T17:26:18.111Z",
+    "rootDir": "/tmp/openclawbrain-canonical-frozen-20/trace-score-resolution",
+    "branch": "main",
+    "revision": "rev-trace-score-resolution",
+    "labels": [
+      "proof-plan"
+    ]
+  },
+  "evalTurnCount": 1,
+  "seedBuiltAt": "2026-03-28T17:26:18.111Z",
+  "seedActivatedAt": "2026-03-28T17:27:18.111Z",
+  "seedExport": {
+    "interactionEvents": [
+      {
+        "contract": "interaction_events.v1",
+        "eventId": "sanitized-session-score-resolution-seed:cue-proof-run:interaction",
+        "agentId": "main",
+        "sessionId": "sanitized-session-score-resolution-seed",
+        "channel": "telegram",
+        "sequence": 1,
+        "kind": "operator_override",
+        "createdAt": "2026-03-28T17:26:18.111Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "telegram/direct/proof-plan/seed"
+        },
+        "semantic": {
+          "semanticType": "control_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "messageId": "cue-proof-run-seed-message"
+      }
+    ],
+    "feedbackEvents": [
+      {
+        "contract": "feedback_events.v1",
+        "eventId": "sanitized-session-score-resolution-seed:cue-proof-run:feedback",
+        "agentId": "main",
+        "sessionId": "sanitized-session-score-resolution-seed",
+        "channel": "telegram",
+        "sequence": 2,
+        "kind": "teaching",
+        "createdAt": "2026-03-28T17:27:18.111Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "telegram/direct/proof-plan/seed"
+        },
+        "content": "T-20260328-040 is the real-trace learned-route proof run for OpenClawBrain.",
+        "semantic": {
+          "semanticType": "teacher_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "relatedInteractionId": "sanitized-session-score-resolution-seed:cue-proof-run:interaction"
+      }
+    ],
+    "range": {
+      "start": 1,
+      "end": 2,
+      "count": 2,
+      "firstEventId": "sanitized-session-score-resolution-seed:cue-proof-run:interaction",
+      "lastEventId": "sanitized-session-score-resolution-seed:cue-proof-run:feedback",
+      "firstCreatedAt": "2026-03-28T17:26:18.111Z",
+      "lastCreatedAt": "2026-03-28T17:27:18.111Z"
+    },
+    "provenance": {
+      "runtimeOwner": "openclaw",
+      "sessionId": "sanitized-session-score-resolution-seed",
+      "channel": "telegram",
+      "interactionCount": 1,
+      "feedbackCount": 1,
+      "sourceStreams": [
+        "telegram/direct/proof-plan/seed"
+      ],
+      "contracts": [
+        "interaction_events.v1",
+        "feedback_events.v1"
+      ],
+      "exportDigest": "sha256-87146b424a028b5ce39da63d78dc75c09650c263cf022e8b0cea29434baa1680",
+      "semanticSurface": {
+        "semanticTypes": [
+          "control_signal",
+          "teacher_signal"
+        ],
+        "sourceKinds": [
+          "recorded_session_seed"
+        ],
+        "diagnosticIntents": []
+      },
+      "learningSurface": {
+        "bootProfile": "fast_boot_defaults",
+        "learningCadence": "passive_background",
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "telegram/direct/proof-plan/seed:operator_override",
+          "telegram/direct/proof-plan/seed:teaching"
+        ],
+        "labelSources": {
+          "human": [
+            "telegram/direct/proof-plan/seed:operator_override",
+            "telegram/direct/proof-plan/seed:teaching"
+          ],
+          "self": []
+        },
+        "labelHarvest": {
+          "humanLabels": 2,
+          "selfLabels": 0,
+          "corrections": 0,
+          "teachings": 1,
+          "approvals": 0,
+          "suppressions": 0,
+          "operatorOverrideLabels": 1,
+          "memoryCompileLabels": 0
+        },
+        "principalSummary": {
+          "teacherIdentities": [],
+          "teacherRoles": [],
+          "teacherAuthorities": [],
+          "priorityClasses": [],
+          "scopedEventCount": 0,
+          "supersedingEventCount": 0
+        }
+      }
+    }
+  },
+  "turns": [
+    {
+      "turnId": "plan-turn-1",
+      "turn": {
+        "agentId": "main",
+        "sessionId": "sanitized-session-score-resolution",
+        "channel": "telegram",
+        "sourceStream": "telegram/direct/proof-plan",
+        "userMessage": "So what's next for us to work on?",
+        "createdAt": "2026-03-28T19:54:42.389Z",
+        "sequenceStart": 1000,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "runtimeHints": [
+          "proof",
+          "next",
+          "plan"
+        ],
+        "compile": {
+          "createdAt": "2026-03-28T19:54:42.389Z",
+          "sequence": 1000
+        },
+        "delivery": {
+          "createdAt": "2026-03-28T19:54:57.546Z",
+          "sequence": 1001,
+          "messageId": "msg-plan-turn-1"
+        },
+        "feedback": [
+          {
+            "createdAt": "2026-03-28T19:54:57.546Z",
+            "content": "Next steps: commit the rollout-evaluator scaffold, export a sanitized non-test real-trace replay corpus, and rerun the rollout evaluator.",
+            "sequence": 1002,
+            "kind": "teaching"
+          }
+        ]
+      },
+      "expectedContextPhrases": [
+        "learned-route proof run"
+      ],
+      "minimumPhraseHits": 1
+    },
+    {
+      "turnId": "plan-turn-2",
+      "turn": {
+        "agentId": "main",
+        "sessionId": "sanitized-session-score-resolution",
+        "channel": "telegram",
+        "sourceStream": "telegram/direct/proof-plan",
+        "userMessage": "Please make an end-to-end master plan for me.",
+        "createdAt": "2026-03-28T19:56:06.301Z",
+        "sequenceStart": 1010,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "runtimeHints": [
+          "master-plan",
+          "proof",
+          "roadmap"
+        ],
+        "compile": {
+          "createdAt": "2026-03-28T19:56:06.301Z",
+          "sequence": 1010
+        },
+        "delivery": {
+          "createdAt": "2026-03-28T19:58:48.383Z",
+          "sequence": 1011,
+          "messageId": "msg-plan-turn-2"
+        },
+        "feedback": [
+          {
+            "createdAt": "2026-03-28T19:58:48.383Z",
+            "content": "The master plan ends with a rollout verdict: ready, limited, or blocked.",
+            "sequence": 1012,
+            "kind": "teaching"
+          }
+        ]
+      },
+      "expectedContextPhrases": [
+        "real-trace learned-route proof run"
+      ],
+      "minimumPhraseHits": 1
+    },
+    {
+      "turnId": "plan-turn-3",
+      "turn": {
+        "agentId": "main",
+        "sessionId": "sanitized-session-score-resolution",
+        "channel": "telegram",
+        "sourceStream": "telegram/direct/proof-plan",
+        "userMessage": "Please do this entire plan end to end.",
+        "createdAt": "2026-03-28T20:01:14.399Z",
+        "sequenceStart": 1020,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "runtimeHints": [
+          "execute",
+          "proof",
+          "end-to-end"
+        ],
+        "compile": {
+          "createdAt": "2026-03-28T20:01:14.399Z",
+          "sequence": 1020
+        },
+        "delivery": {
+          "createdAt": "2026-03-28T20:01:41.227Z",
+          "sequence": 1021,
+          "messageId": "msg-plan-turn-3"
+        },
+        "feedback": []
+      },
+      "expectedContextPhrases": [
+        "sanitized non-test real-trace replay corpus",
+        "ready, limited, or blocked"
+      ],
+      "minimumPhraseHits": 2
+    }
+  ],
+  "fixtureHash": "sha256-63d53f199a24fc52c99e70ab08c081d9f795c9234d4c9ad6b641f3f9480003ab"
+}

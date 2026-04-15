@@ -1,0 +1,241 @@
+{
+  "contract": "recorded_session_replay_proof_lane_closeout.v1",
+  "hashAlgorithm": "sha256",
+  "laneDir": "_lane",
+  "sourceManifest": {
+    "contract": "recorded_session_replay_proof_lane_source_manifest.v1",
+    "provided": true,
+    "manifestId": "canonical-frozen-20",
+    "manifestContract": "canonical_recorded_session_trace_set_manifest.v1",
+    "manifestDigest": "sha256-952aff638de8127852221d1fe0e378fdf63456e972fb004f395b0d72c3a8197a"
+  },
+  "verdict": {
+    "verdict": "success_and_proven",
+    "severity": "none",
+    "why": "20/20 replay proof bundles generated successfully and produced deterministic aggregate outputs."
+  },
+  "requestedTraceCount": 20,
+  "successfulTraceCount": 20,
+  "failedTraceCount": 0,
+  "failedTraceIds": [],
+  "modeOrder": [
+    "no_brain",
+    "vector_only",
+    "graph_prior_only",
+    "learned_route"
+  ],
+  "winnerModeCounts": [
+    {
+      "mode": "no_brain",
+      "rankedWinnerCount": 0,
+      "sharedTopScoreTraceCount": 0
+    },
+    {
+      "mode": "vector_only",
+      "rankedWinnerCount": 0,
+      "sharedTopScoreTraceCount": 17
+    },
+    {
+      "mode": "graph_prior_only",
+      "rankedWinnerCount": 17,
+      "sharedTopScoreTraceCount": 17
+    },
+    {
+      "mode": "learned_route",
+      "rankedWinnerCount": 3,
+      "sharedTopScoreTraceCount": 20
+    }
+  ],
+  "traceHashes": [
+    {
+      "traceId": "tern-recorded-session-proof",
+      "bundleHash": "sha256-0265a0daea9bd81595d19a9c01428fefa808004e2758be2a3a6f7efc5a414d6c",
+      "scoreHash": "sha256-f29f509c3325264b35db30b22add4bb8755147ab30854555c5a75cafaa9d85f8",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100
+    },
+    {
+      "traceId": "trace-comparative-replay",
+      "bundleHash": "sha256-46f518a1f64ddfbe1bdc2e770dc913cbe899abd737a1dce0f4bd20b3f955944f",
+      "scoreHash": "sha256-73f1b7feb0a980a86f3cb1ac77b83fd11e9beba10bd94d8ca88662eba3d4966d",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100
+    },
+    {
+      "traceId": "trace-correction-answer-paths-explicit",
+      "bundleHash": "sha256-c6b5d0a8e8d1079739fcd64d9c82a4bd9b1a533d6a22bea47a3ed7a700b06906",
+      "scoreHash": "sha256-9bfe2a23f653e51394d996a48de7422e433e33eacead19db6384b3403b8d21df",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100
+    },
+    {
+      "traceId": "trace-correction-deeper-proof-story",
+      "bundleHash": "sha256-e7d86160a979331c62d729913749bacdf054436b9ae91df89d3b78af0e8425e6",
+      "scoreHash": "sha256-f53ed5a5c8ddc917c02949b7670ed6f9536f04525a72db8b54a2992971b6a2ce",
+      "winnerMode": "learned_route",
+      "scoreSpread": 100
+    },
+    {
+      "traceId": "trace-correction-mode-paths-explicit",
+      "bundleHash": "sha256-22543eba7dc0bac15bf5aede6b9d4406be2288cbd89349be691d73d015442b31",
+      "scoreHash": "sha256-861948adf0c41bc28a4502d59d8e74bb0f688248eb88ae2341378e72590377c7",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100
+    },
+    {
+      "traceId": "trace-correction-rollout-verdict",
+      "bundleHash": "sha256-0c632527c097c335e9c0bb57fc80671fb36032be5d70725aabdc891ea1315f62",
+      "scoreHash": "sha256-34e9004bb8e64367d20ed45ec4221f73afbffd7fe6f08eaa6319d559082a1a03",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 70
+    },
+    {
+      "traceId": "trace-direct-answer-proof-bundle-layout",
+      "bundleHash": "sha256-e84b53d5f935d350542943dc4f1a91973e121743e43214313a823bc5e1b1f677",
+      "scoreHash": "sha256-8dacf4ff6aec6d444933ba68386eac14027fb737e309991af8c285645a65ff24",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 88
+    },
+    {
+      "traceId": "trace-direct-answer-release-verify",
+      "bundleHash": "sha256-64adabc4e0f66bcabb775441dc9e27c42d630c432de383d701156acb321d3c00",
+      "scoreHash": "sha256-f303d322f4af33f027a2e8f7d6197a074c363857ad03e83bb47733725ca07454",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100
+    },
+    {
+      "traceId": "trace-direct-answer-reproduce-eval-command",
+      "bundleHash": "sha256-e7dda77e05f2b43f9f83773c975693da60ce202e1ef99c05a707f87175f7ee4a",
+      "scoreHash": "sha256-2c8a0411f11abbfe90ad573ed3040e1dc011e58360a96e86d7295fdce6074196",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100
+    },
+    {
+      "traceId": "trace-openclaw-replay-freeze-identity",
+      "bundleHash": "sha256-5caa6cb3d3194941f2d818d166da1975ee7df09858f9c2c898ec03c99df63257",
+      "scoreHash": "sha256-c50b91bef701e0a99ea6ebb5ea333242825b38d6e4f0310c6c5fb28166ae8dd0",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100
+    },
+    {
+      "traceId": "trace-plan-lane-handoff",
+      "bundleHash": "sha256-604f95c1e7d05312384db461aa9fc3d46309e7d174195bfd62223a184bed1d9b",
+      "scoreHash": "sha256-873fa430060dda5c070f764f103e32e4fca215234a61be2d9d3b75fb9d6c79c6",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100
+    },
+    {
+      "traceId": "trace-plan-proof-artifact-triage",
+      "bundleHash": "sha256-d60516727af97e02bb7c720d9436a600a75bb7b7a702c1c81c9c415822c2e077",
+      "scoreHash": "sha256-b89f26fc3b64b2d1cee92202900e7dee747e06f7f885a5fe2c5e5909586496dc",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100
+    },
+    {
+      "traceId": "trace-plan-regression-workflow",
+      "bundleHash": "sha256-a1b5366779dfcaf3ef68b7d540653366bbb48126db816059c860e587ee706241",
+      "scoreHash": "sha256-3c6124f3ea39c2727d6a430e8fd5a2b3ba3cf196467f9eef155dcd303cc462e9",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 88
+    },
+    {
+      "traceId": "trace-retrieval-proof-hashes",
+      "bundleHash": "sha256-9e8e59fd0c8d5dea2b3fa97e22eb2147e084a9e9c0b8fe99d148f063d6356799",
+      "scoreHash": "sha256-0dd1aebace8e7519ab083e55aec8f6c21dc93108dd95314bb3b3545e42108f12",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100
+    },
+    {
+      "traceId": "trace-retrieval-restart-checklist-lookup",
+      "bundleHash": "sha256-d5201af94c012c2df5ab8e6f8c9096011bd3fa3736819d9e9d257b619096360e",
+      "scoreHash": "sha256-90c8f852831153b110e2357447665c6e2192116c113f0e0088a23f280221bfc7",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100
+    },
+    {
+      "traceId": "trace-retrieval-routing-prior-doc",
+      "bundleHash": "sha256-a79d1d3ae3c7c6c5060945970c36b324c019cf5bdebc8bb35c73691b34cbcda4",
+      "scoreHash": "sha256-50e7e482137879f0d8929a049d60b77407662a5852ea73b52a4678fd5867577e",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100
+    },
+    {
+      "traceId": "trace-score-resolution",
+      "bundleHash": "sha256-609c835237087343146a54cb3ee081ee638695161a8932cc744977c5d53d29bb",
+      "scoreHash": "sha256-10672f3749744d69b3b8eed58c2735df1846633c4b18bca6df1578e3440daf55",
+      "winnerMode": "learned_route",
+      "scoreSpread": 100
+    },
+    {
+      "traceId": "trace-seed-carry-forward",
+      "bundleHash": "sha256-af81643c94d1522cc456e82d3ff6575cfb4cc3fefe0017c3c35876eccf79b197",
+      "scoreHash": "sha256-03f3832f4899fab14dee8fc6516a747f11ec6b5a3edaa3d2985a7350fa6e8713",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100
+    },
+    {
+      "traceId": "trace-seed-carry-forward-eval-dedup",
+      "bundleHash": "sha256-bc7e3dd58582e7b79082a1a993b4e4db10e22e4e670fec926e58d0af12a26db2",
+      "scoreHash": "sha256-c60ee6bb15eadb317e390ee75799cba46ed25e397cf9e96c1d64ca0c1031b2ae",
+      "winnerMode": "learned_route",
+      "scoreSpread": 100
+    },
+    {
+      "traceId": "trace-train-freeze-eval",
+      "bundleHash": "sha256-d38ed6e31fb225c58a18675718cf10e44c1c526cd1b45bad3caa45b4fc2e39cc",
+      "scoreHash": "sha256-9a4827d8c274a23658cbca826331701fc869a6fec8860baaa7eee5ebb08cea4c",
+      "winnerMode": "graph_prior_only",
+      "scoreSpread": 100
+    }
+  ],
+  "files": [
+    {
+      "role": "readme",
+      "path": "README.md",
+      "digest": "sha256-220680a5516d54dec4b7afaf8dbb7904dc00ecd3734ae0858b9576a74a11b4cf",
+      "contract": null
+    },
+    {
+      "role": "index",
+      "path": "index.json",
+      "digest": "sha256-8b024722a80a09f7f42b5ed3eb8d6c1c5145178541557afe9dd0bafb83e1a4c6",
+      "contract": "recorded_session_replay_proof_lane_index.v1"
+    },
+    {
+      "role": "summary-tables",
+      "path": "summary-tables.json",
+      "digest": "sha256-00d32175027bd74da434badcd850102240f47dc03bea7c44f4419fbe3003e2cf",
+      "contract": "recorded_session_replay_proof_lane_summary_tables.v1"
+    },
+    {
+      "role": "pairwise-deltas",
+      "path": "pairwise-deltas.json",
+      "digest": "sha256-38a4962542d4c6e7753c5991565179292f5afe1710e81006a0a1c6d36095fe40",
+      "contract": "recorded_session_replay_proof_lane_pairwise_deltas.v1"
+    },
+    {
+      "role": "win-rate-matrix",
+      "path": "win-rate-matrix.json",
+      "digest": "sha256-3574b30fed5f9a8bd6168b3c9db31f38dc949c61b142cdd3ea75cc2d2f6ef62a",
+      "contract": "recorded_session_replay_proof_lane_win_rate_matrix.v1"
+    },
+    {
+      "role": "worked-traces",
+      "path": "worked-traces.md",
+      "digest": "sha256-1466731b61d698995568646d01435d3d28afc73e2778aa1dac5e291fa7df154a",
+      "contract": null
+    },
+    {
+      "role": "generation-report",
+      "path": "generation-report.json",
+      "digest": "sha256-65d6c1258922dfe9c408deb08b0167c099a140e8a494fbacda93c334e124fec2",
+      "contract": "recorded_session_replay_proof_lane_generation_report.v1"
+    },
+    {
+      "role": "summary",
+      "path": "summary.md",
+      "digest": "sha256-9b34451212d822196f5632a144e47b7e96820536e6fc087d0c08e3c9a1a6a9d2",
+      "contract": null
+    }
+  ]
+}

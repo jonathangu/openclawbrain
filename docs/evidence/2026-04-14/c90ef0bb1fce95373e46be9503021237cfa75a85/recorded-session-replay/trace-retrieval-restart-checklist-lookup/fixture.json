@@ -1,0 +1,211 @@
+{
+  "contract": "recorded_session_replay_fixture.v1",
+  "traceId": "trace-retrieval-restart-checklist-lookup",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T03:40:00.000Z",
+  "bundleBuiltAt": "2026-04-01T03:50:00.000Z",
+  "traceHash": "sha256-6f5f930f2df03ad616e08dfd2f0d1e71d1aa99ff5985e8434e9947ee2ee26b92",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from packages/cli/dist/test/recorded-session-replay-proof-bundle.test.js"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-trace-retrieval-restart-checklist-lookup",
+    "snapshotId": "snapshot-trace-retrieval-restart-checklist-lookup",
+    "capturedAt": "2026-04-01T03:39:00.000Z",
+    "rootDir": "/tmp/openclawbrain-canonical-frozen-20/trace-retrieval-restart-checklist-lookup",
+    "branch": "main",
+    "revision": "rev-trace-retrieval-restart-checklist-lookup",
+    "labels": [
+      "canonical-frozen-20"
+    ]
+  },
+  "evalTurnCount": 1,
+  "seedBuiltAt": "2026-04-01T03:41:00.000Z",
+  "seedActivatedAt": "2026-04-01T03:42:00.000Z",
+  "seedExport": {
+    "interactionEvents": [
+      {
+        "contract": "interaction_events.v1",
+        "eventId": "session-retrieval-restart-checklist-lookup-seed:cue-restart-checklist:interaction",
+        "agentId": "openclaw-runtime",
+        "sessionId": "session-retrieval-restart-checklist-lookup-seed",
+        "channel": "cli",
+        "sequence": 1,
+        "kind": "operator_override",
+        "createdAt": "2026-04-01T03:38:30.000Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "openclaw/runtime/cli/seed"
+        },
+        "semantic": {
+          "semanticType": "control_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "messageId": "cue-restart-checklist-seed-message"
+      }
+    ],
+    "feedbackEvents": [
+      {
+        "contract": "feedback_events.v1",
+        "eventId": "session-retrieval-restart-checklist-lookup-seed:cue-restart-checklist:feedback",
+        "agentId": "openclaw-runtime",
+        "sessionId": "session-retrieval-restart-checklist-lookup-seed",
+        "channel": "cli",
+        "sequence": 2,
+        "kind": "teaching",
+        "createdAt": "2026-04-01T03:39:30.000Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "openclaw/runtime/cli/seed"
+        },
+        "content": "The operator lane restart checklist is archived in docs/evidence and incidents are tagged with postmortem IDs.",
+        "semantic": {
+          "semanticType": "teacher_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "relatedInteractionId": "session-retrieval-restart-checklist-lookup-seed:cue-restart-checklist:interaction"
+      }
+    ],
+    "range": {
+      "start": 1,
+      "end": 2,
+      "count": 2,
+      "firstEventId": "session-retrieval-restart-checklist-lookup-seed:cue-restart-checklist:interaction",
+      "lastEventId": "session-retrieval-restart-checklist-lookup-seed:cue-restart-checklist:feedback",
+      "firstCreatedAt": "2026-04-01T03:38:30.000Z",
+      "lastCreatedAt": "2026-04-01T03:39:30.000Z"
+    },
+    "provenance": {
+      "runtimeOwner": "openclaw",
+      "sessionId": "session-retrieval-restart-checklist-lookup-seed",
+      "channel": "cli",
+      "interactionCount": 1,
+      "feedbackCount": 1,
+      "sourceStreams": [
+        "openclaw/runtime/cli/seed"
+      ],
+      "contracts": [
+        "interaction_events.v1",
+        "feedback_events.v1"
+      ],
+      "exportDigest": "sha256-bac37f94f19cfea19c7efd1079839bbeaea0c119ce87830550d8176a9e22b181",
+      "semanticSurface": {
+        "semanticTypes": [
+          "control_signal",
+          "teacher_signal"
+        ],
+        "sourceKinds": [
+          "recorded_session_seed"
+        ],
+        "diagnosticIntents": []
+      },
+      "learningSurface": {
+        "bootProfile": "fast_boot_defaults",
+        "learningCadence": "passive_background",
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "openclaw/runtime/cli/seed:operator_override",
+          "openclaw/runtime/cli/seed:teaching"
+        ],
+        "labelSources": {
+          "human": [
+            "openclaw/runtime/cli/seed:operator_override",
+            "openclaw/runtime/cli/seed:teaching"
+          ],
+          "self": []
+        },
+        "labelHarvest": {
+          "humanLabels": 2,
+          "selfLabels": 0,
+          "corrections": 0,
+          "teachings": 1,
+          "approvals": 0,
+          "suppressions": 0,
+          "operatorOverrideLabels": 1,
+          "memoryCompileLabels": 0
+        },
+        "principalSummary": {
+          "teacherIdentities": [],
+          "teacherRoles": [],
+          "teacherAuthorities": [],
+          "priorityClasses": [],
+          "scopedEventCount": 0,
+          "supersedingEventCount": 0
+        }
+      }
+    }
+  },
+  "turns": [
+    {
+      "turnId": "restart-checklist-turn-1",
+      "turn": {
+        "sessionId": "session-retrieval-restart-checklist-lookup",
+        "channel": "cli",
+        "sourceStream": "openclaw/runtime/cli",
+        "userMessage": "Where is the restart checklist archived?",
+        "createdAt": "2026-04-01T03:43:00.000Z",
+        "sequenceStart": 1000,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "compile": {
+          "createdAt": "2026-04-01T03:43:00.000Z",
+          "sequence": 1000
+        },
+        "delivery": {
+          "createdAt": "2026-04-01T03:43:20.000Z",
+          "sequence": 1001,
+          "messageId": "msg-restart-checklist-turn-1"
+        },
+        "feedback": [
+          {
+            "createdAt": "2026-04-01T03:43:35.000Z",
+            "content": "Answer with docs/evidence and postmortem IDs.",
+            "sequence": 1002,
+            "kind": "teaching"
+          }
+        ]
+      },
+      "expectedContextPhrases": [
+        "docs/evidence"
+      ],
+      "minimumPhraseHits": 1
+    },
+    {
+      "turnId": "restart-checklist-turn-2",
+      "turn": {
+        "sessionId": "session-retrieval-restart-checklist-lookup",
+        "channel": "cli",
+        "sourceStream": "openclaw/runtime/cli",
+        "userMessage": "Where is it archived and how are incidents tagged again?",
+        "createdAt": "2026-04-01T03:44:30.000Z",
+        "sequenceStart": 1010,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "runtimeHints": [
+          "restart",
+          "archive",
+          "again"
+        ],
+        "compile": {
+          "createdAt": "2026-04-01T03:44:30.000Z",
+          "sequence": 1010
+        },
+        "delivery": {
+          "createdAt": "2026-04-01T03:44:50.000Z",
+          "sequence": 1011,
+          "messageId": "msg-restart-checklist-turn-2"
+        },
+        "feedback": []
+      },
+      "expectedContextPhrases": [
+        "docs/evidence",
+        "postmortem IDs"
+      ],
+      "minimumPhraseHits": 1
+    }
+  ],
+  "fixtureHash": "sha256-ee04d0d989fc57e44664473fe8d656d4383122c7b35b3a2ebbcac2b5c1400aa0"
+}

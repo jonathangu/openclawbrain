@@ -1,0 +1,651 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "trace-plan-regression-workflow",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T02:00:00.000Z",
+  "generatedAt": "2026-04-01T02:10:00.000Z",
+  "traceHash": "sha256-d6c19595e20ace6fabb5b7541429491ac83c38d9e852f37f0b5ee0bf60e6ed38",
+  "fixtureHash": "sha256-398d90b9686a4dc952239f413c84c29595706a3f11e555898846a0d70de73153",
+  "scoreHash": "sha256-f523ec89a8c02c755e2c80823530274a74179d47f768d4edccb89c3b145a2570",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from docs/reproduce-eval.md"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 5,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 2,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 0,
+          "totalEventCount": 3,
+          "attributedEventCount": 3,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T02:05:20.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-90328e9b0c4f9b38528d7a84c935133ee1cb08f73bd2c39b66d2b7ab6828c750"
+      },
+      "turns": [
+        {
+          "turnId": "regression-workflow-turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-5aa095a954e492d1a18f939cf0dd8c28da0863b3ade8984bb57513c7ec43baa4",
+          "expectedContextPhrases": [
+            "hashes.json",
+            "bundle.json"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "hashes.json",
+            "bundle.json"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 0,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T02:03:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "regression-workflow-turn-2",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-4f6c59eebbe2fc4f3cb4e656fa93c6e45ac10765c5b8112bc9d298983cfa2aa6",
+          "expectedContextPhrases": [
+            "hashes.json",
+            "summary-tables.json",
+            "modes/learned_route.json"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "hashes.json",
+            "summary-tables.json",
+            "modes/learned_route.json"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T02:05:20.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 88,
+        "compileOkCount": 2,
+        "phraseHitCount": 4,
+        "phraseCount": 5,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-288281bd"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 2,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 3,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:memory_compiled",
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 2,
+          "totalEventCount": 5,
+          "attributedEventCount": 5,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 5,
+          "selectionDigestTurnCount": 2,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T02:05:20.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-9f753531f74de7da80060350c9810a057fcf7fa7bc090033e25c2e5d586df035"
+      },
+      "turns": [
+        {
+          "turnId": "regression-workflow-turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-288281bd",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-ed38b0f3c752b0c55bddb035a2512944255a50993f9396d393d145c8af26d907",
+          "selectedContextIds": [
+            "pack-288281bd:event:session-plan-regression-workflow-seed:cue-regression:feedback",
+            "pack-288281bd:event:session-plan-regression-workflow-seed:cue-regression:interaction",
+            "pack-288281bd:passive-background-learning"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-plan-regression-workflow-seed: If a replay rerun changes semantic hashes, compare hashes.json, summary-tables.json, coverage-snapshot.json, and hardening-snapshot.json, then inspect bundle.json and the per-mode outputs before claiming contract drift.. Related interaction: session-plan-regression-workflow-seed:cue-regression:interaction.",
+            "Interaction operator_override on cli session session-plan-regression-workflow-seed. Message: cue-regression-seed-message.",
+            "Learning cadence is passive_background with always_on scans across openclaw/runtime/cli/seed:operator_override, openclaw/runtime/cli/seed:teaching; sparse teacher gating budget=64, delayMs=0, background_amplification=1, amplified_labels=0."
+          ],
+          "eventExportDigest": "sha256-10023873c159cc8277055ef43c4d8badc6f66a2c98b72526d2b1aa561738c6b8",
+          "expectedContextPhrases": [
+            "hashes.json",
+            "bundle.json"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [
+            "hashes.json",
+            "bundle.json"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 1,
+            "totalEventCount": 3,
+            "attributedEventCount": 3,
+            "selectionDigestCount": 3,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T02:03:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "regression-workflow-turn-2",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-288281bd",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-fe035e7f61174668e6ae735f3dae9f60e47110e788df31ad98d00384471bfa1d",
+          "selectedContextIds": [
+            "pack-288281bd:event:session-plan-regression-workflow-seed:cue-regression:feedback",
+            "pack-288281bd:event:session-plan-regression-workflow-seed:cue-regression:interaction",
+            "pack-288281bd:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-plan-regression-workflow-seed: If a replay rerun changes semantic hashes, compare hashes.json, summary-tables.json, coverage-snapshot.json, and hardening-snapshot.json, then inspect bundle.json and the per-mode outputs before claiming contract drift.. Related interaction: session-plan-regression-workflow-seed:cue-regression:interaction.",
+            "Interaction operator_override on cli session session-plan-regression-workflow-seed. Message: cue-regression-seed-message.",
+            "Workspace snapshot snapshot-trace-plan-regression-workflow for ws-trace-plan-regression-workflow captured at 2026-04-01T01:59:00.000Z with revision rev-trace-plan-regression-workflow."
+          ],
+          "eventExportDigest": "sha256-a4f6320930ed2acfcfbd28a1f543092b1a8efad787adfc61af087c85a7dfa0ea",
+          "expectedContextPhrases": [
+            "hashes.json",
+            "summary-tables.json",
+            "modes/learned_route.json"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "hashes.json",
+            "summary-tables.json"
+          ],
+          "missedPhrases": [
+            "modes/learned_route.json"
+          ],
+          "qualityScore": 80,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T02:05:20.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 88,
+        "compileOkCount": 2,
+        "phraseHitCount": 4,
+        "phraseCount": 5,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-288281bd"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 2,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 3,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:memory_compiled",
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 2,
+          "totalEventCount": 5,
+          "attributedEventCount": 5,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 5,
+          "selectionDigestTurnCount": 2,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T02:05:20.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-20cfdb2124b87dd7dbe58f03e81d9a9d8a4af7fc04b6050ca267fc729810333d"
+      },
+      "turns": [
+        {
+          "turnId": "regression-workflow-turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-288281bd",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-ed38b0f3c752b0c55bddb035a2512944255a50993f9396d393d145c8af26d907",
+          "selectedContextIds": [
+            "pack-288281bd:event:session-plan-regression-workflow-seed:cue-regression:feedback",
+            "pack-288281bd:event:session-plan-regression-workflow-seed:cue-regression:interaction",
+            "pack-288281bd:passive-background-learning"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-plan-regression-workflow-seed: If a replay rerun changes semantic hashes, compare hashes.json, summary-tables.json, coverage-snapshot.json, and hardening-snapshot.json, then inspect bundle.json and the per-mode outputs before claiming contract drift.. Related interaction: session-plan-regression-workflow-seed:cue-regression:interaction.",
+            "Interaction operator_override on cli session session-plan-regression-workflow-seed. Message: cue-regression-seed-message.",
+            "Learning cadence is passive_background with always_on scans across openclaw/runtime/cli/seed:operator_override, openclaw/runtime/cli/seed:teaching; sparse teacher gating budget=64, delayMs=0, background_amplification=1, amplified_labels=0."
+          ],
+          "eventExportDigest": "sha256-10023873c159cc8277055ef43c4d8badc6f66a2c98b72526d2b1aa561738c6b8",
+          "expectedContextPhrases": [
+            "hashes.json",
+            "bundle.json"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [
+            "hashes.json",
+            "bundle.json"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 1,
+            "totalEventCount": 3,
+            "attributedEventCount": 3,
+            "selectionDigestCount": 3,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T02:03:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "regression-workflow-turn-2",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-288281bd",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-fe035e7f61174668e6ae735f3dae9f60e47110e788df31ad98d00384471bfa1d",
+          "selectedContextIds": [
+            "pack-288281bd:event:session-plan-regression-workflow-seed:cue-regression:feedback",
+            "pack-288281bd:event:session-plan-regression-workflow-seed:cue-regression:interaction",
+            "pack-288281bd:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-plan-regression-workflow-seed: If a replay rerun changes semantic hashes, compare hashes.json, summary-tables.json, coverage-snapshot.json, and hardening-snapshot.json, then inspect bundle.json and the per-mode outputs before claiming contract drift.. Related interaction: session-plan-regression-workflow-seed:cue-regression:interaction.",
+            "Interaction operator_override on cli session session-plan-regression-workflow-seed. Message: cue-regression-seed-message.",
+            "Workspace snapshot snapshot-trace-plan-regression-workflow for ws-trace-plan-regression-workflow captured at 2026-04-01T01:59:00.000Z with revision rev-trace-plan-regression-workflow."
+          ],
+          "eventExportDigest": "sha256-a4f6320930ed2acfcfbd28a1f543092b1a8efad787adfc61af087c85a7dfa0ea",
+          "expectedContextPhrases": [
+            "hashes.json",
+            "summary-tables.json",
+            "modes/learned_route.json"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "hashes.json",
+            "summary-tables.json"
+          ],
+          "missedPhrases": [
+            "modes/learned_route.json"
+          ],
+          "qualityScore": 80,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T02:05:20.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 88,
+        "compileOkCount": 2,
+        "phraseHitCount": 4,
+        "phraseCount": 5,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 1,
+        "packIds": [
+          "pack-288281bd",
+          "pack-167c08b4"
+        ],
+        "trainTurnCount": 1,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-167c08b4",
+        "frozenEvalRouterIdentity": "pack-167c08b4:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 3,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:memory_compiled",
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 2,
+          "totalEventCount": 5,
+          "attributedEventCount": 5,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 5,
+          "selectionDigestTurnCount": 2,
+          "activePackChangeCount": 1,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T02:05:20.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-49a9dce374e6c7ad3c333eaecbf965be031eb588ba343efd7f66120f2064039d"
+      },
+      "turns": [
+        {
+          "turnId": "regression-workflow-turn-1",
+          "replayMode": "learned_route",
+          "phase": "train",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-288281bd",
+          "modeRequested": "learned",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-ed38b0f3c752b0c55bddb035a2512944255a50993f9396d393d145c8af26d907",
+          "selectedContextIds": [
+            "pack-288281bd:event:session-plan-regression-workflow-seed:cue-regression:feedback",
+            "pack-288281bd:event:session-plan-regression-workflow-seed:cue-regression:interaction",
+            "pack-288281bd:passive-background-learning"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-plan-regression-workflow-seed: If a replay rerun changes semantic hashes, compare hashes.json, summary-tables.json, coverage-snapshot.json, and hardening-snapshot.json, then inspect bundle.json and the per-mode outputs before claiming contract drift.. Related interaction: session-plan-regression-workflow-seed:cue-regression:interaction.",
+            "Interaction operator_override on cli session session-plan-regression-workflow-seed. Message: cue-regression-seed-message.",
+            "Learning cadence is passive_background with always_on scans across openclaw/runtime/cli/seed:operator_override, openclaw/runtime/cli/seed:teaching; sparse teacher gating budget=64, delayMs=0, background_amplification=1, amplified_labels=0."
+          ],
+          "eventExportDigest": "sha256-10023873c159cc8277055ef43c4d8badc6f66a2c98b72526d2b1aa561738c6b8",
+          "expectedContextPhrases": [
+            "hashes.json",
+            "bundle.json"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [
+            "hashes.json",
+            "bundle.json"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": true,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 1,
+            "totalEventCount": 3,
+            "attributedEventCount": 3,
+            "selectionDigestCount": 3,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T02:03:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "regression-workflow-turn-2",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-167c08b4",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "routerIdentity": "pack-167c08b4:route_fn",
+          "selectionDigest": "sha256-697339927a48772f20a6b7c748f75b5b8cfa82466abc14b47b3465ae7482f995",
+          "selectedContextIds": [
+            "runtime-graph-7d329d42:event:evt-cd5d58fa587c94bb:split:1",
+            "pack-288281bd:event:session-plan-regression-workflow-seed:cue-regression:feedback",
+            "runtime-graph-7d329d42:workspace"
+          ],
+          "selectedContextTexts": [
+            "Focused memory on teaching, cli, plan, regression: Teaching feedback on cli session session-plan-regression-workflow: Compare hashes.",
+            "Teaching feedback on cli session session-plan-regression-workflow-seed: If a replay rerun changes semantic hashes, compare hashes.json, summary-tables.json, coverage-snapshot.json, and hardening-snapshot.json, then inspect bundle.json and the per-mode outputs before claiming contract drift.. Related interaction: session-plan-regression-workflow-seed:cue-regression:interaction.",
+            "Workspace snapshot snapshot-trace-plan-regression-workflow for ws-trace-plan-regression-workflow captured at 2026-04-01T01:59:00.000Z with revision rev-trace-plan-regression-workflow."
+          ],
+          "eventExportDigest": "sha256-9311e626ee2043e30f8e3380b853f309428b5071d4dab038e4b9855bc5dd4acf",
+          "expectedContextPhrases": [
+            "hashes.json",
+            "summary-tables.json",
+            "modes/learned_route.json"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "hashes.json",
+            "summary-tables.json"
+          ],
+          "missedPhrases": [
+            "modes/learned_route.json"
+          ],
+          "qualityScore": 80,
+          "compileActiveVersion": 2,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T02:05:20.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 88
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 88
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 88
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-7d7f09e4cb648c89dc31ce7eecc203b69a276716366567a59835b8153c788181"
+}

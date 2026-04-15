@@ -1,0 +1,656 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "trace-plan-proof-artifact-triage",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T02:20:00.000Z",
+  "generatedAt": "2026-04-01T02:30:00.000Z",
+  "traceHash": "sha256-0cf8cb60e9ada33f76aa46557e599749091e81d486af58269182793f5706eb5b",
+  "fixtureHash": "sha256-d2de95f47483d717328b536c37387d67416a65c6ef4706bb5e261a3f2a08590e",
+  "scoreHash": "sha256-b89f26fc3b64b2d1cee92202900e7dee747e06f7f885a5fe2c5e5909586496dc",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from docs/reproduce-eval.md"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 6,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 2,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 0,
+          "totalEventCount": 3,
+          "attributedEventCount": 3,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T02:25:00.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-91cb4e3cbbf02d6e28f4e5844a1cdc601a411cf0f2238175efe87f3839231475"
+      },
+      "turns": [
+        {
+          "turnId": "artifact-triage-turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-569186a0dbacfd470b11c2eb6d89b12e1a09f7ed231af357a259623ecb70d487",
+          "expectedContextPhrases": [
+            "summary.md",
+            "validation-report.json",
+            "hashes.json"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "summary.md",
+            "validation-report.json",
+            "hashes.json"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 0,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T02:23:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "artifact-triage-turn-2",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-408d1c8b5ac0e506b434fe97d4984345808bb6c315aae0b00e6b4656cef31a7c",
+          "expectedContextPhrases": [
+            "summary.md",
+            "validation-report.json",
+            "hashes.json"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "summary.md",
+            "validation-report.json",
+            "hashes.json"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T02:25:00.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 100,
+        "compileOkCount": 2,
+        "phraseHitCount": 6,
+        "phraseCount": 6,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-416f2acf"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 2,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 3,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:memory_compiled",
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 2,
+          "totalEventCount": 5,
+          "attributedEventCount": 5,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 5,
+          "selectionDigestTurnCount": 2,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T02:25:00.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-38feec3d38ef80a68853b1484162ec84e7cd4efd0e13d8ae1000b1e77df0dee4"
+      },
+      "turns": [
+        {
+          "turnId": "artifact-triage-turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-416f2acf",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-19092869424e95edff9b83d9bdb4e66b5212e64466045ef9aa4c0e6ceb46e6ef",
+          "selectedContextIds": [
+            "pack-416f2acf:event:session-plan-proof-artifact-triage-seed:cue-artifact-order:feedback",
+            "pack-416f2acf:event:session-plan-proof-artifact-triage-seed:cue-artifact-order:interaction",
+            "pack-416f2acf:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-plan-proof-artifact-triage-seed: Start replay proof triage with summary.md, validation-report.json, hashes.json, coverage-snapshot.json, and hardening-snapshot.json before diving into bundle.json or the per-mode files.. Related interaction: session-plan-proof-artifact-triage-seed:cue-artifact-order:interaction.",
+            "Interaction operator_override on cli session session-plan-proof-artifact-triage-seed. Message: cue-artifact-order-seed-message.",
+            "Workspace snapshot snapshot-trace-plan-proof-artifact-triage for ws-trace-plan-proof-artifact-triage captured at 2026-04-01T02:19:00.000Z with revision rev-trace-plan-proof-artifact-triage."
+          ],
+          "eventExportDigest": "sha256-a5cbf2f0e4ac69d3f77b7d42cd82f82d12c81cc944b3db148fe3e91395d7ad8b",
+          "expectedContextPhrases": [
+            "summary.md",
+            "validation-report.json",
+            "hashes.json"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [
+            "summary.md",
+            "validation-report.json",
+            "hashes.json"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 1,
+            "totalEventCount": 3,
+            "attributedEventCount": 3,
+            "selectionDigestCount": 3,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T02:23:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "artifact-triage-turn-2",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-416f2acf",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-9ac8b8d75d56c0ed6d4f26217867da1079e6e2ec580a29f294977328791840b7",
+          "selectedContextIds": [
+            "pack-416f2acf:event:session-plan-proof-artifact-triage-seed:cue-artifact-order:feedback",
+            "pack-416f2acf:event:session-plan-proof-artifact-triage-seed:cue-artifact-order:interaction",
+            "pack-416f2acf:human-label-harvest"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-plan-proof-artifact-triage-seed: Start replay proof triage with summary.md, validation-report.json, hashes.json, coverage-snapshot.json, and hardening-snapshot.json before diving into bundle.json or the per-mode files.. Related interaction: session-plan-proof-artifact-triage-seed:cue-artifact-order:interaction.",
+            "Interaction operator_override on cli session session-plan-proof-artifact-triage-seed. Message: cue-artifact-order-seed-message.",
+            "Human label harvest is first-class with 2 labels sourced from openclaw/runtime/cli/seed:operator_override, openclaw/runtime/cli/seed:teaching."
+          ],
+          "eventExportDigest": "sha256-a696bf0004f4405adfdde75f34bc2442b88d2ec8d5ecc86dbfc1e2e33d28b61e",
+          "expectedContextPhrases": [
+            "summary.md",
+            "validation-report.json",
+            "hashes.json"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "summary.md",
+            "validation-report.json",
+            "hashes.json"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T02:25:00.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 100,
+        "compileOkCount": 2,
+        "phraseHitCount": 6,
+        "phraseCount": 6,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-416f2acf"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 2,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 3,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:memory_compiled",
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 2,
+          "totalEventCount": 5,
+          "attributedEventCount": 5,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 5,
+          "selectionDigestTurnCount": 2,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T02:25:00.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-d25d46fd2b1ab3c2f7acfff190b2eef2aecd1534c15939a683e019448cf2d7f0"
+      },
+      "turns": [
+        {
+          "turnId": "artifact-triage-turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-416f2acf",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-19092869424e95edff9b83d9bdb4e66b5212e64466045ef9aa4c0e6ceb46e6ef",
+          "selectedContextIds": [
+            "pack-416f2acf:event:session-plan-proof-artifact-triage-seed:cue-artifact-order:feedback",
+            "pack-416f2acf:event:session-plan-proof-artifact-triage-seed:cue-artifact-order:interaction",
+            "pack-416f2acf:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-plan-proof-artifact-triage-seed: Start replay proof triage with summary.md, validation-report.json, hashes.json, coverage-snapshot.json, and hardening-snapshot.json before diving into bundle.json or the per-mode files.. Related interaction: session-plan-proof-artifact-triage-seed:cue-artifact-order:interaction.",
+            "Interaction operator_override on cli session session-plan-proof-artifact-triage-seed. Message: cue-artifact-order-seed-message.",
+            "Workspace snapshot snapshot-trace-plan-proof-artifact-triage for ws-trace-plan-proof-artifact-triage captured at 2026-04-01T02:19:00.000Z with revision rev-trace-plan-proof-artifact-triage."
+          ],
+          "eventExportDigest": "sha256-a5cbf2f0e4ac69d3f77b7d42cd82f82d12c81cc944b3db148fe3e91395d7ad8b",
+          "expectedContextPhrases": [
+            "summary.md",
+            "validation-report.json",
+            "hashes.json"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [
+            "summary.md",
+            "validation-report.json",
+            "hashes.json"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 1,
+            "totalEventCount": 3,
+            "attributedEventCount": 3,
+            "selectionDigestCount": 3,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T02:23:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "artifact-triage-turn-2",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-416f2acf",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-9ac8b8d75d56c0ed6d4f26217867da1079e6e2ec580a29f294977328791840b7",
+          "selectedContextIds": [
+            "pack-416f2acf:event:session-plan-proof-artifact-triage-seed:cue-artifact-order:feedback",
+            "pack-416f2acf:event:session-plan-proof-artifact-triage-seed:cue-artifact-order:interaction",
+            "pack-416f2acf:human-label-harvest"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-plan-proof-artifact-triage-seed: Start replay proof triage with summary.md, validation-report.json, hashes.json, coverage-snapshot.json, and hardening-snapshot.json before diving into bundle.json or the per-mode files.. Related interaction: session-plan-proof-artifact-triage-seed:cue-artifact-order:interaction.",
+            "Interaction operator_override on cli session session-plan-proof-artifact-triage-seed. Message: cue-artifact-order-seed-message.",
+            "Human label harvest is first-class with 2 labels sourced from openclaw/runtime/cli/seed:operator_override, openclaw/runtime/cli/seed:teaching."
+          ],
+          "eventExportDigest": "sha256-a696bf0004f4405adfdde75f34bc2442b88d2ec8d5ecc86dbfc1e2e33d28b61e",
+          "expectedContextPhrases": [
+            "summary.md",
+            "validation-report.json",
+            "hashes.json"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "summary.md",
+            "validation-report.json",
+            "hashes.json"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T02:25:00.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 100,
+        "compileOkCount": 2,
+        "phraseHitCount": 6,
+        "phraseCount": 6,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 1,
+        "packIds": [
+          "pack-416f2acf",
+          "pack-84a5668a"
+        ],
+        "trainTurnCount": 1,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-84a5668a",
+        "frozenEvalRouterIdentity": "pack-84a5668a:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 3,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:memory_compiled",
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 2,
+          "totalEventCount": 5,
+          "attributedEventCount": 5,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 5,
+          "selectionDigestTurnCount": 2,
+          "activePackChangeCount": 1,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T02:25:00.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-b0a2ae22ad9d8714f71cf04447c6e3d87ed7cdeb77cbf94777dfd0b769760bb1"
+      },
+      "turns": [
+        {
+          "turnId": "artifact-triage-turn-1",
+          "replayMode": "learned_route",
+          "phase": "train",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-416f2acf",
+          "modeRequested": "learned",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-19092869424e95edff9b83d9bdb4e66b5212e64466045ef9aa4c0e6ceb46e6ef",
+          "selectedContextIds": [
+            "pack-416f2acf:event:session-plan-proof-artifact-triage-seed:cue-artifact-order:feedback",
+            "pack-416f2acf:event:session-plan-proof-artifact-triage-seed:cue-artifact-order:interaction",
+            "pack-416f2acf:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-plan-proof-artifact-triage-seed: Start replay proof triage with summary.md, validation-report.json, hashes.json, coverage-snapshot.json, and hardening-snapshot.json before diving into bundle.json or the per-mode files.. Related interaction: session-plan-proof-artifact-triage-seed:cue-artifact-order:interaction.",
+            "Interaction operator_override on cli session session-plan-proof-artifact-triage-seed. Message: cue-artifact-order-seed-message.",
+            "Workspace snapshot snapshot-trace-plan-proof-artifact-triage for ws-trace-plan-proof-artifact-triage captured at 2026-04-01T02:19:00.000Z with revision rev-trace-plan-proof-artifact-triage."
+          ],
+          "eventExportDigest": "sha256-a5cbf2f0e4ac69d3f77b7d42cd82f82d12c81cc944b3db148fe3e91395d7ad8b",
+          "expectedContextPhrases": [
+            "summary.md",
+            "validation-report.json",
+            "hashes.json"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [
+            "summary.md",
+            "validation-report.json",
+            "hashes.json"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": true,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 1,
+            "totalEventCount": 3,
+            "attributedEventCount": 3,
+            "selectionDigestCount": 3,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T02:23:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "artifact-triage-turn-2",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-84a5668a",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "routerIdentity": "pack-84a5668a:route_fn",
+          "selectionDigest": "sha256-2fd6b56f7b138588dd2bbf8057741d4dc3832275cee1c0ec56061cdacea2cce6",
+          "selectedContextIds": [
+            "pack-416f2acf:event:session-plan-proof-artifact-triage-seed:cue-artifact-order:feedback",
+            "runtime-graph-06097fec:event:evt-2100a2970180028e:split:1",
+            "pack-416f2acf:human-label-harvest"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-plan-proof-artifact-triage-seed: Start replay proof triage with summary.md, validation-report.json, hashes.json, coverage-snapshot.json, and hardening-snapshot.json before diving into bundle.json or the per-mode files.. Related interaction: session-plan-proof-artifact-triage-seed:cue-artifact-order:interaction.",
+            "Focused memory on teaching, cli, plan, proof: Teaching feedback on cli session session-plan-proof-artifact-triage: Start with summary.",
+            "Human label harvest is first-class with 2 labels sourced from openclaw/runtime/cli/seed:operator_override, openclaw/runtime/cli/seed:teaching."
+          ],
+          "eventExportDigest": "sha256-df1919ffeb8bd175eb75f1ee3c3b30e8c0fffe43c7eefc1369065faf99d9a57c",
+          "expectedContextPhrases": [
+            "summary.md",
+            "validation-report.json",
+            "hashes.json"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "summary.md",
+            "validation-report.json",
+            "hashes.json"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 2,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T02:25:00.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 100
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 100
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 100
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-d60516727af97e02bb7c720d9436a600a75bb7b7a702c1c81c9c415822c2e077"
+}

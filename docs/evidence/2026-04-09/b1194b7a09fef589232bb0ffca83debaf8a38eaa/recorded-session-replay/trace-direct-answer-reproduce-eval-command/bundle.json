@@ -1,0 +1,640 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "trace-direct-answer-reproduce-eval-command",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-01T01:20:00.000Z",
+  "generatedAt": "2026-04-01T01:30:00.000Z",
+  "traceHash": "sha256-5bdf7dae6f318a437c25599d1163e02df616c6f8d8831f793342a828e48d8f56",
+  "fixtureHash": "sha256-9d178dbf6995a5ba8dcb2d1d1ffe4156b462ef915f606d24f8e99715f78f6ceb",
+  "scoreHash": "sha256-2c8a0411f11abbfe90ad573ed3040e1dc011e58360a96e86d7295fdce6074196",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "synthetic replayable equivalent derived from docs/reproduce-eval.md"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 4,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 2,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 0,
+          "totalEventCount": 3,
+          "attributedEventCount": 3,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T01:24:50.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-a2a7115fd8aa4c7bf4a719e6ce12d1ded35b497046b9e9542ec7ffd21f7790fc"
+      },
+      "turns": [
+        {
+          "turnId": "reproduce-command-turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-08b07a51d91b0006e7096569c236606bc38e8d563d8475703aed65c303993910",
+          "expectedContextPhrases": [
+            "tsx scripts/validate-recorded-session-replay.ts",
+            "--trace"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "tsx scripts/validate-recorded-session-replay.ts",
+            "--trace"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 0,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T01:23:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "reproduce-command-turn-2",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-48384aaf5d762472de2ba44c30108280f734545342fb690e52b11d1ebf091c0c",
+          "expectedContextPhrases": [
+            "tsx scripts/validate-recorded-session-replay.ts",
+            "--trace"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "tsx scripts/validate-recorded-session-replay.ts",
+            "--trace"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T01:24:50.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 100,
+        "compileOkCount": 2,
+        "phraseHitCount": 4,
+        "phraseCount": 4,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-bd1c118f"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 2,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 3,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:memory_compiled",
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 2,
+          "totalEventCount": 5,
+          "attributedEventCount": 5,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 5,
+          "selectionDigestTurnCount": 2,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T01:24:50.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-52e3e2d865a135c0b03c88160184909e3a73802d1699e209039a9b1f8a11f29c"
+      },
+      "turns": [
+        {
+          "turnId": "reproduce-command-turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-bd1c118f",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-211a91055b64388940a75bdb55f4d699532e5efb22acb010ae454944731f12a7",
+          "selectedContextIds": [
+            "pack-bd1c118f:event:session-direct-answer-reproduce-eval-command-seed:cue-command:feedback",
+            "pack-bd1c118f:event:session-direct-answer-reproduce-eval-command-seed:cue-command:interaction",
+            "pack-bd1c118f:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-direct-answer-reproduce-eval-command-seed: Run tsx scripts/validate-recorded-session-replay.ts --trace path/to/recorded-trace.json to regenerate a recorded-session replay proof bundle.. Related interaction: session-direct-answer-reproduce-eval-command-seed:cue-command:interaction.",
+            "Interaction operator_override on cli session session-direct-answer-reproduce-eval-command-seed. Message: cue-command-seed-message.",
+            "Workspace snapshot snapshot-trace-direct-answer-reproduce-eval-command for ws-trace-direct-answer-reproduce-eval-command captured at 2026-04-01T01:19:00.000Z with revision rev-trace-direct-answer-reproduce-eval-command."
+          ],
+          "eventExportDigest": "sha256-a1727bbf59cec92a3a7a73b5cbb6beec6b11129b1e12f89fb55cbc1aee28adbe",
+          "expectedContextPhrases": [
+            "tsx scripts/validate-recorded-session-replay.ts",
+            "--trace"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [
+            "tsx scripts/validate-recorded-session-replay.ts",
+            "--trace"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 1,
+            "totalEventCount": 3,
+            "attributedEventCount": 3,
+            "selectionDigestCount": 3,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T01:23:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "reproduce-command-turn-2",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-bd1c118f",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-345ebb8bf8aa74ab91c494abcf99cb7a598818261e0ed0ec8445d59252452228",
+          "selectedContextIds": [
+            "pack-bd1c118f:event:session-direct-answer-reproduce-eval-command-seed:cue-command:feedback",
+            "pack-bd1c118f:event:session-direct-answer-reproduce-eval-command-seed:cue-command:interaction",
+            "pack-bd1c118f:human-label-harvest"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-direct-answer-reproduce-eval-command-seed: Run tsx scripts/validate-recorded-session-replay.ts --trace path/to/recorded-trace.json to regenerate a recorded-session replay proof bundle.. Related interaction: session-direct-answer-reproduce-eval-command-seed:cue-command:interaction.",
+            "Interaction operator_override on cli session session-direct-answer-reproduce-eval-command-seed. Message: cue-command-seed-message.",
+            "Human label harvest is first-class with 2 labels sourced from openclaw/runtime/cli/seed:operator_override, openclaw/runtime/cli/seed:teaching."
+          ],
+          "eventExportDigest": "sha256-38e559b50f9c09efdc78abc7f62a6732428a8d36f78690a42a910bc2d504bca3",
+          "expectedContextPhrases": [
+            "tsx scripts/validate-recorded-session-replay.ts",
+            "--trace"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [
+            "tsx scripts/validate-recorded-session-replay.ts",
+            "--trace"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T01:24:50.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 100,
+        "compileOkCount": 2,
+        "phraseHitCount": 4,
+        "phraseCount": 4,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-bd1c118f"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 2,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 3,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:memory_compiled",
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 2,
+          "totalEventCount": 5,
+          "attributedEventCount": 5,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 5,
+          "selectionDigestTurnCount": 2,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T01:24:50.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-c25c525cc243aa6bde58517be9145058616370b3036ad965e7a014c2cca79471"
+      },
+      "turns": [
+        {
+          "turnId": "reproduce-command-turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-bd1c118f",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-211a91055b64388940a75bdb55f4d699532e5efb22acb010ae454944731f12a7",
+          "selectedContextIds": [
+            "pack-bd1c118f:event:session-direct-answer-reproduce-eval-command-seed:cue-command:feedback",
+            "pack-bd1c118f:event:session-direct-answer-reproduce-eval-command-seed:cue-command:interaction",
+            "pack-bd1c118f:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-direct-answer-reproduce-eval-command-seed: Run tsx scripts/validate-recorded-session-replay.ts --trace path/to/recorded-trace.json to regenerate a recorded-session replay proof bundle.. Related interaction: session-direct-answer-reproduce-eval-command-seed:cue-command:interaction.",
+            "Interaction operator_override on cli session session-direct-answer-reproduce-eval-command-seed. Message: cue-command-seed-message.",
+            "Workspace snapshot snapshot-trace-direct-answer-reproduce-eval-command for ws-trace-direct-answer-reproduce-eval-command captured at 2026-04-01T01:19:00.000Z with revision rev-trace-direct-answer-reproduce-eval-command."
+          ],
+          "eventExportDigest": "sha256-a1727bbf59cec92a3a7a73b5cbb6beec6b11129b1e12f89fb55cbc1aee28adbe",
+          "expectedContextPhrases": [
+            "tsx scripts/validate-recorded-session-replay.ts",
+            "--trace"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [
+            "tsx scripts/validate-recorded-session-replay.ts",
+            "--trace"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 1,
+            "totalEventCount": 3,
+            "attributedEventCount": 3,
+            "selectionDigestCount": 3,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T01:23:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "reproduce-command-turn-2",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-bd1c118f",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-345ebb8bf8aa74ab91c494abcf99cb7a598818261e0ed0ec8445d59252452228",
+          "selectedContextIds": [
+            "pack-bd1c118f:event:session-direct-answer-reproduce-eval-command-seed:cue-command:feedback",
+            "pack-bd1c118f:event:session-direct-answer-reproduce-eval-command-seed:cue-command:interaction",
+            "pack-bd1c118f:human-label-harvest"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-direct-answer-reproduce-eval-command-seed: Run tsx scripts/validate-recorded-session-replay.ts --trace path/to/recorded-trace.json to regenerate a recorded-session replay proof bundle.. Related interaction: session-direct-answer-reproduce-eval-command-seed:cue-command:interaction.",
+            "Interaction operator_override on cli session session-direct-answer-reproduce-eval-command-seed. Message: cue-command-seed-message.",
+            "Human label harvest is first-class with 2 labels sourced from openclaw/runtime/cli/seed:operator_override, openclaw/runtime/cli/seed:teaching."
+          ],
+          "eventExportDigest": "sha256-38e559b50f9c09efdc78abc7f62a6732428a8d36f78690a42a910bc2d504bca3",
+          "expectedContextPhrases": [
+            "tsx scripts/validate-recorded-session-replay.ts",
+            "--trace"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [
+            "tsx scripts/validate-recorded-session-replay.ts",
+            "--trace"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T01:24:50.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 100,
+        "compileOkCount": 2,
+        "phraseHitCount": 4,
+        "phraseCount": 4,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 1,
+        "packIds": [
+          "pack-bd1c118f",
+          "pack-4621b7bf"
+        ],
+        "trainTurnCount": 1,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-4621b7bf",
+        "frozenEvalRouterIdentity": "pack-4621b7bf:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 2,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 3,
+          "scanSurfaces": [
+            "openclaw/runtime/cli:memory_compiled",
+            "openclaw/runtime/cli:message_delivered",
+            "openclaw/runtime/cli:teaching"
+          ],
+          "humanLabelCount": 1,
+          "selfLabelCount": 2,
+          "totalEventCount": 5,
+          "attributedEventCount": 5,
+          "attributedTurnCount": 2,
+          "selectionDigestCount": 5,
+          "selectionDigestTurnCount": 2,
+          "activePackChangeCount": 1,
+          "freshestSourceStream": "openclaw/runtime/cli",
+          "freshestCreatedAt": "2026-04-01T01:24:50.000Z",
+          "warnings": []
+        },
+        "scoreHash": "sha256-7cac351e084dc01e55c46dc459806058ed85a8ec94fbea21dbefd05ef9432f84"
+      },
+      "turns": [
+        {
+          "turnId": "reproduce-command-turn-1",
+          "replayMode": "learned_route",
+          "phase": "train",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-bd1c118f",
+          "modeRequested": "learned",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-211a91055b64388940a75bdb55f4d699532e5efb22acb010ae454944731f12a7",
+          "selectedContextIds": [
+            "pack-bd1c118f:event:session-direct-answer-reproduce-eval-command-seed:cue-command:feedback",
+            "pack-bd1c118f:event:session-direct-answer-reproduce-eval-command-seed:cue-command:interaction",
+            "pack-bd1c118f:workspace"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-direct-answer-reproduce-eval-command-seed: Run tsx scripts/validate-recorded-session-replay.ts --trace path/to/recorded-trace.json to regenerate a recorded-session replay proof bundle.. Related interaction: session-direct-answer-reproduce-eval-command-seed:cue-command:interaction.",
+            "Interaction operator_override on cli session session-direct-answer-reproduce-eval-command-seed. Message: cue-command-seed-message.",
+            "Workspace snapshot snapshot-trace-direct-answer-reproduce-eval-command for ws-trace-direct-answer-reproduce-eval-command captured at 2026-04-01T01:19:00.000Z with revision rev-trace-direct-answer-reproduce-eval-command."
+          ],
+          "eventExportDigest": "sha256-a1727bbf59cec92a3a7a73b5cbb6beec6b11129b1e12f89fb55cbc1aee28adbe",
+          "expectedContextPhrases": [
+            "tsx scripts/validate-recorded-session-replay.ts",
+            "--trace"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [
+            "tsx scripts/validate-recorded-session-replay.ts",
+            "--trace"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": true,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered",
+              "openclaw/runtime/cli:teaching"
+            ],
+            "humanLabelCount": 1,
+            "selfLabelCount": 1,
+            "totalEventCount": 3,
+            "attributedEventCount": 3,
+            "selectionDigestCount": 3,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T01:23:35.000Z"
+          },
+          "warnings": []
+        },
+        {
+          "turnId": "reproduce-command-turn-2",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-4621b7bf",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "routerIdentity": "pack-4621b7bf:route_fn",
+          "selectionDigest": "sha256-99d7cb3e21f3a96016c85da578b2975416028a157fbd7f9cdc5c76d473073e2b",
+          "selectedContextIds": [
+            "pack-bd1c118f:event:session-direct-answer-reproduce-eval-command-seed:cue-command:feedback",
+            "runtime-graph-ba04f6c2:event:evt-a6bb74276897a548",
+            "pack-bd1c118f:human-label-harvest"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on cli session session-direct-answer-reproduce-eval-command-seed: Run tsx scripts/validate-recorded-session-replay.ts --trace path/to/recorded-trace.json to regenerate a recorded-session replay proof bundle.. Related interaction: session-direct-answer-reproduce-eval-command-seed:cue-command:interaction.",
+            "Teaching feedback on cli session session-direct-answer-reproduce-eval-command: Use tsx scripts/validate-recorded-session-replay.ts --trace path/to/recorded-trace.json.. Related interaction: evt-9e4b34cd13451e73.",
+            "Human label harvest is first-class with 2 labels sourced from openclaw/runtime/cli/seed:operator_override, openclaw/runtime/cli/seed:teaching."
+          ],
+          "eventExportDigest": "sha256-545fb46fb7e1e8f53d0c1f9e88ab00d81bb452ecdce99afa8c44019fecec656f",
+          "expectedContextPhrases": [
+            "tsx scripts/validate-recorded-session-replay.ts",
+            "--trace"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [
+            "tsx scripts/validate-recorded-session-replay.ts",
+            "--trace"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 2,
+          "promoted": false,
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "openclaw/runtime/cli:memory_compiled",
+              "openclaw/runtime/cli:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "openclaw/runtime/cli",
+            "freshestCreatedAt": "2026-04-01T01:24:50.000Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 100
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 100
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 100
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-e7dda77e05f2b43f9f83773c975693da60ce202e1ef99c05a707f87175f7ee4a"
+}

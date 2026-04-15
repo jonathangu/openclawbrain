@@ -1,0 +1,155 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 100,
+    "compileOkCount": 2,
+    "phraseHitCount": 4,
+    "phraseCount": 4,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-c85fd2f2"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 2,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 2,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 3,
+      "scanSurfaces": [
+        "openclaw/runtime/cli:memory_compiled",
+        "openclaw/runtime/cli:message_delivered",
+        "openclaw/runtime/cli:teaching"
+      ],
+      "humanLabelCount": 1,
+      "selfLabelCount": 2,
+      "totalEventCount": 5,
+      "attributedEventCount": 5,
+      "attributedTurnCount": 2,
+      "selectionDigestCount": 5,
+      "selectionDigestTurnCount": 2,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "openclaw/runtime/cli",
+      "freshestCreatedAt": "2026-04-01T01:44:50.000Z",
+      "warnings": []
+    },
+    "scoreHash": "sha256-c4ea09c75c7f1b7b0f3df872051012ceb1c7a4f6cebe52234cef46e6489449bb"
+  },
+  "turns": [
+    {
+      "turnId": "release-verify-turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-c85fd2f2",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-ded840d5e33b84da9e60b34be3fdce1bd4bd03d71602b9483ac709767539a0eb",
+      "selectedContextIds": [
+        "pack-c85fd2f2:event:session-direct-answer-release-verify-seed:cue-release-verify:feedback",
+        "pack-c85fd2f2:event:session-direct-answer-release-verify-seed:cue-release-verify:interaction",
+        "pack-c85fd2f2:workspace"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on cli session session-direct-answer-release-verify-seed: The root release verification entrypoint is npm run release:verify. It starts with npm test before proof and package verification.. Related interaction: session-direct-answer-release-verify-seed:cue-release-verify:interaction.",
+        "Interaction operator_override on cli session session-direct-answer-release-verify-seed. Message: cue-release-verify-seed-message.",
+        "Workspace snapshot snapshot-trace-direct-answer-release-verify for ws-trace-direct-answer-release-verify captured at 2026-04-01T01:39:00.000Z with revision rev-trace-direct-answer-release-verify."
+      ],
+      "eventExportDigest": "sha256-3c6c3aca6f998d8e6787193e23d6fca3e06ab671f8c041c13e0f85e78764ce89",
+      "expectedContextPhrases": [
+        "npm run release:verify",
+        "npm test"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "npm run release:verify",
+        "npm test"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "openclaw/runtime/cli:memory_compiled",
+          "openclaw/runtime/cli:message_delivered",
+          "openclaw/runtime/cli:teaching"
+        ],
+        "humanLabelCount": 1,
+        "selfLabelCount": 1,
+        "totalEventCount": 3,
+        "attributedEventCount": 3,
+        "selectionDigestCount": 3,
+        "freshestSourceStream": "openclaw/runtime/cli",
+        "freshestCreatedAt": "2026-04-01T01:43:35.000Z"
+      },
+      "warnings": []
+    },
+    {
+      "turnId": "release-verify-turn-2",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-c85fd2f2",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-086b69db9fac010101fe9fbcffa3f79cb2ccde6b0a363b0bd78d16f9b1321d2f",
+      "selectedContextIds": [
+        "pack-c85fd2f2:event:session-direct-answer-release-verify-seed:cue-release-verify:feedback",
+        "pack-c85fd2f2:event:session-direct-answer-release-verify-seed:cue-release-verify:interaction",
+        "pack-c85fd2f2:human-label-harvest"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on cli session session-direct-answer-release-verify-seed: The root release verification entrypoint is npm run release:verify. It starts with npm test before proof and package verification.. Related interaction: session-direct-answer-release-verify-seed:cue-release-verify:interaction.",
+        "Interaction operator_override on cli session session-direct-answer-release-verify-seed. Message: cue-release-verify-seed-message.",
+        "Human label harvest is first-class with 2 labels sourced from openclaw/runtime/cli/seed:operator_override, openclaw/runtime/cli/seed:teaching."
+      ],
+      "eventExportDigest": "sha256-1fdfc9fcfb9a173a5262eea3f7255f896ed98d39ee1c28ae1228cee5dca85218",
+      "expectedContextPhrases": [
+        "npm run release:verify",
+        "npm test"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "npm run release:verify",
+        "npm test"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "openclaw/runtime/cli:memory_compiled",
+          "openclaw/runtime/cli:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "openclaw/runtime/cli",
+        "freshestCreatedAt": "2026-04-01T01:44:50.000Z"
+      },
+      "warnings": []
+    }
+  ]
+}
