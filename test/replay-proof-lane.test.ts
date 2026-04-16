@@ -190,6 +190,10 @@ function normalizeReplayLaneVolatileText(text: string): string {
       "$1<volatile-latency>$3<volatile-latency>",
     )
     .replace(
+      /(used [0-9.]+ estimated prompt tokens, [0-9.]+ estimated prompt USD, and )([0-9.]+)( ms serve-path latency per incremental win vs [^,]+ [0-9.]+, [0-9.]+, and )([0-9.]+)/g,
+      "$1<volatile-latency>$3<volatile-latency>",
+    )
+    .replace(
       /(\| [^|]+ \| [^|]+ \| [^|]+ \| [^|]+ \| [^|]+ \| [^|]+ \| [^|]+ \| )([^|]+)( \| [^|]+ \| [^|]+ \| .* \|)/g,
       "$1<volatile-latency>$3",
     );
