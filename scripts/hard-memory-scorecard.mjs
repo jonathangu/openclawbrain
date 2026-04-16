@@ -74,11 +74,26 @@ function formatValue(value) {
   return `\`${String(value)}\``;
 }
 
-function readJson(filePath) {
-  return JSON.parse(readFileSync(filePath, "utf8"));
+function readStructuredFile(filePath) {
+  const text = readFileSync(filePath, "utf8");
+  if (filePath.endsWith(".jsonl")) {
+    return text
+      .split(/\r?\n/u)
+      .map((line) => line.trim())
+      .filter(Boolean)
+      .map((line, index) => {
+        try {
+          return JSON.parse(line);
+        }
+        catch (error) {
+          throw new Error(`Failed to parse JSONL line ${index + 1} in ${filePath}: ${error.message}`);
+        }
+      });
+  }
+  return JSON.parse(text);
 }
 
-function collectJsonFiles(rootDir) {
+function collectStructuredFiles(rootDir) {
   const collected = [];
   const visit = (currentDir) => {
     const entries = readdirSync(currentDir, { withFileTypes: true });
@@ -88,13 +103,38 @@ function collectJsonFiles(rootDir) {
         visit(entryPath);
         continue;
       }
-      if (entry.isFile() && entry.name.endsWith(".json")) {
+      if (entry.isFile() && (entry.name.endsWith(".json") || entry.name.endsWith(".jsonl"))) {
         collected.push(entryPath);
       }
     }
   };
   visit(rootDir);
   return collected.sort();
+}
+
+function normalizeStructuredRows(payload) {
+  if (Array.isArray(payload)) {
+    return payload.filter((row) => row && typeof row === "object");
+  }
+  if (!payload || typeof payload !== "object") {
+    return [];
+  }
+  if (Array.isArray(payload.rows)) {
+    return normalizeStructuredRows(payload.rows);
+  }
+  if (Array.isArray(payload.records)) {
+    return normalizeStructuredRows(payload.records);
+  }
+  if (Array.isArray(payload.traces)) {
+    return normalizeStructuredRows(payload.traces);
+  }
+  if (Array.isArray(payload.metrics)) {
+    return normalizeStructuredRows(payload.metrics);
+  }
+  if (Array.isArray(payload.entries)) {
+    return normalizeStructuredRows(payload.entries);
+  }
+  return [payload];
 }
 
 function extractTraceIdFromSeedEntry(entry) {
@@ -104,16 +144,20 @@ function extractTraceIdFromSeedEntry(entry) {
   if (!entry || typeof entry !== "object") {
     return null;
   }
-  return normalizeText(entry.traceId) ?? normalizeText(entry.id);
+  return normalizeText(entry.traceId)
+    ?? normalizeText(entry.trace_id)
+    ?? normalizeText(entry.id);
 }
 
 function collectSeedTraceIds(seedManifest, labelRecords) {
   const fromManifest = [];
   const manifestTraceEntries = Array.isArray(seedManifest?.traces)
     ? seedManifest.traces
-    : Array.isArray(seedManifest?.traceIds)
-      ? seedManifest.traceIds
-      : [];
+    : Array.isArray(seedManifest?.entries)
+      ? seedManifest.entries
+      : Array.isArray(seedManifest?.traceIds)
+        ? seedManifest.traceIds
+        : [];
   for (const entry of manifestTraceEntries) {
     const traceId = extractTraceIdFromSeedEntry(entry);
     if (traceId) {
@@ -123,12 +167,12 @@ function collectSeedTraceIds(seedManifest, labelRecords) {
   if (fromManifest.length > 0) {
     return [...new Set(fromManifest)];
   }
-  return [...new Set((Array.isArray(labelRecords) ? labelRecords : []).map((record) => normalizeText(record?.trace_id ?? record?.traceId)).filter(Boolean))];
+  return [...new Set(normalizeStructuredRows(labelRecords).map((record) => normalizeText(record?.trace_id ?? record?.traceId)).filter(Boolean))];
 }
 
 function buildLabelIndex(labelRecords) {
   const index = new Map();
-  for (const record of Array.isArray(labelRecords) ? labelRecords : []) {
+  for (const record of normalizeStructuredRows(labelRecords)) {
     const traceId = normalizeText(record?.trace_id ?? record?.traceId);
     if (!traceId || index.has(traceId)) {
       continue;
@@ -141,7 +185,7 @@ function buildLabelIndex(labelRecords) {
 function buildReplayTraceIndex(replayLaneSummaryTables) {
   const index = new Map();
   for (const row of Array.isArray(replayLaneSummaryTables?.traces) ? replayLaneSummaryTables.traces : []) {
-    const traceId = normalizeText(row?.traceId);
+    const traceId = normalizeText(row?.traceId ?? row?.trace_id);
     if (!traceId || index.has(traceId)) {
       continue;
     }
@@ -160,18 +204,52 @@ function firstNumber(...values) {
   return null;
 }
 
+function extractUtilityMetricRow(row) {
+  const metrics = row?.metrics ?? row?.supplementalMetrics ?? row?.route_objective_hint ?? row?.routeObjectiveHint ?? null;
+  return {
+    netUtilityDelta: firstNumber(
+      row?.net_utility_delta,
+      row?.netUtilityDelta,
+      row?.utility_delta_vs_graph_prior_only,
+      row?.utilityDeltaVsBaseline,
+      row?.utilityDelta,
+      metrics?.net_utility_delta,
+      metrics?.netUtilityDelta,
+      metrics?.utility_delta_vs_graph_prior_only,
+      metrics?.utilityDeltaVsBaseline,
+      metrics?.utilityDelta,
+    ),
+    costDelta: firstNumber(
+      row?.cost_delta,
+      row?.costDelta,
+      row?.costDeltaVsBaseline,
+      row?.costUsdDelta,
+      metrics?.cost_delta,
+      metrics?.costDelta,
+      metrics?.costDeltaVsBaseline,
+      metrics?.costUsdDelta,
+    ),
+    latencyDelta: firstNumber(
+      row?.latency_delta,
+      row?.latencyDelta,
+      row?.latencyDeltaVsBaseline,
+      row?.latencyMsDelta,
+      metrics?.latency_delta,
+      metrics?.latencyDelta,
+      metrics?.latencyDeltaVsBaseline,
+      metrics?.latencyMsDelta,
+    ),
+  };
+}
+
 function buildSupplementalMetricsIndex(supplementalMetrics) {
   const index = new Map();
-  for (const row of Array.isArray(supplementalMetrics) ? supplementalMetrics : []) {
+  for (const row of normalizeStructuredRows(supplementalMetrics)) {
     const traceId = normalizeText(row?.traceId ?? row?.trace_id);
     if (!traceId || index.has(traceId)) {
       continue;
     }
-    index.set(traceId, {
-      netUtilityDelta: firstNumber(row?.netUtilityDelta, row?.utilityDeltaVsBaseline, row?.utilityDelta),
-      costDelta: firstNumber(row?.costDelta, row?.costDeltaVsBaseline, row?.costUsdDelta),
-      latencyDelta: firstNumber(row?.latencyDelta, row?.latencyDeltaVsBaseline, row?.latencyMsDelta),
-    });
+    index.set(traceId, extractUtilityMetricRow(row));
   }
   return index;
 }
@@ -215,7 +293,7 @@ function buildTraceRows({ seedTraceIds, labelIndex, replayTraceIndex, supplement
     const oracleBestMode = strictEligible ? labels?.oracle_best_mode ?? null : normalizeText(labels?.oracle_best_mode);
     const outcomeVsBaseline = strictEligible ? relationFromOracleBestMode(oracleBestMode) : null;
     const replayRow = replayTraceIndex.get(traceId) ?? null;
-    const supplementalMetrics = supplementalMetricsIndex.get(traceId) ?? null;
+    const supplementalMetrics = supplementalMetricsIndex.get(traceId) ?? extractUtilityMetricRow(labelRecord);
     const notes = [];
     if (!labelRecord) {
       notes.push("missing_label_record");
@@ -298,6 +376,7 @@ export function buildHardMemoryScorecard({
 
   const resolvedFocusCohortId = normalizeText(focusCohortId)
     ?? normalizeText(seedManifest?.manifestId)
+    ?? normalizeText(seedManifest?.setId)
     ?? normalizeText(seedManifest?.focusCohortId)
     ?? "hard-memory-unspecified";
 
@@ -386,11 +465,11 @@ function loadLabelRecords({ labelFiles, labelsDir }) {
   if (labelsDir) {
     const resolvedDir = path.resolve(labelsDir);
     if (statSync(resolvedDir).isDirectory()) {
-      files.push(...collectJsonFiles(resolvedDir));
+      files.push(...collectStructuredFiles(resolvedDir));
     }
   }
   files.push(...labelFiles.map((filePath) => path.resolve(filePath)));
-  return [...new Set(files)].map((filePath) => readJson(filePath));
+  return [...new Set(files)].flatMap((filePath) => normalizeStructuredRows(readStructuredFile(filePath)));
 }
 
 function parseArgs(argv) {
@@ -454,10 +533,10 @@ function usageText() {
     "",
     "Options:",
     "  --seed-manifest <path>          JSON manifest with trace ids or trace entries",
-    "  --labels-dir <dir>              Directory of learned-route-labels.v1 JSON records",
-    "  --labels-file <path>            Single learned-route-labels.v1 JSON record (repeatable)",
+    "  --labels-dir <dir>              Directory of learned-route-labels.v1 JSON/JSONL records",
+    "  --labels-file <path>            Single learned-route-labels.v1 JSON or JSONL record file (repeatable)",
     "  --replay-summary-tables <path>  Matching replay-lane summary-tables.json for recall delta",
-    "  --supplemental-metrics <path>   JSON rows with traceId + netUtilityDelta (optional)",
+    "  --supplemental-metrics <path>   JSON or JSONL rows with traceId + netUtilityDelta (optional)",
     "  --focus-cohort-id <id>          Override focus cohort id",
     "  --out-dir <dir>                 Write hard-memory-scorecard.json and .md here",
     "  --help                          Show this help",
@@ -474,9 +553,9 @@ export function main(argv = process.argv.slice(2)) {
     throw new Error("--out-dir is required");
   }
 
-  const seedManifest = args.seedManifestPath ? readJson(path.resolve(args.seedManifestPath)) : null;
-  const replayLaneSummaryTables = args.replaySummaryTablesPath ? readJson(path.resolve(args.replaySummaryTablesPath)) : null;
-  const supplementalMetrics = args.supplementalMetricsPath ? readJson(path.resolve(args.supplementalMetricsPath)) : [];
+  const seedManifest = args.seedManifestPath ? readStructuredFile(path.resolve(args.seedManifestPath)) : null;
+  const replayLaneSummaryTables = args.replaySummaryTablesPath ? readStructuredFile(path.resolve(args.replaySummaryTablesPath)) : null;
+  const supplementalMetrics = args.supplementalMetricsPath ? readStructuredFile(path.resolve(args.supplementalMetricsPath)) : [];
   const labelRecords = loadLabelRecords({ labelFiles: args.labelFiles, labelsDir: args.labelsDir });
   const scorecard = buildHardMemoryScorecard({
     focusCohortId: args.focusCohortId,
