@@ -15,6 +15,7 @@ import {
   type FrozenRecordedSessionEvalManifestV1,
 } from "../../src/eval/comparative-eval-runner.js";
 import { OPENCLAWBRAIN_EXPLAINABLE_EVAL_SCORECARD_CONTRACT } from "../../src/eval/openclawbrain-explainable-scorecard.js";
+import { buildRecordedSessionReplayFixture, runRecordedSessionReplay } from "../../packages/cli/dist/src/index.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -151,6 +152,45 @@ function buildTrainFreezeTrace(rootDir: string, label: string) {
         deliveredAt: "2026-04-01T10:05:30.000Z",
         userMessage: "Before changing files, what is the rule?",
         expectedContextPhrases: ["readme before editing"],
+      },
+    ],
+  };
+}
+
+function buildEvalOnlyTrace(rootDir: string, label: string) {
+  return {
+    contract: "recorded_session_trace.v1",
+    traceId: `trace-eval-only-${label}`,
+    source: "sanitized_recorded_session",
+    recordedAt: "2026-04-01T12:00:00.000Z",
+    bundleBuiltAt: "2026-04-01T12:10:00.000Z",
+    agentId: "agent",
+    sessionId: `session-eval-only-${label}`,
+    channel: "cli",
+    sourceStream: "recorded/session",
+    privacy: {
+      sanitized: true,
+      notes: ["test fixture"],
+    },
+    workspace: createWorkspace(rootDir, label, "# Eval only workspace\nThe routing guide lives here.\n"),
+    seedBuiltAt: "2026-04-01T11:56:00.000Z",
+    seedActivatedAt: "2026-04-01T11:57:00.000Z",
+    seedCues: [
+      {
+        cueId: `cue-routing-guide-${label}`,
+        createdAt: "2026-04-01T11:55:00.000Z",
+        content: "The routing guide lives here.",
+        kind: "teaching",
+      },
+    ],
+    turns: [
+      {
+        turnId: `${label}-turn-1`,
+        createdAt: "2026-04-01T12:01:00.000Z",
+        deliveredAt: "2026-04-01T12:01:30.000Z",
+        userMessage: "show the routing guide",
+        runtimeHints: ["routing", "guide"],
+        expectedContextPhrases: ["routing guide"],
       },
     ],
   };
@@ -337,6 +377,26 @@ describe("comparative eval runner", () => {
     expect(descriptor.scorecard.policy.reasons).toContain(
       "baseline_mean_quality_gain_vs_floor: baseline does not clear the floor anchor by the configured mean quality margin",
     );
+  });
+
+  it("keeps learned-route replay distinct on eval-only traces by seeding a learned router", () => {
+    const rootDir = createTempRoot("comparative-eval-runner-eval-only");
+    const replayRoot = path.join(rootDir, "replay");
+    const trace = buildEvalOnlyTrace(rootDir, "eval-only");
+
+    const bundle = runRecordedSessionReplay(replayRoot, buildRecordedSessionReplayFixture(trace));
+    const learnedMode = bundle.modes.find((mode) => mode.mode === "learned_route");
+    const learnedTurn = learnedMode?.turns[0];
+
+    expect(learnedMode?.summary.trainTurnCount).toBe(0);
+    expect(learnedMode?.summary.evalTurnCount).toBe(1);
+    expect(learnedMode?.summary.frozenEvalRouterIdentity).toMatch(/:route_fn$/);
+    expect(learnedMode?.summary.usedLearnedRouteTurnCount).toBe(1);
+    expect(learnedTurn?.modeEffective).toBe("learned");
+    expect(learnedTurn?.usedLearnedRouteFn).toBe(true);
+    expect(learnedTurn?.activationTaken).toBe(true);
+    expect(learnedTurn?.activationSource).toBe("learned_route_fn");
+    expect(learnedTurn?.routerIdentity).toMatch(/:route_fn$/);
   });
 
   it("fails the gate when learned routing adds promotion churn on tie traces", () => {

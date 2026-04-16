@@ -313,12 +313,19 @@ function routerLearnedPrior(update) {
 function graphWalkNeighborActionScore(edge, targetEntry) {
     return edge.weight + targetEntry.score * 0.2 + targetEntry.matchedTokens.length * 1.5 + targetEntry.priority * 0.1;
 }
-function graphWalkShouldStop(pack, sourceBlockId, nextNeighbor) {
+function describeGraphWalkStopDecision(pack, sourceBlockId, nextNeighbor) {
     if (nextNeighbor === undefined) {
-        return true;
+        return {
+            shouldStop: true,
+            learnedStopPolicyActive: false
+        };
     }
-    const stopScore = routerLearnedPrior(routerStopPolicyUpdateForSource(pack, sourceBlockId));
-    return stopScore >= graphWalkNeighborActionScore(nextNeighbor.edge, nextNeighbor.targetEntry);
+    const stopPolicyUpdate = routerStopPolicyUpdateForSource(pack, sourceBlockId);
+    const stopScore = routerLearnedPrior(stopPolicyUpdate);
+    return {
+        shouldStop: stopScore >= graphWalkNeighborActionScore(nextNeighbor.edge, nextNeighbor.targetEntry),
+        learnedStopPolicyActive: stopPolicyUpdate !== null
+    };
 }
 function routerDeltaSummary(pack) {
     if (pack.router === null || pack.router.policyUpdates.length === 0) {
@@ -635,7 +642,8 @@ function selectContextBlocks(ranked, maxBlocks) {
             overlapPrunedCount: 0,
             overlapPrunedBlockIds: [],
             graphWalkSeedBlockIds: [],
-            graphWalkHopCount: 0
+            graphWalkHopCount: 0,
+            graphWalkLearnedStopPolicyDecisionCount: 0
         };
     }
     const selected = [];
@@ -675,7 +683,8 @@ function selectContextBlocks(ranked, maxBlocks) {
         overlapPrunedCount,
         overlapPrunedBlockIds,
         graphWalkSeedBlockIds: [],
-        graphWalkHopCount: 0
+        graphWalkHopCount: 0,
+        graphWalkLearnedStopPolicyDecisionCount: 0
     };
 }
 function selectContextBlocksByGraphWalk(pack, ranked, maxBlocks) {
@@ -686,7 +695,8 @@ function selectContextBlocksByGraphWalk(pack, ranked, maxBlocks) {
             overlapPrunedCount: 0,
             overlapPrunedBlockIds: [],
             graphWalkSeedBlockIds: [],
-            graphWalkHopCount: 0
+            graphWalkHopCount: 0,
+            graphWalkLearnedStopPolicyDecisionCount: 0
         };
     }
     const selected = [];
@@ -698,6 +708,7 @@ function selectContextBlocksByGraphWalk(pack, ranked, maxBlocks) {
     let matchedSelectedCount = 0;
     let overlapPrunedCount = 0;
     let graphWalkHopCount = 0;
+    let graphWalkLearnedStopPolicyDecisionCount = 0;
     const trySelect = (entry, matchedTier) => {
         if (selected.length >= maxBlocks) {
             return false;
@@ -752,7 +763,11 @@ function selectContextBlocksByGraphWalk(pack, ranked, maxBlocks) {
                 }
                 return left.targetEntry.packOrder - right.targetEntry.packOrder;
             })[0];
-            if (graphWalkShouldStop(pack, currentBlockId, nextNeighbor)) {
+            const stopDecision = describeGraphWalkStopDecision(pack, currentBlockId, nextNeighbor);
+            if (stopDecision.learnedStopPolicyActive) {
+                graphWalkLearnedStopPolicyDecisionCount += 1;
+            }
+            if (stopDecision.shouldStop) {
                 frontier.pop();
                 continue;
             }
@@ -779,7 +794,8 @@ function selectContextBlocksByGraphWalk(pack, ranked, maxBlocks) {
         overlapPrunedCount,
         overlapPrunedBlockIds,
         graphWalkSeedBlockIds,
-        graphWalkHopCount
+        graphWalkHopCount,
+        graphWalkLearnedStopPolicyDecisionCount
     };
 }
 function totalCharCount(blocks) {
@@ -1408,11 +1424,24 @@ function compileRuntimeCore(packOrRoot, request, options = {}, rankOptions = {})
         ? selectContextBlocksByGraphWalk(pack, ranked, maxBlocks)
         : selectContextBlocks(ranked, maxBlocks);
     const selected = selection.selected;
+    const selectedBlockIds = new Set(selected.map((block) => block.id));
     const compactionMode = request.compactionMode ?? "native";
     const charsBefore = totalCharCount(selected);
     const fitted = fitContextToCharBudget(selected, request.maxContextChars, compactionMode);
     const selectedContext = fitted.blocks;
     const traversalActivatedCount = ranked.filter((entry) => (entry.traversalScore ?? 0) > 0).length;
+    const learnedRoutePolicyUpdateCandidateCount = ranked.filter((entry) => entry.routerPolicyUpdate !== null).length;
+    const learnedRoutePolicyUpdateSelectedCount = ranked.filter((entry) => selectedBlockIds.has(entry.blockId) && entry.routerPolicyUpdate !== null).length;
+    const learnedRouteStopPolicyDecisionCount = selection.graphWalkLearnedStopPolicyDecisionCount ?? 0;
+    const learnedRouteEvidence = usedLearnedRouteFn
+        ? "learned_route_fn"
+        : learnedRoutePolicyUpdateSelectedCount > 0
+            ? "router_policy_update_selected"
+            : learnedRouteStopPolicyDecisionCount > 0
+                ? "graph_walk_stop_policy"
+                : learnedRoutePolicyUpdateCandidateCount > 0
+                    ? "router_policy_update_candidate_only"
+                    : "none";
     const candidateRoutingChannels = summarizeRoutingChannels(ranked);
     const selectedRoutingChannels = summarizeRoutingChannels(ranked.filter((entry) => selectedContext.some((selectedBlock) => selectedBlock.id === entry.blockId)));
     const structuralSignals = buildStructuralSignals(ranked, selectedContext, selection);
@@ -1455,6 +1484,10 @@ function compileRuntimeCore(packOrRoot, request, options = {}, rankOptions = {})
     if (traversalActivatedCount > 0) {
         notes.push(`graph_traversal_activated=${traversalActivatedCount}`);
     }
+    notes.push(`learned_route_evidence=${learnedRouteEvidence}`);
+    notes.push(`learned_route_policy_update_candidates=${learnedRoutePolicyUpdateCandidateCount}`);
+    notes.push(`learned_route_policy_update_selected=${learnedRoutePolicyUpdateSelectedCount}`);
+    notes.push(`learned_route_stop_policy_decisions=${learnedRouteStopPolicyDecisionCount}`);
     notes.push(`pack_graph_blocks=${pack.graph.blocks.length}`);
     notes.push(`runtime_plasticity_source=${pack.manifest.graphDynamics.runtimePlasticitySource}`);
     if (pack.graph.evolution !== undefined) {
@@ -1495,7 +1528,7 @@ function compileRuntimeCore(packOrRoot, request, options = {}, rankOptions = {})
     if (initHandoff.learnedRouteUpdateCount !== null) {
         notes.push(`learned_route_update_count=${initHandoff.learnedRouteUpdateCount}`);
     }
-    if (usedLearnedRouteFn && pack.router !== null) {
+    if (pack.router !== null && learnedRouteEvidence !== "none") {
         notes.push(`router_strategy=${pack.router.strategy}`);
         notes.push(`router_update_method=${pack.router.training.method}`);
         notes.push(`router_refresh_status=${pack.router.training.status}`);

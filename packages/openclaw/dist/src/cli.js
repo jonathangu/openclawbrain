@@ -1195,10 +1195,10 @@ function summarizeStatusRouteFn(status, report) {
     }
     let detail = report.routeFn.detail;
     if (report.servePath.usedLearnedRouteFn === true) {
-        detail = `current serve proof used the learned route_fn; ${report.routeFn.detail}`;
+        detail = `current serve proof used learned-route evidence from the active route_fn/artifact; ${report.routeFn.detail}`;
     }
     else if (report.routeFn.usedAt !== null) {
-        detail = `current serve proof did not use the learned route_fn, but the active route_fn last served a learned turn at ${report.routeFn.usedAt}`;
+        detail = `current serve proof did not use learned-route evidence, but the active route_fn last served a learned turn at ${report.routeFn.usedAt}`;
     }
     else if (report.routeFn.updatedAt !== null) {
         detail = `active route_fn was last updated at ${report.routeFn.updatedAt}, but no learned serve use is visible yet for the current pack`;

@@ -7,6 +7,13 @@ function noteValue(notes, prefix) {
     const note = notes.find((entry) => entry.startsWith(prefix));
     return note === undefined ? null : note.slice(prefix.length);
 }
+function reportedLearnedRouteUsageFromDiagnostics(diagnostics) {
+    if (diagnostics.usedLearnedRouteFn === true) {
+        return true;
+    }
+    const learnedRouteEvidence = noteValue(diagnostics.notes, "learned_route_evidence=");
+    return learnedRouteEvidence !== null && learnedRouteEvidence !== "none";
+}
 function roundNumber(value) {
     return Math.round(value * 10_000) / 10_000;
 }
@@ -238,6 +245,9 @@ function serveFallbackReason(result) {
         return result.error;
     }
     const notes = result.compileResponse.diagnostics.notes;
+    if (reportedLearnedRouteUsageFromDiagnostics(result.compileResponse.diagnostics)) {
+        return null;
+    }
     const enforced = noteValue(notes, "learned_required_enforced=");
     if (enforced !== null) {
         return enforced;
@@ -250,7 +260,7 @@ function serveFallbackReason(result) {
     if (selectionTiers === "token_match+priority_fallback") {
         return selectionTiers;
     }
-    return result.compileResponse.diagnostics.usedLearnedRouteFn ? null : `mode_effective=${result.compileResponse.diagnostics.modeEffective}`;
+    return `mode_effective=${result.compileResponse.diagnostics.modeEffective}`;
 }
 export function appendServeTimeRouteDecisionLog(input) {
     const activationRoot = path.resolve(input.activationRoot);
@@ -283,6 +293,9 @@ export function appendServeTimeRouteDecisionLog(input) {
         ? input.compileResult.compileResponse.selectedContext.filter((block) => !isStableKernelContextBlock(block)).map((block) => block.id)
         : [];
     const promotionLink = findPromotionLink(activationRoot, input.compileResult.ok ? input.compileResult.activePackId : null, activePack?.manifest.payloadChecksums.router ?? null);
+    const reportedLearnedRouteUsage = input.compileResult.ok
+        ? reportedLearnedRouteUsageFromDiagnostics(input.compileResult.compileResponse.diagnostics)
+        : null;
     const entryBase = {
         recordType: "serve_time_route_decision",
         recordedAt: input.recordedAt,
@@ -306,7 +319,7 @@ export function appendServeTimeRouteDecisionLog(input) {
         activePackRouterChecksum: activePack?.manifest.payloadChecksums.router ?? null,
         activePackGraphChecksum: activePack?.manifest.payloadChecksums.graph ?? null,
         routerIdentity: input.compileResult.ok ? input.compileResult.compileResponse.diagnostics.routerIdentity : null,
-        usedLearnedRouteFn: input.compileResult.ok ? input.compileResult.compileResponse.diagnostics.usedLearnedRouteFn : null,
+        usedLearnedRouteFn: reportedLearnedRouteUsage,
         servedArtifact: input.compileResult.ok ? input.compileResult.compileResponse.diagnostics.servedArtifact : null,
         selectionDigest: input.compileResult.ok ? input.compileResult.compileResponse.diagnostics.selectionDigest : null,
         requestedBudget: {

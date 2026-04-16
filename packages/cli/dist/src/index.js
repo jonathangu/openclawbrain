@@ -3270,6 +3270,29 @@ function readDiagnosticNoteList(notes, prefix) {
         .map((entry) => entry.trim())
         .filter((entry) => entry.length > 0);
 }
+function readReportedLearnedRouteEvidenceSource(notes) {
+    const value = readDiagnosticNoteValue(notes, "learned_route_evidence=");
+    return value === null || value.length === 0 || value === "none" ? null : value;
+}
+function resolveReportedLearnedRouteUsage(input) {
+    if (input.usedLearnedRouteFn === true) {
+        return {
+            active: true,
+            source: "learned_route_fn"
+        };
+    }
+    const source = readReportedLearnedRouteEvidenceSource(input.notes ?? []);
+    return {
+        active: source !== null,
+        source
+    };
+}
+function resolveReportedLearnedRouteUsageFromDiagnostics(diagnostics) {
+    return resolveReportedLearnedRouteUsage({
+        notes: diagnostics.notes,
+        usedLearnedRouteFn: diagnostics.usedLearnedRouteFn
+    });
+}
 function parseDiagnosticInteger(value) {
     if (value === null) {
         return null;
@@ -3378,6 +3401,10 @@ function buildContextAttributionSummary(input) {
     const selectedContext = [...(input.selectedContext ?? [])];
     const stableKernelBlocks = selectedContext.filter((block) => isStableKernelContextBlock(block));
     const brainCompiledBlocks = selectedContext.filter((block) => !isStableKernelContextBlock(block));
+    const learnedRouteUsage = resolveReportedLearnedRouteUsage({
+        notes: input.notes ?? [],
+        usedLearnedRouteFn: input.usedLearnedRouteFn
+    });
     if (input.unprobed) {
         return {
             selectedContextCount: 0,
@@ -3415,19 +3442,22 @@ function buildContextAttributionSummary(input) {
         };
     }
     const evidence = brainCompiledBlocks.length > 0
-        ? input.usedLearnedRouteFn === true
+        ? learnedRouteUsage.active
             ? "route_fn_and_brain_context"
             : "brain_context_only"
-        : input.usedLearnedRouteFn === true
+        : learnedRouteUsage.active
             ? "route_fn_only"
             : "stable_kernel_only";
     const detailPrefix = `selected=${selectedContext.length}; tiers=${selectionTiers ?? "unknown"}; kernel=${stableKernelBlocks.length}; brain=${brainCompiledBlocks.length}`;
+    const learnedRouteDetail = learnedRouteUsage.source === null || learnedRouteUsage.source === "learned_route_fn"
+        ? "learned route ran"
+        : `learned-route artifact evidence (${learnedRouteUsage.source}) was active`;
     const detail = evidence === "route_fn_and_brain_context"
-        ? `${detailPrefix}; learned route ran and non-seed brain-compiled context was selected`
+        ? `${detailPrefix}; ${learnedRouteDetail} and non-seed brain-compiled context was selected`
         : evidence === "brain_context_only"
             ? `${detailPrefix}; non-seed brain-compiled context was selected without learned-route evidence`
             : evidence === "route_fn_only"
-                ? `${detailPrefix}; learned route ran but selected context stayed inside the stable kernel`
+                ? `${detailPrefix}; ${learnedRouteDetail} but selected context stayed inside the stable kernel`
                 : `${detailPrefix}; selected context stayed inside the stable kernel`;
     return {
         selectedContextCount: selectedContext.length,
@@ -3464,10 +3494,11 @@ function buildAttachCompileStatus(result, observability, activePackId) {
         };
     }
     const notes = [...result.compileResponse.diagnostics.notes];
+    const reportedLearnedRouteUsage = resolveReportedLearnedRouteUsageFromDiagnostics(result.compileResponse.diagnostics);
     const contextAttribution = buildContextAttributionSummary({
         fallbackToStaticContext: false,
         hardRequirementViolated: false,
-        usedLearnedRouteFn: result.compileResponse.diagnostics.usedLearnedRouteFn,
+        usedLearnedRouteFn: reportedLearnedRouteUsage.active,
         selectedContext: result.compileResponse.selectedContext,
         notes
     });
@@ -3476,7 +3507,7 @@ function buildAttachCompileStatus(result, observability, activePackId) {
         fallbackToStaticContext: false,
         hardRequirementViolated: false,
         activePackId: result.activePackId,
-        usedLearnedRouteFn: result.compileResponse.diagnostics.usedLearnedRouteFn,
+        usedLearnedRouteFn: reportedLearnedRouteUsage.active,
         routerIdentity: result.compileResponse.diagnostics.routerIdentity,
         selectionDigest: result.compileResponse.diagnostics.selectionDigest,
         initMode: readDiagnosticNoteValue(notes, "init_mode=") ?? observability?.initHandoff.initMode ?? null,
@@ -3792,10 +3823,11 @@ function buildRuntimeTurnAttribution(input) {
     const profileId = normalizeOptionalString(input.turn.profileId) ?? null;
     if (input.compileResult.ok) {
         const notes = input.compileResult.compileResponse.diagnostics.notes;
+        const reportedLearnedRouteUsage = resolveReportedLearnedRouteUsageFromDiagnostics(input.compileResult.compileResponse.diagnostics);
         const contextAttribution = buildContextAttributionSummary({
             fallbackToStaticContext: false,
             hardRequirementViolated: false,
-            usedLearnedRouteFn: input.compileResult.compileResponse.diagnostics.usedLearnedRouteFn,
+            usedLearnedRouteFn: reportedLearnedRouteUsage.active,
             selectedContext: input.compileResult.compileResponse.selectedContext,
             notes
         });
@@ -3806,7 +3838,7 @@ function buildRuntimeTurnAttribution(input) {
             brainAttachmentPolicy,
             brainStatus: "serving_active_pack",
             activePackId: input.compileResult.activePackId,
-            usedLearnedRouteFn: input.compileResult.compileResponse.diagnostics.usedLearnedRouteFn,
+            usedLearnedRouteFn: reportedLearnedRouteUsage.active,
             routerIdentity: input.compileResult.compileResponse.diagnostics.routerIdentity,
             selectionDigest: input.compileResult.compileResponse.diagnostics.selectionDigest,
             selectionTiers: readDiagnosticNoteValue(notes, "selection_tiers="),
@@ -3817,7 +3849,7 @@ function buildRuntimeTurnAttribution(input) {
                 brainAttachmentPolicy,
                 brainStatus: "serving_active_pack",
                 activePackId: input.compileResult.activePackId,
-                usedLearnedRouteFn: input.compileResult.compileResponse.diagnostics.usedLearnedRouteFn,
+                usedLearnedRouteFn: reportedLearnedRouteUsage.active,
                 routerIdentity: input.compileResult.compileResponse.diagnostics.routerIdentity,
                 selectionDigest: input.compileResult.compileResponse.diagnostics.selectionDigest
             }),
@@ -4721,15 +4753,20 @@ function buildRecordedSessionTurnActivation(replayMode, result) {
     }
     const modeEffective = result.compileResponse.diagnostics.modeEffective ?? null;
     const routerIdentity = result.compileResponse.diagnostics.routerIdentity ?? null;
-    const usedLearnedRouteFn = result.compileResponse.diagnostics.usedLearnedRouteFn === true;
+    const learnedRouteUsage = resolveReportedLearnedRouteUsageFromDiagnostics(result.compileResponse.diagnostics);
     return {
-        activationTaken: usedLearnedRouteFn,
-        activationSource: usedLearnedRouteFn
-            ? "learned_route_fn"
+        activationTaken: learnedRouteUsage.active,
+        activationSource: learnedRouteUsage.active
+            ? learnedRouteUsage.source === "learned_route_fn"
+                ? "learned_route_fn"
+                : `learned_route_artifact:${learnedRouteUsage.source}`
             : modeEffective === null
                 ? "compile_diagnostics"
                 : `mode_effective:${modeEffective}`,
-        activationReason: `usedLearnedRouteFn=${String(result.compileResponse.diagnostics.usedLearnedRouteFn)}; modeEffective=${modeEffective ?? "null"}; routerIdentity=${routerIdentity ?? "null"}`,
+        activationReason:
+            `usedLearnedRouteFn=${String(result.compileResponse.diagnostics.usedLearnedRouteFn)}; ` +
+                `learnedRouteEvidence=${learnedRouteUsage.source ?? "none"}; ` +
+                `modeEffective=${modeEffective ?? "null"}; routerIdentity=${routerIdentity ?? "null"}`,
         activationConfidence: "high"
     };
 }
@@ -4746,6 +4783,9 @@ function buildRecordedSessionTurnReport(replayMode, turnFixture, result, options
     const observability = buildRecordedSessionTurnObservability(result);
     const eventExportDigest = result.eventExport.ok === true ? result.eventExport.normalizedEventExport.provenance.exportDigest : null;
     const activation = buildRecordedSessionTurnActivation(replayMode, result);
+    const reportedLearnedRouteUsage = result.ok
+        ? resolveReportedLearnedRouteUsageFromDiagnostics(result.compileResponse.diagnostics)
+        : { active: false, source: null };
     return {
         turnId: turnFixture.turnId,
         replayMode,
@@ -4757,7 +4797,7 @@ function buildRecordedSessionTurnReport(replayMode, turnFixture, result, options
         modeRequested: plan.routeModeRequested,
         modeEffective: result.ok ? result.compileResponse.diagnostics.modeEffective : null,
         selectionEngine: plan.selectionEngine,
-        usedLearnedRouteFn: result.ok ? result.compileResponse.diagnostics.usedLearnedRouteFn : false,
+        usedLearnedRouteFn: reportedLearnedRouteUsage.active,
         activationTaken: activation.activationTaken,
         activationSource: activation.activationSource,
         activationReason: activation.activationReason,
@@ -4998,14 +5038,17 @@ function prepareReplayModeRoot(rootDir, mode) {
     mkdirSync(modeRoot, { recursive: true });
     return modeRoot;
 }
-function prepareSeedActivation(rootDir, fixture) {
+function prepareSeedActivation(rootDir, fixture, learnedRouting = false) {
     const activationRoot = path.join(rootDir, "activation");
     const seedPackRoot = path.join(rootDir, "seed-pack");
     const seedPack = materializeCandidatePackFromNormalizedEventExport(seedPackRoot, {
         packLabel: `${fixture.traceId}-seed`,
         workspace: fixture.workspace,
         normalizedEventExport: fixture.seedExport,
-        learnedRouting: false,
+        // Keep the seed lane aligned with the replay mode so eval-only learned-route
+        // traces still bind a distinct router artifact instead of collapsing to the
+        // heuristic/vector seed path.
+        learnedRouting,
         builtAt: fixture.seedBuiltAt,
         offlineArtifacts: ["recorded-session-replay-seed"],
         structuralOps: {
@@ -5039,7 +5082,7 @@ function runRecordedSessionNoBrainMode(rootDir, fixture) {
 }
 function runRecordedSessionSeededComparativeMode(rootDir, fixture, replayMode) {
     const modeRoot = prepareReplayModeRoot(rootDir, replayMode);
-    const { activationRoot } = prepareSeedActivation(modeRoot, fixture);
+    const { activationRoot } = prepareSeedActivation(modeRoot, fixture, false);
     const turns = fixture.turns.map((turnFixture) => {
         const result = runRuntimeTurn(buildRecordedSessionReplayTurnInput(turnFixture, modeRoot, replayMode), {
             activationRoot,
@@ -5055,7 +5098,7 @@ function runRecordedSessionSeededComparativeMode(rootDir, fixture, replayMode) {
 }
 function runRecordedSessionLearnedRouteMode(rootDir, fixture) {
     const modeRoot = prepareReplayModeRoot(rootDir, "learned_route");
-    const { activationRoot } = prepareSeedActivation(modeRoot, fixture);
+    const { activationRoot } = prepareSeedActivation(modeRoot, fixture, true);
     const loopRoot = path.join(modeRoot, "loop");
     const turnPlan = buildRecordedSessionReplayTurnPlan(fixture);
     let state;
@@ -7804,7 +7847,7 @@ function buildCurrentProfileTurnAttributionFromReport(report, policyMode, profil
         brainCompiledSources: [...contextAttribution.brainCompiledSources],
         contextEvidence: contextAttribution.evidence === "unprobed" ? "stable_kernel_only" : contextAttribution.evidence,
         detail: brainStatus === "serving_active_pack"
-            ? "current profile status probe compiled from the active pack with explicit route-function and block-source attribution"
+            ? "current profile status probe compiled from the active pack with explicit learned-route and block-source attribution"
             : brainStatus === "hard_fail"
                 ? "current profile status probe hit a learned-route hard fail before serving context could compile"
                 : "current profile status probe fail-opened to static context because no serving pack was available"

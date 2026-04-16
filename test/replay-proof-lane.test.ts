@@ -283,7 +283,7 @@ describe("recorded session replay proof lane", () => {
     expect(descriptor.summaryTables.scorecard.activationPrecision).toMatchObject({
       available: true,
       observedTurnCount: 5,
-      activationCount: 3,
+      activationCount: 5,
       beneficialActivationCount: 1,
       precision: expect.any(Number),
     });
