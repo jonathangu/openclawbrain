@@ -272,8 +272,40 @@ function commandStatus(): void {
   const workerState = readWorkerRuntimeState(store, brainConfig);
   const contextFeedback = store.getContextFeedbackSummary();
   const contextUsefulness = store.getContextUsefulnessSummary();
+  const routeOutcomeTruthStored = store.getTrainingStateJson<Record<string, unknown>>("route_outcome_truth_summary_json");
   const promotionStory = buildPromotionStory(store, { contextFeedback });
+  const routeTraceCount = store.countTraces();
   const observationAttribution = store.getObservationAttributionSummary();
+  const routeOutcomeTruth = routeOutcomeTruthStored
+    ? {
+        ...routeOutcomeTruthStored,
+        coverage: {
+          ...(typeof routeOutcomeTruthStored.coverage === "object" && routeOutcomeTruthStored.coverage !== null
+            ? routeOutcomeTruthStored.coverage as Record<string, unknown>
+            : {}),
+          routeTraceCount,
+          observationCount: observationAttribution.totalObservationCount,
+          servedCoverage: routeTraceCount > 0
+            ? Number((routeOutcomeTruthStored.activation as Record<string, unknown> | undefined)?.totalServedCount ?? 0) / routeTraceCount
+            : 0,
+          outcomeCoverage: observationAttribution.totalObservationCount > 0
+            ? Number((routeOutcomeTruthStored.coverage as Record<string, unknown> | undefined)?.followUpCount ?? 0) / observationAttribution.totalObservationCount
+            : 0,
+          resolutionCoverage: observationAttribution.totalObservationCount > 0
+            ? Number((routeOutcomeTruthStored.coverage as Record<string, unknown> | undefined)?.followUpCount ?? 0) / observationAttribution.totalObservationCount
+            : 0,
+        },
+        latest: {
+          routeServed: store.getTrainingStateJson("last_route_served_event_json"),
+          turnOutcome: store.getTrainingStateJson("last_turn_outcome_event_json"),
+          retryOrIntervention: store.getTrainingStateJson("last_retry_or_intervention_event_json"),
+          episodeResolution: store.getTrainingStateJson("last_episode_resolution_event_json"),
+        },
+        detail: routeTraceCount === 0
+          ? "no traced routes recorded yet"
+          : `served=${Number((routeOutcomeTruthStored.activation as Record<string, unknown> | undefined)?.totalServedCount ?? 0)}/${routeTraceCount} traced turns, followups=${Number((routeOutcomeTruthStored.coverage as Record<string, unknown> | undefined)?.followUpCount ?? 0)}, confirmations=${Number((routeOutcomeTruthStored.coverage as Record<string, unknown> | undefined)?.confirmationCount ?? 0)}`,
+      }
+    : store.getRouteOutcomeTruthSummary();
   const teacherReadyBefore = Date.now() - Math.max(1_000, brainConfig.trainerIntervalMs);
   const teacherTruth = {
     queue: store.getTeacherQueueSummary(teacherReadyBefore, 20),
@@ -384,12 +416,14 @@ function commandStatus(): void {
     currentPackMetadata: promotionStory.currentPack?.metadata ?? null,
     pendingObservations: store.countPendingObservations(),
     pendingObservationsByStatus: store.countObservationsByStatus(),
+    routeTraceCount,
     observationAttribution,
     attributionTruth,
     teacherTruth,
     operatorHealth,
     contextFeedback,
     contextUsefulness,
+    routeOutcomeTruth,
     learningHealth,
     routeQuality,
     continuousLearning,

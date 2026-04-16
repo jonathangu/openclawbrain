@@ -1388,6 +1388,57 @@ describe("BrainService", () => {
     expect(status.routeTraceCount).toBe(1);
     expect(status.supervisionCount).toBe(1);
     expect(status.pendingObservations).toBe(0);
+    expect(status.routeOutcomeTruth).toMatchObject({
+      coverage: {
+        routeTraceCount: 1,
+        observationCount: 1,
+        followUpCount: 1,
+        confirmationCount: 1,
+      },
+      activation: {
+        totalServedCount: 1,
+        learnedNontrivialCount: 1,
+        learnedNontrivialOutcomeCount: 1,
+        learnedNontrivialResolvedCount: 1,
+        learnedNontrivialCorrectionLikeCount: 0,
+      },
+      outcomes: {
+        resolved: 1,
+        reask: 0,
+      },
+      resolutions: {
+        completed: 1,
+        unresolved: 0,
+        totalRetryCount: 0,
+      },
+      metrics: {
+        activationPrecision: {
+          value: 1,
+          numerator: 1,
+          denominator: 1,
+        },
+        retryRate: {
+          value: 0,
+          numerator: 0,
+          denominator: 1,
+        },
+      },
+      latest: {
+        routeServed: expect.objectContaining({
+          contract: "ocb.route_served.v1",
+          episode_id: result?.episode.id,
+        }),
+        turnOutcome: expect.objectContaining({
+          contract: "ocb.turn_outcome.v1",
+          outcome_class: "resolved",
+        }),
+        episodeResolution: expect.objectContaining({
+          contract: "ocb.episode_resolution.v1",
+          resolution_class: "completed",
+          resolved: true,
+        }),
+      },
+    });
     expect(status.attributionTruth).toMatchObject({
       contract: "openclawbrain_attribution_truth.v1",
       visible: true,

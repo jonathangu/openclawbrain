@@ -830,4 +830,116 @@ describe("BrainService observations", () => {
       status: "pending_followup",
     });
   });
+
+  it("emits route decision and route served runtime events when a turn is recorded", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-runtime-events-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-runtime-events-state-");
+    writeFileSync(
+      join(workspaceRoot, "PLAYBOOK.md"),
+      "# Pull Requests\n\nUse gh pr create for pull request workflows.\n",
+      "utf8",
+    );
+
+    const service = new BrainService({ deps: createDeps(brainRoot) });
+    await service.init({
+      workspaceRoot,
+      embedFn: async (text) => embed(text),
+    });
+
+    const result = await service.query({
+      conversationId: 54,
+      queryText: "how do I open a pull request?",
+      budgetChars: 4000,
+      queryEmbedding: embed("gh pr create pull request"),
+    });
+
+    await service.recordTurnObservation({
+      episodeId: result?.episode.id,
+      assistantResponse: "Use `gh pr create` to open the pull request.",
+      toolResults: [],
+    });
+
+    const store = (service as unknown as {
+      store: { getTrainingStateJson: <T>(key: string) => T | null };
+    }).store;
+
+    expect(store.getTrainingStateJson<Record<string, unknown>>("last_route_decision_event_json")).toMatchObject({
+      contract: "ocb.route_decision.v1",
+      episode_id: result?.episode.id,
+      trace_id: result?.trace.id,
+    });
+    expect(store.getTrainingStateJson<Record<string, unknown>>("last_route_served_event_json")).toMatchObject({
+      contract: "ocb.route_served.v1",
+      episode_id: result?.episode.id,
+      conversation_id: 54,
+      used_learned_route_fn: true,
+    });
+    expect(store.getTrainingStateJson<unknown[]>("recent_route_decision_events_json")).toHaveLength(1);
+    expect(store.getTrainingStateJson<unknown[]>("recent_route_served_events_json")).toHaveLength(1);
+  });
+
+  it("emits thin turn outcome and retry runtime events from follow-up attachment", async () => {
+    const workspaceRoot = makeTempDir("openclawbrain-followup-events-workspace-");
+    const brainRoot = makeTempDir("openclawbrain-followup-events-state-");
+    writeFileSync(
+      join(workspaceRoot, "PLAYBOOK.md"),
+      "# Pull Requests\n\nUse gh pr create for pull request workflows.\n",
+      "utf8",
+    );
+
+    const service = new BrainService({ deps: createDeps(brainRoot) });
+    await service.init({
+      workspaceRoot,
+      embedFn: async (text) => embed(text),
+    });
+
+    const result = await service.query({
+      conversationId: 55,
+      queryText: "how do I open a pull request?",
+      budgetChars: 4000,
+      queryEmbedding: embed("gh pr create pull request"),
+    });
+
+    await service.recordTurnObservation({
+      episodeId: result?.episode.id,
+      assistantResponse: "Use `gh pr create` to open the pull request.",
+      toolResults: [],
+    });
+    await service.observeUserTurn({
+      conversationId: 55,
+      messageId: 401,
+      episodeId: result?.episode.id,
+      userText: "Can you try again with a different way?",
+      recentMessages: [],
+      recentSummaries: [],
+    });
+
+    const store = (service as unknown as {
+      store: { getTrainingStateJson: <T>(key: string) => T | null };
+    }).store;
+
+    expect(store.getTrainingStateJson<Record<string, unknown>>("last_turn_outcome_event_json")).toMatchObject({
+      contract: "ocb.turn_outcome.v1",
+      episode_id: result?.episode.id,
+      outcome_class: "reask",
+      follow_up_class: "reask",
+      source: "user_followup",
+    });
+    expect(store.getTrainingStateJson<Record<string, unknown>>("last_retry_or_intervention_event_json")).toMatchObject({
+      contract: "ocb.retry_or_intervention.v1",
+      episode_id: result?.episode.id,
+      trigger_kind: "user_retry",
+      retry_count_delta: 1,
+    });
+    expect(store.getTrainingStateJson<Record<string, unknown>>("last_episode_resolution_event_json")).toMatchObject({
+      contract: "ocb.episode_resolution.v1",
+      episode_id: result?.episode.id,
+      resolution_class: "unknown",
+      resolved: false,
+      total_retry_count: 1,
+    });
+    expect(store.getTrainingStateJson<unknown[]>("recent_turn_outcome_events_json")).toHaveLength(1);
+    expect(store.getTrainingStateJson<unknown[]>("recent_retry_or_intervention_events_json")).toHaveLength(1);
+    expect(store.getTrainingStateJson<unknown[]>("recent_episode_resolution_events_json")).toHaveLength(1);
+  });
 });

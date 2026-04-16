@@ -62,6 +62,17 @@ import { buildContextManagementModel } from "../context-management-model.js";
 import { buildContinuousLearningOperatorStatus, continuousLearningControlDir } from "./continuous-learning-status.js";
 import { buildRouteQualitySummaryV1, type RouteQualitySummaryRoutingModeV1 } from "./route-quality-summary.js";
 import { summarizeAttributionTruth, summarizeOperatorHealth } from "../live-runtime-audit.js";
+import { evaluateContextUsefulness } from "../brain-core/usefulness.js";
+import { materializeRouteDecisionEventFromTraceV1, type RouteDecisionEventV1 } from "../brain-core/route-decision-event.js";
+import {
+  buildEpisodeResolutionEventV1,
+  buildRetryOrInterventionEventV1,
+  buildRouteServedEventV1,
+  buildTurnOutcomeEventV1,
+  type RetryOrInterventionEventV1,
+  type RouteServedEventV1,
+  type TurnOutcomeEventV1,
+} from "../brain-core/route-outcome-events.js";
 import {
   proposeUserCorrectionFast,
   proposeUserCorrectionWithModel,
@@ -884,6 +895,398 @@ export class BrainService {
     this.store.setTrainingStateJson("recent_prefetch_decisions_json", this.recentPrefetchDecisions.slice(-25));
   }
 
+  private appendRecentTrainingStateEvent<T>(params: {
+    lastKey: string;
+    recentKey: string;
+    event: T;
+    maxItems?: number;
+  }): void {
+    this.store.setTrainingStateJson(params.lastKey, params.event);
+    const prior = this.store.getTrainingStateJson<T[]>(params.recentKey);
+    const recent = Array.isArray(prior) ? [...prior, params.event].slice(-(params.maxItems ?? 25)) : [params.event];
+    this.store.setTrainingStateJson(params.recentKey, recent);
+    this.updateRouteOutcomeTruthSummary(params.event);
+  }
+
+  private updateRouteOutcomeTruthSummary(event: unknown): void {
+    const contract = typeof event === "object" && event !== null && "contract" in event
+      ? String((event as { contract?: unknown }).contract ?? "")
+      : "";
+    if (![
+      "ocb.route_served.v1",
+      "ocb.turn_outcome.v1",
+      "ocb.retry_or_intervention.v1",
+      "ocb.episode_resolution.v1",
+    ].includes(contract)) {
+      return;
+    }
+    const current = this.store.getTrainingStateJson<Record<string, unknown>>("route_outcome_truth_summary_json") ?? {};
+    const episodeStates = typeof current.episodeStates === "object" && current.episodeStates !== null
+      ? { ...(current.episodeStates as Record<string, Record<string, unknown>>) }
+      : {};
+    const episodeId = typeof (event as { episode_id?: unknown }).episode_id === "string"
+      ? (event as { episode_id: string }).episode_id
+      : null;
+    if (!episodeId) {
+      return;
+    }
+    const state = { ...(episodeStates[episodeId] ?? {}) };
+    if (contract === "ocb.route_served.v1") {
+      state.activationKind = (event as { activation_kind?: unknown }).activation_kind ?? null;
+      state.usedLearnedRouteFn = (event as { used_learned_route_fn?: unknown }).used_learned_route_fn === true;
+      state.failOpen = (event as { fail_open?: unknown }).fail_open === true;
+    } else if (contract === "ocb.turn_outcome.v1") {
+      state.outcomeClass = (event as { outcome_class?: unknown }).outcome_class ?? null;
+      state.followUpClass = (event as { follow_up_class?: unknown }).follow_up_class ?? null;
+      state.correctionRequired = (event as { correction_required?: unknown }).correction_required === true;
+    } else if (contract === "ocb.retry_or_intervention.v1") {
+      state.totalRetryCount = Math.max(0, Number(state.totalRetryCount ?? 0))
+        + Math.max(0, Number((event as { retry_count_delta?: unknown }).retry_count_delta ?? 0));
+      state.totalInterventionCount = Math.max(0, Number(state.totalInterventionCount ?? 0))
+        + Math.max(0, Number((event as { intervention_count_delta?: unknown }).intervention_count_delta ?? 0));
+    } else if (contract === "ocb.episode_resolution.v1") {
+      state.resolutionClass = (event as { resolution_class?: unknown }).resolution_class ?? null;
+      state.resolved = (event as { resolved?: unknown }).resolved === true;
+      state.totalRetryCount = Math.max(0, Number((event as { total_retry_count?: unknown }).total_retry_count ?? state.totalRetryCount ?? 0));
+      state.totalInterventionCount = Math.max(0, Number((event as { total_intervention_count?: unknown }).total_intervention_count ?? state.totalInterventionCount ?? 0));
+      state.finalOutcomeQuality = (event as { final_outcome_quality?: unknown }).final_outcome_quality ?? null;
+    }
+    episodeStates[episodeId] = state;
+
+    const activationKindCounts = {
+      graph_prior_only: 0,
+      learned_prior_like: 0,
+      learned_nontrivial: 0,
+      fail_open: 0,
+    };
+    const outcomes = {
+      resolved: 0,
+      correction: 0,
+      contradiction: 0,
+      reask: 0,
+      unknown: 0,
+    };
+    let usedLearnedRouteFnCount = 0;
+    let failOpenCount = 0;
+    let learnedNontrivialCount = 0;
+    let learnedNontrivialOutcomeCount = 0;
+    let learnedNontrivialResolvedCount = 0;
+    let learnedNontrivialCorrectionLikeCount = 0;
+    let nonActivatedCorrectionLikeCount = 0;
+    let followUpCount = 0;
+    let confirmationCount = 0;
+    let completedCount = 0;
+    let unresolvedCount = 0;
+    let totalRetryCount = 0;
+
+    for (const summaryState of Object.values(episodeStates)) {
+      const activationKind = typeof summaryState.activationKind === "string" && summaryState.activationKind in activationKindCounts
+        ? summaryState.activationKind as keyof typeof activationKindCounts
+        : null;
+      if (activationKind) {
+        activationKindCounts[activationKind] += 1;
+        if (summaryState.usedLearnedRouteFn === true) {
+          usedLearnedRouteFnCount += 1;
+        }
+        if (summaryState.failOpen === true) {
+          failOpenCount += 1;
+        }
+        if (activationKind === "learned_nontrivial") {
+          learnedNontrivialCount += 1;
+        }
+      }
+
+      const outcomeClass = typeof summaryState.outcomeClass === "string" && summaryState.outcomeClass in outcomes
+        ? summaryState.outcomeClass as keyof typeof outcomes
+        : null;
+      if (outcomeClass) {
+        followUpCount += 1;
+        outcomes[outcomeClass] += 1;
+        if (summaryState.followUpClass === "confirmation") {
+          confirmationCount += 1;
+        }
+        const correctionLike = outcomeClass === "correction" || outcomeClass === "contradiction" || outcomeClass === "reask";
+        if (activationKind === "learned_nontrivial") {
+          learnedNontrivialOutcomeCount += 1;
+          if (summaryState.resolved === true || outcomeClass === "resolved") {
+            learnedNontrivialResolvedCount += 1;
+          }
+          if (correctionLike) {
+            learnedNontrivialCorrectionLikeCount += 1;
+          }
+        } else if (correctionLike) {
+          nonActivatedCorrectionLikeCount += 1;
+        }
+      }
+
+      if (summaryState.resolved === true) {
+        completedCount += 1;
+      } else if (outcomeClass) {
+        unresolvedCount += 1;
+      }
+      totalRetryCount += Math.max(0, Number(summaryState.totalRetryCount ?? 0));
+    }
+
+    const activationPrecisionDenominator = learnedNontrivialOutcomeCount;
+    const recallProxyDenominator = learnedNontrivialResolvedCount + nonActivatedCorrectionLikeCount;
+    this.store.setTrainingStateJson("route_outcome_truth_summary_json", {
+      version: 1,
+      updatedAt: new Date().toISOString(),
+      coverage: {
+        followUpCount,
+        confirmationCount,
+        learnedActivationOutcomeCoverage: learnedNontrivialCount > 0 ? learnedNontrivialOutcomeCount / learnedNontrivialCount : 0,
+      },
+      activation: {
+        totalServedCount: Object.keys(episodeStates).length,
+        usedLearnedRouteFnCount,
+        activationKindCounts,
+        failOpenCount,
+        learnedNontrivialCount,
+        learnedNontrivialOutcomeCount,
+        learnedNontrivialResolvedCount,
+        learnedNontrivialCorrectionLikeCount,
+        nonActivatedCorrectionLikeCount,
+      },
+      outcomes,
+      resolutions: {
+        completed: completedCount,
+        unresolved: unresolvedCount,
+        totalRetryCount,
+      },
+      metrics: {
+        activationPrecision: {
+          value: activationPrecisionDenominator > 0 ? learnedNontrivialResolvedCount / activationPrecisionDenominator : null,
+          numerator: learnedNontrivialResolvedCount,
+          denominator: activationPrecisionDenominator,
+        },
+        unnecessaryActivationRate: {
+          value: learnedNontrivialOutcomeCount > 0 ? learnedNontrivialCorrectionLikeCount / learnedNontrivialOutcomeCount : null,
+          numerator: learnedNontrivialCorrectionLikeCount,
+          denominator: learnedNontrivialOutcomeCount,
+        },
+        retryRate: {
+          value: followUpCount > 0 ? outcomes.reask / followUpCount : null,
+          numerator: outcomes.reask,
+          denominator: followUpCount,
+        },
+        activationRecall: null,
+        activationRecallBlockedReason: "independent beneficial-opportunity denominator is still missing on the live path",
+        activationRecallProxy: {
+          value: recallProxyDenominator > 0 ? learnedNontrivialResolvedCount / recallProxyDenominator : null,
+          numerator: learnedNontrivialResolvedCount,
+          denominator: recallProxyDenominator,
+          note: "proxy uses confirmed learned activations vs non-activated correction-like follow-ups, not reviewed must-fire truth",
+        },
+        extraTurnsToCompletion: null,
+        extraTurnsToCompletionBlockedReason: "completion chains do not yet carry cumulative retry counts through to final resolution",
+      },
+      episodeStates,
+    });
+  }
+
+  private emitRouteDecisionEvent(
+    trace: DecisionTrace,
+    assemblyDecision: BrainAssemblyDecisionSnapshot | null,
+  ): RouteDecisionEventV1 | null {
+    if (!trace.routeTrace?.selectionMetadata) {
+      return null;
+    }
+    const event = materializeRouteDecisionEventFromTraceV1({
+      trace,
+      routeFnVersion: trace.routeTrace.routerIdentity ?? assemblyDecision?.activePackId ?? "unknown_route_fn",
+      timestamp: assemblyDecision?.decisionRecordedAt ?? undefined,
+    });
+    this.appendRecentTrainingStateEvent({
+      lastKey: "last_route_decision_event_json",
+      recentKey: "recent_route_decision_events_json",
+      event,
+    });
+    return event;
+  }
+
+  private emitRouteServedEvent(params: {
+    episodeId: string;
+    trace: DecisionTrace;
+    conversationId: number | null;
+    assemblyDecision: BrainAssemblyDecisionSnapshot | null;
+  }): RouteServedEventV1 | null {
+    const routeTrace = params.trace.routeTrace;
+    if (!routeTrace) {
+      return null;
+    }
+    const routeMetadata = this.buildObservationRouteMetadata(params.trace, params.assemblyDecision);
+    const selectionMetadata = routeTrace.selectionMetadata ?? routeMetadata.selectionMetadata;
+    const usedLearnedRouteFn = routeTrace.selectedNodeIds.length > 0
+      || routeTrace.candidateNodeIds.length > 0
+      || (selectionMetadata?.decisionPointSnapshots?.length ?? 0) > 0;
+    const activationKind = selectionMetadata?.servedPartial || selectionMetadata?.brainDropReason
+      ? "fail_open"
+      : !usedLearnedRouteFn
+        ? "graph_prior_only"
+        : routeMetadata.selectedNodeIds.length > 0
+          ? "learned_nontrivial"
+          : "learned_prior_like";
+    const event = buildRouteServedEventV1({
+      identity: {
+        conversationId: params.conversationId,
+        episodeId: params.episodeId,
+        traceId: getTraceRetryIdentity(params.trace)?.traceId ?? params.trace.id,
+        serveDecisionRecordId: routeMetadata.serveDecisionRecordId,
+        selectionDigest: routeMetadata.selectionDigest,
+        turnCompileEventId: routeMetadata.turnCompileEventId,
+      },
+      modeRequested: params.assemblyDecision?.summaryRoutingMode ?? "learned_route",
+      modeEffective: params.assemblyDecision?.mode ?? selectionMetadata?.compileReport?.decision.mode ?? "unknown",
+      usedLearnedRouteFn,
+      activationKind,
+      activePackId: routeMetadata.activePackId ?? "unknown_pack",
+      routerIdentity: routeMetadata.routerIdentity ?? "unknown_router",
+      requestDigest: routeMetadata.requestDigest,
+      agentIdentity: routeMetadata.agentIdentity ? `${routeMetadata.agentIdentity.agentId}:${routeMetadata.agentIdentity.lane}` : null,
+      activePackEventExportDigest: routeMetadata.activePackEventExportDigest,
+      activePackGraphChecksum: routeMetadata.activePackGraphChecksum,
+      activePackRouterChecksum: routeMetadata.activePackRouterChecksum,
+      bindingMode: routeMetadata.bindingMode,
+      candidateNodeIds: routeMetadata.candidateNodeIds,
+      selectedNodeIds: routeMetadata.selectedNodeIds,
+      selectedTraversalNodeIds: routeMetadata.selectedTraversalNodeIds,
+      selectedPathNodeIds: routeMetadata.selectedPathNodeIds,
+      selectedSeedNodeIds: routeMetadata.selectedSeedNodeIds,
+      servedArtifact: routeMetadata.servedArtifact?.artifactType ?? null,
+      sourceSummary: routeMetadata.sourceSummary
+        ? JSON.stringify({
+            injectedCount: routeMetadata.sourceSummary.injectedCount,
+            kinds: routeMetadata.sourceSummary.kinds,
+            trusts: routeMetadata.sourceSummary.trusts,
+          })
+        : null,
+      toolCount: null,
+      promptTokensEstimate: selectionMetadata?.queryBudgetChars ?? null,
+      latencyMs: selectionMetadata?.compileElapsedMs ?? selectionMetadata?.totalQueryMs ?? null,
+      failOpen: activationKind === "fail_open" || selectionMetadata?.servedPartial === true,
+      hardRequirementViolated: selectionMetadata?.brainDropReason === "deadline_before_injection" ? true : null,
+      eventAt: params.assemblyDecision?.decisionRecordedAt ?? undefined,
+    });
+    this.appendRecentTrainingStateEvent({
+      lastKey: "last_route_served_event_json",
+      recentKey: "recent_route_served_events_json",
+      event,
+    });
+    return event;
+  }
+
+  private emitTurnOutcomeEventsFromObservation(observation: {
+    id: string;
+    episodeId: string;
+    conversationId: number | null;
+    traceId: string | null;
+    routeMetadata: BrainObservationRouteMetadata;
+    followUpText: string | null;
+    toolResults: BrainObservationToolResult[];
+    updatedAt: number;
+  }, followUpTextOverride?: string | null): TurnOutcomeEventV1 | null {
+    const evaluation = evaluateContextUsefulness({
+      ...observation,
+      followUpText: followUpTextOverride ?? observation.followUpText,
+    } as Parameters<typeof evaluateContextUsefulness>[0]);
+    const followUpClass = evaluation.signals.followUp.class;
+    const outcomeClass = followUpClass === "correction"
+      ? "correction"
+      : followUpClass === "contradiction"
+        ? "contradiction"
+        : followUpClass === "reask"
+          ? "reask"
+          : followUpClass === "confirmation"
+            ? "resolved"
+            : "unknown";
+    const eventAt = new Date(observation.updatedAt).toISOString();
+    const event = buildTurnOutcomeEventV1({
+      identity: {
+        conversationId: observation.conversationId,
+        episodeId: observation.episodeId,
+        traceId: observation.traceId,
+        observationId: observation.id,
+        serveDecisionRecordId: observation.routeMetadata.serveDecisionRecordId,
+        selectionDigest: observation.routeMetadata.selectionDigest,
+        turnCompileEventId: observation.routeMetadata.turnCompileEventId,
+      },
+      outcomeClass,
+      correctionRequired: outcomeClass === "correction" || outcomeClass === "contradiction" || outcomeClass === "reask" || outcomeClass === "retry",
+      source: "user_followup",
+      followUpClass,
+      toolOutcomeClass: evaluation.signals.toolOutcome.class,
+      routeIntegrityClass: evaluation.signals.routeIntegrity.class,
+      reason: evaluation.reason,
+      closedAt: eventAt,
+      eventAt,
+    });
+    this.appendRecentTrainingStateEvent({
+      lastKey: "last_turn_outcome_event_json",
+      recentKey: "recent_turn_outcome_events_json",
+      event,
+    });
+
+    const resolutionEvent = buildEpisodeResolutionEventV1({
+      identity: {
+        conversationId: observation.conversationId,
+        episodeId: observation.episodeId,
+        traceId: observation.traceId,
+        observationId: observation.id,
+        serveDecisionRecordId: observation.routeMetadata.serveDecisionRecordId,
+        selectionDigest: observation.routeMetadata.selectionDigest,
+        turnCompileEventId: observation.routeMetadata.turnCompileEventId,
+      },
+      resolutionClass: followUpClass === "confirmation" ? "completed" : "unknown",
+      resolved: followUpClass === "confirmation",
+      resolutionUserTurnIndex: 2,
+      resolutionAssistantTurnIndex: 1,
+      totalRetryCount: outcomeClass === "reask" ? 1 : 0,
+      totalInterventionCount: 0,
+      finalOutcomeQuality:
+        followUpClass === "confirmation"
+          ? evaluation.verdict
+          : outcomeClass === "reask"
+            ? "needs_retry"
+            : evaluation.verdict,
+      resolvedAt: eventAt,
+      eventAt,
+    });
+    this.appendRecentTrainingStateEvent({
+      lastKey: "last_episode_resolution_event_json",
+      recentKey: "recent_episode_resolution_events_json",
+      event: resolutionEvent,
+    });
+
+    if (outcomeClass === "reask") {
+      const retryEvent = buildRetryOrInterventionEventV1({
+        identity: {
+          conversationId: observation.conversationId,
+          episodeId: observation.episodeId,
+          traceId: observation.traceId,
+          observationId: observation.id,
+          serveDecisionRecordId: observation.routeMetadata.serveDecisionRecordId,
+          selectionDigest: observation.routeMetadata.selectionDigest,
+          turnCompileEventId: observation.routeMetadata.turnCompileEventId,
+        },
+        triggerKind: "user_retry",
+        triggeredBy: "user",
+        reasonClass: "incomplete",
+        retryCountDelta: 1,
+        interventionCountDelta: 0,
+        triggeredAt: eventAt,
+        eventAt,
+      });
+      this.appendRecentTrainingStateEvent({
+        lastKey: "last_retry_or_intervention_event_json",
+        recentKey: "recent_retry_or_intervention_events_json",
+        event: retryEvent,
+      });
+    }
+
+    return event;
+  }
+
   private notePrefetchDecision(decision: BrainPrefetchDecision): BrainPrefetchDecision {
     const normalizedDecision = normalizePrefetchDecision(decision);
     this.lastPrefetchDecision = normalizedDecision;
@@ -1604,6 +2007,14 @@ export class BrainService {
         ? this.lastAssemblyDecision
         : null;
 
+    this.emitRouteDecisionEvent(trace, assemblyDecision);
+    this.emitRouteServedEvent({
+      episodeId: episode.id,
+      trace,
+      conversationId: episode.conversationId,
+      assemblyDecision,
+    });
+
     this.store.insertObservation({
       episodeId: episode.id,
       conversationId: episode.conversationId,
@@ -1732,13 +2143,16 @@ export class BrainService {
 
   async observeUserTurn(observation: UserMemoryObservation): Promise<void> {
     if (!isSystemMessage(observation.userText)) {
-      this.store.attachObservationFollowUp(
+      const attachedObservation = this.store.attachObservationFollowUp(
         observation.conversationId,
         this.config.persistRawSurfaces
           ? observation.userText
           : (redactTextSurface("follow_up", observation.userText) ?? ""),
         observation.episodeId,
       );
+      if (attachedObservation) {
+        this.emitTurnOutcomeEventsFromObservation(attachedObservation, observation.userText);
+      }
     }
     if (!this.embeddingClient) {
       return;
@@ -1975,10 +2389,41 @@ export class BrainService {
     const workerState = readWorkerRuntimeState(this.store, this.config);
     const contextFeedback = this.store.getContextFeedbackSummary();
     const contextUsefulness = this.store.getContextUsefulnessSummary();
+    const routeOutcomeTruthStored = this.store.getTrainingStateJson<Record<string, unknown>>("route_outcome_truth_summary_json");
     const promotionStory = buildPromotionStory(this.store, { contextFeedback });
     const routeTraceCount = this.store.countTraces();
     const supervisionCount = this.store.countTraceSupervision();
     const observationAttribution = this.store.getObservationAttributionSummary();
+    const routeOutcomeTruth = routeOutcomeTruthStored
+      ? {
+          ...routeOutcomeTruthStored,
+          coverage: {
+            ...(typeof routeOutcomeTruthStored.coverage === "object" && routeOutcomeTruthStored.coverage !== null
+              ? routeOutcomeTruthStored.coverage as Record<string, unknown>
+              : {}),
+            routeTraceCount,
+            observationCount: observationAttribution.totalObservationCount,
+            servedCoverage: routeTraceCount > 0
+              ? Number((routeOutcomeTruthStored.activation as Record<string, unknown> | undefined)?.totalServedCount ?? 0) / routeTraceCount
+              : 0,
+            outcomeCoverage: observationAttribution.totalObservationCount > 0
+              ? Number((routeOutcomeTruthStored.coverage as Record<string, unknown> | undefined)?.followUpCount ?? 0) / observationAttribution.totalObservationCount
+              : 0,
+            resolutionCoverage: observationAttribution.totalObservationCount > 0
+              ? Number((routeOutcomeTruthStored.coverage as Record<string, unknown> | undefined)?.followUpCount ?? 0) / observationAttribution.totalObservationCount
+              : 0,
+          },
+          latest: {
+            routeServed: this.store.getTrainingStateJson("last_route_served_event_json"),
+            turnOutcome: this.store.getTrainingStateJson("last_turn_outcome_event_json"),
+            retryOrIntervention: this.store.getTrainingStateJson("last_retry_or_intervention_event_json"),
+            episodeResolution: this.store.getTrainingStateJson("last_episode_resolution_event_json"),
+          },
+          detail: routeTraceCount === 0
+            ? "no traced routes recorded yet"
+            : `served=${Number((routeOutcomeTruthStored.activation as Record<string, unknown> | undefined)?.totalServedCount ?? 0)}/${routeTraceCount} traced turns, followups=${Number((routeOutcomeTruthStored.coverage as Record<string, unknown> | undefined)?.followUpCount ?? 0)}, confirmations=${Number((routeOutcomeTruthStored.coverage as Record<string, unknown> | undefined)?.confirmationCount ?? 0)}`,
+        }
+      : this.store.getRouteOutcomeTruthSummary();
     const teacherReadyBefore = Date.now() - Math.max(1_000, this.config.trainerIntervalMs);
     const teacherTruth = {
       queue: this.store.getTeacherQueueSummary(teacherReadyBefore, 20),
@@ -2110,6 +2555,7 @@ export class BrainService {
       operatorHealth,
       contextFeedback,
       contextUsefulness,
+      routeOutcomeTruth,
       learningHealth,
       continuousLearning,
       ...workerState,

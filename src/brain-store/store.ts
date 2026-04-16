@@ -75,7 +75,7 @@ import {
   normalizeTeacherProposalV1,
   summarizeTeacherProposalV1,
 } from "../brain-core/teacher-v3-contracts.js";
-import { usefulnessThresholds } from "../brain-core/usefulness.js";
+import { evaluateContextUsefulness, usefulnessThresholds } from "../brain-core/usefulness.js";
 import { summarizeRecentDecisionTraces, type RecentDecisionTraceSummary } from "../brain-core/trace.js";
 
 // ═══════════════════════════════════════════
@@ -91,6 +91,63 @@ function deserializeEmbedding(blob: Buffer | Uint8Array | null): Float32Array | 
   if (!blob) return null;
   const buf = blob instanceof Buffer ? blob : Buffer.from(blob);
   return new Float32Array(buf.buffer, buf.byteOffset, buf.byteLength / 4);
+}
+
+function classifyRouteOutcomeActivationKind(routeMetadata: BrainObservationRouteMetadata): {
+  usedLearnedRouteFn: boolean;
+  activationKind: "graph_prior_only" | "learned_prior_like" | "learned_nontrivial" | "fail_open";
+} {
+  const selectionMetadata = routeMetadata.selectionMetadata;
+  const usedLearnedRouteFn = routeMetadata.selectedNodeIds.length > 0
+    || routeMetadata.candidateNodeIds.length > 0
+    || (selectionMetadata?.decisionPointSnapshots?.length ?? 0) > 0;
+  const activationKind = selectionMetadata?.servedPartial || selectionMetadata?.brainDropReason
+    ? "fail_open"
+    : !usedLearnedRouteFn
+      ? "graph_prior_only"
+      : routeMetadata.selectedNodeIds.length > 0
+        ? "learned_nontrivial"
+        : "learned_prior_like";
+  return {
+    usedLearnedRouteFn,
+    activationKind,
+  };
+}
+
+function classifyObservationOutcome(observation: BrainObservation): {
+  followUpClass: string | null;
+  outcomeClass: "resolved" | "correction" | "contradiction" | "reask" | "unknown";
+  correctionLike: boolean;
+  completed: boolean;
+  evaluation: BrainContextUsefulnessEvaluationV1 | null;
+} {
+  if (!observation.followUpText?.trim()) {
+    return {
+      followUpClass: null,
+      outcomeClass: "unknown",
+      correctionLike: false,
+      completed: false,
+      evaluation: null,
+    };
+  }
+  const evaluation = evaluateContextUsefulness(observation);
+  const followUpClass = evaluation.signals.followUp.class;
+  const outcomeClass = followUpClass === "correction"
+    ? "correction"
+    : followUpClass === "contradiction"
+      ? "contradiction"
+      : followUpClass === "reask"
+        ? "reask"
+        : followUpClass === "confirmation"
+          ? "resolved"
+          : "unknown";
+  return {
+    followUpClass,
+    outcomeClass,
+    correctionLike: outcomeClass === "correction" || outcomeClass === "contradiction" || outcomeClass === "reask",
+    completed: followUpClass === "confirmation",
+    evaluation,
+  };
 }
 
 function parseJsonValue<T>(value: unknown, fallback: T): T {
@@ -1636,6 +1693,216 @@ export class BrainStore {
       latestUnmatched,
       latestNonExact,
       detail,
+    };
+  }
+
+  getRouteOutcomeTruthSummary(): {
+    version: number;
+    coverage: {
+      routeTraceCount: number;
+      observationCount: number;
+      followUpCount: number;
+      confirmationCount: number;
+      servedCoverage: number;
+      outcomeCoverage: number;
+      resolutionCoverage: number;
+      learnedActivationOutcomeCoverage: number;
+    };
+    activation: {
+      totalServedCount: number;
+      usedLearnedRouteFnCount: number;
+      activationKindCounts: Record<"graph_prior_only" | "learned_prior_like" | "learned_nontrivial" | "fail_open", number>;
+      failOpenCount: number;
+      learnedNontrivialCount: number;
+      learnedNontrivialOutcomeCount: number;
+      learnedNontrivialResolvedCount: number;
+      learnedNontrivialCorrectionLikeCount: number;
+      nonActivatedCorrectionLikeCount: number;
+    };
+    outcomes: {
+      resolved: number;
+      correction: number;
+      contradiction: number;
+      reask: number;
+      unknown: number;
+    };
+    resolutions: {
+      completed: number;
+      unresolved: number;
+      totalRetryCount: number;
+    };
+    metrics: {
+      activationPrecision: { value: number | null; numerator: number; denominator: number };
+      unnecessaryActivationRate: { value: number | null; numerator: number; denominator: number };
+      retryRate: { value: number | null; numerator: number; denominator: number };
+      activationRecall: null;
+      activationRecallBlockedReason: string;
+      activationRecallProxy: { value: number | null; numerator: number; denominator: number; note: string };
+      extraTurnsToCompletion: null;
+      extraTurnsToCompletionBlockedReason: string;
+    };
+    latest: {
+      routeServed: unknown;
+      turnOutcome: unknown;
+      retryOrIntervention: unknown;
+      episodeResolution: unknown;
+    };
+    detail: string;
+  } {
+    const observationRows = this.db.prepare(`
+      SELECT *
+      FROM brain_observations
+      ORDER BY created_at DESC
+    `).all() as Record<string, unknown>[];
+    const observations = observationRows.map((row) => this.toObservation(row));
+    const routeTraceCount = this.countTraces();
+    const activationKindCounts = {
+      graph_prior_only: 0,
+      learned_prior_like: 0,
+      learned_nontrivial: 0,
+      fail_open: 0,
+    };
+    const outcomes = {
+      resolved: 0,
+      correction: 0,
+      contradiction: 0,
+      reask: 0,
+      unknown: 0,
+    };
+    let followUpCount = 0;
+    let confirmationCount = 0;
+    let usedLearnedRouteFnCount = 0;
+    let failOpenCount = 0;
+    let learnedNontrivialCount = 0;
+    let learnedNontrivialOutcomeCount = 0;
+    let learnedNontrivialResolvedCount = 0;
+    let learnedNontrivialCorrectionLikeCount = 0;
+    let nonActivatedCorrectionLikeCount = 0;
+    let completedCount = 0;
+    let unresolvedCount = 0;
+    let totalRetryCount = 0;
+
+    for (const observation of observations) {
+      const activation = classifyRouteOutcomeActivationKind(observation.routeMetadata);
+      activationKindCounts[activation.activationKind] += 1;
+      if (activation.usedLearnedRouteFn) {
+        usedLearnedRouteFnCount += 1;
+      }
+      if (activation.activationKind === "fail_open") {
+        failOpenCount += 1;
+      }
+      if (activation.activationKind === "learned_nontrivial") {
+        learnedNontrivialCount += 1;
+      }
+
+      const outcome = classifyObservationOutcome(observation);
+      if (!outcome.followUpClass) {
+        continue;
+      }
+      followUpCount += 1;
+      outcomes[outcome.outcomeClass] += 1;
+      if (outcome.completed) {
+        confirmationCount += 1;
+        completedCount += 1;
+      } else {
+        unresolvedCount += 1;
+      }
+      if (outcome.outcomeClass === "reask") {
+        totalRetryCount += 1;
+      }
+
+      if (activation.activationKind === "learned_nontrivial") {
+        learnedNontrivialOutcomeCount += 1;
+        if (outcome.completed) {
+          learnedNontrivialResolvedCount += 1;
+        }
+        if (outcome.correctionLike) {
+          learnedNontrivialCorrectionLikeCount += 1;
+        }
+      } else if (outcome.correctionLike) {
+        nonActivatedCorrectionLikeCount += 1;
+      }
+    }
+
+    const servedCoverage = routeTraceCount > 0 ? observations.length / routeTraceCount : 0;
+    const outcomeCoverage = observations.length > 0 ? followUpCount / observations.length : 0;
+    const resolutionCoverage = observations.length > 0 ? followUpCount / observations.length : 0;
+    const learnedActivationOutcomeCoverage = learnedNontrivialCount > 0
+      ? learnedNontrivialOutcomeCount / learnedNontrivialCount
+      : 0;
+    const activationPrecisionDenominator = learnedNontrivialOutcomeCount;
+    const activationPrecisionNumerator = learnedNontrivialResolvedCount;
+    const unnecessaryActivationNumerator = learnedNontrivialCorrectionLikeCount;
+    const unnecessaryActivationDenominator = learnedNontrivialOutcomeCount;
+    const retryRateNumerator = outcomes.reask;
+    const retryRateDenominator = followUpCount;
+    const recallProxyDenominator = learnedNontrivialResolvedCount + nonActivatedCorrectionLikeCount;
+
+    return {
+      version: 1,
+      coverage: {
+        routeTraceCount,
+        observationCount: observations.length,
+        followUpCount,
+        confirmationCount,
+        servedCoverage,
+        outcomeCoverage,
+        resolutionCoverage,
+        learnedActivationOutcomeCoverage,
+      },
+      activation: {
+        totalServedCount: observations.length,
+        usedLearnedRouteFnCount,
+        activationKindCounts,
+        failOpenCount,
+        learnedNontrivialCount,
+        learnedNontrivialOutcomeCount,
+        learnedNontrivialResolvedCount,
+        learnedNontrivialCorrectionLikeCount,
+        nonActivatedCorrectionLikeCount,
+      },
+      outcomes,
+      resolutions: {
+        completed: completedCount,
+        unresolved: unresolvedCount,
+        totalRetryCount,
+      },
+      metrics: {
+        activationPrecision: {
+          value: activationPrecisionDenominator > 0 ? activationPrecisionNumerator / activationPrecisionDenominator : null,
+          numerator: activationPrecisionNumerator,
+          denominator: activationPrecisionDenominator,
+        },
+        unnecessaryActivationRate: {
+          value: unnecessaryActivationDenominator > 0 ? unnecessaryActivationNumerator / unnecessaryActivationDenominator : null,
+          numerator: unnecessaryActivationNumerator,
+          denominator: unnecessaryActivationDenominator,
+        },
+        retryRate: {
+          value: retryRateDenominator > 0 ? retryRateNumerator / retryRateDenominator : null,
+          numerator: retryRateNumerator,
+          denominator: retryRateDenominator,
+        },
+        activationRecall: null,
+        activationRecallBlockedReason: "independent beneficial-opportunity denominator is still missing on the live path",
+        activationRecallProxy: {
+          value: recallProxyDenominator > 0 ? learnedNontrivialResolvedCount / recallProxyDenominator : null,
+          numerator: learnedNontrivialResolvedCount,
+          denominator: recallProxyDenominator,
+          note: "proxy uses confirmed learned activations vs non-activated correction-like follow-ups, not reviewed must-fire truth",
+        },
+        extraTurnsToCompletion: null,
+        extraTurnsToCompletionBlockedReason: "completion chains do not yet carry cumulative retry counts through to final resolution",
+      },
+      latest: {
+        routeServed: this.getTrainingStateJson("last_route_served_event_json"),
+        turnOutcome: this.getTrainingStateJson("last_turn_outcome_event_json"),
+        retryOrIntervention: this.getTrainingStateJson("last_retry_or_intervention_event_json"),
+        episodeResolution: this.getTrainingStateJson("last_episode_resolution_event_json"),
+      },
+      detail: observations.length === 0
+        ? "no observations recorded yet"
+        : `served=${observations.length}/${routeTraceCount} traced turns, followups=${followUpCount}, confirmations=${confirmationCount}, learned_nontrivial=${learnedNontrivialCount}, fail_open=${failOpenCount}`,
     };
   }
 
