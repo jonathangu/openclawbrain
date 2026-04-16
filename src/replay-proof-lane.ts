@@ -1,6 +1,7 @@
 import { createHash } from "node:crypto";
 import { mkdirSync, readFileSync, rmSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 import {
   validateRecordedSessionReplayProofBundle,
   writeRecordedSessionReplayProofBundle,
@@ -43,8 +44,19 @@ const RECORDED_SESSION_REPLAY_PROOF_LANE_WIN_RATE_MATRIX_CONTRACT = "recorded_se
 const RECORDED_SESSION_REPLAY_PROOF_LANE_INDEX_CONTRACT = "recorded_session_replay_proof_lane_index.v1";
 const RECORDED_SESSION_REPLAY_PROOF_LANE_GENERATION_REPORT_CONTRACT = "recorded_session_replay_proof_lane_generation_report.v1";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const repoRoot = path.resolve(__dirname, "..");
+
 type ReplayLaneMode = (typeof RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER)[number];
 type ReplayLaneRelation = "better" | "tied" | "worse";
+
+interface ReplayLanePricingTable {
+  version: string | null;
+  path: string;
+  charsPerToken: number;
+  promptPriceUsdPer1mTokens: number;
+}
 
 export interface RecordedSessionReplayProofLaneSourceManifestV1 {
   contract: typeof RECORDED_SESSION_REPLAY_PROOF_LANE_SOURCE_MANIFEST_CONTRACT;
@@ -78,8 +90,15 @@ interface RecordedSessionReplayProofLaneModeTraceRowV1 {
   phraseCount: number;
   promotionCount: number;
   usedLearnedRouteTurnCount: number;
+  activationObservedTurnCount: number;
+  activationTakenTurnCount: number;
   selectedContextBlockCount: number;
   selectedContextCharCount: number;
+  estimatedPromptTokenCount: number;
+  estimatedPromptCostUsd: number | null;
+  totalLatencyMs: number;
+  totalRouteSelectionLatencyMs: number;
+  totalPromptAssemblyLatencyMs: number;
   fallbackToStaticContextTurnCount: number;
   hardRequirementViolatedTurnCount: number;
   warningCount: number;
@@ -99,10 +118,21 @@ interface RecordedSessionReplayProofLaneTurnModeRowV1 {
   activePackId: string | null;
   routerIdentity: string | null;
   selectionDigest: string | null;
+  activationTaken: boolean | null;
+  activationSource: string | null;
+  activationReason: string | null;
+  activationConfidence: string | null;
   fallbackToStaticContext: boolean;
   hardRequirementViolated: boolean;
   selectedContextBlockCount: number;
   selectedContextCharCount: number;
+  estimatedPromptTokens: number | null;
+  estimatedPromptCostUsd: number | null;
+  timing: {
+    totalMs: number | null;
+    routeSelectionMs: number | null;
+    promptAssemblyMs: number | null;
+  };
   selectedContextPreview: string | null;
 }
 
@@ -156,8 +186,15 @@ interface RecordedSessionReplayProofLaneModeSummaryRowV1 {
   totalPhraseCount: number;
   totalPromotionCount: number;
   totalUsedLearnedRouteTurnCount: number;
+  totalActivationObservedTurnCount: number;
+  totalActivationTakenTurnCount: number;
   totalSelectedContextBlockCount: number;
   totalSelectedContextCharCount: number;
+  totalEstimatedPromptTokenCount: number;
+  totalEstimatedPromptCostUsd: number | null;
+  totalLatencyMs: number;
+  totalRouteSelectionLatencyMs: number;
+  totalPromptAssemblyLatencyMs: number;
   totalFallbackToStaticContextTurnCount: number;
   totalHardRequirementViolatedTurnCount: number;
   totalWarningCount: number;
@@ -210,6 +247,20 @@ export interface RecordedSessionReplayProofLaneActivationPrecisionProxyV1 {
   limitations: string[];
 }
 
+export interface RecordedSessionReplayProofLaneActivationPrecisionV1 {
+  available: boolean;
+  observedTurnCount: number;
+  activationCount: number;
+  beneficialActivationCount: number;
+  precision: number | null;
+  sourceCounts: Array<{
+    source: string;
+    count: number;
+  }>;
+  summary: string;
+  limitations: string[];
+}
+
 export interface RecordedSessionReplayProofLaneSuccessAdjustedEconomicsV1 {
   available: boolean;
   successUnit: "validated_trace" | null;
@@ -222,6 +273,9 @@ export interface RecordedSessionReplayProofLaneSuccessAdjustedEconomicsV1 {
   baselineEstimatedPromptCostUsdPerSuccess: number | null;
   promptTokenDeltaCandidateMinusBaseline: number | null;
   promptCostUsdDeltaCandidateMinusBaseline: number | null;
+  candidateServePathLatencyMsPerSuccess: number | null;
+  baselineServePathLatencyMsPerSuccess: number | null;
+  servePathLatencyMsDeltaCandidateMinusBaseline: number | null;
   summary: string;
   limitations: string[];
 }
@@ -254,6 +308,7 @@ export interface RecordedSessionReplayProofLaneExplainableScorecardV1 {
   criticalRegressionCount: number;
   requiredContextRecall: RecordedSessionReplayProofLaneRequiredContextRecallV1;
   correctionAbsorption: RecordedSessionReplayProofLaneCorrectionAbsorptionV1;
+  activationPrecision: RecordedSessionReplayProofLaneActivationPrecisionV1;
   activationPrecisionProxy: RecordedSessionReplayProofLaneActivationPrecisionProxyV1;
   successAdjustedEconomics: RecordedSessionReplayProofLaneSuccessAdjustedEconomicsV1;
   failOpen: RecordedSessionReplayProofLaneFailOpenV1;
@@ -522,6 +577,30 @@ function writeText(filePath: string, value: string): void {
   writeFileSync(filePath, value.endsWith("\n") ? value : `${value}\n`, "utf8");
 }
 
+function loadPricingTable(): ReplayLanePricingTable | null {
+  const pricingTablePath = path.resolve(repoRoot, "scripts", "pricing-table.v1.json");
+  try {
+    const pricingTable = JSON.parse(readFileSync(pricingTablePath, "utf8")) as {
+      version?: string;
+      charsPerToken?: number;
+      promptPriceUsdPer1mTokens?: number;
+    };
+    const charsPerToken = Number(pricingTable.charsPerToken ?? 4);
+    const promptPriceUsdPer1mTokens = Number(pricingTable.promptPriceUsdPer1mTokens ?? 0);
+    if (!Number.isFinite(charsPerToken) || charsPerToken <= 0 || !Number.isFinite(promptPriceUsdPer1mTokens)) {
+      return null;
+    }
+    return {
+      version: typeof pricingTable.version === "string" ? pricingTable.version : null,
+      path: portableRelativePath(repoRoot, pricingTablePath),
+      charsPerToken,
+      promptPriceUsdPer1mTokens,
+    };
+  } catch {
+    return null;
+  }
+}
+
 function renderJson(value: unknown): string {
   return `${JSON.stringify(value, null, 2)}\n`;
 }
@@ -614,6 +693,20 @@ function roundRate(numerator: number, denominator: number): number | null {
 function roundValue(value: number, places = 6): number {
   const factor = 10 ** places;
   return Math.round(value * factor) / factor;
+}
+
+function roundAverage(total: number, count: number, places = 6): number | null {
+  if (!Number.isFinite(total) || count <= 0) {
+    return null;
+  }
+  return roundValue(total / count, places);
+}
+
+function floorAverage(total: number, count: number): number | null {
+  if (!Number.isFinite(total) || count <= 0) {
+    return null;
+  }
+  return Math.floor(total / count);
 }
 
 function previewText(value: string | null | undefined, maxLength = 96): string | null {
@@ -718,6 +811,22 @@ function buildExplainableScorecard(
   const correctionNonApprovalTurnCount = params.turns.filter((turn) =>
     turn.feedbackKinds.some((kind) => kind !== "approval")
   ).length;
+  const candidateTurnRows = params.turns
+    .map((turn) => turn.modes.find((row) => row.mode === candidateMode) ?? null)
+    .filter((row): row is RecordedSessionReplayProofLaneTurnModeRowV1 => row !== null);
+  const explicitActivationObservedTurns = candidateTurnRows.filter((row) => row.activationTaken !== null);
+  const explicitActivationTurns = explicitActivationObservedTurns.filter((row) => row.activationTaken === true);
+  const beneficialExplicitActivationCount = params.turns.filter((turn) => {
+    const candidateTurn = turn.modes.find((row) => row.mode === candidateMode);
+    return candidateTurn?.activationTaken === true && turn.candidateRelationVsBaseline === "better";
+  }).length;
+  const activationSourceCounts = [...explicitActivationObservedTurns.reduce((counts, row) => {
+    const source = row.activationSource ?? "unknown";
+    counts.set(source, (counts.get(source) ?? 0) + 1);
+    return counts;
+  }, new Map<string, number>()).entries()]
+    .map(([source, count]) => ({ source, count }))
+    .sort((left, right) => right.count - left.count || left.source.localeCompare(right.source));
   const proxyActivationTurns = params.turns.filter((turn) => {
     const candidateTurn = turn.modes.find((row) => row.mode === candidateMode);
     const baselineTurn = turn.modes.find((row) => row.mode === baselineMode);
@@ -729,9 +838,6 @@ function buildExplainableScorecard(
       || candidateTurn.activePackId !== baselineTurn.activePackId;
   });
   const beneficialProxyActivationCount = proxyActivationTurns.filter((turn) => turn.candidateRelationVsBaseline === "better").length;
-  const candidateTurnRows = params.turns
-    .map((turn) => turn.modes.find((row) => row.mode === candidateMode) ?? null)
-    .filter((row): row is RecordedSessionReplayProofLaneTurnModeRowV1 => row !== null);
   const degradedCandidateTurnRows = candidateTurnRows.filter((row) =>
     row.compileOk === false || row.fallbackToStaticContext || row.hardRequirementViolated
   );
@@ -752,20 +858,36 @@ function buildExplainableScorecard(
     return degraded && turn.candidateRegressionVsFloor === false;
   }).length;
   const winTraces = params.traces.filter((trace) => trace.candidateRelationVsBaseline === "better");
-  const candidateSelectedContextCharsOnWins = winTraces.reduce((sum, trace) => {
+  const candidatePromptTokensOnWins = winTraces.reduce((sum, trace) => {
     const row = trace.modes.find((modeRow) => modeRow.mode === candidateMode);
-    return sum + (row?.selectedContextCharCount ?? 0);
+    return sum + (row?.estimatedPromptTokenCount ?? 0);
   }, 0);
-  const baselineSelectedContextCharsOnWins = winTraces.reduce((sum, trace) => {
+  const baselinePromptTokensOnWins = winTraces.reduce((sum, trace) => {
     const row = trace.modes.find((modeRow) => modeRow.mode === baselineMode);
-    return sum + (row?.selectedContextCharCount ?? 0);
+    return sum + (row?.estimatedPromptTokenCount ?? 0);
   }, 0);
-  const candidatePromptTokensPerSuccess = winTraces.length > 0
-    ? roundRate(estimateTokensFromChars(candidateSelectedContextCharsOnWins) ?? 0, winTraces.length)
-    : null;
-  const baselinePromptTokensPerSuccess = winTraces.length > 0
-    ? roundRate(estimateTokensFromChars(baselineSelectedContextCharsOnWins) ?? 0, winTraces.length)
-    : null;
+  const candidatePromptCostUsdOnWins = winTraces.reduce((sum, trace) => {
+    const row = trace.modes.find((modeRow) => modeRow.mode === candidateMode);
+    return sum + (row?.estimatedPromptCostUsd ?? 0);
+  }, 0);
+  const baselinePromptCostUsdOnWins = winTraces.reduce((sum, trace) => {
+    const row = trace.modes.find((modeRow) => modeRow.mode === baselineMode);
+    return sum + (row?.estimatedPromptCostUsd ?? 0);
+  }, 0);
+  const candidateLatencyMsOnWins = winTraces.reduce((sum, trace) => {
+    const row = trace.modes.find((modeRow) => modeRow.mode === candidateMode);
+    return sum + (row?.totalLatencyMs ?? 0);
+  }, 0);
+  const baselineLatencyMsOnWins = winTraces.reduce((sum, trace) => {
+    const row = trace.modes.find((modeRow) => modeRow.mode === baselineMode);
+    return sum + (row?.totalLatencyMs ?? 0);
+  }, 0);
+  const candidatePromptTokensPerSuccess = roundAverage(candidatePromptTokensOnWins, winTraces.length);
+  const baselinePromptTokensPerSuccess = roundAverage(baselinePromptTokensOnWins, winTraces.length);
+  const candidatePromptCostUsdPerSuccess = roundAverage(candidatePromptCostUsdOnWins, winTraces.length);
+  const baselinePromptCostUsdPerSuccess = roundAverage(baselinePromptCostUsdOnWins, winTraces.length);
+  const candidateLatencyMsPerSuccess = floorAverage(candidateLatencyMsOnWins, winTraces.length);
+  const baselineLatencyMsPerSuccess = floorAverage(baselineLatencyMsOnWins, winTraces.length);
 
   return {
     candidateMode,
@@ -803,6 +925,23 @@ function buildExplainableScorecard(
         ? `observed ${correctionFeedbackTurnCount} feedback-bearing turns (${correctionNonApprovalTurnCount} non-approval), but replay-lane outputs do not yet measure recurrence after correction`
         : "correction absorption is unavailable in replay-lane outputs because no feedback-bearing turns were recorded here",
     },
+    activationPrecision: {
+      available: explicitActivationObservedTurns.length > 0,
+      observedTurnCount: explicitActivationObservedTurns.length,
+      activationCount: explicitActivationTurns.length,
+      beneficialActivationCount: beneficialExplicitActivationCount,
+      precision: roundRate(beneficialExplicitActivationCount, explicitActivationTurns.length),
+      sourceCounts: activationSourceCounts,
+      summary: explicitActivationObservedTurns.length === 0
+        ? "explicit learned-route activation is unavailable because replay turns did not emit activationTaken"
+        : explicitActivationTurns.length === 0
+          ? `observed 0/${explicitActivationObservedTurns.length} explicit learned-route activations in this replay lane`
+          : `explicit learned-route activation precision is ${beneficialExplicitActivationCount}/${explicitActivationTurns.length} across ${explicitActivationObservedTurns.length} observed candidate turns`,
+      limitations: [
+        "explicit activation is currently defined by emitted activationTaken on learned_route turns",
+        "activation recall is still blocked because replay outputs do not carry an independent beneficial-opportunity oracle",
+      ],
+    },
     activationPrecisionProxy: {
       available: proxyActivationTurns.length > 0,
       activationCount: proxyActivationTurns.length,
@@ -825,18 +964,26 @@ function buildExplainableScorecard(
       successCount: winTraces.length,
       candidateEstimatedPromptTokensPerSuccess: candidatePromptTokensPerSuccess,
       baselineEstimatedPromptTokensPerSuccess: baselinePromptTokensPerSuccess,
-      candidateEstimatedPromptCostUsdPerSuccess: null,
-      baselineEstimatedPromptCostUsdPerSuccess: null,
+      candidateEstimatedPromptCostUsdPerSuccess: candidatePromptCostUsdPerSuccess,
+      baselineEstimatedPromptCostUsdPerSuccess: baselinePromptCostUsdPerSuccess,
       promptTokenDeltaCandidateMinusBaseline: candidatePromptTokensPerSuccess !== null && baselinePromptTokensPerSuccess !== null
         ? roundValue(candidatePromptTokensPerSuccess - baselinePromptTokensPerSuccess)
         : null,
-      promptCostUsdDeltaCandidateMinusBaseline: null,
+      promptCostUsdDeltaCandidateMinusBaseline: candidatePromptCostUsdPerSuccess !== null && baselinePromptCostUsdPerSuccess !== null
+        ? roundValue(candidatePromptCostUsdPerSuccess - baselinePromptCostUsdPerSuccess)
+        : null,
+      candidateServePathLatencyMsPerSuccess: candidateLatencyMsPerSuccess,
+      baselineServePathLatencyMsPerSuccess: baselineLatencyMsPerSuccess,
+      servePathLatencyMsDeltaCandidateMinusBaseline: candidateLatencyMsPerSuccess !== null && baselineLatencyMsPerSuccess !== null
+        ? candidateLatencyMsPerSuccess - baselineLatencyMsPerSuccess
+        : null,
       summary: winTraces.length > 0
-        ? `${candidateMode} used ${candidatePromptTokensPerSuccess ?? "n/a"} estimated prompt tokens per incremental win vs ${baselineMode} ${baselinePromptTokensPerSuccess ?? "n/a"} on the same winning traces`
+        ? `${candidateMode} used ${candidatePromptTokensPerSuccess ?? "n/a"} estimated prompt tokens, ${candidatePromptCostUsdPerSuccess ?? "n/a"} estimated prompt USD, and ${candidateLatencyMsPerSuccess ?? "n/a"} ms serve-path latency per incremental win vs ${baselineMode} ${baselinePromptTokensPerSuccess ?? "n/a"}, ${baselinePromptCostUsdPerSuccess ?? "n/a"}, and ${baselineLatencyMsPerSuccess ?? "n/a"}`
         : "success-adjusted economics are unavailable because learned_route produced no incremental wins vs graph_prior_only in this replay lane",
       limitations: [
         "prompt-token values are estimated from selected-context chars using the default 4 chars/token proxy",
-        "pricing tables are not loaded in replay-lane aggregates, so usd cost fields remain unavailable here",
+        "prompt USD values are estimated from scripts/pricing-table.v1.json when that pricing table is available",
+        "latency values cover the serve-path hot path only and exclude background work",
       ],
     },
     failOpen: {
@@ -944,6 +1091,20 @@ function countStringChars(values: unknown): number {
   return values.reduce((total, value) => total + (typeof value === "string" ? value.length : 0), 0);
 }
 
+function estimateUsdFromTokens(tokens: number, pricePer1mTokens: number): number | null {
+  if (!Number.isFinite(tokens) || !Number.isFinite(pricePer1mTokens)) {
+    return null;
+  }
+  return roundValue((tokens / 1_000_000) * pricePer1mTokens);
+}
+
+function normalizeTimingMs(value: number | null | undefined): number | null {
+  if (typeof value !== "number" || !Number.isFinite(value)) {
+    return null;
+  }
+  return Math.round(value / 5) * 5;
+}
+
 function estimateTokensFromChars(chars: number, charsPerToken = 4): number | null {
   if (!Number.isFinite(chars) || !Number.isFinite(charsPerToken) || charsPerToken <= 0) {
     return null;
@@ -955,15 +1116,25 @@ function buildTraceAnalysis(
   artifactRoot: string,
   descriptor: RecordedSessionReplayProofBundleDescriptorV1,
   validation: RecordedSessionReplayProofBundleValidationV1,
+  pricingTable: ReplayLanePricingTable | null,
 ): RecordedSessionReplayProofLaneTraceAnalysisV1 {
   const bundleDir = portableRelativePath(artifactRoot, descriptor.rootDir);
   const modes = RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER.map((mode) => {
     const report = findModeReport(descriptor, mode);
+    const normalizedTurnTimings = report.turns.map((turn) => ({
+      totalMs: normalizeTimingMs(turn.timing?.totalMs),
+      routeSelectionMs: normalizeTimingMs(turn.timing?.routeSelectionMs),
+      promptAssemblyMs: normalizeTimingMs(turn.timing?.promptAssemblyMs),
+    }));
     const selectedContextBlockCount = report.turns.reduce(
       (sum, turn) => sum + (Array.isArray(turn.selectedContextIds) ? turn.selectedContextIds.length : turn.selectedContextTexts.length),
       0,
     );
     const selectedContextCharCount = report.turns.reduce((sum, turn) => sum + countStringChars(turn.selectedContextTexts), 0);
+    const estimatedPromptTokenCount = estimateTokensFromChars(selectedContextCharCount, pricingTable?.charsPerToken ?? 4) ?? 0;
+    const estimatedPromptCostUsd = pricingTable
+      ? estimateUsdFromTokens(estimatedPromptTokenCount, pricingTable.promptPriceUsdPer1mTokens)
+      : null;
     return {
       mode,
       qualityScore: report.summary.qualityScore,
@@ -973,8 +1144,15 @@ function buildTraceAnalysis(
       phraseCount: report.summary.phraseCount,
       promotionCount: report.summary.promotionCount,
       usedLearnedRouteTurnCount: report.summary.usedLearnedRouteTurnCount,
+      activationObservedTurnCount: report.turns.filter((turn) => turn.activationTaken !== null).length,
+      activationTakenTurnCount: report.turns.filter((turn) => turn.activationTaken === true).length,
       selectedContextBlockCount,
       selectedContextCharCount,
+      estimatedPromptTokenCount,
+      estimatedPromptCostUsd,
+      totalLatencyMs: normalizedTurnTimings.reduce((sum, timing) => sum + (timing.totalMs ?? 0), 0),
+      totalRouteSelectionLatencyMs: normalizedTurnTimings.reduce((sum, timing) => sum + (timing.routeSelectionMs ?? 0), 0),
+      totalPromptAssemblyLatencyMs: normalizedTurnTimings.reduce((sum, timing) => sum + (timing.promptAssemblyMs ?? 0), 0),
       fallbackToStaticContextTurnCount: report.turns.filter((turn) => turn.fallbackToStaticContext === true).length,
       hardRequirementViolatedTurnCount: report.turns.filter((turn) => turn.hardRequirementViolated === true).length,
       warningCount: report.summary.scannerEvidence.warnings.length,
@@ -1002,10 +1180,26 @@ function buildTraceAnalysis(
         activePackId: turn.activePackId,
         routerIdentity: typeof turn.routerIdentity === "string" ? turn.routerIdentity : null,
         selectionDigest: turn.selectionDigest,
+        activationTaken: typeof turn.activationTaken === "boolean" ? turn.activationTaken : null,
+        activationSource: typeof turn.activationSource === "string" ? turn.activationSource : null,
+        activationReason: typeof turn.activationReason === "string" ? turn.activationReason : null,
+        activationConfidence: typeof turn.activationConfidence === "string" ? turn.activationConfidence : null,
         fallbackToStaticContext: turn.fallbackToStaticContext === true,
         hardRequirementViolated: turn.hardRequirementViolated === true,
         selectedContextBlockCount: Array.isArray(turn.selectedContextIds) ? turn.selectedContextIds.length : turn.selectedContextTexts.length,
         selectedContextCharCount: countStringChars(turn.selectedContextTexts),
+        estimatedPromptTokens: estimateTokensFromChars(countStringChars(turn.selectedContextTexts), pricingTable?.charsPerToken ?? 4),
+        estimatedPromptCostUsd: pricingTable
+          ? estimateUsdFromTokens(
+            estimateTokensFromChars(countStringChars(turn.selectedContextTexts), pricingTable.charsPerToken) ?? 0,
+            pricingTable.promptPriceUsdPer1mTokens,
+          )
+          : null,
+        timing: {
+          totalMs: normalizeTimingMs(turn.timing?.totalMs),
+          routeSelectionMs: normalizeTimingMs(turn.timing?.routeSelectionMs),
+          promptAssemblyMs: normalizeTimingMs(turn.timing?.promptAssemblyMs),
+        },
         selectedContextPreview: previewText(turn.selectedContextTexts.join(" || "), 140),
       };
     });
@@ -1081,8 +1275,17 @@ function buildSummaryTables(
       totalPhraseCount: rows.reduce((sum, row) => sum + row.phraseCount, 0),
       totalPromotionCount: rows.reduce((sum, row) => sum + row.promotionCount, 0),
       totalUsedLearnedRouteTurnCount: rows.reduce((sum, row) => sum + row.usedLearnedRouteTurnCount, 0),
+      totalActivationObservedTurnCount: rows.reduce((sum, row) => sum + row.activationObservedTurnCount, 0),
+      totalActivationTakenTurnCount: rows.reduce((sum, row) => sum + row.activationTakenTurnCount, 0),
       totalSelectedContextBlockCount: rows.reduce((sum, row) => sum + row.selectedContextBlockCount, 0),
       totalSelectedContextCharCount: rows.reduce((sum, row) => sum + row.selectedContextCharCount, 0),
+      totalEstimatedPromptTokenCount: rows.reduce((sum, row) => sum + row.estimatedPromptTokenCount, 0),
+      totalEstimatedPromptCostUsd: rows.every((row) => row.estimatedPromptCostUsd !== null)
+        ? roundValue(rows.reduce((sum, row) => sum + (row.estimatedPromptCostUsd ?? 0), 0))
+        : null,
+      totalLatencyMs: rows.reduce((sum, row) => sum + row.totalLatencyMs, 0),
+      totalRouteSelectionLatencyMs: rows.reduce((sum, row) => sum + row.totalRouteSelectionLatencyMs, 0),
+      totalPromptAssemblyLatencyMs: rows.reduce((sum, row) => sum + row.totalPromptAssemblyLatencyMs, 0),
       totalFallbackToStaticContextTurnCount: rows.reduce((sum, row) => sum + row.fallbackToStaticContextTurnCount, 0),
       totalHardRequirementViolatedTurnCount: rows.reduce((sum, row) => sum + row.hardRequirementViolatedTurnCount, 0),
       totalWarningCount: rows.reduce((sum, row) => sum + row.warningCount, 0),
@@ -1412,11 +1615,11 @@ function buildWorkedTracesMarkdown(
       lines.push(`- learned_route vs approved prior: \`${turn.candidateRelationVsBaseline ?? "unknown"}\``);
       lines.push(`- diagnostic top modes: ${turn.topModes.map((mode) => `\`${mode}\``).join(", ")} (spread ${turn.scoreSpread})`);
       lines.push("");
-      lines.push("| mode | phase | diagnostic quality | compile | required-context recall | learned route | promoted | selection | context preview |");
-      lines.push("| --- | --- | ---: | --- | ---: | --- | --- | --- | --- |");
+      lines.push("| mode | phase | diagnostic quality | compile | required-context recall | activation | source | latency ms | promoted | selection | context preview |");
+      lines.push("| --- | --- | ---: | --- | ---: | --- | --- | ---: | --- | --- | --- |");
       for (const row of [...turn.modes].sort(compareQualityRows)) {
         lines.push(
-          `| ${row.mode} | ${row.phase} | ${row.qualityScore} | ${row.compileOk ? "yes" : "no"} | ${row.phraseHitCount}/${row.phraseCount} | ${row.usedLearnedRouteFn ? "yes" : "no"} | ${row.promoted ? "yes" : "no"} | ${shortDigest(row.selectionDigest)} | ${row.selectedContextPreview ?? "none"} |`,
+          `| ${row.mode} | ${row.phase} | ${row.qualityScore} | ${row.compileOk ? "yes" : "no"} | ${row.phraseHitCount}/${row.phraseCount} | ${row.activationTaken === null ? "n/a" : row.activationTaken ? "yes" : "no"} | ${row.activationSource ?? "none"} | ${row.timing.totalMs ?? "n/a"} | ${row.promoted ? "yes" : "no"} | ${shortDigest(row.selectionDigest)} | ${row.selectedContextPreview ?? "none"} |`,
         );
       }
     }
@@ -1461,6 +1664,7 @@ function buildLaneReadme(
   lines.push(`- regressions vs no_brain floor: ${formatCountRate(scorecard.regressionVsFloor)} (critical regressions: ${scorecard.criticalRegressionCount})`);
   lines.push(`- required-context recall: ${scorecard.requiredContextRecall.summary}`);
   lines.push(`- correction absorption: ${scorecard.correctionAbsorption.summary}`);
+  lines.push(`- activation precision: ${scorecard.activationPrecision.summary}`);
   lines.push(`- activation precision proxy: ${scorecard.activationPrecisionProxy.summary}`);
   lines.push(`- success-adjusted economics: ${scorecard.successAdjustedEconomics.summary}`);
   lines.push(`- fail-open: ${scorecard.failOpen.summary}`);
@@ -1587,6 +1791,7 @@ function buildLaneSummary(
   lines.push(`- regressions vs no_brain floor: ${formatCountRate(scorecard.regressionVsFloor)} (critical regressions: ${scorecard.criticalRegressionCount})`);
   lines.push(`- required-context recall: ${scorecard.requiredContextRecall.summary}`);
   lines.push(`- correction absorption: ${scorecard.correctionAbsorption.summary}`);
+  lines.push(`- activation precision: ${scorecard.activationPrecision.summary}`);
   lines.push(`- activation precision proxy: ${scorecard.activationPrecisionProxy.summary}`);
   lines.push(`- success-adjusted economics: ${scorecard.successAdjustedEconomics.summary}`);
   lines.push(`- fail-open: ${scorecard.failOpen.summary}`);
@@ -1624,6 +1829,7 @@ export function writeRecordedSessionReplayProofLane(
   const workedTraceLimit = normalizeWorkedTraceLimit(input.workedTraceLimit);
   const assumptions = normalizeStringArray(input.assumptions);
   const sourceManifest = readSourceManifest(input.sourceManifestPath ?? null);
+  const pricingTable = loadPricingTable();
   ensureDir(artifactRoot);
   rmSync(laneDir, { recursive: true, force: true });
   ensureDir(laneDir);
@@ -1644,7 +1850,7 @@ export function writeRecordedSessionReplayProofLane(
       const validation = validateRecordedSessionReplayProofBundle(bundleDir);
       writeJson(validationPath, validation);
       successfulBundles.push(descriptor);
-      traceAnalyses.push(buildTraceAnalysis(artifactRoot, descriptor, validation));
+      traceAnalyses.push(buildTraceAnalysis(artifactRoot, descriptor, validation, pricingTable));
       generationEntries.push({
         traceId,
         tracePath: traceInput.tracePath ?? null,

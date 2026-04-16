@@ -4686,6 +4686,53 @@ function buildRecordedSessionReplayTurnInput(turnFixture, modeRoot, replayMode) 
         export: buildRecordedSessionTurnExportRoot(modeRoot, turnFixture.turnId)
     };
 }
+function buildRecordedSessionTurnActivation(replayMode, result) {
+    if (replayMode !== "learned_route") {
+        return {
+            activationTaken: null,
+            activationSource: null,
+            activationReason: null,
+            activationConfidence: null
+        };
+    }
+    if (!result.ok) {
+        if (result.hardRequirementViolated) {
+            return {
+                activationTaken: false,
+                activationSource: "hard_requirement_violation",
+                activationReason: "learned-route activation was blocked because the active pack requires learned routing and the hard requirement failed",
+                activationConfidence: "high"
+            };
+        }
+        if (result.fallbackToStaticContext) {
+            return {
+                activationTaken: false,
+                activationSource: "fallback_to_static_context",
+                activationReason: "learned-route activation was not observed because serve fell back to static context",
+                activationConfidence: "high"
+            };
+        }
+        return {
+            activationTaken: false,
+            activationSource: "compile_failure",
+            activationReason: "learned-route activation was not observed because compile failed before a runtime activation signal was emitted",
+            activationConfidence: "medium"
+        };
+    }
+    const modeEffective = result.compileResponse.diagnostics.modeEffective ?? null;
+    const routerIdentity = result.compileResponse.diagnostics.routerIdentity ?? null;
+    const usedLearnedRouteFn = result.compileResponse.diagnostics.usedLearnedRouteFn === true;
+    return {
+        activationTaken: usedLearnedRouteFn,
+        activationSource: usedLearnedRouteFn
+            ? "learned_route_fn"
+            : modeEffective === null
+                ? "compile_diagnostics"
+                : `mode_effective:${modeEffective}`,
+        activationReason: `usedLearnedRouteFn=${String(result.compileResponse.diagnostics.usedLearnedRouteFn)}; modeEffective=${modeEffective ?? "null"}; routerIdentity=${routerIdentity ?? "null"}`,
+        activationConfidence: "high"
+    };
+}
 function buildRecordedSessionTurnReport(replayMode, turnFixture, result, options) {
     const plan = recordedSessionReplayModePlan(replayMode);
     const compileOk = result.ok;
@@ -4698,6 +4745,7 @@ function buildRecordedSessionTurnReport(replayMode, turnFixture, result, options
     });
     const observability = buildRecordedSessionTurnObservability(result);
     const eventExportDigest = result.eventExport.ok === true ? result.eventExport.normalizedEventExport.provenance.exportDigest : null;
+    const activation = buildRecordedSessionTurnActivation(replayMode, result);
     return {
         turnId: turnFixture.turnId,
         replayMode,
@@ -4710,6 +4758,10 @@ function buildRecordedSessionTurnReport(replayMode, turnFixture, result, options
         modeEffective: result.ok ? result.compileResponse.diagnostics.modeEffective : null,
         selectionEngine: plan.selectionEngine,
         usedLearnedRouteFn: result.ok ? result.compileResponse.diagnostics.usedLearnedRouteFn : false,
+        activationTaken: activation.activationTaken,
+        activationSource: activation.activationSource,
+        activationReason: activation.activationReason,
+        activationConfidence: activation.activationConfidence,
         routerIdentity: result.ok ? result.compileResponse.diagnostics.routerIdentity : null,
         selectionDigest: result.ok ? result.compileResponse.diagnostics.selectionDigest : null,
         selectedContextIds,
@@ -4722,6 +4774,7 @@ function buildRecordedSessionTurnReport(replayMode, turnFixture, result, options
         qualityScore: scoring.qualityScore,
         compileActiveVersion: options.compileActiveVersion,
         promoted: options.promoted,
+        timing: result.timing ?? null,
         observability,
         warnings: [...result.warnings]
     };

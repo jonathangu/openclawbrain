@@ -1263,6 +1263,7 @@ function summarizeReplayLaneBundle(bundlePath, workspaceRoot) {
   const regressionVsBaseline = scorecard?.regressionVsBaseline ?? null;
   const regressionVsFloor = scorecard?.regressionVsFloor ?? null;
   const requiredContextRecall = scorecard?.requiredContextRecall ?? null;
+  const activationPrecision = scorecard?.activationPrecision ?? null;
   const activationPrecisionProxy = scorecard?.activationPrecisionProxy ?? null;
   const successAdjustedEconomics = scorecard?.successAdjustedEconomics ?? null;
   const failOpen = scorecard?.failOpen ?? null;
@@ -1328,6 +1329,10 @@ function summarizeReplayLaneBundle(bundlePath, workspaceRoot) {
       requiredContextRecallCandidateHits: Number(requiredContextRecall?.candidatePhraseHitCount ?? 0),
       requiredContextRecallBaselineHits: Number(requiredContextRecall?.baselinePhraseHitCount ?? 0),
       requiredContextRecallPhraseCount: Number(requiredContextRecall?.candidatePhraseCount ?? requiredContextRecall?.baselinePhraseCount ?? 0),
+      activationCount: Number(activationPrecision?.activationCount ?? 0),
+      beneficialActivationCount: Number(activationPrecision?.beneficialActivationCount ?? 0),
+      activationPrecision: Number(activationPrecision?.precision ?? Number.NaN),
+      activationPrecisionSummary: typeof activationPrecision?.summary === "string" ? activationPrecision.summary : null,
       activationProxyCount: Number(activationPrecisionProxy?.activationCount ?? 0),
       beneficialActivationProxyCount: Number(activationPrecisionProxy?.beneficialActivationCount ?? 0),
       activationPrecisionProxy: Number(activationPrecisionProxy?.precision ?? Number.NaN),
@@ -1335,7 +1340,13 @@ function summarizeReplayLaneBundle(bundlePath, workspaceRoot) {
       incrementalWinTraceCount: Number(successAdjustedEconomics?.successCount ?? 0),
       candidateEstimatedPromptTokensPerIncrementalWin: Number(successAdjustedEconomics?.candidateEstimatedPromptTokensPerSuccess ?? Number.NaN),
       baselineEstimatedPromptTokensPerIncrementalWin: Number(successAdjustedEconomics?.baselineEstimatedPromptTokensPerSuccess ?? Number.NaN),
+      candidateEstimatedPromptCostUsdPerIncrementalWin: Number(successAdjustedEconomics?.candidateEstimatedPromptCostUsdPerSuccess ?? Number.NaN),
+      baselineEstimatedPromptCostUsdPerIncrementalWin: Number(successAdjustedEconomics?.baselineEstimatedPromptCostUsdPerSuccess ?? Number.NaN),
       promptTokenDeltaPerIncrementalWin: Number(successAdjustedEconomics?.promptTokenDeltaCandidateMinusBaseline ?? Number.NaN),
+      promptCostUsdDeltaPerIncrementalWin: Number(successAdjustedEconomics?.promptCostUsdDeltaCandidateMinusBaseline ?? Number.NaN),
+      candidateServePathLatencyMsPerIncrementalWin: Number(successAdjustedEconomics?.candidateServePathLatencyMsPerSuccess ?? Number.NaN),
+      baselineServePathLatencyMsPerIncrementalWin: Number(successAdjustedEconomics?.baselineServePathLatencyMsPerSuccess ?? Number.NaN),
+      servePathLatencyMsDeltaPerIncrementalWin: Number(successAdjustedEconomics?.servePathLatencyMsDeltaCandidateMinusBaseline ?? Number.NaN),
       failOpenDegradedTurnCount: Number(failOpen?.degradedTurnCount ?? 0),
       failOpenAcceptableDegradedTurnCount: Number(failOpen?.acceptableDegradedTurnCount ?? 0),
       failOpenCatastrophicDegradedTurnCount: Number(failOpen?.catastrophicDegradedTurnCount ?? 0),
@@ -2369,6 +2380,16 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs, statusPro
             requiredContextRecallPhraseCount: Number.isFinite(replayFocusMetrics?.requiredContextRecallPhraseCount)
               ? Number(replayFocusMetrics.requiredContextRecallPhraseCount)
               : null,
+            activationCount: Number.isFinite(replayFocusMetrics?.activationCount)
+              ? Number(replayFocusMetrics.activationCount)
+              : null,
+            beneficialActivationCount: Number.isFinite(replayFocusMetrics?.beneficialActivationCount)
+              ? Number(replayFocusMetrics.beneficialActivationCount)
+              : null,
+            activationPrecision: Number.isFinite(replayFocusMetrics?.activationPrecision)
+              ? Number(replayFocusMetrics.activationPrecision)
+              : null,
+            activationPrecisionSummary: replayFocusMetrics?.activationPrecisionSummary ?? null,
             activationProxyCount: Number.isFinite(replayFocusMetrics?.activationProxyCount)
               ? Number(replayFocusMetrics.activationProxyCount)
               : null,
@@ -2388,8 +2409,26 @@ function buildNightlyAggregate({ config, bundles, now, scanDurationMs, statusPro
             baselineEstimatedPromptTokensPerIncrementalWin: Number.isFinite(replayFocusMetrics?.baselineEstimatedPromptTokensPerIncrementalWin)
               ? Number(replayFocusMetrics.baselineEstimatedPromptTokensPerIncrementalWin)
               : null,
+            candidateEstimatedPromptCostUsdPerIncrementalWin: Number.isFinite(replayFocusMetrics?.candidateEstimatedPromptCostUsdPerIncrementalWin)
+              ? Number(replayFocusMetrics.candidateEstimatedPromptCostUsdPerIncrementalWin)
+              : null,
+            baselineEstimatedPromptCostUsdPerIncrementalWin: Number.isFinite(replayFocusMetrics?.baselineEstimatedPromptCostUsdPerIncrementalWin)
+              ? Number(replayFocusMetrics.baselineEstimatedPromptCostUsdPerIncrementalWin)
+              : null,
             promptTokenDeltaPerIncrementalWin: Number.isFinite(replayFocusMetrics?.promptTokenDeltaPerIncrementalWin)
               ? Number(replayFocusMetrics.promptTokenDeltaPerIncrementalWin)
+              : null,
+            promptCostUsdDeltaPerIncrementalWin: Number.isFinite(replayFocusMetrics?.promptCostUsdDeltaPerIncrementalWin)
+              ? Number(replayFocusMetrics.promptCostUsdDeltaPerIncrementalWin)
+              : null,
+            candidateServePathLatencyMsPerIncrementalWin: Number.isFinite(replayFocusMetrics?.candidateServePathLatencyMsPerIncrementalWin)
+              ? Number(replayFocusMetrics.candidateServePathLatencyMsPerIncrementalWin)
+              : null,
+            baselineServePathLatencyMsPerIncrementalWin: Number.isFinite(replayFocusMetrics?.baselineServePathLatencyMsPerIncrementalWin)
+              ? Number(replayFocusMetrics.baselineServePathLatencyMsPerIncrementalWin)
+              : null,
+            servePathLatencyMsDeltaPerIncrementalWin: Number.isFinite(replayFocusMetrics?.servePathLatencyMsDeltaPerIncrementalWin)
+              ? Number(replayFocusMetrics.servePathLatencyMsDeltaPerIncrementalWin)
               : null,
             failOpenDegradedTurnCount: Number.isFinite(replayFocusMetrics?.failOpenDegradedTurnCount)
               ? Number(replayFocusMetrics.failOpenDegradedTurnCount)
@@ -2688,9 +2727,13 @@ function formatNightlyMarkdown(aggregate) {
   lines.push(`- optimize-over regression rate: ${replayFocus?.regressionRate ?? "n/a"}`);
   lines.push(`- optimize-over required-context recall: ${replayFocus?.requiredContextRecallSummary ?? "unavailable"}`);
   lines.push(`- optimize-over recall delta: ${replayFocus?.requiredContextRecallDelta ?? "n/a"}`);
+  lines.push(`- activation precision: ${replayFocus?.activationPrecisionSummary ?? "unavailable"}`);
+  lines.push(`- activation precision rate: ${replayFocus?.activationPrecision ?? "n/a"}`);
   lines.push(`- activation precision proxy: ${replayFocus?.activationPrecisionProxySummary ?? "unavailable"}`);
   lines.push(`- activation precision proxy rate: ${replayFocus?.activationPrecisionProxy ?? "n/a"}`);
   lines.push(`- prompt-token delta per incremental win: ${replayFocus?.promptTokenDeltaPerIncrementalWin ?? "n/a"}`);
+  lines.push(`- prompt-cost delta per incremental win: ${formatUsd(replayFocus?.promptCostUsdDeltaPerIncrementalWin)}`);
+  lines.push(`- serve-path latency delta per incremental win: ${replayFocus?.servePathLatencyMsDeltaPerIncrementalWin ?? "n/a"}`);
   lines.push(`- fail-open proxy: ${replayFocus?.failOpenSummary ?? "unavailable"}`);
   lines.push(`- purpose-aligned unique utility leaders: ${JSON.stringify(aggregate.replayMetrics.utilityWinnerModeCounts)}`);
   lines.push(`- purpose-aligned utility-tied bundles: ${aggregate.replayMetrics.utilityTiedTopBundleCount ?? 0}`);

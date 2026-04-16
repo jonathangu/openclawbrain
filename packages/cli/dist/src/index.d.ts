@@ -1137,6 +1137,10 @@ export interface RecordedSessionReplayTurnReportV1 {
     modeEffective: RouteMode | null;
     selectionEngine: CompileSelectionMode | null;
     usedLearnedRouteFn: boolean;
+    activationTaken: boolean | null;
+    activationSource: string | null;
+    activationReason: string | null;
+    activationConfidence: string | null;
     routerIdentity: string | null;
     selectionDigest: string | null;
     selectedContextIds: string[];
@@ -1149,6 +1153,7 @@ export interface RecordedSessionReplayTurnReportV1 {
     qualityScore: number;
     compileActiveVersion: number | null;
     promoted: boolean;
+    timing: BrainServeHotPathTimingV1 | null;
     observability: {
         scanPolicy: LearningScanPolicy | null;
         scanSurfaces: string[];

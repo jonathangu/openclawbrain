@@ -183,6 +183,64 @@ function readText(root: string, relativePath: string): string {
   return readFileSync(path.join(root, relativePath), "utf8");
 }
 
+function normalizeReplayLaneVolatileText(text: string): string {
+  return text
+    .replace(
+      /(success-adjusted economics: .*? estimated prompt USD, and )([0-9.]+)( ms serve-path latency per incremental win vs .*?, [0-9.]+, and )([0-9.]+)/g,
+      "$1<volatile-latency>$3<volatile-latency>",
+    )
+    .replace(
+      /(\| [^|]+ \| [^|]+ \| [^|]+ \| [^|]+ \| [^|]+ \| [^|]+ \| [^|]+ \| )([^|]+)( \| [^|]+ \| [^|]+ \| .* \|)/g,
+      "$1<volatile-latency>$3",
+    );
+}
+
+function scrubReplayLaneVolatileJson(value: unknown): unknown {
+  if (typeof value === "string") {
+    return normalizeReplayLaneVolatileText(value);
+  }
+  if (Array.isArray(value)) {
+    return value.map((entry) => scrubReplayLaneVolatileJson(entry));
+  }
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value).map(([key, entry]) => {
+        if ([
+          "totalLatencyMs",
+          "totalRouteSelectionLatencyMs",
+          "totalPromptAssemblyLatencyMs",
+          "candidateServePathLatencyMsPerSuccess",
+          "baselineServePathLatencyMsPerSuccess",
+          "servePathLatencyMsDeltaCandidateMinusBaseline",
+          "totalMs",
+          "routeSelectionMs",
+          "promptAssemblyMs",
+          "bundleHash",
+        ].includes(key)) {
+          return [key, "<volatile-latency>"];
+        }
+        return [key, scrubReplayLaneVolatileJson(entry)];
+      }),
+    );
+  }
+  return value;
+}
+
+function normalizeReplayLaneMarkdown(text: string): string {
+  return normalizeReplayLaneVolatileText(text);
+}
+
+function readNormalizedReplayLaneArtifact(root: string, relativePath: string): string {
+  const text = readText(root, relativePath);
+  if (relativePath.endsWith(".json")) {
+    return JSON.stringify(scrubReplayLaneVolatileJson(JSON.parse(text)), null, 2);
+  }
+  if (relativePath.endsWith(".md")) {
+    return normalizeReplayLaneMarkdown(text);
+  }
+  return text;
+}
+
 describe("recorded session replay proof lane", () => {
   it("writes stable aggregate artifacts under _lane with pairwise deltas and win-rate matrices", () => {
     const artifactRoot = makeTempDir("replay-proof-lane-");
@@ -217,6 +275,20 @@ describe("recorded session replay proof lane", () => {
       count: 0,
       rate: 0,
       totalCount: 2,
+    });
+    expect(descriptor.summaryTables.scorecard.activationPrecision).toMatchObject({
+      available: true,
+      observedTurnCount: 5,
+      activationCount: 3,
+      beneficialActivationCount: 1,
+      precision: expect.any(Number),
+    });
+    expect(descriptor.summaryTables.scorecard.successAdjustedEconomics).toMatchObject({
+      available: true,
+      candidateEstimatedPromptCostUsdPerSuccess: expect.any(Number),
+      baselineEstimatedPromptCostUsdPerSuccess: expect.any(Number),
+      candidateServePathLatencyMsPerSuccess: expect.any(Number),
+      baselineServePathLatencyMsPerSuccess: expect.any(Number),
     });
 
     const learnedVsGraph = descriptor.pairwiseDeltas.pairs.find(
@@ -278,7 +350,9 @@ describe("recorded session replay proof lane", () => {
       RECORDED_SESSION_REPLAY_PROOF_LANE_LAYOUT.workedTraces,
     ];
     for (const relativePath of stableFiles) {
-      expect(readText(first.laneDir, relativePath)).toBe(readText(second.laneDir, relativePath));
+      expect(readNormalizedReplayLaneArtifact(first.laneDir, relativePath)).toBe(
+        readNormalizedReplayLaneArtifact(second.laneDir, relativePath),
+      );
     }
   });
 });
