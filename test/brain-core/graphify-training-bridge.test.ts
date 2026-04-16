@@ -279,6 +279,8 @@ describe("graphify training bridge", () => {
       });
 
       expect(validateGraphifyTrainingReviewBundleV1(bundle)).toMatchObject({ valid: true });
+      expect(bundle.policy_supervision_row_count).toBe(1);
+      expect(bundle.policy_supervision_rows).toHaveLength(1);
       const row = bundle.rows[0];
       expect(row?.route_objective_hint).not.toBeNull();
       expect(row?.route_objective_hint).toMatchObject({
@@ -297,6 +299,27 @@ describe("graphify training bridge", () => {
       expect(row?.route_objective_hint?.negative_action_ids).toEqual(["action_traverse_doc_1", "doc_2", "tool_1"]);
       expect(row?.route_objective_hint?.notes.join(" ")).toMatch(/trace-level route-objective hint only/i);
       expect(row?.review_notes.join(" ")).toMatch(/do not replace decision-point teacher labels/i);
+      expect(bundle.policy_supervision_rows[0]).toMatchObject({
+        row_type: "abstain",
+        hard_negative_class: "graph_prior_preferred",
+        net_utility_delta: -0.42,
+        net_utility_delta_source: "reviewed",
+        projection_status: "trace_projected",
+        oracle_best_mode: "graph_prior_only",
+      });
+
+      const summary = summarizeGraphifyTrainingReviewBundleV1(bundle);
+      expect(summary).toMatchObject({
+        rowCount: 1,
+        includedRowCount: 1,
+        truncated: false,
+        neighborhoodContextCount: bundle.neighborhood_context_count,
+        provenanceGapHintCount: bundle.provenance_gap_hint_count,
+        hardNegativeSupportCount: bundle.hard_negative_support_count,
+        policySupervisionRowCount: 1,
+        routeRowIds: [routeRow.row_id],
+      });
+      expect(summary.policySupervisionSummary.byRowType.abstain).toBe(1);
     }
     finally {
       rmSync(tempRoot, { recursive: true, force: true });

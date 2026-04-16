@@ -5,6 +5,8 @@ import { Type, type Static } from "@sinclair/typebox";
 import { Value } from "@sinclair/typebox/value";
 import type { ContractValidationResultV1, RouteDecisionRowSummaryV1, RouteDecisionRowV1 } from "./route-rows.js";
 import { summarizeRouteDecisionRowV1, validateRouteDecisionRowV1 } from "./route-rows.js";
+import type { PolicySupervisionRowV1, PolicySupervisionSummaryV1 } from "./policy-supervision-rows.js";
+import { PolicySupervisionRowSchemaV1, buildPolicySupervisionRowV1, summarizePolicySupervisionRowsV1, validatePolicySupervisionRowV1 } from "./policy-supervision-rows.js";
 
 export const GRAPHIFY_TRAINING_REVIEW_BUNDLE_VERSION_V1 = 1 as const;
 export const GRAPHIFY_TRAINING_REVIEW_BUNDLE_CONTRACT_V1 = "graphify_training_review_bundle.v1";
@@ -320,9 +322,11 @@ export const GraphifyTrainingReviewBundleSchemaV1 = Type.Object(
     neighborhood_context_count: Type.Number({ minimum: 0 }),
     provenance_gap_hint_count: Type.Number({ minimum: 0 }),
     hard_negative_support_count: Type.Number({ minimum: 0 }),
+    policy_supervision_row_count: Type.Number({ minimum: 0 }),
     route_row_ids: Type.Array(Type.String({ minLength: 1 })),
     rows: Type.Array(GraphifyTrainingReviewRowSchemaV1),
     provenance_gap_hints: Type.Array(GraphifyProvenanceGapHintSchemaV1),
+    policy_supervision_rows: Type.Array(PolicySupervisionRowSchemaV1),
   },
   { additionalProperties: false },
 );
@@ -776,6 +780,18 @@ export function materializeGraphifyTrainingReviewBundleV1(params: {
       };
   });
 
+  const policySupervisionRows: PolicySupervisionRowV1[] = [];
+  for (const routeRow of includedRows) {
+    const traceLabel = params.routeObjectiveLabelsByTraceId?.[routeRow.trace_id] ?? null;
+    if (traceLabel) {
+      const psRow = buildPolicySupervisionRowV1({ routeRow, traceLabel });
+      const psValidation = validatePolicySupervisionRowV1(psRow);
+      if (psValidation.valid) {
+        policySupervisionRows.push(psRow);
+      }
+    }
+  }
+
   const sourceBundleId = normalizeString(params.graphifyImportSlice.sourceBundleId) ?? neighborhoodContext.source_bundle_id;
   const sourceBundleHash = normalizeString(params.graphifyImportSlice.sourceBundleHash) ?? neighborhoodContext.source_bundle_hash;
   const generatedAt = params.generatedAt ?? new Date().toISOString();
@@ -797,9 +813,11 @@ export function materializeGraphifyTrainingReviewBundleV1(params: {
     neighborhood_context_count: neighborhoodContext.neighborhoods.length,
     provenance_gap_hint_count: provenanceGapHints.length,
     hard_negative_support_count: rows.reduce((count, row) => count + row.hard_negative_supports.length, 0),
+    policy_supervision_row_count: policySupervisionRows.length,
     route_row_ids: routeRowIds,
     rows,
     provenance_gap_hints: provenanceGapHints,
+    policy_supervision_rows: policySupervisionRows,
   };
 
   return bundle;
@@ -868,6 +886,8 @@ export interface GraphifyTrainingReviewSummaryV1 {
   neighborhoodContextCount: number;
   provenanceGapHintCount: number;
   hardNegativeSupportCount: number;
+  policySupervisionRowCount: number;
+  policySupervisionSummary: PolicySupervisionSummaryV1;
   routeRowIds: string[];
 }
 
@@ -880,6 +900,8 @@ export function summarizeGraphifyTrainingReviewBundleV1(bundle: GraphifyTraining
     neighborhoodContextCount: bundle.neighborhood_context_count,
     provenanceGapHintCount: bundle.provenance_gap_hint_count,
     hardNegativeSupportCount: bundle.hard_negative_support_count,
+    policySupervisionRowCount: bundle.policy_supervision_row_count,
+    policySupervisionSummary: summarizePolicySupervisionRowsV1(bundle.policy_supervision_rows),
     routeRowIds: [...bundle.route_row_ids],
   };
 }
