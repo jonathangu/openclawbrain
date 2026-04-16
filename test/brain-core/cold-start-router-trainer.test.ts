@@ -9,6 +9,10 @@ import {
   summarizeRouterArtifactManifestV1,
   validateRouterArtifactManifestV1,
 } from "../../src/brain-core/cold-start-router-contracts.js";
+import type {
+  DataRegistryEntryV1,
+  RouteDecisionRowV1,
+} from "../../src/brain-core/cold-start-router-contracts.js";
 import {
   loadAndFilterColdStartRouterApprovedExportV1,
 } from "../../src/brain-core/cold-start-router-approved-export-loader.js";
@@ -26,6 +30,7 @@ import {
   scoreColdStartRouteRowV1,
   trainColdStartRouterArtifactV1,
 } from "../../src/brain-core/cold-start-router-trainer.js";
+import type { ColdStartRouterModelV1 } from "../../src/brain-core/cold-start-router-trainer.js";
 import type { Episode, TraversalAction, TraversalState, TrajectoryExpansion, TrajectoryStep } from "../../src/brain-core/types.js";
 
 const __filename = fileURLToPath(import.meta.url);
@@ -56,6 +61,142 @@ function createTempRoot(label: string): string {
   const root = mkdtempSync(path.join(os.tmpdir(), `${label}-`));
   tempRoots.push(root);
   return root;
+}
+
+function makeActivationFirstRegistryEntry(datasetId: string): DataRegistryEntryV1 {
+  return {
+    dataset_id: datasetId,
+    source_family: "qa",
+    upstream_url: "https://example.org/activation-first",
+    original_creator: "OpenClaw",
+    license: "CC BY 4.0",
+    commercial_use_status: "allowed",
+    redistribution_status: "allowed",
+    pii_risk: "none",
+    benchmark_split_status: "train",
+    approval_status: "approved_train",
+    reviewer: "operator",
+    immutable_snapshot_ref: `snapshot:${datasetId}@sha256:activation-first`,
+    exact_files: ["data/train.json"],
+    file_hashes: {
+      "data/train.json": "sha256:activation-first-train",
+    },
+    allowed_uses: ["route supervision", "ranking baselines"],
+    disallowed_uses: ["private redistribution"],
+    notes: ["activation-first fixture"],
+    created_at: "2026-04-10T08:00:00Z",
+    updated_at: "2026-04-10T08:00:00Z",
+  };
+}
+
+function makeActivationFirstTrainingRows(datasetId: string): RouteDecisionRowV1[] {
+  return [
+    {
+      row_id: "row_activation_first_continue",
+      dataset_id: datasetId,
+      query: "Find the current shipping correction memory before drafting the reply",
+      cursor_path: ["source:billing-thread"],
+      candidate_set: [
+        { candidate_id: "mem:shipping_correction", candidate_type: "memory_node", authority: "human", freshness: "current", score_hint: 0.88 },
+        { candidate_id: "doc:generic_shipping_policy", candidate_type: "doc_chunk", authority: "operator_policy", freshness: "stale", token_cost: 18, score_hint: 0.22 },
+      ],
+      teacher_action: { kind: "traverse", target_ids: ["mem:shipping_correction"] },
+      stop_label: "CONTINUE",
+      evidence_spans: [
+        { source_ref: "message_201", start: 0, end: 32 },
+        { source_ref: "memory_201", start: 0, end: 28 },
+      ],
+      hard_negatives: ["doc:generic_shipping_policy"],
+      outcome_gain: 0.8,
+      provenance: {
+        dataset: datasetId,
+        source_license: "CC BY 4.0",
+        source_family: "qa",
+        source_snapshot_ref: `snapshot:${datasetId}@sha256:activation-first`,
+        recorded_by: "operator",
+        recorded_at: "2026-04-10T08:01:00Z",
+        review_status: "approved_train",
+      },
+      split_tag: "train",
+      created_at: "2026-04-10T08:02:00Z",
+    },
+    {
+      row_id: "row_activation_first_stop_local",
+      dataset_id: datasetId,
+      query: "Use the invoice tool and stop locally",
+      cursor_path: ["source:billing-thread"],
+      candidate_set: [
+        { candidate_id: "tool:invoice_draft", candidate_type: "tool", authority: "runtime", freshness: "current", token_cost: 2, score_hint: 0.87 },
+        { candidate_id: "mem:shipping_correction", candidate_type: "memory_node", authority: "human", freshness: "current", score_hint: 0.15 },
+      ],
+      teacher_action: { kind: "tool", tool_name: "tool:invoice_draft" },
+      stop_label: "STOP_LOCAL",
+      evidence_spans: [
+        { source_ref: "message_202", start: 0, end: 28 },
+      ],
+      hard_negatives: [],
+      outcome_gain: 0.8,
+      provenance: {
+        dataset: datasetId,
+        source_license: "CC BY 4.0",
+        source_family: "qa",
+        source_snapshot_ref: `snapshot:${datasetId}@sha256:activation-first`,
+        recorded_by: "operator",
+        recorded_at: "2026-04-10T08:03:00Z",
+        review_status: "approved_train",
+      },
+      split_tag: "train",
+      created_at: "2026-04-10T08:04:00Z",
+    },
+  ];
+}
+
+function makeGreedyThresholdRouteRow(datasetId: string): RouteDecisionRowV1 {
+  return {
+    row_id: "row_activation_first_greedy_lane",
+    dataset_id: datasetId,
+    query: "Need the exact shipping correction memory, not the generic policy page",
+    cursor_path: ["source:billing-thread"],
+    candidate_set: [
+      { candidate_id: "mem:shipping_correction", candidate_type: "memory_node", authority: "human", freshness: "current", score_hint: 0.28 },
+      { candidate_id: "doc:generic_shipping_policy", candidate_type: "doc_chunk", authority: "operator_policy", freshness: "current", score_hint: 0.18 },
+    ],
+    teacher_action: { kind: "traverse", target_ids: ["mem:shipping_correction"] },
+    stop_label: "CONTINUE",
+    evidence_spans: [
+      { source_ref: "message_203", start: 0, end: 30 },
+      { source_ref: "memory_203", start: 0, end: 24 },
+    ],
+    hard_negatives: ["doc:generic_shipping_policy"],
+    outcome_gain: 0.72,
+    provenance: {
+      dataset: datasetId,
+      source_license: "CC BY 4.0",
+      source_family: "qa",
+      source_snapshot_ref: `snapshot:${datasetId}@sha256:activation-first`,
+      recorded_by: "operator",
+      recorded_at: "2026-04-10T08:05:00Z",
+      review_status: "approved_train",
+    },
+    split_tag: "train",
+    created_at: "2026-04-10T08:06:00Z",
+  };
+}
+
+function trainActivationFirstFixture(outputDir: string, datasetId: string) {
+  return trainColdStartRouterArtifactV1({
+    artifactId: `router-artifact-${datasetId}`,
+    artifactVersion: "0.0.1",
+    packType: "base",
+    compatibleRuntimeVersion: "openclawbrain-runtime@0.4.43",
+    registryEntries: [makeActivationFirstRegistryEntry(datasetId)],
+    routeRows: makeActivationFirstTrainingRows(datasetId),
+    outputDir,
+    routerIdentity: `router:${datasetId}`,
+    createdAt: "2026-04-10T08:10:00Z",
+    trainingDataRefs: [datasetId],
+    replayGateRefs: [`replay:${datasetId}`],
+  });
 }
 
 describe("cold-start router trainer", () => {
@@ -121,7 +262,7 @@ describe("cold-start router trainer", () => {
       toolActionSetCount: 2,
     });
     expect(result.model.calibration).toMatchObject({
-      activationThreshold: 0.5,
+      activationThreshold: 0.45,
       abstentionThreshold: 0.55,
       expectedUtilityThreshold: 0,
       stopLocalThreshold: 0.5,
@@ -144,7 +285,7 @@ describe("cold-start router trainer", () => {
       activated: true,
       selectedContextCount: 1,
       selectedTokenBudget: null,
-      activationThreshold: 0.5,
+      activationThreshold: 0.45,
       abstentionThreshold: 0.55,
       expectedUtilityThreshold: 0,
       stopLocalThreshold: 0.5,
@@ -184,6 +325,78 @@ describe("cold-start router trainer", () => {
     expect(runtimeSelection.stopped).toBe(false);
     expect(runtimeSelection.selectedCandidateIds).toEqual(["mem:shipping_history"]);
     expect(runtimeSelection.decisionSummary.activated).toBe(true);
+  });
+
+  it("overweights beneficial CONTINUE rows so greedy retrains lean activation-first", () => {
+    const outputDir = createTempRoot("cold-start-router-activation-first-bias");
+    const result = trainActivationFirstFixture(outputDir, "dataset_activation_first_bias");
+
+    expect(result.model.calibration.activationThreshold).toBe(0.45);
+    expect(result.model.stopLabelCounts.CONTINUE).toBeGreaterThan(result.model.stopLabelCounts.STOP_LOCAL);
+    expect(result.model.stopLabelCounts.CONTINUE).toBeGreaterThan(0.8);
+    expect(result.model.stopLabelCounts.STOP_LOCAL).toBeCloseTo(0.8, 6);
+    expect(result.model.livePolicyInitializer.policyParams.stopBias).toBeLessThan(0);
+  });
+
+  it("activates a near-threshold must-fire row once it enters the greedy activation lane", () => {
+    const outputDir = createTempRoot("cold-start-router-greedy-lane");
+    const trained = trainActivationFirstFixture(outputDir, "dataset_activation_first_greedy_lane");
+    const model: ColdStartRouterModelV1 = {
+      ...trained.model,
+      livePolicyInitializer: {
+        ...trained.model.livePolicyInitializer,
+        policyParams: {
+          ...trained.model.livePolicyInitializer.policyParams,
+          stopBias: 0.35,
+        },
+        seedWeights: [],
+        stopLocalWeights: [
+          {
+            sourceNodeId: "source:billing-thread",
+            positive: 1,
+            negative: 4,
+            support: 5,
+            weight: 0,
+          },
+        ],
+        edgeWeights: [
+          {
+            sourceNodeId: "source:billing-thread",
+            targetNodeId: "mem:shipping_correction",
+            positive: 5,
+            negative: 1,
+            support: 6,
+            prior: 1,
+            weight: 0.3,
+          },
+          {
+            sourceNodeId: "source:billing-thread",
+            targetNodeId: "doc:generic_shipping_policy",
+            positive: 2,
+            negative: 3,
+            support: 5,
+            prior: 1,
+            weight: 0.05,
+          },
+        ],
+        toolActionPriors: [],
+        toolActionSets: [],
+      },
+    };
+    const row = makeGreedyThresholdRouteRow("dataset_activation_first_greedy_lane");
+    const scoring = scoreColdStartRouteRowV1({ model, row });
+    const topCandidateProbability = scoring.policyDistribution.actions.find((action) => (
+      action.action.type === "traverse" && action.action.candidate?.candidate_id === "mem:shipping_correction"
+    ))?.probability ?? 0;
+
+    expect(scoring.stopPrediction.label).toBe("CONTINUE");
+    expect(scoring.decisionSummary.activationThreshold).toBe(0.45);
+    expect(scoring.policyDistribution.stopAction.probability).toBeLessThan(0.55);
+    expect(topCandidateProbability).toBeGreaterThan(0.45);
+    expect(topCandidateProbability).toBeLessThan(0.5);
+    expect(scoring.decisionSummary.activated).toBe(true);
+    expect(scoring.decisionSummary.stopReason).toBeNull();
+    expect(scoring.rankedCandidates[0]?.candidate.candidate_id).toBe("mem:shipping_correction");
   });
 
   it("predicts STOP_LOCAL for the two MuSiQue replay rows that only have a single evidence span", () => {

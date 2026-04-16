@@ -516,6 +516,10 @@ interface CountBucket {
   support: number;
 }
 
+const ACTIVATION_FIRST_CONTINUE_ROW_BONUS = 0.25;
+const ACTIVATION_FIRST_HARD_NEGATIVE_BONUS = 0.15;
+const MAX_TRAINING_ROW_WEIGHT = 2.5;
+
 function createCountBucket(): CountBucket {
   return { positive: 0, negative: 0, support: 0 };
 }
@@ -536,12 +540,24 @@ function clampFinite(value: number, lower: number, upper: number): number {
   return Math.min(upper, Math.max(lower, value));
 }
 
-function toRowWeight(outcomeGain: number): number {
-  const magnitude = Math.abs(Number(outcomeGain));
+function activationFirstRowBonus(
+  row: Pick<RouteDecisionRowV1, "outcome_gain" | "teacher_action" | "stop_label" | "hard_negatives">,
+): number {
+  if (row.teacher_action.kind !== "traverse" || row.stop_label !== "CONTINUE" || Number(row.outcome_gain) <= 0) {
+    return 0;
+  }
+  return ACTIVATION_FIRST_CONTINUE_ROW_BONUS
+    + (row.hard_negatives.length > 0 ? ACTIVATION_FIRST_HARD_NEGATIVE_BONUS : 0);
+}
+
+function toRowWeight(
+  row: Pick<RouteDecisionRowV1, "outcome_gain" | "teacher_action" | "stop_label" | "hard_negatives">,
+): number {
+  const magnitude = Math.abs(Number(row.outcome_gain));
   if (!Number.isFinite(magnitude) || magnitude === 0) {
     return 0.25;
   }
-  return clampFinite(magnitude, 0.25, 2);
+  return clampFinite(magnitude + activationFirstRowBonus(row), 0.25, MAX_TRAINING_ROW_WEIGHT);
 }
 
 function calcLiveWeight(
@@ -823,7 +839,7 @@ export function buildColdStartRouterLivePolicyInitializerV1(params: {
   let toolRowCount = params.warmStartInitializer?.toolRowCount ?? 0;
 
   for (const row of params.routeRows) {
-    const rowWeight = toRowWeight(row.outcome_gain);
+    const rowWeight = toRowWeight(row);
     const sourceNodeId = normalizeCursorSourceNodeId(row.cursor_path);
     const positiveCandidateIds = parsePositiveCandidateIds(row);
     const toolCandidates = row.candidate_set.filter((candidate) => candidate.candidate_type === "tool");

@@ -330,6 +330,9 @@ const STOP_HARD_NEGATIVE_BUCKETS = ["0", "1", "2+"] as const;
 const STOP_OUTCOME_GAIN_BUCKETS = ["loss", "low", "medium", "high"] as const;
 
 const DEFAULT_STOP_LABEL_ORDER: ColdStartStopLabelV1[] = ["CONTINUE", "STOP_LOCAL", "STOP"];
+const ACTIVATION_FIRST_CONTINUE_ROW_BONUS = 0.25;
+const ACTIVATION_FIRST_HARD_NEGATIVE_BONUS = 0.15;
+const MAX_TRAINING_ROW_WEIGHT = 2.5;
 
 function sha256Text(value: string): string {
   return `sha256:${createHash("sha256").update(value, "utf8").digest("hex")}`;
@@ -364,12 +367,24 @@ function clampFinite(value: number, lower: number, upper: number): number {
   return Math.min(upper, Math.max(lower, value));
 }
 
-function toRowWeight(outcomeGain: number): number {
-  const magnitude = Math.abs(Number(outcomeGain));
+function activationFirstRowBonus(
+  row: Pick<RouteDecisionRowV1, "outcome_gain" | "teacher_action" | "stop_label" | "hard_negatives">,
+): number {
+  if (row.teacher_action.kind !== "traverse" || row.stop_label !== "CONTINUE" || Number(row.outcome_gain) <= 0) {
+    return 0;
+  }
+  return ACTIVATION_FIRST_CONTINUE_ROW_BONUS
+    + (row.hard_negatives.length > 0 ? ACTIVATION_FIRST_HARD_NEGATIVE_BONUS : 0);
+}
+
+function toRowWeight(
+  row: Pick<RouteDecisionRowV1, "outcome_gain" | "teacher_action" | "stop_label" | "hard_negatives">,
+): number {
+  const magnitude = Math.abs(Number(row.outcome_gain));
   if (!Number.isFinite(magnitude) || magnitude === 0) {
     return 0.25;
   }
-  return clampFinite(magnitude, 0.25, 2);
+  return clampFinite(magnitude + activationFirstRowBonus(row), 0.25, MAX_TRAINING_ROW_WEIGHT);
 }
 
 function bucketTokenCost(tokenCost: number | null | undefined): string {
@@ -944,7 +959,7 @@ function buildCalibration(): ColdStartRouterCalibrationV1 {
     smoothing: 1,
     supportDampening: 2,
     labelOrder: [...DEFAULT_STOP_LABEL_ORDER],
-    activationThreshold: 0.5,
+    activationThreshold: 0.45,
     abstentionThreshold: 0.55,
     expectedUtilityThreshold: 0,
     stopLocalThreshold: 0.5,
@@ -1249,7 +1264,7 @@ export function trainColdStartRouterArtifactV1(params: ColdStartRouterTrainingIn
     usedDatasetIds.add(row.dataset_id);
     usedRouteRows.push(row);
 
-    const rowWeight = toRowWeight(row.outcome_gain);
+    const rowWeight = toRowWeight(row);
     const positiveIds = resolvePositiveCandidateIds(row);
     const canTrainRanking = positiveIds.size > 0;
     const toolCandidates = row.candidate_set.filter((candidate) => candidate.candidate_type === "tool");
