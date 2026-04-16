@@ -36,12 +36,25 @@ export interface ColdStartRouterReplayGateLoadIssueV1 {
 export interface ColdStartRouterReplayGateRowResultV1 {
   rowId: string;
   teacherActionKind: RouteDecisionRowV1["teacher_action"]["kind"];
+  expectedActivated: boolean | null;
+  actualActivated: boolean | null;
   expectedTopCandidateId: string | null;
   actualTopCandidateId: string | null;
   expectedStopLabel: RouteDecisionRowV1["stop_label"];
   actualStopLabel: RouteDecisionRowV1["stop_label"];
+  actualStopReason: string | null;
+  decisionConfidence: number | null;
+  activationProbability: number | null;
+  abstentionProbability: number | null;
+  predictedUtility: number | null;
+  predictedRegretOfAbstaining: number | null;
+  stopLocalProbability: number | null;
   topCandidateProbability: number;
   stopProbability: number;
+  activationThreshold: number | null;
+  abstentionThreshold: number | null;
+  expectedUtilityThreshold: number | null;
+  stopLocalThreshold: number | null;
   passed: boolean;
   issues: string[];
 }
@@ -58,6 +71,31 @@ export interface ColdStartRouterReplayGateVerdictV1 {
   skippedRowCount: number;
   loadIssues: ColdStartRouterReplayGateLoadIssueV1[];
   rowResults: ColdStartRouterReplayGateRowResultV1[];
+}
+
+function expectedActivatedForReplayRow(row: RouteDecisionRowV1): boolean | null {
+  switch (row.teacher_action.kind) {
+    case "traverse":
+      return row.stop_label === "CONTINUE";
+    case "tool":
+    case "stop":
+      return false;
+    default:
+      return null;
+  }
+}
+
+function findTraverseProbability(params: {
+  candidateId: string | null;
+  actionDistribution: ReturnType<typeof scoreColdStartRouteRowV1>["policyDistribution"]["actions"];
+}): number {
+  if (!params.candidateId) {
+    return 0;
+  }
+  return params.actionDistribution.find((entry) => (
+    entry.action.type === "traverse"
+      && entry.action.candidate?.candidate_id === params.candidateId
+  ))?.probability ?? 0;
 }
 
 export interface ColdStartRouterLoadedArtifactV1 {
@@ -350,23 +388,40 @@ export function replayColdStartRouterArtifactV1(params: {
       rowResults.push({
         rowId: row.row_id,
         teacherActionKind: row.teacher_action.kind,
+        expectedActivated: expectedActivatedForReplayRow(row),
+        actualActivated: null,
         expectedTopCandidateId: null,
         actualTopCandidateId: null,
         expectedStopLabel: row.stop_label,
         actualStopLabel: row.stop_label,
+        actualStopReason: null,
+        decisionConfidence: null,
+        activationProbability: null,
+        abstentionProbability: null,
+        predictedUtility: null,
+        predictedRegretOfAbstaining: null,
+        stopLocalProbability: null,
         topCandidateProbability: 0,
         stopProbability: 0,
+        activationThreshold: null,
+        abstentionThreshold: null,
+        expectedUtilityThreshold: null,
+        stopLocalThreshold: null,
         passed: false,
         issues: [`unsupported teacher_action kind ${row.teacher_action.kind}`],
       });
       continue;
     }
 
+    const expectedActivated = expectedActivatedForReplayRow(row);
     const expectedTopCandidateId = row.teacher_action.target_ids[0]?.trim() ?? null;
     const scoring = scoreColdStartRouteRowV1({ model: loaded.artifact.model, row });
     const actualTopCandidateId = scoring.rankedCandidates[0]?.candidate.candidate_id ?? null;
     const actualStopLabel = scoring.stopPrediction.label;
-    const topCandidateProbability = scoring.policyDistribution.actions[0]?.probability ?? 0;
+    const topCandidateProbability = findTraverseProbability({
+      candidateId: actualTopCandidateId,
+      actionDistribution: scoring.policyDistribution.actions,
+    });
     const stopProbability = scoring.policyDistribution.stopAction.probability;
     const issues: string[] = [];
 
@@ -375,6 +430,9 @@ export function replayColdStartRouterArtifactV1(params: {
     } else if (actualTopCandidateId !== expectedTopCandidateId) {
       issues.push(`top candidate ${actualTopCandidateId ?? "none"} != expected ${expectedTopCandidateId}`);
     }
+    if (expectedActivated !== null && scoring.decisionSummary.activated !== expectedActivated) {
+      issues.push(`activation ${scoring.decisionSummary.activated ? "on" : "off"} != expected ${expectedActivated ? "on" : "off"}`);
+    }
     if (actualStopLabel !== row.stop_label) {
       issues.push(`stop label ${actualStopLabel} != expected ${row.stop_label}`);
     }
@@ -382,12 +440,25 @@ export function replayColdStartRouterArtifactV1(params: {
     rowResults.push({
       rowId: row.row_id,
       teacherActionKind: row.teacher_action.kind,
+      expectedActivated,
+      actualActivated: scoring.decisionSummary.activated,
       expectedTopCandidateId,
       actualTopCandidateId,
       expectedStopLabel: row.stop_label,
       actualStopLabel,
+      actualStopReason: scoring.decisionSummary.stopReason,
+      decisionConfidence: scoring.decisionSummary.confidence,
+      activationProbability: scoring.decisionSummary.activationProbability,
+      abstentionProbability: scoring.decisionSummary.abstentionProbability,
+      predictedUtility: scoring.decisionSummary.predictedUtility,
+      predictedRegretOfAbstaining: scoring.decisionSummary.predictedRegretOfAbstaining,
+      stopLocalProbability: scoring.decisionSummary.stopLocalProbability,
       topCandidateProbability,
       stopProbability,
+      activationThreshold: scoring.decisionSummary.activationThreshold,
+      abstentionThreshold: scoring.decisionSummary.abstentionThreshold,
+      expectedUtilityThreshold: scoring.decisionSummary.expectedUtilityThreshold,
+      stopLocalThreshold: scoring.decisionSummary.stopLocalThreshold,
       passed: issues.length === 0,
       issues,
     });
@@ -410,7 +481,7 @@ export function replayColdStartRouterArtifactV1(params: {
     manifestSummary: loaded.artifact.manifestSummary,
     passed,
     verdict,
-    summary: `${passedRowCount}/${evaluatedRowCount} replay rows passed${skippedRowCount > 0 ? `, ${skippedRowCount} skipped` : ""}`,
+    summary: `${passedRowCount}/${evaluatedRowCount} replay rows passed${skippedRowCount > 0 ? `, ${skippedRowCount} skipped` : ""}; activation matches ${rowResults.filter((rowResult) => rowResult.expectedActivated === rowResult.actualActivated).length}/${rowResults.filter((rowResult) => rowResult.expectedActivated !== null && rowResult.actualActivated !== null).length}`,
     evaluatedRowCount,
     passedRowCount,
     failedRowCount,

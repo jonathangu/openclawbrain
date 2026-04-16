@@ -789,7 +789,7 @@ function buildDecisionSummary(params: {
   let stopReason: ColdStartRouterDecisionStopReasonV1 | null = null;
   if (bestTraverse === null) {
     stopReason = "no_candidates";
-  } else if (stopLocalProbability >= thresholds.stopLocalThreshold && abstentionProbability >= activationProbability) {
+  } else if (stopLocalProbability >= thresholds.stopLocalThreshold || params.stopPrediction.label === "STOP_LOCAL") {
     stopReason = "stop_local";
   } else if (abstentionProbability >= thresholds.abstentionThreshold && abstentionProbability >= activationProbability) {
     stopReason = "abstention_threshold_met";
