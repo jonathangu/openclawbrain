@@ -222,6 +222,7 @@ export interface GraphifyRouteObjectiveTraceLabelLikeV1 {
   utilityDelta?: number | null;
   netUtilityDelta?: number | null;
   costSensitive?: "low" | "medium" | "high" | null;
+  hardNegativeClass?: "unnecessary_activation" | "tie_with_cost" | "graph_prior_preferred" | "stale_memory" | "wrapper_heavy" | "no_outcome_change" | null;
 }
 
 const RouteRowCoreSchemaV1 = Type.Object(

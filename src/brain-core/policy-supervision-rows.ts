@@ -151,10 +151,21 @@ function rowTypeFromTraceLabel(
   return "abstain";
 }
 
+function normalizeHardNegativeClass(value: string | null | undefined): HardNegativeClass | null {
+  return HARD_NEGATIVE_CLASSES.includes(value as HardNegativeClass)
+    ? value as HardNegativeClass
+    : null;
+}
+
 function hardNegativeClassFromTraceLabel(
   oracleBestMode: string | null | undefined,
   costSensitive: string | null | undefined,
+  explicitHardNegativeClass: string | null | undefined,
 ): HardNegativeClass | null {
+  const explicit = normalizeHardNegativeClass(explicitHardNegativeClass);
+  if (explicit) {
+    return explicit;
+  }
   if (oracleBestMode === "graph_prior_only") {
     return "graph_prior_preferred";
   }
@@ -171,20 +182,30 @@ function rowWeightFromInputs(params: {
   netUtilityDelta: number | null;
   costSensitive: string | null | undefined;
   oracleBestMode: string | null | undefined;
+  hardNegativeClass: HardNegativeClass | null;
 }): number {
   if (params.netUtilityDelta !== null && Number.isFinite(params.netUtilityDelta)) {
     return Number((1 + Math.abs(params.netUtilityDelta)).toFixed(6));
   }
+  const hardNegativeFloor = params.hardNegativeClass === "tie_with_cost"
+    ? 2
+    : params.hardNegativeClass === "graph_prior_preferred" || params.hardNegativeClass === "stale_memory"
+      ? 1.75
+      : params.hardNegativeClass === "wrapper_heavy" || params.hardNegativeClass === "no_outcome_change"
+        ? 1.5
+        : params.hardNegativeClass === "unnecessary_activation"
+          ? 1.25
+          : 1;
   if (params.costSensitive === "high") {
-    return 2;
+    return Math.max(2, hardNegativeFloor);
   }
   if (params.costSensitive === "medium") {
-    return 1.5;
+    return Math.max(1.5, hardNegativeFloor);
   }
   if (params.oracleBestMode === "learned_route") {
-    return 1.5;
+    return Math.max(1.5, hardNegativeFloor);
   }
-  return 1;
+  return hardNegativeFloor;
 }
 
 export function buildPolicySupervisionRowV1(params: {
@@ -194,7 +215,11 @@ export function buildPolicySupervisionRowV1(params: {
   const { routeRow, traceLabel } = params;
   const oracleBestMode = traceLabel.oracleBestMode ?? null;
   const rowType = rowTypeFromTraceLabel(oracleBestMode, routeRow);
-  const hardNegativeClass = hardNegativeClassFromTraceLabel(oracleBestMode, traceLabel.costSensitive);
+  const hardNegativeClass = hardNegativeClassFromTraceLabel(
+    oracleBestMode,
+    traceLabel.costSensitive,
+    traceLabel.hardNegativeClass ?? null,
+  );
 
   const netUtilityDelta = typeof traceLabel.netUtilityDelta === "number" && Number.isFinite(traceLabel.netUtilityDelta)
     ? traceLabel.netUtilityDelta
@@ -212,6 +237,7 @@ export function buildPolicySupervisionRowV1(params: {
     netUtilityDelta,
     costSensitive: traceLabel.costSensitive,
     oracleBestMode,
+    hardNegativeClass,
   });
 
   const confidenceTarget = oracleBestMode === "learned_route" || oracleBestMode === "graph_prior_only"

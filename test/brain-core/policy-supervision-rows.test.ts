@@ -156,4 +156,26 @@ describe("policy supervision rows", () => {
       oracle_best_mode: "tie",
     });
   });
+
+  it("honors explicit mined hard-negative classes even when oracle mode alone is ambiguous", () => {
+    const row = buildPolicySupervisionRowV1({
+      routeRow: makeRouteRowFixture(),
+      traceLabel: {
+        traceId: "trace_policy_supervision_fixture_01",
+        focusLane: "must_not_fire_100",
+        strictHardMemoryEligible: false,
+        oracleBestMode: "tie",
+        costSensitive: "low",
+        hardNegativeClass: "wrapper_heavy",
+      },
+    });
+
+    expect(validatePolicySupervisionRowV1(row)).toMatchObject({ valid: true });
+    expect(row).toMatchObject({
+      row_type: "abstain",
+      row_weight: 1.5,
+      hard_negative_class: "wrapper_heavy",
+      oracle_best_mode: "tie",
+    });
+  });
 });

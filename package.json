@@ -50,6 +50,7 @@
     "proof:replay-lane": "node --experimental-transform-types scripts/build-recorded-session-replay-lane.ts",
     "eval:comparative": "node --experimental-transform-types scripts/eval/run-comparative-eval.ts",
     "test": "vitest run --dir test",
+    "test:learned-route-mission": "vitest run --dir test test/brain-core/graphify-training-bridge.test.ts test/brain-core/policy-supervision-rows.test.ts test/brain-core/route-decision-event.test.ts test/brain-core/cold-start-router-trainer.test.ts test/brain-core/cold-start-router-runtime.test.ts test/brain-core/cold-start-router-replay-gate.test.ts test/brain-core/cold-start-router-periodic-retrain.test.ts",
     "version-packages": "changeset version"
   },
   "dependencies": {
