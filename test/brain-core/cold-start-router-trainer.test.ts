@@ -120,6 +120,12 @@ describe("cold-start router trainer", () => {
       toolActionPriorCount: 2,
       toolActionSetCount: 2,
     });
+    expect(result.model.calibration).toMatchObject({
+      activationThreshold: 0.5,
+      abstentionThreshold: 0.55,
+      expectedUtilityThreshold: 0,
+      stopLocalThreshold: 0.5,
+    });
     expect(result.model.toolActionPriors.length).toBeGreaterThan(0);
     expect(result.model.toolActionSets.length).toBeGreaterThan(0);
     expect(result.model.toolActionSets.some((entry) => entry.candidates.some((candidate) => candidate.candidate_type === "tool"))).toBe(true);
@@ -134,6 +140,18 @@ describe("cold-start router trainer", () => {
     expect(ranking[0]?.candidate.candidate_id).toBe("mem:shipping_history");
     expect(rowScore.policyDistribution.actions).toHaveLength(loadedExport.routeRows[0].candidate_set.length + 1);
     expect(rowScore.policyDistribution.stopAction.action.type).toBe("stop_local");
+    expect(rowScore.decisionSummary).toMatchObject({
+      activated: true,
+      selectedContextCount: 1,
+      selectedTokenBudget: null,
+      activationThreshold: 0.5,
+      abstentionThreshold: 0.55,
+      expectedUtilityThreshold: 0,
+      stopLocalThreshold: 0.5,
+      stopReason: null,
+    });
+    expect(rowScore.decisionSummary.activationProbability).toBeGreaterThan(0);
+    expect(rowScore.decisionSummary.predictedUtility).toBeGreaterThan(0);
     expect(
       rowScore.policyDistribution.actions.reduce((sum, action) => sum + action.probability, 0),
     ).toBeCloseTo(1.0, 5);
@@ -159,10 +177,13 @@ describe("cold-start router trainer", () => {
     expect(runtimeRowScore.rankedCandidates[0]?.candidate.candidate_id).toBe("mem:shipping_history");
     expect(runtimeRowScore.policyDistribution.actions).toHaveLength(loadedExport.routeRows[0].candidate_set.length + 1);
     expect(runtimeRowScore.policyDistribution.stopAction.action.type).toBe("stop_local");
+    expect(runtimeRowScore.decisionSummary.activated).toBe(true);
+    expect(runtimeRowScore.decisionSummary.stopReason).toBeNull();
 
     const runtimeSelection = selectColdStartRouteCandidateIdsFromArtifactBundleV1({ artifactBundle: runtimeBundle, row: loadedExport.routeRows[0] });
     expect(runtimeSelection.stopped).toBe(false);
     expect(runtimeSelection.selectedCandidateIds).toEqual(["mem:shipping_history"]);
+    expect(runtimeSelection.decisionSummary.activated).toBe(true);
   });
 
   it("predicts STOP_LOCAL for the two MuSiQue replay rows that only have a single evidence span", () => {
@@ -179,6 +200,7 @@ describe("cold-start router trainer", () => {
       const scoring = scoreColdStartRouteRowFromArtifactBundleV1({ artifactBundle: runtimeBundle, row: row! });
       expect(scoring.stopPrediction.label).toBe("STOP_LOCAL");
       expect(scoring.policyDistribution.stopAction.probability).toBeGreaterThan(0);
+      expect(scoring.decisionSummary.stopLocalProbability).toBeGreaterThan(0);
       expect(scoring.rankedCandidates[0]?.candidate.candidate_id).toBe(teacherAction.target_ids[0]);
     }
   });

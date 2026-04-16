@@ -88,6 +88,10 @@ export interface ColdStartRouterCalibrationV1 {
   smoothing: number;
   supportDampening: number;
   labelOrder: ColdStartStopLabelV1[];
+  activationThreshold: number;
+  abstentionThreshold: number;
+  expectedUtilityThreshold: number;
+  stopLocalThreshold: number;
 }
 
 export interface ColdStartRouterFeatureNormalizersV1 {
@@ -245,10 +249,35 @@ export interface ColdStartRouterPolicyDistributionV1 {
   stopAction: ColdStartRouterPolicyActionScoreV1;
 }
 
+export type ColdStartRouterDecisionStopReasonV1 =
+  | "stop_local"
+  | "activation_threshold_not_met"
+  | "abstention_threshold_met"
+  | "expected_utility_below_threshold"
+  | "no_candidates";
+
+export interface ColdStartRouterDecisionSummaryV1 {
+  activated: boolean;
+  confidence: number;
+  activationProbability: number;
+  abstentionProbability: number;
+  predictedUtility: number;
+  predictedRegretOfAbstaining: number;
+  stopLocalProbability: number;
+  selectedContextCount: number;
+  selectedTokenBudget: number | null;
+  activationThreshold: number;
+  abstentionThreshold: number;
+  expectedUtilityThreshold: number;
+  stopLocalThreshold: number;
+  stopReason: ColdStartRouterDecisionStopReasonV1 | null;
+}
+
 export interface ColdStartRouterScoringResultV1 {
   rankedCandidates: ColdStartRouterRankedCandidateV1[];
   stopPrediction: ColdStartRouterStopPredictionV1;
   policyDistribution: ColdStartRouterPolicyDistributionV1;
+  decisionSummary: ColdStartRouterDecisionSummaryV1;
 }
 
 export type ColdStartRouterWarmStartModeV1 = "strict" | "best_effort";
@@ -733,6 +762,63 @@ function buildPolicyDistribution(params: {
   };
 }
 
+function buildDecisionSummary(params: {
+  model: ColdStartRouterModelV1;
+  row: RouteDecisionRowV1;
+  rankedCandidates: ColdStartRouterRankedCandidateV1[];
+  stopPrediction: ColdStartRouterStopPredictionV1;
+  policyDistribution: ColdStartRouterPolicyDistributionV1;
+}): ColdStartRouterDecisionSummaryV1 {
+  const rowBudgetContext = ((params.row as unknown as { budget_context?: { query_budget_chars?: number | null; max_context_chars?: number | null } }).budget_context) ?? null;
+  const bestTraverse = params.rankedCandidates[0] ?? null;
+  const activationProbability = bestTraverse
+    ? params.policyDistribution.actions.find((entry) => (
+      entry.action.type === "traverse" && entry.action.candidate?.candidate_id === bestTraverse.candidate.candidate_id
+    ))?.probability ?? 0
+    : 0;
+  const abstentionProbability = params.policyDistribution.stopAction.probability;
+  const stopLabelProbabilities = softmaxScores(
+    params.model.calibration.labelOrder.map((label) => ({ label, score: params.stopPrediction.scores[label] })),
+  );
+  const stopLocalProbability = stopLabelProbabilities.find((entry) => entry.label === "STOP_LOCAL")?.probability ?? 0;
+  const predictedUtility = activationProbability - abstentionProbability;
+  const predictedRegretOfAbstaining = Math.max(0, predictedUtility);
+  const thresholds = params.model.calibration;
+
+  let activated = false;
+  let stopReason: ColdStartRouterDecisionStopReasonV1 | null = null;
+  if (bestTraverse === null) {
+    stopReason = "no_candidates";
+  } else if (stopLocalProbability >= thresholds.stopLocalThreshold && abstentionProbability >= activationProbability) {
+    stopReason = "stop_local";
+  } else if (abstentionProbability >= thresholds.abstentionThreshold && abstentionProbability >= activationProbability) {
+    stopReason = "abstention_threshold_met";
+  } else if (activationProbability < thresholds.activationThreshold) {
+    stopReason = "activation_threshold_not_met";
+  } else if (predictedUtility < thresholds.expectedUtilityThreshold) {
+    stopReason = "expected_utility_below_threshold";
+  } else {
+    activated = true;
+  }
+
+  return {
+    activated,
+    confidence: activated ? activationProbability : abstentionProbability,
+    activationProbability,
+    abstentionProbability,
+    predictedUtility,
+    predictedRegretOfAbstaining,
+    stopLocalProbability,
+    selectedContextCount: activated && bestTraverse ? 1 : 0,
+    selectedTokenBudget: rowBudgetContext?.query_budget_chars ?? rowBudgetContext?.max_context_chars ?? null,
+    activationThreshold: thresholds.activationThreshold,
+    abstentionThreshold: thresholds.abstentionThreshold,
+    expectedUtilityThreshold: thresholds.expectedUtilityThreshold,
+    stopLocalThreshold: thresholds.stopLocalThreshold,
+    stopReason,
+  };
+}
+
 function validateTrainingInputs(params: ColdStartRouterTrainingInputV1): void {
   if (params.artifactId.trim().length === 0) {
     throw new Error("artifactId is required");
@@ -858,6 +944,10 @@ function buildCalibration(): ColdStartRouterCalibrationV1 {
     smoothing: 1,
     supportDampening: 2,
     labelOrder: [...DEFAULT_STOP_LABEL_ORDER],
+    activationThreshold: 0.5,
+    abstentionThreshold: 0.55,
+    expectedUtilityThreshold: 0,
+    stopLocalThreshold: 0.5,
   };
 }
 
@@ -1630,11 +1720,19 @@ export function scoreColdStartRouteRowV1(params: {
       contributions: scoreBreakdownToContributions(stopAction.scoreBreakdown),
     },
   };
+  const decisionSummary = buildDecisionSummary({
+    model: params.model,
+    row: params.row,
+    rankedCandidates,
+    stopPrediction,
+    policyDistribution,
+  });
 
   return {
     rankedCandidates,
     stopPrediction,
     policyDistribution,
+    decisionSummary,
   };
 }
 

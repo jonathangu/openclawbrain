@@ -341,12 +341,7 @@ export function selectColdStartRouteCandidateIdsFromArtifactBundleV1(params: {
 }): ColdStartRouterSelectionResultV1 {
   const scoring = scoreColdStartRouteRowFromArtifactBundleV1(params);
   const bestTraverse = scoring.rankedCandidates[0] ?? null;
-  const bestTraverseProbability = bestTraverse
-    ? scoring.policyDistribution.actions.find((entry) => (
-      entry.action.type === "traverse" && entry.action.targetNodeId === bestTraverse.candidate.candidate_id
-    ))?.probability ?? 0
-    : 0;
-  const stopped = bestTraverse === null || scoring.policyDistribution.stopAction.probability >= bestTraverseProbability;
+  const stopped = !scoring.decisionSummary.activated;
   return {
     ...scoring,
     selectedCandidateIds: stopped || bestTraverse === null ? [] : [bestTraverse.candidate.candidate_id],
