@@ -113,6 +113,7 @@ describe("policy supervision rows", () => {
     expect(validatePolicySupervisionRowV1(row)).toMatchObject({ valid: true });
     expect(row).toMatchObject({
       row_type: "activate",
+      focus_lane: "must_fire_30",
       row_weight: 1.8,
       confidence_target: 0.9,
       hard_negative_class: null,
@@ -130,6 +131,7 @@ describe("policy supervision rows", () => {
       withHardNegativeClass: 0,
     });
     expect(summary.byRowType.activate).toBe(1);
+    expect(summary.byFocusLane.must_fire_30).toBe(1);
   });
 
   it("projects an abstain row with tie-with-cost hard negative pressure", () => {
@@ -147,6 +149,7 @@ describe("policy supervision rows", () => {
     expect(validatePolicySupervisionRowV1(row)).toMatchObject({ valid: true });
     expect(row).toMatchObject({
       row_type: "abstain",
+      focus_lane: "must_not_fire_100",
       row_weight: 2,
       confidence_target: 0.7,
       hard_negative_class: "tie_with_cost",
@@ -173,6 +176,7 @@ describe("policy supervision rows", () => {
     expect(validatePolicySupervisionRowV1(row)).toMatchObject({ valid: true });
     expect(row).toMatchObject({
       row_type: "abstain",
+      focus_lane: "must_not_fire_100",
       row_weight: 1.5,
       hard_negative_class: "wrapper_heavy",
       oracle_best_mode: "tie",

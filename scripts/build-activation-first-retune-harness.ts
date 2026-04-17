@@ -15,6 +15,7 @@ const LEARNED_ROUTE_TRANCHE_MANIFEST_CONTRACT = "learned_route_eval_tranche_mani
 const ACTIVATION_FIRST_RETUNE_HARNESS_CONTRACT = "activation_first_retune_harness.v1" as const;
 const LEARNED_ROUTE_LABEL_SCHEMA = "learned-route-labels.v1" as const;
 const DEFAULT_TASK_ID = "T-20260415-257";
+const DEFAULT_FELT_RESUME_MANIFEST = path.join(workspaceRoot, "task-artifacts", DEFAULT_TASK_ID, "felt-resume-25.manifest.json");
 const DEFAULT_MUST_FIRE_MANIFEST = path.join(workspaceRoot, "task-artifacts", DEFAULT_TASK_ID, "must-fire-30.manifest.json");
 const DEFAULT_MUST_NOT_FIRE_MANIFEST = path.join(workspaceRoot, "task-artifacts", DEFAULT_TASK_ID, "must-not-fire-100.manifest.json");
 const DEFAULT_HARD_NEGATIVE_SPEC = path.join(workspaceRoot, "task-artifacts", DEFAULT_TASK_ID, "hard-negative-mining-spec.v1.json");
@@ -115,6 +116,7 @@ interface LabelRecord {
 
 interface ParsedArgs {
   taskId: string;
+  feltResumeManifest: string;
   mustFireManifest: string;
   mustNotFireManifest: string;
   hardNegativeSpec: string;
@@ -130,6 +132,7 @@ function usage(): void {
       "",
       "Options:",
       `  --task-id <id>                 Defaults to ${DEFAULT_TASK_ID}`,
+      `  --felt-resume-manifest <path> Defaults to ${DEFAULT_FELT_RESUME_MANIFEST}`,
       `  --must-fire-manifest <path>   Defaults to ${DEFAULT_MUST_FIRE_MANIFEST}`,
       `  --must-not-fire-manifest <path> Defaults to ${DEFAULT_MUST_NOT_FIRE_MANIFEST}`,
       `  --hard-negative-spec <path>   Defaults to ${DEFAULT_HARD_NEGATIVE_SPEC}`,
@@ -139,6 +142,7 @@ function usage(): void {
       "  --help                        Show this help",
       "",
       "Outputs:",
+      "  <output-dir>/felt-resume-eval.manifest.json",
       "  <output-dir>/must-fire-anchor-eval.manifest.json",
       "  <output-dir>/must-not-fire-anchor-eval.manifest.json",
       "  <output-dir>/activation-first-retune.labels-template.jsonl",
@@ -159,6 +163,7 @@ function normalizeCliString(value: string | undefined): string | null {
 function parseArgs(argv: string[]): ParsedArgs {
   const parsed: ParsedArgs = {
     taskId: DEFAULT_TASK_ID,
+    feltResumeManifest: DEFAULT_FELT_RESUME_MANIFEST,
     mustFireManifest: DEFAULT_MUST_FIRE_MANIFEST,
     mustNotFireManifest: DEFAULT_MUST_NOT_FIRE_MANIFEST,
     hardNegativeSpec: DEFAULT_HARD_NEGATIVE_SPEC,
@@ -171,6 +176,11 @@ function parseArgs(argv: string[]): ParsedArgs {
     switch (arg) {
       case "--task-id":
         parsed.taskId = normalizeCliString(argv[index + 1]) ?? parsed.taskId;
+        index += 1;
+        break;
+      case "--felt-resume-manifest":
+      case "--felt-manifest":
+        parsed.feltResumeManifest = path.resolve(argv[index + 1] ?? "");
         index += 1;
         break;
       case "--must-fire-manifest":
@@ -311,6 +321,49 @@ function mustFireDefaults(anchor: TrancheAnchor, trancheId: string, generatedAt:
   };
 }
 
+function feltResumeDefaults(anchor: TrancheAnchor, trancheId: string, generatedAt: string): LabelRecord {
+  const bucket = anchor.bucket ?? null;
+  const operationalRecovery = bucket !== null && (
+    bucket.includes("boot")
+    || bucket.includes("gateway")
+    || bucket.includes("handoff")
+    || bucket.includes("resume")
+    || bucket.includes("narrow")
+    || bucket.includes("continue")
+  );
+  const costSensitive: CostSensitive = operationalRecovery ? "medium" : "low";
+  return {
+    schema_version: LEARNED_ROUTE_LABEL_SCHEMA,
+    status: "prefilled_from_tranche_manifest",
+    trace_id: anchor.traceId,
+    source_path: anchor.sourcePath,
+    bucket,
+    annotator: "activation-first-retune-harness",
+    labeled_at: generatedAt,
+    labels: {
+      memory_needed: "yes",
+      wrapper_noise: "no",
+      continuation_only: "no",
+      operational_recovery: operationalRecovery ? "yes" : "no",
+      human_semantic_task: "yes",
+      oracle_best_mode: "learned_route",
+      cost_sensitive: costSensitive,
+      focus_lane: trancheId,
+      hard_negative_class: null,
+    },
+    notes: {
+      memory_needed_reason: anchor.whyIncluded ?? "Anchor selected because correct continuation depends on recent task state that is not fully restated in-turn.",
+      oracle_reason: "This felt-resume anchor is prefilled toward learned_route because retrieval is expected to recover the right task state and produce a materially better continuation.",
+      unclear_reason: null,
+    },
+    prefill: {
+      seed_set: trancheId,
+      rationale: anchor.whyIncluded ?? "Felt-resume anchor from tranche manifest.",
+      projection_source: "activation-first-retune-harness",
+    },
+  };
+}
+
 function mustNotFireDefaults(
   anchor: TrancheAnchor,
   trancheId: string,
@@ -364,11 +417,13 @@ function mustNotFireDefaults(
 function buildReadme(params: {
   taskId: string;
   generatedAt: string;
+  feltResume: TrancheManifest;
   mustFire: TrancheManifest;
   mustNotFire: TrancheManifest;
   guardrail: GuardrailManifest;
   hardNegativeSpec: HardNegativeSpec;
   outputs: {
+    feltResumeManifestPath: string;
     mustFireManifestPath: string;
     mustNotFireManifestPath: string;
     labelsPath: string;
@@ -384,22 +439,25 @@ function buildReadme(params: {
     `- mission test: \`${missionTestCommand}\``,
     "",
     "## Generated inputs",
+    `- felt-resume optimize eval manifest: \`${portableRelativePath(path.dirname(params.outputs.harnessJsonPath), params.outputs.feltResumeManifestPath)}\``,
     `- must-fire anchor eval manifest: \`${portableRelativePath(path.dirname(params.outputs.harnessJsonPath), params.outputs.mustFireManifestPath)}\``,
     `- must-not-fire anchor eval manifest: \`${portableRelativePath(path.dirname(params.outputs.harnessJsonPath), params.outputs.mustNotFireManifestPath)}\``,
     `- prefilled labels template: \`${portableRelativePath(path.dirname(params.outputs.harnessJsonPath), params.outputs.labelsPath)}\``,
     `- harness descriptor: \`${portableRelativePath(path.dirname(params.outputs.harnessJsonPath), params.outputs.harnessJsonPath)}\``,
     "",
     "## Truth boundaries",
+    `- felt-resume optimize lane available now: ${params.feltResume.anchors.length}/${params.feltResume.targetTraceCount ?? params.feltResume.anchors.length}`,
     `- must-fire anchors available now: ${params.mustFire.anchors.length}/${params.mustFire.targetTraceCount ?? params.mustFire.anchors.length}`,
     `- must-not-fire anchors available now: ${params.mustNotFire.anchors.length}/${params.mustNotFire.targetTraceCount ?? params.mustNotFire.anchors.length}`,
     `- guardrail lane: ${params.guardrail.setId ?? params.guardrail.manifestId ?? "semantic-rich-live"} (${params.guardrail.traceCount ?? params.guardrail.expectedTraceCount ?? "unknown"} traces)`,
     ...(params.guardrail.realTraceCoverage?.summary ? [`- guardrail truth boundary: ${params.guardrail.realTraceCoverage.summary}`] : []),
     "",
     "## Suggested execution order",
-    `1. Review and tighten \`${path.basename(params.outputs.labelsPath)}\` for the current anchor tranche defaults.`,
-    `2. Run comparative replay on \`${path.basename(params.outputs.mustFireManifestPath)}\` and \`${path.basename(params.outputs.mustNotFireManifestPath)}\`.`,
-    "3. Keep the semantic-rich broad-live lane as a guardrail lane, not the optimize lane.",
-    `4. Re-run \`${missionTestCommand}\` after each candidate retune.`,
+    `1. Review and tighten \`${path.basename(params.outputs.labelsPath)}\` for the felt-resume and restraint tranche defaults.`,
+    `2. Run comparative replay on \`${path.basename(params.outputs.feltResumeManifestPath)}\` and \`${path.basename(params.outputs.mustNotFireManifestPath)}\`.`,
+    `3. Keep \`${path.basename(params.outputs.mustFireManifestPath)}\` as a secondary memory-needed audit lane, not the headline optimize lane.`,
+    "4. Keep the semantic-rich broad-live lane as a guardrail lane, not the optimize lane.",
+    `5. Re-run \`${missionTestCommand}\` after each candidate retune.`,
     "",
   ].join("\n");
 }
@@ -408,18 +466,26 @@ function main(): void {
   const args = parseArgs(process.argv.slice(2));
   mkdirSync(args.outputDir, { recursive: true });
 
+  const feltResume = assertTrancheManifest(readJson<TrancheManifest>(args.feltResumeManifest), args.feltResumeManifest);
   const mustFire = assertTrancheManifest(readJson<TrancheManifest>(args.mustFireManifest), args.mustFireManifest);
   const mustNotFire = assertTrancheManifest(readJson<TrancheManifest>(args.mustNotFireManifest), args.mustNotFireManifest);
   const hardNegativeSpec = readJson<HardNegativeSpec>(args.hardNegativeSpec);
   const guardrailManifest = readJson<GuardrailManifest>(args.guardrailManifest);
   const bucketToHardNegativeClass = hardNegativeSpec.bucketToHardNegativeClass ?? {};
 
+  const feltResumeEvalManifestPath = path.join(args.outputDir, "felt-resume-eval.manifest.json");
   const mustFireEvalManifestPath = path.join(args.outputDir, "must-fire-anchor-eval.manifest.json");
   const mustNotFireEvalManifestPath = path.join(args.outputDir, "must-not-fire-anchor-eval.manifest.json");
   const labelsPath = path.join(args.outputDir, "activation-first-retune.labels-template.jsonl");
   const harnessJsonPath = path.join(args.outputDir, "activation-first-retune-harness.json");
   const readmePath = path.join(args.outputDir, "README.md");
 
+  const feltResumeEvalManifest = buildFrozenManifest({
+    tranche: feltResume,
+    manifestId: `${feltResume.trancheId}-eval`,
+    outputDir: args.outputDir,
+    generatedAt: args.generatedAt,
+  });
   const mustFireEvalManifest = buildFrozenManifest({
     tranche: mustFire,
     manifestId: `${mustFire.trancheId}-anchor-eval`,
@@ -433,10 +499,12 @@ function main(): void {
     generatedAt: args.generatedAt,
   });
 
+  writeJson(feltResumeEvalManifestPath, feltResumeEvalManifest);
   writeJson(mustFireEvalManifestPath, mustFireEvalManifest);
   writeJson(mustNotFireEvalManifestPath, mustNotFireEvalManifest);
 
   const labelRecords: LabelRecord[] = [
+    ...feltResume.anchors.map((anchor) => feltResumeDefaults(anchor, feltResume.trancheId, args.generatedAt)),
     ...mustFire.anchors.map((anchor) => mustFireDefaults(anchor, mustFire.trancheId, args.generatedAt)),
     ...mustNotFire.anchors.map((anchor) => mustNotFireDefaults(anchor, mustNotFire.trancheId, bucketToHardNegativeClass, args.generatedAt)),
   ];
@@ -448,6 +516,17 @@ function main(): void {
     generatedAt: args.generatedAt,
     missionTestCommand: hardNegativeSpec.missionTestCommand ?? "npm run test:learned-route-mission",
     labelsTemplatePath: portableRelativePath(args.outputDir, labelsPath),
+    primaryOptimizeLane: "felt_resume_25",
+    feltResume: {
+      trancheId: feltResume.trancheId,
+      purpose: feltResume.purpose ?? null,
+      anchorTraceCount: feltResume.anchors.length,
+      targetTraceCount: feltResume.targetTraceCount ?? null,
+      manifestPath: portableRelativePath(args.outputDir, feltResumeEvalManifestPath),
+      sourceManifestPath: portableRelativePath(args.outputDir, args.feltResumeManifest),
+      comparativeEvalCommand: `npx tsx scripts/eval/run-comparative-eval.ts --manifest ${portableRelativePath(repoRoot, feltResumeEvalManifestPath)}`,
+      replayLaneCommand: `npx tsx scripts/build-recorded-session-replay-lane.ts --trace-manifest ${portableRelativePath(repoRoot, feltResumeEvalManifestPath)}`,
+    },
     mustFire: {
       trancheId: mustFire.trancheId,
       purpose: mustFire.purpose ?? null,
@@ -486,11 +565,13 @@ function main(): void {
   writeFileSync(readmePath, buildReadme({
     taskId: args.taskId,
     generatedAt: args.generatedAt,
+    feltResume,
     mustFire,
     mustNotFire,
     guardrail: guardrailManifest,
     hardNegativeSpec,
     outputs: {
+      feltResumeManifestPath: feltResumeEvalManifestPath,
       mustFireManifestPath: mustFireEvalManifestPath,
       mustNotFireManifestPath: mustNotFireEvalManifestPath,
       labelsPath,
@@ -501,6 +582,7 @@ function main(): void {
   process.stdout.write(
     [
       `Activation-first retune harness: ${args.outputDir}`,
+      `feltResumeManifest: ${feltResumeEvalManifestPath}`,
       `mustFireManifest: ${mustFireEvalManifestPath}`,
       `mustNotFireManifest: ${mustNotFireEvalManifestPath}`,
       `labelsTemplate: ${labelsPath}`,

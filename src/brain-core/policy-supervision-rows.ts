@@ -65,6 +65,7 @@ export const PolicySupervisionRowSchemaV1 = Type.Object(
     episode_id: Type.Union([Type.String({ minLength: 1 }), Type.Null()]),
     decision_point_id: Type.Union([Type.String({ minLength: 1 }), Type.Null()]),
     row_type: Type.Union(POLICY_SUPERVISION_ROW_TYPES.map((v) => Type.Literal(v))),
+    focus_lane: Type.Union([Type.String({ minLength: 1 }), Type.Null()]),
     trace_slice: PolicySupervisionTraceSliceSchemaV1,
     row_weight: Type.Number({ minimum: 0 }),
     confidence_target: Type.Union([Type.Number({ minimum: 0, maximum: 1 }), Type.Null()]),
@@ -275,6 +276,7 @@ export function buildPolicySupervisionRowV1(params: {
     episode_id: routeRow.episode_id,
     decision_point_id: null,
     row_type: rowType,
+    focus_lane: normalizeString(traceLabel.focusLane),
     trace_slice: traceSlice,
     row_weight: rowWeight,
     confidence_target: confidenceTarget,
@@ -291,6 +293,7 @@ export interface PolicySupervisionSummaryV1 {
   totalRows: number;
   byRowType: Record<PolicySupervisionRowType, number>;
   byProjectionStatus: Record<PolicySupervisionProjectionStatus, number>;
+  byFocusLane: Record<string, number>;
   traceProjectedCount: number;
   withNetUtilityDelta: number;
   withHardNegativeClass: number;
@@ -309,12 +312,16 @@ export function summarizePolicySupervisionRowsV1(rows: PolicySupervisionRowV1[])
     decision_point_reviewed: 0,
     owner_labeled: 0,
   };
+  const byFocusLane: Record<string, number> = {};
   let withNetUtilityDelta = 0;
   let withHardNegativeClass = 0;
 
   for (const row of rows) {
     byRowType[row.row_type] += 1;
     byProjectionStatus[row.projection_status] += 1;
+    if (row.focus_lane) {
+      byFocusLane[row.focus_lane] = (byFocusLane[row.focus_lane] ?? 0) + 1;
+    }
     if (row.net_utility_delta !== null) {
       withNetUtilityDelta += 1;
     }
@@ -327,6 +334,7 @@ export function summarizePolicySupervisionRowsV1(rows: PolicySupervisionRowV1[])
     totalRows: rows.length,
     byRowType,
     byProjectionStatus,
+    byFocusLane,
     traceProjectedCount: byProjectionStatus.trace_projected,
     withNetUtilityDelta,
     withHardNegativeClass,
