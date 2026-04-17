@@ -482,6 +482,36 @@ describe("recorded session replay proof lane", () => {
     expect(overrideLearnedRoute?.turns.every((turn) => turn.activationSource?.startsWith("learned_route_artifact:candidate_override:"))).toBe(true);
   });
 
+  it("records a negative served-live-policy spike result explicitly when learned-route usage still stays false", () => {
+    const trace = createComparativeTrace();
+    const spikeRoot = makeTempDir("replay-proof-lane-spike-");
+    const candidateArtifactDir = makeTempDir("replay-proof-lane-spike-candidate-");
+    const candidateRouterIdentity = "router:replay-proof-lane-spike-stop";
+
+    trainReplayStopArtifact(candidateArtifactDir, candidateRouterIdentity);
+
+    writeRecordedSessionReplayProofLane({
+      artifactRoot: spikeRoot,
+      traces: [{ trace: structuredClone(trace) }],
+      learnedRouteCandidateArtifact: {
+        artifactDir: candidateArtifactDir,
+        mode: "served_live_policy_spike",
+      },
+    });
+
+    const spikeBundle = loadRecordedSessionReplayProofBundle(path.join(spikeRoot, trace.traceId));
+    const spikeLearnedRoute = spikeBundle.bundle.modes.find((mode) => mode.mode === "learned_route");
+
+    expect(spikeLearnedRoute).toBeDefined();
+    expect(spikeLearnedRoute?.summary.usedLearnedRouteTurnCount).toBe(0);
+    expect(spikeLearnedRoute?.turns.every((turn) => turn.usedLearnedRouteFn === false)).toBe(true);
+    expect(spikeLearnedRoute?.turns.every((turn) => turn.activationTaken === true)).toBe(true);
+    expect(spikeLearnedRoute?.turns.every((turn) => turn.routerIdentity === candidateRouterIdentity)).toBe(true);
+    expect(spikeLearnedRoute?.turns.map((turn) => turn.selectedContextIds)).toEqual([[], []]);
+    expect(spikeLearnedRoute?.turns.every((turn) => turn.activationSource?.startsWith("learned_route_artifact:candidate_override_live_policy:"))).toBe(true);
+    expect(spikeLearnedRoute?.turns.every((turn) => turn.activationReason?.includes("usedLearnedRouteFn=false"))).toBe(true);
+  });
+
   it("keeps the core _lane artifacts reproducible across different output roots", () => {
     const firstRoot = makeTempDir("replay-proof-lane-first-");
     const secondRoot = makeTempDir("replay-proof-lane-second-");

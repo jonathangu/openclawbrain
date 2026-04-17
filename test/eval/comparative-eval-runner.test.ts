@@ -543,6 +543,12 @@ describe("comparative eval runner", () => {
     const learnedRouteMode = proofBundle.bundle.modes.find((mode) => mode.mode === "learned_route");
 
     expect(descriptor.report.notes).toContain(`learned_route replay override artifact: ${candidateArtifactDir}`);
+    expect(descriptor.report.notes).toContain(
+      "candidate override runs are non-authoritative for served learned-route hotpath truth because replay override keeps usedLearnedRouteFn=false by construction",
+    );
+    expect(descriptor.report.assumptions).toContain(
+      "candidate override replay does not bind the candidate as the served learned-route router, so authoritative broad-live verdicts still require a served-pack bridge",
+    );
     expect(learnedRouteMode).toBeDefined();
     expect(learnedRouteMode?.summary.usedLearnedRouteTurnCount).toBe(0);
     expect(learnedRouteMode?.turns.every((turn) => turn.usedLearnedRouteFn === false)).toBe(true);

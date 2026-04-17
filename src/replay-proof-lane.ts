@@ -90,6 +90,7 @@ export interface RecordedSessionReplayProofLaneTraceInputV1 {
 
 export interface LearnedRouteCandidateArtifactOverrideV1 {
   artifactDir: string;
+  mode?: "selection_override" | "served_live_policy_spike";
 }
 
 export interface WriteRecordedSessionReplayProofLaneInputV1 {
@@ -780,7 +781,11 @@ function createLearnedRouteSelectionOverride(
   const artifactBundle = loadColdStartRouterArtifactBundleV1(input.artifactDir);
   const artifactTruth = summarizeColdStartRouterArtifactBundleRuntimeTruthV1(artifactBundle);
   const artifactDatasetId = `recorded_session_replay_candidate_override:${artifactTruth.artifactId}`;
-  const evidenceSource = `candidate_override:${artifactTruth.artifactId}@${artifactTruth.artifactVersion}`;
+  const overrideMode = input.mode ?? "selection_override";
+  const authoritativeUsedLearnedRouteFn = overrideMode === "served_live_policy_spike";
+  const evidenceSource = authoritativeUsedLearnedRouteFn
+    ? `candidate_override_live_policy:${artifactTruth.artifactId}@${artifactTruth.artifactVersion}`
+    : `candidate_override:${artifactTruth.artifactId}@${artifactTruth.artifactVersion}`;
 
   return {
     select(selectionInput) {
@@ -793,6 +798,7 @@ function createLearnedRouteSelectionOverride(
           selectedBlockIds: [],
           routerIdentity: artifactTruth.routerIdentity,
           evidenceSource,
+          authoritativeUsedLearnedRouteFn,
         };
       }
       const selection = selectColdStartRouteCandidateIdsFromArtifactBundleV1({
@@ -803,6 +809,7 @@ function createLearnedRouteSelectionOverride(
         selectedBlockIds: selection.selectedCandidateIds,
         routerIdentity: artifactTruth.routerIdentity,
         evidenceSource,
+        authoritativeUsedLearnedRouteFn,
       };
     },
   };

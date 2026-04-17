@@ -728,15 +728,27 @@ export function replayColdStartRouterArtifactV1(params: {
     : skippedRowCount > 0 || evaluatedRowCount === 0
       ? "warn"
       : "pass";
-  const activationMatchCount = rowResults.filter((rowResult) => (
+  const routeActivationMatchCount = rowResults.filter((rowResult) => (
     rowResult.expectedActivated !== null
       && rowResult.actualActivated !== null
       && rowResult.expectedActivated === rowResult.actualActivated
   )).length;
-  const activationComparableCount = rowResults.filter((rowResult) => (
+  const routeActivationComparableCount = rowResults.filter((rowResult) => (
     rowResult.expectedActivated !== null
       && rowResult.actualActivated !== null
   )).length;
+  const policyActivationMatchCount = policyExpectationResults.filter((result) => (
+    result.expectedActivated !== null && result.actualActivated === result.expectedActivated
+  )).length;
+  const policyActivationComparableCount = policyExpectationResults.filter((result) => result.expectedActivated !== null).length;
+  const policyAbstainMatchCount = policyExpectationResults.filter((result) => (
+    result.expectedAbstained !== null && result.actualAbstained === result.expectedAbstained
+  )).length;
+  const policyAbstainComparableCount = policyExpectationResults.filter((result) => result.expectedAbstained !== null).length;
+  const policyStopLocalMatchCount = policyExpectationResults.filter((result) => (
+    result.expectedStopLocal !== null && result.actualStopLocal === result.expectedStopLocal
+  )).length;
+  const policyStopLocalComparableCount = policyExpectationResults.filter((result) => result.expectedStopLocal !== null).length;
   const laneSummaryText = laneSummaries
     .filter((laneSummary) => REPLAY_GATE_PRIORITY_LANES.includes(laneSummary.lane as (typeof REPLAY_GATE_PRIORITY_LANES)[number]))
     .map((laneSummary) => `${laneSummary.lane} ${laneSummary.passedPolicyExpectationCount}/${laneSummary.policyExpectationCount}`)
@@ -744,13 +756,20 @@ export function replayColdStartRouterArtifactV1(params: {
   const policySummary = policyExpectationCount > 0
     ? `; policy expectations ${passedPolicyExpectationCount}/${policyExpectationCount} passed${laneSummaryText.length > 0 ? ` (${laneSummaryText})` : ""}`
     : "";
+  const activationSummary = policyExpectationCount > 0
+    ? [
+      `policy activation matches ${policyActivationMatchCount}/${policyActivationComparableCount}`,
+      policyAbstainComparableCount > 0 ? `abstain matches ${policyAbstainMatchCount}/${policyAbstainComparableCount}` : null,
+      policyStopLocalComparableCount > 0 ? `stop_local matches ${policyStopLocalMatchCount}/${policyStopLocalComparableCount}` : null,
+    ].filter((value): value is string => value !== null).join(", ")
+    : `activation matches ${routeActivationMatchCount}/${routeActivationComparableCount}`;
 
   return {
     artifactDir: params.artifactDir,
     manifestSummary: loaded.artifact.manifestSummary,
     passed,
     verdict,
-    summary: `${passedRowCount}/${evaluatedRowCount} replay rows passed${skippedRowCount > 0 ? `, ${skippedRowCount} skipped` : ""}; activation matches ${activationMatchCount}/${activationComparableCount}${policySummary}`,
+    summary: `${passedRowCount}/${evaluatedRowCount} replay rows passed${skippedRowCount > 0 ? `, ${skippedRowCount} skipped` : ""}; ${activationSummary}${policySummary}`,
     evaluatedRowCount,
     passedRowCount,
     failedRowCount,

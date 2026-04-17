@@ -25,7 +25,10 @@ import {
   type PolicySupervisionRowV1,
 } from "../src/brain-core/policy-supervision-rows.ts";
 import type { RouteDecisionRowV1 as PolicyProjectionRouteRowV1 } from "../src/brain-core/route-rows.ts";
-import { runComparativeEval } from "../src/eval/comparative-eval-runner.ts";
+import {
+  type ComparativeEvalScorecardV1,
+  runComparativeEval,
+} from "../src/eval/comparative-eval-runner.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -218,6 +221,18 @@ interface FeltOverlapSummaryV1 {
   worseCount: number;
 }
 
+export interface FeltOptimizeComparativeSummaryV1 {
+  available: boolean;
+  comparableTraceCount: number;
+  betterCount: number;
+  tiedCount: number;
+  worseCount: number;
+  regressions: number;
+  requiredContextRecallSummary: string | null;
+  outputDir: string | null;
+  notes: string[];
+}
+
 interface BroadLiveTraceScorecardRowV1 {
   traceId: string;
   candidateRelationVsBaseline: "better" | "tied" | "worse" | null;
@@ -304,6 +319,7 @@ interface RunnerArtifactsV1 {
   registryEntriesPath: string;
   materializationPath: string;
   candidateArtifactDir: string;
+  feltOptimizeEvalDir: string;
   broadLiveEvalDir: string;
   scorecardPath: string;
   runPath: string;
@@ -312,6 +328,8 @@ interface RunnerArtifactsV1 {
 interface RunnerScorecardV1 {
   candidateArtifactDir: string;
   feltUniqueWinsTiesRegressions: FeltOverlapSummaryV1;
+  feltComparativeEval: FeltOptimizeComparativeSummaryV1;
+  feltBroadLiveOverlap: FeltOverlapSummaryV1;
   feltReplayGateExpectationPassCount: {
     passed: number;
     total: number;
@@ -1191,6 +1209,40 @@ export function deriveFinalCandidateStatusV1(
   return input.broadLiveVetoResult === "pass" ? "pass" : "reject";
 }
 
+export function summarizeFeltOptimizeScorecardV1(params: {
+  scorecard: ComparativeEvalScorecardV1;
+  outputDir?: string | null;
+  notes?: string[];
+}): FeltOptimizeComparativeSummaryV1 {
+  const explainable = params.scorecard.explainableScorecard;
+  const traceOutcome = explainable.traceOutcomeVsBaseline;
+  return {
+    available: true,
+    comparableTraceCount: traceOutcome.totalCount,
+    betterCount: traceOutcome.betterCount,
+    tiedCount: traceOutcome.tiedCount,
+    worseCount: traceOutcome.worseCount,
+    regressions: explainable.regressionVsBaseline.count,
+    requiredContextRecallSummary: explainable.requiredContextRecall.summary,
+    outputDir: params.outputDir ?? null,
+    notes: params.notes ?? [],
+  };
+}
+
+function unavailableFeltOptimizeComparativeSummary(notes: string[]): FeltOptimizeComparativeSummaryV1 {
+  return {
+    available: false,
+    comparableTraceCount: 0,
+    betterCount: 0,
+    tiedCount: 0,
+    worseCount: 0,
+    regressions: 0,
+    requiredContextRecallSummary: null,
+    outputDir: null,
+    notes,
+  };
+}
+
 function readBroadLiveArtifacts(broadLiveDir: string): {
   scorecard: BroadLiveScorecardV1 | null;
   report: BroadLiveReportV1 | null;
@@ -1245,6 +1297,45 @@ function loadStaleBroadLiveProofRead(params: {
     summaryTables,
     feltTraceIds: params.feltTraceIds,
   });
+}
+
+function runCandidateSpecificFeltOptimizeEval(params: {
+  harnessDir: string;
+  feltOptimizeOutputDir: string;
+  harness: ActivationFirstRetuneHarnessV1;
+  candidateArtifact: CandidateArtifactRunSummaryV1;
+}): FeltOptimizeComparativeSummaryV1 {
+  const manifestPath = resolveHarnessPath(params.harnessDir, params.harness.feltResume.manifestPath);
+  if (!existsSync(manifestPath)) {
+    return unavailableFeltOptimizeComparativeSummary([
+      `Felt optimize manifest is missing at ${manifestPath}; no candidate-specific felt comparative eval was run.`,
+    ]);
+  }
+
+  rmSync(params.feltOptimizeOutputDir, { recursive: true, force: true });
+  try {
+    const descriptor = runComparativeEval({
+      manifestPath,
+      outputDir: params.feltOptimizeOutputDir,
+      learnedRouteCandidateArtifactDir: params.candidateArtifact.outputDir,
+    });
+    return summarizeFeltOptimizeScorecardV1({
+      scorecard: descriptor.scorecard,
+      outputDir: portableRelativePath(repoRoot, descriptor.outputDir),
+      notes: [
+        "Candidate-specific felt optimize comparative eval executed for the just-trained gating-only candidate.",
+        `felt optimize manifest: ${portableRelativePath(repoRoot, manifestPath)}`,
+        `candidate artifact: ${params.candidateArtifact.artifactId}@${params.candidateArtifact.artifactVersion}`,
+        `candidate artifact checksum: ${params.candidateArtifact.artifactChecksum}`,
+      ],
+    });
+  } catch (error) {
+    return unavailableFeltOptimizeComparativeSummary([
+      `Candidate-specific felt optimize comparative eval failed: ${toErrorMessage(error)}`,
+      `candidate artifact: ${params.candidateArtifact.artifactId}@${params.candidateArtifact.artifactVersion}`,
+      `candidate artifact checksum: ${params.candidateArtifact.artifactChecksum}`,
+    ]);
+  }
 }
 
 function runCandidateSpecificBroadLiveProofRead(params: {
@@ -1347,8 +1438,15 @@ function broadLiveQualificationSuffix(broadLive: BroadLiveProofReadSummaryV1): s
 
 function renderBrutalScorecard(scorecard: RunnerScorecardV1): string {
   const broadLive = scorecard.broadLive;
+  const feltEval = scorecard.feltUniqueWinsTiesRegressions;
+  const overlap = scorecard.feltBroadLiveOverlap;
+  const feltSuffix = scorecard.feltComparativeEval.available
+    ? ` (full felt eval ${feltEval.availableTraceCount}/${feltEval.totalTraceCount}; broad-live overlap ${overlap.availableTraceCount}/${overlap.totalTraceCount})`
+    : feltEval.availableTraceCount > 0
+      ? ` (broad-live overlap ${feltEval.availableTraceCount}/${feltEval.totalTraceCount})`
+      : " (felt eval unavailable)";
   return [
-    `felt unique wins / ties / regressions: ${scorecard.feltUniqueWinsTiesRegressions.betterCount}/${scorecard.feltUniqueWinsTiesRegressions.tiedCount}/${scorecard.feltUniqueWinsTiesRegressions.worseCount}${scorecard.feltUniqueWinsTiesRegressions.availableTraceCount > 0 ? ` (broad-live overlap ${scorecard.feltUniqueWinsTiesRegressions.availableTraceCount}/${scorecard.feltUniqueWinsTiesRegressions.totalTraceCount})` : " (broad-live overlap unavailable)"}`,
+    `felt unique wins / ties / regressions: ${feltEval.betterCount}/${feltEval.tiedCount}/${feltEval.worseCount}${feltSuffix}`,
     `felt replay-gate expectation pass count: ${scorecard.feltReplayGateExpectationPassCount.passed}/${scorecard.feltReplayGateExpectationPassCount.total}`,
     `unnecessary activations / must-not-fire failures: ${scorecard.unnecessaryActivations.count}/${scorecard.unnecessaryActivations.total} / ${scorecard.mustNotFireFailures.count}/${scorecard.mustNotFireFailures.total}`,
     `broad-live regressions or veto result: ${broadLive.regressions}/${broadLive.comparableTraceCount}; ${broadLive.vetoResult}${broadLiveQualificationSuffix(broadLive)}`,
@@ -1405,6 +1503,7 @@ async function main(): Promise<void> {
     registryEntriesPath: path.join(args.outputDir, "registry-entries.json"),
     materializationPath: path.join(args.outputDir, "materialization-summary.json"),
     candidateArtifactDir: path.join(args.outputDir, "candidate-artifact"),
+    feltOptimizeEvalDir: path.join(args.outputDir, "felt-optimize-comparative-eval"),
     broadLiveEvalDir: path.join(args.outputDir, "broad-live-comparative-eval"),
     scorecardPath: path.join(args.outputDir, "scorecard.json"),
     runPath: path.join(args.outputDir, "run.json"),
@@ -1483,19 +1582,35 @@ async function main(): Promise<void> {
   const mustNotFireLaneSummary = findLaneSummary(mustNotFireReplay, mustNotFireLane.laneName);
   const unnecessaryActivations = summarizeUnnecessaryActivations(mustNotFireReplay);
   const mustNotFireFailures = summarizeMustNotFireFailures(mustNotFireLaneSummary);
+  const candidateArtifact = {
+    artifactId: candidate.manifest.artifact_id,
+    artifactVersion: candidate.manifest.artifact_version,
+    artifactChecksum: candidate.manifest.artifact_checksum,
+    outputDir: artifacts.candidateArtifactDir,
+    routerIdentity: candidateRouterIdentity,
+  };
+  const feltComparativeEval = runCandidateSpecificFeltOptimizeEval({
+    harnessDir: args.harnessDir,
+    feltOptimizeOutputDir: artifacts.feltOptimizeEvalDir,
+    harness,
+    candidateArtifact,
+  });
   const broadLive = loadBroadLiveProofRead({
     harnessDir: args.harnessDir,
     broadLiveOutputDir: artifacts.broadLiveEvalDir,
     harness,
-    candidateArtifact: {
-      artifactId: candidate.manifest.artifact_id,
-      artifactVersion: candidate.manifest.artifact_version,
-      artifactChecksum: candidate.manifest.artifact_checksum,
-      outputDir: artifacts.candidateArtifactDir,
-      routerIdentity: candidateRouterIdentity,
-    },
+    candidateArtifact,
     feltTraceIds: routeObjectiveInput.lanes.feltResume.traceIds,
   });
+  const feltUniqueWinsTiesRegressions: FeltOverlapSummaryV1 = feltComparativeEval.available
+    ? {
+      availableTraceCount: feltComparativeEval.comparableTraceCount,
+      totalTraceCount: routeObjectiveInput.lanes.feltResume.traceIds.length,
+      betterCount: feltComparativeEval.betterCount,
+      tiedCount: feltComparativeEval.tiedCount,
+      worseCount: feltComparativeEval.worseCount,
+    }
+    : broadLive.feltOverlap;
 
   const finalCandidateStatus = deriveFinalCandidateStatusV1({
     feltPassed: feltReplay.passed && feltLaneSummary.failedPolicyExpectationCount === 0,
@@ -1506,7 +1621,9 @@ async function main(): Promise<void> {
 
   const scorecard: RunnerScorecardV1 = {
     candidateArtifactDir: portableRelativePath(repoRoot, artifacts.candidateArtifactDir),
-    feltUniqueWinsTiesRegressions: broadLive.feltOverlap,
+    feltUniqueWinsTiesRegressions,
+    feltComparativeEval,
+    feltBroadLiveOverlap: broadLive.feltOverlap,
     feltReplayGateExpectationPassCount: {
       passed: feltLaneSummary.passedPolicyExpectationCount,
       total: feltLaneSummary.policyExpectationCount,
@@ -1536,6 +1653,7 @@ async function main(): Promise<void> {
     },
     training: candidate.model.training,
     feltReplay,
+    feltComparativeEvaluation: feltComparativeEval,
     mustNotFireReplay,
     broadLiveEvaluation: {
       outputDir: artifacts.broadLiveEvalDir,

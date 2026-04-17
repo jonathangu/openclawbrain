@@ -1740,7 +1740,10 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
     `mode order is ${RECORDED_SESSION_REPLAY_PROOF_LANE_MODE_ORDER.join(", ")}`,
     "the comparative runner delegates replay execution to writeRecordedSessionReplayProofLane so each trace still runs through the real replay/runtime path",
     ...(input.learnedRouteCandidateArtifactDir
-      ? [`learned_route replay override artifact: ${path.resolve(input.learnedRouteCandidateArtifactDir)}`]
+      ? [
+          `learned_route replay override artifact: ${path.resolve(input.learnedRouteCandidateArtifactDir)}`,
+          "candidate override runs are non-authoritative for served learned-route hotpath truth because replay override keeps usedLearnedRouteFn=false by construction",
+        ]
       : []),
     ...manifestLoad.notes,
   ];
@@ -1751,7 +1754,10 @@ export function runComparativeEval(input: RunComparativeEvalInput = {}): Compara
     "scorecard prompt-cost metrics are cheap deterministic proxies derived from selected context chars",
     `${policyThresholds.candidateMode} is the candidate mode, ${policyThresholds.baselineMode} is the baseline mode, and ${policyThresholds.floorMode} is the floor anchor for the explicit comparative policy`,
     ...(input.learnedRouteCandidateArtifactDir
-      ? ["when provided, learned_route replay uses the supplied candidate artifact instead of replay-trained route_fn state"]
+      ? [
+          "when provided, learned_route replay uses the supplied candidate artifact instead of replay-trained route_fn state",
+          "candidate override replay does not bind the candidate as the served learned-route router, so authoritative broad-live verdicts still require a served-pack bridge",
+        ]
       : []),
     "this scaffold does not finalize the frozen trace set or widen proof-bundle generation scope",
   ];

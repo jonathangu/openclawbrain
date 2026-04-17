@@ -438,6 +438,8 @@ describe("cold-start router replay gate", () => {
       passedPolicyExpectationCount: 0,
       failedPolicyExpectationCount: 1,
     });
+    expect(verdict.summary).toContain("policy activation matches 0/1");
+    expect(verdict.summary).toContain("abstain matches 0/1");
     expect(verdict.laneSummaries).toEqual([
       expect.objectContaining({
         lane: "must_not_fire_100",
@@ -552,6 +554,52 @@ describe("cold-start router replay gate", () => {
         passed: false,
       }),
     ]);
+  });
+
+  it("reports policy-led summary text even when route-row activation diagnostics disagree", () => {
+    const datasetId = "dataset_replay_gate_policy_summary";
+    const outputDir = createTempRoot("cold-start-router-replay-gate-policy-summary");
+    trainActivationFirstReplayFixture({
+      outputDir,
+      datasetId,
+    });
+
+    const replayRow = {
+      ...makeGreedyThresholdRouteRow(datasetId),
+      teacher_action: { kind: "tool" as const, tool_name: "__policy_summary_probe__" },
+    };
+    const verdict = replayColdStartRouterArtifactV1({
+      artifactDir: outputDir,
+      routeRows: [replayRow],
+      policySupervisionRows: [
+        makePolicySupervisionRowFixture({
+          rowId: "ps_replay_gate_policy_summary",
+          traceId: "trace_replay_gate_policy_summary",
+          routeRowId: replayRow.row_id,
+          rowType: "activate",
+          focusLane: "felt_resume_25",
+          rowWeight: 1.5,
+          oracleBestMode: "learned_route",
+        }),
+      ],
+    });
+
+    expect(verdict).toMatchObject({
+      passed: true,
+      verdict: "pass",
+      policyExpectationCount: 1,
+      passedPolicyExpectationCount: 1,
+      failedPolicyExpectationCount: 0,
+    });
+    expect(verdict.rowResults[0]).toMatchObject({
+      routeRowDiagnosticPassed: false,
+      policyExpectationPassCount: 1,
+      passed: true,
+      actualActivated: true,
+    });
+    expect(verdict.summary).toContain("policy activation matches 1/1");
+    expect(verdict.summary).toContain("abstain matches 1/1");
+    expect(verdict.summary).not.toContain("activation matches 0/1");
   });
 
   it("runs the smoke script end to end", () => {

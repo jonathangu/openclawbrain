@@ -5,6 +5,7 @@ import {
   coerceRestraintLanePolicyRowV1,
   deriveFinalCandidateStatusV1,
   derivePseudoRouteBucketPlanV1,
+  summarizeFeltOptimizeScorecardV1,
 } from "../scripts/run-activation-first-gating-retune.ts";
 import type { PolicySupervisionRowV1 } from "../src/brain-core/policy-supervision-rows.ts";
 
@@ -144,6 +145,136 @@ describe("activation-first gating retune runner helpers", () => {
       broadLiveAuthoritative: true,
       broadLiveVetoResult: "pass",
     })).toBe("pass");
+  });
+
+  it("summarizes full felt optimize outcomes from comparative eval scorecards", () => {
+    const feltSummary = summarizeFeltOptimizeScorecardV1({
+      scorecard: {
+        contract: "comparative_eval_scorecard.v1",
+        manifestId: "felt-resume-25-eval",
+        manifestContract: "frozen_recorded_session_eval_manifest.v1",
+        modeOrder: ["graph_prior_only", "learned_route"],
+        requestedTraceCount: 25,
+        successfulTraceCount: 25,
+        failedTraceCount: 0,
+        scorecardHash: "sha256:test",
+        pricingTable: {
+          version: null,
+          path: "pricing.json",
+          charsPerToken: 4,
+          promptPriceUsdPer1mTokens: 0,
+        },
+        scoringProxyNotes: [],
+        modes: [],
+        pairwise: [],
+        policy: {
+          status: "fail",
+          decisive: true,
+          thresholds: {
+            candidateMode: "learned_route",
+            baselineMode: "graph_prior_only",
+            floorMode: "graph_prior_only",
+            minTieOrBetterRateVsBaseline: null,
+            maxRegressionRateVsBaseline: null,
+            maxRegressionRateVsFloor: null,
+            minMeanQualityDeltaVsBaseline: null,
+          },
+          observed: {
+            comparableTraceCount: 25,
+            tieOrBetterRateVsBaseline: null,
+            regressionRateVsBaseline: null,
+            regressionRateVsFloor: null,
+            meanQualityDeltaVsBaseline: null,
+          },
+          reasons: [],
+          checks: [],
+        },
+        explainableScorecard: {
+          candidateMode: "learned_route",
+          baselineMode: "graph_prior_only",
+          floorMode: "graph_prior_only",
+          comparableTraceCount: 25,
+          comparableTurnCount: 25,
+          traceOutcomeVsBaseline: {
+            betterCount: 0,
+            tiedCount: 24,
+            worseCount: 1,
+            betterRate: 0,
+            tieRate: 0.96,
+            worseRate: 0.04,
+            totalCount: 25,
+          },
+          turnOutcomeVsBaseline: {
+            betterCount: 0,
+            tiedCount: 24,
+            worseCount: 1,
+            betterRate: 0,
+            tieRate: 0.96,
+            worseRate: 0.04,
+            totalCount: 25,
+          },
+          traceTieOrBetterVsBaseline: { count: 24, rate: 0.96, totalCount: 25 },
+          turnTieOrBetterVsBaseline: { count: 24, rate: 0.96, totalCount: 25 },
+          regressionVsBaseline: { count: 1, rate: 0.04, totalCount: 25 },
+          regressionVsFloor: { count: 1, rate: 0.04, totalCount: 25 },
+          criticalRegressionCount: 1,
+          requiredContextRecall: {
+            available: true,
+            candidateMode: "learned_route",
+            baselineMode: "graph_prior_only",
+            candidatePhraseHitCount: 3,
+            candidatePhraseCount: 63,
+            candidateRate: 0.047619,
+            baselinePhraseHitCount: 4,
+            baselinePhraseCount: 63,
+            baselineRate: 0.063492,
+            delta: -0.015873,
+            summary: "learned_route recalled 3/63 required-context phrases vs graph_prior_only 4/63",
+          },
+          correctionAbsorption: {
+            available: false,
+            observedFeedbackTurnCount: 0,
+            observedNonApprovalFeedbackTurnCount: 0,
+            summary: "none",
+          },
+          successAdjustedEconomics: {
+            available: false,
+            successUnit: null,
+            candidateMode: "learned_route",
+            baselineMode: "graph_prior_only",
+            successCount: 25,
+            candidateEstimatedPromptTokensPerSuccess: null,
+            baselineEstimatedPromptTokensPerSuccess: null,
+            candidateEstimatedPromptCostUsdPerSuccess: null,
+            baselineEstimatedPromptCostUsdPerSuccess: null,
+            promptTokenDeltaCandidateMinusBaseline: null,
+            promptCostUsdDeltaCandidateMinusBaseline: null,
+            summary: "n/a",
+            limitations: [],
+          },
+          failOpen: {
+            available: false,
+            failOpenRate: null,
+            summary: "n/a",
+          },
+        },
+        traces: [],
+      } as any,
+      outputDir: "artifacts/activation-first-gating-retune/T-20260415-257/felt-optimize-comparative-eval",
+      notes: ["candidate-specific felt optimize eval"],
+    });
+
+    expect(feltSummary).toEqual({
+      available: true,
+      comparableTraceCount: 25,
+      betterCount: 0,
+      tiedCount: 24,
+      worseCount: 1,
+      regressions: 1,
+      requiredContextRecallSummary: "learned_route recalled 3/63 required-context phrases vs graph_prior_only 4/63",
+      outputDir: "artifacts/activation-first-gating-retune/T-20260415-257/felt-optimize-comparative-eval",
+      notes: ["candidate-specific felt optimize eval"],
+    });
   });
 
   it("records a fresh candidate-specific veto result without overstating authority", () => {
