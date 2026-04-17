@@ -1,0 +1,479 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-bountiful-670a1ed3-b4c8-4dfe-8a1f-2d1526663457-window-010",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-03-05T15:40:08.332Z",
+  "generatedAt": "2026-03-05T16:18:25.924Z",
+  "traceHash": "sha256-c80a3decbe06cbf3c4af187d8a5af847ce341540f23d409b6e7d63d31df4bcc4",
+  "fixtureHash": "sha256-741cbfbe2c3d2f3a4ab8e97bf7b8405a7d1cec581f3191dded735c7802b1e00f",
+  "scoreHash": "sha256-26931654b9e966f70747a987b5f3d9becd84b244bfc80eb50665f1766c46e3ea",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/bountiful/sessions/670a1ed3-b4c8-4dfe-8a1f-2d1526663457.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-03-05T16:18:25.924Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-16c0b7f4b283cf0cadf9518aed3354f26372dc3c9867fbbccefe14e243137800"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-6eef937333dc1edc91806a7031cdeedc72a8feee229c202795ed982ba5273e85",
+          "expectedContextPhrases": [
+            "//bountiful.garden/admin\"}"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "//bountiful.garden/admin\"}"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.031,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.031,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-03-05T16:18:25.924Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-abac3b2c"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-03-05T16:18:25.924Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-b08eb5fc1ff25ca9747f4e1a4b98986ccb4cf7eba6dcc6f2ba034a7efa3d01a3"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-abac3b2c",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-be4627d465e9cabcc95cb1e2440c3ddd7c582602df2c46690eb1b5d8d7aa6a3d",
+          "selectedContextIds": [
+            "pack-abac3b2c:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-3:feedback",
+            "pack-abac3b2c:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-4:feedback",
+            "pack-abac3b2c:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-6:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8584\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Thu 2026-03-05 07:52 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Make sure everything still works after wipe. Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-3:interaction.",
+            "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8584\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Thu 2026-03-05 07:52 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Make sure everything still works after wipe. Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-4:interaction.",
+            "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8586\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Thu 2026-03-05 07:53 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Make sure everything still works after wipe. Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-6:interaction."
+          ],
+          "eventExportDigest": "sha256-4428b371b95697aa89799fc083256f60aeb6232df14c1774182aa715f8f73187",
+          "expectedContextPhrases": [
+            "//bountiful.garden/admin\"}"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "//bountiful.garden/admin\"}"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.434,
+            "routeSelectionMs": 4.737,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 2.694,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-03-05T16:18:25.924Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-abac3b2c"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-03-05T16:18:25.924Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-dc378d3513a7ef27a50f5884310bda9229dabb2677868ee474db6b6f6e99eb6e"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-abac3b2c",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-b79056d5f485e5d0e5856c5027e46a67631afbe0058aa5b6d6c1d70c22205ae4",
+          "selectedContextIds": [
+            "pack-abac3b2c:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-3:feedback",
+            "pack-abac3b2c:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-3:interaction",
+            "pack-abac3b2c:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-4:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8584\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Thu 2026-03-05 07:52 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Make sure everything still works after wipe. Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-3:interaction.",
+            "Interaction operator_override on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed. Message: cue-3-seed-message.",
+            "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8584\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Thu 2026-03-05 07:52 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Make sure everything still works after wipe. Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-4:interaction."
+          ],
+          "eventExportDigest": "sha256-dcccd087656c962e558c728b9662bf85560e3ff789ebbd30c9473704eef78bde",
+          "expectedContextPhrases": [
+            "//bountiful.garden/admin\"}"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "//bountiful.garden/admin\"}"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.288,
+            "routeSelectionMs": 4.563,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.722,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-03-05T16:18:25.924Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-c0809a7d"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-c0809a7d",
+        "frozenEvalRouterIdentity": "pack-c0809a7d:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-03-05T16:18:25.924Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-64379825e286e65d11b2be80a02c416ecc8ea71d782f8bb66f5a8aef8bd641b8"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-c0809a7d",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-c0809a7d:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-c0809a7d:route_fn",
+          "selectionDigest": "sha256-4d19b0514b79a441a36bef1ffdebe998719ca9a8a8b9b9925b156ba3da9c014e",
+          "selectedContextIds": [
+            "pack-c0809a7d:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-3:feedback",
+            "pack-c0809a7d:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-4:feedback",
+            "pack-c0809a7d:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-6:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8584\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Thu 2026-03-05 07:52 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Make sure everything still works after wipe. Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-3:interaction.",
+            "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8584\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Thu 2026-03-05 07:52 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Make sure everything still works after wipe. Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-4:interaction.",
+            "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8586\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Thu 2026-03-05 07:53 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Make sure everything still works after wipe. Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-6:interaction."
+          ],
+          "eventExportDigest": "sha256-b1203c59f19c9d8d76034d7b44b5938b6f86ec62ce5a433c1a67bca49228c30d",
+          "expectedContextPhrases": [
+            "//bountiful.garden/admin\"}"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "//bountiful.garden/admin\"}"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 8.502,
+            "routeSelectionMs": 5.214,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.286,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-03-05T16:18:25.924Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-b7e5d2b8d2ad40930959d4a974b1eec15ddd87ea160968dbaa3459457cf6e8ab"
+}

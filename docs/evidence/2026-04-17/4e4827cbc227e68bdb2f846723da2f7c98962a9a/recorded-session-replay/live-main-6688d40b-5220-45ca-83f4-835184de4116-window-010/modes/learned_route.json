@@ -1,0 +1,115 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 2,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-cf96fe26"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-cf96fe26",
+    "frozenEvalRouterIdentity": "pack-cf96fe26:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-15T03:19:55.784Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-a64164f104bf15ed75766ffa7331ddbe74f2800ab17f0f933f823012191b3b38"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-cf96fe26",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-cf96fe26:route_fn",
+      "activationConfidence": "high",
+      "routerIdentity": "pack-cf96fe26:route_fn",
+      "selectionDigest": "sha256-4f4f9660192c7320f5ea84be0f506e57ab5ace94d7468a05cedd1fb587e160cb",
+      "selectedContextIds": [
+        "pack-cf96fe26:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-6:feedback",
+        "pack-cf96fe26:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:feedback",
+        "pack-cf96fe26:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:interaction"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"23578\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-14 20:19 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Nuce. Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-6:interaction.",
+        "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"23573\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-14 18:36 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Pelican is down again. Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:interaction.",
+        "Interaction operator_override on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed. Message: cue-1-seed-message."
+      ],
+      "eventExportDigest": "sha256-b72042d97c5136cdd95bc7bd50c2c27780af7707f39f23d7e81940a7f43aea75",
+      "expectedContextPhrases": [
+        "ae2e6535",
+        "99f39e32e1a2"
+      ],
+      "minimumPhraseHits": 2,
+      "phraseHits": [],
+      "missedPhrases": [
+        "ae2e6535",
+        "99f39e32e1a2"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 10.05,
+        "routeSelectionMs": 6.559,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.489,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-15T03:19:55.784Z"
+      },
+      "warnings": []
+    }
+  ]
+}

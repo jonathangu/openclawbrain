@@ -1,0 +1,117 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 60,
+    "compileOkCount": 1,
+    "phraseHitCount": 1,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-d1441006"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-04T05:23:16.710Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-fcdc02cc040e38da5c0a7762c42b623c4fc8d0c0778a29f177a8b065479b68cd"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-d1441006",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-a4ddce77f16b4af5b536cd0b57aa3bf23fd8accc9a5d1fb010d9fb321d49f9fa",
+      "selectedContextIds": [
+        "pack-d1441006:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-6:feedback",
+        "pack-d1441006:event:ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-1:feedback",
+        "pack-d1441006:pointer-aware-init"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session ef483339-56ab-4747-8c16-79eac3e5645b-seed: assistant: Done. - Implemented the Teacher v3 canary contract as an explicit, bounded, rollback-bound target-state object. - Canary plans now require an explicit `rollbackKey`, stay `surfaceState: \"target\"`, `rolloutMode: \"off\"`, and `enabled: false`. - Added proposal-summary and diff surfacing for `canaryRollout` so the plan is inspectable in higher-level contract summaries. - Updated focused tests for the new shape and rollback-bound behavior. - Refreshed related docs to reflect the explicit rollback-.... Related interaction: ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-6:interaction.",
+        "Teaching feedback on live-session session ef483339-56ab-4747-8c16-79eac3e5645b-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Gate 4 lane A for task T-20260403-129 in the OpenClawBrain repo. Work in /tmp/ocb-t129-gate4a on branch t129-gate4a-canary-contracts. Mission: implement the explicit bounded canary plan objects for Teacher v3. Land the narrowest real contract/config surface for canary plans that is inspectable, off by default, and rollback-bound. This lane should own the ca.... Related interaction: ef483339-56ab-4747-8c16-79eac3e5645b-seed:cue-1:interaction.",
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-04-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+      ],
+      "eventExportDigest": "sha256-41d4098ee58e3df85d958d00af700d491cff0a20258610eff7d82440f1c71e37",
+      "expectedContextPhrases": [
+        "T-20260403-129",
+        "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-129/lane-gate4a-canary-contracts.md",
+        "/brain-core/teacher-v3-contracts.test.ts"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [
+        "T-20260403-129"
+      ],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-129/lane-gate4a-canary-contracts.md",
+        "/brain-core/teacher-v3-contracts.test.ts"
+      ],
+      "qualityScore": 60,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 9.276,
+        "routeSelectionMs": 5.279,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.995,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-04T05:23:16.710Z"
+      },
+      "warnings": []
+    }
+  ]
+}

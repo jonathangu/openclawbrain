@@ -1,0 +1,495 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-015",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-07T18:00:10.407Z",
+  "generatedAt": "2026-04-07T21:10:25.804Z",
+  "traceHash": "sha256-80a26a379e19395f27acf926c2152bf691413288f74fb851622ffb175287659b",
+  "fixtureHash": "sha256-b5c7f982a4c7c837b7b862133d2b0fb112246d1e5da8e79088a56147358f56fa",
+  "scoreHash": "sha256-9eed19502b060e3ac71b5a78c006a288a1a8296375725936d3ec948d543e317a",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/bountiful/sessions/8578588b-f6c3-4605-abef-80a728fb6bf3.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-04-07T21:10:25.804Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-5e03ec51b785f9aa9cb42beeeff27828af175efefc4b17a7390a8051e0981fb1"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-4e8a2007a995e12e68437dca02b2f8604a5d827bd0ee89fa35a577e80fc9493a",
+          "expectedContextPhrases": [
+            "heartbeat proactive continue work",
+            "apr heartbeat proactive continue",
+            "continue work not status"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "heartbeat proactive continue work",
+            "apr heartbeat proactive continue",
+            "continue work not status"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.035,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.035,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-04-07T21:10:25.804Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-d9564638"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-04-07T21:10:25.804Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-ee0deb44de08847aa00fc809b2daa5a4f938c0ddb4a936d617339202ea1e267f"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-d9564638",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-958149080c4bb3504d13c202689e35736157fbe7bd42ac39d9b029798ca2a9e5",
+          "selectedContextIds": [
+            "pack-d9564638:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback",
+            "pack-d9564638:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:feedback",
+            "pack-d9564638:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-4:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15838\", \"reply_to_id\": \"15835\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"B\", \"body\": \"I’ve opened the task in the ledger. Now I’m rewriting the three bloated contex.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction.",
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15838\", \"reply_to_id\": \"15835\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"B\", \"body\": \"I’ve opened the task in the ledger. Now I’m rewriting the three bloated contex.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction.",
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15837\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Please edit heartbeat to make sure the tasks are updated and don't discuss stale work that's already done.. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-4:interaction."
+          ],
+          "eventExportDigest": "sha256-20f540a0fb6d795f261bcf9a6bf940769e52ee9a57dcc9e6c401a64f3a58b8aa",
+          "expectedContextPhrases": [
+            "heartbeat proactive continue work",
+            "apr heartbeat proactive continue",
+            "continue work not status"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "heartbeat proactive continue work",
+            "apr heartbeat proactive continue",
+            "continue work not status"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 3.648,
+            "routeSelectionMs": 2.183,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 1.462,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-04-07T21:10:25.804Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-d9564638"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-04-07T21:10:25.804Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-47ac05dd6d74f3fdeba14f1fa0e62d62c5bafeaffff6b27dd4a25767c91ca661"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-d9564638",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-b1ec33beb8a3027737b10f859c22f7375b8a9b0628179f9400b40df4b04b1ca7",
+          "selectedContextIds": [
+            "pack-d9564638:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback",
+            "pack-d9564638:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction",
+            "pack-d9564638:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15838\", \"reply_to_id\": \"15835\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"B\", \"body\": \"I’ve opened the task in the ledger. Now I’m rewriting the three bloated contex.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction.",
+            "Interaction operator_override on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed. Message: cue-5-seed-message.",
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15838\", \"reply_to_id\": \"15835\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"B\", \"body\": \"I’ve opened the task in the ledger. Now I’m rewriting the three bloated contex.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction."
+          ],
+          "eventExportDigest": "sha256-361d60df514811b6a814869235241b30add167f3e33e4f4d46df1cc6a76e8b9e",
+          "expectedContextPhrases": [
+            "heartbeat proactive continue work",
+            "apr heartbeat proactive continue",
+            "continue work not status"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "heartbeat proactive continue work",
+            "apr heartbeat proactive continue",
+            "continue work not status"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 3.327,
+            "routeSelectionMs": 2.077,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 1.247,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-04-07T21:10:25.804Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-469572b3"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-469572b3",
+        "frozenEvalRouterIdentity": "pack-469572b3:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-04-07T21:10:25.804Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-f7dfdd9fe62c525ef35e3e047427a041772b08d5eca4f64c6d5b383446aa8189"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-469572b3",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-469572b3:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-469572b3:route_fn",
+          "selectionDigest": "sha256-f780951019ff9e67696ae3f0a0a5741b97989743d0e0b942f8d098438198c2ec",
+          "selectedContextIds": [
+            "pack-469572b3:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback",
+            "pack-469572b3:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:feedback",
+            "pack-469572b3:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-4:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15838\", \"reply_to_id\": \"15835\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"B\", \"body\": \"I’ve opened the task in the ledger. Now I’m rewriting the three bloated contex.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction.",
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15838\", \"reply_to_id\": \"15835\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"B\", \"body\": \"I’ve opened the task in the ledger. Now I’m rewriting the three bloated contex.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction.",
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15837\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Please edit heartbeat to make sure the tasks are updated and don't discuss stale work that's already done.. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-4:interaction."
+          ],
+          "eventExportDigest": "sha256-6122ad04631140e3adfc03f01c8edb658ee55654dede9e008a31e232f3d3eed8",
+          "expectedContextPhrases": [
+            "heartbeat proactive continue work",
+            "apr heartbeat proactive continue",
+            "continue work not status"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "heartbeat proactive continue work",
+            "apr heartbeat proactive continue",
+            "continue work not status"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 4.881,
+            "routeSelectionMs": 2.959,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 1.92,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-04-07T21:10:25.804Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-a4c4d81da8bd4cb11b6d265bd1bcb2ce66f2d3450e5ace93424289d2470f6253"
+}

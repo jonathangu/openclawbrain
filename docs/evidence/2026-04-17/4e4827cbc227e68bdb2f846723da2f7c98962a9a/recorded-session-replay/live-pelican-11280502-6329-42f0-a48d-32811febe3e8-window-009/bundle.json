@@ -1,0 +1,495 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-pelican-11280502-6329-42f0-a48d-32811febe3e8-window-009",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-03-01T22:28:01.325Z",
+  "generatedAt": "2026-03-02T01:12:38.057Z",
+  "traceHash": "sha256-2f6c0119a771d3d4002ad2796a568648f1ef4a576c6d777928a579e3ee482d2c",
+  "fixtureHash": "sha256-bc5d36362845b850e526b2c0c66165097088057015558a1287a8837f47ec0645",
+  "scoreHash": "sha256-6e425a8fc8d7d8f9d55c2e4004491be43eaf6245ddc62af45fffd971dc90d6f4",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/pelican/sessions/11280502-6329-42f0-a48d-32811febe3e8.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-03-02T01:12:38.057Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-23fd42a717917abc9a657ded0642e878a093677ccd38ec86a1e6fb99c57037fe"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-292bf0f2aee2fc1e15cbda5ae9a8db9a1059c33422f2ff8b32da050b9199a302",
+          "expectedContextPhrases": [
+            "toolcall",
+            "process",
+            "action"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "toolcall",
+            "process",
+            "action"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.038,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.038,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-03-02T01:12:38.057Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-373cc85c"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-03-02T01:12:38.057Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-80223d37b2996bd8adb1de12037b4fcecf30a990f688bcbc582b1bc96c6a4527"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-373cc85c",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-29a8a27c31d156f5408ab87898af6f513256e3659bed73b95fb20022d6005cd9",
+          "selectedContextIds": [
+            "pack-373cc85c:pointer-aware-init",
+            "pack-373cc85c:workspace-init:0d01dda4",
+            "pack-373cc85c:pointer-passive-expansion"
+          ],
+          "selectedContextTexts": [
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
+            "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=6, outbound=2). MEMORY.md — Bountiful Garden Product truth - Bountiful is a hyper-local backyard exchange where **story beats marketplace jargon**. - Harvest is the stable **user-facing** noun. Keep bounty as the stable **internal** entity term. fruit is only literal fruit. - Patrick and Jon are equal principals. Patrick’s product/de…",
+            "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, memory/2026-03-25.md, task-artifacts/ledger-archive/TASKS-2026-03-24-reset-for-new-mission.md, +6 more."
+          ],
+          "eventExportDigest": "sha256-cebc9a2d6d0b62aae8c49372174d12581aa8fe22eb35d8432c2d56f18a6087a6",
+          "expectedContextPhrases": [
+            "toolcall",
+            "process",
+            "action"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "toolcall",
+            "process",
+            "action"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.357,
+            "routeSelectionMs": 4.586,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.768,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-03-02T01:12:38.057Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-373cc85c"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-03-02T01:12:38.057Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-768fdcfff38fc902f1037729945884d32d78afb15358011bf10b2d0dca22390e"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-373cc85c",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-53d6ae7a9acadbad99fc248581a5abff1ef858b49dda9e7407712c4741de8089",
+          "selectedContextIds": [
+            "pack-373cc85c:pointer-aware-init",
+            "pack-373cc85c:workspace-init:0d01dda4",
+            "pack-373cc85c:workspace-init:16415817"
+          ],
+          "selectedContextTexts": [
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
+            "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=6, outbound=2). MEMORY.md — Bountiful Garden Product truth - Bountiful is a hyper-local backyard exchange where **story beats marketplace jargon**. - Harvest is the stable **user-facing** noun. Keep bounty as the stable **internal** entity term. fruit is only literal fruit. - Patrick and Jon are equal principals. Patrick’s product/de…",
+            "Working-set input TASKS.md selected by pointer-aware init (inbound=6, outbound=19). Last ledger refresh: 2026-04-08 15:05 PT Status keys: active | parked | blocked | done Current queue: **T-117** Live truth - Active principal task: none - Highest-priority blocked principal task: **T-117 — App Store + Play Store launch master plan and execution track** - Canonical repo: /Users/guclaw/.openclaw/workspa…"
+          ],
+          "eventExportDigest": "sha256-8ec9adac7d4ef2cb6841b2de4228f6c44fab00ebafc39e5712bb5eda072a13cc",
+          "expectedContextPhrases": [
+            "toolcall",
+            "process",
+            "action"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "toolcall",
+            "process",
+            "action"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 8.163,
+            "routeSelectionMs": 5.42,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.741,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-03-02T01:12:38.057Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-ca4e78bb"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-ca4e78bb",
+        "frozenEvalRouterIdentity": "pack-ca4e78bb:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-03-02T01:12:38.057Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-182d730649c992336820b9feabf2d44769f169d9d5306bc37a7b50d8f987a50d"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-ca4e78bb",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-ca4e78bb:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-ca4e78bb:route_fn",
+          "selectionDigest": "sha256-9bf5500b244901b6bb48a2a19dc8fbe7386ccdf62586409c2c5998faf37b672e",
+          "selectedContextIds": [
+            "pack-ca4e78bb:pointer-aware-init",
+            "pack-ca4e78bb:workspace-init:0d01dda4",
+            "pack-ca4e78bb:pointer-passive-expansion"
+          ],
+          "selectedContextTexts": [
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
+            "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=6, outbound=2). MEMORY.md — Bountiful Garden Product truth - Bountiful is a hyper-local backyard exchange where **story beats marketplace jargon**. - Harvest is the stable **user-facing** noun. Keep bounty as the stable **internal** entity term. fruit is only literal fruit. - Patrick and Jon are equal principals. Patrick’s product/de…",
+            "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, memory/2026-03-25.md, task-artifacts/ledger-archive/TASKS-2026-03-24-reset-for-new-mission.md, +6 more."
+          ],
+          "eventExportDigest": "sha256-67fa1de0efbde681e38970ac4eb1e19d5dbff9a3fa6432f8b2c33afc3158a8cb",
+          "expectedContextPhrases": [
+            "toolcall",
+            "process",
+            "action"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "toolcall",
+            "process",
+            "action"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 8.628,
+            "routeSelectionMs": 5.273,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.352,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-03-02T01:12:38.057Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-9c7208a7835822f6d1daee3a99608fd34f17293c19491780bffa293fff2e2545"
+}

@@ -1,0 +1,117 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-bb9b68fd"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-bb9b68fd",
+    "frozenEvalRouterIdentity": "pack-bb9b68fd:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-02-27T22:52:17.830Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-e79a38228fbb4b41ac5d84fc0e41aa33204b2fe15fb565bdda0c9b023ce2ff44"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-bb9b68fd",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-bb9b68fd:route_fn",
+      "activationConfidence": "high",
+      "routerIdentity": "pack-bb9b68fd:route_fn",
+      "selectionDigest": "sha256-6868afbd4759bd76402c0778790e032725534d80fffbc3e91fbf22596108b0ef",
+      "selectedContextIds": [
+        "pack-bb9b68fd:pointer-aware-init",
+        "pack-bb9b68fd:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
+        "pack-bb9b68fd:workspace-init:e490748e"
+      ],
+      "selectedContextTexts": [
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-27-crabpath-polish.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: A new session was started via /new or /reset. Execute your Session Startup sequence now - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning.. Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction.",
+        "Working-set input AGENTS_ACTIVE.md selected by pointer-aware init (inbound=4, outbound=0). Active Gates (auto-generated) *Compiled 2026-04-12 08:06 UTC — no high-signal gates selected* No [GATE] candidates currently meet the active threshold for main. Run again after more signals, then review before any new behavior loop. *0 active entries*"
+      ],
+      "eventExportDigest": "sha256-53bd37f9a8d49b8a2039d18711bb16c96c4f2373de8d22f6b6a8bd6ab8c0ce49",
+      "expectedContextPhrases": [
+        "/.ssh/guclaw-tft-v2.pem",
+        "/train/retrain_gbm.log",
+        "/dev/null"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/.ssh/guclaw-tft-v2.pem",
+        "/train/retrain_gbm.log",
+        "/dev/null"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 9.029,
+        "routeSelectionMs": 5.673,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.354,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-02-27T22:52:17.830Z"
+      },
+      "warnings": []
+    }
+  ]
+}

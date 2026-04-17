@@ -1,0 +1,117 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-696d44d2"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-696d44d2",
+    "frozenEvalRouterIdentity": "pack-696d44d2:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/bountiful/session-window:memory_compiled",
+        "live/bountiful/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/bountiful/session-window",
+      "freshestCreatedAt": "2026-03-01T06:41:59.299Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-ddad01a7a952cbb96c740c672dfc252a901efd3a174d26e03e402072f5db7c3d"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-696d44d2",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-696d44d2:route_fn",
+      "activationConfidence": "high",
+      "routerIdentity": "pack-696d44d2:route_fn",
+      "selectionDigest": "sha256-7c876ad4ca1bccf3f4ddf386965f0866ae2b33f714159cd47afd5dd53f21f043",
+      "selectedContextIds": [
+        "pack-696d44d2:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-5:feedback",
+        "pack-696d44d2:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:feedback",
+        "pack-696d44d2:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"7449\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan\", \"name\": \"Jonathan\" } ``` lets think deeply about how this trade works. can you ask OPUS 4.6 high thinking. ask it for a full critique. show it screenshots. what is each person \"thinking\" when they see this .... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-5:interaction.",
+        "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: To send an image back, prefer the message tool (media/path/filePath). If you must inline, use MEDIA:https://example.com/image.jpg (spaces ok, quote if needed) or a safe relative path like MEDIA:./image.jpg. Avoid absolute paths (MEDIA:/...) and ~ paths — they are blocked for security. Keep caption in the text body. Conversation info (untrusted metadata): ```json { \"message_id\": \"7436\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:interaction.",
+        "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: System: [2026-02-28 22:02:15 PST] Exec completed (ember-br, code 0) :: /bounty/{createdId}` to clipboard. - Wired toast feedback using existing `useToast`: - Success: `Link copied!` - Failure: `Could not copy link` - Left the primary `Share with neig… Conversation info (untrusted metadata): ```json { \"message_id\": \"7425\", \"reply_to_id\": \"7424\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": tr.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:interaction."
+      ],
+      "eventExportDigest": "sha256-08dc13301c006a997401f82a37dba05bccc08a6f300cac6387fa68099bcf0530",
+      "expectedContextPhrases": [
+        "/3",
+        "/−",
+        "/countering*"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/3",
+        "/−",
+        "/countering*"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 10.465,
+        "routeSelectionMs": 7.041,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 3.421,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/bountiful/session-window:memory_compiled",
+          "live/bountiful/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/bountiful/session-window",
+        "freshestCreatedAt": "2026-03-01T06:41:59.299Z"
+      },
+      "warnings": []
+    }
+  ]
+}

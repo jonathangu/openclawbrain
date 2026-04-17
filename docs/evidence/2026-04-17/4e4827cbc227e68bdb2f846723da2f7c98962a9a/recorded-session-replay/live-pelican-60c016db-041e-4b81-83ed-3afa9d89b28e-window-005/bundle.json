@@ -1,0 +1,487 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-005",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-03-03T01:59:20.947Z",
+  "generatedAt": "2026-03-03T08:59:46.318Z",
+  "traceHash": "sha256-f4905564adc9cb953b8b5504309a4080c3ac583fe0f629cb62b1e05f91ea23a3",
+  "fixtureHash": "sha256-0ad0b5e1e0f2271069ee0d118e38a8f083b22de4d11f9b10cb9ee63b3ed54883",
+  "scoreHash": "sha256-807240f8a599384b41e08fcea1500a0df9bc48e80fbc85b750fde3fb229ad0c3",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/pelican/sessions/60c016db-041e-4b81-83ed-3afa9d89b28e.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 2,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-03-03T08:59:46.318Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-64badee520388e2e251dcf80ba87d74776085beb63219f4be30791f06cfae40c"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-24adc9748760a60af9d647664c56347921666d25daa72d7aab6ffa282df64e6f",
+          "expectedContextPhrases": [
+            "e57d5511",
+            "f6804d379b61"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "e57d5511",
+            "f6804d379b61"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.027,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.027,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-03-03T08:59:46.318Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 2,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-d6abeadb"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-03-03T08:59:46.318Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-a5733003af75997345b801f9a1b9d3288f7072107eb9d0019d18efb7af3d0404"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-d6abeadb",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-82f7a2bea58b3bb0637616cf0526a8653456d5c2880000178891fff670337618",
+          "selectedContextIds": [
+            "pack-d6abeadb:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:feedback",
+            "pack-d6abeadb:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
+            "pack-d6abeadb:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 00:53 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` What else for operational excellence?. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:interaction.",
+            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 00:56 PST\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Operational excellence for Pelican = (1) deterministic behavior, (2) full traceability, (3) fast fail-closed recovery. Biggest remaining wins:\\n\\n1. Execution quality S.... Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction.",
+            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Mon 2026-03-02 19:29 PST\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"No new learnings.\" } ``` Is this the heartbeat?. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:interaction."
+          ],
+          "eventExportDigest": "sha256-36a2f62a0e7d2563c5c31cb871dc304104800f707f65dc91a71355cb60663f1e",
+          "expectedContextPhrases": [
+            "e57d5511",
+            "f6804d379b61"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "e57d5511",
+            "f6804d379b61"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 6.97,
+            "routeSelectionMs": 4.409,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.56,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-03-03T08:59:46.318Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 2,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-d6abeadb"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-03-03T08:59:46.318Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-77ae0827bf1bda039056440cff95d3c0e52a1d5b47528393778bfb0ef9cc8ae5"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-d6abeadb",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-7e1d08052f5439f1c65b91cad1e3d6bb2c4f4a5612cda8f2a3e0e87e55b43af3",
+          "selectedContextIds": [
+            "pack-d6abeadb:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:feedback",
+            "pack-d6abeadb:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:interaction",
+            "pack-d6abeadb:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 00:53 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` What else for operational excellence?. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:interaction.",
+            "Interaction operator_override on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed. Message: cue-4-seed-message.",
+            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 00:56 PST\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Operational excellence for Pelican = (1) deterministic behavior, (2) full traceability, (3) fast fail-closed recovery. Biggest remaining wins:\\n\\n1. Execution quality S.... Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction."
+          ],
+          "eventExportDigest": "sha256-09bbfad72302003fe2385e3fdf9f611314ddd1c274d646fcd8bd9e80dc7aa86d",
+          "expectedContextPhrases": [
+            "e57d5511",
+            "f6804d379b61"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "e57d5511",
+            "f6804d379b61"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.094,
+            "routeSelectionMs": 4.48,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 2.612,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-03-03T08:59:46.318Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 2,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-9e284468"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-9e284468",
+        "frozenEvalRouterIdentity": "pack-9e284468:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-03-03T08:59:46.318Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-cb63875f3e4b06b7573008d20dfc6f1ee740bda4b6162dc081aed55306dba692"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-9e284468",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-9e284468:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-9e284468:route_fn",
+          "selectionDigest": "sha256-c7e96570c47320e3a0c64076940f699432f0896174e1a7b41d3248842db20450",
+          "selectedContextIds": [
+            "pack-9e284468:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:feedback",
+            "pack-9e284468:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
+            "pack-9e284468:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 00:53 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` What else for operational excellence?. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-4:interaction.",
+            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 00:56 PST\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Operational excellence for Pelican = (1) deterministic behavior, (2) full traceability, (3) fast fail-closed recovery. Biggest remaining wins:\\n\\n1. Execution quality S.... Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction.",
+            "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Mon 2026-03-02 19:29 PST\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"No new learnings.\" } ``` Is this the heartbeat?. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:interaction."
+          ],
+          "eventExportDigest": "sha256-cf25eec5a6423422a4aef266587c8a3486fa1c402f6e3f35e73320890482efcc",
+          "expectedContextPhrases": [
+            "e57d5511",
+            "f6804d379b61"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "e57d5511",
+            "f6804d379b61"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 8.437,
+            "routeSelectionMs": 5.185,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.251,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-03-03T08:59:46.318Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-76a254072f8fb4165f78685439bbd2d0342e7cc957adcfb1b500d71c7ee3ca13"
+}

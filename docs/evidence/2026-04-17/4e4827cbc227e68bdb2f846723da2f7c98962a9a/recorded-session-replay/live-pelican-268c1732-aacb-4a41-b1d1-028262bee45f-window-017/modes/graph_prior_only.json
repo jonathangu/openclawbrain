@@ -1,0 +1,116 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-ac29ab8f"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-04-15T11:31:17.338Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-208b887f0b43b35039e2e7aa104a9abc7c9ce4d803ee0dd953eae0e498e112c0"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-ac29ab8f",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-ba9920d19658b8d20ef0565ff3710e0e69c2db2f2687dd6e172869787a270434",
+      "selectedContextIds": [
+        "pack-ac29ab8f:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-1:feedback",
+        "pack-ac29ab8f:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:feedback",
+        "pack-ac29ab8f:event:268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:interaction"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19108\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:36 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Stay in the owner lane. Make a deep engineering plan. Let's do all four options structures and make our allocation sizing way bigger. Implement all these changes now. Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"19110\", \"reply_to_id\": \"19109\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 03:37 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"I wrote the full file-backed plan and committed it.\\n\\n• Artifact: task-.... Related interaction: 268c1732-aacb-4a41-b1d1-028262bee45f-seed:cue-2:interaction.",
+        "Interaction operator_override on live-session session 268c1732-aacb-4a41-b1d1-028262bee45f-seed. Message: cue-2-seed-message."
+      ],
+      "eventExportDigest": "sha256-05dde9c5b407c31a5598d5529c4935608184e4f057f4e8b562597c2b5ddcec0d",
+      "expectedContextPhrases": [
+        "correct model trading never",
+        "even correct model trading",
+        "guaranteed profitable model correctness"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "correct model trading never",
+        "even correct model trading",
+        "guaranteed profitable model correctness"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.111,
+        "routeSelectionMs": 4.446,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.663,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-04-15T11:31:17.338Z"
+      },
+      "warnings": []
+    }
+  ]
+}

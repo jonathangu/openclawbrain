@@ -1,0 +1,112 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 100,
+    "compileOkCount": 1,
+    "phraseHitCount": 1,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-e385c05c"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/bountiful/session-window:memory_compiled",
+        "live/bountiful/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/bountiful/session-window",
+      "freshestCreatedAt": "2026-03-05T16:41:33.858Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-23f9ae274e15ddbc92ae3cb8e59779be164abe330585f210efc65c3c37ad0e80"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-e385c05c",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-dde088deffbf52773554973fe59d8d64d1f3eb1afc0d3470e57b210a7d37c92e",
+      "selectedContextIds": [
+        "pack-e385c05c:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-1:feedback",
+        "pack-e385c05c:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-3:feedback",
+        "pack-e385c05c:event:670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-4:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Pre-compaction memory flush. Store durable memories now (use memory/2026-03-05.md; create memory/ if needed). IMPORTANT: If the file already exists, APPEND new content only and do not overwrite existing entries. If nothing to store, reply with NO_REPLY. Current time: Thursday, March 5th, 2026 — 8:24 AM (America/Los_Angeles). Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Pre-compaction memory flush. Store durable memories now (use memory/2026-03-05.md; create memory/ if needed). IMPORTANT: If the file already exists, APPEND new content only and do not overwrite existing entries. If nothing to store, reply with NO_REPLY. Current time: Thursday, March 5th, 2026 — 8:26 AM (America/Los_Angeles). Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-3:interaction.",
+        "Teaching feedback on live-session session 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed: user: Pre-compaction memory flush. Store durable memories now (use memory/2026-03-05.md; create memory/ if needed). IMPORTANT: If the file already exists, APPEND new content only and do not overwrite existing entries. If nothing to store, reply with NO_REPLY. Current time: Thursday, March 5th, 2026 — 8:26 AM (America/Los_Angeles). Related interaction: 670a1ed3-b4c8-4dfe-8a1f-2d1526663457-seed:cue-4:interaction."
+      ],
+      "eventExportDigest": "sha256-0ca91f24e2b2177d49135ace2863c913ae1ee5645391d5e177902dcc2af26b8f",
+      "expectedContextPhrases": [
+        "no_reply"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [
+        "no_reply"
+      ],
+      "missedPhrases": [],
+      "qualityScore": 100,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.513,
+        "routeSelectionMs": 4.71,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 2.8,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/bountiful/session-window:memory_compiled",
+          "live/bountiful/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/bountiful/session-window",
+        "freshestCreatedAt": "2026-03-05T16:41:33.858Z"
+      },
+      "warnings": []
+    }
+  ]
+}

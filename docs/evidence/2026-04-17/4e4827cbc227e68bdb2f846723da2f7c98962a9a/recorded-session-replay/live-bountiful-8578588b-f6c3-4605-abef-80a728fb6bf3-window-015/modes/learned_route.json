@@ -1,0 +1,117 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-469572b3"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-469572b3",
+    "frozenEvalRouterIdentity": "pack-469572b3:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/bountiful/session-window:memory_compiled",
+        "live/bountiful/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/bountiful/session-window",
+      "freshestCreatedAt": "2026-04-07T21:10:25.804Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-f7dfdd9fe62c525ef35e3e047427a041772b08d5eca4f64c6d5b383446aa8189"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-469572b3",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-469572b3:route_fn",
+      "activationConfidence": "high",
+      "routerIdentity": "pack-469572b3:route_fn",
+      "selectionDigest": "sha256-f780951019ff9e67696ae3f0a0a5741b97989743d0e0b942f8d098438198c2ec",
+      "selectedContextIds": [
+        "pack-469572b3:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback",
+        "pack-469572b3:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:feedback",
+        "pack-469572b3:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-4:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15838\", \"reply_to_id\": \"15835\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"B\", \"body\": \"I’ve opened the task in the ledger. Now I’m rewriting the three bloated contex.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction.",
+        "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15838\", \"reply_to_id\": \"15835\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"B\", \"body\": \"I’ve opened the task in the ledger. Now I’m rewriting the three bloated contex.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction.",
+        "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15837\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Please edit heartbeat to make sure the tasks are updated and don't discuss stale work that's already done.. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-4:interaction."
+      ],
+      "eventExportDigest": "sha256-6122ad04631140e3adfc03f01c8edb658ee55654dede9e008a31e232f3d3eed8",
+      "expectedContextPhrases": [
+        "heartbeat proactive continue work",
+        "apr heartbeat proactive continue",
+        "continue work not status"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "heartbeat proactive continue work",
+        "apr heartbeat proactive continue",
+        "continue work not status"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 4.881,
+        "routeSelectionMs": 2.959,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 1.92,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/bountiful/session-window:memory_compiled",
+          "live/bountiful/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/bountiful/session-window",
+        "freshestCreatedAt": "2026-04-07T21:10:25.804Z"
+      },
+      "warnings": []
+    }
+  ]
+}

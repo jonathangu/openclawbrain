@@ -1,0 +1,495 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-pelican-60c016db-041e-4b81-83ed-3afa9d89b28e-window-002",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-03-03T01:59:20.947Z",
+  "generatedAt": "2026-03-03T03:30:11.662Z",
+  "traceHash": "sha256-0cfee0e7c7d7a332b7f5a4f24cbf19b04a7b31698d12d254a92d62753684d371",
+  "fixtureHash": "sha256-539cc58588045f4d44638a17795295875c8ed45ffa9d4d266b2c19df9a95dd7f",
+  "scoreHash": "sha256-dde8e9da0e72030779f7dc189a53f145bc9a441cc3a59084a0eb57a0c6acc827",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/pelican/sessions/60c016db-041e-4b81-83ed-3afa9d89b28e.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-03-03T03:30:11.662Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-1c32ce668e6813134ccd828363a96ac1b89f56519737480b00962b4a14175506"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-ed303a4800cfa051eb9d71a4c18602722d8a1ef56a8dcc165f5d874c6b1f411f",
+          "expectedContextPhrases": [
+            "especially phrase new learnings.",
+            "new learnings. memory flush",
+            "phrase new learnings. memory"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "especially phrase new learnings.",
+            "new learnings. memory flush",
+            "phrase new learnings. memory"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.031,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.031,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-03-03T03:30:11.662Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-338e30d1"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-03-03T03:30:11.662Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-0b7583cbc5c3bd01765295068e417595ac88a7da89f852b31a6d95af4dded6e6"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-338e30d1",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-13ec65b1638f23f081380722bee9d1848cc2145cb636f14af6610d9041a6b6e1",
+          "selectedContextIds": [
+            "pack-338e30d1:pointer-aware-init",
+            "pack-338e30d1:workspace-init:16415817",
+            "pack-338e30d1:workspace-init:02e33be9"
+          ],
+          "selectedContextTexts": [
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
+            "Working-set input TASKS.md selected by pointer-aware init (inbound=4, outbound=89). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 1:39 AM PT — 0 active unblocked principal tasks Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they repor…",
+            "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=1, outbound=2). HEARTBEAT.md - Read TASKS.md first. - If there is no active unfinished unblocked principal task, reply HEARTBEAT_OK. - If there is one, reread MEMORY.md plus only the files needed for the next concrete step. - Default to doing the work, not narrating it. - Finish the task if safe; otherwise execute the best next ready…"
+          ],
+          "eventExportDigest": "sha256-d806edb1e73a869322917874a5232aa9b072c54ca604f81c4dda8e6cf1906678",
+          "expectedContextPhrases": [
+            "especially phrase new learnings.",
+            "new learnings. memory flush",
+            "phrase new learnings. memory"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "especially phrase new learnings.",
+            "new learnings. memory flush",
+            "phrase new learnings. memory"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.031,
+            "routeSelectionMs": 4.38,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.649,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-03-03T03:30:11.662Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-338e30d1"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-03-03T03:30:11.662Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-260a5108d6246532d6ad74b6f1558627529166fdaaa2545956a62d3bf1c2f2f1"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-338e30d1",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-6a75e5dabba9d6f20c70e3a2824241f8b582ca3a266ef180580cf2470d472ab3",
+          "selectedContextIds": [
+            "pack-338e30d1:pointer-aware-init",
+            "pack-338e30d1:workspace-init:02e33be9",
+            "pack-338e30d1:workspace-init:16415817"
+          ],
+          "selectedContextTexts": [
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
+            "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=1, outbound=2). HEARTBEAT.md - Read TASKS.md first. - If there is no active unfinished unblocked principal task, reply HEARTBEAT_OK. - If there is one, reread MEMORY.md plus only the files needed for the next concrete step. - Default to doing the work, not narrating it. - Finish the task if safe; otherwise execute the best next ready…",
+            "Working-set input TASKS.md selected by pointer-aware init (inbound=4, outbound=89). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 1:39 AM PT — 0 active unblocked principal tasks Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they repor…"
+          ],
+          "eventExportDigest": "sha256-72d6e9a6bd503bcf7aaa90b654264beec04bf974b393da250c1fbe2473b81eda",
+          "expectedContextPhrases": [
+            "especially phrase new learnings.",
+            "new learnings. memory flush",
+            "phrase new learnings. memory"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "especially phrase new learnings.",
+            "new learnings. memory flush",
+            "phrase new learnings. memory"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.065,
+            "routeSelectionMs": 4.413,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.651,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-03-03T03:30:11.662Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-dcd8dcac"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-dcd8dcac",
+        "frozenEvalRouterIdentity": "pack-dcd8dcac:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-03-03T03:30:11.662Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-9f6b332280090d3ebb9200922aee5370d9c415749b158f2b0762524b83c3a9e6"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-dcd8dcac",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-dcd8dcac:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-dcd8dcac:route_fn",
+          "selectionDigest": "sha256-d8ebe13dffba3e99fe8adc35993f6c464960bbf620b834ac2089b34386264daa",
+          "selectedContextIds": [
+            "pack-dcd8dcac:pointer-aware-init",
+            "pack-dcd8dcac:workspace-init:16415817",
+            "pack-dcd8dcac:workspace-init:02e33be9"
+          ],
+          "selectedContextTexts": [
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
+            "Working-set input TASKS.md selected by pointer-aware init (inbound=4, outbound=89). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 1:39 AM PT — 0 active unblocked principal tasks Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they repor…",
+            "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=1, outbound=2). HEARTBEAT.md - Read TASKS.md first. - If there is no active unfinished unblocked principal task, reply HEARTBEAT_OK. - If there is one, reread MEMORY.md plus only the files needed for the next concrete step. - Default to doing the work, not narrating it. - Finish the task if safe; otherwise execute the best next ready…"
+          ],
+          "eventExportDigest": "sha256-82807efc46ef59ef297be029c7e500193fa55177966e42fdd2b86f36ce5d5eff",
+          "expectedContextPhrases": [
+            "especially phrase new learnings.",
+            "new learnings. memory flush",
+            "phrase new learnings. memory"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "especially phrase new learnings.",
+            "new learnings. memory flush",
+            "phrase new learnings. memory"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 8.432,
+            "routeSelectionMs": 5.175,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.255,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-03-03T03:30:11.662Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-8ce3c707df67bf8e3b6b984df9fe2e121994ae6b00539506f74cdc555abc80cb"
+}

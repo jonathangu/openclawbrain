@@ -1,0 +1,93 @@
+{
+  "contract": "recorded_session_trace.v1",
+  "traceId": "live-main-0856fc42-5677-417a-94a6-eeed26a9d994-window-003",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-04T03:01:06.621Z",
+  "bundleBuiltAt": "2026-04-04T03:38:36.781Z",
+  "agentId": "main",
+  "sessionId": "0856fc42-5677-417a-94a6-eeed26a9d994",
+  "channel": "live-session",
+  "sourceStream": "live/main/session-window",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/main/sessions/0856fc42-5677-417a-94a6-eeed26a9d994.jsonl"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-main",
+    "snapshotId": "session-0856fc42-5677-417a-94a6-eeed26a9d994",
+    "capturedAt": "2026-04-04T03:01:06.621Z",
+    "rootDir": "/Users/guclaw/.openclaw/workspace",
+    "revision": "0856fc42-5677-417a-94a6-eeed26a9d994",
+    "labels": [
+      "live-history",
+      "main",
+      "interactive",
+      "meaningful-assistant-text"
+    ]
+  },
+  "seedBuiltAt": "2026-04-04T03:01:07.864Z",
+  "seedActivatedAt": "2026-04-04T03:15:20.790Z",
+  "seedCues": [
+    {
+      "cueId": "cue-1",
+      "createdAt": "2026-04-04T03:01:07.864Z",
+      "content": "user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are lane Gate 2 for task T-20260403-129 in the OpenClawBrain repo. Work in /tmp/ocb-t129-gate2 on branch t129-gate2-proof. Mission: implement the proof-bundle writer and runtime-emission plumbing for Teacher v3 runtime/proof adoption. Target emitted files: summary.md, status.json, surface-map.json, proposal-report.json, verdict.json. Use real runtime/proof data...",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-2",
+      "createdAt": "2026-04-04T03:13:48.726Z",
+      "content": "user: System: [2026-04-03 20:13:46 PDT] Exec completed (delta-em, code 0) :: test.ts [2m([22m[2m3 tests[22m[2m)[22m[32m 2[2mms[22m[39m [32m✓[39m test/teacher-v3-proof-bundle.test.ts [2m([22m[2m1 test[22m[2m)[22m[32m 4[2mms[22m[39m [2m Test Files [22m [1m[3… Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/work...",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-3",
+      "createdAt": "2026-04-04T03:15:05.875Z",
+      "content": "assistant: /tmp/ocb-t129-gate2\",",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-4",
+      "createdAt": "2026-04-04T03:15:09.280Z",
+      "content": "assistant: /tmp/ocb-t129-gate2\",",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-5",
+      "createdAt": "2026-04-04T03:15:14.558Z",
+      "content": "assistant: T-20260403-129 ; /proof/d ; 20260403",
+      "kind": "teaching"
+    },
+    {
+      "cueId": "cue-6",
+      "createdAt": "2026-04-04T03:15:20.790Z",
+      "content": "assistant: Done. - Added `scripts/teacher-v3-proof-bundle.mjs` to build and write the bounded Teacher v3 proof bundle: - `summary.md` - `status.json` - `surface-map.json` - `proposal-report.json` - `verdict.json` - Wired `scripts/capture-openclawbrain-operator-proof.mjs` to emit that bundle from live runtime/proof/docs inputs. - Added focused tests for bundle structure and output-dir resolution. - Commit: `632e2eac34fcd73a3695d8ac26e0de3014b07483` - Lane report written to: - `/Users/guclaw/.openclaw/wor...",
+      "kind": "teaching"
+    }
+  ],
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "createdAt": "2026-04-04T03:38:23.142Z",
+      "deliveredAt": "2026-04-04T03:38:36.781Z",
+      "userMessage": "Exec denied (gateway id=d5f4d62c-fb2a-4717-8e25-73fb1c15efa2, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('scripts/teacher-v3-proof-bundle.mjs') text = path.read_text() old = '''function buildTeacherV3ProposalSeed(input) { const bundleId = normalizeText(input.bundleId) ?? `teacher-v3-proof-${timestampToken(input.bundleStartedAt)}`; const runtimeStatus = summarizeRuntimeStatus(input.runtimeStatus ?? null); const operatorProof = summarizeOperatorProofTruth(input.operatorProof ?? null); const docsTruth = summarizeDocsTruth(input.docsTruth ?? null); const subjectIds = normalizeArray(input.subjectIds).map((subject) => normalizeText(subject)).filter(Boolean); const proposalSubjectIds = subjectIds.length > 0 ? subjectIds : [\"surface:runtime-truth\", \"surface:proof-truth\", \"surface:docs-truth\"]; const proposalClass = normalizeText(input.proposalClass) ?? \"lint\"; const proposalLane = normalizeText(input.proposalLane) ?? proposalClass; const producerVersion = normalizeText(input.producerVersion) ?? \"openclawbrain-proof-capture\"; const proposalId = normalizeText(input.proposalId) ?? bundleId; const sourceBundleId = operatorProof.bundleDir ?? normalizeText(input.operatorProof?.bundleDir) ?? null; const idempotencyKey = sha256Text(JSON.stringify({ bundleId, proposalId, proposalClass, proposalLane, producerVersion, basePackVersion: runtimeStatus.currentPackVersion, baseGraphHash: runtimeStatus.currentPackMetadata?.kind ?? null, runtimeStatusCommand: normalizeText(input.runtimeStatusCommand), operatorProofCommand: operatorProof.command, runtimeLoadProofPath: operatorProof.runtimeLoadProofPath, docsTruthPath: docsTruth.path, })); return { recordSource: input.proposalRecord?.recordSource ?? \"runtime-capture\", bundleId, proposalId, proposalLane, proposalClass, status: normalizeText(input.proposalStatus) ?? \"validated\", lineage: { proposalClass, basePackVersion: runtimeStatus.currentPackVersion, baseGraphHash: normalizeText(input.proposalRecord?.lineage?.baseGraphHash) ?? null, producerVersion, producerBuildId: normalizeText(input.proposalRecord?.lineage?.producerBuildId) ?? null, promptHash: normalizeText(input.proposalRecord?.lineage?.promptHash) ?? sha256Text(input.runtimeStatusCommand ?? bundleId), templateId: normalizeText(input.proposalRecord?.lineage?.templateId) ?? \"teacher-v3-proof-bundle-v1\", scope: normalizeText(input.proposalRecord?.lineage?.scope) ?? \"runtime-proof-adoption\", profile: normalizeText(input.proposalRecord?.lineage?.profile) ?? null, idempotencyKey, sourceBundleId, parentProposalIds: normalizeArray(input.proposalRecord?.lineage?.parentProposalIds) .map((parentId) => normalizeText(parentId)) .filter(Boolean), }, subjectIds: proposalSubjectIds, evidence: normalizeArray(input.proposalRecord?.evidence).length > 0 ? normalizeArray(input.proposalRecord.evidence) : [ { evidenceId: \"runtime-status\", sourceKind: \"repo\", sourceId: normalizeText(input.runtimeStatusCommand) ?? \"runtime-status\", authority: \"raw_source\", derivation: \"teacher_inference\", excerpt: \"Runtime status snapshot captured for the Teacher v3 proof bundle.\", sourceHash: sha256Text(JSON.stringify(runtimeStatus)), }, { evidenceId: \"operator-proof\", sourceKind: \"repo\", sourceId: normalizeText(input.operatorProof?.command) ?? \"openclawbrain proof\", authority: \"raw_source\", derivation: \"teacher_compilation\", excerpt: \"Operator proof bundle captured alongside the runtime snapshot.\", sourceHash: sha256Text(JSON.stringify(operatorProof)), }, { evidenceId: \"docs-truth\", sourceKind: \"file\", sourceId: normalizeText(input.docsTruth?.path) ?? \"docs/architecture/teacher-v3-proof.md\", authority: \"raw_source\", derivation: \"teacher_compilation\", excerpt: \"Teacher v3 proof-surface design note used as the docs truth anchor.\", sourceHash: sha256Text(JSON.stringify(docsTruth)), }, ], counterevidence: normalizeArray(input.proposalRecord?.counterevidence), payload: input.proposalRecord?.payload ?? { runtimeStatus, operatorProof, docsTruth, bundleArtifacts: [ TEACHER_V3_PROOF_BUNDLE_LAYOUT.summary, TEACHER_V3_PROOF_BUNDLE_LAYOUT.status, TEACHER_V3_PROOF_BUNDLE_LAYOUT.surfaceMap, TEACHER_V3_PROOF_BUNDLE_LAYOUT.proposalReport, TEACHER_V3_PROOF_BUNDLE_LAYOUT.verdict, ], }, confidence: Number.isFinite(input.proposalRecord?.confidence) ? Number(input.proposalRecord.confidence) : 0.92, replaySuites: normalizeArray(input.proposalRecord?.replaySuites).length > 0 ? normalizeArray(input.proposalRecord.replaySuites) : [ \"runtime-status-surface\", \"operator-proof-surface\", \"teacher-v3-docs-truth\", ], rollbackKey: normalizeText(input.proposalRecord?.rollbackKey) ?? `rollback:teacher-v3-proof-bundle:${bundleId}`, createdAt: normalizeText(input.proposalRecord?.createdAt) ?? input.bundleStartedAt, resolvedAt: normalizeText(input.proposalRecord?.resolvedAt) ?? input.bundleStartedAt, gate1Seam: { present: Boolean(input.proposalRecord?.gate1Seam?.present), recordSource: input.proposalRecord?.gate1Seam?.recordSource ?? \"runtime-capture\", note: input.proposalRecord?.gate1Seam?.note ?? \"Gate 1 persistence is not wired in this branch; this bundle is seeded from runtime/proof inputs and can later be replaced by a stored proposal record.\", }, docsTruth, runtimeTruth: runtimeStatus, proofTruth: operatorProof, proposalReviewMode: proposalClass === \"mutation\" || proposalClass === \"forgetting\" || proposalClass === \"correction\" ? \"shadow_only\" : \"promotable\", }; } ''' new = '''function buildTeacherV3ProposalSeed(input) { const bundleId = normalizeText(input.bundleId) ?? `teacher-v3-proof-${timestampToken(input.bundleStartedAt)}`; const runtimeStatus = summarizeRuntimeStatus(input.runtimeStatus ?? null); const operatorProof = summarizeOperatorProofTruth(input.operatorProof ?? null); const docsTruth = summarizeDocsTruth(input.docsTruth ?? null); const runtimeStatusCommand = normalizeText(input.runtimeStatusCommand) ?? \"runtime-status\"; const operatorProofCommand = normalizeText(input.operatorProofCommand) ?? \"openclawbrain proof\"; const subjectIds = normalizeArray(input.subjectIds).map((subject) => normalizeText(subject)).filter(Boolean); const proposalSubjectIds = subjectIds.length > 0 ? subjectIds : [\"surface:runtime-truth\", \"surface:proof-truth\", \"surface:docs-truth\"]; const proposalClass = normalizeText(input.proposalClass) ?? \"lint\"; const proposalLane = normalizeText(input.proposalLane) ?? proposalClass; const producerVersion = normalizeText(input.producerVersion) ?? \"openclawbrain-proof-capture\"; const proposalId = normalizeText(input.proposalId) ?? bundleId; const sourceBundleId = operatorProof.bundleDir ?? normalizeText(input.operatorProof?.bundleDir) ?? null; const idempotencyKey = sha256Text(JSON.stringify({ bundleId, proposalId, proposalClass, proposalLane, producerVersion, basePackVersion: runtimeStatus.currentPackVersion, baseGraphHash: runtimeStatus.currentPackMetadata?.kind ?? null, runtimeStatusCommand, operatorProofCommand, runtimeLoadProofPath: operatorProof.runtimeLoadProofPath, docsTruthPath: docsTruth.path, })); const proposalRecord = input.proposalRecord ?? null; const proposalRecordEvidence = normalizeArray(proposalRecord?.evidence); const proposalRecordCounterevidence = normalizeArray(proposalRecord?.counterevidence); const proposalRecordReplaySuites = normalizeArray(proposalRecord?.replaySuites); return { recordSource: proposalRecord?.recordSource ?? \"runtime-capture\", bundleId, proposalId, proposalLane, proposalClass, status: normalizeText(input.proposalStatus) ?? \"validated\", runtimeStatusCommand, operatorProofCommand, lineage: { proposalClass, basePackVersion: runtimeStatus.currentPackVersion, baseGraphHash: normalizeText(proposalRecord?.lineage?.baseGraphHash) ?? null, producerVersion, producerBuildId: normalizeText(proposalRecord?.lineage?.producerBuildId) ?? null, promptHash: normalizeText(proposalRecord?.lineage?.promptHash) ?? sha256Text(runtimeStatusCommand + operatorProofCommand + docsTruth.path), templateId: normalizeText(proposalRecord?.lineage?.templa",
+      "runtimeHints": [
+        "/teacher-v3-proof-bundle.mjs')",
+        "/architecture/teacher-v3-proof.md\",",
+        "/proof",
+        "d5f4d62c",
+        "73fb1c15efa2",
+        "teacher-v3-proof-${timestampToken(input.bundleStartedAt)}"
+      ],
+      "expectedContextPhrases": [
+        "T-20260403-129",
+        "/capture-openclawbrain-operator-proof.mjs",
+        "/proof/docs"
+      ]
+    }
+  ]
+}

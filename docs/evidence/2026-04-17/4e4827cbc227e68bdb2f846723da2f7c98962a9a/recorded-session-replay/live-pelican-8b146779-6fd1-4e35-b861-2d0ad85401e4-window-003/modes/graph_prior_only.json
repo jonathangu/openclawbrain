@@ -1,0 +1,112 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-7f7576d0"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-03-31T16:54:56.868Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-b2e4bb5ff926c264a85df81975229f943da2b13771b3224ef8638c7552745339"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-7f7576d0",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-053b4ec82c6cf50598ff33d080a548df19055191301cb77928a85f76f9cec101",
+      "selectedContextIds": [
+        "pack-7f7576d0:event:8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-3:feedback",
+        "pack-7f7576d0:event:8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-3:interaction",
+        "pack-7f7576d0:event:8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-1:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed: user: New explicit directive from Jon: we hard cut over to real money for everything. Interpretation for this fix lane: - treat live production runtime roots and live production broker truth as the only canonical operator surface for active monitoring - eliminate remaining paper/shadow fallback behavior from the dashboard/operator truth path for this slice - if a contract/path default still points to old-root or paper-oriented state for active production monitoring, fix it now - keep safety, but bi.... Related interaction: 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-3:interaction.",
+        "Interaction operator_override on live-session session 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed. Message: cue-3-seed-message.",
+        "Teaching feedback on live-session session 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: In clean worktree /Users/guclaw/worktrees/quant-research/068g-dashboardtruth, fix the remaining live dashboard truth stack end to end. Known hard evidence: - Live production trades exist today in runtime_state/live/production_positions.json: - AAPL order 119331450 entered 2026-03-31T10:01:37-04:00 credit 5.28 - AMZN order 119349858 entered 2026-03-31T10:31:20-04:00.... Related interaction: 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-1:interaction."
+      ],
+      "eventExportDigest": "sha256-3bc6e0fd7f25a15acbbb4b4829c46aa10e247e0d5b37ec356871cd16f0db37b5",
+      "expectedContextPhrases": [
+        "/Users/guclaw/worktrees/quant-research/068g-dashboardtruth/runtime_state.py\"}"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/worktrees/quant-research/068g-dashboardtruth/runtime_state.py\"}"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.214,
+        "routeSelectionMs": 4.691,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 2.523,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-03-31T16:54:56.868Z"
+      },
+      "warnings": []
+    }
+  ]
+}

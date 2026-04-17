@@ -1,0 +1,495 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-bountiful-b51279b9-581b-4db2-9a92-56c1d07af4c7-window-002",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-02-28T12:14:41.688Z",
+  "generatedAt": "2026-02-28T16:01:02.976Z",
+  "traceHash": "sha256-bb16877a0fe2caf32819847f224e56592583ef2fd1a04c845d04e2ee17b64d0a",
+  "fixtureHash": "sha256-4ba8498860fc7c42d2e5ff1842f641b3036471f0db760ed3478d90908a631234",
+  "scoreHash": "sha256-bf56aac9a86157239c3b9ddffaa6eeb6471a838be28178a898c91622f573db4d",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/bountiful/sessions/b51279b9-581b-4db2-9a92-56c1d07af4c7.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-02-28T16:01:02.976Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-09b23957d62d4dd2aef54d6f6e2af1d61d598bff57f4a467b714b73990a75fcf"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-a0eefa034e13e67fe0814c96f6b86dace7a3f1fe24b569cd79d902447aadfc99",
+          "expectedContextPhrases": [
+            "brain maintenance successfully. bountiful",
+            "maintenance successfully. bountiful brain",
+            "successfully. bountiful brain got"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "brain maintenance successfully. bountiful",
+            "maintenance successfully. bountiful brain",
+            "successfully. bountiful brain got"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.179,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.179,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-02-28T16:01:02.976Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-1f21753b"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-02-28T16:01:02.976Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-43bdd20afd10975041a90a68d84a9920cd049934cdfa0b0df845eb1bf6dcc19b"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-1f21753b",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-133d1f1ed12140fe7892769815764b9f85e4ab446ef77aa2a937ae5e5659669f",
+          "selectedContextIds": [
+            "pack-1f21753b:workspace-init:0d01dda4",
+            "pack-1f21753b:pointer-aware-init",
+            "pack-1f21753b:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-1:feedback"
+          ],
+          "selectedContextTexts": [
+            "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=6, outbound=2). MEMORY.md — Bountiful Garden Product truth - Bountiful is a hyper-local backyard exchange where **story beats marketplace jargon**. - Harvest is the stable **user-facing** noun. Keep bounty as the stable **internal** entity term. fruit is only literal fruit. - Patrick and Jon are equal principals. Patrick’s product/de…",
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
+            "Teaching feedback on live-session session b51279b9-581b-4db2-9a92-56c1d07af4c7-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. Current time: Saturday, February 28th, 2026 — 4:14 AM (America/Los_Angeles). Related interaction: b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-1:interaction."
+          ],
+          "eventExportDigest": "sha256-502552a84bc2d426244898623498ade248f60cf41a5602e1c7b09ea976e46969",
+          "expectedContextPhrases": [
+            "brain maintenance successfully. bountiful",
+            "maintenance successfully. bountiful brain",
+            "successfully. bountiful brain got"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "brain maintenance successfully. bountiful",
+            "maintenance successfully. bountiful brain",
+            "successfully. bountiful brain got"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 13.636,
+            "routeSelectionMs": 10.222,
+            "promptAssemblyMs": 0.025,
+            "otherMs": 3.389,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-02-28T16:01:02.976Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-1f21753b"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-02-28T16:01:02.976Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-68108b0d2b35b5a989e391fb0cab714adf97d47dbd3f5a7c341a63afd52f9355"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-1f21753b",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-64661fc9860e81a761dff808f6e96e86d4f8c454c6efd62122a86527871f82a9",
+          "selectedContextIds": [
+            "pack-1f21753b:workspace-init:0d01dda4",
+            "pack-1f21753b:pointer-aware-init",
+            "pack-1f21753b:workspace-init:02e33be9"
+          ],
+          "selectedContextTexts": [
+            "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=6, outbound=2). MEMORY.md — Bountiful Garden Product truth - Bountiful is a hyper-local backyard exchange where **story beats marketplace jargon**. - Harvest is the stable **user-facing** noun. Keep bounty as the stable **internal** entity term. fruit is only literal fruit. - Patrick and Jon are equal principals. Patrick’s product/de…",
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
+            "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=4, outbound=2). HEARTBEAT.md — Bountiful Use heartbeat to keep Bountiful moving without manual babysitting. 1. Reread TASKS.md from disk, then read only the relevant MEMORY.md snippets and project artifacts for the current live task. 2. Trust current file truth over chat or old summaries. 3. Treat only active tasks as live work. Trea…"
+          ],
+          "eventExportDigest": "sha256-59cc008e2bad4182818bd0c0701d113df725f9cb5aacc600b6b44c824b7b395d",
+          "expectedContextPhrases": [
+            "brain maintenance successfully. bountiful",
+            "maintenance successfully. bountiful brain",
+            "successfully. bountiful brain got"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "brain maintenance successfully. bountiful",
+            "maintenance successfully. bountiful brain",
+            "successfully. bountiful brain got"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.89,
+            "routeSelectionMs": 5.349,
+            "promptAssemblyMs": 0.004,
+            "otherMs": 2.537,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-02-28T16:01:02.976Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-873fbc10"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-873fbc10",
+        "frozenEvalRouterIdentity": "pack-873fbc10:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-02-28T16:01:02.976Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-b8f9b82a64aaba92ee0fe642e7f5ab4d439362f99dc157eec2ef64ef2c880479"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-873fbc10",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-873fbc10:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-873fbc10:route_fn",
+          "selectionDigest": "sha256-e4f06711c6c6db0951c62843bcc750a5c9498edfe97798e3ea3e72f863fc6a5a",
+          "selectedContextIds": [
+            "pack-873fbc10:workspace-init:0d01dda4",
+            "pack-873fbc10:pointer-aware-init",
+            "pack-873fbc10:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-1:feedback"
+          ],
+          "selectedContextTexts": [
+            "Top-priority boot input MEMORY.md selected by pointer-aware init (inbound=6, outbound=2). MEMORY.md — Bountiful Garden Product truth - Bountiful is a hyper-local backyard exchange where **story beats marketplace jargon**. - Harvest is the stable **user-facing** noun. Keep bounty as the stable **internal** entity term. fruit is only literal fruit. - Patrick and Jon are equal principals. Patrick’s product/de…",
+            "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, task-artifacts/ledger-archive/TASKS-2026-03-30-pre-cleanup.md, task-artifacts/ledger-archive/TASKS-2026-03-20-pre-prune.md, task-artifacts/ledger-archive/TASKS-2026-03-21-post-ship-pre-prune.md, +2 more, and passive expansion task-artifacts/ledger-archive/TASKS-2026-03-26-context-reset.md, task-artifacts/ledger-archive/TASKS-2026-03-22-session-reset.md, docs/tool-manifest.md, BOOTSTRAP.md, +8 more from the MEMORY index graph.",
+            "Teaching feedback on live-session session b51279b9-581b-4db2-9a92-56c1d07af4c7-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. Current time: Saturday, February 28th, 2026 — 4:14 AM (America/Los_Angeles). Related interaction: b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-1:interaction."
+          ],
+          "eventExportDigest": "sha256-101c61afbdc122985f17d4faf23ce71c40dfb39c3d8f273d97189e87f5765939",
+          "expectedContextPhrases": [
+            "brain maintenance successfully. bountiful",
+            "maintenance successfully. bountiful brain",
+            "successfully. bountiful brain got"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "brain maintenance successfully. bountiful",
+            "maintenance successfully. bountiful brain",
+            "successfully. bountiful brain got"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 8.801,
+            "routeSelectionMs": 5.829,
+            "promptAssemblyMs": 0.004,
+            "otherMs": 2.969,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-02-28T16:01:02.976Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-c34882df2472a9df4152a99fb2fffe8cdb61c56b624412ce8b52b3076056406e"
+}

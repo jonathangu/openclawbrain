@@ -1,0 +1,117 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-bb611267"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-bb611267",
+    "frozenEvalRouterIdentity": "pack-bb611267:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-02-27T23:58:56.090Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-e13fed4ac721752f855304c5b84a405a9559878ac815c4ae95685ddfcbb75588"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-bb611267",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-bb611267:route_fn",
+      "activationConfidence": "high",
+      "routerIdentity": "pack-bb611267:route_fn",
+      "selectionDigest": "sha256-c80dd9f1dfa6135111872661215dc9d9b6fbc0a9d4dfb256e0d44ccbcc0697f5",
+      "selectedContextIds": [
+        "pack-bb611267:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction",
+        "pack-bb611267:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction",
+        "pack-bb611267:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction"
+      ],
+      "selectedContextTexts": [
+        "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-1-seed-message.",
+        "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-2-seed-message.",
+        "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-6-seed-message."
+      ],
+      "eventExportDigest": "sha256-fd5127fcf891795f4a77658abf0e14d99b86e206186d8e3ddc5f04acd5095936",
+      "expectedContextPhrases": [
+        "/.ssh/guclaw-tft-v2.pem",
+        "/tmp/gbm_v5_train.log",
+        "/dev/null'\","
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/.ssh/guclaw-tft-v2.pem",
+        "/tmp/gbm_v5_train.log",
+        "/dev/null'\","
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 9.803,
+        "routeSelectionMs": 6.062,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.739,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-02-27T23:58:56.090Z"
+      },
+      "warnings": []
+    }
+  ]
+}

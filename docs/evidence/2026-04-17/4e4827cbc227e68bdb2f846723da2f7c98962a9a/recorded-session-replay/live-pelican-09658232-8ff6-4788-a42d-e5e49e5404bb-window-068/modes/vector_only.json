@@ -1,0 +1,116 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-ecc6c2f8"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-02-28T02:56:20.652Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-7a9fb3426020f0a37a4aed7aee680b5f8a997c02cb28d1b174365f3ac8a238c3"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-ecc6c2f8",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-1fc7d12c47687fc094fff00f6186ac38efc472bd9e0b00b1d3ba4facfc5d8ee3",
+      "selectedContextIds": [
+        "pack-ecc6c2f8:pointer-aware-init",
+        "pack-ecc6c2f8:workspace-init:02e33be9",
+        "pack-ecc6c2f8:workspace-init:16415817"
+      ],
+      "selectedContextTexts": [
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-02-28-deployment-gaps.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
+        "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=1, outbound=2). HEARTBEAT.md - Read TASKS.md first. - If there is no active unfinished unblocked principal task, reply HEARTBEAT_OK. - If there is one, reread MEMORY.md plus only the files needed for the next concrete step. - Default to doing the work, not narrating it. - Finish the task if safe; otherwise execute the best next ready…",
+        "Working-set input TASKS.md selected by pointer-aware init (inbound=4, outbound=89). TASKS.md — Canonical Task Ledger Last updated: 2026-04-17 1:39 AM PT — 0 active unblocked principal tasks Rules - This is the single live source of truth for principal-owned tasks in this workspace. - TASKS.md is single-writer; only the principal orchestrator may edit it. - Workers must never edit TASKS.md; they repor…"
+      ],
+      "eventExportDigest": "sha256-52dd40701d409ed18969f07e7bc2d40544ad668f41e30dfb215d46ac7837afeb",
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/workspace/quant-research\\n\\npython3",
+        "/ensemble_production_gbm_v5_20260228.pkl','rb')",
+        "days_to_exp"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace/quant-research\\n\\npython3",
+        "/ensemble_production_gbm_v5_20260228.pkl','rb')",
+        "days_to_exp"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.312,
+        "routeSelectionMs": 4.61,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.7,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-02-28T02:56:20.652Z"
+      },
+      "warnings": []
+    }
+  ]
+}

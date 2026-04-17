@@ -1,0 +1,479 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-004",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-07T18:00:10.407Z",
+  "generatedAt": "2026-04-07T18:48:23.686Z",
+  "traceHash": "sha256-e204eec37724aacda490110857d04f610417247b024d310ad6302080aea397ff",
+  "fixtureHash": "sha256-6f87b65c79b51cbc945548d32dcf271be29d7e50d05ff0c454ef7979a8b75cf2",
+  "scoreHash": "sha256-a0a3152dba6ab2300e9395530f8864ff9697ba0174d486d15d45a93bf62140ad",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/bountiful/sessions/8578588b-f6c3-4605-abef-80a728fb6bf3.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-04-07T18:48:23.686Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-c76acc1a03aa06534fe63599a6439df3e7c5ba77b6ef580f7d358b50380fb3e8"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-bfde73a752c0d4d7fcab32b42aea3789eed4b0e77cea08fc7ee932d90818c3ae",
+          "expectedContextPhrases": [
+            "no_reply"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "no_reply"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.028,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.028,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-04-07T18:48:23.686Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-68fda9d2"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-04-07T18:48:23.686Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-ff6aa5d5cc74b60f0f4266bcb6b7874ce9cacea6d227c41c7662824645a68d91"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-68fda9d2",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-265697f071253c7a0c8e04b0dc1156d4e530a23272d12ef783c880bb826e1c53",
+          "selectedContextIds": [
+            "pack-68fda9d2:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback",
+            "pack-68fda9d2:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback",
+            "pack-68fda9d2:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-3:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: You are running a boot check. Follow BOOT.md instructions exactly. BOOT.md: # BOOT.md — Bountiful startup 1. Read `TASKS.md`. 2. Inspect live worker/process/session truth plus any task-specific files under `task-artifacts/` and `task-status/`. 3. Resume the highest-priority unfinished, unblocked principal task from files, not chat. 4. If `TASKS.md` shows no active principal task, stay lean and wait for fresh direction from Jon or Patrick. 5. If you are the orchestrator, reread `TASKS.md` imme.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction.",
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: A new session was started via /new or /reset. Run your Session Startup sequence - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning. Current time: Tuesday.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:interaction.",
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: assistant: /Users/guclaw/.openclaw/workspace-bountiful/task-artifacts/T-117/blocker-matrix-2026-04-01.md\"}. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-3:interaction."
+          ],
+          "eventExportDigest": "sha256-fe35ada744b5dcecfefe629285241d7c6bbc48dc576c209ae4ff784c494e3a1f",
+          "expectedContextPhrases": [
+            "no_reply"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "no_reply"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 3.32,
+            "routeSelectionMs": 2.061,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 1.256,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-04-07T18:48:23.686Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-68fda9d2"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-04-07T18:48:23.686Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-4dd584aea2c355c9be5952f425ea9d96a004cce62a93e07e01aad441c0446a18"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-68fda9d2",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-b28448cbda645e1feebfa6951dc89c5a42655f3417ea31f76e3fbbb3be366f79",
+          "selectedContextIds": [
+            "pack-68fda9d2:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback",
+            "pack-68fda9d2:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction",
+            "pack-68fda9d2:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: You are running a boot check. Follow BOOT.md instructions exactly. BOOT.md: # BOOT.md — Bountiful startup 1. Read `TASKS.md`. 2. Inspect live worker/process/session truth plus any task-specific files under `task-artifacts/` and `task-status/`. 3. Resume the highest-priority unfinished, unblocked principal task from files, not chat. 4. If `TASKS.md` shows no active principal task, stay lean and wait for fresh direction from Jon or Patrick. 5. If you are the orchestrator, reread `TASKS.md` imme.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction.",
+            "Interaction operator_override on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed. Message: cue-5-seed-message.",
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: A new session was started via /new or /reset. Run your Session Startup sequence - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning. Current time: Tuesday.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:interaction."
+          ],
+          "eventExportDigest": "sha256-ca4bbcb904a71872cb64cbc4f28752f0f9805235cd65713c24a7d9d417395720",
+          "expectedContextPhrases": [
+            "no_reply"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "no_reply"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 3.252,
+            "routeSelectionMs": 2,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 1.25,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-04-07T18:48:23.686Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-a4e80e43"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-a4e80e43",
+        "frozenEvalRouterIdentity": "pack-a4e80e43:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-04-07T18:48:23.686Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-6488311c4303cdd19c15e2b6e89692bfddaea43bcd0fc8c54a623f75e2bb84fc"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-a4e80e43",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-a4e80e43:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-a4e80e43:route_fn",
+          "selectionDigest": "sha256-9a748addd659a57afd2b43d4e9e37cbf2fc0343a17bb536ba7519c0d3ed51677",
+          "selectedContextIds": [
+            "pack-a4e80e43:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback",
+            "pack-a4e80e43:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback",
+            "pack-a4e80e43:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: You are running a boot check. Follow BOOT.md instructions exactly. BOOT.md: # BOOT.md — Bountiful startup 1. Read `TASKS.md`. 2. Inspect live worker/process/session truth plus any task-specific files under `task-artifacts/` and `task-status/`. 3. Resume the highest-priority unfinished, unblocked principal task from files, not chat. 4. If `TASKS.md` shows no active principal task, stay lean and wait for fresh direction from Jon or Patrick. 5. If you are the orchestrator, reread `TASKS.md` imme.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction.",
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: A new session was started via /new or /reset. Run your Session Startup sequence - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning. Current time: Tuesday.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:interaction.",
+            "Interaction operator_override on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed. Message: cue-5-seed-message."
+          ],
+          "eventExportDigest": "sha256-476b958b265b6005515502c1180480f95620feeead231ac32ce9a37c56653aee",
+          "expectedContextPhrases": [
+            "no_reply"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "no_reply"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 4.841,
+            "routeSelectionMs": 2.874,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 1.965,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-04-07T18:48:23.686Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-8c684c4800d99378b43e41325df4e77ce7c040258af40d66c41b1a33b1d165d3"
+}

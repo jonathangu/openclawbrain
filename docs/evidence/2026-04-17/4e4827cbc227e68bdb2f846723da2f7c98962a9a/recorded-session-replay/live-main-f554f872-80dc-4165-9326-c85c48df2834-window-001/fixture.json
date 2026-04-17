@@ -1,0 +1,183 @@
+{
+  "contract": "recorded_session_replay_fixture.v1",
+  "traceId": "live-main-f554f872-80dc-4165-9326-c85c48df2834-window-001",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-03T16:07:51.092Z",
+  "bundleBuiltAt": "2026-04-03T16:10:39.359Z",
+  "traceHash": "sha256-a9a0d976d691035c87611c3bf8262c8f24aa8cb2b2147e70d168e8ca66af5301",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/main/sessions/f554f872-80dc-4165-9326-c85c48df2834.jsonl"
+    ]
+  },
+  "workspace": {
+    "workspaceId": "ws-main",
+    "snapshotId": "session-f554f872-80dc-4165-9326-c85c48df2834",
+    "capturedAt": "2026-04-03T16:07:51.092Z",
+    "rootDir": "/",
+    "revision": "f554f872-80dc-4165-9326-c85c48df2834",
+    "labels": [
+      "live-history",
+      "main",
+      "interactive",
+      "tool-using-assistant"
+    ]
+  },
+  "seedBuiltAt": "2026-04-03T16:07:51.093Z",
+  "seedActivatedAt": "2026-04-03T16:07:51.093Z",
+  "seedExport": {
+    "interactionEvents": [
+      {
+        "contract": "interaction_events.v1",
+        "eventId": "f554f872-80dc-4165-9326-c85c48df2834-seed:cue-1:interaction",
+        "agentId": "main",
+        "sessionId": "f554f872-80dc-4165-9326-c85c48df2834-seed",
+        "channel": "live-session",
+        "sequence": 1,
+        "kind": "operator_override",
+        "createdAt": "2026-04-03T16:07:51.093Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "live/main/session-window/seed"
+        },
+        "semantic": {
+          "semanticType": "control_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "messageId": "cue-1-seed-message"
+      }
+    ],
+    "feedbackEvents": [
+      {
+        "contract": "feedback_events.v1",
+        "eventId": "f554f872-80dc-4165-9326-c85c48df2834-seed:cue-1:feedback",
+        "agentId": "main",
+        "sessionId": "f554f872-80dc-4165-9326-c85c48df2834-seed",
+        "channel": "live-session",
+        "sequence": 2,
+        "kind": "teaching",
+        "createdAt": "2026-04-03T16:08:51.093Z",
+        "source": {
+          "runtimeOwner": "openclaw",
+          "stream": "live/main/session-window/seed"
+        },
+        "content": "assistant: ✅ New session started · model: openai-codex/gpt-5.4",
+        "semantic": {
+          "semanticType": "teacher_signal",
+          "sourceKind": "recorded_session_seed"
+        },
+        "relatedInteractionId": "f554f872-80dc-4165-9326-c85c48df2834-seed:cue-1:interaction"
+      }
+    ],
+    "range": {
+      "start": 1,
+      "end": 2,
+      "count": 2,
+      "firstEventId": "f554f872-80dc-4165-9326-c85c48df2834-seed:cue-1:interaction",
+      "lastEventId": "f554f872-80dc-4165-9326-c85c48df2834-seed:cue-1:feedback",
+      "firstCreatedAt": "2026-04-03T16:07:51.093Z",
+      "lastCreatedAt": "2026-04-03T16:08:51.093Z"
+    },
+    "provenance": {
+      "runtimeOwner": "openclaw",
+      "sessionId": "f554f872-80dc-4165-9326-c85c48df2834-seed",
+      "channel": "live-session",
+      "interactionCount": 1,
+      "feedbackCount": 1,
+      "sourceStreams": [
+        "live/main/session-window/seed"
+      ],
+      "contracts": [
+        "interaction_events.v1",
+        "feedback_events.v1"
+      ],
+      "exportDigest": "sha256-6a45162d576424e3b81a8f3165799d0c16115fbd125b09f506306f29d9816064",
+      "semanticSurface": {
+        "semanticTypes": [
+          "control_signal",
+          "teacher_signal"
+        ],
+        "sourceKinds": [
+          "recorded_session_seed"
+        ],
+        "diagnosticIntents": []
+      },
+      "learningSurface": {
+        "bootProfile": "fast_boot_defaults",
+        "learningCadence": "passive_background",
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window/seed:operator_override",
+          "live/main/session-window/seed:teaching"
+        ],
+        "labelSources": {
+          "human": [
+            "live/main/session-window/seed:operator_override",
+            "live/main/session-window/seed:teaching"
+          ],
+          "self": []
+        },
+        "labelHarvest": {
+          "humanLabels": 2,
+          "selfLabels": 0,
+          "corrections": 0,
+          "teachings": 1,
+          "approvals": 0,
+          "suppressions": 0,
+          "operatorOverrideLabels": 1,
+          "memoryCompileLabels": 0
+        },
+        "principalSummary": {
+          "teacherIdentities": [],
+          "teacherRoles": [],
+          "teacherAuthorities": [],
+          "priorityClasses": [],
+          "scopedEventCount": 0,
+          "supersedingEventCount": 0
+        }
+      }
+    }
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "turn": {
+        "agentId": "main",
+        "sessionId": "f554f872-80dc-4165-9326-c85c48df2834",
+        "channel": "live-session",
+        "sourceStream": "live/main/session-window",
+        "userMessage": "System: [2026-04-03 08:57:36 PDT] Exec completed (delta-fj, code 0) :: To https://github.com/jonathangu/openclawbrain.git 2f04374..fb565ee main -> main System: [2026-04-03 09:00:08 PDT] Exec completed (quiet-pi, code 0) :: v0.4.27 v0.4.27 [main 4a93786] Bump OpenClawBrain packages to 0.4.27 2 files changed, 2 insertions(+), 2 deletions(-) To https://github.com/jonathangu/openclawbrain.git fb565ee..4… System: [2026-04-03 09:00:26 PDT] Exec completed (calm-val, code 1) :: ze: 454.8 kB npm notice unpacked size: 2.7 MB npm notice shasum: 9d321e036a11f311d808c163a579bd25174ae210 npm notice integrity: sha512-l0x9MbKUSNnee[...]JF6PxYvggHMMw== npm notice… System: [2026-04-03 09:00:46 PDT] Exec completed (faint-co, code 1) :: ERTION', actual: '0.4.26', expected: '0.4.27', operator: 'strictEqual', diff: 'simple' } Node.js v25.5.0 npm error code 1 npm error path /Users/guclaw/.openclaw/workspace/openclaw… System: [2026-04-03 09:01:36 PDT] Exec completed (rapid-du, code 0) :: [main 36a381e] Fix 0.4.27 release metadata 2 files changed, 2 insertions(+), 2 deletions(-) To https://github.com/jonathangu/openclawbrain.git 4a93786..36a381e main -> main System: [2026-04-03 09:01:54 PDT] Exec completed (glow-bas, code 0) :: 0.4.27 npm notice filename: openclawbrain-cli-0.4.27.tgz npm notice package size: 402.0 kB npm notice unpacked size: 2.2 MB npm notice shasum: fce1e9fd416cb8b83bfa03db273b8f4da38b… System: [2026-04-03 09:02:24 PDT] Exec completed (tidy-bis, code 0) :: {} None pack-6b230ab2 System: [2026-04-03 09:02:38 PDT] Exec completed (wild-sum, code 0) :: changed 9 packages in 673ms 0.4.27 System: [2026-04-03 09:03:08 PDT] Exec completed (grand-ri, code 1) :: e obj, end = self.raw_decode(s, idx=_w(s, 0).end()) ~~~~~~~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^^^ File \"/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.1… System: [2026-04-03 09:03:39 PDT] Exec completed (crisp-cr, code 0) :: ~/.openclaw/openclaw.json plugins.allow already includes openclawbrain; plugins.entries already uses openclawbrain\", \"Learner auto-start already ensured for /Users/guclaw/.opencla… System: [2026-04-03 09:04:04 PDT] Exec completed (nova-val, code 0) :: alLLM detected=yes enabled=yes provider=ollama model=unsloth-qwen3.5-27b:q4_k_m rollback ready=yes state=ready previous=pack-72b1d39c proof lastExport=2026-04-02T05:13:32.326Z las… System: [2026-04-03 09:06:44 PDT] Exec completed (rapid-sh, code 0) :: tingPath\": \"policy_gradient_v1\", \"pgVersionRequested\": \"v1\", \"pgVersionUsed\": \"v1\", \"decisionLogCount\": 0, \"fallbackReason\": \"serve_time_decision_log_tail_truncated+oversized_line… System: [2026-04-03 09:07:14 PDT] Exec completed (amber-at, code 0) :: 60653Z/extracted-startup-breadcrumbs.log Runtime proof: /Users/guclaw/.openclaw/workspace/artifacts/operator-proof-20260403-160653Z/runtime-load-proof.json Coverage snapshot: /Use… System: [2026-04-03 09:07:38 PDT] Exec completed (clear-sh, code 0) :: 60724Z/extracted-startup-breadcrumbs.log Runtime proof: /Users/guclaw/.openclaw/workspace/artifacts/operator-proof-20260403-160724Z/runtime-load-proof.json Coverage snapshot: /Use… A new session was started via /new or /reset. Run your Session Startup sequence - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning. Current time: Friday, April 3rd, 2026 — 9:07 AM (America/Los_Angeles) / 2026-04-03 16:07 UTC",
+        "createdAt": "2026-04-03T16:10:32.562Z",
+        "sequenceStart": 1000,
+        "maxContextBlocks": 3,
+        "mode": "heuristic",
+        "runtimeHints": [
+          "//github.com/jonathangu/openclawbrain.git",
+          "/Users/guclaw/.openclaw/workspace/openclaw…",
+          "/opt/homebrew/Cellar/python@3.14/3.14.3_1/Frameworks/Python.framework/Versions/3.1…",
+          "/.openclaw/openclaw.json",
+          "/Users/guclaw/.opencla…",
+          "/extracted-startup-breadcrumbs.log"
+        ],
+        "compile": {
+          "createdAt": "2026-04-03T16:10:32.562Z",
+          "sequence": 1000
+        },
+        "delivery": {
+          "createdAt": "2026-04-03T16:10:39.359Z",
+          "sequence": 1001,
+          "messageId": "msg-turn-1"
+        },
+        "feedback": []
+      },
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/workspace/BOOT.md\"}"
+      ],
+      "minimumPhraseHits": 1
+    }
+  ],
+  "fixtureHash": "sha256-5890b682144351849269c08cb811bbb472ba0970bc84bb6b237fb1117c406a77"
+}

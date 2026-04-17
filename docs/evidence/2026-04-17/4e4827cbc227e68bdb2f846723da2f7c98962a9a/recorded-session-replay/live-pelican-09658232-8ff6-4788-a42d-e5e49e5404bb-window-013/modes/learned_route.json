@@ -1,0 +1,113 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-7e24c468"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-7e24c468",
+    "frozenEvalRouterIdentity": "pack-7e24c468:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-02-27T23:27:35.287Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-d59cea2ec2810f7b6f166554a7937e8f928a55f57293f50ca8b1ced4dcfc5b9f"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-7e24c468",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-7e24c468:route_fn",
+      "activationConfidence": "high",
+      "routerIdentity": "pack-7e24c468:route_fn",
+      "selectionDigest": "sha256-37bff2e180f7525b06527d272cd755cd9971316bcc2b72815fa3b4000c9757ed",
+      "selectedContextIds": [
+        "pack-7e24c468:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
+        "pack-7e24c468:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
+        "pack-7e24c468:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: ffc1b986-38d1-494c-b5a2-3cac96543fa0] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: No new learnings. Stats: runtime 34s • tokens 14.1k (in 12.5k / out 1.6k) A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system message verbatim. R.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction.",
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 14:52:27 PST] Exec completed (cool-wha, code 255) :: ssh: connect to host 44.247.209.229 port 22: Operation timed out Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. Current time: Friday, February 27th, 2026 — 3:00 PM (America/Los_Angeles). Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction.",
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: We had training running. How's it going pelican: 🚀 GBM retrain is RUNNING on AWS Instance: g5.xlarge (44.247.209.229) Training: 15 members × 23 quantiles, 31,926 rows, 178 features All embeddings-only, no has_news/news_missing ✅ Had to fight through: • New Ubuntu 24.04/22.04 AMIs auto-terminate on g5 (!) • Old AMI has Python 3.7 → installed lightgbm<4.0 • SCP kills connections >5MB → uploaded via S3 chunks • 6 dead instances along the way ETA: ~30-40 min for GBM, then TFT on same instance (~3.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction."
+      ],
+      "eventExportDigest": "sha256-117b3cbc4331bb4b4ba4c6face9b819e422d591a59d19eebb97cd226ee36a4d5",
+      "expectedContextPhrases": [
+        "/15"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/15"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 9.218,
+        "routeSelectionMs": 5.779,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.437,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-02-27T23:27:35.287Z"
+      },
+      "warnings": []
+    }
+  ]
+}

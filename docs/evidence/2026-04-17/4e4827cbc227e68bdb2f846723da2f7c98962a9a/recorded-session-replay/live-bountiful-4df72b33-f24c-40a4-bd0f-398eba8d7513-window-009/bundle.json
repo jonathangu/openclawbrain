@@ -1,0 +1,498 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-bountiful-4df72b33-f24c-40a4-bd0f-398eba8d7513-window-009",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-03-03T03:06:05.100Z",
+  "generatedAt": "2026-03-03T04:05:10.369Z",
+  "traceHash": "sha256-909da7829d18c7b4060630b0679e4b4f9d3623ad878ab660055447ba4071489f",
+  "fixtureHash": "sha256-d6f02df1f7fd44472c7a5dc57cc2a6eccb52d15bdd1b99973bade05111901191",
+  "scoreHash": "sha256-a2a8ca1c206221a2a4185966dba67c0e4f636555b91067b23ec47bf8c8dfb67f",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/bountiful/sessions/4df72b33-f24c-40a4-bd0f-398eba8d7513.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-03-03T04:05:10.369Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-67d503fa6cc9652ac016339af3a8c1038900f3a66d390047a5f53eeceb6dc18e"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-ae107405a98541aeb27fed8b77d9796ef5f7aae5d502caf4f2273e037b8ee6e4",
+          "expectedContextPhrases": [
+            "toolcall",
+            "process",
+            "action"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "toolcall",
+            "process",
+            "action"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.031,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.031,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-03-03T04:05:10.369Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 60,
+        "compileOkCount": 1,
+        "phraseHitCount": 1,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-5a2ba37f"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-03-03T04:05:10.369Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-09680ddb16dbf4e739ff8ecbcdb1207faaa7ce65eba98892f2c224252a210f4e"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-5a2ba37f",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-6ae6197ee1ef5d18cc272e0da30b60dc310920cae46bb6990a564acd2ca75fcd",
+          "selectedContextIds": [
+            "pack-5a2ba37f:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-1:feedback",
+            "pack-5a2ba37f:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-2:feedback",
+            "pack-5a2ba37f:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-4:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8097\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:26 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` B: Yep. Quick scope check before I swing the axe: Do you mean remove “fruit” from the TS/JS code layer only (.... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-1:interaction.",
+            "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8098\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:26 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Jonathan: Get rid of the term fruit in code I do not want to see any fruit mentioned as function names or db .... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-2:interaction.",
+            "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8103\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 20:00 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` How's it going. Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-4:interaction."
+          ],
+          "eventExportDigest": "sha256-3133513062a512ac4318890af049338e70ab0e6713f183cf5dea2561a42474d3",
+          "expectedContextPhrases": [
+            "toolcall",
+            "process",
+            "action"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [
+            "action"
+          ],
+          "missedPhrases": [
+            "toolcall",
+            "process"
+          ],
+          "qualityScore": 60,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.121,
+            "routeSelectionMs": 4.518,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 2.599,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-03-03T04:05:10.369Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 60,
+        "compileOkCount": 1,
+        "phraseHitCount": 1,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-5a2ba37f"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-03-03T04:05:10.369Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-cef17b16bb6b9aa38858a75060c39c4b0c390bc677ff4d46e188901a83caf6ea"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-5a2ba37f",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-42bf7aa4c5e0b193d96eb65c886746f752c6d2ee5b509bbd4b7ae14974f1cdc4",
+          "selectedContextIds": [
+            "pack-5a2ba37f:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-1:feedback",
+            "pack-5a2ba37f:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-2:feedback",
+            "pack-5a2ba37f:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-2:interaction"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8097\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:26 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` B: Yep. Quick scope check before I swing the axe: Do you mean remove “fruit” from the TS/JS code layer only (.... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-1:interaction.",
+            "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8098\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:26 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Jonathan: Get rid of the term fruit in code I do not want to see any fruit mentioned as function names or db .... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-2:interaction.",
+            "Interaction operator_override on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed. Message: cue-2-seed-message."
+          ],
+          "eventExportDigest": "sha256-9aa53a807f50ad8e7f387be8de3ae07d0bae7a26d270eb35ba7ebbde8c0f139b",
+          "expectedContextPhrases": [
+            "toolcall",
+            "process",
+            "action"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [
+            "action"
+          ],
+          "missedPhrases": [
+            "toolcall",
+            "process"
+          ],
+          "qualityScore": 60,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.179,
+            "routeSelectionMs": 4.448,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.728,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-03-03T04:05:10.369Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 60,
+        "compileOkCount": 1,
+        "phraseHitCount": 1,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-f3204b94"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-f3204b94",
+        "frozenEvalRouterIdentity": "pack-f3204b94:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-03-03T04:05:10.369Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-308a6e29c6534cd8bc297aba7a63452ac6e432c3fb543507c47a7d2c04677ecf"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-f3204b94",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-f3204b94:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-f3204b94:route_fn",
+          "selectionDigest": "sha256-960ceafcb06f6fbb41aa5687ab8e1c6a37ce2942b94edfd546749db96ca3b390",
+          "selectedContextIds": [
+            "pack-f3204b94:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-2:feedback",
+            "pack-f3204b94:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-1:feedback",
+            "pack-f3204b94:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-4:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8098\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:26 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Jonathan: Get rid of the term fruit in code I do not want to see any fruit mentioned as function names or db .... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-2:interaction.",
+            "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8097\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:26 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` B: Yep. Quick scope check before I swing the axe: Do you mean remove “fruit” from the TS/JS code layer only (.... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-1:interaction.",
+            "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8103\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 20:00 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` How's it going. Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-4:interaction."
+          ],
+          "eventExportDigest": "sha256-56f38a148c4ca003ac458bccce74ca62c9715b99af2fcfe3e8cb7133bf716c75",
+          "expectedContextPhrases": [
+            "toolcall",
+            "process",
+            "action"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [
+            "action"
+          ],
+          "missedPhrases": [
+            "toolcall",
+            "process"
+          ],
+          "qualityScore": 60,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 8.72,
+            "routeSelectionMs": 5.334,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 3.383,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-03-03T04:05:10.369Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 60
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 60
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 60
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-c4f575391ceaa252adc815d6125eb97e09a5a71e4d379fe53501f38972bc8519"
+}

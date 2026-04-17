@@ -1,0 +1,116 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-d59f6f7d"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-03-03T08:54:02.215Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-276b2e73f26d60faa069fcb0ac298ce5376bdb39118cdec2efddc1a513251c81"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-d59f6f7d",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-37fb320420c54e34e1d9396a70b8542fe56924192b7a1f0bcb54a90a7ef226dd",
+      "selectedContextIds": [
+        "pack-d59f6f7d:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback",
+        "pack-d59f6f7d:pointer-aware-init",
+        "pack-d59f6f7d:workspace-init:48025857"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Mon 2026-03-02 19:29 PST\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"No new learnings.\" } ``` Is this the heartbeat?. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:interaction.",
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph.",
+        "Working-set input scripts/openclawbrain_replay_aggregate.py selected by pointer-aware init (inbound=5, outbound=0). #!/usr/bin/env python3 \"\"\"Aggregate recorded-session replay proof bundles already on disk. This is intentionally tiny and dependency-free: - scans the live replay-bundle roots for recorded_session_replay_proof_manifest.v1 bundles - groups them by trace id - computes bundle-level and pairwise mode stats - writes a JSON…"
+      ],
+      "eventExportDigest": "sha256-a4f92a63f3afd472461abdeff3d0b448a0e117f57d7a48351ceba5bf90580f40",
+      "expectedContextPhrases": [
+        "maxresults query operational excellence",
+        "operational excellence next steps",
+        "query operational excellence next"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "maxresults query operational excellence",
+        "operational excellence next steps",
+        "query operational excellence next"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 8.602,
+        "routeSelectionMs": 5.609,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.991,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-03-03T08:54:02.215Z"
+      },
+      "warnings": []
+    }
+  ]
+}

@@ -1,0 +1,114 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 2,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-6a5fe3b9"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-04T06:30:40.358Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-a360440a7b7d7b555987c4b5484e7697eed42c765db1a009890c446cc372a58b"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-6a5fe3b9",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-32214dd7b42512c146a2740f0ebfe3116645a89d2c943165796b5dd7e16bd3b1",
+      "selectedContextIds": [
+        "pack-6a5fe3b9:workspace",
+        "pack-6a5fe3b9:event:40299bc1-00ef-445f-960b-1b1147ffd61f-seed:cue-1:feedback",
+        "pack-6a5fe3b9:event:40299bc1-00ef-445f-960b-1b1147ffd61f-seed:cue-1:interaction"
+      ],
+      "selectedContextTexts": [
+        "Workspace snapshot session-40299bc1-00ef-445f-960b-1b1147ffd61f for ws-main captured at 2026-04-04T06:30:06.837Z with revision 40299bc1-00ef-445f-960b-1b1147ffd61f.",
+        "Teaching feedback on live-session session 40299bc1-00ef-445f-960b-1b1147ffd61f-seed: assistant: ✅ New session started · model: openai-codex/gpt-5.4. Related interaction: 40299bc1-00ef-445f-960b-1b1147ffd61f-seed:cue-1:interaction.",
+        "Interaction operator_override on live-session session 40299bc1-00ef-445f-960b-1b1147ffd61f-seed. Message: cue-1-seed-message."
+      ],
+      "eventExportDigest": "sha256-c930dcecbb82f1d9bd661fb4efe4fe04666a052e6068a0dcf584f175f79226f8",
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/workspace/BOOT.md\"}",
+        "/Users/guclaw/.openclaw/workspace/TASKS.md\"}"
+      ],
+      "minimumPhraseHits": 2,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace/BOOT.md\"}",
+        "/Users/guclaw/.openclaw/workspace/TASKS.md\"}"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 2.363,
+        "routeSelectionMs": 1.422,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 0.939,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-04T06:30:40.358Z"
+      },
+      "warnings": []
+    }
+  ]
+}

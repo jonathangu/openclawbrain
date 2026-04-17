@@ -1,0 +1,117 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-c7147297"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-c7147297",
+    "frozenEvalRouterIdentity": "pack-c7147297:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-04-01T02:44:34.222Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-1abd20a5ffc75687067a1e417d14d2a7ad485392134737b5a6bf76989a35d8f2"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-c7147297",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-c7147297:route_fn",
+      "activationConfidence": "high",
+      "routerIdentity": "pack-c7147297:route_fn",
+      "selectionDigest": "sha256-a20880fe40417ddb6fce543853768fa674fe614fd16062b23646dcc425eb4c0d",
+      "selectedContextIds": [
+        "pack-c7147297:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:feedback",
+        "pack-c7147297:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:feedback",
+        "pack-c7147297:pointer-aware-init"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session ad267ee2-3cc5-44dd-9e95-4b908028642a-seed: user: Update: Jon explicitly approved the aggressive path and explicitly said you are welcome to kill existing training jobs. Treat this as permission to optimize for immediate relaunch, not next-run-only. Adjust PEL-072 implementation accordingly: support killing/replacing the current sequential retrain with the new parallel GBM+TFT architecture as soon as the code path is ready. Prioritize a concrete relaunchable implementation and operator runbook/proof path.. Related interaction: ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:interaction.",
+        "Teaching feedback on live-session session ad267ee2-3cc5-44dd-9e95-4b908028642a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-072: fix Pelican retrain architecture for next run in /Users/guclaw/worktrees/quant-research/072a-parallel-retrain. Work only in that worktree. Problem: current AWS retrain is sequential by design (GBM first, TFT second) inside bootstrap-train.sh, with weak observability: GBM/TFT only emit training_started and sparse/empty train logs. Jon explicitly wants GBM a.... Related interaction: ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:interaction.",
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-01-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, docs/jon-model.md, docs/checklists.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
+      ],
+      "eventExportDigest": "sha256-b270f34ccc12f53b6eedac6def44e7486b2e70603522a3d66383e23efca32759",
+      "expectedContextPhrases": [
+        "/retrain_v6_monitor.sh",
+        "/weekly_retrain.sh",
+        "/progress"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/retrain_v6_monitor.sh",
+        "/weekly_retrain.sh",
+        "/progress"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 8.862,
+        "routeSelectionMs": 5.44,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.421,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-04-01T02:44:34.222Z"
+      },
+      "warnings": []
+    }
+  ]
+}

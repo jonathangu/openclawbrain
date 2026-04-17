@@ -1,0 +1,490 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-pelican-ab517e57-6c7d-4bcd-bce3-265ea08c9853-window-005",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-07T20:16:20.950Z",
+  "generatedAt": "2026-04-14T20:20:24.036Z",
+  "traceHash": "sha256-9a8a2e6a63cc5912fb58030e76267c771c6d07671775935e13384022cf8e7c59",
+  "fixtureHash": "sha256-d3b9199b3d1fba06ec6d727611496f93d92d13e1e28ef25defc3314d0f80c421",
+  "scoreHash": "sha256-68788495cb2e448056aea7709314fe03d3b73b1c1729e291f9f64caf9c50d8af",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/pelican/sessions/ab517e57-6c7d-4bcd-bce3-265ea08c9853.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 2,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-14T20:20:24.036Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-39cca038bdbd32b11125d0c6fba3b1b3a673e66a982ba05e8a320b541d748401"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-4652803deac12b530cb10cb9f21edb38d64f8c067727d35b668cacb2f201aaf4",
+          "expectedContextPhrases": [
+            "handled",
+            "internally."
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "handled",
+            "internally."
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.035,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.035,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-14T20:20:24.036Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 70,
+        "compileOkCount": 1,
+        "phraseHitCount": 1,
+        "phraseCount": 2,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-a9c82841"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-14T20:20:24.036Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-04249846775e6348508e6c92d04b78d294ba0c5eeb6c2527d4a721c84afd3535"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-a9c82841",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-4637fe089fba0f5f941cd1d2f2e78ab0ad143740a0b307c1a18e99a1aef2e6df",
+          "selectedContextIds": [
+            "pack-a9c82841:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-6:feedback",
+            "pack-a9c82841:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-1:feedback",
+            "pack-a9c82841:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-2:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Monday, April 13th, 2026 - 1:18 PM (America/Los_Angeles) / 2026-04-13 20:18 UTC. Related interaction: ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-6:interaction.",
+            "Teaching feedback on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7t.... Related interaction: ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-1:interaction.",
+            "Teaching feedback on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7t.... Related interaction: ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-2:interaction."
+          ],
+          "eventExportDigest": "sha256-a68e88bec94cf46ad762f647b0801100dffd4fedb014e87d356d620fabff8e8d",
+          "expectedContextPhrases": [
+            "handled",
+            "internally."
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "internally."
+          ],
+          "missedPhrases": [
+            "handled"
+          ],
+          "qualityScore": 70,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.244,
+            "routeSelectionMs": 4.555,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.687,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-14T20:20:24.036Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 70,
+        "compileOkCount": 1,
+        "phraseHitCount": 1,
+        "phraseCount": 2,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-a9c82841"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-14T20:20:24.036Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-4198a82b7230fa5dd1b10d5161c88c36b055ed04cfdb5142ba52604a60cc2ee6"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-a9c82841",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-dd96965c2ecef49edc4fc29bcddf529f28388a227c45156a807024d4f25e798f",
+          "selectedContextIds": [
+            "pack-a9c82841:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-6:feedback",
+            "pack-a9c82841:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-6:interaction",
+            "pack-a9c82841:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-1:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Monday, April 13th, 2026 - 1:18 PM (America/Los_Angeles) / 2026-04-13 20:18 UTC. Related interaction: ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-6:interaction.",
+            "Interaction operator_override on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed. Message: cue-6-seed-message.",
+            "Teaching feedback on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7t.... Related interaction: ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-1:interaction."
+          ],
+          "eventExportDigest": "sha256-78169e49f55c70e55478f22750d44ffa2790bcdbd0712362d1786c6c1755d85b",
+          "expectedContextPhrases": [
+            "handled",
+            "internally."
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "internally."
+          ],
+          "missedPhrases": [
+            "handled"
+          ],
+          "qualityScore": 70,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.249,
+            "routeSelectionMs": 4.566,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 2.682,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-14T20:20:24.036Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 70,
+        "compileOkCount": 1,
+        "phraseHitCount": 1,
+        "phraseCount": 2,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-a6330ad4"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-a6330ad4",
+        "frozenEvalRouterIdentity": "pack-a6330ad4:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-14T20:20:24.036Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-e6ab87904584dbff51ce9e94eacafc81bd4c606b6f15a7db6f63e019c43dfea8"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-a6330ad4",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-a6330ad4:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-a6330ad4:route_fn",
+          "selectionDigest": "sha256-e1876f6edee13d4640729c7be32196f1b57de05b0e2f175dfbd8d1f464126f3c",
+          "selectedContextIds": [
+            "pack-a6330ad4:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-6:feedback",
+            "pack-a6330ad4:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-1:feedback",
+            "pack-a6330ad4:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-2:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Monday, April 13th, 2026 - 1:18 PM (America/Los_Angeles) / 2026-04-13 20:18 UTC. Related interaction: ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-6:interaction.",
+            "Teaching feedback on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7t.... Related interaction: ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-1:interaction.",
+            "Teaching feedback on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7t.... Related interaction: ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-2:interaction."
+          ],
+          "eventExportDigest": "sha256-2606468fa2e71e94e34dff0a9d07f80ad1a21c923fd5621fe19e06994fb2b1b2",
+          "expectedContextPhrases": [
+            "handled",
+            "internally."
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [
+            "internally."
+          ],
+          "missedPhrases": [
+            "handled"
+          ],
+          "qualityScore": 70,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 8.767,
+            "routeSelectionMs": 5.386,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.379,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-14T20:20:24.036Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 70
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 70
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 70
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-9e313f0b00204224628f0c239359f4a996fedfedfea82f963deadb1a1b8ec3be"
+}

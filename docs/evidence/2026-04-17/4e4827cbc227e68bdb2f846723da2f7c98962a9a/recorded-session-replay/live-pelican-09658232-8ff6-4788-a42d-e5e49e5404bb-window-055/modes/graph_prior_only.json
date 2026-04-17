@@ -1,0 +1,112 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-5a4d06c0"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-02-28T01:52:36.626Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-b0eb9878f036fb544db97c62701f211e0c5ee859ae2548d5585d4b07c1768b24"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-5a4d06c0",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-4ef68a3d72b1062296df47c41fb809c7608ad91abdc9dbfc0ce04da02dbd60dd",
+      "selectedContextIds": [
+        "pack-5a4d06c0:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback",
+        "pack-5a4d06c0:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction",
+        "pack-5a4d06c0:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:38:10 PST] Exec completed (swift-cr, code 1) :: erify failed for embeddings_contextual.parquet (attempt 2/5), retrying... ⚠ Upload verify failed for embeddings_contextual.parquet (attempt 3/5), retrying... ⚠ Upload verify faile… System: [2026-02-27 17:39:30 PST] Exec completed (quick-ba, code 0) :: ation is currently not supported. Please check the documentation for supported configurations. Instance: (us-west-1) Waiter InstanceRunning failed: An error occurred (Missing.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction.",
+        "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-2-seed-message.",
+        "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-1-seed-message."
+      ],
+      "eventExportDigest": "sha256-fe5cfebe51742e20a1e5353ebec0da649f6b2b47909ecee4a22eb710af872405",
+      "expectedContextPhrases": [
+        "02ff48e800d3550ab"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "02ff48e800d3550ab"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.99,
+        "routeSelectionMs": 5.364,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.624,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-02-28T01:52:36.626Z"
+      },
+      "warnings": []
+    }
+  ]
+}

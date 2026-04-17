@@ -1,0 +1,495 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-bountiful-8b2dc443-4b37-45b3-8dba-b53ce81adbba-window-013",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-03-01T04:53:38.399Z",
+  "generatedAt": "2026-03-01T06:25:49.413Z",
+  "traceHash": "sha256-07e10f6820bf810e1999011ea58316d9d53ec99aa0ac7473d30a2c9a79d153ae",
+  "fixtureHash": "sha256-54c4d68b5e528e2dc7ad50c599fd75e1b659a972d8d4c97376e292a3ef62dcc8",
+  "scoreHash": "sha256-a0a35d02f09bf57d173d6046c9255a76f02bad8e04fed15dfc7e72b75ff51380",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/bountiful/sessions/8b2dc443-4b37-45b3-8dba-b53ce81adbba.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-03-01T06:25:49.413Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-430dcaca40205cc8d42bfba95521d8acee2a6e6c074b542cd0b9a2d9f1547939"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-441daecc8074c87498d0880bfdc3e46d60ab1fecbfe6bc312a5764302f0e2a57",
+          "expectedContextPhrases": [
+            "/Users/guclaw/.openclaw/workspace-bountiful/backyard-ripe",
+            "/web/src/features/trades/routes/TradeThreadRoute.tsx",
+            "/web/src/features/trades"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/.openclaw/workspace-bountiful/backyard-ripe",
+            "/web/src/features/trades/routes/TradeThreadRoute.tsx",
+            "/web/src/features/trades"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.035,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.035,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-03-01T06:25:49.413Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-8f203624"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-03-01T06:25:49.413Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-7cd7389ac1ecf0b62a1775539d4ff23a785f406590a2eaa7345fb8c72c680ccd"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-8f203624",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-1c353fb803983c3fd1c248414860f74c3e51c0f4e002f149f2a181165c43e439",
+          "selectedContextIds": [
+            "pack-8f203624:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:feedback",
+            "pack-8f203624:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:feedback",
+            "pack-8f203624:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-6:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: To send an image back, prefer the message tool (media/path/filePath). If you must inline, use MEDIA:https://example.com/image.jpg (spaces ok, quote if needed) or a safe relative path like MEDIA:./image.jpg. Avoid absolute paths (MEDIA:/...) and ~ paths — they are blocked for security. Keep caption in the text body. Conversation info (untrusted metadata): ```json { \"message_id\": \"7423\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:interaction.",
+            "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: System: [2026-02-28 21:51:22 PST] Exec completed (salty-la, code 0) :: Starting API server on :3001 (with auto-restart)... Watchdog PID: 20057 ⏳ Waiting for servers... ✅ API healthy ✅ Frontend healthy (served by Express) 🔧 Starting Cloudflare Tunnel… Conversation info (untrusted metadata): ```json { \"message_id\": \"7419\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrust.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:interaction.",
+            "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"7433\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan\", \"name\": \"Jonathan\" } ``` hello?. Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-6:interaction."
+          ],
+          "eventExportDigest": "sha256-2698280cca673858b6432d43c1ad1a3af0cc9bfefc30c9ab472cd85e308f5227",
+          "expectedContextPhrases": [
+            "/Users/guclaw/.openclaw/workspace-bountiful/backyard-ripe",
+            "/web/src/features/trades/routes/TradeThreadRoute.tsx",
+            "/web/src/features/trades"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/.openclaw/workspace-bountiful/backyard-ripe",
+            "/web/src/features/trades/routes/TradeThreadRoute.tsx",
+            "/web/src/features/trades"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.759,
+            "routeSelectionMs": 4.896,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 2.86,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-03-01T06:25:49.413Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-8f203624"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-03-01T06:25:49.413Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-dd3d8022166d5ee55a004bbc2bf11800e6531b7aa71dfa0fb89637ae1b6496a8"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-8f203624",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-c6858dcf4462f827f8966b5f0d5737bfa7600b6bad9ff575e5c8a0a6497ec930",
+          "selectedContextIds": [
+            "pack-8f203624:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:feedback",
+            "pack-8f203624:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:interaction",
+            "pack-8f203624:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: To send an image back, prefer the message tool (media/path/filePath). If you must inline, use MEDIA:https://example.com/image.jpg (spaces ok, quote if needed) or a safe relative path like MEDIA:./image.jpg. Avoid absolute paths (MEDIA:/...) and ~ paths — they are blocked for security. Keep caption in the text body. Conversation info (untrusted metadata): ```json { \"message_id\": \"7423\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:interaction.",
+            "Interaction operator_override on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed. Message: cue-3-seed-message.",
+            "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: System: [2026-02-28 21:51:22 PST] Exec completed (salty-la, code 0) :: Starting API server on :3001 (with auto-restart)... Watchdog PID: 20057 ⏳ Waiting for servers... ✅ API healthy ✅ Frontend healthy (served by Express) 🔧 Starting Cloudflare Tunnel… Conversation info (untrusted metadata): ```json { \"message_id\": \"7419\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrust.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:interaction."
+          ],
+          "eventExportDigest": "sha256-d03ac971458ad653d46d75f61b61198a48c7cb801784edc133a67de619a7117e",
+          "expectedContextPhrases": [
+            "/Users/guclaw/.openclaw/workspace-bountiful/backyard-ripe",
+            "/web/src/features/trades/routes/TradeThreadRoute.tsx",
+            "/web/src/features/trades"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/.openclaw/workspace-bountiful/backyard-ripe",
+            "/web/src/features/trades/routes/TradeThreadRoute.tsx",
+            "/web/src/features/trades"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.645,
+            "routeSelectionMs": 4.86,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 2.782,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-03-01T06:25:49.413Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-544b59ff"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-544b59ff",
+        "frozenEvalRouterIdentity": "pack-544b59ff:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-03-01T06:25:49.413Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-674b0a0ec80f23d28bce9acb08377e2473adab57d3043dec3ec0deacb64f813a"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-544b59ff",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-544b59ff:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-544b59ff:route_fn",
+          "selectionDigest": "sha256-af362d5b526877fa124f20d61dc91c1608e6f7007302e336952e5d531308b6f5",
+          "selectedContextIds": [
+            "pack-544b59ff:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:feedback",
+            "pack-544b59ff:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:feedback",
+            "pack-544b59ff:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-6:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: To send an image back, prefer the message tool (media/path/filePath). If you must inline, use MEDIA:https://example.com/image.jpg (spaces ok, quote if needed) or a safe relative path like MEDIA:./image.jpg. Avoid absolute paths (MEDIA:/...) and ~ paths — they are blocked for security. Keep caption in the text body. Conversation info (untrusted metadata): ```json { \"message_id\": \"7423\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:interaction.",
+            "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: System: [2026-02-28 21:51:22 PST] Exec completed (salty-la, code 0) :: Starting API server on :3001 (with auto-restart)... Watchdog PID: 20057 ⏳ Waiting for servers... ✅ API healthy ✅ Frontend healthy (served by Express) 🔧 Starting Cloudflare Tunnel… Conversation info (untrusted metadata): ```json { \"message_id\": \"7419\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrust.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-2:interaction.",
+            "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"7433\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan\", \"name\": \"Jonathan\" } ``` hello?. Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-6:interaction."
+          ],
+          "eventExportDigest": "sha256-45b7bcb0f98135a06a5a6bf37b63454a5948bca70ad122015aedef07b08f9303",
+          "expectedContextPhrases": [
+            "/Users/guclaw/.openclaw/workspace-bountiful/backyard-ripe",
+            "/web/src/features/trades/routes/TradeThreadRoute.tsx",
+            "/web/src/features/trades"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/.openclaw/workspace-bountiful/backyard-ripe",
+            "/web/src/features/trades/routes/TradeThreadRoute.tsx",
+            "/web/src/features/trades"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 9.408,
+            "routeSelectionMs": 5.906,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 3.499,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-03-01T06:25:49.413Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-f20e0023ba6c233e0fb5021cb0311972ea0341903666bdb942b91b79a85ceb2b"
+}

@@ -1,0 +1,112 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-46c36079"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/bountiful/session-window:memory_compiled",
+        "live/bountiful/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/bountiful/session-window",
+      "freshestCreatedAt": "2026-03-01T07:42:49.852Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-8c25a9bb4eaffc70cfeb167ef848d91e541986ecece364c06645c28429d00231"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-46c36079",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-8f4db017167991da85caf9022f8e1ba75c3c60b4315e79671a7fa21d9a94a3e9",
+      "selectedContextIds": [
+        "pack-46c36079:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-5:feedback",
+        "pack-46c36079:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-5:interaction",
+        "pack-46c36079:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: System: [2026-02-28 23:19:49 PST] Exec completed (rapid-bi, code 0) :: Starting API server on :3001 (with auto-restart)... Watchdog PID: 40809 ⏳ Waiting for servers... ✅ API healthy ✅ Frontend healthy (served by Express) 🔧 Starting Cloudflare Tunnel… Conversation info (untrusted metadata): ```json { \"message_id\": \"7484\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrust.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-5:interaction.",
+        "Interaction operator_override on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed. Message: cue-5-seed-message.",
+        "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: System: [2026-02-28 23:05:38 PST] Exec completed (glow-rid, code 0) :: s/trades/components/OwnerActionBar.tsx) - [TradeHeader.tsx](/Users/guclaw/worktrees/bountiful/3/apps/web/src/features/trades/components/TradeHeader.tsx) Verification: - Ran `pnpm … Conversation info (untrusted metadata): ```json { \"message_id\": \"7478\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrus.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:interaction."
+      ],
+      "eventExportDigest": "sha256-c87055713f147de21a4f0195b09bdf19885d4e07642b7de827fd4a45edb82236",
+      "expectedContextPhrases": [
+        "/gratitude"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/gratitude"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.754,
+        "routeSelectionMs": 4.906,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.846,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/bountiful/session-window:memory_compiled",
+          "live/bountiful/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/bountiful/session-window",
+        "freshestCreatedAt": "2026-03-01T07:42:49.852Z"
+      },
+      "warnings": []
+    }
+  ]
+}

@@ -1,0 +1,113 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-9e4e40ae"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-9e4e40ae",
+    "frozenEvalRouterIdentity": "pack-9e4e40ae:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-15T03:36:51.087Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-248e9f80b3286a63db129a16fc41eecf9d6ca5b6e266ff414aa446ca9ee9600c"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-9e4e40ae",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-9e4e40ae:route_fn",
+      "activationConfidence": "high",
+      "routerIdentity": "pack-9e4e40ae:route_fn",
+      "selectionDigest": "sha256-971913c8d38a6a0ff9bb5a526cc538b858d2674581d03d1b78c7dfe5ea14d5e8",
+      "selectedContextIds": [
+        "pack-9e4e40ae:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-6:feedback",
+        "pack-9e4e40ae:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:feedback",
+        "pack-9e4e40ae:pointer-aware-init"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Run the following periodic tasks (only those due based on their intervals): - project-scan: Reread TASKS.md. If an active principal task exists, inspect only the relevant project files needed to advance or close it. If none exists, reply HEARTBEAT_OK. After completing all due tasks, reply HEARTBEAT_OK. Current time: Tuesday, April 14th, 2026 - 8:32 PM (America/Los_Angeles) / 2026-04-15 03:32 UTC. Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-6:interaction.",
+        "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Run the following periodic tasks (only those due based on their intervals): - task-ledger-review: Reread TASKS.md. If an active unblocked principal task exists, reread MEMORY.md plus only the needed project files, then execute the best next ready step. Only report a real milestone, blocker, or completion; otherwise reply HEARTBEAT_OK. After completing all due tasks, reply HEARTBEAT_OK. Current time: Tuesday, April 14th, 2026 - 8:15 PM (America/Los_Angeles) / 2026-04-15 03:15 UTC. Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-1:interaction.",
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-15-duckdb-lock.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, AGENTS_ACTIVE.md, BOOT.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+      ],
+      "eventExportDigest": "sha256-96bb57f2063a0a412492669e6b6d31d93d1d3e0fdf32ce0156349c15bc80ec9e",
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/workspace/memory/2026-04-14.md\"}"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace/memory/2026-04-14.md\"}"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 10.112,
+        "routeSelectionMs": 6.624,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.487,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-15T03:36:51.087Z"
+      },
+      "warnings": []
+    }
+  ]
+}

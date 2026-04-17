@@ -1,0 +1,498 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-main-560d4776-a50d-4b05-9d1f-caaa2cdb8e31-window-002",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-04T01:31:49.851Z",
+  "generatedAt": "2026-04-04T02:04:28.205Z",
+  "traceHash": "sha256-035806e6f9bcb3753f58456b70d56dc8a01f4abf60114aeaf359384806f6c24b",
+  "fixtureHash": "sha256-74bbbcc2ba3e23b87dadc56cde438b46daa30c3743245ccd0b40d24de1249370",
+  "scoreHash": "sha256-804b7f101ba25bba7b56077d00820813d4b07736146931c78fb78ea4785e0a9f",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/main/sessions/560d4776-a50d-4b05-9d1f-caaa2cdb8e31.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/main/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/main/session-window",
+          "freshestCreatedAt": "2026-04-04T02:04:28.205Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-54ce8361598e1b4080ba115badc91e906441ece2076bc91bc1f9f28df2706034"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-9fbdf01325885746811881193a3fe3da408885286e122f3fa9f3268a6161ab8a",
+          "expectedContextPhrases": [
+            "/fixtures/compiled-artifacts/target-state-scaffold/",
+            "a2a53360c1fc902dd4f610d53983747ea2775303",
+            "artifacts/fixtures/compiled-artifacts/target-state-scaffold/"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/fixtures/compiled-artifacts/target-state-scaffold/",
+            "a2a53360c1fc902dd4f610d53983747ea2775303",
+            "artifacts/fixtures/compiled-artifacts/target-state-scaffold/"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.038,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.038,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/main/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/main/session-window",
+            "freshestCreatedAt": "2026-04-04T02:04:28.205Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 80,
+        "compileOkCount": 1,
+        "phraseHitCount": 2,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-1c3f2d0b"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/main/session-window:memory_compiled",
+            "live/main/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/main/session-window",
+          "freshestCreatedAt": "2026-04-04T02:04:28.205Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-df88ab1b32dc2c4a4fae116f533ee38ae37458d0bdf351898cbbd8aadca33f6e"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-1c3f2d0b",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-bb3d1703f38766257caa84b85fe93be29a60d7ea3663dfa88ced9efe01851815",
+          "selectedContextIds": [
+            "pack-1c3f2d0b:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-6:feedback",
+            "pack-1c3f2d0b:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-2:feedback",
+            "pack-1c3f2d0b:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-1:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed: assistant: Done. What I added: - A target-state compiled-artifact fixture pack at `artifacts/fixtures/compiled-artifacts/target-state-scaffold/` - Three example artifacts: - concept page - map-of-territory page - provenance-gap report - A pack README and manifest tying the examples together What it shows: - markdown + sidecar artifact shape - explicit evidence/provenance fields - clear separation between derived scaffolding and live truth Validation: - Parsed all new JSON files successfully - Verified a.... Related interaction: 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-6:interaction.",
+            "Teaching feedback on live-session session 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed: assistant: I'm adding a small target-state fixture pack under `artifacts/fixtures/compiled-artifacts/` with three example compiled artifacts: a concept page, a map-of-territory page, and a provenance-gap report. ToolCall exec {\"command\": \"python3 heredoc\\nfrom pathlib import Path\\nimport hashlib\\nimport json\\n\\nbase = Path('/Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/fixtures/compiled-artifacts/target-state-scaffold')\\nartifacts. Related interaction: 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-2:interaction.",
+            "Teaching feedback on live-session session 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Worker I for task T-20260403-126 in /Users/guclaw/.openclaw/workspace. Goal: make compiled artifacts tangible with examples/fixtures in /Users/guclaw/.openclaw/workspace/openclawbrain. Read first: /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-126/wave2-board.md and docs/architecture/compiled-artifacts.md. Then add a small set of example compil.... Related interaction: 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-1:interaction."
+          ],
+          "eventExportDigest": "sha256-1ce6078664fd69ead6e37196e7e95b80a771598ef23450902ca61defd1df03c7",
+          "expectedContextPhrases": [
+            "/fixtures/compiled-artifacts/target-state-scaffold/",
+            "a2a53360c1fc902dd4f610d53983747ea2775303",
+            "artifacts/fixtures/compiled-artifacts/target-state-scaffold/"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [
+            "/fixtures/compiled-artifacts/target-state-scaffold/",
+            "artifacts/fixtures/compiled-artifacts/target-state-scaffold/"
+          ],
+          "missedPhrases": [
+            "a2a53360c1fc902dd4f610d53983747ea2775303"
+          ],
+          "qualityScore": 80,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 9.093,
+            "routeSelectionMs": 6.088,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.003,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/main/session-window:memory_compiled",
+              "live/main/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/main/session-window",
+            "freshestCreatedAt": "2026-04-04T02:04:28.205Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 80,
+        "compileOkCount": 1,
+        "phraseHitCount": 2,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-1c3f2d0b"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/main/session-window:memory_compiled",
+            "live/main/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/main/session-window",
+          "freshestCreatedAt": "2026-04-04T02:04:28.205Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-8b96009499753d262e7d3bc1e6fd4b4143bda687f53120e42aadb543a3961562"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-1c3f2d0b",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-c43dc2d1ded8df276b0e2554149bfb988ec64e2bee04328dceaee409c49032cf",
+          "selectedContextIds": [
+            "pack-1c3f2d0b:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-6:feedback",
+            "pack-1c3f2d0b:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-6:interaction",
+            "pack-1c3f2d0b:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-2:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed: assistant: Done. What I added: - A target-state compiled-artifact fixture pack at `artifacts/fixtures/compiled-artifacts/target-state-scaffold/` - Three example artifacts: - concept page - map-of-territory page - provenance-gap report - A pack README and manifest tying the examples together What it shows: - markdown + sidecar artifact shape - explicit evidence/provenance fields - clear separation between derived scaffolding and live truth Validation: - Parsed all new JSON files successfully - Verified a.... Related interaction: 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-6:interaction.",
+            "Interaction operator_override on live-session session 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed. Message: cue-6-seed-message.",
+            "Teaching feedback on live-session session 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed: assistant: I'm adding a small target-state fixture pack under `artifacts/fixtures/compiled-artifacts/` with three example compiled artifacts: a concept page, a map-of-territory page, and a provenance-gap report. ToolCall exec {\"command\": \"python3 heredoc\\nfrom pathlib import Path\\nimport hashlib\\nimport json\\n\\nbase = Path('/Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/fixtures/compiled-artifacts/target-state-scaffold')\\nartifacts. Related interaction: 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-2:interaction."
+          ],
+          "eventExportDigest": "sha256-56e9be928bdcffb6a3613494081c584054a32a977bc9ef24365ed6205b3dcdab",
+          "expectedContextPhrases": [
+            "/fixtures/compiled-artifacts/target-state-scaffold/",
+            "a2a53360c1fc902dd4f610d53983747ea2775303",
+            "artifacts/fixtures/compiled-artifacts/target-state-scaffold/"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [
+            "/fixtures/compiled-artifacts/target-state-scaffold/",
+            "artifacts/fixtures/compiled-artifacts/target-state-scaffold/"
+          ],
+          "missedPhrases": [
+            "a2a53360c1fc902dd4f610d53983747ea2775303"
+          ],
+          "qualityScore": 80,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 8.495,
+            "routeSelectionMs": 5.67,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 2.824,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/main/session-window:memory_compiled",
+              "live/main/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/main/session-window",
+            "freshestCreatedAt": "2026-04-04T02:04:28.205Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 80,
+        "compileOkCount": 1,
+        "phraseHitCount": 2,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-ca00062a"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-ca00062a",
+        "frozenEvalRouterIdentity": "pack-ca00062a:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/main/session-window:memory_compiled",
+            "live/main/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/main/session-window",
+          "freshestCreatedAt": "2026-04-04T02:04:28.205Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-fefdc257182ef3a0c379a0673da746abf5f5b641550c6f4b789ece227c43eb34"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-ca00062a",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-ca00062a:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-ca00062a:route_fn",
+          "selectionDigest": "sha256-c1e2bff18567b763cddc5e689926249076b586160fd6cc0193b3b9a1b80be9f4",
+          "selectedContextIds": [
+            "pack-ca00062a:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-6:feedback",
+            "pack-ca00062a:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-2:feedback",
+            "pack-ca00062a:event:560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-1:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed: assistant: Done. What I added: - A target-state compiled-artifact fixture pack at `artifacts/fixtures/compiled-artifacts/target-state-scaffold/` - Three example artifacts: - concept page - map-of-territory page - provenance-gap report - A pack README and manifest tying the examples together What it shows: - markdown + sidecar artifact shape - explicit evidence/provenance fields - clear separation between derived scaffolding and live truth Validation: - Parsed all new JSON files successfully - Verified a.... Related interaction: 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-6:interaction.",
+            "Teaching feedback on live-session session 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed: assistant: I'm adding a small target-state fixture pack under `artifacts/fixtures/compiled-artifacts/` with three example compiled artifacts: a concept page, a map-of-territory page, and a provenance-gap report. ToolCall exec {\"command\": \"python3 heredoc\\nfrom pathlib import Path\\nimport hashlib\\nimport json\\n\\nbase = Path('/Users/guclaw/.openclaw/workspace/openclawbrain/artifacts/fixtures/compiled-artifacts/target-state-scaffold')\\nartifacts. Related interaction: 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-2:interaction.",
+            "Teaching feedback on live-session session 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Worker I for task T-20260403-126 in /Users/guclaw/.openclaw/workspace. Goal: make compiled artifacts tangible with examples/fixtures in /Users/guclaw/.openclaw/workspace/openclawbrain. Read first: /Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-126/wave2-board.md and docs/architecture/compiled-artifacts.md. Then add a small set of example compil.... Related interaction: 560d4776-a50d-4b05-9d1f-caaa2cdb8e31-seed:cue-1:interaction."
+          ],
+          "eventExportDigest": "sha256-88dc1fd73edcbd8b1ad51607ac565c250b7d3ed9f2f3e1bc415256ba9dac42b4",
+          "expectedContextPhrases": [
+            "/fixtures/compiled-artifacts/target-state-scaffold/",
+            "a2a53360c1fc902dd4f610d53983747ea2775303",
+            "artifacts/fixtures/compiled-artifacts/target-state-scaffold/"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [
+            "/fixtures/compiled-artifacts/target-state-scaffold/",
+            "artifacts/fixtures/compiled-artifacts/target-state-scaffold/"
+          ],
+          "missedPhrases": [
+            "a2a53360c1fc902dd4f610d53983747ea2775303"
+          ],
+          "qualityScore": 80,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 11.252,
+            "routeSelectionMs": 7.644,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.606,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/main/session-window:memory_compiled",
+              "live/main/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/main/session-window",
+            "freshestCreatedAt": "2026-04-04T02:04:28.205Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 80
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 80
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 80
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-1d65816f9dc40935fd10f3a7f7142a307458ea32b1104569470594132ca47afd"
+}

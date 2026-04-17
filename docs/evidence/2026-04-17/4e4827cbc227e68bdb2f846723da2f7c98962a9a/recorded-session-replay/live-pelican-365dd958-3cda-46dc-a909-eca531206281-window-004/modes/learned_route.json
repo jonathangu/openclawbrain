@@ -1,0 +1,118 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 60,
+    "compileOkCount": 1,
+    "phraseHitCount": 1,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-bbbb9415"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-bbbb9415",
+    "frozenEvalRouterIdentity": "pack-bbbb9415:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-04-12T23:44:26.441Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-f9e08ffdb3e585eaf32c3ca5d46ddd658c1f8d416948bd7866628f071c10ae1c"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-bbbb9415",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-bbbb9415:route_fn",
+      "activationConfidence": "high",
+      "routerIdentity": "pack-bbbb9415:route_fn",
+      "selectionDigest": "sha256-f8ee2a9f7b1d8afb02925d5b39f5dc7d95c7c142f187d414ba46e68509018bfa",
+      "selectedContextIds": [
+        "pack-bbbb9415:pointer-aware-init",
+        "pack-bbbb9415:event:365dd958-3cda-46dc-a909-eca531206281-seed:cue-1:feedback",
+        "pack-bbbb9415:event:365dd958-3cda-46dc-a909-eca531206281-seed:cue-3:feedback"
+      ],
+      "selectedContextTexts": [
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
+        "Teaching feedback on live-session session 365dd958-3cda-46dc-a909-eca531206281-seed: user: A new session was started via /new or /reset. Run your Session Startup sequence - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning. Current time: Sunday,.... Related interaction: 365dd958-3cda-46dc-a909-eca531206281-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session 365dd958-3cda-46dc-a909-eca531206281-seed: user: A new session was started via /new or /reset. Run your Session Startup sequence - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined voice, mannerisms, and mood. Keep it to 1-3 sentences and ask what they want to do. If the runtime model differs from default_model in the system prompt, mention the default model. Do not mention internal steps, files, tools, or reasoning. Current time: Sunday,.... Related interaction: 365dd958-3cda-46dc-a909-eca531206281-seed:cue-3:interaction."
+      ],
+      "eventExportDigest": "sha256-247013dedbd96bb19f82893296992dbf49e7a32fd9bea2b8784e7f4a77652edd",
+      "expectedContextPhrases": [
+        "hey",
+        "jon.",
+        "ready"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [
+        "hey"
+      ],
+      "missedPhrases": [
+        "jon.",
+        "ready"
+      ],
+      "qualityScore": 60,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 8.801,
+        "routeSelectionMs": 5.393,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.407,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-04-12T23:44:26.441Z"
+      },
+      "warnings": []
+    }
+  ]
+}

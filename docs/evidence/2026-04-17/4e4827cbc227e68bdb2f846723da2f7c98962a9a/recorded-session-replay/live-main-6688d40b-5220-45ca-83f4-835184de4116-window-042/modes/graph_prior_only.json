@@ -1,0 +1,116 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-fb8d9fb1"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-15T12:14:48.593Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-87765a11603dbaa285694ed2a6d523b6720f63131aa24bb3c7bc0ed5bb8e481e"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-fb8d9fb1",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-880d6458497aa8a5a83c642bedee2d3dc88540e53917a56bf37b090aa257e298",
+      "selectedContextIds": [
+        "pack-fb8d9fb1:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-6:feedback",
+        "pack-fb8d9fb1:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-6:interaction",
+        "pack-fb8d9fb1:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"23638\", \"reply_to_id\": \"23637\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 05:13 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"guclaw\", \"body\": \"Short version, learned_route is worse mostly because it is more expensive.... Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-6:interaction.",
+        "Interaction operator_override on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed. Message: cue-6-seed-message.",
+        "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"23635\", \"reply_to_id\": \"23634\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 04:32 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"guclaw\", \"body\": \"Yep. In plain English:\\n\\n• I fixed the OpenClawBrain replay reporting so.... Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:interaction."
+      ],
+      "eventExportDigest": "sha256-d56ce884d5dd555147058cf252d17c0cc86eb8961c4abfe7d39123bda08b6caf",
+      "expectedContextPhrases": [
+        "canonical-frozen-20 rolling real traces",
+        "real traces eval manifest",
+        "rolling real traces eval"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "canonical-frozen-20 rolling real traces",
+        "real traces eval manifest",
+        "rolling real traces eval"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 9.167,
+        "routeSelectionMs": 6.417,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.748,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-15T12:14:48.593Z"
+      },
+      "warnings": []
+    }
+  ]
+}

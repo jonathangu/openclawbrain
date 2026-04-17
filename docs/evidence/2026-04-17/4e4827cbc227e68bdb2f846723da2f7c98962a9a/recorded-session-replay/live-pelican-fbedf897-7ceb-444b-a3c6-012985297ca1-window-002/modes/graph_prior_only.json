@@ -1,0 +1,112 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-2c9a1e97"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-04-08T13:58:42.832Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-a7f5c3b25532c987d41000de27b9c2fa7aabe7584a58bc02220332ecefb826c1"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-2c9a1e97",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-de1f0f76d85476b90dc3ece711bcf31ae222109264522180e85d2880b807f04d",
+      "selectedContextIds": [
+        "pack-2c9a1e97:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-1:feedback",
+        "pack-2c9a1e97:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-1:interaction",
+        "pack-2c9a1e97:event:fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-2:interaction"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session fbedf897-7ceb-444b-a3c6-012985297ca1-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Resolve the active cherry-pick conflict for PEL-087 in /Users/guclaw/worktrees/pelican/18. Context: branch pel-087-112x-113x-harvest has already integrated 112a (occupancy) and 112b (overlap penalties). Cherry-picking 112c (replacement optimizer, commit bc4b392 from /Users/guclaw/worktrees/pelican/13) is in progress and conflicts mainly in run_once.py plus BUGFIX_R.... Related interaction: fbedf897-7ceb-444b-a3c6-012985297ca1-seed:cue-1:interaction.",
+        "Interaction operator_override on live-session session fbedf897-7ceb-444b-a3c6-012985297ca1-seed. Message: cue-1-seed-message.",
+        "Interaction operator_override on live-session session fbedf897-7ceb-444b-a3c6-012985297ca1-seed. Message: cue-2-seed-message."
+      ],
+      "eventExportDigest": "sha256-1f7856eae78d7c8a51c31061e40b78ac2f8ba71f00174d58fc492978f893003e",
+      "expectedContextPhrases": [
+        "/Users/guclaw/openclaw/skills/coding-agent/SKILL.md\"}"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/openclaw/skills/coding-agent/SKILL.md\"}"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.227,
+        "routeSelectionMs": 4.604,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.622,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-04-08T13:58:42.832Z"
+      },
+      "warnings": []
+    }
+  ]
+}

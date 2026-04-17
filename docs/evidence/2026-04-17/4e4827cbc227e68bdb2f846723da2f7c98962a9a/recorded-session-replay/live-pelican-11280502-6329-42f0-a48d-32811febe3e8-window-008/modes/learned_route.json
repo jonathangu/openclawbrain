@@ -1,0 +1,117 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-044a6800"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-044a6800",
+    "frozenEvalRouterIdentity": "pack-044a6800:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-03-02T01:07:00.447Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-3da9b684cb9792047479bf423493c777065e882ed9fb3b5551f0a8210015250c"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-044a6800",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-044a6800:route_fn",
+      "activationConfidence": "high",
+      "routerIdentity": "pack-044a6800:route_fn",
+      "selectionDigest": "sha256-5b0eb8edba4622df61453c4cb07ac479aad7811a1a2b258181c84ad6e33265a8",
+      "selectedContextIds": [
+        "pack-044a6800:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:feedback",
+        "pack-044a6800:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:feedback",
+        "pack-044a6800:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Not fully “all good” yet — trading-path looks green, but one of our safety verifiers (validate_model.py) is currently not trustworthy, and I’m fixing that now.\\n\\n✅ What I’ve re-checked and it’s OK\\n\\n• S3 snapshots are clean: latest key data/2026/02/27/16-00-49.json downloads fine (~15MB), collection_errors empty, and recent.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:interaction.",
+        "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: System: [2026-03-01 16:45:19 PST] Exec completed (ember-em, code 1) :: on_gbm_v5_20260228.pkl -t models/ensemble_production_tft_v5_20260228.pkl and ensure output is valid JSON only. - Also run without --json to ensure human output still prints. Make … Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"Jonathan\", \"body\": \"Okay double check that the data collector works. The data gets to s3 clean.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:interaction.",
+        "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: System: [2026-03-01 14:30:14 PST] Exec failed (tidal-gu, signal SIGTERM) Okay double check that the data collector works. The data gets to s3 clean. The listener works everything at inference time works. Double check that we made good labels and good features with no data leakage. Trained good models with good data. What else to check?. Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-2:interaction."
+      ],
+      "eventExportDigest": "sha256-8e51e95ac3dde60dce4576bb2eb73c55c541442525cb12a78a135e1163db54bc",
+      "expectedContextPhrases": [
+        "/NO-GO",
+        "c81f6fc",
+        "--max-rows"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/NO-GO",
+        "c81f6fc",
+        "--max-rows"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 10.47,
+        "routeSelectionMs": 6.853,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 3.614,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-03-02T01:07:00.447Z"
+      },
+      "warnings": []
+    }
+  ]
+}

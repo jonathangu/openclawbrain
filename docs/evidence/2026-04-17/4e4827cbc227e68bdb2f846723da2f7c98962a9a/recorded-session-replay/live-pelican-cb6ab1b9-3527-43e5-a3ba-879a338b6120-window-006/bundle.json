@@ -1,0 +1,487 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-pelican-cb6ab1b9-3527-43e5-a3ba-879a338b6120-window-006",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-09T06:08:38.082Z",
+  "generatedAt": "2026-04-09T06:47:57.026Z",
+  "traceHash": "sha256-4f07ed34ccc6a5c54819d12a1e93195c70560e32cc80e0d0e09592b4765b8105",
+  "fixtureHash": "sha256-00d9f388b90351cc79a6666fb1faf09e6f2109bf7c85e8cdc18048263ccb39a6",
+  "scoreHash": "sha256-f9dae07a13e7013df0371bc5f7b4902abc82c1754d362e4276bf2a5fa941dffc",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/pelican/sessions/cb6ab1b9-3527-43e5-a3ba-879a338b6120.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 2,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-09T06:47:57.026Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-0f9e400fcbe43d9ab55b6048a20689714c3c7aae22f85e1babf49f3474335a32"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-22122c60dd6f043dfe74e98cecaa713cc3d4e159817e96d47e8628af77a65c06",
+          "expectedContextPhrases": [
+            "/36**.",
+            "c4bb93fa9a864e221c6ebf62c2a50899453e2b07"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/36**.",
+            "c4bb93fa9a864e221c6ebf62c2a50899453e2b07"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.027,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.027,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-09T06:47:57.026Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 2,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-09b95d77"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-09T06:47:57.026Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-77f8b0f4f6f1475789067c2f7680641735c5f5a51d2dcb01d531a1811368377f"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-09b95d77",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-7214347baa26ebc7d4f5ee7782186f4a17b111b9a015a3196a7b9bcef2209c86",
+          "selectedContextIds": [
+            "pack-09b95d77:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:feedback",
+            "pack-09b95d77:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback",
+            "pack-09b95d77:pointer-aware-init"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=3fe194f4-3589-44f1-8e06-1f44240f170d, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:interaction.",
+            "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=e465c1e2-b1b2-43e6-a551-54e213ee37d8, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:interaction.",
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
+          ],
+          "eventExportDigest": "sha256-f230424e9441cea1e580ed1b006c3fe271de525753f968af5982940ebbbab064",
+          "expectedContextPhrases": [
+            "/36**.",
+            "c4bb93fa9a864e221c6ebf62c2a50899453e2b07"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/36**.",
+            "c4bb93fa9a864e221c6ebf62c2a50899453e2b07"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.579,
+            "routeSelectionMs": 5,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 2.578,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-09T06:47:57.026Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 2,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-09b95d77"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-09T06:47:57.026Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-a9327cc2d6d48c1da0c8a6164b8cbadee5ee8a568fbc92cfb2e655d8be72014f"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-09b95d77",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-a9c3baa6e8cc1d0b8a90814d6eded42c2505fc94702ba0791f5ab257558ed52b",
+          "selectedContextIds": [
+            "pack-09b95d77:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:feedback",
+            "pack-09b95d77:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:interaction",
+            "pack-09b95d77:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=3fe194f4-3589-44f1-8e06-1f44240f170d, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:interaction.",
+            "Interaction operator_override on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed. Message: cue-4-seed-message.",
+            "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=e465c1e2-b1b2-43e6-a551-54e213ee37d8, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:interaction."
+          ],
+          "eventExportDigest": "sha256-2e57a2525f77fd7bf3c4368dc758683817a934181da997d725a4b0c556f84181",
+          "expectedContextPhrases": [
+            "/36**.",
+            "c4bb93fa9a864e221c6ebf62c2a50899453e2b07"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/36**.",
+            "c4bb93fa9a864e221c6ebf62c2a50899453e2b07"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.662,
+            "routeSelectionMs": 5.01,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 2.651,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-09T06:47:57.026Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 2,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-7598711a"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-7598711a",
+        "frozenEvalRouterIdentity": "pack-7598711a:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-09T06:47:57.026Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-6adc9c9874063bf2cd3a7a92f48471b045b8c1ffa2249f2a597cf616dc985dcd"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-7598711a",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-7598711a:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-7598711a:route_fn",
+          "selectionDigest": "sha256-5bd0eddd74b61578b0cded1ddd5acf20bfaa37e2ce2dc7700911584446ee122f",
+          "selectedContextIds": [
+            "pack-7598711a:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:feedback",
+            "pack-7598711a:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:feedback",
+            "pack-7598711a:pointer-aware-init"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=e465c1e2-b1b2-43e6-a551-54e213ee37d8, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-6:interaction.",
+            "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=3fe194f4-3589-44f1-8e06-1f44240f170d, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:interaction.",
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
+          ],
+          "eventExportDigest": "sha256-33e9229f432526c313ad83e9d3439c5f09e4b57e44f6dca05f5b419358b80047",
+          "expectedContextPhrases": [
+            "/36**.",
+            "c4bb93fa9a864e221c6ebf62c2a50899453e2b07"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/36**.",
+            "c4bb93fa9a864e221c6ebf62c2a50899453e2b07"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 9.395,
+            "routeSelectionMs": 6.056,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.338,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-09T06:47:57.026Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-ca73e330925da51e93b6325bdd792c0d81103fe263b656b1000fddd40cdfb71f"
+}

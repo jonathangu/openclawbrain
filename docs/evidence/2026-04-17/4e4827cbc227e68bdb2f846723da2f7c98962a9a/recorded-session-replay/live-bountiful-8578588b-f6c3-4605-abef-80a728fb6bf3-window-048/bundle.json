@@ -1,0 +1,479 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-bountiful-8578588b-f6c3-4605-abef-80a728fb6bf3-window-048",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-07T18:00:10.407Z",
+  "generatedAt": "2026-04-11T09:35:04.061Z",
+  "traceHash": "sha256-ec11702cd5c290669dcb9e538d05099a378cb83776c59f4106b510b78248b8f6",
+  "fixtureHash": "sha256-c6a51fb2365b547d2ebf3546bcc8b17b6e2bc89686df2016f759916179857243",
+  "scoreHash": "sha256-4c3ee149e11c7a08500f088642770d3ff7c3833728cd9b4a3924f725bb0b1f36",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/bountiful/sessions/8578588b-f6c3-4605-abef-80a728fb6bf3.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-04-11T09:35:04.061Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-733cbd9351d42e7f14c5829edc01a658388a245c6f3afae8ff24b34e8acd9e00"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-4f318e37bc141edeb0349276672f78eb3238aababc4766468faed1a922d04727",
+          "expectedContextPhrases": [
+            "/Users/guclaw/.openclaw/workspace-bountiful/TASKS.md\"}"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/.openclaw/workspace-bountiful/TASKS.md\"}"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.036,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.036,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-04-11T09:35:04.061Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-2b03b687"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-04-11T09:35:04.061Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-a328a165a82c0e3111c45dc62e6a0d93f45fc334c57e537f612113c5be78fae6"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-2b03b687",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-59b7eb2fa4512bd72767c56ef86c0ced177e4e73b61d720c117b8a3e3c86c36a",
+          "selectedContextIds": [
+            "pack-2b03b687:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:feedback",
+            "pack-2b03b687:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback",
+            "pack-2b03b687:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15848\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:11 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Yes do this; Yes. Heartbeat can be more than “say what’s going on” — it can proactively wake the main session, reread TASKS.md, continue the highest-priority unfinished work, and only stay quiet when there’s tru.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction.",
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15837\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Please edit heartbeat to make sure the tasks are updated and don't discuss stale work that's already done.. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:interaction.",
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15845\", \"reply_to_id\": \"15840\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:09 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"B\", \"body\": \"Done — I tightened HEARTBEAT.md so it now:\\n\\n• rereads TASKS.md from disk eac.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction."
+          ],
+          "eventExportDigest": "sha256-b13f21ca59ee001d79a1d396c4628f6dca4c49e5568070a21e4c709293c72bcf",
+          "expectedContextPhrases": [
+            "/Users/guclaw/.openclaw/workspace-bountiful/TASKS.md\"}"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/.openclaw/workspace-bountiful/TASKS.md\"}"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 3.754,
+            "routeSelectionMs": 2.342,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 1.409,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-04-11T09:35:04.061Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-2b03b687"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-04-11T09:35:04.061Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-30f1d30f2fcc62872b257f8b9f0e88bc1c679395178598479c6bb3bc0f078950"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-2b03b687",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-1f279fcfa1892271c0d726131c212bf8694bc1fa38c3d4d37705fbf07035ad4f",
+          "selectedContextIds": [
+            "pack-2b03b687:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:feedback",
+            "pack-2b03b687:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction",
+            "pack-2b03b687:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15848\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:11 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Yes do this; Yes. Heartbeat can be more than “say what’s going on” — it can proactively wake the main session, reread TASKS.md, continue the highest-priority unfinished work, and only stay quiet when there’s tru.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction.",
+            "Interaction operator_override on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed. Message: cue-6-seed-message.",
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15837\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Please edit heartbeat to make sure the tasks are updated and don't discuss stale work that's already done.. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:interaction."
+          ],
+          "eventExportDigest": "sha256-fc09679f65cf6f4ea8c6faa48d9f96a92ea98403f87fbd08b4670757e0cdb46a",
+          "expectedContextPhrases": [
+            "/Users/guclaw/.openclaw/workspace-bountiful/TASKS.md\"}"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/.openclaw/workspace-bountiful/TASKS.md\"}"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 3.571,
+            "routeSelectionMs": 2.218,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 1.351,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-04-11T09:35:04.061Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-3ebdd01c"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-3ebdd01c",
+        "frozenEvalRouterIdentity": "pack-3ebdd01c:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-04-11T09:35:04.061Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-dd15d7358c7f461511d852a010c7d077393c6f0179a4130fa108a30d2eb15b6a"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-3ebdd01c",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-3ebdd01c:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-3ebdd01c:route_fn",
+          "selectionDigest": "sha256-448d0ea06d41362f2611a2d91b6c0da316d55cd35eef5ddbd3f2bef0e859974d",
+          "selectedContextIds": [
+            "pack-3ebdd01c:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:feedback",
+            "pack-3ebdd01c:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:feedback",
+            "pack-3ebdd01c:event:8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15848\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:11 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Yes do this; Yes. Heartbeat can be more than “say what’s going on” — it can proactively wake the main session, reread TASKS.md, continue the highest-priority unfinished work, and only stay quiet when there’s tru.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-6:interaction.",
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15837\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:00 PDT\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Please edit heartbeat to make sure the tasks are updated and don't discuss stale work that's already done.. Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-2:interaction.",
+            "Teaching feedback on live-session session 8578588b-f6c3-4605-abef-80a728fb6bf3-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"15845\", \"reply_to_id\": \"15840\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Tue 2026-04-07 14:09 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"B\", \"body\": \"Done — I tightened HEARTBEAT.md so it now:\\n\\n• rereads TASKS.md from disk eac.... Related interaction: 8578588b-f6c3-4605-abef-80a728fb6bf3-seed:cue-5:interaction."
+          ],
+          "eventExportDigest": "sha256-afeb08eda784d036a47f3214c7f3e12e0f80f75de085153ce41f5426c2258958",
+          "expectedContextPhrases": [
+            "/Users/guclaw/.openclaw/workspace-bountiful/TASKS.md\"}"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/.openclaw/workspace-bountiful/TASKS.md\"}"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 5.342,
+            "routeSelectionMs": 3.256,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 2.083,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-04-11T09:35:04.061Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-cd8a4d68be168c53079ed0f44f8db15288950a60ed19fa1efcd2307ad4798b1c"
+}

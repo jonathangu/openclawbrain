@@ -1,0 +1,112 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-6291b4cc"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-02-28T06:02:18.782Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-4446a9b9c94fb3bc424008be467ac5954c3cb69e91566737ce1870370e431afc"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-6291b4cc",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-8de481d5cc32e6f7b2ba1ab57d01842ba2e8c2d6348691ec08afb6a38e0df06d",
+      "selectedContextIds": [
+        "pack-6291b4cc:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback",
+        "pack-6291b4cc:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction",
+        "pack-6291b4cc:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: e44f8983-c431-41b9-b220-e56702ccc914] A cron job \"tft-bulletproof-check\" just completed successfully. Result: Interesting — no `model.tar.gz` yet, but there's a 120MB `.pkl` file uploaded at 8:17 PM PT (about an hour ago). No cloud-init log, which means training is likely still in progress — the pkl is probably an intermediate checkpoint or one of the ensemble members. Let me check if there's any more recent activity. Stats: runtime 24s • tokens 870 (in 7 / out 863) • prompt/cache.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction.",
+        "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-5-seed-message.",
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 0db80b90-5eeb-46c9-9eee-40efce5153b2] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: Ran the extraction pipeline and classified Jon's substantive messages from the last 2 hours. I also checked memory (today + yesterday) for context. Memory check - memory/2026-02-27.md and memory/2026-02-26.md inspected (no contradictory policy found). No prior memory snippet prevented making these gates. What I ran - Command executed: python3 /Users/guclaw/.opencla.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction."
+      ],
+      "eventExportDigest": "sha256-0f80050cc7a75dea202dbd252976934fb57fa6e229da43db333057efbeca308c",
+      "expectedContextPhrases": [
+        "no_reply"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "no_reply"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.748,
+        "routeSelectionMs": 5.052,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.694,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-02-28T06:02:18.782Z"
+      },
+      "warnings": []
+    }
+  ]
+}

@@ -1,0 +1,479 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-058",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-02-27T22:49:33.807Z",
+  "generatedAt": "2026-02-28T02:23:08.227Z",
+  "traceHash": "sha256-70e107aa90463a0c77bc30d344eca5153707641920ed24320747bbd52e05a0e6",
+  "fixtureHash": "sha256-2a5cd5afc4b09fa9beced059043152cd23fab3958640aae8275a1e91138ba120",
+  "scoreHash": "sha256-8e981659af62855b8d5ce037e7a8df19534c8ba32773463ffa85c271b54179a7",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/pelican/sessions/09658232-8ff6-4788-a42d-e5e49e5404bb.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-02-28T02:23:08.227Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-1c146c3106aa3a476acb28a8b075ba9caa0dc741d245d11ea00bbf3c4bbed6c9"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-0222f363b706a0977968e273da8aa4a672f483ee6ca98138079f609551f656e4",
+          "expectedContextPhrases": [
+            "0099b7a9354f27c47"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "0099b7a9354f27c47"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.027,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.027,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-02-28T02:23:08.227Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-98cdc110"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-02-28T02:23:08.227Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-dd5264d56fd7131cdc0abef121a381224536ff8fa898ce987651cd3ebf10ed00"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-98cdc110",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-6f01de24897669c6c1af58f1bf4c24c4a85606ae50570fede6b6b2b9ab8574da",
+          "selectedContextIds": [
+            "pack-98cdc110:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
+            "pack-98cdc110:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback",
+            "pack-98cdc110:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:52:08 PST] Exec failed (kind-ott, signal SIGTERM) :: === Chunked uploads === full_feature_matrix_v4.parquet: 12 chunks 5/12 10/12 ✓ full_feature_matrix_v4.parquet (0 failures) embeddings_contextual.parquet: 16 chunks System: [2026-02-27 17:52:14 PST] Exec completed (swift-ca, code 1) :: failed for full_feature_matrix_v4.parquet (attempt 2/5), retrying... ⚠ Upload verify failed for full_feature_matrix_v4.parquet (attempt 3/5), retrying... ⚠ Upload verify failed fo… Use o.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction.",
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:52:08 PST] Exec failed (kind-ott, signal SIGTERM) :: === Chunked uploads === full_feature_matrix_v4.parquet: 12 chunks 5/12 10/12 ✓ full_feature_matrix_v4.parquet (0 failures) embeddings_contextual.parquet: 16 chunks System: [2026-02-27 17:52:14 PST] Exec completed (swift-ca, code 1) :: failed for full_feature_matrix_v4.parquet (attempt 2/5), retrying... ⚠ Upload verify failed for full_feature_matrix_v4.parquet (attempt 3/5), retrying... ⚠ Upload verify failed fo… Use o.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction.",
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:52:08 PST] Exec failed (kind-ott, signal SIGTERM) :: === Chunked uploads === full_feature_matrix_v4.parquet: 12 chunks 5/12 10/12 ✓ full_feature_matrix_v4.parquet (0 failures) embeddings_contextual.parquet: 16 chunks System: [2026-02-27 17:52:14 PST] Exec completed (swift-ca, code 1) :: failed for full_feature_matrix_v4.parquet (attempt 2/5), retrying... ⚠ Upload verify failed for full_feature_matrix_v4.parquet (attempt 3/5), retrying... ⚠ Upload verify failed fo… Use o.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction."
+          ],
+          "eventExportDigest": "sha256-56f2f2e1b65fd609b45ff443231a51539a1e88f8bdf90556050cda03ec008631",
+          "expectedContextPhrases": [
+            "0099b7a9354f27c47"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "0099b7a9354f27c47"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.499,
+            "routeSelectionMs": 4.807,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.69,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-02-28T02:23:08.227Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-98cdc110"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-02-28T02:23:08.227Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-4c53e90ccabb60ab69a3e21564321b9117f9c34f00c6fdc06bc092c85de8a153"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-98cdc110",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-2f314bfd31fbdf7142803dbe51cc56e73e84f4939b77f967973655d39061f9d0",
+          "selectedContextIds": [
+            "pack-98cdc110:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
+            "pack-98cdc110:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction",
+            "pack-98cdc110:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:52:08 PST] Exec failed (kind-ott, signal SIGTERM) :: === Chunked uploads === full_feature_matrix_v4.parquet: 12 chunks 5/12 10/12 ✓ full_feature_matrix_v4.parquet (0 failures) embeddings_contextual.parquet: 16 chunks System: [2026-02-27 17:52:14 PST] Exec completed (swift-ca, code 1) :: failed for full_feature_matrix_v4.parquet (attempt 2/5), retrying... ⚠ Upload verify failed for full_feature_matrix_v4.parquet (attempt 3/5), retrying... ⚠ Upload verify failed fo… Use o.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction.",
+            "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-4-seed-message.",
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:52:08 PST] Exec failed (kind-ott, signal SIGTERM) :: === Chunked uploads === full_feature_matrix_v4.parquet: 12 chunks 5/12 10/12 ✓ full_feature_matrix_v4.parquet (0 failures) embeddings_contextual.parquet: 16 chunks System: [2026-02-27 17:52:14 PST] Exec completed (swift-ca, code 1) :: failed for full_feature_matrix_v4.parquet (attempt 2/5), retrying... ⚠ Upload verify failed for full_feature_matrix_v4.parquet (attempt 3/5), retrying... ⚠ Upload verify failed fo… Use o.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction."
+          ],
+          "eventExportDigest": "sha256-88d0a54130e7516e5cbb4efeeee7c404ce28714e7eb3ac23a472c7d365644fc3",
+          "expectedContextPhrases": [
+            "0099b7a9354f27c47"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "0099b7a9354f27c47"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.463,
+            "routeSelectionMs": 4.785,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.676,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-02-28T02:23:08.227Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-5e99f753"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-5e99f753",
+        "frozenEvalRouterIdentity": "pack-5e99f753:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-02-28T02:23:08.227Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-075507154c7eaef4de6b646b614971e9452f6305fdfb56593e6d9dadd3caf62e"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-5e99f753",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-5e99f753:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-5e99f753:route_fn",
+          "selectionDigest": "sha256-f74baaec9e7bf67dd112b64e85de9562541e9c78bb2ae336925e03b3ba4f64d7",
+          "selectedContextIds": [
+            "pack-5e99f753:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
+            "pack-5e99f753:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback",
+            "pack-5e99f753:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:52:08 PST] Exec failed (kind-ott, signal SIGTERM) :: === Chunked uploads === full_feature_matrix_v4.parquet: 12 chunks 5/12 10/12 ✓ full_feature_matrix_v4.parquet (0 failures) embeddings_contextual.parquet: 16 chunks System: [2026-02-27 17:52:14 PST] Exec completed (swift-ca, code 1) :: failed for full_feature_matrix_v4.parquet (attempt 2/5), retrying... ⚠ Upload verify failed for full_feature_matrix_v4.parquet (attempt 3/5), retrying... ⚠ Upload verify failed fo… Use o.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction.",
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:52:08 PST] Exec failed (kind-ott, signal SIGTERM) :: === Chunked uploads === full_feature_matrix_v4.parquet: 12 chunks 5/12 10/12 ✓ full_feature_matrix_v4.parquet (0 failures) embeddings_contextual.parquet: 16 chunks System: [2026-02-27 17:52:14 PST] Exec completed (swift-ca, code 1) :: failed for full_feature_matrix_v4.parquet (attempt 2/5), retrying... ⚠ Upload verify failed for full_feature_matrix_v4.parquet (attempt 3/5), retrying... ⚠ Upload verify failed fo… Use o.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction.",
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:52:08 PST] Exec failed (kind-ott, signal SIGTERM) :: === Chunked uploads === full_feature_matrix_v4.parquet: 12 chunks 5/12 10/12 ✓ full_feature_matrix_v4.parquet (0 failures) embeddings_contextual.parquet: 16 chunks System: [2026-02-27 17:52:14 PST] Exec completed (swift-ca, code 1) :: failed for full_feature_matrix_v4.parquet (attempt 2/5), retrying... ⚠ Upload verify failed for full_feature_matrix_v4.parquet (attempt 3/5), retrying... ⚠ Upload verify failed fo… Use o.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction."
+          ],
+          "eventExportDigest": "sha256-62bae26310339e937d0c6e3548cbbfe250ccaf557f9361a505b70385023a3c29",
+          "expectedContextPhrases": [
+            "0099b7a9354f27c47"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "0099b7a9354f27c47"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 8.921,
+            "routeSelectionMs": 5.576,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.344,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-02-28T02:23:08.227Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-3f5cecb5d393b7dfaa5adbe07e6514c1d13830caf731c8864928469c1a65e24e"
+}

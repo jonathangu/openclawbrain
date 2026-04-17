@@ -1,0 +1,113 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-ea1b9c04"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-ea1b9c04",
+    "frozenEvalRouterIdentity": "pack-ea1b9c04:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/bountiful/session-window:memory_compiled",
+        "live/bountiful/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/bountiful/session-window",
+      "freshestCreatedAt": "2026-03-05T15:41:08.632Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-5eab565d3de696556fe8250c9e29434caf7e3b912edbe21e6a6020406232a757"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-ea1b9c04",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-ea1b9c04:route_fn",
+      "activationConfidence": "high",
+      "routerIdentity": "pack-ea1b9c04:route_fn",
+      "selectionDigest": "sha256-6f7145942b4abacb5a8502c039f5a35421e075786c54c140d56c51f53a11414c",
+      "selectedContextIds": [
+        "pack-ea1b9c04:pointer-aware-init",
+        "pack-ea1b9c04:workspace-init:7959c2b1",
+        "pack-ea1b9c04:pointer-passive-expansion"
+      ],
+      "selectedContextTexts": [
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-03-05-1953.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, memory/archive/2026-03-05-1953.md, docs/jon-model.md, +2 more, and passive expansion docs/training-launch-contract.md, docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, +8 more from the MEMORY index graph.",
+        "Working-set input memory/archive/2026-03-05-1953.md selected by pointer-aware init (inbound=1, outbound=5). Session: 2026-03-05 19:53:52 UTC - **Session Key**: agent:pelican:main - **Session ID**: 820dfbff-397c-43ba-9982-4cbdf68a2def - **Source**: telegram Conversation Summary user: Conversation info (untrusted metadata): Sender (untrusted metadata): Yes please watch out for our exits. We need to exit when we want to exit a…",
+        "Passive expansion keeps 12 pointer-reachable files off the hot path after handoff: docs/training-launch-contract.md, docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, quant-research/docs/OPENCLAWBRAIN_OPS.md, docs/openclawbrain-upgrade-path.md, +6 more."
+      ],
+      "eventExportDigest": "sha256-9d26d2bea6fb95666ebcc13a53dca1d72f53239265cf80a71714871d6da52343",
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/workspace-bountiful/backyard-ripe"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace-bountiful/backyard-ripe"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 8.455,
+        "routeSelectionMs": 5.16,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.292,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/bountiful/session-window:memory_compiled",
+          "live/bountiful/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/bountiful/session-window",
+        "freshestCreatedAt": "2026-03-05T15:41:08.632Z"
+      },
+      "warnings": []
+    }
+  ]
+}

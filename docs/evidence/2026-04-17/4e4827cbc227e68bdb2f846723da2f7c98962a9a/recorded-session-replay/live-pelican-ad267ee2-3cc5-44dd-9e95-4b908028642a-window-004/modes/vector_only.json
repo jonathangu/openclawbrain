@@ -1,0 +1,112 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-31d1eae8"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-04-01T02:44:45.858Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-0c654319a96bcc1efd68fc1f811001964adfe5ab2aed334071b8b149784feb56"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-31d1eae8",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-fccc5e2b48a819056abf6f59df7e44fd7fd6cfcea0e8c0735e8f6ba1ba0363da",
+      "selectedContextIds": [
+        "pack-31d1eae8:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:feedback",
+        "pack-31d1eae8:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-5:feedback",
+        "pack-31d1eae8:event:ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session ad267ee2-3cc5-44dd-9e95-4b908028642a-seed: user: Update: Jon explicitly approved the aggressive path and explicitly said you are welcome to kill existing training jobs. Treat this as permission to optimize for immediate relaunch, not next-run-only. Adjust PEL-072 implementation accordingly: support killing/replacing the current sequential retrain with the new parallel GBM+TFT architecture as soon as the code path is ready. Prioritize a concrete relaunchable implementation and operator runbook/proof path.. Related interaction: ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-3:interaction.",
+        "Teaching feedback on live-session session ad267ee2-3cc5-44dd-9e95-4b908028642a-seed: user: Jon explicitly approved killing the current sequential retrain and wants immediate parallel GBM+TFT architecture. Optimize for aggressive relaunch path now; include exact relaunch steps and any code needed so we can deploy and run parallel as soon as your lane finishes.. Related interaction: ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-5:interaction.",
+        "Teaching feedback on live-session session ad267ee2-3cc5-44dd-9e95-4b908028642a-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: PEL-072: fix Pelican retrain architecture for next run in /Users/guclaw/worktrees/quant-research/072a-parallel-retrain. Work only in that worktree. Problem: current AWS retrain is sequential by design (GBM first, TFT second) inside bootstrap-train.sh, with weak observability: GBM/TFT only emit training_started and sparse/empty train logs. Jon explicitly wants GBM a.... Related interaction: ad267ee2-3cc5-44dd-9e95-4b908028642a-seed:cue-1:interaction."
+      ],
+      "eventExportDigest": "sha256-f3dbcee17f715d51efcb4103fb3c4b4afb3d6f07e74c44b124509fce6c6f838d",
+      "expectedContextPhrases": [
+        "/Users/guclaw/worktrees/quant-research/072a-parallel-retrain\"}"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/worktrees/quant-research/072a-parallel-retrain\"}"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.095,
+        "routeSelectionMs": 4.489,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 2.604,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-04-01T02:44:45.858Z"
+      },
+      "warnings": []
+    }
+  ]
+}

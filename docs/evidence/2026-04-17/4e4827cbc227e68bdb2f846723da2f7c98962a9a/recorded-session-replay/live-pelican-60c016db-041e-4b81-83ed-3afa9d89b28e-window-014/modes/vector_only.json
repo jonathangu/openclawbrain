@@ -1,0 +1,116 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-666c9f3e"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-03-03T10:15:20.011Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-8dffa3bd84f401b04f979860feaf8c7810fb6ba2edc18a791cd20c5097ac9f14"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-666c9f3e",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-eb0bff83c71e9db8c1438ab998d9f19701bb4b61e6f04bcb9b842eb888ad7c90",
+      "selectedContextIds": [
+        "pack-666c9f3e:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
+        "pack-666c9f3e:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:feedback",
+        "pack-666c9f3e:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 02:12 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Ship it! Make sure everything is well documented!. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction.",
+        "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:03 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Write the complete list of things we need to get done for this to trade like a real quant options hedge fund. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:08 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Do all improvements! Use codex. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:interaction."
+      ],
+      "eventExportDigest": "sha256-6b722c0f3db659f2be720da6f1c34b81c6a93606fb7fcb9fd3ed40f78ca5a5a9",
+      "expectedContextPhrases": [
+        "query matthew meeting evening",
+        "matthew meeting evening",
+        "maxresults query matthew meeting"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "query matthew meeting evening",
+        "matthew meeting evening",
+        "maxresults query matthew meeting"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 6.859,
+        "routeSelectionMs": 4.306,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 2.552,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-03-03T10:15:20.011Z"
+      },
+      "warnings": []
+    }
+  ]
+}

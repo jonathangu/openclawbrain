@@ -1,0 +1,117 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 60,
+    "compileOkCount": 1,
+    "phraseHitCount": 1,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-7c3e48d9"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-04-13T05:16:04.894Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-61e0693198e231229e5ea965c9147555551cde0c6e7792828d244c69caaf4b86"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-7c3e48d9",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-755d833d17d7d8bdb215d46ebd5f08935c2406ec6638b3fd4348ae7ba4a7225a",
+      "selectedContextIds": [
+        "pack-7c3e48d9:event:4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-4:feedback",
+        "pack-7c3e48d9:event:4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-4:interaction",
+        "pack-7c3e48d9:event:4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-5:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed: assistant: /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/session-startup-ready-2026-04-12.md\"}. Related interaction: 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-4:interaction.",
+        "Interaction operator_override on live-session session 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed. Message: cue-4-seed-message.",
+        "Teaching feedback on live-session session 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed: assistant: /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/retrain-runtime-gate-swarm-2026-04-12.md\"} ; /Users/guclaw/.openclaw/pelican/ops/task-artifacts/PEL-087/weekly-retrain-launch-proof-2026-04-12.md\"}. Related interaction: 4e89d5a5-376f-4b67-9e88-3aea314ab451-seed:cue-5:interaction."
+      ],
+      "eventExportDigest": "sha256-459f6ad705bc0fe0af414b4e11b8c2e8fd343a774dc1ae79ad4cb936f0e514a7",
+      "expectedContextPhrases": [
+        "yep",
+        "here.",
+        "pelican"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [
+        "pelican"
+      ],
+      "missedPhrases": [
+        "yep",
+        "here."
+      ],
+      "qualityScore": 60,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.761,
+        "routeSelectionMs": 5.106,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 2.653,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-04-13T05:16:04.894Z"
+      },
+      "warnings": []
+    }
+  ]
+}

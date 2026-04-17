@@ -1,0 +1,113 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-0139413f"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-0139413f",
+    "frozenEvalRouterIdentity": "pack-0139413f:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-04-14T14:09:02.755Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-9594a24532e5d9e4ae50f2bca44c3b543c211ec2d85dc6731e052f4a2cfcfcd8"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-0139413f",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-0139413f:route_fn",
+      "activationConfidence": "high",
+      "routerIdentity": "pack-0139413f:route_fn",
+      "selectionDigest": "sha256-a26e71ae9e4f13d7e504ec123aaa5b60eedfddc74e24331707d59650caa89714",
+      "selectedContextIds": [
+        "pack-0139413f:event:8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-6:feedback",
+        "pack-0139413f:event:8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-6:interaction",
+        "pack-0139413f:workspace-init:02e33be9"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed: user: An async command you ran earlier has completed. The result is shown in the system messages above. Handle the result internally. Do not relay it to the user unless explicitly requested. Current time: Tuesday, April 14th, 2026 - 7:01 AM (America/Los_Angeles) / 2026-04-14 14:01 UTC. Related interaction: 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed:cue-6:interaction.",
+        "Interaction operator_override on live-session session 8d942e32-c1fa-4af4-932d-fc1e8cb76bbc-seed. Message: cue-6-seed-message.",
+        "Top-priority boot input HEARTBEAT.md selected by pointer-aware init (inbound=4, outbound=2). HEARTBEAT.md — Pelican Use heartbeat to keep Pelican moving without manual prompting. Read TASKS.md first. Follow AGENTS.md at all times. Standard heartbeat - Read TASKS.md. - Pick the single highest-priority open, unblocked task. - Take one concrete executable step. - Verify the result with current file/runtime truth…"
+      ],
+      "eventExportDigest": "sha256-a68ac70bca1b3b6caea5dccffdfbfd4d32f73863a175fcc9d8c5bd635f9af3d0",
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/pelican/ops/TASKS.md\"}"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/pelican/ops/TASKS.md\"}"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 8.565,
+        "routeSelectionMs": 5.237,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 3.326,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-04-14T14:09:02.755Z"
+      },
+      "warnings": []
+    }
+  ]
+}

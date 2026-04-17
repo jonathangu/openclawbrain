@@ -1,0 +1,116 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-53184054"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-15T12:27:00.343Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-1dbe5cb2c0ff73f8bb62f58f5f47796a8442dddfef1cfd56d595b08b9011d03c"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-53184054",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-09565eeb2f8c8aa38166ef29c7106e2a30c95343f66fb1e25690e4e27f9296eb",
+      "selectedContextIds": [
+        "pack-53184054:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:feedback",
+        "pack-53184054:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-5:feedback",
+        "pack-53184054:event:6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"23638\", \"reply_to_id\": \"23637\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 05:13 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"guclaw\", \"body\": \"Short version, learned_route is worse mostly because it is more expensive.... Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-4:interaction.",
+        "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"23640\", \"reply_to_id\": \"23637\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 05:14 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"guclaw\", \"body\": \"Short version, learned_route is worse mostly because it is more expensive.... Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-5:interaction.",
+        "Teaching feedback on live-session session 6688d40b-5220-45ca-83f4-835184de4116-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"23635\", \"reply_to_id\": \"23634\", \"sender_id\": \"8518484672\", \"sender\": \"Jonathan\", \"timestamp\": \"Wed 2026-04-15 04:32 PDT\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"guclaw\", \"body\": \"Yep. In plain English:\\n\\n• I fixed the OpenClawBrain replay reporting so.... Related interaction: 6688d40b-5220-45ca-83f4-835184de4116-seed:cue-2:interaction."
+      ],
+      "eventExportDigest": "sha256-6358940f9978395647ec23b6b335290d4475de0abf18fe9d902745857b31058b",
+      "expectedContextPhrases": [
+        "history pelican guclaw bountiful",
+        "live history pelican guclaw",
+        "pelican guclaw bountiful sessions"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "history pelican guclaw bountiful",
+        "live history pelican guclaw",
+        "pelican guclaw bountiful sessions"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.481,
+        "routeSelectionMs": 4.762,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.717,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-15T12:27:00.343Z"
+      },
+      "warnings": []
+    }
+  ]
+}

@@ -1,0 +1,479 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-bountiful-b51279b9-581b-4db2-9a92-56c1d07af4c7-window-004",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-02-28T12:14:41.688Z",
+  "generatedAt": "2026-02-28T17:00:34.026Z",
+  "traceHash": "sha256-d8a6a685e755dad1fa0654d4b6b59fae51d32befb5054b1345ad7441ba8df43e",
+  "fixtureHash": "sha256-6c5d4c7687666f33983698e226b698dfe912054eada98b448401e6f4fac93956",
+  "scoreHash": "sha256-f085a7f23593dd8b5cab05274672bcabdcbbbc4620d87507b751ab02de54c381",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/bountiful/sessions/b51279b9-581b-4db2-9a92-56c1d07af4c7.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-02-28T17:00:34.026Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-ffc68f5afc82e7216af198fb6c91f17aa507e3e600979abda3e7dedfc7ea0fe9"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-93ad38364aeb73d55f34edeec37c2ce44c193a0d73947b0ae5bf19f4d9c94ea2",
+          "expectedContextPhrases": [
+            "/merged),"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/merged),"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.026,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.026,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-02-28T17:00:34.026Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-0f16efa9"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-02-28T17:00:34.026Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-9f70a38cf8dda79f05bf8e1dd74db070497b21039f6b177c61877e1dadbc5ec4"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-0f16efa9",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-f5fff58b7826d9276774c7906aa65167141510c0b13ea0fbc728be53478307d9",
+          "selectedContextIds": [
+            "pack-0f16efa9:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-5:feedback",
+            "pack-0f16efa9:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-3:feedback",
+            "pack-0f16efa9:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-4:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session b51279b9-581b-4db2-9a92-56c1d07af4c7-seed: user: [sessionId: 3a4cab56-64f1-4eb1-a427-cc6d90dfcea8] A cron job \"bountiful-learning-v2\" just completed successfully. Result: **Learning Harness v2 — Bountiful (4h window)** ✅ Harvest complete — no new messages to classify **Maintenance:** - **main:** 5,591 nodes, 15,631 edges (pruned 2,074, merged 3) - **pelican:** 1,552 nodes, 17,763 edges (pruned 4,275, merged 2) - **bountiful:** 1,723 nodes, 12,274 edges (pruned 13,824, merged 2) **Database stats:** - Active learnings: 259 (136 GATE, 123 REF).... Related interaction: b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-5:interaction.",
+            "Teaching feedback on live-session session b51279b9-581b-4db2-9a92-56c1d07af4c7-seed: user: [sessionId: 829d88b8-3e38-4b38-806e-19da01caf5bc] A cron job \"bountiful-learning-v2\" just completed successfully. Result: 🌱 **Learning Harvest v2 — Bountiful (4h window)** **Harvest Results:** - No new messages to classify (0 unclassified) - Skipped extraction stages (no work needed) - Maintenance completed across all brains **OpenClawBrain Maintenance:** - **main**: 5,594 nodes, 13,403 edges (no pruning) - **pelican**: 1,552 nodes, 17,238 edges (pruned 3,996, merged 2) - **bountiful**: 886 n.... Related interaction: b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-3:interaction.",
+            "Teaching feedback on live-session session b51279b9-581b-4db2-9a92-56c1d07af4c7-seed: assistant: Learning harvest ran cleanly in the last window. - Nothing new came in that needed classification, so no extraction work was needed. - Routine brain maintenance completed successfully. - The Bountiful brain got a good cleanup pass (a lot of extra connections pruned) — should keep retrieval snappy and the graph lean.. Related interaction: b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-4:interaction."
+          ],
+          "eventExportDigest": "sha256-6c4f2d1d2855c3d2822f7626ffce58e38ac17133b124cc71110646cbfb997fe7",
+          "expectedContextPhrases": [
+            "/merged),"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/merged),"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.69,
+            "routeSelectionMs": 5.097,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 2.591,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-02-28T17:00:34.026Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-0f16efa9"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-02-28T17:00:34.026Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-0f2df765707b5b52b309904fee63c61ab3e047d8aebede4ff8b3179196b70542"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-0f16efa9",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-0a8535505405756a8b90e70f45af77e2c2d68a98b5397c850e273ded9912e221",
+          "selectedContextIds": [
+            "pack-0f16efa9:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-5:feedback",
+            "pack-0f16efa9:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-5:interaction",
+            "pack-0f16efa9:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-3:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session b51279b9-581b-4db2-9a92-56c1d07af4c7-seed: user: [sessionId: 3a4cab56-64f1-4eb1-a427-cc6d90dfcea8] A cron job \"bountiful-learning-v2\" just completed successfully. Result: **Learning Harness v2 — Bountiful (4h window)** ✅ Harvest complete — no new messages to classify **Maintenance:** - **main:** 5,591 nodes, 15,631 edges (pruned 2,074, merged 3) - **pelican:** 1,552 nodes, 17,763 edges (pruned 4,275, merged 2) - **bountiful:** 1,723 nodes, 12,274 edges (pruned 13,824, merged 2) **Database stats:** - Active learnings: 259 (136 GATE, 123 REF).... Related interaction: b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-5:interaction.",
+            "Interaction operator_override on live-session session b51279b9-581b-4db2-9a92-56c1d07af4c7-seed. Message: cue-5-seed-message.",
+            "Teaching feedback on live-session session b51279b9-581b-4db2-9a92-56c1d07af4c7-seed: user: [sessionId: 829d88b8-3e38-4b38-806e-19da01caf5bc] A cron job \"bountiful-learning-v2\" just completed successfully. Result: 🌱 **Learning Harvest v2 — Bountiful (4h window)** **Harvest Results:** - No new messages to classify (0 unclassified) - Skipped extraction stages (no work needed) - Maintenance completed across all brains **OpenClawBrain Maintenance:** - **main**: 5,594 nodes, 13,403 edges (no pruning) - **pelican**: 1,552 nodes, 17,238 edges (pruned 3,996, merged 2) - **bountiful**: 886 n.... Related interaction: b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-3:interaction."
+          ],
+          "eventExportDigest": "sha256-1a0cdd1d4b45de098a672daa73d40cfdb5fb5bbad2e1eb6ed39a21c516e05d5e",
+          "expectedContextPhrases": [
+            "/merged),"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/merged),"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.349,
+            "routeSelectionMs": 4.841,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 2.506,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-02-28T17:00:34.026Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-bc0ea1ee"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-bc0ea1ee",
+        "frozenEvalRouterIdentity": "pack-bc0ea1ee:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-02-28T17:00:34.026Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-94ef559ab21e228349f3b9fcbe0c6632e869faad1b0c5216dd67141f30be0929"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-bc0ea1ee",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-bc0ea1ee:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-bc0ea1ee:route_fn",
+          "selectionDigest": "sha256-613fb82b4b8db23999e518ce5d0d825b90275f2a6bc5a81cd7be136d745211e9",
+          "selectedContextIds": [
+            "pack-bc0ea1ee:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-5:feedback",
+            "pack-bc0ea1ee:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-3:feedback",
+            "pack-bc0ea1ee:event:b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-4:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session b51279b9-581b-4db2-9a92-56c1d07af4c7-seed: user: [sessionId: 3a4cab56-64f1-4eb1-a427-cc6d90dfcea8] A cron job \"bountiful-learning-v2\" just completed successfully. Result: **Learning Harness v2 — Bountiful (4h window)** ✅ Harvest complete — no new messages to classify **Maintenance:** - **main:** 5,591 nodes, 15,631 edges (pruned 2,074, merged 3) - **pelican:** 1,552 nodes, 17,763 edges (pruned 4,275, merged 2) - **bountiful:** 1,723 nodes, 12,274 edges (pruned 13,824, merged 2) **Database stats:** - Active learnings: 259 (136 GATE, 123 REF).... Related interaction: b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-5:interaction.",
+            "Teaching feedback on live-session session b51279b9-581b-4db2-9a92-56c1d07af4c7-seed: user: [sessionId: 829d88b8-3e38-4b38-806e-19da01caf5bc] A cron job \"bountiful-learning-v2\" just completed successfully. Result: 🌱 **Learning Harvest v2 — Bountiful (4h window)** **Harvest Results:** - No new messages to classify (0 unclassified) - Skipped extraction stages (no work needed) - Maintenance completed across all brains **OpenClawBrain Maintenance:** - **main**: 5,594 nodes, 13,403 edges (no pruning) - **pelican**: 1,552 nodes, 17,238 edges (pruned 3,996, merged 2) - **bountiful**: 886 n.... Related interaction: b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-3:interaction.",
+            "Teaching feedback on live-session session b51279b9-581b-4db2-9a92-56c1d07af4c7-seed: assistant: Learning harvest ran cleanly in the last window. - Nothing new came in that needed classification, so no extraction work was needed. - Routine brain maintenance completed successfully. - The Bountiful brain got a good cleanup pass (a lot of extra connections pruned) — should keep retrieval snappy and the graph lean.. Related interaction: b51279b9-581b-4db2-9a92-56c1d07af4c7-seed:cue-4:interaction."
+          ],
+          "eventExportDigest": "sha256-29e2545c78a3b339b1543318c7df5f58005c55567bc348cb42b584463388b6c4",
+          "expectedContextPhrases": [
+            "/merged),"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/merged),"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 9.782,
+            "routeSelectionMs": 6.298,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 3.481,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-02-28T17:00:34.026Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-0ddfae91197e9521ec68f8520e58dd5705b42f5166ad3d5bdccae7c6daae0036"
+}

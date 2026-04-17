@@ -1,0 +1,479 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-018",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-02-27T22:49:33.807Z",
+  "generatedAt": "2026-02-28T00:07:36.313Z",
+  "traceHash": "sha256-31afb2df9c1a17ca25197bd8dab4006e37b9c5d5cee2757703f3aa5a6af3cc63",
+  "fixtureHash": "sha256-998f6618e36f06829cb18a9eae15dbb334b923e47c420cfa28a2642db4d68155",
+  "scoreHash": "sha256-e2f522ab849b482afd730145b80632f4c5f57c9aa60e6fa11d122791dcf56c89",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/pelican/sessions/09658232-8ff6-4788-a42d-e5e49e5404bb.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-02-28T00:07:36.313Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-c0657d7b41d16e0a76bed7b5e5dcdadf4310444b0556eb5e7411f6141dac5dd0"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-39ec2c65fd3a62e6d6cec73a6eb2d11e30b84f2cbff2a993c3beb6ce92cbf174",
+          "expectedContextPhrases": [
+            "no_reply"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "no_reply"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.035,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.035,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-02-28T00:07:36.313Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-2b0c7eed"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-02-28T00:07:36.313Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-126039d99fa7c4d50ce2c75b607e43af3043c883ca49735f2e0f2b681765e016"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-2b0c7eed",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-d5154bdcca899b8828c8875b9a93e15b75ebf123323de657509b3338edf069be",
+          "selectedContextIds": [
+            "pack-2b0c7eed:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
+            "pack-2b0c7eed:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
+            "pack-2b0c7eed:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 9e9acf30-fee4-41a1-97f6-ac5597851b77] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: No new learnings. Stats: runtime 1m41s • tokens 19.9k (in 13.7k / out 6.2k) A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system message verbatim..... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction.",
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: eeb5903a-1991-4471-87ba-565408d3db83] A cron job \"v5-gbm-training-monitor\" just completed successfully. Result: Good context. Training is at member 5/15, ~28 min left. Let me update the heartbeat with current progress: Stats: runtime 22s • tokens 787 (in 7 / out 780) • prompt/cache 20.8k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention s.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction.",
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: d4fe5adc-c09d-4b95-86b2-b106a2a97c64] A cron job \"v5-gbm-training-monitor\" just completed successfully. Result: Training is still in progress — member 9/15 is running now. Each member takes ~160s, so ~16 minutes remaining. Let me check if the runs file is elsewhere: Stats: runtime 15s • tokens 450 (in 5 / out 445) • prompt/cache 17.5k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Kee.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction."
+          ],
+          "eventExportDigest": "sha256-9ad5fe1ab55ec45d4d3c0001cd74e7e7d434bed1fa53d29580aabac8c30695d9",
+          "expectedContextPhrases": [
+            "no_reply"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "no_reply"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 8.66,
+            "routeSelectionMs": 5.877,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.78,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-02-28T00:07:36.313Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-2b0c7eed"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-02-28T00:07:36.313Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-1195e947d5d5571ddc80d9bb3dfce7b2c5b7a4d39aa0f0aed150e32543a26b5a"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-2b0c7eed",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-208d7e37f22ab98d4a61be523efbb1d58a866b2949c0e7613f475cc68cec3e1e",
+          "selectedContextIds": [
+            "pack-2b0c7eed:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
+            "pack-2b0c7eed:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction",
+            "pack-2b0c7eed:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 9e9acf30-fee4-41a1-97f6-ac5597851b77] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: No new learnings. Stats: runtime 1m41s • tokens 19.9k (in 13.7k / out 6.2k) A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system message verbatim..... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction.",
+            "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-4-seed-message.",
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: eeb5903a-1991-4471-87ba-565408d3db83] A cron job \"v5-gbm-training-monitor\" just completed successfully. Result: Good context. Training is at member 5/15, ~28 min left. Let me update the heartbeat with current progress: Stats: runtime 22s • tokens 787 (in 7 / out 780) • prompt/cache 20.8k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention s.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction."
+          ],
+          "eventExportDigest": "sha256-12288f7eaeb64b68b4df172f6cc0c8dc436c0802c534f996aa5766e1341ac3f5",
+          "expectedContextPhrases": [
+            "no_reply"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "no_reply"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 8.387,
+            "routeSelectionMs": 5.664,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.721,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-02-28T00:07:36.313Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-bcab9b94"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-bcab9b94",
+        "frozenEvalRouterIdentity": "pack-bcab9b94:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-02-28T00:07:36.313Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-943fd6d612885f4febdecedc45b63e1499807652f228916a7e904d3212816973"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-bcab9b94",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-bcab9b94:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-bcab9b94:route_fn",
+          "selectionDigest": "sha256-ae5fc46f88afa5f4af117aaa66b508cd8bffa33c6db99d7500ecdec01268bd8e",
+          "selectedContextIds": [
+            "pack-bcab9b94:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
+            "pack-bcab9b94:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:feedback",
+            "pack-bcab9b94:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 9e9acf30-fee4-41a1-97f6-ac5597851b77] A cron job \"pelican-interaction-harvester\" just completed successfully. Result: No new learnings. Stats: runtime 1m41s • tokens 19.9k (in 13.7k / out 6.2k) A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system message verbatim..... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction.",
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: eeb5903a-1991-4471-87ba-565408d3db83] A cron job \"v5-gbm-training-monitor\" just completed successfully. Result: Good context. Training is at member 5/15, ~28 min left. Let me update the heartbeat with current progress: Stats: runtime 22s • tokens 787 (in 7 / out 780) • prompt/cache 20.8k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention s.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-3:interaction.",
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: d4fe5adc-c09d-4b95-86b2-b106a2a97c64] A cron job \"v5-gbm-training-monitor\" just completed successfully. Result: Training is still in progress — member 9/15 is running now. Each member takes ~160s, so ~16 minutes remaining. Let me check if the runs file is elsewhere: Stats: runtime 15s • tokens 450 (in 5 / out 445) • prompt/cache 17.5k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Kee.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-5:interaction."
+          ],
+          "eventExportDigest": "sha256-fde25a1c9bae622a24cea60c532be859544e118d749f619e325b1892b400efea",
+          "expectedContextPhrases": [
+            "no_reply"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "no_reply"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 10.431,
+            "routeSelectionMs": 6.896,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.533,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-02-28T00:07:36.313Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-f48c10f59c17dfff8438e384a4b4581109193936e49a47e82245cf80de6e266b"
+}

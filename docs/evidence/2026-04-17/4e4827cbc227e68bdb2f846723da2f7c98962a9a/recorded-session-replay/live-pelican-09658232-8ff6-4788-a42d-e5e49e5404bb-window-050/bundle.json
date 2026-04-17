@@ -1,0 +1,487 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-pelican-09658232-8ff6-4788-a42d-e5e49e5404bb-window-050",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-02-27T22:49:33.807Z",
+  "generatedAt": "2026-02-28T01:46:10.708Z",
+  "traceHash": "sha256-edca99fed5bfa02f8196eb002c7ca5449e3ad77a55a7ede4db613e0216b9a288",
+  "fixtureHash": "sha256-075e6ae40abca95623d0eaab9386a47facdde038c6af2c88f5255ae9a6184b2a",
+  "scoreHash": "sha256-9f344800fd22c1537d9e5ac4ec5cbf80c73072121873ec3f4dafa32d639a8014",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/pelican/sessions/09658232-8ff6-4788-a42d-e5e49e5404bb.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 2,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-02-28T01:46:10.708Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-6022525cea9be81df298416f8768122250fedda0d93e17bc4857c9bee2c2bbc7"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-ca6f58e67c9af42c758300a0b9bdeb9aa0db8224a8b978ddedcaf91a8b1def5b",
+          "expectedContextPhrases": [
+            "/Users/guclaw/.openclaw/workspace/quant-research\\n\\necho",
+            "/configs"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/.openclaw/workspace/quant-research\\n\\necho",
+            "/configs"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.027,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.027,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-02-28T01:46:10.708Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 2,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-1bab87d3"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-02-28T01:46:10.708Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-b7f1274c3c5c639bcdca8926aaeefe4e89275cc1f44f7ba84f2eb0a9b36a88c3"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-1bab87d3",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-8befeaf0acc2e6c52a4adfa6314a4bba0c5157c5a11df2cd7bbe1cc2bc418642",
+          "selectedContextIds": [
+            "pack-1bab87d3:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
+            "pack-1bab87d3:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction",
+            "pack-1bab87d3:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:38:10 PST] Exec completed (swift-cr, code 1) :: erify failed for embeddings_contextual.parquet (attempt 2/5), retrying... ⚠ Upload verify failed for embeddings_contextual.parquet (attempt 3/5), retrying... ⚠ Upload verify faile… System: [2026-02-27 17:39:30 PST] Exec completed (quick-ba, code 0) :: ation is currently not supported. Please check the documentation for supported configurations. Instance: (us-west-1) Waiter InstanceRunning failed: An error occurred (Missing.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction.",
+            "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-4-seed-message.",
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: A cron job \"pelican-interaction-harvester\" just completed successfully. Result: New learnings found — last 2 hours (Jon / sender:8518484672) Summary - Substantive Jon messages found: 15 - [GATE] candidates (promote to AGENTS.md): 4 primary items (silent-exit detection, lifecycle atomicity, heartbeat/monitoring min-spec, safe-delete) - [REF] items (stay in docs): model-download/validation, GPT‑5.2 preference, many procedural directives - Regressions needing Jon alert (do NOT send without confi.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction."
+          ],
+          "eventExportDigest": "sha256-fcc958370d3dda4d3088522d134c902d54c0f6186c43252067b86bb8594fd9f5",
+          "expectedContextPhrases": [
+            "/Users/guclaw/.openclaw/workspace/quant-research\\n\\necho",
+            "/configs"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/.openclaw/workspace/quant-research\\n\\necho",
+            "/configs"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.012,
+            "routeSelectionMs": 4.401,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.609,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-02-28T01:46:10.708Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 2,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-1bab87d3"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-02-28T01:46:10.708Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-c74f988f5ecb462f9a815c083749aae22ff7bd6e56fe52e2b4a53f2574b0c765"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-1bab87d3",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-8befeaf0acc2e6c52a4adfa6314a4bba0c5157c5a11df2cd7bbe1cc2bc418642",
+          "selectedContextIds": [
+            "pack-1bab87d3:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
+            "pack-1bab87d3:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction",
+            "pack-1bab87d3:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:38:10 PST] Exec completed (swift-cr, code 1) :: erify failed for embeddings_contextual.parquet (attempt 2/5), retrying... ⚠ Upload verify failed for embeddings_contextual.parquet (attempt 3/5), retrying... ⚠ Upload verify faile… System: [2026-02-27 17:39:30 PST] Exec completed (quick-ba, code 0) :: ation is currently not supported. Please check the documentation for supported configurations. Instance: (us-west-1) Waiter InstanceRunning failed: An error occurred (Missing.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction.",
+            "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-4-seed-message.",
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: A cron job \"pelican-interaction-harvester\" just completed successfully. Result: New learnings found — last 2 hours (Jon / sender:8518484672) Summary - Substantive Jon messages found: 15 - [GATE] candidates (promote to AGENTS.md): 4 primary items (silent-exit detection, lifecycle atomicity, heartbeat/monitoring min-spec, safe-delete) - [REF] items (stay in docs): model-download/validation, GPT‑5.2 preference, many procedural directives - Regressions needing Jon alert (do NOT send without confi.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction."
+          ],
+          "eventExportDigest": "sha256-fcc958370d3dda4d3088522d134c902d54c0f6186c43252067b86bb8594fd9f5",
+          "expectedContextPhrases": [
+            "/Users/guclaw/.openclaw/workspace/quant-research\\n\\necho",
+            "/configs"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/.openclaw/workspace/quant-research\\n\\necho",
+            "/configs"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.185,
+            "routeSelectionMs": 4.511,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.672,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-02-28T01:46:10.708Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 2,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-43667cba"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-43667cba",
+        "frozenEvalRouterIdentity": "pack-43667cba:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-02-28T01:46:10.708Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-f2a0adcf6bd7642be743d89aec05f0bfe45bc9d9d62f378dd4b69ffc551b4e2f"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-43667cba",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-43667cba:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-43667cba:route_fn",
+          "selectionDigest": "sha256-1a0f317d23ce73090c8d4de5c9e2ea85b132ec571794961c80f58ea37e2dbc7b",
+          "selectedContextIds": [
+            "pack-43667cba:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction",
+            "pack-43667cba:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:feedback",
+            "pack-43667cba:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-1:interaction"
+          ],
+          "selectedContextTexts": [
+            "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-4-seed-message.",
+            "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: System: [2026-02-27 17:38:10 PST] Exec completed (swift-cr, code 1) :: erify failed for embeddings_contextual.parquet (attempt 2/5), retrying... ⚠ Upload verify failed for embeddings_contextual.parquet (attempt 3/5), retrying... ⚠ Upload verify faile… System: [2026-02-27 17:39:30 PST] Exec completed (quick-ba, code 0) :: ation is currently not supported. Please check the documentation for supported configurations. Instance: (us-west-1) Waiter InstanceRunning failed: An error occurred (Missing.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-4:interaction.",
+            "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-1-seed-message."
+          ],
+          "eventExportDigest": "sha256-e90bdf87417079941b6b9bf91bbe1a2dba0bc0be7cf8ad401dfa976d066a11ff",
+          "expectedContextPhrases": [
+            "/Users/guclaw/.openclaw/workspace/quant-research\\n\\necho",
+            "/configs"
+          ],
+          "minimumPhraseHits": 2,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/.openclaw/workspace/quant-research\\n\\necho",
+            "/configs"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 8.645,
+            "routeSelectionMs": 5.275,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.368,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-02-28T01:46:10.708Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-7f5fb203c2daa799ab969465138d866b96125fb25786bc919b29710ade9aa79e"
+}

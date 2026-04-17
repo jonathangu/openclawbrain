@@ -1,0 +1,496 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-pelican-072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-window-002",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-09T07:31:47.817Z",
+  "generatedAt": "2026-04-09T08:07:20.715Z",
+  "traceHash": "sha256-1df02420998a45ff18b6fa7592e1d6cd553e69e00670f629819f48f156232f3b",
+  "fixtureHash": "sha256-d26e41f8ffbf777f72220318ad80ec7f532c81cc4e8c86beb0f89befd769d272",
+  "scoreHash": "sha256-a5c102cb45541b25eaa1031ed15842d1229ed8fb5484ed56c77a5d51c5ec0468",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/pelican/sessions/072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-09T08:07:20.715Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-caffae64068969fa7e1d950417642498125ccd7a52b99fe5538a0a0e555ac8a8"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-fde7a62e70491e9e35da9749bbd0e298e7fa588e5fe2a8a437a942672430b194",
+          "expectedContextPhrases": [
+            "/pel087_core36_alert_suite.py",
+            "/test_core_capture_state_machine.py",
+            "/test_pel087_core36_alert_suite.py"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/pel087_core36_alert_suite.py",
+            "/test_core_capture_state_machine.py",
+            "/test_pel087_core36_alert_suite.py"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.025,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.025,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-09T08:07:20.715Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 100,
+        "compileOkCount": 1,
+        "phraseHitCount": 3,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-29ae38a4"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-09T08:07:20.715Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-342ba85c5311a47d1892e4a823de46a4b8dcdeb9ee298ca676be05c4132f37bf"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-29ae38a4",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-4f7535ce6116ace6b204e44285df3439234eb752bbd5627f697a49555ec83b4b",
+          "selectedContextIds": [
+            "pack-29ae38a4:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:feedback",
+            "pack-29ae38a4:pointer-aware-init",
+            "pack-29ae38a4:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-4:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed: assistant: I’ve got the state machine module in place; now I’m wiring it into the off-hotpath alert suite and adding recovery provenance handling without touching the live collector path. ToolCall exec {\"command\": \"python3 heredoc\\nfrom pathlib import Path\\npath = Path('/Users/guclaw/worktrees/pelican/49/scripts/pel087_core36_alert_suite.py')\\ntext = path.read_text()\\ntext = text.replace('from ticker_universe import TR. Related interaction: 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:interaction.",
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
+            "Teaching feedback on live-session session 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed: assistant: I’ve got the new state machine, alert-suite wiring, and tests in place. Next I’m running focused pytest on the new slice plus the existing core-36 alert tests to catch any leakage or typing regressions. ToolCall exec {\"command\": \"python3 -m pytest -q tests/test_core_capture_state_machine.py tests/test_pel087_core36_alert_suite.py\", \"timeout\": 120, \"workdir\": \"/Users/guclaw/worktrees/pelican/49\"}. Related interaction: 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-4:interaction."
+          ],
+          "eventExportDigest": "sha256-9643f665530efe6e9ca1da2a7f013df08f1209c05596fd2d8d97fb3b79b52c5e",
+          "expectedContextPhrases": [
+            "/pel087_core36_alert_suite.py",
+            "/test_core_capture_state_machine.py",
+            "/test_pel087_core36_alert_suite.py"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [
+            "/pel087_core36_alert_suite.py",
+            "/test_core_capture_state_machine.py",
+            "/test_pel087_core36_alert_suite.py"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.705,
+            "routeSelectionMs": 5.019,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.685,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-09T08:07:20.715Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 60,
+        "compileOkCount": 1,
+        "phraseHitCount": 1,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-29ae38a4"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-09T08:07:20.715Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-1ceb4eed1f20b9bdf62734e86d9bf91775d71eeddea33e9a7e7f0673ceb1ad36"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-29ae38a4",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-0124e6b9f6b78de532588325242dc61839c8526a3e2ea57d84aa65b48e46b051",
+          "selectedContextIds": [
+            "pack-29ae38a4:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:feedback",
+            "pack-29ae38a4:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:interaction",
+            "pack-29ae38a4:pointer-aware-init"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed: assistant: I’ve got the state machine module in place; now I’m wiring it into the off-hotpath alert suite and adding recovery provenance handling without touching the live collector path. ToolCall exec {\"command\": \"python3 heredoc\\nfrom pathlib import Path\\npath = Path('/Users/guclaw/worktrees/pelican/49/scripts/pel087_core36_alert_suite.py')\\ntext = path.read_text()\\ntext = text.replace('from ticker_universe import TR. Related interaction: 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:interaction.",
+            "Interaction operator_override on live-session session 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed. Message: cue-3-seed-message.",
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
+          ],
+          "eventExportDigest": "sha256-f3aeb0eec8f548e5df3f22bc530e59ed75e51fb57baf8efe0802c1573825cff0",
+          "expectedContextPhrases": [
+            "/pel087_core36_alert_suite.py",
+            "/test_core_capture_state_machine.py",
+            "/test_pel087_core36_alert_suite.py"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [
+            "/pel087_core36_alert_suite.py"
+          ],
+          "missedPhrases": [
+            "/test_core_capture_state_machine.py",
+            "/test_pel087_core36_alert_suite.py"
+          ],
+          "qualityScore": 60,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.617,
+            "routeSelectionMs": 4.958,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.656,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-09T08:07:20.715Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 100,
+        "compileOkCount": 1,
+        "phraseHitCount": 3,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-696954af"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-696954af",
+        "frozenEvalRouterIdentity": "pack-696954af:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-09T08:07:20.715Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-356bf1445d9ac1894991f0c0d6746d0ad86c919781ca0658eabbbe0f2d387702"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-696954af",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-696954af:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-696954af:route_fn",
+          "selectionDigest": "sha256-9b9853c699f97b71a0795df585e516f1d637885d02f19cfc0276810d57e7e2a1",
+          "selectedContextIds": [
+            "pack-696954af:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:feedback",
+            "pack-696954af:pointer-aware-init",
+            "pack-696954af:event:072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-4:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed: assistant: I’ve got the state machine module in place; now I’m wiring it into the off-hotpath alert suite and adding recovery provenance handling without touching the live collector path. ToolCall exec {\"command\": \"python3 heredoc\\nfrom pathlib import Path\\npath = Path('/Users/guclaw/worktrees/pelican/49/scripts/pel087_core36_alert_suite.py')\\ntext = path.read_text()\\ntext = text.replace('from ticker_universe import TR. Related interaction: 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-3:interaction.",
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
+            "Teaching feedback on live-session session 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed: assistant: I’ve got the new state machine, alert-suite wiring, and tests in place. Next I’m running focused pytest on the new slice plus the existing core-36 alert tests to catch any leakage or typing regressions. ToolCall exec {\"command\": \"python3 -m pytest -q tests/test_core_capture_state_machine.py tests/test_pel087_core36_alert_suite.py\", \"timeout\": 120, \"workdir\": \"/Users/guclaw/worktrees/pelican/49\"}. Related interaction: 072a9d79-0a6d-4d33-aa9c-b4474dc2a3b3-seed:cue-4:interaction."
+          ],
+          "eventExportDigest": "sha256-9fa32082b25dcf3f080536377873d893fd779a095b8c22c216a768f006394db0",
+          "expectedContextPhrases": [
+            "/pel087_core36_alert_suite.py",
+            "/test_core_capture_state_machine.py",
+            "/test_pel087_core36_alert_suite.py"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [
+            "/pel087_core36_alert_suite.py",
+            "/test_core_capture_state_machine.py",
+            "/test_pel087_core36_alert_suite.py"
+          ],
+          "missedPhrases": [],
+          "qualityScore": 100,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 9.452,
+            "routeSelectionMs": 6.053,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.397,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-09T08:07:20.715Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "learned_route",
+    "ranking": [
+      {
+        "mode": "learned_route",
+        "qualityScore": 100
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 100
+      },
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 60
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-04c0312980aba34b93685cc233e85daae069b59dac30c4234f959784a5af41c6"
+}

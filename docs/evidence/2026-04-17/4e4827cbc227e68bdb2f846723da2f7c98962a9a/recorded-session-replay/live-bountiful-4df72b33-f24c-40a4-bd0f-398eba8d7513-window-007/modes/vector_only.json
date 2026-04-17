@@ -1,0 +1,117 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 60,
+    "compileOkCount": 1,
+    "phraseHitCount": 1,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-e43a5e1f"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/bountiful/session-window:memory_compiled",
+        "live/bountiful/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/bountiful/session-window",
+      "freshestCreatedAt": "2026-03-03T04:02:19.270Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-09032a8be01c062412ebc3e3f93cad8a55b29e496ba22ec34da1c09d69f6d5ec"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-e43a5e1f",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-c58e5c336251511527bc47e0017cbcedc804d11b89c8a1bd3d18f0f151dfef64",
+      "selectedContextIds": [
+        "pack-e43a5e1f:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:feedback",
+        "pack-e43a5e1f:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:feedback",
+        "pack-e43a5e1f:event:4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-4:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8103\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 20:00 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` How's it going. Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-6:interaction.",
+        "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8097\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:26 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` B: Yep. Quick scope check before I swing the axe: Do you mean remove “fruit” from the TS/JS code layer only (.... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-3:interaction.",
+        "Teaching feedback on live-session session 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"8098\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"Jonathan\", \"timestamp\": \"Mon 2026-03-02 19:26 PST\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Jonathan: Get rid of the term fruit in code I do not want to see any fruit mentioned as function names or db .... Related interaction: 4df72b33-f24c-40a4-bd0f-398eba8d7513-seed:cue-4:interaction."
+      ],
+      "eventExportDigest": "sha256-78410173ffe0ad4a3bbacb28a87d1de13437529848f9726ac23042166b2c8796",
+      "expectedContextPhrases": [
+        "toolcall",
+        "process",
+        "action"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [
+        "action"
+      ],
+      "missedPhrases": [
+        "toolcall",
+        "process"
+      ],
+      "qualityScore": 60,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 6.943,
+        "routeSelectionMs": 4.398,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 2.542,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/bountiful/session-window:memory_compiled",
+          "live/bountiful/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/bountiful/session-window",
+        "freshestCreatedAt": "2026-03-03T04:02:19.270Z"
+      },
+      "warnings": []
+    }
+  ]
+}

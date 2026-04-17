@@ -1,0 +1,495 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-pelican-cb6ab1b9-3527-43e5-a3ba-879a338b6120-window-005",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-09T06:08:38.082Z",
+  "generatedAt": "2026-04-09T06:47:32.295Z",
+  "traceHash": "sha256-80f4bd70b8f229336838d17a92921bfca64745f162a9177679361b11e355a256",
+  "fixtureHash": "sha256-1a25c630a19d83ff4b3784d9a97b879e228a965826872ffe6bcc2e6453fbac5a",
+  "scoreHash": "sha256-f0fa27aab1913b8053f11a38a9bf3c872d5f381250ae1ea0c9a04ea1a70fbaf4",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/pelican/sessions/cb6ab1b9-3527-43e5-a3ba-879a338b6120.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-09T06:47:32.295Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-94ade431a5c986254405c71afb4d4071b897c04f7cbfe57133fcaa9500ad06d1"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-bb875a54564026506eea53f101973f3b3d56ffe186ca6914df1c2a29360ce7b3",
+          "expectedContextPhrases": [
+            "/test_rebuild_feature_matrix_coverage.py",
+            "/retry",
+            "c4bb93fa9a864e221c6ebf62c2a50899453e2b07"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/test_rebuild_feature_matrix_coverage.py",
+            "/retry",
+            "c4bb93fa9a864e221c6ebf62c2a50899453e2b07"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.029,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.029,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-09T06:47:32.295Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-97c1cbae"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-09T06:47:32.295Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-29dc0d6c8e81c29d5e12c1a14420528950fdbaaeba645756265d85e5a73887fa"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-97c1cbae",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-47e9c113e90b588d1405c7fcf7b4d9037a9940a06fee26cc23e6ff2995aa6a68",
+          "selectedContextIds": [
+            "pack-97c1cbae:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:feedback",
+            "pack-97c1cbae:pointer-aware-init",
+            "pack-97c1cbae:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=3fe194f4-3589-44f1-8e06-1f44240f170d, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:interaction.",
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
+            "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: assistant: Hardened. What I changed - Kept the earlier fix: core ticker rows are no longer dropped just because options chain is partial. - Added a **fail-closed guardrail** for the core-36 slice: - if the latest core-36 snapshot has any ticker with - `options_collection_partial_flag > 0`, or - `options_collection_failed_ticker_count > 0`, or - `options_collection_incomplete_ticker_count > 0` - the proof lane now **returns non-zero** and surfaces the exact tickers instead of quietly publishing a degrade.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:interaction."
+          ],
+          "eventExportDigest": "sha256-ac81f3c422699be77c6ef8a9ddcfc12e13c6f0996d10a64a984662122d786f04",
+          "expectedContextPhrases": [
+            "/test_rebuild_feature_matrix_coverage.py",
+            "/retry",
+            "c4bb93fa9a864e221c6ebf62c2a50899453e2b07"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/test_rebuild_feature_matrix_coverage.py",
+            "/retry",
+            "c4bb93fa9a864e221c6ebf62c2a50899453e2b07"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.681,
+            "routeSelectionMs": 5.052,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.626,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-09T06:47:32.295Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-97c1cbae"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-09T06:47:32.295Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-9a00568171515d43cb16b441d30085f0ee54cd928e74e825b76191255e103fb1"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-97c1cbae",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-dde9b87ec8dc4d75612458d6876542552855f3755bf8b126c9e7763ea12522ff",
+          "selectedContextIds": [
+            "pack-97c1cbae:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:feedback",
+            "pack-97c1cbae:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:interaction",
+            "pack-97c1cbae:pointer-aware-init"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=3fe194f4-3589-44f1-8e06-1f44240f170d, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:interaction.",
+            "Interaction operator_override on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed. Message: cue-5-seed-message.",
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph."
+          ],
+          "eventExportDigest": "sha256-39094154ba72e6f4954d1694a39b35d2aff7f021718f3c7eec1d43f0f4e0c47b",
+          "expectedContextPhrases": [
+            "/test_rebuild_feature_matrix_coverage.py",
+            "/retry",
+            "c4bb93fa9a864e221c6ebf62c2a50899453e2b07"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/test_rebuild_feature_matrix_coverage.py",
+            "/retry",
+            "c4bb93fa9a864e221c6ebf62c2a50899453e2b07"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.645,
+            "routeSelectionMs": 5.048,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 2.596,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-09T06:47:32.295Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-c79b8601"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-c79b8601",
+        "frozenEvalRouterIdentity": "pack-c79b8601:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/pelican/session-window:memory_compiled",
+            "live/pelican/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/pelican/session-window",
+          "freshestCreatedAt": "2026-04-09T06:47:32.295Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-60435629ec9a80df1f11598aacd41ca1b5c011f3e4a3b6e7768d7d3cab7e80cc"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-c79b8601",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-c79b8601:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-c79b8601:route_fn",
+          "selectionDigest": "sha256-26c8de6408f47009a2f8e95409614034c4deb0bd7e595c6708f373e1b1ab3bb9",
+          "selectedContextIds": [
+            "pack-c79b8601:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:feedback",
+            "pack-c79b8601:pointer-aware-init",
+            "pack-c79b8601:event:cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: user: Exec denied (gateway id=3fe194f4-3589-44f1-8e06-1f44240f170d, approval-timeout (obfuscation-detected)): python3 - <<'PY' from pathlib import Path path = Path('rebuild_feature_matrix_coverage.py') text = path.read_text() # Insert helper before _sha256. helper = '''def _compute_latest_snapshot_coverage( df: pd.DataFrame, snapshot_ts_utc_naive: pd.Series, target_tickers: list[str], ) -> dict[str, Any]: target_set = { str(ticker).strip().upper() for ticker in target_tickers if str(ticker).strip().... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-5:interaction.",
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-09-pelican-alerts.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
+            "Teaching feedback on live-session session cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed: assistant: Hardened. What I changed - Kept the earlier fix: core ticker rows are no longer dropped just because options chain is partial. - Added a **fail-closed guardrail** for the core-36 slice: - if the latest core-36 snapshot has any ticker with - `options_collection_partial_flag > 0`, or - `options_collection_failed_ticker_count > 0`, or - `options_collection_incomplete_ticker_count > 0` - the proof lane now **returns non-zero** and surfaces the exact tickers instead of quietly publishing a degrade.... Related interaction: cb6ab1b9-3527-43e5-a3ba-879a338b6120-seed:cue-4:interaction."
+          ],
+          "eventExportDigest": "sha256-dc59e67f087a954974a276e6ca6f1ca663580f5272daaa121fbf750a9d71666a",
+          "expectedContextPhrases": [
+            "/test_rebuild_feature_matrix_coverage.py",
+            "/retry",
+            "c4bb93fa9a864e221c6ebf62c2a50899453e2b07"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/test_rebuild_feature_matrix_coverage.py",
+            "/retry",
+            "c4bb93fa9a864e221c6ebf62c2a50899453e2b07"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 9.447,
+            "routeSelectionMs": 6.092,
+            "promptAssemblyMs": 0.001,
+            "otherMs": 3.354,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/pelican/session-window:memory_compiled",
+              "live/pelican/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/pelican/session-window",
+            "freshestCreatedAt": "2026-04-09T06:47:32.295Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-c9cf1104ceb05c52ab787672e38abb4ad30f052b28adf04ed454febad7dbbafa"
+}

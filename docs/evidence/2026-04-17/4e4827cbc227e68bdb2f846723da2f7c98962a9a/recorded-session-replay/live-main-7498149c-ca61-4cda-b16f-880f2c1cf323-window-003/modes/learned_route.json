@@ -1,0 +1,113 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-c1f59bf5"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-c1f59bf5",
+    "frozenEvalRouterIdentity": "pack-c1f59bf5:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-11T09:16:03.981Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-ec3d0f2a9d68503892d305ccac333f74e565f5f1161ea9ba4d863c82dc4533df"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-c1f59bf5",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-c1f59bf5:route_fn",
+      "activationConfidence": "high",
+      "routerIdentity": "pack-c1f59bf5:route_fn",
+      "selectionDigest": "sha256-4982315634f620f386e62aedf5604aa9871361a32e2f694a6ba8fe9095be7291",
+      "selectedContextIds": [
+        "pack-c1f59bf5:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:feedback",
+        "pack-c1f59bf5:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-3:feedback",
+        "pack-c1f59bf5:event:7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-5:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: Deep-dive correction lane for T-20260407-173. This is the actual remaining blocker. Worktree baseline: - branch: t173-lane-f-comparative-correction (from t173-lane-c-verification) - npm install already completed in this worktree - repo-wide tsc is supposed to pass on this branch You must fix the real comparative replay/eval behavior, not just make local assertions .... Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: assistant: I’m loading the requested artifacts/tests first, then I’ll reproduce the failures and fix the real behavior on this branch. ToolCall read {\"path\": \"/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260407-173/final-replay-eval-swarm-board.md\"}. Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-3:interaction.",
+        "Teaching feedback on live-session session 7498149c-ca61-4cda-b16f-880f2c1cf323-seed: assistant: I found the real regression: this branch’s clean-install path resolves `@openclawbrain/*` to the lightweight local bridge packages added in Lane C, while the passing `main` checkout was still picking up richer nested package installs under `packages/cli/node_modules`. The bridge versions are too weak for replay/eval runtime use. I’m tightening the local `contracts` and `event-export` bridges so clean installs behave like the real packages instead of degrading to partial/blocked. ToolCall edit.... Related interaction: 7498149c-ca61-4cda-b16f-880f2c1cf323-seed:cue-5:interaction."
+      ],
+      "eventExportDigest": "sha256-e0be90cc5aa2e5dba3af8191a7e2f50bd29ff0e30249d87722e7cae083c86e13",
+      "expectedContextPhrases": [
+        "/Users/guclaw/.openclaw/workspace/worktrees/t173-lane-f-comparative-correction\","
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace/worktrees/t173-lane-f-comparative-correction\","
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 10.128,
+        "routeSelectionMs": 6.448,
+        "promptAssemblyMs": 0.003,
+        "otherMs": 3.678,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-11T09:16:03.981Z"
+      },
+      "warnings": []
+    }
+  ]
+}

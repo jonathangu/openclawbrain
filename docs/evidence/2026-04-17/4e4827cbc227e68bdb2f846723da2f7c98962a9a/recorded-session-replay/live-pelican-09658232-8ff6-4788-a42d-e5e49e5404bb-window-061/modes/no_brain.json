@@ -1,0 +1,100 @@
+{
+  "mode": "no_brain",
+  "summary": {
+    "mode": "no_brain",
+    "activationStrategy": "no_brain",
+    "modeRequested": null,
+    "selectionEngine": null,
+    "qualityScore": 0,
+    "compileOkCount": 0,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 1,
+      "scanSurfaces": [
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 0,
+      "totalEventCount": 1,
+      "attributedEventCount": 1,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 0,
+      "selectionDigestTurnCount": 0,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-02-28T02:32:19.135Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-b0af8593686f4dcd1625a4737259415fed87f48af0fee073ee2e87cde2bfd51e"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "no_brain",
+      "phase": "eval",
+      "compileOk": false,
+      "fallbackToStaticContext": true,
+      "hardRequirementViolated": false,
+      "activePackId": null,
+      "modeRequested": null,
+      "modeEffective": null,
+      "selectionEngine": null,
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": null,
+      "selectedContextIds": [],
+      "selectedContextTexts": [],
+      "eventExportDigest": "sha256-cb82745b5ce681319b4442416b8eeba9da489ffdcf2a5eb741758dda277d6524",
+      "expectedContextPhrases": [
+        "//polygon-data-collection/tft-training/full_feature_matrix_v4.parquet"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "//polygon-data-collection/tft-training/full_feature_matrix_v4.parquet"
+      ],
+      "qualityScore": 0,
+      "compileActiveVersion": null,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 0.027,
+        "routeSelectionMs": null,
+        "promptAssemblyMs": null,
+        "otherMs": 0.027,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 0,
+        "totalEventCount": 1,
+        "attributedEventCount": 1,
+        "selectionDigestCount": 0,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-02-28T02:32:19.135Z"
+      },
+      "warnings": []
+    }
+  ]
+}

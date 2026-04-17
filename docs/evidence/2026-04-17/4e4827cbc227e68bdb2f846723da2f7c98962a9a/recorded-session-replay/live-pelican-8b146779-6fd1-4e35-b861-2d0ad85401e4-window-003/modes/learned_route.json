@@ -1,0 +1,113 @@
+{
+  "mode": "learned_route",
+  "summary": {
+    "mode": "learned_route",
+    "activationStrategy": "continuous_learned_loop",
+    "modeRequested": "learned",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 1,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-b7d2084b"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": "pack-b7d2084b",
+    "frozenEvalRouterIdentity": "pack-b7d2084b:route_fn",
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-03-31T16:54:56.868Z",
+      "warnings": [
+        "human_labels_missing",
+        "active_pack_never_moved"
+      ]
+    },
+    "scoreHash": "sha256-7a62ceed7f31f53b2372643ab96d533c536977c1c8ab37f3c7384bc33e112518"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "learned_route",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-b7d2084b",
+      "modeRequested": "learned",
+      "modeEffective": "learned",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": true,
+      "activationTaken": true,
+      "activationSource": "learned_route_fn",
+      "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-b7d2084b:route_fn",
+      "activationConfidence": "high",
+      "routerIdentity": "pack-b7d2084b:route_fn",
+      "selectionDigest": "sha256-691f8c70ae5a701c2a5daddeb82a4a9d9c25a2d75c8da9ade16443bf12693c48",
+      "selectedContextIds": [
+        "pack-b7d2084b:event:8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-3:feedback",
+        "pack-b7d2084b:event:8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-1:feedback",
+        "pack-b7d2084b:event:8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-6:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed: user: New explicit directive from Jon: we hard cut over to real money for everything. Interpretation for this fix lane: - treat live production runtime roots and live production broker truth as the only canonical operator surface for active monitoring - eliminate remaining paper/shadow fallback behavior from the dashboard/operator truth path for this slice - if a contract/path default still points to old-root or paper-oriented state for active production monitoring, fix it now - keep safety, but bi.... Related interaction: 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-3:interaction.",
+        "Teaching feedback on live-session session 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: In clean worktree /Users/guclaw/worktrees/quant-research/068g-dashboardtruth, fix the remaining live dashboard truth stack end to end. Known hard evidence: - Live production trades exist today in runtime_state/live/production_positions.json: - AAPL order 119331450 entered 2026-03-31T10:01:37-04:00 credit 5.28 - AMZN order 119349858 entered 2026-03-31T10:31:20-04:00.... Related interaction: 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed: assistant: Folded in. What changed in this tighten-up: - Live dashboard/operator monitoring now defaults to `live` / `primary` instead of falling back to paper/shadow. - `position_store` refresh triggers now resolve the live production contract fail-closed, so live monitoring no longer drifts onto paper-oriented contract defaults. - Added/updated tests proving the live monitoring default is live-only. Files changed in this pass: - `refresh_dashboard.py` - `position_store.py` - `tests/test_refresh_dashbo.... Related interaction: 8b146779-6fd1-4e35-b861-2d0ad85401e4-seed:cue-6:interaction."
+      ],
+      "eventExportDigest": "sha256-971ef0c85cb50a53138dac80296badf881e8c982dcb963b3aa1b618f4791c732",
+      "expectedContextPhrases": [
+        "/Users/guclaw/worktrees/quant-research/068g-dashboardtruth/runtime_state.py\"}"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/Users/guclaw/worktrees/quant-research/068g-dashboardtruth/runtime_state.py\"}"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 9.223,
+        "routeSelectionMs": 5.486,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 3.736,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-03-31T16:54:56.868Z"
+      },
+      "warnings": []
+    }
+  ]
+}

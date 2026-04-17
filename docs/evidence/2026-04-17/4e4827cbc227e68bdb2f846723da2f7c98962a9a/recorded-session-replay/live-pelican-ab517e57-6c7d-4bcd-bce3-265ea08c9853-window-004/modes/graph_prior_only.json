@@ -1,0 +1,114 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 2,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-63e8e9b0"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-04-13T20:19:17.463Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-4213c1edadc464d2bf71ae20082eaee666e438f4e58c4b72484cdf4ab9a9ce34"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-63e8e9b0",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-31fcebe8c17f57d0ddbb6267a7e964f84c4b8add28c9963cef21c3c3fbf00637",
+      "selectedContextIds": [
+        "pack-63e8e9b0:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-1:feedback",
+        "pack-63e8e9b0:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-2:feedback",
+        "pack-63e8e9b0:event:ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-2:interaction"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7t.... Related interaction: ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed: user: Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. If current work from the active session is still in flight or there is a clear next step, reply with a concise status update that explicitly says work is continuing and keep working. Use HEARTBEAT_OK only when there is truly nothing requiring attention. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/pelican/ops/HEARTBEAT.md (exact case). Do not read docs/heartbeat.md. Current time: Tuesday, April 7t.... Related interaction: ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed:cue-2:interaction.",
+        "Interaction operator_override on live-session session ab517e57-6c7d-4bcd-bce3-265ea08c9853-seed. Message: cue-2-seed-message."
+      ],
+      "eventExportDigest": "sha256-cb6ba7aabc99a4dd3a1e9324307133d381c68bba828acf6bf1b39fb4b9b3bf18",
+      "expectedContextPhrases": [
+        "handled",
+        "internally."
+      ],
+      "minimumPhraseHits": 2,
+      "phraseHits": [],
+      "missedPhrases": [
+        "handled",
+        "internally."
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.266,
+        "routeSelectionMs": 4.578,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 2.687,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-04-13T20:19:17.463Z"
+      },
+      "warnings": []
+    }
+  ]
+}

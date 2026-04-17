@@ -1,0 +1,117 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 60,
+    "compileOkCount": 1,
+    "phraseHitCount": 1,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-4fe8c88e"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-03-03T09:08:52.403Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-84b0a0ae6b7059901c567c2ef1428386c81cec18aa996315244e0476572d8c16"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-4fe8c88e",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-e05d4ea2c31b86f797b3b3a494f04691a7bbc3ecf004637390b7052c2df7095a",
+      "selectedContextIds": [
+        "pack-4fe8c88e:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:feedback",
+        "pack-4fe8c88e:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:feedback",
+        "pack-4fe8c88e:event:60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 01:03 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Long term greedy. Write the complete list of things we need to get done for this to trade like a real quant options hedge fund. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-6:interaction.",
+        "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 00:53 PST\" } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` What else for operational excellence?. Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session 60c016db-041e-4b81-83ed-3afa9d89b28e-seed: user: Conversation info (untrusted metadata): ```json { \"timestamp\": \"Tue 2026-03-03 00:56 PST\", \"has_reply_context\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan (8518484672)\", \"id\": \"8518484672\", \"name\": \"Jonathan\" } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"pelican\", \"body\": \"Operational excellence for Pelican = (1) deterministic behavior, (2) full traceability, (3) fast fail-closed recovery. Biggest remaining wins:\\n\\n1. Execution quality S.... Related interaction: 60c016db-041e-4b81-83ed-3afa9d89b28e-seed:cue-2:interaction."
+      ],
+      "eventExportDigest": "sha256-601fdb58fccdbbb8fe1e83b33183113142c532efaa2e62250dc444297b71435c",
+      "expectedContextPhrases": [
+        "toolcall",
+        "gateway",
+        "action"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [
+        "action"
+      ],
+      "missedPhrases": [
+        "toolcall",
+        "gateway"
+      ],
+      "qualityScore": 60,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 6.922,
+        "routeSelectionMs": 4.351,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 2.57,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-03-03T09:08:52.403Z"
+      },
+      "warnings": []
+    }
+  ]
+}

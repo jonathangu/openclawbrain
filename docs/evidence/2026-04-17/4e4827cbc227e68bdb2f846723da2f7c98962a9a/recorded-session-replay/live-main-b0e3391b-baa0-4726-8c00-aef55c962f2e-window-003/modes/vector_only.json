@@ -1,0 +1,112 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 1,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-70d807d6"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-04T05:01:48.823Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-a9cde1ae23b997d84ab8b74040075716ab6360984bcbbfb5d1535aeee329f2aa"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-70d807d6",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-48afc3d65a863f44a1d88e66fcecce047dd7f2a99763c033eebe7ff8824d6a2a",
+      "selectedContextIds": [
+        "pack-70d807d6:event:b0e3391b-baa0-4726-8c00-aef55c962f2e-seed:cue-1:feedback",
+        "pack-70d807d6:event:b0e3391b-baa0-4726-8c00-aef55c962f2e-seed:cue-6:feedback",
+        "pack-70d807d6:pointer-aware-init"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session b0e3391b-baa0-4726-8c00-aef55c962f2e-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Gate 3 lane C for task T-20260403-129 in the OpenClawBrain repo. Work in /tmp/ocb-t129-gate3c on branch t129-gate3c-replay-harvest. Mission: build the shared replay harness/plumbing needed to make Teacher v3 replay outcomes durable and inspectable across proposal classes. Focus on reusable replay result capture, proof-bundle capture of replay outcomes, and .... Related interaction: b0e3391b-baa0-4726-8c00-aef55c962f2e-seed:cue-1:interaction.",
+        "Teaching feedback on live-session session b0e3391b-baa0-4726-8c00-aef55c962f2e-seed: assistant: Done. What I accomplished: - Added a shared Teacher v3 replay-outcome harness with normalized explicit outcomes plus bounded derived fallback capture. - Extended Teacher v3 proof-bundle plumbing so bundles now carry `replayOutcomes` and `replayOutcomeSummary`. - Added core contract support for replay outcome types and summaries, plus proposal summary/diff propagation. - Added focused tests for: - explicit promotable + shadow-only replay outcomes - derived proof-bundle replay outcomes - proof .... Related interaction: b0e3391b-baa0-4726-8c00-aef55c962f2e-seed:cue-6:interaction.",
+        "Pointer-aware init keeps fast boot first with anchors memory/2026-04-04-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+      ],
+      "eventExportDigest": "sha256-5ddc49bda303ede5c992a0f82483b3569c4524c68f8fe7cc67ea8134251e93e4",
+      "expectedContextPhrases": [
+        "heartbeat_ok"
+      ],
+      "minimumPhraseHits": 1,
+      "phraseHits": [],
+      "missedPhrases": [
+        "heartbeat_ok"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 9.142,
+        "routeSelectionMs": 6.365,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.775,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-04T05:01:48.823Z"
+      },
+      "warnings": []
+    }
+  ]
+}

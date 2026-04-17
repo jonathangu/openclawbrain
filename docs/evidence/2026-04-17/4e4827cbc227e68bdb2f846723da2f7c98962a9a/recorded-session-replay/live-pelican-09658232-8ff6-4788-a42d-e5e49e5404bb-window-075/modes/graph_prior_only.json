@@ -1,0 +1,116 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 40,
+    "compileOkCount": 1,
+    "phraseHitCount": 0,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-0a7c26b8"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-02-28T04:19:06.816Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-2a3ec35e23479a38e6f486f2036451be24274b4e215560aada3ac6dc3d9859ea"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-0a7c26b8",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-179ded6aa784696dd8c30ad86e39a39bf3773e85426208406db268d9d6f0b3a6",
+      "selectedContextIds": [
+        "pack-0a7c26b8:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:feedback",
+        "pack-0a7c26b8:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction",
+        "pack-0a7c26b8:event:09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 4ff6d91e-8778-4011-b5aa-df96cf3d35c1] A cron job \"tft-v6-training-monitor\" just completed successfully. Result: ⚠️ ✉️ Message failed Stats: runtime 44s • tokens 1.7k (in 10 / out 1.7k) • prompt/cache 20.5k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system messa.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-6:interaction.",
+        "Interaction operator_override on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed. Message: cue-6-seed-message.",
+        "Teaching feedback on live-session session 09658232-8ff6-4788-a42d-e5e49e5404bb-seed: user: [sessionId: 0458af2a-3e31-4127-b87c-907e264302b4] A cron job \"v6-slim-training-monitor\" just completed successfully. Result: ⚠️ ✉️ Message failed Stats: runtime 59s • tokens 2.0k (in 10 / out 2.0k) • prompt/cache 18.9k A completed cron job is ready for user delivery. Convert the result above into your normal assistant voice and send that user-facing update now. Keep this internal context private (don't mention system/log/stats/session details or announce type), and do not copy the system mess.... Related interaction: 09658232-8ff6-4788-a42d-e5e49e5404bb-seed:cue-2:interaction."
+      ],
+      "eventExportDigest": "sha256-df2c9aa627a17d66b372d7639ca4a70095f94e0fca950cfca44fc974d2b377ad",
+      "expectedContextPhrases": [
+        "/.ssh/guclaw-tft-v2.pem",
+        "/tmp/tft_v6_train.log",
+        "/dev/null;"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [],
+      "missedPhrases": [
+        "/.ssh/guclaw-tft-v2.pem",
+        "/tmp/tft_v6_train.log",
+        "/dev/null;"
+      ],
+      "qualityScore": 40,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.787,
+        "routeSelectionMs": 5.063,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.722,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-02-28T04:19:06.816Z"
+      },
+      "warnings": []
+    }
+  ]
+}

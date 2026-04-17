@@ -1,0 +1,117 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 60,
+    "compileOkCount": 1,
+    "phraseHitCount": 1,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-4a5113ae"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/main/session-window:memory_compiled",
+        "live/main/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/main/session-window",
+      "freshestCreatedAt": "2026-04-04T05:21:56.190Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-a23be78031752bea72407d49c8c01d75459b91e7e195cf1a1c0d7ec50a91bdf8"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-4a5113ae",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-1376dd1b9ce652a373d44ee6827d185f47c028913329b6882727e7a775a95221",
+      "selectedContextIds": [
+        "pack-4a5113ae:event:9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-6:feedback",
+        "pack-4a5113ae:event:9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-6:interaction",
+        "pack-4a5113ae:event:9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-1:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 9bbddffa-4765-4b8c-822f-3fbac8f66538-seed: assistant: Implemented Gate 4B canary guardrails. What changed: - Added a real canary activation guard in `src/brain-core/teacher-v3-contracts.ts` - canary rollout stays target-state and off by default - activation now requires replay summary, proof bundle, and rollback binding - guard state is operator-visible via proof-bundle summaries - Enforced the guard in `src/brain-store/store.ts` - insert/update paths now reject canary activation requests that lack the required bindings - Exposed canary rollout .... Related interaction: 9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-6:interaction.",
+        "Interaction operator_override on live-session session 9bbddffa-4765-4b8c-822f-3fbac8f66538-seed. Message: cue-6-seed-message.",
+        "Teaching feedback on live-session session 9bbddffa-4765-4b8c-822f-3fbac8f66538-seed: user: You are running as a subagent (depth 1/1). Results auto-announce to your requester; do not busy-poll for status. [Subagent Task]: You are Gate 4 lane B for task T-20260403-129 in the OpenClawBrain repo. Work in /tmp/ocb-t129-gate4b on branch t129-gate4b-canary-guards. Mission: implement the hard activation guardrails for Teacher v3 canary plumbing. Build the narrowest real guard path that blocks any canary activation unless replay, proof, and rollback binding are present. Keep canary operator.... Related interaction: 9bbddffa-4765-4b8c-822f-3fbac8f66538-seed:cue-1:interaction."
+      ],
+      "eventExportDigest": "sha256-db0311f914e54bbfb866bbe2b6f39d083de35450523f7c49210a6f8bba560c8e",
+      "expectedContextPhrases": [
+        "T-20260403-129",
+        "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-129/lane-gate4b-canary-guards.md",
+        "/brain-core/teacher-v3-contracts.test.ts"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [
+        "T-20260403-129"
+      ],
+      "missedPhrases": [
+        "/Users/guclaw/.openclaw/workspace/task-artifacts/T-20260403-129/lane-gate4b-canary-guards.md",
+        "/brain-core/teacher-v3-contracts.test.ts"
+      ],
+      "qualityScore": 60,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.908,
+        "routeSelectionMs": 5.16,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.746,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/main/session-window:memory_compiled",
+          "live/main/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/main/session-window",
+        "freshestCreatedAt": "2026-04-04T05:21:56.190Z"
+      },
+      "warnings": []
+    }
+  ]
+}

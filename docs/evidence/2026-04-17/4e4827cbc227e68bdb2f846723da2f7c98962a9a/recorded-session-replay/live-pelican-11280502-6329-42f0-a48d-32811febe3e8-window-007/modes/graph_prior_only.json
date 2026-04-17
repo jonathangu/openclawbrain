@@ -1,0 +1,117 @@
+{
+  "mode": "graph_prior_only",
+  "summary": {
+    "mode": "graph_prior_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "graph_walk_v1",
+    "qualityScore": 60,
+    "compileOkCount": 1,
+    "phraseHitCount": 1,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-d5ff1665"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-03-02T00:51:49.691Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-a05adea9c042d5a9bf2fa133b65f869c476c2079b931f318b225d8d5bb34b1b2"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "graph_prior_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-d5ff1665",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "graph_walk_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-0faff769bcec703213085f6309d60d0886dc011e22d26a933b461273673c11ac",
+      "selectedContextIds": [
+        "pack-d5ff1665:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:feedback",
+        "pack-d5ff1665:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:interaction",
+        "pack-d5ff1665:event:11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:feedback"
+      ],
+      "selectedContextTexts": [
+        "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: user: System: [2026-03-01 16:45:19 PST] Exec completed (ember-em, code 1) :: on_gbm_v5_20260228.pkl -t models/ensemble_production_tft_v5_20260228.pkl and ensure output is valid JSON only. - Also run without --json to ensure human output still prints. Make … Conversation info (untrusted metadata): ```json { \"has_reply_context\": true } ``` Replied message (untrusted, for context): ```json { \"sender_label\": \"Jonathan\", \"body\": \"Okay double check that the data collector works. The data gets to s3 clean.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-5:interaction.",
+        "Interaction operator_override on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed. Message: cue-5-seed-message.",
+        "Teaching feedback on live-session session 11280502-6329-42f0-a48d-32811febe3e8-seed: assistant: What happened: the Codex job didn’t run any code changes because **Codex Spark is rate-limited right now** (“usage limit for GPT‑5.3‑Codex‑Spark”). I’ve already restarted the same fix using **fallback `gpt-5.3-codex --yolo`** (in flight). Here’s **what’s sus from my checks** (and what’s *not*): ### Clean / green (things you asked me to double-check) - **Collector → S3 cleanliness:** latest S3 snapshot (`data/2026/02/27/16-00-49.json`) downloads clean (~**14.98MB**), parses clean, and has **`c.... Related interaction: 11280502-6329-42f0-a48d-32811febe3e8-seed:cue-6:interaction."
+      ],
+      "eventExportDigest": "sha256-499d1a9cb5d9d7b2c4f7b0ce5b9fd9035f8972f11669d0946eced2e5d07b9771",
+      "expectedContextPhrases": [
+        "toolcall",
+        "process",
+        "action"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [
+        "action"
+      ],
+      "missedPhrases": [
+        "toolcall",
+        "process"
+      ],
+      "qualityScore": 60,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 7.725,
+        "routeSelectionMs": 5.042,
+        "promptAssemblyMs": 0.002,
+        "otherMs": 2.68,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-03-02T00:51:49.691Z"
+      },
+      "warnings": []
+    }
+  ]
+}

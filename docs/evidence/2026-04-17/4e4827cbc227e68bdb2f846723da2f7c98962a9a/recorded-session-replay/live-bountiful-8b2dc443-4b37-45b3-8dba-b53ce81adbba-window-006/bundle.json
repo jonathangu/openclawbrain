@@ -1,0 +1,479 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-bountiful-8b2dc443-4b37-45b3-8dba-b53ce81adbba-window-006",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-03-01T04:53:38.399Z",
+  "generatedAt": "2026-03-01T05:19:45.427Z",
+  "traceHash": "sha256-9a9f3db5c5e9f18aad5ca8aa8c8134dfac254479399202badc35306faa348393",
+  "fixtureHash": "sha256-af03997f06ab50c99afcf76923b04c21e1338d145564c582674e59eb816853de",
+  "scoreHash": "sha256-476ef78cc081fd39b903f99a8b297c9532c1ebf25d34e98c8626f52cddf6f4d4",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/bountiful/sessions/8b2dc443-4b37-45b3-8dba-b53ce81adbba.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-03-01T05:19:45.427Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-048408a5bc1e1d56a6cc83e227b9a2958b83cb861b21925fd209ce4b8456f636"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-2f3465379954cf60a63f570da0258a21034b9c7bb53f1307bb5d3786d3a72b6f",
+          "expectedContextPhrases": [
+            "/Users/guclaw/openclaw/skills/coding-agent/SKILL.md\"}"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/openclaw/skills/coding-agent/SKILL.md\"}"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.027,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.027,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-03-01T05:19:45.427Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-98a61f55"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-03-01T05:19:45.427Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-b3e4607c09c0d214a1e4511ec7fe4dc474b081c6e1016ee4bb98401e4d17dab3"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-98a61f55",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-9890ca23d4d3289f9e4f4b1b0c8c974fe34259ae0bf456f3ccfb80cd0464951a",
+          "selectedContextIds": [
+            "pack-98a61f55:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:feedback",
+            "pack-98a61f55:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-5:feedback",
+            "pack-98a61f55:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: System: [2026-02-28 21:04:19 PST] Exec completed (warm-fal, code 0) :: `listing-creation.ts` -> `bounty-creation.ts` - Shared package naming cleanup: - MCP client/tool methods and tool IDs updated to bounty naming (`getBounty`, `createBounty`, `myBou… Conversation info (untrusted metadata): ```json { \"message_id\": \"7402\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrus.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:interaction.",
+            "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: System: [2026-02-28 21:08:21 PST] Exec completed (nimble-c, code 0) :: Starting API server on :3001 (with auto-restart)... Watchdog PID: 15731 ⏳ Waiting for servers... ✅ API healthy ✅ Frontend healthy (served by Express) 🔧 Starting Cloudflare Tunnel… Conversation info (untrusted metadata): ```json { \"message_id\": \"7406\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrust.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-5:interaction.",
+            "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"7400\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan\", \"name\": \"Jonathan\" } ``` Nobody saved listing anywhere. This app isn't launched. No seo yet. Yes do a tidy up or! Use codex! Yes cleanup!. Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:interaction."
+          ],
+          "eventExportDigest": "sha256-6fdd668a3ae53164359aa75c4eb5edb83add036c0d0d7d409a00bf5bb19e2808",
+          "expectedContextPhrases": [
+            "/Users/guclaw/openclaw/skills/coding-agent/SKILL.md\"}"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/openclaw/skills/coding-agent/SKILL.md\"}"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.646,
+            "routeSelectionMs": 4.651,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 2.993,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-03-01T05:19:45.427Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-98a61f55"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-03-01T05:19:45.427Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-4e9a9f7c815c4ac1acd36b77f1a6677817c6325e3e57241889d356c61b3f984b"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-98a61f55",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-9a78dbb224f83301f626907028374119027ceb5161cd832150f45423869735ae",
+          "selectedContextIds": [
+            "pack-98a61f55:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:feedback",
+            "pack-98a61f55:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:feedback",
+            "pack-98a61f55:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:interaction"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: System: [2026-02-28 21:04:19 PST] Exec completed (warm-fal, code 0) :: `listing-creation.ts` -> `bounty-creation.ts` - Shared package naming cleanup: - MCP client/tool methods and tool IDs updated to bounty naming (`getBounty`, `createBounty`, `myBou… Conversation info (untrusted metadata): ```json { \"message_id\": \"7402\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrus.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:interaction.",
+            "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: System: [2026-02-28 20:50:11 PST] Exec completed (crisp-du, code 0) :: 4 [32m+[m[31m-[m[m apps/web/src/features/profile/UnifiedProfilePage.tsx | 4 [32m+[m[31m-[m[m apps/web/src/features/profile/components/ProfileListingsGrid.tsx | 4 [32m+[m[31m-[m[m … A new session was started via /new or /reset. Execute your Session Startup sequence now - read the required files before responding to the user. Then greet the user in your configured persona, if one is provided. Be yourself - use your defined v.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-1:interaction.",
+            "Interaction operator_override on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed. Message: cue-1-seed-message."
+          ],
+          "eventExportDigest": "sha256-6fe5f29ac38b67575071223a4e4064c579fe0344f4384cf2406c6e40baea5cd4",
+          "expectedContextPhrases": [
+            "/Users/guclaw/openclaw/skills/coding-agent/SKILL.md\"}"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/openclaw/skills/coding-agent/SKILL.md\"}"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 7.495,
+            "routeSelectionMs": 4.877,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 2.616,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-03-01T05:19:45.427Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 1,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-cc5d726a"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-cc5d726a",
+        "frozenEvalRouterIdentity": "pack-cc5d726a:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/bountiful/session-window:memory_compiled",
+            "live/bountiful/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/bountiful/session-window",
+          "freshestCreatedAt": "2026-03-01T05:19:45.427Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-c3aeed57cd4d521ce19c13156840dd6aa761fe736ba70d34a78c2d88c3bd0466"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-cc5d726a",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-cc5d726a:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-cc5d726a:route_fn",
+          "selectionDigest": "sha256-0cccb3fff7a94c0df66377b796be7acdf4952a0a5b12a99add14f82599db7a7b",
+          "selectedContextIds": [
+            "pack-cc5d726a:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:feedback",
+            "pack-cc5d726a:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-5:feedback",
+            "pack-cc5d726a:event:8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: System: [2026-02-28 21:04:19 PST] Exec completed (warm-fal, code 0) :: `listing-creation.ts` -> `bounty-creation.ts` - Shared package naming cleanup: - MCP client/tool methods and tool IDs updated to bounty naming (`getBounty`, `createBounty`, `myBou… Conversation info (untrusted metadata): ```json { \"message_id\": \"7402\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrus.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-4:interaction.",
+            "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: System: [2026-02-28 21:08:21 PST] Exec completed (nimble-c, code 0) :: Starting API server on :3001 (with auto-restart)... Watchdog PID: 15731 ⏳ Waiting for servers... ✅ API healthy ✅ Frontend healthy (served by Express) 🔧 Starting Cloudflare Tunnel… Conversation info (untrusted metadata): ```json { \"message_id\": \"7406\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrust.... Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-5:interaction.",
+            "Teaching feedback on live-session session 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed: user: Conversation info (untrusted metadata): ```json { \"message_id\": \"7400\", \"sender_id\": \"8518484672\", \"conversation_label\": \"BOUNTIFUL id:-5151316478\", \"sender\": \"8518484672\", \"group_subject\": \"BOUNTIFUL\", \"is_group_chat\": true } ``` Sender (untrusted metadata): ```json { \"label\": \"Jonathan\", \"name\": \"Jonathan\" } ``` Nobody saved listing anywhere. This app isn't launched. No seo yet. Yes do a tidy up or! Use codex! Yes cleanup!. Related interaction: 8b2dc443-4b37-45b3-8dba-b53ce81adbba-seed:cue-3:interaction."
+          ],
+          "eventExportDigest": "sha256-374d8453dc513e75360819ee9218eaecb5edcca11b9f79e192fa26c1bcfe8fb0",
+          "expectedContextPhrases": [
+            "/Users/guclaw/openclaw/skills/coding-agent/SKILL.md\"}"
+          ],
+          "minimumPhraseHits": 1,
+          "phraseHits": [],
+          "missedPhrases": [
+            "/Users/guclaw/openclaw/skills/coding-agent/SKILL.md\"}"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 10.004,
+            "routeSelectionMs": 6.479,
+            "promptAssemblyMs": 0.004,
+            "otherMs": 3.521,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/bountiful/session-window:memory_compiled",
+              "live/bountiful/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/bountiful/session-window",
+            "freshestCreatedAt": "2026-03-01T05:19:45.427Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-69dfc991268c3188ca8726baa678e158807152c1db8f7b40637676f224f7c88b"
+}

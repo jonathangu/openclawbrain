@@ -1,0 +1,495 @@
+{
+  "contract": "recorded_session_replay_bundle.v1",
+  "traceId": "live-main-dad145d5-21a8-405e-a4b5-229d517ce15f-window-009",
+  "source": "sanitized_recorded_session",
+  "recordedAt": "2026-04-06T00:48:10.365Z",
+  "generatedAt": "2026-04-06T01:04:08.135Z",
+  "traceHash": "sha256-f0f24d3812e038d9d2b67d9309de9db96cd24c2faefb0b5dd93caf569b3c1d1f",
+  "fixtureHash": "sha256-6b6c634b067ee2b84c6981ae8fc0d6c41efb6194e1723d88dd7d0087036cd1ac",
+  "scoreHash": "sha256-78b3106ce438a2e0485d4d2a40ad10e75743b3cbc208b983653c52f0e68452a1",
+  "privacy": {
+    "sanitized": true,
+    "notes": [
+      "Internal local-only trace extracted from live session history.",
+      "Not approved for public export without a separate redaction pass.",
+      "Source session path: /Users/guclaw/.openclaw/agents/main/sessions/dad145d5-21a8-405e-a4b5-229d517ce15f.jsonl"
+    ]
+  },
+  "modes": [
+    {
+      "mode": "no_brain",
+      "summary": {
+        "mode": "no_brain",
+        "activationStrategy": "no_brain",
+        "modeRequested": null,
+        "selectionEngine": null,
+        "qualityScore": 0,
+        "compileOkCount": 0,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 1,
+          "scanSurfaces": [
+            "live/main/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 0,
+          "totalEventCount": 1,
+          "attributedEventCount": 1,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 0,
+          "selectionDigestTurnCount": 0,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/main/session-window",
+          "freshestCreatedAt": "2026-04-06T01:04:08.135Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-a0ea26975a8365e08832501930a2890706222216fe363c833adbd0065a774a3f"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "no_brain",
+          "phase": "eval",
+          "compileOk": false,
+          "fallbackToStaticContext": true,
+          "hardRequirementViolated": false,
+          "activePackId": null,
+          "modeRequested": null,
+          "modeEffective": null,
+          "selectionEngine": null,
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": null,
+          "selectedContextIds": [],
+          "selectedContextTexts": [],
+          "eventExportDigest": "sha256-a24bc80fa091713b86b1acff659c06a9199ebfe0c42c1f8057ff77d99d42b6a8",
+          "expectedContextPhrases": [
+            "T-20260405-147",
+            "/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405",
+            "/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "T-20260405-147",
+            "/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405",
+            "/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2"
+          ],
+          "qualityScore": 0,
+          "compileActiveVersion": null,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 0.041,
+            "routeSelectionMs": null,
+            "promptAssemblyMs": null,
+            "otherMs": 0.041,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/main/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 0,
+            "totalEventCount": 1,
+            "attributedEventCount": 1,
+            "selectionDigestCount": 0,
+            "freshestSourceStream": "live/main/session-window",
+            "freshestCreatedAt": "2026-04-06T01:04:08.135Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "vector_only",
+      "summary": {
+        "mode": "vector_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "flat_rank_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-8a6ed9e1"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/main/session-window:memory_compiled",
+            "live/main/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/main/session-window",
+          "freshestCreatedAt": "2026-04-06T01:04:08.135Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-bccd8df3dfb5521867eac6273033720bb3519b617a112f28ffe8977caf0bc4b9"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "vector_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-8a6ed9e1",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "flat_rank_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-dad2ad51893f8970a8077eed2a36166ab720cda27f860dbc540a0e8ce76d3792",
+          "selectedContextIds": [
+            "pack-8a6ed9e1:event:dad145d5-21a8-405e-a4b5-229d517ce15f-seed:cue-5:feedback",
+            "pack-8a6ed9e1:event:dad145d5-21a8-405e-a4b5-229d517ce15f-seed:cue-3:feedback",
+            "pack-8a6ed9e1:pointer-aware-init"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session dad145d5-21a8-405e-a4b5-229d517ce15f-seed: user: System: [2026-04-05 17:55:55 PDT] Exec completed (young-cr, code 0) :: 6b60f8d56bf227f03914f5f0753d6fa1b359d7104ea\" }, { \"path\": \"hotpot_dev_fullwiki_v1.json\", \"size_bytes\": 47454698, \"sha256\": \"2f1f3e594a3066a3084cc57950ca2713c24712adaad03af6ccce18d… Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/work.... Related interaction: dad145d5-21a8-405e-a4b5-229d517ce15f-seed:cue-5:interaction.",
+            "Teaching feedback on live-session session dad145d5-21a8-405e-a4b5-229d517ce15f-seed: user: System: [2026-04-05 17:54:29 PDT] Exec completed (ember-du, code 0) :: e20294f7a4a\" }, { \"path\": \"data/musique_full_v1.0_test.jsonl\", \"size_bytes\": 55558292, \"sha256\": \"01d7b0f752bdc1fc98856d605560e021a89be903baeb9daff11adeb7fac61328\" }, { \"path\": \"d… Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/work.... Related interaction: dad145d5-21a8-405e-a4b5-229d517ce15f-seed:cue-3:interaction.",
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+          ],
+          "eventExportDigest": "sha256-d0442fffdef6a659411d82ebd158630e7d91571125ced51690650bd28f2972b1",
+          "expectedContextPhrases": [
+            "T-20260405-147",
+            "/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405",
+            "/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "T-20260405-147",
+            "/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405",
+            "/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 8.188,
+            "routeSelectionMs": 5.232,
+            "promptAssemblyMs": 0.003,
+            "otherMs": 2.953,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/main/session-window:memory_compiled",
+              "live/main/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/main/session-window",
+            "freshestCreatedAt": "2026-04-06T01:04:08.135Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "graph_prior_only",
+      "summary": {
+        "mode": "graph_prior_only",
+        "activationStrategy": "seed_pack",
+        "modeRequested": "heuristic",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 0,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-8a6ed9e1"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": null,
+        "frozenEvalRouterIdentity": null,
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/main/session-window:memory_compiled",
+            "live/main/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/main/session-window",
+          "freshestCreatedAt": "2026-04-06T01:04:08.135Z",
+          "warnings": [
+            "human_labels_missing"
+          ]
+        },
+        "scoreHash": "sha256-9898a3f7a30afdf78d4ee41295cc53aa85041b2aae35081b359bd6d11f7e876a"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "graph_prior_only",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-8a6ed9e1",
+          "modeRequested": "heuristic",
+          "modeEffective": "heuristic",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": false,
+          "activationTaken": null,
+          "activationSource": null,
+          "activationReason": null,
+          "activationConfidence": null,
+          "routerIdentity": null,
+          "selectionDigest": "sha256-d5c327047813c236e93b8c931e4c01800f50fffc5969d27ce259d4eb149e5574",
+          "selectedContextIds": [
+            "pack-8a6ed9e1:event:dad145d5-21a8-405e-a4b5-229d517ce15f-seed:cue-5:feedback",
+            "pack-8a6ed9e1:event:dad145d5-21a8-405e-a4b5-229d517ce15f-seed:cue-5:interaction",
+            "pack-8a6ed9e1:event:dad145d5-21a8-405e-a4b5-229d517ce15f-seed:cue-3:feedback"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session dad145d5-21a8-405e-a4b5-229d517ce15f-seed: user: System: [2026-04-05 17:55:55 PDT] Exec completed (young-cr, code 0) :: 6b60f8d56bf227f03914f5f0753d6fa1b359d7104ea\" }, { \"path\": \"hotpot_dev_fullwiki_v1.json\", \"size_bytes\": 47454698, \"sha256\": \"2f1f3e594a3066a3084cc57950ca2713c24712adaad03af6ccce18d… Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/work.... Related interaction: dad145d5-21a8-405e-a4b5-229d517ce15f-seed:cue-5:interaction.",
+            "Interaction operator_override on live-session session dad145d5-21a8-405e-a4b5-229d517ce15f-seed. Message: cue-5-seed-message.",
+            "Teaching feedback on live-session session dad145d5-21a8-405e-a4b5-229d517ce15f-seed: user: System: [2026-04-05 17:54:29 PDT] Exec completed (ember-du, code 0) :: e20294f7a4a\" }, { \"path\": \"data/musique_full_v1.0_test.jsonl\", \"size_bytes\": 55558292, \"sha256\": \"01d7b0f752bdc1fc98856d605560e021a89be903baeb9daff11adeb7fac61328\" }, { \"path\": \"d… Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/work.... Related interaction: dad145d5-21a8-405e-a4b5-229d517ce15f-seed:cue-3:interaction."
+          ],
+          "eventExportDigest": "sha256-152e2880a3598562d10a40b418c8d4ad34afd19008b9a1bfa8205dd50d5dc05c",
+          "expectedContextPhrases": [
+            "T-20260405-147",
+            "/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405",
+            "/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "T-20260405-147",
+            "/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405",
+            "/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 8.482,
+            "routeSelectionMs": 5.438,
+            "promptAssemblyMs": 0.004,
+            "otherMs": 3.041,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/main/session-window:memory_compiled",
+              "live/main/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/main/session-window",
+            "freshestCreatedAt": "2026-04-06T01:04:08.135Z"
+          },
+          "warnings": []
+        }
+      ]
+    },
+    {
+      "mode": "learned_route",
+      "summary": {
+        "mode": "learned_route",
+        "activationStrategy": "continuous_learned_loop",
+        "modeRequested": "learned",
+        "selectionEngine": "graph_walk_v1",
+        "qualityScore": 40,
+        "compileOkCount": 1,
+        "phraseHitCount": 0,
+        "phraseCount": 3,
+        "usedLearnedRouteTurnCount": 1,
+        "promotionCount": 0,
+        "packIds": [
+          "pack-8b02b57c"
+        ],
+        "trainTurnCount": 0,
+        "evalTurnCount": 1,
+        "frozenEvalPackId": "pack-8b02b57c",
+        "frozenEvalRouterIdentity": "pack-8b02b57c:route_fn",
+        "scannerEvidence": {
+          "exportTurnCount": 1,
+          "scanPolicy": "always_on",
+          "scanSurfaceCount": 2,
+          "scanSurfaces": [
+            "live/main/session-window:memory_compiled",
+            "live/main/session-window:message_delivered"
+          ],
+          "humanLabelCount": 0,
+          "selfLabelCount": 1,
+          "totalEventCount": 2,
+          "attributedEventCount": 2,
+          "attributedTurnCount": 1,
+          "selectionDigestCount": 2,
+          "selectionDigestTurnCount": 1,
+          "activePackChangeCount": 0,
+          "freshestSourceStream": "live/main/session-window",
+          "freshestCreatedAt": "2026-04-06T01:04:08.135Z",
+          "warnings": [
+            "human_labels_missing",
+            "active_pack_never_moved"
+          ]
+        },
+        "scoreHash": "sha256-6d77d7a6b550bbeaa781bec4155c263d855e5a160d7cb801b0037a08c91c83b3"
+      },
+      "turns": [
+        {
+          "turnId": "turn-1",
+          "replayMode": "learned_route",
+          "phase": "eval",
+          "compileOk": true,
+          "fallbackToStaticContext": false,
+          "hardRequirementViolated": false,
+          "activePackId": "pack-8b02b57c",
+          "modeRequested": "learned",
+          "modeEffective": "learned",
+          "selectionEngine": "graph_walk_v1",
+          "usedLearnedRouteFn": true,
+          "activationTaken": true,
+          "activationSource": "learned_route_fn",
+          "activationReason": "usedLearnedRouteFn=true; learnedRouteEvidence=learned_route_fn; modeEffective=learned; routerIdentity=pack-8b02b57c:route_fn",
+          "activationConfidence": "high",
+          "routerIdentity": "pack-8b02b57c:route_fn",
+          "selectionDigest": "sha256-9298f2bb0c7303e300eaf83cd53809038d154a29aab6c2fd61237876b5966084",
+          "selectedContextIds": [
+            "pack-8b02b57c:event:dad145d5-21a8-405e-a4b5-229d517ce15f-seed:cue-5:feedback",
+            "pack-8b02b57c:event:dad145d5-21a8-405e-a4b5-229d517ce15f-seed:cue-3:feedback",
+            "pack-8b02b57c:pointer-aware-init"
+          ],
+          "selectedContextTexts": [
+            "Teaching feedback on live-session session dad145d5-21a8-405e-a4b5-229d517ce15f-seed: user: System: [2026-04-05 17:55:55 PDT] Exec completed (young-cr, code 0) :: 6b60f8d56bf227f03914f5f0753d6fa1b359d7104ea\" }, { \"path\": \"hotpot_dev_fullwiki_v1.json\", \"size_bytes\": 47454698, \"sha256\": \"2f1f3e594a3066a3084cc57950ca2713c24712adaad03af6ccce18d… Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/work.... Related interaction: dad145d5-21a8-405e-a4b5-229d517ce15f-seed:cue-5:interaction.",
+            "Teaching feedback on live-session session dad145d5-21a8-405e-a4b5-229d517ce15f-seed: user: System: [2026-04-05 17:54:29 PDT] Exec completed (ember-du, code 0) :: e20294f7a4a\" }, { \"path\": \"data/musique_full_v1.0_test.jsonl\", \"size_bytes\": 55558292, \"sha256\": \"01d7b0f752bdc1fc98856d605560e021a89be903baeb9daff11adeb7fac61328\" }, { \"path\": \"d… Read HEARTBEAT.md if it exists (workspace context). Follow it strictly. Do not infer or repeat old tasks from prior chats. If nothing needs attention, reply HEARTBEAT_OK. When reading HEARTBEAT.md, use workspace file /Users/guclaw/.openclaw/work.... Related interaction: dad145d5-21a8-405e-a4b5-229d517ce15f-seed:cue-3:interaction.",
+            "Pointer-aware init keeps fast boot first with anchors memory/2026-04-06-boot-check.md, MEMORY.md, AGENTS.md, SOUL.md, +4 more, working set TASKS.md, BOOT.md, AGENTS_ACTIVE.md, memory/2026-04-11.md, +2 more, and passive expansion artifacts/openclawbrain-proof-cron/nightly-aggregate/summary.md, task-artifacts/T-20260414-245/closeout.md, task-artifacts/T-20260414-245/guardrail-cleanup-2026-04-14.md, artifacts/openclawbrain-proof-cron/cron-config.json, +8 more from the MEMORY index graph."
+          ],
+          "eventExportDigest": "sha256-7ad05a4a199e80ee51531e2b288f2317ca43b8e2d1faf7fb65c47f4c36891a46",
+          "expectedContextPhrases": [
+            "T-20260405-147",
+            "/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405",
+            "/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2"
+          ],
+          "minimumPhraseHits": 3,
+          "phraseHits": [],
+          "missedPhrases": [
+            "T-20260405-147",
+            "/data/cold-start/snapshots/hotpotqa_v1/hotpotqa.github.io__20260405",
+            "/data/cold-start/snapshots/musique_v1/stonybrooknlp__musique__922ac98f19a2"
+          ],
+          "qualityScore": 40,
+          "compileActiveVersion": 1,
+          "promoted": false,
+          "timing": {
+            "scope": "brain_serve_hot_path_only",
+            "totalMs": 9.715,
+            "routeSelectionMs": 5.964,
+            "promptAssemblyMs": 0.002,
+            "otherMs": 3.749,
+            "backgroundWorkIncluded": false,
+            "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+          },
+          "observability": {
+            "scanPolicy": "always_on",
+            "scanSurfaces": [
+              "live/main/session-window:memory_compiled",
+              "live/main/session-window:message_delivered"
+            ],
+            "humanLabelCount": 0,
+            "selfLabelCount": 1,
+            "totalEventCount": 2,
+            "attributedEventCount": 2,
+            "selectionDigestCount": 2,
+            "freshestSourceStream": "live/main/session-window",
+            "freshestCreatedAt": "2026-04-06T01:04:08.135Z"
+          },
+          "warnings": []
+        }
+      ]
+    }
+  ],
+  "summary": {
+    "winnerMode": "graph_prior_only",
+    "ranking": [
+      {
+        "mode": "graph_prior_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "learned_route",
+        "qualityScore": 40
+      },
+      {
+        "mode": "vector_only",
+        "qualityScore": 40
+      },
+      {
+        "mode": "no_brain",
+        "qualityScore": 0
+      }
+    ]
+  },
+  "bundleHash": "sha256-1d5bc1c50218c07317d287f87303a83c2e2cc9072a22bc138cd90989783edfdb"
+}

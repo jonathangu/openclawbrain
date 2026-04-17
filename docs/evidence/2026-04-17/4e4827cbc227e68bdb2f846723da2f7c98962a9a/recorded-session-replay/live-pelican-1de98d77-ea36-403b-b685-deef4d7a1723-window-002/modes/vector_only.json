@@ -1,0 +1,117 @@
+{
+  "mode": "vector_only",
+  "summary": {
+    "mode": "vector_only",
+    "activationStrategy": "seed_pack",
+    "modeRequested": "heuristic",
+    "selectionEngine": "flat_rank_v1",
+    "qualityScore": 60,
+    "compileOkCount": 1,
+    "phraseHitCount": 1,
+    "phraseCount": 3,
+    "usedLearnedRouteTurnCount": 0,
+    "promotionCount": 0,
+    "packIds": [
+      "pack-910a9218"
+    ],
+    "trainTurnCount": 0,
+    "evalTurnCount": 1,
+    "frozenEvalPackId": null,
+    "frozenEvalRouterIdentity": null,
+    "scannerEvidence": {
+      "exportTurnCount": 1,
+      "scanPolicy": "always_on",
+      "scanSurfaceCount": 2,
+      "scanSurfaces": [
+        "live/pelican/session-window:memory_compiled",
+        "live/pelican/session-window:message_delivered"
+      ],
+      "humanLabelCount": 0,
+      "selfLabelCount": 1,
+      "totalEventCount": 2,
+      "attributedEventCount": 2,
+      "attributedTurnCount": 1,
+      "selectionDigestCount": 2,
+      "selectionDigestTurnCount": 1,
+      "activePackChangeCount": 0,
+      "freshestSourceStream": "live/pelican/session-window",
+      "freshestCreatedAt": "2026-04-13T07:33:42.439Z",
+      "warnings": [
+        "human_labels_missing"
+      ]
+    },
+    "scoreHash": "sha256-804e7dffa2c4fde579b81961ad6aa5a0c4ab1c12c4c3759178c2ccc09a1933c6"
+  },
+  "turns": [
+    {
+      "turnId": "turn-1",
+      "replayMode": "vector_only",
+      "phase": "eval",
+      "compileOk": true,
+      "fallbackToStaticContext": false,
+      "hardRequirementViolated": false,
+      "activePackId": "pack-910a9218",
+      "modeRequested": "heuristic",
+      "modeEffective": "heuristic",
+      "selectionEngine": "flat_rank_v1",
+      "usedLearnedRouteFn": false,
+      "activationTaken": null,
+      "activationSource": null,
+      "activationReason": null,
+      "activationConfidence": null,
+      "routerIdentity": null,
+      "selectionDigest": "sha256-34b1ae7da70e7a36652ec221cf5172751c27b4513594ac8dbc4282cfcbf55409",
+      "selectedContextIds": [
+        "pack-910a9218:pointer-aware-init",
+        "pack-910a9218:workspace",
+        "pack-910a9218:event:1de98d77-ea36-403b-b685-deef4d7a1723-seed:cue-2:interaction"
+      ],
+      "selectedContextTexts": [
+        "Pointer-aware init keeps fast boot first with anchors MEMORY.md, AGENTS.md, SOUL.md, USER.md, +3 more, working set TASKS.md, quant-research/IRON_SOUL.md, tasks.md, docs/jon-model.md, +2 more, and passive expansion docs/prediction_pipeline.md, quant-research/docs/OPERATIONS_RUNBOOK.md, BOOT.md, docs/secret-pointers.md, +8 more from the MEMORY index graph.",
+        "Workspace snapshot session-1de98d77-ea36-403b-b685-deef4d7a1723 for ws-pelican captured at 2026-04-13T07:33:11.441Z with revision 1de98d77-ea36-403b-b685-deef4d7a1723.",
+        "Interaction operator_override on live-session session 1de98d77-ea36-403b-b685-deef4d7a1723-seed. Message: cue-2-seed-message."
+      ],
+      "eventExportDigest": "sha256-81e6edf4ccca4b8de10288746a8705abd695ffb4d8d5939ba8118f4c13d4fe3c",
+      "expectedContextPhrases": [
+        "here.",
+        "pelican",
+        "awake"
+      ],
+      "minimumPhraseHits": 3,
+      "phraseHits": [
+        "pelican"
+      ],
+      "missedPhrases": [
+        "here.",
+        "awake"
+      ],
+      "qualityScore": 60,
+      "compileActiveVersion": 1,
+      "promoted": false,
+      "timing": {
+        "scope": "brain_serve_hot_path_only",
+        "totalMs": 6.202,
+        "routeSelectionMs": 3.853,
+        "promptAssemblyMs": 0.001,
+        "otherMs": 2.348,
+        "backgroundWorkIncluded": false,
+        "detail": "Measured inside compileRuntimeContext before serve-route logging; includes serve-path normalization, active-pack lookup, structural-budget resolution, route/candidate selection, and prompt assembly when run; excludes background scanner/embedder/teacher work, promotion, and runtime event-export writes."
+      },
+      "observability": {
+        "scanPolicy": "always_on",
+        "scanSurfaces": [
+          "live/pelican/session-window:memory_compiled",
+          "live/pelican/session-window:message_delivered"
+        ],
+        "humanLabelCount": 0,
+        "selfLabelCount": 1,
+        "totalEventCount": 2,
+        "attributedEventCount": 2,
+        "selectionDigestCount": 2,
+        "freshestSourceStream": "live/pelican/session-window",
+        "freshestCreatedAt": "2026-04-13T07:33:42.439Z"
+      },
+      "warnings": []
+    }
+  ]
+}
