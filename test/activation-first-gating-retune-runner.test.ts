@@ -145,4 +145,113 @@ describe("activation-first gating retune runner helpers", () => {
       broadLiveVetoResult: "pass",
     })).toBe("pass");
   });
+
+  it("records a fresh candidate-specific veto result without overstating authority", () => {
+    const freshPass = classifyBroadLiveProofReadV1({
+      scorecard: {
+        contract: "comparative_eval_scorecard.v1",
+        requestedTraceCount: 2,
+        successfulTraceCount: 2,
+        failedTraceCount: 0,
+        policy: { status: "pass" },
+        explainableScorecard: {
+          regressionVsBaseline: { count: 0, totalCount: 2 },
+          traceOutcomeVsBaseline: {
+            betterCount: 1,
+            tiedCount: 1,
+            worseCount: 0,
+            totalCount: 2,
+          },
+        },
+        modes: [{ mode: "learned_route", totalUsedLearnedRouteTurnCount: 0 }],
+        traces: [
+          { traceId: "felt-1", candidateRelationVsBaseline: "better" },
+          { traceId: "felt-2", candidateRelationVsBaseline: "tied" },
+        ],
+      },
+      report: {
+        contract: "comparative_eval_runner_report.v1",
+        status: "ok",
+        gateStatus: "pass",
+        gateDecisive: true,
+      },
+      summaryTables: {
+        contract: "recorded_session_replay_proof_lane_summary_tables.v1",
+        turns: [
+          {
+            traceId: "felt-1",
+            modes: [{
+              mode: "learned_route",
+              usedLearnedRouteFn: false,
+              routerIdentity: null,
+              activationTaken: false,
+            }],
+          },
+        ],
+      },
+      feltTraceIds: ["felt-1", "felt-2"],
+      freshRunExecuted: true,
+    });
+
+    expect(freshPass.authoritative).toBe(false);
+    expect(freshPass.vetoResult).toBe("pass");
+    expect(freshPass.notes).toContain(
+      "Candidate-specific broad-live comparative eval executed for the just-trained gating-only candidate.",
+    );
+    expect(deriveFinalCandidateStatusV1({
+      feltPassed: true,
+      restraintPassed: true,
+      broadLiveAuthoritative: freshPass.authoritative,
+      broadLiveVetoResult: freshPass.vetoResult,
+    })).toBe("architecture_verdict");
+
+    const freshReject = classifyBroadLiveProofReadV1({
+      scorecard: {
+        contract: "comparative_eval_scorecard.v1",
+        requestedTraceCount: 2,
+        successfulTraceCount: 2,
+        failedTraceCount: 0,
+        policy: { status: "fail" },
+        explainableScorecard: {
+          regressionVsBaseline: { count: 1, totalCount: 2 },
+          traceOutcomeVsBaseline: {
+            betterCount: 0,
+            tiedCount: 1,
+            worseCount: 1,
+            totalCount: 2,
+          },
+        },
+        modes: [{ mode: "learned_route", totalUsedLearnedRouteTurnCount: 0 }],
+        traces: [
+          { traceId: "felt-1", candidateRelationVsBaseline: "worse" },
+          { traceId: "felt-2", candidateRelationVsBaseline: "tied" },
+        ],
+      },
+      report: {
+        contract: "comparative_eval_runner_report.v1",
+        status: "partial",
+        gateStatus: "fail",
+        gateDecisive: true,
+      },
+      summaryTables: {
+        contract: "recorded_session_replay_proof_lane_summary_tables.v1",
+        turns: [
+          {
+            traceId: "felt-1",
+            modes: [{
+              mode: "learned_route",
+              usedLearnedRouteFn: false,
+              routerIdentity: null,
+              activationTaken: false,
+            }],
+          },
+        ],
+      },
+      feltTraceIds: ["felt-1", "felt-2"],
+      freshRunExecuted: true,
+    });
+
+    expect(freshReject.authoritative).toBe(false);
+    expect(freshReject.vetoResult).toBe("reject");
+  });
 });

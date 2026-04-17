@@ -25,6 +25,7 @@ import {
   type PolicySupervisionRowV1,
 } from "../src/brain-core/policy-supervision-rows.ts";
 import type { RouteDecisionRowV1 as PolicyProjectionRouteRowV1 } from "../src/brain-core/route-rows.ts";
+import { runComparativeEval } from "../src/eval/comparative-eval-runner.ts";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -50,6 +51,8 @@ const DEFAULT_WARM_START_ARTIFACT_DIR = path.join(
   "cold-start-router-approved-export",
   "real-approved-router-train.hotpotqa-musique.v3",
 );
+const CANDIDATE_SPECIFIC_BROAD_LIVE_RUN_NOTE =
+  "Candidate-specific broad-live comparative eval executed for the just-trained gating-only candidate.";
 
 export type ActivationFirstLaneKeyV1 = "feltResume" | "mustFire" | "mustNotFire";
 export type ActivationFirstCandidateStatusV1 = "pass" | "reject" | "architecture_verdict";
@@ -301,6 +304,7 @@ interface RunnerArtifactsV1 {
   registryEntriesPath: string;
   materializationPath: string;
   candidateArtifactDir: string;
+  broadLiveEvalDir: string;
   scorecardPath: string;
   runPath: string;
 }
@@ -322,6 +326,14 @@ interface RunnerScorecardV1 {
   };
   broadLive: BroadLiveProofReadSummaryV1;
   finalCandidateStatus: ActivationFirstCandidateStatusV1;
+}
+
+interface CandidateArtifactRunSummaryV1 {
+  artifactId: string;
+  artifactVersion: string;
+  artifactChecksum: string;
+  outputDir: string;
+  routerIdentity: string | null;
 }
 
 function usage(): void {
@@ -348,6 +360,10 @@ function normalizeCliString(value: string | undefined): string | null {
   }
   const trimmed = value.trim();
   return trimmed.length > 0 ? trimmed : null;
+}
+
+function toErrorMessage(error: unknown): string {
+  return error instanceof Error ? error.message : String(error);
 }
 
 function parseArgs(argv: string[]): ParsedArgs {
@@ -1066,7 +1082,9 @@ export function classifyBroadLiveProofReadV1(params: {
   report: BroadLiveReportV1 | null;
   summaryTables: BroadLiveSummaryTablesV1 | null;
   feltTraceIds: string[];
+  freshRunExecuted?: boolean;
 }): BroadLiveProofReadSummaryV1 {
+  const freshRunExecuted = params.freshRunExecuted === true;
   if (!params.scorecard || !params.report || !params.summaryTables) {
     return {
       available: false,
@@ -1086,7 +1104,11 @@ export function classifyBroadLiveProofReadV1(params: {
         tiedCount: 0,
         worseCount: 0,
       },
-      notes: ["Broad-live proof artifacts are unavailable; no candidate-specific veto can be made."],
+      notes: [
+        freshRunExecuted
+          ? "Candidate-specific broad-live comparative eval did not produce a complete scorecard/report/summary surface; no fresh veto can be made."
+          : "Broad-live proof artifacts are unavailable; no candidate-specific veto can be made.",
+      ],
     };
   }
 
@@ -1111,15 +1133,28 @@ export function classifyBroadLiveProofReadV1(params: {
 
   const authoritative = usedLearnedRouteTurnCount > 0 && boundLearnedRouteTurnCount > 0;
   const regressions = Number(params.scorecard.explainableScorecard.regressionVsBaseline.count ?? 0);
-  const vetoResult: BroadLiveVetoResultV1 = !authoritative
-    ? "proof_read_only"
-    : regressions > 0 || params.scorecard.policy.status !== "pass" || params.report.gateStatus !== "pass"
+  const gatePassed = params.scorecard.policy.status === "pass" && params.report.gateStatus === "pass";
+  const vetoResult: BroadLiveVetoResultV1 = freshRunExecuted
+    ? regressions > 0 || !gatePassed
       ? "reject"
-      : "pass";
+      : "pass"
+    : !authoritative
+      ? "proof_read_only"
+      : regressions > 0 || !gatePassed
+        ? "reject"
+        : "pass";
 
   const notes: string[] = [];
+  if (freshRunExecuted) {
+    notes.push(CANDIDATE_SPECIFIC_BROAD_LIVE_RUN_NOTE);
+  }
   if (!authoritative) {
     notes.push("learned_route never bound a live router function in the broad-live proof surface");
+    if (freshRunExecuted) {
+      notes.push(
+        "Fresh broad-live veto outcome is recorded, but final status stays architecture_verdict until the replay surface binds a learned router identity.",
+      );
+    }
   }
   if (usedLearnedRouteTurnCount === 0) {
     notes.push("scorecard reports zero learned-route turns that used the learned router function");
@@ -1156,19 +1191,54 @@ export function deriveFinalCandidateStatusV1(
   return input.broadLiveVetoResult === "pass" ? "pass" : "reject";
 }
 
-function loadBroadLiveProofRead(params: {
-  harnessDir: string;
-  feltTraceIds: string[];
-}): BroadLiveProofReadSummaryV1 {
-  const broadLiveDir = path.join(params.harnessDir, "semantic-rich-broad-live-eval");
+function readBroadLiveArtifacts(broadLiveDir: string): {
+  scorecard: BroadLiveScorecardV1 | null;
+  report: BroadLiveReportV1 | null;
+  summaryTables: BroadLiveSummaryTablesV1 | null;
+} {
   const scorecardPath = path.join(broadLiveDir, "scorecard.json");
   const reportPath = path.join(broadLiveDir, "report.json");
   const summaryTablesPath = path.join(broadLiveDir, "traces", "_lane", "summary-tables.json");
 
-  const scorecard = existsSync(scorecardPath) ? readJson<BroadLiveScorecardV1>(scorecardPath) : null;
-  const report = existsSync(reportPath) ? readJson<BroadLiveReportV1>(reportPath) : null;
-  const summaryTables = existsSync(summaryTablesPath) ? readJson<BroadLiveSummaryTablesV1>(summaryTablesPath) : null;
+  return {
+    scorecard: existsSync(scorecardPath) ? readJson<BroadLiveScorecardV1>(scorecardPath) : null,
+    report: existsSync(reportPath) ? readJson<BroadLiveReportV1>(reportPath) : null,
+    summaryTables: existsSync(summaryTablesPath) ? readJson<BroadLiveSummaryTablesV1>(summaryTablesPath) : null,
+  };
+}
 
+function unavailableBroadLiveProofRead(params: {
+  feltTraceIds: string[];
+  notes: string[];
+}): BroadLiveProofReadSummaryV1 {
+  return {
+    available: false,
+    authoritative: false,
+    vetoResult: "proof_read_only",
+    regressions: 0,
+    comparableTraceCount: 0,
+    policyStatus: null,
+    gateStatus: null,
+    usedLearnedRouteTurnCount: 0,
+    boundLearnedRouteTurnCount: 0,
+    activatedLearnedRouteTurnCount: 0,
+    feltOverlap: {
+      availableTraceCount: 0,
+      totalTraceCount: params.feltTraceIds.length,
+      betterCount: 0,
+      tiedCount: 0,
+      worseCount: 0,
+    },
+    notes: [...params.notes],
+  };
+}
+
+function loadStaleBroadLiveProofRead(params: {
+  harnessDir: string;
+  feltTraceIds: string[];
+}): BroadLiveProofReadSummaryV1 {
+  const broadLiveDir = path.join(params.harnessDir, "semantic-rich-broad-live-eval");
+  const { scorecard, report, summaryTables } = readBroadLiveArtifacts(broadLiveDir);
   return classifyBroadLiveProofReadV1({
     scorecard,
     report,
@@ -1177,13 +1247,110 @@ function loadBroadLiveProofRead(params: {
   });
 }
 
+function runCandidateSpecificBroadLiveProofRead(params: {
+  harnessDir: string;
+  broadLiveOutputDir: string;
+  harness: ActivationFirstRetuneHarnessV1;
+  candidateArtifact: CandidateArtifactRunSummaryV1;
+  feltTraceIds: string[];
+}): BroadLiveProofReadSummaryV1 {
+  const manifestRef = normalizeCliString(params.harness.broadLiveGuardrail?.manifestPath ?? undefined);
+  if (manifestRef === null) {
+    return unavailableBroadLiveProofRead({
+      feltTraceIds: params.feltTraceIds,
+      notes: ["Harness broad-live guardrail manifest is missing; no fresh candidate-specific veto can be run."],
+    });
+  }
+
+  const manifestPath = resolveHarnessPath(params.harnessDir, manifestRef);
+  if (!existsSync(manifestPath)) {
+    return unavailableBroadLiveProofRead({
+      feltTraceIds: params.feltTraceIds,
+      notes: [`Broad-live guardrail manifest is missing at ${manifestPath}; no fresh candidate-specific veto can be run.`],
+    });
+  }
+
+  rmSync(params.broadLiveOutputDir, { recursive: true, force: true });
+  try {
+    const descriptor = runComparativeEval({
+      manifestPath,
+      outputDir: params.broadLiveOutputDir,
+    });
+    const laneSummaryTablesPath = descriptor.report.files.laneSummaryTables === null
+      ? null
+      : path.join(descriptor.outputDir, descriptor.report.files.laneSummaryTables);
+    const summaryTables = laneSummaryTablesPath !== null && existsSync(laneSummaryTablesPath)
+      ? readJson<BroadLiveSummaryTablesV1>(laneSummaryTablesPath)
+      : null;
+    const broadLive = classifyBroadLiveProofReadV1({
+      scorecard: descriptor.scorecard,
+      report: descriptor.report,
+      summaryTables,
+      feltTraceIds: params.feltTraceIds,
+      freshRunExecuted: true,
+    });
+    broadLive.notes = uniqueStrings([
+      ...broadLive.notes,
+      `broad-live candidate run output: ${portableRelativePath(repoRoot, params.broadLiveOutputDir)}`,
+      `broad-live guardrail manifest: ${portableRelativePath(repoRoot, manifestPath)}`,
+      `candidate artifact: ${params.candidateArtifact.artifactId}@${params.candidateArtifact.artifactVersion}`,
+      `candidate artifact checksum: ${params.candidateArtifact.artifactChecksum}`,
+      `candidate router identity: ${params.candidateArtifact.routerIdentity ?? "null"}`,
+    ]);
+    return broadLive;
+  } catch (error) {
+    return unavailableBroadLiveProofRead({
+      feltTraceIds: params.feltTraceIds,
+      notes: [
+        `Candidate-specific broad-live comparative eval failed: ${toErrorMessage(error)}`,
+        `candidate artifact: ${params.candidateArtifact.artifactId}@${params.candidateArtifact.artifactVersion}`,
+        `candidate artifact checksum: ${params.candidateArtifact.artifactChecksum}`,
+      ],
+    });
+  }
+}
+
+function loadBroadLiveProofRead(params: {
+  harnessDir: string;
+  broadLiveOutputDir: string;
+  harness: ActivationFirstRetuneHarnessV1;
+  candidateArtifact: CandidateArtifactRunSummaryV1;
+  feltTraceIds: string[];
+}): BroadLiveProofReadSummaryV1 {
+  const candidateRun = runCandidateSpecificBroadLiveProofRead(params);
+  if (candidateRun.available) {
+    return candidateRun;
+  }
+
+  const staleProofRead = loadStaleBroadLiveProofRead({
+    harnessDir: params.harnessDir,
+    feltTraceIds: params.feltTraceIds,
+  });
+  return {
+    ...staleProofRead,
+    notes: uniqueStrings([
+      ...candidateRun.notes,
+      ...staleProofRead.notes,
+    ]),
+  };
+}
+
+function broadLiveQualificationSuffix(broadLive: BroadLiveProofReadSummaryV1): string {
+  if (broadLive.authoritative) {
+    return "";
+  }
+  return broadLive.notes.includes(CANDIDATE_SPECIFIC_BROAD_LIVE_RUN_NOTE)
+    ? " (non-authoritative candidate-specific run)"
+    : " (non-authoritative proof read)";
+}
+
 function renderBrutalScorecard(scorecard: RunnerScorecardV1): string {
   const broadLive = scorecard.broadLive;
   return [
     `felt unique wins / ties / regressions: ${scorecard.feltUniqueWinsTiesRegressions.betterCount}/${scorecard.feltUniqueWinsTiesRegressions.tiedCount}/${scorecard.feltUniqueWinsTiesRegressions.worseCount}${scorecard.feltUniqueWinsTiesRegressions.availableTraceCount > 0 ? ` (broad-live overlap ${scorecard.feltUniqueWinsTiesRegressions.availableTraceCount}/${scorecard.feltUniqueWinsTiesRegressions.totalTraceCount})` : " (broad-live overlap unavailable)"}`,
     `felt replay-gate expectation pass count: ${scorecard.feltReplayGateExpectationPassCount.passed}/${scorecard.feltReplayGateExpectationPassCount.total}`,
     `unnecessary activations / must-not-fire failures: ${scorecard.unnecessaryActivations.count}/${scorecard.unnecessaryActivations.total} / ${scorecard.mustNotFireFailures.count}/${scorecard.mustNotFireFailures.total}`,
-    `broad-live regressions or veto result: ${broadLive.regressions}/${broadLive.comparableTraceCount}; ${broadLive.vetoResult}${broadLive.authoritative ? "" : " (non-authoritative proof read)"}`,
+    `broad-live regressions or veto result: ${broadLive.regressions}/${broadLive.comparableTraceCount}; ${broadLive.vetoResult}${broadLiveQualificationSuffix(broadLive)}`,
     `final candidate status: ${scorecard.finalCandidateStatus}`,
   ].join("\n");
 }
@@ -1237,6 +1404,7 @@ async function main(): Promise<void> {
     registryEntriesPath: path.join(args.outputDir, "registry-entries.json"),
     materializationPath: path.join(args.outputDir, "materialization-summary.json"),
     candidateArtifactDir: path.join(args.outputDir, "candidate-artifact"),
+    broadLiveEvalDir: path.join(args.outputDir, "broad-live-comparative-eval"),
     scorecardPath: path.join(args.outputDir, "scorecard.json"),
     runPath: path.join(args.outputDir, "run.json"),
   };
@@ -1316,6 +1484,15 @@ async function main(): Promise<void> {
   const mustNotFireFailures = summarizeMustNotFireFailures(mustNotFireLaneSummary);
   const broadLive = loadBroadLiveProofRead({
     harnessDir: args.harnessDir,
+    broadLiveOutputDir: artifacts.broadLiveEvalDir,
+    harness,
+    candidateArtifact: {
+      artifactId: candidate.manifest.artifact_id,
+      artifactVersion: candidate.manifest.artifact_version,
+      artifactChecksum: candidate.manifest.artifact_checksum,
+      outputDir: artifacts.candidateArtifactDir,
+      routerIdentity: candidateRouterIdentity,
+    },
     feltTraceIds: routeObjectiveInput.lanes.feltResume.traceIds,
   });
 
@@ -1354,10 +1531,15 @@ async function main(): Promise<void> {
       artifactChecksum: candidate.manifest.artifact_checksum,
       priorBaseArtifactId: candidate.manifest.prior_base_artifact_id ?? null,
       priorBaseArtifactChecksum: candidate.manifest.prior_base_artifact_checksum ?? null,
+      routerIdentity: candidateRouterIdentity,
     },
     training: candidate.model.training,
     feltReplay,
     mustNotFireReplay,
+    broadLiveEvaluation: {
+      outputDir: artifacts.broadLiveEvalDir,
+      guardrailManifestPath: harness.broadLiveGuardrail?.manifestPath ?? null,
+    },
     broadLive,
     scorecard,
   });
